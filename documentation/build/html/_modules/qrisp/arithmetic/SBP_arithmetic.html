@@ -1,0 +1,1410 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>qrisp.arithmetic.SBP_arithmetic &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+<link href="../../../_static/styles/bootstrap.css?digest=e353d410970836974a52" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+
+  
+  <link href="../../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=e353d410970836974a52" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/custom.css" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=e353d410970836974a52" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52" />
+
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../_static/clipboard.min.js"></script>
+    <script src="../../../_static/copybutton.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/qrisp/arithmetic/SBP_arithmetic';</script>
+    <link rel="canonical" href="https://qrisp.eu/_modules/qrisp/arithmetic/SBP_arithmetic.html" />
+    <link rel="shortcut icon" href="../../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="light">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+<div class="bd-header__inner bd-page-width">
+  <label class="sidebar-toggle primary-toggle" for="__primary">
+    <span class="fa-solid fa-bars"></span>
+  </label>
+  
+  <div class="navbar-header-items__start">
+    
+      <div class="navbar-item">
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../../_static/logo_extended.png" class="logo__image only-light" alt="Logo image"/>
+    <script>document.write(`<img src="../../../_static/logo_extended.png" class="logo__image only-dark" alt="Logo image"/>`);</script>
+  
+  
+</a></div>
+    
+  </div>
+  
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../general/tutorial.html">
+                        Tutorial
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../reference/index.html">
+                        Reference
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../general/setup.html">
+                        Setup
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../general/imprint.html">
+                        Imprint
+                      </a>
+                    </li>
+                
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+  </button>
+`);
+</script>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/fraunhoferfokus/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square"></i></span>
+            <label class="sr-only">GitHub</label></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+  </button>
+`);
+</script>
+    </div>
+  
+
+  
+</div>
+
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../general/tutorial.html">
+                        Tutorial
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../reference/index.html">
+                        Reference
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../general/setup.html">
+                        Setup
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../general/imprint.html">
+                        Imprint
+                      </a>
+                    </li>
+                
+  </ul>
+</nav></div>
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/fraunhoferfokus/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square"></i></span>
+            <label class="sr-only">GitHub</label></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumbs">
+  <ul class="bd-breadcrumbs" role="navigation" aria-label="Breadcrumb">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">qrisp.arithmetic.SBP_arithmetic</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <h1>Source code for qrisp.arithmetic.SBP_arithmetic</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">/*********************************************************************</span>
+<span class="sd">* Copyright (c) 2023 the Qrisp Authors</span>
+<span class="sd">*</span>
+<span class="sd">* This program and the accompanying materials are made</span>
+<span class="sd">* available under the terms of the Eclipse Public License 2.0</span>
+<span class="sd">* which is available at https://www.eclipse.org/legal/epl-2.0/</span>
+<span class="sd">*</span>
+<span class="sd">* SPDX-License-Identifier: EPL-2.0</span>
+<span class="sd">**********************************************************************/</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">sympy</span> <span class="k">as</span> <span class="nn">sp</span>
+
+<span class="kn">from</span> <span class="nn">qrisp.arithmetic.poly_tools</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">expr_to_list</span><span class="p">,</span>
+    <span class="n">filter_pow</span><span class="p">,</span>
+    <span class="n">get_ordered_symbol_list</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">qrisp.core</span> <span class="kn">import</span> <span class="n">QuantumArray</span><span class="p">,</span> <span class="n">QuantumVariable</span><span class="p">,</span> <span class="n">cp</span><span class="p">,</span> <span class="n">cx</span><span class="p">,</span> <span class="n">cz</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">mcx</span><span class="p">,</span> <span class="n">p</span>
+<span class="kn">from</span> <span class="nn">qrisp.misc</span> <span class="kn">import</span> <span class="n">gate_wrap</span>
+
+<span class="c1"># Threshold of rounding used in detecting integer multiples of pi</span>
+<span class="n">pi_mult_round_threshold</span> <span class="o">=</span> <span class="mi">11</span>
+
+<span class="n">depth_tracker</span> <span class="o">=</span> <span class="p">{}</span>
+
+
+<span class="c1"># Check if the given expression is a polynomial</span>
+<span class="k">def</span> <span class="nf">check_for_polynomial</span><span class="p">(</span><span class="n">expr</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">sp</span><span class="o">.</span><span class="n">preorder_traversal</span><span class="p">(</span><span class="n">expr</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span>
+            <span class="n">x</span><span class="p">,</span>
+            <span class="p">(</span>
+                <span class="n">sp</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">mul</span><span class="o">.</span><span class="n">Mul</span><span class="p">,</span>
+                <span class="n">sp</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">add</span><span class="o">.</span><span class="n">Add</span><span class="p">,</span>
+                <span class="n">sp</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">symbol</span><span class="o">.</span><span class="n">Symbol</span><span class="p">,</span>
+                <span class="n">sp</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">numbers</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span>
+                <span class="n">sp</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">numbers</span><span class="o">.</span><span class="n">Float</span><span class="p">,</span>
+                <span class="n">sp</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">power</span><span class="o">.</span><span class="n">Pow</span><span class="p">,</span>
+            <span class="p">),</span>
+        <span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">power</span><span class="o">.</span><span class="n">Pow</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">sp</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">numbers</span><span class="o">.</span><span class="n">Integer</span><span class="p">):</span>
+                <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">return</span> <span class="kc">True</span>
+
+
+<span class="c1"># Efficient implementation of the multicontrolled U_g gate</span>
+<span class="k">def</span> <span class="nf">multi_controlled_U_g</span><span class="p">(</span>
+    <span class="n">output_qf</span><span class="p">,</span> <span class="n">control_qb_list</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">phase_tolerant</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">use_gms</span><span class="o">=</span><span class="kc">False</span>
+<span class="p">):</span>
+    <span class="c1"># Set alias for quantum session</span>
+    <span class="n">qs</span> <span class="o">=</span> <span class="n">output_qf</span><span class="o">.</span><span class="n">qs</span>
+
+    <span class="c1"># For one control qubit, there is no advantage in calculating an ancilla qubit</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">control_qb_list</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">ancilla</span> <span class="o">=</span> <span class="n">control_qb_list</span>
+
+    <span class="c1"># Otherwise request an ancilla qubit</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">ancilla</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">qs</span><span class="o">=</span><span class="n">output_qf</span><span class="o">.</span><span class="n">qs</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;sbp_anc*&quot;</span><span class="p">)</span>
+
+    <span class="c1"># If an ancilla qb is available</span>
+    <span class="c1"># we synthesize the result of the boolean multiplication in it</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">control_qb_list</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">use_gms</span><span class="p">:</span>
+            <span class="n">toffoli_method</span> <span class="o">=</span> <span class="s2">&quot;gms&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">toffoli_method</span> <span class="o">=</span> <span class="s2">&quot;gray_pt&quot;</span>
+
+        <span class="c1"># Apply multi-controlled x gate</span>
+        <span class="n">mcx</span><span class="p">(</span><span class="n">control_qb_list</span><span class="p">,</span> <span class="n">ancilla</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">method</span><span class="o">=</span><span class="n">toffoli_method</span><span class="p">)</span>
+
+    <span class="c1"># Now we execute the phase gates</span>
+    <span class="c1"># For this there is 2 possibilies</span>
+    <span class="c1"># Either use regular phase gates or use GMS gates</span>
+    <span class="c1"># GMS gates are ion-trap native gates, that allow the entanglement</span>
+    <span class="c1"># of multiple qubits within a single laser pulse</span>
+    <span class="k">if</span> <span class="n">use_gms</span><span class="p">:</span>
+        <span class="c1"># GMSEnvironment is an environment that allows programming</span>
+        <span class="c1"># with regular phase gates but converts everything programmed</span>
+        <span class="c1"># into a GMS gate upon leaving the environment</span>
+        <span class="kn">from</span> <span class="nn">qrisp.environments.GMSEnvironmentironment</span> <span class="kn">import</span> <span class="n">GMSEnvironment</span>
+
+        <span class="n">env</span> <span class="o">=</span> <span class="n">GMSEnvironment</span><span class="p">(</span><span class="n">qs</span><span class="p">)</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># This is an environment that simply does nothing</span>
+        <span class="kn">from</span> <span class="nn">qrisp.environments.quantum_environments</span> <span class="kn">import</span> <span class="n">QuantumEnvironment</span>
+
+        <span class="n">env</span> <span class="o">=</span> <span class="n">QuantumEnvironment</span><span class="p">()</span>
+
+    <span class="c1"># Enter environment</span>
+    <span class="c1"># if True:</span>
+    <span class="n">env</span><span class="o">.</span><span class="n">manual_allocation_management</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">with</span> <span class="n">env</span><span class="p">:</span>
+        <span class="n">phase_accumulator</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">cz_counter</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="c1"># Execute controlled rotations</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">output_qf</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+            <span class="c1"># The -i (instead of i) reverses the gate order implying that</span>
+            <span class="c1"># we can leave out the swaps of the QFT</span>
+
+            <span class="n">rot_angle</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">y</span>
+            <span class="n">rot_angle</span> <span class="o">=</span> <span class="n">rot_angle</span> <span class="o">%</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">rot_angle</span><span class="p">,</span> <span class="n">pi_mult_round_threshold</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span>
+                <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">((</span><span class="o">-</span><span class="n">rot_angle</span><span class="p">)</span> <span class="o">%</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">),</span> <span class="n">pi_mult_round_threshold</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span>
+            <span class="p">):</span>
+                <span class="c1"># If phase is equal to pi, execute cz gate (costs one CNOT less than CP)</span>
+                <span class="k">if</span> <span class="kc">False</span><span class="p">:</span>
+                    <span class="c1"># if np.round(abs(rot_angle) - np.pi, pi_mult_round_threshold) == 0:</span>
+                    <span class="n">cz</span><span class="p">(</span><span class="n">ancilla</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">output_qf</span><span class="o">.</span><span class="n">reg</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+                    <span class="n">cz_counter</span> <span class="o">+=</span> <span class="mi">1</span>
+
+                    <span class="n">phase_accumulator</span> <span class="o">+=</span> <span class="n">rot_angle</span> <span class="o">/</span> <span class="mi">2</span>
+                <span class="c1"># Otherwise execute cp gate</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">cx</span><span class="p">(</span><span class="n">ancilla</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">output_qf</span><span class="o">.</span><span class="n">reg</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+                    <span class="n">p</span><span class="p">(</span><span class="o">-</span><span class="n">rot_angle</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">output_qf</span><span class="o">.</span><span class="n">reg</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+                    <span class="n">cx</span><span class="p">(</span><span class="n">ancilla</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">output_qf</span><span class="o">.</span><span class="n">reg</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+                    <span class="n">p</span><span class="p">(</span><span class="n">rot_angle</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">output_qf</span><span class="o">.</span><span class="n">reg</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+                    <span class="n">phase_accumulator</span> <span class="o">+=</span> <span class="n">rot_angle</span> <span class="o">/</span> <span class="mi">2</span>
+                    <span class="c1"># cp(rot_angle, ancilla_qb, output_qf.reg[i])</span>
+                    <span class="c1"># crz(rot_angle, ancilla[0], output_qf.reg[i])</span>
+        <span class="n">p</span><span class="p">(</span><span class="n">phase_accumulator</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">cz_counter</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">ancilla</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="c1"># Uncompute boolean multiplication</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">control_qb_list</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">use_gms</span><span class="p">:</span>
+            <span class="n">toffoli_method</span> <span class="o">+=</span> <span class="s2">&quot;_inv&quot;</span>
+
+        <span class="n">mcx</span><span class="p">(</span><span class="n">control_qb_list</span><span class="p">,</span> <span class="n">ancilla</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">method</span><span class="o">=</span><span class="n">toffoli_method</span><span class="p">)</span>
+        <span class="c1"># gray_logic_synth_qb_list(control_qb_list,</span>
+        <span class="c1"># ancilla_qb, ancilla_qv.qs, tt, inverse = True)</span>
+        <span class="n">ancilla</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">phase_accumulator</span>
+
+
+<span class="c1"># This function returns the U_g gate (up to qiskit endian conventions)</span>
+<span class="c1"># This is used for applying U_g gates which have no control-knobs</span>
+<span class="k">def</span> <span class="nf">U_g</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">qv</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">qv</span><span class="p">)):</span>
+        <span class="n">rot_angle</span> <span class="o">=</span> <span class="n">rot_angle</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="n">i</span><span class="p">)</span> <span class="o">*</span> <span class="n">y</span>
+        <span class="n">rot_angle</span> <span class="o">=</span> <span class="n">rot_angle</span> <span class="o">%</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">rot_angle</span><span class="p">,</span> <span class="n">pi_mult_round_threshold</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span>
+            <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">((</span><span class="o">-</span><span class="n">rot_angle</span><span class="p">)</span> <span class="o">%</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">),</span> <span class="n">pi_mult_round_threshold</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span>
+        <span class="p">):</span>
+            <span class="n">p</span><span class="p">(</span><span class="n">rot_angle</span><span class="p">,</span> <span class="n">qv</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+
+<span class="c1"># This function encodes a semi-boolean polynomial into a circuit i.e.</span>
+<span class="c1"># For the polynomial p(x_0, x_1, x_2) = 4*x_0*x_1 + 2*x_0*x_2</span>
+<span class="c1"># the effect of this function is:</span>
+<span class="c1"># U_f |x_0, x_1, x_2&gt;|0&gt; = |x_0, x_1, x_2&gt;|p(x_1,x_2,x_3)&gt;</span>
+<span class="k">def</span> <span class="nf">sb_polynomial_encoder</span><span class="p">(</span>
+    <span class="n">input_qf_list</span><span class="p">,</span> <span class="n">output_qf</span><span class="p">,</span> <span class="n">poly</span><span class="p">,</span> <span class="n">inplace_mult</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">use_gms</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">init_op</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span>
+<span class="p">):</span>
+    <span class="c1"># As the polynomial has only boolean variables,</span>
+    <span class="c1"># powers can be ignored since x**k = x for x in GF(2)</span>
+    <span class="n">poly</span> <span class="o">=</span> <span class="n">filter_pow</span><span class="p">(</span><span class="n">poly</span><span class="o">.</span><span class="n">expand</span><span class="p">())</span><span class="o">.</span><span class="n">expand</span><span class="p">()</span> <span class="o">/</span> <span class="mf">2.0</span><span class="o">**</span><span class="n">output_qf</span><span class="o">.</span><span class="n">exponent</span>
+
+    <span class="c1"># Acquire list of symbols present in the polynomial</span>
+    <span class="n">symbol_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">qf</span> <span class="ow">in</span> <span class="n">input_qf_list</span><span class="p">:</span>
+        <span class="n">temp_var_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">symbols</span><span class="p">(</span><span class="n">qf</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_&quot;</span> <span class="o">+</span> <span class="s2">&quot;0:&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">qf</span><span class="o">.</span><span class="n">size</span><span class="p">)))</span>
+        <span class="n">symbol_list</span> <span class="o">+=</span> <span class="n">temp_var_list</span>
+
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">symbol_list</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">n</span> <span class="o">!=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">var</span><span class="o">.</span><span class="n">size</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">input_qf_list</span><span class="p">]):</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+            <span class="s2">&quot;Input variables do not the required amount of qubits to encode polynomial&quot;</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Acquire monomials in list form</span>
+    <span class="n">monomial_list</span> <span class="o">=</span> <span class="n">expr_to_list</span><span class="p">(</span><span class="n">poly</span><span class="p">)</span>
+
+    <span class="kn">from</span> <span class="nn">qrisp</span> <span class="kn">import</span> <span class="n">QFT</span>
+
+    <span class="n">QFT</span><span class="p">(</span>
+        <span class="n">output_qf</span><span class="p">,</span>
+        <span class="n">inv</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">exec_swap</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">inplace_mult</span><span class="o">=</span><span class="n">inplace_mult</span><span class="p">,</span>
+        <span class="n">use_gms</span><span class="o">=</span><span class="n">use_gms</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># The list of qubits contained in the variables of input_var_list</span>
+    <span class="n">input_qubits</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="nb">list</span><span class="p">(</span><span class="n">var</span><span class="o">.</span><span class="n">reg</span><span class="p">)</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">input_qf_list</span><span class="p">],</span> <span class="p">[])</span>
+
+    <span class="n">control_qubit_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">y_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># Iterate through the monomials</span>
+    <span class="k">for</span> <span class="n">monom</span> <span class="ow">in</span> <span class="n">monomial_list</span><span class="p">:</span>
+        <span class="c1"># Prepare the two variables coeff (which is the coefficient of the monomial)</span>
+        <span class="c1"># And the list of variables which appear in the monomial</span>
+
+        <span class="c1"># For this, go through the cases which can appear</span>
+
+        <span class="c1"># This describes the case where there is only a single term in the monomial</span>
+        <span class="c1"># Either a constant or a variable</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">monom</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">monom</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">sp</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">symbol</span><span class="o">.</span><span class="n">Symbol</span><span class="p">):</span>
+                <span class="n">coeff</span> <span class="o">=</span> <span class="mi">1</span>
+                <span class="n">variables</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">monom</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">coeff</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">monom</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="n">variables</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># This describes the case where there is multiple terms in the monomial</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">monom</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">sp</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">symbol</span><span class="o">.</span><span class="n">Symbol</span><span class="p">):</span>
+            <span class="n">coeff</span> <span class="o">=</span> <span class="n">monom</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">variables</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">monom</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">coeff</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="n">variables</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">monom</span><span class="p">)</span>
+
+        <span class="c1"># Check if the coefficient is an integer (up to float errors)</span>
+        <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">coeff</span><span class="p">)))</span> <span class="o">-</span> <span class="n">coeff</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">1e-14</span><span class="p">:</span>
+            <span class="k">pass</span>
+            <span class="c1"># raise Exception(&quot;Tried to encode sb-polynomial</span>
+            <span class="c1"># with non-integer coefficient&quot;)</span>
+
+        <span class="c1"># Append coefficient to y_list</span>
+        <span class="n">y_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">coeff</span><span class="p">))))</span>
+
+        <span class="c1"># Prepare the qubits on which the U_g should be controlled</span>
+        <span class="n">control_qubit_numbers</span> <span class="o">=</span> <span class="p">[</span><span class="n">symbol_list</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">var</span><span class="p">)</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">variables</span><span class="p">]</span>
+
+        <span class="n">control_qubits</span> <span class="o">=</span> <span class="p">[</span><span class="n">input_qubits</span><span class="p">[</span><span class="n">nr</span><span class="p">]</span> <span class="k">for</span> <span class="n">nr</span> <span class="ow">in</span> <span class="n">control_qubit_numbers</span><span class="p">]</span>
+
+        <span class="n">control_qubits</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">control_qubits</span><span class="p">))</span>
+
+        <span class="n">control_qubits</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">identifier</span><span class="p">)</span>
+
+        <span class="n">control_qubit_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">control_qubits</span><span class="p">)</span>
+
+    <span class="c1"># Now we apply the multi controlled U_g gate</span>
+    <span class="c1"># Here the order in which they are applied makes a huge difference</span>
+    <span class="c1"># In order to determine, which U_g to apply next, we evaluate a cost function</span>
+    <span class="c1"># (which we determined through trial and error)</span>
+    <span class="c1"># and choose the U_g with the lowest cost</span>
+
+    <span class="c1"># Note that for this feature to yield an improvement, the quantum session requires</span>
+    <span class="c1"># multiple free ancilla qubits to work on</span>
+    <span class="k">def</span> <span class="nf">delay_cost</span><span class="p">(</span><span class="n">depth_array</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="n">depth_array</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">find_best_monomial</span><span class="p">(</span><span class="n">control_qubit_list</span><span class="p">,</span> <span class="n">depth_dic</span><span class="p">):</span>
+        <span class="n">delay_cost_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">control_qubit_list</span><span class="p">)):</span>
+            <span class="n">depth_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">depth_dic</span><span class="p">[</span><span class="n">qb</span><span class="p">]</span> <span class="k">for</span> <span class="n">qb</span> <span class="ow">in</span> <span class="n">control_qubit_list</span><span class="p">[</span><span class="n">i</span><span class="p">]])</span>
+
+            <span class="n">delay_cost_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">delay_cost</span><span class="p">(</span><span class="n">depth_array</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">delay_cost_list</span><span class="p">)</span>
+
+    <span class="c1"># Iterate through the list of U_g gates</span>
+    <span class="k">while</span> <span class="n">control_qubit_list</span><span class="p">:</span>
+        <span class="c1"># TO-DO fix depth calculation inside environment</span>
+        <span class="c1"># Update depth_dic (contains the depth of each qubit)</span>
+        <span class="c1"># depth_dic = output_qf.qs.get_depth_dic()</span>
+
+        <span class="c1"># Determine best U_g</span>
+        <span class="c1"># monomial_index = find_best_monomial(control_qubit_list, depth_dic)</span>
+        <span class="n">monomial_index</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="c1"># Find control qubits and their coefficient</span>
+        <span class="n">control_qubits</span> <span class="o">=</span> <span class="n">control_qubit_list</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">monomial_index</span><span class="p">)</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">y_list</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">monomial_index</span><span class="p">)</span>
+
+        <span class="c1"># Apply (controlled) U_g</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">control_qubits</span><span class="p">):</span>
+            <span class="n">multi_controlled_U_g</span><span class="p">(</span><span class="n">output_qf</span><span class="p">,</span> <span class="n">control_qubits</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">use_gms</span><span class="o">=</span><span class="n">use_gms</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">U_g</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">output_qf</span><span class="p">)</span>
+
+    <span class="c1"># Apply QFT</span>
+    <span class="n">QFT</span><span class="p">(</span><span class="n">output_qf</span><span class="p">,</span> <span class="n">inv</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exec_swap</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">use_gms</span><span class="o">=</span><span class="n">use_gms</span><span class="p">)</span>
+
+
+<span class="c1"># Multiplies two integers</span>
+<span class="c1"># The general idea is to represent the integers as values of two polynomials</span>
+<span class="c1"># p(x) = x_0 + 2*x_1 + 4*x_2 ...</span>
+<span class="c1"># p(y) = y_0 + 2*y_1 + 4*y_2 ...</span>
+<span class="c1"># these polynomials get multiplied and which forms a bigger polynomial</span>
+<span class="c1"># which can be encoded using the polynomial encoder</span>
+<div class="viewcode-block" id="sbp_mult"><a class="viewcode-back" href="../../../reference/Miscellaneous%20Functions/generated/qrisp.sbp_mult.html#qrisp.sbp_mult">[docs]</a><span class="k">def</span> <span class="nf">sbp_mult</span><span class="p">(</span><span class="n">factor_1_qf</span><span class="p">,</span> <span class="n">factor_2_qf</span><span class="p">,</span> <span class="n">output_qf</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Performs multiplication based on the evaluation of</span>
+<span class="sd">    `semi-boolean polynomials &lt;https://ieeexplore.ieee.org/document/9815035&gt;`_.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    factor_1_qf : QuantumFloat</span>
+<span class="sd">        The first factor to multiply.</span>
+<span class="sd">    factor_2_qf : QuantumFloat</span>
+<span class="sd">        The second factor to multiply.</span>
+<span class="sd">    output_qf : QuantumFloat, optional</span>
+<span class="sd">        The QuantumFloat to store the result in.</span>
+<span class="sd">        By default, a suited new QuantumFloat is created.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    output_qf : QuantumFloat</span>
+<span class="sd">        A QuantumFloat containing the result of the multiplication.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+
+<span class="sd">    We multiply two QuantumFloats:</span>
+
+<span class="sd">    &gt;&gt;&gt; from qrisp import QuantumFloat, sbp_mult</span>
+<span class="sd">    &gt;&gt;&gt; qf_0 = QuantumFloat(3)</span>
+<span class="sd">    &gt;&gt;&gt; qf_1 = QuantumFloat(3)</span>
+<span class="sd">    &gt;&gt;&gt; qf_0[:] = 3</span>
+<span class="sd">    &gt;&gt;&gt; qf_1[:] = 4</span>
+<span class="sd">    &gt;&gt;&gt; qf_res = sbp_mult(qf_0, qf_1)</span>
+<span class="sd">    &gt;&gt;&gt; print(qf_res)</span>
+<span class="sd">    {12: 1.0}</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">output_qf</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">qrisp.qtypes.quantum_float</span> <span class="kn">import</span> <span class="n">create_output_qf</span>
+
+        <span class="n">output_qf</span> <span class="o">=</span> <span class="n">create_output_qf</span><span class="p">([</span><span class="n">factor_1_qf</span><span class="p">,</span> <span class="n">factor_2_qf</span><span class="p">],</span> <span class="n">op</span><span class="o">=</span><span class="s2">&quot;mul&quot;</span><span class="p">)</span>
+    <span class="c1"># Multiply the polynmials</span>
+    <span class="n">mult_poly</span> <span class="o">=</span> <span class="n">factor_1_qf</span><span class="o">.</span><span class="n">sb_poly</span><span class="p">(</span><span class="n">output_qf</span><span class="o">.</span><span class="n">msize</span><span class="p">)</span> <span class="o">*</span> <span class="n">factor_2_qf</span><span class="o">.</span><span class="n">sb_poly</span><span class="p">(</span>
+        <span class="n">output_qf</span><span class="o">.</span><span class="n">msize</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Apply sb encoder</span>
+    <span class="n">sb_polynomial_encoder</span><span class="p">([</span><span class="n">factor_1_qf</span><span class="p">,</span> <span class="n">factor_2_qf</span><span class="p">],</span> <span class="n">output_qf</span><span class="p">,</span> <span class="n">mult_poly</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">output_qf</span></div>
+
+
+<div class="viewcode-block" id="sbp_add"><a class="viewcode-back" href="../../../reference/Miscellaneous%20Functions/generated/qrisp.sbp_add.html#qrisp.sbp_add">[docs]</a><span class="k">def</span> <span class="nf">sbp_add</span><span class="p">(</span><span class="n">summand_1_qf</span><span class="p">,</span> <span class="n">summand_2_qf</span><span class="p">,</span> <span class="n">output_qf</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Performs addition based on the evaluation of</span>
+<span class="sd">    `semi-boolean polynomials &lt;https://ieeexplore.ieee.org/document/9815035&gt;`_.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    summand_1_qf : QuantumFloat</span>
+<span class="sd">        The first summand to add.</span>
+<span class="sd">    summand_2_qf : QuantumFloat</span>
+<span class="sd">        The second summand to add.</span>
+<span class="sd">    output_qf : QuantumFloat, optional</span>
+<span class="sd">        The QuantumFloat to store the result in.</span>
+<span class="sd">        By default, a suited new QuantumFloat is created.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    output_qf : QuantumFloat</span>
+<span class="sd">        A QuantumFloat containing the result of the addition.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+
+<span class="sd">    We add two QuantumFloats:</span>
+
+<span class="sd">    &gt;&gt;&gt; from qrisp import QuantumFloat, sbp_add</span>
+<span class="sd">    &gt;&gt;&gt; qf_0 = QuantumFloat(3)</span>
+<span class="sd">    &gt;&gt;&gt; qf_1 = QuantumFloat(3)</span>
+<span class="sd">    &gt;&gt;&gt; qf_0[:] = 3</span>
+<span class="sd">    &gt;&gt;&gt; qf_1[:] = 4</span>
+<span class="sd">    &gt;&gt;&gt; qf_res = sbp_add(qf_0, qf_1)</span>
+<span class="sd">    &gt;&gt;&gt; print(qf_res)</span>
+<span class="sd">    {7: 1.0}</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">output_qf</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">qrisp.qtypes.quantum_float</span> <span class="kn">import</span> <span class="n">create_output_qf</span>
+
+        <span class="n">output_qf</span> <span class="o">=</span> <span class="n">create_output_qf</span><span class="p">([</span><span class="n">summand_1_qf</span><span class="p">,</span> <span class="n">summand_2_qf</span><span class="p">],</span> <span class="n">op</span><span class="o">=</span><span class="s2">&quot;add&quot;</span><span class="p">)</span>
+
+    <span class="n">sum_poly</span> <span class="o">=</span> <span class="n">summand_1_qf</span><span class="o">.</span><span class="n">sb_poly</span><span class="p">(</span><span class="n">output_qf</span><span class="o">.</span><span class="n">msize</span><span class="p">)</span> <span class="o">+</span> <span class="n">summand_2_qf</span><span class="o">.</span><span class="n">sb_poly</span><span class="p">(</span>
+        <span class="n">output_qf</span><span class="o">.</span><span class="n">msize</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Apply sb encoder</span>
+    <span class="n">sb_polynomial_encoder</span><span class="p">([</span><span class="n">summand_1_qf</span><span class="p">,</span> <span class="n">summand_2_qf</span><span class="p">],</span> <span class="n">output_qf</span><span class="p">,</span> <span class="n">sum_poly</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">output_qf</span></div>
+
+
+<div class="viewcode-block" id="sbp_sub"><a class="viewcode-back" href="../../../reference/Miscellaneous%20Functions/generated/qrisp.sbp_sub.html#qrisp.sbp_sub">[docs]</a><span class="k">def</span> <span class="nf">sbp_sub</span><span class="p">(</span><span class="n">summand_1_qf</span><span class="p">,</span> <span class="n">summand_2_qf</span><span class="p">,</span> <span class="n">output_qf</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Performs subtraction based on the evaluation of</span>
+<span class="sd">    `semi-boolean polynomials &lt;https://ieeexplore.ieee.org/document/9815035&gt;`_.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    summand_1_qf : QuantumFloat</span>
+<span class="sd">        The QuantumFloat to subtract from.</span>
+<span class="sd">    summand_2_qf : QuantumFloat</span>
+<span class="sd">        The QuantumFloat to subtract.</span>
+<span class="sd">    output_qf : QuantumFloat, optional</span>
+<span class="sd">        The QuantumFloat to store the result in.</span>
+<span class="sd">        By default, a suited new QuantumFloat is created.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    output_qf : QuantumFloat</span>
+<span class="sd">        A QuantumFloat containing the result of the subtraction.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+
+<span class="sd">    We add two QuantumFloats:</span>
+
+<span class="sd">    &gt;&gt;&gt; from qrisp import QuantumFloat, sbp_sub</span>
+<span class="sd">    &gt;&gt;&gt; qf_0 = QuantumFloat(3)</span>
+<span class="sd">    &gt;&gt;&gt; qf_1 = QuantumFloat(3)</span>
+<span class="sd">    &gt;&gt;&gt; qf_0[:] = 3</span>
+<span class="sd">    &gt;&gt;&gt; qf_1[:] = 4</span>
+<span class="sd">    &gt;&gt;&gt; qf_res = sbp_sub(qf_0, qf_1)</span>
+<span class="sd">    &gt;&gt;&gt; print(qf_res)</span>
+<span class="sd">    {-1: 1.0}</span>
+
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">output_qf</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">qrisp.qtypes.quantum_float</span> <span class="kn">import</span> <span class="n">create_output_qf</span>
+
+        <span class="n">output_qf</span> <span class="o">=</span> <span class="n">create_output_qf</span><span class="p">([</span><span class="n">summand_1_qf</span><span class="p">,</span> <span class="n">summand_2_qf</span><span class="p">],</span> <span class="n">op</span><span class="o">=</span><span class="s2">&quot;sub&quot;</span><span class="p">)</span>
+
+    <span class="n">dif_poly</span> <span class="o">=</span> <span class="n">summand_1_qf</span><span class="o">.</span><span class="n">sb_poly</span><span class="p">(</span><span class="n">output_qf</span><span class="o">.</span><span class="n">msize</span><span class="p">)</span> <span class="o">-</span> <span class="n">summand_2_qf</span><span class="o">.</span><span class="n">sb_poly</span><span class="p">(</span>
+        <span class="n">output_qf</span><span class="o">.</span><span class="n">msize</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Apply sb encoder</span>
+    <span class="n">sb_polynomial_encoder</span><span class="p">([</span><span class="n">summand_1_qf</span><span class="p">,</span> <span class="n">summand_2_qf</span><span class="p">],</span> <span class="n">output_qf</span><span class="p">,</span> <span class="n">dif_poly</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">output_qf</span></div>
+
+
+<span class="c1"># Encode the polynomial given in poly in output var</span>
+<span class="c1"># depending on the input variables qv_list</span>
+<span class="nd">@gate_wrap</span><span class="p">(</span><span class="n">is_qfree</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">permeability</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">polynomial_encoder</span><span class="p">(</span><span class="n">qf_list</span><span class="p">,</span> <span class="n">output_qf</span><span class="p">,</span> <span class="n">poly</span><span class="p">,</span> <span class="n">encoding_dic</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">inplace_mult</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Evaluates a (multivariate) sympy polynomial on a list of QuantumFloats using</span>
+<span class="sd">    `semi-boolean polynomials &lt;https://ieeexplore.ieee.org/document/9815035&gt;`_.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    qf_list : list[QuantumFloat]</span>
+<span class="sd">        The list of QuantumFloats to evaluate the polynomial on.</span>
+<span class="sd">    output_qf : QuantumFloat</span>
+<span class="sd">        The QuantumFloat to evaluate into.</span>
+<span class="sd">    poly : sympy expression</span>
+<span class="sd">        The polynomial to evaluate.</span>
+<span class="sd">    encoding_dic : dict, optional</span>
+<span class="sd">        A dictionary which has the QuantumFloats of qf_list as keys and the associated</span>
+<span class="sd">        sympy symbols as values. By default, the symbols of the polynomial</span>
+<span class="sd">        will be ordered alphabetically and then matched to the order in qf_list.</span>
+<span class="sd">    inplace_mult : int, optional</span>
+<span class="sd">        This integer allow to perform an inplace multiplication on output_qf,</span>
+<span class="sd">        before the polynomial is evaluated.</span>
+<span class="sd">        Note that due to reversibility only odd numbers are supported.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    Exception</span>
+<span class="sd">        Provided QuantumFloat list does not include the appropriate amount of elements</span>
+<span class="sd">        to encode given polynomial&quot;.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    None.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+
+<span class="sd">    We evaluate the polynomial $x^2 + 2y^2$ on two QuantumFloats:</span>
+
+
+<span class="sd">    &gt;&gt;&gt; from sympy import Symbol</span>
+<span class="sd">    &gt;&gt;&gt; x = Symbol(&quot;x&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; y = Symbol(&quot;y&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; poly = x**2 + 2*y**2</span>
+<span class="sd">    &gt;&gt;&gt; from qrisp import QuantumFloat, polynomial_encoder</span>
+<span class="sd">    &gt;&gt;&gt; x_qf = QuantumFloat(3)</span>
+<span class="sd">    &gt;&gt;&gt; y_qf = QuantumFloat(3)</span>
+<span class="sd">    &gt;&gt;&gt; x_qf[:] = 3</span>
+<span class="sd">    &gt;&gt;&gt; y_qf[:] = 2</span>
+<span class="sd">    &gt;&gt;&gt; res_qf = QuantumFloat(7)</span>
+<span class="sd">    &gt;&gt;&gt; encoding_dic = {x_qf : x, y_qf : y}</span>
+<span class="sd">    &gt;&gt;&gt; polynomial_encoder([x_qf, y_qf], res_qf, poly, encoding_dic)</span>
+<span class="sd">    &gt;&gt;&gt; print(res_qf)</span>
+<span class="sd">    {17.0: 1.0}</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">qf_list</span><span class="p">,</span> <span class="n">QuantumArray</span><span class="p">):</span>
+        <span class="n">qf_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">qf_list</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span><span class="o">.</span><span class="n">qv_array</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">encoding_dic</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">symbol_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">encoding_dic</span><span class="p">[</span><span class="n">qv</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="k">for</span> <span class="n">qv</span> <span class="ow">in</span> <span class="n">qf_list</span><span class="p">]</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">symbol_list</span> <span class="o">=</span> <span class="n">get_ordered_symbol_list</span><span class="p">(</span><span class="n">poly</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">symbol_list</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">qf_list</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+            <span class="s2">&quot;Provided QuantumFloat list does not include the appropriate amount&quot;</span>
+            <span class="s2">&quot;of elements to encode given polynomial&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">output_qf</span><span class="o">.</span><span class="n">signed</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">qf</span> <span class="ow">in</span> <span class="n">qf_list</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">qf</span><span class="o">.</span><span class="n">signed</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                    <span class="s2">&quot;When encoding into an unsigned quantum float&quot;</span>
+                    <span class="s2">&quot;provide only unsigned inputs&quot;</span>
+                <span class="p">)</span>
+
+    <span class="n">sb_poly_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">qf</span><span class="o">.</span><span class="n">sb_poly</span><span class="p">(</span><span class="n">output_qf</span><span class="o">.</span><span class="n">size</span><span class="p">)</span> <span class="k">for</span> <span class="n">qf</span> <span class="ow">in</span> <span class="n">qf_list</span><span class="p">]</span>
+
+    <span class="n">repl_dic</span> <span class="o">=</span> <span class="p">{</span><span class="n">symbol_list</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span> <span class="n">sb_poly_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">qf_list</span><span class="p">))}</span>
+    <span class="c1"># Substitute SB-polynomials</span>
+    <span class="n">sb_polynomial</span> <span class="o">=</span> <span class="n">poly</span><span class="o">.</span><span class="n">subs</span><span class="p">(</span><span class="n">repl_dic</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">()</span>
+
+    <span class="c1"># Apply sb encoder</span>
+    <span class="n">sb_polynomial_encoder</span><span class="p">(</span><span class="n">qf_list</span><span class="p">,</span> <span class="n">output_qf</span><span class="p">,</span> <span class="n">sb_polynomial</span><span class="p">,</span> <span class="n">inplace_mult</span><span class="o">=</span><span class="n">inplace_mult</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">split</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+    <span class="n">k</span><span class="p">,</span> <span class="n">m</span> <span class="o">=</span> <span class="nb">divmod</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">),</span> <span class="n">n</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="n">i</span> <span class="o">*</span> <span class="n">k</span> <span class="o">+</span> <span class="nb">min</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">m</span><span class="p">)</span> <span class="p">:</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">k</span> <span class="o">+</span> <span class="nb">min</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">m</span><span class="p">)]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">))</span>
+
+
+<span class="c1"># Performs inplace addition on a QFT-ed variable</span>
+<span class="c1"># by applying successive U_g gates</span>
+<span class="k">def</span> <span class="nf">U_g_inpl_adder</span><span class="p">(</span><span class="n">modified_var</span><span class="p">,</span> <span class="n">summand</span><span class="p">,</span> <span class="n">mult_factor</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+    <span class="n">applied_phases</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># Extract the coefficients of the SB-polynomial of x</span>
+    <span class="kn">from</span> <span class="nn">sympy</span> <span class="kn">import</span> <span class="n">Poly</span>
+
+    <span class="n">summand_coeffs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">Poly</span><span class="p">(</span><span class="n">summand</span><span class="o">.</span><span class="n">sb_poly</span><span class="p">(</span><span class="n">modified_var</span><span class="o">.</span><span class="n">msize</span><span class="p">))</span><span class="o">.</span><span class="n">as_dict</span><span class="p">()</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+    <span class="n">summand_coeffs</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">coeff</span><span class="p">)</span> <span class="k">for</span> <span class="n">coeff</span> <span class="ow">in</span> <span class="n">summand_coeffs</span><span class="p">][::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="c1"># summand_coeffs.sort()</span>
+
+    <span class="n">summand_coeffs</span> <span class="o">=</span> <span class="n">summand_coeffs</span> <span class="o">+</span> <span class="p">(</span><span class="n">summand</span><span class="o">.</span><span class="n">size</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">summand_coeffs</span><span class="p">))</span> <span class="o">*</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">summand</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">summand_coeffs</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="n">applied_phases</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">multi_controlled_U_g</span><span class="p">(</span>
+                <span class="n">modified_var</span><span class="p">,</span>
+                <span class="p">[</span><span class="n">summand</span><span class="p">[</span><span class="n">j</span><span class="p">]],</span>
+                <span class="n">mult_factor</span> <span class="o">*</span> <span class="n">summand_coeffs</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">*</span> <span class="mi">2</span><span class="o">**-</span><span class="n">modified_var</span><span class="o">.</span><span class="n">exponent</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">applied_phases</span>
+
+
+<span class="c1"># This algorithm is based on the equation X*U_g(y)*X = U_g(-y)*G with G as global phase</span>
+<span class="c1"># This is used to perform conditional addition/subtraction required for multiplication</span>
+<span class="c1"># using algorithm 3 from https://arxiv.org/abs/2112.10537</span>
+<span class="c1"># s = x &lt;&lt; (n + 1)</span>
+<span class="c1"># s− = x</span>
+<span class="c1"># for i in range(y.size):</span>
+<span class="c1">#   if y[i]:</span>
+<span class="c1">#       s+= (x &lt;&lt; i)</span>
+<span class="c1">#   else:</span>
+<span class="c1">#       s−= (x &lt;&lt; i)</span>
+<span class="c1"># return s &gt;&gt; 1</span>
+<span class="c1"># We will use the function U_g_inply_adder for the inplace additions</span>
+<span class="c1"># while performing conditional additions using CNOT gates.</span>
+<span class="c1"># The approach is therefore a hybrid of SBP-method and traditional logic approaches</span>
+<div class="viewcode-block" id="hybrid_mult"><a class="viewcode-back" href="../../../reference/Miscellaneous%20Functions/generated/qrisp.hybrid_mult.html#qrisp.hybrid_mult">[docs]</a><span class="k">def</span> <span class="nf">hybrid_mult</span><span class="p">(</span>
+    <span class="n">x</span><span class="p">,</span>
+    <span class="n">y</span><span class="p">,</span>
+    <span class="n">output_qf</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">init_op</span><span class="o">=</span><span class="s2">&quot;h&quot;</span><span class="p">,</span>
+    <span class="n">terminal_op</span><span class="o">=</span><span class="s2">&quot;qft&quot;</span><span class="p">,</span>
+    <span class="n">phase_tolerant</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">cl_factor</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+<span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An advanced algorithm for multiplication which has better depth, gate-count</span>
+<span class="sd">    and compile time than :meth:`sbp_mult &lt;qrisp.sbp_mult&gt;`.</span>
+<span class="sd">    It does not support squaring a single QuantumFloat though.</span>
+
+<span class="sd">    This algorithm also operates on the Fourier transform. Because of this,</span>
+<span class="sd">    between successive multiplications targeting the same QuantumFloat</span>
+<span class="sd">    it is not neccessary to Fourier-Transform.</span>
+<span class="sd">    This advantage is expressed in the parameters init_op and terminal_op.</span>
+<span class="sd">    These can be set to either &#39;h&#39;, &#39;qft&#39; or None</span>
+<span class="sd">    to leave out self canceling Fourier-transforms.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x : QuantumFloat</span>
+<span class="sd">        The first factor to multiply.</span>
+<span class="sd">    y : QuantumFloat</span>
+<span class="sd">        The second factor to multiply.</span>
+<span class="sd">    output_qf : QuantumFloat, optional</span>
+<span class="sd">        The QuantumFloat to store the result in.</span>
+<span class="sd">        By default a suited QuantumFloat is created.</span>
+<span class="sd">    init_op : str, optional</span>
+<span class="sd">        The operation to bring output_qf into it&#39;s Fourier-transform.</span>
+<span class="sd">        The default is &#39;h&#39;.</span>
+<span class="sd">    terminal_op : str, optional</span>
+<span class="sd">        The operation to bring output_qf back from it&#39;s Fourier-transform.</span>
+<span class="sd">        The default is &quot;qft&quot;.</span>
+<span class="sd">    phase_tolerant : bool, optional</span>
+<span class="sd">        If set to True, differing results introduce differing extra phases.</span>
+<span class="sd">        This can be usefull to save resources incase this functions will get uncomputed.</span>
+<span class="sd">        The default is False.</span>
+<span class="sd">    cl_factor : float, optional</span>
+<span class="sd">        Allows to multiply the result by a classical factor without any extra gates.</span>
+<span class="sd">        The default is 1.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    output_qf : QuantumFloat</span>
+<span class="sd">        The QuantumFloat containing the result.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+
+<span class="sd">    We multiply two QuantumFloat with eachother and an additional classical factor</span>
+
+<span class="sd">    &gt;&gt;&gt; from qrisp import QuantumFloat, hybrid_mult</span>
+<span class="sd">    &gt;&gt;&gt; qf_0 = QuantumFloat(3)</span>
+<span class="sd">    &gt;&gt;&gt; qf_1 = QuantumFloat(3)</span>
+<span class="sd">    &gt;&gt;&gt; qf_0[:] = 3</span>
+<span class="sd">    &gt;&gt;&gt; qf_1[:] = 4</span>
+<span class="sd">    &gt;&gt;&gt; qf_res = hybrid_mult(qf_0, qf_1, cl_factor = 2)</span>
+<span class="sd">    &gt;&gt;&gt; print(qf_res)</span>
+<span class="sd">    {24: 1.0}</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="kn">from</span> <span class="nn">qrisp</span> <span class="kn">import</span> <span class="n">QFT</span><span class="p">,</span> <span class="n">cx</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">merge</span><span class="p">,</span> <span class="n">z</span>
+
+    <span class="c1"># The two factors take asymetrical roles in this algorithm</span>
+    <span class="c1"># This implies that there is most likely a prefered choice</span>
+    <span class="c1"># for the roles depending on the size of the factors</span>
+    <span class="c1"># Several trials showed that these roles work best</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;</span> <span class="n">y</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
+        <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">y</span><span class="p">,</span> <span class="n">x</span>
+
+    <span class="c1"># We shift the exponent of both factors such that they are integers</span>
+    <span class="c1"># and shift the result in the end, by the sum of both exponents</span>
+    <span class="c1"># This allows convenient treatment of non-integer inputs</span>
+    <span class="c1"># while only constructing the algorithm for integers</span>
+    <span class="n">x_exp</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">exponent</span><span class="p">)</span>
+    <span class="n">y_exp</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">exponent</span><span class="p">)</span>
+
+    <span class="n">x</span><span class="o">.</span><span class="n">exp_shift</span><span class="p">(</span><span class="o">-</span><span class="n">x_exp</span><span class="p">)</span>
+    <span class="n">y</span><span class="o">.</span><span class="n">exp_shift</span><span class="p">(</span><span class="o">-</span><span class="n">y_exp</span><span class="p">)</span>
+
+    <span class="c1"># If no output_qf is given, create one</span>
+    <span class="kn">from</span> <span class="nn">qrisp.qtypes.quantum_float</span> <span class="kn">import</span> <span class="n">create_output_qf</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">output_qf</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">)):</span>
+        <span class="n">output_qf</span> <span class="o">=</span> <span class="n">create_output_qf</span><span class="p">([</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">],</span> <span class="n">op</span><span class="o">=</span><span class="s2">&quot;mul&quot;</span><span class="p">)</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">output_qf</span><span class="o">.</span><span class="n">exp_shift</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">x_exp</span> <span class="o">+</span> <span class="n">y_exp</span><span class="p">))</span>
+
+    <span class="n">output_qf</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="c1"># output_qf.exp_shift(-1)</span>
+    <span class="c1"># Since the result is right shifted at the end, this implies that the zero-th qubit</span>
+    <span class="c1"># of the output will not contain any information (otherwise this would imply,</span>
+    <span class="c1"># that integer multiplications can yield non-integer results).</span>
+    <span class="c1"># However the result still needs to be able to</span>
+    <span class="c1"># display every possible result. This is why it needs &quot;extra working-space&quot;</span>
+    <span class="c1"># We therefore extend it by one qubit</span>
+
+    <span class="c1"># Merge the sessions of all involved variables</span>
+    <span class="n">merge</span><span class="p">([</span><span class="n">output_qf</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">])</span>
+
+    <span class="c1"># Perform initial operation</span>
+    <span class="c1"># (check the general documentation of SBP arithmetic for more details)</span>
+    <span class="k">if</span> <span class="n">init_op</span> <span class="o">==</span> <span class="s2">&quot;h&quot;</span><span class="p">:</span>
+        <span class="n">h</span><span class="p">(</span><span class="n">output_qf</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">init_op</span> <span class="o">==</span> <span class="s2">&quot;qft&quot;</span><span class="p">:</span>
+        <span class="n">QFT</span><span class="p">(</span><span class="n">output_qf</span><span class="p">,</span> <span class="n">exec_swap</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">h</span><span class="p">(</span><span class="n">output_qf</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="c1"># We treat the case that y is signed by applying a negation on output_qf that is</span>
+    <span class="c1"># conditioned on the sign qubit of y (see command [2]). This will be reversed</span>
+    <span class="c1"># at the end of the algorithm. This implies that every addition that happens</span>
+    <span class="c1"># in between is actually a subtraction.</span>
+    <span class="c1"># So this acts as a sign reversal of the result.</span>
+    <span class="c1"># We then need to make sure we multiply with the absolute of y</span>
+    <span class="c1"># We do this by applying a bitwise negation on the mantissa of y conditioned on</span>
+    <span class="c1"># the sign qubit (command [4]). This bitwise negation acts as</span>
+    <span class="c1"># NOT y = -y + 1</span>
+    <span class="c1"># This implies we need to correct the additional +1.</span>
+    <span class="c1"># This additional +1 is equivalent to an extra +x in the result</span>
+    <span class="c1"># Therefore we need to subtract this +x from output_qf.</span>
+    <span class="c1"># Note that this subtraction also has to be performed</span>
+    <span class="c1"># conditioned on the sign qubit of y.</span>
+    <span class="c1"># Instead of adding an additional control qubit, we again follow the strategy</span>
+    <span class="c1"># of turning a conditional subtraction into a conditional subtraction/addition</span>
+    <span class="k">if</span> <span class="n">y</span><span class="o">.</span><span class="n">signed</span><span class="p">:</span>
+        <span class="c1"># This performs the first part of the conditional subtraction/addition</span>
+        <span class="c1"># for j in range(x.size):</span>
+        <span class="c1"># multi_controlled_U_g(output_qf, [x[j]], -x_coeffs[j])</span>
+        <span class="n">U_g_inpl_adder</span><span class="p">(</span><span class="n">output_qf</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="n">cl_factor</span><span class="p">)</span>  <span class="c1"># command [1]</span>
+
+        <span class="c1"># Negate output_qf conditioned on the sign qubit of y</span>
+        <span class="n">cx</span><span class="p">(</span><span class="n">y</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">output_qf</span><span class="p">)</span>  <span class="c1"># command [2]</span>
+
+        <span class="c1"># This would perform the second part of the subtraction/addition</span>
+        <span class="c1"># However this command is merged into command [5] for more performance gains.</span>
+        <span class="c1"># If commented in, this command reverses command [1]</span>
+        <span class="c1"># if output_qf has not been negated IF the sign qubit</span>
+        <span class="c1"># has not negated output_qf. Otherwise the subtraction of x is completed.</span>
+        <span class="c1"># for j in range(x.size):</span>
+        <span class="c1"># multi_controlled_U_g(output_qf, [x[j]], x_coeffs[j]) #command [3]</span>
+
+        <span class="c1"># Negate mantissa of y</span>
+        <span class="n">cx</span><span class="p">(</span><span class="n">y</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">y</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>  <span class="c1"># command [4]</span>
+
+    <span class="c1"># This performs the initial two lines of the initially mentioned</span>
+    <span class="c1"># multiplication algorithm:</span>
+    <span class="c1"># s = x &lt;&lt; (n + 1)</span>
+    <span class="c1"># s− = x</span>
+
+    <span class="c1"># Note that the boolean y.signed adds the phase that would have been added</span>
+    <span class="c1"># in command [3]</span>
+    <span class="c1"># however not requiring another round of U_g gates</span>
+    <span class="n">applied_phases</span> <span class="o">=</span> <span class="n">U_g_inpl_adder</span><span class="p">(</span>
+        <span class="n">output_qf</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">cl_factor</span> <span class="o">*</span> <span class="p">(</span><span class="mi">2</span> <span class="o">**</span> <span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">msize</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">y</span><span class="o">.</span><span class="n">signed</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="c1"># We now come to the loop of the multiplication algorithm</span>
+
+    <span class="c1"># for i in range(y.size):</span>
+    <span class="c1">#   if y[i]:</span>
+    <span class="c1">#       s+= (x &lt;&lt; i)</span>
+    <span class="c1">#   else:</span>
+    <span class="c1">#       s−= (x &lt;&lt; i)</span>
+
+    <span class="c1"># Negate output_qf in order to perform the conditional addition/subtraction</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">phase_tolerant</span> <span class="ow">and</span> <span class="n">terminal_op</span> <span class="o">!=</span> <span class="s2">&quot;qft&quot;</span><span class="p">:</span>
+        <span class="n">hybrid_mult_anc</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">y</span><span class="o">.</span><span class="n">signed</span><span class="p">:</span>
+            <span class="n">cx</span><span class="p">(</span><span class="n">y</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">hybrid_mult_anc</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">applied_phases</span><span class="p">)):</span>
+                <span class="n">cp</span><span class="p">(</span><span class="o">-</span><span class="n">applied_phases</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span> <span class="n">hybrid_mult_anc</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">x</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
+
+    <span class="n">cx</span><span class="p">(</span><span class="n">y</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">output_qf</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">msize</span><span class="p">):</span>
+        <span class="c1"># Perform in-place addition</span>
+        <span class="c1"># (note that if y[i] is active an addition has to be performed).</span>
+        <span class="c1"># Therefore, we need to perform a subtraction here,</span>
+        <span class="c1"># because if y[i] is active output_qf has been negated</span>
+        <span class="n">applied_phases</span> <span class="o">=</span> <span class="n">U_g_inpl_adder</span><span class="p">(</span><span class="n">output_qf</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="o">-</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="n">i</span><span class="p">)</span> <span class="o">*</span> <span class="n">cl_factor</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">phase_tolerant</span> <span class="ow">and</span> <span class="n">terminal_op</span> <span class="o">!=</span> <span class="s2">&quot;qft&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">cx</span><span class="p">(</span><span class="n">y</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span> <span class="n">hybrid_mult_anc</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">cx</span><span class="p">(</span><span class="n">y</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">hybrid_mult_anc</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">applied_phases</span><span class="p">)):</span>
+                <span class="n">cp</span><span class="p">(</span><span class="o">-</span><span class="n">applied_phases</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span> <span class="n">hybrid_mult_anc</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">x</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
+                <span class="c1"># sbp+= -2*applied_phases[k]*Symbol(&quot;y_&quot; + str(i))*Symbol(&quot;x_&quot; + str(k))</span>
+
+        <span class="c1"># This command is equivalent to</span>
+        <span class="c1"># cx(y[i], output_qf)</span>
+        <span class="c1"># cx(y[i+1], output_qf)</span>
+        <span class="c1"># ie. performs the output_qf negation but requires less cnot gates</span>
+        <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="n">y</span><span class="o">.</span><span class="n">msize</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">cx</span><span class="p">(</span><span class="n">y</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">y</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
+            <span class="n">cx</span><span class="p">(</span><span class="n">y</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span> <span class="n">output_qf</span><span class="p">)</span>
+            <span class="n">cx</span><span class="p">(</span><span class="n">y</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">y</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">y</span><span class="o">.</span><span class="n">signed</span><span class="p">:</span>
+                <span class="c1"># This command performs the final negation</span>
+                <span class="c1"># if y is signed, we can perform the negation</span>
+                <span class="c1"># together with the negation conditioned on the sign qubit</span>
+                <span class="c1"># of y (command [6])</span>
+                <span class="n">cx</span><span class="p">(</span><span class="n">y</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">output_qf</span><span class="p">)</span>  <span class="c1"># command [5]</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">phase_tolerant</span> <span class="ow">and</span> <span class="n">terminal_op</span> <span class="o">!=</span> <span class="s2">&quot;qft&quot;</span><span class="p">:</span>
+        <span class="n">cx</span><span class="p">(</span><span class="n">y</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">hybrid_mult_anc</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">y</span><span class="o">.</span><span class="n">signed</span><span class="p">:</span>
+            <span class="n">cx</span><span class="p">(</span><span class="n">y</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">hybrid_mult_anc</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+        <span class="c1"># from sympy import Symbol, simplify</span>
+        <span class="c1"># temp_x = sum([2**i*Symbol(&quot;x_&quot; + str(i)) for i in range(3)], 0)</span>
+        <span class="c1"># temp_y = sum([2**i*Symbol(&quot;y_&quot; + str(i)) for i in range(3)], 0)</span>
+
+        <span class="c1"># sbp = sbp/(2*np.pi)</span>
+
+        <span class="c1"># sbp = simplify((sbp + (temp_x*temp_y).expand()/2**7))</span>
+        <span class="c1"># print(sbp)</span>
+        <span class="n">hybrid_mult_anc</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">y</span><span class="o">.</span><span class="n">signed</span><span class="p">:</span>
+        <span class="c1"># This makes sure the negation from command [5] is performed</span>
+        <span class="n">cx</span><span class="p">(</span><span class="n">y</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">y</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+        <span class="n">cx</span><span class="p">(</span><span class="n">y</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">output_qf</span><span class="p">)</span>  <span class="c1"># command[6]</span>
+
+        <span class="n">cx</span><span class="p">(</span><span class="n">y</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">y</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+        <span class="c1"># Reverse command [4]</span>
+        <span class="n">cx</span><span class="p">(</span><span class="n">y</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">y</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="c1"># Free up the qubit which we identified as containing no information</span>
+
+    <span class="n">h</span><span class="p">(</span><span class="n">output_qf</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">output_qf</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="n">output_qf</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="c1"># Perform terminal qft</span>
+    <span class="k">if</span> <span class="n">terminal_op</span> <span class="o">==</span> <span class="s2">&quot;qft&quot;</span><span class="p">:</span>
+        <span class="n">QFT</span><span class="p">(</span><span class="n">output_qf</span><span class="p">,</span> <span class="n">inv</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exec_swap</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">phase_tolerant</span> <span class="ow">and</span> <span class="n">terminal_op</span> <span class="o">==</span> <span class="s2">&quot;qft&quot;</span><span class="p">:</span>
+        <span class="c1"># This is a phase tolerant correction using only single qubit gates.</span>
+        <span class="c1"># We found it by looking at the sbp of the correction using cp gates and</span>
+        <span class="c1"># identified the sbp of x*y in it.</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">output_qf</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+            <span class="n">p</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span><span class="o">**</span><span class="n">i</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">**</span> <span class="p">(</span><span class="n">output_qf</span><span class="o">.</span><span class="n">size</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="n">output_qf</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="n">output_qf</span><span class="o">.</span><span class="n">signed</span><span class="p">:</span>
+            <span class="n">z</span><span class="p">(</span><span class="n">output_qf</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="n">output_qf</span><span class="o">.</span><span class="n">exp_shift</span><span class="p">((</span><span class="n">x_exp</span> <span class="o">+</span> <span class="n">y_exp</span><span class="p">))</span>
+
+    <span class="c1"># Perform exponent shifts</span>
+
+    <span class="n">x</span><span class="o">.</span><span class="n">exp_shift</span><span class="p">(</span><span class="n">x_exp</span><span class="p">)</span>
+    <span class="n">y</span><span class="o">.</span><span class="n">exp_shift</span><span class="p">(</span><span class="n">y_exp</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">output_qf</span></div>
+
+
+<span class="c1"># Wrapper for choosing the best multiplication algorithm</span>
+<span class="k">def</span> <span class="nf">q_mult</span><span class="p">(</span><span class="n">factor_1</span><span class="p">,</span> <span class="n">factor_2</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;auto&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">factor_1</span><span class="o">.</span><span class="n">reg</span> <span class="o">==</span> <span class="n">factor_2</span><span class="o">.</span><span class="n">reg</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">q_mult</span><span class="p">(</span><span class="n">factor_1</span><span class="p">,</span> <span class="n">factor_2</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;sbp&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">q_mult</span><span class="p">(</span><span class="n">factor_1</span><span class="p">,</span> <span class="n">factor_2</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;hybrid&quot;</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;sbp&quot;</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">qrisp.qtypes.quantum_float</span> <span class="kn">import</span> <span class="n">create_output_qf</span>
+
+        <span class="k">if</span> <span class="n">target</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">target</span> <span class="o">=</span> <span class="n">create_output_qf</span><span class="p">([</span><span class="n">factor_1</span><span class="p">,</span> <span class="n">factor_2</span><span class="p">],</span> <span class="n">op</span><span class="o">=</span><span class="s2">&quot;mul&quot;</span><span class="p">)</span>
+
+        <span class="n">sbp_mult</span><span class="p">(</span><span class="n">factor_1</span><span class="p">,</span> <span class="n">factor_2</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">target</span>
+
+    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;hybrid&quot;</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">qrisp.arithmetic</span> <span class="kn">import</span> <span class="n">hybrid_mult</span>
+
+        <span class="k">return</span> <span class="n">hybrid_mult</span><span class="p">(</span><span class="n">factor_1</span><span class="p">,</span> <span class="n">factor_2</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">QFT_inpl_mult</span><span class="p">(</span><span class="n">qv</span><span class="p">,</span> <span class="n">inplace_mult</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+    <span class="kn">from</span> <span class="nn">qrisp.misc</span> <span class="kn">import</span> <span class="n">is_inv</span>
+
+    <span class="n">qv</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">qv</span><span class="p">)</span>
+    <span class="n">qv</span> <span class="o">=</span> <span class="n">qv</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">qv</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">is_inv</span><span class="p">(</span><span class="n">inplace_mult</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+            <span class="s2">&quot;Tried to perform non-invertible inplace multiplication during Fourier-Transform&quot;</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Perform QFT with inplace multiplication</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">h</span><span class="p">(</span><span class="n">qv</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">break</span>
+
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">k</span> <span class="o">+</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">!=</span> <span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">cp</span><span class="p">(</span><span class="n">inplace_mult</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">**</span> <span class="p">(</span><span class="n">k</span> <span class="o">+</span> <span class="mi">2</span><span class="p">),</span> <span class="n">qv</span><span class="p">[</span><span class="n">k</span> <span class="o">+</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span> <span class="n">qv</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># The -1 here cancels some cp gates of the inverse qft</span>
+                <span class="n">cp</span><span class="p">((</span><span class="n">inplace_mult</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">**</span> <span class="p">(</span><span class="n">k</span> <span class="o">+</span> <span class="mi">2</span><span class="p">),</span> <span class="n">qv</span><span class="p">[</span><span class="n">k</span> <span class="o">+</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span> <span class="n">qv</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+    <span class="c1"># Perform reversed QFT without inplace multiplication and without canceled steps</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">k</span> <span class="o">+</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">!=</span> <span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">cp</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">**</span> <span class="p">(</span><span class="n">k</span> <span class="o">+</span> <span class="mi">2</span><span class="p">),</span> <span class="n">qv</span><span class="p">[</span><span class="n">k</span> <span class="o">+</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span> <span class="n">qv</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">h</span><span class="p">(</span><span class="n">qv</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">qv</span>
+
+
+<div class="viewcode-block" id="inpl_mult"><a class="viewcode-back" href="../../../reference/Miscellaneous%20Functions/generated/qrisp.inpl_mult.html#qrisp.inpl_mult">[docs]</a><span class="k">def</span> <span class="nf">inpl_mult</span><span class="p">(</span><span class="n">qf</span><span class="p">,</span> <span class="n">mult_int</span><span class="p">,</span> <span class="n">treat_overflow</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Performs inplace multiplication of a :ref:`QuantumFloat` with a classical integer.</span>
+<span class="sd">    To prevent overflow errors, this function automatically adjusts the mantissa size.</span>
+<span class="sd">    If you want to prevent this behavior, set ``treat_overflow = False``.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    qf : QuantumFloat</span>
+<span class="sd">        The QuantumFloat to inplace-multiply.</span>
+<span class="sd">    mult_int : int</span>
+<span class="sd">        The integer to perform the multiplication with.</span>
+<span class="sd">    treat_overflow : bool</span>
+<span class="sd">        If set to ``False``, the mantissa will not be extended to prevent overflow errors. The default is ``True``.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+
+<span class="sd">    We create a QuantumFloat, bring it to superposition and perform an inplace multiplication.</span>
+
+<span class="sd">    &gt;&gt;&gt; from qrisp import QuantumFloat, h, inpl_mult</span>
+<span class="sd">    &gt;&gt;&gt; a = QuantumFloat(5, signed = True)</span>
+<span class="sd">    &gt;&gt;&gt; h(a[0])</span>
+<span class="sd">    &gt;&gt;&gt; h(a[-1])</span>
+<span class="sd">    &gt;&gt;&gt; print(a)</span>
+<span class="sd">    {0: 0.25, 1: 0.25, -32: 0.25, -31: 0.25}</span>
+<span class="sd">    &gt;&gt;&gt; inpl_mult(a, -5)</span>
+<span class="sd">    &gt;&gt;&gt; print(a)</span>
+<span class="sd">    {0: 0.25, 155: 0.25, 160: 0.25, -5: 0.25}</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mult_int</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+            <span class="s2">&quot;Tried to inplace multiply QuantumFloat with non-integer factor&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">mult_int</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">qf</span><span class="o">.</span><span class="n">signed</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+            <span class="s2">&quot;Tried to inplace-multiply unsigned QuantumFloat with negative factor&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">bit_shift</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">while</span> <span class="ow">not</span> <span class="n">mult_int</span> <span class="o">%</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">bit_shift</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">mult_int</span> <span class="o">=</span> <span class="n">mult_int</span> <span class="o">//</span> <span class="mi">2</span>
+
+    <span class="k">if</span> <span class="n">mult_int</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">treat_overflow</span><span class="p">:</span>
+            <span class="n">extension_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">mult_int</span><span class="p">))))</span>
+            <span class="n">qf</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">extension_size</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="n">qf</span><span class="o">.</span><span class="n">size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">qf</span><span class="o">.</span><span class="n">signed</span><span class="p">:</span>
+                <span class="n">cx</span><span class="p">(</span><span class="n">qf</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">qf</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span> <span class="o">-</span> <span class="n">extension_size</span> <span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+        <span class="kn">from</span> <span class="nn">qrisp.arithmetic.SBP_arithmetic</span> <span class="kn">import</span> <span class="n">QFT_inpl_mult</span>
+
+        <span class="n">QFT_inpl_mult</span><span class="p">(</span><span class="n">qf</span><span class="p">,</span> <span class="n">inplace_mult</span><span class="o">=</span><span class="n">mult_int</span><span class="p">)</span>
+
+    <span class="n">qf</span> <span class="o">&lt;&lt;</span> <span class="n">bit_shift</span></div>
+</pre></div>
+
+                </article>
+              
+              
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/bootstrap.js?digest=e353d410970836974a52"></script>
+<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+  <p class="copyright">
+    
+      © Copyright 2023, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.3.0.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item"><p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.13.3.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

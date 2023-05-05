@@ -1,0 +1,721 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>Quantum Environments &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+<link href="../../_static/styles/bootstrap.css?digest=e353d410970836974a52" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+
+  
+  <link href="../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=e353d410970836974a52" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=e353d410970836974a52" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52" />
+
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/clipboard.min.js"></script>
+    <script src="../../_static/copybutton.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'reference/Quantum Environments/index';</script>
+    <link rel="canonical" href="https://qrisp.eu/reference/Quantum Environments/index.html" />
+    <link rel="shortcut icon" href="../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="ConditionEnvironment" href="ConditionEnvironment.html" />
+    <link rel="prev" title="QuantumString" href="../Quantum%20Types/QuantumString.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="light">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+<div class="bd-header__inner bd-page-width">
+  <label class="sidebar-toggle primary-toggle" for="__primary">
+    <span class="fa-solid fa-bars"></span>
+  </label>
+  
+  <div class="navbar-header-items__start">
+    
+      <div class="navbar-item">
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../_static/logo_extended.png" class="logo__image only-light" alt="Logo image"/>
+    <script>document.write(`<img src="../../_static/logo_extended.png" class="logo__image only-dark" alt="Logo image"/>`);</script>
+  
+  
+</a></div>
+    
+  </div>
+  
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../general/tutorial.html">
+                        Tutorial
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item current active">
+                      <a class="nav-link nav-internal" href="../index.html">
+                        Reference
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../general/setup.html">
+                        Setup
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../general/imprint.html">
+                        Imprint
+                      </a>
+                    </li>
+                
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+  </button>
+`);
+</script>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/fraunhoferfokus/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square"></i></span>
+            <label class="sr-only">GitHub</label></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+  </button>
+`);
+</script>
+    </div>
+  
+
+  
+    <label class="sidebar-toggle secondary-toggle" for="__secondary">
+      <span class="fa-solid fa-outdent"></span>
+    </label>
+  
+</div>
+
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../general/tutorial.html">
+                        Tutorial
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item current active">
+                      <a class="nav-link nav-internal" href="../index.html">
+                        Reference
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../general/setup.html">
+                        Setup
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../general/imprint.html">
+                        Imprint
+                      </a>
+                    </li>
+                
+  </ul>
+</nav></div>
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/fraunhoferfokus/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square"></i></span>
+            <label class="sr-only">GitHub</label></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+        <div class="sidebar-primary-item"><nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../Introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Core/index.html">Core</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Quantum%20Types/index.html">Quantum Types</a></li>
+<li class="toctree-l1 current active has-children"><a class="current reference internal" href="#">Quantum Environments</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-1"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="ConditionEnvironment.html">ConditionEnvironment</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ControlEnvironment.html">ControlEnvironment</a></li>
+<li class="toctree-l2"><a class="reference internal" href="InversionEnvironment.html">InversionEnvironment</a></li>
+<li class="toctree-l2"><a class="reference internal" href="GateWrapEnvironment.html">GateWrapEnvironment</a></li>
+<li class="toctree-l2"><a class="reference internal" href="GMSEnvironment.html">GMSEnvironment</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../Algorithms/index.html">Algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Circuit%20Construction/index.html">Circuit Construction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Backend%20Interface/index.html">Backend Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Quantum%20Networks/index.html">Quantum Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Miscellaneous%20Functions/index.html">Miscellaneous Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Examples/index.html">Examples</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumbs">
+  <ul class="bd-breadcrumbs" role="navigation" aria-label="Breadcrumb">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../index.html" class="nav-link">Reference</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">Quantum Environments</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <section id="quantum-environments">
+<span id="quantumenvironment"></span><h1>Quantum Environments<a class="headerlink" href="#quantum-environments" title="Permalink to this heading">#</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="qrisp.QuantumEnvironment">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">QuantumEnvironment</span></span><a class="reference internal" href="../../_modules/qrisp/environments/quantum_environments.html#QuantumEnvironment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qrisp.QuantumEnvironment" title="Permalink to this definition">#</a></dt>
+<dd><p>QuantumEnvironments are blocks of code, that undergo some user-specified compilation
+process. They can be entered using the <code class="docutils literal notranslate"><span class="pre">with</span></code> statement</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">qrisp</span> <span class="kn">import</span> <span class="n">QuantumEnvironment</span><span class="p">,</span> <span class="n">QuantumVariable</span><span class="p">,</span> <span class="n">x</span>
+
+<span class="n">qv</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+
+<span class="k">with</span> <span class="n">QuantumEnvironment</span><span class="p">():</span>
+   <span class="n">x</span><span class="p">(</span><span class="n">qv</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>In this case we have no special compilation technique, since the abstract baseclass
+simply returns it’s content:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">qv</span><span class="o">.</span><span class="n">qs</span><span class="p">)</span>
+<span class="go">QuantumCircuit:</span>
+<span class="go">---------------</span>
+<span class="go">      ┌───┐</span>
+<span class="go">qv.0: ┤ X ├</span>
+<span class="go">      ├───┤</span>
+<span class="go">qv.1: ┤ X ├</span>
+<span class="go">      ├───┤</span>
+<span class="go">qv.2: ┤ X ├</span>
+<span class="go">      ├───┤</span>
+<span class="go">qv.3: ┤ X ├</span>
+<span class="go">      ├───┤</span>
+<span class="go">qv.4: ┤ X ├</span>
+<span class="go">      └───┘</span>
+<span class="go">Live QuantumVariables:</span>
+<span class="go">----------------------</span>
+<span class="go">QuantumVariable qv</span>
+</pre></div>
+</div>
+<p>More advanced environments allow for a large variety of features and can significantly
+simplify code development and maintainance.</p>
+<p>The most important built-in QuantumEnvironments are:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="ConditionEnvironment.html#conditionenvironment"><span class="std std-ref">ConditionEnvironment</span></a></p></li>
+<li><p><a class="reference internal" href="ControlEnvironment.html#controlenvironment"><span class="std std-ref">ControlEnvironment</span></a></p></li>
+<li><p><a class="reference internal" href="InversionEnvironment.html#inversionenvironment"><span class="std std-ref">InversionEnvironment</span></a></p></li>
+<li><p><a class="reference internal" href="GateWrapEnvironment.html#gatewrapenvironment"><span class="std std-ref">GateWrapEnvironment</span></a></p></li>
+</ul>
+<p>Due to sophisticated condition evaluation of nested <a class="reference internal" href="ConditionEnvironment.html#conditionenvironment"><span class="std std-ref">ConditionEnvironment</span></a> and
+<a class="reference internal" href="ControlEnvironment.html#controlenvironment"><span class="std std-ref">ControlEnvironment</span></a>, using QuantumEnvironments even can bring an increase in
+performance, compared to the <a class="reference external" href="https://qiskit.org/documentation/stubs/qiskit.circuit.QuantumCircuit.control.html">control method</a>
+which is commonly implemented by QuantumCircuit-based approaches.</p>
+<p><strong>Uncomputation within QuantumEnvironments</strong></p>
+<p>Uncomputation via the <a class="reference internal" href="../Core/generated/qrisp.QuantumVariable.uncompute.html#qrisp.QuantumVariable.uncompute" title="qrisp.QuantumVariable.uncompute"><code class="xref py py-meth docutils literal notranslate"><span class="pre">uncompute</span></code></a> method is
+possible only if the <a class="reference internal" href="../Core/QuantumVariable.html#quantumvariable"><span class="std std-ref">QuantumVariable</span></a> has been created within the same or a
+sub-environment:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">qrisp</span> <span class="kn">import</span> <span class="n">QuantumVariable</span><span class="p">,</span> <span class="n">QuantumEnvironment</span><span class="p">,</span> <span class="n">cx</span>
+
+<span class="n">a</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="k">with</span> <span class="n">QuantumEnvironment</span><span class="p">():</span>
+
+    <span class="n">b</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">cx</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="n">QuantumEnvironment</span><span class="p">():</span>
+
+        <span class="n">c</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">cx</span><span class="p">(</span><span class="n">b</span><span class="p">,</span><span class="n">c</span><span class="p">)</span>
+
+    <span class="n">c</span><span class="o">.</span><span class="n">uncompute</span><span class="p">()</span> <span class="c1"># works because c was created in a sub environment</span>
+    <span class="n">b</span><span class="o">.</span><span class="n">uncompute</span><span class="p">()</span> <span class="c1"># works because b was created in the same environment</span>
+    <span class="c1"># a.uncompute() # doesn&#39;t work because a was created outside this</span>
+    <span class="n">environment</span><span class="o">.</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">qs</span><span class="p">)</span>
+<span class="go">QuantumCircuit:</span>
+<span class="go">---------------</span>
+<span class="go">a.0: ──■──────────────■──</span>
+<span class="go">     ┌─┴─┐          ┌─┴─┐</span>
+<span class="go">b.0: ┤ X ├──■────■──┤ X ├</span>
+<span class="go">     └───┘┌─┴─┐┌─┴─┐└───┘</span>
+<span class="go">c.0: ─────┤ X ├┤ X ├─────</span>
+<span class="go">          └───┘└───┘</span>
+<span class="go">Live QuantumVariables:</span>
+<span class="go">----------------------</span>
+<span class="go">QuantumVariable a</span>
+</pre></div>
+</div>
+<p><strong>Visualisation within QuantumEnvironments</strong></p>
+<p>Calling <code class="docutils literal notranslate"><span class="pre">print</span></code> on a <a class="reference internal" href="../Core/QuantumSession.html#quantumsession"><span class="std std-ref">QuantumSession</span></a> inside a QuantumEnvironment will
+display only the instructions, that have been performed within this environment.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">qrisp</span> <span class="kn">import</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span>
+<span class="n">a</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+
+<span class="n">x</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+<span class="k">with</span> <span class="n">QuantumEnvironment</span><span class="p">():</span>
+
+    <span class="n">y</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="k">with</span> <span class="n">QuantumEnvironment</span><span class="p">():</span>
+
+        <span class="n">z</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">qs</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">qs</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">qs</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Executing this snippet yields</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="go">&gt;&gt;&gt;</span>
+<span class="go">QuantumCircuit:</span>
+<span class="go">---------------</span>
+<span class="go">a.0: ─────</span>
+
+<span class="go">a.1: ─────</span>
+<span class="go">     ┌───┐</span>
+<span class="go">a.2: ┤ Z ├</span>
+<span class="go">     └───┘</span>
+<span class="go">QuantumEnvironment Stack:</span>
+<span class="go">-------------------------</span>
+<span class="go">Level 0: QuantumEnvironment</span>
+<span class="go">Level 1: QuantumEnvironment</span>
+
+<span class="go">Live QuantumVariables:</span>
+<span class="go">----------------------</span>
+<span class="go">QuantumVariable a</span>
+<span class="go">QuantumCircuit:</span>
+<span class="go">---------------</span>
+<span class="go">a.0: ─────</span>
+<span class="go">     ┌───┐</span>
+<span class="go">a.1: ┤ Y ├</span>
+<span class="go">     ├───┤</span>
+<span class="go">a.2: ┤ Z ├</span>
+<span class="go">     └───┘</span>
+<span class="go">QuantumEnvironment Stack:</span>
+<span class="go">-------------------------</span>
+<span class="go">Level 0: QuantumEnvironment</span>
+
+<span class="go">Live QuantumVariables:</span>
+<span class="go">----------------------</span>
+<span class="go">QuantumVariable a</span>
+<span class="go">QuantumCircuit:</span>
+<span class="go">---------------</span>
+<span class="go">     ┌───┐</span>
+<span class="go">a.0: ┤ X ├</span>
+<span class="go">     ├───┤</span>
+<span class="go">a.1: ┤ Y ├</span>
+<span class="go">     ├───┤</span>
+<span class="go">a.2: ┤ Z ├</span>
+<span class="go">     └───┘</span>
+<span class="go">Live QuantumVariables:</span>
+<span class="go">----------------------</span>
+<span class="go">QuantumVariable a</span>
+</pre></div>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Calling <code class="docutils literal notranslate"><span class="pre">print</span></code> within a QuantumEnvironment causes all sub environments to be
+compiled. While this doesn’t change the semantics of the resulting circuit,
+especially nested <a class="reference internal" href="ConditionEnvironment.html#conditionenvironment"><span class="std std-ref">Condition</span></a>- and
+<a class="reference internal" href="ControlEnvironment.html#controlenvironment"><span class="std std-ref">ControlEnvironments</span></a> lose a lot of efficiency if
+compiled prematurely. Therefore, <code class="docutils literal notranslate"><span class="pre">print</span></code>-calls within QuantumEnvironments are
+usefull for debugging purposes but should be removed, if efficiency is a
+concern.</p>
+</div>
+<p><strong>Creating custom QuantumEnvironments</strong></p>
+<p>More interesting QuantumEnvironments can be created by inheriting and modifying
+the compile method. In the following code snippet, we will demonstrate how to
+set up a QuantumEnvironment, that skips every second instruction. We do this
+by inheriting from the QuantumEnvironment class. This will provide us with
+the necessary attributes for writing the compile method:</p>
+<p>#. <code class="docutils literal notranslate"><span class="pre">.env_data</span></code>, which is the list of instructions, that have been appended in this
+environment. Note that child environments append themselves in this list upon
+exiting.</p>
+<p>#. <code class="docutils literal notranslate"><span class="pre">.env_qs</span></code> which is a QuantumSession, where all QuantumVariables, that operated
+inside this environment, are registered.</p>
+<p>The compile method is then called once all environments of <code class="docutils literal notranslate"><span class="pre">.env_qs</span></code> have been
+exited. Note that this doesn’t neccessarily imply that all QuantumEnvironments have
+been left. For more information about the interplay between QuantumSessions and
+QuantumEnvironments check the <a class="reference internal" href="../Core/Session%20Merging.html#sessionmerging"><span class="std std-ref">session merging</span></a> documentation.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">ExampleEnvironment</span><span class="p">(</span><span class="n">QuantumEnvironment</span><span class="p">):</span>
+
+   <span class="k">def</span> <span class="nf">compile</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+      <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">env_data</span><span class="p">)):</span>
+
+         <span class="c1">#This line makes sure every second instruction is skipped</span>
+         <span class="k">if</span> <span class="n">i</span><span class="o">%</span><span class="mi">2</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+         <span class="n">instruction</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">env_data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+         <span class="c1">#If the instruction is an environment, we compile this environment</span>
+         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">instruction</span><span class="p">,</span> <span class="n">QuantumEnvironment</span><span class="p">):</span>
+            <span class="n">instruction</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span>
+         <span class="c1">#Otherwise we append</span>
+         <span class="k">else</span><span class="p">:</span>
+             <span class="bp">self</span><span class="o">.</span><span class="n">env_qs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">instruction</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Check the result:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">qrisp</span> <span class="kn">import</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">h</span>
+<span class="n">qv</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span>
+
+<span class="k">with</span> <span class="n">ExampleEnvironment</span><span class="p">():</span>
+    <span class="n">x</span><span class="p">(</span><span class="n">qv</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">y</span><span class="p">(</span><span class="n">qv</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="k">with</span> <span class="n">ExampleEnvironment</span><span class="p">():</span>
+        <span class="n">z</span><span class="p">(</span><span class="n">qv</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+        <span class="n">t</span><span class="p">(</span><span class="n">qv</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+    <span class="k">with</span> <span class="n">ExampleEnvironment</span><span class="p">():</span>
+        <span class="n">s</span><span class="p">(</span><span class="n">qv</span><span class="p">[</span><span class="mi">4</span><span class="p">])</span>
+    <span class="n">h</span><span class="p">(</span><span class="n">qv</span><span class="p">[</span><span class="mi">5</span><span class="p">])</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">qv</span><span class="o">.</span><span class="n">qs</span><span class="p">)</span>
+<span class="go">QuantumCircuit:</span>
+<span class="go">---------------</span>
+<span class="go">      ┌───┐</span>
+<span class="go">qv.0: ┤ X ├</span>
+<span class="go">      └───┘</span>
+<span class="go">qv.1: ─────</span>
+<span class="go">      ┌───┐</span>
+<span class="go">qv.2: ┤ Z ├</span>
+<span class="go">      └───┘</span>
+<span class="go">qv.3: ─────</span>
+
+<span class="go">qv.4: ─────</span>
+<span class="go">      ┌───┐</span>
+<span class="go">qv.5: ┤ H ├</span>
+<span class="go">      └───┘</span>
+<span class="go">Live QuantumVariables:</span>
+<span class="go">----------------------</span>
+<span class="go">QuantumVariable qv</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<div class="toctree-wrapper compound">
+</div>
+</section>
+
+
+                </article>
+              
+              
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#qrisp.QuantumEnvironment"><code class="docutils literal notranslate"><span class="pre">QuantumEnvironment</span></code></a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/bootstrap.js?digest=e353d410970836974a52"></script>
+<script src="../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+  <p class="copyright">
+    
+      © Copyright 2023, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.3.0.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item"><p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.13.3.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

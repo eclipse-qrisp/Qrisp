@@ -1,0 +1,60 @@
+"""
+/*********************************************************************
+* Copyright (c) 2023 the Qrisp Authors
+*
+* This program and the accompanying materials are made
+* available under the terms of the Eclipse Public License 2.0
+* which is available at https://www.eclipse.org/legal/epl-2.0/
+*
+* SPDX-License-Identifier: EPL-2.0
+**********************************************************************/
+"""
+
+
+import numpy as np
+
+from qrisp import QuantumVariable, cp, transpile, x
+from qrisp.misc.GMS_tools import (
+    gms_multi_cp_gate,
+    gms_multi_cx_fan_out,
+)
+
+n = 5
+qv = QuantumVariable(n)
+
+
+x(qv[-1])
+qv.qs.append(
+    gms_multi_cx_fan_out(n - 1, use_uniform=True, phase_tolerant=False), qv.reg
+)
+
+print(transpile(qv.qs, 2))
+print(qv.get_measurement())
+
+
+# %%
+
+n = 3
+
+theta = [np.pi / (i + 1) for i in range(n - 1)]
+
+qv_0 = QuantumVariable(n)
+
+qv_0.qs.append(gms_multi_cp_gate(n - 1, theta), qv_0.reg)
+
+
+qv_1 = QuantumVariable(n)
+
+for i in range(n - 1):
+    cp(theta[i], qv_1[i], qv_1[n - 1])
+
+
+unitary = qv_0.qs.get_unitary()
+print(qv_0.qs.get_unitary(decimals=4))
+
+
+print("Is equal:", qv_0.qs.compare_unitary(qv_1.qs))
+
+
+print("Is diagonal:", np.linalg.norm(unitary - np.diag(np.diagonal(unitary))) < 1e-3)
+print(np.round(np.angle(np.diagonal(unitary)) % (2 * np.pi) / (np.pi), 3))

@@ -1,0 +1,706 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>qrisp.environments.control_environment &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+<link href="../../../_static/styles/bootstrap.css?digest=e353d410970836974a52" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+
+  
+  <link href="../../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=e353d410970836974a52" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/custom.css" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=e353d410970836974a52" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52" />
+
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../_static/clipboard.min.js"></script>
+    <script src="../../../_static/copybutton.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/qrisp/environments/control_environment';</script>
+    <link rel="canonical" href="https://qrisp.eu/_modules/qrisp/environments/control_environment.html" />
+    <link rel="shortcut icon" href="../../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="light">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+<div class="bd-header__inner bd-page-width">
+  <label class="sidebar-toggle primary-toggle" for="__primary">
+    <span class="fa-solid fa-bars"></span>
+  </label>
+  
+  <div class="navbar-header-items__start">
+    
+      <div class="navbar-item">
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../../_static/logo_extended.png" class="logo__image only-light" alt="Logo image"/>
+    <script>document.write(`<img src="../../../_static/logo_extended.png" class="logo__image only-dark" alt="Logo image"/>`);</script>
+  
+  
+</a></div>
+    
+  </div>
+  
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../general/tutorial.html">
+                        Tutorial
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../reference/index.html">
+                        Reference
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../general/setup.html">
+                        Setup
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../general/imprint.html">
+                        Imprint
+                      </a>
+                    </li>
+                
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+  </button>
+`);
+</script>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/fraunhoferfokus/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square"></i></span>
+            <label class="sr-only">GitHub</label></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+  </button>
+`);
+</script>
+    </div>
+  
+
+  
+</div>
+
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../general/tutorial.html">
+                        Tutorial
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../reference/index.html">
+                        Reference
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../general/setup.html">
+                        Setup
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../general/imprint.html">
+                        Imprint
+                      </a>
+                    </li>
+                
+  </ul>
+</nav></div>
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/fraunhoferfokus/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square"></i></span>
+            <label class="sr-only">GitHub</label></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumbs">
+  <ul class="bd-breadcrumbs" role="navigation" aria-label="Breadcrumb">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">qrisp.environments.control_environment</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <h1>Source code for qrisp.environments.control_environment</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">/*********************************************************************</span>
+<span class="sd">* Copyright (c) 2023 the Qrisp Authors</span>
+<span class="sd">*</span>
+<span class="sd">* This program and the accompanying materials are made</span>
+<span class="sd">* available under the terms of the Eclipse Public License 2.0</span>
+<span class="sd">* which is available at https://www.eclipse.org/legal/epl-2.0/</span>
+<span class="sd">*</span>
+<span class="sd">* SPDX-License-Identifier: EPL-2.0</span>
+<span class="sd">**********************************************************************/</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="kn">from</span> <span class="nn">qrisp.circuit.qubit</span> <span class="kn">import</span> <span class="n">Qubit</span>
+<span class="kn">from</span> <span class="nn">qrisp.core.library</span> <span class="kn">import</span> <span class="n">mcx</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">rz</span><span class="p">,</span> <span class="n">x</span>
+<span class="kn">from</span> <span class="nn">qrisp.core.session_merging_tools</span> <span class="kn">import</span> <span class="n">merge</span>
+<span class="kn">from</span> <span class="nn">qrisp.environments</span> <span class="kn">import</span> <span class="n">QuantumEnvironment</span>
+<span class="kn">from</span> <span class="nn">qrisp.misc</span> <span class="kn">import</span> <span class="n">perm_lock</span><span class="p">,</span> <span class="n">perm_unlock</span>
+
+
+<div class="viewcode-block" id="ControlEnvironment"><a class="viewcode-back" href="../../../reference/Quantum%20Environments/ControlEnvironment.html#qrisp.ControlEnvironment">[docs]</a><span class="k">class</span> <span class="nc">ControlEnvironment</span><span class="p">(</span><span class="n">QuantumEnvironment</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class behaves similarly to ConditionEnvironment but instead of a function</span>
+<span class="sd">    calculating a truth value, we supply a list of qubits.</span>
+<span class="sd">    The environment&#39;s content is then controlled on these qubits.</span>
+
+<span class="sd">    An alias for this QuantumEnvironment is &quot;control&quot;.</span>
+
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ctrl_qubits : list[Qubit]</span>
+<span class="sd">        A list of qubits on which to control the environment&#39;s content.</span>
+<span class="sd">    ctrl_state : int/str, optional</span>
+<span class="sd">        The computational basis state which is supposed to activate the environment.</span>
+<span class="sd">        Can be supplied as a bitstring or integer. The default is &quot;1111..&quot;.</span>
+
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+
+<span class="sd">    We create a QuantumVariable and control on some of it&#39;s qubits</span>
+<span class="sd">    using the control alias ::</span>
+
+<span class="sd">        from qrisp import QuantumVariable, QuantumString, multi_measurement, control, h</span>
+
+<span class="sd">        qv = QuantumVariable(3)</span>
+<span class="sd">        q_str = QuantumString()</span>
+
+<span class="sd">        qv[:] = &quot;011&quot;</span>
+<span class="sd">        h(qv[0])</span>
+
+<span class="sd">        with control(qv[:2], &quot;11&quot;):</span>
+<span class="sd">            q_str += &quot;hello world&quot;</span>
+
+
+<span class="sd">    &gt;&gt;&gt; print(multi_measurement([qv, q_str]))</span>
+<span class="sd">    {(&#39;011&#39;, &#39;aaaaaaaaaaa&#39;): 0.5, (&#39;111&#39;, &#39;hello world&#39;): 0.5}</span>
+
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctrl_qubits</span><span class="p">,</span> <span class="n">ctrl_state</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">ctrl_method</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">arg_qs</span> <span class="o">=</span> <span class="n">merge</span><span class="p">(</span><span class="n">ctrl_qubits</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">ctrl_method</span> <span class="o">=</span> <span class="n">ctrl_method</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ctrl_qubits</span><span class="p">,</span> <span class="n">Qubit</span><span class="p">):</span>
+            <span class="n">ctrl_qubits</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctrl_qubits</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ctrl_qubits</span> <span class="o">=</span> <span class="n">ctrl_qubits</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ctrl_state</span> <span class="o">=</span> <span class="n">ctrl_state</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">manual_allocation_management</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="c1"># For more information on why this attribute is neccessary check the comment</span>
+        <span class="c1"># on the line containing subcondition_truth_values = []</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sub_condition_envs</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="n">QuantumEnvironment</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="c1"># Method to enter the environment</span>
+    <span class="k">def</span> <span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="kn">from</span> <span class="nn">qrisp.qtypes.quantum_bool</span> <span class="kn">import</span> <span class="n">QuantumBool</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ctrl_qubits</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">condition_truth_value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ctrl_qubits</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">qbool</span> <span class="o">=</span> <span class="n">QuantumBool</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;ctrl env*&quot;</span><span class="p">,</span> <span class="n">qs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">arg_qs</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">condition_truth_value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">qbool</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">QuantumEnvironment</span><span class="o">.</span><span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+        <span class="n">merge</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">env_qs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">arg_qs</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">condition_truth_value</span>
+
+    <span class="k">def</span> <span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exception_type</span><span class="p">,</span> <span class="n">exception_value</span><span class="p">,</span> <span class="n">traceback</span><span class="p">):</span>
+        <span class="kn">from</span> <span class="nn">qrisp.environments</span> <span class="kn">import</span> <span class="p">(</span>
+            <span class="n">ConditionEnvironment</span><span class="p">,</span>
+            <span class="n">ControlEnvironment</span><span class="p">,</span>
+            <span class="n">InversionEnvironment</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">parent_cond_env</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="n">QuantumEnvironment</span><span class="o">.</span><span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exception_type</span><span class="p">,</span> <span class="n">exception_value</span><span class="p">,</span> <span class="n">traceback</span><span class="p">)</span>
+
+        <span class="c1"># Determine the parent environment</span>
+        <span class="k">for</span> <span class="n">env</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">env_qs</span><span class="o">.</span><span class="n">env_stack</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="p">(</span><span class="n">ControlEnvironment</span><span class="p">,</span> <span class="n">ConditionEnvironment</span><span class="p">)):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">parent_cond_env</span> <span class="o">=</span> <span class="n">env</span>
+                <span class="k">break</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="p">(</span><span class="n">QuantumEnvironment</span><span class="p">,</span> <span class="n">InversionEnvironment</span><span class="p">)):</span>
+                <span class="k">break</span>
+
+    <span class="k">def</span> <span class="nf">compile</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="kn">from</span> <span class="nn">qrisp</span> <span class="kn">import</span> <span class="n">QuantumBool</span>
+        <span class="kn">from</span> <span class="nn">qrisp.environments</span> <span class="kn">import</span> <span class="n">ConditionEnvironment</span>
+
+        <span class="c1"># Create the quantum variable where the condition truth value should be saved</span>
+        <span class="c1"># Incase we have a parent environment we create two qubits because</span>
+        <span class="c1"># we use the second qubit to compute the toffoli of this one and the parent</span>
+        <span class="c1"># environments truth value in order to not have the environment operations</span>
+        <span class="c1"># controlled on two qubits</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">env_data</span><span class="p">):</span>
+            <span class="c1"># The first step we have to perform is calculating the truth value of the</span>
+            <span class="c1"># environments quantum condition. For this we differentiate between</span>
+            <span class="c1"># the case that this condition is embedded in another condition or not</span>
+
+            <span class="n">ctrl_qubits</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ctrl_qubits</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent_cond_env</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># In the parent case we also need to make sure that the code is executed</span>
+                <span class="c1"># if the parent environment is executed. A possible approach would be</span>
+                <span class="c1"># to control the content on both, the parent and the chield truth value.</span>
+                <span class="c1"># However, for each nesting level the gate count to generate</span>
+                <span class="c1"># the controlled-controlled-controlled... version of the gates inside</span>
+                <span class="c1"># the environment increases exponentially. Because of this we compute</span>
+                <span class="c1"># the toffoli of the parent and child truth value</span>
+                <span class="c1"># and controll the environment gates on this qubit.</span>
+
+                <span class="c1"># Synthesize the condition of the environment</span>
+                <span class="c1"># into the condition truth value qubit</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ctrl_qubits</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="kn">from</span> <span class="nn">qrisp.misc</span> <span class="kn">import</span> <span class="n">retarget_instructions</span>
+
+                    <span class="bp">self</span><span class="o">.</span><span class="n">qbool</span> <span class="o">=</span> <span class="n">QuantumBool</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;ctrl env*&quot;</span><span class="p">)</span>
+                    <span class="n">retarget_instructions</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">env_data</span><span class="p">,</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">condition_truth_value</span><span class="p">],</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">qbool</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+                    <span class="p">)</span>
+
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">env_qs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">QuantumEnvironment</span><span class="p">):</span>
+                        <span class="n">env</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">env_qs</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+                        <span class="n">env</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span>
+
+                    <span class="bp">self</span><span class="o">.</span><span class="n">condition_truth_value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">qbool</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+                <span class="n">ctrl_qubits</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parent_cond_env</span><span class="o">.</span><span class="n">condition_truth_value</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ctrl_state</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">ctrl_state</span> <span class="o">+=</span> <span class="mi">2</span> <span class="o">**</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ctrl_qubits</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ctrl_qubits</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">mcx</span><span class="p">(</span>
+                    <span class="n">ctrl_qubits</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">condition_truth_value</span><span class="p">,</span>
+                    <span class="n">ctrl_state</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ctrl_state</span><span class="p">,</span>
+                    <span class="n">method</span><span class="o">=</span><span class="s2">&quot;gray_pt&quot;</span><span class="p">,</span>
+                <span class="p">)</span>
+
+            <span class="n">perm_lock</span><span class="p">(</span><span class="n">ctrl_qubits</span><span class="p">)</span>
+            <span class="c1"># unlock(self.condition_truth_value)</span>
+
+            <span class="c1"># This list will contain the qubits holding the truth values of</span>
+            <span class="c1"># conditional/control environments within this environment.</span>
+            <span class="c1"># The instruction from the subcondition environments do not need to be</span>
+            <span class="c1"># controlled, since their compile method compiles their condition</span>
+            <span class="c1"># truth value based on the truth value of the parent environment.</span>
+            <span class="n">subcondition_truth_values</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">env</span><span class="o">.</span><span class="n">condition_truth_value</span> <span class="k">for</span> <span class="n">env</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sub_condition_envs</span>
+            <span class="p">]</span>
+            <span class="n">inversion_tracker</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="c1"># Now we need to recover the instructions from the data list</span>
+            <span class="c1"># and perform their controlled version on the condition_truth_value qubit</span>
+            <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">env_data</span><span class="p">:</span>
+                <span class="n">instruction</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">env_data</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+                <span class="c1"># If the instruction == conditional environment, compile the environment</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">instruction</span><span class="p">,</span> <span class="p">(</span><span class="n">ControlEnvironment</span><span class="p">,</span> <span class="n">ConditionEnvironment</span><span class="p">)):</span>
+                    <span class="n">instruction</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span>
+
+                    <span class="n">subcondition_truth_values</span> <span class="o">=</span> <span class="p">[</span>
+                        <span class="n">env</span><span class="o">.</span><span class="n">condition_truth_value</span> <span class="k">for</span> <span class="n">env</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sub_condition_envs</span>
+                    <span class="p">]</span>
+                    <span class="k">continue</span>
+
+                <span class="c1"># If the instruction is a general environment, compile the instruction</span>
+                <span class="c1"># and add the compilation result to the list of instructions</span>
+                <span class="c1"># that need to be conditionally executed.</span>
+                <span class="k">elif</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">instruction</span><span class="o">.</span><span class="vm">__class__</span><span class="p">,</span> <span class="n">QuantumEnvironment</span><span class="p">):</span>
+                    <span class="n">temp_data_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">env_qs</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">env_qs</span><span class="o">.</span><span class="n">clear_data</span><span class="p">()</span>
+                    <span class="n">instruction</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">env_data</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">env_qs</span><span class="o">.</span><span class="n">data</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">env_data</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">env_qs</span><span class="o">.</span><span class="n">clear_data</span><span class="p">()</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">env_qs</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">temp_data_list</span><span class="p">)</span>
+
+                    <span class="n">subcondition_truth_values</span> <span class="o">=</span> <span class="p">[</span>
+                        <span class="n">env</span><span class="o">.</span><span class="n">condition_truth_value</span> <span class="k">for</span> <span class="n">env</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sub_condition_envs</span>
+                    <span class="p">]</span>
+                    <span class="k">continue</span>
+
+                <span class="k">if</span> <span class="p">(</span>
+                    <span class="n">instruction</span><span class="o">.</span><span class="n">op</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;qb_alloc&quot;</span><span class="p">,</span> <span class="s2">&quot;qb_dealloc&quot;</span><span class="p">]</span>
+                    <span class="ow">and</span> <span class="n">instruction</span><span class="o">.</span><span class="n">qubits</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">condition_truth_value</span>
+                <span class="p">)</span> <span class="ow">or</span> <span class="n">instruction</span><span class="o">.</span><span class="n">op</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;barrier&quot;</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">env_qs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">instruction</span><span class="p">)</span>
+                    <span class="k">continue</span>
+
+                <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">instruction</span><span class="o">.</span><span class="n">qubits</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">subcondition_truth_values</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">env_qs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">instruction</span><span class="p">)</span>
+                    <span class="k">continue</span>
+
+                <span class="c1"># Support for inversion of the condition without opening a new</span>
+                <span class="c1"># environment</span>
+                <span class="c1"># if set(instruction.qubits).issubset(self.user_exposed_qbool):</span>
+                <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">instruction</span><span class="o">.</span><span class="n">qubits</span><span class="p">)</span><span class="o">.</span><span class="n">issubset</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">condition_truth_value</span><span class="p">]):</span>
+                    <span class="k">if</span> <span class="n">instruction</span><span class="o">.</span><span class="n">op</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;x&quot;</span><span class="p">:</span>
+                        <span class="n">inversion_tracker</span> <span class="o">*=</span> <span class="o">-</span><span class="mi">1</span>
+                        <span class="n">x</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">condition_truth_value</span><span class="p">)</span>
+                    <span class="k">elif</span> <span class="n">instruction</span><span class="o">.</span><span class="n">op</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;p&quot;</span><span class="p">:</span>
+                        <span class="n">p</span><span class="p">(</span><span class="n">instruction</span><span class="o">.</span><span class="n">op</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">condition_truth_value</span><span class="p">)</span>
+                    <span class="k">elif</span> <span class="n">instruction</span><span class="o">.</span><span class="n">op</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;rz&quot;</span><span class="p">:</span>
+                        <span class="n">rz</span><span class="p">(</span><span class="n">instruction</span><span class="o">.</span><span class="n">op</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">condition_truth_value</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                            <span class="s2">&quot;Tried to perform invalid operations&quot;</span>
+                            <span class="s2">&quot;on condition truth value (allowed are x, p, rz)&quot;</span>
+                        <span class="p">)</span>
+                    <span class="k">continue</span>
+
+                <span class="c1"># Create controlled instruction</span>
+                <span class="n">instruction</span><span class="o">.</span><span class="n">op</span> <span class="o">=</span> <span class="n">instruction</span><span class="o">.</span><span class="n">op</span><span class="o">.</span><span class="n">control</span><span class="p">(</span>
+                    <span class="n">num_ctrl_qubits</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ctrl_method</span>
+                <span class="p">)</span>
+
+                <span class="c1"># Add condition truth value qubit to the instruction qubit list</span>
+                <span class="n">instruction</span><span class="o">.</span><span class="n">qubits</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">condition_truth_value</span><span class="p">]</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span>
+                    <span class="n">instruction</span><span class="o">.</span><span class="n">qubits</span>
+                <span class="p">)</span>
+                <span class="c1"># Append instruction</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">env_qs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">instruction</span><span class="p">)</span>
+
+            <span class="n">perm_unlock</span><span class="p">(</span><span class="n">ctrl_qubits</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">inversion_tracker</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                <span class="n">x</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">condition_truth_value</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ctrl_qubits</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">mcx</span><span class="p">(</span>
+                    <span class="n">ctrl_qubits</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">qbool</span><span class="p">,</span>
+                    <span class="n">method</span><span class="o">=</span><span class="s2">&quot;gray_pt_inv&quot;</span><span class="p">,</span>
+                    <span class="n">ctrl_state</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ctrl_state</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">qbool</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent_cond_env</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parent_cond_env</span><span class="o">.</span><span class="n">sub_condition_envs</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sub_condition_envs</span> <span class="o">+</span> <span class="p">[</span><span class="bp">self</span><span class="p">]</span>
+            <span class="p">)</span></div>
+
+
+<span class="n">control</span> <span class="o">=</span> <span class="n">ControlEnvironment</span>
+</pre></div>
+
+                </article>
+              
+              
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/bootstrap.js?digest=e353d410970836974a52"></script>
+<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+  <p class="copyright">
+    
+      © Copyright 2023, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.3.0.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item"><p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.13.3.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

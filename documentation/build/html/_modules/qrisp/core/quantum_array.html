@@ -1,0 +1,1390 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>qrisp.core.quantum_array &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+<link href="../../../_static/styles/bootstrap.css?digest=e353d410970836974a52" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+
+  
+  <link href="../../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=e353d410970836974a52" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/custom.css" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=e353d410970836974a52" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52" />
+
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../_static/clipboard.min.js"></script>
+    <script src="../../../_static/copybutton.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/qrisp/core/quantum_array';</script>
+    <link rel="canonical" href="https://qrisp.eu/_modules/qrisp/core/quantum_array.html" />
+    <link rel="shortcut icon" href="../../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="light">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+<div class="bd-header__inner bd-page-width">
+  <label class="sidebar-toggle primary-toggle" for="__primary">
+    <span class="fa-solid fa-bars"></span>
+  </label>
+  
+  <div class="navbar-header-items__start">
+    
+      <div class="navbar-item">
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../../_static/logo_extended.png" class="logo__image only-light" alt="Logo image"/>
+    <script>document.write(`<img src="../../../_static/logo_extended.png" class="logo__image only-dark" alt="Logo image"/>`);</script>
+  
+  
+</a></div>
+    
+  </div>
+  
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../general/tutorial.html">
+                        Tutorial
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../reference/index.html">
+                        Reference
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../general/setup.html">
+                        Setup
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../general/imprint.html">
+                        Imprint
+                      </a>
+                    </li>
+                
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+  </button>
+`);
+</script>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/fraunhoferfokus/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square"></i></span>
+            <label class="sr-only">GitHub</label></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+  </button>
+`);
+</script>
+    </div>
+  
+
+  
+</div>
+
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../general/tutorial.html">
+                        Tutorial
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../reference/index.html">
+                        Reference
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../general/setup.html">
+                        Setup
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../general/imprint.html">
+                        Imprint
+                      </a>
+                    </li>
+                
+  </ul>
+</nav></div>
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/fraunhoferfokus/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square"></i></span>
+            <label class="sr-only">GitHub</label></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumbs">
+  <ul class="bd-breadcrumbs" role="navigation" aria-label="Breadcrumb">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">qrisp.core.quantum_array</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <h1>Source code for qrisp.core.quantum_array</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">/*********************************************************************</span>
+<span class="sd">* Copyright (c) 2023 the Qrisp Authors</span>
+<span class="sd">*</span>
+<span class="sd">* This program and the accompanying materials are made</span>
+<span class="sd">* available under the terms of the Eclipse Public License 2.0</span>
+<span class="sd">* which is available at https://www.eclipse.org/legal/epl-2.0/</span>
+<span class="sd">*</span>
+<span class="sd">* SPDX-License-Identifier: EPL-2.0</span>
+<span class="sd">**********************************************************************/</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">product</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">qrisp.circuit</span> <span class="kn">import</span> <span class="n">transpile</span>
+<span class="kn">from</span> <span class="nn">qrisp.core</span> <span class="kn">import</span> <span class="n">QuantumVariable</span>
+<span class="kn">from</span> <span class="nn">qrisp.misc</span> <span class="kn">import</span> <span class="n">bin_rep</span>
+<span class="kn">from</span> <span class="nn">qrisp.environments.temp_var_environment</span> <span class="kn">import</span> <span class="n">temp_qv</span>
+
+
+<div class="viewcode-block" id="QuantumArray"><a class="viewcode-back" href="../../../reference/Core/QuantumArray.html#qrisp.QuantumArray">[docs]</a><span class="k">class</span> <span class="nc">QuantumArray</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class allows the convenient management of multiple QuantumVariables of one</span>
+<span class="sd">    type. As a subclass of `numpy&#39;s ndarray</span>
+<span class="sd">    &lt;https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html&gt;`_, the</span>
+<span class="sd">    QuantumArray supports many convenient array manipulation methods. Similar to the</span>
+<span class="sd">    numpy equivalent, creating a QuantumArray can be achieved by specifying a shape and</span>
+<span class="sd">    a ``qtype``:</span>
+
+<span class="sd">    &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">    &gt;&gt;&gt; from qrisp import QuantumArray, QuantumFloat</span>
+<span class="sd">    &gt;&gt;&gt; qtype = QuantumFloat(5, -2)</span>
+<span class="sd">    &gt;&gt;&gt; q_array = QuantumArray(qtype = qtype, shape = (2, 2, 2))</span>
+
+<span class="sd">    Note that ``qtype`` is not a type object but a QuantumVariable which serves as an</span>
+<span class="sd">    &quot;example&quot;.</span>
+
+<span class="sd">    To retrieve the entries (i.e. QuantumVariables) from the QuantumArray, we simply</span>
+<span class="sd">    index as with regular numpy arrays:</span>
+
+<span class="sd">    &gt;&gt;&gt; from qrisp import h</span>
+<span class="sd">    &gt;&gt;&gt; qv = q_array[0,0,1]</span>
+<span class="sd">    &gt;&gt;&gt; h(qv[0])</span>
+<span class="sd">    &gt;&gt;&gt; print(q_array)</span>
+<span class="sd">    {OutcomeArray([[[0., 0.],</span>
+<span class="sd">                    [0., 0.]],</span>
+<span class="sd">                   [[0., 0.],</span>
+<span class="sd">                    [0., 0.]]]): 0.5,</span>
+<span class="sd">     OutcomeArray([[[0.  , 0.25],</span>
+<span class="sd">                    [0.  , 0.  ]],</span>
+<span class="sd">                   [[0.  , 0.  ],</span>
+<span class="sd">                    [0.  , 0.  ]]]): 0.5}</span>
+
+<span class="sd">    We see the value 0.25 in the second entry because we applied an H-gate onto the 0-th</span>
+<span class="sd">    qubit of the QuantumVariable at position (0,0,1). Since the type of this array is a</span>
+<span class="sd">    QuantumFloat, with exponent -2, the significance of this qubit is 0.25.</span>
+
+<span class="sd">    Note that the keys of the dictionary returned by the get_measurement method are no</span>
+<span class="sd">    regular numpy arrays, as key objects need to be hashable. Instead, they are objects</span>
+<span class="sd">    of an immutable subclass of np.ndarray called OutcomeArray, that supports hashing.</span>
+
+<span class="sd">    For QuantumArrays, many methods known from numpy arrays work here too:</span>
+
+<span class="sd">    &gt;&gt;&gt; q_array = q_array.reshape(2,4)</span>
+
+<span class="sd">    Not only do the ndarray methods work but also many other convenience functions from</span>
+<span class="sd">    the numpy module:</span>
+
+<span class="sd">    &gt;&gt;&gt; q_array_swap = np.swapaxes(q_array, 0, 1)</span>
+<span class="sd">    &gt;&gt;&gt; print(q_array_swap)</span>
+<span class="sd">    {OutcomeArray([[0., 0.],</span>
+<span class="sd">                   [0., 0.],</span>
+<span class="sd">                   [0., 0.],</span>
+<span class="sd">                   [0., 0.]]): 0.5,</span>
+<span class="sd">     OutcomeArray([[0.  , 0.  ],</span>
+<span class="sd">                   [0.25, 0.  ],</span>
+<span class="sd">                   [0.  , 0.  ],</span>
+<span class="sd">                   [0.  , 0.  ]]): 0.5}</span>
+
+<span class="sd">    To initiate the array, we use the :meth:`encode &lt;qrisp.QuantumArray.encode&gt;` method.</span>
+<span class="sd">    Similar to QuantumVariables, we can also use the slicing operator, but this time</span>
+<span class="sd">    non-trivial slices are possible as well:</span>
+
+<span class="sd">    &gt;&gt;&gt; q_array[1:,:] = 2*np.ones((1,4))</span>
+<span class="sd">    &gt;&gt;&gt; print(q_array)</span>
+<span class="sd">    {OutcomeArray([[0., 0., 0., 0.],</span>
+<span class="sd">                   [2., 2., 2., 2.]]): 0.5,</span>
+<span class="sd">     OutcomeArray([[0.  , 0.25, 0.  , 0.  ],</span>
+<span class="sd">                   [2.  , 2.  , 2.  , 2.  ]]): 0.5}</span>
+
+
+<span class="sd">    The shape of a QuantumArray does not have to be specified at creation. We can either</span>
+<span class="sd">    set it through the :meth:`set_shape &lt;qrisp.QuantumArray.set_shape&gt;` method or by</span>
+<span class="sd">    initiating:</span>
+
+<span class="sd">    &gt;&gt;&gt; q_array_1 = QuantumArray(qtype = qtype)</span>
+<span class="sd">    &gt;&gt;&gt; q_array_1.set_shape((2,2))</span>
+<span class="sd">    &gt;&gt;&gt; print(q_array_1)</span>
+<span class="sd">    {OutcomeArray([[0., 0.],</span>
+<span class="sd">                   [0., 0.]]): 1.0}</span>
+<span class="sd">    &gt;&gt;&gt; q_array_2 = QuantumArray(qtype = qtype)</span>
+<span class="sd">    &gt;&gt;&gt; q_array_2[:] = np.eye(2)</span>
+<span class="sd">    &gt;&gt;&gt; print(q_array_2)</span>
+<span class="sd">    {OutcomeArray([[1., 0.],</span>
+<span class="sd">                   [0., 1.]]): 1.0}</span>
+
+<span class="sd">    **Quantum indexing**</span>
+
+<span class="sd">    QuantumArrays can be dereferenced by :ref:`QuantumFloats &lt;QuantumFloat&gt;`. This</span>
+<span class="sd">    returns a :ref:`QuantumEnvironment` in which the corresponding entry is avaliable as</span>
+<span class="sd">    a QuantumVariable. ::</span>
+
+<span class="sd">        from qrisp import QuantumBool, QuantumArray, QuantumFloat, h, multi_measurement</span>
+
+<span class="sd">        q_array = QuantumArray(QuantumBool(), shape = (4,4))</span>
+<span class="sd">        index_0 = QuantumFloat(2)</span>
+<span class="sd">        index_1 = QuantumFloat(2)</span>
+
+
+<span class="sd">        index_0[:] = 2</span>
+<span class="sd">        index_1[:] = 1</span>
+
+<span class="sd">        h(index_0[0])</span>
+
+<span class="sd">        with q_array[index_0, index_1] as entry:</span>
+<span class="sd">            entry.flip()</span>
+
+<span class="sd">    &gt;&gt;&gt; print(multi_measurement([index_0, index_1, q_array]))</span>
+<span class="sd">    {(2, 1, OutcomeArray([[0., 0., 0., 0.],</span>
+<span class="sd">                          [0., 0., 0., 0.],</span>
+<span class="sd">                          [0., 1., 0., 0.],</span>
+<span class="sd">                          [0., 0., 0., 0.]])): 0.5,</span>
+<span class="sd">     (3, 1, OutcomeArray([[0., 0., 0., 0.],</span>
+<span class="sd">                          [0., 0., 0., 0.],</span>
+<span class="sd">                          [0., 0., 0., 0.],</span>
+<span class="sd">                          [0., 1., 0., 0.]])): 0.5}</span>
+
+<span class="sd">    .. note::</span>
+<span class="sd">        This only works for arrays which have a size of an integer power of 2.</span>
+
+<span class="sd">    **Matrix multiplication**</span>
+
+<span class="sd">    For QuantumArrays with ``qtype`` QuantumFloat, matrix multiplication is available.</span>
+
+<span class="sd">    &gt;&gt;&gt; q_array_1 = QuantumArray(qtype)</span>
+<span class="sd">    &gt;&gt;&gt; q_array_2 = QuantumArray(qtype)</span>
+<span class="sd">    &gt;&gt;&gt; q_array_1[:] = 2*np.eye(2)</span>
+<span class="sd">    &gt;&gt;&gt; q_array_2[:] = [[1,2],[3,4]]</span>
+<span class="sd">    &gt;&gt;&gt; print(q_array_1 @ q_array_2)</span>
+<span class="sd">    {OutcomeArray([[2., 4.],</span>
+<span class="sd">                   [6., 0.]]): 1.0}</span>
+
+<span class="sd">    .. note::</span>
+<span class="sd">        By default, the output matrix will have the same ``qtype`` as the first input</span>
+<span class="sd">        matrix. Here, the ``qtype`` is a QuantumFloat with 5 mantissa bits and exponent</span>
+<span class="sd">        -2, implying that the result 8 yields overflow. Since qrisps unsigend arithmetic</span>
+<span class="sd">        is modular, we get a 0.</span>
+
+<span class="sd">    It is also possible to multiply classical and quantum matrices</span>
+
+<span class="sd">    &gt;&gt;&gt; q_array = QuantumArray(qtype)</span>
+<span class="sd">    &gt;&gt;&gt; q_array[:] = 3*np.eye(2)</span>
+<span class="sd">    &gt;&gt;&gt; cl_array = np.array([[1,2],[3,4]])</span>
+<span class="sd">    &gt;&gt;&gt; print(q_array @ cl_array)</span>
+<span class="sd">    {OutcomeArray([[3., 6.],</span>
+<span class="sd">                   [1., 4.]]): 1.0}</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__new__</span><span class="p">(</span><span class="n">subtype</span><span class="p">,</span> <span class="n">qtype</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">qs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">QuantumVariable</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">Exception</span>
+
+        <span class="n">obj</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="n">subtype</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;object&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">shape</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">obj</span><span class="o">.</span><span class="n">shape_specified</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">obj</span><span class="o">.</span><span class="n">shape_specified</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="kn">from</span> <span class="nn">qrisp.misc</span> <span class="kn">import</span> <span class="n">find_calling_line</span>
+
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span> <span class="ow">is</span> <span class="n">QuantumArray</span><span class="p">:</span>
+                <span class="n">line</span> <span class="o">=</span> <span class="n">find_calling_line</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">line</span> <span class="o">=</span> <span class="n">find_calling_line</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+
+            <span class="n">split_line</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;=&quot;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">split_line</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">and</span> <span class="kc">False</span><span class="p">:</span>
+                <span class="n">python_var_name</span> <span class="o">=</span> <span class="n">split_line</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">python_var_name</span> <span class="o">=</span> <span class="n">python_var_name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">python_var_name</span> <span class="o">=</span> <span class="n">python_var_name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="n">python_var_name</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="kn">from</span> <span class="nn">qrisp</span> <span class="kn">import</span> <span class="n">QuantumBool</span><span class="p">,</span> <span class="n">QuantumChar</span><span class="p">,</span> <span class="n">QuantumFloat</span>
+
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">qtype</span><span class="p">,</span> <span class="n">QuantumFloat</span><span class="p">):</span>
+                    <span class="n">name</span> <span class="o">=</span> <span class="n">qtype</span><span class="o">.</span><span class="n">get_unique_name</span><span class="p">(</span><span class="s2">&quot;qf_array&quot;</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">qtype</span><span class="p">,</span> <span class="n">QuantumBool</span><span class="p">):</span>
+                    <span class="n">name</span> <span class="o">=</span> <span class="n">qtype</span><span class="o">.</span><span class="n">get_unique_name</span><span class="p">(</span><span class="s2">&quot;qbl_array&quot;</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">qtype</span><span class="p">,</span> <span class="n">QuantumChar</span><span class="p">):</span>
+                    <span class="n">name</span> <span class="o">=</span> <span class="n">qtype</span><span class="o">.</span><span class="n">get_unique_name</span><span class="p">(</span><span class="s2">&quot;qch_array&quot;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">name</span> <span class="o">=</span> <span class="n">qtype</span><span class="o">.</span><span class="n">get_unique_name</span><span class="p">(</span><span class="s2">&quot;qv_array&quot;</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">name</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;*&quot;</span><span class="p">:</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="n">qtype</span><span class="o">.</span><span class="n">get_unique_name</span><span class="p">(</span><span class="n">name</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+        <span class="n">obj</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">qtype</span><span class="o">.</span><span class="n">name</span>
+
+        <span class="c1"># Set data size</span>
+        <span class="n">obj</span><span class="o">.</span><span class="n">msize</span> <span class="o">=</span> <span class="n">qtype</span><span class="o">.</span><span class="n">size</span>
+        <span class="n">obj</span><span class="o">.</span><span class="n">qtype</span> <span class="o">=</span> <span class="n">qtype</span><span class="o">.</span><span class="n">duplicate</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">obj</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">qs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="kn">from</span> <span class="nn">qrisp.core</span> <span class="kn">import</span> <span class="n">QuantumSession</span>
+
+            <span class="n">qs</span> <span class="o">=</span> <span class="n">QuantumSession</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">shape</span><span class="p">,)</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">product</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">i</span><span class="p">))</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">shape</span><span class="p">]))</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">indices</span><span class="p">:</span>
+            <span class="n">temp_dup</span> <span class="o">=</span> <span class="n">qtype</span><span class="o">.</span><span class="n">duplicate</span><span class="p">(</span><span class="n">qs</span><span class="o">=</span><span class="n">qs</span><span class="p">)</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="o">.</span><span class="fm">__setitem__</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">temp_dup</span><span class="p">)</span>
+        <span class="n">obj</span><span class="o">.</span><span class="n">qs</span> <span class="o">=</span> <span class="n">qs</span>
+
+        <span class="k">return</span> <span class="n">obj</span>
+
+<div class="viewcode-block" id="QuantumArray.decoder"><a class="viewcode-back" href="../../../reference/Core/generated/qrisp.QuantumArray.decoder.html#qrisp.QuantumArray.decoder">[docs]</a>    <span class="k">def</span> <span class="nf">decoder</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">code_int</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The decoder method specifies how a QuantumArray turns the outcomes of</span>
+<span class="sd">        measurements into human-readable values. It recieves an integer i and returns an</span>
+<span class="sd">        OutcomeArray.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        i : int</span>
+<span class="sd">            Integer representing the outcome of a measurement of the qubits of this</span>
+<span class="sd">            QuantumArray.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        res : np.ndarray</span>
+<span class="sd">            An array with entries of the type of the results of the .decoder of the</span>
+<span class="sd">            qtype of this array.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+
+<span class="sd">        We create a QuantumFloat and inspect its decoder:</span>
+
+<span class="sd">        &gt;&gt;&gt; from qrisp import QuantumArray, QuantumFloat</span>
+<span class="sd">        &gt;&gt;&gt; qtype = QuantumFloat(3)</span>
+<span class="sd">        &gt;&gt;&gt; q_array = QuantumArray(qtype, (2,2))</span>
+<span class="sd">        &gt;&gt;&gt; print(q_array.decoder(1))</span>
+<span class="sd">        [[0 0]</span>
+<span class="sd">         [0 1]]</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">flattened_array</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+
+        <span class="kn">from</span> <span class="nn">qrisp.qtypes.quantum_float</span> <span class="kn">import</span> <span class="n">QuantumFloat</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">qtype</span><span class="p">,</span> <span class="n">QuantumFloat</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">qtype</span><span class="o">.</span><span class="n">exponent</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">res</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">flattened_array</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">res</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">flattened_array</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">flattened_array</span><span class="p">))</span>
+
+        <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">qtype</span><span class="p">)</span>
+
+        <span class="n">bin_string</span> <span class="o">=</span> <span class="n">bin_rep</span><span class="p">(</span><span class="n">code_int</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">flattened_array</span><span class="p">)</span> <span class="o">*</span> <span class="n">n</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">flattened_array</span><span class="p">)):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">res</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">qtype</span><span class="o">.</span><span class="n">decoder</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">bin_string</span><span class="p">[</span><span class="n">i</span> <span class="o">*</span> <span class="n">n</span> <span class="p">:</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">n</span><span class="p">],</span> <span class="mi">2</span><span class="p">))</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="n">res</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;object&quot;</span><span class="p">)</span>
+                <span class="n">res</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">qtype</span><span class="o">.</span><span class="n">decoder</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">bin_string</span><span class="p">[</span><span class="n">i</span> <span class="o">*</span> <span class="n">n</span> <span class="p">:</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">n</span><span class="p">],</span> <span class="mi">2</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">OutcomeArray</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="QuantumArray.encoder"><a class="viewcode-back" href="../../../reference/Core/generated/qrisp.QuantumArray.encoder.html#qrisp.QuantumArray.encoder">[docs]</a>    <span class="k">def</span> <span class="nf">encoder</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">encoding_array</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The encoder reverses the decoder, it turns arrays into integers based on the</span>
+<span class="sd">        encoder of the ``qtype`` of this array.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        encoding_array :</span>
+<span class="sd">            An array where the entries can be read by the decoder of qtype.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        Exception</span>
+<span class="sd">            Tried to call encoder on array with mismatching shape.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        i : int</span>
+<span class="sd">            The integer encoding the given array.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+
+<span class="sd">        We create a QuantumArray and inspect it&#39;s encoder:</span>
+
+<span class="sd">        &gt;&gt;&gt; from qrisp import QuantumArray, QuantumFloat</span>
+<span class="sd">        &gt;&gt;&gt; qtype = QuantumFloat(3)</span>
+<span class="sd">        &gt;&gt;&gt; q_array = QuantumArray(qtype, (2,2))</span>
+<span class="sd">        &gt;&gt;&gt; print(q_array.encoder(np.eye(2)))</span>
+<span class="sd">        513</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">encoding_array</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="n">encoding_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">encoding_array</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">encoding_array</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Tried to call encoder on array with mismatching shape&quot;</span><span class="p">)</span>
+
+        <span class="n">flattened_encoding_array</span> <span class="o">=</span> <span class="n">encoding_array</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+        <span class="n">flattened_quantum_array</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+
+        <span class="n">encoding_int_str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">flattened_encoding_array</span><span class="p">)):</span>
+            <span class="n">qv</span> <span class="o">=</span> <span class="n">flattened_quantum_array</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">encoding_int_str</span> <span class="o">+=</span> <span class="n">bin_rep</span><span class="p">(</span>
+                <span class="n">qv</span><span class="o">.</span><span class="n">encoder</span><span class="p">(</span><span class="n">flattened_encoding_array</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span> <span class="n">qv</span><span class="o">.</span><span class="n">size</span>
+            <span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">encoding_int_str</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="mi">2</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="QuantumArray.set_shape"><a class="viewcode-back" href="../../../reference/Core/generated/qrisp.QuantumArray.set_shape.html#qrisp.QuantumArray.set_shape">[docs]</a>    <span class="k">def</span> <span class="nf">set_shape</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method to specify a shape for arrays which have been created without one.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        shape : tuple</span>
+<span class="sd">            Desired shape.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        Exception</span>
+<span class="sd">            QuantumArray already has a shape.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape_specified</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                <span class="s2">&quot;Tried to set shape of QuantumArray, which already has a shape&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">shape</span><span class="p">,)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">refcheck</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="n">indices</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">product</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">i</span><span class="p">))</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">shape</span><span class="p">]))</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">indices</span><span class="p">:</span>
+            <span class="n">temp_dup</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">qtype</span><span class="o">.</span><span class="n">duplicate</span><span class="p">(</span><span class="n">qs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">qs</span><span class="p">)</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="o">.</span><span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">temp_dup</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">shape_specified</span> <span class="o">=</span> <span class="kc">True</span></div>
+
+    <span class="k">def</span> <span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape_specified</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="s2">&quot;shape&quot;</span><span class="p">):</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_shape</span><span class="p">(</span><span class="n">value</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">QuantumArray</span><span class="p">):</span>
+            <span class="bp">self</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">init_from</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="k">return</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">QuantumVariable</span><span class="p">):</span>
+            <span class="k">return</span>
+        <span class="bp">self</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">__array_function__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="n">types</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">func</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;concatenate&quot;</span><span class="p">:</span>
+            <span class="kn">from</span> <span class="nn">qrisp</span> <span class="kn">import</span> <span class="n">merge</span>
+
+            <span class="k">if</span> <span class="nb">id</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">qtype</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">id</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">qtype</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                    <span class="s2">&quot;Tried to concatenate arrays with differing qtype objects&quot;</span>
+                <span class="p">)</span>
+
+            <span class="n">merge</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+
+            <span class="n">ndarray_res</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="o">.</span><span class="n">__array_function__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="n">types</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">)</span>
+
+            <span class="n">res</span> <span class="o">=</span> <span class="n">QuantumArray</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">qtype</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">ndarray_res</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+
+            <span class="n">indices</span> <span class="o">=</span> <span class="n">product</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">i</span><span class="p">))</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">ndarray_res</span><span class="o">.</span><span class="n">shape</span><span class="p">])</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">indices</span><span class="p">:</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="o">.</span><span class="fm">__setitem__</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">ndarray_res</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+            <span class="n">res</span><span class="o">.</span><span class="n">qs</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">qs</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">qtype</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">qtype</span>
+
+            <span class="k">return</span> <span class="n">res</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="o">.</span><span class="n">__array_function__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="n">types</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="c1"># Retrieves a measurement of the arrays state</span>
+    <span class="c1"># Returns a list of tuples of the type (array, count)</span>
+    <span class="c1"># ie. [(array([1,1,0]), 232), (array([1,1,3]), 115), ...]</span>
+<div class="viewcode-block" id="QuantumArray.get_measurement"><a class="viewcode-back" href="../../../reference/Core/generated/qrisp.QuantumArray.get_measurement.html#qrisp.QuantumArray.get_measurement">[docs]</a>    <span class="k">def</span> <span class="nf">get_measurement</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">backend</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">shots</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span>
+        <span class="nb">compile</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">compilation_kwargs</span><span class="o">=</span><span class="p">{},</span>
+        <span class="n">subs_dic</span><span class="o">=</span><span class="p">{},</span>
+        <span class="n">circuit_preprocessor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method for acquiring measurement results for the given array. The semantics are</span>
+<span class="sd">        similar to the :meth:`get_measurement &lt;qrisp.QuantumVariable.get_measurement&gt;`</span>
+<span class="sd">        method of QuantumVariable. The results are returned as a dictionary of another</span>
+<span class="sd">        numpy subtype called OutcomeArray.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        backend : BackendClient, optional</span>
+<span class="sd">            The backend on which to evaluate the quantum circuit. The default can be</span>
+<span class="sd">            specified in the file default_backend.py.</span>
+<span class="sd">        shots : integer, optional</span>
+<span class="sd">            The amount of shots to evaluate the circuit. The default is 10000.</span>
+<span class="sd">        compile : bool, optional</span>
+<span class="sd">            Boolean indicating if the .compile method of the underlying QuantumSession</span>
+<span class="sd">            should be called before. The default is True.</span>
+<span class="sd">        compilation_kwargs  : dict, optional</span>
+<span class="sd">            Keyword arguments for the compile method. For more details check</span>
+<span class="sd">            :meth:`QuantumSession.compile &lt;qrisp.QuantumSession.compile&gt;`.</span>
+<span class="sd">            The default is ``{}``.</span>
+<span class="sd">        subs_dic : dict, optional</span>
+<span class="sd">            A dictionary of sympy symbols and floats to specify parameters in the case</span>
+<span class="sd">            of a circuit with unspecified, abstract parameters. The default is {}.</span>
+<span class="sd">        circuit_preprocessor : Python function, optional</span>
+<span class="sd">            A function which recieves a QuantumCircuit and returns one, which is applied</span>
+<span class="sd">            after compilation and parameter substitution. The default is None.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        Exception</span>
+<span class="sd">            Tried to get measurement within open environment.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list of tuples</span>
+<span class="sd">            The measurement results in the form [(outcome_label, probability), ...].</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+
+<span class="sd">        &gt;&gt;&gt; from qrisp import QuantumFloat, QuantumArray</span>
+<span class="sd">        &gt;&gt;&gt; qtype = QuantumFloat(3)</span>
+<span class="sd">        &gt;&gt;&gt; q_array = QuantumArray(qtype)</span>
+<span class="sd">        &gt;&gt;&gt; q_array[:] = [[1,0],[0,1]]</span>
+<span class="sd">        &gt;&gt;&gt; res = q_array.get_measurement()</span>
+<span class="sd">        &gt;&gt;&gt; print(res)</span>
+<span class="sd">        {OutcomeArray([[1, 0],</span>
+<span class="sd">                       [0, 1]]): 1.0}</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">for</span> <span class="n">qv</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">flatten</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">qv</span><span class="o">.</span><span class="n">is_deleted</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                    <span class="s2">&quot;Tried to measure QuantumArray containing deleted QuantumVariables&quot;</span>
+                <span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape_specified</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Tried to measure QuantumArray without shape specification&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">backend</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">backend</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="kn">from</span> <span class="nn">qrisp.default_backend</span> <span class="kn">import</span> <span class="n">def_backend</span>
+
+                <span class="n">backend</span> <span class="o">=</span> <span class="n">def_backend</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">backend</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">backend</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">env_stack</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Tried to get measurement within open environment&quot;</span><span class="p">)</span>
+
+        <span class="n">qubits</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">qv</span><span class="o">.</span><span class="n">reg</span> <span class="k">for</span> <span class="n">qv</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">flatten</span><span class="p">()[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]],</span> <span class="p">[])</span>
+        <span class="c1"># Copy circuit in over to prevent modification</span>
+        <span class="kn">from</span> <span class="nn">qrisp.quantum_network</span> <span class="kn">import</span> <span class="n">QuantumNetworkClient</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">backend</span><span class="p">,</span> <span class="n">QuantumNetworkClient</span><span class="p">):</span>
+            <span class="n">qc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">clear_data</span><span class="p">()</span>
+            <span class="n">shots</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">compile</span><span class="p">:</span>
+                <span class="kn">from</span> <span class="nn">qrisp.core.compilation</span> <span class="kn">import</span> <span class="n">qompiler</span>
+
+                <span class="n">qc</span> <span class="o">=</span> <span class="n">qompiler</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">qs</span><span class="p">,</span> <span class="n">intended_measurements</span><span class="o">=</span><span class="n">qubits</span><span class="p">,</span> <span class="o">**</span><span class="n">compilation_kwargs</span>
+                <span class="p">)</span>
+                <span class="c1"># qc = self.qs.compile(compilation_workspace)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">qc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+        <span class="c1"># Bind parameters</span>
+        <span class="k">if</span> <span class="n">subs_dic</span><span class="p">:</span>
+            <span class="n">qc</span> <span class="o">=</span> <span class="n">qc</span><span class="o">.</span><span class="n">bind_parameters</span><span class="p">(</span><span class="n">subs_dic</span><span class="p">)</span>
+
+        <span class="c1"># Execute user specified circuit_preprocessor</span>
+        <span class="k">if</span> <span class="n">circuit_preprocessor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">qc</span> <span class="o">=</span> <span class="n">circuit_preprocessor</span><span class="p">(</span><span class="n">qc</span><span class="p">)</span>
+
+        <span class="c1"># Transpile circuit</span>
+        <span class="n">qc</span> <span class="o">=</span> <span class="n">transpile</span><span class="p">(</span><span class="n">qc</span><span class="p">)</span>
+
+        <span class="kn">from</span> <span class="nn">qrisp.misc</span> <span class="kn">import</span> <span class="n">get_measurement_from_qc</span>
+
+        <span class="n">counts</span> <span class="o">=</span> <span class="n">get_measurement_from_qc</span><span class="p">(</span><span class="n">qc</span><span class="p">,</span> <span class="n">qubits</span><span class="p">,</span> <span class="n">backend</span><span class="p">,</span> <span class="n">shots</span><span class="p">)</span>
+
+        <span class="c1"># Insert outcome labels (if available and hashable)</span>
+        <span class="n">new_counts_dic</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">counts</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">outcome_label</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">decoder</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+            <span class="n">new_counts_dic</span><span class="p">[</span><span class="n">outcome_label</span><span class="p">]</span> <span class="o">=</span> <span class="n">counts</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+        <span class="n">counts</span> <span class="o">=</span> <span class="n">new_counts_dic</span>
+
+        <span class="c1"># Sort keys</span>
+        <span class="n">sorted_key_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">counts</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="n">sorted_key_list</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="o">-</span><span class="n">counts</span><span class="p">[</span><span class="n">x</span><span class="p">])</span>
+        <span class="n">counts</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">counts</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">sorted_key_list</span><span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">counts</span></div>
+
+<div class="viewcode-block" id="QuantumArray.encode"><a class="viewcode-back" href="../../../reference/Core/generated/qrisp.QuantumArray.encode.html#qrisp.QuantumArray.encode">[docs]</a>    <span class="k">def</span> <span class="nf">encode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">encoding_array</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The encode method allows to quickly bring a QuantumArray in a desired</span>
+<span class="sd">        computational basis state. For this, it performs a circuit, bringing fresh</span>
+<span class="sd">        qubits into the integer state specified by the encoder.</span>
+
+<span class="sd">        A shorthand for this method is given by the ``[:]`` operator.</span>
+
+<span class="sd">        Note that the qubits to initialize have to be fresh (i.e. no operations</span>
+<span class="sd">        performed on them).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        value :</span>
+<span class="sd">            A value supported by the encoder.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+
+<span class="sd">        We create a QuantumArray and encode the identity matrix.</span>
+
+<span class="sd">        &gt;&gt;&gt; from qrisp import QuantumArray, QuantumFloat</span>
+<span class="sd">        &gt;&gt;&gt; qtype = QuantumFloat(5)</span>
+<span class="sd">        &gt;&gt;&gt; q_array = QuantumArray(qtype, (4,4))</span>
+<span class="sd">        &gt;&gt;&gt; q_array.encode(np.eye(4))</span>
+<span class="sd">        &gt;&gt;&gt; print(q_array)</span>
+<span class="sd">        {OutcomeArray([[1, 0, 0, 0],</span>
+<span class="sd">                       [0, 1, 0, 0],</span>
+<span class="sd">                       [0, 0, 1, 0],</span>
+<span class="sd">                       [0, 0, 0, 1]]): 1.0}</span>
+
+<span class="sd">        Using the slice operator we can also encode on slices of QuantumArrays</span>
+
+<span class="sd">        &gt;&gt;&gt; q_array = QuantumArray(qtype, (4,4))</span>
+<span class="sd">        &gt;&gt;&gt; q_array[:,:2] = np.ones((4,2))</span>
+<span class="sd">        &gt;&gt;&gt; print(q_array)</span>
+<span class="sd">        {OutcomeArray([[1, 1, 0, 0],</span>
+<span class="sd">                       [1, 1, 0, 0],</span>
+<span class="sd">                       [1, 1, 0, 0],</span>
+<span class="sd">                       [1, 1, 0, 0]]): 1.0}</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">flattened_array</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+
+        <span class="n">qubit_list</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">qv</span><span class="o">.</span><span class="n">reg</span> <span class="k">for</span> <span class="n">qv</span> <span class="ow">in</span> <span class="n">flattened_array</span><span class="p">],</span> <span class="p">[])</span>
+
+        <span class="kn">from</span> <span class="nn">qrisp.misc</span> <span class="kn">import</span> <span class="n">check_if_fresh</span><span class="p">,</span> <span class="n">int_encoder</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">check_if_fresh</span><span class="p">(</span><span class="n">qubit_list</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">qs</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Tried to initialize qubits which are not fresh anymore.&quot;</span><span class="p">)</span>
+
+        <span class="n">int_encoder</span><span class="p">(</span><span class="n">qubit_list</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span><span class="p">(</span><span class="n">encoding_array</span><span class="p">))</span>
+
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="QuantumArray.delete"><a class="viewcode-back" href="../../../reference/Core/generated/qrisp.QuantumArray.delete.html#qrisp.QuantumArray.delete">[docs]</a>    <span class="k">def</span> <span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">verify</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Performs the :meth:`delete &lt;qrisp.QuantumVariable.delete&gt;` method on all</span>
+<span class="sd">        QuantumVariables in this array.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        verify : bool, optional</span>
+<span class="sd">            If this keyword is set to true, a simulator is queried to check if the</span>
+<span class="sd">            deleted qubits are in the $\ket{0}$ state. The default is False.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">temp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">temp</span><span class="p">)):</span>
+            <span class="n">temp</span><span class="o">.</span><span class="n">qv_array</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span></div>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_measurement</span><span class="p">())</span>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_measurement</span><span class="p">())</span>
+
+    <span class="k">def</span> <span class="fm">__matmul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="kn">from</span> <span class="nn">qrisp</span> <span class="kn">import</span> <span class="n">QuantumFloat</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">qtype</span><span class="p">,</span> <span class="n">QuantumFloat</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">QuantumArray</span><span class="p">):</span>
+                <span class="kn">from</span> <span class="nn">qrisp.arithmetic</span> <span class="kn">import</span> <span class="n">q_matmul</span>
+
+                <span class="k">return</span> <span class="n">q_matmul</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+                <span class="kn">from</span> <span class="nn">qrisp.arithmetic</span> <span class="kn">import</span> <span class="n">semi_classic_matmul</span>
+
+                <span class="k">return</span> <span class="n">semi_classic_matmul</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Matrix multiplication for non-float types not implemented&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__rmatmul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="kn">from</span> <span class="nn">qrisp</span> <span class="kn">import</span> <span class="n">QuantumFloat</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">qtype</span><span class="p">,</span> <span class="n">QuantumFloat</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span> <span class="o">@</span> <span class="n">other</span><span class="o">.</span><span class="n">transpose</span><span class="p">())</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="n">QuantumVariable</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">manipulate_array</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">index</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">QuantumVariable</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">manipulate_array</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">)</span>
+
+<div class="viewcode-block" id="QuantumArray.init_state"><a class="viewcode-back" href="../../../reference/Core/generated/qrisp.QuantumArray.init_state.html#qrisp.QuantumArray.init_state">[docs]</a>    <span class="k">def</span> <span class="nf">init_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tuple_list</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method to initiate arbitrary quantum states in this array. The semantics are</span>
+<span class="sd">        similar to the :meth:`QuantumVariable equivalent</span>
+<span class="sd">        &lt;qrisp.QuantumVariable.init_state&gt;` of this method.</span>
+
+<span class="sd">        The given state will be normalized.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tuple_list : list of tuples</span>
+<span class="sd">            The list of tuples describing the quantum state. The first componenet of the</span>
+<span class="sd">            tuples needs to represent the array and the second the required amplitude.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        Exception</span>
+<span class="sd">            Tried to initialize quantum state on qubits which are not fresh anymore.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+
+<span class="sd">        We initiate a quantum state on an array and evaluate the measurement</span>
+<span class="sd">        probabilities.</span>
+
+<span class="sd">        &gt;&gt;&gt; from qrisp import QuantumArray, QuantumFloat</span>
+<span class="sd">        &gt;&gt;&gt; qtype = QuantumFloat(3)</span>
+<span class="sd">        &gt;&gt;&gt; q_array = QuantumArray(qtype, shape = 3)</span>
+<span class="sd">        &gt;&gt;&gt; q_array.init_state([(np.array([1, 2, 3]), 1), (np.array([1, 2, 2]), 0.5j)])</span>
+<span class="sd">        &gt;&gt;&gt; print(q_array)</span>
+<span class="sd">        {OutcomeArray([1, 2, 3]): 0.8, OutcomeArray([1, 2, 2]): 0.2}</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tuple_list</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">tuple_list</span> <span class="o">=</span> <span class="p">[(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">tuple_list</span><span class="o">.</span><span class="n">items</span><span class="p">()]</span>
+
+        <span class="n">flattened_array</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+        <span class="n">qubit_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">qv</span> <span class="ow">in</span> <span class="n">flattened_array</span><span class="p">:</span>
+            <span class="n">qubit_list</span> <span class="o">+=</span> <span class="n">qv</span><span class="o">.</span><span class="n">reg</span>
+            <span class="kn">from</span> <span class="nn">qrisp.misc</span> <span class="kn">import</span> <span class="n">check_if_fresh</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">check_if_fresh</span><span class="p">(</span><span class="n">qv</span><span class="o">.</span><span class="n">reg</span><span class="p">,</span> <span class="n">qv</span><span class="o">.</span><span class="n">qs</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                    <span class="s2">&quot;Tried to initialize quantum state on qubits,&quot;</span>
+                    <span class="s2">&quot;which are not fresh anymore&quot;</span>
+                <span class="p">)</span>
+
+        <span class="n">target_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">2</span> <span class="o">**</span> <span class="nb">len</span><span class="p">(</span><span class="n">qubit_list</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">complex128</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tuple_list</span><span class="p">)):</span>
+            <span class="n">target_array</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">encoder</span><span class="p">(</span><span class="n">tuple_list</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">])]</span> <span class="o">=</span> <span class="n">tuple_list</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="n">target_array</span> <span class="o">=</span> <span class="n">target_array</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">vdot</span><span class="p">(</span><span class="n">target_array</span><span class="p">,</span> <span class="n">target_array</span><span class="p">)</span> <span class="o">**</span> <span class="mf">0.5</span>
+
+        <span class="kn">from</span> <span class="nn">qrisp</span> <span class="kn">import</span> <span class="n">init_state</span>
+
+        <span class="n">init_state</span><span class="p">(</span><span class="n">qubit_list</span><span class="p">,</span> <span class="n">target_array</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="QuantumArray.init_from"><a class="viewcode-back" href="../../../reference/Core/generated/qrisp.QuantumArray.init_from.html#qrisp.QuantumArray.init_from">[docs]</a>    <span class="k">def</span> <span class="nf">init_from</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Performs the :meth:`init_from &lt;qrisp.QuantumVariable.init_from&gt;` method on all</span>
+<span class="sd">        containing QuantumVariables based on their equivalent in the QuantumArray other.</span>
+<span class="sd">        Note that this method does not copy the quantum state. For more details check</span>
+<span class="sd">        the documentation of the init_from method of QuantumVariable.</span>
+
+<span class="sd">        A shorthand for this method is the slicing operator ``[:]``.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        other : QuantumArray</span>
+<span class="sd">            The QuantumArray from which to initiate.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        Exception</span>
+<span class="sd">            Tried to initialize from array of invalied shape or qtype.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+
+<span class="sd">        We create a QuantumArray and bring it into superposition</span>
+
+<span class="sd">        &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">        &gt;&gt;&gt; from qrisp import QuantumArray, QuantumFloat, h, multi_measurement</span>
+<span class="sd">        &gt;&gt;&gt; qtype = QuantumFloat(5)</span>
+<span class="sd">        &gt;&gt;&gt; q_array_a = QuantumArray(qtype)</span>
+<span class="sd">        &gt;&gt;&gt; q_array_a[:] = np.eye(3)</span>
+<span class="sd">        &gt;&gt;&gt; h(q_array_a[0,0][0])</span>
+<span class="sd">        &gt;&gt;&gt; print(q_array_a)</span>
+<span class="sd">        {OutcomeArray([[0, 0, 0],</span>
+<span class="sd">                       [0, 1, 0],</span>
+<span class="sd">                       [0, 0, 1]]): 0.5,</span>
+<span class="sd">         OutcomeArray([[1, 0, 0],</span>
+<span class="sd">                       [0, 1, 0],</span>
+<span class="sd">                       [0, 0, 1]]): 0.5}</span>
+
+<span class="sd">        We now duplicate this array and initiate</span>
+
+<span class="sd">        &gt;&gt;&gt; q_array_b = q_array_a.duplicate()</span>
+<span class="sd">        &gt;&gt;&gt; q_array_b.init_from(q_array_a)</span>
+<span class="sd">        &gt;&gt;&gt; print(multi_measurement([q_array_a, q_array_b]))</span>
+<span class="sd">                {(OutcomeArray([[0, 0, 0],</span>
+<span class="sd">                                [0, 1, 0],</span>
+<span class="sd">                                [0, 0, 1]]),</span>
+<span class="sd">                  OutcomeArray([[0, 0, 0],</span>
+<span class="sd">                                [0, 1, 0],</span>
+<span class="sd">                                [0, 0, 1]])): 0.5,</span>
+<span class="sd">                 (OutcomeArray([[1, 0, 0],</span>
+<span class="sd">                                [0, 1, 0],</span>
+<span class="sd">                                [0, 0, 1]]),</span>
+<span class="sd">                  OutcomeArray([[1, 0, 0],</span>
+<span class="sd">                                [0, 1, 0],</span>
+<span class="sd">                                [0, 0, 1]])): 0.5}</span>
+
+
+<span class="sd">        We can achieve the same with the slicing operator</span>
+
+<span class="sd">        &gt;&gt;&gt; q_array_c = QuantumArray(qtype, shape = (3, 3))</span>
+<span class="sd">        &gt;&gt;&gt; q_array_c[1,:] = q_array_a[0,:]</span>
+<span class="sd">        &gt;&gt;&gt; print(multi_measurement([q_array_b, q_array_c]))</span>
+<span class="sd">        {(OutcomeArray([[0, 0, 0],</span>
+<span class="sd">                        [0, 0, 0],</span>
+<span class="sd">                        [0, 0, 0]]),</span>
+<span class="sd">          OutcomeArray([[0, 0, 0],</span>
+<span class="sd">                        [0, 0, 0],</span>
+<span class="sd">                        [0, 0, 0]])): 0.5,</span>
+<span class="sd">         (OutcomeArray([[0, 0, 0],</span>
+<span class="sd">                        [1, 0, 0],</span>
+<span class="sd">                        [0, 0, 0]]),</span>
+<span class="sd">          OutcomeArray([[0, 0, 0],</span>
+<span class="sd">                        [1, 0, 0],</span>
+<span class="sd">                        [0, 0, 0]])): 0.5}</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">qtype</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">id</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">qtype</span><span class="p">)</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">other</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Tried to initialize from array of invalid shape or qtype&quot;</span><span class="p">)</span>
+
+        <span class="n">self_fl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+        <span class="n">other_fl</span> <span class="o">=</span> <span class="n">other</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">self_fl</span><span class="p">)):</span>
+            <span class="n">self_fl</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">init_from</span><span class="p">(</span><span class="n">other_fl</span><span class="p">[</span><span class="n">i</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="QuantumArray.duplicate"><a class="viewcode-back" href="../../../reference/Core/generated/qrisp.QuantumArray.duplicate.html#qrisp.QuantumArray.duplicate">[docs]</a>    <span class="k">def</span> <span class="nf">duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">init</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">qs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This method returns a fresh QuantumArray, with equal ``qtype`` and shape.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        init : bool, optional</span>
+<span class="sd">            If set to True, the :meth:`init_from &lt;qrisp.QuantumArray.init_from&gt;` method</span>
+<span class="sd">            will be called after creation. The default is False.</span>
+<span class="sd">        qs : QuantumSession, optional</span>
+<span class="sd">            The QuantumSession where the duplicate should be registered. By default,</span>
+<span class="sd">            the duplicate will be registered in a new QuantumSession.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        res : QuantumArray</span>
+<span class="sd">            The duplicated array.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+
+<span class="sd">        We duplicate a QuantumArray consisting of QuantumFloats with and without</span>
+<span class="sd">        initiation.</span>
+
+
+<span class="sd">        &gt;&gt;&gt; from qrisp import QuantumArray, QuantumFloat</span>
+<span class="sd">        &gt;&gt;&gt; qtype = QuantumFloat(4)</span>
+<span class="sd">        &gt;&gt;&gt; q_array_0 = QuantumArray(qtype, (2,2))</span>
+<span class="sd">        &gt;&gt;&gt; q_array_0[:] = np.ones((2,2))</span>
+<span class="sd">        &gt;&gt;&gt; print(q_array_0)</span>
+<span class="sd">        {OutcomeArray([[1, 1],</span>
+<span class="sd">                       [1, 1]]): 1.0}</span>
+<span class="sd">        &gt;&gt;&gt; q_array_1 = q_array_0.duplicate()</span>
+<span class="sd">        &gt;&gt;&gt; print(q_array_1)</span>
+<span class="sd">        {OutcomeArray([[0, 0],</span>
+<span class="sd">                       [0, 0]]): 1.0}</span>
+
+<span class="sd">        Note that no values have been carried over:</span>
+
+<span class="sd">        &gt;&gt;&gt; q_array_2 = q_array_0.duplicate(init = True)</span>
+<span class="sd">        &gt;&gt;&gt; print(q_array_2)</span>
+<span class="sd">        {OutcomeArray([[1, 1],</span>
+<span class="sd">                       [1, 1]]): 1.0}</span>
+
+<span class="sd">        Now the values have been carried over. Note that this does NOT copy the state.</span>
+<span class="sd">        For more information on this check the documentation of the</span>
+<span class="sd">        :meth:`init_from &lt;qrisp.QuantumVariable.init_from&gt;` method of QuantumVariable.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">qs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="kn">from</span> <span class="nn">qrisp</span> <span class="kn">import</span> <span class="n">QuantumSession</span>
+
+            <span class="n">qs</span> <span class="o">=</span> <span class="n">QuantumSession</span><span class="p">()</span>
+
+        <span class="n">indices</span> <span class="o">=</span> <span class="n">product</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">i</span><span class="p">))</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">])</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">indices</span><span class="p">:</span>
+            <span class="n">temp_dup</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">qtype</span><span class="o">.</span><span class="n">duplicate</span><span class="p">(</span><span class="n">qs</span><span class="o">=</span><span class="n">qs</span><span class="p">)</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="o">.</span><span class="fm">__setitem__</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">temp_dup</span><span class="p">)</span>
+
+        <span class="n">res</span><span class="o">.</span><span class="n">msize</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">qtype</span><span class="o">.</span><span class="n">size</span>
+        <span class="n">res</span><span class="o">.</span><span class="n">qtype</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">qtype</span>
+        <span class="n">res</span><span class="o">.</span><span class="n">qs</span> <span class="o">=</span> <span class="n">qs</span>
+        <span class="k">if</span> <span class="n">init</span><span class="p">:</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">init_from</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">res</span></div>
+
+    <span class="k">def</span> <span class="nf">__array_finalize__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">obj</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">shape_specified</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">shape_specified</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">qtype</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">qtype</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">qs</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">qs</span>
+
+<div class="viewcode-block" id="QuantumArray.most_likely"><a class="viewcode-back" href="../../../reference/Core/generated/qrisp.QuantumArray.most_likely.html#qrisp.QuantumArray.most_likely">[docs]</a>    <span class="k">def</span> <span class="nf">most_likely</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Performs a measurement and returns the most likely outcome.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        **kwargs : Keyword arguments for the get_measurement call.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+
+<span class="sd">        &gt;&gt;&gt; from qrisp import QuantumFloat, QuantumArray, ry</span>
+<span class="sd">        &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">        &gt;&gt;&gt; qa = QuantumArray(QuantumFloat(3), shape = 4)</span>
+<span class="sd">        &gt;&gt;&gt; ry(np.pi*9/8, qa[0][0])</span>
+<span class="sd">        &gt;&gt;&gt; print(qa)</span>
+<span class="sd">        {OutcomeArray([1, 0, 0, 0]): 0.9619, OutcomeArray([0, 0, 0, 0]): 0.0381}</span>
+<span class="sd">        &gt;&gt;&gt; qa.most_likely()</span>
+<span class="sd">        OutcomeArray([1, 0, 0, 0])</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_measurement</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span></div></div>
+
+
+<span class="nd">@temp_qv</span>
+<span class="k">def</span> <span class="nf">manipulate_array</span><span class="p">(</span><span class="n">q_array</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+    <span class="kn">from</span> <span class="nn">qrisp</span> <span class="kn">import</span> <span class="n">QuantumFloat</span><span class="p">,</span> <span class="n">demux</span><span class="p">,</span> <span class="n">invert</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">q_array</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">index</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                <span class="s2">&quot;Tried to quantum deref QuantumArray with index of mismatching shape&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">qf</span> <span class="ow">in</span> <span class="n">index</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">qf</span><span class="p">,</span> <span class="n">QuantumFloat</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">qf</span><span class="o">.</span><span class="n">signed</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Tried to quantum deref with a signed QuantumFloat&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">qf</span><span class="o">.</span><span class="n">exponent</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Tried to quantum deref with a non-integer&quot;</span><span class="p">)</span>
+
+        <span class="n">index</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">qv</span><span class="o">.</span><span class="n">reg</span> <span class="k">for</span> <span class="n">qv</span> <span class="ow">in</span> <span class="n">index</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]],</span> <span class="p">[])</span>
+        <span class="n">q_array</span> <span class="o">=</span> <span class="n">q_array</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+
+    <span class="k">with</span> <span class="n">invert</span><span class="p">():</span>
+        <span class="n">demux</span><span class="p">(</span><span class="n">q_array</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">index</span><span class="p">,</span> <span class="n">q_array</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">q_array</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+
+<span class="k">class</span> <span class="nc">OutcomeArray</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__new__</span><span class="p">(</span><span class="n">subtype</span><span class="p">,</span> <span class="n">ndarray</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="n">ndarray</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ndarray</span><span class="p">)</span>
+
+        <span class="n">obj</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="n">subtype</span><span class="p">,</span> <span class="n">ndarray</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">ndarray</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="n">product</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">i</span><span class="p">))</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">ndarray</span><span class="o">.</span><span class="n">shape</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">indices</span><span class="p">:</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="o">.</span><span class="fm">__setitem__</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">ndarray</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+        <span class="n">obj</span><span class="o">.</span><span class="n">flags</span><span class="o">.</span><span class="n">writeable</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="n">obj</span>
+
+    <span class="k">def</span> <span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">hash</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">==</span> <span class="n">other</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array_equal</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="o">.</span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;, dtype=int64&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">res</span>
+</pre></div>
+
+                </article>
+              
+              
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/bootstrap.js?digest=e353d410970836974a52"></script>
+<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+  <p class="copyright">
+    
+      © Copyright 2023, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.3.0.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item"><p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.13.3.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

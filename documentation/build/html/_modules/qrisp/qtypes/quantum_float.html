@@ -1,0 +1,1383 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>qrisp.qtypes.quantum_float &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+<link href="../../../_static/styles/bootstrap.css?digest=e353d410970836974a52" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+
+  
+  <link href="../../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=e353d410970836974a52" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/custom.css" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=e353d410970836974a52" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52" />
+
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../_static/clipboard.min.js"></script>
+    <script src="../../../_static/copybutton.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/qrisp/qtypes/quantum_float';</script>
+    <link rel="canonical" href="https://qrisp.eu/_modules/qrisp/qtypes/quantum_float.html" />
+    <link rel="shortcut icon" href="../../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="light">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+<div class="bd-header__inner bd-page-width">
+  <label class="sidebar-toggle primary-toggle" for="__primary">
+    <span class="fa-solid fa-bars"></span>
+  </label>
+  
+  <div class="navbar-header-items__start">
+    
+      <div class="navbar-item">
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../../_static/logo_extended.png" class="logo__image only-light" alt="Logo image"/>
+    <script>document.write(`<img src="../../../_static/logo_extended.png" class="logo__image only-dark" alt="Logo image"/>`);</script>
+  
+  
+</a></div>
+    
+  </div>
+  
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../general/tutorial.html">
+                        Tutorial
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../reference/index.html">
+                        Reference
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../general/setup.html">
+                        Setup
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../general/imprint.html">
+                        Imprint
+                      </a>
+                    </li>
+                
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+  </button>
+`);
+</script>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/fraunhoferfokus/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square"></i></span>
+            <label class="sr-only">GitHub</label></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+  </button>
+`);
+</script>
+    </div>
+  
+
+  
+</div>
+
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../general/tutorial.html">
+                        Tutorial
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../reference/index.html">
+                        Reference
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../general/setup.html">
+                        Setup
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../general/imprint.html">
+                        Imprint
+                      </a>
+                    </li>
+                
+  </ul>
+</nav></div>
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/fraunhoferfokus/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square"></i></span>
+            <label class="sr-only">GitHub</label></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumbs">
+  <ul class="bd-breadcrumbs" role="navigation" aria-label="Breadcrumb">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">qrisp.qtypes.quantum_float</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <h1>Source code for qrisp.qtypes.quantum_float</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">/*********************************************************************</span>
+<span class="sd">* Copyright (c) 2023 the Qrisp Authors</span>
+<span class="sd">*</span>
+<span class="sd">* This program and the accompanying materials are made</span>
+<span class="sd">* available under the terms of the Eclipse Public License 2.0</span>
+<span class="sd">* which is available at https://www.eclipse.org/legal/epl-2.0/</span>
+<span class="sd">*</span>
+<span class="sd">* SPDX-License-Identifier: EPL-2.0</span>
+<span class="sd">**********************************************************************/</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">sympy</span> <span class="k">as</span> <span class="nn">sp</span>
+
+<span class="kn">from</span> <span class="nn">qrisp.arithmetic</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">eq</span><span class="p">,</span>
+    <span class="n">geq</span><span class="p">,</span>
+    <span class="n">gt</span><span class="p">,</span>
+    <span class="n">inpl_mult</span><span class="p">,</span>
+    <span class="n">leq</span><span class="p">,</span>
+    <span class="n">lt</span><span class="p">,</span>
+    <span class="n">neq</span><span class="p">,</span>
+    <span class="n">polynomial_encoder</span><span class="p">,</span>
+    <span class="n">q_mult</span><span class="p">,</span>
+    <span class="n">sbp_add</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">qrisp.core</span> <span class="kn">import</span> <span class="n">QuantumVariable</span>
+<span class="kn">from</span> <span class="nn">qrisp.misc</span> <span class="kn">import</span> <span class="n">gate_wrap</span>
+
+
+<span class="k">def</span> <span class="nf">signed_int_iso</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">&lt;</span> <span class="o">-</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="n">n</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="o">**</span><span class="n">n</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Applying signed integer isomorphism resulted in overflow&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">x</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">x</span> <span class="o">%</span> <span class="mi">2</span><span class="o">**</span><span class="n">n</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="o">-</span><span class="nb">abs</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">**</span> <span class="p">(</span><span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">signed_int_iso_inv</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">y</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">**</span> <span class="p">(</span><span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="o">**</span><span class="n">n</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">y</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="o">-</span><span class="p">(</span><span class="mi">2</span> <span class="o">**</span> <span class="p">(</span><span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span> <span class="o">+</span> <span class="n">y</span>
+
+
+<span class="c1"># Truncates a polynomial of the form p(x) = 2**k_0*x*i_0 + 2**k_1*x**i_1 ...</span>
+<span class="c1"># where every summand where the power of the coefficients does not lie in the interval</span>
+<span class="c1"># trunc bounds is removed</span>
+<span class="k">def</span> <span class="nf">trunc_poly</span><span class="p">(</span><span class="n">poly</span><span class="p">,</span> <span class="n">trunc_bounds</span><span class="p">):</span>
+    <span class="c1"># Convert to sympy polynomial</span>
+    <span class="n">poly</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">poly</span><span class="p">(</span><span class="n">poly</span><span class="p">)</span>
+
+    <span class="c1"># Clip upper bound</span>
+    <span class="n">poly</span> <span class="o">=</span> <span class="n">poly</span><span class="o">.</span><span class="n">trunc</span><span class="p">(</span><span class="mf">2.0</span> <span class="o">**</span> <span class="p">(</span><span class="n">trunc_bounds</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+
+    <span class="c1"># Clip lower bound</span>
+    <span class="n">poly</span> <span class="o">=</span> <span class="n">poly</span> <span class="o">/</span> <span class="mf">2.0</span> <span class="o">**</span> <span class="n">trunc_bounds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">poly</span> <span class="o">=</span> <span class="n">poly</span> <span class="o">-</span> <span class="n">sp</span><span class="o">.</span><span class="n">poly</span><span class="p">(</span><span class="n">poly</span><span class="p">)</span><span class="o">.</span><span class="n">trunc</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">poly</span> <span class="o">=</span> <span class="n">poly</span> <span class="o">*</span> <span class="mf">2.0</span> <span class="o">**</span> <span class="n">trunc_bounds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">poly</span><span class="o">.</span><span class="n">expr</span><span class="o">.</span><span class="n">expand</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="QuantumFloat"><a class="viewcode-back" href="../../../reference/Quantum%20Types/QuantumFloat.html#qrisp.QuantumFloat">[docs]</a><span class="k">class</span> <span class="nc">QuantumFloat</span><span class="p">(</span><span class="n">QuantumVariable</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This subclass of :ref:`QuantumVariable` can represent floating point numbers</span>
+<span class="sd">    (signed and unsigned) up to an arbitrary precision.</span>
+
+<span class="sd">    The technical details of the employed arithmetic can be found in this</span>
+<span class="sd">    `article &lt;https://ieeexplore.ieee.org/document/9815035&gt;`_.</span>
+
+<span class="sd">    To create a QuantumFloat we call the constructor:</span>
+
+<span class="sd">    &gt;&gt;&gt; from qrisp import QuantumFloat</span>
+<span class="sd">    &gt;&gt;&gt; a = QuantumFloat(3, -1, signed = False)</span>
+
+<span class="sd">    Here, the 3 indicates the amount of mantissa qubits and the -1 indicates the</span>
+<span class="sd">    exponent.</span>
+
+<span class="sd">    For unsigned QuantumFloats, the decoder function is given by</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        f_{k}(i) = i2^{k}</span>
+
+<span class="sd">    Where $k$ is the exponent.</span>
+
+<span class="sd">    We can check which values can be represented:</span>
+
+<span class="sd">    &gt;&gt;&gt; for i in range(2**a.size): print(a.decoder(i))</span>
+<span class="sd">    0.0</span>
+<span class="sd">    0.5</span>
+<span class="sd">    1.0</span>
+<span class="sd">    1.5</span>
+<span class="sd">    2.0</span>
+<span class="sd">    2.5</span>
+<span class="sd">    3.0</span>
+<span class="sd">    3.5</span>
+
+<span class="sd">    We see $2^3 = 8$ values, because we have 3 mantissa qubits. The exponent is -1,</span>
+<span class="sd">    implying the precision is $0.5 = 2^{-1}$.</span>
+
+<span class="sd">    For signed QuantumFloats, the decoder function is</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        f_{k}^{n}(i) = \begin{cases} i2^{k} &amp; \text{if } i &lt; 2^n \\ (i - 2^{n+1})2^k &amp;</span>
+<span class="sd">        \text{else} \end{cases}</span>
+
+<span class="sd">    Where $k$ is again, the exponent and $n$ is the mantissa size.</span>
+
+
+<span class="sd">    Another example:</span>
+
+<span class="sd">    &gt;&gt;&gt; b = QuantumFloat(2, -2, signed = True)</span>
+<span class="sd">    &gt;&gt;&gt; for i in range(2**b.size): print(b.decoder(i))</span>
+<span class="sd">    0.0</span>
+<span class="sd">    0.25</span>
+<span class="sd">    0.5</span>
+<span class="sd">    0.75</span>
+<span class="sd">    -1.0</span>
+<span class="sd">    -0.75</span>
+<span class="sd">    -0.5</span>
+<span class="sd">    -0.25</span>
+
+<span class="sd">    Here, we have $2^2 = 4$ values and their signed equivalents. Their precision is</span>
+<span class="sd">    $0.25 = 2^{-2}$.</span>
+
+
+<span class="sd">    **Arithmetic**</span>
+
+<span class="sd">    Many operations known from classical arithmetic work for QuantumFloats in infix</span>
+<span class="sd">    notation.</span>
+
+<span class="sd">    Addition:</span>
+
+<span class="sd">    &gt;&gt;&gt; a[:] = 1.5</span>
+<span class="sd">    &gt;&gt;&gt; b[:] = 0.25</span>
+<span class="sd">    &gt;&gt;&gt; c = a + b</span>
+<span class="sd">    &gt;&gt;&gt; print(c)</span>
+<span class="sd">    {1.75: 1.0}</span>
+
+<span class="sd">    Subtraction:</span>
+
+<span class="sd">    &gt;&gt;&gt; d = a - c</span>
+<span class="sd">    &gt;&gt;&gt; print(d)</span>
+<span class="sd">    {-0.25: 1.0}</span>
+
+<span class="sd">    Multiplication:</span>
+
+<span class="sd">    &gt;&gt;&gt; e = d * b</span>
+<span class="sd">    &gt;&gt;&gt; print(e)</span>
+<span class="sd">    {-0.0625: 1.0}</span>
+
+<span class="sd">    And even division:</span>
+
+<span class="sd">    &gt;&gt;&gt; a = QuantumFloat(3)</span>
+<span class="sd">    &gt;&gt;&gt; b = QuantumFloat(3)</span>
+<span class="sd">    &gt;&gt;&gt; a[:] = 7</span>
+<span class="sd">    &gt;&gt;&gt; b[:] = 2</span>
+<span class="sd">    &gt;&gt;&gt; c = a/b</span>
+<span class="sd">    &gt;&gt;&gt; print(c)</span>
+<span class="sd">    {3.5: 1.0}</span>
+
+<span class="sd">    Floor division:</span>
+
+<span class="sd">    &gt;&gt;&gt; d = a//b</span>
+<span class="sd">    &gt;&gt;&gt; print(d)</span>
+<span class="sd">    {3.0: 1.0}</span>
+
+<span class="sd">    Inversion:</span>
+
+<span class="sd">    &gt;&gt;&gt; a = QuantumFloat(3, -1)</span>
+<span class="sd">    &gt;&gt;&gt; a[:] = 3.5</span>
+<span class="sd">    &gt;&gt;&gt; b= a**-1</span>
+<span class="sd">    &gt;&gt;&gt; print(b)</span>
+<span class="sd">    {0.25: 1.0}</span>
+
+<span class="sd">    Note that the latter is only an approximate result. This is because in many cases,</span>
+<span class="sd">    the results of division can not be stored in a finite amount of qubits, forcing us</span>
+<span class="sd">    to approximate.</span>
+<span class="sd">    To get a better approximation we can use the :meth:`q_div &lt;qrisp.q_div&gt;` and</span>
+<span class="sd">    :meth:`qf_inversion &lt;qrisp.qf_inversion&gt;` functions and specify the precision:</span>
+
+<span class="sd">    &gt;&gt;&gt; from qrisp import q_div, qf_inversion</span>
+<span class="sd">    &gt;&gt;&gt; a = QuantumFloat(3)</span>
+<span class="sd">    &gt;&gt;&gt; a[:] = 1</span>
+<span class="sd">    &gt;&gt;&gt; b = QuantumFloat(3)</span>
+<span class="sd">    &gt;&gt;&gt; b[:] = 7</span>
+<span class="sd">    &gt;&gt;&gt; c = q_div(a, b, prec = 6)</span>
+<span class="sd">    &gt;&gt;&gt; print(c)</span>
+<span class="sd">    {0.140625: 1.0}</span>
+
+<span class="sd">    Comparing with the classical result (0.1428571428):</span>
+
+<span class="sd">    &gt;&gt;&gt; 1/7 - 0.140625</span>
+<span class="sd">    0.002232142857142849</span>
+
+<span class="sd">    We see that the result is inside the expected precision of $2^{-6} =  0.015625$.</span>
+
+
+<span class="sd">    **In-place Operations**</span>
+
+<span class="sd">    Further supported operations are inplace addition, subtraction (with both classical</span>
+<span class="sd">    and quantum values):</span>
+
+<span class="sd">    &gt;&gt;&gt; a = QuantumFloat(4, signed = True)</span>
+<span class="sd">    &gt;&gt;&gt; a[:] = 4</span>
+<span class="sd">    &gt;&gt;&gt; b = QuantumFloat(4)</span>
+<span class="sd">    &gt;&gt;&gt; b[:] = 3</span>
+<span class="sd">    &gt;&gt;&gt; a += b</span>
+<span class="sd">    &gt;&gt;&gt; print(a)</span>
+<span class="sd">    {7: 1.0}</span>
+<span class="sd">    &gt;&gt;&gt; a -= 2</span>
+<span class="sd">    &gt;&gt;&gt; print(a)</span>
+<span class="sd">    {5: 1.0}</span>
+
+<span class="sd">    .. warning::</span>
+<span class="sd">        Additions that would result in overflow, raise no errors. Instead, the additions</span>
+<span class="sd">        are performed `modular &lt;https://en.wikipedia.org/wiki/Modular_arithmetic&gt;`_.</span>
+
+<span class="sd">        &gt;&gt;&gt; c = QuantumFloat(3)</span>
+<span class="sd">        &gt;&gt;&gt; c += 9</span>
+<span class="sd">        &gt;&gt;&gt; print(c)</span>
+<span class="sd">        {1: 1.0}</span>
+
+<span class="sd">    For inplace multiplications, only classical integers are allowed:</span>
+
+<span class="sd">    &gt;&gt;&gt; a *= -3</span>
+<span class="sd">    &gt;&gt;&gt; print(a)</span>
+<span class="sd">    {-15: 1.0}</span>
+
+<span class="sd">    .. note::</span>
+<span class="sd">        In-place multiplications can change the mantissa size to prevent overflow</span>
+<span class="sd">        errors. If you want to prevent this behavior, look into</span>
+<span class="sd">        :meth:`inpl_mult &lt;qrisp.inpl_mult&gt;`.</span>
+
+<span class="sd">        &gt;&gt;&gt; a.size</span>
+<span class="sd">        7</span>
+
+<span class="sd">    **Bitshifts**</span>
+
+<span class="sd">    Bitshifts can be executed for free (i.e. not requiring any quantum gates). We can</span>
+<span class="sd">    either use the :meth:`exp_shift &lt;qrisp.QuantumFloat.exp_shift&gt;` method or use the</span>
+<span class="sd">    infix operators. Note that the bitshifts work in-place.</span>
+
+
+<span class="sd">    &gt;&gt;&gt; a.exp_shift(3)</span>
+<span class="sd">    &gt;&gt;&gt; print(a)</span>
+<span class="sd">    {-120: 1.0}</span>
+<span class="sd">    &gt;&gt;&gt; a &gt;&gt; 5</span>
+<span class="sd">    &gt;&gt;&gt; print(a)</span>
+<span class="sd">    {-3.75: 1.0}</span>
+
+<span class="sd">    **Comparisons**</span>
+
+<span class="sd">    QuantumFloats can be compared to Python floats using the established operators. The</span>
+<span class="sd">    return values are :ref:`QuantumBools &lt;QuantumBool&gt;`:</span>
+
+<span class="sd">    &gt;&gt;&gt; from qrisp import h</span>
+<span class="sd">    &gt;&gt;&gt; a = QuantumFloat(4)</span>
+<span class="sd">    &gt;&gt;&gt; h(a[2])</span>
+<span class="sd">    &gt;&gt;&gt; print(a)</span>
+<span class="sd">    {0: 0.5, 4: 0.5}</span>
+<span class="sd">    &gt;&gt;&gt; comparison_qbl_0 = (a &lt; 4 )</span>
+<span class="sd">    &gt;&gt;&gt; print(comparison_qbl_0)</span>
+<span class="sd">    {False: 0.5, True: 0.5}</span>
+
+<span class="sd">    Comparison to other QuantumFloats also works:</span>
+
+<span class="sd">    &gt;&gt;&gt; b = QuantumFloat(3)</span>
+<span class="sd">    &gt;&gt;&gt; b[:] = 4</span>
+<span class="sd">    &gt;&gt;&gt; comparison_qbl_1 = (a == b)</span>
+<span class="sd">    &gt;&gt;&gt; comparison_qbl_1.qs.statevector()</span>
+<span class="sd">    sqrt(2)*(|0&gt;*|True&gt;*|4&gt;*|False&gt; + |4&gt;*|False&gt;*|4&gt;*|True&gt;)/2</span>
+
+<span class="sd">    The first tensor factor containing a boolean value is corresponding to</span>
+<span class="sd">    ``comparison_qbl_0`` and the second one is ``comparison_qbl_1``.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msize</span><span class="p">,</span> <span class="n">exponent</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">qs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">signed</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="c1"># Boolean to indicate if the float is signed</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">signed</span> <span class="o">=</span> <span class="n">signed</span>
+
+        <span class="c1"># Exponent</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">exponent</span> <span class="o">=</span> <span class="n">exponent</span>
+
+        <span class="c1"># Size of the mantissa</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">msize</span> <span class="o">=</span> <span class="n">msize</span>
+
+        <span class="c1"># Array that consists of (log2(min), log2(max)) where min and max are the</span>
+        <span class="c1"># minimal and maximal values of the absolutes that the QuantumFloat can</span>
+        <span class="c1"># represent.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mshape</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">exponent</span><span class="p">,</span> <span class="n">exponent</span> <span class="o">+</span> <span class="n">msize</span><span class="p">])</span>
+
+        <span class="c1"># Initialize QuantumVariable</span>
+        <span class="k">if</span> <span class="n">signed</span><span class="p">:</span>
+            <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">msize</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">qs</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">msize</span><span class="p">,</span> <span class="n">qs</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
+
+    <span class="c1"># Define outcome_labels</span>
+    <span class="k">def</span> <span class="nf">decoder</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">signed</span><span class="p">:</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="n">signed_int_iso_inv</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="mf">2.0</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">exponent</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="n">i</span> <span class="o">*</span> <span class="mi">2</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">exponent</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">exponent</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">res</span>
+
+    <span class="c1"># def encoder(self, i):</span>
+    <span class="c1">#     if self.signed:</span>
+    <span class="c1">#         res = int(signed_int_iso(i/2**self.exponent, self.size-1))</span>
+    <span class="c1">#     else:</span>
+    <span class="c1">#         res =  int(i/2**self.exponent)</span>
+
+    <span class="c1">#     return res</span>
+
+<div class="viewcode-block" id="QuantumFloat.sb_poly"><a class="viewcode-back" href="../../../reference/Quantum%20Types/generated/qrisp.QuantumFloat.sb_poly.html#qrisp.QuantumFloat.sb_poly">[docs]</a>    <span class="k">def</span> <span class="nf">sb_poly</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the semi-boolean polynomial of this `QuantumFloat` where `m` specifies</span>
+<span class="sd">        the image extension parameter.</span>
+
+<span class="sd">        For the technical details we refer to:</span>
+<span class="sd">        https://ieeexplore.ieee.org/document/9815035</span>
+
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        m : int, optional</span>
+<span class="sd">            Image extension parameter. The default is 0.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Sympy expression</span>
+<span class="sd">            The semi-boolean polynomial of this QuantumFloat.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+
+<span class="sd">        &gt;&gt;&gt; from qrisp import QuantumFloat</span>
+<span class="sd">        &gt;&gt;&gt; x = QuantumFloat(3, -1, signed = True, name = &quot;x&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; print(x.sb_poly(5))</span>
+<span class="sd">        0.5*x_0 + 1.0*x_1 + 2.0*x_2 + 28.0*x_3</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">m</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">m</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span>
+
+        <span class="n">symbols</span> <span class="o">=</span> <span class="p">[</span><span class="n">sp</span><span class="o">.</span><span class="n">symbols</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">))</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">)]</span>
+
+        <span class="n">poly</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="mf">2.0</span> <span class="o">**</span> <span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">*</span> <span class="n">symbols</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">)])</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">signed</span><span class="p">:</span>
+            <span class="n">poly</span> <span class="o">+=</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">**</span> <span class="p">(</span><span class="n">m</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="mf">2.0</span> <span class="o">**</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">))</span> <span class="o">*</span> <span class="n">symbols</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="mi">2</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">exponent</span> <span class="o">*</span> <span class="n">poly</span></div>
+
+    <span class="k">def</span> <span class="nf">encode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">encoding_number</span><span class="p">,</span> <span class="n">rounding</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">rounding</span><span class="p">:</span>
+            <span class="c1"># Round value to closest fitting number</span>
+            <span class="n">outcome_labels</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">decoder</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">)]</span>
+            <span class="n">encoding_number</span> <span class="o">=</span> <span class="n">outcome_labels</span><span class="p">[</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">encoding_number</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">outcome_labels</span><span class="p">)))</span>
+            <span class="p">]</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">encoding_number</span><span class="p">)</span>
+
+    <span class="nd">@gate_wrap</span><span class="p">(</span><span class="n">permeability</span><span class="o">=</span><span class="s2">&quot;args&quot;</span><span class="p">,</span> <span class="n">is_qfree</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">QuantumFloat</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">q_mult</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">bit_shift</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">while</span> <span class="ow">not</span> <span class="n">other</span> <span class="o">%</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="n">other</span> <span class="o">=</span> <span class="n">other</span> <span class="o">&gt;&gt;</span> <span class="mi">1</span>
+                <span class="n">bit_shift</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">signed</span> <span class="ow">or</span> <span class="n">other</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">output_qf</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">msize</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">other</span><span class="p">)))),</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">exponent</span><span class="p">,</span>
+                    <span class="n">signed</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">output_qf</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">msize</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">other</span><span class="p">)))),</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">exponent</span><span class="p">,</span>
+                    <span class="n">signed</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                <span class="p">)</span>
+
+            <span class="n">polynomial_encoder</span><span class="p">([</span><span class="bp">self</span><span class="p">],</span> <span class="n">output_qf</span><span class="p">,</span> <span class="n">other</span> <span class="o">*</span> <span class="n">sp</span><span class="o">.</span><span class="n">Symbol</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">))</span>
+
+            <span class="n">output_qf</span> <span class="o">&lt;&lt;</span> <span class="n">bit_shift</span>
+
+            <span class="k">return</span> <span class="n">output_qf</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                <span class="s2">&quot;QuantumFloat multiplication for type &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">))</span> <span class="o">+</span> <span class="s2">&quot;&quot;</span>
+                <span class="s2">&quot; not implemented (available are QuantumFloat and int)&quot;</span>
+            <span class="p">)</span>
+
+    <span class="nd">@gate_wrap</span><span class="p">(</span><span class="n">permeability</span><span class="o">=</span><span class="s2">&quot;args&quot;</span><span class="p">,</span> <span class="n">is_qfree</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">QuantumFloat</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">sbp_add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">duplicate</span><span class="p">(</span><span class="n">init</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">res</span> <span class="o">+=</span> <span class="n">other</span>
+            <span class="k">return</span> <span class="n">res</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                <span class="s2">&quot;Addition with type &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">))</span> <span class="o">+</span> <span class="s2">&quot; not implemented&quot;</span>
+            <span class="p">)</span>
+
+    <span class="nd">@gate_wrap</span><span class="p">(</span><span class="n">permeability</span><span class="o">=</span><span class="s2">&quot;args&quot;</span><span class="p">,</span> <span class="n">is_qfree</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__sub__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="kn">from</span> <span class="nn">qrisp.arithmetic</span> <span class="kn">import</span> <span class="n">sbp_sub</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">QuantumFloat</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">sbp_sub</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">duplicate</span><span class="p">(</span><span class="n">init</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">res</span> <span class="o">-=</span> <span class="n">other</span>
+            <span class="k">return</span> <span class="n">res</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                <span class="s2">&quot;Subtraction with type &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">))</span> <span class="o">+</span> <span class="s2">&quot; not implemented&quot;</span>
+            <span class="p">)</span>
+
+    <span class="fm">__radd__</span> <span class="o">=</span> <span class="fm">__add__</span>
+    <span class="fm">__rmul__</span> <span class="o">=</span> <span class="fm">__mul__</span>
+
+    <span class="nd">@gate_wrap</span><span class="p">(</span><span class="n">permeability</span><span class="o">=</span><span class="s2">&quot;args&quot;</span><span class="p">,</span> <span class="n">is_qfree</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__rsub__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="kn">from</span> <span class="nn">qrisp</span> <span class="kn">import</span> <span class="n">x</span>
+        <span class="kn">from</span> <span class="nn">qrisp.arithmetic</span> <span class="kn">import</span> <span class="n">sbp_sub</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">QuantumFloat</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">sbp_sub</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">duplicate</span><span class="p">(</span><span class="n">init</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">res</span><span class="o">.</span><span class="n">signed</span><span class="p">:</span>
+                <span class="n">res</span><span class="o">.</span><span class="n">add_sign</span><span class="p">()</span>
+            <span class="n">x</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+            <span class="n">res</span> <span class="o">-=</span> <span class="n">other</span> <span class="o">-</span> <span class="mi">2</span><span class="o">**</span><span class="n">res</span><span class="o">.</span><span class="n">exponent</span>
+            <span class="k">return</span> <span class="n">res</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                <span class="s2">&quot;Subtraction with type &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">))</span> <span class="o">+</span> <span class="s2">&quot; not implemented&quot;</span>
+            <span class="p">)</span>
+
+    <span class="nd">@gate_wrap</span><span class="p">(</span><span class="n">permeability</span><span class="o">=</span><span class="s2">&quot;args&quot;</span><span class="p">,</span> <span class="n">is_qfree</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__truediv__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="kn">from</span> <span class="nn">qrisp.arithmetic</span> <span class="kn">import</span> <span class="n">q_div</span>
+
+        <span class="k">return</span> <span class="n">q_div</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="nd">@gate_wrap</span><span class="p">(</span><span class="n">permeability</span><span class="o">=</span><span class="s2">&quot;args&quot;</span><span class="p">,</span> <span class="n">is_qfree</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__floordiv__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">signed</span> <span class="ow">or</span> <span class="n">other</span><span class="o">.</span><span class="n">signed</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Floor division not implemented for signed QuantumFloats&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">exponent</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">other</span><span class="o">.</span><span class="n">exponent</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                <span class="s2">&quot;Tried to perform floor division on non-integer QuantumFloats&quot;</span>
+            <span class="p">)</span>
+        <span class="kn">from</span> <span class="nn">qrisp.arithmetic</span> <span class="kn">import</span> <span class="n">q_div</span>
+
+        <span class="k">return</span> <span class="n">q_div</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">,</span> <span class="n">prec</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="nd">@gate_wrap</span><span class="p">(</span><span class="n">permeability</span><span class="o">=</span><span class="s2">&quot;args&quot;</span><span class="p">,</span> <span class="n">is_qfree</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__pow__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">power</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">power</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Currently the only supported power is -1&quot;</span><span class="p">)</span>
+
+        <span class="kn">from</span> <span class="nn">qrisp.arithmetic</span> <span class="kn">import</span> <span class="n">qf_inversion</span>
+
+        <span class="k">return</span> <span class="n">qf_inversion</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="nd">@gate_wrap</span><span class="p">(</span><span class="n">permeability</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">is_qfree</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__iadd__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">QuantumFloat</span><span class="p">):</span>
+            <span class="n">input_qf_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">other</span><span class="p">]</span>
+            <span class="n">poly</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">symbols</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">)</span>
+
+            <span class="n">polynomial_encoder</span><span class="p">(</span><span class="n">input_qf_list</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="n">poly</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
+            <span class="c1"># self.incr(other)</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">int</span><span class="p">(</span><span class="n">other</span> <span class="o">/</span> <span class="mi">2</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">exponent</span><span class="p">)</span> <span class="o">==</span> <span class="n">other</span> <span class="o">/</span> <span class="mi">2</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">exponent</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                    <span class="s2">&quot;Tried to perform in-place addition with invalid number. &quot;</span>
+                    <span class="s2">&quot;QuantumFloat precision too low.&quot;</span>
+                <span class="p">)</span>
+
+            <span class="n">input_qf_list</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">poly</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">sympify</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+
+            <span class="n">polynomial_encoder</span><span class="p">(</span><span class="n">input_qf_list</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="n">poly</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                <span class="s2">&quot;In-place addition for type &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">))</span> <span class="o">+</span> <span class="s2">&quot; not implemented&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="nd">@gate_wrap</span><span class="p">(</span><span class="n">permeability</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">is_qfree</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__isub__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">QuantumFloat</span><span class="p">):</span>
+            <span class="n">input_qf_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">other</span><span class="p">]</span>
+            <span class="n">poly</span> <span class="o">=</span> <span class="o">-</span><span class="n">sp</span><span class="o">.</span><span class="n">symbols</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">)</span>
+
+            <span class="n">polynomial_encoder</span><span class="p">(</span><span class="n">input_qf_list</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="n">poly</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">int</span><span class="p">(</span><span class="n">other</span> <span class="o">/</span> <span class="mi">2</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">exponent</span><span class="p">)</span> <span class="o">==</span> <span class="n">other</span> <span class="o">/</span> <span class="mi">2</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">exponent</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                    <span class="s2">&quot;Tried to perform in-place subtraction with invalid number. &quot;</span>
+                    <span class="s2">&quot;QuantumFloat precision too low.&quot;</span>
+                <span class="p">)</span>
+
+            <span class="n">input_qf_list</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">poly</span> <span class="o">=</span> <span class="o">-</span><span class="n">sp</span><span class="o">.</span><span class="n">sympify</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+
+            <span class="n">polynomial_encoder</span><span class="p">(</span><span class="n">input_qf_list</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="n">poly</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                <span class="s2">&quot;In-place substraction for type &quot;</span>
+                <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">))</span>
+                <span class="o">+</span> <span class="s2">&quot; not implemented&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="nd">@gate_wrap</span><span class="p">(</span><span class="n">permeability</span><span class="o">=</span><span class="p">[],</span> <span class="n">is_qfree</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__imul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="n">inpl_mult</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="fm">__rshift__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">exp_shift</span><span class="p">(</span><span class="o">-</span><span class="n">k</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="fm">__lshift__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">exp_shift</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="fm">__lt__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="p">(</span><span class="n">QuantumFloat</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Comparison with type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)</span><span class="si">}</span><span class="s2"> not implemented&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">lt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__gt__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="p">(</span><span class="n">QuantumFloat</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Comparison with type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)</span><span class="si">}</span><span class="s2"> not implemented&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">gt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__le__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="p">(</span><span class="n">QuantumFloat</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Comparison with type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)</span><span class="si">}</span><span class="s2"> not implemented&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">leq</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__ge__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="p">(</span><span class="n">QuantumFloat</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Comparison with type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)</span><span class="si">}</span><span class="s2"> not implemented&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">geq</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="p">(</span><span class="n">QuantumFloat</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Comparison with type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)</span><span class="si">}</span><span class="s2"> not implemented&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">eq</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="p">(</span><span class="n">QuantumFloat</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Comparison with type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)</span><span class="si">}</span><span class="s2"> not implemented&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">neq</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">exp_shift</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shift</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">shift</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Tried to shift QuantumFloat exponent by non-integer value&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">exponent</span> <span class="o">+=</span> <span class="n">shift</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mshape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mshape</span> <span class="o">+</span> <span class="n">shift</span>
+
+    <span class="k">def</span> <span class="nf">reduce</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">qubits</span><span class="p">,</span> <span class="n">verify</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="n">QuantumVariable</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">qubits</span><span class="p">,</span> <span class="n">verify</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mshape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-=</span> <span class="nb">len</span><span class="p">(</span><span class="n">qubits</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">msize</span> <span class="o">-=</span> <span class="nb">len</span><span class="p">(</span><span class="n">qubits</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mshape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-=</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">msize</span> <span class="o">-=</span> <span class="mi">1</span>
+
+    <span class="k">def</span> <span class="nf">extend</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">amount</span><span class="p">,</span> <span class="n">position</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">QuantumVariable</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">amount</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="n">position</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">mshape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+=</span> <span class="n">amount</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">msize</span> <span class="o">+=</span> <span class="n">amount</span>
+
+<div class="viewcode-block" id="QuantumFloat.add_sign"><a class="viewcode-back" href="../../../reference/Quantum%20Types/generated/qrisp.QuantumFloat.add_sign.html#qrisp.QuantumFloat.add_sign">[docs]</a>    <span class="k">def</span> <span class="nf">add_sign</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Turns an unsigned QuantumFloat into its signed version.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        Exception</span>
+<span class="sd">            Tried to add sign to signed QuantumFloat.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+
+<span class="sd">        &gt;&gt;&gt; from qrisp import QuantumFloat</span>
+<span class="sd">        &gt;&gt;&gt; qf = QuantumFloat(4)</span>
+<span class="sd">        &gt;&gt;&gt; qf.signed</span>
+<span class="sd">        False</span>
+<span class="sd">        &gt;&gt;&gt; qf.add_sign()</span>
+<span class="sd">        &gt;&gt;&gt; qf.signed</span>
+<span class="sd">        True</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">signed</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;Tried to add sign to signed QuantumFloat&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mshape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">msize</span> <span class="o">-=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">signed</span> <span class="o">=</span> <span class="kc">True</span></div>
+
+<div class="viewcode-block" id="QuantumFloat.sign"><a class="viewcode-back" href="../../../reference/Quantum%20Types/generated/qrisp.QuantumFloat.sign.html#qrisp.QuantumFloat.sign">[docs]</a>    <span class="k">def</span> <span class="nf">sign</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the sign qubit.</span>
+
+<span class="sd">        This qubit is in state $\ket{1}$ if the QuantumFloat holds a negative value and</span>
+<span class="sd">        in state $\ket{0}$ otherwise.</span>
+
+<span class="sd">        For more information about the encoding of negative numbers check the</span>
+<span class="sd">        `publication &lt;https://ieeexplore.ieee.org/document/9815035&gt;`_.</span>
+
+<span class="sd">        .. warning::</span>
+
+<span class="sd">            Performing an X gate on this qubit does not flip the sign! Use inplace</span>
+<span class="sd">            multiplication instead.</span>
+
+<span class="sd">            &gt;&gt;&gt; from qrisp import QuantumFloat</span>
+<span class="sd">            &gt;&gt;&gt; qf = QuantumFloat(3, signed = True)</span>
+<span class="sd">            &gt;&gt;&gt; qf[:] = 3</span>
+<span class="sd">            &gt;&gt;&gt; qf *= -1</span>
+<span class="sd">            &gt;&gt;&gt; print(qf)</span>
+<span class="sd">            {-3: 1.0}</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        Exception</span>
+<span class="sd">            Tried to retrieve sign qubit of unsigned QuantumFloat.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Qubit</span>
+<span class="sd">            The qubit holding the sign.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+
+<span class="sd">        We create a QuantumFloat, initiate a state that has probability 2/3 of being</span>
+<span class="sd">        negative and entangle a QuantumBool with the sign qubit.</span>
+
+<span class="sd">        &gt;&gt;&gt; from qrisp import QuantumFloat, QuantumBool, cx</span>
+<span class="sd">        &gt;&gt;&gt; qf = QuantumFloat(4, signed = True)</span>
+<span class="sd">        &gt;&gt;&gt; n_amp = 1/3**0.5</span>
+<span class="sd">        &gt;&gt;&gt; qf[:] = {-1 : n_amp, -2 : n_amp, 1 : n_amp}</span>
+<span class="sd">        &gt;&gt;&gt; qbl = QuantumBool()</span>
+<span class="sd">        &gt;&gt;&gt; cx(qf.sign(), qbl)</span>
+<span class="sd">        &gt;&gt;&gt; print(qbl)</span>
+<span class="sd">        {True: 0.6667, False: 0.3333}</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">signed</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Tried to retrieve sign qubit of unsigned QuantumFloat&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span></div>
+
+    <span class="k">def</span> <span class="nf">init_from</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">,</span> <span class="n">ignore_rounding_errors</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">ignore_overflow_errors</span><span class="o">=</span><span class="kc">False</span>
+    <span class="p">):</span>
+        <span class="n">copy_qf</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">other</span><span class="p">,</span>
+            <span class="n">ignore_rounding_errors</span><span class="o">=</span><span class="n">ignore_rounding_errors</span><span class="p">,</span>
+            <span class="n">ignore_overflow_errors</span><span class="o">=</span><span class="n">ignore_overflow_errors</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">incr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="kn">from</span> <span class="nn">qrisp.arithmetic.incrementation</span> <span class="kn">import</span> <span class="n">increment</span>
+
+        <span class="k">if</span> <span class="n">x</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="mi">2</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">exponent</span>
+        <span class="n">increment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+<div class="viewcode-block" id="QuantumFloat.significant"><a class="viewcode-back" href="../../../reference/Quantum%20Types/generated/qrisp.QuantumFloat.significant.html#qrisp.QuantumFloat.significant">[docs]</a>    <span class="k">def</span> <span class="nf">significant</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the qubit with significance $k$.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        k : int</span>
+<span class="sd">            The significance.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        Exception</span>
+<span class="sd">            Tried to retrieve invalid significant from QuantumFloat</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Qubit</span>
+<span class="sd">            The Qubit with significance $k$.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+
+<span class="sd">        We create a QuantumFloat and flip a qubit of specified significance.</span>
+
+<span class="sd">        &gt;&gt;&gt; from qrisp import QuantumFloat, x</span>
+<span class="sd">        &gt;&gt;&gt; qf = QuantumFloat(6, -3)</span>
+<span class="sd">        &gt;&gt;&gt; x(qf.significant(-2))</span>
+<span class="sd">        &gt;&gt;&gt; print(qf)</span>
+<span class="sd">        {0.25: 1.0}</span>
+
+<span class="sd">        The qubit with significance $-2$ corresponds to the value $0.25 = 2^{-2}$.</span>
+
+<span class="sd">        &gt;&gt;&gt; x(qf.significant(2))</span>
+<span class="sd">        {4.25: 1.0}</span>
+
+<span class="sd">        The qubit with significance $2$ corresponds to the value $4 = 2^{2}$.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">sig_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mshape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">mshape</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+
+        <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sig_list</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Tried to retrieve invalid significant </span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2"> &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;from QuantumFloat with mantissa shape </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">mshape</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="n">sig_list</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">k</span><span class="p">)]</span></div>
+
+<div class="viewcode-block" id="QuantumFloat.truncate"><a class="viewcode-back" href="../../../reference/Quantum%20Types/generated/qrisp.QuantumFloat.truncate.html#qrisp.QuantumFloat.truncate">[docs]</a>    <span class="k">def</span> <span class="nf">truncate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Receives a regular float and returns the float that is closest to the input but</span>
+<span class="sd">        can still be encoded.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x : float</span>
+<span class="sd">            A float that is supposed to be truncated.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            The truncated float.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+
+<span class="sd">        We create a QuantumFloat and round a value to fit the encoder and subsequently</span>
+<span class="sd">        initiate:</span>
+
+<span class="sd">        &gt;&gt;&gt; from qrisp import QuantumFloat</span>
+<span class="sd">        &gt;&gt;&gt; qf = QuantumFloat(4, -1)</span>
+<span class="sd">        &gt;&gt;&gt; value = 0.5102341</span>
+<span class="sd">        &gt;&gt;&gt; qf[:] = value</span>
+<span class="sd">        Exception: Value 0.5102341 not supported by encoder.</span>
+<span class="sd">        &gt;&gt;&gt; rounded_value = qf.truncate(value)</span>
+<span class="sd">        &gt;&gt;&gt; rounded_value</span>
+<span class="sd">        0.5</span>
+<span class="sd">        &gt;&gt;&gt; qf[:] = rounded_value</span>
+<span class="sd">        &gt;&gt;&gt; print(qf)</span>
+<span class="sd">        {0.5: 1.0}</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">decoder_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">decoder</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">)])</span>
+
+        <span class="k">return</span> <span class="n">decoder_values</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">decoder_values</span> <span class="o">-</span> <span class="n">x</span><span class="p">))]</span></div></div>
+
+
+<span class="k">def</span> <span class="nf">create_output_qf</span><span class="p">(</span><span class="n">operands</span><span class="p">,</span> <span class="n">op</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">op</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">expr</span><span class="o">.</span><span class="n">Expr</span><span class="p">):</span>
+        <span class="kn">from</span> <span class="nn">qrisp.arithmetic.poly_tools</span> <span class="kn">import</span> <span class="n">expr_to_list</span>
+
+        <span class="n">expr_list</span> <span class="o">=</span> <span class="n">expr_to_list</span><span class="p">(</span><span class="n">op</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">expr_list</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expr_list</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">sp</span><span class="o">.</span><span class="n">Symbol</span><span class="p">):</span>
+                <span class="n">expr_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="n">operands</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">prod</span><span class="p">(</span><span class="nb">iter</span><span class="p">):</span>
+            <span class="nb">iter</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">iter</span><span class="p">)</span>
+            <span class="n">a</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="nb">iter</span><span class="p">)):</span>
+                <span class="n">a</span> <span class="o">*=</span> <span class="nb">iter</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+            <span class="k">return</span> <span class="n">a</span>
+
+        <span class="kn">from</span> <span class="nn">sympy</span> <span class="kn">import</span> <span class="n">Abs</span><span class="p">,</span> <span class="n">Poly</span><span class="p">,</span> <span class="n">Symbol</span>
+
+        <span class="n">poly</span> <span class="o">=</span> <span class="n">Poly</span><span class="p">(</span><span class="n">op</span><span class="p">)</span>
+        <span class="n">monom_list</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">a</span> <span class="o">*</span> <span class="n">prod</span><span class="p">(</span><span class="n">x</span><span class="o">**</span><span class="n">k</span> <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">poly</span><span class="o">.</span><span class="n">gens</span><span class="p">,</span> <span class="n">mon</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">a</span><span class="p">,</span> <span class="n">mon</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">poly</span><span class="o">.</span><span class="n">coeffs</span><span class="p">(),</span> <span class="n">poly</span><span class="o">.</span><span class="n">monoms</span><span class="p">())</span>
+        <span class="p">]</span>
+
+        <span class="n">max_value_dic</span> <span class="o">=</span> <span class="p">{</span><span class="n">Symbol</span><span class="p">(</span><span class="n">qf</span><span class="o">.</span><span class="n">name</span><span class="p">):</span> <span class="mf">2.0</span> <span class="o">**</span> <span class="n">qf</span><span class="o">.</span><span class="n">mshape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">qf</span> <span class="ow">in</span> <span class="n">operands</span><span class="p">}</span>
+        <span class="n">min_value_dic</span> <span class="o">=</span> <span class="p">{</span><span class="n">Symbol</span><span class="p">(</span><span class="n">qf</span><span class="o">.</span><span class="n">name</span><span class="p">):</span> <span class="mf">2.0</span> <span class="o">**</span> <span class="n">qf</span><span class="o">.</span><span class="n">mshape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">qf</span> <span class="ow">in</span> <span class="n">operands</span><span class="p">}</span>
+
+        <span class="n">abs_poly</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">Abs</span><span class="p">(</span><span class="n">monom</span><span class="p">)</span> <span class="k">for</span> <span class="n">monom</span> <span class="ow">in</span> <span class="n">monom_list</span><span class="p">],</span> <span class="mi">0</span><span class="p">)</span>
+
+        <span class="n">min_poly_value</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span>
+            <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">Abs</span><span class="p">(</span><span class="n">monom</span><span class="p">)</span><span class="o">.</span><span class="n">subs</span><span class="p">(</span><span class="n">min_value_dic</span><span class="p">))</span> <span class="k">for</span> <span class="n">monom</span> <span class="ow">in</span> <span class="n">monom_list</span><span class="p">]</span>
+        <span class="p">)</span>
+
+        <span class="n">max_poly_value</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">abs_poly</span><span class="o">.</span><span class="n">subs</span><span class="p">(</span><span class="n">max_value_dic</span><span class="p">))</span>
+
+        <span class="n">min_sig</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="n">min_poly_value</span><span class="p">)))</span>
+        <span class="n">max_sig</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="n">max_poly_value</span><span class="p">)))</span>
+
+        <span class="n">msize</span> <span class="o">=</span> <span class="n">max_sig</span> <span class="o">-</span> <span class="n">min_sig</span>
+        <span class="n">exponent</span> <span class="o">=</span> <span class="n">min_sig</span>
+
+        <span class="n">signed</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="nb">sum</span><span class="p">([</span><span class="nb">int</span><span class="p">(</span><span class="n">operand</span><span class="o">.</span><span class="n">signed</span><span class="p">)</span> <span class="k">for</span> <span class="n">operand</span> <span class="ow">in</span> <span class="n">operands</span><span class="p">]))</span>
+
+        <span class="k">return</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="n">msize</span><span class="p">,</span> <span class="n">exponent</span><span class="o">=</span><span class="n">exponent</span><span class="p">,</span> <span class="n">signed</span><span class="o">=</span><span class="n">signed</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">op</span> <span class="o">==</span> <span class="s2">&quot;add&quot;</span><span class="p">:</span>
+        <span class="n">signed</span> <span class="o">=</span> <span class="n">operands</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">signed</span> <span class="ow">or</span> <span class="n">operands</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">signed</span>
+        <span class="n">exponent</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">operands</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">exponent</span><span class="p">,</span> <span class="n">operands</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">exponent</span><span class="p">)</span>
+
+        <span class="n">max_sig</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="mi">2</span> <span class="o">**</span> <span class="n">operands</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">mshape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">**</span> <span class="n">operands</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">mshape</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">msize</span> <span class="o">=</span> <span class="n">max_sig</span> <span class="o">-</span> <span class="n">exponent</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="n">QuantumFloat</span><span class="p">(</span>
+            <span class="n">msize</span><span class="p">,</span> <span class="n">exponent</span><span class="p">,</span> <span class="n">operands</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">qs</span><span class="p">,</span> <span class="n">signed</span><span class="o">=</span><span class="n">signed</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;add_res*&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">op</span> <span class="o">==</span> <span class="s2">&quot;mul&quot;</span><span class="p">:</span>
+        <span class="n">signed</span> <span class="o">=</span> <span class="n">operands</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">signed</span> <span class="ow">or</span> <span class="n">operands</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">signed</span>
+
+        <span class="k">if</span> <span class="n">operands</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">reg</span> <span class="o">==</span> <span class="n">operands</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">reg</span> <span class="ow">and</span> <span class="p">(</span>
+            <span class="n">operands</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">signed</span> <span class="ow">and</span> <span class="n">operands</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">signed</span>
+        <span class="p">):</span>
+            <span class="n">signed</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="k">return</span> <span class="n">QuantumFloat</span><span class="p">(</span>
+            <span class="n">operands</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">msize</span>
+            <span class="o">+</span> <span class="n">operands</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">msize</span>
+            <span class="o">+</span> <span class="n">operands</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">signed</span> <span class="o">*</span> <span class="n">operands</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">signed</span><span class="p">,</span>
+            <span class="n">operands</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">exponent</span> <span class="o">+</span> <span class="n">operands</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">exponent</span><span class="p">,</span>
+            <span class="n">operands</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">qs</span><span class="p">,</span>
+            <span class="n">signed</span><span class="o">=</span><span class="n">signed</span><span class="p">,</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;mul_res*&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">op</span> <span class="o">==</span> <span class="s2">&quot;sub&quot;</span><span class="p">:</span>
+        <span class="n">exponent</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">operands</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">exponent</span><span class="p">,</span> <span class="n">operands</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">exponent</span><span class="p">)</span>
+        <span class="n">max_sig</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="mi">2</span> <span class="o">**</span> <span class="n">operands</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">mshape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">**</span> <span class="n">operands</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">mshape</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">msize</span> <span class="o">=</span> <span class="n">max_sig</span> <span class="o">-</span> <span class="n">exponent</span> <span class="o">+</span> <span class="mi">1</span>
+
+        <span class="k">return</span> <span class="n">QuantumFloat</span><span class="p">(</span>
+            <span class="n">msize</span><span class="p">,</span> <span class="n">exponent</span><span class="p">,</span> <span class="n">operands</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">qs</span><span class="p">,</span> <span class="n">signed</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;sub_res*&quot;</span>
+        <span class="p">)</span>
+
+
+<span class="c1"># Initiates the value of qf2 into qf1 where qf1 has to hold the value 0</span>
+<span class="k">def</span> <span class="nf">copy_qf</span><span class="p">(</span><span class="n">qf1</span><span class="p">,</span> <span class="n">qf2</span><span class="p">,</span> <span class="n">ignore_overflow_errors</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">ignore_rounding_errors</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="c1"># Lists that translate Qubit index =&gt; Significance</span>
+    <span class="n">qf1_sign_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">qf1</span><span class="o">.</span><span class="n">exponent</span> <span class="o">+</span> <span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">qf1</span><span class="o">.</span><span class="n">size</span><span class="p">)]</span>
+    <span class="n">qf2_sign_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">qf2</span><span class="o">.</span><span class="n">exponent</span> <span class="o">+</span> <span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">qf2</span><span class="o">.</span><span class="n">size</span><span class="p">)]</span>
+
+    <span class="c1"># Check overflow/underflow</span>
+    <span class="k">if</span> <span class="nb">max</span><span class="p">(</span><span class="n">qf1_sign_list</span><span class="p">)</span> <span class="o">&lt;</span> <span class="nb">max</span><span class="p">(</span><span class="n">qf2_sign_list</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">ignore_overflow_errors</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+            <span class="s2">&quot;Copy operation would result in overflow &quot;</span>
+            <span class="s2">&quot;(use ignore_overflow_errors = True)&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">min</span><span class="p">(</span><span class="n">qf1_sign_list</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">min</span><span class="p">(</span><span class="n">qf2_sign_list</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">ignore_rounding_errors</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+            <span class="s2">&quot;Copy operation would result in rounding &quot;</span>
+            <span class="s2">&quot;(use ignore_rounding_errors = True)&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">qs</span> <span class="o">=</span> <span class="n">qf1</span><span class="o">.</span><span class="n">qs</span>
+
+    <span class="k">if</span> <span class="n">qf2</span><span class="o">.</span><span class="n">signed</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">qf1</span><span class="o">.</span><span class="n">signed</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Tried to copy signed into unsigend float&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Remove last entry from significance list (last qubit is the sign qubit)</span>
+        <span class="n">qf2_sign_list</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">qf1_sign_list</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">qf1_sign_list</span><span class="p">)):</span>
+        <span class="c1"># If we are in a realm where both floats have overlapping significance</span>
+        <span class="c1"># =&gt; CNOT into each other</span>
+        <span class="k">if</span> <span class="n">qf1_sign_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="ow">in</span> <span class="n">qf2_sign_list</span><span class="p">:</span>
+            <span class="n">qf2_index</span> <span class="o">=</span> <span class="n">qf2_sign_list</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">qf1_sign_list</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="n">qs</span><span class="o">.</span><span class="n">cx</span><span class="p">(</span><span class="n">qf2</span><span class="p">[</span><span class="n">qf2_index</span><span class="p">],</span> <span class="n">qf1</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># Otherwise copy the sign bit into the bits of higher significance than qf2</span>
+        <span class="k">if</span> <span class="n">qf1_sign_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&gt;</span> <span class="nb">max</span><span class="p">(</span><span class="n">qf2_sign_list</span><span class="p">)</span> <span class="ow">and</span> <span class="n">qf2</span><span class="o">.</span><span class="n">signed</span><span class="p">:</span>
+            <span class="n">qs</span><span class="o">.</span><span class="n">cx</span><span class="p">(</span><span class="n">qf2</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">qf1</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+    <span class="c1"># Copy the sign bit</span>
+    <span class="k">if</span> <span class="n">qf2</span><span class="o">.</span><span class="n">signed</span><span class="p">:</span>
+        <span class="n">qs</span><span class="o">.</span><span class="n">cx</span><span class="p">(</span><span class="n">qf2</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">qf1</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+</pre></div>
+
+                </article>
+              
+              
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/bootstrap.js?digest=e353d410970836974a52"></script>
+<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+  <p class="copyright">
+    
+      © Copyright 2023, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.3.0.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item"><p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.13.3.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

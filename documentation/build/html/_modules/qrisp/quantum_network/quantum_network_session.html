@@ -1,0 +1,620 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>qrisp.quantum_network.quantum_network_session &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+<link href="../../../_static/styles/bootstrap.css?digest=e353d410970836974a52" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+
+  
+  <link href="../../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=e353d410970836974a52" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/custom.css" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=e353d410970836974a52" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52" />
+
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../_static/clipboard.min.js"></script>
+    <script src="../../../_static/copybutton.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/qrisp/quantum_network/quantum_network_session';</script>
+    <link rel="canonical" href="https://qrisp.eu/_modules/qrisp/quantum_network/quantum_network_session.html" />
+    <link rel="shortcut icon" href="../../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="light">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+<div class="bd-header__inner bd-page-width">
+  <label class="sidebar-toggle primary-toggle" for="__primary">
+    <span class="fa-solid fa-bars"></span>
+  </label>
+  
+  <div class="navbar-header-items__start">
+    
+      <div class="navbar-item">
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../../_static/logo_extended.png" class="logo__image only-light" alt="Logo image"/>
+    <script>document.write(`<img src="../../../_static/logo_extended.png" class="logo__image only-dark" alt="Logo image"/>`);</script>
+  
+  
+</a></div>
+    
+  </div>
+  
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../general/tutorial.html">
+                        Tutorial
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../reference/index.html">
+                        Reference
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../general/setup.html">
+                        Setup
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../general/imprint.html">
+                        Imprint
+                      </a>
+                    </li>
+                
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+  </button>
+`);
+</script>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/fraunhoferfokus/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square"></i></span>
+            <label class="sr-only">GitHub</label></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+  </button>
+`);
+</script>
+    </div>
+  
+
+  
+</div>
+
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../general/tutorial.html">
+                        Tutorial
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../reference/index.html">
+                        Reference
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../general/setup.html">
+                        Setup
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../general/imprint.html">
+                        Imprint
+                      </a>
+                    </li>
+                
+  </ul>
+</nav></div>
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/fraunhoferfokus/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square"></i></span>
+            <label class="sr-only">GitHub</label></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumbs">
+  <ul class="bd-breadcrumbs" role="navigation" aria-label="Breadcrumb">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">qrisp.quantum_network.quantum_network_session</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <h1>Source code for qrisp.quantum_network.quantum_network_session</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">/*********************************************************************</span>
+<span class="sd">* Copyright (c) 2023 the Qrisp Authors</span>
+<span class="sd">*</span>
+<span class="sd">* This program and the accompanying materials are made</span>
+<span class="sd">* available under the terms of the Eclipse Public License 2.0</span>
+<span class="sd">* which is available at https://www.eclipse.org/legal/epl-2.0/</span>
+<span class="sd">*</span>
+<span class="sd">* SPDX-License-Identifier: EPL-2.0</span>
+<span class="sd">**********************************************************************/</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">qrisp</span> <span class="kn">import</span> <span class="n">QuantumBool</span><span class="p">,</span> <span class="n">QuantumChar</span><span class="p">,</span> <span class="n">QuantumFloat</span><span class="p">,</span> <span class="n">QuantumSession</span><span class="p">,</span> <span class="n">merge</span>
+<span class="kn">from</span> <span class="nn">qrisp.circuit</span> <span class="kn">import</span> <span class="n">QuantumCircuit</span><span class="p">,</span> <span class="n">QubitAlloc</span><span class="p">,</span> <span class="n">QubitDealloc</span><span class="p">,</span> <span class="n">transpile</span>
+<span class="kn">from</span> <span class="nn">qrisp.quantum_network</span> <span class="kn">import</span> <span class="n">QuantumNetworkClient</span>
+
+
+<div class="viewcode-block" id="QuantumNetworkSession"><a class="viewcode-back" href="../../../reference/Quantum%20Networks/QuantumNetworkSession.html#qrisp.quantum_network.QuantumNetworkSession">[docs]</a><span class="k">class</span> <span class="nc">QuantumNetworkSession</span><span class="p">(</span><span class="n">QuantumSession</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class allows using Qrisps high-level programming interface to interact with</span>
+<span class="sd">    QuantumNetworks. As an inheritor of the QuantumSession class, we can create</span>
+<span class="sd">    QuantumVariables with it which can then be sent to other participators of the</span>
+<span class="sd">    QuantumNetwork.</span>
+
+<span class="sd">    Note that get_measurement calls are also realized by the single-shot simulator. For</span>
+<span class="sd">    more information on this check the documentation of the run method of the</span>
+<span class="sd">    QuantumNetworkClient class.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    name : str</span>
+<span class="sd">        A nickname such as &quot;Alice&quot; or &quot;Bob&quot;, which is used to direct the communication</span>
+<span class="sd">        of other users to you.</span>
+<span class="sd">    socket_ip : str</span>
+<span class="sd">        The IP of the QuantumNetworkServer to connect to.</span>
+<span class="sd">    port : int</span>
+<span class="sd">        The port of the QuantumNetworkServer to connect to. The default is 7070.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+
+<span class="sd">    We create a QuantumNetworkServer and connect a QuantumNetworkSession to it.</span>
+
+<span class="sd">    &gt;&gt;&gt; from qrisp.quantum_network import QuantumNetworkServer, QuantumNetworkSession</span>
+<span class="sd">    &gt;&gt;&gt; example_server = QuantumNetworkServer(socket_ip = &quot;127.0.0.1&quot;, background = True)</span>
+<span class="sd">    &gt;&gt;&gt; example_server.start()</span>
+<span class="sd">    &gt;&gt;&gt; alice_session = QuantumNetworkSession(socket_ip = &quot;127.0.0.1&quot;, port = 7070, name = &quot;alice&quot;)</span>
+
+<span class="sd">    Now we can create QuantumVariables as we are used to</span>
+
+<span class="sd">    &gt;&gt;&gt; from qrisp import QuantumFloat</span>
+<span class="sd">    &gt;&gt;&gt; qf = QuantumFloat(4, 5, qs = alice_session)</span>
+
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">socket_ip</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">qn_client</span> <span class="o">=</span> <span class="n">QuantumNetworkClient</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">socket_ip</span><span class="o">=</span><span class="n">socket_ip</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="n">port</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inbox</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">backend</span><span class="o">=</span><span class="n">qn_client</span><span class="p">)</span>
+
+<div class="viewcode-block" id="QuantumNetworkSession.send_qv"><a class="viewcode-back" href="../../../reference/Quantum%20Networks/generated/qrisp.quantum_network.QuantumNetworkSession.send_qv.html#qrisp.quantum_network.QuantumNetworkSession.send_qv">[docs]</a>    <span class="k">def</span> <span class="nf">send_qv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">qv</span><span class="p">,</span> <span class="n">recipient</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sends a :ref:`QuantumVariable` to another participant of the network.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        qv : QuantumVariable</span>
+<span class="sd">            The QuantumVariable to send.</span>
+<span class="sd">        recipient : str</span>
+<span class="sd">            The name of the recipient.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+
+<span class="sd">        We create a QuantumNetworkServer and connect a QuantumNetworkSession to it.</span>
+
+<span class="sd">        &gt;&gt;&gt; from qrisp.quantum_network import QuantumNetworkServer, QuantumNetworkSession</span>
+<span class="sd">        &gt;&gt;&gt; example_server = QuantumNetworkServer(socket_ip = &quot;127.0.0.1&quot;, background = True)</span>
+<span class="sd">        &gt;&gt;&gt; example_server.start()</span>
+<span class="sd">        &gt;&gt;&gt; alice_session = QuantumNetworkSession(socket_ip = &quot;127.0.0.1&quot;, port = 7070, name = &quot;alice&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; bob_session = QuantumNetworkSession(socket_ip = &quot;127.0.0.1&quot;, port = 7070, name = &quot;bob&quot;)</span>
+
+<span class="sd">        We create a :ref:`QuantumFloat` and perform some arithmetic</span>
+
+<span class="sd">        &gt;&gt;&gt; from qrisp import QuantumFloat</span>
+<span class="sd">        &gt;&gt;&gt; qf = QuantumFloat(4, qs = alice_session)</span>
+<span class="sd">        &gt;&gt;&gt; qf += 3</span>
+<span class="sd">        &gt;&gt;&gt; alice_session.send_qv(qf, &quot;bob&quot;)</span>
+
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">qv</span><span class="o">.</span><span class="n">qs</span> <span class="o">==</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="n">merge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">qv</span><span class="o">.</span><span class="n">qs</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+        <span class="n">qv_qubits</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">qv</span><span class="o">.</span><span class="n">reg</span><span class="p">)</span>
+
+        <span class="n">type_information</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">qv</span><span class="p">,</span> <span class="n">QuantumFloat</span><span class="p">):</span>
+            <span class="n">type_information</span><span class="p">[</span><span class="s2">&quot;qtype&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;qf&quot;</span>
+            <span class="n">type_information</span><span class="p">[</span><span class="s2">&quot;msize&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">qv</span><span class="o">.</span><span class="n">msize</span><span class="p">)</span>
+            <span class="n">type_information</span><span class="p">[</span><span class="s2">&quot;exponent&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">qv</span><span class="o">.</span><span class="n">exponent</span><span class="p">)</span>
+            <span class="n">type_information</span><span class="p">[</span><span class="s2">&quot;signed&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">qv</span><span class="o">.</span><span class="n">signed</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">qv</span><span class="p">,</span> <span class="n">QuantumChar</span><span class="p">):</span>
+            <span class="n">type_information</span><span class="p">[</span><span class="s2">&quot;qtype&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;qc&quot;</span>
+            <span class="n">type_information</span><span class="p">[</span><span class="s2">&quot;nisq_char&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">qv</span><span class="o">.</span><span class="n">nisq_char</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">qv</span><span class="p">,</span> <span class="n">QuantumBool</span><span class="p">):</span>
+            <span class="n">type_information</span><span class="p">[</span><span class="s2">&quot;qtype&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;qb&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">send_qubits</span><span class="p">(</span><span class="n">recipient</span><span class="p">,</span> <span class="n">qv_qubits</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">type_information</span><span class="p">))</span>
+
+        <span class="n">qv</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">qv_qubits</span><span class="p">)):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">qubits</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">qv_qubits</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="p">[]</span></div>
+
+<div class="viewcode-block" id="QuantumNetworkSession.update"><a class="viewcode-back" href="../../../reference/Quantum%20Networks/generated/qrisp.quantum_network.QuantumNetworkSession.update.html#qrisp.quantum_network.QuantumNetworkSession.update">[docs]</a>    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This updates the inbox attribute and returns the received QuantumVariables.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        received_qvs : list[QuantumVariable]</span>
+<span class="sd">            The QuantumVariables which have been received since the last update.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+
+<span class="sd">        We assume that the commands from the example of the</span>
+<span class="sd">        :meth:`send_qv &lt;qrisp.quantum_network.QuantumNetworkSession.send_qv&gt;` method</span>
+<span class="sd">        have been executed.</span>
+
+<span class="sd">        &gt;&gt;&gt; inbox = bob_session.update()</span>
+<span class="sd">        &gt;&gt;&gt; print(inbox[0])</span>
+<span class="sd">        {3.0: 1.0}</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="kn">from</span> <span class="nn">qrisp</span> <span class="kn">import</span> <span class="n">QuantumVariable</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+        <span class="n">updated_inbox</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">inbox</span><span class="p">()</span>
+
+        <span class="n">received_qvs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">starting_index</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inbox</span><span class="p">))</span>
+        <span class="kn">from</span> <span class="nn">ast</span> <span class="kn">import</span> <span class="n">literal_eval</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">starting_index</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">updated_inbox</span><span class="p">)):</span>
+            <span class="k">for</span> <span class="n">qb</span> <span class="ow">in</span> <span class="n">updated_inbox</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">add_qubit</span><span class="p">(</span><span class="n">qb</span><span class="p">)</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">type_information</span> <span class="o">=</span> <span class="n">literal_eval</span><span class="p">(</span><span class="n">updated_inbox</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="n">type_information</span> <span class="o">=</span> <span class="p">{}</span>
+
+            <span class="n">new_qv</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">qs</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+
+            <span class="n">new_qv</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">updated_inbox</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]),</span> <span class="n">proposal</span><span class="o">=</span><span class="n">updated_inbox</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">type_information</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">type_information</span><span class="p">[</span><span class="s2">&quot;qtype&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;qf&quot;</span><span class="p">:</span>
+                    <span class="n">new_qv</span><span class="o">.</span><span class="vm">__class__</span> <span class="o">=</span> <span class="n">QuantumFloat</span>
+                    <span class="n">new_qv</span><span class="o">.</span><span class="n">msize</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">type_information</span><span class="p">[</span><span class="s2">&quot;msize&quot;</span><span class="p">])</span>
+                    <span class="n">new_qv</span><span class="o">.</span><span class="n">exponent</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">type_information</span><span class="p">[</span><span class="s2">&quot;exponent&quot;</span><span class="p">])</span>
+                    <span class="n">new_qv</span><span class="o">.</span><span class="n">signed</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">type_information</span><span class="p">[</span><span class="s2">&quot;signed&quot;</span><span class="p">]))</span>
+
+                <span class="k">if</span> <span class="n">type_information</span><span class="p">[</span><span class="s2">&quot;qtype&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;qc&quot;</span><span class="p">:</span>
+                    <span class="n">new_qv</span><span class="o">.</span><span class="vm">__class__</span> <span class="o">=</span> <span class="n">QuantumChar</span>
+                    <span class="n">new_qv</span><span class="o">.</span><span class="n">nisq_char</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">type_information</span><span class="p">[</span><span class="s2">&quot;nisq_char&quot;</span><span class="p">]))</span>
+
+                <span class="k">elif</span> <span class="n">type_information</span><span class="p">[</span><span class="s2">&quot;qtype&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;qb&quot;</span><span class="p">:</span>
+                    <span class="n">new_qv</span><span class="o">.</span><span class="vm">__class__</span> <span class="o">=</span> <span class="n">QuantumBool</span>
+
+            <span class="n">received_qvs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_qv</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">inbox</span> <span class="o">+=</span> <span class="n">received_qvs</span>
+        <span class="k">return</span> <span class="n">received_qvs</span></div></div>
+</pre></div>
+
+                </article>
+              
+              
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/bootstrap.js?digest=e353d410970836974a52"></script>
+<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+  <p class="copyright">
+    
+      © Copyright 2023, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.3.0.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item"><p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.13.3.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

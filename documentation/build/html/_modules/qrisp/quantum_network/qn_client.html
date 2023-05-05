@@ -1,0 +1,824 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>qrisp.quantum_network.qn_client &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+<link href="../../../_static/styles/bootstrap.css?digest=e353d410970836974a52" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+
+  
+  <link href="../../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=e353d410970836974a52" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/custom.css" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=e353d410970836974a52" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52" />
+
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../_static/clipboard.min.js"></script>
+    <script src="../../../_static/copybutton.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/qrisp/quantum_network/qn_client';</script>
+    <link rel="canonical" href="https://qrisp.eu/_modules/qrisp/quantum_network/qn_client.html" />
+    <link rel="shortcut icon" href="../../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="light">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+<div class="bd-header__inner bd-page-width">
+  <label class="sidebar-toggle primary-toggle" for="__primary">
+    <span class="fa-solid fa-bars"></span>
+  </label>
+  
+  <div class="navbar-header-items__start">
+    
+      <div class="navbar-item">
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../../_static/logo_extended.png" class="logo__image only-light" alt="Logo image"/>
+    <script>document.write(`<img src="../../../_static/logo_extended.png" class="logo__image only-dark" alt="Logo image"/>`);</script>
+  
+  
+</a></div>
+    
+  </div>
+  
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../general/tutorial.html">
+                        Tutorial
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../reference/index.html">
+                        Reference
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../general/setup.html">
+                        Setup
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../general/imprint.html">
+                        Imprint
+                      </a>
+                    </li>
+                
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+  </button>
+`);
+</script>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/fraunhoferfokus/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square"></i></span>
+            <label class="sr-only">GitHub</label></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+  </button>
+`);
+</script>
+    </div>
+  
+
+  
+</div>
+
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../general/tutorial.html">
+                        Tutorial
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../reference/index.html">
+                        Reference
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../general/setup.html">
+                        Setup
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../general/imprint.html">
+                        Imprint
+                      </a>
+                    </li>
+                
+  </ul>
+</nav></div>
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/fraunhoferfokus/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square"></i></span>
+            <label class="sr-only">GitHub</label></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumbs">
+  <ul class="bd-breadcrumbs" role="navigation" aria-label="Breadcrumb">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">qrisp.quantum_network.qn_client</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <h1>Source code for qrisp.quantum_network.qn_client</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">/*********************************************************************</span>
+<span class="sd">* Copyright (c) 2023 the Qrisp Authors</span>
+<span class="sd">*</span>
+<span class="sd">* This program and the accompanying materials are made</span>
+<span class="sd">* available under the terms of the Eclipse Public License 2.0</span>
+<span class="sd">* which is available at https://www.eclipse.org/legal/epl-2.0/</span>
+<span class="sd">*</span>
+<span class="sd">* SPDX-License-Identifier: EPL-2.0</span>
+<span class="sd">**********************************************************************/</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="kn">from</span> <span class="nn">qrisp</span> <span class="kn">import</span> <span class="n">Qubit</span>
+<span class="kn">from</span> <span class="nn">qrisp.interface</span> <span class="kn">import</span> <span class="n">PortableQubit</span>
+<span class="kn">from</span> <span class="nn">qrisp.interface.circuit_converter</span> <span class="kn">import</span> <span class="n">convert_circuit</span>
+<span class="kn">from</span> <span class="nn">qrisp.quantum_network.interface.codegen</span> <span class="kn">import</span> <span class="n">QuantumNetworkService</span>
+<span class="kn">from</span> <span class="nn">qrisp.quantum_network.interface.codegen.ttypes</span> <span class="kn">import</span> <span class="n">Message</span>
+
+
+<div class="viewcode-block" id="QuantumNetworkClient"><a class="viewcode-back" href="../../../reference/Quantum%20Networks/QuantumNetworkClient.html#qrisp.quantum_network.QuantumNetworkClient">[docs]</a><span class="k">class</span> <span class="nc">QuantumNetworkClient</span><span class="p">(</span><span class="n">QuantumNetworkService</span><span class="o">.</span><span class="n">Client</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class allows connecting to Qrisp quantum networks.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    name : str</span>
+<span class="sd">        A nickname such as &quot;Alice&quot; or &quot;Bob&quot;, which is used to direct the communication</span>
+<span class="sd">        of other users to you.</span>
+<span class="sd">    socket_ip : str</span>
+<span class="sd">        The IP adress of the QuantumNetworkServer.</span>
+<span class="sd">    port : int, optional</span>
+<span class="sd">        The port of the QuantumNetworkServer. The default is 7070.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+
+<span class="sd">    We create a QuantumNetworkServer listening on the localhost IP-address and connect</span>
+<span class="sd">    the client.</span>
+
+<span class="sd">    &gt;&gt;&gt; from qrisp.quantum_network import QuantumNetworkServer, QuantumNetworkClient</span>
+<span class="sd">    &gt;&gt;&gt; local_server = QuantumNetworkServer(&quot;127.0.0.1&quot;, background = True)</span>
+<span class="sd">    &gt;&gt;&gt; local_server.start()</span>
+<span class="sd">    &gt;&gt;&gt; client = QuantumNetworkClient(name = &quot;alice&quot;, socket_ip = &quot;127.0.0.1&quot;)</span>
+
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">socket_ip</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="kn">from</span> <span class="nn">thrift.protocol</span> <span class="kn">import</span> <span class="n">TBinaryProtocol</span>
+        <span class="kn">from</span> <span class="nn">thrift.transport</span> <span class="kn">import</span> <span class="n">TSocket</span><span class="p">,</span> <span class="n">TTransport</span>
+
+        <span class="k">if</span> <span class="n">port</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">port</span> <span class="o">=</span> <span class="mi">7070</span>
+        <span class="c1"># Create the transport for the User Interface to the server</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transport</span> <span class="o">=</span> <span class="n">TSocket</span><span class="o">.</span><span class="n">TSocket</span><span class="p">(</span><span class="n">socket_ip</span><span class="p">,</span> <span class="n">port</span><span class="p">)</span>
+        <span class="c1"># Buffering is critical. Raw sockets are very slow</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transport</span> <span class="o">=</span> <span class="n">TTransport</span><span class="o">.</span><span class="n">TBufferedTransport</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">transport</span><span class="p">)</span>
+        <span class="c1"># Wrap in a protocol</span>
+        <span class="n">protocol</span> <span class="o">=</span> <span class="n">TBinaryProtocol</span><span class="o">.</span><span class="n">TBinaryProtocol</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">transport</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">socket_ip</span> <span class="o">=</span> <span class="n">socket_ip</span>
+        <span class="c1"># Create a client to use the protocol encoder</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">protocol</span><span class="p">)</span>
+
+        <span class="c1"># Connect!</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transport</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">register_client</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+
+    <span class="c1"># Destructor closes the transport</span>
+    <span class="k">def</span> <span class="fm">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transport</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+<div class="viewcode-block" id="QuantumNetworkClient.run"><a class="viewcode-back" href="../../../reference/Quantum%20Networks/generated/qrisp.quantum_network.QuantumNetworkClient.run.html#qrisp.quantum_network.QuantumNetworkClient.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">qc</span><span class="p">,</span> <span class="n">shots</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Runs a QuantumCircuit on the client&#39;s backend. Note that QuantumNetwork</span>
+<span class="sd">        simulations do not support multiple shots, as the quantum state of the network</span>
+<span class="sd">        is stored and updated everytime a client sends a query. Multiple shots could</span>
+<span class="sd">        yield differing measurement outcomes, which implies an ambiguous quantum state</span>
+<span class="sd">        of the network. Nevertheless, the results are returned in the form of a</span>
+<span class="sd">        dictionary in order to comply with the quantum circuit execution backend</span>
+<span class="sd">        interface.</span>
+
+<span class="sd">        Note that it is possible to submit QuantumCircuits which contain qubits, that</span>
+<span class="sd">        have not been requested previously. In this case, the qubits names are</span>
+<span class="sd">        internally extended by the string &quot;@client_name&quot;  (if they aren&#39;t extended in</span>
+<span class="sd">        this way already). This is to allow multiple clients to submit circuits with</span>
+<span class="sd">        matching qubit names.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        qc : QuantumCircuit</span>
+<span class="sd">            The QuantumCircuit to run.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        res : dict</span>
+<span class="sd">            A dictionary containing a single key/value pair where the key represents the</span>
+<span class="sd">            measurement outcome.</span>
+
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+
+<span class="sd">        We create a local QuantumNetworkServer, connect a client and run a</span>
+<span class="sd">        QuantumCircuit.</span>
+
+<span class="sd">        &gt;&gt;&gt; from qrisp.quantum_network import QuantumNetworkServer, QuantumNetworkClient</span>
+<span class="sd">        &gt;&gt;&gt; local_server = QuantumNetworkServer(&quot;127.0.0.1&quot;, background = True)</span>
+<span class="sd">        &gt;&gt;&gt; local_server.start()</span>
+<span class="sd">        &gt;&gt;&gt; client = QuantumNetworkClient(name = &quot;alice&quot;, socket_ip = &quot;127.0.0.1&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; from qrisp import QuantumCircuit</span>
+<span class="sd">        &gt;&gt;&gt; qc = QuantumCircuit(2)</span>
+<span class="sd">        &gt;&gt;&gt; qc.h(0)</span>
+<span class="sd">        &gt;&gt;&gt; qc.cx(0,1)</span>
+<span class="sd">        &gt;&gt;&gt; qc.measure([0,1])</span>
+<span class="sd">        &gt;&gt;&gt; client.run(qc)</span>
+<span class="sd">        {&#39;11&#39;: 1}</span>
+
+<span class="sd">        We perform another shot</span>
+
+<span class="sd">        &gt;&gt;&gt; client.run(qc)</span>
+<span class="sd">        {&#39;01&#39;: 1}</span>
+
+<span class="sd">        After applying the first run command, the quantum state is</span>
+
+<span class="sd">        .. math::</span>
+<span class="sd">            \ket{\psi} = \ket{1}\ket{1}</span>
+
+<span class="sd">        Applying the Hadamard yields</span>
+
+<span class="sd">        .. math::</span>
+<span class="sd">            \text{H}_0 \ket{\psi} = \frac{1}{\sqrt{2}}(\ket{0} - \ket{1})\ket{1}</span>
+
+<span class="sd">        The CX yields</span>
+
+<span class="sd">        .. math::</span>
+<span class="sd">            \text{CX}_{01} \text{H}_0 \ket{\psi} =</span>
+<span class="sd">            \frac{1}{\sqrt{2}}(\ket{0}\ket{1} - \ket{1}\ket{0})</span>
+
+<span class="sd">        Finally, the measurement collapsed the state into the first summand.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">converted_circuit</span> <span class="o">=</span> <span class="n">convert_circuit</span><span class="p">(</span><span class="n">qc</span><span class="p">,</span> <span class="s2">&quot;thrift&quot;</span><span class="p">)</span>
+
+        <span class="n">res</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">converted_circuit</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">res</span>
+
+        <span class="n">qc</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">get_clear_qc</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">convert_circuit</span><span class="p">(</span><span class="n">qc</span><span class="p">,</span> <span class="s2">&quot;qrisp&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="QuantumNetworkClient.send_qubits"><a class="viewcode-back" href="../../../reference/Quantum%20Networks/generated/qrisp.quantum_network.QuantumNetworkClient.send_qubits.html#qrisp.quantum_network.QuantumNetworkClient.send_qubits">[docs]</a>    <span class="k">def</span> <span class="nf">send_qubits</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">recipient</span><span class="p">,</span> <span class="n">qubits</span><span class="p">,</span> <span class="n">annotation</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sends the specified qubits to another participant of the network.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        recipient : str</span>
+<span class="sd">            The recipients name.</span>
+<span class="sd">        qubits : list[Qubit]</span>
+<span class="sd">            The list of qubits to send.</span>
+<span class="sd">        annotation : str</span>
+<span class="sd">            A string containing an arbitrary message that is available for the</span>
+<span class="sd">            reciepient.</span>
+
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+
+<span class="sd">        We create a QuantumNetworkServer, connect two clients and distribute a bell pair</span>
+<span class="sd">        another client.</span>
+
+<span class="sd">        &gt;&gt;&gt; from qrisp.quantum_network import QuantumNetworkServer, QuantumNetworkClient</span>
+<span class="sd">        &gt;&gt;&gt; local_server = QuantumNetworkServer(&quot;127.0.0.1&quot;, background = True)</span>
+<span class="sd">        &gt;&gt;&gt; local_server.start()</span>
+<span class="sd">        &gt;&gt;&gt; alice_client = QuantumNetworkClient(name = &quot;alice&quot;, socket_ip = &quot;127.0.0.1&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; bob_client = QuantumNetworkClient(name = &quot;bob&quot;, socket_ip = &quot;127.0.0.1&quot;)</span>
+
+<span class="sd">        Now we create the bell pair:</span>
+
+<span class="sd">        &gt;&gt;&gt; from qrisp import QuantumCircuit</span>
+<span class="sd">        &gt;&gt;&gt; qc = QuantumCircuit(2)</span>
+<span class="sd">        &gt;&gt;&gt; qc.h(0)</span>
+<span class="sd">        &gt;&gt;&gt; qc.cx(0,1)</span>
+<span class="sd">        &gt;&gt;&gt; alice_client.run(qc)</span>
+<span class="sd">        {&#39;&#39;: 1}</span>
+
+<span class="sd">        Send one of the qubits to Bob:</span>
+
+<span class="sd">        &gt;&gt;&gt; alice_client.send_qubits(&quot;bob&quot;, [qc.qubits[0]], annotation = &quot;Happy birthday!&quot;)</span>
+
+<span class="sd">        Now Bob can measure</span>
+
+<span class="sd">        &gt;&gt;&gt; messages = bob_client.inbox()</span>
+<span class="sd">        &gt;&gt;&gt; received_qubits, annotation = messages[0]</span>
+<span class="sd">        &gt;&gt;&gt; qc = bob_client.get_clear_qc()</span>
+<span class="sd">        &gt;&gt;&gt; qc.measure(received_qubits)</span>
+<span class="sd">        &gt;&gt;&gt; bob_client.run(qc)</span>
+<span class="sd">        {&#39;1&#39;: 1}</span>
+
+<span class="sd">        After Bob&#39;s measurement, we expect Alice&#39;s measurement to yield the same due to</span>
+<span class="sd">        `spukhafter Fernwirkung</span>
+<span class="sd">        &lt;https://en.wikipedia.org/wiki/Quantum_entanglement#History&gt;`_:</span>
+
+<span class="sd">        &gt;&gt;&gt; qc = alice_client.get_clear_qc()</span>
+<span class="sd">        &gt;&gt;&gt; qc.measure(qc.qubits)</span>
+<span class="sd">        &gt;&gt;&gt; alice_client.run(qc)</span>
+<span class="sd">        {&#39;1&#39;: 1}</span>
+
+
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">msg</span> <span class="o">=</span> <span class="n">Message</span><span class="p">([</span><span class="n">PortableQubit</span><span class="p">(</span><span class="n">qb</span><span class="o">.</span><span class="n">identifier</span><span class="p">)</span> <span class="k">for</span> <span class="n">qb</span> <span class="ow">in</span> <span class="n">qubits</span><span class="p">],</span> <span class="n">annotation</span><span class="p">)</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">send_qubits</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">recipient</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="QuantumNetworkClient.request_qubits"><a class="viewcode-back" href="../../../reference/Quantum%20Networks/generated/qrisp.quantum_network.QuantumNetworkClient.request_qubits.html#qrisp.quantum_network.QuantumNetworkClient.request_qubits">[docs]</a>    <span class="k">def</span> <span class="nf">request_qubits</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">amount</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates the specified amount of qubits for the client&#39;s backend.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        amount : int</span>
+<span class="sd">            The amount of qubits to create.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list[Qubit]</span>
+<span class="sd">            The qubits created.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+
+<span class="sd">        &gt;&gt;&gt; from qrisp.quantum_network import QuantumNetworkServer, QuantumNetworkClient</span>
+<span class="sd">        &gt;&gt;&gt; local_server = QuantumNetworkServer(&quot;127.0.0.1&quot;, background = True)</span>
+<span class="sd">        &gt;&gt;&gt; local_server.start()</span>
+<span class="sd">        &gt;&gt;&gt; client = QuantumNetworkClient(name = &quot;alice&quot;, socket_ip = &quot;127.0.0.1&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; qb_list = client.request_qubits(4)</span>
+<span class="sd">        &gt;&gt;&gt; print(qb_list)</span>
+<span class="sd">        [Qubit(qb_0@alice), Qubit(qb_1@alice), Qubit(qb_2@alice), Qubit(qb_3@alice)]</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">qb_list</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">request_qubits</span><span class="p">(</span><span class="n">amount</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">[</span><span class="n">Qubit</span><span class="p">(</span><span class="n">qb</span><span class="o">.</span><span class="n">identifier</span><span class="p">)</span> <span class="k">for</span> <span class="n">qb</span> <span class="ow">in</span> <span class="n">qb_list</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="QuantumNetworkClient.get_clear_qc"><a class="viewcode-back" href="../../../reference/Quantum%20Networks/generated/qrisp.quantum_network.QuantumNetworkClient.get_clear_qc.html#qrisp.quantum_network.QuantumNetworkClient.get_clear_qc">[docs]</a>    <span class="k">def</span> <span class="nf">get_clear_qc</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a QuantumCircuit containing all the qubits that belong to the client at</span>
+<span class="sd">        the moment.</span>
+
+<span class="sd">        Note that the qubit names of the run QuantumCircuit are internally extended by</span>
+<span class="sd">        the string &quot;@client_name&quot;  (if they aren&#39;t extended in this way already). This</span>
+<span class="sd">        is to allow multiple clients to submit circuits with matching qubit names.</span>
+
+<span class="sd">        Note that</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        QuantumCircuit</span>
+<span class="sd">            An empty QuantumCircuit containing the qubits, this client may operate on.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+
+<span class="sd">        We set up a quantum network, run some QuantumCircuits and retrieve the clear</span>
+<span class="sd">        QuantumCircuit:</span>
+
+<span class="sd">        &gt;&gt;&gt; from qrisp.quantum_network import QuantumNetworkServer, QuantumNetworkClient</span>
+<span class="sd">        &gt;&gt;&gt; local_server = QuantumNetworkServer(&quot;127.0.0.1&quot;, background = True)</span>
+<span class="sd">        &gt;&gt;&gt; local_server.start()</span>
+<span class="sd">        &gt;&gt;&gt; client = QuantumNetworkClient(name = &quot;alice&quot;, socket_ip = &quot;127.0.0.1&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; from qrisp import QuantumCircuit</span>
+<span class="sd">        &gt;&gt;&gt; qc_0 = QuantumCircuit(1)</span>
+<span class="sd">        &gt;&gt;&gt; qc_0.x(0)</span>
+<span class="sd">        &gt;&gt;&gt; print(qc_0)</span>
+<span class="sd">              ┌───┐</span>
+<span class="sd">        qb_8: ┤ X ├</span>
+<span class="sd">              └───┘</span>
+<span class="sd">        &gt;&gt;&gt; client.run(qc_0)</span>
+<span class="sd">        &gt;&gt;&gt; qc_1 = QuantumCircuit(1)</span>
+<span class="sd">        &gt;&gt;&gt; qc_1.h(0)</span>
+<span class="sd">        &gt;&gt;&gt; print(qc_1)</span>
+<span class="sd">                ┌───┐</span>
+<span class="sd">         qb_26: ┤ H ├</span>
+<span class="sd">                └───┘</span>
+<span class="sd">        &gt;&gt;&gt; client.run(qc_1)</span>
+<span class="sd">        &gt;&gt;&gt; print(client.get_clear_qc().qubits)</span>
+<span class="sd">        [Qubit(qb_58@alice), Qubit(qb_77@alice)]</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">qc</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">get_clear_qc</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">convert_circuit</span><span class="p">(</span><span class="n">qc</span><span class="p">,</span> <span class="s2">&quot;qrisp&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="QuantumNetworkClient.get_overall_qc"><a class="viewcode-back" href="../../../reference/Quantum%20Networks/generated/qrisp.quantum_network.QuantumNetworkClient.get_overall_qc.html#qrisp.quantum_network.QuantumNetworkClient.get_overall_qc">[docs]</a>    <span class="k">def</span> <span class="nf">get_overall_qc</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieves the QuantumCircuit of all operations that happened in the network so</span>
+<span class="sd">        far.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        QuantumCircuit</span>
+<span class="sd">            The QuantumCircuit containing all operations that happened in this</span>
+<span class="sd">            QuantumNetwork.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+
+<span class="sd">        We assume that the commands of the example of the</span>
+<span class="sd">        :meth:`send_qubits &lt;qrisp.quantum_network.QuantumNetworkClient.send_qubits&gt;`</span>
+<span class="sd">        method have been executed.</span>
+
+<span class="sd">        &gt;&gt;&gt; print(alice_client.get_overall_qc())</span>
+<span class="sd">                      ░ ┌───┐      ░ ┌─┐ ░</span>
+<span class="sd">        qb_34@alice: ─░─┤ H ├──■───░─┤M├─░────</span>
+<span class="sd">                      ░ └───┘┌─┴─┐ ░ └╥┘ ░ ┌─┐</span>
+<span class="sd">        qb_35@alice: ─░──────┤ X ├─░──╫──░─┤M├</span>
+<span class="sd">                      ░      └───┘ ░  ║  ░ └╥┘</span>
+<span class="sd">           cb_bob_0: ═════════════════╩═════╬═</span>
+<span class="sd">                                            ║</span>
+<span class="sd">         cb_alice_0: ═══════════════════════╩═</span>
+
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">qc</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">get_overall_qc</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">convert_circuit</span><span class="p">(</span><span class="n">qc</span><span class="p">,</span> <span class="s2">&quot;qrisp&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="QuantumNetworkClient.inbox"><a class="viewcode-back" href="../../../reference/Quantum%20Networks/generated/qrisp.quantum_network.QuantumNetworkClient.inbox.html#qrisp.quantum_network.QuantumNetworkClient.inbox">[docs]</a>    <span class="k">def</span> <span class="nf">inbox</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a list of tuples containing the received qubits and their annotations.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        res_list : list[tuple[list[Qubit], str]]</span>
+<span class="sd">            A list of tuples containing the sent qubits and the annotations.</span>
+
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+
+<span class="sd">        We send a qubit from one client to another and inspect the inbox</span>
+
+<span class="sd">        &gt;&gt;&gt; from qrisp.quantum_network import QuantumNetworkServer, QuantumNetworkClient</span>
+<span class="sd">        &gt;&gt;&gt; local_server = QuantumNetworkServer(&quot;127.0.0.1&quot;, background = True)</span>
+<span class="sd">        &gt;&gt;&gt; local_server.start()</span>
+<span class="sd">        &gt;&gt;&gt; alice_client = QuantumNetworkClient(name = &quot;alice&quot;, socket_ip = &quot;127.0.0.1&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; bob_client = QuantumNetworkClient(name = &quot;bob&quot;, socket_ip = &quot;127.0.0.1&quot;)</span>
+
+<span class="sd">        Prepare the qubit which will be sent to bob:</span>
+
+<span class="sd">        &gt;&gt;&gt; from qrisp import QuantumCircuit</span>
+<span class="sd">        &gt;&gt;&gt; qc = QuantumCircuit(1)</span>
+<span class="sd">        &gt;&gt;&gt; qc.h(0)</span>
+<span class="sd">        &gt;&gt;&gt; alice_client.run(qc)</span>
+<span class="sd">        {&#39;&#39;: 1}</span>
+
+<span class="sd">        Send the qubit to Bob:</span>
+
+<span class="sd">        &gt;&gt;&gt; alice_client.send_qubits(&quot;bob&quot;, [qc.qubits[0]], annotation = &quot;Merry christmas!&quot;)</span>
+
+<span class="sd">        Now Bob can check his inbox</span>
+
+<span class="sd">        &gt;&gt;&gt; messages = bob_client.inbox()</span>
+<span class="sd">        &gt;&gt;&gt; received_qubits, annotation = messages[0]</span>
+<span class="sd">        &gt;&gt;&gt; print(received_qubits)</span>
+<span class="sd">        [Qubit(qb_20@alice)]</span>
+<span class="sd">        &gt;&gt;&gt; print(annotation)</span>
+<span class="sd">        Merry christmas!</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">inbox_list</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">inbox</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+
+        <span class="n">res_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">inbox_list</span><span class="p">)):</span>
+            <span class="n">res_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="p">(</span>
+                    <span class="p">[</span><span class="n">Qubit</span><span class="p">(</span><span class="n">qb</span><span class="o">.</span><span class="n">identifier</span><span class="p">)</span> <span class="k">for</span> <span class="n">qb</span> <span class="ow">in</span> <span class="n">inbox_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">qubits</span><span class="p">],</span>
+                    <span class="n">inbox_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">annotation</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">res_list</span></div></div>
+</pre></div>
+
+                </article>
+              
+              
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/bootstrap.js?digest=e353d410970836974a52"></script>
+<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+  <p class="copyright">
+    
+      © Copyright 2023, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.3.0.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item"><p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.13.3.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

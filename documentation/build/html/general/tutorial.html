@@ -1,0 +1,1095 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>Tutorial &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=e353d410970836974a52" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=e353d410970836974a52" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/css/custom.css" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=e353d410970836974a52" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52" />
+
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/clipboard.min.js"></script>
+    <script src="../_static/copybutton.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'general/tutorial';</script>
+    <link rel="canonical" href="https://qrisp.eu/general/tutorial.html" />
+    <link rel="shortcut icon" href="../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Reference" href="../reference/index.html" />
+    <link rel="prev" title="What is Qrisp?" href="../index.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="light">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+<div class="bd-header__inner bd-page-width">
+  <label class="sidebar-toggle primary-toggle" for="__primary">
+    <span class="fa-solid fa-bars"></span>
+  </label>
+  
+  <div class="navbar-header-items__start">
+    
+      <div class="navbar-item">
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+    
+    
+    
+    <img src="../_static/logo_extended.png" class="logo__image only-light" alt="Logo image"/>
+    <script>document.write(`<img src="../_static/logo_extended.png" class="logo__image only-dark" alt="Logo image"/>`);</script>
+  
+  
+</a></div>
+    
+  </div>
+  
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item current active">
+                      <a class="nav-link nav-internal" href="#">
+                        Tutorial
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../reference/index.html">
+                        Reference
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="setup.html">
+                        Setup
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="imprint.html">
+                        Imprint
+                      </a>
+                    </li>
+                
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+  </button>
+`);
+</script>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/fraunhoferfokus/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square"></i></span>
+            <label class="sr-only">GitHub</label></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+  </button>
+`);
+</script>
+    </div>
+  
+
+  
+    <label class="sidebar-toggle secondary-toggle" for="__secondary">
+      <span class="fa-solid fa-outdent"></span>
+    </label>
+  
+</div>
+
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item current active">
+                      <a class="nav-link nav-internal" href="#">
+                        Tutorial
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../reference/index.html">
+                        Reference
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="setup.html">
+                        Setup
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="imprint.html">
+                        Imprint
+                      </a>
+                    </li>
+                
+  </ul>
+</nav></div>
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/fraunhoferfokus/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square"></i></span>
+            <label class="sr-only">GitHub</label></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumbs">
+  <ul class="bd-breadcrumbs" role="navigation" aria-label="Breadcrumb">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page">Tutorial</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <section id="tutorial">
+<span id="id1"></span><h1>Tutorial<a class="headerlink" href="#tutorial" title="Permalink to this heading">#</a></h1>
+<p>Welcome to the tutorial of Qrisp! This page is designed to help you get started by providing step-by-step instructions and examples. Whether you’re a beginner or an experienced quantum programmer, this tutorial will guide you through the fundamentals of the framework and help you become familiar with its syntax and features.</p>
+<p>We’ve structured the tutorial in a way that is easy to follow, starting with the basics and gradually building up to more advanced language features like automatic <a class="reference internal" href="../reference/Core/Uncomputation.html#id2"><span class="std std-ref">recomputation</span></a>. Along the way, we’ll introduce you to important concepts and techniques that you’ll need to know in order to write highly efficient algorithms in Qrisp.</p>
+<p>We encourage you to follow along with the examples and try out the code for yourself. Don’t worry if you make mistakes or don’t understand something right away - programming is a process of learning and experimentation, and it takes time to become proficient.</p>
+<p>By the end of this tutorial, you’ll have a solid foundation of Qrisp and be ready to tackle more complex projects. So let’s get <strong>started</strong>!</p>
+<section id="creating-a-quantumvariable">
+<h2>Creating a QuantumVariable<a class="headerlink" href="#creating-a-quantumvariable" title="Permalink to this heading">#</a></h2>
+<p>The central building block of Qrisp algorithms is the <a class="reference internal" href="../reference/Core/QuantumVariable.html"><span class="doc">QuantumVariable</span></a>. A QuantumVariable hides the qubit management from the user, enables human readable in- and outputs, strong typing via class inheritance, infix arithmetic syntax and much more. Creating a QuantumVariable is simple:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">qrisp</span> <span class="kn">import</span> <span class="n">QuantumVariable</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">qv</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Here, 5 refers to the number of qubits the QuantumVariable represents.
+QuantumVariables allow for convenient quantum function construction and evaluation, since a QuantumVariable carries all the information that is relevant for performing quantum operations on it.</p>
+<p>QuantumVariables can be low-level manipulated by calling <a class="reference internal" href="../reference/Miscellaneous%20Functions/Gate%20application%20functions.html#gate-application-functions"><span class="std std-ref">gate application functions</span></a> on them:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">qrisp</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">cx</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">h</span><span class="p">(</span><span class="n">qv</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">z</span><span class="p">(</span><span class="n">qv</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cx</span><span class="p">(</span><span class="n">qv</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">qv</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>Note that the Z gate is applied to all qubits of <code class="docutils literal notranslate"><span class="pre">qv</span></code> since there is no qubit specified.</p>
+<p>In order to take a look at the generated circuit, we call <code class="docutils literal notranslate"><span class="pre">print</span></code> on the <a class="reference internal" href="../reference/Core/QuantumSession.html#quantumsession"><span class="std std-ref">QuantumSession</span></a> in which <code class="docutils literal notranslate"><span class="pre">qv</span></code> is registered:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">qv</span><span class="o">.</span><span class="n">qs</span><span class="p">)</span>
+<span class="go">QuantumCircuit:</span>
+<span class="go">---------------</span>
+<span class="go">      ┌───┐┌───┐</span>
+<span class="go">qv.0: ┤ H ├┤ Z ├──■──</span>
+<span class="go">      ├───┤└───┘  │</span>
+<span class="go">qv.1: ┤ Z ├───────┼──</span>
+<span class="go">      ├───┤       │</span>
+<span class="go">qv.2: ┤ Z ├───────┼──</span>
+<span class="go">      ├───┤     ┌─┴─┐</span>
+<span class="go">qv.3: ┤ Z ├─────┤ X ├</span>
+<span class="go">      ├───┤     └───┘</span>
+<span class="go">qv.4: ┤ Z ├──────────</span>
+<span class="go">      └───┘</span>
+<span class="go">Live QuantumVariables:</span>
+<span class="go">----------------------</span>
+<span class="go">QuantumVariable qv</span>
+</pre></div>
+</div>
+<p>Once the QuantumVariable is not needed anymore, we can call the <a class="reference internal" href="../reference/Core/generated/qrisp.QuantumVariable.delete.html#qrisp.QuantumVariable.delete" title="qrisp.QuantumVariable.delete"><code class="xref py py-meth docutils literal notranslate"><span class="pre">delete</span></code></a> method, to tell the qubit manager, to free up the corresponding qubits. Calling <a class="reference internal" href="../reference/Core/generated/qrisp.QuantumVariable.delete.html#qrisp.QuantumVariable.delete" title="qrisp.QuantumVariable.delete"><code class="xref py py-meth docutils literal notranslate"><span class="pre">delete</span></code></a> enables the qubits of <code class="docutils literal notranslate"><span class="pre">qv</span></code> to be reused at a later point for other purposes.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">qv</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">verify</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+<span class="go">Exception: Tried to delete QuantumVariable which is not in |0&gt; state.</span>
+</pre></div>
+</div>
+<p>If given the keyword argument <code class="docutils literal notranslate"><span class="pre">verify</span></code> , Qrisp will check if the deleted qubits are properly disentangled by querying a simulator. Note that <code class="docutils literal notranslate"><span class="pre">verify</span></code> is set to <code class="docutils literal notranslate"><span class="pre">False</span></code> by default as the simulation can be resource costly for algorithms, which are creating and destroying alot of QuantumVariables.</p>
+<p>In this case, the qubits are not ready to use for other purposes as they still are in a non-trivial state. If <code class="docutils literal notranslate"><span class="pre">qv</span></code> is entangled to other qubits, a simple reset would result in a non-unitary collapse of superposition. We would need to perform a procedure which is commonly called <a class="reference internal" href="../reference/Core/Uncomputation.html#uncomputation"><span class="std std-ref">Uncomputation</span></a>.</p>
+<p>QuantumVariables can be thought of as the abstract parent class of more special types. One example is the <a class="reference internal" href="../reference/Quantum%20Types/QuantumChar.html"><span class="doc">QuantumChar</span></a>:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">qrisp</span> <span class="kn">import</span> <span class="n">QuantumChar</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">qch</span> <span class="o">=</span> <span class="n">QuantumChar</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>In order to initialize <code class="docutils literal notranslate"><span class="pre">qch</span></code>, we use the slicing operator (which invokes the <a class="reference internal" href="../reference/Core/generated/qrisp.QuantumVariable.encode.html"><span class="doc">encode</span></a> method):</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">qch</span><span class="p">[:]</span> <span class="o">=</span> <span class="s2">&quot;e&quot;</span>
+</pre></div>
+</div>
+<p>We can check the content using a simple <code class="docutils literal notranslate"><span class="pre">print</span></code> call:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">qch</span><span class="p">)</span>
+<span class="go">{&quot;e&quot;: 1.0}</span>
+</pre></div>
+</div>
+<p>This command queries a simulator which evaluates the compiled quantum circuit. The measurement results are returned as bitstrings, which are then converted to the corresponding outcome value. Here, the 1.0 corresponds to the probability of the outcome <code class="docutils literal notranslate"><span class="pre">&quot;e&quot;</span></code>.
+In order to bring some quantumness into the script, we can entangle it to our previously created QuantumVariable</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">cx</span><span class="p">(</span><span class="n">qv</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">qch</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">qch</span><span class="p">)</span>
+<span class="go">{&#39;e&#39;: 0.5, &#39;f&#39;: 0.5}</span>
+</pre></div>
+</div>
+<p>This brings the 0-th qubit of <code class="docutils literal notranslate"><span class="pre">qch</span></code> into a superposition and therefore <code class="docutils literal notranslate"><span class="pre">&quot;f&quot;</span></code> now appears with 50% probability.</p>
+<p>If we want to apply further processing to the measurement results, we can retrieve them as a dictionary using the <a class="reference internal" href="../reference/Core/generated/qrisp.QuantumVariable.get_measurement.html#qrisp.QuantumVariable.get_measurement" title="qrisp.QuantumVariable.get_measurement"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_measurement</span></code></a> method:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">results</span> <span class="o">=</span> <span class="n">qch</span><span class="o">.</span><span class="n">get_measurement</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>To investigate the statevector, we call the <a class="reference internal" href="../reference/Core/generated/qrisp.QuantumSession.statevector.html#qrisp.QuantumSession.statevector" title="qrisp.QuantumSession.statevector"><code class="xref py py-meth docutils literal notranslate"><span class="pre">statevector</span></code></a> method of the <a class="reference internal" href="../reference/Core/QuantumSession.html#quantumsession"><span class="std std-ref">QuantumSession</span></a>:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">qch</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">statevector</span><span class="p">()</span>
+<span class="go">sqrt(2)*(|00000&gt;*|e&gt; - |10010&gt;*|f&gt;)/2</span>
+</pre></div>
+</div>
+<p>If you have Sympy’s <a class="reference external" href="https://docs.sympy.org/latest/tutorials/intro-tutorial/printing.html">pretty printing</a> enabled in your console, you will even receive a nice LaTeX rendering:</p>
+<a class="reference internal image-reference" href="../_images/tutorial_statevector.png"><img alt="Tutorial statevector" class="align-left" src="../_images/tutorial_statevector.png" style="width: 200px;" /></a>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p>Qrisp has full compatibility to Qiskit featuring convenient <a class="reference internal" href="../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.from_qiskit.html#qrisp.QuantumCircuit.from_qiskit" title="qrisp.QuantumCircuit.from_qiskit"><code class="xref py py-meth docutils literal notranslate"><span class="pre">importing</span></code></a> and <a class="reference internal" href="../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.to_qiskit.html#qrisp.QuantumCircuit.to_qiskit" title="qrisp.QuantumCircuit.to_qiskit"><code class="xref py py-meth docutils literal notranslate"><span class="pre">exporting</span></code></a> of Qiskit circuits:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">qiskit_qc</span> <span class="o">=</span> <span class="n">qch</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span><span class="o">.</span><span class="n">to_qiskit</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>It is also possible to run Qrisp code directly on IBM Q hardware using a <a class="reference internal" href="../reference/Backend%20Interface/VirtualQiskitBackend.html#virtualqiskitbackend"><span class="std std-ref">VirtualQiskitBackend</span></a>.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">qiskit_ibm_provider</span> <span class="kn">import</span> <span class="n">IBMProvider</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">provider</span> <span class="o">=</span> <span class="n">IBMProvider</span><span class="p">(</span><span class="n">YOUR_APITOKEN</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">kolkata_qiskit</span> <span class="o">=</span> <span class="n">provider</span><span class="o">.</span><span class="n">get_backend</span><span class="p">(</span><span class="s2">&quot;ibmq_kolkata&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">qrisp</span> <span class="kn">import</span> <span class="n">VirtualQiskitBackend</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">kolkata_qrisp</span> <span class="o">=</span> <span class="n">VirtualQiskitBackend</span><span class="p">(</span><span class="n">kolkata_qiskit</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">results</span> <span class="o">=</span> <span class="n">qch</span><span class="o">.</span><span class="n">get_measurement</span><span class="p">(</span><span class="n">backend</span> <span class="o">=</span> <span class="n">kolkata_qrisp</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+<span class="go">{&#39;e&#39;: 0.4544, &#39;f&#39;: 0.4492, &#39;g&#39;: 0.0269, &#39;h&#39;: 0.0261, &#39;m&#39;: 0.0173, &#39;n&#39;: 0.0142, &#39;a&#39;: 0.0037, &#39;b&#39;: 0.0035, &#39;u&#39;: 0.0012, &#39;v&#39;: 0.0012, &#39;p&#39;: 0.0008, &#39;o&#39;: 0.0006, &#39;d&#39;: 0.0002, &#39;j&#39;: 0.0002, &#39;x&#39;: 0.0002, &#39;c&#39;: 0.0001, &#39;i&#39;: 0.0001, &#39;?&#39;: 0.0001}</span>
+</pre></div>
+</div>
+<p>And that’s it - you’re set with the basics and ready to build some algorithms!</p>
+</section>
+</section>
+<section id="solving-a-quadratic-equation-using-grover-s-algorithm">
+<h1>Solving a quadratic equation using Grover’s algorithm<a class="headerlink" href="#solving-a-quadratic-equation-using-grover-s-algorithm" title="Permalink to this heading">#</a></h1>
+<p>As a first example, we showcase how to solve the quadratic equation</p>
+<div class="math notranslate nohighlight">
+\[x^2 = 0.25\]</div>
+<p>using Grover’s algorithm. The idea here is to prepare an oracle, that multiplies a <a class="reference internal" href="../reference/Quantum%20Types/QuantumFloat.html"><span class="doc">QuantumFloat</span></a> with itself and tags the desired value <span class="math notranslate nohighlight">\(c_{tag} = 0.25\)</span>. This oracle is then embedded into several Grover iterations to amplify the amplitude of the solution.</p>
+<section id="oracle-construction">
+<h2>Oracle Construction<a class="headerlink" href="#oracle-construction" title="Permalink to this heading">#</a></h2>
+<p>We start with elaborating the oracle construction:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">qrisp</span> <span class="kn">import</span> <span class="n">auto_uncompute</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">QuantumFloat</span>
+
+<span class="nd">@auto_uncompute</span>
+<span class="k">def</span> <span class="nf">sqrt_oracle</span><span class="p">(</span><span class="n">qf</span><span class="p">):</span>
+    <span class="n">temp_qbool</span> <span class="o">=</span> <span class="p">(</span><span class="n">qf</span><span class="o">*</span><span class="n">qf</span> <span class="o">==</span> <span class="mf">0.25</span><span class="p">)</span>
+    <span class="n">z</span><span class="p">(</span><span class="n">temp_qbool</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This oracle recieves a <a class="reference internal" href="../reference/Quantum%20Types/QuantumFloat.html#quantumfloat"><span class="std std-ref">QuantumFloat</span></a> <code class="docutils literal notranslate"><span class="pre">qf</span></code> and evaluates the square. Subsequently it determines wether the result is equal to 0.25, which returns the <a class="reference internal" href="../reference/Quantum%20Types/QuantumBool.html#quantumbool"><span class="std std-ref">QuantumBool</span></a> <code class="docutils literal notranslate"><span class="pre">temp_qbool</span></code>. Finally, we perform a Z gate on <code class="docutils literal notranslate"><span class="pre">temp_qbool</span></code>. Note the <code class="docutils literal notranslate"><span class="pre">auto_uncompute</span></code> decorator, which automatically uncomputes all temporary values of this function (ie. the result of the multiplication and <code class="docutils literal notranslate"><span class="pre">temp_qbool</span></code>). You can find more information about Qrisps automatic uncomputation in  <a class="reference internal" href="../reference/Core/Uncomputation.html#uncomputation"><span class="std std-ref">Uncomputation</span></a>.</p>
+<p>To inspect the circuit, we create a <a class="reference internal" href="../reference/Quantum%20Types/QuantumFloat.html#quantumfloat"><span class="std std-ref">QuantumFloat</span></a>, evaluate the oracle and call <code class="docutils literal notranslate"><span class="pre">print</span></code> on the <code class="docutils literal notranslate"><span class="pre">.qs</span></code> attribute</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">qf</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">signed</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sqrt_oracle</span><span class="p">(</span><span class="n">qf</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">qf</span><span class="o">.</span><span class="n">qs</span><span class="p">)</span>
+<span class="go">QuantumCircuit:</span>
+<span class="go">---------------</span>
+<span class="go">             ┌───────────┐               ┌──────────────┐</span>
+<span class="go">     qf_0.0: ┤0          ├───────────────┤0             ├</span>
+<span class="go">             │           │               │              │</span>
+<span class="go">     qf_0.1: ┤1          ├───────────────┤1             ├</span>
+<span class="go">             │           │               │              │</span>
+<span class="go">     qf_0.2: ┤2          ├───────────────┤2             ├</span>
+<span class="go">             │           │               │              │</span>
+<span class="go">     qf_0.3: ┤3          ├───────────────┤3             ├</span>
+<span class="go">             │           │               │              │</span>
+<span class="go">mul_res_0.0: ┤4          ├──■─────────■──┤4             ├</span>
+<span class="go">             │           │  │         │  │              │</span>
+<span class="go">mul_res_0.1: ┤5          ├──o─────────o──┤5             ├</span>
+<span class="go">             │           │  │         │  │              │</span>
+<span class="go">mul_res_0.2: ┤6          ├──o─────────o──┤6             ├</span>
+<span class="go">             │           │  │         │  │              │</span>
+<span class="go">mul_res_0.3: ┤7          ├──o─────────o──┤7             ├</span>
+<span class="go">             │           │  │         │  │              │</span>
+<span class="go">mul_res_0.4: ┤8  __mul__ ├──o─────────o──┤8  __mul___dg ├</span>
+<span class="go">             │           │  │         │  │              │</span>
+<span class="go">mul_res_0.5: ┤9          ├──o─────────o──┤9             ├</span>
+<span class="go">             │           │  │         │  │              │</span>
+<span class="go">mul_res_0.6: ┤10         ├──o─────────o──┤10            ├</span>
+<span class="go">             │           │  │         │  │              │</span>
+<span class="go">sbp_anc_0.0: ┤11         ├──┼─────────┼──┤11            ├</span>
+<span class="go">             │           │  │         │  │              │</span>
+<span class="go">sbp_anc_1.0: ┤12         ├──┼─────────┼──┤12            ├</span>
+<span class="go">             │           │  │         │  │              │</span>
+<span class="go">sbp_anc_2.0: ┤13         ├──┼─────────┼──┤13            ├</span>
+<span class="go">             │           │  │         │  │              │</span>
+<span class="go">sbp_anc_3.0: ┤14         ├──┼─────────┼──┤14            ├</span>
+<span class="go">             │           │  │         │  │              │</span>
+<span class="go">sbp_anc_4.0: ┤15         ├──┼─────────┼──┤15            ├</span>
+<span class="go">             │           │  │         │  │              │</span>
+<span class="go">sbp_anc_5.0: ┤16         ├──┼─────────┼──┤16            ├</span>
+<span class="go">             └───────────┘┌─┴─┐┌───┐┌─┴─┐└──────────────┘</span>
+<span class="go">eq_cond_0.0: ─────────────┤ X ├┤ Z ├┤ X ├────────────────</span>
+<span class="go">                          └───┘└───┘└───┘</span>
+<span class="go">Live QuantumVariables:</span>
+<span class="go">----------------------</span>
+<span class="go">QuantumFloat qf_0</span>
+</pre></div>
+</div>
+<p>We can see how the multiplication is evaluated into a new QuantumFloat called <code class="docutils literal notranslate"><span class="pre">mul_res_0</span></code> using some ancilla qubits. Subsequently, a multi-controlled X-gate evaluates the condition of it to be equal to 0.25 into a qubit called <code class="docutils literal notranslate"><span class="pre">eq_cond_0</span></code>. The ancilla qubits and <code class="docutils literal notranslate"><span class="pre">eq_cond</span></code> will be recycled for each other during <a class="reference internal" href="../reference/Core/generated/qrisp.QuantumSession.compile.html#qrisp.QuantumSession.compile" title="qrisp.QuantumSession.compile"><code class="xref py py-meth docutils literal notranslate"><span class="pre">compilation</span></code></a>, implying there is 0 qubit overhead for the ancillae:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">qf</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span><span class="o">.</span><span class="n">num_qubits</span><span class="p">()</span>
+<span class="go">12</span>
+</pre></div>
+</div>
+<p>We perform the Z-gate and <a class="reference internal" href="../reference/Core/Uncomputation.html#uncomputation"><span class="std std-ref">uncompute</span></a>. The uncomputation is necessary here because the state the <a class="reference internal" href="../reference/Miscellaneous%20Functions/generated/qrisp.grover.diffuser.html#qrisp.grover.diffuser" title="qrisp.grover.diffuser"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Grover</span> <span class="pre">diffuser</span></code></a> acts on needs to be disentangled.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>QuantumVariables can be named independently of their name as a Python variable. If no name is provided, Qrisp tries to infer the name of the Python variable but in many cases there is ambiguity, meaning there is no guaranteed relation between the naming of the qubits and the name of the Python variable.</p>
+</div>
+</section>
+<section id="grover-s-algorithm">
+<h2>Grover’s algorithm<a class="headerlink" href="#grover-s-algorithm" title="Permalink to this heading">#</a></h2>
+<p>The code for embedding the constructed oracle into Grover’s algorithm is:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">qrisp.grover</span> <span class="kn">import</span> <span class="n">diffuser</span>
+
+<span class="n">qf</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">signed</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+
+<span class="n">n</span> <span class="o">=</span> <span class="n">qf</span><span class="o">.</span><span class="n">size</span>
+<span class="n">iterations</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="mi">2</span><span class="o">**</span><span class="n">n</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span><span class="o">**</span><span class="mf">0.5</span><span class="p">)</span>
+
+<span class="n">h</span><span class="p">(</span><span class="n">qf</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">iterations</span><span class="p">):</span>
+    <span class="n">sqrt_oracle</span><span class="p">(</span><span class="n">qf</span><span class="p">)</span>
+    <span class="n">diffuser</span><span class="p">(</span><span class="n">qf</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">qf</span><span class="p">)</span>
+<span class="go">{0.5: 0.4727, -0.5: 0.4727, 0.0: 0.0039, 1.0: 0.0039, 1.5: 0.0039, 2.0: 0.0039, 2.5: 0.0039, 3.0: 0.0039, 3.5: 0.0039, -4.0: 0.0039, -3.5: 0.0039, -3.0: 0.0039, -2.5: 0.0039, -2.0: 0.0039, -1.5: 0.0039, -1.0: 0.0039}</span>
+</pre></div>
+</div>
+<p>First we create the <a class="reference internal" href="../reference/Quantum%20Types/QuantumFloat.html"><span class="doc">QuantumFloat</span></a> which will contain the solution. Note that the QuantumFloat constructor creates unsigned floats by default. We determine the number of iterations according to the formula given <a class="reference external" href="https://arxiv.org/abs/quant-ph/9909040">here</a>, taking into consideration that we expect two solutions (<span class="math notranslate nohighlight">\(S = \{0.5, -0.5\}\)</span>). The next step is then to bring <code class="docutils literal notranslate"><span class="pre">qf</span></code> into uniform superposition, followed by the Grover iterations and finalized by a <a class="reference internal" href="../reference/Core/generated/qrisp.QuantumVariable.get_measurement.html#qrisp.QuantumVariable.get_measurement" title="qrisp.QuantumVariable.get_measurement"><code class="xref py py-meth docutils literal notranslate"><span class="pre">measurement</span></code></a> (which is called by <code class="docutils literal notranslate"><span class="pre">print</span></code>).</p>
+</section>
+</section>
+<section id="quantum-phase-estimation">
+<h1>Quantum Phase Estimation<a class="headerlink" href="#quantum-phase-estimation" title="Permalink to this heading">#</a></h1>
+<p><a class="reference external" href="https://en.wikipedia.org/wiki/Quantum_phase_estimation_algorithm">Quantum phase estimation</a> is an important subroutine in many quantum algorithms. If you are not familiar with this algorithm, we recommend that you first read about it <a class="reference external" href="https://qiskit.org/textbook/ch-algorithms/quantum-phase-estimation.html">elsewhere</a> and then come back here. We shortly summarize the problem this algorithm solves:
+Given is a unitary <span class="math notranslate nohighlight">\(U\)</span> and quantum state <span class="math notranslate nohighlight">\(\ket{\psi}\)</span> which is an eigenvector of <span class="math notranslate nohighlight">\(U\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[U \ket{\psi} = \text{exp}(i 2 \pi \phi)\ket{\psi}\]</div>
+<p>Applying quantum phase estimation to <span class="math notranslate nohighlight">\(U\)</span> and <span class="math notranslate nohighlight">\(\ket{\psi}\)</span> returns a quantum register containing an estimate for the value of <span class="math notranslate nohighlight">\(\phi\)</span>.</p>
+<div class="math notranslate nohighlight">
+\[\text{QPE}_{U} \ket{\psi} \ket{0} = \ket{\psi} \ket{\phi}\]</div>
+<p>It can be implemented within a few lines of code in Qrisp:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">qrisp</span> <span class="kn">import</span> <span class="n">QuantumFloat</span><span class="p">,</span> <span class="n">control</span><span class="p">,</span> <span class="n">QFT</span><span class="p">,</span> <span class="n">h</span>
+
+<span class="k">def</span> <span class="nf">QPE</span><span class="p">(</span><span class="n">psi</span><span class="p">,</span> <span class="n">U</span><span class="p">,</span> <span class="n">precision</span><span class="p">):</span>
+
+    <span class="n">res</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="n">precision</span><span class="p">,</span> <span class="o">-</span><span class="n">precision</span><span class="p">)</span>
+
+    <span class="n">h</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">precision</span><span class="p">):</span>
+        <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">res</span><span class="p">[</span><span class="n">i</span><span class="p">]):</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="n">i</span><span class="p">):</span>
+                <span class="n">U</span><span class="p">(</span><span class="n">psi</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">QFT</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">inv</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The first step here is to create the <a class="reference internal" href="../reference/Quantum%20Types/QuantumFloat.html#qrisp.QuantumFloat" title="qrisp.QuantumFloat"><code class="xref py py-meth docutils literal notranslate"><span class="pre">QuantumFloat</span></code></a> <code class="docutils literal notranslate"><span class="pre">res</span></code> which will contain the result. The first argument specifies the amount of mantissa qubits, the QuantumFloat should contain and the second argument specifies the exponent. Having <span class="math notranslate nohighlight">\(n\)</span> mantissa qubits and and exponent of <span class="math notranslate nohighlight">\(-n\)</span> means that this QuantumFloat can represent the values between 0 and 1 with a granularity of <span class="math notranslate nohighlight">\(2^{-n}\)</span>. Subsequently we apply an Hadamard gate to all qubits of <code class="docutils literal notranslate"><span class="pre">res</span></code> and continue by performing controlled evaluations of <span class="math notranslate nohighlight">\(U\)</span>. This is achieved by using the <code class="docutils literal notranslate"><span class="pre">with</span> <span class="pre">control(res[i]):</span></code> statement. This statement enters a <a class="reference internal" href="../reference/Quantum%20Environments/ControlEnvironment.html#controlenvironment"><span class="std std-ref">ControlEnvironment</span></a> such that every quantum operation inside the indented code block will be controlled on the i-th qubit of <code class="docutils literal notranslate"><span class="pre">res</span></code>. We conclude the algorithm by performing an inverse quantum fourier transformation of <code class="docutils literal notranslate"><span class="pre">res</span></code>.</p>
+<p>Note that compared to the <a class="reference external" href="https://qiskit.org/documentation/stubs/qiskit.circuit.library.PhaseEstimation.html">Qiskit implementation</a> the Qrisp version comes with the convenience that <span class="math notranslate nohighlight">\(U\)</span> can be given as a Python function (instead of a Circuit object) allowing for slim and elegant evaluations. Furthermore, the line <code class="docutils literal notranslate"><span class="pre">with</span> <span class="pre">control(res[i]):</span></code> invokes a <a class="reference internal" href="../reference/Quantum%20Environments/ControlEnvironment.html#qrisp.ControlEnvironment" title="qrisp.ControlEnvironment"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ControlEnvironment</span></code></a>, which can yield significant gains in performance if <code class="docutils literal notranslate"><span class="pre">qpe</span></code> is called within another <code class="docutils literal notranslate"><span class="pre">ControlEnvironments</span></code> (compared to the Qiskit approach of simply synthesizing the double controlled version for every participating gate).</p>
+<p>We test our code with a simple example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">qrisp</span> <span class="kn">import</span> <span class="n">p</span><span class="p">,</span> <span class="n">QuantumVariable</span><span class="p">,</span> <span class="n">multi_measurement</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="k">def</span> <span class="nf">U</span><span class="p">(</span><span class="n">psi</span><span class="p">):</span>
+    <span class="n">phi_1</span> <span class="o">=</span> <span class="mf">0.5</span>
+    <span class="n">phi_2</span> <span class="o">=</span> <span class="mf">0.125</span>
+
+    <span class="n">p</span><span class="p">(</span><span class="n">phi_1</span><span class="o">*</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="n">psi</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">p</span><span class="p">(</span><span class="n">phi_2</span><span class="o">*</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="n">psi</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+<span class="n">psi</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="n">h</span><span class="p">(</span><span class="n">psi</span><span class="p">)</span>
+
+<span class="n">res</span> <span class="o">=</span> <span class="n">QPE</span><span class="p">(</span><span class="n">psi</span><span class="p">,</span> <span class="n">U</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>In this code snippet, we define a function <code class="docutils literal notranslate"><span class="pre">U</span></code> which applies a phase gate onto the first two qubits of its input. We then create the <a class="reference internal" href="../reference/Core/QuantumVariable.html#quantumvariable"><span class="std std-ref">QuantumVariable</span></a> <code class="docutils literal notranslate"><span class="pre">psi</span></code> and bring it into uniform superposition by applying Hadamard gates onto each qubit. Subsequently, we evaluate <code class="docutils literal notranslate"><span class="pre">qpe</span></code> on <code class="docutils literal notranslate"><span class="pre">U</span></code> and <code class="docutils literal notranslate"><span class="pre">psi</span></code> with the precision 3.</p>
+<p>The quantum state is now:</p>
+<div class="math notranslate nohighlight">
+\[\frac{1}{2} \text{QPE}_{U}(\ket{00} + \ket{01} + \ket{10} + \ket{11})\ket{0} = \frac{1}{2} (\ket{00}\ket{0} + \ket{10}\ket{\phi_1} + \ket{01}\ket{\phi_2} +\ket{11}\ket{\phi_1 + \phi_2})\]</div>
+<p>We verify by measuring <code class="docutils literal notranslate"><span class="pre">psi</span></code> <a class="reference internal" href="../reference/Miscellaneous%20Functions/generated/qrisp.multi_measurement.html#qrisp.multi_measurement" title="qrisp.multi_measurement"><code class="xref py py-meth docutils literal notranslate"><span class="pre">together</span></code></a> with <code class="docutils literal notranslate"><span class="pre">res</span></code>:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">multi_measurement</span><span class="p">([</span><span class="n">psi</span><span class="p">,</span> <span class="n">res</span><span class="p">]))</span>
+<span class="go">{(&#39;00&#39;, 0.0): 0.25,</span>
+<span class="go"> (&#39;10&#39;, 0.5): 0.25,</span>
+<span class="go"> (&#39;01&#39;, 0.125): 0.25,</span>
+<span class="go"> (&#39;11&#39;, 0.625): 0.25}</span>
+</pre></div>
+</div>
+</section>
+<section id="solving-the-traveling-salesman-problem-tsp">
+<h1>Solving the traveling salesman problem (TSP)<a class="headerlink" href="#solving-the-traveling-salesman-problem-tsp" title="Permalink to this heading">#</a></h1>
+<p id="tsp">While the previous examples contained a complexity, that could in principle still be managed with a low level QuantumCircuit creation framework, our next problem contains much more conceptual complexity. We believe that this example clearly displays the neccessity of a higher-level language like Qrisp in order to tackle problems of similar or even higher complexity.</p>
+<p>The <a class="reference external" href="https://en.wikipedia.org/wiki/Travelling_salesman_problem">traveling salesman problem</a> is a common example of an NP-hard problem. The task is to find the shortest round trip through a set of cities, which are described by a weighted graph. As shown in <a class="reference external" href="https://qiskit.org/documentation/optimization/tutorials/06_examples_max_cut_and_tsp.html">this tutorial</a> the traveling salesman problem can be reformulated in terms of a <a class="reference external" href="https://en.wikipedia.org/wiki/Quadratic_unconstrained_binary_optimization">QUBO problem</a> instance and then solved using either VQE or QAOA. A certain disadvantage of this approach is that the amount of binary variables grows as <span class="math notranslate nohighlight">\(\mathcal{O}(n^2)\)</span> where <span class="math notranslate nohighlight">\(n\)</span> is the amount of cities.
+Another approach has been demonstrated <a class="reference external" href="https://arxiv.org/pdf/1805.10928.pdf">in this paper</a> (which has also been implemented in a <a class="reference external" href="https://qiskit.org/textbook/ch-paper-implementations/tsp.html">Qiskit tutorial</a>). The idea is to use quantum phase estimation on successive diagonal operators to retrieve the route distance. The amount of qubits here grows as <span class="math notranslate nohighlight">\(\mathcal{O}(n log(n))\)</span>. Unfortunately the paper provides no details on how to perform the actual quantum search.</p>
+<p>We will now introduce a solution that resembles the second method including the quantum search. This involves creating a superposition of all possible routes (excluding those that repeat cities), assessing the distance of the routes, and determining whether the distance is below a certain threshold. The use of Qrisp’s high-level language features simplifies many of these steps. Moreover, employing Qrisp not only streamlines the process, but also greatly improves resource efficiency: The presented code includes more than 10 distinct QuantumVariables distributed across 41 qubits which compiles into a QuantumCircuit that uses only 23 qubits.</p>
+<p>The first step is to create a problem instance. We do this by specifying the amount of cities and an adjancecy matrix.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">qrisp</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="n">city_amount</span> <span class="o">=</span> <span class="mi">4</span>
+
+<span class="n">distance_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span>     <span class="mf">0.25</span><span class="p">,</span>   <span class="mf">0.125</span><span class="p">,</span>  <span class="mf">0.5</span><span class="p">],</span>
+                            <span class="p">[</span><span class="mf">0.25</span><span class="p">,</span>  <span class="mi">0</span><span class="p">,</span>      <span class="mf">0.625</span><span class="p">,</span>  <span class="mf">0.375</span><span class="p">],</span>
+                            <span class="p">[</span><span class="mf">0.125</span><span class="p">,</span> <span class="mf">0.625</span><span class="p">,</span>  <span class="mi">0</span><span class="p">,</span>      <span class="mf">0.75</span><span class="p">],</span>
+                            <span class="p">[</span><span class="mf">0.5</span><span class="p">,</span>   <span class="mf">0.375</span><span class="p">,</span>  <span class="mf">0.75</span><span class="p">,</span>   <span class="mi">0</span><span class="p">]])</span><span class="o">/</span><span class="n">city_amount</span>
+</pre></div>
+</div>
+<section id="setting-up-a-superposition-of-all-routes">
+<h2>Setting up a superposition of all routes<a class="headerlink" href="#setting-up-a-superposition-of-all-routes" title="Permalink to this heading">#</a></h2>
+<p>Unlike Qiskit’s solution, we will not search the space of <strong>every</strong> combination of cities but only the permutations (ie. the combinations, which contain each city only once). To do this we need to set up a superposition, where only the permutations are present. We achieve this by bringing a set of QuantumVariables <span class="math notranslate nohighlight">\(s_0, s_1, .. s_k\)</span>, which we call <code class="docutils literal notranslate"><span class="pre">perm_specifiers</span></code> into uniform superposition. Each computational basis-state of these variables specifies a permutation. We then call a function <code class="docutils literal notranslate"><span class="pre">eval_perm</span></code>, which creates a <a class="reference internal" href="../reference/Core/QuantumArray.html#quantumarray"><span class="std std-ref">QuantumArray</span></a> containing that permutation.</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}U_{\text{eval_perm}} \sum_{s_0 = 0}^n \sum_{s_1 = 0}^n .. \sum_{s_k = 0}^n \left( \bigotimes_{i = 0}^k \ket{s_i} \right) \ket{0}\\
+= \sum_{s_0 = 0}^n \sum_{s_1 = 0}^n .. \sum_{s_k = 0}^n \left( \bigotimes_{i = 0}^k \ket{s_i} \right) \ket{\text{eval_perm}(s_0, s_1, .. s_n)}\end{split}\]</div>
+<p>The first task in creating the oracle is therefore to code the function <code class="docutils literal notranslate"><span class="pre">eval_perm</span></code>. The idea here is to use “reverse” <a class="reference external" href="https://en.wikipedia.org/wiki/Selection_sort">selection sort</a>. What does that mean? A sorting algorithm is basically a procedure that reverts every permutation to its ordered state. The reversal of this procedure therefore transforms the ordered state (ie. (1,2,3..)) to a permutation, based on a set of variables. For selection sort this set of variables is the index of the minimum element of each iteration. This index specifies, which element is swapped to the first position. Swapping a <a class="reference internal" href="../reference/Core/QuantumArray.html#quantumarray"><span class="std std-ref">QuantumArray</span></a> entry specified by a <a class="reference internal" href="../reference/Quantum%20Types/QuantumFloat.html#quantumfloat"><span class="std std-ref">QuantumFloat</span></a> to the first position can be achieved by inverting the <a class="reference internal" href="../reference/Algorithms/generated/qrisp.demux.html#qrisp.demux" title="qrisp.demux"><code class="xref py py-meth docutils literal notranslate"><span class="pre">demux</span></code></a> function :</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1">#Receives a QuantumArray qa and a QuantumFloat index and</span>
+<span class="c1">#then swaps the entry specified by index to the first position of the QuantumArray</span>
+<span class="k">def</span> <span class="nf">swap_to_front</span><span class="p">(</span><span class="n">qa</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+    <span class="k">with</span> <span class="n">invert</span><span class="p">():</span>
+        <span class="n">demux</span><span class="p">(</span><span class="n">qa</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">index</span><span class="p">,</span> <span class="n">qa</span><span class="p">,</span> <span class="n">permit_mismatching_size</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>We can now define <code class="docutils literal notranslate"><span class="pre">eval_perm</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1">#Receives a list of QuantumFloats, which specify a permuation</span>
+<span class="c1">#and then returns QuantumArray holding that permutation</span>
+<span class="k">def</span> <span class="nf">eval_perm</span><span class="p">(</span><span class="n">perm_specifiers</span><span class="p">):</span>
+
+    <span class="c1">#Specify the size of the QuantumFloats, which will represent the cities</span>
+    <span class="n">city_specifier_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="n">city_amount</span><span class="p">)))</span>
+
+    <span class="c1">#Create the QuantumArray, which will hold the permutations</span>
+    <span class="n">qa</span> <span class="o">=</span> <span class="n">QuantumArray</span><span class="p">(</span><span class="n">QuantumFloat</span><span class="p">(</span><span class="n">city_specifier_size</span><span class="p">),</span> <span class="n">city_amount</span><span class="p">)</span>
+
+    <span class="c1">#Initiate the QuantumArray with the identity permutation, ie. (0,1,2..)</span>
+    <span class="n">qa</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">city_amount</span><span class="p">)</span>
+
+    <span class="c1">#Iteratively swap</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">city_amount</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">swap_to_front</span><span class="p">(</span><span class="n">qa</span><span class="p">[</span><span class="n">i</span><span class="p">:],</span> <span class="n">perm_specifiers</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">qa</span>
+</pre></div>
+</div>
+<p>In this function we first determine, how big the QuantumFloat needs to be in order to represent every city. If we had <span class="math notranslate nohighlight">\(8 = 2^3\)</span> cities, we would need 3 qubits. We then create a <a class="reference internal" href="../reference/Core/QuantumArray.html#quantumarray"><span class="std std-ref">QuantumArray</span></a> with qtype <a class="reference internal" href="../reference/Quantum%20Types/QuantumFloat.html#quantumfloat"><span class="std std-ref">QuantumFloat</span></a> and size <code class="docutils literal notranslate"><span class="pre">city_amount</span></code>. This array will hold the resulting permutation, which is why we <a class="reference internal" href="../reference/Core/generated/qrisp.QuantumArray.encode.html#qrisp.QuantumArray.encode" title="qrisp.QuantumArray.encode"><code class="xref py py-meth docutils literal notranslate"><span class="pre">initiate</span></code></a> the identity permutation. The final part of the function is to iterate through the array and swap the entry specified by <code class="docutils literal notranslate"><span class="pre">perm_specifiers</span></code> to the i-th entry.</p>
+<p>Before we test this function, we create another helper function, which creates the <code class="docutils literal notranslate"><span class="pre">perm_specifiers</span></code>.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1">#Function that returns a list of QuantumFloats,</span>
+<span class="c1">#specifying the permutations (these will be in uniform superposition)</span>
+<span class="k">def</span> <span class="nf">create_perm_specifiers</span><span class="p">(</span><span class="n">city_amount</span><span class="p">):</span>
+
+    <span class="n">perm_specifiers</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">city_amount</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+
+        <span class="n">qf_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="n">city_amount</span><span class="o">-</span><span class="n">i</span><span class="p">)))</span>
+
+        <span class="n">temp_qf</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="n">qf_size</span><span class="p">)</span>
+
+        <span class="n">perm_specifiers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">temp_qf</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">perm_specifiers</span>
+</pre></div>
+</div>
+<p>Note that we dynamically redetermine the size of the <a class="reference internal" href="../reference/Quantum%20Types/QuantumFloat.html#quantumfloat"><span class="std std-ref">QuantumFloat</span></a> before each iteration. To understand why we can do this, consider the last iteration of <code class="docutils literal notranslate"><span class="pre">eval_perm</span></code>. Here we treat a <a class="reference internal" href="../reference/Core/QuantumArray.html#quantumarray"><span class="std std-ref">QuantumArray</span></a> with only 2 entries. Therefore the last specifier only needs the size of a single qubit.</p>
+<p>We can now test our results so far:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">perm_specifiers</span> <span class="o">=</span> <span class="n">create_perm_specifiers</span><span class="p">(</span><span class="n">city_amount</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">qv</span> <span class="ow">in</span> <span class="n">perm_specifiers</span><span class="p">:</span> <span class="n">h</span><span class="p">(</span><span class="n">qv</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">perm</span> <span class="o">=</span> <span class="n">eval_perm</span><span class="p">(</span><span class="n">perm_specifiers</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">multi_measurement</span><span class="p">(</span><span class="n">perm_specifiers</span> <span class="o">+</span> <span class="p">[</span><span class="n">perm</span><span class="p">])</span>
+<span class="go">{(0, 0, 0, OutcomeArray([0, 1, 2, 3])): 0.0312,</span>
+<span class="go"> (0, 0, 1, OutcomeArray([0, 1, 3, 2])): 0.0312,</span>
+<span class="go"> (0, 1, 0, OutcomeArray([0, 2, 1, 3])): 0.0312,</span>
+<span class="go"> (0, 1, 1, OutcomeArray([0, 2, 3, 1])): 0.0312,</span>
+<span class="go"> (0, 2, 0, OutcomeArray([0, 3, 2, 1])): 0.0312,</span>
+<span class="go"> (0, 2, 1, OutcomeArray([0, 3, 1, 2])): 0.0312,</span>
+<span class="go"> (0, 3, 0, OutcomeArray([0, 3, 1, 2])): 0.0312,</span>
+<span class="go"> (0, 3, 1, OutcomeArray([0, 3, 2, 1])): 0.0312,</span>
+<span class="go"> (1, 0, 0, OutcomeArray([1, 0, 3, 2])): 0.0312,</span>
+<span class="go"> (1, 0, 1, OutcomeArray([1, 0, 2, 3])): 0.0312,</span>
+<span class="go"> (1, 1, 0, OutcomeArray([1, 3, 0, 2])): 0.0312,</span>
+<span class="go"> (1, 1, 1, OutcomeArray([1, 3, 2, 0])): 0.0312,</span>
+<span class="go"> (1, 2, 0, OutcomeArray([1, 2, 3, 0])): 0.0312,</span>
+<span class="go"> (1, 2, 1, OutcomeArray([1, 2, 0, 3])): 0.0312,</span>
+<span class="go"> (1, 3, 0, OutcomeArray([1, 2, 0, 3])): 0.0312,</span>
+<span class="go"> (1, 3, 1, OutcomeArray([1, 2, 3, 0])): 0.0312,</span>
+<span class="go"> (2, 0, 0, OutcomeArray([2, 1, 0, 3])): 0.0312,</span>
+<span class="go"> (2, 0, 1, OutcomeArray([2, 1, 3, 0])): 0.0312,</span>
+<span class="go"> (2, 1, 0, OutcomeArray([2, 0, 1, 3])): 0.0312,</span>
+<span class="go"> (2, 1, 1, OutcomeArray([2, 0, 3, 1])): 0.0312,</span>
+<span class="go"> (2, 2, 0, OutcomeArray([2, 3, 0, 1])): 0.0312,</span>
+<span class="go"> (2, 2, 1, OutcomeArray([2, 3, 1, 0])): 0.0312,</span>
+<span class="go"> (2, 3, 0, OutcomeArray([2, 3, 1, 0])): 0.0312,</span>
+<span class="go"> (2, 3, 1, OutcomeArray([2, 3, 0, 1])): 0.0312,</span>
+<span class="go"> (3, 0, 0, OutcomeArray([3, 0, 1, 2])): 0.0312,</span>
+<span class="go"> (3, 0, 1, OutcomeArray([3, 0, 2, 1])): 0.0312,</span>
+<span class="go"> (3, 1, 0, OutcomeArray([3, 1, 0, 2])): 0.0312,</span>
+<span class="go"> (3, 1, 1, OutcomeArray([3, 1, 2, 0])): 0.0312,</span>
+<span class="go"> (3, 2, 0, OutcomeArray([3, 2, 1, 0])): 0.0312,</span>
+<span class="go"> (3, 2, 1, OutcomeArray([3, 2, 0, 1])): 0.0312,</span>
+<span class="go"> (3, 3, 0, OutcomeArray([3, 2, 0, 1])): 0.0312,</span>
+<span class="go"> (3, 3, 1, OutcomeArray([3, 2, 1, 0])): 0.0312}</span>
+</pre></div>
+</div>
+<p>In this code snipped, we first create the <code class="docutils literal notranslate"><span class="pre">perm_specifiers</span></code> and set them to uniform superposition by applying an H gate onto every participating qubit. We then call the <code class="docutils literal notranslate"><span class="pre">eval_perm</span></code> function to receive a <a class="reference internal" href="../reference/Core/QuantumArray.html#quantumarray"><span class="std std-ref">QuantumArray</span></a> containing the corresponding permutations. Finally we measure all of these variables together using the <a class="reference internal" href="../reference/Miscellaneous%20Functions/generated/qrisp.multi_measurement.html#qrisp.multi_measurement" title="qrisp.multi_measurement"><code class="xref py py-meth docutils literal notranslate"><span class="pre">multi_measurement</span></code></a> function. This function allows to measure multiple QuantumVariables at once and returns the results as a dictionary of tuples.</p>
+<p>The first 3 numbers within the keys of this dictionary are the permutation specifiers. We see that the 3rd number only varies between 0 and 1, which is due to the previously mentioned dynamic size determination. The values denoted with <code class="docutils literal notranslate"><span class="pre">OutcomeArray</span></code> denote the permutation. Note that these permutations indeed never contain the same city twice.</p>
+</section>
+<section id="evaluating-route-distance">
+<h2>Evaluating route distance<a class="headerlink" href="#evaluating-route-distance" title="Permalink to this heading">#</a></h2>
+<p>Now that we have a superposition of states describing every possible route, we have to evaluate the distance of them.</p>
+<p>On a classical computer, this function is rather simple</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">cl_route_distance</span><span class="p">(</span><span class="n">itinerary</span><span class="p">):</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">city_amount</span><span class="p">):</span>
+        <span class="n">res</span> <span class="o">+=</span> <span class="n">distance_matrix</span><span class="p">[</span><span class="n">itinerary</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">itinerary</span><span class="p">[(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">%</span><span class="n">city_amount</span><span class="p">]]</span>
+    <span class="k">return</span> <span class="n">res</span>
+</pre></div>
+</div>
+<p>We present two approaches to perform this function on a quantum computer. One is based one quantum phase estimation and the other one on loading the distance matrix from a <a class="reference internal" href="../reference/Core/QuantumDictionary.html#quantumdictionary"><span class="std std-ref">QuantumDictionary</span></a>.</p>
+<p><strong>Quantum Phase Estimation based evaluation</strong></p>
+<p>The idea here is to make use of <a class="reference internal" href="../reference/Algorithms/generated/qrisp.QPE.html#qrisp.QPE" title="qrisp.QPE"><code class="xref py py-meth docutils literal notranslate"><span class="pre">quantum</span> <span class="pre">phase</span> <span class="pre">estimation</span></code></a> while abusing the additive properties of successive phase functions.</p>
+<p>We realize these phase functions using the <a class="reference internal" href="../reference/Miscellaneous%20Functions/generated/qrisp.as_hamiltonian.html#qrisp.as_hamiltonian" title="qrisp.as_hamiltonian"><code class="xref py py-meth docutils literal notranslate"><span class="pre">as_hamiltonian</span></code></a> decorator. This decorator turns Python functions of ordinary variables into functions of QuantumVariables. The effect of these functions is to apply the result of the original function as a phase onto the quantum state.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@as_hamiltonian</span>
+<span class="k">def</span> <span class="nf">trip_distance</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="nb">iter</span> <span class="o">=</span> <span class="mi">1</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">distance_matrix</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span><span class="o">*</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="nb">iter</span>
+</pre></div>
+</div>
+<p>In mathematical terms, this function performs the following operation</p>
+<div class="math notranslate nohighlight">
+\[\mathrm{U}_{\text{trip_distance}} \ket{i} \ket{j} = \exp(i \cdot \text{trip_distance}(i, j, \text{iter})) \ket{i} \ket{j}\]</div>
+<p>Therefore, having several of these applied iteratively yields the summed distance as a phase:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\mathrm{U}_{\text{td}}\mathrm{U}_{\text{td}}\mathrm{U}_{\text{td}}\mathrm{U}_{\text{td}} \ket{\sigma(0)} \ket{\sigma(1)} \ket{\sigma(2)} \ket{\sigma(3)}\\
+= \exp(i \sum_{i = 0}^{3} \text{trip_distance}(\sigma(i), \sigma((i+1)\%4), \text{iter})) \ket{\sigma(0)} \ket{\sigma(1)} \ket{\sigma(2)} \ket{\sigma(3)}\end{split}\]</div>
+<p>Where <span class="math notranslate nohighlight">\(\sigma\)</span> is the permutation.</p>
+<p>We set up the function for performing the successive phase application</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">phase_apply_summed_distance</span><span class="p">(</span><span class="n">itinerary</span><span class="p">,</span> <span class="nb">iter</span> <span class="o">=</span> <span class="mi">1</span><span class="p">):</span>
+
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">itinerary</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+        <span class="n">trip_distance</span><span class="p">(</span><span class="n">itinerary</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">itinerary</span><span class="p">[(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">%</span><span class="n">n</span><span class="p">],</span> <span class="nb">iter</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This function can now be used as an input for the <a class="reference internal" href="../reference/Algorithms/generated/qrisp.QPE.html#qrisp.QPE" title="qrisp.QPE"><code class="xref py py-meth docutils literal notranslate"><span class="pre">quantum</span> <span class="pre">phase</span> <span class="pre">estimation</span></code></a> algorithm.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@lifted</span>
+<span class="k">def</span> <span class="nf">qpe_calc_perm_travel_distance</span><span class="p">(</span><span class="n">itinerary</span><span class="p">,</span> <span class="n">precision</span><span class="p">):</span>
+
+    <span class="k">return</span> <span class="n">QPE</span><span class="p">(</span><span class="n">itinerary</span><span class="p">,</span>
+               <span class="n">phase_apply_summed_distance</span><span class="p">,</span>
+               <span class="n">precision</span> <span class="o">=</span> <span class="n">precision</span><span class="p">,</span>
+               <span class="n">iter_spec</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Note the keyword <code class="docutils literal notranslate"><span class="pre">iter_spec</span></code> which indicates that, instead of repeatedly evaluating <code class="docutils literal notranslate"><span class="pre">phase_apply_summed_distance</span></code>, the algorithm supplies the amount of iterations as the keyword <code class="docutils literal notranslate"><span class="pre">iter</span></code>. This reduces the required resources significantly. Of further interest is the <a class="reference internal" href="../reference/Miscellaneous%20Functions/generated/qrisp.lifted.html#qrisp.lifted" title="qrisp.lifted"><code class="xref py py-meth docutils literal notranslate"><span class="pre">lifted</span></code></a> decorator. This decorator tells the compiler that this function is <code class="docutils literal notranslate"><span class="pre">qfree</span></code> and permeable on its inputs and thus can be automatically uncomputed, even though it contains subroutines (<a class="reference internal" href="../reference/Algorithms/generated/qrisp.QFT.html#qrisp.QFT" title="qrisp.QFT"><code class="xref py py-meth docutils literal notranslate"><span class="pre">QFT</span></code></a>!) which aren’t <code class="docutils literal notranslate"><span class="pre">qfree</span></code>. For more information about these concepts, visit our <a class="reference internal" href="../reference/Core/Uncomputation.html#uncomputation"><span class="std std-ref">uncomputation documentation page</span></a>.</p>
+<p>To verify our results we evaluate our function on a randomly chosen itinerary and compare with the classical result:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">test_itinerary</span> <span class="o">=</span> <span class="n">QuantumArray</span><span class="p">(</span><span class="n">qtype</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">test_itinerary</span><span class="p">[:]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cl_route_distance</span><span class="p">(</span><span class="n">test_itinerary</span><span class="o">.</span><span class="n">most_likely</span><span class="p">())</span>
+<span class="go">0.53125</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">qpe_res</span> <span class="o">=</span> <span class="n">qpe_calc_perm_travel_distance</span><span class="p">(</span><span class="n">test_itinerary</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">qpe_res</span><span class="p">)</span>
+<span class="go">{0.53125: 1.0}</span>
+</pre></div>
+</div>
+<p><strong>Quantum Dictionary based evaluation</strong></p>
+<p>Another approach to evaluate the route distance is to load the data of the distance matrix into the superposition using a <a class="reference internal" href="../reference/Core/QuantumDictionary.html#quantumdictionary"><span class="std std-ref">QuantumDictionary</span></a>.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">qdict_calc_perm_travel_distance</span><span class="p">(</span><span class="n">itinerary</span><span class="p">,</span> <span class="n">precision</span><span class="p">):</span>
+
+    <span class="c1">#A QuantumFloat with n qubits and exponent -n</span>
+    <span class="c1">#can represent values between 0 and 1</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="n">precision</span><span class="p">,</span> <span class="o">-</span><span class="n">precision</span><span class="p">)</span>
+
+    <span class="c1">#Fill QuantumDictionary with values</span>
+    <span class="n">qd</span> <span class="o">=</span> <span class="n">QuantumDictionary</span><span class="p">(</span><span class="n">return_type</span> <span class="o">=</span> <span class="n">res</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">city_amount</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">city_amount</span><span class="p">):</span>
+            <span class="n">qd</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">distance_matrix</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span>
+
+    <span class="c1">#Evaluate result</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">city_amount</span><span class="p">):</span>
+        <span class="n">trip_distance</span> <span class="o">=</span> <span class="n">qd</span><span class="p">[</span><span class="n">itinerary</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">itinerary</span><span class="p">[(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">%</span><span class="n">city_amount</span><span class="p">]]</span>
+        <span class="n">res</span> <span class="o">+=</span> <span class="n">trip_distance</span>
+        <span class="n">trip_distance</span><span class="o">.</span><span class="n">uncompute</span><span class="p">(</span><span class="n">recompute</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">res</span>
+</pre></div>
+</div>
+<p>Here, <code class="docutils literal notranslate"><span class="pre">trip_distance</span></code> is a <a class="reference internal" href="../reference/Quantum%20Types/QuantumFloat.html#quantumfloat"><span class="std std-ref">QuantumFloat</span></a> which contains the distance between the i-th city and its successor. This QuantumFloat then gets added to the result and afterwards <a class="reference internal" href="../reference/Core/Uncomputation.html#uncomputation"><span class="std std-ref">uncomputed</span></a>. The uncomputation allows the qubit manager to reuse the qubits of <code class="docutils literal notranslate"><span class="pre">trip_distance</span></code> after each iteration.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The keyword <code class="docutils literal notranslate"><span class="pre">recompute</span> <span class="pre">=</span> <span class="pre">True</span></code> is a bit more involved: Since this function will be embedded into an oracle, the result will be uncomputed at some later point. There are now two ways to deal with the uncomputation of the <code class="docutils literal notranslate"><span class="pre">trip_distance</span></code> QuantumVariables inside the uncomputation of the <code class="docutils literal notranslate"><span class="pre">res</span></code> QuantumVariable.</p>
+<ul class="simple">
+<li><p>Delay the uncomputation of <code class="docutils literal notranslate"><span class="pre">trip_distance</span></code> such that the information can be used to uncompute <code class="docutils literal notranslate"><span class="pre">res</span></code>.</p></li>
+<li><p>Recompute <code class="docutils literal notranslate"><span class="pre">trip_distance</span></code> and use the recomputed value for the uncomputation of <code class="docutils literal notranslate"><span class="pre">res</span></code>.</p></li>
+</ul>
+<p>There is pros and cons for both strategies. To get a better understanding of this problem you can check our documentation on <a class="reference internal" href="../reference/Core/Uncomputation.html#id2"><span class="std std-ref">recomputation</span></a>. By default the  <a class="reference external" href="https://github.com/eth-sri/Unqomp">underlying algorithm</a> of Qrisps automatic uncomputation will always go for option 1. The main drawback of this approach is that delaying the uncomputation blocks the involved qubits for the time of the delay. This implies that the qubits of the <code class="docutils literal notranslate"><span class="pre">trip_distance</span></code> QuantumFloat from each iteration will be blocked, which is not the behavior we want. Much rather we would like to reuse the qubits of iteration 0 for iteration 1 and so on. Because of this, we set <code class="docutils literal notranslate"><span class="pre">recompute</span> <span class="pre">=</span> <span class="pre">True</span></code> which will perform the uncomputation immediately and automatically recompute if needed at a later point. All of this might seem complicated but simply setting <code class="docutils literal notranslate"><span class="pre">recompute</span> <span class="pre">=</span> <span class="pre">True</span></code> is enough - the rest is handled by the compiler. Once you reach the end of the tutorial, we invite you to compare the qubit count when setting this keyword to <code class="docutils literal notranslate"><span class="pre">False</span></code>!</p>
+</div>
+<p>We verify our function on our established example.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">test_itinerary</span> <span class="o">=</span> <span class="n">QuantumArray</span><span class="p">(</span><span class="n">qtype</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">test_itinerary</span><span class="p">[:]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">qdict_res</span> <span class="o">=</span> <span class="n">qdict_calc_perm_travel_distance</span><span class="p">(</span><span class="n">test_itinerary</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">qdict_res</span><span class="p">)</span>
+<span class="go">{0.53125: 1.0}</span>
+</pre></div>
+</div>
+<p>We can now compare the required resources for both approaches. We do this by calling the <a class="reference internal" href="../reference/Core/generated/qrisp.QuantumSession.compile.html#qrisp.QuantumSession.compile" title="qrisp.QuantumSession.compile"><code class="xref py py-meth docutils literal notranslate"><span class="pre">compile</span> <span class="pre">method</span></code></a> of the <a class="reference internal" href="../reference/Core/QuantumSession.html#quantumsession"><span class="std std-ref">QuantumSession</span></a>, the result is registered in. This method dynamically (de)allocates qubits and returns a <a class="reference internal" href="../reference/Circuit%20Construction/QuantumCircuit.html#quantumcircuit"><span class="std std-ref">QuantumCircuit</span></a>.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">qdict_compiled_qc</span> <span class="o">=</span> <span class="n">qdict_res</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">qdict_compiled_qc</span><span class="o">.</span><span class="n">cnot_count</span><span class="p">()</span>
+<span class="go">560</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">qdict_compiled_qc</span><span class="o">.</span><span class="n">depth</span><span class="p">()</span>
+<span class="go">299</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">qdict_compiled_qc</span><span class="o">.</span><span class="n">num_qubits</span><span class="p">()</span>
+<span class="go">18</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">qpe_compiled_qc</span> <span class="o">=</span> <span class="n">qpe_res</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">qpe_compiled_qc</span><span class="o">.</span><span class="n">cnot_count</span><span class="p">()</span>
+<span class="go">626</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">qpe_compiled_qc</span><span class="o">.</span><span class="n">depth</span><span class="p">()</span>
+<span class="go">742</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">qpe_compiled_qc</span><span class="o">.</span><span class="n">num_qubits</span><span class="p">()</span>
+<span class="go">13</span>
+</pre></div>
+</div>
+<p>We see that the <a class="reference internal" href="../reference/Core/QuantumDictionary.html#quantumdictionary"><span class="std std-ref">QuantumDictionary</span></a> based function is about twice as fast, takes a comparable amount of CNOT gates and needs about 50% more qubits. The qubit overhead is due to the fact that during each iteration, the QuantumFloat <code class="docutils literal notranslate"><span class="pre">trip_distance</span></code> is allocated and eventually uncomputed. These extra qubits are not present in the QPE based approach.</p>
+</section>
+<section id="creating-the-oracle">
+<h2>Creating the oracle<a class="headerlink" href="#creating-the-oracle" title="Permalink to this heading">#</a></h2>
+<p>The next step is to create the oracle function. For this, we put everything together we have create so far:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">qrisp</span> <span class="kn">import</span> <span class="n">auto_uncompute</span><span class="p">,</span> <span class="n">z</span>
+
+<span class="nd">@auto_uncompute</span>
+<span class="k">def</span> <span class="nf">eval_distance_threshold</span><span class="p">(</span><span class="n">perm_specifiers</span><span class="p">,</span> <span class="n">precision</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">method</span> <span class="o">=</span> <span class="s2">&quot;qpe&quot;</span><span class="p">):</span>
+
+    <span class="n">itinerary</span> <span class="o">=</span> <span class="n">eval_perm</span><span class="p">(</span><span class="n">perm_specifiers</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;qdict&quot;</span><span class="p">:</span>
+        <span class="n">distance</span> <span class="o">=</span> <span class="n">qdict_calc_perm_travel_distance</span><span class="p">(</span><span class="n">itinerary</span><span class="p">,</span> <span class="n">precision</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;qpe&quot;</span><span class="p">:</span>
+        <span class="n">distance</span> <span class="o">=</span> <span class="n">qpe_calc_perm_travel_distance</span><span class="p">(</span><span class="n">itinerary</span><span class="p">,</span> <span class="n">precision</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Don&#39;t know method </span><span class="si">{</span><span class="n">method</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="n">is_below_treshold</span> <span class="o">=</span> <span class="p">(</span><span class="n">distance</span> <span class="o">&lt;=</span> <span class="n">threshold</span><span class="p">)</span>
+
+    <span class="n">z</span><span class="p">(</span><span class="n">is_below_treshold</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The line <code class="docutils literal notranslate"><span class="pre">distance</span> <span class="pre">&lt;=</span> <span class="pre">threshold</span></code> returns a <a class="reference internal" href="../reference/Quantum%20Types/QuantumBool.html#quantumbool"><span class="std std-ref">QuantumBool</span></a> that is in the state <span class="math notranslate nohighlight">\(\ket{\text{True}}\)</span> if the condition is met. The last line applies a z-gate, to perform the necessary phase flip.
+Note the <code class="docutils literal notranslate"><span class="pre">auto_uncompute</span></code> decorator, which <a class="reference internal" href="../reference/Core/Uncomputation.html#uncomputation"><span class="std std-ref">uncomputes</span></a> all local QuantumVariables that have been created inside this function.</p>
+</section>
+<section id="evaluating-the-oracle">
+<h2>Evaluating the oracle<a class="headerlink" href="#evaluating-the-oracle" title="Permalink to this heading">#</a></h2>
+<p>Finally, we can evaluate the oracle and find a solution to our pet problem. We do this by calling the prebuild <a class="reference internal" href="../reference/Miscellaneous%20Functions/generated/qrisp.grover.grovers_alg.html#qrisp.grover.grovers_alg" title="qrisp.grover.grovers_alg"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Grover's</span> <span class="pre">algorithm</span></code></a> function.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1">#Create permutation specifiers</span>
+<span class="n">perm_specifiers</span> <span class="o">=</span> <span class="n">create_perm_specifiers</span><span class="p">(</span><span class="n">city_amount</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">math</span> <span class="kn">import</span> <span class="n">factorial</span>
+<span class="c1">#Determine an estimate for the amount of winner states</span>
+<span class="c1">#(Average number of computational basis states per permutation) * (4 cyclic shifts)*(2 directions)</span>
+<span class="n">winner_state_amount</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="nb">sum</span><span class="p">([</span><span class="n">qv</span><span class="o">.</span><span class="n">size</span> <span class="k">for</span> <span class="n">qv</span> <span class="ow">in</span> <span class="n">perm_specifiers</span><span class="p">])</span><span class="o">/</span><span class="n">factorial</span><span class="p">(</span><span class="n">city_amount</span><span class="p">))</span><span class="o">*</span><span class="n">city_amount</span><span class="o">*</span><span class="mi">2</span>
+
+<span class="kn">from</span> <span class="nn">qrisp.grover</span> <span class="kn">import</span> <span class="n">grovers_alg</span>
+
+<span class="c1">#Evaluate Grovers algorithm</span>
+<span class="n">grovers_alg</span><span class="p">(</span><span class="n">perm_specifiers</span><span class="p">,</span> <span class="c1">#Permutation specifiers</span>
+            <span class="n">eval_distance_threshold</span><span class="p">,</span> <span class="c1">#Oracle function</span>
+            <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;threshold&quot;</span> <span class="p">:</span> <span class="mf">0.4</span><span class="p">,</span> <span class="s2">&quot;precision&quot;</span> <span class="p">:</span> <span class="mi">5</span><span class="p">,</span> <span class="s2">&quot;method&quot;</span> <span class="p">:</span> <span class="s2">&quot;qpe&quot;</span><span class="p">},</span> <span class="c1">#Specify the keyword arguments for the Oracle</span>
+            <span class="n">winner_state_amount</span> <span class="o">=</span> <span class="n">winner_state_amount</span><span class="p">)</span> <span class="c1">#Specify the estimated amount of winners</span>
+
+<span class="c1">#Retrieve measurement</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">multi_measurement</span><span class="p">(</span><span class="n">perm_specifiers</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">res</span>
+<span class="go">{(0, 0, 1): 0.096,</span>
+<span class="go"> (0, 1, 1): 0.096,</span>
+<span class="go"> (1, 0, 1): 0.096,</span>
+<span class="go"> (1, 1, 1): 0.096,</span>
+<span class="go"> (2, 1, 0): 0.096,</span>
+<span class="go"> (2, 2, 1): 0.096,</span>
+<span class="go"> (2, 3, 0): 0.096,</span>
+<span class="go"> (3, 1, 0): 0.096,</span>
+<span class="go"> (3, 2, 1): 0.096,</span>
+<span class="go"> (3, 3, 0): 0.096,</span>
+<span class="go"> (0, 0, 0): 0.0032,</span>
+<span class="go"> (0, 1, 0): 0.0032,</span>
+<span class="go"> (0, 2, 0): 0.0032,</span>
+<span class="go"> (0, 2, 1): 0.0032,</span>
+<span class="go"> (0, 3, 0): 0.0032,</span>
+<span class="go"> (0, 3, 1): 0.0032,</span>
+<span class="go"> (1, 0, 0): 0.0032,</span>
+<span class="go"> (1, 1, 0): 0.0032,</span>
+<span class="go"> (1, 2, 0): 0.0032,</span>
+<span class="go"> (1, 2, 1): 0.0032,</span>
+<span class="go"> (1, 3, 0): 0.0032,</span>
+<span class="go"> (1, 3, 1): 0.0032,</span>
+<span class="go"> (2, 0, 0): 0.0032,</span>
+<span class="go"> (2, 0, 1): 0.0032,</span>
+<span class="go"> (2, 1, 1): 0.0032,</span>
+<span class="go"> (2, 2, 0): 0.0032,</span>
+<span class="go"> (2, 3, 1): 0.0032,</span>
+<span class="go"> (3, 0, 0): 0.0032,</span>
+<span class="go"> (3, 0, 1): 0.0032,</span>
+<span class="go"> (3, 1, 1): 0.0032,</span>
+<span class="go"> (3, 2, 0): 0.0032,</span>
+<span class="go"> (3, 3, 1): 0.0032}</span>
+</pre></div>
+</div>
+<p>We see that we have 10 states that have been amplified. This is no surprise as different permutations can represent the same route (and therefore result in the same travel distance). Indeed our estimate for the amount of winner states was pretty good:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">winner_state_amount</span>
+<span class="go">10.666666666666666</span>
+</pre></div>
+</div>
+<p>To extract the final solution, we need to evaluate the permuation given by one of the solutions for the <code class="docutils literal notranslate"><span class="pre">permutation_specifiers</span></code>. A resource efficient possibility would be to recreate the algorithm classically, however we will just evaluate it once more on the simulator</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">winning_specifiers</span> <span class="o">=</span> <span class="n">create_perm_specifiers</span><span class="p">(</span><span class="n">city_amount</span><span class="p">)</span>
+
+<span class="n">winning_specifiers</span><span class="p">[</span><span class="mi">0</span><span class="p">][:]</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">winning_specifiers</span><span class="p">[</span><span class="mi">1</span><span class="p">][:]</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">winning_specifiers</span><span class="p">[</span><span class="mi">2</span><span class="p">][:]</span> <span class="o">=</span> <span class="mi">1</span>
+
+<span class="n">winning_itinerary</span> <span class="o">=</span> <span class="n">eval_perm</span><span class="p">(</span><span class="n">winning_specifiers</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">winning_itinerary</span><span class="o">.</span><span class="n">most_likely</span><span class="p">()</span>
+<span class="go">OutcomeArray([0, 1, 3, 2])</span>
+</pre></div>
+</div>
+</section>
+<section id="benchmarking-performance">
+<h2>Benchmarking Performance<a class="headerlink" href="#benchmarking-performance" title="Permalink to this heading">#</a></h2>
+<p>Last but not least, we evaluate some performance indicators. For this, we again compile the QuantumSession to a QuantumCircuit.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">qpe_compiled_qc</span> <span class="o">=</span> <span class="n">perm_specifiers</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">qpe_compiled_qc</span><span class="o">.</span><span class="n">depth</span><span class="p">()</span>
+<span class="go">4679</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">qpe_compiled_qc</span><span class="o">.</span><span class="n">cnot_count</span><span class="p">()</span>
+<span class="go">3484</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">qdict_compiled_qc</span><span class="o">.</span><span class="n">num_qubits</span><span class="p">()</span>
+<span class="go">21</span>
+</pre></div>
+</div>
+<p>These are the values for the quantum phase estimation based approach. To evaluate the <a class="reference internal" href="../reference/Core/QuantumDictionary.html#quantumdictionary"><span class="std std-ref">QuantumDictionary</span></a> based algorithm, we set <code class="docutils literal notranslate"><span class="pre">&quot;method&quot;</span> <span class="pre">:</span> <span class="pre">&quot;qdict&quot;</span></code> in the <code class="docutils literal notranslate"><span class="pre">grovers_alg</span></code> call.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">qdict_compiled_qc</span> <span class="o">=</span> <span class="n">perm_specifiers</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">qdict_compiled_qc</span><span class="o">.</span><span class="n">depth</span><span class="p">()</span>
+<span class="go">1065</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">qdict_compiled_qc</span><span class="o">.</span><span class="n">cnot_count</span><span class="p">()</span>
+<span class="go">1632</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">qdict_compiled_qc</span><span class="o">.</span><span class="n">num_qubits</span><span class="p">()</span>
+<span class="go">23</span>
+</pre></div>
+</div>
+<p>If you are interested in ways to improve the performance even further, we recommend checking the <a class="reference internal" href="../reference/Examples/EfficientTSP.html#efficienttsp"><span class="std std-ref">Efficient Solution for the TSP</span></a>. This solution slightly tweeks the one presented here but roughly halves the required resources.</p>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#">Tutorial</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#creating-a-quantumvariable">Creating a QuantumVariable</a></li>
+</ul>
+</li>
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#solving-a-quadratic-equation-using-grover-s-algorithm">Solving a quadratic equation using Grover’s algorithm</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#oracle-construction">Oracle Construction</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#grover-s-algorithm">Grover’s algorithm</a></li>
+</ul>
+</li>
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#quantum-phase-estimation">Quantum Phase Estimation</a></li>
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#solving-the-traveling-salesman-problem-tsp">Solving the traveling salesman problem (TSP)</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#setting-up-a-superposition-of-all-routes">Setting up a superposition of all routes</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#evaluating-route-distance">Evaluating route distance</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#creating-the-oracle">Creating the oracle</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#evaluating-the-oracle">Evaluating the oracle</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#benchmarking-performance">Benchmarking Performance</a></li>
+</ul>
+</li>
+</ul>
+
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=e353d410970836974a52"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+  <p class="copyright">
+    
+      © Copyright 2023, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.3.0.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item"><p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.13.3.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

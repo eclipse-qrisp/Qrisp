@@ -1,0 +1,867 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>qrisp.environments.quantum_environments &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+<link href="../../../_static/styles/bootstrap.css?digest=e353d410970836974a52" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+
+  
+  <link href="../../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=e353d410970836974a52" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/custom.css" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=e353d410970836974a52" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52" />
+
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../_static/clipboard.min.js"></script>
+    <script src="../../../_static/copybutton.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/qrisp/environments/quantum_environments';</script>
+    <link rel="canonical" href="https://qrisp.eu/_modules/qrisp/environments/quantum_environments.html" />
+    <link rel="shortcut icon" href="../../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="light">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+<div class="bd-header__inner bd-page-width">
+  <label class="sidebar-toggle primary-toggle" for="__primary">
+    <span class="fa-solid fa-bars"></span>
+  </label>
+  
+  <div class="navbar-header-items__start">
+    
+      <div class="navbar-item">
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../../_static/logo_extended.png" class="logo__image only-light" alt="Logo image"/>
+    <script>document.write(`<img src="../../../_static/logo_extended.png" class="logo__image only-dark" alt="Logo image"/>`);</script>
+  
+  
+</a></div>
+    
+  </div>
+  
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../general/tutorial.html">
+                        Tutorial
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../reference/index.html">
+                        Reference
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../general/setup.html">
+                        Setup
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../general/imprint.html">
+                        Imprint
+                      </a>
+                    </li>
+                
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+  </button>
+`);
+</script>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/fraunhoferfokus/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square"></i></span>
+            <label class="sr-only">GitHub</label></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+  </button>
+`);
+</script>
+    </div>
+  
+
+  
+</div>
+
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../general/tutorial.html">
+                        Tutorial
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../reference/index.html">
+                        Reference
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../general/setup.html">
+                        Setup
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../general/imprint.html">
+                        Imprint
+                      </a>
+                    </li>
+                
+  </ul>
+</nav></div>
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/fraunhoferfokus/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square"></i></span>
+            <label class="sr-only">GitHub</label></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumbs">
+  <ul class="bd-breadcrumbs" role="navigation" aria-label="Breadcrumb">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">qrisp.environments.quantum_environments</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <h1>Source code for qrisp.environments.quantum_environments</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">/*********************************************************************</span>
+<span class="sd">* Copyright (c) 2023 the Qrisp Authors</span>
+<span class="sd">*</span>
+<span class="sd">* This program and the accompanying materials are made</span>
+<span class="sd">* available under the terms of the Eclipse Public License 2.0</span>
+<span class="sd">* which is available at https://www.eclipse.org/legal/epl-2.0/</span>
+<span class="sd">*</span>
+<span class="sd">* SPDX-License-Identifier: EPL-2.0</span>
+<span class="sd">**********************************************************************/</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="c1"># Abstract class to describe environments</span>
+<span class="c1"># The idea is to start dumping the circuit data into a container</span>
+<span class="c1"># (the .env_data attribute) once the environment is entered.</span>
+<span class="c1"># Meanwhile, the original data of the session is stored in the .original_data attribute.</span>
+<span class="c1"># The dumping is ended when the environment is left or a child environment is entered.</span>
+<span class="c1"># The child environment will append itself into the container, once it is left.</span>
+<span class="c1"># As soon as the most outer environment is left all the circuit data will be compiled.</span>
+<span class="c1"># The compilation process is specified by the inheritor of this class.</span>
+<span class="c1"># For instance conditional environments will turn every quantum operation</span>
+<span class="c1"># that took place in that environment into it&#39;s controlled version.</span>
+
+<span class="c1"># Another level of complexity is introduced by handling the quantum sessions.</span>
+<span class="c1"># The problem here is that we want (almost) all quantum sessions,</span>
+<span class="c1"># that operate inside the environment, to be merged into the environment session.</span>
+<span class="c1"># The sessions we dont want merged are the ones that get CREATED inside the environment.</span>
+<span class="c1"># This situtation represents the case that we have a foreign function from a module,</span>
+<span class="c1"># which creates some gate objects, using a quantum session. If we merge this quantum</span>
+<span class="c1"># session into our environment, the foreign function no longer works as intended.</span>
+<span class="c1"># The strategy for solving this kind of problem is now:</span>
+
+<span class="c1"># 1. At environment entry, all currently live quantum sessions are logged and the</span>
+<span class="c1"># environments very own QuantumSession (.env_qs) is created. This QuantumEnvironment</span>
+<span class="c1"># appends itself to the environment stack of these QuantumSessions.</span>
+
+<span class="c1"># 2. Once the append method of a QuantumSession is executed, the environment stack of</span>
+<span class="c1"># this QuantumSession is checked for Environment where the env_qs QuantumSession</span>
+<span class="c1"># is not merged into. If this is the case, the QuantumSession&#39;s data will be transfered</span>
+<span class="c1"># into the original_data attribute of the oldest env_qs environment</span>
+<span class="c1"># that has not been merged into self.</span>
+
+<span class="c1"># 3. At environment exit, every quantum session, that operated inside this environment</span>
+<span class="c1"># is merged together.</span>
+
+<span class="c1"># 4. Apart from the (de)allocation gates, all the collected data is stored inside</span>
+<span class="c1"># the .env_data attribute</span>
+
+<span class="kn">from</span> <span class="nn">qrisp.circuit</span> <span class="kn">import</span> <span class="n">QubitAlloc</span><span class="p">,</span> <span class="n">QubitDealloc</span>
+<span class="kn">from</span> <span class="nn">qrisp.core.quantum_session</span> <span class="kn">import</span> <span class="n">QuantumSession</span>
+
+
+<div class="viewcode-block" id="QuantumEnvironment"><a class="viewcode-back" href="../../../reference/Quantum%20Environments/index.html#qrisp.QuantumEnvironment">[docs]</a><span class="k">class</span> <span class="nc">QuantumEnvironment</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">    QuantumEnvironments are blocks of code, that undergo some user-specified compilation</span>
+<span class="sd">    process. They can be entered using the ``with`` statement</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">       from qrisp import QuantumEnvironment, QuantumVariable, x</span>
+
+<span class="sd">       qv = QuantumVariable(5)</span>
+
+<span class="sd">       with QuantumEnvironment():</span>
+<span class="sd">          x(qv)</span>
+
+<span class="sd">    In this case we have no special compilation technique, since the abstract baseclass</span>
+<span class="sd">    simply returns it&#39;s content:</span>
+
+<span class="sd">    &gt;&gt;&gt; print(qv.qs)</span>
+<span class="sd">    QuantumCircuit:</span>
+<span class="sd">    ---------------</span>
+<span class="sd">          ┌───┐</span>
+<span class="sd">    qv.0: ┤ X ├</span>
+<span class="sd">          ├───┤</span>
+<span class="sd">    qv.1: ┤ X ├</span>
+<span class="sd">          ├───┤</span>
+<span class="sd">    qv.2: ┤ X ├</span>
+<span class="sd">          ├───┤</span>
+<span class="sd">    qv.3: ┤ X ├</span>
+<span class="sd">          ├───┤</span>
+<span class="sd">    qv.4: ┤ X ├</span>
+<span class="sd">          └───┘</span>
+<span class="sd">    Live QuantumVariables:</span>
+<span class="sd">    ----------------------</span>
+<span class="sd">    QuantumVariable qv</span>
+
+<span class="sd">    More advanced environments allow for a large variety of features and can significantly</span>
+<span class="sd">    simplify code development and maintainance.</span>
+
+<span class="sd">    The most important built-in QuantumEnvironments are:</span>
+
+<span class="sd">    * :ref:`ConditionEnvironment`</span>
+
+<span class="sd">    * :ref:`ControlEnvironment`</span>
+
+<span class="sd">    * :ref:`InversionEnvironment`</span>
+
+<span class="sd">    * :ref:`GateWrapEnvironment`</span>
+
+<span class="sd">    Due to sophisticated condition evaluation of nested :ref:`conditionenvironment` and</span>
+<span class="sd">    :ref:`controlenvironment`, using QuantumEnvironments even can bring an increase in</span>
+<span class="sd">    performance, compared to the `control method</span>
+<span class="sd">    &lt;https://qiskit.org/documentation/stubs/qiskit.circuit.QuantumCircuit.control.html&gt;`_</span>
+<span class="sd">    which is commonly implemented by QuantumCircuit-based approaches.</span>
+
+<span class="sd">    **Uncomputation within QuantumEnvironments**</span>
+
+<span class="sd">    Uncomputation via the :meth:`uncompute &lt;qrisp.QuantumVariable.uncompute&gt;` method is</span>
+<span class="sd">    possible only if the :ref:`QuantumVariable` has been created within the same or a</span>
+<span class="sd">    sub-environment:</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        from qrisp import QuantumVariable, QuantumEnvironment, cx</span>
+
+<span class="sd">        a = QuantumVariable(1)</span>
+
+<span class="sd">        with QuantumEnvironment():</span>
+
+<span class="sd">            b = QuantumVariable(1)</span>
+
+<span class="sd">            cx(a,b)</span>
+
+<span class="sd">            with QuantumEnvironment():</span>
+
+<span class="sd">                c = QuantumVariable(1)</span>
+
+<span class="sd">                cx(b,c)</span>
+
+<span class="sd">            c.uncompute() # works because c was created in a sub environment</span>
+<span class="sd">            b.uncompute() # works because b was created in the same environment</span>
+<span class="sd">            # a.uncompute() # doesn&#39;t work because a was created outside this</span>
+<span class="sd">            environment.</span>
+
+
+<span class="sd">    &gt;&gt;&gt; print(a.qs)</span>
+<span class="sd">    QuantumCircuit:</span>
+<span class="sd">    ---------------</span>
+<span class="sd">    a.0: ──■──────────────■──</span>
+<span class="sd">         ┌─┴─┐          ┌─┴─┐</span>
+<span class="sd">    b.0: ┤ X ├──■────■──┤ X ├</span>
+<span class="sd">         └───┘┌─┴─┐┌─┴─┐└───┘</span>
+<span class="sd">    c.0: ─────┤ X ├┤ X ├─────</span>
+<span class="sd">              └───┘└───┘</span>
+<span class="sd">    Live QuantumVariables:</span>
+<span class="sd">    ----------------------</span>
+<span class="sd">    QuantumVariable a</span>
+
+<span class="sd">    **Visualisation within QuantumEnvironments**</span>
+
+<span class="sd">    Calling ``print`` on a :ref:`QuantumSession` inside a QuantumEnvironment will</span>
+<span class="sd">    display only the instructions, that have been performed within this environment. ::</span>
+
+<span class="sd">        from qrisp import x, y, z</span>
+<span class="sd">        a = QuantumVariable(3)</span>
+
+<span class="sd">        x(a[0])</span>
+
+<span class="sd">        with QuantumEnvironment():</span>
+
+<span class="sd">            y(a[1])</span>
+
+<span class="sd">            with QuantumEnvironment():</span>
+
+<span class="sd">                z(a[2])</span>
+
+<span class="sd">                print(a.qs)</span>
+
+<span class="sd">            print(a.qs)</span>
+
+<span class="sd">        print(a.qs)</span>
+
+<span class="sd">    Executing this snippet yields</span>
+
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    QuantumCircuit:</span>
+<span class="sd">    ---------------</span>
+<span class="sd">    a.0: ─────</span>
+<span class="sd">    &lt;BLANKLINE&gt;</span>
+<span class="sd">    a.1: ─────</span>
+<span class="sd">         ┌───┐</span>
+<span class="sd">    a.2: ┤ Z ├</span>
+<span class="sd">         └───┘</span>
+<span class="sd">    QuantumEnvironment Stack:</span>
+<span class="sd">    -------------------------</span>
+<span class="sd">    Level 0: QuantumEnvironment</span>
+<span class="sd">    Level 1: QuantumEnvironment</span>
+<span class="sd">    &lt;BLANKLINE&gt;</span>
+<span class="sd">    Live QuantumVariables:</span>
+<span class="sd">    ----------------------</span>
+<span class="sd">    QuantumVariable a</span>
+<span class="sd">    QuantumCircuit:</span>
+<span class="sd">    ---------------</span>
+<span class="sd">    a.0: ─────</span>
+<span class="sd">         ┌───┐</span>
+<span class="sd">    a.1: ┤ Y ├</span>
+<span class="sd">         ├───┤</span>
+<span class="sd">    a.2: ┤ Z ├</span>
+<span class="sd">         └───┘</span>
+<span class="sd">    QuantumEnvironment Stack:</span>
+<span class="sd">    -------------------------</span>
+<span class="sd">    Level 0: QuantumEnvironment</span>
+<span class="sd">    &lt;BLANKLINE&gt;</span>
+<span class="sd">    Live QuantumVariables:</span>
+<span class="sd">    ----------------------</span>
+<span class="sd">    QuantumVariable a</span>
+<span class="sd">    QuantumCircuit:</span>
+<span class="sd">    ---------------</span>
+<span class="sd">         ┌───┐</span>
+<span class="sd">    a.0: ┤ X ├</span>
+<span class="sd">         ├───┤</span>
+<span class="sd">    a.1: ┤ Y ├</span>
+<span class="sd">         ├───┤</span>
+<span class="sd">    a.2: ┤ Z ├</span>
+<span class="sd">         └───┘</span>
+<span class="sd">    Live QuantumVariables:</span>
+<span class="sd">    ----------------------</span>
+<span class="sd">    QuantumVariable a</span>
+
+
+<span class="sd">    .. warning::</span>
+
+<span class="sd">        Calling ``print`` within a QuantumEnvironment causes all sub environments to be</span>
+<span class="sd">        compiled. While this doesn&#39;t change the semantics of the resulting circuit,</span>
+<span class="sd">        especially nested :ref:`Condition &lt;conditionenvironment&gt;`- and</span>
+<span class="sd">        :ref:`ControlEnvironments &lt;controlenvironment&gt;` lose a lot of efficiency if</span>
+<span class="sd">        compiled prematurely. Therefore, ``print``-calls within QuantumEnvironments are</span>
+<span class="sd">        usefull for debugging purposes but should be removed, if efficiency is a</span>
+<span class="sd">        concern.</span>
+
+
+<span class="sd">    **Creating custom QuantumEnvironments**</span>
+
+<span class="sd">    More interesting QuantumEnvironments can be created by inheriting and modifying</span>
+<span class="sd">    the compile method. In the following code snippet, we will demonstrate how to</span>
+<span class="sd">    set up a QuantumEnvironment, that skips every second instruction. We do this</span>
+<span class="sd">    by inheriting from the QuantumEnvironment class. This will provide us with</span>
+<span class="sd">    the necessary attributes for writing the compile method:</span>
+
+<span class="sd">    #. ``.env_data``, which is the list of instructions, that have been appended in this</span>
+<span class="sd">    environment. Note that child environments append themselves in this list upon</span>
+<span class="sd">    exiting.</span>
+
+<span class="sd">    #. ``.env_qs`` which is a QuantumSession, where all QuantumVariables, that operated</span>
+<span class="sd">    inside this environment, are registered.</span>
+
+<span class="sd">    The compile method is then called once all environments of ``.env_qs`` have been</span>
+<span class="sd">    exited. Note that this doesn&#39;t neccessarily imply that all QuantumEnvironments have</span>
+<span class="sd">    been left. For more information about the interplay between QuantumSessions and</span>
+<span class="sd">    QuantumEnvironments check the :ref:`session merging &lt;SessionMerging&gt;` documentation.</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">       class ExampleEnvironment(QuantumEnvironment):</span>
+
+<span class="sd">          def compile(self):</span>
+
+<span class="sd">             for i in range(len(self.env_data)):</span>
+
+<span class="sd">                #This line makes sure every second instruction is skipped</span>
+<span class="sd">                if i%2:</span>
+<span class="sd">                   continue</span>
+
+<span class="sd">                instruction = self.env_data[i]</span>
+
+<span class="sd">                #If the instruction is an environment, we compile this environment</span>
+<span class="sd">                if isinstance(instruction, QuantumEnvironment):</span>
+<span class="sd">                   instruction.compile()</span>
+<span class="sd">                #Otherwise we append</span>
+<span class="sd">                else:</span>
+<span class="sd">                    self.env_qs.append(instruction)</span>
+
+<span class="sd">    Check the result: ::</span>
+
+<span class="sd">       from qrisp import x, y, z, t, s, h</span>
+<span class="sd">       qv = QuantumVariable(6)</span>
+
+<span class="sd">       with ExampleEnvironment():</span>
+<span class="sd">           x(qv[0])</span>
+<span class="sd">           y(qv[1])</span>
+<span class="sd">           with ExampleEnvironment():</span>
+<span class="sd">               z(qv[2])</span>
+<span class="sd">               t(qv[3])</span>
+<span class="sd">           with ExampleEnvironment():</span>
+<span class="sd">               s(qv[4])</span>
+<span class="sd">           h(qv[5])</span>
+
+<span class="sd">    &gt;&gt;&gt; print(qv.qs)</span>
+<span class="sd">    QuantumCircuit:</span>
+<span class="sd">    ---------------</span>
+<span class="sd">          ┌───┐</span>
+<span class="sd">    qv.0: ┤ X ├</span>
+<span class="sd">          └───┘</span>
+<span class="sd">    qv.1: ─────</span>
+<span class="sd">          ┌───┐</span>
+<span class="sd">    qv.2: ┤ Z ├</span>
+<span class="sd">          └───┘</span>
+<span class="sd">    qv.3: ─────</span>
+<span class="sd">    &lt;BLANKLINE&gt;</span>
+<span class="sd">    qv.4: ─────</span>
+<span class="sd">          ┌───┐</span>
+<span class="sd">    qv.5: ┤ H ├</span>
+<span class="sd">          └───┘</span>
+<span class="sd">    Live QuantumVariables:</span>
+<span class="sd">    ----------------------</span>
+<span class="sd">    QuantumVariable qv</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">deepest_environment</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span>
+
+    <span class="c1"># The methods to start the dumping process for this environment</span>
+    <span class="c1"># The dumping basically consists of copying the original data into a temporary</span>
+    <span class="c1"># container (here the list .original_data) and then clearing the data of</span>
+    <span class="c1"># the quantum session. Once the dumping ends the data which has been appended</span>
+    <span class="c1"># in the meantime is appended to the environments&#39; data list .env_data and</span>
+    <span class="c1"># the original circuit data is reinstated</span>
+    <span class="k">def</span> <span class="nf">start_dumping</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">qs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">env_qs</span>
+
+        <span class="c1"># Temporarily store the qs circuit data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">original_data</span> <span class="o">+=</span> <span class="n">qs</span><span class="o">.</span><span class="n">data</span>
+
+        <span class="c1"># Clear the qs circuit data to collect what is coming</span>
+        <span class="n">qs</span><span class="o">.</span><span class="n">clear_data</span><span class="p">()</span>
+
+        <span class="n">qs</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">env_data</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">env_data</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">def</span> <span class="nf">stop_dumping</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">qs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">env_qs</span>
+
+        <span class="c1"># Collect circuit data into the data_list</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">env_data</span> <span class="o">+=</span> <span class="n">qs</span><span class="o">.</span><span class="n">data</span>
+
+        <span class="n">qs</span><span class="o">.</span><span class="n">clear_data</span><span class="p">()</span>
+
+        <span class="c1"># Reinstate original circuit data</span>
+        <span class="n">qs</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">original_data</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">original_data</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># Method to enter the environment</span>
+    <span class="k">def</span> <span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># The QuantumSessions operating inside this environment will be merged</span>
+        <span class="c1"># into this QuantumSession</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">env_qs</span> <span class="o">=</span> <span class="n">QuantumSession</span><span class="p">()</span>
+
+        <span class="c1"># This list stores the original data of the quantum session tracked</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">original_data</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># This list stores the data that is appended inside the environemt</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">env_data</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># Set the new relationships</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">deepest_environment</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">deepest_environment</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span>
+
+        <span class="c1"># Acquire a list of all active quantum sessions</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">active_qs_list</span> <span class="o">=</span> <span class="n">QuantumSession</span><span class="o">.</span><span class="n">get_active_quantum_sessions</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">qs</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_qs_list</span><span class="p">:</span>
+            <span class="c1"># Append self to the environment stack of the QuantumSession</span>
+            <span class="n">qs</span><span class="o">.</span><span class="n">env_stack</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+        <span class="c1"># Start the dumping process</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">start_dumping</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="c1"># Method to exit the environment</span>
+    <span class="k">def</span> <span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exception_type</span><span class="p">,</span> <span class="n">exception_value</span><span class="p">,</span> <span class="n">traceback</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">deepest_environment</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span>
+
+        <span class="c1"># Stop dumping</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stop_dumping</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">active_qs_list</span><span class="p">)):</span>
+            <span class="c1"># Remove from the environment stack</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">active_qs_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">env_stack</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;manual_allocation_management&quot;</span><span class="p">):</span>
+            <span class="c1"># Create a list which will store deallocation gates</span>
+            <span class="n">dealloc_qubit_list</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">alloc_qubit_list</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="c1"># We now iterate through the collected data. We do this in order</span>
+            <span class="c1"># to make sure that the (de)allocation gates are notprocessed</span>
+            <span class="c1"># by the environment compiler as this might disturb their functionality</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+
+            <span class="k">while</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">env_data</span><span class="p">):</span>
+                <span class="n">instr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">env_data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">instr</span><span class="p">,</span> <span class="n">QuantumEnvironment</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">instr</span><span class="o">.</span><span class="n">op</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;qb_alloc&quot;</span><span class="p">:</span>
+                        <span class="n">alloc_qubit_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">env_data</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">.</span><span class="n">qubits</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                        <span class="k">continue</span>
+                    <span class="k">if</span> <span class="n">instr</span><span class="o">.</span><span class="n">op</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;qb_dealloc&quot;</span><span class="p">:</span>
+                        <span class="n">dealloc_qubit_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">env_data</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">.</span><span class="n">qubits</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                        <span class="n">instr</span><span class="o">.</span><span class="n">qubits</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">allocated</span> <span class="o">=</span> <span class="kc">True</span>
+                        <span class="k">continue</span>
+
+                <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="k">for</span> <span class="n">qb</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">alloc_qubit_list</span><span class="p">)):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">env_qs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">QubitAlloc</span><span class="p">(),</span> <span class="p">[</span><span class="n">qb</span><span class="p">])</span>
+
+        <span class="c1"># If this was the outermost environment, we compile</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">env_qs</span><span class="o">.</span><span class="n">env_stack</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span>
+
+        <span class="c1"># Otherwise, we append self to the data of the parent environment</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">env_data</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">env_qs</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;manual_allocation_management&quot;</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">qb</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">dealloc_qubit_list</span><span class="p">)):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">env_qs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">QubitDealloc</span><span class="p">(),</span> <span class="p">[</span><span class="n">qb</span><span class="p">])</span>
+
+    <span class="c1"># This is the default compilation method.</span>
+    <span class="c1"># It simply compiles all subenvironments and the collected data to the session</span>
+    <span class="c1"># For more advanced environments this should be modified</span>
+    <span class="k">def</span> <span class="nf">compile</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">instruction</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">env_data</span><span class="p">:</span>
+            <span class="c1"># If the instruction is an environment, compile the environment</span>
+            <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">instruction</span><span class="o">.</span><span class="vm">__class__</span><span class="p">,</span> <span class="n">QuantumEnvironment</span><span class="p">):</span>
+                <span class="n">instruction</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Append instruction</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">env_qs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">instruction</span><span class="p">)</span></div>
+</pre></div>
+
+                </article>
+              
+              
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/bootstrap.js?digest=e353d410970836974a52"></script>
+<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+  <p class="copyright">
+    
+      © Copyright 2023, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.3.0.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item"><p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.13.3.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

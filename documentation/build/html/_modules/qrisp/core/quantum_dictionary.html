@@ -1,0 +1,707 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>qrisp.core.quantum_dictionary &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+<link href="../../../_static/styles/bootstrap.css?digest=e353d410970836974a52" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+
+  
+  <link href="../../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=e353d410970836974a52" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/custom.css" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=e353d410970836974a52" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52" />
+
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../_static/clipboard.min.js"></script>
+    <script src="../../../_static/copybutton.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/qrisp/core/quantum_dictionary';</script>
+    <link rel="canonical" href="https://qrisp.eu/_modules/qrisp/core/quantum_dictionary.html" />
+    <link rel="shortcut icon" href="../../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="light">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+<div class="bd-header__inner bd-page-width">
+  <label class="sidebar-toggle primary-toggle" for="__primary">
+    <span class="fa-solid fa-bars"></span>
+  </label>
+  
+  <div class="navbar-header-items__start">
+    
+      <div class="navbar-item">
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../../_static/logo_extended.png" class="logo__image only-light" alt="Logo image"/>
+    <script>document.write(`<img src="../../../_static/logo_extended.png" class="logo__image only-dark" alt="Logo image"/>`);</script>
+  
+  
+</a></div>
+    
+  </div>
+  
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../general/tutorial.html">
+                        Tutorial
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../reference/index.html">
+                        Reference
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../general/setup.html">
+                        Setup
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../general/imprint.html">
+                        Imprint
+                      </a>
+                    </li>
+                
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+  </button>
+`);
+</script>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/fraunhoferfokus/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square"></i></span>
+            <label class="sr-only">GitHub</label></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+  </button>
+`);
+</script>
+    </div>
+  
+
+  
+</div>
+
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../general/tutorial.html">
+                        Tutorial
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../reference/index.html">
+                        Reference
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../general/setup.html">
+                        Setup
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../general/imprint.html">
+                        Imprint
+                      </a>
+                    </li>
+                
+  </ul>
+</nav></div>
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/fraunhoferfokus/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square"></i></span>
+            <label class="sr-only">GitHub</label></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumbs">
+  <ul class="bd-breadcrumbs" role="navigation" aria-label="Breadcrumb">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">qrisp.core.quantum_dictionary</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <h1>Source code for qrisp.core.quantum_dictionary</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">/*********************************************************************</span>
+<span class="sd">* Copyright (c) 2023 the Qrisp Authors</span>
+<span class="sd">*</span>
+<span class="sd">* This program and the accompanying materials are made</span>
+<span class="sd">* available under the terms of the Eclipse Public License 2.0</span>
+<span class="sd">* which is available at https://www.eclipse.org/legal/epl-2.0/</span>
+<span class="sd">*</span>
+<span class="sd">* SPDX-License-Identifier: EPL-2.0</span>
+<span class="sd">**********************************************************************/</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">itertools</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">qrisp.core</span> <span class="kn">import</span> <span class="n">QuantumVariable</span><span class="p">,</span> <span class="n">recursive_qv_search</span>
+<span class="kn">from</span> <span class="nn">qrisp.logic_synthesis</span> <span class="kn">import</span> <span class="n">TruthTable</span>
+<span class="kn">from</span> <span class="nn">qrisp.misc</span> <span class="kn">import</span> <span class="n">bin_rep</span><span class="p">,</span> <span class="n">custom_qv</span><span class="p">,</span> <span class="n">int_as_array</span>
+
+
+<div class="viewcode-block" id="QuantumDictionary"><a class="viewcode-back" href="../../../reference/Core/QuantumDictionary.html#qrisp.QuantumDictionary">[docs]</a><span class="k">class</span> <span class="nc">QuantumDictionary</span><span class="p">(</span><span class="nb">dict</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class can be used for loading data relations into the quantum computer which</span>
+<span class="sd">    are not based on a quantum algorithm.</span>
+
+<span class="sd">    As an inheritor of the Python dictionary it has all the functionality we are used to</span>
+
+<span class="sd">    &gt;&gt;&gt; from qrisp import QuantumDictionary, QuantumVariable, multi_measurement</span>
+<span class="sd">    &gt;&gt;&gt; qd = QuantumDictionary()</span>
+<span class="sd">    &gt;&gt;&gt; qd[1] = 2</span>
+<span class="sd">    &gt;&gt;&gt; qd[42] = (3,4)</span>
+<span class="sd">    &gt;&gt;&gt; qd[&quot;hello&quot;] = &quot;hallo&quot;</span>
+<span class="sd">    &gt;&gt;&gt; qd[&quot;world&quot;] = &quot;welt&quot;</span>
+<span class="sd">    &gt;&gt;&gt; print(qd[42])</span>
+<span class="sd">    (3,4)</span>
+
+<span class="sd">    The key difference is that the QuantumDictionary can also recieve</span>
+<span class="sd">    :ref:`QuantumVariables &lt;QuantumVariable&gt;` as keys and return the corresponding</span>
+<span class="sd">    values as an entangled QuantumVariable.</span>
+
+<span class="sd">    We demonstrate this by preparing a QuantumVariable which has the keys of ``qd`` as</span>
+<span class="sd">    outcome labels:</span>
+
+<span class="sd">    &gt;&gt;&gt; key_qv = QuantumVariable.custom([1, 42, &quot;hello&quot;, &quot;world&quot;])</span>
+<span class="sd">    &gt;&gt;&gt; key_qv[:] = {&quot;hello&quot; : 1, &quot;world&quot; : 1}</span>
+<span class="sd">    &gt;&gt;&gt; print(key_qv)</span>
+<span class="sd">    {&#39;hello&#39;: 0.5, &#39;world&#39;: 0.5}</span>
+
+<span class="sd">    We now load the data from the QuantumDictionary into the quantum algorithm by</span>
+<span class="sd">    dereferencing ``qd`` with ``key_qv``:</span>
+
+<span class="sd">    &gt;&gt;&gt; value_qv = qd[key_qv]</span>
+<span class="sd">    &gt;&gt;&gt; multi_measurement([key_qv, value_qv])</span>
+<span class="sd">    {(&#39;hello&#39;, &#39;hallo&#39;): 0.5, (&#39;world&#39;, &#39;welt&#39;): 0.5}</span>
+
+<span class="sd">    We see that the states of ``key_qv`` are now entangled with the states of the</span>
+<span class="sd">    values.</span>
+
+<span class="sd">    QuantumDictionaries can also load from tuples of QuantumVariables:</span>
+
+<span class="sd">    &gt;&gt;&gt; qd[(1,2)] = 73</span>
+<span class="sd">    &gt;&gt;&gt; qd[(0,2)] = 37</span>
+<span class="sd">    &gt;&gt;&gt; qf1 = QuantumFloat(1)</span>
+<span class="sd">    &gt;&gt;&gt; qf2 = QuantumFloat(2)</span>
+<span class="sd">    &gt;&gt;&gt; h(qf1)</span>
+<span class="sd">    &gt;&gt;&gt; qf2[:] = 2</span>
+<span class="sd">    &gt;&gt;&gt; res = qd[(qf1, qf2)]</span>
+<span class="sd">    &gt;&gt;&gt; multi_measurement([qf1, qf2, res])</span>
+<span class="sd">    {(0, 2, 37): 0.5, (1, 2, 73): 0.5}</span>
+
+<span class="sd">    Mathematically we have</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        U_{\text{qd}} \left( \sum_{x \in \text{labels}} a_x \ket{x} \right)</span>
+<span class="sd">        \ket{0} = \sum_{x \in \text{labels}} a_x \ket{x} \ket{\text{qd}[x]}</span>
+
+<span class="sd">    Note that this quantum operation is realized through quantum logic synthesis, which</span>
+<span class="sd">    scales rather badly compared to algorithmic generation of data relations.</span>
+<span class="sd">    Therefore, performing as much logic on the quantum computer is preferable over</span>
+<span class="sd">    performing the logic on the classical computer and inserting the results using</span>
+<span class="sd">    QuantumDictionaries.</span>
+
+
+<span class="sd">    **Specifying the return type**</span>
+
+<span class="sd">    The returned QuantumVariable ``value_qv`` is (similar to ``key_qv``) a</span>
+<span class="sd">    CustomQuantumVariable:</span>
+
+<span class="sd">    &gt;&gt;&gt; print(type(value_qv))</span>
+<span class="sd">    &lt;class &#39;qrisp.misc.misc_functions.custom_qv.&lt;locals&gt;.CustomQuantumVariable&#39;&gt;</span>
+
+<span class="sd">    If we want to apply further processing this might not be helpfull since custom</span>
+<span class="sd">    QuantumVariables lack many methods that are available in more specific quantum</span>
+<span class="sd">    types. In this case we can supply the QuantumDictionary with a return type:</span>
+
+<span class="sd">    &gt;&gt;&gt; from qrisp import QuantumFloat</span>
+<span class="sd">    &gt;&gt;&gt; qtype = QuantumFloat(4, -2, signed = True)</span>
+<span class="sd">    &gt;&gt;&gt; float_qd = QuantumDictionary(return_type = qtype)</span>
+
+<span class="sd">    We fill again with some example values</span>
+
+<span class="sd">    &gt;&gt;&gt; float_qd[&quot;hello&quot;] = 0.5</span>
+<span class="sd">    &gt;&gt;&gt; float_qd[&quot;world&quot;] = -1</span>
+
+<span class="sd">    And retrieve the value:</span>
+
+<span class="sd">    &gt;&gt;&gt; value_qv = float_qd[key_qv]</span>
+<span class="sd">    &gt;&gt;&gt; print(type(value_qv))</span>
+<span class="sd">    &lt;class &#39;qrisp.qtypes.quantum_float.QuantumFloat&#39;&gt;</span>
+
+<span class="sd">    Since ``value_qv`` is a QuantumFloat now, we can use the established methods for</span>
+<span class="sd">    arithmetic - for instance the inplace addition:</span>
+
+<span class="sd">    &gt;&gt;&gt; value_qv += 1.5</span>
+<span class="sd">    &gt;&gt;&gt; print(multi_measurement([key_qv, value_qv]))</span>
+<span class="sd">    {(&#39;hello&#39;, 2.0): 0.5, (&#39;world&#39;, 0.5): 0.5}</span>
+
+
+<span class="sd">    **Advanced usage**</span>
+
+<span class="sd">    In some cases, (such as manual uncomputation) it is required to specify into which</span>
+<span class="sd">    variable the QuantumDictionary should load. We do this with the</span>
+<span class="sd">    :meth:`load &lt;qrisp.QuantumDictionary.load&gt;` method:</span>
+
+<span class="sd">    &gt;&gt;&gt; qf = qtype.duplicate()</span>
+<span class="sd">    &gt;&gt;&gt; float_qd.load(key_qv, qf)</span>
+<span class="sd">    &gt;&gt;&gt; print(qf)</span>
+<span class="sd">    {0.5: 0.5, -1.0: 0.5}</span>
+
+<span class="sd">    The ``load`` method furthermore allows to specify which logic synthesis algorithm</span>
+<span class="sd">    should be used.</span>
+
+<span class="sd">    &gt;&gt;&gt; qf2 = qtype.duplicate()</span>
+<span class="sd">    &gt;&gt;&gt; float_qd.load(key_qv, qf2, synth_method = &quot;gray&quot;)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">init_dict</span><span class="o">=</span><span class="p">{},</span> <span class="n">return_type</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">init_dict</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">return_type</span> <span class="o">=</span> <span class="n">return_type</span>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+<div class="viewcode-block" id="QuantumDictionary.load"><a class="viewcode-back" href="../../../reference/Core/generated/qrisp.QuantumDictionary.load.html#qrisp.QuantumDictionary.load">[docs]</a>    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value_qv</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">synth_method</span><span class="o">=</span><span class="s2">&quot;gray&quot;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Loads the values of the QuantumDictionary into a given QuantumVariable.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        key_qv : QuantumVariable</span>
+<span class="sd">            A QuantumVariable with a decoder supporting the keys of this</span>
+<span class="sd">            QuantumDictionary.</span>
+<span class="sd">        value_qv : QuantumVariable, optional</span>
+<span class="sd">            The QuantumVariable to load the values into. If given None, a new</span>
+<span class="sd">            QuantumVariable is generated.</span>
+<span class="sd">        synth_method : string, optional</span>
+<span class="sd">            The method of logic synthesis to use for loading. Currently available are</span>
+<span class="sd">            &quot;gray&quot;, &quot;gray_pt&quot;, &quot;pprm&quot; and &quot;pprm_pt&quot;. The default is &quot;gray&quot;.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        Exception</span>
+<span class="sd">            Tried to load value from empty dictionary.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+
+<span class="sd">        We create a QuantumDictionary with return type QuantumFloat</span>
+
+<span class="sd">        &gt;&gt;&gt; from qrisp import QuantumDictionary, QuantumFloat, h</span>
+<span class="sd">        &gt;&gt;&gt; qtype = QuantumFloat(4, -2)</span>
+<span class="sd">        &gt;&gt;&gt; float_qd = QuantumDictionary(return_type = qtype)</span>
+<span class="sd">        &gt;&gt;&gt; float_qd[0] = 1</span>
+<span class="sd">        &gt;&gt;&gt; float_qd[1] = 2</span>
+
+<span class="sd">        Create the key and the value variable:</span>
+
+<span class="sd">        &gt;&gt;&gt; key_qv = QuantumFloat(1, signed = False)</span>
+<span class="sd">        &gt;&gt;&gt; h(key_qv)</span>
+<span class="sd">        &gt;&gt;&gt; value_qv = qtype.duplicate()</span>
+
+<span class="sd">        And load the values</span>
+
+<span class="sd">        &gt;&gt;&gt; float_qd.load(key_qv, value_qv, synth_method = &quot;pprm&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; print(value_qv)</span>
+<span class="sd">        {1.0: 0.5, 2.0: 0.5}</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">qv_list</span> <span class="o">=</span> <span class="n">recursive_qv_search</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">qv_list</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">dict</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="p">(</span><span class="n">key</span><span class="p">,)</span>
+
+        <span class="n">labels</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">qv</span> <span class="ow">in</span> <span class="n">key</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">qv</span><span class="p">,</span> <span class="n">QuantumVariable</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                    <span class="s2">&quot;Tried to deref QuantumDictionary with mixed&quot;</span>
+                    <span class="s2">&quot;(classical + quantum) input.&quot;</span>
+                <span class="p">)</span>
+
+            <span class="n">labels</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">qv</span><span class="o">.</span><span class="n">decoder</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="n">qv</span><span class="o">.</span><span class="n">size</span><span class="p">)])</span>
+
+        <span class="n">quantum_key</span> <span class="o">=</span> <span class="n">key</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">labels</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">constellations</span> <span class="o">=</span> <span class="n">labels</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">constellations</span> <span class="o">=</span> <span class="n">itertools</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="o">*</span><span class="n">labels</span><span class="p">)</span>
+
+        <span class="n">relevant_dic</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">for</span> <span class="n">const</span> <span class="ow">in</span> <span class="n">constellations</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">const</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+                <span class="n">relevant_dic</span><span class="p">[</span><span class="n">const</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">const</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">value_qv</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">return_type</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">)):</span>
+                <span class="n">value_qv</span> <span class="o">=</span> <span class="n">custom_qv</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">relevant_dic</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">value_qv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">return_type</span><span class="o">.</span><span class="n">duplicate</span><span class="p">()</span>
+
+        <span class="n">n</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">qv</span><span class="o">.</span><span class="n">size</span> <span class="k">for</span> <span class="n">qv</span> <span class="ow">in</span> <span class="n">key</span><span class="p">])</span>
+
+        <span class="n">tt_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">2</span><span class="o">**</span><span class="n">n</span><span class="p">,</span> <span class="n">value_qv</span><span class="o">.</span><span class="n">size</span><span class="p">))</span>
+
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">relevant_dic</span><span class="p">:</span>
+            <span class="n">bin_string</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">quantum_key</span><span class="p">)):</span>
+                <span class="n">qv</span> <span class="o">=</span> <span class="n">quantum_key</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+                    <span class="n">bin_string</span> <span class="o">+=</span> <span class="n">bin_rep</span><span class="p">(</span><span class="n">qv</span><span class="o">.</span><span class="n">encoder</span><span class="p">(</span><span class="n">k</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span> <span class="n">qv</span><span class="o">.</span><span class="n">size</span><span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">bin_string</span> <span class="o">+=</span> <span class="n">bin_rep</span><span class="p">(</span><span class="n">qv</span><span class="o">.</span><span class="n">encoder</span><span class="p">(</span><span class="n">k</span><span class="p">),</span> <span class="n">qv</span><span class="o">.</span><span class="n">size</span><span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+            <span class="n">row_number</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">bin_string</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="mi">2</span><span class="p">)</span>
+            <span class="n">tt_array</span><span class="p">[</span><span class="n">row_number</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">int_as_array</span><span class="p">(</span>
+                <span class="n">value_qv</span><span class="o">.</span><span class="n">encoder</span><span class="p">(</span><span class="n">relevant_dic</span><span class="p">[</span><span class="n">k</span><span class="p">]),</span> <span class="n">value_qv</span><span class="o">.</span><span class="n">size</span>
+            <span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="n">tt</span> <span class="o">=</span> <span class="n">TruthTable</span><span class="p">(</span><span class="n">tt_array</span><span class="p">)</span>
+
+        <span class="n">qv_temp_0</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+        <span class="n">qv_temp_1</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="n">value_qv</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">qs</span><span class="o">=</span><span class="n">qv_temp_0</span><span class="o">.</span><span class="n">qs</span><span class="p">)</span>
+
+        <span class="n">tt</span><span class="o">.</span><span class="n">q_synth</span><span class="p">(</span><span class="n">qv_temp_0</span><span class="p">,</span> <span class="n">qv_temp_1</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="n">synth_method</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">qv_temp_0</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">qubits</span><span class="p">)</span> <span class="o">!=</span> <span class="n">qv_temp_0</span><span class="o">.</span><span class="n">size</span> <span class="o">+</span> <span class="n">qv_temp_1</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
+            <span class="n">synth_ancilla</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span>
+                <span class="nb">len</span><span class="p">(</span><span class="n">qv_temp_0</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">qubits</span><span class="p">)</span> <span class="o">-</span> <span class="n">qv_temp_0</span><span class="o">.</span><span class="n">size</span> <span class="o">+</span> <span class="n">qv_temp_1</span><span class="o">.</span><span class="n">size</span>
+            <span class="p">)</span>
+            <span class="n">quantum_key</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">synth_ancilla</span><span class="p">)</span>
+
+        <span class="n">res_gate</span> <span class="o">=</span> <span class="n">qv_temp_0</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">to_gate</span><span class="p">(</span><span class="s2">&quot;quantum deref&quot;</span><span class="p">)</span>
+        <span class="n">res_gate</span><span class="o">.</span><span class="n">is_qfree</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">res_gate</span><span class="o">.</span><span class="n">permeability</span> <span class="o">=</span> <span class="p">{</span><span class="n">i</span><span class="p">:</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">n</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">res_gate</span><span class="o">.</span><span class="n">num_qubits</span><span class="p">)}</span>
+
+        <span class="n">quantum_key</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">res_gate</span><span class="p">,</span> <span class="nb">sum</span><span class="p">([</span><span class="n">qv</span><span class="o">.</span><span class="n">reg</span> <span class="k">for</span> <span class="n">qv</span> <span class="ow">in</span> <span class="n">quantum_key</span><span class="p">],</span> <span class="p">[])</span> <span class="o">+</span> <span class="n">value_qv</span><span class="o">.</span><span class="n">reg</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">qv_temp_0</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">qubits</span><span class="p">)</span> <span class="o">!=</span> <span class="n">qv_temp_0</span><span class="o">.</span><span class="n">size</span> <span class="o">+</span> <span class="n">qv_temp_1</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
+            <span class="n">synth_ancilla</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">value_qv</span></div></div>
+</pre></div>
+
+                </article>
+              
+              
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/bootstrap.js?digest=e353d410970836974a52"></script>
+<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+  <p class="copyright">
+    
+      © Copyright 2023, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.3.0.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item"><p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.13.3.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

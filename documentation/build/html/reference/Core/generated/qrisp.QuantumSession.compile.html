@@ -1,0 +1,774 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>qrisp.QuantumSession.compile &#8212;   documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+<link href="../../../_static/styles/bootstrap.css?digest=e353d410970836974a52" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+
+  
+  <link href="../../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=e353d410970836974a52" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/custom.css" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=e353d410970836974a52" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52" />
+
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../_static/clipboard.min.js"></script>
+    <script src="../../../_static/copybutton.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'reference/Core/generated/qrisp.QuantumSession.compile';</script>
+    <link rel="canonical" href="https://qrisp.eu/reference/Core/generated/qrisp.QuantumSession.compile.html" />
+    <link rel="shortcut icon" href="../../../_static/qrisp_favicon.png"/>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="qrisp.QuantumSession.statevector" href="qrisp.QuantumSession.statevector.html" />
+    <link rel="prev" title="qrisp.QuantumSession.__init__" href="qrisp.QuantumSession.__init__.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="light">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+<div class="bd-header__inner bd-page-width">
+  <label class="sidebar-toggle primary-toggle" for="__primary">
+    <span class="fa-solid fa-bars"></span>
+  </label>
+  
+  <div class="navbar-header-items__start">
+    
+      <div class="navbar-item">
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../../_static/logo_extended.png" class="logo__image only-light" alt="Logo image"/>
+    <script>document.write(`<img src="../../../_static/logo_extended.png" class="logo__image only-dark" alt="Logo image"/>`);</script>
+  
+  
+</a></div>
+    
+  </div>
+  
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../general/tutorial.html">
+                        Tutorial
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item current active">
+                      <a class="nav-link nav-internal" href="../../index.html">
+                        Reference
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../general/setup.html">
+                        Setup
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../general/imprint.html">
+                        Imprint
+                      </a>
+                    </li>
+                
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+  </button>
+`);
+</script>
+        </div>
+      
+      
+        <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/fraunhoferfokus/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square"></i></span>
+            <label class="sr-only">GitHub</label></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+  </button>
+`);
+</script>
+    </div>
+  
+
+  
+    <label class="sidebar-toggle secondary-toggle" for="__secondary">
+      <span class="fa-solid fa-outdent"></span>
+    </label>
+  
+</div>
+
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../general/tutorial.html">
+                        Tutorial
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item current active">
+                      <a class="nav-link nav-internal" href="../../index.html">
+                        Reference
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../general/setup.html">
+                        Setup
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../general/imprint.html">
+                        Imprint
+                      </a>
+                    </li>
+                
+  </ul>
+</nav></div>
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/fraunhoferfokus/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square"></i></span>
+            <label class="sr-only">GitHub</label></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs... "
+         aria-label="Search the docs... "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+        <div class="sidebar-primary-item"><nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../Introduction.html">Introduction</a></li>
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="../index.html">Core</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-1"><i class="fa-solid fa-chevron-down"></i></label><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../QuantumVariable.html">QuantumVariable</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="../QuantumSession.html">QuantumSession</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="../QuantumArray.html">QuantumArray</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="../QuantumDictionary.html">QuantumDictionary</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="../Uncomputation.html">Uncomputation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../Session%20Merging.html">Session Merging</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../Quantum%20Types/index.html">Quantum Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../Quantum%20Environments/index.html">Quantum Environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../Algorithms/index.html">Algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../Circuit%20Construction/index.html">Circuit Construction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../Backend%20Interface/index.html">Backend Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../Quantum%20Networks/index.html">Quantum Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../Miscellaneous%20Functions/index.html">Miscellaneous Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../Examples/index.html">Examples</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+
+
+<nav aria-label="Breadcrumbs">
+  <ul class="bd-breadcrumbs" role="navigation" aria-label="Breadcrumb">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Reference</a></li>
+    
+    
+    <li class="breadcrumb-item"><i class="fa-solid fa-ellipsis"></i></li>
+    
+    
+    <li class="breadcrumb-item"><a href="../QuantumSession.html" class="nav-link">QuantumSession</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">qrisp.QuantumSession.compile</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <section id="qrisp-quantumsession-compile">
+<h1>qrisp.QuantumSession.compile<a class="headerlink" href="#qrisp-quantumsession-compile" title="Permalink to this heading">#</a></h1>
+<dl class="py method">
+<dt class="sig sig-object py" id="qrisp.QuantumSession.compile">
+<span class="sig-prename descclassname"><span class="pre">QuantumSession.</span></span><span class="sig-name descname"><span class="pre">compile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">workspace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">intended_measurements</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cancel_qfts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">disable_uncomputation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/qrisp/core/quantum_session.html#QuantumSession.compile"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qrisp.QuantumSession.compile" title="Permalink to this definition">#</a></dt>
+<dd><p>Method to compile the QuantumSession into a <a class="reference internal" href="../../Circuit%20Construction/QuantumCircuit.html#quantumcircuit"><span class="std std-ref">QuantumCircuit</span></a>. The compiler
+dynamically allocates the qubits of the QuantumSession on qubits that might have
+been used by priorly deleted <a class="reference internal" href="../QuantumVariable.html#quantumvariable"><span class="std std-ref">QuantumVariables</span></a>.</p>
+<p>Using the <code class="docutils literal notranslate"><span class="pre">workspace</span></code> keyword, we can grant the compiler a number of extra
+qubits to use in order to reduce the circuit depth.</p>
+<p>Furthermore, the compiler recompiles any <a class="reference internal" href="../../Miscellaneous%20Functions/generated/qrisp.mcx.html#qrisp.mcx" title="qrisp.mcx"><code class="xref py py-meth docutils literal notranslate"><span class="pre">mcx</span></code></a> instruction
+with <code class="docutils literal notranslate"><span class="pre">method</span> <span class="pre">=</span> <span class="pre">auto</span></code> using a dynamically generated mcx implementation that
+makes use of as much of the currently available clean and dirty ancillae.
+This feature will never allocate additional qubits on its own. If required,
+it can be supplied with additional space using the <code class="docutils literal notranslate"><span class="pre">workspace</span></code> keyword.</p>
+<p>The .compile method is called by default, when executing the
+<a class="reference internal" href="qrisp.QuantumVariable.get_measurement.html#qrisp.QuantumVariable.get_measurement" title="qrisp.QuantumVariable.get_measurement"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_measurement</span></code></a> method of
+<a class="reference internal" href="../QuantumVariable.html#quantumvariable"><span class="std std-ref">QuantumVariable</span></a>. This method also allows specification of compilation
+option through the <code class="docutils literal notranslate"><span class="pre">compilation_kwargs</span></code> argument.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>workspace</strong><span class="classifier">int, optional</span></dt><dd><p>The amount of workspace qubits to be granted. The default is 0.</p>
+</dd>
+<dt><strong>intended_measurements</strong><span class="classifier">list[Qubit], optional</span></dt><dd><p>A list of <a class="reference internal" href="../../Circuit%20Construction/Qubit.html#qubit"><span class="std std-ref">Qubits</span></a> that are supposed to be measured. The
+compiler will remove any instructions that are not directly neccessary to
+perform the measurements. Note that the resulting <a class="reference internal" href="../../Circuit%20Construction/QuantumCircuit.html#quantumcircuit"><span class="std std-ref">QuantumCircuit</span></a>
+contains no measurements, such that the user can still specify a classical
+bit for the measurement. The default ist [].</p>
+</dd>
+<dt><strong>cancel_qfts</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, any <a class="reference internal" href="../../Algorithms/generated/qrisp.QFT.html#qrisp.QFT" title="qrisp.QFT"><code class="xref py py-meth docutils literal notranslate"><span class="pre">QFT</span></code></a> instruction that is executed on
+a set of qubits that have just been allocated (ie. the <span class="math notranslate nohighlight">\(\ket{0}\)</span> state) will
+be replaced by a set of H gates. The same goes for QFT instructions executed
+directly before deallocation. The default is <code class="docutils literal notranslate"><span class="pre">True</span></code>.</p>
+</dd>
+<dt><strong>disable_uncomputation</strong><span class="classifier">bool, optional</span></dt><dd><p>Experimental feature the allows fully automized uncomputation. If set to
+<code class="docutils literal notranslate"><span class="pre">False</span></code> any <a class="reference internal" href="../QuantumVariable.html#quantumvariable"><span class="std std-ref">QuantumVariable</span></a> that went out of scope will be
+uncomputed by the compiler. The default is <code class="docutils literal notranslate"><span class="pre">True</span></code>.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>QuantumCircuit</dt><dd><p>The compiled QuantumCircuit.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p><strong>Workspace</strong></p>
+<p>We calculate a product of 2 <a class="reference internal" href="../../Quantum%20Types/QuantumFloat.html#quantumfloat"><span class="std std-ref">QuantumFloats</span></a> using the
+<a class="reference internal" href="../../Miscellaneous%20Functions/generated/qrisp.sbp_mult.html#qrisp.sbp_mult" title="qrisp.sbp_mult"><code class="xref py py-meth docutils literal notranslate"><span class="pre">sbp_mult</span></code></a> function which heavily profits from more
+workspace.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">qrisp</span> <span class="kn">import</span> <span class="n">QuantumFloat</span><span class="p">,</span> <span class="n">sbp_mult</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">qf_0</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">qf_0</span><span class="p">[:]</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">qf_1</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">qf_1</span><span class="p">[:]</span> <span class="o">=</span> <span class="mi">5</span>
+</pre></div>
+</div>
+<p>Calculate product:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">qf_res</span> <span class="o">=</span> <span class="n">sbp_mult</span><span class="p">(</span><span class="n">qf_0</span><span class="p">,</span> <span class="n">qf_1</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">qf_res</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">num_qubits</span><span class="p">()</span>
+<span class="go">45</span>
+</pre></div>
+</div>
+<p>Compile circuit with no workspace</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">qc_0</span> <span class="o">=</span> <span class="n">qf_res</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">qc_0</span><span class="o">.</span><span class="n">num_qubits</span><span class="p">()</span>
+<span class="go">21</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">qc_0</span><span class="o">.</span><span class="n">depth</span><span class="p">()</span>
+<span class="go">497</span>
+</pre></div>
+</div>
+<p>Compile circuit with 4 workspace qubits</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">qc_1</span> <span class="o">=</span> <span class="n">qf_res</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">qc_1</span><span class="o">.</span><span class="n">num_qubits</span><span class="p">()</span>
+<span class="go">25</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">qc_1</span><span class="o">.</span><span class="n">depth</span><span class="p">()</span>
+<span class="go">258</span>
+</pre></div>
+</div>
+<p><strong>mcx recompilation</strong></p>
+<p>To demonstrate the recompilation feature, we create two
+<a class="reference internal" href="../QuantumVariable.html#quantumvariable"><span class="std std-ref">QuantumVariables</span></a>.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">qrisp</span> <span class="kn">import</span> <span class="n">QuantumVariable</span><span class="p">,</span> <span class="n">mcx</span><span class="p">,</span> <span class="n">cx</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ctrl</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">target</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">mcx</span><span class="p">(</span><span class="n">ctrl</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">ctrl</span><span class="o">.</span><span class="n">qs</span><span class="p">)</span>
+<span class="go">QuantumCircuit:</span>
+<span class="go">---------------</span>
+<span class="go">  ctrl.0: ──■──</span>
+<span class="go">            │</span>
+<span class="go">  ctrl.1: ──■──</span>
+<span class="go">            │</span>
+<span class="go">  ctrl.2: ──■──</span>
+<span class="go">            │</span>
+<span class="go">  ctrl.3: ──■──</span>
+<span class="go">          ┌─┴─┐</span>
+<span class="go">target.0: ┤ X ├</span>
+<span class="go">          └───┘</span>
+<span class="go">Live QuantumVariables:</span>
+<span class="go">----------------------</span>
+<span class="go">QuantumVariable ctrl</span>
+<span class="go">QuantumVariable target</span>
+</pre></div>
+</div>
+<p>We can now call the <code class="docutils literal notranslate"><span class="pre">.compile</span></code> method</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">compiled_qc</span> <span class="o">=</span> <span class="n">ctrl</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">compiled_qc</span><span class="o">.</span><span class="n">depth</span><span class="p">()</span>
+<span class="go">50</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">compiled_qc</span><span class="p">)</span>
+<span class="go">    ctrl.0: ──■──</span>
+<span class="go">              │</span>
+<span class="go">    ctrl.1: ──■──</span>
+<span class="go">              │</span>
+<span class="go">    ctrl.2: ──■──</span>
+<span class="go">              │</span>
+<span class="go">    ctrl.3: ──■──</span>
+<span class="go">            ┌─┴─┐</span>
+<span class="go">  target.0: ┤ X ├</span>
+<span class="go">            └───┘</span>
+</pre></div>
+</div>
+<p>We see no change here, because there was no free space to execute a more optimal
+mcx implementation. We can grant additional space using the <code class="docutils literal notranslate"><span class="pre">workspace</span></code>
+argument:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">compiled_qc</span> <span class="o">=</span> <span class="n">ctrl</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">workspace</span> <span class="o">=</span> <span class="mi">2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">compiled_qc</span><span class="o">.</span><span class="n">depth</span><span class="p">()</span>
+<span class="go">22</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">compiled_qc</span><span class="p">)</span>
+<span class="go">             ┌────────┐               ┌────────┐</span>
+<span class="go">     ctrl.0: ┤0       ├───────────────┤0       ├──────────</span>
+<span class="go">             │        │               │        │</span>
+<span class="go">     ctrl.1: ┤1       ├───────────────┤1       ├──────────</span>
+<span class="go">             │        │┌────────┐     │        │┌────────┐</span>
+<span class="go">     ctrl.2: ┤        ├┤0       ├─────┤        ├┤0       ├</span>
+<span class="go">             │  pt2cx ││        │     │  pt2cx ││        │</span>
+<span class="go">     ctrl.3: ┤        ├┤1       ├─────┤        ├┤1       ├</span>
+<span class="go">             │        ││        │┌───┐│        ││        │</span>
+<span class="go">   target.0: ┤        ├┤  pt2cx ├┤ X ├┤        ├┤  pt2cx ├</span>
+<span class="go">             │        ││        │└─┬─┘│        ││        │</span>
+<span class="go">workspace_0: ┤2       ├┤        ├──■──┤2       ├┤        ├</span>
+<span class="go">             └────────┘│        │  │  └────────┘│        │</span>
+<span class="go">workspace_1: ──────────┤2       ├──■────────────┤2       ├</span>
+<span class="go">                       └────────┘               └────────┘</span>
+</pre></div>
+</div>
+<p>Granting extra qubits to use this feature is however not usually necessary. The
+compiler automatically detects and reuses qubit resources available at the
+corresponding stage of the compilation.
+To demonstrate this feature, we allocate a third QuantumVariable:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">qv</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cx</span><span class="p">(</span><span class="n">target</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">qv</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">ctrl</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">compile</span><span class="p">())</span>
+<span class="go">          ┌────────┐               ┌────────┐</span>
+<span class="go">  ctrl.0: ┤0       ├───────────────┤0       ├────────────────────</span>
+<span class="go">          │        │               │        │</span>
+<span class="go">  ctrl.1: ┤1       ├───────────────┤1       ├────────────────────</span>
+<span class="go">          │        │┌────────┐     │        │┌────────┐</span>
+<span class="go">  ctrl.2: ┤        ├┤0       ├─────┤        ├┤0       ├──────────</span>
+<span class="go">          │  pt2cx ││        │     │  pt2cx ││        │</span>
+<span class="go">  ctrl.3: ┤        ├┤1       ├─────┤        ├┤1       ├──────────</span>
+<span class="go">          │        ││        │┌───┐│        ││        │</span>
+<span class="go">target.0: ┤        ├┤  pt2cx ├┤ X ├┤        ├┤  pt2cx ├──■────■──</span>
+<span class="go">          │        ││        │└─┬─┘│        ││        │┌─┴─┐  │</span>
+<span class="go">    qv.0: ┤2       ├┤        ├──■──┤2       ├┤        ├┤ X ├──┼──</span>
+<span class="go">          └────────┘│        │  │  └────────┘│        │└───┘┌─┴─┐</span>
+<span class="go">    qv.1: ──────────┤2       ├──■────────────┤2       ├─────┤ X ├</span>
+<span class="go">                    └────────┘               └────────┘     └───┘</span>
+</pre></div>
+</div>
+<p>We see how the qubits that will later hold <code class="docutils literal notranslate"><span class="pre">qv</span></code> are used to efficiently
+compile the mcx gate.</p>
+<p>In situations of no free clean ancilla qubits, the Qrisp compiler even makes use
+of dirty ancillae. To demonstrate, we again create three QuantumVariables
+but this time we execute a <a class="reference internal" href="../../Miscellaneous%20Functions/generated/qrisp.cx.html#qrisp.cx" title="qrisp.cx"><code class="xref py py-meth docutils literal notranslate"><span class="pre">cx</span></code></a>-gate before executing the
+<a class="reference internal" href="../../Miscellaneous%20Functions/generated/qrisp.mcx.html#qrisp.mcx" title="qrisp.mcx"><code class="xref py py-meth docutils literal notranslate"><span class="pre">mcx</span></code></a>-gate. This way <code class="docutils literal notranslate"><span class="pre">qv</span></code> has to be allocated before the
+<code class="docutils literal notranslate"><span class="pre">mcx</span></code> gate.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ctrl</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">target</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">qv</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cx</span><span class="p">(</span><span class="n">target</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">qv</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">mcx</span><span class="p">(</span><span class="n">ctrl</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">ctrl</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">compile</span><span class="p">())</span>
+<span class="go">  ctrl.0: ────────────────────────────────────■──────────────────────────»</span>
+<span class="go">                         ┌─────────────────┐  │  ┌─────────────────┐     »</span>
+<span class="go">  ctrl.1: ───────────────┤1                ├──┼──┤1                ├─────»</span>
+<span class="go">                         │                 │  │  │                 │     »</span>
+<span class="go">  ctrl.2: ───────────────┤2                ├──┼──┤2                ├─────»</span>
+<span class="go">                         │                 │  │  │                 │     »</span>
+<span class="go">  ctrl.3: ────────────■──┤                 ├──┼──┤                 ├──■──»</span>
+<span class="go">                    ┌─┴─┐│  reduced_maslov │  │  │  reduced_maslov │┌─┴─┐»</span>
+<span class="go">target.0: ──■────■──┤ X ├┤                 ├──┼──┤                 ├┤ X ├»</span>
+<span class="go">          ┌─┴─┐  │  └─┬─┘│                 │┌─┴─┐│                 │└─┬─┘»</span>
+<span class="go">    qv.0: ┤ X ├──┼────┼──┤0                ├┤ X ├┤0                ├──┼──»</span>
+<span class="go">          └───┘┌─┴─┐  │  │                 │└───┘│                 │  │  »</span>
+<span class="go">    qv.1: ─────┤ X ├──■──┤3                ├─────┤3                ├──■──»</span>
+<span class="go">               └───┘     └─────────────────┘     └─────────────────┘     »</span>
+<span class="go">«</span>
+<span class="go">«  ctrl.0: ─────────────────────■─────────────────────</span>
+<span class="go">«          ┌─────────────────┐  │  ┌─────────────────┐</span>
+<span class="go">«  ctrl.1: ┤1                ├──┼──┤1                ├</span>
+<span class="go">«          │                 │  │  │                 │</span>
+<span class="go">«  ctrl.2: ┤2                ├──┼──┤2                ├</span>
+<span class="go">«          │                 │  │  │                 │</span>
+<span class="go">«  ctrl.3: ┤                 ├──┼──┤                 ├</span>
+<span class="go">«          │  reduced_maslov │  │  │  reduced_maslov │</span>
+<span class="go">«target.0: ┤                 ├──┼──┤                 ├</span>
+<span class="go">«          │                 │┌─┴─┐│                 │</span>
+<span class="go">«    qv.0: ┤0                ├┤ X ├┤0                ├</span>
+<span class="go">«          │                 │└───┘│                 │</span>
+<span class="go">«    qv.1: ┤3                ├─────┤3                ├</span>
+<span class="go">«          └─────────────────┘     └─────────────────┘</span>
+</pre></div>
+</div>
+<p>We see how the qubits of <code class="docutils literal notranslate"><span class="pre">qv</span></code> are utilized as dirty ancilla qubits in order
+to facilitate a more efficient <code class="docutils literal notranslate"><span class="pre">mcx</span></code> implementation compared to no ancillae
+at all.</p>
+<p><strong>Fully automized uncomputation</strong></p>
+<p>This feature is as of right now experimental. To demonstrate, we create a test
+function, creating a local <a class="reference internal" href="../../Quantum%20Types/QuantumBool.html#quantumbool"><span class="std std-ref">QuantumBool</span></a></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">qrisp</span> <span class="kn">import</span> <span class="n">QuantumBool</span><span class="p">,</span> <span class="n">mcx</span>
+
+<span class="k">def</span> <span class="nf">triple_AND</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">):</span>
+
+    <span class="n">local</span> <span class="o">=</span> <span class="n">QuantumBool</span><span class="p">()</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">QuantumBool</span><span class="p">()</span>
+
+    <span class="n">mcx</span><span class="p">([</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">],</span> <span class="n">local</span><span class="p">)</span>
+
+    <span class="n">mcx</span><span class="p">([</span><span class="n">c</span><span class="p">,</span> <span class="n">local</span><span class="p">],</span> <span class="n">result</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">result</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="n">QuantumBool</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">b</span> <span class="o">=</span> <span class="n">QuantumBool</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">c</span> <span class="o">=</span> <span class="n">QuantumBool</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">res</span> <span class="o">=</span> <span class="n">triple_AND</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">c</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">qs</span><span class="p">)</span>
+<span class="go">QuantumCircuit:</span>
+<span class="go">---------------</span>
+<span class="go">     a.0: ──■───────</span>
+<span class="go">            │</span>
+<span class="go">     b.0: ──■───────</span>
+<span class="go">            │</span>
+<span class="go">     c.0: ──┼────■──</span>
+<span class="go">          ┌─┴─┐  │</span>
+<span class="go"> local.0: ┤ X ├──■──</span>
+<span class="go">          └───┘┌─┴─┐</span>
+<span class="go">result.0: ─────┤ X ├</span>
+<span class="go">               └───┘</span>
+<span class="go">Live QuantumVariables:</span>
+<span class="go">----------------------</span>
+<span class="go">QuantumBool a</span>
+<span class="go">QuantumBool b</span>
+<span class="go">QuantumBool c</span>
+<span class="go">QuantumBool local</span>
+<span class="go">QuantumBool result</span>
+</pre></div>
+</div>
+<p>We now compile with the corresponding keyword argument:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">disable_uncomputation</span> <span class="o">=</span> <span class="kc">False</span><span class="p">))</span>
+<span class="go">             ┌────────┐     ┌────────┐</span>
+<span class="go">        a.0: ┤0       ├─────┤0       ├</span>
+<span class="go">             │        │     │        │</span>
+<span class="go">        b.0: ┤1       ├─────┤1       ├</span>
+<span class="go">             │        │     │        │</span>
+<span class="go">        c.0: ┤  pt2cx ├──■──┤  pt2cx ├</span>
+<span class="go">             │        │┌─┴─┐│        │</span>
+<span class="go">   result.0: ┤        ├┤ X ├┤        ├</span>
+<span class="go">             │        │└─┬─┘│        │</span>
+<span class="go">workspace_0: ┤2       ├──■──┤2       ├</span>
+<span class="go">             └────────┘     └────────┘</span>
+</pre></div>
+</div>
+<p>We see that the <code class="docutils literal notranslate"><span class="pre">local</span></code> QuantumBool is no longer allocated but has been
+uncomputed and it’s qubits are available as workspace.</p>
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+              
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#qrisp.QuantumSession.compile"><code class="docutils literal notranslate"><span class="pre">QuantumSession.compile()</span></code></a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/bootstrap.js?digest=e353d410970836974a52"></script>
+<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+  <p class="copyright">
+    
+      © Copyright 2023, Qrisp developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.3.0.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item"><p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.13.3.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

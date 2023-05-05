@@ -1,0 +1,12 @@
+:root {
+  /*****************************************************************************
+  * Overall Layout Variables
+  */
+
+  // Header height will impact the top offset for many sections
+  // Article header is 66% of Header
+  --pst-header-height: 12rem;
+  --pst-header-article-height: calc(var(--pst-header-height) * 2 / 3);
+  --pst-sidebar-secondary: 15rem;
+  --pst-font-size-base: 15px;
+}
