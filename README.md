@@ -1,7 +1,7 @@
 <p align="center" width="100%"><img src="logo/qrisp_logo.png" width=30% height=30%></p>
 
 Qrisp is an open-source python framework for high-level programming of Quantum computers.
-By automating many steps one usually encounters when progrmaming a quantum computer, introducing quantum types, and many more features Qrisp makes quantum programming more user-friendly yet stays performant when it comes to compiling programs to the circuit level.
+By automating many steps one usually encounters when programming a quantum computer, e.g. introducing quantum types, automatic uncomputation, and many more features Qrisp makes quantum programming more user-friendly yet stays performant when it comes to compiling programs to the circuit level.
 
 ## Documentation
 The full documentation, alongside with many tutorials and examples, is available under [Qrisp Documentation](https://www.qrisp.eu/).
@@ -17,7 +17,7 @@ Qrisp has been confirmed to work with Python version 3.8, 3.9 & 3.10.
 The very first program you usually write, when learning a new programming language, is printing 'hello world'.
 We want to do the same, but in a quantum way.
 
-For this we can make use of the ``QuantumString`` type implemented in Qrisp. So we start by creating a new variable of the type QuantumString and assign the value 'hello world':
+For this we can make use of the ``QuantumString`` type implemented in Qrisp. So we start by creating a new variable of the type ``QuantumString`` and assign the value 'hello world':
 ```python
 from qrisp import QuantumString
 
@@ -27,7 +27,7 @@ q_str[:] = "hello world"
 print(q_str)
 ```
 
-With the ``print(q_str)`` command, we automatically simulate the circuit generated when assigning ``hello world`` to ``q_str``. And es expected we get ``hello world`` with a probility of 1 as output:
+With the ``print(q_str)`` command, we automatically simulate the circuit generated when assigning ``hello world`` to ``q_str``. As expected we get ``hello world`` with a probility of 1 as output:
 ```python
 {'hello world': 1.0}
 ```
