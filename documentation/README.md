@@ -1,6 +1,6 @@
 # Documentation for Qrisp project
 This README gives an overview of the relevant files of the documentation page development.\
-The documentation is build with Sphinx. For further information I recommend the following tutorial:\
+The documentation is build with [Sphinx](https://www.sphinx-doc.org/). For further information I recommend the following tutorial:\
 [How to Document using Sphinx: Part 1—Setting up](https://www.youtube.com/watch?v=WcUhGT4rs5o)
 
 # Installing Sphinx and extensions
