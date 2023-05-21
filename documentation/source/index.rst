@@ -45,9 +45,9 @@ With Qrisp, you can concentrate on the crucial aspects of your code and reduce t
          cl_res = ClassicalRegister(2*n)
          qc = QuantumCircuit(a, b, res, cl_res)
          for i in range(len(a)):
-             if 3 & 1<<i: qc.x(a[i]) 
+             if 3 & 1<<i: qc.x(a[i])
          for i in range(len(b)):
-             if 4 & 1<<i: qc.x(b[i]) 
+             if 4 & 1<<i: qc.x(b[i])
          qc.append(RGQFTMultiplier(n, 2*n), 
          list(a) + list(b) + list(res))
          qc.measure(res, cl_res)
@@ -70,7 +70,7 @@ With Qrisp, you can concentrate on the crucial aspects of your code and reduce t
          #Yields: {12: 1.0}
 
 
-Apart from simple scripts like the above, our :doc:`tutorial <general/tutorial>` showcases the utilization of Qrisp in solving the traveling salesman problem. This solution involves over 10 distinct :ref:`QuantumVariables <QuantumVariable>`, with their respective qubits being repeatedly disentangled and repurposed for other variables. The presented approach scales better in the qubit count than the previously known QUBO based solution:  $\mathcal{O}(n \text{log}(n))$ vs. $\mathcal{O}(n^2)$. 
+Apart from simple scripts like the above, our :doc:`tutorial <general/tutorial>` showcases the utilization of Qrisp in solving the traveling salesman problem. This solution involves over 10 distinct :ref:`QuantumVariables <QuantumVariable>`, with their respective qubits being repeatedly disentangled and repurposed for other variables. The presented approach scales better in the qubit count than the previously known QUBO based solution: $\mathcal{O}(n \, \log(n))$ vs. $\mathcal{O}(n^2)$.
 
 This example illustrates how Qrisp, as a high-level language, permits novel and scalable solutions to intricate problems and furthermore that high-level quantum programming languages will be an integral part of the future of quantum information science.
 
