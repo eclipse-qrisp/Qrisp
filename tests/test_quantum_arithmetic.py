@@ -68,7 +68,7 @@ def test_quantum_arithmetic():
         print(operation)
         test_arithmetic_helper(a, b, operation)
 
-    a = QuantumFloat(3, 1, signed=True)
+    a = QuantumFloat(2, 1, signed=True)
     b = QuantumFloat(3, 0, signed=True)
 
     for operation in ["add", "sub", "mul", "div"]:
