@@ -6,7 +6,7 @@ Uncomputation
 Why uncomputation?
 ------------------
 
-Uncomputation is an important aspect of quantum information processing because it allows for the efficient use of quantum resources. In classical computing this can be achieved by deleting information and reusing the deleted bits for other purposes. Deleting (or resetting) a qubit is however not a reversible process and is usually performed by measuring the qubit in question and performing a bitflip based on the outcome. This measurement in turn collapses the superposition of other entangled qubits, which are supposed to be unaffected. In many cases this collaps interferes with the quantum algorithm, such that the resulting state can no longer be used.
+Uncomputation is an important aspect of quantum information processing because it allows for the efficient use of quantum resources. In classical computing this can be achieved by deleting information and reusing the deleted bits for other purposes. Deleting (or resetting) a qubit is however not a reversible process and is usually performed by measuring the qubit in question and performing a bitflip based on the outcome. This measurement in turn collapses the superposition of other entangled qubits, which are supposed to be unaffected. In many cases this collapse interferes with the quantum algorithm, such that the resulting state can no longer be used.
 In some situations, uncomputation is not only relevant as a way to manage quantum resources but is required in order for the quantum algorithm to function properly. One such example is Grover's algorithm. Assume we have two QuantumVariables, of which one is in a state of uniform superposition
 
 

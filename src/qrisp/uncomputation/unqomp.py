@@ -1,5 +1,5 @@
 """
-/********************************************************************************
+\********************************************************************************
 * Copyright (c) 2023 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -8,11 +8,11 @@
 *
 * This Source Code may also be made available under the following Secondary
 * Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2 
-* or later with the GNU Classpath Exception which is
+* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+* with the GNU Classpath Exception which is
 * available at https://www.gnu.org/software/classpath/license.html.
 *
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0
+* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************/
 """
 
@@ -187,12 +187,13 @@ def uncompute_node(dag, uncomp_node, uncomp_qbs, recompute_qubits=[]):
     if isinstance(uncomp_node.instr.op, ControlledOperation):
         op = uncomp_node.instr.op
 
-        if op.method == "auto" and 1 < len(op.controls) < 5 or op.method == "gray":
-            uncomp_node.instr.op = PTControlledOperation(
-                op.base_operation,
-                num_ctrl_qubits=len(op.controls),
-                ctrl_state=op.ctrl_state,
-            )
+        if op.method == "auto" and len(op.controls) < 5 or op.method == "gray":
+            if len(op.controls) != 1:
+                uncomp_node.instr.op = PTControlledOperation(
+                    op.base_operation,
+                    num_ctrl_qubits=len(op.controls),
+                    ctrl_state=op.ctrl_state,
+                )
 
     # Replace results of logic synthesis by phase tolerant logic synthesis
     if isinstance(uncomp_node.instr.op, LogicSynthGate):

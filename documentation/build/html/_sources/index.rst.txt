@@ -10,10 +10,13 @@ Qrisp is a high-level programming language for working with quantum computers. Q
 
 To get an overview over some features, we recommend checking the :doc:`tutorial <general/tutorial>`. In-depth documentation can be found in the :doc:`reference <reference/index>`.
 
+**Already familiar with Qrisp?** Check out what's new in :ref:`version 0.2 <v0.2>`!
+
 .. image:: ./qrisp_wheel.png
   :width: 680
   :alt: Qrisp wheel
   :align: center
+  :class: sd-m-auto sd-animate-grow50
 
 
 Why should you use Qrisp over other quantum frameworks?
@@ -97,7 +100,8 @@ nikolay.tcholtchev@fokus.fraunhofer.de
    :hidden:
    
    general/tutorial
-   reference/index   
+   reference/index
    general/setup
+   general/changelog/index
    general/imprint
  

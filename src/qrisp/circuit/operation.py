@@ -1,5 +1,5 @@
 """
-/********************************************************************************
+\********************************************************************************
 * Copyright (c) 2023 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -8,11 +8,11 @@
 *
 * This Source Code may also be made available under the following Secondary
 * Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2 
-* or later with the GNU Classpath Exception which is
+* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+* with the GNU Classpath Exception which is
 * available at https://www.gnu.org/software/classpath/license.html.
 *
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0
+* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************/
 """
 
@@ -122,8 +122,7 @@ class Operation:
                 self.abstract_params = self.abstract_params.union(par.free_symbols)
             elif not isinstance(par, (np.floating, np.int32, float, int)):
                 raise Exception(
-                    "Tried to create operation with parameters that are neither float"
-                    "nor symbols"
+                    f"Tried to create operation with parameters of type {type(par)}"
                 )
 
             self.params.append(par)
@@ -345,9 +344,15 @@ class Operation:
 
         if self.num_clbits != 0:
             raise AttributeError("Tried to control non-unitary operation")
-
+            
+        res_num_ctrl_qubits = num_ctrl_qubits
+        
+        if isinstance(self, PTControlledOperation):
+            res_num_ctrl_qubits += len(self.controls)
+        
         # Check if the method is phase tolerant
-        if method.find("pt") != -1 and num_ctrl_qubits != 1:
+        if method.find("pt") != -1 and res_num_ctrl_qubits != 1:
+            
             return PTControlledOperation(
                 self, num_ctrl_qubits, ctrl_state=ctrl_state, method=method
             )
@@ -504,7 +509,7 @@ class U3Gate(Operation):
 
             return self.get_unitary(decimals)
 
-    def substitute(self, subs_dic):
+    def bind_parameters(self, subs_dic):
         return U3Gate(
             adaptive_substitution(self.theta, subs_dic),
             adaptive_substitution(self.phi, subs_dic),
@@ -722,7 +727,8 @@ class PTControlledOperation(Operation):
         else:
             name_prefix = "pt" + str(num_ctrl_qubits) + "c"
 
-        super().__init__(
+        Operation.__init__(
+            self,
             name=name_prefix + base_operation.name,
             num_qubits=base_operation.num_qubits + num_ctrl_qubits,
             num_clbits=0,

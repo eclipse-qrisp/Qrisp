@@ -1,5 +1,5 @@
 """
-/********************************************************************************
+\********************************************************************************
 * Copyright (c) 2023 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -8,11 +8,11 @@
 *
 * This Source Code may also be made available under the following Secondary
 * Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2 
-* or later with the GNU Classpath Exception which is
+* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+* with the GNU Classpath Exception which is
 * available at https://www.gnu.org/software/classpath/license.html.
 *
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0
+* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************/
 """
 
@@ -409,9 +409,7 @@ class QuantumSession(QuantumCircuit):
         return max(depth_dic.values())
 
     def __eq__(self, other):
-        if other is None:
-            return False
-        return id(self().data) == id(other().data)
+        return id(self.data) == id(other.data)
 
     def append(self, operation_or_instruction, qubits=[], clbits=[]):
         # Check the type of the instruction/operation
@@ -680,6 +678,9 @@ class QuantumSession(QuantumCircuit):
 
         """
 
+        if len(self.env_stack):
+            raise Exception("Tried to evaluate statevector within open QuantumEnvironments")
+            
         from qrisp import get_statevector_function, get_sympy_state
 
         if return_type == "array":
@@ -1062,4 +1063,4 @@ class QuantumSession(QuantumCircuit):
 
         self.qs_tracker = [weakref.ref(qs) for qs in qs_list]
 
-        return qs_list
+        return list(self.qs_tracker)

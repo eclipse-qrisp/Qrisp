@@ -2,6 +2,11 @@
 __pycache__/
 *.pyc
 *.egg-info/
+*.eggs
 *.DS_Store
 
+/build/
+/dist/
+/documentation/build/
+/src/qrisp.egg-info/
 .idea

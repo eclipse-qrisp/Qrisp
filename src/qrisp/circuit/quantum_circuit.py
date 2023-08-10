@@ -1,5 +1,5 @@
 """
-/********************************************************************************
+\********************************************************************************
 * Copyright (c) 2023 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -8,11 +8,11 @@
 *
 * This Source Code may also be made available under the following Secondary
 * Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2 
-* or later with the GNU Classpath Exception which is
+* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+* with the GNU Classpath Exception which is
 * available at https://www.gnu.org/software/classpath/license.html.
 *
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0
+* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************/
 """
 
@@ -505,10 +505,6 @@ class QuantumCircuit:
 
     # Printing method
     def __str__(self):
-        if self.abstract_params:
-            raise Exception(
-                "Tried to print QuantumCircuit with unspecified abstract parameters"
-            )
 
         from qiskit.visualization.circuit_visualization import circuit_drawer
 
@@ -1745,6 +1741,26 @@ class QuantumCircuit:
             return
         self.append(ops.RZZGate(phi), [qubits_0, qubits_1])
 
+    def xxyy(self, phi, beta, qubits_0, qubits_1):
+        """
+        Instruct an XXYY-gate.
+
+        Parameters
+        ----------
+        phi : float or sympy.Symbol
+            The angle parameter.
+        beta : float or sympi.Symbol
+            The other angle parameter
+        qubits_0 : Qubit
+            The Qubit to apply the gate on.
+        qubits_1 : Qubit
+            The other Qubit to apply the gate on.
+        """
+
+        if phi == 0:
+            return
+        self.append(ops.XXYYGate(phi, beta), [qubits_0, qubits_1])
+
     def swap(self, qubits_0, qubits_1):
         """
         Instruct a SWAP-gate.
@@ -2030,12 +2046,16 @@ fast_append = AppendingAccelerator
 # Converts various inputs (eg. integers, qubits or quantum variables) to lists of qubit
 # used in the append method of QuantumCircuit and QuantumSession
 def convert_to_qb_list(input, circuit=None, top_level=True):
+    from qrisp import QuantumArray
+    
     if issubclass(input.__class__, Qubit):
         if top_level:
             result = [input]
         else:
             result = input
-
+    elif isinstance(input, QuantumArray):
+        result = sum([qv.reg for qv in input.flatten()], [])
+        
     elif hasattr(input, "__iter__"):
         result = []
         for i in range(len(input)):

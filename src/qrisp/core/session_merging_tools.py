@@ -1,5 +1,5 @@
 """
-/********************************************************************************
+\********************************************************************************
 * Copyright (c) 2023 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -8,11 +8,11 @@
 *
 * This Source Code may also be made available under the following Secondary
 * Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2 
-* or later with the GNU Classpath Exception which is
+* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+* with the GNU Classpath Exception which is
 * available at https://www.gnu.org/software/classpath/license.html.
 *
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0
+* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************/
 """
 
@@ -189,6 +189,10 @@ def merge_sessions_inner(qs_0, qs_1, merge_env_stack_=True):
 
         qs_0.qv_list.append(qv)
 
+    for qv in qs_1.deleted_qv_list:
+        # Patch quantum session attribute
+        qv.qs = qs_0
+        
     qs_0.deleted_qv_list.extend(qs_1.deleted_qv_list)
 
     reorder_quantum_variables(qs_0)
@@ -296,7 +300,10 @@ def reorder_quantum_variables(qs):
 def identify_sessions_in_environment(env, qs_0, qs_1):
     i = 0
     while i < len(env.active_qs_list):
-        if env.active_qs_list[i] == qs_1:
+        if env.active_qs_list[i]() is None:
+            env.active_qs_list.pop(i)
+            continue
+        elif env.active_qs_list[i]() == qs_1:
             env.active_qs_list.pop(i)
             continue
         i += 1

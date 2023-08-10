@@ -1,5 +1,5 @@
 """
-/********************************************************************************
+\********************************************************************************
 * Copyright (c) 2023 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -8,11 +8,11 @@
 *
 * This Source Code may also be made available under the following Secondary
 * Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2 
-* or later with the GNU Classpath Exception which is
+* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+* with the GNU Classpath Exception which is
 * available at https://www.gnu.org/software/classpath/license.html.
 *
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0
+* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************/
 """
 
@@ -21,7 +21,7 @@ from qrisp.circuit.qubit import Qubit
 from qrisp.core.library import mcx, p, rz, x
 from qrisp.core.session_merging_tools import merge
 from qrisp.environments import QuantumEnvironment
-from qrisp.misc import perm_lock, perm_unlock
+from qrisp.misc import perm_lock, perm_unlock, bin_rep
 
 
 class ControlEnvironment(QuantumEnvironment):
@@ -66,14 +66,25 @@ class ControlEnvironment(QuantumEnvironment):
 
     """
 
-    def __init__(self, ctrl_qubits, ctrl_state=-1, ctrl_method=None):
+    def __init__(self, ctrl_qubits, ctrl_state=-1, ctrl_method=None, invert = False):
         self.arg_qs = merge(ctrl_qubits)
 
+    
         self.ctrl_method = ctrl_method
         if isinstance(ctrl_qubits, Qubit):
             ctrl_qubits = [ctrl_qubits]
+            
+        if isinstance(ctrl_state, int):
+            if ctrl_state < 0:
+                ctrl_state += 2**len(ctrl_qubits)
+                
+            self.ctrl_state = bin_rep(ctrl_state, len(ctrl_qubits))[::-1]
+        else:
+            self.ctrl_state = str(ctrl_state)
+        
+            
         self.ctrl_qubits = ctrl_qubits
-        self.ctrl_state = ctrl_state
+        self.invert = invert
 
         self.manual_allocation_management = True
 
@@ -90,7 +101,7 @@ class ControlEnvironment(QuantumEnvironment):
         if len(self.ctrl_qubits) == 1:
             self.condition_truth_value = self.ctrl_qubits[0]
         else:
-            self.qbool = QuantumBool(name="ctrl env*", qs=self.arg_qs)
+            self.qbool = QuantumBool(name="ctrl_env*", qs=self.arg_qs)
             self.condition_truth_value = self.qbool[0]
 
         QuantumEnvironment.__enter__(self)
@@ -134,8 +145,11 @@ class ControlEnvironment(QuantumEnvironment):
             # the case that this condition is embedded in another condition or not
 
             ctrl_qubits = list(self.ctrl_qubits)
+            cond_compile_ctrl_state = self.ctrl_state
+            
 
             if self.parent_cond_env is not None:
+                
                 # In the parent case we also need to make sure that the code is executed
                 # if the parent environment is executed. A possible approach would be
                 # to control the content on both, the parent and the chield truth value.
@@ -150,28 +164,50 @@ class ControlEnvironment(QuantumEnvironment):
                 if len(ctrl_qubits) == 1:
                     from qrisp.misc import retarget_instructions
 
-                    self.qbool = QuantumBool(name="ctrl env*")
+                    self.qbool = QuantumBool(name="ctrl_env*")
                     retarget_instructions(
                         self.env_data, [self.condition_truth_value], [self.qbool[0]]
                     )
 
-                    if isinstance(self.env_qs.data[-1], QuantumEnvironment):
-                        env = self.env_qs.data.pop(-1)
-                        env.compile()
+                    if len(self.env_qs.data):
+                        if isinstance(self.env_qs.data[-1], QuantumEnvironment):
+                            env = self.env_qs.data.pop(-1)
+                            env.compile()
 
                     self.condition_truth_value = self.qbool[0]
 
                 ctrl_qubits.append(self.parent_cond_env.condition_truth_value)
-
-                if self.ctrl_state != -1:
-                    self.ctrl_state += 2 ** (len(ctrl_qubits) - 1)
+                
+                
+                parent_ctrl_state = "1"
+                
+                if isinstance(self.parent_cond_env, ControlEnvironment):
+                    if len(self.parent_cond_env.ctrl_qubits) == 1:
+                        if self.parent_cond_env.ctrl_state == "0":
+                            parent_ctrl_state = "0"
+                
+                    if self.parent_cond_env.invert:
+                        if parent_ctrl_state == "0":
+                            parent_ctrl_state  = "1"
+                        elif parent_ctrl_state == "1":
+                            parent_ctrl_state  = "0"
+                        
+                cond_compile_ctrl_state = cond_compile_ctrl_state + parent_ctrl_state
+                    
+                
 
             if len(ctrl_qubits) > 1:
+                
+                if len(ctrl_qubits) > 5:
+                    method = "auto"
+                else:
+                    method = "gray_pt"
+                
                 mcx(
                     ctrl_qubits,
                     self.condition_truth_value,
-                    ctrl_state=self.ctrl_state,
-                    method="gray_pt",
+                    ctrl_state=cond_compile_ctrl_state,
+                    method=method,
                 )
 
             perm_lock(ctrl_qubits)
@@ -186,6 +222,9 @@ class ControlEnvironment(QuantumEnvironment):
                 env.condition_truth_value for env in self.sub_condition_envs
             ]
             inversion_tracker = 1
+            
+
+            
             # Now we need to recover the instructions from the data list
             # and perform their controlled version on the condition_truth_value qubit
             while self.env_data:
@@ -244,10 +283,26 @@ class ControlEnvironment(QuantumEnvironment):
                             "on condition truth value (allowed are x, p, rz)"
                         )
                     continue
-
+                
+                if len(ctrl_qubits) == 1:
+                    ctrl_state = self.ctrl_state
+                else:
+                    ctrl_state = "1"
+                    
+                if self.invert:
+                    
+                    new_ctrl_state = ""
+                    for c in ctrl_state:
+                        if c == "1":
+                            new_ctrl_state += "0"
+                        else:
+                            new_ctrl_state += "1"
+                            
+                    ctrl_state = new_ctrl_state
+                    
                 # Create controlled instruction
                 instruction.op = instruction.op.control(
-                    num_ctrl_qubits=1, method=self.ctrl_method
+                    num_ctrl_qubits=1, method=self.ctrl_method, ctrl_state=ctrl_state
                 )
 
                 # Add condition truth value qubit to the instruction qubit list
@@ -258,16 +313,22 @@ class ControlEnvironment(QuantumEnvironment):
                 self.env_qs.append(instruction)
 
             perm_unlock(ctrl_qubits)
-
+            
             if inversion_tracker == -1:
                 x(self.condition_truth_value)
 
             if len(ctrl_qubits) > 1:
+                
+                if len(ctrl_qubits) > 5:
+                    method = "auto"
+                else:
+                    method = "gray_pt_inv"
+                
                 mcx(
                     ctrl_qubits,
                     self.qbool,
-                    method="gray_pt_inv",
-                    ctrl_state=self.ctrl_state,
+                    method=method,
+                    ctrl_state=cond_compile_ctrl_state,
                 )
                 self.qbool.delete()
 

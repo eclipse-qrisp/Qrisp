@@ -14,5 +14,7 @@ Quantum Environments
    ConditionEnvironment
    ControlEnvironment
    InversionEnvironment
+   ConjugationEnvironment
    GateWrapEnvironment
+   IterationEnvironment
    GMSEnvironment

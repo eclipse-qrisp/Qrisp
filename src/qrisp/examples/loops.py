@@ -1,5 +1,5 @@
 """
-/********************************************************************************
+\********************************************************************************
 * Copyright (c) 2023 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -8,11 +8,11 @@
 *
 * This Source Code may also be made available under the following Secondary
 * Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2 
-* or later with the GNU Classpath Exception which is
+* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+* with the GNU Classpath Exception which is
 * available at https://www.gnu.org/software/classpath/license.html.
 *
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0
+* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************/
 """
 
@@ -38,6 +38,6 @@ for i in qRange(n):
 start_time = time.time()
 print(qf)  # Yields {10.0: 0.5, 15.0: 0.5}
 
-print("Excpected outcomes:", [n * (n + 1) / 2 for n in n_results.keys()])
+print("Excpected outcomes:", [(n-1) * (n) / 2 for n in n_results.keys()])
 # Yields n*(n+1)/2 as expected
 print(start_time - time.time())

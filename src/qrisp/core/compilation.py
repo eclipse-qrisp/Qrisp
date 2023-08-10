@@ -1,5 +1,5 @@
 """
-/********************************************************************************
+\********************************************************************************
 * Copyright (c) 2023 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -8,11 +8,11 @@
 *
 * This Source Code may also be made available under the following Secondary
 * Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2 
-* or later with the GNU Classpath Exception which is
+* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+* with the GNU Classpath Exception which is
 * available at https://www.gnu.org/software/classpath/license.html.
 *
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0
+* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************/
 """
 
@@ -67,16 +67,7 @@ def qompiler(
                     qc = uncompute_qc(qc, qv.reg)
                 except:
                     print(f"Warning: Automatic uncomputation for {qv.name} failed")
-
-        if intended_measurements:
-            # This function reorders the circuit such that the intended measurements can
-            # be executed as early as possible additionally, any instructions that are
-            # not needed for the intended measurements are removed
-            try:
-                qc = measurement_reduction(qc, intended_measurements)
-            except Exception as e:
-                if "Unitary of operation " not in str(e):
-                    raise e
+                    
 
         def reordering_transpile_predicate(op):
             if (
@@ -98,6 +89,18 @@ def qompiler(
             qc = transpile(qc, transpile_predicate=qft_transpile_predicate)
 
             qc = qft_cancellation(qc)
+            
+        if intended_measurements:
+            # This function reorders the circuit such that the intended measurements can
+            # be executed as early as possible additionally, any instructions that are
+            # not needed for the intended measurements are removed
+            try:
+                qc = measurement_reduction(qc, intended_measurements)
+                # pass
+            except Exception as e:
+                if "Unitary of operation " not in str(e):
+                    raise e
+
 
         # We now reorder the transpiled QuantumCircuit. Reordering is performed based on
         # the DAG representation of Unqomp. The advantage of this representation is that
@@ -175,11 +178,6 @@ def qompiler(
             if instr.op.name == "barrier":
                 continue
 
-            if instr.op.name == "qb_alloc":
-                # We delay the allocation until an actual gate is executed
-                allocated_qb_list.append(instr.qubits[0])
-                continue
-
             # Check if any of the involved qubits need an allocation
             for qb in instr.qubits:
                 if qb not in translation_dic:
@@ -191,8 +189,9 @@ def qompiler(
                     )
 
                     translation_dic[qb] = free_qb_list.pop(0)
+                    allocated_qb_list.append(qb)
 
-                    qc.append(QubitAlloc(), [translation_dic[qb]])
+                    # qc.append(QubitAlloc(), [translation_dic[qb]])
 
             if instr.op.name == "qb_dealloc":
                 # For the deallocation, we simply remove the qubits from the translation
@@ -278,11 +277,6 @@ def qompiler(
                     )
 
                 update_depth_dic(qc.data[-1], depth_dic)
-
-        # Allocate the qubits which had an alloc gate but no actual gates
-        for qb in allocated_qb_list:
-            if qb not in translation_dic:
-                translation_dic[qb] = free_qb_list.pop(0)
 
         # The following code is mostly about renaming and ordering the resulting circuit
         # in order to make the compiled circuit still comprehensible
@@ -417,6 +411,30 @@ def reorder_qc(qc):
 
     for n in topological_sort(G, prefer=dealloc_identifier, delay=alloc_identifer):
         qc_new.append(n.instr)
+
+    #The above algorithm does not move allocation gates to their latest possible
+    #position (only compared to other deallocation gates)    
+    #We therefore manually move the allocation gates to the position right
+    #before the first actual instruction on that qubit.
+    new_data = []
+    delayed_qubit_alloc_dic = {}
+    
+    for i in range(len(qc_new.data)):
+        instr = qc_new.data[i]
+        
+        if instr.op.name == "qb_alloc":
+            delayed_qubit_alloc_dic[instr.qubits[0]] = instr
+        else:
+            for qb in set(delayed_qubit_alloc_dic.keys()).intersection(instr.qubits):
+                new_data.append(delayed_qubit_alloc_dic[qb])
+                del delayed_qubit_alloc_dic[qb]
+            
+            new_data.append(instr)
+    
+    for instr in delayed_qubit_alloc_dic.values():
+        new_data.append(instr)
+    
+    qc_new.data = new_data
 
     return qc_new
 
@@ -840,14 +858,24 @@ def qft_cancellation(qc):
     from numpy.linalg import norm
 
     for i in range(len(qc.data)):
+        
         instr = qc.data[i]
         if "QFT" in instr.op.name:
             previous_instruction_type = []
 
             for qb in instr.qubits:
                 previous_instruction = qc.data[last_instr_dic[qb]]
-
+                
                 if previous_instruction.op.num_qubits != instr.op.num_qubits:
+                    break
+                
+                if not qb in previous_instruction.qubits:
+                    break
+                
+                if tuple(previous_instruction.qubits) != tuple(instr.qubits):
+                    break
+
+                if qc.data.index(previous_instruction) in cancellation_indices:
                     break
 
                 if "QFT" in previous_instruction.op.name:
@@ -875,6 +903,9 @@ def qft_cancellation(qc):
                     previous_instruction_type.append("alloc")
                 else:
                     break
+                
+
+                
             else:
                 if len(set(previous_instruction_type)) == 1:
                     if previous_instruction_type[0] == "QFT":

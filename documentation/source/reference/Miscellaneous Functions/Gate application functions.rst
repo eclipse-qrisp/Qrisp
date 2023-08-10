@@ -22,6 +22,7 @@ These functions facilitate the application of (elementary) quantum gates. Note t
    cp
    rx
    ry
+   rz
    mcx
    mcz
    mcp
@@ -33,5 +34,10 @@ These functions facilitate the application of (elementary) quantum gates. Note t
    sx
    sx_dg
    swap
+   rxx
+   rzz
+   xxyy
+   u3
    barrier
    gphase
+   id

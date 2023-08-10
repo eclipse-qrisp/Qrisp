@@ -1,5 +1,5 @@
 """
-/********************************************************************************
+\********************************************************************************
 * Copyright (c) 2023 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -8,11 +8,11 @@
 *
 * This Source Code may also be made available under the following Secondary
 * Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2 
-* or later with the GNU Classpath Exception which is
+* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+* with the GNU Classpath Exception which is
 * available at https://www.gnu.org/software/classpath/license.html.
 *
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0
+* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************/
 """
 
@@ -167,6 +167,7 @@ toffoli_qc.p(np.pi / 4, 0)
 toffoli_qc.p(-np.pi / 4, 2)
 toffoli_qc.cx(1, 0)
 toffoli_qc.h(2)
+toffoli_qc.qubits[1], toffoli_qc.qubits[0] = toffoli_qc.qubits[0], toffoli_qc.qubits[1]
 
 margolus_qc = QuantumCircuit(3)
 G = RYGate(np.pi / 4)
@@ -668,7 +669,7 @@ def balauca_dirty(control, target, k, dirty_ancillae=None, ctrl_state=None):
 
     k = min((n - 2) // 2 + 1, k)
 
-    if k == 0:
+    if k <= 1:
         qs.append(
             XGate().control(n, ctrl_state=ctrl_state, method="gray"),
             list(control) + [target],

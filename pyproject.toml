@@ -4,3 +4,9 @@ requires = [
     "wheel"
 ]
 build-backend = "setuptools.build_meta"
+
+[tool.isort]
+profile = "black"
+
+[tool.pylint. messages_control]
+disable = ["import-error"]

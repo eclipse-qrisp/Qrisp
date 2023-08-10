@@ -30,6 +30,7 @@
 
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/css/custom.css" />
   
   <!-- Pre-loaded scripts that we'll load fully later -->
@@ -37,17 +38,15 @@
 <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52" />
 
     <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
-    <script src="../../../_static/jquery.js"></script>
-    <script src="../../../_static/underscore.js"></script>
-    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../../../_static/doctools.js"></script>
     <script src="../../../_static/sphinx_highlight.js"></script>
     <script src="../../../_static/clipboard.min.js"></script>
     <script src="../../../_static/copybutton.js"></script>
+    <script src="../../../_static/design-tabs.js"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/qrisp/core/library';</script>
     <link rel="canonical" href="https://qrisp.eu/_modules/qrisp/core/library.html" />
-    <link rel="shortcut icon" href="../../../_static/qrisp_favicon.png"/>
+    <link rel="icon" href="../../../_static/qrisp_favicon.png"/>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -100,7 +99,8 @@
     <span class="fa-solid fa-bars"></span>
   </label>
   
-  <div class="navbar-header-items__start">
+  
+  <div class="col-lg-3 navbar-header-items__start">
     
       <div class="navbar-item">
   
@@ -113,14 +113,13 @@
     
     
     
-    <img src="../../../_static/logo_extended.png" class="logo__image only-light" alt="Logo image"/>
-    <script>document.write(`<img src="../../../_static/logo_extended.png" class="logo__image only-dark" alt="Logo image"/>`);</script>
+    <img src="../../../_static/qrisp_logo.png" class="logo__image only-light" alt="Logo image"/>
+    <script>document.write(`<img src="../../../_static/qrisp_logo.png" class="logo__image only-dark" alt="Logo image"/>`);</script>
   
   
 </a></div>
     
   </div>
-  
   
   <div class="col-lg-9 navbar-header-items">
     
@@ -157,6 +156,13 @@
                 
 
                     <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../general/changelog/index.html">
+                        Changelog
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
                       <a class="nav-link nav-internal" href="../../../general/imprint.html">
                         Imprint
                       </a>
@@ -175,7 +181,7 @@
 <script>
 document.write(`
   <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <i class="fa-solid fa-magnifying-glass"></i>
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
   </button>
 `);
 </script>
@@ -193,8 +199,8 @@ document.write(`
           
           
           
-          <a href="https://github.com/fraunhoferfokus/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square"></i></span>
-            <label class="sr-only">GitHub</label></a>
+          <a href="https://github.com/fraunhoferfokus/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square fa-lg" aria-hidden="true"></i></span>
+            <span class="sr-only">GitHub</span></a>
         </li>
 </ul></div>
       
@@ -207,13 +213,17 @@ document.write(`
 <script>
 document.write(`
   <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <i class="fa-solid fa-magnifying-glass"></i>
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
   </button>
 `);
 </script>
     </div>
   
 
+  
+    <label class="sidebar-toggle secondary-toggle" for="__secondary">
+      <span class="fa-solid fa-outdent"></span>
+    </label>
   
 </div>
 
@@ -262,6 +272,13 @@ document.write(`
                 
 
                     <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../general/changelog/index.html">
+                        Changelog
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
                       <a class="nav-link nav-internal" href="../../../general/imprint.html">
                         Imprint
                       </a>
@@ -287,8 +304,8 @@ document.write(`
           
           
           
-          <a href="https://github.com/fraunhoferfokus/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square"></i></span>
-            <label class="sr-only">GitHub</label></a>
+          <a href="https://github.com/fraunhoferfokus/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square fa-lg" aria-hidden="true"></i></span>
+            <span class="sr-only">GitHub</span></a>
         </li>
 </ul></div>
         
@@ -370,15 +387,21 @@ document.write(`
                   
   <h1>Source code for qrisp.core.library</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">/*********************************************************************</span>
-<span class="sd">* Copyright (c) 2023 the Qrisp Authors</span>
+<span class="sd">\********************************************************************************</span>
+<span class="sd">* Copyright (c) 2023 the Qrisp authors</span>
 <span class="sd">*</span>
-<span class="sd">* This program and the accompanying materials are made</span>
-<span class="sd">* available under the terms of the Eclipse Public License 2.0</span>
-<span class="sd">* which is available at https://www.eclipse.org/legal/epl-2.0/</span>
+<span class="sd">* This program and the accompanying materials are made available under the</span>
+<span class="sd">* terms of the Eclipse Public License 2.0 which is available at</span>
+<span class="sd">* http://www.eclipse.org/legal/epl-2.0.</span>
 <span class="sd">*</span>
-<span class="sd">* SPDX-License-Identifier: EPL-2.0</span>
-<span class="sd">**********************************************************************/</span>
+<span class="sd">* This Source Code may also be made available under the following Secondary</span>
+<span class="sd">* Licenses when the conditions for such availability set forth in the Eclipse</span>
+<span class="sd">* Public License, v. 2.0 are satisfied: GNU General Public License, version 2</span>
+<span class="sd">* with the GNU Classpath Exception which is</span>
+<span class="sd">* available at https://www.gnu.org/software/classpath/license.html.</span>
+<span class="sd">*</span>
+<span class="sd">* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0</span>
+<span class="sd">********************************************************************************/</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
 
@@ -387,8 +410,8 @@ document.write(`
 <span class="kn">import</span> <span class="nn">qrisp.circuit.standard_operations</span> <span class="k">as</span> <span class="nn">std_ops</span>
 <span class="kn">from</span> <span class="nn">qrisp.core</span> <span class="kn">import</span> <span class="n">recursive_qs_search</span>
 
-
 <span class="k">def</span> <span class="nf">append_operation</span><span class="p">(</span><span class="n">operation</span><span class="p">,</span> <span class="n">qubits</span><span class="o">=</span><span class="p">[],</span> <span class="n">clbits</span><span class="o">=</span><span class="p">[]):</span>
+    
     <span class="n">qs_list</span> <span class="o">=</span> <span class="n">recursive_qs_search</span><span class="p">([</span><span class="n">qubits</span><span class="p">,</span> <span class="n">clbits</span><span class="p">])</span>
 
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">qs_list</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
@@ -458,8 +481,6 @@ document.write(`
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">append_operation</span><span class="p">(</span><span class="n">std_ops</span><span class="o">.</span><span class="n">HGate</span><span class="p">(),</span> <span class="p">[</span><span class="n">qubits</span><span class="p">])</span>
 
-    <span class="c1"># std_ops.HGate().append([qubits])</span>
-
     <span class="k">return</span> <span class="n">qubits</span></div>
 
 
@@ -474,8 +495,6 @@ document.write(`
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">append_operation</span><span class="p">(</span><span class="n">std_ops</span><span class="o">.</span><span class="n">XGate</span><span class="p">(),</span> <span class="p">[</span><span class="n">qubits</span><span class="p">])</span>
-
-    <span class="c1"># std_ops.XGate().append([qubits])</span>
 
     <span class="k">return</span> <span class="n">qubits</span></div>
 
@@ -492,8 +511,6 @@ document.write(`
 
     <span class="n">append_operation</span><span class="p">(</span><span class="n">std_ops</span><span class="o">.</span><span class="n">YGate</span><span class="p">(),</span> <span class="p">[</span><span class="n">qubits</span><span class="p">])</span>
 
-    <span class="c1"># std_ops.YGate().append([qubits])</span>
-
     <span class="k">return</span> <span class="n">qubits</span></div>
 
 
@@ -508,7 +525,6 @@ document.write(`
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">append_operation</span><span class="p">(</span><span class="n">std_ops</span><span class="o">.</span><span class="n">ZGate</span><span class="p">(),</span> <span class="p">[</span><span class="n">qubits</span><span class="p">])</span>
 
-    <span class="c1"># std_ops.ZGate().append([qubits])</span>
     <span class="k">return</span> <span class="n">qubits</span></div>
 
 
@@ -960,8 +976,6 @@ document.write(`
 
     <span class="n">append_operation</span><span class="p">(</span><span class="n">std_ops</span><span class="o">.</span><span class="n">RXGate</span><span class="p">(</span><span class="n">phi</span><span class="p">),</span> <span class="p">[</span><span class="n">qubits</span><span class="p">])</span>
 
-    <span class="c1"># std_ops.RXGate(phi).append([qubits])</span>
-
     <span class="k">return</span> <span class="n">qubits</span></div>
 
 
@@ -980,12 +994,10 @@ document.write(`
 
     <span class="n">append_operation</span><span class="p">(</span><span class="n">std_ops</span><span class="o">.</span><span class="n">RYGate</span><span class="p">(</span><span class="n">phi</span><span class="p">),</span> <span class="p">[</span><span class="n">qubits</span><span class="p">])</span>
 
-    <span class="c1"># std_ops.RYGate(phi).append([qubits])</span>
-
     <span class="k">return</span> <span class="n">qubits</span></div>
 
 
-<span class="k">def</span> <span class="nf">rz</span><span class="p">(</span><span class="n">phi</span><span class="p">,</span> <span class="n">qubits</span><span class="p">):</span>
+<div class="viewcode-block" id="rz"><a class="viewcode-back" href="../../../reference/Miscellaneous%20Functions/generated/qrisp.rz.html#qrisp.rz">[docs]</a><span class="k">def</span> <span class="nf">rz</span><span class="p">(</span><span class="n">phi</span><span class="p">,</span> <span class="n">qubits</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Applies an RY gate.</span>
 
@@ -1000,9 +1012,7 @@ document.write(`
 
     <span class="n">append_operation</span><span class="p">(</span><span class="n">std_ops</span><span class="o">.</span><span class="n">RZGate</span><span class="p">(</span><span class="n">phi</span><span class="p">),</span> <span class="p">[</span><span class="n">qubits</span><span class="p">])</span>
 
-    <span class="c1"># std_ops.RZGate(phi).append([qubits])</span>
-
-    <span class="k">return</span> <span class="n">qubits</span>
+    <span class="k">return</span> <span class="n">qubits</span></div>
 
 
 <div class="viewcode-block" id="crz"><a class="viewcode-back" href="../../../reference/Miscellaneous%20Functions/generated/qrisp.crz.html#qrisp.crz">[docs]</a><span class="k">def</span> <span class="nf">crz</span><span class="p">(</span><span class="n">phi</span><span class="p">,</span> <span class="n">qubits_0</span><span class="p">,</span> <span class="n">qubits_1</span><span class="p">):</span>
@@ -1122,6 +1132,86 @@ document.write(`
     <span class="k">return</span> <span class="n">qubits</span></div>
 
 
+
+<div class="viewcode-block" id="xxyy"><a class="viewcode-back" href="../../../reference/Miscellaneous%20Functions/generated/qrisp.xxyy.html#qrisp.xxyy">[docs]</a><span class="k">def</span> <span class="nf">xxyy</span><span class="p">(</span><span class="n">phi</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="n">qubits_0</span><span class="p">,</span> <span class="n">qubits_1</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Applies an XXYY interaction gate.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    phi : float or sympy.Symbol</span>
+<span class="sd">        The global phase to apply.</span>
+<span class="sd">    beta : float or sympy.Symbol</span>
+<span class="sd">        The other angle parameter.</span>
+<span class="sd">    qubits_0 : Qubit or list[Qubit] or QuantumVariable</span>
+<span class="sd">        The first Qubit to perform the XXYY gate on.</span>
+<span class="sd">    qubits_1 : Qubit or list[Qubit] or QuantumVariable</span>
+<span class="sd">        The second Qubit to perform the XXYY gate on.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">append_operation</span><span class="p">(</span><span class="n">std_ops</span><span class="o">.</span><span class="n">XXYYGate</span><span class="p">(</span><span class="n">phi</span><span class="p">,</span> <span class="n">beta</span><span class="p">),</span> <span class="p">[</span><span class="n">qubits_0</span><span class="p">,</span> <span class="n">qubits_1</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">qubits_0</span><span class="p">,</span> <span class="n">qubits_1</span></div>
+
+
+<div class="viewcode-block" id="rzz"><a class="viewcode-back" href="../../../reference/Miscellaneous%20Functions/generated/qrisp.rzz.html#qrisp.rzz">[docs]</a><span class="k">def</span> <span class="nf">rzz</span><span class="p">(</span><span class="n">phi</span><span class="p">,</span> <span class="n">qubits_0</span><span class="p">,</span> <span class="n">qubits_1</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Applies an RZZ gate.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    phi : float or sympy.Symbol</span>
+<span class="sd">        The phase to apply.</span>
+<span class="sd">    beta : float or sympy.Symbol</span>
+<span class="sd">        The other angle parameter.</span>
+<span class="sd">    qubits_0 : Qubit or list[Qubit] or QuantumVariable</span>
+<span class="sd">        The first argument to perform the RZZ gate one.</span>
+<span class="sd">    qubits_1 : Qubit or list[Qubit] or QuantumVariable</span>
+<span class="sd">        The second argument to perform the RZZ gate one.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">append_operation</span><span class="p">(</span><span class="n">std_ops</span><span class="o">.</span><span class="n">RZZGate</span><span class="p">(</span><span class="n">phi</span><span class="p">),</span> <span class="p">[</span><span class="n">qubits_0</span><span class="p">,</span> <span class="n">qubits_1</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">qubits_0</span><span class="p">,</span> <span class="n">qubits_1</span></div>
+
+<div class="viewcode-block" id="rxx"><a class="viewcode-back" href="../../../reference/Miscellaneous%20Functions/generated/qrisp.rxx.html#qrisp.rxx">[docs]</a><span class="k">def</span> <span class="nf">rxx</span><span class="p">(</span><span class="n">phi</span><span class="p">,</span> <span class="n">qubits_0</span><span class="p">,</span> <span class="n">qubits_1</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Applies an RXX gate.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    phi : float or sympy.Symbol</span>
+<span class="sd">        The phase to apply.</span>
+<span class="sd">    beta : float or sympy.Symbol</span>
+<span class="sd">        The other angle parameter.</span>
+<span class="sd">    qubits_0 : Qubit or list[Qubit] or QuantumVariable</span>
+<span class="sd">        The first argument to perform the RXX gate one.</span>
+<span class="sd">    qubits_1 : Qubit or list[Qubit] or QuantumVariable</span>
+<span class="sd">        The second argument to perform the RXX gate one.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">append_operation</span><span class="p">(</span><span class="n">std_ops</span><span class="o">.</span><span class="n">RXXGate</span><span class="p">(</span><span class="n">phi</span><span class="p">),</span> <span class="p">[</span><span class="n">qubits_0</span><span class="p">,</span> <span class="n">qubits_1</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">qubits_0</span><span class="p">,</span> <span class="n">qubits_1</span></div>
+
+<div class="viewcode-block" id="u3"><a class="viewcode-back" href="../../../reference/Miscellaneous%20Functions/generated/qrisp.u3.html#qrisp.u3">[docs]</a><span class="k">def</span> <span class="nf">u3</span><span class="p">(</span><span class="n">theta</span><span class="p">,</span> <span class="n">phi</span><span class="p">,</span> <span class="n">lam</span><span class="p">,</span> <span class="n">qubits</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Applies an U3 gate.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    theta : float or sympy.Symbol</span>
+<span class="sd">        The first angle parameter.</span>
+<span class="sd">    phi : float or sympy.Symbol</span>
+<span class="sd">        The second angle parameter.</span>
+<span class="sd">    lambda : float or sympy.Symbol</span>
+<span class="sd">        The third angle parameter.</span>
+<span class="sd">    qubits : Qubit or list[Qubit] or QuantumVariable</span>
+<span class="sd">        The Qubit to perform the U3 gate on.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">append_operation</span><span class="p">(</span><span class="n">std_ops</span><span class="o">.</span><span class="n">RZGate</span><span class="p">(</span><span class="n">phi</span><span class="p">),</span> <span class="p">[</span><span class="n">qubits</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">qubits</span></div>
+
+
 <div class="viewcode-block" id="measure"><a class="viewcode-back" href="../../../reference/Miscellaneous%20Functions/generated/qrisp.measure.html#qrisp.measure">[docs]</a><span class="k">def</span> <span class="nf">measure</span><span class="p">(</span><span class="n">qubits</span><span class="p">,</span> <span class="n">clbits</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Performs a measurement of the specified Qubit.</span>
@@ -1209,7 +1299,7 @@ document.write(`
     <span class="k">return</span> <span class="n">qubits_0</span><span class="p">,</span> <span class="n">qubits_1</span></div>
 
 
-<span class="k">def</span> <span class="nf">id</span><span class="p">(</span><span class="n">qubits</span><span class="p">):</span>
+<div class="viewcode-block" id="id"><a class="viewcode-back" href="../../../reference/Miscellaneous%20Functions/generated/qrisp.id.html#qrisp.id">[docs]</a><span class="k">def</span> <span class="nf">id</span><span class="p">(</span><span class="n">qubits</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Applies an ID gate.</span>
 
@@ -1221,7 +1311,7 @@ document.write(`
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">append_operation</span><span class="p">(</span><span class="n">std_ops</span><span class="o">.</span><span class="n">IDGate</span><span class="p">(),</span> <span class="p">[</span><span class="n">qubits</span><span class="p">])</span>
 
-    <span class="k">return</span> <span class="n">qubits</span>
+    <span class="k">return</span> <span class="n">qubits</span></div>
 
 
 <span class="k">def</span> <span class="nf">QFT_inner</span><span class="p">(</span><span class="n">qv</span><span class="p">,</span> <span class="n">exec_swap</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">qiskit_endian</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">inplace_mult</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">use_gms</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
@@ -1266,7 +1356,7 @@ document.write(`
     <span class="k">return</span> <span class="n">qv</span>
 
 
-<div class="viewcode-block" id="QFT"><a class="viewcode-back" href="../../../reference/Algorithms/generated/qrisp.QFT.html#qrisp.QFT">[docs]</a><span class="k">def</span> <span class="nf">QFT</span><span class="p">(</span>
+<div class="viewcode-block" id="QFT"><a class="viewcode-back" href="../../../reference/Algorithms/QFT.html#qrisp.QFT">[docs]</a><span class="k">def</span> <span class="nf">QFT</span><span class="p">(</span>
     <span class="n">qv</span><span class="p">,</span> <span class="n">inv</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">exec_swap</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">qiskit_endian</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">inplace_mult</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">use_gms</span><span class="o">=</span><span class="kc">False</span>
 <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
@@ -1322,7 +1412,7 @@ document.write(`
     <span class="k">return</span> <span class="n">qv</span></div>
 
 
-<div class="viewcode-block" id="QPE"><a class="viewcode-back" href="../../../reference/Algorithms/generated/qrisp.QPE.html#qrisp.QPE">[docs]</a><span class="k">def</span> <span class="nf">QPE</span><span class="p">(</span>
+<div class="viewcode-block" id="QPE"><a class="viewcode-back" href="../../../reference/Algorithms/QPE.html#qrisp.QPE">[docs]</a><span class="k">def</span> <span class="nf">QPE</span><span class="p">(</span>
     <span class="n">args</span><span class="p">,</span> <span class="n">U</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">iter_spec</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">ctrl_method</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="p">{}</span>
 <span class="p">):</span>
     <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
@@ -1430,27 +1520,27 @@ document.write(`
                 <span class="s2">&quot;Tried to perform quantum phase estimation without&quot;</span>
                 <span class="s2">&quot;precision specification&quot;</span>
             <span class="p">)</span>
-        <span class="n">res</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="n">precision</span><span class="p">,</span> <span class="o">-</span><span class="n">precision</span><span class="p">,</span> <span class="n">signed</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">qpe_res</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="n">precision</span><span class="p">,</span> <span class="o">-</span><span class="n">precision</span><span class="p">,</span> <span class="n">signed</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">res</span> <span class="o">=</span> <span class="n">target</span>
+        <span class="n">qpe_res</span> <span class="o">=</span> <span class="n">target</span>
 
-    <span class="n">h</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+    <span class="n">h</span><span class="p">(</span><span class="n">qpe_res</span><span class="p">)</span>
 
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">qpe_res</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">iter_spec</span><span class="p">:</span>
-            <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">res</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">ctrl_method</span><span class="o">=</span><span class="n">ctrl_method</span><span class="p">):</span>
+            <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">qpe_res</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">ctrl_method</span><span class="o">=</span><span class="n">ctrl_method</span><span class="p">):</span>
                 <span class="n">U</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="nb">iter</span><span class="o">=</span><span class="mi">2</span><span class="o">**</span><span class="n">i</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">res</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">ctrl_method</span><span class="o">=</span><span class="n">ctrl_method</span><span class="p">):</span>
+            <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">qpe_res</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">ctrl_method</span><span class="o">=</span><span class="n">ctrl_method</span><span class="p">):</span>
                 <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="n">i</span><span class="p">):</span>
                     <span class="n">U</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
-    <span class="n">QFT</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">inv</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">QFT</span><span class="p">(</span><span class="n">qpe_res</span><span class="p">,</span> <span class="n">inv</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">res</span></div>
+    <span class="k">return</span> <span class="n">qpe_res</span></div>
 
 
-<div class="viewcode-block" id="quantum_counting"><a class="viewcode-back" href="../../../reference/Algorithms/generated/qrisp.quantum_counting.html#qrisp.quantum_counting">[docs]</a><span class="k">def</span> <span class="nf">quantum_counting</span><span class="p">(</span><span class="n">qv</span><span class="p">,</span> <span class="n">oracle</span><span class="p">,</span> <span class="n">precision</span><span class="p">):</span>
+<div class="viewcode-block" id="quantum_counting"><a class="viewcode-back" href="../../../reference/Algorithms/quantum_counting.html#qrisp.quantum_counting">[docs]</a><span class="k">def</span> <span class="nf">quantum_counting</span><span class="p">(</span><span class="n">qv</span><span class="p">,</span> <span class="n">oracle</span><span class="p">,</span> <span class="n">precision</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This algorithm estimates the amount of solutions for a given Grover oracle.</span>
 
@@ -1515,7 +1605,7 @@ document.write(`
     <span class="k">return</span> <span class="n">M</span></div>
 
 
-<div class="viewcode-block" id="HHL"><a class="viewcode-back" href="../../../reference/Algorithms/generated/qrisp.HHL.html#qrisp.HHL">[docs]</a><span class="k">def</span> <span class="nf">HHL</span><span class="p">(</span><span class="n">qv</span><span class="p">,</span> <span class="n">hamiltonian_evolution</span><span class="p">,</span> <span class="n">ev_inversion</span><span class="p">,</span> <span class="n">precision</span><span class="p">):</span>
+<div class="viewcode-block" id="HHL"><a class="viewcode-back" href="../../../reference/Algorithms/HHL.html#qrisp.HHL">[docs]</a><span class="k">def</span> <span class="nf">HHL</span><span class="p">(</span><span class="n">qv</span><span class="p">,</span> <span class="n">hamiltonian_evolution</span><span class="p">,</span> <span class="n">ev_inversion</span><span class="p">,</span> <span class="n">precision</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Evaluates the HHL algorithm.</span>
 
@@ -1556,7 +1646,6 @@ document.write(`
 
 <span class="k">def</span> <span class="nf">fredkin_qc</span><span class="p">(</span><span class="n">num_ctrl_qubits</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">ctrl_state</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;gray&quot;</span><span class="p">):</span>
     <span class="kn">from</span> <span class="nn">qrisp</span> <span class="kn">import</span> <span class="n">QuantumCircuit</span><span class="p">,</span> <span class="n">XGate</span>
-
     <span class="n">mcx_gate</span> <span class="o">=</span> <span class="n">XGate</span><span class="p">()</span><span class="o">.</span><span class="n">control</span><span class="p">()</span><span class="o">.</span><span class="n">control</span><span class="p">(</span><span class="n">ctrl_state</span><span class="o">=</span><span class="n">ctrl_state</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="n">method</span><span class="p">)</span>
 
     <span class="n">qc</span> <span class="o">=</span> <span class="n">QuantumCircuit</span><span class="p">(</span><span class="n">num_ctrl_qubits</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span>
@@ -1567,7 +1656,7 @@ document.write(`
     <span class="k">return</span> <span class="n">qc</span>
 
 
-<div class="viewcode-block" id="demux"><a class="viewcode-back" href="../../../reference/Algorithms/generated/qrisp.demux.html#qrisp.demux">[docs]</a><span class="k">def</span> <span class="nf">demux</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">ctrl_qv</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ctrl_method</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">permit_mismatching_size</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<div class="viewcode-block" id="demux"><a class="viewcode-back" href="../../../reference/Algorithms/demux.html#qrisp.demux">[docs]</a><span class="k">def</span> <span class="nf">demux</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">ctrl_qv</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ctrl_method</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">permit_mismatching_size</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">reduce_depth</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This functions allows moving an input value into an iterable output, where the</span>
 <span class="sd">    position is specified by a ``QuantumFloat``. Demux is short for demultiplexer and</span>
@@ -1599,6 +1688,9 @@ document.write(`
 <span class="sd">    permit_mismatching_size : bool, optional</span>
 <span class="sd">        If set to False, an exception will be raised, if the state-space dimension of</span>
 <span class="sd">        `ctrl_qv`` is differing from the amount of outputs. The default is False.</span>
+<span class="sd">    reduce_depth : bool, optional</span>
+<span class="sd">        If set to True, this option reduces (de)allocates additional qubits to</span>
+<span class="sd">        reduce the depth. The default is False.</span>
 
 <span class="sd">    Raises</span>
 <span class="sd">    ------</span>
@@ -1705,20 +1797,39 @@ document.write(`
         <span class="k">return</span> <span class="n">output</span>
 
     <span class="k">if</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        
+        <span class="k">if</span> <span class="n">reduce_depth</span><span class="p">:</span>
+            <span class="n">demux_ancilla</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ctrl_qv</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">cx</span><span class="p">(</span><span class="n">ctrl_qv</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">demux_ancilla</span><span class="p">)</span>
+            <span class="n">ctrl_qubits</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">demux_ancilla</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ctrl_qubits</span> <span class="o">=</span> <span class="n">ctrl_qv</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            
+        
         <span class="n">demux</span><span class="p">(</span>
             <span class="n">output</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
-            <span class="n">ctrl_qv</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+            <span class="n">ctrl_qubits</span><span class="p">,</span>
+            <span class="c1">#ctrl_qv[:-1],</span>
             <span class="n">output</span><span class="p">[:</span> <span class="n">N</span> <span class="o">//</span> <span class="mi">2</span><span class="p">],</span>
             <span class="n">ctrl_method</span><span class="o">=</span><span class="n">ctrl_method</span><span class="p">,</span>
             <span class="n">permit_mismatching_size</span><span class="o">=</span><span class="n">permit_mismatching_size</span><span class="p">,</span>
+            <span class="n">reduce_depth</span><span class="o">=</span><span class="n">reduce_depth</span>
         <span class="p">)</span>
+        
+        
         <span class="n">demux</span><span class="p">(</span>
             <span class="n">output</span><span class="p">[</span><span class="n">N</span> <span class="o">//</span> <span class="mi">2</span><span class="p">],</span>
             <span class="n">ctrl_qv</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
             <span class="n">output</span><span class="p">[</span><span class="n">N</span> <span class="o">//</span> <span class="mi">2</span> <span class="p">:],</span>
             <span class="n">ctrl_method</span><span class="o">=</span><span class="n">ctrl_method</span><span class="p">,</span>
             <span class="n">permit_mismatching_size</span><span class="o">=</span><span class="n">permit_mismatching_size</span><span class="p">,</span>
+            <span class="n">reduce_depth</span><span class="o">=</span><span class="n">reduce_depth</span>
         <span class="p">)</span>
+        <span class="k">if</span> <span class="n">reduce_depth</span><span class="p">:</span>
+            <span class="n">cx</span><span class="p">(</span><span class="n">ctrl_qv</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">demux_ancilla</span><span class="p">)</span>
+            <span class="n">demux_ancilla</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+        
+
 
     <span class="k">return</span> <span class="n">output</span></div>
 
@@ -1745,6 +1856,216 @@ document.write(`
     <span class="n">swap</span><span class="p">(</span><span class="n">q_array</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">qv</span><span class="p">)</span>
 
     <span class="n">demux</span><span class="p">(</span><span class="n">q_array</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">index</span><span class="p">,</span> <span class="n">q_array</span><span class="p">,</span> <span class="n">ctrl_method</span><span class="o">=</span><span class="s2">&quot;gray_pt&quot;</span><span class="p">)</span>
+
+
+
+<div class="viewcode-block" id="cyclic_shift"><a class="viewcode-back" href="../../../reference/Algorithms/cyclic_shift.html#qrisp.cyclic_shift">[docs]</a><span class="k">def</span> <span class="nf">cyclic_shift</span><span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="n">shift_amount</span> <span class="o">=</span> <span class="mi">1</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Performs a cyclic shift of the values of an iterable with logarithmic depth. </span>
+<span class="sd">    The shifting amount can be specified.</span>
+
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    iterable : list[Qubit] or list[QuantumVariable] or QuantumArray</span>
+<span class="sd">        The iterable to be shifted.</span>
+<span class="sd">    shift_amount : integer or QuantumFloat, optional</span>
+<span class="sd">        The iterable will be shifted by that amount. The default is 1.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    </span>
+<span class="sd">    We create a QuantumArray, initiate a sequence of increments and perform a cyclic shift.</span>
+<span class="sd">    </span>
+<span class="sd">    &gt;&gt;&gt; from qrisp import QuantumFloat, QuantumArray, cyclic_shift</span>
+<span class="sd">    &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">    &gt;&gt;&gt; qa = QuantumArray(QuantumFloat(3), 8)</span>
+<span class="sd">    &gt;&gt;&gt; qa[:] = np.arange(8)</span>
+<span class="sd">    &gt;&gt;&gt; cyclic_shift(qa, shift_amount = 2)</span>
+<span class="sd">    &gt;&gt;&gt; print(qa)</span>
+<span class="sd">    {OutcomeArray([6, 7, 0, 1, 2, 3, 4, 5]): 1.0}</span>
+<span class="sd">    </span>
+<span class="sd">    We do something similar to demonstrate the shift by quantum values.</span>
+<span class="sd">    For this we initiate a :ref:`QuantumFloat` in the superposition of 0, 1 and -3.</span>
+<span class="sd">    </span>
+<span class="sd">    &gt;&gt;&gt; shift_amount = QuantumFloat(3, signed = True)</span>
+<span class="sd">    &gt;&gt;&gt; shift_amount[:] = {0 : 3**-0.5, 1: 3**-0.5, -3 : 3**-0.5}</span>
+<span class="sd">    &gt;&gt;&gt; qa = QuantumArray(QuantumFloat(3), 8)</span>
+<span class="sd">    &gt;&gt;&gt; qa[:] = np.arange(8)</span>
+<span class="sd">    &gt;&gt;&gt; cyclic_shift(qa, shift_amount)</span>
+<span class="sd">    &gt;&gt;&gt; print(qa)</span>
+<span class="sd">    {OutcomeArray([0, 1, 2, 3, 4, 5, 6, 7]): 0.3333, OutcomeArray([7, 0, 1, 2, 3, 4, 5, 6]): 0.3333, OutcomeArray([3, 4, 5, 6, 7, 0, 1, 2]): 0.3333}</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="kn">from</span> <span class="nn">qrisp</span> <span class="kn">import</span> <span class="n">QuantumFloat</span><span class="p">,</span> <span class="n">control</span><span class="p">,</span> <span class="n">QuantumBool</span><span class="p">,</span> <span class="n">cx</span>
+    
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">shift_amount</span><span class="p">,</span> <span class="n">QuantumFloat</span><span class="p">):</span>
+        
+        <span class="k">if</span> <span class="n">shift_amount</span><span class="o">.</span><span class="n">mshape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Tried to quantum shift by non-integer QuantumFloat&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">shift_amount</span><span class="o">.</span><span class="n">signed</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">shift_amount</span><span class="o">.</span><span class="n">sign</span><span class="p">()):</span>
+                <span class="n">cyclic_shift</span><span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="o">**</span><span class="p">(</span><span class="n">shift_amount</span><span class="o">.</span><span class="n">mshape</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+            
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">*</span><span class="n">shift_amount</span><span class="o">.</span><span class="n">mshape</span><span class="p">):</span>
+            <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">shift_amount</span><span class="o">.</span><span class="n">significant</span><span class="p">(</span><span class="n">i</span><span class="p">)):</span>
+                <span class="n">cyclic_shift</span><span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="mi">2</span><span class="o">**</span><span class="n">i</span><span class="p">)</span>
+    
+        <span class="k">return</span>
+            
+    
+    
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">iterable</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">shift_amount</span><span class="o">%</span><span class="nb">len</span><span class="p">(</span><span class="n">iterable</span><span class="p">):</span>
+        <span class="k">return</span>
+    <span class="k">if</span> <span class="n">shift_amount</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">cyclic_shift</span><span class="p">(</span><span class="n">iterable</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="o">-</span><span class="n">shift_amount</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="n">shift_amount</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+        
+        <span class="n">perm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">iterable</span><span class="p">))</span>
+        <span class="n">perm</span> <span class="o">=</span> <span class="p">(</span><span class="n">perm</span> <span class="o">-</span> <span class="n">shift_amount</span><span class="p">)</span><span class="o">%</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">iterable</span><span class="p">))</span>
+        
+        <span class="n">permute_iterable</span><span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="n">perm</span><span class="p">)</span>
+        <span class="k">return</span>
+    
+    <span class="n">n</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">iterable</span><span class="p">))</span>
+    
+    <span class="k">if</span> <span class="n">n</span> <span class="o">!=</span> <span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">n</span><span class="p">))</span>
+        
+        <span class="n">cyclic_shift</span><span class="p">(</span><span class="n">iterable</span><span class="p">[:</span><span class="mi">2</span><span class="o">**</span><span class="n">n</span><span class="p">],</span> <span class="n">shift_amount</span><span class="p">)</span>
+        <span class="n">cyclic_shift</span><span class="p">([</span><span class="n">iterable</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">iterable</span><span class="p">[</span><span class="mi">2</span><span class="o">**</span><span class="n">n</span><span class="p">:]),</span> <span class="n">shift_amount</span><span class="p">)</span>
+        <span class="k">return</span>
+    
+    
+    <span class="n">correction_indices</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">iterable</span><span class="p">)</span><span class="o">//</span><span class="mi">2</span><span class="p">):</span>
+        <span class="n">swap_tuple</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">i</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">swap</span><span class="p">(</span><span class="n">iterable</span><span class="p">[</span><span class="n">swap_tuple</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">iterable</span><span class="p">[</span><span class="n">swap_tuple</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
+        <span class="n">correction_indices</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">swap_tuple</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    
+    <span class="n">cyclic_shift</span><span class="p">([</span><span class="n">iterable</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">correction_indices</span><span class="p">],</span> <span class="n">shift_amount</span><span class="p">)</span></div>
+    
+
+<span class="k">def</span> <span class="nf">to_cycles</span><span class="p">(</span><span class="n">perm</span><span class="p">):</span>
+    <span class="n">pi</span> <span class="o">=</span> <span class="p">{</span><span class="n">i</span><span class="p">:</span> <span class="n">perm</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">perm</span><span class="p">))}</span>
+    <span class="n">cycles</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">while</span> <span class="n">pi</span><span class="p">:</span>
+        <span class="n">elem0</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">pi</span><span class="p">))</span> <span class="c1"># arbitrary starting element</span>
+        <span class="n">this_elem</span> <span class="o">=</span> <span class="n">pi</span><span class="p">[</span><span class="n">elem0</span><span class="p">]</span>
+        <span class="n">next_item</span> <span class="o">=</span> <span class="n">pi</span><span class="p">[</span><span class="n">this_elem</span><span class="p">]</span>
+
+        <span class="n">cycle</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">cycle</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">this_elem</span><span class="p">)</span>
+            <span class="k">del</span> <span class="n">pi</span><span class="p">[</span><span class="n">this_elem</span><span class="p">]</span>
+            <span class="n">this_elem</span> <span class="o">=</span> <span class="n">next_item</span>
+            <span class="k">if</span> <span class="n">next_item</span> <span class="ow">in</span> <span class="n">pi</span><span class="p">:</span>
+                <span class="n">next_item</span> <span class="o">=</span> <span class="n">pi</span><span class="p">[</span><span class="n">next_item</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">break</span>
+
+        <span class="n">cycles</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cycle</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">cycles</span>
+
+<div class="viewcode-block" id="permute_iterable"><a class="viewcode-back" href="../../../reference/Algorithms/iterable_permutation.html#qrisp.permute_iterable">[docs]</a><span class="k">def</span> <span class="nf">permute_iterable</span><span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="n">perm</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Applies an arbitrary permutation to an iterable with logarithmic depth.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    iterable : QuantumArray or List[QuantumVariable] or QuantumVariable or List[Qubit]</span>
+<span class="sd">        The iterable to perform the permutation on.</span>
+<span class="sd">    perm : List[integer]</span>
+<span class="sd">        A list specifying the permutation.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    </span>
+<span class="sd">    We create a QuantumArray containing increments and apply a specified permutation.</span>
+<span class="sd">    </span>
+<span class="sd">    &gt;&gt;&gt; from qrisp import QuantumFloat, QuantumArray, permute_iterable</span>
+<span class="sd">    &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">    &gt;&gt;&gt; qa = QuantumArray(QuantumFloat(3), 8)</span>
+<span class="sd">    &gt;&gt;&gt; qa[:] = np.arange(8)</span>
+<span class="sd">    &gt;&gt;&gt; permute_iterable(qa, perm = [1,0,3,7,5,2,6,4])</span>
+<span class="sd">    &gt;&gt;&gt; print(qa)</span>
+<span class="sd">    {OutcomeArray([1, 0, 3, 7, 5, 2, 6, 4]): 1.0}</span>
+<span class="sd">    &gt;&gt;&gt; print(qa.qs)</span>
+<span class="sd">    QuantumCircuit:</span>
+<span class="sd">    ---------------</span>
+<span class="sd">      qa.0: ────────────X──────────────────────</span>
+<span class="sd">                        │                      </span>
+<span class="sd">      qa.1: ──────X─────┼──────────────────────</span>
+<span class="sd">                  │     │                      </span>
+<span class="sd">      qa.2: ──────┼──X──┼──────────────────────</span>
+<span class="sd">            ┌───┐ │  │  │                      </span>
+<span class="sd">    qa_1.0: ┤ X ├─┼──┼──X──────────────────────</span>
+<span class="sd">            └───┘ │  │                         </span>
+<span class="sd">    qa_1.1: ──────X──┼─────────────────────────</span>
+<span class="sd">                     │                         </span>
+<span class="sd">    qa_1.2: ─────────X─────────────────────────</span>
+<span class="sd">    &lt;BLANKLINE&gt;                                           </span>
+<span class="sd">    qa_2.0: ───────────────────────────X───────</span>
+<span class="sd">            ┌───┐                      │       </span>
+<span class="sd">    qa_2.1: ┤ X ├──────────────────────┼──X────</span>
+<span class="sd">            └───┘                      │  │    </span>
+<span class="sd">    qa_2.2: ───────────────────────────┼──┼──X─</span>
+<span class="sd">            ┌───┐                      │  │  │ </span>
+<span class="sd">    qa_3.0: ┤ X ├──────────X───────────┼──┼──┼─</span>
+<span class="sd">            ├───┤          │           │  │  │ </span>
+<span class="sd">    qa_3.1: ┤ X ├──────────┼──X────────┼──┼──┼─</span>
+<span class="sd">            └───┘          │  │        │  │  │ </span>
+<span class="sd">    qa_3.2: ───────────────┼──┼──X─────┼──┼──┼─</span>
+<span class="sd">                           │  │  │     │  │  │ </span>
+<span class="sd">    qa_4.0: ──────X────────┼──┼──┼─────┼──┼──┼─</span>
+<span class="sd">                  │        │  │  │     │  │  │ </span>
+<span class="sd">    qa_4.1: ──────┼──X─────┼──┼──┼─────┼──┼──┼─</span>
+<span class="sd">            ┌───┐ │  │     │  │  │     │  │  │ </span>
+<span class="sd">    qa_4.2: ┤ X ├─┼──┼──X──┼──┼──┼─────┼──┼──┼─</span>
+<span class="sd">            ├───┤ │  │  │  │  │  │     │  │  │ </span>
+<span class="sd">    qa_5.0: ┤ X ├─X──┼──┼──┼──┼──┼──X──X──┼──┼─</span>
+<span class="sd">            └───┘    │  │  │  │  │  │     │  │ </span>
+<span class="sd">    qa_5.1: ─────────X──┼──┼──┼──┼──┼──X──X──┼─</span>
+<span class="sd">            ┌───┐       │  │  │  │  │  │     │ </span>
+<span class="sd">    qa_5.2: ┤ X ├───────X──┼──┼──┼──┼──┼──X──X─</span>
+<span class="sd">            └───┘          │  │  │  │  │  │    </span>
+<span class="sd">    qa_6.0: ───────────────┼──┼──┼──┼──┼──┼────</span>
+<span class="sd">            ┌───┐          │  │  │  │  │  │    </span>
+<span class="sd">    qa_6.1: ┤ X ├──────────┼──┼──┼──┼──┼──┼────</span>
+<span class="sd">            ├───┤          │  │  │  │  │  │    </span>
+<span class="sd">    qa_6.2: ┤ X ├──────────┼──┼──┼──┼──┼──┼────</span>
+<span class="sd">            ├───┤          │  │  │  │  │  │    </span>
+<span class="sd">    qa_7.0: ┤ X ├──────────X──┼──┼──X──┼──┼────</span>
+<span class="sd">            ├───┤             │  │     │  │    </span>
+<span class="sd">    qa_7.1: ┤ X ├─────────────X──┼─────X──┼────</span>
+<span class="sd">            ├───┤                │        │    </span>
+<span class="sd">    qa_7.2: ┤ X ├────────────────X────────X────</span>
+<span class="sd">            └───┘                              </span>
+<span class="sd">    Live QuantumVariables:</span>
+<span class="sd">    ----------------------</span>
+<span class="sd">    QuantumFloat qa</span>
+<span class="sd">    QuantumFloat qa_1</span>
+<span class="sd">    QuantumFloat qa_2</span>
+<span class="sd">    QuantumFloat qa_3</span>
+<span class="sd">    QuantumFloat qa_4</span>
+<span class="sd">    QuantumFloat qa_5</span>
+<span class="sd">    QuantumFloat qa_6</span>
+<span class="sd">    QuantumFloat qa_7</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="kn">from</span> <span class="nn">sympy.combinatorics</span> <span class="kn">import</span> <span class="n">Permutation</span>
+    
+    <span class="n">inv_perm</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">Permutation</span><span class="p">(</span><span class="n">perm</span><span class="p">)</span><span class="o">**-</span><span class="mi">1</span><span class="p">)</span>
+    
+    <span class="n">cycles</span> <span class="o">=</span> <span class="n">to_cycles</span><span class="p">(</span><span class="n">inv_perm</span><span class="p">)</span>
+    
+    <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">cycles</span><span class="p">:</span>
+        <span class="n">cyclic_shift</span><span class="p">([</span><span class="n">iterable</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">c</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span></div>
 </pre></div>
 
                 </article>
@@ -1754,6 +2075,21 @@ document.write(`
             </div>
             
             
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://join.slack.com/t/qrisp-workspace/shared_invite/zt-20yv9bbvo-igspbQpslCBK9ZlYSVijsw">Slack workspace.</a></p>
+    </div>
+  </div>
+</div>
+
+</div></div>
               
             
           </div>
@@ -1785,7 +2121,7 @@ document.write(`
       
         <div class="footer-item">
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.3.0.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 6.2.1.
     <br/>
   </p>
 </div>
@@ -1796,7 +2132,7 @@ document.write(`
     <div class="footer-items__end">
       
         <div class="footer-item"><p class="theme-version">
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.13.3.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.13.4dev0.
 </p></div>
       
     </div>

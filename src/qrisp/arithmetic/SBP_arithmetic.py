@@ -1,5 +1,5 @@
 """
-/********************************************************************************
+\********************************************************************************
 * Copyright (c) 2023 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -8,11 +8,11 @@
 *
 * This Source Code may also be made available under the following Secondary
 * Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2 
-* or later with the GNU Classpath Exception which is
+* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+* with the GNU Classpath Exception which is
 * available at https://www.gnu.org/software/classpath/license.html.
 *
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0
+* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************/
 """
 
@@ -955,10 +955,6 @@ def inpl_mult(qf, mult_int, treat_overflow=True):
     {0: 0.25, 155: 0.25, 160: 0.25, -5: 0.25}
 
     """
-    if not isinstance(mult_int, int):
-        raise Exception(
-            "Tried to inplace multiply QuantumFloat with non-integer factor"
-        )
 
     if mult_int < 0 and not qf.signed:
         raise Exception(
@@ -966,9 +962,24 @@ def inpl_mult(qf, mult_int, treat_overflow=True):
         )
 
     bit_shift = 0
-    while not mult_int % 2:
-        bit_shift += 1
-        mult_int = mult_int // 2
+    
+    if int(mult_int) != mult_int:
+        
+        c = abs(mult_int)
+        
+        for i in range(32):
+            if int(2**i*c) == 2**i*c:
+                break
+        else:
+            raise Exception("Tried to inplace multiply with number of to much precision")
+        
+        bit_shift = -i
+        mult_int = 2**i*mult_int
+        
+    else:
+        while not mult_int % 2:
+            bit_shift += 1
+            mult_int = mult_int // 2
 
     if mult_int != 1:
         if treat_overflow:
@@ -980,5 +991,46 @@ def inpl_mult(qf, mult_int, treat_overflow=True):
         from qrisp.arithmetic.SBP_arithmetic import QFT_inpl_mult
 
         QFT_inpl_mult(qf, inplace_mult=mult_int)
+    
+    quantum_bit_shift(qf, bit_shift, treat_overflow)
+    
+    if treat_overflow and bit_shift<0 and qf.signed:
+        cx(qf[-1], qf[bit_shift-1:-1])
+    
 
-    qf << bit_shift
+    
+def quantum_bit_shift(qf, bit_shift, treat_overflow = True):
+    
+    from qrisp import cyclic_shift, control, QuantumFloat
+    
+    if isinstance(bit_shift, QuantumFloat):
+        
+        if bit_shift.signed or qf.signed:
+            raise Exception("Quantum-quantum bitshifting is currently only supported for unsigned arguments")
+        
+        for i in range(*bit_shift.mshape):
+            with control(bit_shift.significant(i)):
+                quantum_bit_shift(qf, 2**i)
+        
+        return
+    
+    if treat_overflow:
+        
+        if bit_shift > 0:
+            
+            if qf.signed:
+                qf.extend(bit_shift, position=qf.size-1)
+            else:
+                qf.extend(bit_shift, position=qf.size)
+                
+        else:
+            qf.extend(abs(bit_shift), position=0)
+            qf.exp_shift(bit_shift)
+            
+    if qf.signed:
+        cyclic_shift(qf[:-1], bit_shift)
+    else:
+        cyclic_shift(qf, bit_shift)
+        
+        
+        

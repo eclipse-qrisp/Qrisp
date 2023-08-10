@@ -1,3 +1,5 @@
+.. _QuantumNetwork:
+
 Quantum Networks
 ================
 

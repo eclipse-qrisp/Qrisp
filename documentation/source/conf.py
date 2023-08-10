@@ -1,5 +1,5 @@
 """
-/********************************************************************************
+\********************************************************************************
 * Copyright (c) 2023 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -8,11 +8,11 @@
 *
 * This Source Code may also be made available under the following Secondary
 * Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2 
-* or later with the GNU Classpath Exception which is
+* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+* with the GNU Classpath Exception which is
 * available at https://www.gnu.org/software/classpath/license.html.
 *
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0
+* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************/
 """
 
@@ -62,7 +62,8 @@ extensions = [
               "texext",
                 "numpydoc",
               "sphinx_sitemap",
-               "sphinx_copybutton"
+               "sphinx_copybutton",
+               "sphinx_design"
               #"nb2plots",
               ]
 
@@ -74,7 +75,7 @@ imgmath_use_preview = True
 github_repository = 'https://github.com/fraunhoferfokus/Qrisp'
 
 # Add any paths that contain templates here, relative to this directory.
-# templates_path = ['_templates']
+templates_path = ['_templates']
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -119,8 +120,9 @@ html_theme_options = {
     "navbar_end": ["navbar-icon-links"],
     "enable_search_shortcuts" : True,
     "search_bar_text": "Search the docs... ",
-    "navbar_align": "content",
+    # "navbar_align": "content",
     "pygment_light_style": "lovelace",
+    "secondary_sidebar_items": ["page-toc.html", "slack_link.html"]
 }
 html_sidebars = {
     "**": ["search-field", "sidebar-nav-bs"],
@@ -150,7 +152,8 @@ html_show_sourcelink = False
 
 html_favicon = '../../logo/qrisp_favicon.png'
 
-html_logo = "../../logo/logo_extended.png"
+# html_logo = "../../logo/logo_extended.png"
+html_logo = "../../logo/qrisp_logo.png"
 
 
 add_module_names = False

@@ -1,5 +1,5 @@
 """
-/********************************************************************************
+\********************************************************************************
 * Copyright (c) 2023 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -8,11 +8,11 @@
 *
 * This Source Code may also be made available under the following Secondary
 * Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2 
-* or later with the GNU Classpath Exception which is
+* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+* with the GNU Classpath Exception which is
 * available at https://www.gnu.org/software/classpath/license.html.
 *
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0
+* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************/
 """
 
@@ -62,10 +62,12 @@ def auto_uncompute_inner(function):
         # Execute function
         result = function(*args, **kwargs)
 
+        multi_session_merge(recursive_qs_search(result) + [qs])
+
         result_vars = set([hash(qv) for qv in recursive_qv_search(result)])
 
         uncomp_vars = []
-
+        
         for qv in qs.qv_list:
             if not hash(qv) in initial_qvs.union(result_vars):
                 uncomp_vars.append(qv)
@@ -75,7 +77,7 @@ def auto_uncompute_inner(function):
         return result
 
     auto_uncomputed_function.__name__ = function.__name__ + "_auto_uncomputed"
-
+    auto_uncomputed_function.__doc__ = function.__doc__
     # Return result
     return auto_uncomputed_function
 
@@ -86,15 +88,24 @@ verify = np.zeros(1)
 def uncompute(qs, uncomp_vars, recompute=False):
     from qrisp import QuantumEnvironment
 
-    qubits_to_uncompute = sum([qv.reg for qv in uncomp_vars], [])
-
-    i = 0
-    while i < len(qs.data):
-        if isinstance(qs.data[i], QuantumEnvironment):
-            env = qs.data.pop(i)
+    if len(uncomp_vars) == 0:
+        return
+    
+    temp_data = list(qs.data)
+    qs.data = []
+    
+    
+    
+    for i in range(len(temp_data)):
+        if isinstance(temp_data[i], QuantumEnvironment):
+            env = temp_data[i]
             env.compile()
-            continue
-        i += 1
+        else:
+            qs.append(temp_data[i])
+            
+            
+    uncomp_vars = list(set(uncomp_vars).intersection(qs.qv_list))
+    qubits_to_uncompute = sum([qv.reg for qv in uncomp_vars], [])
 
     alloc_gates_remaining = list(qubits_to_uncompute)
 

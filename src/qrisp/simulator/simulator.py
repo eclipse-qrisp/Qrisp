@@ -1,5 +1,5 @@
 """
-/********************************************************************************
+\********************************************************************************
 * Copyright (c) 2023 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -8,16 +8,16 @@
 *
 * This Source Code may also be made available under the following Secondary
 * Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2 
-* or later with the GNU Classpath Exception which is
+* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+* with the GNU Classpath Exception which is
 * available at https://www.gnu.org/software/classpath/license.html.
 *
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0
+* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************/
 """
 
 import threading
-
+import sys
 # -*- coding: utf-8 -*-
 import numpy as np
 from tqdm import tqdm
@@ -58,7 +58,8 @@ def run(qc, shots, token="", iqs=None, insert_reset=True):
         leave=False,
         delay=0.2,
         position=0,
-        smoothing=1
+        smoothing=1,
+        file=sys.stdout
         # colour = "green"
     )
     
@@ -158,7 +159,7 @@ def run(qc, shots, token="", iqs=None, insert_reset=True):
         # The iqs object contains the outcome bitstrings in the attribute .outcome_list
         # and the probablities in .cl_prob. In order to ensure qiskit compatibility, we
         # reverse the bitstrings
-        res = {}
+        prob_dict = {}
         for i in range(len(iqs.cl_prob)):
             if iqs.cl_prob[i] == 0:
                 continue
@@ -171,10 +172,43 @@ def run(qc, shots, token="", iqs=None, insert_reset=True):
                     outcome_str += "0"
 
             try:
-                res[outcome_str[::-1]] += int(np.round(iqs.cl_prob[i] * shots))
+                prob_dict[outcome_str[::-1]] += iqs.cl_prob[i]
             except KeyError:
-                res[outcome_str[::-1]] = int(np.round(iqs.cl_prob[i] * shots))
+                prob_dict[outcome_str[::-1]] = iqs.cl_prob[i]
 
+        
+        #Normalize probabilities to 1 (can be slightly different due to
+        #floating point errors)
+        norm = 0
+        for v in prob_dict.values():
+            norm += v
+            
+        for k,v in prob_dict.items():
+            prob_dict[k] = prob_dict[k]/norm
+            
+
+        #If shots >= 10000, no samples will be drawn and the distribution will
+        #be returned instead
+        if shots >= 10000:
+            res = {}
+            
+            for k, v in prob_dict.items():
+                res[k] = int(np.round(v*abs(shots)))
+                
+        #Generate samples
+        else:
+            
+            from numpy.random import choice
+            p_array = np.array(list(prob_dict.values()))
+            
+            samples = choice(len(p_array), shots, p=p_array)
+            
+            keys = list(prob_dict.keys())
+            
+            res = {k : 0 for k in keys}
+            for s in samples:
+                res[keys[s]] += 1
+                
         return res
 
 
@@ -188,7 +222,8 @@ def statevector_sim(qc):
         leave=False,
         delay=0.2,
         position=0,
-        smoothing=1
+        smoothing=1,
+        file=sys.stdout
         # colour = "green"
     )
     

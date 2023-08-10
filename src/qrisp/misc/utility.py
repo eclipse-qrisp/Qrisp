@@ -1,5 +1,5 @@
 """
-/********************************************************************************
+\********************************************************************************
 * Copyright (c) 2023 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -8,11 +8,11 @@
 *
 * This Source Code may also be made available under the following Secondary
 * Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2 
-* or later with the GNU Classpath Exception which is
+* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+* with the GNU Classpath Exception which is
 * available at https://www.gnu.org/software/classpath/license.html.
 *
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0
+* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************/
 """
 
@@ -349,6 +349,7 @@ def gate_wrap_inner(
         from qrisp.circuit import Qubit
         from qrisp.core import recursive_qs_search, recursive_qv_search
         from qrisp.environments import GateWrapEnvironment
+        from qrisp import merge
 
         qs_list = recursive_qs_search([args, kwargs])
 
@@ -362,6 +363,7 @@ def gate_wrap_inner(
 
         initial_qubits = set(qs.qubits)
 
+
         if name is None:
             gwe = GateWrapEnvironment(name=function.__name__)
         else:
@@ -370,14 +372,12 @@ def gate_wrap_inner(
         with gwe:
             result = function(*args, **kwargs)
 
-        try:
-            qs.data.remove(gwe)
-
+        if len(qs.env_stack):
             gwe.compile()
-
-        except ValueError:
-            pass
-
+            
+        if gwe in qs.data:
+            qs.data.remove(gwe)
+        
         if gwe.instruction is None:
             return result
 
@@ -1119,7 +1119,7 @@ def get_statevector_function(qs, decimals=None):
             qs = list(label_constellation.keys())[0].qs
 
             if len(label_constellation) != len(qs.qv_list):
-                missing_variables = set([qv().name for qv in qs.qv_list]) - set(
+                missing_variables = set([qv.name for qv in qs.qv_list]) - set(
                     [qv.name for qv in label_constellation.keys()]
                 )
                 raise Exception(
@@ -1197,7 +1197,7 @@ def get_measurement_from_qc(qc, qubits, backend, shots=10000):
 
     # Normalize counts
     for key in counts.keys():
-        counts[key] = counts[key] / shots
+        counts[key] = counts[key] / abs(shots)
 
     return counts
 
@@ -1374,7 +1374,7 @@ def get_sympy_state(qs, decimals):
     from qrisp.simulator import statevector_sim
 
     qv_list = list(qs.qv_list)
-
+    
     labels = []
     for qv in qv_list:
         labels.append([qv.decoder(i) for i in range(2**qv.size)])
@@ -1483,7 +1483,7 @@ def get_sympy_state(qs, decimals):
                 bit_string += int_string[compiled_qc.qubits.index(qb)]
 
             label = qv.decoder(int(bit_string[::-1], 2))
-            ket_expr *= OrthogonalKet(str(label))
+            ket_expr *= OrthogonalKet((label))
 
         res += ket_expr
 

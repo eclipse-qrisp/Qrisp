@@ -1,5 +1,5 @@
 """
-/********************************************************************************
+\********************************************************************************
 * Copyright (c) 2023 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -8,11 +8,11 @@
 *
 * This Source Code may also be made available under the following Secondary
 * Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2 
-* or later with the GNU Classpath Exception which is
+* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+* with the GNU Classpath Exception which is
 * available at https://www.gnu.org/software/classpath/license.html.
 *
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0
+* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************/
 """
 
@@ -25,11 +25,14 @@ from numba import njit
 from qrisp import fast_append
 from qrisp.simulator.bi_arrays import BiArray, DenseBiArray, SparseBiArray, tensordot
 
-id_matrix = np.eye(2, dtype=np.complex64)
 
-pauli_x = np.asarray([[0, 1], [1, 0]], dtype=np.complex64)
-pauli_y = np.asarray([[0, 0], [0, 0]]) + 1j * np.asarray([[0, -1], [1, 0]])
-pauli_z = np.asarray([[1, 0], [0, -1]], dtype=np.complex64)
+np_dtype = np.complex64
+
+id_matrix = np.eye(2, dtype=np_dtype)
+
+pauli_x = np.asarray([[0, 1], [1, 0]], dtype=np_dtype)
+pauli_y = np.asarray([[0, 0], [0, 0]]) + 1j * np.asarray([[0, -1], [1, 0]], dtype = np_dtype)
+pauli_z = np.asarray([[1, 0], [0, -1]], dtype=np_dtype)
 
 
 # Function which returns the unitary of a u3 gate
@@ -275,7 +278,7 @@ def __calc_circuit_unitary(qc):
 
     # If the circuit is empty, return the identity matrix
     if len(qc.data) == 0:
-        return np.eye(2**n)
+        return np.eye(2**n, dtype = np_dtype)
 
     # If the circuit contains only a single insturction,
     # calculate this instructions unitary and embedd it

@@ -1,5 +1,5 @@
 """
-/********************************************************************************
+\********************************************************************************
 * Copyright (c) 2023 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -8,11 +8,11 @@
 *
 * This Source Code may also be made available under the following Secondary
 * Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2 
-* or later with the GNU Classpath Exception which is
+* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+* with the GNU Classpath Exception which is
 * available at https://www.gnu.org/software/classpath/license.html.
 *
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0
+* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************/
 """
 
@@ -445,21 +445,29 @@ class QuantumVariable:
         # Register duplicate variable in session manager
 
         if name is not None:
+            
+            if name[-1] == "*":
+                self.user_given_name = False
+                name = name[:-1]
+            else:
+                duplicate.user_given_name = True
+            
             duplicate.name = name
             new_qs.register_qv(duplicate)
-            duplicate.user_given_name = True
+            
+            
 
         else:
             duplicate.user_given_name = False
 
             try:
-                duplicate.name = self.name
+                duplicate.name = self.name + "_dupl"
                 new_qs.register_qv(duplicate)
             except NameError:
                 i = 0
                 while True:
                     try:
-                        duplicate.name = self.name + "_" + str(i)
+                        duplicate.name = self.name + "_dupl" + str(i)
                         new_qs.register_qv(duplicate)
                         break
                     except NameError:
@@ -470,15 +478,15 @@ class QuantumVariable:
 
         duplicate.qs = new_qs
 
-        if qs is not None:
-            merge(qs, new_qs)
-
         # This attribute tracks the created QuantumVariables for the
         # auto_uncompute decorator
         # We use weak references as some qrisp modules rely on reference counting
         QuantumVariable.live_qvs.append(weakref.ref(duplicate))
         duplicate.creation_time = int(self.creation_counter[0])
         duplicate.creation_counter += 1
+
+        if qs is not None:
+            merge(qs, new_qs)
 
         if init:
             duplicate.init_from(self)
@@ -566,7 +574,7 @@ class QuantumVariable:
 
         raise Exception("Value " + str(value) + " not supported by encoder.")
 
-    def encode(self, value):
+    def encode(self, value, permit_dirtyness = False):
         """
         The encode method allows to quickly bring a QuantumVariable in a desired
         computational basis state.
@@ -580,6 +588,8 @@ class QuantumVariable:
         ----------
         value :
             A value supported by the encoder.
+        permit_dirtyness : bool, optional
+            Surpresses the error message when calling encode on dirty qubits.
 
         Returns
         -------
@@ -604,9 +614,10 @@ class QuantumVariable:
         """
 
         from qrisp.misc import check_if_fresh, int_encoder
-
-        if not check_if_fresh(self.reg, self.qs):
-            raise Exception("Tried to initialize qubits which are not fresh anymore.")
+        
+        if not permit_dirtyness:
+            if not check_if_fresh(self.reg, self.qs):
+                raise Exception("Tried to initialize qubits which are not fresh anymore.")
 
         int_encoder(self, self.encoder(value))
 
@@ -937,6 +948,7 @@ class QuantumVariable:
             outcome_labels = []
             for i in range(2**self.size):
                 temp = self.decoder(i)
+                
                 try:
                     hash(temp)
                 except TypeError:
@@ -946,8 +958,6 @@ class QuantumVariable:
 
                 outcome_labels.append(temp)
 
-            if outcome_labels[0] == int(self.size) * "0":
-                outcome_labels = list(range(2**self.size))
             plot_histogram(outcome_labels, counts, filename)
             plt.show()
 
@@ -983,11 +993,20 @@ class QuantumVariable:
 
     def __str__(self):
         return str(self.get_measurement())
-
+    
     def __repr__(self):
         return "<" + str(type(self)).split(".")[-1][:-2] + " '" + self.name + "'>"
         return str(type(self)).split(".")[-1][:-2] + "(name = " + self.name + ")"
         return str(self)
+    
+    def __del__(self):
+        i = 0
+        while i < len(self.live_qvs):
+            if self.live_qvs[i]() is None or id(self) == id(self.live_qvs[i]()):
+                self.live_qvs.pop(i)
+                continue
+            i += 1
+        
 
     def __len__(self):
         return self.size
@@ -1000,7 +1019,7 @@ class QuantumVariable:
         return q_eq(self, other)
 
     def __hash__(self):
-        return id(self)
+        return self.creation_time
 
     def __setitem__(self, key, value):
         if key != slice(None, None, None):
@@ -1345,7 +1364,7 @@ def plot_histogram(outcome_labels, counts, filename=None):
         except KeyError:
             res_list.append(0)
 
-    plt.bar(outcome_labels, res_list, width=1 / len(outcome_labels))
+    plt.bar(outcome_labels, res_list, width = 0.8/len(outcome_labels))
     plt.grid()
     plt.ylabel("Measurement probability")
     plt.xlabel("QuantumVariable value")

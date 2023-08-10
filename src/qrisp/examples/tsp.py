@@ -1,5 +1,5 @@
 """
-/********************************************************************************
+\********************************************************************************
 * Copyright (c) 2023 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -8,11 +8,11 @@
 *
 * This Source Code may also be made available under the following Secondary
 * Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2 
-* or later with the GNU Classpath Exception which is
+* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+* with the GNU Classpath Exception which is
 * available at https://www.gnu.org/software/classpath/license.html.
 *
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0
+* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************/
 """
 
@@ -166,6 +166,10 @@ grovers_alg(
     winner_state_amount=winner_state_amount,
 )  # Specify the estimated amount of winners
 # eval_distance_threshold(perm_specifiers , 5, 0.4)
+
+qc = perm_specifiers[0].qs.compile()
+print(qc.depth())
+print(qc.cnot_count())
 
 
 # %%
@@ -365,7 +369,6 @@ grovers_alg(
 # Retrieve measurement
 
 res = multi_measurement(perm_specifiers)
-
 
 # Check results
 # print(list(res)[0])

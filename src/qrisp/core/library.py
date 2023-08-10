@@ -1,5 +1,5 @@
 """
-/********************************************************************************
+\********************************************************************************
 * Copyright (c) 2023 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -8,11 +8,11 @@
 *
 * This Source Code may also be made available under the following Secondary
 * Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2 
-* or later with the GNU Classpath Exception which is
+* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+* with the GNU Classpath Exception which is
 * available at https://www.gnu.org/software/classpath/license.html.
 *
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0
+* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************/
 """
 
@@ -22,8 +22,8 @@ import numpy as np
 import qrisp.circuit.standard_operations as std_ops
 from qrisp.core import recursive_qs_search
 
-
 def append_operation(operation, qubits=[], clbits=[]):
+    
     qs_list = recursive_qs_search([qubits, clbits])
 
     if len(qs_list) == 0:
@@ -93,8 +93,6 @@ def h(qubits):
     """
     append_operation(std_ops.HGate(), [qubits])
 
-    # std_ops.HGate().append([qubits])
-
     return qubits
 
 
@@ -109,8 +107,6 @@ def x(qubits):
     """
 
     append_operation(std_ops.XGate(), [qubits])
-
-    # std_ops.XGate().append([qubits])
 
     return qubits
 
@@ -127,8 +123,6 @@ def y(qubits):
 
     append_operation(std_ops.YGate(), [qubits])
 
-    # std_ops.YGate().append([qubits])
-
     return qubits
 
 
@@ -143,7 +137,6 @@ def z(qubits):
     """
     append_operation(std_ops.ZGate(), [qubits])
 
-    # std_ops.ZGate().append([qubits])
     return qubits
 
 
@@ -595,8 +588,6 @@ def rx(phi, qubits):
 
     append_operation(std_ops.RXGate(phi), [qubits])
 
-    # std_ops.RXGate(phi).append([qubits])
-
     return qubits
 
 
@@ -615,8 +606,6 @@ def ry(phi, qubits):
 
     append_operation(std_ops.RYGate(phi), [qubits])
 
-    # std_ops.RYGate(phi).append([qubits])
-
     return qubits
 
 
@@ -634,8 +623,6 @@ def rz(phi, qubits):
     """
 
     append_operation(std_ops.RZGate(phi), [qubits])
-
-    # std_ops.RZGate(phi).append([qubits])
 
     return qubits
 
@@ -754,6 +741,86 @@ def gphase(phi, qubits):
     """
 
     append_operation(std_ops.GPhaseGate(phi), qubits)
+    return qubits
+
+
+
+def xxyy(phi, beta, qubits_0, qubits_1):
+    """
+    Applies an XXYY interaction gate.
+
+    Parameters
+    ----------
+    phi : float or sympy.Symbol
+        The global phase to apply.
+    beta : float or sympy.Symbol
+        The other angle parameter.
+    qubits_0 : Qubit or list[Qubit] or QuantumVariable
+        The first Qubit to perform the XXYY gate on.
+    qubits_1 : Qubit or list[Qubit] or QuantumVariable
+        The second Qubit to perform the XXYY gate on.
+    """
+
+    append_operation(std_ops.XXYYGate(phi, beta), [qubits_0, qubits_1])
+    return qubits_0, qubits_1
+
+
+def rzz(phi, qubits_0, qubits_1):
+    """
+    Applies an RZZ gate.
+
+    Parameters
+    ----------
+    phi : float or sympy.Symbol
+        The phase to apply.
+    beta : float or sympy.Symbol
+        The other angle parameter.
+    qubits_0 : Qubit or list[Qubit] or QuantumVariable
+        The first argument to perform the RZZ gate one.
+    qubits_1 : Qubit or list[Qubit] or QuantumVariable
+        The second argument to perform the RZZ gate one.
+    """
+
+    append_operation(std_ops.RZZGate(phi), [qubits_0, qubits_1])
+    return qubits_0, qubits_1
+
+def rxx(phi, qubits_0, qubits_1):
+    """
+    Applies an RXX gate.
+
+    Parameters
+    ----------
+    phi : float or sympy.Symbol
+        The phase to apply.
+    beta : float or sympy.Symbol
+        The other angle parameter.
+    qubits_0 : Qubit or list[Qubit] or QuantumVariable
+        The first argument to perform the RXX gate one.
+    qubits_1 : Qubit or list[Qubit] or QuantumVariable
+        The second argument to perform the RXX gate one.
+    """
+
+    append_operation(std_ops.RXXGate(phi), [qubits_0, qubits_1])
+    return qubits_0, qubits_1
+
+def u3(theta, phi, lam, qubits):
+    """
+    Applies an U3 gate.
+
+    Parameters
+    ----------
+    theta : float or sympy.Symbol
+        The first angle parameter.
+    phi : float or sympy.Symbol
+        The second angle parameter.
+    lambda : float or sympy.Symbol
+        The third angle parameter.
+    qubits : Qubit or list[Qubit] or QuantumVariable
+        The Qubit to perform the U3 gate on.
+    """
+
+    append_operation(std_ops.RZGate(phi), [qubits])
+
     return qubits
 
 
@@ -1065,24 +1132,24 @@ def QPE(
                 "Tried to perform quantum phase estimation without"
                 "precision specification"
             )
-        res = QuantumFloat(precision, -precision, signed=False)
+        qpe_res = QuantumFloat(precision, -precision, signed=False)
     else:
-        res = target
+        qpe_res = target
 
-    h(res)
+    h(qpe_res)
 
-    for i in range(res.size):
+    for i in range(qpe_res.size):
         if iter_spec:
-            with control(res[i], ctrl_method=ctrl_method):
+            with control(qpe_res[i], ctrl_method=ctrl_method):
                 U(args, iter=2**i, **kwargs)
         else:
-            with control(res[i], ctrl_method=ctrl_method):
+            with control(qpe_res[i], ctrl_method=ctrl_method):
                 for j in range(2**i):
                     U(args, **kwargs)
 
-    QFT(res, inv=True)
+    QFT(qpe_res, inv=True)
 
-    return res
+    return qpe_res
 
 
 def quantum_counting(qv, oracle, precision):
@@ -1191,7 +1258,6 @@ def HHL(qv, hamiltonian_evolution, ev_inversion, precision):
 
 def fredkin_qc(num_ctrl_qubits=1, ctrl_state=-1, method="gray"):
     from qrisp import QuantumCircuit, XGate
-
     mcx_gate = XGate().control().control(ctrl_state=ctrl_state, method=method)
 
     qc = QuantumCircuit(num_ctrl_qubits + 2)
@@ -1202,7 +1268,7 @@ def fredkin_qc(num_ctrl_qubits=1, ctrl_state=-1, method="gray"):
     return qc
 
 
-def demux(input, ctrl_qv, output=None, ctrl_method=None, permit_mismatching_size=False):
+def demux(input, ctrl_qv, output=None, ctrl_method=None, permit_mismatching_size=False, reduce_depth = False):
     """
     This functions allows moving an input value into an iterable output, where the
     position is specified by a ``QuantumFloat``. Demux is short for demultiplexer and
@@ -1234,6 +1300,9 @@ def demux(input, ctrl_qv, output=None, ctrl_method=None, permit_mismatching_size
     permit_mismatching_size : bool, optional
         If set to False, an exception will be raised, if the state-space dimension of
         `ctrl_qv`` is differing from the amount of outputs. The default is False.
+    reduce_depth : bool, optional
+        If set to True, this option reduces (de)allocates additional qubits to
+        reduce the depth. The default is False.
 
     Raises
     ------
@@ -1340,20 +1409,39 @@ def demux(input, ctrl_qv, output=None, ctrl_method=None, permit_mismatching_size
         return output
 
     if n > 1:
+        
+        if reduce_depth:
+            demux_ancilla = QuantumVariable(len(ctrl_qv)-1)
+            cx(ctrl_qv[:-1], demux_ancilla)
+            ctrl_qubits = list(demux_ancilla)
+        else:
+            ctrl_qubits = ctrl_qv[:-1]
+            
+        
         demux(
             output[0],
-            ctrl_qv[:-1],
+            ctrl_qubits,
+            #ctrl_qv[:-1],
             output[: N // 2],
             ctrl_method=ctrl_method,
             permit_mismatching_size=permit_mismatching_size,
+            reduce_depth=reduce_depth
         )
+        
+        
         demux(
             output[N // 2],
             ctrl_qv[:-1],
             output[N // 2 :],
             ctrl_method=ctrl_method,
             permit_mismatching_size=permit_mismatching_size,
+            reduce_depth=reduce_depth
         )
+        if reduce_depth:
+            cx(ctrl_qv[:-1], demux_ancilla)
+            demux_ancilla.delete()
+        
+
 
     return output
 
@@ -1380,3 +1468,213 @@ def q_swap_into(q_array, index, qv):
     swap(q_array[0], qv)
 
     demux(q_array[0], index, q_array, ctrl_method="gray_pt")
+
+
+
+def cyclic_shift(iterable, shift_amount = 1):
+    r"""
+    Performs a cyclic shift of the values of an iterable with logarithmic depth. 
+    The shifting amount can be specified.
+
+    
+    Parameters
+    ----------
+    iterable : list[Qubit] or list[QuantumVariable] or QuantumArray
+        The iterable to be shifted.
+    shift_amount : integer or QuantumFloat, optional
+        The iterable will be shifted by that amount. The default is 1.
+
+    Examples
+    --------
+    
+    We create a QuantumArray, initiate a sequence of increments and perform a cyclic shift.
+    
+    >>> from qrisp import QuantumFloat, QuantumArray, cyclic_shift
+    >>> import numpy as np
+    >>> qa = QuantumArray(QuantumFloat(3), 8)
+    >>> qa[:] = np.arange(8)
+    >>> cyclic_shift(qa, shift_amount = 2)
+    >>> print(qa)
+    {OutcomeArray([6, 7, 0, 1, 2, 3, 4, 5]): 1.0}
+    
+    We do something similar to demonstrate the shift by quantum values.
+    For this we initiate a :ref:`QuantumFloat` in the superposition of 0, 1 and -3.
+    
+    >>> shift_amount = QuantumFloat(3, signed = True)
+    >>> shift_amount[:] = {0 : 3**-0.5, 1: 3**-0.5, -3 : 3**-0.5}
+    >>> qa = QuantumArray(QuantumFloat(3), 8)
+    >>> qa[:] = np.arange(8)
+    >>> cyclic_shift(qa, shift_amount)
+    >>> print(qa)
+    {OutcomeArray([0, 1, 2, 3, 4, 5, 6, 7]): 0.3333, OutcomeArray([7, 0, 1, 2, 3, 4, 5, 6]): 0.3333, OutcomeArray([3, 4, 5, 6, 7, 0, 1, 2]): 0.3333}
+    """
+    
+    from qrisp import QuantumFloat, control, QuantumBool, cx
+    
+    if isinstance(shift_amount, QuantumFloat):
+        
+        if shift_amount.mshape[0] < 0:
+            raise Exception("Tried to quantum shift by non-integer QuantumFloat")
+        
+        if shift_amount.signed:
+            with control(shift_amount.sign()):
+                cyclic_shift(iterable, -2**(shift_amount.mshape[1]))
+            
+        for i in range(*shift_amount.mshape):
+            with control(shift_amount.significant(i)):
+                cyclic_shift(iterable, 2**i)
+    
+        return
+            
+    
+    
+    if len(iterable) == 0 or not shift_amount%len(iterable):
+        return
+    if shift_amount < 0:
+        return cyclic_shift(iterable[::-1], -shift_amount)
+    
+    if shift_amount != 1:
+        
+        perm = np.arange(len(iterable))
+        perm = (perm - shift_amount)%(len(iterable))
+        
+        permute_iterable(iterable, perm)
+        return
+    
+    n = np.log2(len(iterable))
+    
+    if n != np.floor(n):
+        n = int(np.floor(n))
+        
+        cyclic_shift(iterable[:2**n], shift_amount)
+        cyclic_shift([iterable[0]] + list(iterable[2**n:]), shift_amount)
+        return
+    
+    
+    correction_indices = []
+    for i in range(len(iterable)//2):
+        swap_tuple = (2*i, 2*i+1)
+        swap(iterable[swap_tuple[0]], iterable[swap_tuple[1]])
+        correction_indices.append(swap_tuple[0])
+    
+    cyclic_shift([iterable[i] for i in correction_indices], shift_amount)
+    
+
+def to_cycles(perm):
+    pi = {i: perm[i] for i in range(len(perm))}
+    cycles = []
+
+    while pi:
+        elem0 = next(iter(pi)) # arbitrary starting element
+        this_elem = pi[elem0]
+        next_item = pi[this_elem]
+
+        cycle = []
+        while True:
+            cycle.append(this_elem)
+            del pi[this_elem]
+            this_elem = next_item
+            if next_item in pi:
+                next_item = pi[next_item]
+            else:
+                break
+
+        cycles.append(cycle)
+
+    return cycles
+
+def permute_iterable(iterable, perm):
+    """
+    Applies an arbitrary permutation to an iterable with logarithmic depth.
+
+    Parameters
+    ----------
+    iterable : QuantumArray or List[QuantumVariable] or QuantumVariable or List[Qubit]
+        The iterable to perform the permutation on.
+    perm : List[integer]
+        A list specifying the permutation.
+
+    Examples
+    --------
+    
+    We create a QuantumArray containing increments and apply a specified permutation.
+    
+    >>> from qrisp import QuantumFloat, QuantumArray, permute_iterable
+    >>> import numpy as np
+    >>> qa = QuantumArray(QuantumFloat(3), 8)
+    >>> qa[:] = np.arange(8)
+    >>> permute_iterable(qa, perm = [1,0,3,7,5,2,6,4])
+    >>> print(qa)
+    {OutcomeArray([1, 0, 3, 7, 5, 2, 6, 4]): 1.0}
+    >>> print(qa.qs)
+    QuantumCircuit:
+    ---------------
+      qa.0: ────────────X──────────────────────
+                        │                      
+      qa.1: ──────X─────┼──────────────────────
+                  │     │                      
+      qa.2: ──────┼──X──┼──────────────────────
+            ┌───┐ │  │  │                      
+    qa_1.0: ┤ X ├─┼──┼──X──────────────────────
+            └───┘ │  │                         
+    qa_1.1: ──────X──┼─────────────────────────
+                     │                         
+    qa_1.2: ─────────X─────────────────────────
+    <BLANKLINE>                                           
+    qa_2.0: ───────────────────────────X───────
+            ┌───┐                      │       
+    qa_2.1: ┤ X ├──────────────────────┼──X────
+            └───┘                      │  │    
+    qa_2.2: ───────────────────────────┼──┼──X─
+            ┌───┐                      │  │  │ 
+    qa_3.0: ┤ X ├──────────X───────────┼──┼──┼─
+            ├───┤          │           │  │  │ 
+    qa_3.1: ┤ X ├──────────┼──X────────┼──┼──┼─
+            └───┘          │  │        │  │  │ 
+    qa_3.2: ───────────────┼──┼──X─────┼──┼──┼─
+                           │  │  │     │  │  │ 
+    qa_4.0: ──────X────────┼──┼──┼─────┼──┼──┼─
+                  │        │  │  │     │  │  │ 
+    qa_4.1: ──────┼──X─────┼──┼──┼─────┼──┼──┼─
+            ┌───┐ │  │     │  │  │     │  │  │ 
+    qa_4.2: ┤ X ├─┼──┼──X──┼──┼──┼─────┼──┼──┼─
+            ├───┤ │  │  │  │  │  │     │  │  │ 
+    qa_5.0: ┤ X ├─X──┼──┼──┼──┼──┼──X──X──┼──┼─
+            └───┘    │  │  │  │  │  │     │  │ 
+    qa_5.1: ─────────X──┼──┼──┼──┼──┼──X──X──┼─
+            ┌───┐       │  │  │  │  │  │     │ 
+    qa_5.2: ┤ X ├───────X──┼──┼──┼──┼──┼──X──X─
+            └───┘          │  │  │  │  │  │    
+    qa_6.0: ───────────────┼──┼──┼──┼──┼──┼────
+            ┌───┐          │  │  │  │  │  │    
+    qa_6.1: ┤ X ├──────────┼──┼──┼──┼──┼──┼────
+            ├───┤          │  │  │  │  │  │    
+    qa_6.2: ┤ X ├──────────┼──┼──┼──┼──┼──┼────
+            ├───┤          │  │  │  │  │  │    
+    qa_7.0: ┤ X ├──────────X──┼──┼──X──┼──┼────
+            ├───┤             │  │     │  │    
+    qa_7.1: ┤ X ├─────────────X──┼─────X──┼────
+            ├───┤                │        │    
+    qa_7.2: ┤ X ├────────────────X────────X────
+            └───┘                              
+    Live QuantumVariables:
+    ----------------------
+    QuantumFloat qa
+    QuantumFloat qa_1
+    QuantumFloat qa_2
+    QuantumFloat qa_3
+    QuantumFloat qa_4
+    QuantumFloat qa_5
+    QuantumFloat qa_6
+    QuantumFloat qa_7
+    
+    """
+    
+    from sympy.combinatorics import Permutation
+    
+    inv_perm = list(Permutation(perm)**-1)
+    
+    cycles = to_cycles(inv_perm)
+    
+    for c in cycles:
+        cyclic_shift([iterable[i] for i in c], 1)

@@ -3,7 +3,7 @@ Examples
 
 In this section, we provide a glimpse into the diverse range of applications that can be implemented using Qrisp. With these, we display how Qrisp provides a powerful and flexible platform for implementing and exploring quantum computing applications. These examples are designed to help you understand the capabilities of our language and inspire you to develop your own quantum computing applications.
 
-.. list-table:: Title
+.. list-table::
    :widths: 25 25
    :header-rows: 1
 
@@ -17,6 +17,8 @@ In this section, we provide a glimpse into the diverse range of applications tha
      - An example to demonstrate how to utilize the ``as_hamiltonian`` decorator.
    * - :ref:`HelloWorld`
      - An example to demonstrate the use of :ref:`QuantumStrings <QuantumString>` in the form of the well known "Hello world" script.
+   * - :ref:`SimulationExample`
+     - This example displays how to write a QC simulator that runs on a quantum computer itself.
    * - :ref:`InplaceMatrixMultiplication`
      - Showcases the use of the :meth:`qrisp.inplace_matrix_app` to apply an invertible classical matrix inplace to a quantum vector.
    * - :ref:`Loops`
@@ -40,6 +42,7 @@ In this section, we provide a glimpse into the diverse range of applications tha
    ExactGrover
    DiagonalHamiltonianApplication
    HelloWorld
+   SimulationExample
    InplaceMatrixMultiplication
    Loops
    MatrixMultiplication

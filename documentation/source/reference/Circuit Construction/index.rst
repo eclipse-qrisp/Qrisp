@@ -1,3 +1,5 @@
+.. _CircuitConstruction:
+
 Circuit Construction
 ====================
 

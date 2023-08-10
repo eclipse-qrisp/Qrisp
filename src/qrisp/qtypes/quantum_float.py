@@ -1,5 +1,5 @@
 """
-/********************************************************************************
+\********************************************************************************
 * Copyright (c) 2023 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -8,11 +8,11 @@
 *
 * This Source Code may also be made available under the following Secondary
 * Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2 
-* or later with the GNU Classpath Exception which is
+* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+* with the GNU Classpath Exception which is
 * available at https://www.gnu.org/software/classpath/license.html.
 *
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0
+* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************/
 """
 
@@ -31,6 +31,7 @@ from qrisp.arithmetic import (
     polynomial_encoder,
     q_mult,
     sbp_add,
+    quantum_bit_shift,
 )
 from qrisp.core import QuantumVariable
 from qrisp.misc import gate_wrap
@@ -235,7 +236,7 @@ class QuantumFloat(QuantumVariable):
         >>> print(c)
         {1: 1.0}
 
-    For inplace multiplications, only classical integers are allowed:
+    For inplace multiplications, only classical values are allowed:
 
     >>> a *= -3
     >>> print(a)
@@ -372,7 +373,7 @@ class QuantumFloat(QuantumVariable):
 
         return 2**self.exponent * poly
 
-    def encode(self, encoding_number, rounding=False):
+    def encode(self, encoding_number, rounding=False, permit_dirtyness=False):
         if rounding:
             # Round value to closest fitting number
             outcome_labels = [self.decoder(i) for i in range(2**self.size)]
@@ -380,7 +381,7 @@ class QuantumFloat(QuantumVariable):
                 np.argmin(np.abs(encoding_number - np.array(outcome_labels)))
             ]
 
-        super().encode(encoding_number)
+        super().encode(encoding_number, permit_dirtyness=permit_dirtyness)
 
     @gate_wrap(permeability="args", is_qfree=True)
     def __mul__(self, other):
@@ -603,6 +604,48 @@ class QuantumFloat(QuantumVariable):
         return neq(self, other)
 
     def exp_shift(self, shift):
+        """
+        Performs an internal bit shift. Note that this method doesn't cost any
+        quantum gates. For the quantum version of this method, see
+        :meth:`quantum_bit_shift<qrisp.QuantumFloat.quantum_bitshift>`.
+
+        Parameters
+        ----------
+        shift : int
+            The amount to shift.
+
+        Raises
+        ------
+        Exception
+            Tried to shift QuantumFloat exponent by non-integer value
+
+        Examples
+        --------
+        
+        We create a QuantumFloat and perform a bitshift:
+            
+        >>> from qrisp import QuantumFloat
+        >>> a = QuantumFloat(4)
+        >>> a[:] = 2
+        >>> a.exp_shift(2)
+        >>> print(a)
+        {8: 1.0}
+        >>> print(a.qs)
+        QuantumCircuit:
+        ---------------
+        a.0: ─────
+             ┌───┐
+        a.1: ┤ X ├
+             └───┘
+        a.2: ─────
+        <BLANKLINE>
+        a.3: ─────
+        <BLANKLINE>          
+        Live QuantumVariables:
+        ----------------------
+        QuantumFloat a
+        
+        """
         if not isinstance(shift, int):
             raise Exception("Tried to shift QuantumFloat exponent by non-integer value")
 
@@ -814,6 +857,96 @@ class QuantumFloat(QuantumVariable):
         decoder_values = np.array([self.decoder(i) for i in range(2**self.size)])
 
         return decoder_values[np.argmin(np.abs(decoder_values - x))]
+    
+    def get_ev(self, **mes_kwargs):
+        """
+        Retrieves the expectation value of self.
+
+        Parameters
+        ----------
+        **mes_kwargs : dict
+            Keyword arguments for the measurement. See :meth:`qrisp.QuantumVariable.get_measurement` for more information.
+
+        Returns
+        -------
+        float
+            The expectation value.
+            
+        Examples
+        --------
+        
+        We set up a QuantumFloat in uniform superposition and retrieve the expectation value:
+            
+        >>> from qrisp import QuantumFloat, h
+        >>> qf = QuantumFloat(4)
+        >>> h(qf)
+        >>> qf.get_ev()
+        7.5
+        
+        """
+        
+        mes_res = self.get_measurement(**mes_kwargs)
+        
+        return sum([k*v for k,v in mes_res.items()])
+    
+    def quantum_bit_shift(self, shift_amount):
+        """
+        Performs a bit shift in the quantum device.
+        While :meth:`exp_shift<qrisp.QuantumFloat.exp_shift>` performs a bit shift
+        in the compiler (thus costing no quantum gates) this method performs the
+        bitshift on the hardware.
+        
+        This has the advantage, that it can be controlled if called within a 
+        :ref:`ControlEnvironment` and furthermore admits bit shifts based on the
+        state of a QuantumFloat
+        
+        .. note::
+            
+            Bit bit shifts based on a QuantumFloat are currently only possible
+            if both self and ``shift_amount`` are unsigned.
+            
+        .. warning::
+            
+            Quantum bit shifting extends the QuantumFloat (ie. it allocates 
+            additional qubits).
+
+        Parameters
+        ----------
+        shift_amount : int or QuantumFloat
+            The amount to shift.
+        
+        Raises
+        ------
+        Exception
+            Tried to shift QuantumFloat exponent by non-integer value
+        Exception
+            Quantum-quantum bitshifting is currently only supported for unsigned arguments
+        
+        Examples
+        --------
+        
+        We create a QuantumFloat and a QuantumBool to perform a controlled bit shift.
+        
+        ::
+            
+            from qrisp import QuantumFloat, QuantumBool, h
+            qf = QuantumFloat(4)
+            qf[:] = 1
+            qbl = QuantumBool()
+            h(qbl)
+
+            with qbl:
+                qf.quantum_bit_shift(2)
+        
+        Evaluate the result
+        
+        >>> print(qf.qs.statevector())
+        sqrt(2)*(|1>*|False> + |4>*|True>)/2
+
+        """
+        quantum_bit_shift(self, shift_amount)
+        
+        
 
 
 def create_output_qf(operands, op):

@@ -1,12 +1,8 @@
-:root {
-  /*****************************************************************************
-  * Overall Layout Variables
-  */
+.custom-box {
+  position: relative;
+  transition: transform 0.2s ease-in-out;
+}
 
-  // Header height will impact the top offset for many sections
-  // Article header is 66% of Header
-  --pst-header-height: 12rem;
-  --pst-header-article-height: calc(var(--pst-header-height) * 2 / 3);
-  --pst-sidebar-secondary: 15rem;
-  --pst-font-size-base: 15px;
+.custom-box:hover {
+  transform: scale(1.05);
 }

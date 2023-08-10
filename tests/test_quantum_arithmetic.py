@@ -1,5 +1,5 @@
 """
-/********************************************************************************
+\********************************************************************************
 * Copyright (c) 2023 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -8,18 +8,18 @@
 *
 * This Source Code may also be made available under the following Secondary
 * Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2 
-* or later with the GNU Classpath Exception which is
+* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+* with the GNU Classpath Exception which is
 * available at https://www.gnu.org/software/classpath/license.html.
 *
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0
+* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************/
 """
 
 
 def test_quantum_arithmetic():
     import numpy as np
-    from qrisp import h, multi_measurement, q_div, QuantumFloat
+    from qrisp import h, multi_measurement, q_div, QuantumFloat, QuantumBool
 
     def test_arithmetic_helper(qf_0, qf_1, operation):
         qf_0 = qf_0.duplicate()
@@ -98,3 +98,20 @@ def test_quantum_arithmetic():
     h(b[-1])
     b *= -4
     assert b.get_measurement() == {116: 0.25, 120: 0.25, -12: 0.25, -8: 0.25}
+    
+    qf = QuantumFloat(4, signed = True)
+    qf[:] = 1
+
+    qbl = QuantumBool()
+
+    h(qbl)
+
+    with qbl:
+        qf *= -3*0.125
+    
+    assert qf.get_measurement() == {1.0: 0.5, -0.375: 0.5}
+
+    qf = QuantumFloat(4)
+    h(qf)
+    assert qf.get_ev() == 7.5
+            

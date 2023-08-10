@@ -7,7 +7,7 @@
 
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
     <title>Algorithms &#8212;   documentation</title>
   
@@ -31,6 +31,7 @@
 
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css" />
   
   <!-- Pre-loaded scripts that we'll load fully later -->
@@ -38,20 +39,18 @@
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52" />
 
     <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
-    <script src="../../_static/jquery.js"></script>
-    <script src="../../_static/underscore.js"></script>
-    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../../_static/doctools.js"></script>
     <script src="../../_static/sphinx_highlight.js"></script>
     <script src="../../_static/clipboard.min.js"></script>
     <script src="../../_static/copybutton.js"></script>
+    <script src="../../_static/design-tabs.js"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'reference/Algorithms/index';</script>
     <link rel="canonical" href="https://qrisp.eu/reference/Algorithms/index.html" />
-    <link rel="shortcut icon" href="../../_static/qrisp_favicon.png"/>
+    <link rel="icon" href="../../_static/qrisp_favicon.png"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="qrisp.QFT" href="generated/qrisp.QFT.html" />
+    <link rel="next" title="Quantum Fourier Transformation" href="QFT.html" />
     <link rel="prev" title="GMSEnvironment" href="../Quantum%20Environments/GMSEnvironment.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
@@ -103,7 +102,8 @@
     <span class="fa-solid fa-bars"></span>
   </label>
   
-  <div class="navbar-header-items__start">
+  
+  <div class="col-lg-3 navbar-header-items__start">
     
       <div class="navbar-item">
   
@@ -116,14 +116,13 @@
     
     
     
-    <img src="../../_static/logo_extended.png" class="logo__image only-light" alt="Logo image"/>
-    <script>document.write(`<img src="../../_static/logo_extended.png" class="logo__image only-dark" alt="Logo image"/>`);</script>
+    <img src="../../_static/qrisp_logo.png" class="logo__image only-light" alt="Logo image"/>
+    <script>document.write(`<img src="../../_static/qrisp_logo.png" class="logo__image only-dark" alt="Logo image"/>`);</script>
   
   
 </a></div>
     
   </div>
-  
   
   <div class="col-lg-9 navbar-header-items">
     
@@ -160,6 +159,13 @@
                 
 
                     <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../general/changelog/index.html">
+                        Changelog
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
                       <a class="nav-link nav-internal" href="../../general/imprint.html">
                         Imprint
                       </a>
@@ -178,7 +184,7 @@
 <script>
 document.write(`
   <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <i class="fa-solid fa-magnifying-glass"></i>
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
   </button>
 `);
 </script>
@@ -196,8 +202,8 @@ document.write(`
           
           
           
-          <a href="https://github.com/fraunhoferfokus/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square"></i></span>
-            <label class="sr-only">GitHub</label></a>
+          <a href="https://github.com/fraunhoferfokus/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square fa-lg" aria-hidden="true"></i></span>
+            <span class="sr-only">GitHub</span></a>
         </li>
 </ul></div>
       
@@ -210,13 +216,17 @@ document.write(`
 <script>
 document.write(`
   <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <i class="fa-solid fa-magnifying-glass"></i>
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
   </button>
 `);
 </script>
     </div>
   
 
+  
+    <label class="sidebar-toggle secondary-toggle" for="__secondary">
+      <span class="fa-solid fa-outdent"></span>
+    </label>
   
 </div>
 
@@ -265,6 +275,13 @@ document.write(`
                 
 
                     <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../general/changelog/index.html">
+                        Changelog
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
                       <a class="nav-link nav-internal" href="../../general/imprint.html">
                         Imprint
                       </a>
@@ -290,8 +307,8 @@ document.write(`
           
           
           
-          <a href="https://github.com/fraunhoferfokus/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square"></i></span>
-            <label class="sr-only">GitHub</label></a>
+          <a href="https://github.com/fraunhoferfokus/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square fa-lg" aria-hidden="true"></i></span>
+            <span class="sr-only">GitHub</span></a>
         </li>
 </ul></div>
         
@@ -326,12 +343,16 @@ document.write(`
 <li class="toctree-l1"><a class="reference internal" href="../Quantum%20Types/index.html">Quantum Types</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../Quantum%20Environments/index.html">Quantum Environments</a></li>
 <li class="toctree-l1 current active has-children"><a class="current reference internal" href="#">Algorithms</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-1"><i class="fa-solid fa-chevron-down"></i></label><ul>
-<li class="toctree-l2"><a class="reference internal" href="generated/qrisp.QFT.html">qrisp.QFT</a></li>
-<li class="toctree-l2"><a class="reference internal" href="generated/qrisp.QPE.html">qrisp.QPE</a></li>
-<li class="toctree-l2"><a class="reference internal" href="generated/qrisp.quantum_counting.html">qrisp.quantum_counting</a></li>
-<li class="toctree-l2"><a class="reference internal" href="generated/qrisp.HHL.html">qrisp.HHL</a></li>
-<li class="toctree-l2"><a class="reference internal" href="generated/qrisp.demux.html">qrisp.demux</a></li>
-<li class="toctree-l2"><a class="reference internal" href="generated/qrisp.grover.grovers_alg.html">qrisp.grover.grovers_alg</a></li>
+<li class="toctree-l2"><a class="reference internal" href="QFT.html">Quantum Fourier Transformation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="QPE.html">Quantum Phase Estimation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="grover.grovers_alg.html">Grover’s Algorithm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="QuantumBacktrackingTree.html">Quantum Backtracking</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="quantum_counting.html">Quantum Counting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="HHL.html">HHL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="demux.html">Iterable Demuxing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cyclic_shift.html">Iterable Shifting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="iterable_permutation.html">Iterable Permutation</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../Circuit%20Construction/index.html">Circuit Construction</a></li>
@@ -399,32 +420,8 @@ document.write(`
   <section id="algorithms">
 <h1>Algorithms<a class="headerlink" href="#algorithms" title="Permalink to this heading">#</a></h1>
 <p>This submodule provides a collection of commonly used quantum algorithms that can be used to solve a variety of computational problems.</p>
-<table class="autosummary longtable table autosummary">
-<colgroup>
-<col style="width: 10%" />
-<col style="width: 90%" />
-</colgroup>
-<tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.QFT.html#qrisp.QFT" title="qrisp.QFT"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QFT</span></code></a>(qv[, inv, exec_swap, qiskit_endian, ...])</p></td>
-<td><p>Performs the quantum fourier transform on the input.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/qrisp.QPE.html#qrisp.QPE" title="qrisp.QPE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QPE</span></code></a>(args, U[, precision, target, iter_spec, ...])</p></td>
-<td><p>Evaluates the <a class="reference external" href="https://en.wikipedia.org/wiki/Quantum_phase_estimation_algorithm">quantum phase estimation algorithm</a>.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.quantum_counting.html#qrisp.quantum_counting" title="qrisp.quantum_counting"><code class="xref py py-obj docutils literal notranslate"><span class="pre">quantum_counting</span></code></a>(qv, oracle, precision)</p></td>
-<td><p>This algorithm estimates the amount of solutions for a given Grover oracle.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/qrisp.HHL.html#qrisp.HHL" title="qrisp.HHL"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HHL</span></code></a>(qv, hamiltonian_evolution, ev_inversion, ...)</p></td>
-<td><p>Evaluates the HHL algorithm.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.demux.html#qrisp.demux" title="qrisp.demux"><code class="xref py py-obj docutils literal notranslate"><span class="pre">demux</span></code></a>(input, ctrl_qv[, output, ctrl_method, ...])</p></td>
-<td><p>This functions allows moving an input value into an iterable output, where the position is specified by a <code class="docutils literal notranslate"><span class="pre">QuantumFloat</span></code>.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../Miscellaneous%20Functions/generated/qrisp.grover.grovers_alg.html#qrisp.grover.grovers_alg" title="qrisp.grover.grovers_alg"><code class="xref py py-obj docutils literal notranslate"><span class="pre">grover.grovers_alg</span></code></a>(qv_list, oracle_function)</p></td>
-<td><p>Applies Grover's algorithm to a given oracle (in the form of a Python function).</p></td>
-</tr>
-</tbody>
-</table>
+<div class="toctree-wrapper compound">
+</div>
 </section>
 
 
@@ -435,6 +432,21 @@ document.write(`
             </div>
             
             
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://join.slack.com/t/qrisp-workspace/shared_invite/zt-20yv9bbvo-igspbQpslCBK9ZlYSVijsw">Slack workspace.</a></p>
+    </div>
+  </div>
+</div>
+
+</div></div>
               
             
           </div>
@@ -466,7 +478,7 @@ document.write(`
       
         <div class="footer-item">
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.3.0.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 6.2.1.
     <br/>
   </p>
 </div>
@@ -477,7 +489,7 @@ document.write(`
     <div class="footer-items__end">
       
         <div class="footer-item"><p class="theme-version">
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.13.3.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.13.4dev0.
 </p></div>
       
     </div>

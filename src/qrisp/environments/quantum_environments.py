@@ -1,5 +1,5 @@
 """
-/********************************************************************************
+\********************************************************************************
 * Copyright (c) 2023 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -8,11 +8,11 @@
 *
 * This Source Code may also be made available under the following Secondary
 * Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2 
-* or later with the GNU Classpath Exception which is
+* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+* with the GNU Classpath Exception which is
 * available at https://www.gnu.org/software/classpath/license.html.
 *
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0
+* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************/
 """
 
@@ -370,7 +370,7 @@ class QuantumEnvironment:
         self.active_qs_list = QuantumSession.get_active_quantum_sessions()
         for qs in self.active_qs_list:
             # Append self to the environment stack of the QuantumSession
-            qs.env_stack.append(self)
+            qs().env_stack.append(self)
 
         # Start the dumping process
         self.start_dumping()
@@ -386,7 +386,8 @@ class QuantumEnvironment:
 
         for i in range(len(self.active_qs_list)):
             # Remove from the environment stack
-            self.active_qs_list[i].env_stack.pop(-1)
+            if self.active_qs_list[i]() is not None:
+                self.active_qs_list[i]().env_stack.pop(-1)
 
         if not hasattr(self, "manual_allocation_management"):
             # Create a list which will store deallocation gates

@@ -1,5 +1,5 @@
 """
-/********************************************************************************
+\********************************************************************************
 * Copyright (c) 2023 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -8,11 +8,11 @@
 *
 * This Source Code may also be made available under the following Secondary
 * Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2 
-* or later with the GNU Classpath Exception which is
+* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+* with the GNU Classpath Exception which is
 * available at https://www.gnu.org/software/classpath/license.html.
 *
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0
+* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************/
 """
 
@@ -359,8 +359,9 @@ class ConditionEnvironment(QuantumEnvironment):
         # we use the second qubit to compute the toffoli of this one and the parent
         # environments truth value in order to not have the environment operations
         # controlled on two qubits
-
-        if len(self.env_data):
+        if len(self.env_data) == 0:
+            self.qbool.delete()
+        else:
             # The first step we have to perform is calculating the truth value of
             # this environments quantum condition. For this we differentiate between
             # the case that this condition is embedded in another condition or not
@@ -542,7 +543,7 @@ class ConditionEnvironment(QuantumEnvironment):
                 if isinstance(self.env_qs.data[-1], QuantumEnvironment):
                     env = self.env_qs.data.pop(-1)
                     env.compile()
-
+                
                 cond_eval_bool.delete()
 
 
@@ -582,7 +583,7 @@ def adaptive_condition(cond_eval_function):
 
         uncomputed_function = auto_uncompute(cond_eval_function)
 
-        if calling_line.split(" ")[0] == "with":
+        if calling_line.split(" ")[0] == "with" and "&" not in calling_line and "|" not in calling_line and "~" not in calling_line:
             return quantum_condition(uncomputed_function)(*args, **kwargs)
         else:
             return uncomputed_function(*args, **kwargs)

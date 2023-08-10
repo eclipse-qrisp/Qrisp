@@ -107,7 +107,7 @@ It is also possible to run Qrisp code directly on IBM Q hardware using a :ref:`V
 
 >>> from qiskit_ibm_provider import IBMProvider
 >>> provider = IBMProvider(YOUR_APITOKEN)
->>> kolkata_qiskit = provider.get_backend("ibmq_kolkata")
+>>> kolkata_qiskit = provider.get_backend("ibm_lagos")
 >>> from qrisp import VirtualQiskitBackend
 >>> kolkata_qrisp = VirtualQiskitBackend(kolkata_qiskit)
 >>> results = qch.get_measurement(backend = kolkata_qrisp)

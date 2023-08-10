@@ -1,5 +1,5 @@
 """
-/********************************************************************************
+\********************************************************************************
 * Copyright (c) 2023 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -8,11 +8,11 @@
 *
 * This Source Code may also be made available under the following Secondary
 * Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2 
-* or later with the GNU Classpath Exception which is
+* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+* with the GNU Classpath Exception which is
 * available at https://www.gnu.org/software/classpath/license.html.
 *
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0
+* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************/
 """
 
@@ -24,8 +24,8 @@ import numpy as np
 from qrisp.circuit import transpile
 from qrisp.core import QuantumVariable
 from qrisp.misc import bin_rep
-from qrisp.environments.temp_var_environment import temp_qv
-
+# from qrisp.environments.temp_var_environment import temp_qv
+from qrisp.environments import conjugate
 
 class QuantumArray(np.ndarray):
     """
@@ -221,7 +221,7 @@ class QuantumArray(np.ndarray):
 
         # Set data size
         obj.msize = qtype.size
-        obj.qtype = qtype.duplicate(name=obj.name)
+        obj.qtype = qtype
 
         if qs is None:
             from qrisp.core import QuantumSession
@@ -233,8 +233,10 @@ class QuantumArray(np.ndarray):
         indices = list(product(*[list(range(i)) for i in shape]))
 
         for i in indices:
-            temp_dup = qtype.duplicate(qs=qs)
+            
+            temp_dup = qtype.duplicate(name = obj.name + "*", qs=qs)
             np.ndarray.__setitem__(obj, i, temp_dup)
+            
         obj.qs = qs
 
         return obj
@@ -910,7 +912,7 @@ class QuantumArray(np.ndarray):
         return list(self.get_measurement(**kwargs))[0]
 
 
-@temp_qv
+@conjugate
 def manipulate_array(q_array, index):
     from qrisp import QuantumFloat, demux, invert
 

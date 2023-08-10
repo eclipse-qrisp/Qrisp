@@ -1,5 +1,5 @@
 """
-/********************************************************************************
+\********************************************************************************
 * Copyright (c) 2023 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -8,11 +8,11 @@
 *
 * This Source Code may also be made available under the following Secondary
 * Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2 
-* or later with the GNU Classpath Exception which is
+* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+* with the GNU Classpath Exception which is
 * available at https://www.gnu.org/software/classpath/license.html.
 *
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0
+* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************/
 """
 
@@ -24,7 +24,7 @@ import threading
 import numpy as np
 from numba import njit
 
-from qrisp.circuit import Instruction, QuantumCircuit, transpile
+from qrisp.circuit import Instruction, QuantumCircuit, transpile, Reset
 
 memory_bandwidth_penalty = 2
 
@@ -483,11 +483,9 @@ def count_measurements_and_treat_alloc(qc, insert_reset=True):
             qc.data.pop(i)
             continue
         elif instr.op.name == "qb_dealloc":
+            qc.data.pop(i)
             if insert_reset:
-                instr.op.name = "reset"
-            else:
-                qc.data.pop(i)
-                continue
+                qc.data.insert(i, Instruction(Reset(), qubits = instr.qubits))
 
         i += 1
     return counter

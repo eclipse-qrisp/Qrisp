@@ -1,5 +1,5 @@
 """
-/********************************************************************************
+\********************************************************************************
 * Copyright (c) 2023 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -8,11 +8,11 @@
 *
 * This Source Code may also be made available under the following Secondary
 * Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2 
-* or later with the GNU Classpath Exception which is
+* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+* with the GNU Classpath Exception which is
 * available at https://www.gnu.org/software/classpath/license.html.
 *
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0
+* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************/
 """
 
@@ -176,6 +176,14 @@ class QuantumBool(QuantumVariable):
 
         x(self)
         return self
+    
+    def __invert__(self):
+        inverted_qbl = QuantumBool()
+        from qrisp import cx
+        cx(self, inverted_qbl)
+        inverted_qbl.flip()
+        return inverted_qbl
+        
 
     def __enter__(self):
         self.env = control(self)
@@ -191,3 +199,6 @@ class QuantumBool(QuantumVariable):
         self.env.__exit__(a, b, c)
         if ref_count == 5:
             self.uncompute()
+            
+    def __bool__(self):
+        raise Exception("Tried to convert QuantumBool to classical bool (probable due using the and + or keywords - try using & + | instead)")

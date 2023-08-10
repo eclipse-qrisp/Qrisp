@@ -1,0 +1,77 @@
+.. _v0.2:
+
+Qrisp 0.2
+=========
+
+We're excited to unveil a range of new and innovative features that will elevate your quantum programming experience. From powerful new modules to streamlined workflows, this release is designed to empower you in unlocking the full potential of quantum computing. Read on to discover the advancements that await you in the first Qrisp update!
+
+Quantum Backtracking module
+---------------------------
+
+Our latest Qrisp update introduces a :ref:`module for quantum backtracking algorithms<QuantumBacktrackingTree>`.
+This module offers a versatile framework for executing `backtracking algorithms in a quantum context 
+<https://en.wikipedia.org/wiki/Backtracking>`_, with applications ranging from solving combinatorial 
+optimization problems like 3-SAT to addressing challenges like TSP. The quantum backtracking module 
+enables a straightforward 1-to-1 correspondence to classical backtracking algorithms.
+
+The core of this module revolves around a central data structure called :ref:`QuantumBacktrackingTree<QuantumBacktrackingTree>`
+designed to facilitate backtracking algorithms in the quantum realm. These algorithms operate under 
+a common structure, featuring a predefined maximum recursion depth, the crucial accept and reject functions,
+and a set of feasible assignments for an iterable.
+
+:ref:`ConjugationEnvironment`
+-----------------------------
+
+Operator conjugation is a procedure, that is present in `many <https://arxiv.org/abs/quant-ph/9605043>`_ `quantum <https://arxiv.org/abs/1509.02374>`_ `algorithms <https://arxiv.org/abs/quant-ph/0008033>`_.
+The :ref:`ConjugationEnvironment` not only helps to structure your codebase but can also improve performance,
+when embedded into a :ref:`ControlEnvironment` or a :ref:`ConditionEnvironment`.
+
+
+
+:ref:`IterationEnvironment`
+---------------------------
+
+This environment can be used as a drop-in replacement for arbitrary loops.
+The purpose of the :ref:`IterationEnvironment` is mostly to mitigate compile time bottlenecks by
+compiling only a single iteration and then simply duplicate the instructions for
+the remaining iteration.
+
+The ``precompile`` feature of this QuantumEnvironment allows an even stronger reduction in
+compile time. If this keyword argument is set to ``True``, the :meth:`.compile method<qrisp.QuantumSession.compile>` 
+is called on the environments content.
+
+
+Conversion of circuits with abstract parameters
+-----------------------------------------------
+
+* Added functionality to enable conversion between parametrized Qrisp :ref:`QuantumCircuits<QuantumCircuit>` parametrized to Qiskit QuantumCircuits and the other way around. This feature can be accessed by simply calling the established methods: :meth:`.to_qiskit<qrisp.QuantumCircuit.to_qiskit>` and :meth:`.from_qiskit<qrisp.QuantumCircuit.from_qiskit>`.
+* Parametrized circuits can be printed now.
+
+Minor Features
+--------------
+
+* Implemented :meth:`cyclic_shift<qrisp.cyclic_shift>`.
+* Implemented :meth:`permute_iterable<qrisp.permute_iterable>`.
+* Implemented the :meth:`quantum_bit_shift<qrisp.QuantumFloat.quantum_bit_shift>` method for QuantumFloat.
+* Implemented the ``reduce_depth`` feature for :meth:`demux<qrisp.demux>`.
+* Implemented the ``invert`` feature for :ref:`ControlEnvironment`.
+* Implemented the :meth:`get_ev <qrisp.QuantumFloat.get_ev>` method to retrieve expectation values of QuantumFloats.
+* Gate application functions now also work on QuantumArrays.
+
+
+
+Bug fixes
+---------
+
+* Simulation requests are no longer transferred through the network interface.
+* The Qrisp simulator will now generate stochastic noise if queried with shots < 10000.
+* QuantumFloat in-place multiplication now uses a quantum bit shift instead of the compiler bit shift.
+* Fixed a bug that in some situtations prevented proper uncomputation within quantum environments.
+* Fixed a bug that caused an unintentional phase in the ``balauca_dirty`` mcx function.
+* Some parts of the simulator used ``np.complex64`` while others used ``np.complex128``. The datatype can now be chosen.
+* Fixed a bug that prevent proper control state specification on control environments.
+* Fixed a bug that in some situations caused multiple uncomputations for QuantumVariables that were uncomputed within quantum environments.
+* Fixed a bug that prevented proper control state specification in ControlEnvironments that only operate on a single control qubit.
+* Fixed an issue that caused a memory leak: a QuantumEnvironment attribute kept references to unreachable quantum session objects alive.
+* Fixed QFT cancellation issue yielding erroneous result in loop example.
+* Unintetional conversion of QuantumBools to regular bools using the __bool__ method, now results in an Exception.

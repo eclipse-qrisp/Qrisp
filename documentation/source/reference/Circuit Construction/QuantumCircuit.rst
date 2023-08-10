@@ -101,6 +101,7 @@ Operation application methods
    QuantumCircuit.sx_dg
    QuantumCircuit.rxx
    QuantumCircuit.rzz
+   QuantumCircuit.xxyy
    QuantumCircuit.reset
    QuantumCircuit.unitary
    QuantumCircuit.gphase

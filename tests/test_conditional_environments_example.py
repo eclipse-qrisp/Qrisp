@@ -1,5 +1,5 @@
 """
-/********************************************************************************
+\********************************************************************************
 * Copyright (c) 2023 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -8,16 +8,16 @@
 *
 * This Source Code may also be made available under the following Secondary
 * Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2 
-* or later with the GNU Classpath Exception which is
+* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+* with the GNU Classpath Exception which is
 * available at https://www.gnu.org/software/classpath/license.html.
 *
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0
+* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************/
 """
 
 # Created by ann81984 at 29.04.2022
-import pytest
+# import pytest
 import numpy
 
 from qrisp.interface import VirtualQiskitBackend
@@ -30,6 +30,8 @@ from qrisp import (
     h,
     OutcomeArray,
     multi_measurement,
+    auto_uncompute,
+    invert
 )
 
 
@@ -149,3 +151,22 @@ def test_conditional_environments_example():
             print(d.qs)
 
     assert len(a.qs.qv_list) == 4
+    
+    @auto_uncompute
+    def test_function(qf_a, qbl):
+        
+        with qf_a == 0:
+            x(qbl)
+        
+        # print(qbl.qs)
+        return qbl
+        
+    qf_a = QuantumFloat(2)
+    qbl = QuantumBool()
+
+    # qf_a[:] = 3
+
+    with invert():
+        test_function(qf_a, qbl)
+        
+    print(qf_a.qs)

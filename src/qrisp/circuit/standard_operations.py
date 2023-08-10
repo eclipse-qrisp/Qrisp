@@ -1,5 +1,5 @@
 """
-/********************************************************************************
+\********************************************************************************
 * Copyright (c) 2023 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -8,11 +8,11 @@
 *
 * This Source Code may also be made available under the following Secondary
 * Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2 
-* or later with the GNU Classpath Exception which is
+* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+* with the GNU Classpath Exception which is
 * available at https://www.gnu.org/software/classpath/license.html.
 *
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0
+* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************/
 """
 
@@ -173,6 +173,28 @@ def RZZGate(phi=0):
         name="rzz", num_qubits=2, num_clbits=0, params=[phi], definition=qc
     )
 
+def XXYYGate(phi=0, beta=0):
+    from qrisp.circuit.quantum_circuit import QuantumCircuit
+
+    qc = QuantumCircuit(2)
+    qc.rz(beta, 0)
+    qc.rz(-np.pi/2, 1)
+    qc.sx(1)
+    qc.rz(np.pi/2, 1)
+    qc.s(0)
+    qc.cx(1,0)
+    qc.ry(-phi/2, 1)
+    qc.ry(-phi/2, 0)
+    qc.cx(1,0)
+    qc.s_dg(0)
+    qc.rz(-np.pi/2,1)
+    qc.sx_dg(1)
+    qc.rz(np.pi/2,1)
+    qc.rz(-beta,0)
+
+    return Operation(
+        name="xxyy", num_qubits=2, num_clbits=0, params=[phi,beta], definition=qc
+    )
 
 def Barrier(num_qubits=1):
     res = Operation(num_qubits=num_qubits, name="barrier")
@@ -267,6 +289,7 @@ op_list = [
     RZZGate,
     SXGate,
     SXDGGate,
+    XXYYGate,
     Barrier,
     Measurement,
     Reset,

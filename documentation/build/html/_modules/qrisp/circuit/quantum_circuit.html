@@ -30,6 +30,7 @@
 
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/css/custom.css" />
   
   <!-- Pre-loaded scripts that we'll load fully later -->
@@ -37,17 +38,15 @@
 <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52" />
 
     <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
-    <script src="../../../_static/jquery.js"></script>
-    <script src="../../../_static/underscore.js"></script>
-    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../../../_static/doctools.js"></script>
     <script src="../../../_static/sphinx_highlight.js"></script>
     <script src="../../../_static/clipboard.min.js"></script>
     <script src="../../../_static/copybutton.js"></script>
+    <script src="../../../_static/design-tabs.js"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/qrisp/circuit/quantum_circuit';</script>
     <link rel="canonical" href="https://qrisp.eu/_modules/qrisp/circuit/quantum_circuit.html" />
-    <link rel="shortcut icon" href="../../../_static/qrisp_favicon.png"/>
+    <link rel="icon" href="../../../_static/qrisp_favicon.png"/>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -100,7 +99,8 @@
     <span class="fa-solid fa-bars"></span>
   </label>
   
-  <div class="navbar-header-items__start">
+  
+  <div class="col-lg-3 navbar-header-items__start">
     
       <div class="navbar-item">
   
@@ -113,14 +113,13 @@
     
     
     
-    <img src="../../../_static/logo_extended.png" class="logo__image only-light" alt="Logo image"/>
-    <script>document.write(`<img src="../../../_static/logo_extended.png" class="logo__image only-dark" alt="Logo image"/>`);</script>
+    <img src="../../../_static/qrisp_logo.png" class="logo__image only-light" alt="Logo image"/>
+    <script>document.write(`<img src="../../../_static/qrisp_logo.png" class="logo__image only-dark" alt="Logo image"/>`);</script>
   
   
 </a></div>
     
   </div>
-  
   
   <div class="col-lg-9 navbar-header-items">
     
@@ -157,6 +156,13 @@
                 
 
                     <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../general/changelog/index.html">
+                        Changelog
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
                       <a class="nav-link nav-internal" href="../../../general/imprint.html">
                         Imprint
                       </a>
@@ -175,7 +181,7 @@
 <script>
 document.write(`
   <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <i class="fa-solid fa-magnifying-glass"></i>
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
   </button>
 `);
 </script>
@@ -193,8 +199,8 @@ document.write(`
           
           
           
-          <a href="https://github.com/fraunhoferfokus/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square"></i></span>
-            <label class="sr-only">GitHub</label></a>
+          <a href="https://github.com/fraunhoferfokus/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square fa-lg" aria-hidden="true"></i></span>
+            <span class="sr-only">GitHub</span></a>
         </li>
 </ul></div>
       
@@ -207,13 +213,17 @@ document.write(`
 <script>
 document.write(`
   <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <i class="fa-solid fa-magnifying-glass"></i>
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
   </button>
 `);
 </script>
     </div>
   
 
+  
+    <label class="sidebar-toggle secondary-toggle" for="__secondary">
+      <span class="fa-solid fa-outdent"></span>
+    </label>
   
 </div>
 
@@ -262,6 +272,13 @@ document.write(`
                 
 
                     <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../general/changelog/index.html">
+                        Changelog
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
                       <a class="nav-link nav-internal" href="../../../general/imprint.html">
                         Imprint
                       </a>
@@ -287,8 +304,8 @@ document.write(`
           
           
           
-          <a href="https://github.com/fraunhoferfokus/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square"></i></span>
-            <label class="sr-only">GitHub</label></a>
+          <a href="https://github.com/fraunhoferfokus/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square fa-lg" aria-hidden="true"></i></span>
+            <span class="sr-only">GitHub</span></a>
         </li>
 </ul></div>
         
@@ -370,15 +387,21 @@ document.write(`
                   
   <h1>Source code for qrisp.circuit.quantum_circuit</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">/*********************************************************************</span>
-<span class="sd">* Copyright (c) 2023 the Qrisp Authors</span>
+<span class="sd">\********************************************************************************</span>
+<span class="sd">* Copyright (c) 2023 the Qrisp authors</span>
 <span class="sd">*</span>
-<span class="sd">* This program and the accompanying materials are made</span>
-<span class="sd">* available under the terms of the Eclipse Public License 2.0</span>
-<span class="sd">* which is available at https://www.eclipse.org/legal/epl-2.0/</span>
+<span class="sd">* This program and the accompanying materials are made available under the</span>
+<span class="sd">* terms of the Eclipse Public License 2.0 which is available at</span>
+<span class="sd">* http://www.eclipse.org/legal/epl-2.0.</span>
 <span class="sd">*</span>
-<span class="sd">* SPDX-License-Identifier: EPL-2.0</span>
-<span class="sd">**********************************************************************/</span>
+<span class="sd">* This Source Code may also be made available under the following Secondary</span>
+<span class="sd">* Licenses when the conditions for such availability set forth in the Eclipse</span>
+<span class="sd">* Public License, v. 2.0 are satisfied: GNU General Public License, version 2</span>
+<span class="sd">* with the GNU Classpath Exception which is</span>
+<span class="sd">* available at https://www.gnu.org/software/classpath/license.html.</span>
+<span class="sd">*</span>
+<span class="sd">* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0</span>
+<span class="sd">********************************************************************************/</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
 
@@ -870,10 +893,6 @@ document.write(`
 
     <span class="c1"># Printing method</span>
     <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">abstract_params</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
-                <span class="s2">&quot;Tried to print QuantumCircuit with unspecified abstract parameters&quot;</span>
-            <span class="p">)</span>
 
         <span class="kn">from</span> <span class="nn">qiskit.visualization.circuit_visualization</span> <span class="kn">import</span> <span class="n">circuit_drawer</span>
 
@@ -2110,6 +2129,26 @@ document.write(`
             <span class="k">return</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ops</span><span class="o">.</span><span class="n">RZZGate</span><span class="p">(</span><span class="n">phi</span><span class="p">),</span> <span class="p">[</span><span class="n">qubits_0</span><span class="p">,</span> <span class="n">qubits_1</span><span class="p">])</span></div>
 
+<div class="viewcode-block" id="QuantumCircuit.xxyy"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.xxyy.html#qrisp.QuantumCircuit.xxyy">[docs]</a>    <span class="k">def</span> <span class="nf">xxyy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phi</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="n">qubits_0</span><span class="p">,</span> <span class="n">qubits_1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Instruct an XXYY-gate.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        phi : float or sympy.Symbol</span>
+<span class="sd">            The angle parameter.</span>
+<span class="sd">        beta : float or sympi.Symbol</span>
+<span class="sd">            The other angle parameter</span>
+<span class="sd">        qubits_0 : Qubit</span>
+<span class="sd">            The Qubit to apply the gate on.</span>
+<span class="sd">        qubits_1 : Qubit</span>
+<span class="sd">            The other Qubit to apply the gate on.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">phi</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ops</span><span class="o">.</span><span class="n">XXYYGate</span><span class="p">(</span><span class="n">phi</span><span class="p">,</span> <span class="n">beta</span><span class="p">),</span> <span class="p">[</span><span class="n">qubits_0</span><span class="p">,</span> <span class="n">qubits_1</span><span class="p">])</span></div>
+
 <div class="viewcode-block" id="QuantumCircuit.swap"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.swap.html#qrisp.QuantumCircuit.swap">[docs]</a>    <span class="k">def</span> <span class="nf">swap</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">qubits_0</span><span class="p">,</span> <span class="n">qubits_1</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Instruct a SWAP-gate.</span>
@@ -2395,12 +2434,16 @@ document.write(`
 <span class="c1"># Converts various inputs (eg. integers, qubits or quantum variables) to lists of qubit</span>
 <span class="c1"># used in the append method of QuantumCircuit and QuantumSession</span>
 <span class="k">def</span> <span class="nf">convert_to_qb_list</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">circuit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">top_level</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="kn">from</span> <span class="nn">qrisp</span> <span class="kn">import</span> <span class="n">QuantumArray</span>
+    
     <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">input</span><span class="o">.</span><span class="vm">__class__</span><span class="p">,</span> <span class="n">Qubit</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">top_level</span><span class="p">:</span>
             <span class="n">result</span> <span class="o">=</span> <span class="p">[</span><span class="nb">input</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">result</span> <span class="o">=</span> <span class="nb">input</span>
-
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">QuantumArray</span><span class="p">):</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">qv</span><span class="o">.</span><span class="n">reg</span> <span class="k">for</span> <span class="n">qv</span> <span class="ow">in</span> <span class="nb">input</span><span class="o">.</span><span class="n">flatten</span><span class="p">()],</span> <span class="p">[])</span>
+        
     <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="s2">&quot;__iter__&quot;</span><span class="p">):</span>
         <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="nb">input</span><span class="p">)):</span>
@@ -2456,6 +2499,21 @@ document.write(`
             
             
               
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+  <div class="sidebar-secondary-item">
+  <div class="related">
+    <div class="admonition note custom-box">
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;">Get in touch!</h2>
+      <p>
+    If you are interested in Qrisp or high-level quantum algorithm research in general connect with us on our
+      <a href="https://join.slack.com/t/qrisp-workspace/shared_invite/zt-20yv9bbvo-igspbQpslCBK9ZlYSVijsw">Slack workspace.</a></p>
+    </div>
+  </div>
+</div>
+
+</div></div>
+              
             
           </div>
           <footer class="bd-footer-content">
@@ -2486,7 +2544,7 @@ document.write(`
       
         <div class="footer-item">
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.3.0.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 6.2.1.
     <br/>
   </p>
 </div>
@@ -2497,7 +2555,7 @@ document.write(`
     <div class="footer-items__end">
       
         <div class="footer-item"><p class="theme-version">
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.13.3.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.13.4dev0.
 </p></div>
       
     </div>
