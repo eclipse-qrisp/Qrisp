@@ -194,109 +194,122 @@ def sb_polynomial_encoder(
     # Acquire monomials in list form
     monomial_list = expr_to_list(poly)
 
-    from qrisp import QFT
+    from qrisp import QFT, conjugate, QuantumEnvironment
+    
 
-    QFT(
-        output_qf,
-        inv=False,
-        exec_swap=False,
-        inplace_mult=inplace_mult,
-        use_gms=use_gms,
-    )
+    if inplace_mult == 1:
+        env = conjugate(QFT)(
+            output_qf,
+            inv=False,
+            exec_swap=False,
+            inplace_mult=inplace_mult,
+            use_gms=use_gms,
+        )
+    else:
+        QFT(
+            output_qf,
+            inv=False,
+            exec_swap=False,
+            inplace_mult=inplace_mult,
+            use_gms=use_gms,
+        )
+        env = QuantumEnvironment()
 
-    # The list of qubits contained in the variables of input_var_list
-    input_qubits = sum([list(var.reg) for var in input_qf_list], [])
-
-    control_qubit_list = []
-    y_list = []
-
-    # Iterate through the monomials
-    for monom in monomial_list:
-        # Prepare the two variables coeff (which is the coefficient of the monomial)
-        # And the list of variables which appear in the monomial
-
-        # For this, go through the cases which can appear
-
-        # This describes the case where there is only a single term in the monomial
-        # Either a constant or a variable
-        if len(monom) == 1:
-            if isinstance(monom[0], sp.core.symbol.Symbol):
+    with env:
+        # The list of qubits contained in the variables of input_var_list
+        input_qubits = sum([list(var.reg) for var in input_qf_list], [])
+    
+        control_qubit_list = []
+        y_list = []
+    
+        # Iterate through the monomials
+        for monom in monomial_list:
+            # Prepare the two variables coeff (which is the coefficient of the monomial)
+            # And the list of variables which appear in the monomial
+    
+            # For this, go through the cases which can appear
+    
+            # This describes the case where there is only a single term in the monomial
+            # Either a constant or a variable
+            if len(monom) == 1:
+                if isinstance(monom[0], sp.core.symbol.Symbol):
+                    coeff = 1
+                    variables = list(monom)
+                else:
+                    coeff = float(monom[0])
+                    variables = []
+    
+            # This describes the case where there is multiple terms in the monomial
+            elif not isinstance(monom[0], sp.core.symbol.Symbol):
+                coeff = monom[0]
+                variables = list(monom[1:])
+            else:
                 coeff = 1
                 variables = list(monom)
+    
+            # Check if the coefficient is an integer (up to float errors)
+            if abs(int(np.round(float(coeff))) - coeff) > 1e-14:
+                pass
+                # raise Exception("Tried to encode sb-polynomial
+                # with non-integer coefficient")
+    
+            # Append coefficient to y_list
+            y_list.append(int(np.round(float(coeff))))
+    
+            # Prepare the qubits on which the U_g should be controlled
+            control_qubit_numbers = [symbol_list.index(var) for var in variables]
+    
+            control_qubits = [input_qubits[nr] for nr in control_qubit_numbers]
+    
+            control_qubits = list(set(control_qubits))
+    
+            control_qubits.sort(key=lambda x: x.identifier)
+    
+            control_qubit_list.append(control_qubits)
+    
+        # Now we apply the multi controlled U_g gate
+        # Here the order in which they are applied makes a huge difference
+        # In order to determine, which U_g to apply next, we evaluate a cost function
+        # (which we determined through trial and error)
+        # and choose the U_g with the lowest cost
+    
+        # Note that for this feature to yield an improvement, the quantum session requires
+        # multiple free ancilla qubits to work on
+        def delay_cost(depth_array):
+            return max(depth_array)
+    
+        def find_best_monomial(control_qubit_list, depth_dic):
+            delay_cost_list = []
+    
+            for i in range(len(control_qubit_list)):
+                depth_array = np.array([depth_dic[qb] for qb in control_qubit_list[i]])
+    
+                delay_cost_list.append(delay_cost(depth_array))
+    
+            return np.argmin(delay_cost_list)
+    
+        # Iterate through the list of U_g gates
+        while control_qubit_list:
+            # TO-DO fix depth calculation inside environment
+            # Update depth_dic (contains the depth of each qubit)
+            # depth_dic = output_qf.qs.get_depth_dic()
+    
+            # Determine best U_g
+            # monomial_index = find_best_monomial(control_qubit_list, depth_dic)
+            monomial_index = 0
+            # Find control qubits and their coefficient
+            control_qubits = control_qubit_list.pop(monomial_index)
+            y = y_list.pop(monomial_index)
+    
+            # Apply (controlled) U_g
+            if len(control_qubits):
+                multi_controlled_U_g(output_qf, control_qubits, y, use_gms=use_gms)
             else:
-                coeff = float(monom[0])
-                variables = []
+                U_g(y, output_qf)
 
-        # This describes the case where there is multiple terms in the monomial
-        elif not isinstance(monom[0], sp.core.symbol.Symbol):
-            coeff = monom[0]
-            variables = list(monom[1:])
-        else:
-            coeff = 1
-            variables = list(monom)
-
-        # Check if the coefficient is an integer (up to float errors)
-        if abs(int(np.round(float(coeff))) - coeff) > 1e-14:
-            pass
-            # raise Exception("Tried to encode sb-polynomial
-            # with non-integer coefficient")
-
-        # Append coefficient to y_list
-        y_list.append(int(np.round(float(coeff))))
-
-        # Prepare the qubits on which the U_g should be controlled
-        control_qubit_numbers = [symbol_list.index(var) for var in variables]
-
-        control_qubits = [input_qubits[nr] for nr in control_qubit_numbers]
-
-        control_qubits = list(set(control_qubits))
-
-        control_qubits.sort(key=lambda x: x.identifier)
-
-        control_qubit_list.append(control_qubits)
-
-    # Now we apply the multi controlled U_g gate
-    # Here the order in which they are applied makes a huge difference
-    # In order to determine, which U_g to apply next, we evaluate a cost function
-    # (which we determined through trial and error)
-    # and choose the U_g with the lowest cost
-
-    # Note that for this feature to yield an improvement, the quantum session requires
-    # multiple free ancilla qubits to work on
-    def delay_cost(depth_array):
-        return max(depth_array)
-
-    def find_best_monomial(control_qubit_list, depth_dic):
-        delay_cost_list = []
-
-        for i in range(len(control_qubit_list)):
-            depth_array = np.array([depth_dic[qb] for qb in control_qubit_list[i]])
-
-            delay_cost_list.append(delay_cost(depth_array))
-
-        return np.argmin(delay_cost_list)
-
-    # Iterate through the list of U_g gates
-    while control_qubit_list:
-        # TO-DO fix depth calculation inside environment
-        # Update depth_dic (contains the depth of each qubit)
-        # depth_dic = output_qf.qs.get_depth_dic()
-
-        # Determine best U_g
-        # monomial_index = find_best_monomial(control_qubit_list, depth_dic)
-        monomial_index = 0
-        # Find control qubits and their coefficient
-        control_qubits = control_qubit_list.pop(monomial_index)
-        y = y_list.pop(monomial_index)
-
-        # Apply (controlled) U_g
-        if len(control_qubits):
-            multi_controlled_U_g(output_qf, control_qubits, y, use_gms=use_gms)
-        else:
-            U_g(y, output_qf)
-
-    # Apply QFT
-    QFT(output_qf, inv=True, exec_swap=False, use_gms=use_gms)
+    if inplace_mult != 1:
+        # Apply QFT
+        QFT(output_qf, inv=True, exec_swap=False, use_gms=use_gms)
 
 
 # Multiplies two integers
