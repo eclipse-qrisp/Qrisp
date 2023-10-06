@@ -17,7 +17,8 @@
 """
 
 
-from qrisp.environments import QuantumEnvironment
+from qrisp.environments import QuantumEnvironment, control
+from qrisp.environments.custom_control_environment import custom_control
 from qrisp.circuit import Operation, ControlledOperation
 from qrisp.core.session_merging_tools import recursive_qs_search, merge
 from qrisp.misc import get_depth_dic
@@ -109,18 +110,21 @@ class ConjugationEnvironment(QuantumEnvironment):
     at the circuit:
         
     >>> print(qf.qs.transpile(2))
-    ctrl.0: ─────────■──────────■─────────■─────────■─────────■─────────────────
-            ┌──────┐ │P(3π/16)  │         │         │         │      ┌─────────┐
-      qf.0: ┤0     ├─■──────────┼─────────┼─────────┼─────────┼──────┤0        ├
-            │      │            │P(3π/8)  │         │         │      │         │
-      qf.1: ┤1     ├────────────■─────────┼─────────┼─────────┼──────┤1        ├
-            │      │                      │P(3π/4)  │         │      │         │
-      qf.2: ┤2 QFT ├──────────────────────■─────────┼─────────┼──────┤2 QFT_dg ├
-            │      │                                │P(3π/2)  │      │         │
-      qf.3: ┤3     ├────────────────────────────────■─────────┼──────┤3        ├
-            │      │                                          │P(3π) │         │
-      qf.4: ┤4     ├──────────────────────────────────────────■──────┤4        ├
-            └──────┘                                                 └─────────┘
+    
+    ::
+    
+        ctrl.0: ─────────■──────────■─────────■─────────■─────────■─────────────────
+                ┌──────┐ │P(3π/16)  │         │         │         │      ┌─────────┐
+          qf.0: ┤0     ├─■──────────┼─────────┼─────────┼─────────┼──────┤0        ├
+                │      │            │P(3π/8)  │         │         │      │         │
+          qf.1: ┤1     ├────────────■─────────┼─────────┼─────────┼──────┤1        ├
+                │      │                      │P(3π/4)  │         │      │         │
+          qf.2: ┤2 QFT ├──────────────────────■─────────┼─────────┼──────┤2 QFT_dg ├
+                │      │                                │P(3π/2)  │      │         │
+          qf.3: ┤3     ├────────────────────────────────■─────────┼──────┤3        ├
+                │      │                                          │P(3π) │         │
+          qf.4: ┤4     ├──────────────────────────────────────────■──────┤4        ├
+                └──────┘                                                 └─────────┘
 
 
     """
@@ -138,8 +142,6 @@ class ConjugationEnvironment(QuantumEnvironment):
         
     def __enter__(self):
         
-        
-        
         # merge(recursive_qs_search(self.args) + [self.env_qs])
         QuantumEnvironment.__enter__(self)
         
@@ -148,6 +150,18 @@ class ConjugationEnvironment(QuantumEnvironment):
         
         qv_set_before = set(self.env_qs.qv_list)        
         res = self.conjugation_function(*self.args, **self.kwargs)
+        
+        temp_data = list(self.env_qs.data)
+        self.env_qs.data = []
+        i = 0
+
+        while temp_data:
+            instr = temp_data.pop(i)
+            if isinstance(instr, QuantumEnvironment):
+                instr.compile()
+            else:
+                self.env_qs.data.append(instr)
+        
         if qv_set_before != set(self.env_qs.qv_list):
             raise Exception("Tried to create/destroy QuantumVariables within a conjugation")
         
@@ -156,9 +170,37 @@ class ConjugationEnvironment(QuantumEnvironment):
         self.env_qs.data = []
         
         return res
+    
+    def __exit__(self, exception_type, exception_value, traceback):
         
+        self.perform_conjugation()
         
-    def compile(self):
+        QuantumEnvironment.__exit__(self, exception_type, exception_value, traceback)
+        
+    
+    @custom_control
+    def perform_conjugation(self, ctrl = None):
+        
+        temp = list(self.env_qs.data)
+        self.env_qs.data = []
+        
+        for instr in self.conjugation_circ.data:
+            self.env_qs.append(instr)
+            
+        # self.env_qs.data.extend(self.conjugation_circ.data)
+        
+        if ctrl is not None:
+            with control(ctrl):
+                self.env_qs.data.extend(temp)
+        else:
+            
+            self.env_qs.data.extend(temp)
+        
+        for instr in self.conjugation_circ.inverse().data:
+            self.env_qs.append(instr)
+        
+    
+    def compile_(self, ctrl = None):
         
         temp = list(self.env_qs.data)
         self.env_qs.data = []
@@ -200,7 +242,17 @@ class ConjugationEnvironment(QuantumEnvironment):
         
         conj_op = ConjugatedOperation(self.conjugation_circ, content_circ)
         
+        alloc_instr = [instr for instr in self.conjugation_circ.data + content_circ.data if instr.op.name == "qb_alloc"]
+        
+        for instr in alloc_instr:
+            self.env_qs.append(instr)
+        
         self.env_qs.append(conj_op, content_circ.qubits)
+        
+        dealloc_instr = [instr for instr in self.conjugation_circ.data + content_circ.data if instr.op.name == "qb_dealloc"]
+        
+        for instr in dealloc_instr:
+            self.env_qs.append(instr)
         
         
 class ConjugatedOperation(Operation):
@@ -237,6 +289,10 @@ class ConjugatedOperation(Operation):
         res.definition.append(self.conjugation_gate.inverse(), self.definition.qubits)
         
         return res
+    
+    def inverse(self):
+        return ConjugatedOperation(self.conjugation_gate.definition, self.content_gate.inverse().definition)
+        
         
         
 def conjugate(conjugation_function):

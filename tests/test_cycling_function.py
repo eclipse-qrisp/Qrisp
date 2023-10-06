@@ -34,7 +34,6 @@ def test_cycling_function():
     
             assert qa[(k*l)%(len(qa))].get_measurement() == {"1": 1}
             
-            
             qa = QuantumArray(QuantumVariable(1), 2**n+k)
             qa[0][:] = "1"
             
@@ -42,7 +41,6 @@ def test_cycling_function():
                 cyclic_shift(qa)
     
             assert qa[(l)%(len(qa))].get_measurement() == {"1": 1}
-            
     
     qa = QuantumArray(QuantumFloat(3), 8)
 

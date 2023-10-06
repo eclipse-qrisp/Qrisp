@@ -24,7 +24,6 @@ from numpy import binary_repr
 from qrisp import *
 from qrisp import auto_uncompute
 from qrisp.grover import grovers_alg
-from qrisp.logic_synthesis import gray_synth_gate
 from qrisp import QuantumFloat
 
 

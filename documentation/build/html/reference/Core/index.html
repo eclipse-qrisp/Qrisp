@@ -3,11 +3,11 @@
 <!DOCTYPE html>
 
 
-<html lang="en" data-theme="light">
+<html data-theme="light">
 
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
     <title>Core &#8212;   documentation</title>
   
@@ -19,41 +19,50 @@
   </script>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../_static/styles/theme.css?digest=e353d410970836974a52" rel="stylesheet" />
-<link href="../../_static/styles/bootstrap.css?digest=e353d410970836974a52" rel="stylesheet" />
-<link href="../../_static/styles/pydata-sphinx-theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+  <link href="../../_static/styles/theme.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+<link href="../../_static/styles/bootstrap.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=ac02cc09edc035673794" rel="stylesheet" />
 
   
-  <link href="../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=e353d410970836974a52" rel="stylesheet" />
+  <link href="../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=ac02cc09edc035673794" rel="stylesheet" />
   <link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
 <link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
 <link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
 
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-thebe.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css" />
   
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=e353d410970836974a52" />
-<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52" />
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=ac02cc09edc035673794" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=ac02cc09edc035673794" />
+  <script src="../../_static/vendor/fontawesome/6.1.2/js/all.min.js?digest=ac02cc09edc035673794"></script>
 
     <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
     <script src="../../_static/doctools.js"></script>
-    <script src="../../_static/sphinx_highlight.js"></script>
     <script src="../../_static/clipboard.min.js"></script>
     <script src="../../_static/copybutton.js"></script>
     <script src="../../_static/design-tabs.js"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"
+const thebe_selector = "div.highlight"
+const thebe_selector_input = "pre"
+const thebe_selector_output = "span.go"
+</script>
+    <script async="async" src="../../_static/sphinx-thebe.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'reference/Core/index';</script>
     <link rel="canonical" href="https://qrisp.eu/reference/Core/index.html" />
-    <link rel="icon" href="../../_static/qrisp_favicon.png"/>
+    <link rel="shortcut icon" href="../../_static/qrisp_favicon.png"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="QuantumVariable" href="QuantumVariable.html" />
     <link rel="prev" title="Introduction" href="../Introduction.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:language" content="None"/>
   </head>
   
   
@@ -62,6 +71,15 @@
   
   
   <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>
+    Back to top
+  </button>
+
   
   <input type="checkbox"
           class="sidebar-toggle"
@@ -138,7 +156,7 @@
   <ul class="bd-navbar-elements navbar-nav">
     
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../../general/tutorial.html">
+                      <a class="nav-link nav-internal" href="../../general/tutorial/index.html">
                         Tutorial
                       </a>
                     </li>
@@ -181,13 +199,15 @@
       
         <div class="navbar-item navbar-persistent--container">
           
-<script>
-document.write(`
-  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
-  </button>
-`);
-</script>
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
         </div>
       
       
@@ -213,18 +233,20 @@ document.write(`
   
   
     <div class="navbar-persistent--mobile">
-<script>
-document.write(`
-  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
-  </button>
-`);
-</script>
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
     </div>
   
 
   
-    <label class="sidebar-toggle secondary-toggle" for="__secondary">
+    <label class="sidebar-toggle secondary-toggle" for="__secondary" tabindex="0">
       <span class="fa-solid fa-outdent"></span>
     </label>
   
@@ -254,7 +276,7 @@ document.write(`
   <ul class="bd-navbar-elements navbar-nav">
     
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../../general/tutorial.html">
+                      <a class="nav-link nav-internal" href="../../general/tutorial/index.html">
                         Tutorial
                       </a>
                     </li>
@@ -389,8 +411,8 @@ document.write(`
 
 
 
-<nav aria-label="Breadcrumbs">
-  <ul class="bd-breadcrumbs" role="navigation" aria-label="Breadcrumb">
+<nav aria-label="Breadcrumb">
+  <ul class="bd-breadcrumbs">
     
     <li class="breadcrumb-item breadcrumb-home">
       <a href="../../index.html" class="nav-link" aria-label="Home">
@@ -418,18 +440,18 @@ document.write(`
                 <article class="bd-article" role="main">
                   
   <section id="core">
-<h1>Core<a class="headerlink" href="#core" title="Permalink to this heading">#</a></h1>
+<h1>Core<a class="headerlink" href="#core" title="Permalink to this headline">#</a></h1>
 <div class="toctree-wrapper compound">
 </div>
 <p>The core module of Qrisp provides fundamental functionality that is essential for building quantum applications. It includes features such as data structures, algorithms, and utility functions that can be used across multiple components of quantum algorithm development. Additionally, the core module includes interfaces for <a class="reference internal" href="generated/qrisp.QuantumVariable.encode.html#qrisp.QuantumVariable.encode" title="qrisp.QuantumVariable.encode"><code class="xref py py-meth docutils literal notranslate"><span class="pre">input</span></code></a> and <a class="reference internal" href="generated/qrisp.QuantumVariable.get_measurement.html#qrisp.QuantumVariable.get_measurement" title="qrisp.QuantumVariable.get_measurement"><code class="xref py py-meth docutils literal notranslate"><span class="pre">output</span></code></a> operations, <a class="reference internal" href="generated/qrisp.QuantumSession.compile.html#qrisp.QuantumSession.compile" title="qrisp.QuantumSession.compile"><code class="xref py py-meth docutils literal notranslate"><span class="pre">compilation</span></code></a> to quantum circuits, and uncomputation. This module serves as the foundation for the entire framework and provides developers with the necessary tools to build reliable and scalable applications.</p>
 <section id="quantumvariable">
-<h2><a class="reference internal" href="QuantumVariable.html#quantumvariable"><span class="std std-ref">QuantumVariable</span></a><a class="headerlink" href="#quantumvariable" title="Permalink to this heading">#</a></h2>
+<h2><a class="reference internal" href="QuantumVariable.html#quantumvariable"><span class="std std-ref">QuantumVariable</span></a><a class="headerlink" href="#quantumvariable" title="Permalink to this headline">#</a></h2>
 <p>QuantumVariables are the central building block of Qrisp algorithms. Using QuantumVariables, many of the nitty-gritty management tasks such as choosing a suited set of qubits within a complex algorithm are automated.
 Furthermore the class provides features such as human readable in- and outputs, quantum typing via class inheritance or infix arithmetics.
 A <a class="reference internal" href="../Quantum%20Types/QuantumFloat.html#quantumfloat"><span class="std std-ref">QuantumFloat</span></a> is an example for a subclass of QuantumVariable, which can represent numbers.</p>
 </section>
 <section id="quantumsession">
-<h2><a class="reference internal" href="QuantumSession.html#quantumsession"><span class="std std-ref">QuantumSession</span></a><a class="headerlink" href="#quantumsession" title="Permalink to this heading">#</a></h2>
+<h2><a class="reference internal" href="QuantumSession.html#quantumsession"><span class="std std-ref">QuantumSession</span></a><a class="headerlink" href="#quantumsession" title="Permalink to this headline">#</a></h2>
 <p>Each QuantumVariable is registered in exactly one QuantumSession. The QuantumSession manages the lifetime cycle of the QuantumVariables being assigned to that Session and enables features such as automatic uncomputation.
 The QuantumSession a QuantumVariable is assigned to, is stored in the <code class="docutils literal notranslate"><span class="pre">qs</span></code> attribute of a QuantumVariable.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">qrisp</span> <span class="kn">import</span> <span class="n">QuantumVariable</span>
@@ -439,15 +461,15 @@ The QuantumSession a QuantumVariable is assigned to, is stored in the <code clas
 </div>
 </section>
 <section id="quantumarray">
-<h2><a class="reference internal" href="QuantumArray.html#quantumarray"><span class="std std-ref">QuantumArray</span></a><a class="headerlink" href="#quantumarray" title="Permalink to this heading">#</a></h2>
+<h2><a class="reference internal" href="QuantumArray.html#quantumarray"><span class="std std-ref">QuantumArray</span></a><a class="headerlink" href="#quantumarray" title="Permalink to this headline">#</a></h2>
 <p>Multiple QuantumVariables with the same type can be handled within a QuantumArray. As an inheritor of the <a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html">numpy array</a>, QuantumArrays can be handled with a lot of flexibility since many of the established numpy methods work for QuantumArrays too. For QuantumArrays with type QuantumFloat, matrix multiplication and tensor contraction is available.</p>
 </section>
 <section id="quantumdictionary">
-<h2><a class="reference internal" href="QuantumDictionary.html#quantumdictionary"><span class="std std-ref">QuantumDictionary</span></a><a class="headerlink" href="#quantumdictionary" title="Permalink to this heading">#</a></h2>
+<h2><a class="reference internal" href="QuantumDictionary.html#quantumdictionary"><span class="std std-ref">QuantumDictionary</span></a><a class="headerlink" href="#quantumdictionary" title="Permalink to this headline">#</a></h2>
 <p>A QuantumDictionary extends a classical python dictionary, by allowing QuantumVariables as keys as well. Using this mechanism it is possible to load classical data relations into the quantum computer via logic synthesis.</p>
 </section>
 <section id="uncomputation">
-<h2><a class="reference internal" href="Uncomputation.html#uncomputation"><span class="std std-ref">Uncomputation</span></a><a class="headerlink" href="#uncomputation" title="Permalink to this heading">#</a></h2>
+<h2><a class="reference internal" href="Uncomputation.html#uncomputation"><span class="std std-ref">Uncomputation</span></a><a class="headerlink" href="#uncomputation" title="Permalink to this headline">#</a></h2>
 <p>This page elaborates on the ways automatic uncomputation can be achieved in Qrisp. Mainly there are two ways to call this procedure:</p>
 <ol class="arabic simple">
 <li><p>The <a class="reference internal" href="generated/qrisp.QuantumVariable.uncompute.html#qrisp.QuantumVariable.uncompute" title="qrisp.QuantumVariable.uncompute"><code class="xref py py-meth docutils literal notranslate"><span class="pre">uncompute</span></code></a> method, which uncomputes the QuantumVariable (if possible) and calls <a class="reference internal" href="generated/qrisp.QuantumVariable.delete.html#qrisp.QuantumVariable.delete" title="qrisp.QuantumVariable.delete"><code class="xref py py-meth docutils literal notranslate"><span class="pre">delete</span></code></a> afterwards.</p></li>
@@ -455,7 +477,7 @@ The QuantumSession a QuantumVariable is assigned to, is stored in the <code clas
 </ol>
 </section>
 <section id="session-merging">
-<h2><a class="reference internal" href="Session%20Merging.html#sessionmerging"><span class="std std-ref">Session Merging</span></a><a class="headerlink" href="#session-merging" title="Permalink to this heading">#</a></h2>
+<h2><a class="reference internal" href="Session%20Merging.html#sessionmerging"><span class="std std-ref">Session Merging</span></a><a class="headerlink" href="#session-merging" title="Permalink to this headline">#</a></h2>
 <p>As the title indicates, this page elaborates how QuantumSessions are merged (manually and automatically). Roughly speaking, two sessions are automatically merged if an entangling operation is executed between two of the contained QuantumVariables. For manual merging we provide the merge function</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">qrisp</span> <span class="kn">import</span> <span class="n">QuantumVariable</span><span class="p">,</span> <span class="n">merge</span><span class="p">,</span> <span class="n">cx</span>
 
@@ -474,8 +496,29 @@ The QuantumSession a QuantumVariable is assigned to, is stored in the <code clas
 </section>
 </section>
 
+    <script type="text/x-thebe-config">
+    {
+        requestKernel: true,
+        binderOptions: {
+            repo: "fraunhoferfokus/Qrisp",
+            ref: "main",
+        },
+        codeMirrorConfig: {
+            theme: "abcdef",
+            mode: "python"
+        },
+        kernelOptions: {
+            kernelName: "python3",
+            path: "./reference\Core"
+        },
+        predefinedOutput: true
+    }
+    </script>
+    <script>kernelName = 'python3'</script>
 
                 </article>
+              
+              
               
               
               
@@ -511,6 +554,20 @@ The QuantumSession a QuantumVariable is assigned to, is stored in the <code clas
   </div>
 </div>
 
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
 </div></div>
               
             
@@ -524,8 +581,8 @@ The QuantumSession a QuantumVariable is assigned to, is stored in the <code clas
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script src="../../_static/scripts/bootstrap.js?digest=e353d410970836974a52"></script>
-<script src="../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52"></script>
+  <script src="../../_static/scripts/bootstrap.js?digest=ac02cc09edc035673794"></script>
+<script src="../../_static/scripts/pydata-sphinx-theme.js?digest=ac02cc09edc035673794"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -543,7 +600,7 @@ The QuantumSession a QuantumVariable is assigned to, is stored in the <code clas
       
         <div class="footer-item">
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 6.2.1.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 4.5.0.
     <br/>
   </p>
 </div>
@@ -551,10 +608,11 @@ The QuantumSession a QuantumVariable is assigned to, is stored in the <code clas
     </div>
   
   
+  
     <div class="footer-items__end">
       
         <div class="footer-item"><p class="theme-version">
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.13.4dev0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.14.1.
 </p></div>
       
     </div>

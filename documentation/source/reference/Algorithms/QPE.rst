@@ -1,4 +1,6 @@
-﻿Quantum Phase Estimation
+﻿.. _QPE:
+
+Quantum Phase Estimation
 ========================
 
 .. currentmodule:: qrisp

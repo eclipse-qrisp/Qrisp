@@ -1,6 +1,5 @@
 connexion>=2.12.0
 qiskit>=0.34.2
-qiskit-aer
 thrift>=0.15.0
 matplotlib>=3.5.1
 waitress>=2.1.1
@@ -8,3 +7,5 @@ scipy>=1.10.0
 numba
 networkx
 tdqm
+qiskit_ibm_runtime
+dill

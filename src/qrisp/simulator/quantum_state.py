@@ -144,6 +144,38 @@ class QuantumState:
         self.last_mes_outcome = (p_0, outcome_state_0, p_1, outcome_state_1)
 
         return self.last_mes_outcome
+    
+    def multi_measure(self, mes_qubits, return_res_states = True):
+        
+        tf = multi_entangle(list(set([self.tensor_factors[i] for i in mes_qubits])))
+        
+        p_list, tf_list, outcome_list = tf.multi_measure(mes_qubits, return_res_tf = return_res_states)
+        
+        outcome_states = []
+        
+        for i in range(len(p_list)):
+            
+            if p_list[i] == 0:
+                outcome_states.append(None)
+                continue
+            
+            if return_res_states:
+                new_outcome_state = self.copy()
+                
+                for j in tf_list[i].qubits:
+                    new_outcome_state.tensor_factors[j] = tf_list[i]
+                    
+                for j in mes_qubits:
+                    new_outcome_state.tensor_factors[j] = TensorFactor([j])
+                    
+                outcome_states.append(new_outcome_state)
+                
+            else:
+                    
+                outcome_states.append(None)
+        
+        return p_list, outcome_states, outcome_list
+            
 
     def add_qubit(self):
         self.tensor_factors.append(TensorFactor([self.n]))

@@ -150,7 +150,8 @@ class IterationEnvironment(QuantumEnvironment):
         
         if set(self.env_qs.qv_list) != self.inital_qvs:
             
-            raise Exception("Tried to invoke IterationEnvironment with code creating/deleting QuantumVariables")
+            if exception_value is None:
+                raise Exception("Tried to invoke IterationEnvironment with code creating/deleting QuantumVariables")
         
         QuantumEnvironment.__exit__(self, exception_type, exception_value, traceback)
         
@@ -199,8 +200,11 @@ class IterationEnvironment(QuantumEnvironment):
             #Determine the workspace qubits from the compiled qc
             workspace_qubits = list(set(compiled_qc.qubits) - set(self.env_qs.qubits))
             
-            #Allocate a QuantumVariable that will hold the workspace
-            workspace_var = QuantumVariable(len(workspace_qubits), qs = self.env_qs, name = "workspace_var*")
+            if len(workspace_qubits):
+                #Allocate a QuantumVariable that will hold the workspace
+                workspace_var = QuantumVariable(len(workspace_qubits), qs = self.env_qs, name = "workspace_var*")
+            else:
+                workspace_var = []
             
             
             #We now prepare the qubit lists for the retarget_instructions function
@@ -228,7 +232,8 @@ class IterationEnvironment(QuantumEnvironment):
                 self.env_qs.data.extend(compiled_data)
                 
             #Delete workspace variable
-            workspace_var.delete()
+            if isinstance(workspace_var, QuantumVariable):
+                workspace_var.delete()
 
         #The non-precompiled case is much simpler
         else:

@@ -63,11 +63,19 @@ extensions = [
                 "numpydoc",
               "sphinx_sitemap",
                "sphinx_copybutton",
-               "sphinx_design"
+               "sphinx_design",
+               "sphinx_thebe"
               #"nb2plots",
               ]
 
-imgmath_latex_preamble = r'\usepackage{braket}'
+imgmath_latex_preamble = r'\usepackage{braket}\n\usepackage{xcolor}\n\usepackage{emoji}'
+
+thebe_config = {
+    "repository_url": "https://github.com/fraunhoferfokus/Qrisp",
+    "repository_branch": "main",
+    "selector": "div.highlight",
+    "selector_output": "span.go",
+}
 
 
 imgmath_use_preview = True
@@ -122,7 +130,7 @@ html_theme_options = {
     "search_bar_text": "Search the docs... ",
     # "navbar_align": "content",
     "pygment_light_style": "lovelace",
-    "secondary_sidebar_items": ["page-toc.html", "slack_link.html"]
+    "secondary_sidebar_items": ["page-toc.html", "slack_link.html", "thebe_button.html"]
 }
 html_sidebars = {
     "**": ["search-field", "sidebar-nav-bs"],
@@ -162,12 +170,10 @@ html_css_files = [
     'css/custom.css',
 ]
 
-
+source_suffix = ['.rst', '.md']
 # Adds 'Edit on gitlab' in the upper right corner
 # html_context = {
 #     "display_gitlab": True, # Integrate Gitlab
 #     "gitlab_repo": "Qrisp Compiler", # Repo name
 #     "conf_py_path": "/source/", # Path in the checkout to the docs root
 # }
-
-

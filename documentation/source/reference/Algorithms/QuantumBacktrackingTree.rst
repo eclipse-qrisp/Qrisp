@@ -43,5 +43,3 @@ Miscellaneous
    QuantumBacktrackingTree.subtree
    QuantumBacktrackingTree.copy
    QuantumBacktrackingTree.path_decoder
-   
-   

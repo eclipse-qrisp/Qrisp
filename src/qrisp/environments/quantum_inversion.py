@@ -47,20 +47,23 @@ class InversionEnvironment(QuantumEnvironment):
     >>> print(qf)
     {0: 1.0}
     >>> print(qf.qs)
-    QuantumCircuit:
-    ---------------
-          ┌───────────┐┌──────────────┐
-    qf.0: ┤0          ├┤0             ├
-          │           ││              │
-    qf.1: ┤1          ├┤1             ├
-          │  __iadd__ ││  __iadd___dg │
-    qf.2: ┤2          ├┤2             ├
-          │           ││              │
-    qf.3: ┤3          ├┤3             ├
-          └───────────┘└──────────────┘
-    Live QuantumVariables:
-    ----------------------
-    QuantumFloat qf
+    
+    ::
+    
+        QuantumCircuit:
+        --------------
+              ┌───────────┐┌──────────────┐
+        qf.0: ┤0          ├┤0             ├
+              │           ││              │
+        qf.1: ┤1          ├┤1             ├
+              │  __iadd__ ││  __iadd___dg │
+        qf.2: ┤2          ├┤2             ├
+              │           ││              │
+        qf.3: ┤3          ├┤3             ├
+              └───────────┘└──────────────┘
+        Live QuantumVariables:
+        ---------------------
+        QuantumFloat qf
 
     In the next example, we create a :ref:`QuantumFloat` and bring it into uniform
     superposition. We calculate the square and set a :ref:`QuantumBool` to ``True``,

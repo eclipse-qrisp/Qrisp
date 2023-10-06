@@ -286,16 +286,24 @@ class QuantumNetworkClient(QuantumNetworkService.Client):
         >>> qc_0 = QuantumCircuit(1)
         >>> qc_0.x(0)
         >>> print(qc_0)
-              ┌───┐
-        qb_8: ┤ X ├
-              └───┘
+        
+        ::
+        
+                  ┌───┐
+            qb_8: ┤ X ├
+                  └───┘
+
         >>> client.run(qc_0)
         >>> qc_1 = QuantumCircuit(1)
         >>> qc_1.h(0)
         >>> print(qc_1)
-                ┌───┐
-         qb_26: ┤ H ├
-                └───┘
+        
+        ::
+        
+                    ┌───┐
+             qb_26: ┤ H ├
+                    └───┘
+                    
         >>> client.run(qc_1)
         >>> print(client.get_clear_qc().qubits)
         [Qubit(qb_58@alice), Qubit(qb_77@alice)]
@@ -324,14 +332,17 @@ class QuantumNetworkClient(QuantumNetworkService.Client):
         method have been executed.
 
         >>> print(alice_client.get_overall_qc())
-                      ░ ┌───┐      ░ ┌─┐ ░
-        qb_34@alice: ─░─┤ H ├──■───░─┤M├─░────
-                      ░ └───┘┌─┴─┐ ░ └╥┘ ░ ┌─┐
-        qb_35@alice: ─░──────┤ X ├─░──╫──░─┤M├
-                      ░      └───┘ ░  ║  ░ └╥┘
-           cb_bob_0: ═════════════════╩═════╬═
-                                            ║
-         cb_alice_0: ═══════════════════════╩═
+        
+        ::
+        
+                          ░ ┌───┐      ░ ┌─┐ ░
+            qb_34@alice: ─░─┤ H ├──■───░─┤M├─░────
+                          ░ └───┘┌─┴─┐ ░ └╥┘ ░ ┌─┐
+            qb_35@alice: ─░──────┤ X ├─░──╫──░─┤M├
+                          ░      └───┘ ░  ║  ░ └╥┘
+               cb_bob_0: ═════════════════╩═════╬═
+                                                ║
+             cb_alice_0: ═══════════════════════╩═
 
 
         """

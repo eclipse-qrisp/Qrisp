@@ -78,24 +78,27 @@ class QuantumVariable:
     >>> from qrisp import cx
     >>> cx(example_qv, example_qv_2)
     >>> print(example_qv.qs)
-    QuantumCircuit:
-    ---------------
-    example_qv.0: ──■────────────
-                    │
-    example_qv.1: ──┼────■───────
-                    │    │
-    example_qv.2: ──┼────┼────■──
-                  ┌─┴─┐  │    │
-         alice.0: ┤ X ├──┼────┼──
-                  └───┘┌─┴─┐  │
-         alice.1: ─────┤ X ├──┼──
-                       └───┘┌─┴─┐
-         alice.2: ──────────┤ X ├
-                            └───┘
-    Live QuantumVariables:
-    ----------------------
-    QuantumVariable example_qv
-    QuantumVariable alice
+    
+    ::
+    
+        QuantumCircuit:
+        --------------
+        example_qv.0: ──■────────────
+                        │
+        example_qv.1: ──┼────■───────
+                        │    │
+        example_qv.2: ──┼────┼────■──
+                      ┌─┴─┐  │    │
+             alice.0: ┤ X ├──┼────┼──
+                      └───┘┌─┴─┐  │
+             alice.1: ─────┤ X ├──┼──
+                           └───┘┌─┴─┐
+             alice.2: ──────────┤ X ├
+                                └───┘
+        Live QuantumVariables:
+        ---------------------
+        QuantumVariable example_qv
+        QuantumVariable alice
 
     QuantumSessions can only contain uniquely named QuantumVariables. If two
     QuantumSessions are :ref:`merged <SessionMerging>` containing identically named
@@ -113,58 +116,62 @@ class QuantumVariable:
             s += temp
 
     >>> print(s.qs)
-    QuantumCircuit:
-    ---------------
-                   ┌───────────┐┌───────────┐┌───────────┐┌───────────┐
-         s.0: ─────┤0          ├┤0          ├┤0          ├┤0          ├
-                   │           ││           ││           ││           │
-         s.1: ─────┤1          ├┤1          ├┤1          ├┤1          ├
-                   │           ││           ││           ││           │
-         s.2: ─────┤2          ├┤2          ├┤2          ├┤2          ├
-                   │           ││           ││           ││           │
-         s.3: ─────┤3          ├┤3          ├┤3          ├┤3          ├
-                   │           ││           ││           ││           │
-         s.4: ─────┤4 __iadd__ ├┤4          ├┤4          ├┤4          ├
-              ┌───┐│           ││           ││           ││           │
-      temp.0: ┤ X ├┤5          ├┤           ├┤           ├┤           ├
-              └───┘│           ││           ││           ││           │
-      temp.1: ─────┤6          ├┤  __iadd__ ├┤           ├┤           ├
-                   │           ││           ││           ││           │
-      temp.2: ─────┤7          ├┤           ├┤           ├┤           ├
-                   │           ││           ││           ││           │
-      temp.3: ─────┤8          ├┤           ├┤  __iadd__ ├┤           ├
-                   └───────────┘│           ││           ││           │
-    temp_1.0: ──────────────────┤5          ├┤           ├┤           ├
-              ┌───┐             │           ││           ││           │
-    temp_1.1: ┤ X ├─────────────┤6          ├┤           ├┤  __iadd__ ├
-              └───┘             │           ││           ││           │
-    temp_1.2: ──────────────────┤7          ├┤           ├┤           ├
-                                │           ││           ││           │
-    temp_1.3: ──────────────────┤8          ├┤           ├┤           ├
-                                └───────────┘│           ││           │
-    temp_2.0: ───────────────────────────────┤5          ├┤           ├
-                                             │           ││           │
-    temp_2.1: ───────────────────────────────┤6          ├┤           ├
-              ┌───┐                          │           ││           │
-    temp_2.2: ┤ X ├──────────────────────────┤7          ├┤           ├
-              └───┘                          │           ││           │
-    temp_2.3: ───────────────────────────────┤8          ├┤           ├
-                                             └───────────┘│           │
-    temp_3.0: ────────────────────────────────────────────┤5          ├
-                                                          │           │
-    temp_3.1: ────────────────────────────────────────────┤6          ├
-                                                          │           │
-    temp_3.2: ────────────────────────────────────────────┤7          ├
-              ┌───┐                                       │           │
-    temp_3.3: ┤ X ├───────────────────────────────────────┤8          ├
-              └───┘                                       └───────────┘
-    Live QuantumVariables:
-    ----------------------
-    QuantumFloat s
-    QuantumFloat temp
-    QuantumFloat temp_1
-    QuantumFloat temp_2
-    QuantumFloat temp_3
+    
+    ::
+    
+        QuantumCircuit:
+        --------------
+                       ┌───────────┐┌───────────┐┌───────────┐┌───────────┐
+             s.0: ─────┤0          ├┤0          ├┤0          ├┤0          ├
+                       │           ││           ││           ││           │
+             s.1: ─────┤1          ├┤1          ├┤1          ├┤1          ├
+                       │           ││           ││           ││           │
+             s.2: ─────┤2          ├┤2          ├┤2          ├┤2          ├
+                       │           ││           ││           ││           │
+             s.3: ─────┤3          ├┤3          ├┤3          ├┤3          ├
+                       │           ││           ││           ││           │
+             s.4: ─────┤4 __iadd__ ├┤4          ├┤4          ├┤4          ├
+                  ┌───┐│           ││           ││           ││           │
+          temp.0: ┤ X ├┤5          ├┤           ├┤           ├┤           ├
+                  └───┘│           ││           ││           ││           │
+          temp.1: ─────┤6          ├┤  __iadd__ ├┤           ├┤           ├
+                       │           ││           ││           ││           │
+          temp.2: ─────┤7          ├┤           ├┤           ├┤           ├
+                       │           ││           ││           ││           │
+          temp.3: ─────┤8          ├┤           ├┤  __iadd__ ├┤           ├
+                       └───────────┘│           ││           ││           │
+        temp_1.0: ──────────────────┤5          ├┤           ├┤           ├
+                  ┌───┐             │           ││           ││           │
+        temp_1.1: ┤ X ├─────────────┤6          ├┤           ├┤  __iadd__ ├
+                  └───┘             │           ││           ││           │
+        temp_1.2: ──────────────────┤7          ├┤           ├┤           ├
+                                    │           ││           ││           │
+        temp_1.3: ──────────────────┤8          ├┤           ├┤           ├
+                                    └───────────┘│           ││           │
+        temp_2.0: ───────────────────────────────┤5          ├┤           ├
+                                                 │           ││           │
+        temp_2.1: ───────────────────────────────┤6          ├┤           ├
+                  ┌───┐                          │           ││           │
+        temp_2.2: ┤ X ├──────────────────────────┤7          ├┤           ├
+                  └───┘                          │           ││           │
+        temp_2.3: ───────────────────────────────┤8          ├┤           ├
+                                                 └───────────┘│           │
+        temp_3.0: ────────────────────────────────────────────┤5          ├
+                                                              │           │
+        temp_3.1: ────────────────────────────────────────────┤6          ├
+                                                              │           │
+        temp_3.2: ────────────────────────────────────────────┤7          ├
+                  ┌───┐                                       │           │
+        temp_3.3: ┤ X ├───────────────────────────────────────┤8          ├
+                  └───┘                                       └───────────┘
+        Live QuantumVariables:
+        ---------------------
+        QuantumFloat s
+        QuantumFloat temp
+        QuantumFloat temp_1
+        QuantumFloat temp_2
+        QuantumFloat temp_3
+
 
     Renaming does not happen for names given through the ``name`` keyword, unless the
     name ends with a ``*``.
@@ -177,7 +184,6 @@ class QuantumVariable:
     >>> cx(example_qv, example_qv_4)
     >>> example_qv_4.name
     'alice_1'
-
 
     Examples
     --------
@@ -811,6 +817,7 @@ class QuantumVariable:
         subs_dic={},
         circuit_preprocessor=None,
         filename=None,
+        precompiled_qc = None
     ):
         r"""
         Method for quick access to the measurement results of the state of the variable.
@@ -888,17 +895,21 @@ class QuantumVariable:
         if self.size == 0:
             return {"": 1.0}
 
-        # Bind parameters
-        if subs_dic:
-            qc = self.qs.bind_parameters(subs_dic)
-
-        else:
+        if precompiled_qc is None:        
             if compile:
                 qc = qompiler(
                     self.qs, intended_measurements=self.reg, **compilation_kwargs
                 )
             else:
                 qc = self.qs.copy()
+        else:
+            qc = precompiled_qc.copy()
+
+        # Bind parameters
+        if subs_dic:
+            qc = qc.bind_parameters(subs_dic)
+            from qrisp.core.compilation import combine_single_qubit_gates
+            qc = combine_single_qubit_gates(qc)
 
         # Copy circuit in over to prevent modification
         from qrisp.quantum_network import QuantumNetworkClient
@@ -1017,6 +1028,11 @@ class QuantumVariable:
         from qrisp.environments import q_eq
 
         return q_eq(self, other)
+    
+    def __ne__(self, other):
+        from qrisp.environments import q_eq
+
+        return q_eq(self, other, invert = True)
 
     def __hash__(self):
         return self.creation_time
@@ -1143,42 +1159,48 @@ class QuantumVariable:
         >>> cx(b[0], b[1])
         >>> p(0.5, b[1])
         >>> print(a.qs)
-        QuantumCircuit:
-        ---------------
-                  ┌───┐
-        a.0: ──■──┤ H ├───────────────
-               │  ├───┤
-        a.1: ──■──┤ H ├───────────────
-               │  └───┘
-        a.2: ──■──────────────────────
-             ┌─┴─┐┌───┐
-        b.0: ┤ X ├┤ X ├──■────────────
-             └───┘└───┘┌─┴─┐┌────────┐
-        b.1: ──────────┤ X ├┤ P(0.5) ├
-                       └───┘└────────┘
-        Live QuantumVariables:
-        ----------------------
-        QuantumVariable a
-        QuantumVariable b
+        
+        ::
+        
+            QuantumCircuit:
+            --------------
+                      ┌───┐
+            a.0: ──■──┤ H ├───────────────
+                   │  ├───┤
+            a.1: ──■──┤ H ├───────────────
+                   │  └───┘
+            a.2: ──■──────────────────────
+                 ┌─┴─┐┌───┐
+            b.0: ┤ X ├┤ X ├──■────────────
+                 └───┘└───┘┌─┴─┐┌────────┐
+            b.1: ──────────┤ X ├┤ P(0.5) ├
+                           └───┘└────────┘
+            Live QuantumVariables:
+            ---------------------
+            QuantumVariable a
+            QuantumVariable b
 
         >>> b.uncompute()
         >>> print(b.qs)
-        QuantumCircuit:
-        ---------------
-             ┌────────┐                              ┌────────┐┌───┐
-        a.0: ┤0       ├──────────────────────────────┤0       ├┤ H ├
-             │        │                              │        │├───┤
-        a.1: ┤1       ├──────────────────────────────┤1       ├┤ H ├
-             │  pt3cx │                              │  pt3cx │└───┘
-        a.2: ┤2       ├──────────────────────────────┤2       ├─────
-             │        │┌───┐                    ┌───┐│        │
-        b.0: ┤3       ├┤ X ├──■──────────────■──┤ X ├┤3       ├─────
-             └────────┘└───┘┌─┴─┐┌────────┐┌─┴─┐└───┘└────────┘
-        b.1: ───────────────┤ X ├┤ P(0.5) ├┤ X ├────────────────────
-                            └───┘└────────┘└───┘
-        Live QuantumVariables:
-        ----------------------
-        QuantumVariable a
+        
+        ::
+        
+            QuantumCircuit:
+            --------------
+                 ┌────────┐                              ┌────────┐┌───┐
+            a.0: ┤0       ├──────────────────────────────┤0       ├┤ H ├
+                 │        │                              │        │├───┤
+            a.1: ┤1       ├──────────────────────────────┤1       ├┤ H ├
+                 │  pt3cx │                              │  pt3cx │└───┘
+            a.2: ┤2       ├──────────────────────────────┤2       ├─────
+                 │        │┌───┐                    ┌───┐│        │
+            b.0: ┤3       ├┤ X ├──■──────────────■──┤ X ├┤3       ├─────
+                 └────────┘└───┘┌─┴─┐┌────────┐┌─┴─┐└───┘└────────┘
+            b.1: ───────────────┤ X ├┤ P(0.5) ├┤ X ├────────────────────
+                                └───┘└────────┘└───┘
+            Live QuantumVariables:
+            ---------------------
+            QuantumVariable a
 
 
         """

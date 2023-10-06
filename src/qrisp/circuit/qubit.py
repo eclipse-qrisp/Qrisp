@@ -37,9 +37,12 @@ class Qubit:
     >>> qc.add_qubit(qb)
     >>> qc.x(qb)
     >>> print(qc)
-              ┌───┐
-    alphonse: ┤ X ├
-              └───┘
+    
+    ::
+    
+                  ┌───┐
+        alphonse: ┤ X ├
+                  └───┘
 
 
     """

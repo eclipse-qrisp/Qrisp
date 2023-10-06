@@ -210,20 +210,23 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
     >>> target = QuantumVariable(1)
     >>> mcx(control, target, method = "gray")
     >>> print(control.qs)
-    QuantumCircuit:
-    ---------------
-    control.0: ──■──
-                 │
-    control.1: ──■──
-                 │
-    control.2: ──■──
-               ┌─┴─┐
-     target.0: ┤ X ├
-               └───┘
-    Live QuantumVariables:
-    ----------------------
-    QuantumVariable control
-    QuantumVariable target
+    
+    ::
+    
+        QuantumCircuit:
+        --------------
+        control.0: ──■──
+                     │
+        control.1: ──■──
+                     │
+        control.2: ──■──
+                   ┌─┴─┐
+         target.0: ┤ X ├
+                   └───┘
+        Live QuantumVariables:
+        ---------------------
+        QuantumVariable control
+        QuantumVariable target
 
     We compare different performance indicators. ::
 
@@ -687,7 +690,7 @@ def s_dg(qubits):
     return qubits
 
 
-def t_dg(phi, qubits):
+def t_dg(qubits):
     """
     Applies a daggered T gate.
 
@@ -870,22 +873,25 @@ def barrier(qubits):
     >>> barrier(qv)
     >>> y(qv)
     >>> print(qv.qs)
-    QuantumCircuit:
-    ---------------
-          ┌───┐ ░ ┌───┐
-    qv.0: ┤ X ├─░─┤ Y ├
-          ├───┤ ░ ├───┤
-    qv.1: ┤ X ├─░─┤ Y ├
-          ├───┤ ░ ├───┤
-    qv.2: ┤ X ├─░─┤ Y ├
-          ├───┤ ░ ├───┤
-    qv.3: ┤ X ├─░─┤ Y ├
-          ├───┤ ░ ├───┤
-    qv.4: ┤ X ├─░─┤ Y ├
-          └───┘ ░ └───┘
-    Live QuantumVariables:
-    ----------------------
-    QuantumVariable qv
+    
+    ::
+    
+        QuantumCircuit:
+        --------------
+              ┌───┐ ░ ┌───┐
+        qv.0: ┤ X ├─░─┤ Y ├
+              ├───┤ ░ ├───┤
+        qv.1: ┤ X ├─░─┤ Y ├
+              ├───┤ ░ ├───┤
+        qv.2: ┤ X ├─░─┤ Y ├
+              ├───┤ ░ ├───┤
+        qv.3: ┤ X ├─░─┤ Y ├
+              ├───┤ ░ ├───┤
+        qv.4: ┤ X ├─░─┤ Y ├
+              └───┘ ░ └───┘
+        Live QuantumVariables:
+        ---------------------
+        QuantumVariable qv
 
     """
 
@@ -951,7 +957,12 @@ def QFT_inner(qv, exec_swap=True, qiskit_endian=True, inplace_mult=1, use_gms=Fa
             "during Fourier-Transform"
         )
 
+    accumulated_phases = np.zeros(n)
     for i in range(n):
+        if accumulated_phases[i] and not use_gms:
+            p(accumulated_phases[i], qv[i])
+            accumulated_phases[i] = 0
+        
         h(qv[i])
 
         if i == n - 1:
@@ -959,7 +970,25 @@ def QFT_inner(qv, exec_swap=True, qiskit_endian=True, inplace_mult=1, use_gms=Fa
 
         with env():
             for k in range(n - i - 1):
-                cp(inplace_mult * 2 * np.pi / 2 ** (k + 2), qv[k + i + 1], qv[i])
+                # cp(inplace_mult * 2 * np.pi / 2 ** (k + 2), qv[k + i + 1], qv[i])
+                
+                if use_gms:
+                    cp(inplace_mult * 2 * np.pi / 2 ** (k + 2), qv[i], qv[k + i + 1])
+                else:
+                    phase = inplace_mult * 2 * np.pi / 2 ** (k + 2)
+                    
+                    cx(qv[k + i + 1], qv[i])
+                    p(-phase/2, qv[i])
+                    cx(qv[k + i + 1], qv[i])
+                    
+                    
+                    accumulated_phases[i] += phase/2
+                    accumulated_phases[k + i + 1] += phase/2
+                
+    for i in range(n):
+        if accumulated_phases[i] and not use_gms:
+            p(accumulated_phases[i], qv[i])
+            accumulated_phases[i] = 0
 
     if exec_swap:
         for i in range(n // 2):
@@ -1526,39 +1555,56 @@ def cyclic_shift(iterable, shift_amount = 1):
     
         return
             
+    N = len(iterable)
+    n = int(np.floor(np.log2(N)))
     
-    
-    if len(iterable) == 0 or not shift_amount%len(iterable):
+    if N == 0 or not shift_amount%N:
         return
     if shift_amount < 0:
         return cyclic_shift(iterable[::-1], -shift_amount)
-    
+
     if shift_amount != 1:
         
-        perm = np.arange(len(iterable))
-        perm = (perm - shift_amount)%(len(iterable))
+        perm = np.arange(N)
+        perm = (perm - shift_amount)%(N)
         
         permute_iterable(iterable, perm)
         return
     
-    n = np.log2(len(iterable))
+    singular_shift(iterable[:2**n])
+    singular_shift([iterable[0]] + list(iterable[2**n:]), use_saeedi = True)
     
-    if n != np.floor(n):
-        n = int(np.floor(n))
-        
-        cyclic_shift(iterable[:2**n], shift_amount)
-        cyclic_shift([iterable[0]] + list(iterable[2**n:]), shift_amount)
+
+def singular_shift(iterable, use_saeedi = False):
+    
+    N = len(iterable)
+    
+    if N in [0,1]:
         return
     
-    
-    correction_indices = []
-    for i in range(len(iterable)//2):
-        swap_tuple = (2*i, 2*i+1)
-        swap(iterable[swap_tuple[0]], iterable[swap_tuple[1]])
-        correction_indices.append(swap_tuple[0])
-    
-    cyclic_shift([iterable[i] for i in correction_indices], shift_amount)
-    
+    if use_saeedi:
+        #Strategy from https://arxiv.org/abs/1304.7516
+        #Seems to perform worse when shifting by a quantum float
+        #But better when the shift length is not a power of 2
+        for i in range(N//2):
+            if (-i)%N == i+1 or i+1 >= N:
+                continue
+            swap(iterable[-i], iterable[i+1])
+            
+        for i in range(N//2):
+            if (-i)%N == i+2 or i+2 >= N:
+                continue
+            swap(iterable[-i], iterable[i+2])
+        
+    else:        
+        correction_indices = []
+        for i in range(len(iterable)//2):
+            swap_tuple = (2*i, 2*i+1)
+            swap(iterable[swap_tuple[0]], iterable[swap_tuple[1]])
+            correction_indices.append(swap_tuple[0])
+            
+        singular_shift([iterable[i] for i in correction_indices])
+
 
 def to_cycles(perm):
     pi = {i: perm[i] for i in range(len(perm))}
@@ -1607,66 +1653,69 @@ def permute_iterable(iterable, perm):
     >>> print(qa)
     {OutcomeArray([1, 0, 3, 7, 5, 2, 6, 4]): 1.0}
     >>> print(qa.qs)
-    QuantumCircuit:
-    ---------------
-      qa.0: ────────────X──────────────────────
-                        │                      
-      qa.1: ──────X─────┼──────────────────────
-                  │     │                      
-      qa.2: ──────┼──X──┼──────────────────────
-            ┌───┐ │  │  │                      
-    qa_1.0: ┤ X ├─┼──┼──X──────────────────────
-            └───┘ │  │                         
-    qa_1.1: ──────X──┼─────────────────────────
-                     │                         
-    qa_1.2: ─────────X─────────────────────────
-    <BLANKLINE>                                           
-    qa_2.0: ───────────────────────────X───────
-            ┌───┐                      │       
-    qa_2.1: ┤ X ├──────────────────────┼──X────
-            └───┘                      │  │    
-    qa_2.2: ───────────────────────────┼──┼──X─
-            ┌───┐                      │  │  │ 
-    qa_3.0: ┤ X ├──────────X───────────┼──┼──┼─
-            ├───┤          │           │  │  │ 
-    qa_3.1: ┤ X ├──────────┼──X────────┼──┼──┼─
-            └───┘          │  │        │  │  │ 
-    qa_3.2: ───────────────┼──┼──X─────┼──┼──┼─
-                           │  │  │     │  │  │ 
-    qa_4.0: ──────X────────┼──┼──┼─────┼──┼──┼─
-                  │        │  │  │     │  │  │ 
-    qa_4.1: ──────┼──X─────┼──┼──┼─────┼──┼──┼─
-            ┌───┐ │  │     │  │  │     │  │  │ 
-    qa_4.2: ┤ X ├─┼──┼──X──┼──┼──┼─────┼──┼──┼─
-            ├───┤ │  │  │  │  │  │     │  │  │ 
-    qa_5.0: ┤ X ├─X──┼──┼──┼──┼──┼──X──X──┼──┼─
-            └───┘    │  │  │  │  │  │     │  │ 
-    qa_5.1: ─────────X──┼──┼──┼──┼──┼──X──X──┼─
-            ┌───┐       │  │  │  │  │  │     │ 
-    qa_5.2: ┤ X ├───────X──┼──┼──┼──┼──┼──X──X─
-            └───┘          │  │  │  │  │  │    
-    qa_6.0: ───────────────┼──┼──┼──┼──┼──┼────
-            ┌───┐          │  │  │  │  │  │    
-    qa_6.1: ┤ X ├──────────┼──┼──┼──┼──┼──┼────
-            ├───┤          │  │  │  │  │  │    
-    qa_6.2: ┤ X ├──────────┼──┼──┼──┼──┼──┼────
-            ├───┤          │  │  │  │  │  │    
-    qa_7.0: ┤ X ├──────────X──┼──┼──X──┼──┼────
-            ├───┤             │  │     │  │    
-    qa_7.1: ┤ X ├─────────────X──┼─────X──┼────
-            ├───┤                │        │    
-    qa_7.2: ┤ X ├────────────────X────────X────
-            └───┘                              
-    Live QuantumVariables:
-    ----------------------
-    QuantumFloat qa
-    QuantumFloat qa_1
-    QuantumFloat qa_2
-    QuantumFloat qa_3
-    QuantumFloat qa_4
-    QuantumFloat qa_5
-    QuantumFloat qa_6
-    QuantumFloat qa_7
+    
+    ::
+    
+        QuantumCircuit:
+        --------------
+          qa.0: ────────────X──────────────────────
+                            │                      
+          qa.1: ──────X─────┼──────────────────────
+                      │     │                      
+          qa.2: ──────┼──X──┼──────────────────────
+                ┌───┐ │  │  │                      
+        qa_1.0: ┤ X ├─┼──┼──X──────────────────────
+                └───┘ │  │                         
+        qa_1.1: ──────X──┼─────────────────────────
+                         │                         
+        qa_1.2: ─────────X─────────────────────────
+                                          
+        qa_2.0: ───────────────────────────X───────
+                ┌───┐                      │       
+        qa_2.1: ┤ X ├──────────────────────┼──X────
+                └───┘                      │  │    
+        qa_2.2: ───────────────────────────┼──┼──X─
+                ┌───┐                      │  │  │ 
+        qa_3.0: ┤ X ├──────────X───────────┼──┼──┼─
+                ├───┤          │           │  │  │ 
+        qa_3.1: ┤ X ├──────────┼──X────────┼──┼──┼─
+                └───┘          │  │        │  │  │ 
+        qa_3.2: ───────────────┼──┼──X─────┼──┼──┼─
+                               │  │  │     │  │  │ 
+        qa_4.0: ──────X────────┼──┼──┼─────┼──┼──┼─
+                      │        │  │  │     │  │  │ 
+        qa_4.1: ──────┼──X─────┼──┼──┼─────┼──┼──┼─
+                ┌───┐ │  │     │  │  │     │  │  │ 
+        qa_4.2: ┤ X ├─┼──┼──X──┼──┼──┼─────┼──┼──┼─
+                ├───┤ │  │  │  │  │  │     │  │  │ 
+        qa_5.0: ┤ X ├─X──┼──┼──┼──┼──┼──X──X──┼──┼─
+                └───┘    │  │  │  │  │  │     │  │ 
+        qa_5.1: ─────────X──┼──┼──┼──┼──┼──X──X──┼─
+                ┌───┐       │  │  │  │  │  │     │ 
+        qa_5.2: ┤ X ├───────X──┼──┼──┼──┼──┼──X──X─
+                └───┘          │  │  │  │  │  │    
+        qa_6.0: ───────────────┼──┼──┼──┼──┼──┼────
+                ┌───┐          │  │  │  │  │  │    
+        qa_6.1: ┤ X ├──────────┼──┼──┼──┼──┼──┼────
+                ├───┤          │  │  │  │  │  │    
+        qa_6.2: ┤ X ├──────────┼──┼──┼──┼──┼──┼────
+                ├───┤          │  │  │  │  │  │    
+        qa_7.0: ┤ X ├──────────X──┼──┼──X──┼──┼────
+                ├───┤             │  │     │  │    
+        qa_7.1: ┤ X ├─────────────X──┼─────X──┼────
+                ├───┤                │        │    
+        qa_7.2: ┤ X ├────────────────X────────X────
+                └───┘                              
+        Live QuantumVariables:
+        ---------------------
+        QuantumFloat qa
+        QuantumFloat qa_1
+        QuantumFloat qa_2
+        QuantumFloat qa_3
+        QuantumFloat qa_4
+        QuantumFloat qa_5
+        QuantumFloat qa_6
+        QuantumFloat qa_7
     
     """
     

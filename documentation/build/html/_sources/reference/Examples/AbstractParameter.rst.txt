@@ -24,12 +24,16 @@ To evaluate the circuit we can now substitute using the :meth:`bind_parameters <
 >>> subs_dict = {phi : np.pi/2}
 >>> bound_qc = qc.bind_parameters(subs_dict)
 >>> print(bound_qc)
-qb_34: ──────o───────
-             │       
-qb_35: ──────o───────
-       ┌───┐ │P(π/2) 
-qb_36: ┤ H ├─■───────
-       └───┘         
+
+::
+
+    qb_34: ──────o───────
+                 │       
+    qb_35: ──────o───────
+           ┌───┐ │P(π/2) 
+    qb_36: ┤ H ├─■───────
+           └───┘         
+       
        
 Using the :meth:`statevector_array <qrisp.QuantumCircuit.statevector_array>` method you can retrieve an array with symbolic entries:
 

@@ -46,8 +46,7 @@ Please note: If you have general questions concerning the institute please refer
 
 .. line-block::
    
-   Prof. Dr.-Ing. Reimund Neugebauer \| President
-   Prof. Dr. Alexander Kurz \| Member of the Executive Board
+   Prof. Dr.-Ing. Holger Hanselka \| President
    Prof. Dr. Axel Müller-Groeling \| Member of the Executive Board
    Ass. jur. Elisabeth Ewen \| Member of the Executive Board
    Dr. Sandra Krey \| Member of the Executive Board

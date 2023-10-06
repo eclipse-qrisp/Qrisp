@@ -9,6 +9,7 @@ Utilities
 
    multi_measurement
    gate_wrap
+   custom_control
    lifted
    redirect_qfunction
    as_hamiltonian
@@ -16,3 +17,4 @@ Utilities
    unlock
    perm_lock
    perm_unlock
+   

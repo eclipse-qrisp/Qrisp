@@ -216,39 +216,46 @@ def gate_wrap(*args, permeability=None, is_qfree=None, name=None, verify=False):
         example_function(a, b)
 
     >>> print(a.qs)
-    QuantumCircuit:
-    ---------------
-         ┌───────────────────┐
-    b.0: ┤0                  ├
-         │                   │
-    b.1: ┤1                  ├
-         │                   │
-    b.2: ┤2                  ├
-         │  example_function │
-    a.0: ┤3                  ├
-         │                   │
-    a.1: ┤4                  ├
-         │                   │
-    a.2: ┤5                  ├
-         └───────────────────┘
-    Live QuantumVariables:
-    ----------------------
-    QuantumVariable a
-    QuantumVariable b
+    
+    ::
+    
+        QuantumCircuit:
+        --------------
+             ┌───────────────────┐
+        b.0: ┤0                  ├
+             │                   │
+        b.1: ┤1                  ├
+             │                   │
+        b.2: ┤2                  ├
+             │  example_function │
+        a.0: ┤3                  ├
+             │                   │
+        a.1: ┤4                  ├
+             │                   │
+        a.2: ┤5                  ├
+             └───────────────────┘
+        Live QuantumVariables:
+        ---------------------
+        QuantumVariable a
+        QuantumVariable b
+    
     >>> print(a.qs.transpile())
-         ┌───┐                    ┌───┐
-    b.0: ┤ X ├─────────────────■──┤ H ├──────────
-         └─┬─┘┌───┐            │  └───┘┌───┐
-    b.1: ──┼──┤ X ├────────────┼────■──┤ H ├─────
-           │  └─┬─┘┌───┐       │    │  └───┘┌───┐
-    b.2: ──┼────┼──┤ X ├───────┼────┼────■──┤ H ├
-           │    │  └─┬─┘┌───┐┌─┴─┐  │    │  └───┘
-    a.0: ──■────┼────┼──┤ X ├┤ X ├──┼────┼───────
-                │    │  ├───┤└───┘┌─┴─┐  │
-    a.1: ───────■────┼──┤ X ├─────┤ X ├──┼───────
-                     │  ├───┤     └───┘┌─┴─┐
-    a.2: ────────────■──┤ X ├──────────┤ X ├─────
-                        └───┘          └───┘
+    
+    ::
+    
+             ┌───┐                    ┌───┐
+        b.0: ┤ X ├─────────────────■──┤ H ├──────────
+             └─┬─┘┌───┐            │  └───┘┌───┐
+        b.1: ──┼──┤ X ├────────────┼────■──┤ H ├─────
+               │  └─┬─┘┌───┐       │    │  └───┘┌───┐
+        b.2: ──┼────┼──┤ X ├───────┼────┼────■──┤ H ├
+               │    │  └─┬─┘┌───┐┌─┴─┐  │    │  └───┘
+        a.0: ──■────┼────┼──┤ X ├┤ X ├──┼────┼───────
+                    │    │  ├───┤└───┘┌─┴─┐  │
+        a.1: ───────■────┼──┤ X ├─────┤ X ├──┼───────
+                         │  ├───┤     └───┘┌─┴─┐
+        a.2: ────────────■──┤ X ├──────────┤ X ├─────
+                            └───┘          └───┘
 
 
     In the next example, we create a function that performs no quantum gates and specify
@@ -272,35 +279,43 @@ def gate_wrap(*args, permeability=None, is_qfree=None, name=None, verify=False):
         res = example_function(qv_0, qv_1)
 
     >>> print(qv_0.qs)
-    QuantumCircuit:
-    ---------------
-            ┌───────────────────┐
-    qv_0.0: ┤0                  ├
-            │                   │
-    qv_1.0: ┤1 example_function ├
-            │                   │
-     res.0: ┤2                  ├
-            └───────────────────┘
-    Live QuantumVariables:
-    ----------------------
-    QuantumVariable qv_0
-    QuantumVariable qv_1
-    QuantumVariable res
+    
+    ::
+    
+        QuantumCircuit:
+        --------------
+                ┌───────────────────┐
+        qv_0.0: ┤0                  ├
+                │                   │
+        qv_1.0: ┤1 example_function ├
+                │                   │
+         res.0: ┤2                  ├
+                └───────────────────┘
+        Live QuantumVariables:
+        ---------------------
+        QuantumVariable qv_0
+        QuantumVariable qv_1
+        QuantumVariable res
+    
+    
     >>> qv_1.uncompute()
     >>> print(qv_0.qs)
-    QuantumCircuit:
-    ---------------
-            ┌───────────────────┐
-    qv_0.0: ┤0                  ├
-            │                   │
-    qv_1.0: ┤1 example_function ├
-            │                   │
-     res.0: ┤2                  ├
-            └───────────────────┘
-    Live QuantumVariables:
-    ----------------------
-    QuantumVariable qv_0
-    QuantumVariable res
+    
+    ::
+    
+        QuantumCircuit:
+        --------------
+                ┌───────────────────┐
+        qv_0.0: ┤0                  ├
+                │                   │
+        qv_1.0: ┤1 example_function ├
+                │                   │
+         res.0: ┤2                  ├
+                └───────────────────┘
+        Live QuantumVariables:
+        ---------------------
+        QuantumVariable qv_0
+        QuantumVariable res
 
     Since ``arg_1`` is marked as permeable, there are no further gates required for
     uncomputation. The situation is different for the other two QuantumVariables, where
@@ -309,17 +324,20 @@ def gate_wrap(*args, permeability=None, is_qfree=None, name=None, verify=False):
     >>> qv_0.uncompute(do_it = False)
     >>> res.uncompute()
     >>> print(qv_0.qs)
-    QuantumCircuit:
-    ---------------
-            ┌───────────────────┐┌──────────────────────┐
-    qv_0.0: ┤0                  ├┤0                     ├
-            │                   ││                      │
-    qv_1.0: ┤1 example_function ├┤1 example_function_dg ├
-            │                   ││                      │
-     res.0: ┤2                  ├┤2                     ├
-            └───────────────────┘└──────────────────────┘
-    Live QuantumVariables:
-    ----------------------
+    
+    ::
+    
+        QuantumCircuit:
+        --------------
+                ┌───────────────────┐┌──────────────────────┐
+        qv_0.0: ┤0                  ├┤0                     ├
+                │                   ││                      │
+        qv_1.0: ┤1 example_function ├┤1 example_function_dg ├
+                │                   ││                      │
+         res.0: ┤2                  ├┤2                     ├
+                └───────────────────┘└──────────────────────┘
+        Live QuantumVariables:
+        ---------------------
     """
 
     if len(args):
@@ -1281,19 +1299,22 @@ def redirect_qfunction(function_to_redirect):
 
 
     >>> print(a.qs)
-    QuantumCircuit:
-    ---------------
-    b.0: ──■──
-           │
-    a.0: ──■──
-         ┌─┴─┐
-    c.0: ┤ X ├
-         └───┘
-    Live QuantumVariables:
-    ----------------------
-    QuantumBool b
-    QuantumBool a
-    QuantumBool c
+    
+    ::
+    
+        QuantumCircuit:
+        --------------
+        b.0: ──■──
+               │
+        a.0: ──■──
+             ┌─┴─┐
+        c.0: ┤ X ├
+             └───┘
+        Live QuantumVariables:
+        ---------------------
+        QuantumBool b
+        QuantumBool a
+        QuantumBool c
 
 
 
@@ -1655,34 +1676,40 @@ def lifted(*args, verify=False):
         res = margolus(control)
 
     >>> print(res.qs)
-    QuantumCircuit:
-    ---------------
-               ┌───────────┐
-    control.0: ┤0          ├
-               │           │
-    control.1: ┤1 margolus ├
-               │           │
-        res.0: ┤2          ├
-               └───────────┘
-    Live QuantumVariables:
-    ----------------------
-    QuantumVariable control
-    QuantumVariable res
+    
+    ::
+    
+        QuantumCircuit:
+        --------------
+                   ┌───────────┐
+        control.0: ┤0          ├
+                   │           │
+        control.1: ┤1 margolus ├
+                   │           │
+            res.0: ┤2          ├
+                   └───────────┘
+        Live QuantumVariables:
+        ---------------------
+        QuantumVariable control
+        QuantumVariable res
 
     >>> res.uncompute()
     >>> print(res.qs)
-    QuantumCircuit:
-    ---------------
-               ┌───────────┐┌──────────────┐
-    control.0: ┤0          ├┤0             ├
-               │           ││              │
-    control.1: ┤1 margolus ├┤1 margolus_dg ├
-               │           ││              │
-        res.0: ┤2          ├┤2             ├
-               └───────────┘└──────────────┘
-    Live QuantumVariables:
-    ----------------------
-    QuantumVariable control
+    
+    ::
+    
+        QuantumCircuit:
+        --------------
+                   ┌───────────┐┌──────────────┐
+        control.0: ┤0          ├┤0             ├
+                   │           ││              │
+        control.1: ┤1 margolus ├┤1 margolus_dg ├
+                   │           ││              │
+            res.0: ┤2          ├┤2             ├
+                   └───────────┘└──────────────┘
+        Live QuantumVariables:
+        ---------------------
+        QuantumVariable control
 
     Note that we set the ``verify`` keyword to ``True`` in this example. In more complex
     functions, involving many qubits this feature should only be used for bug-fixing on

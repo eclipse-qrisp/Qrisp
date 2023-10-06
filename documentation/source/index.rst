@@ -3,26 +3,328 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-What is Qrisp?
-==============
 
-Qrisp is a high-level programming language for working with quantum computers. Qrisp is designed to enable programmers to write complex quantum algorithms with the ease of a modern day programming language while still compiling down to the circuit level. By automating much of the low-level coding duties, such as gate-by-gate assembly or qubit management, we aim to open this field of research to a broad audience of developers. Qrisp is being developed at `Fraunhofer FOKUS <https://www.fokus.fraunhofer.de/en/>`_ funded by the German ministry for economic affairs and climate action. 
+.. |br| raw:: html
 
-To get an overview over some features, we recommend checking the :doc:`tutorial <general/tutorial>`. In-depth documentation can be found in the :doc:`reference <reference/index>`.
+   <br />
+   
+.. raw:: html
 
-**Already familiar with Qrisp?** Check out what's new in :ref:`version 0.2 <v0.2>`!
+    <style>
+    .bd-sidebar-secondary {
+        display: none;
+    }
 
-.. image:: ./qrisp_wheel.png
-  :width: 680
-  :alt: Qrisp wheel
-  :align: center
-  :class: sd-m-auto sd-animate-grow50
+    .wy-nav-content-wrap {
+        margin-left: 0;
+    }
+
+    .frontpage-equation {
+        margin-top: 0.9em;
+    }
+
+    .bd-main .bd-content .bd-article-container {
+        max-width: 75rem; /* Make homepage a little wider instead of 60em */
+    }
+
+    .code-example-text {
+        max-width: 60rem;
+        margin: 0 auto;
+    }
+
+    /* Extra top/bottom padding to the sections */
+    article.bd-article section {
+        padding: 3rem 0 7rem;
+    }
+
+    /* Override all h1 headers except for the hidden ones */
+    h1:not(.sd-d-none) {
+        font-weight: bold;
+        font-size: 48px;
+        text-align: center;
+        margin-bottom: 4rem;
+    }
+
+    /* Override all h3 headers that are not in hero */
+    h3:not(#hero h3) {
+        font-weight: bold;
+        text-align: center;
+    }
+
+    .homepage-button.secondary-button:hover {
+        color: white;
+    }
+
+    /* New CSS for mobile layout */
+    @media (max-width: 768px) {
+        #hero {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        #hero-left,
+        #hero-right {
+            width: 100%;
+        }
+
+        .homepage-button-container {
+            margin-top: 1rem;
+        }
+    }
+    </style>
+
+    <div id="hero">
+        <div id="hero-left">
+            <h2 style="font-size: 60px; font-weight: bold; margin: 2rem auto 0;">Qrisp</h2>
+            <h3 style="font-weight: bold; margin-top: 0; color: #000000;">The next generation of quantum algorithm development</h3>
+            <p>Qrisp is a high-level programming language for creating and compiling quantum algorithms. Its structured programming model enables scalable development and maintenance.</p>
+
+            <div class="homepage-button-container">
+                <div class="homepage-button-container-row">
+                    <a href="./general/tutorial/index.html" class="homepage-button primary-button"; style="color: #FFFFFF;">Get Started</a>
+                    <a href="./reference/Examples/index.html" class="homepage-button secondary-button"; style=" .a:hover{color: #FFFFFF}">See Examples</a>
+                </div>
+                <div class="homepage-button-container-row">
+                    <a href="./reference/index.html" class="homepage-button-link">See API Reference →</a>
+                </div>
+            </div>
+        </div>
+        
+    <div id="hero-right">
+
+.. grid:: 1 1 2 2
+
+    .. grid-item-card::
+        :shadow: none
+        
+        .. raw:: html
+
+            <a href="./reference/Algorithms/QuantumBacktrackingTree.html">
+            <div class="example-img-plot-overlay">
+            <p class="sd-card-text">Solve backtracking problems by leveraging quantum walks</p>
+            </div>
+            </a>
+
+    
+        .. image:: ./_static/backtracking.svg
+            
 
 
-Why should you use Qrisp over other quantum frameworks?
--------------------------------------------------------
+    .. grid-item-card::
+        :shadow: none
+    
+        .. raw:: html
 
-With Qrisp, you can concentrate on the crucial aspects of your code and reduce the burden of overseeing individual qubits and quantum gates. Due to a sophisticated qubit management system, recycled quantum resources are automatically reused across functions, implying Qrisp code can be modularized effectively. Combined with a :ref:`typing system<QuantumTypes>`, which is smoothly integrated into the Python infrastructure, scalable algorithm development is a straightforward process. Qrisp is lightweight and fast yielding a convenient development workflow. Below you find two code snippets that perform the same basic task: Multiplication of two n-bit integers. One is written using Qiskit and the other one utilizes Qrisp.
+            <a href="./reference/Miscellaneous Functions/generated/qrisp.as_hamiltonian.html">
+            <div class="example-img-plot-overlay">
+            <p class="sd-card-text">Synthesize arbitrarily complex diagonal hamiltonians</p>
+            </div>
+            </a>
+
+    
+        .. image:: ./_static/hamiltonian.svg
+
+.. grid:: 1 1 2 2
+
+    .. grid-item-card::
+        :shadow: none
+            
+    
+        .. raw:: html
+            
+            <a href="./reference/Core/generated/qrisp.QuantumSession.statevector.html">
+            <div class="example-img-plot-overlay">
+            <p class="sd-card-text">Explore parametrized algorithms with symbolic statevector simulation</p>
+            </div>
+            </a>
+            <div class="frontpage-equation">
+            
+            
+        .. math::
+            
+            \definecolor{qrispblue}{RGB}{32, 48, 111}
+            \definecolor{textgray}{RGB}{68, 68, 68}
+            
+            \Large
+            \textcolor{textgray}{
+            \begin{align}
+            \frac{\ket{\texttt{hello}} + e^{i \textcolor{red}{\phi}} \ket{\texttt{world}}}{\sqrt{2}}
+            \end{align}
+            }
+            
+        .. raw:: html
+            
+            </div>
+            
+
+    .. grid-item-card::
+        :shadow: none
+    
+        .. raw:: html
+
+            <a href="./general/tutorial/TSP.html">
+            <div class="example-img-plot-overlay">
+            <p class="sd-card-text">Solve the traveling salesman problem using quantum search</code></p>
+            </div>
+            </a>
+
+    
+        .. image:: ./_static/tsp.svg
+
+
+.. raw:: html
+
+
+    </div>  <!-- End Hero Right -->
+    </div>
+    
+|
+|
+|
+
+Key Features
+============
+
+.. grid:: 1 1 2 2
+    :gutter: 5
+
+
+    .. grid-item-card::
+        :class-card: sd-border-0
+        :shadow: none
+        
+        .. image:: ./_static/typed_variables_pic.png
+            :target: ./reference/Quantum%20Types/index.html
+            :align: center
+    
+    
+        .. raw:: html
+        
+            <div class="key-features-text">
+        
+        
+        **Typed quantum variables** |br|
+        Qrisp algorithms are constituted of variables and functions instead of qubits and circuits, which helps you to structure your code and avoid technical debt.
+       
+        .. raw:: html
+        
+            </div>
+
+    .. grid-item-card::
+        :class-card: sd-border-0
+        :shadow: none
+        
+        .. image:: ./_static/recycling.png
+            :target: ./reference/Core/Uncomputation.html
+            :align: center
+
+        .. raw:: html
+        
+            <div class="key-features-text">
+        
+
+    
+        **Automatic uncomputation** |br|
+        QuantumVariables can be uncomputed automatically once they are not needed anymore. The uncomputation module is tightly integrated with an advanced qubit resource managment system.
+        
+        .. raw:: html
+        
+            </div>
+
+        
+    .. grid-item-card::
+        :class-card: sd-border-0
+        :shadow: none
+        
+        .. image:: ./_static/puzzle.png
+            :align: center
+
+        .. raw:: html
+        
+            <div class="key-features-text">
+
+    
+        **Modularity** |br|
+        Automated qubit allocation allow separate modules to recycle qubit resources for eachother without intertwining the code. This feature facilitates interoperability of code written by respective domain experts.
+
+        .. raw:: html
+        
+            </div>
+        
+    .. grid-item-card::
+        :class-card: sd-border-0
+        :shadow: none
+        
+        .. image:: ./_static/abakus.png
+            :target: ./reference/Quantum%20Types/QuantumFloat.html
+            :align: center
+
+
+        .. raw:: html
+        
+            <div class="key-features-text">
+            
+    
+        **Arithmetic** |br|
+        A smoothly integrated system of floating point arithmetic streamlines the development of non-trivial applications.
+
+        .. raw:: html
+        
+            </div>
+
+    .. grid-item-card::
+        :class-card: sd-border-0
+        :shadow: none
+        
+        .. image:: ./_static/plug.png
+            :align: center
+
+        .. raw:: html
+        
+            <div class="key-features-text">
+    
+        **Compatibility** |br|
+        Compilation results are circuit objects, implying they can be run on a variety of hardware providers such as IBM Quantum, Quantinuum, Rigetti etc. Further circuit processing is possible using circuit optimizers like PyZX. 
+        
+        .. raw:: html
+        
+            </div>
+        
+    .. grid-item-card::
+        :class-card: sd-border-0
+        :shadow: none
+        
+        .. image:: ./_static/quantumcomputer.png
+            :align: center
+
+        .. raw:: html
+        
+            <div class="key-features-text">
+
+    
+        **Simulator** |br|
+        Qrisp ships with a high-performance simulator, that utilizes sparse matrices to store and process quantum states. This allows for the simulation of :ref:`(some) quantum circuits <SimulationExample>` involving 100+ qubits.
+        
+        .. raw:: html
+        
+            </div>
+        
+
+
+
+
+
+Dive into Qrisp code
+====================
+
+.. raw:: html
+
+    <div class="code-example-text">
+    
+
+Qrisp code can be significantly shorter and also more readable than the equivalent program in a gate based framework. Regardless, the compiled quantum circuits are in many cases more efficient since the compiler can leverage the code structure into assumptions about algorithmic structure, implying strong compilation optimizations. Below you find two code snippets that perform the same basic task: Multiplication of two n-bit integers. One is written using Qiskit and the other one utilizes Qrisp.
 
 .. list-table::
    :widths: 25 25
@@ -72,34 +374,70 @@ With Qrisp, you can concentrate on the crucial aspects of your code and reduce t
          print(res)
          #Yields: {12: 1.0}
 
-
-Apart from simple scripts like the above, our :doc:`tutorial <general/tutorial>` showcases the utilization of Qrisp in solving the traveling salesman problem. This solution involves over 10 distinct :ref:`QuantumVariables <QuantumVariable>`, with their respective qubits being repeatedly disentangled and repurposed for other variables. The presented approach scales better in the qubit count than the previously known QUBO based solution:  $\mathcal{O}(n \text{log}(n))$ vs. $\mathcal{O}(n^2)$. 
+Apart from simple scripts like the above, our :doc:`tutorial <general/tutorial/TSP>` showcases the utilization of Qrisp in solving the traveling salesman problem. This solution involves over 10 distinct :ref:`QuantumVariables <QuantumVariable>`, with their respective qubits being repeatedly disentangled and repurposed for other variables. The presented approach scales better in the qubit count than the previously known QUBO based solution:  $\mathcal{O}(n \text{log}(n))$ vs. $\mathcal{O}(n^2)$. 
 
 This example illustrates how Qrisp, as a high-level language, permits novel and scalable solutions to intricate problems and furthermore that high-level quantum programming languages will be an integral part of the future of quantum information science.
 
+.. raw:: html
 
-Contact
--------
+    </div>
 
-Qrisp is being developed at `Fraunhofer FOKUS`_. You can reach us via
+Who is behind Qrisp
+===================
 
-**Raphael Seidel (Architect/Developer)**
+.. raw:: html
 
-raphael.seidel@fokus.fraunhofer.de
+    <div class="code-example-text">
+    
 
-**Sebastian Bock (Project Manager/Developer)**
+Qrisp is an open-source project developed at `Fraunhofer FOKUS <https://www.fokus.fraunhofer.de/en/>`_, an industrial research facility based in Berlin. It is publicly funded by the German ministry of econmic affairs with the aim to enable commercial use of quantum computation. To achieve this, we aim to open this field of research to a broad audience of developers.
 
-sebastian.bock@fokus.fraunhofer.de
+.. raw:: html
 
-**Nikolay Tcholtchev (Project Manager)**
+    </div>
 
-nikolay.tcholtchev@fokus.fraunhofer.de
+.. grid:: 1 1 4 4
 
+    .. grid-item-card::
+        :class-card: sd-border-0
+        :shadow: none
+    
+        .. image:: ./_static/dlr_logo.svg
+            :align: center
+            :width: 150
+            :class: no-scaled-link
+
+    .. grid-item-card::
+        :class-card: sd-border-0
+        :shadow: none
+    
+        .. image:: ./_static/fraunhofer_fokus_logo.png
+            :align: center
+            :width: 150
+            :class: no-scaled-link
+            
+    .. grid-item-card::
+        :class-card: sd-border-0
+        :shadow: none
+    
+        .. image:: ./_static/eleqtron_logo.png
+            :align: center
+            :width: 150
+            :class: no-scaled-link
+
+    .. grid-item-card::
+        :class-card: sd-border-0
+        :shadow: none
+    
+        .. image:: ./_static/bmwk_logo.png
+            :align: center
+            :width: 150
+            :class: no-scaled-link
 
 .. toctree::
    :hidden:
    
-   general/tutorial
+   general/tutorial/index
    reference/index
    general/setup
    general/changelog/index

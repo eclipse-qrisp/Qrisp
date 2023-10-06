@@ -866,6 +866,10 @@ def qft_cancellation(qc):
             for qb in instr.qubits:
                 previous_instruction = qc.data[last_instr_dic[qb]]
                 
+                if previous_instruction.op.name == "qb_alloc":
+                    previous_instruction_type.append("alloc")
+                    continue
+                
                 if previous_instruction.op.num_qubits != instr.op.num_qubits:
                     break
                 
@@ -899,8 +903,6 @@ def qft_cancellation(qc):
                     else:
                         break
 
-                elif previous_instruction.op.name == "qb_alloc":
-                    previous_instruction_type.append("alloc")
                 else:
                     break
                 
@@ -951,6 +953,7 @@ def qft_cancellation(qc):
 
         if i in cancellation_indices:
             continue
+        
         else:
             new_qc.append(qc.data[i])
     # print(len(new_qc.data))

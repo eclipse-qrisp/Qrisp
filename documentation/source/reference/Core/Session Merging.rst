@@ -73,13 +73,16 @@ This is however not the case for QuantumSessions that get created inside this en
       a.qs.append(temp_op, a.reg)
 
 >>> print(a.qs)
-QuantumCircuit:
----------------
-     ┌───────────┐
-a.0: ┤ gate_name ├
-     └───────────┘
-Live QuantumVariables:
-----------------------
-QuantumVariable a
+
+::
+
+    QuantumCircuit:
+    --------------
+         ┌───────────┐
+    a.0: ┤ gate_name ├
+         └───────────┘
+    Live QuantumVariables:
+    ---------------------
+    QuantumVariable a
 
 In this snipped we mimic the situation, that a submodule is creating a gate object. In the defined function, the QuantumVariable creates a QuantumSession and performs some (trivial) operations. After that, this quantum session is turned into a gate object and returned. We see that the QuantumSession b was registered in, is not merged into a. 

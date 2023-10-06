@@ -25,8 +25,9 @@ from qrisp.arithmetic.poly_tools import (
     filter_pow,
     get_ordered_symbol_list,
 )
-from qrisp.core import QuantumArray, QuantumVariable, cp, cx, cz, h, mcx, p
+from qrisp.core import QuantumArray, QuantumVariable, cp, cx, cz, h, mcx, p, z, rz
 from qrisp.misc import gate_wrap
+from qrisp.circuit import XGate
 
 # Threshold of rounding used in detecting integer multiples of pi
 pi_mult_round_threshold = 11
@@ -61,7 +62,8 @@ def multi_controlled_U_g(
     output_qf, control_qb_list, y, phase_tolerant=False, use_gms=False
 ):
     # Set alias for quantum session
-    qs = output_qf.qs
+    # qs = output_qf.qs
+    qs = control_qb_list[0].qs()
 
     # For one control qubit, there is no advantage in calculating an ancilla qubit
     if len(control_qb_list) == 1:
@@ -79,7 +81,7 @@ def multi_controlled_U_g(
             toffoli_method = "gms"
         else:
             toffoli_method = "gray_pt"
-
+        
         # Apply multi-controlled x gate
         mcx(control_qb_list, ancilla[0], method=toffoli_method)
 
@@ -98,19 +100,21 @@ def multi_controlled_U_g(
 
     else:
         # This is an environment that simply does nothing
-        from qrisp.environments.quantum_environments import QuantumEnvironment
+        from qrisp.environments import QuantumEnvironment, control
 
-        env = QuantumEnvironment()
+        # env = QuantumEnvironment()
+        env = control(ancilla[0])
 
     # Enter environment
     # if True:
     env.manual_allocation_management = True
+    
     with env:
         phase_accumulator = 0
         cz_counter = 0
 
         # Execute controlled rotations
-        for i in range(output_qf.size):
+        for i in range(len(output_qf)):
             # The -i (instead of i) reverses the gate order implying that
             # we can leave out the swaps of the QFT
 
@@ -124,19 +128,25 @@ def multi_controlled_U_g(
                 # If phase is equal to pi, execute cz gate (costs one CNOT less than CP)
                 if False:
                     # if np.round(abs(rot_angle) - np.pi, pi_mult_round_threshold) == 0:
-                    cz(ancilla[0], output_qf.reg[i])
+                    # cz(ancilla[0], output_qf.reg[i])
+                    
+                    z(output_qf.reg[i])
                     cz_counter += 1
 
                     phase_accumulator += rot_angle / 2
                 # Otherwise execute cp gate
                 else:
-                    cx(ancilla[0], output_qf.reg[i])
-                    p(-rot_angle / 2, output_qf.reg[i])
-                    cx(ancilla[0], output_qf.reg[i])
-                    p(rot_angle / 2, output_qf.reg[i])
+                    # cx(ancilla[0], output_qf[i])
+                    # p(-rot_angle / 2, output_qf[i])
+                    # cx(ancilla[0], output_qf[i])
+                    # p(rot_angle / 2, output_qf[i])
+                    
+                    rz(rot_angle, output_qf[i])
+                    
+                    
 
                     phase_accumulator += rot_angle / 2
-                    # cp(rot_angle, ancilla_qb, output_qf.reg[i])
+                    # cp(rot_angle, ancilla[0], output_qf[i])
                     # crz(rot_angle, ancilla[0], output_qf.reg[i])
         p(phase_accumulator - np.pi * cz_counter / 2, ancilla[0])
 
@@ -146,8 +156,6 @@ def multi_controlled_U_g(
             toffoli_method += "_inv"
 
         mcx(control_qb_list, ancilla[0], method=toffoli_method)
-        # gray_logic_synth_qb_list(control_qb_list,
-        # ancilla_qb, ancilla_qv.qs, tt, inverse = True)
         ancilla.delete()
 
     return phase_accumulator
@@ -343,14 +351,22 @@ def sbp_mult(factor_1_qf, factor_2_qf, output_qf=None):
 
     We multiply two QuantumFloats:
 
-    >>> from qrisp import QuantumFloat, sbp_mult
-    >>> qf_0 = QuantumFloat(3)
-    >>> qf_1 = QuantumFloat(3)
-    >>> qf_0[:] = 3
-    >>> qf_1[:] = 4
-    >>> qf_res = sbp_mult(qf_0, qf_1)
-    >>> print(qf_res)
-    {12: 1.0}
+    ::
+    
+        from qrisp import QuantumFloat, sbp_mult
+        qf_0 = QuantumFloat(3)
+        qf_1 = QuantumFloat(3)
+        qf_0[:] = 3
+        qf_1[:] = 4
+        qf_res = sbp_mult(qf_0, qf_1)
+        print(qf_res)
+
+
+    ::
+
+        #Yields: {12: 1.0}
+
+
     """
 
     if output_qf is None:
@@ -393,14 +409,22 @@ def sbp_add(summand_1_qf, summand_2_qf, output_qf=None):
 
     We add two QuantumFloats:
 
-    >>> from qrisp import QuantumFloat, sbp_add
-    >>> qf_0 = QuantumFloat(3)
-    >>> qf_1 = QuantumFloat(3)
-    >>> qf_0[:] = 3
-    >>> qf_1[:] = 4
-    >>> qf_res = sbp_add(qf_0, qf_1)
-    >>> print(qf_res)
-    {7: 1.0}
+    ::
+    
+        from qrisp import QuantumFloat, sbp_add
+        qf_0 = QuantumFloat(3)
+        qf_1 = QuantumFloat(3)
+        qf_0[:] = 3
+        qf_1[:] = 4
+        qf_res = sbp_add(qf_0, qf_1)
+        print(qf_res)
+
+
+     ::
+
+        # Yields: {7: 1.0}
+
+
     """
 
     if output_qf is None:
@@ -443,14 +467,20 @@ def sbp_sub(summand_1_qf, summand_2_qf, output_qf=None):
 
     We add two QuantumFloats:
 
-    >>> from qrisp import QuantumFloat, sbp_sub
-    >>> qf_0 = QuantumFloat(3)
-    >>> qf_1 = QuantumFloat(3)
-    >>> qf_0[:] = 3
-    >>> qf_1[:] = 4
-    >>> qf_res = sbp_sub(qf_0, qf_1)
-    >>> print(qf_res)
-    {-1: 1.0}
+    ::
+    
+        from qrisp import QuantumFloat, sbp_sub
+        qf_0 = QuantumFloat(3)
+        qf_1 = QuantumFloat(3)
+        qf_0[:] = 3
+        qf_1[:] = 4
+        qf_res = sbp_sub(qf_0, qf_1)
+        print(qf_res)
+
+
+    ::
+
+        # Yields: {-1: 1.0}
 
 
     """
@@ -511,20 +541,28 @@ def polynomial_encoder(qf_list, output_qf, poly, encoding_dic=None, inplace_mult
     We evaluate the polynomial $x^2 + 2y^2$ on two QuantumFloats:
 
 
-    >>> from sympy import Symbol
-    >>> x = Symbol("x")
-    >>> y = Symbol("y")
-    >>> poly = x**2 + 2*y**2
-    >>> from qrisp import QuantumFloat, polynomial_encoder
-    >>> x_qf = QuantumFloat(3)
-    >>> y_qf = QuantumFloat(3)
-    >>> x_qf[:] = 3
-    >>> y_qf[:] = 2
-    >>> res_qf = QuantumFloat(7)
-    >>> encoding_dic = {x_qf : x, y_qf : y}
-    >>> polynomial_encoder([x_qf, y_qf], res_qf, poly, encoding_dic)
-    >>> print(res_qf)
-    {17.0: 1.0}
+    ::
+    
+        from sympy import Symbol
+        x = Symbol("x")
+        y = Symbol("y")
+        poly = x**2 + 2*y**2
+        from qrisp import QuantumFloat, polynomial_encoder
+        x_qf = QuantumFloat(3)
+        y_qf = QuantumFloat(3)
+        x_qf[:] = 3
+        y_qf[:] = 2
+        res_qf = QuantumFloat(7)
+        encoding_dic = {x_qf : x, y_qf : y}
+        polynomial_encoder([x_qf, y_qf], res_qf, poly, encoding_dic)
+        print(res_qf)
+
+
+    ::
+
+        # Yields: {17.0: 1.0}
+
+
     """
 
     if isinstance(qf_list, QuantumArray):
@@ -660,14 +698,21 @@ def hybrid_mult(
 
     We multiply two QuantumFloat with eachother and an additional classical factor
 
-    >>> from qrisp import QuantumFloat, hybrid_mult
-    >>> qf_0 = QuantumFloat(3)
-    >>> qf_1 = QuantumFloat(3)
-    >>> qf_0[:] = 3
-    >>> qf_1[:] = 4
-    >>> qf_res = hybrid_mult(qf_0, qf_1, cl_factor = 2)
-    >>> print(qf_res)
-    {24: 1.0}
+    ::
+    
+        from qrisp import QuantumFloat, hybrid_mult
+        qf_0 = QuantumFloat(3)
+        qf_1 = QuantumFloat(3)
+        qf_0[:] = 3
+        qf_1[:] = 4
+        qf_res = hybrid_mult(qf_0, qf_1, cl_factor = 2)
+        print(qf_res)
+
+
+    ::  
+
+        # Yields: {24: 1.0}
+
 
     """
 
@@ -801,7 +846,8 @@ def hybrid_mult(
             cx(y[i], hybrid_mult_anc[0])
 
             for k in range(len(applied_phases)):
-                cp(-applied_phases[k] * 2, hybrid_mult_anc[0], x[k])
+                # cp(-applied_phases[k] * 2, hybrid_mult_anc[0], x[k])
+                cp(-applied_phases[k] * 2, x[k], hybrid_mult_anc[0])
                 # sbp+= -2*applied_phases[k]*Symbol("y_" + str(i))*Symbol("x_" + str(k))
 
         # This command is equivalent to
@@ -957,15 +1003,30 @@ def inpl_mult(qf, mult_int, treat_overflow=True):
 
     We create a QuantumFloat, bring it to superposition and perform an inplace multiplication.
 
-    >>> from qrisp import QuantumFloat, h, inpl_mult
-    >>> a = QuantumFloat(5, signed = True)
-    >>> h(a[0])
-    >>> h(a[-1])
-    >>> print(a)
-    {0: 0.25, 1: 0.25, -32: 0.25, -31: 0.25}
-    >>> inpl_mult(a, -5)
-    >>> print(a)
-    {0: 0.25, 155: 0.25, 160: 0.25, -5: 0.25}
+    ::
+    
+        from qrisp import QuantumFloat, h, inpl_mult
+        a = QuantumFloat(5, signed = True)
+        h(a[0])
+        h(a[-1])
+        print(a)
+
+
+    ::   
+
+        # Yields: {0: 0.25, 1: 0.25, -32: 0.25, -31: 0.25}
+
+
+    ::
+
+        inpl_mult(a, -5)
+        print(a)
+
+
+    ::
+
+        # Yields: {0: 0.25, 155: 0.25, 160: 0.25, -5: 0.25}
+
 
     """
 

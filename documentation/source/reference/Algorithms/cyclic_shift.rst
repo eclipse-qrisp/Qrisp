@@ -1,4 +1,6 @@
-﻿Iterable Shifting
+﻿.. _ItShifting:
+
+Iterable Shifting
 =================
 
 .. currentmodule:: qrisp

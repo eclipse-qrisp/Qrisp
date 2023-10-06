@@ -121,17 +121,21 @@ class ControlEnvironment(QuantumEnvironment):
 
         QuantumEnvironment.__exit__(self, exception_type, exception_value, traceback)
 
+        from qrisp import ConjugationEnvironment
         # Determine the parent environment
         for env in self.env_qs.env_stack[::-1]:
             if isinstance(env, (ControlEnvironment, ConditionEnvironment)):
                 self.parent_cond_env = env
                 break
-            if not isinstance(env, (QuantumEnvironment, InversionEnvironment)):
-                break
+            if not isinstance(env, (InversionEnvironment, 
+                                    ConjugationEnvironment)):
+                
+                if not type(env) == QuantumEnvironment:
+                    break
 
     def compile(self):
         from qrisp import QuantumBool
-        from qrisp.environments import ConditionEnvironment
+        from qrisp.environments import ConditionEnvironment, CustomControlOperation
 
         # Create the quantum variable where the condition truth value should be saved
         # Incase we have a parent environment we create two qubits because
@@ -229,7 +233,7 @@ class ControlEnvironment(QuantumEnvironment):
             # and perform their controlled version on the condition_truth_value qubit
             while self.env_data:
                 instruction = self.env_data.pop(0)
-
+                
                 # If the instruction == conditional environment, compile the environment
                 if isinstance(instruction, (ControlEnvironment, ConditionEnvironment)):
                     instruction.compile()
@@ -279,7 +283,7 @@ class ControlEnvironment(QuantumEnvironment):
                         rz(instruction.op.params[0], self.condition_truth_value)
                     else:
                         raise Exception(
-                            "Tried to perform invalid operations"
+                            "Tried to perform invalid operations "
                             "on condition truth value (allowed are x, p, rz)"
                         )
                     continue
@@ -299,16 +303,20 @@ class ControlEnvironment(QuantumEnvironment):
                             new_ctrl_state += "1"
                             
                     ctrl_state = new_ctrl_state
+                
+                if self.condition_truth_value in instruction.qubits:
+                    instruction = process_custom_control(instruction, self.condition_truth_value)
                     
-                # Create controlled instruction
-                instruction.op = instruction.op.control(
-                    num_ctrl_qubits=1, method=self.ctrl_method, ctrl_state=ctrl_state
-                )
-
-                # Add condition truth value qubit to the instruction qubit list
-                instruction.qubits = [self.condition_truth_value] + list(
-                    instruction.qubits
-                )
+                else:
+                    # Create controlled instruction
+                    instruction.op = instruction.op.control(
+                        num_ctrl_qubits=1, method=self.ctrl_method, ctrl_state=ctrl_state
+                    )
+    
+                    # Add condition truth value qubit to the instruction qubit list
+                    instruction.qubits = [self.condition_truth_value] + list(
+                        instruction.qubits
+                    )
                 # Append instruction
                 self.env_qs.append(instruction)
 
@@ -338,4 +346,35 @@ class ControlEnvironment(QuantumEnvironment):
             )
 
 
-control = ControlEnvironment
+def process_custom_control(instruction, control_qubit):
+    
+    from qrisp.environments import CustomControlOperation
+    
+    if isinstance(instruction.op, CustomControlOperation):
+        return instruction
+    
+    if instruction.op.definition is None:
+        raise Exception
+    
+    new_definition = instruction.op.definition.clearcopy()
+    
+    control_qubit = new_definition.qubits[instruction.qubits.index(control_qubit)]
+    
+    for def_instr in instruction.op.definition.data:
+            
+        if control_qubit in def_instr.qubits:
+            new_definition.append(process_custom_control(def_instr, control_qubit))
+        else:
+            new_op = def_instr.op.control(1)
+            new_definition.append(new_op, [control_qubit] + def_instr.qubits, def_instr.clbits)
+            
+    res = instruction.copy()
+    res.op.definition = new_definition
+    
+    res.op = CustomControlOperation(res.op, new_definition.qubits.index(control_qubit))
+    
+    
+    return res
+                
+    
+control = ControlEnvironment    

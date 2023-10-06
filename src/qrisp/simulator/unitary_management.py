@@ -33,24 +33,30 @@ id_matrix = np.eye(2, dtype=np_dtype)
 pauli_x = np.asarray([[0, 1], [1, 0]], dtype=np_dtype)
 pauli_y = np.asarray([[0, 0], [0, 0]]) + 1j * np.asarray([[0, -1], [1, 0]], dtype = np_dtype)
 pauli_z = np.asarray([[1, 0], [0, -1]], dtype=np_dtype)
-
+from sympy.core.expr import Expr
+import numpy
+import sympy
 
 # Function which returns the unitary of a u3 gate
-def u3matrix(theta, phi, lam, global_phase):
-    import numpy as module
+def u3matrix(theta, phi, lam, global_phase, use_sympy = False):
+    if not use_sympy:
+        module = numpy
+        I = 1j
+        res = numpy.empty(shape=(2, 2), dtype=numpy.complex64)
+    else:
+        module = sympy
+        I = sympy.I
+        res = numpy.empty(shape=(2, 2), dtype=numpy.dtype("O"))
+    
+    
+    
+    # for par in [theta, phi, lam, global_phase]:
+    #     if isinstance(par, Expr):
+    #         res = module.zeros(shape=(2, 2), dtype="object")
+    #         import sympy as module
 
-    res = module.zeros(shape=(2, 2), dtype=module.complex64)
-
-    from sympy.core.expr import Expr
-
-    I = 1j
-    for par in [theta, phi, lam, global_phase]:
-        if isinstance(par, Expr):
-            res = module.zeros(shape=(2, 2), dtype="object")
-            import sympy as module
-
-            I = sp.I
-            break
+    #         
+    #         break
 
     res[0, 0] = module.cos(theta / 2)
     res[0, 1] = -module.exp(I * lam) * module.sin(theta / 2)

@@ -69,25 +69,28 @@ To demonstrate the functionality, we create a function which returns a :ref:`Qua
    result = triple_AND(a, b, c)
    
 >>> print(result.qs)
-QuantumCircuit:
----------------
-     a.0: ──■───────
-            │       
-     b.0: ──■───────
-            │       
-     c.0: ──┼────■──
-          ┌─┴─┐  │  
- local.0: ┤ X ├──■──
-          └───┘┌─┴─┐
-result.0: ─────┤ X ├
-               └───┘
-Live QuantumVariables:
-----------------------
-QuantumBool a
-QuantumBool b
-QuantumBool c
-QuantumBool local
-QuantumBool result
+
+::
+
+    QuantumCircuit:
+    --------------
+         a.0: ──■───────
+                │       
+         b.0: ──■───────
+                │       
+         c.0: ──┼────■──
+              ┌─┴─┐  │  
+     local.0: ┤ X ├──■──
+              └───┘┌─┴─┐
+    result.0: ─────┤ X ├
+                   └───┘
+    Live QuantumVariables:
+    ---------------------
+    QuantumBool a
+    QuantumBool b
+    QuantumBool c
+    QuantumBool local
+    QuantumBool result
 
 We will now redefine this function with the *auto_uncompute* decorator ::
 
@@ -111,25 +114,28 @@ We will now redefine this function with the *auto_uncompute* decorator ::
    result = triple_AND(a, b, c)
    
 >>> print(result.qs)
-QuantumCircuit:
----------------
-          ┌────────┐     ┌────────┐
-     a.0: ┤0       ├─────┤0       ├
-          │        │     │        │
-     b.0: ┤1       ├─────┤1       ├
-          │  pt2cx │     │  pt2cx │
-     c.0: ┤        ├──■──┤        ├
-          │        │  │  │        │
- local.0: ┤2       ├──■──┤2       ├
-          └────────┘┌─┴─┐└────────┘
-result.0: ──────────┤ X ├──────────
-                    └───┘          
-Live QuantumVariables:
-----------------------
-QuantumBool a
-QuantumBool b
-QuantumBool c
-QuantumBool result
+
+::
+
+    QuantumCircuit:
+    --------------
+              ┌────────┐     ┌────────┐
+         a.0: ┤0       ├─────┤0       ├
+              │        │     │        │
+         b.0: ┤1       ├─────┤1       ├
+              │  pt2cx │     │  pt2cx │
+         c.0: ┤        ├──■──┤        ├
+              │        │  │  │        │
+     local.0: ┤2       ├──■──┤2       ├
+              └────────┘┌─┴─┐└────────┘
+    result.0: ──────────┤ X ├──────────
+                        └───┘          
+    Live QuantumVariables:
+    ---------------------
+    QuantumBool a
+    QuantumBool b
+    QuantumBool c
+    QuantumBool result
 
 We see that the multi-controlled X-gate acting on the local :ref:`QuantumBool` has been replaced by a gate called ``pt2cx`` which stands for phase tolerant two controlled X. For the case of two controls, this is the so called `Margolus gate <https://arxiv.org/abs/quant-ph/0312225>`_. This gate performs the logical operation of a Toffoli gate at only 3 CNOT gates, but introduces an extra phase for each input. Since the inputs here stay unchanged, this extra phase is reversed, once the second inverted Margolus gate is performed.
 
@@ -154,25 +160,28 @@ The second way of calling uncomputation is the :meth:`uncompute<qrisp.QuantumVar
    result = triple_AND(a, b, c)
    
 >>> print(result.qs)
-QuantumCircuit:
----------------
-          ┌────────┐     ┌────────┐
-     a.0: ┤0       ├─────┤0       ├
-          │        │     │        │
-     b.0: ┤1       ├─────┤1       ├
-          │  pt2cx │     │  pt2cx │
-     c.0: ┤        ├──■──┤        ├
-          │        │  │  │        │
- local.0: ┤2       ├──■──┤2       ├
-          └────────┘┌─┴─┐└────────┘
-result.0: ──────────┤ X ├──────────
-                    └───┘          
-Live QuantumVariables:
-----------------------
-QuantumBool a
-QuantumBool b
-QuantumBool c
-QuantumBool result
+
+::
+
+    QuantumCircuit:
+    --------------
+              ┌────────┐     ┌────────┐
+         a.0: ┤0       ├─────┤0       ├
+              │        │     │        │
+         b.0: ┤1       ├─────┤1       ├
+              │  pt2cx │     │  pt2cx │
+         c.0: ┤        ├──■──┤        ├
+              │        │  │  │        │
+     local.0: ┤2       ├──■──┤2       ├
+              └────────┘┌─┴─┐└────────┘
+    result.0: ──────────┤ X ├──────────
+                        └───┘          
+    Live QuantumVariables:
+    ---------------------
+    QuantumBool a
+    QuantumBool b
+    QuantumBool c
+    QuantumBool result
 
 .. note::
    The :meth:`uncompute <qrisp.QuantumVariable.uncompute>` method and the ``auto_uncompute`` decorator automatically call the :meth:`delete <qrisp.QuantumVariable.delete>` method after successfull uncomputation.
@@ -193,20 +202,23 @@ In some cases, the entanglement structure of a set of QuantumVariables only allo
    fanout(a,b,c)
 
 >>> print(a.qs)
-QuantumCircuit:
----------------
-     ┌─────────┐
-c.0: ┤0        ├
-     │         │
-b.0: ┤1 fanout ├
-     │         │
-a.0: ┤2        ├
-     └─────────┘
-Live QuantumVariables:
-----------------------
-QuantumBool a
-QuantumBool b
-QuantumBool c
+
+::
+
+    QuantumCircuit:
+    --------------
+         ┌─────────┐
+    c.0: ┤0        ├
+         │         │
+    b.0: ┤1 fanout ├
+         │         │
+    a.0: ┤2        ├
+         └─────────┘
+    Live QuantumVariables:
+    ---------------------
+    QuantumBool a
+    QuantumBool b
+    QuantumBool c
 
 >>> b.uncompute()
 Exception: Uncomputation failed because gate "fanout" needs to be uncomputed but is also targeting qubits [Qubit(c.0)] which are not up for uncomputation
@@ -223,18 +235,21 @@ We now queue *b* for uncomputation and perform the algorithm once *c* is also up
 
 >>> b.uncompute(do_it = False)
 >>> c.uncompute()
-QuantumCircuit:
----------------
-     ┌─────────┐┌────────────┐   
-a.0: ┤0        ├┤0           ├
-     │         ││            │
-b.0: ┤1 fanout ├┤1 fanout_dg ├
-     │         ││            │
-c.0: ┤2        ├┤2           ├
-     └─────────┘└────────────┘
-Live QuantumVariables:
-----------------------
-QuantumBool a
+
+::
+
+    QuantumCircuit:
+    --------------
+         ┌─────────┐┌────────────┐   
+    a.0: ┤0        ├┤0           ├
+         │         ││            │
+    b.0: ┤1 fanout ├┤1 fanout_dg ├
+         │         ││            │
+    c.0: ┤2        ├┤2           ├
+         └─────────┘└────────────┘
+    Live QuantumVariables:
+    ---------------------
+    QuantumBool a
 
 This problem might seem a bit constructed, because the ``fanout`` gate could in principle be decomposed into a sequence of CNOT gates, which would face no such issue. Not decomposing gates during uncomputation however allows a feature which will be highlighted in the next section.
 
@@ -314,24 +329,27 @@ Recomputation is a phenomenon that can happen if a function ``f`` that uncompute
    result.uncompute()
 
 >>> print(result.qs)
-QuantumCircuit:
----------------
-          ┌────────┐                         ┌────────┐
-     a.0: ┤0       ├─────────────────────────┤0       ├
-          │        │                         │        │
-     b.0: ┤1       ├─────────────────────────┤1       ├
-          │  pt2cx │┌────────┐     ┌────────┐│  pt2cx │
-     c.0: ┤        ├┤1       ├─────┤1       ├┤        ├
-          │        ││        │     │        ││        │
-     u.0: ┤2       ├┤0 pt2cx ├─────┤0 pt2cx ├┤2       ├
-          └────────┘│        │┌───┐│        │└────────┘
-result.0: ──────────┤2       ├┤ Z ├┤2       ├──────────
-                    └────────┘└───┘└────────┘          
-Live QuantumVariables:
-----------------------
-QuantumBool a
-QuantumBool b
-QuantumBool c
+
+::
+
+    QuantumCircuit:
+    --------------
+              ┌────────┐                         ┌────────┐
+         a.0: ┤0       ├─────────────────────────┤0       ├
+              │        │                         │        │
+         b.0: ┤1       ├─────────────────────────┤1       ├
+              │  pt2cx │┌────────┐     ┌────────┐│  pt2cx │
+         c.0: ┤        ├┤1       ├─────┤1       ├┤        ├
+              │        ││        │     │        ││        │
+         u.0: ┤2       ├┤0 pt2cx ├─────┤0 pt2cx ├┤2       ├
+              └────────┘│        │┌───┐│        │└────────┘
+    result.0: ──────────┤2       ├┤ Z ├┤2       ├──────────
+                        └────────┘└───┘└────────┘          
+    Live QuantumVariables:
+    ---------------------
+    QuantumBool a
+    QuantumBool b
+    QuantumBool c
       
 We see that the uncomputation of ``u`` is awaited until the uncomputation of ``result`` finished, even though within the code, the :meth:`uncompute<qrisp.QuantumVariable.uncompute>` call of ``u`` came before the one of ``result``. In many situations this is a really efficient and helpfull feature of the algorithm, since there is less overhead in gates because ``u`` doesn't need to be recomputed.
 There are however situations, where this can yield to a :ref:`significant qubit overhead<tsp>`. To understand how this happens, consider the following simplified situation:
@@ -368,29 +386,32 @@ There are however situations, where this can yield to a :ref:`significant qubit 
    result.uncompute()
 
 >>> print(result.qs)
-QuantumCircuit:
----------------
-          ┌────────┐                                             ┌────────┐
-     a.0: ┤0       ├─────────────────────────────────────────────┤0       ├
-          │        │                                             │        │
-     b.0: ┤1       ├─────────────────────────────────────────────┤1       ├
-          │        │┌────────┐                         ┌────────┐│        │
-     c.0: ┤  pt2cx ├┤1       ├─────────────────────────┤1       ├┤  pt2cx ├
-          │        ││        │┌────────┐     ┌────────┐│        ││        │
-     d.0: ┤        ├┤        ├┤1       ├─────┤1       ├┤        ├┤        ├
-          │        ││  pt2cx ││        │     │        ││  pt2cx ││        │
-     u.0: ┤2       ├┤0       ├┤        ├─────┤        ├┤0       ├┤2       ├
-          └────────┘│        ││  pt2cx │     │  pt2cx ││        │└────────┘
-     v.0: ──────────┤2       ├┤0       ├─────┤0       ├┤2       ├──────────
-                    └────────┘│        │┌───┐│        │└────────┘          
-result.0: ────────────────────┤2       ├┤ Z ├┤2       ├────────────────────
-                              └────────┘└───┘└────────┘                    
-Live QuantumVariables:
-----------------------
-QuantumBool a
-QuantumBool b
-QuantumBool c
-QuantumBool d
+
+::
+
+    QuantumCircuit:
+    --------------
+              ┌────────┐                                             ┌────────┐
+         a.0: ┤0       ├─────────────────────────────────────────────┤0       ├
+              │        │                                             │        │
+         b.0: ┤1       ├─────────────────────────────────────────────┤1       ├
+              │        │┌────────┐                         ┌────────┐│        │
+         c.0: ┤  pt2cx ├┤1       ├─────────────────────────┤1       ├┤  pt2cx ├
+              │        ││        │┌────────┐     ┌────────┐│        ││        │
+         d.0: ┤        ├┤        ├┤1       ├─────┤1       ├┤        ├┤        ├
+              │        ││  pt2cx ││        │     │        ││  pt2cx ││        │
+         u.0: ┤2       ├┤0       ├┤        ├─────┤        ├┤0       ├┤2       ├
+              └────────┘│        ││  pt2cx │     │  pt2cx ││        │└────────┘
+         v.0: ──────────┤2       ├┤0       ├─────┤0       ├┤2       ├──────────
+                        └────────┘│        │┌───┐│        │└────────┘          
+    result.0: ────────────────────┤2       ├┤ Z ├┤2       ├────────────────────
+                                  └────────┘└───┘└────────┘                    
+    Live QuantumVariables:
+    ---------------------
+    QuantumBool a
+    QuantumBool b
+    QuantumBool c
+    QuantumBool d
 
 In the above code snippet, ``result`` only holds a value at times, where ``u`` is deallocated, implying there is a qubit overhead because the qubit containing ``u`` could be recycled to be used for ``result``. However because the uncomputation of ``u`` is delayed until the uncomputation of ``result`` such a recycling is not possible. Therefore the whole point of the uncomputation (efficient qubit resource management) is gone. We circumvent this problem with the ``recompute`` keyword.
 
@@ -426,75 +447,82 @@ In the above code snippet, ``result`` only holds a value at times, where ``u`` i
    result.uncompute()
 
 >>> print(result.qs)
-QuantumCircuit:
----------------
-          ┌────────┐          ┌────────┐          ┌────────┐          »
-     a.0: ┤0       ├──────────┤0       ├──────────┤0       ├──────────»
-          │        │          │        │          │        │          »
-     b.0: ┤1       ├──────────┤1       ├──────────┤1       ├──────────»
-          │        │┌────────┐│        │          │        │          »
-     c.0: ┤  pt2cx ├┤1       ├┤  pt2cx ├──────────┤  pt2cx ├──────────»
-          │        ││        ││        │┌────────┐│        │┌────────┐»
-     d.0: ┤        ├┤        ├┤        ├┤1       ├┤        ├┤1       ├»
-          │        ││  pt2cx ││        ││        ││        ││        │»
-     u.0: ┤2       ├┤0       ├┤2       ├┤        ├┤2       ├┤        ├»
-          └────────┘│        │└────────┘│  pt2cx │└────────┘│  pt2cx │»
-     v.0: ──────────┤2       ├──────────┤0       ├──────────┤0       ├»
-                    └────────┘          │        │  ┌───┐   │        │»
-result.0: ──────────────────────────────┤2       ├──┤ Z ├───┤2       ├»
-                                        └────────┘  └───┘   └────────┘»
-«                    ┌────────┐
-«     a.0: ──────────┤0       ├
-«                    │        │
-«     b.0: ──────────┤1       ├
-«          ┌────────┐│        │
-«     c.0: ┤1       ├┤  pt2cx ├
-«          │        ││        │
-«     d.0: ┤        ├┤        ├
-«          │  pt2cx ││        │
-«     u.0: ┤0       ├┤2       ├
-«          │        │└────────┘
-«     v.0: ┤2       ├──────────
-«          └────────┘          
-«result.0: ────────────────────
-«                              
-Live QuantumVariables:
-----------------------
-QuantumBool a
-QuantumBool b
-QuantumBool c
-QuantumBool d
+
+::
+
+    QuantumCircuit:
+    --------------
+              ┌────────┐          ┌────────┐          ┌────────┐          »
+         a.0: ┤0       ├──────────┤0       ├──────────┤0       ├──────────»
+              │        │          │        │          │        │          »
+         b.0: ┤1       ├──────────┤1       ├──────────┤1       ├──────────»
+              │        │┌────────┐│        │          │        │          »
+         c.0: ┤  pt2cx ├┤1       ├┤  pt2cx ├──────────┤  pt2cx ├──────────»
+              │        ││        ││        │┌────────┐│        │┌────────┐»
+         d.0: ┤        ├┤        ├┤        ├┤1       ├┤        ├┤1       ├»
+              │        ││  pt2cx ││        ││        ││        ││        │»
+         u.0: ┤2       ├┤0       ├┤2       ├┤        ├┤2       ├┤        ├»
+              └────────┘│        │└────────┘│  pt2cx │└────────┘│  pt2cx │»
+         v.0: ──────────┤2       ├──────────┤0       ├──────────┤0       ├»
+                        └────────┘          │        │  ┌───┐   │        │»
+    result.0: ──────────────────────────────┤2       ├──┤ Z ├───┤2       ├»
+                                            └────────┘  └───┘   └────────┘»
+    «                    ┌────────┐
+    «     a.0: ──────────┤0       ├
+    «                    │        │
+    «     b.0: ──────────┤1       ├
+    «          ┌────────┐│        │
+    «     c.0: ┤1       ├┤  pt2cx ├
+    «          │        ││        │
+    «     d.0: ┤        ├┤        ├
+    «          │  pt2cx ││        │
+    «     u.0: ┤0       ├┤2       ├
+    «          │        │└────────┘
+    «     v.0: ┤2       ├──────────
+    «          └────────┘          
+    «result.0: ────────────────────
+    «                              
+    Live QuantumVariables:
+    ---------------------
+    QuantumBool a
+    QuantumBool b
+    QuantumBool c
+    QuantumBool d
 
 We see that the uncomputation of ``u`` is no longer delayed but performed instantly. Once ``result`` is uncomputed, ``u`` is once again recomputed. To reap our gains in qubit count, we call the :meth:`compile <qrisp.QuantumSession.compile>` method of the :ref:`QuantumSession`. This method performs an allocation algorithm to reduce the required qubit count (if possible)
 
 >>> compiled_qc = result.qs.compile()
 >>> print(compiled_qc)
-             ┌────────┐          ┌────────┐                         ┌────────┐»
-        a.0: ┤0       ├──────────┤0       ├─────────────────────────┤0       ├»
-             │        │          │        │                         │        │»
-        b.0: ┤1       ├──────────┤1       ├─────────────────────────┤1       ├»
-             │        │┌────────┐│        │                         │        │»
-        c.0: ┤  pt2cx ├┤1       ├┤  pt2cx ├─────────────────────────┤  pt2cx ├»
-             │        ││        ││        │┌────────┐     ┌────────┐│        │»
-        d.0: ┤        ├┤        ├┤        ├┤1       ├─────┤1       ├┤        ├»
-             │        ││  pt2cx ││        ││        │┌───┐│        ││        │»
-workspace_0: ┤2       ├┤0       ├┤2       ├┤2 pt2cx ├┤ Z ├┤2 pt2cx ├┤2       ├»
-             └────────┘│        │└────────┘│        │└───┘│        │└────────┘»
-workspace_1: ──────────┤2       ├──────────┤0       ├─────┤0       ├──────────»
-                       └────────┘          └────────┘     └────────┘          »
-«                       ┌────────┐
-«        a.0: ──────────┤0       ├
-«                       │        │
-«        b.0: ──────────┤1       ├
-«             ┌────────┐│        │
-«        c.0: ┤1       ├┤  pt2cx ├
-«             │        ││        │
-«        d.0: ┤        ├┤        ├
-«             │  pt2cx ││        │
-«workspace_0: ┤0       ├┤2       ├
-«             │        │└────────┘
-«workspace_1: ┤2       ├──────────
-«             └────────┘          
+
+::
+
+                 ┌────────┐          ┌────────┐                         ┌────────┐»
+            a.0: ┤0       ├──────────┤0       ├─────────────────────────┤0       ├»
+                 │        │          │        │                         │        │»
+            b.0: ┤1       ├──────────┤1       ├─────────────────────────┤1       ├»
+                 │        │┌────────┐│        │                         │        │»
+            c.0: ┤  pt2cx ├┤1       ├┤  pt2cx ├─────────────────────────┤  pt2cx ├»
+                 │        ││        ││        │┌────────┐     ┌────────┐│        │»
+            d.0: ┤        ├┤        ├┤        ├┤1       ├─────┤1       ├┤        ├»
+                 │        ││  pt2cx ││        ││        │┌───┐│        ││        │»
+    workspace_0: ┤2       ├┤0       ├┤2       ├┤2 pt2cx ├┤ Z ├┤2 pt2cx ├┤2       ├»
+                 └────────┘│        │└────────┘│        │└───┘│        │└────────┘»
+    workspace_1: ──────────┤2       ├──────────┤0       ├─────┤0       ├──────────»
+                           └────────┘          └────────┘     └────────┘          »
+    «                       ┌────────┐
+    «        a.0: ──────────┤0       ├
+    «                       │        │
+    «        b.0: ──────────┤1       ├
+    «             ┌────────┐│        │
+    «        c.0: ┤1       ├┤  pt2cx ├
+    «             │        ││        │
+    «        d.0: ┤        ├┤        ├
+    «             │  pt2cx ││        │
+    «workspace_0: ┤0       ├┤2       ├
+    «             │        │└────────┘
+    «workspace_1: ┤2       ├──────────
+    «             └────────┘          
+
 >>> compiled_qc.num_qubits()
 6
 

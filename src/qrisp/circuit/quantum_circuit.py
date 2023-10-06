@@ -67,14 +67,18 @@ class QuantumCircuit:
     >>> qc_0 = QuantumCircuit(4, name = "fan out")
     >>> qc_0.cx(0, range(1,4))
     >>> print(qc_0)
-    qb_0: ──■────■────■──
-          ┌─┴─┐  │    │
-    qb_1: ┤ X ├──┼────┼──
-          └───┘┌─┴─┐  │
-    qb_2: ─────┤ X ├──┼──
-               └───┘┌─┴─┐
-    qb_3: ──────────┤ X ├
-                    └───┘
+    
+    
+    ::
+    
+        qb_0: ──■────■────■──
+              ┌─┴─┐  │    │
+        qb_1: ┤ X ├──┼────┼──
+              └───┘┌─┴─┐  │
+        qb_2: ─────┤ X ├──┼──
+                   └───┘┌─┴─┐
+        qb_3: ──────────┤ X ├
+                        └───┘
 
     Note that the :meth:`cx gate appending method <qrisp.QuantumCircuit.cx>` (like all
     other gate appending methods) can be called with integers, Qubit objects,
@@ -87,36 +91,43 @@ class QuantumCircuit:
     >>> qc_1.h(0)
     >>> qc_1.append(qc_0.to_gate(), qc_1.qubits)
     >>> print(qc_1)
-          ┌───┐┌──────────┐
-    qb_4: ┤ H ├┤0         ├
-          └───┘│          │
-    qb_5: ─────┤1         ├
-               │  fan out │
-    qb_6: ─────┤2         ├
-               │          │
-    qb_7: ─────┤3         ├
-               └──────────┘
+    
+    ::
+        
+              ┌───┐┌──────────┐
+        qb_4: ┤ H ├┤0         ├
+              └───┘│          │
+        qb_5: ─────┤1         ├
+                   │  fan out │
+        qb_6: ─────┤2         ├
+                   │          │
+        qb_7: ─────┤3         ├
+                   └──────────┘
 
     Finally, we add a measurement and evaluate the circuit:
 
     >>> qc_1.measure(qc_1.qubits)
     >>> print(qc_1)
-          ┌───┐┌──────────┐┌─┐
-    qb_4: ┤ H ├┤0         ├┤M├─────────
-          └───┘│          │└╥┘┌─┐
-    qb_5: ─────┤1         ├─╫─┤M├──────
-               │  fan out │ ║ └╥┘┌─┐
-    qb_6: ─────┤2         ├─╫──╫─┤M├───
-               │          │ ║  ║ └╥┘┌─┐
-    qb_7: ─────┤3         ├─╫──╫──╫─┤M├
-               └──────────┘ ║  ║  ║ └╥┘
-    cb_0: ══════════════════╩══╬══╬══╬═
-                               ║  ║  ║
-    cb_1: ═════════════════════╩══╬══╬═
-                                  ║  ║
-    cb_2: ════════════════════════╩══╬═
-                                     ║
-    cb_3: ═══════════════════════════╩═
+        
+    ::
+        
+              ┌───┐┌──────────┐┌─┐
+        qb_4: ┤ H ├┤0         ├┤M├─────────
+              └───┘│          │└╥┘┌─┐
+        qb_5: ─────┤1         ├─╫─┤M├──────
+                   │  fan out │ ║ └╥┘┌─┐
+        qb_6: ─────┤2         ├─╫──╫─┤M├───
+                   │          │ ║  ║ └╥┘┌─┐
+        qb_7: ─────┤3         ├─╫──╫──╫─┤M├
+                   └──────────┘ ║  ║  ║ └╥┘
+        cb_0: ══════════════════╩══╬══╬══╬═
+                                   ║  ║  ║
+        cb_1: ═════════════════════╩══╬══╬═
+                                      ║  ║
+        cb_2: ════════════════════════╩══╬═
+                                         ║
+        cb_3: ═══════════════════════════╩═
+        
     >>> qc_1.run(shots = 1000)
     {'0000': 500, '1111': 500}
 
@@ -128,14 +139,17 @@ class QuantumCircuit:
     >>> qc_2 = QiskitQuantumCircuit(4)
     >>> qc_2.cx(0, range(1,4))
     >>> print(qc_2)
-    q_0: ──■────■────■──
-         ┌─┴─┐  │    │
-    q_1: ┤ X ├──┼────┼──
-         └───┘┌─┴─┐  │
-    q_2: ─────┤ X ├──┼──
-              └───┘┌─┴─┐
-    q_3: ──────────┤ X ├
-                   └───┘
+    
+    ::
+        
+        q_0: ──■────■────■──
+             ┌─┴─┐  │    │
+        q_1: ┤ X ├──┼────┼──
+             └───┘┌─┴─┐  │
+        q_2: ─────┤ X ├──┼──
+                  └───┘┌─┴─┐
+        q_3: ──────────┤ X ├
+                       └───┘
 
     To acquire the Qrisp QuantumCircuit we call the
     :meth:`from_qiskit <qrisp.QuantumCircuit.from_qiskit>` method. Note that we don't
@@ -143,14 +157,17 @@ class QuantumCircuit:
 
     >>> qrisp_qc_2 = QuantumCircuit.from_qiskit(qc_2)
     >>> print(qrisp_qc_2)
-     qb_8: ──■────■────■──
-           ┌─┴─┐  │    │
-     qb_9: ┤ X ├──┼────┼──
-           └───┘┌─┴─┐  │
-    qb_10: ─────┤ X ├──┼──
-                └───┘┌─┴─┐
-    qb_11: ──────────┤ X ├
-                     └───┘
+    
+    ::
+        
+         qb_8: ──■────■────■──
+               ┌─┴─┐  │    │
+         qb_9: ┤ X ├──┼────┼──
+               └───┘┌─┴─┐  │
+        qb_10: ─────┤ X ├──┼──
+                    └───┘┌─┴─┐
+        qb_11: ──────────┤ X ├
+                         └───┘
 
     **Abstract Parameters**
 
@@ -174,13 +191,16 @@ class QuantumCircuit:
     >>> subs_dic = {abstract_parameters[i] : i for i in range(3)}
     >>> bound_qc = qc.bind_parameters(subs_dic)
     >>> print(bound_qc)
-          ┌──────┐
-    qb_0: ┤ P(0) ├
-          ├──────┤
-    qb_1: ┤ P(1) ├
-          ├──────┤
-    qb_2: ┤ P(2) ├
-          └──────┘
+    
+    ::
+        
+              ┌──────┐
+        qb_0: ┤ P(0) ├
+              ├──────┤
+        qb_1: ┤ P(1) ├
+              ├──────┤
+        qb_2: ┤ P(2) ├
+              └──────┘
 
     """
 
@@ -404,26 +424,32 @@ class QuantumCircuit:
         >>> extension_qc.cy(0, 2)
         >>> extension_qc.cz(0, 3)
         >>> print(extension_qc)
-        qb_0: ──■────■────■──
-              ┌─┴─┐  │    │
-        qb_1: ┤ X ├──┼────┼──
-              └───┘┌─┴─┐  │
-        qb_2: ─────┤ Y ├──┼──
-                   └───┘┌─┴─┐
-        qb_3: ──────────┤ Z ├
-                        └───┘
+        
+        ::
+            
+            qb_0: ──■────■────■──
+                  ┌─┴─┐  │    │
+            qb_1: ┤ X ├──┼────┼──
+                  └───┘┌─┴─┐  │
+            qb_2: ─────┤ Y ├──┼──
+                       └───┘┌─┴─┐
+            qb_3: ──────────┤ Z ├
+                            └───┘
         >>> translation_dic = {extension_qc.qubits[i] : qc_to_extend.qubits[-1-i]
         >>> for i in range(4)}
         >>> qc_to_extend.extend(extension_qc, translation_dic)
         >>> print(qc_to_extend)
-                        ┌───┐
-        qb_4: ──────────┤ Z ├
-                   ┌───┐└─┬─┘
-        qb_5: ─────┤ Y ├──┼──
-              ┌───┐└─┬─┘  │
-        qb_6: ┤ X ├──┼────┼──
-              └─┬─┘  │    │
-        qb_7: ──■────■────■──
+        
+        ::
+            
+                            ┌───┐
+            qb_4: ──────────┤ Z ├
+                       ┌───┐└─┬─┘
+            qb_5: ─────┤ Y ├──┼──
+                  ┌───┐└─┬─┘  │
+            qb_6: ┤ X ├──┼────┼──
+                  └─┬─┘  │    │
+            qb_7: ──■────■────■──
 
         """
 
@@ -560,19 +586,26 @@ class QuantumCircuit:
         >>> qc_0.z(0)
         >>> qc_0.cx(0,1)
         >>> print(qc_0)
-              ┌───┐
-        qb_0: ┤ Z ├──■──
-              └───┘┌─┴─┐
-        qb_1: ─────┤ X ├
-                   └───┘
+        
+        ::
+            
+                  ┌───┐
+            qb_0: ┤ Z ├──■──
+                  └───┘┌─┴─┐
+            qb_1: ─────┤ X ├
+                       └───┘
         >>> qc_1.cx(0,1)
         >>> qc_1.z(0)
         >>> print(qc_1)
-                   ┌───┐
-        qb_2: ──■──┤ Z ├
-              ┌─┴─┐└───┘
-        qb_3: ┤ X ├─────
-              └───┘
+        
+        ::
+                
+                       ┌───┐
+            qb_2: ──■──┤ Z ├
+                  ┌─┴─┐└───┘
+            qb_3: ┤ X ├─────
+                  └───┘
+                  
         >>> qc_0.compare_unitary(qc_1)
         True
 
@@ -680,9 +713,12 @@ class QuantumCircuit:
         >>> qc.p(np.pi/2, 0)
         >>> qc.y(0)
         >>> print(qc.inverse())
-                ┌───┐┌─────────┐┌───┐
-          qb_0: ┤ Y ├┤ P(-π/2) ├┤ X ├
-                └───┘└─────────┘└───┘
+        
+        ::
+              
+                  ┌───┐┌─────────┐┌───┐
+            qb_0: ┤ Y ├┤ P(-π/2) ├┤ X ├
+                  └───┘└─────────┘└───┘
 
         For the phase gate, a daggering implies the reversal of the phase -
         Pauli gates however are invariant under daggering.
@@ -824,28 +860,34 @@ class QuantumCircuit:
         >>> qc = QuantumCircuit(3)
         >>> qc.mcx([0,1], 2)
         >>> print(qc)
-        qb_0: ──■──
-                │
-        qb_1: ──■──
-              ┌─┴─┐
-        qb_2: ┤ X ├
-              └───┘
+        
+        ::
+            
+            qb_0: ──■──
+                    │
+            qb_1: ──■──
+                  ┌─┴─┐
+            qb_2: ┤ X ├
+                  └───┘
         >>> print(qc.transpile(basis_gates = ["cx", "rz", "sx"]))
-        global phase: 9π/8
-              ┌──────────┐                 ┌───┐┌─────────┐   ┌───┐   ┌──────────┐┌───┐»
-        qb_1: ┤ Rz(-π/4) ├─────────────────┤ X ├┤ Rz(π/4) ├───┤ X ├───┤ Rz(-π/4) ├┤ X ├»
-              ├──────────┤                 └─┬─┘└─────────┘   └─┬─┘   └──────────┘└─┬─┘»
-        qb_2: ┤ Rz(-π/4) ├───────────────────┼───────■──────────■──────────■────────┼──»
-              ├─────────┬┘┌────┐┌─────────┐  │     ┌─┴─┐   ┌─────────┐   ┌─┴─┐      │  »
-        qb_3: ┤ Rz(π/2) ├─┤ √X ├┤ Rz(π/2) ├──■─────┤ X ├───┤ Rz(π/4) ├───┤ X ├──────■──»
-              └─────────┘ └────┘└─────────┘        └───┘   └─────────┘   └───┘         »
-        «      ┌─────────┐┌───┐
-        «qb_1: ┤ Rz(π/4) ├┤ X ├────────────
-        «      └─────────┘└─┬─┘
-        «qb_2: ─────────────■──────────────
-        «      ┌─────────┐┌────┐┌─────────┐
-        «qb_3: ┤ Rz(π/4) ├┤ √X ├┤ Rz(π/2) ├
-        «      └─────────┘└────┘└─────────┘
+        
+        ::
+            
+            global phase: 9π/8
+                  ┌──────────┐                 ┌───┐┌─────────┐   ┌───┐   ┌──────────┐┌───┐»
+            qb_1: ┤ Rz(-π/4) ├─────────────────┤ X ├┤ Rz(π/4) ├───┤ X ├───┤ Rz(-π/4) ├┤ X ├»
+                  ├──────────┤                 └─┬─┘└─────────┘   └─┬─┘   └──────────┘└─┬─┘»
+            qb_2: ┤ Rz(-π/4) ├───────────────────┼───────■──────────■──────────■────────┼──»
+                  ├─────────┬┘┌────┐┌─────────┐  │     ┌─┴─┐   ┌─────────┐   ┌─┴─┐      │  »
+            qb_3: ┤ Rz(π/2) ├─┤ √X ├┤ Rz(π/2) ├──■─────┤ X ├───┤ Rz(π/4) ├───┤ X ├──────■──»
+                  └─────────┘ └────┘└─────────┘        └───┘   └─────────┘   └───┘         »
+            «      ┌─────────┐┌───┐
+            «qb_1: ┤ Rz(π/4) ├┤ X ├────────────
+            «      └─────────┘└─┬─┘
+            «qb_2: ─────────────■──────────────
+            «      ┌─────────┐┌────┐┌─────────┐
+            «qb_3: ┤ Rz(π/4) ├┤ √X ├┤ Rz(π/2) ├
+            «      └─────────┘└────┘└─────────┘
 
         """
         from qrisp.circuit import transpile
@@ -945,13 +987,16 @@ class QuantumCircuit:
         >>> subs_dic = {abstract_parameters[i] : i for i in range(3)}
         >>> bound_qc = qc.bind_parameters(subs_dic)
         >>> print(bound_qc)
-              ┌──────┐
-        qb_0: ┤ P(0) ├
-              ├──────┤
-        qb_1: ┤ P(1) ├
-              ├──────┤
-        qb_2: ┤ P(2) ├
-              └──────┘
+        
+        ::
+                
+                  ┌──────┐
+            qb_0: ┤ P(0) ├
+                  ├──────┤
+            qb_1: ┤ P(1) ├
+                  ├──────┤
+            qb_2: ┤ P(2) ├
+                  └──────┘
 
         """
 
@@ -1099,22 +1144,25 @@ class QuantumCircuit:
         >>> qc = QuantumCircuit(8)
         >>> qc.append(multi_h, [2*i for i in range(4)])
         >>> print(qc)
-               ┌──────────┐
-         qb_4: ┤0         ├
-               │          │
-         qb_5: ┤          ├
-               │          │
-         qb_6: ┤1         ├
-               │          │
-         qb_7: ┤  multi h ├
-               │          │
-         qb_8: ┤2         ├
-               │          │
-         qb_9: ┤          ├
-               │          │
-        qb_10: ┤3         ├
-               └──────────┘
-        qb_11: ────────────
+        
+        ::
+                
+                   ┌──────────┐
+             qb_4: ┤0         ├
+                   │          │
+             qb_5: ┤          ├
+                   │          │
+             qb_6: ┤1         ├
+                   │          │
+             qb_7: ┤  multi h ├
+                   │          │
+             qb_8: ┤2         ├
+                   │          │
+             qb_9: ┤          ├
+                   │          │
+            qb_10: ┤3         ├
+                   └──────────┘
+            qb_11: ────────────
 
         """
 
@@ -1224,12 +1272,14 @@ class QuantumCircuit:
             raise Exception(
                 f"Provided incorrect amount ({len(qubits)}) of qubits for operation "
                 + str(operation.name)
+                + f" (requires {operation.num_qubits})"
             )
 
         if len(clbits) != operation.num_clbits:
             raise Exception(
                 f"Provided incorrect amount ({len(clbits)}) of clbits for operation "
                 + str(operation.name)
+                + f" (requires {operation.num_clbits})"
             )
 
         if len(set(qubits)) != len(qubits):
@@ -1265,7 +1315,7 @@ class QuantumCircuit:
 
         # Log which abstract parameters have been added to the circuit
         try:
-            self.abstract_params = self.abstract_params.union(operation.abstract_params)
+            self.abstract_params.update(operation.abstract_params)
         except AttributeError:
             pass
 
@@ -1442,6 +1492,56 @@ class QuantumCircuit:
         return hash(res)
 
     @classmethod
+    def from_qasm_str(self, qasm_string):
+        """
+        Loads a QuantumCircuit from a QASM String.
+
+        Parameters
+        ----------
+        qasm_string : string
+            A string obeying the syntax of the OpenQASM specification.
+
+        Returns
+        -------
+        QuantumCircuit
+            The corresponding QuantumCircuit.
+
+        """
+        
+        from qiskit import QuantumCircuit
+        
+        qiskit_qc = QuantumCircuit().from_qasm_str(qasm_string)
+        
+        from qrisp import QuantumCircuit
+        
+        return QuantumCircuit.from_qiskit(qiskit_qc)
+    
+    @classmethod
+    def from_qasm_file(self, filename):
+        """
+        Loads a QuantumCircuit from a QASM file.
+
+        Parameters
+        ----------
+        filename : string
+            A string pointing to a file obeying the OpenQASM syntax.
+
+        Returns
+        -------
+        QuantumCircuit
+            The corresponding QuantumCircuit.
+
+        """
+        from qiskit import QuantumCircuit
+        
+        qiskit_qc = QuantumCircuit().from_qasm_file(filename)
+        
+        from qrisp import QuantumCircuit
+        
+        return QuantumCircuit.from_qiskit(qiskit_qc)
+    
+
+    @classmethod
     def from_qiskit(self, qiskit_qc):
         """
         Class method to create QuantumCircuits from Qiskit QuantumCircuits.
@@ -1465,28 +1565,34 @@ class QuantumCircuit:
         >>> qc_2 = QiskitQuantumCircuit(4)
         >>> qc_2.cx(0, range(1,4))
         >>> print(qc_2)
-        q_0: ──■────■────■──
-             ┌─┴─┐  │    │
-        q_1: ┤ X ├──┼────┼──
-             └───┘┌─┴─┐  │
-        q_2: ─────┤ X ├──┼──
-                  └───┘┌─┴─┐
-        q_3: ──────────┤ X ├
-                       └───┘
+        
+        ::
+                
+            q_0: ──■────■────■──
+                 ┌─┴─┐  │    │
+            q_1: ┤ X ├──┼────┼──
+                 └───┘┌─┴─┐  │
+            q_2: ─────┤ X ├──┼──
+                      └───┘┌─┴─┐
+            q_3: ──────────┤ X ├
+                           └───┘
 
         Note that we don't need to create a QuantumCircuit object first as this is a
         class method.
 
         >>> qrisp_qc_2 = QuantumCircuit.from_qiskit(qc_2)
         >>> print(qrisp_qc_2)
-         qb_8: ──■────■────■──
-               ┌─┴─┐  │    │
-         qb_9: ┤ X ├──┼────┼──
-               └───┘┌─┴─┐  │
-        qb_10: ─────┤ X ├──┼──
-                    └───┘┌─┴─┐
-        qb_11: ──────────┤ X ├
-                         └───┘
+        
+        ::
+            
+             qb_8: ──■────■────■──
+                   ┌─┴─┐  │    │
+             qb_9: ┤ X ├──┼────┼──
+                   └───┘┌─┴─┐  │
+            qb_10: ─────┤ X ├──┼──
+                        └───┘┌─┴─┐
+            qb_11: ──────────┤ X ├
+                             └───┘
 
         """
         from qrisp.interface import convert_from_qiskit
@@ -1506,9 +1612,37 @@ class QuantumCircuit:
         from qrisp.interface.circuit_converter import convert_circuit
 
         return convert_circuit(self, target_api="qiskit", transpile=False)
+    
+    def to_pennylane(self):
+        """
+        Method to convert the given QuantumCircuit to a Pennylane Circuit.
+
+        Returns
+        -------
+        function
+            A function representing a pennylane QuantumCircuit.
+
+        """
+        
+        from qrisp.interface.converter.convert_to_qml import qml_converter
+        
+        return qml_converter(self)
+    
+    def to_pytket(self):
+        """
+        Method to convert the given QuantumCircuit to a Pennylane Circuit.
+
+        Returns
+        -------
+        function
+            A function representing a pennylane QuantumCircuit.
+
+        """
+        from qrisp.interface.converter.convert_to_pytket import pytket_converter
+        
+        return pytket_converter(self)
 
     # Several methods to apply the standard operation defined in standard_operations.py
-
     def measure(self, qubits, clbits=None):
         """
         Instructs a measurement. If given no classical bits, the proper amount will be

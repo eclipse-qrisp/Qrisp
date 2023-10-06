@@ -35,6 +35,7 @@ from qrisp.simulator.circuit_preprocessing import (
     circuit_preprocessor,
     count_measurements_and_treat_alloc,
     group_qc,
+    extract_measurements
 )
 from qrisp.simulator.impure_quantum_state import ImpureQuantumState
 from qrisp.simulator.quantum_state import QuantumState
@@ -54,23 +55,22 @@ def run(qc, shots, token="", iqs=None, insert_reset=True):
         desc=f"Simulating {len(qc.qubits)} qubits..",
         bar_format="{desc} |{bar}| [{percentage:3.0f}%]",
         ncols=85,
-        # ascii = " >#",
         leave=False,
-        delay=0.2,
+        delay=0.1,
         position=0,
         smoothing=1,
         file=sys.stdout
-        # colour = "green"
     )
     
+    LINE_CLEAR = "\x1b[2K"
     progress_bar.display()
 
     # This command enables fast appending. Fast appending means that the .append method
     # of the QuantumCircuit class checks much less validity conditions and is also less
     # tolerant regarding inputs.
     with fast_append():
-        # We convert the circuit which is given with portable objects to a qrisp circuit
-        qc = convert_circuit(qc, "qrisp", transpile=True)
+        
+        qc = qc.transpile()
 
         # Count the amount of measurements (we can stop the simulation after all
         # measurements are performed)
@@ -106,6 +106,16 @@ def run(qc, shots, token="", iqs=None, insert_reset=True):
         progress_bar.total = total_flops
         # Main loop - this loop successively executes operations onto the impure
         # quantum state object
+        
+        mes_list = []
+        
+        if len(qc.qubits) < 22:
+            qc, mes_list = extract_measurements(qc)
+        
+        
+        mes_qubit_indices = []
+        mes_clbit_indices = []
+        
         for i in range(len(qc.data)):
             # Set alias for the instruction of this operation
             instr = qc.data[i]
@@ -132,6 +142,10 @@ def run(qc, shots, token="", iqs=None, insert_reset=True):
                 iqs.reset(qubit_indices[0], True)
 
             elif instr.op.name == "measure":
+                
+                # mes_qubit_indices.append(qubit_indices[0])
+                # mes_clbit_indices.append(qc.clbits.index(instr.clbits[0]))
+                
                 iqs.measure(qubit_indices[0], qc.clbits.index(instr.clbits[0]))
                 measurement_counter += 1
 
@@ -142,18 +156,31 @@ def run(qc, shots, token="", iqs=None, insert_reset=True):
             # If the operation is unitary, we apply this unitary on to the required
             # qubit indices
             else:
+
                 iqs.apply_operation(instr.op, qubit_indices)
 
             # If all measurements have been performed, break
             if measurement_counter == measurement_amount:
                 break
 
-        progress_bar.close()
 
-        LINE_UP = "\033[1A"
-        LINE_CLEAR = "\x1b[2K"
+        for instr in mes_list:
+            
+            mes_qubit_indices.append(qc.qubits.index(instr.qubits[0]))
+            mes_clbit_indices.append(qc.clbits.index(instr.clbits[0]))
+
+
+        if len(mes_qubit_indices):
+            iqs.multi_measure(mes_qubit_indices, mes_clbit_indices, gen_new_states = False)
+            mes_qubit_indices = []
+            mes_clbit_indices = []
+            
+            
+            
+
+
+        progress_bar.close()
         print(LINE_CLEAR, end="\r")
-        # print(LINE_UP, end = "")
 
         # Prepare result dictionary
         # The iqs object contains the outcome bitstrings in the attribute .outcome_list
@@ -227,6 +254,8 @@ def statevector_sim(qc):
         # colour = "green"
     )
     
+    LINE_CLEAR = "\x1b[2K"
+    progress_bar.display()
     # This command enables fast appending. Fast appending means that the .append method
     # of the QuantumCircuit class checks much less validity conditions and is also less
     # tolerant regarding inputs.
@@ -257,6 +286,10 @@ def statevector_sim(qc):
         if len(qc.data) == 0:
             res = np.zeros(2 ** len(qc.qubits), dtype=np.complex64)
             res[0] = 1
+            
+            progress_bar.close()
+            print(LINE_CLEAR, end="\r")
+            
             return res
 
         qs = QuantumState(len(qc.qubits))
@@ -285,8 +318,6 @@ def statevector_sim(qc):
 
         progress_bar.close()
 
-        LINE_UP = "\033[1A"
-        LINE_CLEAR = "\x1b[2K"
         print(LINE_CLEAR, end="\r")
         # print(LINE_UP, end = "")
 

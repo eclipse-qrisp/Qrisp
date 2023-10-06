@@ -54,17 +54,20 @@ class QuantumSession(QuantumCircuit):
     QuantumSessions can be visualized by calling ``print`` on them.
 
     >>> print(qv.qs)
-    QuantumCircuit:
-    ---------------
-    qv.0: ──■────■──
-          ┌─┴─┐┌─┴─┐
-    qv.1: ┤ X ├┤ X ├
-          └───┘└───┘
-    qv.2: ──────────
-    <BLANKLINE>
-    Live QuantumVariables:
-    ----------------------
-    QuantumVariable qv
+    
+    ::
+    
+        QuantumCircuit:
+        --------------
+        qv.0: ──■────■──
+              ┌─┴─┐┌─┴─┐
+        qv.1: ┤ X ├┤ X ├
+              └───┘└───┘
+        qv.2: ──────────
+        
+        Live QuantumVariables:
+        ---------------------
+        QuantumVariable qv
 
     If not specified, QuantumVariables will create their own QuantumSession and register
     themselves in it.
@@ -449,7 +452,7 @@ class QuantumSession(QuantumCircuit):
             else:
                 if not input.allocated:
                     raise Exception(
-                        f"Tried to perform operation {operation.name} on"
+                        f"Tried to perform operation {operation.name} on "
                         f"unallocated qubit {input}"
                     )
 
@@ -825,22 +828,25 @@ class QuantumSession(QuantumCircuit):
         >>> target = QuantumVariable(1)
         >>> mcx(ctrl, target)
         >>> print(ctrl.qs)
-        QuantumCircuit:
-        ---------------
-          ctrl.0: ──■──
-                    │
-          ctrl.1: ──■──
-                    │
-          ctrl.2: ──■──
-                    │
-          ctrl.3: ──■──
-                  ┌─┴─┐
-        target.0: ┤ X ├
-                  └───┘
-        Live QuantumVariables:
-        ----------------------
-        QuantumVariable ctrl
-        QuantumVariable target
+        
+        ::
+        
+            QuantumCircuit:
+            --------------
+              ctrl.0: ──■──
+                        │
+              ctrl.1: ──■──
+                        │
+              ctrl.2: ──■──
+                        │
+              ctrl.3: ──■──
+                      ┌─┴─┐
+            target.0: ┤ X ├
+                      └───┘
+            Live QuantumVariables:
+            ---------------------
+            QuantumVariable ctrl
+            QuantumVariable target
 
         We can now call the ``.compile`` method
 
@@ -848,16 +854,19 @@ class QuantumSession(QuantumCircuit):
         >>> compiled_qc.depth()
         50
         >>> print(compiled_qc)
-            ctrl.0: ──■──
-                      │
-            ctrl.1: ──■──
-                      │
-            ctrl.2: ──■──
-                      │
-            ctrl.3: ──■──
-                    ┌─┴─┐
-          target.0: ┤ X ├
-                    └───┘
+        
+        ::
+        
+                ctrl.0: ──■──
+                          │
+                ctrl.1: ──■──
+                          │
+                ctrl.2: ──■──
+                          │
+                ctrl.3: ──■──
+                        ┌─┴─┐
+              target.0: ┤ X ├
+                        └───┘
 
         We see no change here, because there was no free space to execute a more optimal
         mcx implementation. We can grant additional space using the ``workspace``
@@ -867,21 +876,24 @@ class QuantumSession(QuantumCircuit):
         >>> compiled_qc.depth()
         22
         >>> print(compiled_qc)
-                     ┌────────┐               ┌────────┐
-             ctrl.0: ┤0       ├───────────────┤0       ├──────────
-                     │        │               │        │
-             ctrl.1: ┤1       ├───────────────┤1       ├──────────
-                     │        │┌────────┐     │        │┌────────┐
-             ctrl.2: ┤        ├┤0       ├─────┤        ├┤0       ├
-                     │  pt2cx ││        │     │  pt2cx ││        │
-             ctrl.3: ┤        ├┤1       ├─────┤        ├┤1       ├
-                     │        ││        │┌───┐│        ││        │
-           target.0: ┤        ├┤  pt2cx ├┤ X ├┤        ├┤  pt2cx ├
-                     │        ││        │└─┬─┘│        ││        │
-        workspace_0: ┤2       ├┤        ├──■──┤2       ├┤        ├
-                     └────────┘│        │  │  └────────┘│        │
-        workspace_1: ──────────┤2       ├──■────────────┤2       ├
-                               └────────┘               └────────┘
+        
+        ::
+        
+                         ┌────────┐               ┌────────┐
+                 ctrl.0: ┤0       ├───────────────┤0       ├──────────
+                         │        │               │        │
+                 ctrl.1: ┤1       ├───────────────┤1       ├──────────
+                         │        │┌────────┐     │        │┌────────┐
+                 ctrl.2: ┤        ├┤0       ├─────┤        ├┤0       ├
+                         │  pt2cx ││        │     │  pt2cx ││        │
+                 ctrl.3: ┤        ├┤1       ├─────┤        ├┤1       ├
+                         │        ││        │┌───┐│        ││        │
+               target.0: ┤        ├┤  pt2cx ├┤ X ├┤        ├┤  pt2cx ├
+                         │        ││        │└─┬─┘│        ││        │
+            workspace_0: ┤2       ├┤        ├──■──┤2       ├┤        ├
+                         └────────┘│        │  │  └────────┘│        │
+            workspace_1: ──────────┤2       ├──■────────────┤2       ├
+                                   └────────┘               └────────┘
 
         Granting extra qubits to use this feature is however not usually necessary. The
         compiler automatically detects and reuses qubit resources available at the
@@ -891,21 +903,25 @@ class QuantumSession(QuantumCircuit):
         >>> qv = QuantumVariable(2)
         >>> cx(target[0], qv)
         >>> print(ctrl.qs.compile())
-                  ┌────────┐               ┌────────┐
-          ctrl.0: ┤0       ├───────────────┤0       ├────────────────────
-                  │        │               │        │
-          ctrl.1: ┤1       ├───────────────┤1       ├────────────────────
-                  │        │┌────────┐     │        │┌────────┐
-          ctrl.2: ┤        ├┤0       ├─────┤        ├┤0       ├──────────
-                  │  pt2cx ││        │     │  pt2cx ││        │
-          ctrl.3: ┤        ├┤1       ├─────┤        ├┤1       ├──────────
-                  │        ││        │┌───┐│        ││        │
-        target.0: ┤        ├┤  pt2cx ├┤ X ├┤        ├┤  pt2cx ├──■────■──
-                  │        ││        │└─┬─┘│        ││        │┌─┴─┐  │
-            qv.0: ┤2       ├┤        ├──■──┤2       ├┤        ├┤ X ├──┼──
-                  └────────┘│        │  │  └────────┘│        │└───┘┌─┴─┐
-            qv.1: ──────────┤2       ├──■────────────┤2       ├─────┤ X ├
-                            └────────┘               └────────┘     └───┘
+        
+        ::
+        
+                      ┌────────┐               ┌────────┐
+              ctrl.0: ┤0       ├───────────────┤0       ├────────────────────
+                      │        │               │        │
+              ctrl.1: ┤1       ├───────────────┤1       ├────────────────────
+                      │        │┌────────┐     │        │┌────────┐
+              ctrl.2: ┤        ├┤0       ├─────┤        ├┤0       ├──────────
+                      │  pt2cx ││        │     │  pt2cx ││        │
+              ctrl.3: ┤        ├┤1       ├─────┤        ├┤1       ├──────────
+                      │        ││        │┌───┐│        ││        │
+            target.0: ┤        ├┤  pt2cx ├┤ X ├┤        ├┤  pt2cx ├──■────■──
+                      │        ││        │└─┬─┘│        ││        │┌─┴─┐  │
+                qv.0: ┤2       ├┤        ├──■──┤2       ├┤        ├┤ X ├──┼──
+                      └────────┘│        │  │  └────────┘│        │└───┘┌─┴─┐
+                qv.1: ──────────┤2       ├──■────────────┤2       ├─────┤ X ├
+                                └────────┘               └────────┘     └───┘
+
 
         We see how the qubits that will later hold ``qv`` are used to efficiently
         compile the mcx gate.
@@ -922,35 +938,38 @@ class QuantumSession(QuantumCircuit):
         >>> cx(target[0], qv)
         >>> mcx(ctrl, target)
         >>> print(ctrl.qs.compile())
-          ctrl.0: ────────────────────────────────────■──────────────────────────»
-                                 ┌─────────────────┐  │  ┌─────────────────┐     »
-          ctrl.1: ───────────────┤1                ├──┼──┤1                ├─────»
-                                 │                 │  │  │                 │     »
-          ctrl.2: ───────────────┤2                ├──┼──┤2                ├─────»
-                                 │                 │  │  │                 │     »
-          ctrl.3: ────────────■──┤                 ├──┼──┤                 ├──■──»
-                            ┌─┴─┐│  reduced_maslov │  │  │  reduced_maslov │┌─┴─┐»
-        target.0: ──■────■──┤ X ├┤                 ├──┼──┤                 ├┤ X ├»
-                  ┌─┴─┐  │  └─┬─┘│                 │┌─┴─┐│                 │└─┬─┘»
-            qv.0: ┤ X ├──┼────┼──┤0                ├┤ X ├┤0                ├──┼──»
-                  └───┘┌─┴─┐  │  │                 │└───┘│                 │  │  »
-            qv.1: ─────┤ X ├──■──┤3                ├─────┤3                ├──■──»
-                       └───┘     └─────────────────┘     └─────────────────┘     »
-        «
-        «  ctrl.0: ─────────────────────■─────────────────────
-        «          ┌─────────────────┐  │  ┌─────────────────┐
-        «  ctrl.1: ┤1                ├──┼──┤1                ├
-        «          │                 │  │  │                 │
-        «  ctrl.2: ┤2                ├──┼──┤2                ├
-        «          │                 │  │  │                 │
-        «  ctrl.3: ┤                 ├──┼──┤                 ├
-        «          │  reduced_maslov │  │  │  reduced_maslov │
-        «target.0: ┤                 ├──┼──┤                 ├
-        «          │                 │┌─┴─┐│                 │
-        «    qv.0: ┤0                ├┤ X ├┤0                ├
-        «          │                 │└───┘│                 │
-        «    qv.1: ┤3                ├─────┤3                ├
-        «          └─────────────────┘     └─────────────────┘
+        
+        ::
+        
+              ctrl.0: ────────────────────────────────────■──────────────────────────»
+                                     ┌─────────────────┐  │  ┌─────────────────┐     »
+              ctrl.1: ───────────────┤1                ├──┼──┤1                ├─────»
+                                     │                 │  │  │                 │     »
+              ctrl.2: ───────────────┤2                ├──┼──┤2                ├─────»
+                                     │                 │  │  │                 │     »
+              ctrl.3: ────────────■──┤                 ├──┼──┤                 ├──■──»
+                                ┌─┴─┐│  reduced_maslov │  │  │  reduced_maslov │┌─┴─┐»
+            target.0: ──■────■──┤ X ├┤                 ├──┼──┤                 ├┤ X ├»
+                      ┌─┴─┐  │  └─┬─┘│                 │┌─┴─┐│                 │└─┬─┘»
+                qv.0: ┤ X ├──┼────┼──┤0                ├┤ X ├┤0                ├──┼──»
+                      └───┘┌─┴─┐  │  │                 │└───┘│                 │  │  »
+                qv.1: ─────┤ X ├──■──┤3                ├─────┤3                ├──■──»
+                           └───┘     └─────────────────┘     └─────────────────┘     »
+            «
+            «  ctrl.0: ─────────────────────■─────────────────────
+            «          ┌─────────────────┐  │  ┌─────────────────┐
+            «  ctrl.1: ┤1                ├──┼──┤1                ├
+            «          │                 │  │  │                 │
+            «  ctrl.2: ┤2                ├──┼──┤2                ├
+            «          │                 │  │  │                 │
+            «  ctrl.3: ┤                 ├──┼──┤                 ├
+            «          │  reduced_maslov │  │  │  reduced_maslov │
+            «target.0: ┤                 ├──┼──┤                 ├
+            «          │                 │┌─┴─┐│                 │
+            «    qv.0: ┤0                ├┤ X ├┤0                ├
+            «          │                 │└───┘│                 │
+            «    qv.1: ┤3                ├─────┤3                ├
+            «          └─────────────────┘     └─────────────────┘
 
         We see how the qubits of ``qv`` are utilized as dirty ancilla qubits in order
         to facilitate a more efficient ``mcx`` implementation compared to no ancillae
@@ -980,40 +999,46 @@ class QuantumSession(QuantumCircuit):
         >>> c = QuantumBool()
         >>> res = triple_AND(a,b,c)
         >>> print(res.qs)
-        QuantumCircuit:
-        ---------------
-             a.0: ──■───────
-                    │
-             b.0: ──■───────
-                    │
-             c.0: ──┼────■──
-                  ┌─┴─┐  │
-         local.0: ┤ X ├──■──
-                  └───┘┌─┴─┐
-        result.0: ─────┤ X ├
-                       └───┘
-        Live QuantumVariables:
-        ----------------------
-        QuantumBool a
-        QuantumBool b
-        QuantumBool c
-        QuantumBool local
-        QuantumBool result
+        
+        ::
+        
+            QuantumCircuit:
+            --------------
+                 a.0: ──■───────
+                        │
+                 b.0: ──■───────
+                        │
+                 c.0: ──┼────■──
+                      ┌─┴─┐  │
+             local.0: ┤ X ├──■──
+                      └───┘┌─┴─┐
+            result.0: ─────┤ X ├
+                           └───┘
+            Live QuantumVariables:
+            ---------------------
+            QuantumBool a
+            QuantumBool b
+            QuantumBool c
+            QuantumBool local
+            QuantumBool result
 
         We now compile with the corresponding keyword argument:
 
         >>> print(a.qs.compile(disable_uncomputation = False))
-                     ┌────────┐     ┌────────┐
-                a.0: ┤0       ├─────┤0       ├
-                     │        │     │        │
-                b.0: ┤1       ├─────┤1       ├
-                     │        │     │        │
-                c.0: ┤  pt2cx ├──■──┤  pt2cx ├
-                     │        │┌─┴─┐│        │
-           result.0: ┤        ├┤ X ├┤        ├
-                     │        │└─┬─┘│        │
-        workspace_0: ┤2       ├──■──┤2       ├
-                     └────────┘     └────────┘
+        
+        ::
+        
+                         ┌────────┐     ┌────────┐
+                    a.0: ┤0       ├─────┤0       ├
+                         │        │     │        │
+                    b.0: ┤1       ├─────┤1       ├
+                         │        │     │        │
+                    c.0: ┤  pt2cx ├──■──┤  pt2cx ├
+                         │        │┌─┴─┐│        │
+               result.0: ┤        ├┤ X ├┤        ├
+                         │        │└─┬─┘│        │
+            workspace_0: ┤2       ├──■──┤2       ├
+                         └────────┘     └────────┘
 
         We see that the ``local`` QuantumBool is no longer allocated but has been
         uncomputed and it's qubits are available as workspace.

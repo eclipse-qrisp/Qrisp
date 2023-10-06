@@ -267,7 +267,8 @@ class QuantumDictionary(dict):
             )
             quantum_key.append(synth_ancilla)
 
-        res_gate = qv_temp_0.qs.to_gate("q_load")
+        res_gate = qv_temp_0.qs.data[-1].op
+        # res_gate = qv_temp_0.qs.to_gate("q_load")
         res_gate.is_qfree = True
         res_gate.permeability = {i: i < n for i in range(res_gate.num_qubits)}
 

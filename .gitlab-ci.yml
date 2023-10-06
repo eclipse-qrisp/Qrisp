@@ -11,7 +11,6 @@ cache:
 stages:
   - test
 
-
 before_script:
   - python --version  # For debugging
   - pip3 install virtualenv
@@ -23,12 +22,13 @@ before_script:
   # - pip install flake8
   # - pip install pylint
   - pip install pytest
-  - pip install -r requirements.txt
   - pip install networkx[default]
   - pip install -e .
   - pip install networkit
   - pip install qiskit-aer
-  - python -m pip install -e ./
+  - pip install qiskit_ibm_runtime
+  - pip install pennylane
+
 
 # isort:
 #   stage: linting

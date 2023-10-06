@@ -1,4 +1,6 @@
-﻿Quantum Counting
+﻿.. _QCounting:
+
+Quantum Counting
 ================
 
 .. currentmodule:: qrisp

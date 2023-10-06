@@ -21,12 +21,7 @@ import numpy as np
 import sympy as sp
 
 from qrisp.misc import int_as_array
-from qrisp.circuit import Operation
-#from qrisp import int_encoder, get_ordered_symbol_list
-
-
-# from qiskit import *
-
+from qrisp.circuit import Operation, QuantumCircuit
 
 # Class to describe truth tables
 # Can be intialized with a list of bitstrings, or a numpy array with 1 and 0s or a
@@ -435,12 +430,17 @@ def synth_poly(truth_table, column=0, coeff=None):
 class LogicSynthGate(Operation):
     def __init__(self, init_op, tt, phase_tolerant=False):
         self.tt = tt
-
+        qc = QuantumCircuit(init_op.num_qubits)
+        qc.append(init_op, qc.qubits)
         self.logic_synth_method = phase_tolerant
+        
+        Operation.__init__(self, "logic_synth", 
+                           num_qubits = len(qc.qubits), 
+                           definition = qc
+                           )
 
-        for var in init_op.__dict__.keys():
-            if var != "inverse":
-                self.__dict__[var] = init_op.__dict__[var]
+        self.permeability = {i : i < self.tt.bit_amount for i in range(self.num_qubits)}        
+        self.is_qfree = True
 
     def inverse(self):
         return LogicSynthGate(Operation.inverse(self), self.tt, self.logic_synth_method)

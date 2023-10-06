@@ -31,6 +31,9 @@ In this section, we provide a glimpse into the diverse range of applications tha
      - An example on how to use Qrisps QuantumNetwork module to simulate a quantum teleportation.
    * - :ref:`EfficientTSP`
      - A more efficient version of the solution of the traveling salesman problem, that was presented in the :ref:`Tutorial`
+   * - :ref:`QAOAExample` 
+     - Provides implementations for solving optimization problems using the Quantum Approximate Optimization Algorithm. For a detailed tutorial on how to use QAOA, please refer to the :ref:`in depth QAOA tutorial <QAOA101>`.
+
                     
         
 
@@ -49,3 +52,4 @@ In this section, we provide a glimpse into the diverse range of applications tha
    QuantumModDivision
    QuantumTeleportation
    EfficientTSP
+   QAOA

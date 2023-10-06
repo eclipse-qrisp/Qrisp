@@ -41,37 +41,41 @@ def diffuser(input_object, phase=np.pi):
     >>> q_ch_list = [QuantumChar(), QuantumChar(), QuantumChar()]
     >>> diffuser(q_ch_list)
     >>> print(q_ch_list[0].qs)
-              ┌────────────┐
-    q_ch_0.0: ┤0           ├
-              │            │
-    q_ch_0.1: ┤1           ├
-              │            │
-    q_ch_0.2: ┤2           ├
-              │            │
-    q_ch_0.3: ┤3           ├
-              │            │
-    q_ch_0.4: ┤4           ├
-              │            │
-    q_ch_1.0: ┤5           ├
-              │            │
-    q_ch_1.1: ┤6           ├
-              │            │
-    q_ch_1.2: ┤7  diffuser ├
-              │            │
-    q_ch_1.3: ┤8           ├
-              │            │
-    q_ch_1.4: ┤9           ├
-              │            │
-    q_ch_2.0: ┤10          ├
-              │            │
-    q_ch_2.1: ┤11          ├
-              │            │
-    q_ch_2.2: ┤12          ├
-              │            │
-    q_ch_2.3: ┤13          ├
-              │            │
-    q_ch_2.4: ┤14          ├
-              └────────────┘
+    
+    ::
+
+                  ┌────────────┐
+        q_ch_0.0: ┤0           ├
+                  │            │
+        q_ch_0.1: ┤1           ├
+                  │            │
+        q_ch_0.2: ┤2           ├
+                  │            │
+        q_ch_0.3: ┤3           ├
+                  │            │
+        q_ch_0.4: ┤4           ├
+                  │            │
+        q_ch_1.0: ┤5           ├
+                  │            │
+        q_ch_1.1: ┤6           ├
+                  │            │
+        q_ch_1.2: ┤7  diffuser ├
+                  │            │
+        q_ch_1.3: ┤8           ├
+                  │            │
+        q_ch_1.4: ┤9           ├
+                  │            │
+        q_ch_2.0: ┤10          ├
+                  │            │
+        q_ch_2.1: ┤11          ├
+                  │            │
+        q_ch_2.2: ┤12          ├
+                  │            │
+        q_ch_2.3: ┤13          ├
+                  │            │
+        q_ch_2.4: ┤14          ├
+                  └────────────┘
+                  
     """
 
     if isinstance(input_object, QuantumArray):

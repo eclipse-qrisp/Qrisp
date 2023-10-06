@@ -95,6 +95,7 @@ class ImpureQuantumState:
     # We perform the reset operation by measuring but not tracking the measurement
     # result.
     def reset(self, qubit_index, keep_outcome=False):
+        
         if thread_limit > 1:
             threads = []
 
@@ -158,6 +159,10 @@ class ImpureQuantumState:
     # The logic behind it is rather similar to reset, but this time we log the
     # measurement outcome.
     def measure(self, qubit_index, clbit_index):
+        
+        # self.multi_measure([qubit_index], [clbit_index])
+        # return
+        
         if thread_limit > 1:
             threads = []
 
@@ -204,6 +209,40 @@ class ImpureQuantumState:
                 new_outcome[clbit_index] = 1
                 new_outcome_list.append(new_outcome)
 
+        self.states = new_states
+        self.cl_prob = new_cl_prob
+        self.outcome_list = new_outcome_list
+        
+        
+    # This functions performs measurements
+    # The logic behind it is rather similar to reset, but this time we log the
+    # measurement outcome.
+    def multi_measure(self, qubit_indices, clbit_indices, gen_new_states = True):
+        
+        from qrisp.misc import int_as_array
+        
+        new_states = []
+        new_cl_prob = []
+        new_outcome_list = []
+
+        for i in range(len(self.states)):
+            # Wait for measurement threads to finish
+
+            p_list, mes_states, outcome_list = self.states[i].multi_measure(qubit_indices, return_res_states = gen_new_states)
+            
+            for j in range(len(p_list)):
+                
+                if p_list[j] == 0:
+                    continue
+                
+                new_states.append(mes_states[j])
+                
+                new_outcome = self.outcome_list[i].copy()
+                new_outcome[clbit_indices] = int_as_array(outcome_list[j], len(qubit_indices))
+                new_outcome_list.append(new_outcome)
+                
+                new_cl_prob.append(p_list[j] * self.cl_prob[i])
+                
         self.states = new_states
         self.cl_prob = new_cl_prob
         self.outcome_list = new_outcome_list

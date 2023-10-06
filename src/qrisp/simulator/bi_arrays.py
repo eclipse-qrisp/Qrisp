@@ -33,6 +33,7 @@ from scipy.sparse import (
 )
 
 import qrisp.simulator.bi_array_helper as hlp
+from qrisp.simulator.numerics_config import float_tresh
 
 try:
     # sparse_dot_mkl seems to be only faster in situations, where the shape of the
@@ -183,7 +184,7 @@ class SparseBiArray(BiArray):
             self.nz_indices = init_object[0].ravel()
             self.data = init_object[1]
 
-            self.nz_indices, self.data = hlp.elim_zeros(self.nz_indices, self.data)
+            # self.nz_indices, self.data = hlp.elim_zeros(self.nz_indices, self.data)
 
         # Handle the case that the init_object is a sparse matrix/array
         elif isinstance(init_object, (coo_array, coo_matrix)):
@@ -224,7 +225,7 @@ class SparseBiArray(BiArray):
             )
 
         # Store the sparsity
-        self.sparsity = len(self.nz_indices) / self.size
+        self.sparsity = self.nz_indices.shape[0] / self.size
 
         # This list keeps track of the axes permutations that have been applied.
         # Once the SparseBiArray is needed for a contraction, all these swaps are
@@ -236,11 +237,11 @@ class SparseBiArray(BiArray):
 
         # If the contraction counter is above the threshold, we sum the duplicates and
         # eliminate the zeros.
-        if False:
+        # if False:
             # if contraction_counter > self.contraction_counter_threshold:
-            self.sum_duplicates()
-            self.eliminate_zeros()
-            self.contraction_counter = 0
+            # self.sum_duplicates()
+            # self.eliminate_zeros()
+            # self.contraction_counter = 0
 
     # Method for copying
     def copy(self):
@@ -568,7 +569,10 @@ class SparseBiArray(BiArray):
         self.apply_swaps()
 
         # Construct the flat array
-        res = hlp.construct_flat_array(self.nz_indices, self.data, self.size)
+        if self.data.dtype == np.dtype("O"):
+            res = hlp.construct_flat_array_no_jit(self.nz_indices, self.data, self.size)
+        else:
+            res = hlp.construct_flat_array(self.nz_indices, self.data, self.size)
 
         # Reshape
         return res.reshape(self.shape)
@@ -618,7 +622,7 @@ class SparseBiArray(BiArray):
         # Return result
         return lower_half, upper_half
 
-    def multi_split(self, indices):
+    def multi_measure(self, indices, return_new_arrays = True):
         sprs = self.build_sr_matrix(
             [2 ** (len(indices)), self.size // 2 ** len(indices)]
         ).tocsr()
@@ -627,22 +631,39 @@ class SparseBiArray(BiArray):
         row_ptr = sprs.indptr
         data = sprs.data
 
+        p_list = []
+        outcome_index_list = []
         new_bi_arrays = []
+        
+        
         for r in range(len(row_ptr) - 1):
-            if row_ptr[r] == row_ptr[r + 1]:
-                new_bi_array = None
-            else:
-                new_bi_array = SparseBiArray(
-                    (
-                        col_indices[row_ptr[r] : row_ptr[r + 1]].astype(np.int64),
-                        data[row_ptr[r] : row_ptr[r + 1]],
-                    ),
-                    shape=(self.size // 2 ** len(indices),),
-                )
+            if row_ptr[r] != row_ptr[r + 1]:
+                
+                temp_data = data[row_ptr[r] : row_ptr[r + 1]]
+                p = np.abs(np.vdot(temp_data, temp_data))
+                
+                if p < float_tresh:
+                    continue
+                
+                p_list.append(p)
+                outcome_index_list.append(r)
+                
+                if return_new_arrays:
+                
+                    new_bi_array = SparseBiArray(
+                        (
+                            col_indices[row_ptr[r] : row_ptr[r + 1]].astype(np.int64),
+                            data[row_ptr[r] : row_ptr[r + 1]],
+                        ),
+                        shape=(self.size // 2 ** len(indices),),
+                    )
+    
+                    new_bi_arrays.append(new_bi_array)
+                else:
+                    
+                    new_bi_arrays.append(None)
 
-            new_bi_arrays.append(new_bi_array)
-
-        return new_bi_arrays
+        return new_bi_arrays, p_list, outcome_index_list
 
     # Calculate the squared norm, ie. the sesquilinear scalar product of self with
     # itself
@@ -1002,20 +1023,26 @@ class DenseBiArray(BiArray):
             self.data[: self.size // 2].copy(), self.sparsity
         ), DenseBiArray(self.data[self.size // 2 :].copy(), sparsity=self.sparsity)
 
-    def multi_split(self, indices):
+    def multi_measure(self, indices, return_new_arrays = True):
         original_shape = tuple(self.shape)
-        self.reshape([2 ** (len(indices)), self.size // 2 ** len(indices)])
+        # self.reshape([2 ** (len(indices)), self.size // 2 ** len(indices)])
+        self.reshape(self.size)
 
         np_array = self.to_array()
 
+
+        new_arrays, p_list, outcome_index_list = hlp.dense_measurement(np_array, len(indices), 0)
         new_bi_arrays = []
-
-        for r in range(2 ** len(indices)):
-            new_bi_arrays.append(DenseBiArray(np_array[r, :]))
-
+        
+        if return_new_arrays:
+            for i in range(len(new_arrays)):
+                new_bi_arrays.append(DenseBiArray(new_arrays[i], sparsity = self.sparsity))
+        else:
+            new_bi_arrays = len(p_list)*[None]
+            
         self.reshape(original_shape)
 
-        return new_bi_arrays
+        return new_bi_arrays, p_list, outcome_index_list
 
     # This method works similarly as it's equivalent in SparseBiArray
     def squared_norm(self):

@@ -695,6 +695,28 @@ def average_group_size(qc):
 
     return average_group_size / len(qc.data)
 
+def extract_measurements(qc):
+        
+    qubits = list(qc.qubits)
+    mes_list = []
+    data = []
+    for instr in qc.data[::-1]:
+        
+        if instr.op.name == "measure" and instr.qubits[0] in qubits:
+            mes_list.append(instr)
+        else:
+            data.append(instr)
+        
+        for qb in instr.qubits:
+            try:
+                qubits.remove(qb)
+            except:
+                pass
+    
+    qc.data = data[::-1]
+    
+    return qc, mes_list
+
 
 # Wrapping function for all preproccessing operations
 def circuit_preprocessor(qc):

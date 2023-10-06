@@ -1,4 +1,6 @@
-﻿Iterable Demuxing
+﻿.. _ItDemuxing:
+
+Iterable Demuxing
 =================
 
 .. currentmodule:: qrisp

@@ -76,22 +76,25 @@ class QuantumEnvironment:
     simply returns it's content:
 
     >>> print(qv.qs)
-    QuantumCircuit:
-    ---------------
-          ┌───┐
-    qv.0: ┤ X ├
-          ├───┤
-    qv.1: ┤ X ├
-          ├───┤
-    qv.2: ┤ X ├
-          ├───┤
-    qv.3: ┤ X ├
-          ├───┤
-    qv.4: ┤ X ├
-          └───┘
-    Live QuantumVariables:
-    ----------------------
-    QuantumVariable qv
+    
+    ::
+    
+        QuantumCircuit:
+        --------------
+              ┌───┐
+        qv.0: ┤ X ├
+              ├───┤
+        qv.1: ┤ X ├
+              ├───┤
+        qv.2: ┤ X ├
+              ├───┤
+        qv.3: ┤ X ├
+              ├───┤
+        qv.4: ┤ X ├
+              └───┘
+        Live QuantumVariables:
+        ---------------------
+        QuantumVariable qv
 
     More advanced environments allow for a large variety of features and can significantly
     simplify code development and maintainance.
@@ -143,17 +146,20 @@ class QuantumEnvironment:
 
 
     >>> print(a.qs)
-    QuantumCircuit:
-    ---------------
-    a.0: ──■──────────────■──
-         ┌─┴─┐          ┌─┴─┐
-    b.0: ┤ X ├──■────■──┤ X ├
-         └───┘┌─┴─┐┌─┴─┐└───┘
-    c.0: ─────┤ X ├┤ X ├─────
-              └───┘└───┘
-    Live QuantumVariables:
-    ----------------------
-    QuantumVariable a
+    
+    ::
+    
+        QuantumCircuit:
+        --------------
+        a.0: ──■──────────────■──
+             ┌─┴─┐          ┌─┴─┐
+        b.0: ┤ X ├──■────■──┤ X ├
+             └───┘┌─┴─┐┌─┴─┐└───┘
+        c.0: ─────┤ X ├┤ X ├─────
+                  └───┘└───┘
+        Live QuantumVariables:
+        ---------------------
+        QuantumVariable a
 
     **Visualisation within QuantumEnvironments**
 
@@ -180,51 +186,52 @@ class QuantumEnvironment:
         print(a.qs)
 
     Executing this snippet yields
+    
+    ::
+    
+        QuantumCircuit:
+        --------------
+        a.0: ─────
 
-    >>>
-    QuantumCircuit:
-    ---------------
-    a.0: ─────
-    <BLANKLINE>
-    a.1: ─────
-         ┌───┐
-    a.2: ┤ Z ├
-         └───┘
-    QuantumEnvironment Stack:
-    -------------------------
-    Level 0: QuantumEnvironment
-    Level 1: QuantumEnvironment
-    <BLANKLINE>
-    Live QuantumVariables:
-    ----------------------
-    QuantumVariable a
-    QuantumCircuit:
-    ---------------
-    a.0: ─────
-         ┌───┐
-    a.1: ┤ Y ├
-         ├───┤
-    a.2: ┤ Z ├
-         └───┘
-    QuantumEnvironment Stack:
-    -------------------------
-    Level 0: QuantumEnvironment
-    <BLANKLINE>
-    Live QuantumVariables:
-    ----------------------
-    QuantumVariable a
-    QuantumCircuit:
-    ---------------
-         ┌───┐
-    a.0: ┤ X ├
-         ├───┤
-    a.1: ┤ Y ├
-         ├───┤
-    a.2: ┤ Z ├
-         └───┘
-    Live QuantumVariables:
-    ----------------------
-    QuantumVariable a
+        a.1: ─────
+             ┌───┐
+        a.2: ┤ Z ├
+             └───┘
+        QuantumEnvironment Stack:
+        ------------------------
+        Level 0: QuantumEnvironment
+        Level 1: QuantumEnvironment
+
+        Live QuantumVariables:
+        ---------------------
+        QuantumVariable a
+        QuantumCircuit:
+        --------------
+        a.0: ─────
+             ┌───┐
+        a.1: ┤ Y ├
+             ├───┤
+        a.2: ┤ Z ├
+             └───┘
+        QuantumEnvironment Stack:
+        ------------------------
+        Level 0: QuantumEnvironment
+
+        Live QuantumVariables:
+        ---------------------
+        QuantumVariable a
+        QuantumCircuit:
+        --------------
+             ┌───┐
+        a.0: ┤ X ├
+             ├───┤
+        a.1: ┤ Y ├
+             ├───┤
+        a.2: ┤ Z ├
+             └───┘
+        Live QuantumVariables:
+        ---------------------
+        QuantumVariable a
 
 
     .. warning::
@@ -295,24 +302,27 @@ class QuantumEnvironment:
            h(qv[5])
 
     >>> print(qv.qs)
-    QuantumCircuit:
-    ---------------
-          ┌───┐
-    qv.0: ┤ X ├
-          └───┘
-    qv.1: ─────
-          ┌───┐
-    qv.2: ┤ Z ├
-          └───┘
-    qv.3: ─────
-    <BLANKLINE>
-    qv.4: ─────
-          ┌───┐
-    qv.5: ┤ H ├
-          └───┘
-    Live QuantumVariables:
-    ----------------------
-    QuantumVariable qv
+    
+    ::
+    
+        QuantumCircuit:
+        --------------
+              ┌───┐
+        qv.0: ┤ X ├
+              └───┘
+        qv.1: ─────
+              ┌───┐
+        qv.2: ┤ Z ├
+              └───┘
+        qv.3: ─────
+
+        qv.4: ─────
+              ┌───┐
+        qv.5: ┤ H ├
+              └───┘
+        Live QuantumVariables:
+        ---------------------
+        QuantumVariable qv
 
     """
 
@@ -361,6 +371,11 @@ class QuantumEnvironment:
 
         # This list stores the data that is appended inside the environemt
         self.env_data = []
+        
+        # This list stores the qubits that have been deallocated in this environment
+        # This information is required because the need to be temporarily reallocated
+        # to prevent compilation errors at compile time.
+        self.deallocated_qubits = []
 
         # Set the new relationships
         self.parent = self.deepest_environment[0]
@@ -374,6 +389,7 @@ class QuantumEnvironment:
 
         # Start the dumping process
         self.start_dumping()
+        
 
         return self
 
@@ -389,40 +405,55 @@ class QuantumEnvironment:
             if self.active_qs_list[i]() is not None:
                 self.active_qs_list[i]().env_stack.pop(-1)
 
-        if not hasattr(self, "manual_allocation_management"):
-            # Create a list which will store deallocation gates
-            dealloc_qubit_list = []
-            alloc_qubit_list = []
-            # We now iterate through the collected data. We do this in order
-            # to make sure that the (de)allocation gates are notprocessed
-            # by the environment compiler as this might disturb their functionality
-            i = 0
+        
+        # Create a list which will store deallocation gates
+        dealloc_qubit_list = []
+        alloc_qubit_list = []
+        # We now iterate through the collected data. We do this in order
+        # to make sure that the (de)allocation gates are notprocessed
+        # by the environment compiler as this might disturb their functionality
+        i = 0
 
-            while i < len(self.env_data):
-                instr = self.env_data[i]
+        while i < len(self.env_data):
+            instr = self.env_data[i]
 
-                if not isinstance(instr, QuantumEnvironment):
-                    if instr.op.name == "qb_alloc":
+            if not isinstance(instr, QuantumEnvironment):
+                if instr.op.name == "qb_alloc":
+                    if not hasattr(self, "manual_allocation_management"):
                         alloc_qubit_list.append(self.env_data.pop(i).qubits[0])
                         continue
-                    if instr.op.name == "qb_dealloc":
+                    else:
+                        dealloc_qubit_list.append(self.env_data[i].qubits[0])
+                    
+                
+                if instr.op.name == "qb_dealloc":
+                    if not hasattr(self, "manual_allocation_management"):
                         dealloc_qubit_list.append(self.env_data.pop(i).qubits[0])
-                        instr.qubits[0].allocated = True
                         continue
+                    else:
+                        dealloc_qubit_list.append(self.env_data[i].qubits[0])
+                    # instr.qubits[0].allocated = True
+                    
 
-                i += 1
-
+            i += 1
+            
+        if not hasattr(self, "manual_allocation_management"):
             for qb in list(set(alloc_qubit_list)):
                 self.env_qs.append(QubitAlloc(), [qb])
 
         # If this was the outermost environment, we compile
         if len(self.env_qs.env_stack) == 0:
+            self.deallocated_qubits.extend(dealloc_qubit_list)
+            for qb in self.deallocated_qubits:
+                qb.allocated = True
+            
             self.compile()
 
         # Otherwise, we append self to the data of the parent environment
         else:
             if len(self.env_data):
                 self.env_qs.data.append(self)
+            self.parent.deallocated_qubits.extend(dealloc_qubit_list)
 
         if not hasattr(self, "manual_allocation_management"):
             for qb in list(set(dealloc_qubit_list)):

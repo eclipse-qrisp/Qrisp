@@ -22,7 +22,7 @@ from itertools import product
 import numpy as np
 
 from qrisp.circuit import transpile
-from qrisp.core import QuantumVariable
+from qrisp.core import QuantumVariable, qompiler
 from qrisp.misc import bin_rep
 # from qrisp.environments.temp_var_environment import temp_qv
 from qrisp.environments import conjugate
@@ -279,7 +279,7 @@ class QuantumArray(np.ndarray):
 
         if isinstance(self.qtype, QuantumFloat):
             if self.qtype.exponent >= 0:
-                res = np.zeros(len(flattened_array), dtype=np.int64)
+                res = np.zeros(len(flattened_array), dtype=np.int32)
             else:
                 res = np.zeros(len(flattened_array))
         else:
@@ -290,9 +290,9 @@ class QuantumArray(np.ndarray):
         bin_string = bin_rep(code_int, len(flattened_array) * n)
 
         for i in range(len(flattened_array)):
-            try:
+            if isinstance(self.qtype, QuantumFloat):
                 res[i] = self.qtype.decoder(int(bin_string[i * n : (i + 1) * n], 2))
-            except ValueError:
+            else:
                 res = res.astype("object")
                 res[i] = self.qtype.decoder(int(bin_string[i * n : (i + 1) * n], 2))
 
@@ -436,6 +436,7 @@ class QuantumArray(np.ndarray):
         compilation_kwargs={},
         subs_dic={},
         circuit_preprocessor=None,
+        precompiled_qc = None
     ):
         """
         Method for acquiring measurement results for the given array. The semantics are
@@ -511,31 +512,31 @@ class QuantumArray(np.ndarray):
         # Copy circuit in over to prevent modification
         from qrisp.quantum_network import QuantumNetworkClient
 
-        if isinstance(backend, QuantumNetworkClient):
-            qc = self.qs.copy()
-            self.qs.clear_data()
-            shots = 1
-        else:
+        if precompiled_qc is None:        
             if compile:
-                from qrisp.core.compilation import qompiler
-
                 qc = qompiler(
-                    self.qs, intended_measurements=qubits, **compilation_kwargs
+                    self.qs, intended_measurements = qubits, **compilation_kwargs
                 )
-                # qc = self.qs.compile(compilation_workspace)
             else:
                 qc = self.qs.copy()
+                
+            # Transpile circuit
+            qc = transpile(qc)
+        else:
+            qc = precompiled_qc.copy()
+
 
         # Bind parameters
         if subs_dic:
             qc = qc.bind_parameters(subs_dic)
+            from qrisp.core.compilation import combine_single_qubit_gates
+            qc = combine_single_qubit_gates(qc)
 
         # Execute user specified circuit_preprocessor
         if circuit_preprocessor is not None:
             qc = circuit_preprocessor(qc)
 
-        # Transpile circuit
-        qc = transpile(qc)
+        
 
         from qrisp.misc import get_measurement_from_qc
 
@@ -624,9 +625,7 @@ class QuantumArray(np.ndarray):
             deleted qubits are in the $\ket{0}$ state. The default is False.
 
         """
-        temp = self.flatten()
-        for i in range(len(temp)):
-            temp.qv_array[i].delete()
+        for qv in self.flatten(): qv.delete(verify = verify)
 
     def __repr__(self):
         return str(self.get_measurement())
@@ -942,6 +941,9 @@ class OutcomeArray(np.ndarray):
     def __new__(subtype, ndarray):
         if isinstance(ndarray, list):
             ndarray = np.array(ndarray)
+            
+            if ndarray.dtype == np.int64:
+                ndarray = np.array(ndarray, dtype = np.int32)
 
         obj = super().__new__(subtype, ndarray.shape, dtype=ndarray.dtype)
         indices = product(*[list(range(i)) for i in ndarray.shape])
@@ -952,15 +954,13 @@ class OutcomeArray(np.ndarray):
         return obj
 
     def __hash__(self):
-        return hash(str(self))
+        return hash(self.ravel().data.tobytes())
+        # return hash(str(self))
 
     def __eq__(self, other):
-        if isinstance(other, str):
-            return str(self) == other
-        else:
-            return np.array_equal(self, other)
+        return np.array_equal(self, other)
 
     def __repr__(self):
-        res = np.ndarray.__repr__(self).replace(", dtype=int64", "")
+        res = np.ndarray.__repr__(self).replace(", dtype=int32", "")
 
         return res

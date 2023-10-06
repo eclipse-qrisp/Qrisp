@@ -102,6 +102,7 @@ def convert_to_qrisp(qc):
         Qubit,
         fast_append,
         op_list,
+        PauliGate
     )
 
     op_dict = {op().name: op for op in op_list}
@@ -131,12 +132,27 @@ def convert_to_qrisp(qc):
             if not instr.op.definition is None:
                 op = convert_to_qrisp(instr.op.definition).to_op()
             elif instr.op.name in op_dict.keys():
-                op = op_dict[instr.op.name](*instr.op.params)
+                op_func = op_dict[instr.op.name]
+                if instr.op.name in ["x", "y", "z", "s", "t", "h", "s_dg", "t_dg", "sx", "sx_dg", "id"]:
+                    op = op_func()
+                elif instr.op.name in ["rx", "ry", "rz", "p", "u1", "gphase"]:
+                    op = op_func(sum(instr.op.params))
+                else:
+                    op = op_func(*instr.op.params)
             elif instr.op.name[5:] in op_dict.keys():
                 if instr.op.name[:5] == "c_if_":
                     op = op_dict[instr.op.name[5:]](*instr.op.params).c_if()
             elif instr.op.name[-3:] == "_dg" and instr.op.name[:-3] in op_dict.keys():
-                op = op_dict[instr.op.name[:-3]](*instr.op.params).inverse()
+                op_func = op_dict[instr.op.name[:-3]]
+                if instr.op.name in ["x", "y", "z", "s", "t", "h", "s_dg", "t_dg", "sx", "sx_dg", "id"]:
+                    op = op_func()
+                elif instr.op.name in ["rx", "ry", "rz", "p", "u1"]:
+                    op = op_func(sum(instr.op.params))
+                else:
+                    op = op_func(*instr.op.params)
+                    
+                op = op.inverse()
+                
             else:
                 raise Exception(
                     "Don't know how to convert operation "
@@ -269,6 +285,7 @@ def convert_to_qiskit(qc, transpile=False):
                 qiskit_ins = base_gate.control(
                     len(op.controls), ctrl_state=op.ctrl_state[::-1]
                 )
+        
 
         else:
             qiskit_ins = create_qiskit_instruction(op, params)

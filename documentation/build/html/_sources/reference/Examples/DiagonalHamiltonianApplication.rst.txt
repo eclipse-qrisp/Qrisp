@@ -120,26 +120,29 @@ Acquire measurement results.
 Visualize the QuantumSession of the QuantumFloat ``qf``.
 
 >>> print(qf.qs)
-QuantumCircuit:
----------------
-       ┌───┐┌─────────────────────┐┌─────────┐
- qf.0: ┤ H ├┤0                    ├┤0        ├
-       ├───┤│                     ││         │
- qf.1: ┤ H ├┤1                    ├┤1 QFT_dg ├
-       ├───┤│                     ││         │
- qf.2: ┤ H ├┤2                    ├┤2        ├
-       ├───┤│                     │└─────────┘
-qch.0: ┤ H ├┤3                    ├───────────
-       ├───┤│  app_phase_function │           
-qch.1: ┤ H ├┤4                    ├───────────
-       └───┘│                     │           
-qch.2: ─────┤5                    ├───────────
-            │                     │           
-qch.3: ─────┤6                    ├───────────
-            │                     │           
-qch.4: ─────┤7                    ├───────────
-            └─────────────────────┘           
-Live QuantumVariables:
-----------------------
-QuantumFloat qf
-QuantumChar qch
+
+::
+
+    QuantumCircuit:
+    --------------
+           ┌───┐┌─────────────────────┐┌─────────┐
+     qf.0: ┤ H ├┤0                    ├┤0        ├
+           ├───┤│                     ││         │
+     qf.1: ┤ H ├┤1                    ├┤1 QFT_dg ├
+           ├───┤│                     ││         │
+     qf.2: ┤ H ├┤2                    ├┤2        ├
+           ├───┤│                     │└─────────┘
+    qch.0: ┤ H ├┤3                    ├───────────
+           ├───┤│  app_phase_function │           
+    qch.1: ┤ H ├┤4                    ├───────────
+           └───┘│                     │           
+    qch.2: ─────┤5                    ├───────────
+                │                     │           
+    qch.3: ─────┤6                    ├───────────
+                │                     │           
+    qch.4: ─────┤7                    ├───────────
+                └─────────────────────┘           
+    Live QuantumVariables:
+    ---------------------
+    QuantumFloat qf
+    QuantumChar qch

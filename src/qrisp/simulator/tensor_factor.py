@@ -18,7 +18,7 @@
 
 # -*- coding: utf-8 -*-
 
-from qrisp.simulator.bi_arrays import DenseBiArray, SparseBiArray, tensordot
+from qrisp.simulator.bi_arrays import DenseBiArray, SparseBiArray, tensordot, BiArray
 from qrisp.simulator.numerics_config import float_tresh, xp
 
 # tensordot = xp.tensordot
@@ -26,7 +26,13 @@ from qrisp.simulator.numerics_config import float_tresh, xp
 # Class to describe TensorFactors
 
 
+
+
 class TensorFactor:
+    
+    index_init = xp.zeros(1, dtype = xp.int64)
+    data_init = xp.ones(1, dtype = xp.complex64)
+    
     def __init__(self, qubits, init_tensor_array=None):
         # This list contains a list of integers, which describe the current permutation
         # of qubit indices inside this TensorFactor, i.e. swapping two elements of this
@@ -39,14 +45,14 @@ class TensorFactor:
         self.n = len(qubits)
 
         if init_tensor_array is None:
-            self.tensor_array = xp.zeros(2**self.n, dtype=xp.complex64)
-            self.tensor_array[0] = 1
+            
+            self.tensor_array = SparseBiArray((self.index_init, self.data_init), shape = (2**self.n,))
 
         else:
             self.tensor_array = init_tensor_array
-
-        if isinstance(self.tensor_array, xp.ndarray):
-            self.tensor_array = SparseBiArray(self.tensor_array)
+            
+            if not isinstance(init_tensor_array, BiArray):
+                self.tensor_array = SparseBiArray(self.tensor_array)
 
     def copy(self):
         return TensorFactor(list(self.qubits), self.tensor_array.copy())
@@ -95,7 +101,7 @@ class TensorFactor:
 
     # Entangles two TensorFactors.
     def entangle(self, other):
-        if self == other:
+        if id(self.tensor_array) == id(other.tensor_array):
             return self
         if set(self.qubits).intersection(other.qubits):
             raise Exception(
@@ -173,7 +179,35 @@ class TensorFactor:
             if sorted_qubit_list[i] == self.qubits[i]:
                 continue
             self.swap(i, self.qubits.index(sorted_qubit_list[i]))
+            
+    def multi_measure(self, mes_qubits, return_res_tf = True):
+        
+        for i in range(len(mes_qubits)):
+            # Swap the index that is supposed to be measured to the front
+            index = self.qubits.index(mes_qubits[i])
+            self.swap(i, index)
+            
+        
+        # Split the array - the lower half corresponds to the state with outcome 0,
+        # the upper half to 1
+        new_bi_arrays, p_list, outcome_index_list = self.tensor_array.multi_measure(list(range(len(mes_qubits))), return_new_arrays = return_res_tf)
 
+        p_list = xp.array(p_list)/xp.sum(p_list)
+        
+        new_qubit_list = list(self.qubits[len(mes_qubits):])
+        
+        if return_res_tf:
+            tf_list = []
+            for i in range(len(p_list)):
+                
+                new_bi_arrays[i].data *= 1/p_list[i]**0.5
+                tf_list.append(TensorFactor(list(new_qubit_list), new_bi_arrays[i]))
+        else:
+            tf_list = len(p_list)*[None]
+        
+        return p_list, tf_list, outcome_index_list
+        
+            
 
 # This function allow entangling more than two TensorFactors.
 # Since we are free to choose a contraction order, we pick one

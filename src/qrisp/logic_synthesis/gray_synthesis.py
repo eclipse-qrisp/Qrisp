@@ -18,7 +18,7 @@
 
 import numpy as np
 from qrisp.misc import array_as_int, gate_wrap, int_as_array
-from qrisp.circuit.quantum_circuit import QuantumCircuit
+from qrisp.circuit import QuantumCircuit, Operation, PTControlledOperation, ControlledOperation
 
 use_gray_code = False
 try:
@@ -325,7 +325,7 @@ compiled_gates = {}
 compiled_pt_gates = {}
 
 
-def gray_synth_gate(target_phases, phase_tolerant=False):
+def gray_synth_qc(target_phases, phase_tolerant=False):
     target_phases_id = str(list(target_phases))
 
     if not phase_tolerant:
@@ -338,6 +338,14 @@ def gray_synth_gate(target_phases, phase_tolerant=False):
             return temp
 
     bit_amount = int(np.log2(len(target_phases)))
+    
+    target_phases = np.array(target_phases)
+    target_phases = target_phases.reshape(bit_amount*[2])
+    for i in range(bit_amount//2):
+        target_phases = np.swapaxes(target_phases, i, bit_amount-i-1)
+    target_phases = target_phases.reshape(2**bit_amount)
+
+    
 
     qc = QuantumCircuit(bit_amount)
 
@@ -394,9 +402,9 @@ def gray_synth_gate(target_phases, phase_tolerant=False):
         except TypeError:
             pass
 
-    qc.qubits = qc.qubits[::-1]
-
+    # qc.qubits = qc.qubits[::-1]
     res = qc.to_gate("gray_phase_gate")
+    
     res.target_phases = target_phases
     res.phase_tolerant = phase_tolerant
 
@@ -411,6 +419,56 @@ def gray_synth_gate(target_phases, phase_tolerant=False):
     return res
 
 
+class GraySynthGate(Operation):
+    
+    def __init__(self, target_phases, phase_tolerant = False):
+        
+        definition = gray_synth_qc(target_phases, phase_tolerant).definition
+        
+        Operation.__init__(self, num_qubits = len(definition.qubits), 
+                           definition = definition, 
+                           name = "gray_synth_gate")
+        
+        self.target_phases = target_phases
+        self.phase_tolerant = phase_tolerant
+        
+    def control(self, num_ctrl_qubits=1, ctrl_state=-1, method=None):
+        
+
+        ctrl_state = int(ctrl_state, 2)
+
+        target_phases_new = []
+
+        for i in range(2**num_ctrl_qubits):
+            if i != ctrl_state:
+                target_phases_new += [0] * len(self.target_phases)
+            else:
+                target_phases_new += list(self.target_phases)
+
+        tmp = GraySynthGate(target_phases_new, phase_tolerant="pt" in str(method))
+        
+        if "pt" in str(method):
+            res = PTControlledOperation(self,
+                                        num_ctrl_qubits=num_ctrl_qubits, 
+                                        ctrl_state=ctrl_state, 
+                                        method=method)
+        else:
+            res = ControlledOperation(self,
+                                      num_ctrl_qubits=num_ctrl_qubits, 
+                                      ctrl_state=ctrl_state, 
+                                      method=method)
+        
+        res.definition = tmp.definition
+            
+        return res
+    
+    def inverse(self):
+        res = GraySynthGate(self.target_phases, self.phase_tolerant)
+        res.definition = res.definition.inverse()
+        res.target_phases = [-x for x in self.target_phases]
+        return res
+        
+        
 # Function apply gray synthesis to quantum variable qv
 
 
@@ -419,13 +477,15 @@ def gray_synth_gate(target_phases, phase_tolerant=False):
 # 2 where 2 describes a phase of 2pi. This helps to reduce the amount of float errors.
 @gate_wrap(permeability="full", is_qfree=True)
 def gray_phase_synth(qv, target_phases, phase_tolerant=False):
-    qv.qs.append(gray_synth_gate(target_phases, phase_tolerant), qv.reg)
+    # qv.qs.append(gray_synth_gate(target_phases, phase_tolerant), qv.reg)
+    qv.qs.append(GraySynthGate(target_phases, phase_tolerant), qv.reg)
 
 
 # Similar function as the above but takes a QuantumCircuit and a qubit list as arguments
 # instead
 def gray_phase_synth_qb_list(qc, qb_list, target_phases, phase_tolerant=False):
-    qc.append(gray_synth_gate(target_phases, phase_tolerant), qb_list)
+    # qc.append(gray_synth_gate(target_phases, phase_tolerant), qb_list)
+    qc.append(GraySynthGate(target_phases, phase_tolerant), qb_list)
 
 
 # Function to use gray synthesis for logic synthesis
@@ -463,14 +523,23 @@ def gray_logic_synth_single_qb(input_var, output_var, qb_nr, tt, phase_tolerant=
     # get phase 0 and the states with a 1 in the input qubit get a phases of pi
     # if the truth table says 1 or a phase of 0 otherwise
     target_phases = np.array(tt.shape[0] * [0] + list(tt.n_rep[:, 0])) * np.pi
+    
+    bit_amount = int(np.log2(len(target_phases)))
+    
+    target_phases = np.array(target_phases)
+    target_phases = target_phases.reshape(bit_amount*[2])
+    for i in range(bit_amount//2):
+        target_phases = np.swapaxes(target_phases, i, bit_amount-i-1)
+    target_phases = target_phases.reshape(2**bit_amount)
 
     # Apply h gate to the output qubit in order to get logic states from phases
     from qrisp import h
 
     h(output_var[qb_nr])
     input_var.qs.append(
-        gray_synth_gate(target_phases, phase_tolerant),
-        (input_var.reg + [output_var[qb_nr]])[::-1],
+        # gray_synth_gate(target_phases, phase_tolerant),
+        GraySynthGate(target_phases, phase_tolerant),
+        (input_var.reg + [output_var[qb_nr]]),
     )
     h(output_var[qb_nr])
     return
@@ -512,17 +581,17 @@ def gray_logic_synth(input_var, output_var, tt, phase_tolerant=False, lin_solve=
     qc = input_var_dupl.qs.transpile()
 
     if len(qc.qubits) < 10 and input_var.size != 1:
-        pass
-        # qc = reduce_depth(qc)
+        # pass
+        qc = reduce_depth(qc)
 
     input_var_dupl.qs.data = []
 
     if not phase_tolerant:
-        input_var_dupl.reg = input_var_dupl.reg[::-1]
+        # input_var_dupl.reg = input_var_dupl.reg[::-1]
 
         gray_phase_synth(input_var_dupl, residual_phases)
 
-        input_var_dupl.reg = input_var_dupl.reg[::-1]
+        # input_var_dupl.reg = input_var_dupl.reg[::-1]
 
     qc.data.extend(input_var_dupl.qs.data)
 

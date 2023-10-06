@@ -329,6 +329,7 @@ def recursive_qs_search(input):
         return []
 
     from qrisp.core import QuantumSession
+    from qrisp.environments import QuantumEnvironment
 
     if hasattr(input, "__iter__"):
         iterable = True
@@ -353,6 +354,8 @@ def recursive_qs_search(input):
     else:
         if isinstance(input, QuantumSession):
             result = [input]
+        elif isinstance(input, QuantumEnvironment):
+            result = [input.env_qs]
         else:
             try:
                 if isinstance(input(), QuantumSession):

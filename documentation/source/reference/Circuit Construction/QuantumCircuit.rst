@@ -26,9 +26,6 @@ Constructing QuantumCircuits
    QuantumCircuit.extend
    QuantumCircuit.bind_parameters
    QuantumCircuit.transpile
-   QuantumCircuit.from_qiskit
-   QuantumCircuit.to_qiskit
-   
 
 Evaluating QuantumCircuits
 --------------------------
@@ -47,7 +44,21 @@ Evaluating QuantumCircuits
    QuantumCircuit.qasm
    
  
-  
+Interfacing
+-----------
+
+.. autosummary::
+   :toctree: generated/
+
+   QuantumCircuit.from_qiskit
+   QuantumCircuit.to_qiskit
+   QuantumCircuit.to_pennylane
+   QuantumCircuit.to_pytket
+   QuantumCircuit.from_qasm_str
+   QuantumCircuit.from_qasm_file
+   
+
+
 Operation application methods
 -----------------------------
 
@@ -60,17 +71,20 @@ Operation application methods
    >>> qc.cx(qc.qubits[1:], qc.qubits[0])
    >>> qc.x([0,1,2,3])
    >>> print(qc)
-         ┌───┐┌───┐     ┌───┐┌───┐┌───┐
-   qb_0: ┤ X ├┤ X ├─────┤ X ├┤ X ├┤ X ├
-         └─┬─┘└─┬─┘┌───┐└─┬─┘└─┬─┘└───┘
-   qb_1: ──■────┼──┤ X ├──┼────┼───────
-                │  ├───┤  │    │       
-   qb_2: ───────■──┤ X ├──┼────┼───────
-                   └───┘  │    │  ┌───┐
-   qb_3: ─────────────────■────┼──┤ X ├
-                               │  └───┘
-   qb_4: ──────────────────────■───────
-      
+   
+   ::
+   
+             ┌───┐┌───┐     ┌───┐┌───┐┌───┐
+       qb_0: ┤ X ├┤ X ├─────┤ X ├┤ X ├┤ X ├
+             └─┬─┘└─┬─┘┌───┐└─┬─┘└─┬─┘└───┘
+       qb_1: ──■────┼──┤ X ├──┼────┼───────
+                    │  ├───┤  │    │       
+       qb_2: ───────■──┤ X ├──┼────┼───────
+                       └───┘  │    │  ┌───┐
+       qb_3: ─────────────────■────┼──┤ X ├
+                                   │  └───┘
+       qb_4: ──────────────────────■───────
+
 
 
 .. autosummary::

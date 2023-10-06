@@ -59,29 +59,35 @@ class GateWrapEnvironment(QuantumEnvironment):
 
 
     >>> print(qv.qs)
-    QuantumCircuit:
-    ---------------
-          ┌──────────┐
-    qv.0: ┤0         ├
-          │  example │
-    qv.1: ┤1         ├
-          └──┬───┬───┘
-    qv.2: ───┤ Z ├────
-             └───┘
-    Live QuantumVariables:
-    ----------------------
-    QuantumVariable qv
+    
+    ::
+    
+        QuantumCircuit:
+        --------------
+              ┌──────────┐
+        qv.0: ┤0         ├
+              │  example │
+        qv.1: ┤1         ├
+              └──┬───┬───┘
+        qv.2: ───┤ Z ├────
+                 └───┘
+        Live QuantumVariables:
+        ---------------------
+        QuantumVariable qv
 
     We can access the instruction, which has been appended using the
     ``.instruction`` attribute:
 
     >>> instruction = gwe.instruction
     >>> print(instruction.op.definition)
-           ┌───┐
-    qb_41: ┤ X ├
-           ├───┤
-    qb_42: ┤ Y ├
-           └───┘
+    
+    ::
+    
+               ┌───┐
+        qb_41: ┤ X ├
+               ├───┤
+        qb_42: ┤ Y ├
+               └───┘
 
     Using the :meth:`gate_wrap <qrisp.gate_wrap>` decorator we can quickly gate wrap
     functions: ::
@@ -98,18 +104,21 @@ class GateWrapEnvironment(QuantumEnvironment):
         example_function(qv)
 
     >>> print(qv.qs)
-    QuantumCircuit:
-    ---------------
-          ┌──────────┐┌───────────────────┐
-    qv.0: ┤0         ├┤0                  ├
-          │  example ││                   │
-    qv.1: ┤1         ├┤1 example_function ├
-          └──┬───┬───┘│                   │
-    qv.2: ───┤ Z ├────┤2                  ├
-             └───┘    └───────────────────┘
-    Live QuantumVariables:
-    ----------------------
-    QuantumVariable qv
+    
+    ::
+    
+        QuantumCircuit:
+        --------------
+              ┌──────────┐┌───────────────────┐
+        qv.0: ┤0         ├┤0                  ├
+              │  example ││                   │
+        qv.1: ┤1         ├┤1 example_function ├
+              └──┬───┬───┘│                   │
+        qv.2: ───┤ Z ├────┤2                  ├
+                 └───┘    └───────────────────┘
+        Live QuantumVariables:
+        ---------------------
+        QuantumVariable qv
 
     """
 

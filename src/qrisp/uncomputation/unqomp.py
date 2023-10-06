@@ -209,7 +209,7 @@ def uncompute_node(dag, uncomp_node, uncomp_qbs, recompute_qubits=[]):
 
             temp = input_qv.qs.data[-1].op
             temp.name = uncomp_node.instr.op.name
-
+            
             uncomp_node.instr.op = temp
 
     new_instr = uncomp_node.instr.inverse()

@@ -1,4 +1,6 @@
-﻿Grover's Algorithm
+﻿.. _Grover:
+
+Grover's Algorithm
 ==================
 
 .. currentmodule:: qrisp.grover

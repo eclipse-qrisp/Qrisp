@@ -1,4 +1,6 @@
-﻿HHL
+﻿.. _HHL:
+
+HHL
 ===
 
 .. currentmodule:: qrisp

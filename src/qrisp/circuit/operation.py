@@ -21,6 +21,7 @@ import copy
 
 import numpy as np
 from sympy.core.expr import Expr
+from sympy import lambdify
 
 
 def adaptive_substitution(expr, subs_dic, precision=10):
@@ -83,7 +84,6 @@ class Operation:
         num_clbits=0,
         definition=None,
         params=[],
-        unitary=None,
         init_op=None,
     ):
         if init_op is not None:
@@ -118,9 +118,11 @@ class Operation:
         self.abstract_params = set([])
 
         for par in params:
-            if isinstance(par, Expr):
+            if isinstance(par, (float, int, np.floating, np.int32)):
+                pass
+            elif isinstance(par, Expr):
                 self.abstract_params = self.abstract_params.union(par.free_symbols)
-            elif not isinstance(par, (np.floating, np.int32, float, int)):
+            else:
                 raise Exception(
                     f"Tried to create operation with parameters of type {type(par)}"
                 )
@@ -140,10 +142,6 @@ class Operation:
 
         else:
             self.definition = None
-
-        # If a unitary (numpy array) is given, save the unitary
-        if unitary is not None:
-            self.unitary = unitary
 
         # These attributes store some information for the uncomputation algorithm
         # Qfree basically means that the unitary is a permutation matrix
@@ -327,14 +325,17 @@ class Operation:
         >>> qc = QuantumCircuit(4)
         >>> qc.append(mcrx_gate, qc.qubits)
         >>> print(qc)
-        qb_4: ─────■─────
-                   │
-        qb_5: ─────■─────
-                   │
-        qb_6: ─────■─────
-              ┌────┴────┐
-        qb_7: ┤ Rx(0.5) ├
-              └─────────┘
+        
+        ::
+        
+            qb_4: ─────■─────
+                       │
+            qb_5: ─────■─────
+                       │
+            qb_6: ─────■─────
+                  ┌────┴────┐
+            qb_7: ┤ Rx(0.5) ├
+                  └─────────┘
 
 
         """
@@ -400,17 +401,26 @@ class Operation:
         >>> bound_p_gate.params
         [1.5]
         """
-
+        
+        
         new_params = []
-        for i in range(len(self.params)):
-            new_params.append(adaptive_substitution(self.params[i], subs_dic))
+        repl_args = [subs_dic[symb] for symb in self.abstract_params]
+        
+        if not hasattr(self, "lambdified_params"):
+            self.lambdified_params = []
+            args = list(self.abstract_params)
+            for par in self.params:
+                self.lambdified_params.append(lambdify(args, par, modules = "numpy"))
+                
+            
+        for l_par in self.lambdified_params:
+            
+            new_params.append(l_par(*repl_args))
+        
+        res = self.copy()
+        res.params = new_params
 
-        temp = self.params
-        self.params = new_params
-        res = Operation(init_op=self)
-        self.params = temp
-
-        if not isinstance(res.definition, type(None)):
+        if res.definition is not None:
             res.definition = res.definition.bind_parameters(subs_dic)
 
         return res
@@ -431,6 +441,9 @@ class U3Gate(Operation):
             definition=None,
             params=[theta, phi, lam],
         )
+        
+        if isinstance(global_phase, Expr):
+            self.abstract_params = self.abstract_params.union(global_phase.free_symbols)
 
         # Set parameters
         self.theta = self.params[0]
@@ -505,18 +518,35 @@ class U3Gate(Operation):
 
             # Generate unitary
 
-            self.unitary = u3matrix(self.theta, self.phi, self.lam, self.global_phase)
+            self.unitary = u3matrix(self.theta, self.phi, self.lam, self.global_phase, use_sympy = bool(len(self.abstract_params)))
 
             return self.get_unitary(decimals)
 
     def bind_parameters(self, subs_dic):
-        return U3Gate(
-            adaptive_substitution(self.theta, subs_dic),
-            adaptive_substitution(self.phi, subs_dic),
-            adaptive_substitution(self.lam, subs_dic),
-            self.name,
-            adaptive_substitution(self.global_phase, subs_dic),
-        )
+        
+        new_params = []
+        repl_args = [subs_dic[symb] for symb in self.abstract_params]
+        
+        if not hasattr(self, "lambdified_params"):
+            self.lambdified_params = []
+            args = list(self.abstract_params)
+            for par in [self.theta, self.phi, self.lam, self.global_phase]:
+                self.lambdified_params.append(lambdify(args, par, modules = "numpy"))
+                
+            
+        for l_par in self.lambdified_params:
+            
+            new_params.append(l_par(*repl_args))
+        
+        return U3Gate(new_params[0], new_params[1], new_params[2], self.name, new_params[3])
+        
+        # return U3Gate(
+        #     adaptive_substitution(self.theta, subs_dic),
+        #     adaptive_substitution(self.phi, subs_dic),
+        #     adaptive_substitution(self.lam, subs_dic),
+        #     self.name,
+        #     adaptive_substitution(self.global_phase, subs_dic),
+        # )
 
     def c_if(self, num_clbits=1, value=-1):
         if value == -1:
@@ -576,7 +606,19 @@ class PauliGate(U3Gate):
 
 
 # This class describes phase tolerant controlled operations
-# Phase tolerant means that
+# Phase tolerant means that the unitary can take the form
+# [D_0, 0, 0, 0]
+# [0, D_1,0, 0]
+# [0, 0, D_2, 0]
+# [0, 0, 0, U]
+#Where U is the operation to be controlled and D_i are diagonal operators
+
+#For a regular controlled gate, all D_i have to be identity matrices.
+
+#Phase tolerant controlled operations are usally more efficient than their controlled equivalent.
+
+#In many cases, they can replace the controlled version without changing the semantics,
+#because the phases introduced by the D_i are uncomputed at some later point.
 class PTControlledOperation(Operation):
     def __init__(self, base_operation, num_ctrl_qubits=1, ctrl_state=-1, method="auto"):
         # Object which describes the method. Can be a string lr a callable function
@@ -645,6 +687,7 @@ class PTControlledOperation(Operation):
                 definition_circ.x(-2)
 
         elif self.base_operation.name == "gray_phase_gate":
+            raise
             from qrisp.circuit import multi_controlled_gray_circ
 
             definition_circ, target_phases = multi_controlled_gray_circ(
@@ -668,17 +711,17 @@ class PTControlledOperation(Operation):
         ):
             if base_operation.name == "x":
                 super().__init__(
-                    name="cx", num_qubits=2, num_clbits=0, params=[], unitary=None
+                    name="cx", num_qubits=2, num_clbits=0, params=[]
                 )
                 self.permeability = {0: True, 1: False}
             elif base_operation.name == "y":
                 super().__init__(
-                    name="cy", num_qubits=2, num_clbits=0, params=[], unitary=None
+                    name="cy", num_qubits=2, num_clbits=0, params=[]
                 )
                 self.permeability = {0: True, 1: False}
             elif base_operation.name == "z":
                 super().__init__(
-                    name="cz", num_qubits=2, num_clbits=0, params=[], unitary=None
+                    name="cz", num_qubits=2, num_clbits=0, params=[]
                 )
                 self.permeability = {0: True, 1: True}
 
@@ -734,7 +777,6 @@ class PTControlledOperation(Operation):
             num_clbits=0,
             definition=definition_circ,
             params=base_operation.params,
-            unitary=None,
         )
 
         for i in range(self.num_qubits):
@@ -773,18 +815,10 @@ class PTControlledOperation(Operation):
 
     def bind_parameters(self, subs_dic):
         from copy import copy
-
         res = copy(self)
         if not isinstance(self.definition, type(None)):
             res.definition = self.definition.bind_parameters(subs_dic)
         res.base_operation = self.base_operation.bind_parameters(subs_dic)
-
-        res.params = []
-        for p in self.params:
-            if p in subs_dic:
-                res.params.append(subs_dic[p])
-            else:
-                res.params.append(p)
 
         return res
 

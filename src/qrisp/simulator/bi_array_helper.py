@@ -23,7 +23,7 @@
 
 import numpy as np
 from numba import int64, njit, prange, vectorize
-
+from qrisp.simulator.numerics_config import float_tresh
 
 # It can happen that the coo-matrix multiplication puts two data entries
 # for the same index. These function recognizes and sums these duplicates
@@ -62,7 +62,7 @@ def sum_duplicates_aux_jitted(new_indices, old_data, reconstr_indices):
 # @njit(parallel = True)
 def elim_zeros(nz_indices, data, decimals=8):
     # return nz_indices, data
-    data = np.around(data, decimals=decimals, out=data)
+    # data = np.around(data, decimals=decimals, out=data)
 
     # mask = np.abs(data) > 10**-decimals
     mask = np.nonzero(data)[0]
@@ -134,6 +134,14 @@ def gen_flat_coords_vec(col, row, bit_shape_1):
 # given flattened coordinates and data
 @njit(nogil=True, cache=True)
 def construct_flat_array(flat_coords, data, size):
+    res = np.zeros(size, dtype=data.dtype)
+
+    for i in range(len(flat_coords)):
+        res[flat_coords[i]] += data[i]
+
+    return res
+
+def construct_flat_array_no_jit(flat_coords, data, size):
     res = np.zeros(size, dtype=data.dtype)
 
     for i in range(len(flat_coords)):
@@ -286,3 +294,74 @@ def bi_array_moveaxis(data_array, index_perm, f_index_array):
 
     # return f_index_array
     return data_array[f_index_array]
+
+@njit(nogil=True, cache=True)
+def dense_measurement(input_array, mes_amount, outcome_index):
+    
+    p = np.abs(np.vdot(input_array, input_array))
+    
+    if p < float_tresh:
+        return [input_array], [p], [-1]
+    
+    if mes_amount == 0:
+        return [input_array], [p], [outcome_index]
+    
+    N = input_array.shape[0]
+    new_arrays = []
+    p_list = []
+    outcome_index_list = []
+    
+    a, b, c = dense_measurement(input_array[:N//2], mes_amount - 1, outcome_index)
+    
+    if c[0] != -1:
+        new_arrays.extend(a)
+        p_list.extend(b)
+        outcome_index_list.extend(c)
+    
+    a, b, c = dense_measurement(input_array[N//2:], mes_amount - 1, outcome_index + 2**(mes_amount-1))
+    
+    if c[0] != -1:
+        new_arrays.extend(a)
+        p_list.extend(b)
+        outcome_index_list.extend(c)
+    
+    if len(outcome_index_list):
+        return new_arrays, p_list, outcome_index_list
+    else:
+        return new_arrays, p_list, [-1]
+
+
+@njit(nogil=True, cache=True)
+def sparse_measurement(input_data_array, input_index_array, mes_amount, outcome_index):
+    
+    p = np.abs(np.vdot(input_array, input_array))
+    
+    if p < float_tresh:
+        return [input_array], [p], [-1]
+    
+    if mes_amount == 0:
+        return [input_array], [p], [outcome_index]
+    
+    N = input_array.shape[0]
+    new_arrays = []
+    p_list = []
+    outcome_index_list = []
+    
+    a, b, c = dense_measurement(input_array[:N//2], mes_amount - 1, outcome_index)
+    
+    if c[0] != -1:
+        new_arrays.extend(a)
+        p_list.extend(b)
+        outcome_index_list.extend(c)
+    
+    a, b, c = dense_measurement(input_array[N//2:], mes_amount - 1, outcome_index + 2**(mes_amount-1))
+    
+    if c[0] != -1:
+        new_arrays.extend(a)
+        p_list.extend(b)
+        outcome_index_list.extend(c)
+    
+    if len(outcome_index_list):
+        return new_arrays, p_list, outcome_index_list
+    else:
+        return new_arrays, p_list, [-1]    

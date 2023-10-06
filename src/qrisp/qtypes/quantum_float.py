@@ -631,19 +631,22 @@ class QuantumFloat(QuantumVariable):
         >>> print(a)
         {8: 1.0}
         >>> print(a.qs)
-        QuantumCircuit:
-        ---------------
-        a.0: ─────
-             ┌───┐
-        a.1: ┤ X ├
-             └───┘
-        a.2: ─────
-        <BLANKLINE>
-        a.3: ─────
-        <BLANKLINE>          
-        Live QuantumVariables:
-        ----------------------
-        QuantumFloat a
+        
+        ::
+        
+            QuantumCircuit:
+            --------------
+            a.0: ─────
+                 ┌───┐
+            a.1: ┤ X ├
+                 └───┘
+            a.2: ─────
+            <BLANKLINE>
+            a.3: ─────
+
+            Live QuantumVariables:
+            ---------------------
+            QuantumFloat a
         
         """
         if not isinstance(shift, int):

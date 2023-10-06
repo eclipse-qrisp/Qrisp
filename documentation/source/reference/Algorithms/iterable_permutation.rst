@@ -1,4 +1,6 @@
-﻿Iterable Permutation
+﻿.. _ItPermutation:
+
+Iterable Permutation
 ====================
 
 .. currentmodule:: qrisp

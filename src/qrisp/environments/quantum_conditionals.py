@@ -162,46 +162,49 @@ class ConditionEnvironment(QuantumEnvironment):
     >>> q_ch_1 = QuantumChar()
     >>> res_bool = quantum_eq(q_ch_0, q_ch_1)
     >>> print(q_ch_0.qs)
-    QuantumCircuit:
-    ---------------
-     q_ch_0.0: ──■─────────────────────────────────────────────────────────
-                 │
-     q_ch_0.1: ──┼────■────────────────────────────────────────────────────
-                 │    │
-     q_ch_0.2: ──┼────┼────■───────────────────────────────────────────────
-                 │    │    │
-     q_ch_0.3: ──┼────┼────┼────■──────────────────────────────────────────
-                 │    │    │    │
-     q_ch_0.4: ──┼────┼────┼────┼────■─────────────────────────────────────
-                 │    │    │    │    │
-     q_ch_1.0: ──┼────┼────┼────┼────┼────■────────────────────────────────
-                 │    │    │    │    │    │
-     q_ch_1.1: ──┼────┼────┼────┼────┼────┼────■───────────────────────────
-                 │    │    │    │    │    │    │
-     q_ch_1.2: ──┼────┼────┼────┼────┼────┼────┼────■──────────────────────
-                 │    │    │    │    │    │    │    │
-     q_ch_1.3: ──┼────┼────┼────┼────┼────┼────┼────┼────■─────────────────
-                 │    │    │    │    │    │    │    │    │
-     q_ch_1.4: ──┼────┼────┼────┼────┼────┼────┼────┼────┼────■────────────
-               ┌─┴─┐  │    │    │    │  ┌─┴─┐  │    │    │    │  ┌───┐
-    temp_qv.0: ┤ X ├──┼────┼────┼────┼──┤ X ├──┼────┼────┼────┼──┤ X ├──■──
-               └───┘┌─┴─┐  │    │    │  └───┘┌─┴─┐  │    │    │  ├───┤  │
-    temp_qv.1: ─────┤ X ├──┼────┼────┼───────┤ X ├──┼────┼────┼──┤ X ├──■──
-                    └───┘┌─┴─┐  │    │       └───┘┌─┴─┐  │    │  ├───┤  │
-    temp_qv.2: ──────────┤ X ├──┼────┼────────────┤ X ├──┼────┼──┤ X ├──■──
-                         └───┘┌─┴─┐  │            └───┘┌─┴─┐  │  ├───┤  │
-    temp_qv.3: ───────────────┤ X ├──┼─────────────────┤ X ├──┼──┤ X ├──■──
-                              └───┘┌─┴─┐               └───┘┌─┴─┐├───┤  │
-    temp_qv.4: ────────────────────┤ X ├────────────────────┤ X ├┤ X ├──■──
-                                   └───┘                    └───┘└───┘┌─┴─┐
-        res.0: ───────────────────────────────────────────────────────┤ X ├
-                                                                      └───┘
-    Live QuantumVariables:
-    ----------------------
-    QuantumChar q_ch_0
-    QuantumChar q_ch_1
-    QuantumVariable temp_qv
-    QuantumBool res
+    
+    ::
+    
+        QuantumCircuit:
+        --------------
+         q_ch_0.0: ──■─────────────────────────────────────────────────────────
+                     │
+         q_ch_0.1: ──┼────■────────────────────────────────────────────────────
+                     │    │
+         q_ch_0.2: ──┼────┼────■───────────────────────────────────────────────
+                     │    │    │
+         q_ch_0.3: ──┼────┼────┼────■──────────────────────────────────────────
+                     │    │    │    │
+         q_ch_0.4: ──┼────┼────┼────┼────■─────────────────────────────────────
+                     │    │    │    │    │
+         q_ch_1.0: ──┼────┼────┼────┼────┼────■────────────────────────────────
+                     │    │    │    │    │    │
+         q_ch_1.1: ──┼────┼────┼────┼────┼────┼────■───────────────────────────
+                     │    │    │    │    │    │    │
+         q_ch_1.2: ──┼────┼────┼────┼────┼────┼────┼────■──────────────────────
+                     │    │    │    │    │    │    │    │
+         q_ch_1.3: ──┼────┼────┼────┼────┼────┼────┼────┼────■─────────────────
+                     │    │    │    │    │    │    │    │    │
+         q_ch_1.4: ──┼────┼────┼────┼────┼────┼────┼────┼────┼────■────────────
+                   ┌─┴─┐  │    │    │    │  ┌─┴─┐  │    │    │    │  ┌───┐
+        temp_qv.0: ┤ X ├──┼────┼────┼────┼──┤ X ├──┼────┼────┼────┼──┤ X ├──■──
+                   └───┘┌─┴─┐  │    │    │  └───┘┌─┴─┐  │    │    │  ├───┤  │
+        temp_qv.1: ─────┤ X ├──┼────┼────┼───────┤ X ├──┼────┼────┼──┤ X ├──■──
+                        └───┘┌─┴─┐  │    │       └───┘┌─┴─┐  │    │  ├───┤  │
+        temp_qv.2: ──────────┤ X ├──┼────┼────────────┤ X ├──┼────┼──┤ X ├──■──
+                             └───┘┌─┴─┐  │            └───┘┌─┴─┐  │  ├───┤  │
+        temp_qv.3: ───────────────┤ X ├──┼─────────────────┤ X ├──┼──┤ X ├──■──
+                                  └───┘┌─┴─┐               └───┘┌─┴─┐├───┤  │
+        temp_qv.4: ────────────────────┤ X ├────────────────────┤ X ├┤ X ├──■──
+                                       └───┘                    └───┘└───┘┌─┴─┐
+            res.0: ───────────────────────────────────────────────────────┤ X ├
+                                                                          └───┘
+        Live QuantumVariables:
+        ---------------------
+        QuantumChar q_ch_0
+        QuantumChar q_ch_1
+        QuantumVariable temp_qv
+        QuantumBool res
 
     We can now construct the conditional environment from this function ::
 
@@ -335,7 +338,7 @@ class ConditionEnvironment(QuantumEnvironment):
         return self.qbool
 
     def __exit__(self, exception_type, exception_value, traceback):
-        from qrisp.environments import ControlEnvironment, InversionEnvironment
+        from qrisp.environments import ControlEnvironment, InversionEnvironment, ConjugationEnvironment
 
         # We determine the parent condition environment
         self.parent_cond_env = None
@@ -346,13 +349,17 @@ class ConditionEnvironment(QuantumEnvironment):
             if isinstance(env, (ConditionEnvironment, ControlEnvironment)):
                 self.parent_cond_env = env
                 break
-            if not isinstance(env, (QuantumEnvironment, InversionEnvironment)):
-                break
+            if not isinstance(env, (InversionEnvironment, 
+                                    ConjugationEnvironment)):
+                
+                if not type(env) == QuantumEnvironment:
+                    break
+            
 
     # Compile method
     def compile(self):
-        from qrisp.environments import ControlEnvironment
         from qrisp.qtypes.quantum_bool import QuantumBool
+        from qrisp.environments.control_environment import ControlEnvironment
 
         # Create the quantum variable where the condition truth value should be saved
         # Incase we have a parent environment we create two qubits because
@@ -483,13 +490,18 @@ class ConditionEnvironment(QuantumEnvironment):
                         )
                     continue
 
-                # Create controlled instruction
-                instruction.op = instruction.op.control(1)
-
-                # Add condition truth value qubit to the instruction qubit list
-                instruction.qubits = [self.condition_truth_value] + list(
-                    instruction.qubits
-                )
+                if self.condition_truth_value in instruction.qubits:
+                    instruction = process_custom_control(instruction, self.condition_truth_value)
+                    
+                else:
+                    # Create controlled instruction
+                    instruction.op = instruction.op.control(
+                        num_ctrl_qubits=1)
+    
+                    # Add condition truth value qubit to the instruction qubit list
+                    instruction.qubits = [self.condition_truth_value] + list(
+                        instruction.qubits
+                    )
                 # Append instruction
                 self.env_qs.append(instruction)
 
@@ -592,7 +604,7 @@ def adaptive_condition(cond_eval_function):
 
 
 @adaptive_condition
-def q_eq(input_0, input_1):
+def q_eq(input_0, input_1, invert = False):
     from qrisp import cx
     from qrisp.qtypes.quantum_bool import QuantumBool
 
@@ -605,17 +617,54 @@ def q_eq(input_0, input_1):
                 "for QuantumVariables of differing size"
             )
 
-        temp_qv = QuantumVariable(input_0.size)
-        cx(input_0, temp_qv)
-        cx(input_1, temp_qv)
-        x(temp_qv)
-        mcx(temp_qv, res, method="gray_pt")
+        # temp_qv = QuantumVariable(input_0.size)
+        cx(input_0, input_1)
+        # cx(input_1, temp_qv)
+        # x(temp_qv)
+        mcx(input_1, res, method="balauca", ctrl_state=0)
+        cx(input_0, input_1)
+        
+        
 
-        return res
 
     else:
         label_int = input_0.encoder(input_1)
 
-        mcx(input_0, res, ctrl_state=label_int)
+        mcx(input_0, res, ctrl_state=label_int, method = "balauca")
+    
+    if invert:
+        res.flip()
+    
+    return res
 
-        return res
+def process_custom_control(instruction, control_qubit):
+    
+    from qrisp.environments import CustomControlOperation
+    
+    if isinstance(instruction.op, CustomControlOperation):
+        return instruction
+    
+    if instruction.op.definition is None:
+        raise Exception
+    
+    new_definition = instruction.op.definition.clearcopy()
+    
+    control_qubit = new_definition.qubits[instruction.qubits.index(control_qubit)]
+    
+    for def_instr in instruction.op.definition.data:
+            
+        if control_qubit in def_instr.qubits:
+            new_definition.append(process_custom_control(def_instr, control_qubit))
+        else:
+            new_op = def_instr.op.control(1)
+            new_definition.append(new_op, [control_qubit] + def_instr.qubits, def_instr.clbits)
+            
+    res = instruction.copy()
+    res.op.definition = new_definition
+    
+    res.op = CustomControlOperation(res.op, new_definition.qubits.index(control_qubit))
+    
+    
+    return res
+                
+    

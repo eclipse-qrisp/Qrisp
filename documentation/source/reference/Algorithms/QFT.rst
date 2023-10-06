@@ -1,4 +1,6 @@
-﻿Quantum Fourier Transformation
+﻿.. _QFT:
+
+Quantum Fourier Transformation
 ==============================
 
 .. currentmodule:: qrisp
