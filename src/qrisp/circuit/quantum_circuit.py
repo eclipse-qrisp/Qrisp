@@ -1630,12 +1630,12 @@ class QuantumCircuit:
     
     def to_pytket(self):
         """
-        Method to convert the given QuantumCircuit to a Pennylane Circuit.
+        Method to convert the given QuantumCircuit to a pytket Circuit.
 
         Returns
         -------
         function
-            A function representing a pennylane QuantumCircuit.
+            A function representing a pytket QuantumCircuit.
 
         """
         from qrisp.interface.converter.convert_to_pytket import pytket_converter
