@@ -7,5 +7,5 @@ scipy>=1.10.0
 numba
 networkx
 tdqm
-qiskit_ibm_runtime
+qiskit-ibm-runtime
 dill
