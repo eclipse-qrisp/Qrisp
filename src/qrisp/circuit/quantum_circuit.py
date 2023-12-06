@@ -540,7 +540,6 @@ class QuantumCircuit:
             res_str = str(
                 circuit_drawer(
                     convert_circuit(self, target_api="qiskit", transpile=False),
-                    style="text",
                     cregbundle=False,
                 )
             )
