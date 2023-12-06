@@ -541,6 +541,7 @@ class QuantumCircuit:
                 circuit_drawer(
                     convert_circuit(self, target_api="qiskit", transpile=False),
                     cregbundle=False,
+                    output = "text",
                 )
             )
         except AttributeError:
