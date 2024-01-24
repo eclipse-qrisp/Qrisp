@@ -3,7 +3,7 @@
 <!DOCTYPE html>
 
 
-<html lang="en" data-theme="light">
+<html data-theme="light">
 
   <head>
     <meta charset="utf-8" />
@@ -18,39 +18,48 @@
   </script>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../_static/styles/theme.css?digest=e353d410970836974a52" rel="stylesheet" />
-<link href="../../../_static/styles/bootstrap.css?digest=e353d410970836974a52" rel="stylesheet" />
-<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+  <link href="../../../_static/styles/theme.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+<link href="../../../_static/styles/bootstrap.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=ac02cc09edc035673794" rel="stylesheet" />
 
   
-  <link href="../../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=e353d410970836974a52" rel="stylesheet" />
+  <link href="../../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=ac02cc09edc035673794" rel="stylesheet" />
   <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
 <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
 <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
 
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-thebe.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/css/custom.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/custom03.css" />
   
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=e353d410970836974a52" />
-<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52" />
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=ac02cc09edc035673794" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=ac02cc09edc035673794" />
+  <script src="../../../_static/vendor/fontawesome/6.1.2/js/all.min.js?digest=ac02cc09edc035673794"></script>
 
     <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
     <script src="../../../_static/doctools.js"></script>
-    <script src="../../../_static/sphinx_highlight.js"></script>
     <script src="../../../_static/clipboard.min.js"></script>
     <script src="../../../_static/copybutton.js"></script>
     <script src="../../../_static/design-tabs.js"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"
+const thebe_selector = "div.highlight"
+const thebe_selector_input = "pre"
+const thebe_selector_output = "span.go"
+</script>
+    <script async="async" src="../../../_static/sphinx-thebe.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/qrisp/core/quantum_session';</script>
     <link rel="canonical" href="https://qrisp.eu/_modules/qrisp/core/quantum_session.html" />
-    <link rel="icon" href="../../../_static/qrisp_favicon.png"/>
+    <link rel="shortcut icon" href="../../../_static/qrisp_favicon.png"/>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:language" content="None"/>
   </head>
   
   
@@ -59,6 +68,15 @@
   
   
   <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>
+    Back to top
+  </button>
+
   
   <input type="checkbox"
           class="sidebar-toggle"
@@ -135,7 +153,7 @@
   <ul class="bd-navbar-elements navbar-nav">
     
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../../../general/tutorial.html">
+                      <a class="nav-link nav-internal" href="../../../general/tutorial/index.html">
                         Tutorial
                       </a>
                     </li>
@@ -178,13 +196,15 @@
       
         <div class="navbar-item navbar-persistent--container">
           
-<script>
-document.write(`
-  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
-  </button>
-`);
-</script>
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
         </div>
       
       
@@ -199,7 +219,7 @@ document.write(`
           
           
           
-          <a href="https://github.com/fraunhoferfokus/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square fa-lg" aria-hidden="true"></i></span>
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square fa-lg" aria-hidden="true"></i></span>
             <span class="sr-only">GitHub</span></a>
         </li>
 </ul></div>
@@ -210,18 +230,20 @@ document.write(`
   
   
     <div class="navbar-persistent--mobile">
-<script>
-document.write(`
-  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
-  </button>
-`);
-</script>
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
     </div>
   
 
   
-    <label class="sidebar-toggle secondary-toggle" for="__secondary">
+    <label class="sidebar-toggle secondary-toggle" for="__secondary" tabindex="0">
       <span class="fa-solid fa-outdent"></span>
     </label>
   
@@ -251,7 +273,7 @@ document.write(`
   <ul class="bd-navbar-elements navbar-nav">
     
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../../../general/tutorial.html">
+                      <a class="nav-link nav-internal" href="../../../general/tutorial/index.html">
                         Tutorial
                       </a>
                     </li>
@@ -304,7 +326,7 @@ document.write(`
           
           
           
-          <a href="https://github.com/fraunhoferfokus/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square fa-lg" aria-hidden="true"></i></span>
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square fa-lg" aria-hidden="true"></i></span>
             <span class="sr-only">GitHub</span></a>
         </li>
 </ul></div>
@@ -357,8 +379,8 @@ document.write(`
 
 
 
-<nav aria-label="Breadcrumbs">
-  <ul class="bd-breadcrumbs" role="navigation" aria-label="Breadcrumb">
+<nav aria-label="Breadcrumb">
+  <ul class="bd-breadcrumbs">
     
     <li class="breadcrumb-item breadcrumb-home">
       <a href="../../../index.html" class="nav-link" aria-label="Home">
@@ -368,7 +390,7 @@ document.write(`
     
     <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
     
-    <li class="breadcrumb-item active" aria-current="page">qrisp.core.quantum_session</li>
+    <li class="breadcrumb-item active" aria-current="page">qrisp.core.q...</li>
   </ul>
 </nav>
 </div>
@@ -414,7 +436,7 @@ document.write(`
 
 
 <div class="viewcode-block" id="QuantumSession"><a class="viewcode-back" href="../../../reference/Core/QuantumSession.html#qrisp.QuantumSession">[docs]</a><span class="k">class</span> <span class="nc">QuantumSession</span><span class="p">(</span><span class="n">QuantumCircuit</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    The QuantumSession class manages the life cycle of QuantumVariables and enables</span>
 <span class="sd">    features such as :ref:`QuantumEnvironments &lt;QuantumEnvironment&gt;` or</span>
 <span class="sd">    :ref:`Uncomputation`. To create a QuantumSession, we call the constructor</span>
@@ -442,17 +464,20 @@ document.write(`
 <span class="sd">    QuantumSessions can be visualized by calling ``print`` on them.</span>
 
 <span class="sd">    &gt;&gt;&gt; print(qv.qs)</span>
-<span class="sd">    QuantumCircuit:</span>
-<span class="sd">    ---------------</span>
-<span class="sd">    qv.0: ──■────■──</span>
-<span class="sd">          ┌─┴─┐┌─┴─┐</span>
-<span class="sd">    qv.1: ┤ X ├┤ X ├</span>
-<span class="sd">          └───┘└───┘</span>
-<span class="sd">    qv.2: ──────────</span>
-<span class="sd">    &lt;BLANKLINE&gt;</span>
-<span class="sd">    Live QuantumVariables:</span>
-<span class="sd">    ----------------------</span>
-<span class="sd">    QuantumVariable qv</span>
+<span class="sd">    </span>
+<span class="sd">    ::</span>
+<span class="sd">    </span>
+<span class="sd">        QuantumCircuit:</span>
+<span class="sd">        --------------</span>
+<span class="sd">        qv.0: ──■────■──</span>
+<span class="sd">              ┌─┴─┐┌─┴─┐</span>
+<span class="sd">        qv.1: ┤ X ├┤ X ├</span>
+<span class="sd">              └───┘└───┘</span>
+<span class="sd">        qv.2: ──────────</span>
+<span class="sd">        </span>
+<span class="sd">        Live QuantumVariables:</span>
+<span class="sd">        ---------------------</span>
+<span class="sd">        QuantumVariable qv</span>
 
 <span class="sd">    If not specified, QuantumVariables will create their own QuantumSession and register</span>
 <span class="sd">    themselves in it.</span>
@@ -506,7 +531,7 @@ document.write(`
     <span class="n">qs_tracker</span> <span class="o">=</span> <span class="p">[]</span>
 
 <div class="viewcode-block" id="QuantumSession.__init__"><a class="viewcode-back" href="../../../reference/Core/generated/qrisp.QuantumSession.__init__.html#qrisp.QuantumSession.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Constructs a QuantumSession</span>
 
 <span class="sd">        Parameters</span>
@@ -568,7 +593,7 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">shadow_sessions</span> <span class="o">=</span> <span class="p">[]</span></div>
 
     <span class="k">def</span> <span class="nf">register_qv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">qv</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Method to register QuantumVariables</span>
 
 <span class="sd">        Parameters</span>
@@ -603,7 +628,7 @@ document.write(`
     <span class="k">def</span> <span class="nf">get_qv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">qv</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">qv_list</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">qv</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">key</span><span class="p">:</span>
-                <span class="k">return</span> <span class="n">qv</span><span class="p">()</span>
+                <span class="k">return</span> <span class="n">qv</span>
         <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Could not find QuantumVariable &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">key</span><span class="p">))</span>
 
     <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -697,9 +722,44 @@ document.write(`
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">env_stack</span><span class="p">):</span>
             <span class="k">pass</span>
             <span class="c1"># self.reset(qubits)</span>
+            
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">set</span><span class="p">(</span><span class="n">qubits</span><span class="p">)</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">qubits</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                <span class="s2">&quot;Tried to free up qubits not registered in this quantum session&quot;</span>
+            <span class="p">)</span>
+            
 
         <span class="k">if</span> <span class="n">verify</span><span class="p">:</span>
-            <span class="n">verification_qc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            
+            
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">env_stack</span><span class="p">):</span>
+                <span class="n">verification_qc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                
+                <span class="c1"># In the case the qubits have been uncomputed automatically,</span>
+                <span class="c1"># the uncomputation algorithm already appended the deallocation</span>
+                <span class="c1"># instructions. In order to compile the QuantumSession without</span>
+                <span class="c1"># deallocating the qubits in question, we temporarily remove the</span>
+                <span class="c1"># deallocation instructions.</span>
+                <span class="n">qubits_copy</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">qubits</span><span class="p">)</span>
+                <span class="n">deallocation_instructions</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">while</span> <span class="n">qubits_copy</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">))[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+                        <span class="n">instr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                        <span class="k">if</span> <span class="n">instr</span><span class="o">.</span><span class="n">op</span><span class="o">.</span><span class="n">name</span> <span class="o">!=</span> <span class="s2">&quot;qb_dealloc&quot;</span><span class="p">:</span>
+                            <span class="k">continue</span>
+                        <span class="k">if</span> <span class="n">instr</span><span class="o">.</span><span class="n">qubits</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="n">qubits_copy</span><span class="p">:</span>
+                            <span class="n">qubits_copy</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">instr</span><span class="o">.</span><span class="n">qubits</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                            <span class="n">deallocation_instructions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+                            <span class="k">break</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">break</span>
+                
+                <span class="n">verification_qc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span>
+                
+                <span class="k">for</span> <span class="n">instr</span> <span class="ow">in</span> <span class="n">deallocation_instructions</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">instr</span><span class="p">)</span>
+            
             <span class="k">for</span> <span class="n">qb</span> <span class="ow">in</span> <span class="n">qubits</span><span class="p">:</span>
                 <span class="n">verification_qc</span><span class="o">.</span><span class="n">measure</span><span class="p">(</span><span class="n">qb</span><span class="p">)</span>
 
@@ -709,14 +769,12 @@ document.write(`
             <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">res</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
                 <span class="k">if</span> <span class="n">key</span><span class="p">[:</span> <span class="nb">len</span><span class="p">(</span><span class="n">qubits</span><span class="p">)]</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">qubits</span><span class="p">)</span> <span class="o">*</span> <span class="s2">&quot;0&quot;</span><span class="p">:</span>
                     <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Tried to delete qubits not in |0&gt; state&quot;</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">set</span><span class="p">(</span><span class="n">qubits</span><span class="p">)</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">qubits</span><span class="p">)):</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
-                <span class="s2">&quot;Tried to free up qubits not registered in this quantum session&quot;</span>
-            <span class="p">)</span>
-
+                    
         <span class="k">for</span> <span class="n">qb</span> <span class="ow">in</span> <span class="n">qubits</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">QubitDealloc</span><span class="p">(),</span> <span class="n">qb</span><span class="p">)</span>
+            
+
+
 
     <span class="c1"># Procedure to free up space for quantum variables not used anymore</span>
     <span class="k">def</span> <span class="nf">delete_qv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">qv</span><span class="p">,</span> <span class="n">verify</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
@@ -739,7 +797,7 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">deleted_qv_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">qv</span><span class="p">)</span>
 
 <div class="viewcode-block" id="QuantumSession.cnot_count"><a class="viewcode-back" href="../../../reference/Core/generated/qrisp.QuantumSession.cnot_count.html#qrisp.QuantumSession.cnot_count">[docs]</a>    <span class="k">def</span> <span class="nf">cnot_count</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Method to determine the amount of CNOT gates used in this QuantumSession.</span>
 
 <span class="sd">        Raises</span>
@@ -783,19 +841,6 @@ document.write(`
             <span class="n">tt</span><span class="o">.</span><span class="n">gate_synth</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="n">method</span><span class="p">,</span> <span class="n">inv</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span> <span class="n">input_qubits</span> <span class="o">+</span> <span class="n">output_qubits</span>
         <span class="p">)</span>
 
-<div class="viewcode-block" id="QuantumSession.depth"><a class="viewcode-back" href="../../../reference/Core/generated/qrisp.QuantumSession.depth.html#qrisp.QuantumSession.depth">[docs]</a>    <span class="k">def</span> <span class="nf">depth</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Method to calculate the circuit depth of this QuantumSession</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        int</span>
-<span class="sd">            The circuit depth.</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">depth_dic</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_depth_dic</span><span class="p">()</span>
-        <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="n">depth_dic</span><span class="o">.</span><span class="n">values</span><span class="p">())</span></div>
-
     <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span> <span class="o">==</span> <span class="nb">id</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
 
@@ -836,8 +881,9 @@ document.write(`
                     <span class="n">check_alloc</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="nb">input</span><span class="o">.</span><span class="n">allocated</span><span class="p">:</span>
+                    <span class="c1"># pass</span>
                     <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;Tried to perform operation </span><span class="si">{</span><span class="n">operation</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> on&quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;Tried to perform operation </span><span class="si">{</span><span class="n">operation</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> on &quot;</span>
                         <span class="sa">f</span><span class="s2">&quot;unallocated qubit </span><span class="si">{</span><span class="nb">input</span><span class="si">}</span><span class="s2">&quot;</span>
                     <span class="p">)</span>
 
@@ -890,6 +936,7 @@ document.write(`
 
         <span class="c1"># We merge qs_list again since no merge happened incase there were no</span>
         <span class="c1"># environments.</span>
+        <span class="c1"># if not operation.name == &quot;qb_alloc&quot;:</span>
         <span class="n">multi_session_merge</span><span class="p">(</span><span class="n">qs_list</span><span class="p">)</span>
 
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">operation</span><span class="p">,</span> <span class="n">qubits</span><span class="p">,</span> <span class="n">clbits</span><span class="p">)</span>
@@ -914,7 +961,7 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
 
 <div class="viewcode-block" id="QuantumSession.statevector"><a class="viewcode-back" href="../../../reference/Core/generated/qrisp.QuantumSession.statevector.html#qrisp.QuantumSession.statevector">[docs]</a>    <span class="k">def</span> <span class="nf">statevector</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">return_type</span><span class="o">=</span><span class="s2">&quot;sympy&quot;</span><span class="p">,</span> <span class="n">plot</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">decimals</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns a representation of the statevector. Three options are available:</span>
 
 <span class="sd">        * ``sympy`` returns a `Sympy quantum state</span>
@@ -1095,8 +1142,6 @@ document.write(`
                 <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">statevector_array</span><span class="p">,</span> <span class="n">decimals</span><span class="p">)</span>
 
         <span class="k">elif</span> <span class="n">return_type</span> <span class="o">==</span> <span class="s2">&quot;sympy&quot;</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">decimals</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">decimals</span> <span class="o">=</span> <span class="mi">6</span>
             <span class="k">return</span> <span class="n">get_sympy_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">decimals</span><span class="p">)</span>
 
         <span class="k">elif</span> <span class="n">return_type</span> <span class="o">==</span> <span class="s2">&quot;latex&quot;</span><span class="p">:</span>
@@ -1119,8 +1164,10 @@ document.write(`
         <span class="n">intended_measurements</span><span class="o">=</span><span class="p">[],</span>
         <span class="n">cancel_qfts</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">disable_uncomputation</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">compile_mcm</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">gate_speed</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="p">):</span>
-        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Method to compile the QuantumSession into a :ref:`QuantumCircuit`. The compiler</span>
 <span class="sd">        dynamically allocates the qubits of the QuantumSession on qubits that might have</span>
 <span class="sd">        been used by priorly deleted :ref:`QuantumVariables &lt;QuantumVariable&gt;`.</span>
@@ -1133,6 +1180,21 @@ document.write(`
 <span class="sd">        makes use of as much of the currently available clean and dirty ancillae.</span>
 <span class="sd">        This feature will never allocate additional qubits on its own. If required,</span>
 <span class="sd">        it can be supplied with additional space using the ``workspace`` keyword.</span>
+<span class="sd">    </span>
+<span class="sd">        Another important feature of this function is gate speed aware compilation.</span>
+<span class="sd">        Gate speed here means the amount of time each basis gate requires in a</span>
+<span class="sd">        physical execution of the QuantumCircuit.</span>
+<span class="sd">        For NISQ era devices, CNOT gates are a bottleneck, whereas</span>
+<span class="sd">        FT era devices are expected to be bottlenecked by T-gates. While these are</span>
+<span class="sd">        two important examples, more backend specific gate-speed specifications</span>
+<span class="sd">        are possible. The Qrisp compiler can leverage several non-trivial </span>
+<span class="sd">        commutation relations to reorder circuits such that the run-time is </span>
+<span class="sd">        optimal. To tell the compiler, the time that is required for each gate, </span>
+<span class="sd">        the ``gate_speed`` keyword argument exists. This argument should be a </span>
+<span class="sd">        function of :ref:`Operation` objects, that returns a float indicating</span>
+<span class="sd">        the gate speed. For an example of such a function, check out</span>
+<span class="sd">        :ref:`qrisp.t_depth_indicator`. For further details, check the examples.</span>
+<span class="sd">        </span>
 
 <span class="sd">        The .compile method is called by default, when executing the</span>
 <span class="sd">        :meth:`get_measurement &lt;qrisp.QuantumVariable.get_measurement&gt;` method of</span>
@@ -1160,6 +1222,16 @@ document.write(`
 <span class="sd">            Experimental feature the allows fully automized uncomputation. If set to</span>
 <span class="sd">            ``False`` any :ref:`QuantumVariable` that went out of scope will be</span>
 <span class="sd">            uncomputed by the compiler. The default is ``True``.</span>
+<span class="sd">        gate_speed : function, optional</span>
+<span class="sd">            Enables the compiler to create circuits that are aware of differences</span>
+<span class="sd">            in gate speed. For NISQ era devices, CNOT gates are a bottleneck, whereas</span>
+<span class="sd">            FT era devices are expected to be bottlenecked by </span>
+<span class="sd">        compile_mcm : function, optional</span>
+<span class="sd">            If set to ``True``, any instance of mcx gates with method either ``jones``</span>
+<span class="sd">            or ``gidney`` will be compiled to use a mid-circuit measurement. If </span>
+<span class="sd">            set to ``False``, a functionally equivalent (but less efficient version)</span>
+<span class="sd">            will be used without a mid-circuit measurement. For more information</span>
+<span class="sd">            see :meth:`qrisp.mcx` The default is ``False``.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -1169,6 +1241,8 @@ document.write(`
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 
+<span class="sd">        .. _workspace:</span>
+<span class="sd">            </span>
 <span class="sd">        **Workspace**</span>
 
 <span class="sd">        We calculate a product of 2 :ref:`QuantumFloats &lt;QuantumFloat&gt;` using the</span>
@@ -1213,22 +1287,25 @@ document.write(`
 <span class="sd">        &gt;&gt;&gt; target = QuantumVariable(1)</span>
 <span class="sd">        &gt;&gt;&gt; mcx(ctrl, target)</span>
 <span class="sd">        &gt;&gt;&gt; print(ctrl.qs)</span>
-<span class="sd">        QuantumCircuit:</span>
-<span class="sd">        ---------------</span>
-<span class="sd">          ctrl.0: ──■──</span>
-<span class="sd">                    │</span>
-<span class="sd">          ctrl.1: ──■──</span>
-<span class="sd">                    │</span>
-<span class="sd">          ctrl.2: ──■──</span>
-<span class="sd">                    │</span>
-<span class="sd">          ctrl.3: ──■──</span>
-<span class="sd">                  ┌─┴─┐</span>
-<span class="sd">        target.0: ┤ X ├</span>
-<span class="sd">                  └───┘</span>
-<span class="sd">        Live QuantumVariables:</span>
-<span class="sd">        ----------------------</span>
-<span class="sd">        QuantumVariable ctrl</span>
-<span class="sd">        QuantumVariable target</span>
+<span class="sd">        </span>
+<span class="sd">        ::</span>
+<span class="sd">        </span>
+<span class="sd">            QuantumCircuit:</span>
+<span class="sd">            --------------</span>
+<span class="sd">              ctrl.0: ──■──</span>
+<span class="sd">                        │</span>
+<span class="sd">              ctrl.1: ──■──</span>
+<span class="sd">                        │</span>
+<span class="sd">              ctrl.2: ──■──</span>
+<span class="sd">                        │</span>
+<span class="sd">              ctrl.3: ──■──</span>
+<span class="sd">                      ┌─┴─┐</span>
+<span class="sd">            target.0: ┤ X ├</span>
+<span class="sd">                      └───┘</span>
+<span class="sd">            Live QuantumVariables:</span>
+<span class="sd">            ---------------------</span>
+<span class="sd">            QuantumVariable ctrl</span>
+<span class="sd">            QuantumVariable target</span>
 
 <span class="sd">        We can now call the ``.compile`` method</span>
 
@@ -1236,16 +1313,19 @@ document.write(`
 <span class="sd">        &gt;&gt;&gt; compiled_qc.depth()</span>
 <span class="sd">        50</span>
 <span class="sd">        &gt;&gt;&gt; print(compiled_qc)</span>
-<span class="sd">            ctrl.0: ──■──</span>
-<span class="sd">                      │</span>
-<span class="sd">            ctrl.1: ──■──</span>
-<span class="sd">                      │</span>
-<span class="sd">            ctrl.2: ──■──</span>
-<span class="sd">                      │</span>
-<span class="sd">            ctrl.3: ──■──</span>
-<span class="sd">                    ┌─┴─┐</span>
-<span class="sd">          target.0: ┤ X ├</span>
-<span class="sd">                    └───┘</span>
+<span class="sd">        </span>
+<span class="sd">        ::</span>
+<span class="sd">        </span>
+<span class="sd">                ctrl.0: ──■──</span>
+<span class="sd">                          │</span>
+<span class="sd">                ctrl.1: ──■──</span>
+<span class="sd">                          │</span>
+<span class="sd">                ctrl.2: ──■──</span>
+<span class="sd">                          │</span>
+<span class="sd">                ctrl.3: ──■──</span>
+<span class="sd">                        ┌─┴─┐</span>
+<span class="sd">              target.0: ┤ X ├</span>
+<span class="sd">                        └───┘</span>
 
 <span class="sd">        We see no change here, because there was no free space to execute a more optimal</span>
 <span class="sd">        mcx implementation. We can grant additional space using the ``workspace``</span>
@@ -1255,21 +1335,24 @@ document.write(`
 <span class="sd">        &gt;&gt;&gt; compiled_qc.depth()</span>
 <span class="sd">        22</span>
 <span class="sd">        &gt;&gt;&gt; print(compiled_qc)</span>
-<span class="sd">                     ┌────────┐               ┌────────┐</span>
-<span class="sd">             ctrl.0: ┤0       ├───────────────┤0       ├──────────</span>
-<span class="sd">                     │        │               │        │</span>
-<span class="sd">             ctrl.1: ┤1       ├───────────────┤1       ├──────────</span>
-<span class="sd">                     │        │┌────────┐     │        │┌────────┐</span>
-<span class="sd">             ctrl.2: ┤        ├┤0       ├─────┤        ├┤0       ├</span>
-<span class="sd">                     │  pt2cx ││        │     │  pt2cx ││        │</span>
-<span class="sd">             ctrl.3: ┤        ├┤1       ├─────┤        ├┤1       ├</span>
-<span class="sd">                     │        ││        │┌───┐│        ││        │</span>
-<span class="sd">           target.0: ┤        ├┤  pt2cx ├┤ X ├┤        ├┤  pt2cx ├</span>
-<span class="sd">                     │        ││        │└─┬─┘│        ││        │</span>
-<span class="sd">        workspace_0: ┤2       ├┤        ├──■──┤2       ├┤        ├</span>
-<span class="sd">                     └────────┘│        │  │  └────────┘│        │</span>
-<span class="sd">        workspace_1: ──────────┤2       ├──■────────────┤2       ├</span>
-<span class="sd">                               └────────┘               └────────┘</span>
+<span class="sd">        </span>
+<span class="sd">        ::</span>
+<span class="sd">        </span>
+<span class="sd">                         ┌────────┐               ┌────────┐</span>
+<span class="sd">                 ctrl.0: ┤0       ├───────────────┤0       ├──────────</span>
+<span class="sd">                         │        │               │        │</span>
+<span class="sd">                 ctrl.1: ┤1       ├───────────────┤1       ├──────────</span>
+<span class="sd">                         │        │┌────────┐     │        │┌────────┐</span>
+<span class="sd">                 ctrl.2: ┤        ├┤0       ├─────┤        ├┤0       ├</span>
+<span class="sd">                         │  pt2cx ││        │     │  pt2cx ││        │</span>
+<span class="sd">                 ctrl.3: ┤        ├┤1       ├─────┤        ├┤1       ├</span>
+<span class="sd">                         │        ││        │┌───┐│        ││        │</span>
+<span class="sd">               target.0: ┤        ├┤  pt2cx ├┤ X ├┤        ├┤  pt2cx ├</span>
+<span class="sd">                         │        ││        │└─┬─┘│        ││        │</span>
+<span class="sd">            workspace_0: ┤2       ├┤        ├──■──┤2       ├┤        ├</span>
+<span class="sd">                         └────────┘│        │  │  └────────┘│        │</span>
+<span class="sd">            workspace_1: ──────────┤2       ├──■────────────┤2       ├</span>
+<span class="sd">                                   └────────┘               └────────┘</span>
 
 <span class="sd">        Granting extra qubits to use this feature is however not usually necessary. The</span>
 <span class="sd">        compiler automatically detects and reuses qubit resources available at the</span>
@@ -1279,21 +1362,25 @@ document.write(`
 <span class="sd">        &gt;&gt;&gt; qv = QuantumVariable(2)</span>
 <span class="sd">        &gt;&gt;&gt; cx(target[0], qv)</span>
 <span class="sd">        &gt;&gt;&gt; print(ctrl.qs.compile())</span>
-<span class="sd">                  ┌────────┐               ┌────────┐</span>
-<span class="sd">          ctrl.0: ┤0       ├───────────────┤0       ├────────────────────</span>
-<span class="sd">                  │        │               │        │</span>
-<span class="sd">          ctrl.1: ┤1       ├───────────────┤1       ├────────────────────</span>
-<span class="sd">                  │        │┌────────┐     │        │┌────────┐</span>
-<span class="sd">          ctrl.2: ┤        ├┤0       ├─────┤        ├┤0       ├──────────</span>
-<span class="sd">                  │  pt2cx ││        │     │  pt2cx ││        │</span>
-<span class="sd">          ctrl.3: ┤        ├┤1       ├─────┤        ├┤1       ├──────────</span>
-<span class="sd">                  │        ││        │┌───┐│        ││        │</span>
-<span class="sd">        target.0: ┤        ├┤  pt2cx ├┤ X ├┤        ├┤  pt2cx ├──■────■──</span>
-<span class="sd">                  │        ││        │└─┬─┘│        ││        │┌─┴─┐  │</span>
-<span class="sd">            qv.0: ┤2       ├┤        ├──■──┤2       ├┤        ├┤ X ├──┼──</span>
-<span class="sd">                  └────────┘│        │  │  └────────┘│        │└───┘┌─┴─┐</span>
-<span class="sd">            qv.1: ──────────┤2       ├──■────────────┤2       ├─────┤ X ├</span>
-<span class="sd">                            └────────┘               └────────┘     └───┘</span>
+<span class="sd">        </span>
+<span class="sd">        ::</span>
+<span class="sd">        </span>
+<span class="sd">                      ┌────────┐               ┌────────┐</span>
+<span class="sd">              ctrl.0: ┤0       ├───────────────┤0       ├────────────────────</span>
+<span class="sd">                      │        │               │        │</span>
+<span class="sd">              ctrl.1: ┤1       ├───────────────┤1       ├────────────────────</span>
+<span class="sd">                      │        │┌────────┐     │        │┌────────┐</span>
+<span class="sd">              ctrl.2: ┤        ├┤0       ├─────┤        ├┤0       ├──────────</span>
+<span class="sd">                      │  pt2cx ││        │     │  pt2cx ││        │</span>
+<span class="sd">              ctrl.3: ┤        ├┤1       ├─────┤        ├┤1       ├──────────</span>
+<span class="sd">                      │        ││        │┌───┐│        ││        │</span>
+<span class="sd">            target.0: ┤        ├┤  pt2cx ├┤ X ├┤        ├┤  pt2cx ├──■────■──</span>
+<span class="sd">                      │        ││        │└─┬─┘│        ││        │┌─┴─┐  │</span>
+<span class="sd">                qv.0: ┤2       ├┤        ├──■──┤2       ├┤        ├┤ X ├──┼──</span>
+<span class="sd">                      └────────┘│        │  │  └────────┘│        │└───┘┌─┴─┐</span>
+<span class="sd">                qv.1: ──────────┤2       ├──■────────────┤2       ├─────┤ X ├</span>
+<span class="sd">                                └────────┘               └────────┘     └───┘</span>
+
 
 <span class="sd">        We see how the qubits that will later hold ``qv`` are used to efficiently</span>
 <span class="sd">        compile the mcx gate.</span>
@@ -1310,39 +1397,154 @@ document.write(`
 <span class="sd">        &gt;&gt;&gt; cx(target[0], qv)</span>
 <span class="sd">        &gt;&gt;&gt; mcx(ctrl, target)</span>
 <span class="sd">        &gt;&gt;&gt; print(ctrl.qs.compile())</span>
-<span class="sd">          ctrl.0: ────────────────────────────────────■──────────────────────────»</span>
-<span class="sd">                                 ┌─────────────────┐  │  ┌─────────────────┐     »</span>
-<span class="sd">          ctrl.1: ───────────────┤1                ├──┼──┤1                ├─────»</span>
-<span class="sd">                                 │                 │  │  │                 │     »</span>
-<span class="sd">          ctrl.2: ───────────────┤2                ├──┼──┤2                ├─────»</span>
-<span class="sd">                                 │                 │  │  │                 │     »</span>
-<span class="sd">          ctrl.3: ────────────■──┤                 ├──┼──┤                 ├──■──»</span>
-<span class="sd">                            ┌─┴─┐│  reduced_maslov │  │  │  reduced_maslov │┌─┴─┐»</span>
-<span class="sd">        target.0: ──■────■──┤ X ├┤                 ├──┼──┤                 ├┤ X ├»</span>
-<span class="sd">                  ┌─┴─┐  │  └─┬─┘│                 │┌─┴─┐│                 │└─┬─┘»</span>
-<span class="sd">            qv.0: ┤ X ├──┼────┼──┤0                ├┤ X ├┤0                ├──┼──»</span>
-<span class="sd">                  └───┘┌─┴─┐  │  │                 │└───┘│                 │  │  »</span>
-<span class="sd">            qv.1: ─────┤ X ├──■──┤3                ├─────┤3                ├──■──»</span>
-<span class="sd">                       └───┘     └─────────────────┘     └─────────────────┘     »</span>
-<span class="sd">        «</span>
-<span class="sd">        «  ctrl.0: ─────────────────────■─────────────────────</span>
-<span class="sd">        «          ┌─────────────────┐  │  ┌─────────────────┐</span>
-<span class="sd">        «  ctrl.1: ┤1                ├──┼──┤1                ├</span>
-<span class="sd">        «          │                 │  │  │                 │</span>
-<span class="sd">        «  ctrl.2: ┤2                ├──┼──┤2                ├</span>
-<span class="sd">        «          │                 │  │  │                 │</span>
-<span class="sd">        «  ctrl.3: ┤                 ├──┼──┤                 ├</span>
-<span class="sd">        «          │  reduced_maslov │  │  │  reduced_maslov │</span>
-<span class="sd">        «target.0: ┤                 ├──┼──┤                 ├</span>
-<span class="sd">        «          │                 │┌─┴─┐│                 │</span>
-<span class="sd">        «    qv.0: ┤0                ├┤ X ├┤0                ├</span>
-<span class="sd">        «          │                 │└───┘│                 │</span>
-<span class="sd">        «    qv.1: ┤3                ├─────┤3                ├</span>
-<span class="sd">        «          └─────────────────┘     └─────────────────┘</span>
+<span class="sd">        </span>
+<span class="sd">        ::</span>
+<span class="sd">        </span>
+<span class="sd">              ctrl.0: ────────────────────────────────────■──────────────────────────»</span>
+<span class="sd">                                     ┌─────────────────┐  │  ┌─────────────────┐     »</span>
+<span class="sd">              ctrl.1: ───────────────┤1                ├──┼──┤1                ├─────»</span>
+<span class="sd">                                     │                 │  │  │                 │     »</span>
+<span class="sd">              ctrl.2: ───────────────┤2                ├──┼──┤2                ├─────»</span>
+<span class="sd">                                     │                 │  │  │                 │     »</span>
+<span class="sd">              ctrl.3: ────────────■──┤                 ├──┼──┤                 ├──■──»</span>
+<span class="sd">                                ┌─┴─┐│  reduced_maslov │  │  │  reduced_maslov │┌─┴─┐»</span>
+<span class="sd">            target.0: ──■────■──┤ X ├┤                 ├──┼──┤                 ├┤ X ├»</span>
+<span class="sd">                      ┌─┴─┐  │  └─┬─┘│                 │┌─┴─┐│                 │└─┬─┘»</span>
+<span class="sd">                qv.0: ┤ X ├──┼────┼──┤0                ├┤ X ├┤0                ├──┼──»</span>
+<span class="sd">                      └───┘┌─┴─┐  │  │                 │└───┘│                 │  │  »</span>
+<span class="sd">                qv.1: ─────┤ X ├──■──┤3                ├─────┤3                ├──■──»</span>
+<span class="sd">                           └───┘     └─────────────────┘     └─────────────────┘     »</span>
+<span class="sd">            «</span>
+<span class="sd">            «  ctrl.0: ─────────────────────■─────────────────────</span>
+<span class="sd">            «          ┌─────────────────┐  │  ┌─────────────────┐</span>
+<span class="sd">            «  ctrl.1: ┤1                ├──┼──┤1                ├</span>
+<span class="sd">            «          │                 │  │  │                 │</span>
+<span class="sd">            «  ctrl.2: ┤2                ├──┼──┤2                ├</span>
+<span class="sd">            «          │                 │  │  │                 │</span>
+<span class="sd">            «  ctrl.3: ┤                 ├──┼──┤                 ├</span>
+<span class="sd">            «          │  reduced_maslov │  │  │  reduced_maslov │</span>
+<span class="sd">            «target.0: ┤                 ├──┼──┤                 ├</span>
+<span class="sd">            «          │                 │┌─┴─┐│                 │</span>
+<span class="sd">            «    qv.0: ┤0                ├┤ X ├┤0                ├</span>
+<span class="sd">            «          │                 │└───┘│                 │</span>
+<span class="sd">            «    qv.1: ┤3                ├─────┤3                ├</span>
+<span class="sd">            «          └─────────────────┘     └─────────────────┘</span>
 
 <span class="sd">        We see how the qubits of ``qv`` are utilized as dirty ancilla qubits in order</span>
 <span class="sd">        to facilitate a more efficient ``mcx`` implementation compared to no ancillae</span>
 <span class="sd">        at all.</span>
+
+<span class="sd">        .. _gate_speed_aware_comp:</span>
+
+<span class="sd">        **Gate speed aware compilation**</span>
+<span class="sd">            </span>
+<span class="sd">        Next to the mentioned features, the ``compile`` method performs a variety</span>
+<span class="sd">        of techniques of reordering the gate sequence (without changing the semantics, of course)</span>
+<span class="sd">        to reduce the overall depth. Some of these techniques allow for a consideration</span>
+<span class="sd">        of the gate speed, which enables a unique compilation workflow for each backend.</span>
+<span class="sd">        </span>
+<span class="sd">        The gate speed of the backend can be specified as a function of :ref:`Operation`</span>
+<span class="sd">        objects:</span>
+<span class="sd">            </span>
+<span class="sd">        ::</span>
+<span class="sd">            </span>
+<span class="sd">            def mock_gate_speed_0(op):</span>
+<span class="sd">                </span>
+<span class="sd">                if op.name == &quot;x&quot;:</span>
+<span class="sd">                    return 1</span>
+<span class="sd">                if op.name == &quot;y&quot;:</span>
+<span class="sd">                    return 10</span>
+<span class="sd">                else:</span>
+<span class="sd">                    return 0</span>
+<span class="sd">                </span>
+<span class="sd">        This function describes a backend where the X-gate requires 1 time unit </span>
+<span class="sd">        (for instance nanoseconds), the Y-gate requires 10 time units</span>
+<span class="sd">        and every other gate can be executed instantaneusly.</span>
+<span class="sd">        </span>
+<span class="sd">        We can now observe how this influences the compilation:</span>
+<span class="sd">            </span>
+<span class="sd">        &gt;&gt;&gt; from qrisp import QuantumVariable, x, y, cx</span>
+<span class="sd">        &gt;&gt;&gt; qv = QuantumVariable(3)</span>
+<span class="sd">        &gt;&gt;&gt; y(qv[0])</span>
+<span class="sd">        &gt;&gt;&gt; x(qv[1])</span>
+<span class="sd">        &gt;&gt;&gt; cx(qv[2], qv[:2])</span>
+<span class="sd">        &gt;&gt;&gt; y(qv[1])</span>
+<span class="sd">        &gt;&gt;&gt; x(qv[0])</span>
+<span class="sd">        &gt;&gt;&gt; print(qv.qs)</span>
+<span class="sd">        QuantumCircuit:</span>
+<span class="sd">        ---------------</span>
+<span class="sd">              ┌───┐┌───┐┌───┐     </span>
+<span class="sd">        qv.0: ┤ Y ├┤ X ├┤ X ├─────</span>
+<span class="sd">              ├───┤└─┬─┘├───┤┌───┐</span>
+<span class="sd">        qv.1: ┤ X ├──┼──┤ X ├┤ Y ├</span>
+<span class="sd">              └───┘  │  └─┬─┘└───┘</span>
+<span class="sd">        qv.2: ───────■────■───────</span>
+<span class="sd">        &lt;BLANKLINE&gt;                                                    </span>
+<span class="sd">        Live QuantumVariables:</span>
+<span class="sd">        ----------------------</span>
+<span class="sd">        QuantumVariable qv</span>
+<span class="sd">        </span>
+<span class="sd">        Because the CNOT gate on ``qv.1`` has to wait for the other CNOT gate</span>
+<span class="sd">        (which takes a lot of time because of the costly y gate), the second y gate</span>
+<span class="sd">        can only be executed delayed, making the total runtime of this circuit 20</span>
+<span class="sd">        time units.</span>
+<span class="sd">        </span>
+<span class="sd">        We can verify this using the ``depth_indicator`` keyword of the </span>
+<span class="sd">        :meth:`depth &lt;qrisp.QuantumCircuit.depth&gt;` method:</span>
+<span class="sd">            </span>
+<span class="sd">        &gt;&gt;&gt; qv.qs.depth(depth_indicator = mock_gate_speed_0)</span>
+<span class="sd">        20</span>
+<span class="sd">        </span>
+<span class="sd">        Call the compile method, which automatically fixes the problem</span>
+<span class="sd">        </span>
+<span class="sd">        &gt;&gt;&gt; qc_fixed_0 = qv.qs.compile(gate_speed = mock_gate_speed_0)</span>
+<span class="sd">        &gt;&gt;&gt; print(qc_fixed_0)</span>
+<span class="sd">              ┌───┐          ┌───┐┌───┐</span>
+<span class="sd">        qv.0: ┤ Y ├──────────┤ X ├┤ X ├</span>
+<span class="sd">              ├───┤┌───┐┌───┐└─┬─┘└───┘</span>
+<span class="sd">        qv.1: ┤ X ├┤ X ├┤ Y ├──┼───────</span>
+<span class="sd">              └───┘└─┬─┘└───┘  │       </span>
+<span class="sd">        qv.2: ───────■─────────■───────</span>
+<span class="sd">                                         </span>
+<span class="sd">        We see that the order of the CNOT gates has been switched (which doesn&#39;t</span>
+<span class="sd">        change the semantics) such that now ``qv.1`` no longer has to wait for</span>
+<span class="sd">        the costly y gate.</span>
+<span class="sd">        </span>
+<span class="sd">        &gt;&gt;&gt; qc_fixed_0.depth(depth_indicator = mock_gate_speed_0)</span>
+<span class="sd">        11</span>
+<span class="sd">        </span>
+<span class="sd">        To see that the compilation function did not do this randomly, we can also</span>
+<span class="sd">        create another ``gate_speed`` function.</span>
+<span class="sd">        </span>
+<span class="sd">        ::</span>
+<span class="sd">            </span>
+<span class="sd">            def mock_gate_speed_1(op):</span>
+<span class="sd">                </span>
+<span class="sd">                if op.name == &quot;x&quot;:</span>
+<span class="sd">                    return 10</span>
+<span class="sd">                elif op.name == &quot;y&quot;:</span>
+<span class="sd">                    return 1</span>
+<span class="sd">                else:</span>
+<span class="sd">                    return 0</span>
+<span class="sd">                </span>
+<span class="sd">        </span>
+<span class="sd">        &gt;&gt;&gt; qc_fixed_1 = qv.qs.compile(gate_speed = mock_gate_speed_1)</span>
+<span class="sd">        &gt;&gt;&gt; print(qc_fixed_1)</span>
+<span class="sd">              ┌───┐┌───┐┌───┐     </span>
+<span class="sd">        qv.0: ┤ Y ├┤ X ├┤ X ├─────</span>
+<span class="sd">              ├───┤└─┬─┘├───┤┌───┐</span>
+<span class="sd">        qv.1: ┤ X ├──┼──┤ X ├┤ Y ├</span>
+<span class="sd">              └───┘  │  └─┬─┘└───┘</span>
+<span class="sd">        qv.2: ───────■────■───────</span>
+<span class="sd">        </span>
+<span class="sd">        Now the CNOT gate on ``qv.0`` is executed first, giving again a total depth</span>
+<span class="sd">        of 11</span>
+<span class="sd">        </span>
+<span class="sd">        &gt;&gt;&gt; qc_fixed_1.depth(depth_indicator = mock_gate_speed_1)</span>
+
+<span class="sd">        Qrisp has the two most important depth indicators in-built: </span>
+<span class="sd">        :meth:`CNOT-depth &lt;qrisp.cnot_depth_indicator&gt;` (NISQ) and </span>
+<span class="sd">        :meth:`T-depth &lt;qrisp.t_depth_indicator&gt;` (FT).</span>
 
 <span class="sd">        **Fully automized uncomputation**</span>
 
@@ -1368,44 +1570,49 @@ document.write(`
 <span class="sd">        &gt;&gt;&gt; c = QuantumBool()</span>
 <span class="sd">        &gt;&gt;&gt; res = triple_AND(a,b,c)</span>
 <span class="sd">        &gt;&gt;&gt; print(res.qs)</span>
-<span class="sd">        QuantumCircuit:</span>
-<span class="sd">        ---------------</span>
-<span class="sd">             a.0: ──■───────</span>
-<span class="sd">                    │</span>
-<span class="sd">             b.0: ──■───────</span>
-<span class="sd">                    │</span>
-<span class="sd">             c.0: ──┼────■──</span>
-<span class="sd">                  ┌─┴─┐  │</span>
-<span class="sd">         local.0: ┤ X ├──■──</span>
-<span class="sd">                  └───┘┌─┴─┐</span>
-<span class="sd">        result.0: ─────┤ X ├</span>
-<span class="sd">                       └───┘</span>
-<span class="sd">        Live QuantumVariables:</span>
-<span class="sd">        ----------------------</span>
-<span class="sd">        QuantumBool a</span>
-<span class="sd">        QuantumBool b</span>
-<span class="sd">        QuantumBool c</span>
-<span class="sd">        QuantumBool local</span>
-<span class="sd">        QuantumBool result</span>
+<span class="sd">        </span>
+<span class="sd">        ::</span>
+<span class="sd">        </span>
+<span class="sd">            QuantumCircuit:</span>
+<span class="sd">            --------------</span>
+<span class="sd">                 a.0: ──■───────</span>
+<span class="sd">                        │</span>
+<span class="sd">                 b.0: ──■───────</span>
+<span class="sd">                        │</span>
+<span class="sd">                 c.0: ──┼────■──</span>
+<span class="sd">                      ┌─┴─┐  │</span>
+<span class="sd">             local.0: ┤ X ├──■──</span>
+<span class="sd">                      └───┘┌─┴─┐</span>
+<span class="sd">            result.0: ─────┤ X ├</span>
+<span class="sd">                           └───┘</span>
+<span class="sd">            Live QuantumVariables:</span>
+<span class="sd">            ---------------------</span>
+<span class="sd">            QuantumBool a</span>
+<span class="sd">            QuantumBool b</span>
+<span class="sd">            QuantumBool c</span>
+<span class="sd">            QuantumBool local</span>
+<span class="sd">            QuantumBool result</span>
 
 <span class="sd">        We now compile with the corresponding keyword argument:</span>
 
 <span class="sd">        &gt;&gt;&gt; print(a.qs.compile(disable_uncomputation = False))</span>
-<span class="sd">                     ┌────────┐     ┌────────┐</span>
-<span class="sd">                a.0: ┤0       ├─────┤0       ├</span>
-<span class="sd">                     │        │     │        │</span>
-<span class="sd">                b.0: ┤1       ├─────┤1       ├</span>
-<span class="sd">                     │        │     │        │</span>
-<span class="sd">                c.0: ┤  pt2cx ├──■──┤  pt2cx ├</span>
-<span class="sd">                     │        │┌─┴─┐│        │</span>
-<span class="sd">           result.0: ┤        ├┤ X ├┤        ├</span>
-<span class="sd">                     │        │└─┬─┘│        │</span>
-<span class="sd">        workspace_0: ┤2       ├──■──┤2       ├</span>
-<span class="sd">                     └────────┘     └────────┘</span>
+<span class="sd">        </span>
+<span class="sd">        ::</span>
+<span class="sd">        </span>
+<span class="sd">                         ┌────────┐     ┌────────┐</span>
+<span class="sd">                    a.0: ┤0       ├─────┤0       ├</span>
+<span class="sd">                         │        │     │        │</span>
+<span class="sd">                    b.0: ┤1       ├─────┤1       ├</span>
+<span class="sd">                         │        │     │        │</span>
+<span class="sd">                    c.0: ┤  pt2cx ├──■──┤  pt2cx ├</span>
+<span class="sd">                         │        │┌─┴─┐│        │</span>
+<span class="sd">               result.0: ┤        ├┤ X ├┤        ├</span>
+<span class="sd">                         │        │└─┬─┘│        │</span>
+<span class="sd">            workspace_0: ┤2       ├──■──┤2       ├</span>
+<span class="sd">                         └────────┘     └────────┘</span>
 
 <span class="sd">        We see that the ``local`` QuantumBool is no longer allocated but has been</span>
 <span class="sd">        uncomputed and it&#39;s qubits are available as workspace.</span>
-
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="kn">from</span> <span class="nn">qrisp.core.compilation</span> <span class="kn">import</span> <span class="n">qompiler</span>
@@ -1416,6 +1623,8 @@ document.write(`
             <span class="n">disable_uncomputation</span><span class="o">=</span><span class="n">disable_uncomputation</span><span class="p">,</span>
             <span class="n">intended_measurements</span><span class="o">=</span><span class="n">intended_measurements</span><span class="p">,</span>
             <span class="n">cancel_qfts</span><span class="o">=</span><span class="n">cancel_qfts</span><span class="p">,</span>
+            <span class="n">compile_mcm</span><span class="o">=</span><span class="n">compile_mcm</span><span class="p">,</span>
+            <span class="n">gate_speed</span> <span class="o">=</span> <span class="n">gate_speed</span>
         <span class="p">)</span></div>
 
     <span class="k">def</span> <span class="fm">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -1458,6 +1667,8 @@ document.write(`
               
               
               
+              
+              
             </div>
             
             
@@ -1475,6 +1686,20 @@ document.write(`
   </div>
 </div>
 
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
 </div></div>
               
             
@@ -1488,8 +1713,8 @@ document.write(`
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script src="../../../_static/scripts/bootstrap.js?digest=e353d410970836974a52"></script>
-<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52"></script>
+  <script src="../../../_static/scripts/bootstrap.js?digest=ac02cc09edc035673794"></script>
+<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=ac02cc09edc035673794"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -1507,7 +1732,7 @@ document.write(`
       
         <div class="footer-item">
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 6.2.1.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 4.5.0.
     <br/>
   </p>
 </div>
@@ -1515,10 +1740,11 @@ document.write(`
     </div>
   
   
+  
     <div class="footer-items__end">
       
         <div class="footer-item"><p class="theme-version">
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.13.4dev0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.14.1.
 </p></div>
       
     </div>

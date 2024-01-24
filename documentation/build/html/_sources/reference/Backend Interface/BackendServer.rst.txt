@@ -3,7 +3,7 @@
 BackendServer
 ==============
 
-.. currentmodule:: qrisp.interface.thrift_interface
+.. currentmodule:: qrisp.interface.qunicorn
 .. autoclass:: BackendServer
 
 Methods
@@ -13,5 +13,4 @@ Methods
    :toctree: generated/
 
    BackendServer.start
-   BackendServer.stop
    

@@ -26,7 +26,7 @@ from qrisp.grover import tag_state, grovers_alg
 from qrisp.environments import invert
 from itertools import product
 from qrisp import p, QuantumVariable, h, mcx, QuantumBool
-
+import time
 
 def test_grovers_algorithm():
     qf1 = QuantumFloat(2)

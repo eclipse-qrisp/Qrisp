@@ -68,6 +68,9 @@ In their paper, Hadfield and his colleagues give us some really useful examples 
    * - Max-$\ell$-SAT
      - X mixer
      -    ✅
+   * - :ref:`QUBO (NEW since 0.4!) <QUBOQAOA>`
+     - X mixer
+     -    ✅ 
    * - MaxIndependentSet
      - Controlled X mixer
      -    ✅
@@ -96,3 +99,4 @@ Our QAOA journey doesn’t stop here. In the next tutorials we’re going to tac
    MaxCut
    MkCS
    ConstrainedMixers
+   QUBO

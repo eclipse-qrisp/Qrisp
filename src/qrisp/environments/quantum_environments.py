@@ -53,7 +53,7 @@
 # 4. Apart from the (de)allocation gates, all the collected data is stored inside
 # the .env_data attribute
 
-from qrisp.circuit import QubitAlloc, QubitDealloc
+from qrisp.circuit import QubitAlloc, QubitDealloc, fast_append
 from qrisp.core.quantum_session import QuantumSession
 
 
@@ -389,7 +389,16 @@ class QuantumEnvironment:
 
         # Start the dumping process
         self.start_dumping()
-        
+
+        # Manual allocation management means that the compile method can process allocation
+        # and deallocation gates.
+        # If set to False, these gates will be filtered out of the env_data attribute before
+        # compile is called.
+        # In this case, the (de)allocation gates that happened insided this environment
+        # will be collected and execute before (after) the compile method is called.
+        if type(self) is QuantumEnvironment:
+            self.manual_allocation_management = True
+
 
         return self
 
@@ -405,7 +414,6 @@ class QuantumEnvironment:
             if self.active_qs_list[i]() is not None:
                 self.active_qs_list[i]().env_stack.pop(-1)
 
-        
         # Create a list which will store deallocation gates
         dealloc_qubit_list = []
         alloc_qubit_list = []
@@ -413,31 +421,33 @@ class QuantumEnvironment:
         # to make sure that the (de)allocation gates are notprocessed
         # by the environment compiler as this might disturb their functionality
         i = 0
+        
+        if not hasattr(self, "manual_allocation_management"):
+            self.manual_allocation_management = False
 
+        # Filter allocation gates
         while i < len(self.env_data):
             instr = self.env_data[i]
 
             if not isinstance(instr, QuantumEnvironment):
                 if instr.op.name == "qb_alloc":
-                    if not hasattr(self, "manual_allocation_management"):
+                    if not self.manual_allocation_management:
                         alloc_qubit_list.append(self.env_data.pop(i).qubits[0])
                         continue
                     else:
                         dealloc_qubit_list.append(self.env_data[i].qubits[0])
                     
-                
                 if instr.op.name == "qb_dealloc":
-                    if not hasattr(self, "manual_allocation_management"):
+                    if not self.manual_allocation_management:
                         dealloc_qubit_list.append(self.env_data.pop(i).qubits[0])
                         continue
                     else:
                         dealloc_qubit_list.append(self.env_data[i].qubits[0])
-                    # instr.qubits[0].allocated = True
-                    
 
             i += 1
-            
-        if not hasattr(self, "manual_allocation_management"):
+        
+        # Append allocation gates before compilation
+        if not self.manual_allocation_management:
             for qb in list(set(alloc_qubit_list)):
                 self.env_qs.append(QubitAlloc(), [qb])
 
@@ -447,7 +457,8 @@ class QuantumEnvironment:
             for qb in self.deallocated_qubits:
                 qb.allocated = True
             
-            self.compile()
+            with fast_append():
+                self.compile()
 
         # Otherwise, we append self to the data of the parent environment
         else:
@@ -455,7 +466,8 @@ class QuantumEnvironment:
                 self.env_qs.data.append(self)
             self.parent.deallocated_qubits.extend(dealloc_qubit_list)
 
-        if not hasattr(self, "manual_allocation_management"):
+        # Append deallocation gates after compilation
+        if not self.manual_allocation_management:
             for qb in list(set(dealloc_qubit_list)):
                 self.env_qs.append(QubitDealloc(), [qb])
 

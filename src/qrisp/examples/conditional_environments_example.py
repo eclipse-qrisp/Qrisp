@@ -92,7 +92,7 @@ qc = QuantumChar()
 
 qc[:] = "f"
 
-qf = QuantumFloat(3, -1, signed=True)
+qf = QuantumFloat(6, -1, signed=True)
 q_array = QuantumArray(qf, 4)
 
 h(qc[0])

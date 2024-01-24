@@ -19,23 +19,25 @@
 
 import numpy as np
 
-from qrisp import QuantumVariable, cp, transpile, x
+from qrisp import QuantumVariable, cp, transpile, x, h
 from qrisp.misc.GMS_tools import (
     gms_multi_cp_gate,
     gms_multi_cx_fan_out,
 )
 
 n = 5
-qv = QuantumVariable(n)
+ctrl = QuantumVariable(1)
+target = QuantumVariable(n)
 
 
-x(qv[-1])
-qv.qs.append(
-    gms_multi_cx_fan_out(n - 1, use_uniform=True, phase_tolerant=False), qv.reg
+h(ctrl)
+ctrl.qs.append(
+    gms_multi_cx_fan_out(n, use_uniform=True), list(target) + [ctrl]
 )
 
-print(transpile(qv.qs, 2))
-print(qv.get_measurement())
+print(target.qs.statevector())
+
+print(transpile(ctrl.qs, 2))
 
 
 # %%

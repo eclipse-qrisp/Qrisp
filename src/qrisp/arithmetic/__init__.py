@@ -19,8 +19,8 @@
 
 from qrisp.arithmetic.comparisons import *
 from qrisp.arithmetic.SBP_arithmetic import *
-from qrisp.arithmetic.ripple_carry_adder import *
 from qrisp.arithmetic.ripple_division import *
-from qrisp.arithmetic.incrementation import *
 from qrisp.arithmetic.matrix_multiplication import *
+from qrisp.arithmetic.modular_arithmetic import *
+from qrisp.arithmetic.adders import *
 

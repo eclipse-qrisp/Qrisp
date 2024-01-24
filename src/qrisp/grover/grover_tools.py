@@ -18,11 +18,11 @@
 
 
 import numpy as np
-from qrisp import QuantumArray, QuantumVariable, gate_wrap, gphase, h, mcp, mcz, x, merge, recursive_qs_search, IterationEnvironment
+from qrisp import QuantumArray, QuantumVariable, gate_wrap, gphase, h, mcp, mcz, x, merge, recursive_qs_search, IterationEnvironment, conjugate, invert
 
 
 # Applies the grover diffuser onto the (list of) quantum variable input_object
-def diffuser(input_object, phase=np.pi):
+def diffuser(input_object, phase=np.pi, state_function=None):
     """
     Applies the Grover diffuser onto (multiple) QuantumVariables.
 
@@ -30,6 +30,8 @@ def diffuser(input_object, phase=np.pi):
     ----------
     input_object : QuantumVariable or list[QuantumVariable]
         The (list of) QuantumVariables to apply the Grover diffuser on.
+    state_function : function
+        A Python function preparing the initial state. The default is None.
 
     Examples
     --------
@@ -77,23 +79,40 @@ def diffuser(input_object, phase=np.pi):
                   └────────────┘
                   
     """
+    init_state = True if state_function is not None else False
+    if init_state:
+        def inv_state_function(args):
+            with invert():
+                state_function(*args)
 
     if isinstance(input_object, QuantumArray):
         input_object = [qv for qv in input_object.flatten()]
 
     if isinstance(input_object, list):
-        [h(qv) for qv in input_object]
-        tag_state(
-            {qv: "0" * qv.size for qv in input_object}, binary_values=True, phase=phase
-        )
-        [h(qv) for qv in input_object]
+        if init_state:
+            with conjugate(inv_state_function)(input_object):
+                tag_state(
+                    {qv: "0" * qv.size for qv in input_object}, binary_values=True, phase=phase
+                )    
+        else:
+            [h(qv) for qv in input_object]
+            tag_state(
+                {qv: "0" * qv.size for qv in input_object}, binary_values=True, phase=phase
+            )
+            [h(qv) for qv in input_object]
         gphase(np.pi, input_object[0][0])
     else:
-        h(input_object)
-        tag_state(
-            {input_object: input_object.size * "0"}, binary_values=True, phase=phase
-        )
-        h(input_object)
+        if init_state:
+            with conjugate(inv_state_function)(input_object):
+                tag_state(
+                    {input_object: input_object.size * "0"}, binary_values=True, phase=phase
+                )
+        else:
+            h(input_object)
+            tag_state(
+                {input_object: input_object.size * "0"}, binary_values=True, phase=phase
+            )
+            h(input_object)
         gphase(np.pi, input_object[0])
 
     return input_object
@@ -140,16 +159,6 @@ def tag_state(tag_specificator, binary_values=False, phase=np.pi):
 
     if not len(states):
         states = ["1" * qv.size for qv in qv_list]
-
-    # The phase tag will be executed by a multicontrolled z-gate
-    # Even though the multicontrolled z-gate has no prefered qubit,
-    # in qiskit we have to give one "base" qubit and the other qubits are
-    # the control qubits. For the control qubits we can easily specify the required
-    # control state, however for the base qubit it's not that easy.
-    # If our base qubit should be in state 0 we therefore have to apply an x gate
-    # on it, execute the controlled z gate and then apply another x gate
-
-    # Apply x gate (if neccessary)
 
     bit_string = ""
     from qrisp.misc import bin_rep
@@ -379,7 +388,7 @@ def grovers_alg(
     
     qv_amount = len(qs.qv_list)
 
-    with IterationEnvironment(qs, iterations):
+    with IterationEnvironment(qs, iterations, precompile = False):
     # for i in range(iterations):
         if exact:
             oracle_function(qv_list, phase=phi, **kwargs)

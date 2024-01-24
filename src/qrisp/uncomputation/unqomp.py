@@ -28,6 +28,7 @@ from qrisp.circuit import (
 )
 from qrisp.logic_synthesis import LogicSynthGate
 from qrisp.uncomputation.type_checker import is_permeable, is_qfree
+from qrisp.circuit import fast_append
 
 
 class UnqompNode:
@@ -38,7 +39,10 @@ class UnqompNode:
         self.uncomputed_node = None
 
         self.instr = instr
-        self.hash = hash(self.name)
+        if instr is None:
+            self.hash = hash(self.name)
+        else:
+            self.hash = hash(instr)
 
     def __hash__(self):
         return self.hash
@@ -47,22 +51,23 @@ class UnqompNode:
         if self.instr is None:
             return self.name
         else:
-            return str(self.name)
+            return str(self.instr)
 
     def __repr__(self):
         return str(self)
+    
+    def __eq__(self, other):
+        return self.hash == other.hash
 
 
 def qc_from_dag(dag):
     res_qc = dag.original_qc.clearcopy()
-
-    QuantumCircuit.fast_append = True
-
-    for node in nx.topological_sort(dag):
-        if node.instr:
-            res_qc.append(node.instr)
-
-    QuantumCircuit.fast_append = False
+    from qrisp.core.compilation import topological_sort
+        
+    with fast_append():
+        for node in nx.topological_sort(dag):
+            if node.instr:
+                res_qc.append(node.instr.op, node.instr.qubits, node.instr.clbits)
 
     return res_qc
 
@@ -83,6 +88,18 @@ def dag_from_qc(qc, remove_init_nodes=False):
         recent_node_dic[qc.qubits[i]] = node
         node_counter[qc.qubits[i]] = 1
         init_nodes[qc.qubits[i]] = node
+    
+    for i in range(len(qc.clbits)):
+        
+        node = UnqompNode("clbit_" + str(i) + "_0")
+
+        node.clbit = qc.clbits[i]
+
+        dag.add_node(node)
+        recent_node_dic[qc.clbits[i]] = node
+        node_counter[qc.clbits[i]] = 1
+        init_nodes[qc.clbits[i]] = node
+        
 
     dag.init_nodes = init_nodes
 
@@ -139,8 +156,13 @@ def dag_from_qc(qc, remove_init_nodes=False):
                 recent_node_dic[qb] = node
                 node_counter[qb] += 1
                 node.targets.append(qb)
+        for j in range(len(instr.clbits)):
+            cb = instr.clbits[j]
+            dag.add_edge(recent_node_dic[cb], node, edge_type="anti_dependency")
+            recent_node_dic[cb] = node
 
     dag.original_qc = qc
+    dag.recent_node_dic = recent_node_dic
 
     if remove_init_nodes:
         # Remove init nodes
@@ -150,26 +172,11 @@ def dag_from_qc(qc, remove_init_nodes=False):
 
 
 def uncompute_node(dag, uncomp_node, uncomp_qbs, recompute_qubits=[]):
+    from qrisp.core import topological_sort    
+
+    a_star_n_list = [dag.recent_node_dic[qb] for qb in set(uncomp_node.targets)]
+    a_star_n_list = list(set(a_star_n_list))
     
-    try:
-        lin = list(nx.topological_sort(dag))
-    except nx.NetworkXUnfeasible:
-        raise Exception("Cyclic dependency detected in DAG during uncomputation")
-    
-    lin.reverse()
-
-    a_star_n_list = []
-
-    uncomp_node_target_set = set(uncomp_node.targets)
-
-    for n in lin:
-        if set(uncomp_node.targets).intersection(n.targets):
-            a_star_n_list.append(n)
-            uncomp_node_target_set = uncomp_node_target_set - set(n.targets)
-
-            if not len(uncomp_node_target_set):
-                break
-
     if not is_qfree(uncomp_node.instr.op):
         raise Exception(f"Tried to uncompute non-qfree instruction {uncomp_node.instr}")
 
@@ -193,6 +200,7 @@ def uncompute_node(dag, uncomp_node, uncomp_qbs, recompute_qubits=[]):
                     op.base_operation,
                     num_ctrl_qubits=len(op.controls),
                     ctrl_state=op.ctrl_state,
+                    method = "gray_pt"
                 )
 
     # Replace results of logic synthesis by phase tolerant logic synthesis
@@ -221,6 +229,9 @@ def uncompute_node(dag, uncomp_node, uncomp_qbs, recompute_qubits=[]):
     uncomp_node.uncomputed_node = reversed_node
 
     dag.add_node(reversed_node)
+    
+    for qb in reversed_node.targets:
+        dag.recent_node_dic[qb] = reversed_node
 
     for i in range(len(ctrls)):
         c = ctrls[i]
@@ -250,7 +261,7 @@ def uncompute_node(dag, uncomp_node, uncomp_qbs, recompute_qubits=[]):
             reversed_node,
             edge_type="target",
             qubits=list(
-                set(uncomp_qbs).intersection(n.targets).intersection(new_instr.qubits)
+                set(uncomp_qbs).intersection(a_star_n.targets).intersection(new_instr.qubits)
             ),
         )
 
@@ -272,89 +283,93 @@ def uncompute_node(dag, uncomp_node, uncomp_qbs, recompute_qubits=[]):
 
 
 def uncompute_qc(qc, uncomp_qbs, recompute_qubits=[]):
-    qc_new = qc.copy()
-    previous_instructions = []
-    follow_up_instructions = []
-
-    while len(qc_new.data):
-        instr = qc_new.data[0]
-        if set(uncomp_qbs + recompute_qubits).intersection(instr.qubits):
-            break
-        previous_instructions.append(qc_new.data.pop(0))
-
-    while len(qc_new.data):
-        instr = qc_new.data[-1]
-        if set(uncomp_qbs + recompute_qubits).intersection(instr.qubits):
-            break
-        follow_up_instructions.append(qc_new.data.pop(-1))
-
-    follow_up_instructions = follow_up_instructions[::-1]
-
-    dag = dag_from_qc(qc_new)
-
-    lin = list(nx.topological_sort(dag))
-    lin.reverse()
-
-    for i in range(len(lin)):
-        # for node in lin:
-
-        node = lin[i]
-
-        if node.instr is None:
-            continue
-
-        if not set(node.targets).intersection(uncomp_qbs):
-            continue
-
-        if node.instr.op.name in ["barrier"]:  # , "qb_alloc", "qb_dealloc"]:
-            continue
-
-        # This function checks if there is more than one allocation gate in
-        # the upcoming chain of nodes. This prevents instructions which were
-        # created due to previous recomputations to be included in further recomputations
-        if detect_double_alloc(lin[i:], node.instr.qubits):
-            continue
-
-        if set(node.targets).issubset(uncomp_qbs) and node.instr and node.targets:
-            recompute = uncompute_node(dag, node, uncomp_qbs, recompute_qubits)
-            if recompute:
-                return uncompute_qc(
-                    qc,
-                    uncomp_qbs
-                    + list(set(node.controls).intersection(recompute_qubits)),
-                    recompute_qubits,
-                )
-            continue
-
-        off_target_qubits = list(set(node.targets) - set(uncomp_qbs))
-        if off_target_qubits:
-            not_uncomputable_qubits = []
-            for qb in off_target_qubits:
-                if qb.allocated:
-                    not_uncomputable_qubits.append(qb)
-
-            if not_uncomputable_qubits:
-                raise Exception(
-                    f'Uncomputation failed because gate "{node.instr.op.name}" needs to be uncomputed '
-                    f'but is also targeting qubits {not_uncomputable_qubits} which are not up for uncomputation'
-                )
-            else:
-                return uncompute_qc(
-                    qc,
-                    uncomp_qbs + off_target_qubits,
-                    recompute_qubits=recompute_qubits,
-                )
-
-    try:
-        uncomputed_qc = qc_from_dag(dag)
-    except nx.NetworkXUnfeasible:
-        raise Exception("Cyclic dependency detected in DAG during uncomputation")
-
-    uncomputed_qc.data = (
-        previous_instructions + uncomputed_qc.data + follow_up_instructions
-    )
-
-    return uncomputed_qc
+    
+    with fast_append():
+        qc_new = qc.copy()
+        previous_instructions = []
+        follow_up_instructions = []
+    
+        while len(qc_new.data):
+            instr = qc_new.data[0]
+            if set(uncomp_qbs + recompute_qubits).intersection(instr.qubits):
+                break
+            previous_instructions.append(qc_new.data.pop(0))
+            
+    
+        while len(qc_new.data):
+            instr = qc_new.data[-1]
+            if set(uncomp_qbs + recompute_qubits).intersection(instr.qubits):
+                break
+            follow_up_instructions.append(qc_new.data.pop(-1))
+    
+        follow_up_instructions = follow_up_instructions[::-1]
+    
+        dag = dag_from_qc(qc_new)
+    
+        lin = list(nx.topological_sort(dag))
+        lin.reverse()
+    
+        for i in range(len(lin)):
+            # for node in lin:
+    
+            node = lin[i]
+    
+            if node.instr is None:
+                continue
+    
+            if not set(node.targets).intersection(uncomp_qbs):
+                continue
+    
+            # if node.instr.op.name == "qb_alloc":# , "qb_alloc", "qb_dealloc"]:
+            #     continue
+    
+            # This function checks if there is more than one allocation gate in
+            # the upcoming chain of nodes. This prevents instructions which were
+            # created due to previous recomputations to be included in further recomputations
+            if detect_double_alloc(lin[i:], node.instr.qubits):
+                continue
+    
+            if set(node.targets).issubset(uncomp_qbs) and node.instr and node.targets:
+                recompute = uncompute_node(dag, node, uncomp_qbs, recompute_qubits)
+                if recompute:
+                    return uncompute_qc(
+                        qc,
+                        uncomp_qbs
+                        + list(set(node.controls).intersection(recompute_qubits)),
+                        recompute_qubits,
+                    )
+                continue
+    
+            off_target_qubits = list(set(node.targets) - set(uncomp_qbs))
+            if off_target_qubits:
+                not_uncomputable_qubits = []
+                for qb in off_target_qubits:
+                    if qb.allocated:
+                        not_uncomputable_qubits.append(qb)
+    
+                if not_uncomputable_qubits:
+                    raise Exception(
+                        f'Uncomputation failed because gate "{node.instr.op.name}" needs to be uncomputed '
+                        f'but is also targeting qubits {not_uncomputable_qubits} which are not up for uncomputation'
+                    )
+                else:
+                    return uncompute_qc(
+                        qc,
+                        uncomp_qbs + off_target_qubits,
+                        recompute_qubits=recompute_qubits,
+                    )
+    
+        try:
+            uncomputed_qc = qc_from_dag(dag)
+        except nx.NetworkXUnfeasible:
+            raise Exception("Cyclic dependency detected in DAG during uncomputation")
+    
+        uncomputed_qc.data = (
+            previous_instructions + uncomputed_qc.data + follow_up_instructions
+        )
+        
+    
+        return uncomputed_qc
 
 
 def detect_double_alloc(lin, qubits):

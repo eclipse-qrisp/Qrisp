@@ -13,8 +13,14 @@ This algorithms submodule of Qrisp provides a collection of commonly used quantu
      - periodicity detection and phase estimation
    * - :ref:`Quantum Phase Estimation <QPE>`
      - estimating the eigenvalues of a unitary operator
+   * - :ref:`Quantum Amplitude Amplification <AA>`
+     - enhancing amplitude of a target state
+   * - :ref:`Quantum Amplitude Estimation <QAE>`
+     - estimating the amplitude of a target state
    * - :ref:`QAOA <QAOA>`
      - solving combinatorial optimizatin problems
+   * - :ref:`Shor's Algorithm <Shor>`
+     - efficiently factoring large numbers
    * - :ref:`Grover's Algorithm <Grover>`
      - unstructured search
    * - :ref:`Quantum Backtracking Algorithms <QuantumBacktrackingTree>`
@@ -35,11 +41,13 @@ We encourage you to explore these algorithms, delve into their documentation, an
    
    QFT
    QPE
+   amplitude_amplification
+   QAE
    QAOA
+   Shor
    grover.grovers_alg  
    QuantumBacktrackingTree
    quantum_counting
-   HHL
    demux
    cyclic_shift
    iterable_permutation

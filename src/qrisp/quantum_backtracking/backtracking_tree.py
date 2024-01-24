@@ -30,7 +30,7 @@ from qrisp import (QuantumFloat, QuantumBool, QuantumArray, mcz, cx, h, ry, swap
 """
 As specified in the paper (https://arxiv.org/abs/1509.02374), the key challenge
 in implementing the quantum backtracking algorithm is the realization of the operators
-R_A and R_B. These operators consists of the direct some of diffuser operators D_x,
+R_A and R_B. These operators consists of the direct sum of diffuser operators D_x,
 where x is an arbitrary node of the backtracking graph.
 R_A and R_B are defined as the direct sum of these
 
@@ -315,16 +315,16 @@ class QuantumBacktrackingTree:
         A QuantumVariable representing the possible branches of each node.
     accept : function
         A function taking an instance of QuantumBacktrackingTree and returning
-        a QuantumBool, which is True, if called on a satisfying node.
+        a QuantumBool, which is ``True``, if called on a satisfying node.
     reject : function
         A function taking an instance of QuantumBacktrackingTree and returning
-        a QuantumBool, which is True, if a called on a node where the corresponding
+        a QuantumBool, which is ``True``, if a called on a node where the corresponding
         branch should no longer be investigated.
     subspace_optimization : bool, optional
-        If set to True, a significatn optimization of the quantum_step function 
+        If set to ``True``, a significant optimization of the ``quantum_step`` function 
         will be applied. The reject function has to fullfil a certain property
         for this to yield the correct results. Please check the "Details on the
-        predicate functions" section for more information. The default is False.
+        predicate functions" section for more information. The default is ``False``.
 
 
     Attributes
@@ -332,14 +332,14 @@ class QuantumBacktrackingTree:
 
     h : :ref:`QuantumFloat`
         A one hot encoded integer representing the height of the node. The root
-        has h = max_depth, it's children have h = max_depth-1 etc.
+        has ``h = max_depth``, it's children have ``h = max_depth-1`` etc.
     branch_qa : :ref:`QuantumArray`
         A QuantumArray representing the path from the root to the current node.
-        The qtype of this QuantumArray is what is been provided as branch_qv.
+        The qtype of this QuantumArray is what is been provided as ``branch_qv``.
         Note that the state of this array is the reversed path, ie. a the node
-        with path [1,1,0,1] in a depth 7 tree has the state:
+        with path ``[1,1,0,1]`` in a depth 7 tree has the state:
         $\ket{0}\ket{0}\ket{0}\ket{1}\ket{0}\ket{1}\ket{1}$
-        States that have a non-zero value at entries indexed smaller than h,
+        States that have a non-zero value at entries indexed smaller than ``h``,
         are considered non-algorithmic and will never be visited
         (eg. h=3, branch_qa = $\ket{1}\ket{1}\ket{1}\ket{1}$).
     qs : :ref:`QuantumSession`
@@ -353,13 +353,13 @@ class QuantumBacktrackingTree:
 
     **Checking for the existence of a solution**
 
-    Even though the backtracking problems primary purpose is to find a solution,
+    Even though primary purpose of backtracking algorithms is to find a solution,
     at the core, Montanaros algorithm only determines solution existence. This can
     however still be leveraged into a solution finding algorithm.
 
     To demonstrate the solution existence functionality, we search the binary
     tree that consists only of nodes with alternating branching.
-    We accept if we find the node [0,0,1] (doesn't exist in this tree).
+    We accept if we find the node ``[0,0,1]`` (doesn't exist in this tree).
 
     For this we first set up the reject condition.
 
@@ -391,7 +391,7 @@ class QuantumBacktrackingTree:
     We will reject the node if the oddity of is unequal to the parity and therefore
     reject any path that took a 1 after it already took a 1 (same for 0).
     
-    One the root and it's children there will be rejection to allow for two different
+    On the root and it's children there will be rejection to allow for two different
     paths.
 
     We now implement the accept condition:
@@ -464,9 +464,9 @@ class QuantumBacktrackingTree:
 
     >>> mes_res = qpe_res.get_measurement()
     >>> mes_res[0]
-    0.0253
+    0.1036
 
-    The 0 component has only 2.53% probability of appearing, therefore we can conclude,
+    The 0 component has only 10.36% probability of appearing, therefore we can conclude,
     that in the specified tree no such node exists.
 
     We now perform the same process but with a trivial reject function:
@@ -488,7 +488,7 @@ class QuantumBacktrackingTree:
 
     >>> mes_res = qpe_res.get_measurement()
     >>> mes_res[0]
-    0.5027
+    0.5039
 
     We see a probability of more than 50%, implying a solution exists in
     this tree.
@@ -499,7 +499,7 @@ class QuantumBacktrackingTree:
     by always picking the child node where the quantum algorithm returns "Node exists".
     Finding a solution can therefore be considered a hybrid algorithm.
 
-    To demonstrate, we search for the node [1,1,1] with a trivial reject function.
+    To demonstrate, we search for the node ``[1,1,1]`` with a trivial reject function.
 
     ::
 
@@ -524,14 +524,14 @@ class QuantumBacktrackingTree:
                                        accept = accept,
                                        reject = reject)
 
-    And call the solution finding algorithm
+    And call the solution finding algorithm:
 
     >>> tree.find_solution(precision = 5)
     [1, 1, 1]
     
     **Using the subspace_optimization keyword**
     
-    To demonstrate the usage of this feature, we create to tree instance - one
+    To demonstrate the usage of this feature, we create two tree instances - one
     with and one without the optimization.
     
     ::
@@ -597,9 +597,10 @@ class QuantumBacktrackingTree:
         Parameters
         ----------
         even : bool
-            If set to ``True`` :math:`R_A` will be performed. Otherwise :math:`R_B` 
-            will be performed. Note that "even" refers to the oddity of the h 
-            attribute (instead of the distance from the root).
+            Depending on the parameter, the diffuser acts on the subspaces $\mathcal H_x=\{\ket{x}\}\cup\{\ket{y}\,|\,x\\rightarrow y\}$ where $x$ has odd (``even=False``) or even (``even=True``) height.
+            Note that "even" refers to the parity of the ``h`` attribute instead of the distance from the root.
+            If the ``max_depth`` of the tree is odd, and ``even=False`` then $R_A$ (otherwise $R_B$) is performed, and vice verse if the ``max_depth`` is even. 
+
         ctrl : List[Qubit], optional
             A list of qubits that allows performant controlling. The default is [].
 
@@ -700,6 +701,10 @@ class QuantumBacktrackingTree:
         
         # The first step to achieve this is to swap the branch information
         # into a temporary container. This way the branching information is 0.
+
+        # Check if |x> is root.
+        is_root = QuantumBool()
+        cx(self.h[self.max_depth],is_root)
         
         temporary_container = self.branch_qa.qtype.duplicate()
 
@@ -723,7 +728,12 @@ class QuantumBacktrackingTree:
         # have oddity 1)
         mcz_list.append(oddity_qbl)
         ctrl_state += "0"
+
+        # Check if |x> is root. Otherwise, if the reject funtions returns "True" on the lift of the root a wrong phase (-1) may be applied to the root.
+        mcz_list.append(is_root)
+        ctrl_state += "0"
         
+
         # Add extra controls
         mcz_list += ctrl
         ctrl_state += "1"*len(ctrl)
@@ -750,8 +760,7 @@ class QuantumBacktrackingTree:
 
     def quantum_step(self, ctrl=[], min_height_assumption = 0):
         """
-        Performs the quantum step operator. Depending on wether the root has even
-        or odd height, either :math:`R_A` or :math:`R_B` is executed first. 
+        Performs the quantum step operator $R_BR_A$.
         For more information check the :meth:`diffuser method <qrisp.quantum_backtracking.QuantumBacktrackingTree.qstep_diffuser>`.
 
         Parameters
@@ -760,8 +769,8 @@ class QuantumBacktrackingTree:
             A list of qubits, the step operator should be controlled on. The default is [].
         """
 
-        self.qstep_diffuser(even=self.max_depth % 2, ctrl=ctrl, min_height_assumption = min_height_assumption)
-        self.qstep_diffuser(even=not self.max_depth % 2, ctrl=ctrl, min_height_assumption = min_height_assumption - 1)
+        self.qstep_diffuser(even=not self.max_depth % 2, ctrl=ctrl, min_height_assumption = min_height_assumption)
+        self.qstep_diffuser(even=self.max_depth % 2, ctrl=ctrl, min_height_assumption = min_height_assumption - 1)
 
     def estimate_phase(self, precision):
         r"""
@@ -809,7 +818,7 @@ class QuantumBacktrackingTree:
             
         for i in range(qpe_res.size):
             
-            if height_tracker >= 0:
+            if height_tracker >= 0 and False:
                 for j in range(2**i):
                     self.quantum_step(ctrl=[qpe_res[i]], min_height_assumption = height_tracker)
                     height_tracker -= 2

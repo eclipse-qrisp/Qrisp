@@ -269,7 +269,7 @@ class QAOABenchmark:
         plt.grid()
         plt.show()
     
-    def rank(self, metric = "approx_ratio"):
+    def rank(self, metric = "approx_ratio", print_res = False, average_repetitions = False):
         """
         Ranks the runs of the benchmark according to a given metric.
         
@@ -321,33 +321,106 @@ class QAOABenchmark:
         """
         
         if isinstance(metric, str):
-            
+    
             if metric == "approx_ratio":
-                metric = lambda x : approximation_ratio(x["counts"], self.optimal_solution, self.cost_function)
-            
+                def approx_ratio(x):
+                    return approximation_ratio(x["counts"], self.optimal_solution, self.cost_function)
+    
+                metric = approx_ratio
+    
             elif metric == "time_to_sol":
-                metric = lambda x : time_to_solution(x["counts"], self.optimal_solution, self.cost_function)
-        
+                metric = lambda x: time_to_solution(x["counts"], self.optimal_solution, self.cost_function)
+    
         run_data_list = []
-        
+    
+        if average_repetitions:
+            # Create a dictionary to store aggregated averages
+            average_dict = {}
+    
         for i in range(len(self.layer_depth)):
-            
-            run_data = {"layer_depth" : self.layer_depth[i],
-                         "circuit_depth" : self.circuit_depth[i],
-                         "qubit_amount" : self.qubit_amount[i],
-                         "shots" : self.shots[i],
-                         "iterations" : self.iterations[i],
-                         "counts" : self.counts[i],
-                         "runtime" : self.runtime[i],
-                         "optimal_solution" : self.optimal_solution
-                         }
-            
+    
+            run_data = {"layer_depth": self.layer_depth[i],
+                        "circuit_depth": self.circuit_depth[i],
+                        "qubit_amount": self.qubit_amount[i],
+                        "shots": self.shots[i],
+                        "iterations": self.iterations[i],
+                        "runtime": self.runtime[i],
+                        "optimal_solution": self.optimal_solution,
+                        "counts" : self.counts[i]
+                        }
+    
+            run_data["metric"] = metric(run_data)
+            if average_repetitions:
+                # Create a unique key based on the parameters
+                key = (run_data['layer_depth'], run_data['shots'], run_data['iterations'])
+    
+                # Add the result to the corresponding key in the dictionary
+                if key not in average_dict:
+                    average_dict[key] = {
+                        'total_metric': 0,
+                        'count': 0
+                    }
+                average_dict[key]['total_metric'] += metric(run_data)
+                average_dict[key]['count'] += 1
+    
             run_data_list.append(run_data)
+    
+        if average_repetitions:
+            # Calculate the average for each unique parameter combination
             
-        run_data_list.sort(key = metric)
+            temp = list(run_data_list)
+            run_data_list = []
+            for run_data in temp:
+                key = (run_data['layer_depth'], run_data['shots'], run_data['iterations'])
+                
+                if not key in average_dict:
+                    continue
+                
+                run_data['metric'] = average_dict[key]['total_metric'] / average_dict[key]['count']
+                del run_data["counts"]
+                del run_data["runtime"]
+                run_data_list.append(run_data)
+                
+                del average_dict[key]
+    
+        run_data_list.sort(key=lambda x: x["metric"], reverse=True)
         
-        return run_data_list[::-1]
+        if print_res:
+            self.print_rank_table(run_data_list, metric.__name__)
+    
+        return run_data_list
+
+    
+    def print_rank_table(self, run_data_list, metric_name):
+        """
+        Prints a nicely formatted table of the ranked runs.
+    
+        Parameters
+        ----------
+        run_data_list : list[dict]
+            List of dictionaries containing run data.
+        metric : function
+            Function to rank the run data
+    
+        """
+        header = ["Rank", metric_name, "Overall QV", "p", "QC depth", "QB count", "Shots", "Iterations"]
         
+        
+        # Print the header row
+        print("{:<5} {:<12} {:<12} {:<4} {:<10} {:<9} {:<7} {:<10}".format(*header))
+        print("============================================================================")
+        
+        for i, run_data in enumerate(run_data_list):
+            
+            oqv = sci_notation(overall_quantum_volume(run_data), 4)
+            metric_value = sci_notation(run_data["metric"], 3)
+            
+            
+            row = [i, metric_value, oqv, run_data["layer_depth"], run_data["circuit_depth"], run_data["qubit_amount"],
+                   run_data["shots"], run_data["iterations"]]
+            
+            # Print each row
+            print("{:<5} {:<12} {:<12} {:<4} {:<10} {:<9} {:<7} {:<10}".format(*row))
         
     def save(self, filename):
         """
@@ -500,8 +573,39 @@ def approximation_ratio(counts, optimal_solution, cost_function):
     """
     return cost_function(counts)/cost_function({optimal_solution: 1})
 
+def ilog(n, base):
+    """
+    Find the integer log of n with respect to the base.
 
+    >>> import math
+    >>> for base in range(2, 16 + 1):
+    ...     for n in range(1, 1000):
+    ...         assert ilog(n, base) == int(math.log(n, base) + 1e-10), '%s %s' % (n, base)
+    """
+    
+    if abs(n) < 1:
+        n = 1/n
+    
+    count = 0
+    while n >= base:
+        count += 1
+        n //= base
+    return count
 
+def sci_notation(n, prec=3):
+    """
+    Represent n in scientific notation, with the specified precision.
 
-
-        
+    >>> sci_notation(1234 * 10**1000)
+    '1.234e+1003'
+    >>> sci_notation(10**1000 // 2, prec=1)
+    '5.0e+999'
+    """
+    base = 10
+    exponent = ilog(n, base)
+    
+    if abs(n) < 1:
+        exponent = -exponent
+    
+    mantissa = n / base**exponent
+    return '{0:.{1}f}e{2:+d}'.format(mantissa, prec, exponent)

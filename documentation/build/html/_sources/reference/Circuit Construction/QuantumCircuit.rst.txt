@@ -36,6 +36,8 @@ Evaluating QuantumCircuits
    QuantumCircuit.run
    QuantumCircuit.statevector_array
    QuantumCircuit.depth
+   QuantumCircuit.t_depth
+   QuantumCircuit.cnot_depth
    QuantumCircuit.num_qubits
    QuantumCircuit.count_ops
    QuantumCircuit.get_unitary

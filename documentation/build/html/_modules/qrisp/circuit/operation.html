@@ -3,7 +3,7 @@
 <!DOCTYPE html>
 
 
-<html lang="en" data-theme="light">
+<html data-theme="light">
 
   <head>
     <meta charset="utf-8" />
@@ -18,39 +18,48 @@
   </script>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../_static/styles/theme.css?digest=e353d410970836974a52" rel="stylesheet" />
-<link href="../../../_static/styles/bootstrap.css?digest=e353d410970836974a52" rel="stylesheet" />
-<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+  <link href="../../../_static/styles/theme.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+<link href="../../../_static/styles/bootstrap.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=ac02cc09edc035673794" rel="stylesheet" />
 
   
-  <link href="../../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=e353d410970836974a52" rel="stylesheet" />
+  <link href="../../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=ac02cc09edc035673794" rel="stylesheet" />
   <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
 <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
 <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
 
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-thebe.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/css/custom.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/custom03.css" />
   
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=e353d410970836974a52" />
-<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52" />
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=ac02cc09edc035673794" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=ac02cc09edc035673794" />
+  <script src="../../../_static/vendor/fontawesome/6.1.2/js/all.min.js?digest=ac02cc09edc035673794"></script>
 
     <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
     <script src="../../../_static/doctools.js"></script>
-    <script src="../../../_static/sphinx_highlight.js"></script>
     <script src="../../../_static/clipboard.min.js"></script>
     <script src="../../../_static/copybutton.js"></script>
     <script src="../../../_static/design-tabs.js"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"
+const thebe_selector = "div.highlight"
+const thebe_selector_input = "pre"
+const thebe_selector_output = "span.go"
+</script>
+    <script async="async" src="../../../_static/sphinx-thebe.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/qrisp/circuit/operation';</script>
     <link rel="canonical" href="https://qrisp.eu/_modules/qrisp/circuit/operation.html" />
-    <link rel="icon" href="../../../_static/qrisp_favicon.png"/>
+    <link rel="shortcut icon" href="../../../_static/qrisp_favicon.png"/>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:language" content="None"/>
   </head>
   
   
@@ -59,6 +68,15 @@
   
   
   <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>
+    Back to top
+  </button>
+
   
   <input type="checkbox"
           class="sidebar-toggle"
@@ -135,7 +153,7 @@
   <ul class="bd-navbar-elements navbar-nav">
     
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../../../general/tutorial.html">
+                      <a class="nav-link nav-internal" href="../../../general/tutorial/index.html">
                         Tutorial
                       </a>
                     </li>
@@ -178,13 +196,15 @@
       
         <div class="navbar-item navbar-persistent--container">
           
-<script>
-document.write(`
-  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
-  </button>
-`);
-</script>
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
         </div>
       
       
@@ -199,7 +219,7 @@ document.write(`
           
           
           
-          <a href="https://github.com/fraunhoferfokus/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square fa-lg" aria-hidden="true"></i></span>
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square fa-lg" aria-hidden="true"></i></span>
             <span class="sr-only">GitHub</span></a>
         </li>
 </ul></div>
@@ -210,18 +230,20 @@ document.write(`
   
   
     <div class="navbar-persistent--mobile">
-<script>
-document.write(`
-  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
-  </button>
-`);
-</script>
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
     </div>
   
 
   
-    <label class="sidebar-toggle secondary-toggle" for="__secondary">
+    <label class="sidebar-toggle secondary-toggle" for="__secondary" tabindex="0">
       <span class="fa-solid fa-outdent"></span>
     </label>
   
@@ -251,7 +273,7 @@ document.write(`
   <ul class="bd-navbar-elements navbar-nav">
     
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../../../general/tutorial.html">
+                      <a class="nav-link nav-internal" href="../../../general/tutorial/index.html">
                         Tutorial
                       </a>
                     </li>
@@ -304,7 +326,7 @@ document.write(`
           
           
           
-          <a href="https://github.com/fraunhoferfokus/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square fa-lg" aria-hidden="true"></i></span>
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square fa-lg" aria-hidden="true"></i></span>
             <span class="sr-only">GitHub</span></a>
         </li>
 </ul></div>
@@ -357,8 +379,8 @@ document.write(`
 
 
 
-<nav aria-label="Breadcrumbs">
-  <ul class="bd-breadcrumbs" role="navigation" aria-label="Breadcrumb">
+<nav aria-label="Breadcrumb">
+  <ul class="bd-breadcrumbs">
     
     <li class="breadcrumb-item breadcrumb-home">
       <a href="../../../index.html" class="nav-link" aria-label="Home">
@@ -368,7 +390,7 @@ document.write(`
     
     <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
     
-    <li class="breadcrumb-item active" aria-current="page">qrisp.circuit.operation</li>
+    <li class="breadcrumb-item active" aria-current="page">qrisp.circui...</li>
   </ul>
 </nav>
 </div>
@@ -409,6 +431,7 @@ document.write(`
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">sympy.core.expr</span> <span class="kn">import</span> <span class="n">Expr</span>
+<span class="kn">from</span> <span class="nn">sympy</span> <span class="kn">import</span> <span class="n">lambdify</span>
 
 
 <span class="k">def</span> <span class="nf">adaptive_substitution</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">subs_dic</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
@@ -425,7 +448,7 @@ document.write(`
 <span class="c1"># Class that describes an operation which can be performed on a quantum computer</span>
 <span class="c1"># Example would be an X gate or a measurement</span>
 <div class="viewcode-block" id="Operation"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/Operation.html#qrisp.Operation">[docs]</a><span class="k">class</span> <span class="nc">Operation</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This class describes operations like quantum gates, measurements or classical logic</span>
 <span class="sd">    gates. Operation objects do not carry information about which Qubit/Clbits they are</span>
 <span class="sd">    applied to. This can be found in the Instruction class, which is a combination of an</span>
@@ -471,7 +494,6 @@ document.write(`
         <span class="n">num_clbits</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
         <span class="n">definition</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">params</span><span class="o">=</span><span class="p">[],</span>
-        <span class="n">unitary</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">init_op</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="k">if</span> <span class="n">init_op</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -506,9 +528,11 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">abstract_params</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([])</span>
 
         <span class="k">for</span> <span class="n">par</span> <span class="ow">in</span> <span class="n">params</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">par</span><span class="p">,</span> <span class="n">Expr</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">par</span><span class="p">,</span> <span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">floating</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)):</span>
+                <span class="k">pass</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">par</span><span class="p">,</span> <span class="n">Expr</span><span class="p">):</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">abstract_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">abstract_params</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">par</span><span class="o">.</span><span class="n">free_symbols</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">par</span><span class="p">,</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">floating</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">)):</span>
+            <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
                     <span class="sa">f</span><span class="s2">&quot;Tried to create operation with parameters of type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">par</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
                 <span class="p">)</span>
@@ -529,10 +553,6 @@ document.write(`
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">definition</span> <span class="o">=</span> <span class="kc">None</span>
 
-        <span class="c1"># If a unitary (numpy array) is given, save the unitary</span>
-        <span class="k">if</span> <span class="n">unitary</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">unitary</span> <span class="o">=</span> <span class="n">unitary</span>
-
         <span class="c1"># These attributes store some information for the uncomputation algorithm</span>
         <span class="c1"># Qfree basically means that the unitary is a permutation matrix</span>
         <span class="c1"># (up to local phase shifts). Permeability means that this gate commutes with</span>
@@ -541,7 +561,7 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">permeability</span> <span class="o">=</span> <span class="p">{</span><span class="n">i</span><span class="p">:</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_qubits</span><span class="p">)}</span>
 
 <div class="viewcode-block" id="Operation.copy"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.Operation.copy.html#qrisp.Operation.copy">[docs]</a>    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns a copy of the Operation object.</span>
 
 <span class="sd">        Returns</span>
@@ -567,7 +587,7 @@ document.write(`
     <span class="c1"># Rounding is usefull here because the floating point errors</span>
     <span class="c1"># sometimes make it hard to read the unitary</span>
 <div class="viewcode-block" id="Operation.get_unitary"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.Operation.get_unitary.html#qrisp.Operation.get_unitary">[docs]</a>    <span class="k">def</span> <span class="nf">get_unitary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">decimals</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns the unitary matrix (if applicable) of the Operation as a numpy array.</span>
 
 <span class="sd">        Parameters</span>
@@ -599,7 +619,8 @@ document.write(`
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;barrier&quot;</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">num_qubits</span><span class="p">)</span>
+            <span class="kn">from</span> <span class="nn">qrisp.simulator.unitary_management</span> <span class="kn">import</span> <span class="n">np_dtype</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">num_qubits</span><span class="p">,</span> <span class="n">dtype</span> <span class="o">=</span> <span class="n">np_dtype</span><span class="p">)</span>
 
         <span class="c1"># Check if the unitary is already available</span>
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;unitary&quot;</span><span class="p">):</span>
@@ -624,7 +645,7 @@ document.write(`
     <span class="c1"># Method to return the inverse of the given operation. Again, the methods of more</span>
     <span class="c1"># specific gate families are specified by the inheritors of this class</span>
 <div class="viewcode-block" id="Operation.inverse"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.Operation.inverse.html#qrisp.Operation.inverse">[docs]</a>    <span class="k">def</span> <span class="nf">inverse</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns the inverse of this Operation (if applicable).</span>
 
 <span class="sd">        Raises</span>
@@ -657,7 +678,12 @@ document.write(`
         <span class="c1"># Check if a definition is available and invert it, if so</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">definition</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">inverse_circ</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">definition</span><span class="o">.</span><span class="n">inverse</span><span class="p">()</span>
-            <span class="n">res</span> <span class="o">=</span> <span class="n">inverse_circ</span><span class="o">.</span><span class="n">to_op</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_dg&quot;</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">:]</span> <span class="o">==</span> <span class="s2">&quot;_dg&quot;</span><span class="p">:</span>
+                <span class="n">res</span> <span class="o">=</span> <span class="n">inverse_circ</span><span class="o">.</span><span class="n">to_op</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">[:</span><span class="o">-</span><span class="mi">3</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">res</span> <span class="o">=</span> <span class="n">inverse_circ</span><span class="o">.</span><span class="n">to_op</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_dg&quot;</span><span class="p">)</span>
+                
 
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;qb_alloc&quot;</span><span class="p">:</span>
             <span class="kn">from</span> <span class="nn">qrisp.circuit</span> <span class="kn">import</span> <span class="n">QubitDealloc</span>
@@ -667,6 +693,9 @@ document.write(`
             <span class="kn">from</span> <span class="nn">qrisp.circuit</span> <span class="kn">import</span> <span class="n">QubitAlloc</span>
 
             <span class="n">res</span> <span class="o">=</span> <span class="n">QubitAlloc</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;barrier&quot;</span><span class="p">:</span>
+
+            <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="c1"># Otherwise raise an error</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Don&#39;t know how to invert Operation &quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
@@ -678,7 +707,7 @@ document.write(`
 
     <span class="c1"># Method to create a controlled gate</span>
 <div class="viewcode-block" id="Operation.control"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.Operation.control.html#qrisp.Operation.control">[docs]</a>    <span class="k">def</span> <span class="nf">control</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_ctrl_qubits</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">ctrl_state</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns the controlled version of this Operation (if applicable).</span>
 
 <span class="sd">        Parameters</span>
@@ -715,14 +744,17 @@ document.write(`
 <span class="sd">        &gt;&gt;&gt; qc = QuantumCircuit(4)</span>
 <span class="sd">        &gt;&gt;&gt; qc.append(mcrx_gate, qc.qubits)</span>
 <span class="sd">        &gt;&gt;&gt; print(qc)</span>
-<span class="sd">        qb_4: ─────■─────</span>
-<span class="sd">                   │</span>
-<span class="sd">        qb_5: ─────■─────</span>
-<span class="sd">                   │</span>
-<span class="sd">        qb_6: ─────■─────</span>
-<span class="sd">              ┌────┴────┐</span>
-<span class="sd">        qb_7: ┤ Rx(0.5) ├</span>
-<span class="sd">              └─────────┘</span>
+<span class="sd">        </span>
+<span class="sd">        ::</span>
+<span class="sd">        </span>
+<span class="sd">            qb_4: ─────■─────</span>
+<span class="sd">                       │</span>
+<span class="sd">            qb_5: ─────■─────</span>
+<span class="sd">                       │</span>
+<span class="sd">            qb_6: ─────■─────</span>
+<span class="sd">                  ┌────┴────┐</span>
+<span class="sd">            qb_7: ┤ Rx(0.5) ├</span>
+<span class="sd">                  └─────────┘</span>
 
 
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -739,7 +771,7 @@ document.write(`
             <span class="n">res_num_ctrl_qubits</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">controls</span><span class="p">)</span>
         
         <span class="c1"># Check if the method is phase tolerant</span>
-        <span class="k">if</span> <span class="n">method</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;pt&quot;</span><span class="p">)</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span> <span class="ow">and</span> <span class="n">res_num_ctrl_qubits</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">method</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;pt&quot;</span><span class="p">)</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span> <span class="ow">or</span> <span class="n">method</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;gidney&quot;</span><span class="p">)</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="ow">and</span> <span class="n">res_num_ctrl_qubits</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
             
             <span class="k">return</span> <span class="n">PTControlledOperation</span><span class="p">(</span>
                 <span class="bp">self</span><span class="p">,</span> <span class="n">num_ctrl_qubits</span><span class="p">,</span> <span class="n">ctrl_state</span><span class="o">=</span><span class="n">ctrl_state</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="n">method</span>
@@ -759,7 +791,7 @@ document.write(`
         <span class="k">return</span> <span class="n">is_permeable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indices</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Operation.bind_parameters"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.Operation.bind_parameters.html#qrisp.Operation.bind_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">bind_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subs_dic</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Binds abstract parameters to specified values.</span>
 
 <span class="sd">        Parameters</span>
@@ -788,21 +820,35 @@ document.write(`
 <span class="sd">        &gt;&gt;&gt; bound_p_gate.params</span>
 <span class="sd">        [1.5]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
+        
+        
         <span class="n">new_params</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">)):</span>
-            <span class="n">new_params</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">adaptive_substitution</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">subs_dic</span><span class="p">))</span>
+        <span class="n">repl_args</span> <span class="o">=</span> <span class="p">[</span><span class="n">subs_dic</span><span class="p">[</span><span class="n">symb</span><span class="p">]</span> <span class="k">for</span> <span class="n">symb</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">abstract_params</span><span class="p">]</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;lambdified_params&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lambdified_params</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">args</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">abstract_params</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">par</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">lambdified_params</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lambdify</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">par</span><span class="p">,</span> <span class="n">modules</span> <span class="o">=</span> <span class="s2">&quot;numpy&quot;</span><span class="p">))</span>
+                
+            
+        <span class="k">for</span> <span class="n">l_par</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">lambdified_params</span><span class="p">:</span>
+            
+            <span class="n">new_params</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">l_par</span><span class="p">(</span><span class="o">*</span><span class="n">repl_args</span><span class="p">))</span>
+        
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">res</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">new_params</span>
 
-        <span class="n">temp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">new_params</span>
-        <span class="n">res</span> <span class="o">=</span> <span class="n">Operation</span><span class="p">(</span><span class="n">init_op</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">temp</span>
-
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">definition</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="n">res</span><span class="o">.</span><span class="n">definition</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">res</span><span class="o">.</span><span class="n">definition</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">definition</span><span class="o">.</span><span class="n">bind_parameters</span><span class="p">(</span><span class="n">subs_dic</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">res</span></div></div>
+        <span class="k">return</span> <span class="n">res</span></div>
+    
+    <span class="k">def</span> <span class="nf">c_if</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_control</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">ctrl_state</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">ctrl_state</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="n">ctrl_state</span> <span class="o">=</span> <span class="mi">2</span><span class="o">**</span><span class="n">num_control</span> <span class="o">-</span> <span class="mi">1</span>
 
+        <span class="k">return</span> <span class="n">ClControlledOperation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_control</span><span class="p">,</span> <span class="n">ctrl_state</span><span class="p">)</span></div>
 
 <span class="c1"># Class to describe 1-Qubit gates as unitaries of the form U(theta, phi, lam) =</span>
 <span class="c1"># = exp(-1j*phi/2*sigma_z) exp(-1j*theta/2*sigma_y) exp(-1j*lam/2*sigma_z)</span>
@@ -819,6 +865,9 @@ document.write(`
             <span class="n">definition</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">params</span><span class="o">=</span><span class="p">[</span><span class="n">theta</span><span class="p">,</span> <span class="n">phi</span><span class="p">,</span> <span class="n">lam</span><span class="p">],</span>
         <span class="p">)</span>
+        
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">global_phase</span><span class="p">,</span> <span class="n">Expr</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">abstract_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">abstract_params</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">global_phase</span><span class="o">.</span><span class="n">free_symbols</span><span class="p">)</span>
 
         <span class="c1"># Set parameters</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">theta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
@@ -893,42 +942,47 @@ document.write(`
 
             <span class="c1"># Generate unitary</span>
 
-            <span class="bp">self</span><span class="o">.</span><span class="n">unitary</span> <span class="o">=</span> <span class="n">u3matrix</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">theta</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">phi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">lam</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">global_phase</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">unitary</span> <span class="o">=</span> <span class="n">u3matrix</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">theta</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">phi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">lam</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">global_phase</span><span class="p">,</span> <span class="n">use_sympy</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">abstract_params</span><span class="p">)))</span>
 
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_unitary</span><span class="p">(</span><span class="n">decimals</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">bind_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subs_dic</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">U3Gate</span><span class="p">(</span>
-            <span class="n">adaptive_substitution</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">theta</span><span class="p">,</span> <span class="n">subs_dic</span><span class="p">),</span>
-            <span class="n">adaptive_substitution</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">phi</span><span class="p">,</span> <span class="n">subs_dic</span><span class="p">),</span>
-            <span class="n">adaptive_substitution</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lam</span><span class="p">,</span> <span class="n">subs_dic</span><span class="p">),</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
-            <span class="n">adaptive_substitution</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">global_phase</span><span class="p">,</span> <span class="n">subs_dic</span><span class="p">),</span>
-        <span class="p">)</span>
+        
+        <span class="n">new_params</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">repl_args</span> <span class="o">=</span> <span class="p">[</span><span class="n">subs_dic</span><span class="p">[</span><span class="n">symb</span><span class="p">]</span> <span class="k">for</span> <span class="n">symb</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">abstract_params</span><span class="p">]</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;lambdified_params&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lambdified_params</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">args</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">abstract_params</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">par</span> <span class="ow">in</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">theta</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">phi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">lam</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">global_phase</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">lambdified_params</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lambdify</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">par</span><span class="p">,</span> <span class="n">modules</span> <span class="o">=</span> <span class="s2">&quot;numpy&quot;</span><span class="p">))</span>
+                
+            
+        <span class="k">for</span> <span class="n">l_par</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">lambdified_params</span><span class="p">:</span>
+            
+            <span class="n">new_params</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">l_par</span><span class="p">(</span><span class="o">*</span><span class="n">repl_args</span><span class="p">))</span>
+        
+        <span class="k">return</span> <span class="n">U3Gate</span><span class="p">(</span><span class="n">new_params</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">new_params</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">new_params</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">new_params</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+        
+        <span class="c1"># return U3Gate(</span>
+        <span class="c1">#     adaptive_substitution(self.theta, subs_dic),</span>
+        <span class="c1">#     adaptive_substitution(self.phi, subs_dic),</span>
+        <span class="c1">#     adaptive_substitution(self.lam, subs_dic),</span>
+        <span class="c1">#     self.name,</span>
+        <span class="c1">#     adaptive_substitution(self.global_phase, subs_dic),</span>
+        <span class="c1"># )</span>
 
-    <span class="k">def</span> <span class="nf">c_if</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_clbits</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">value</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">value</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
-            <span class="n">value</span> <span class="o">=</span> <span class="mi">2</span><span class="o">**</span><span class="n">num_clbits</span> <span class="o">-</span> <span class="mi">1</span>
-
-        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-        <span class="n">res</span><span class="o">.</span><span class="n">num_clbits</span> <span class="o">+=</span> <span class="mi">1</span>
-        <span class="n">res</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;c_if_&quot;</span> <span class="o">+</span> <span class="n">res</span><span class="o">.</span><span class="n">name</span>
-        <span class="k">return</span> <span class="n">res</span>
 
 
-<span class="n">id_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">complex64</span><span class="p">)</span>
-
-<span class="n">pauli_x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">complex64</span><span class="p">)</span>
-<span class="n">pauli_y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]])</span> <span class="o">+</span> <span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]])</span>
-<span class="n">pauli_z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">complex64</span><span class="p">)</span>
 
 <span class="n">pi</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
-
 
 <span class="c1"># This class is special for pauli gates. In principle, we could also use the U3Gate</span>
 <span class="c1"># class, but this could lead to unneccessary floating point errors</span>
 <span class="k">class</span> <span class="nc">PauliGate</span><span class="p">(</span><span class="n">U3Gate</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="kn">from</span> <span class="nn">qrisp.simulator.unitary_management</span> <span class="kn">import</span> <span class="n">pauli_x</span><span class="p">,</span> <span class="n">pauli_y</span><span class="p">,</span> <span class="n">pauli_z</span>
+        
         <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;x&quot;</span><span class="p">:</span>
             <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">pi</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">pi</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">unitary</span> <span class="o">=</span> <span class="n">pauli_x</span>
@@ -964,7 +1018,19 @@ document.write(`
 
 
 <span class="c1"># This class describes phase tolerant controlled operations</span>
-<span class="c1"># Phase tolerant means that</span>
+<span class="c1"># Phase tolerant means that the unitary can take the form</span>
+<span class="c1"># [D_0, 0, 0, 0]</span>
+<span class="c1"># [0, D_1,0, 0]</span>
+<span class="c1"># [0, 0, D_2, 0]</span>
+<span class="c1"># [0, 0, 0, U]</span>
+<span class="c1">#Where U is the operation to be controlled and D_i are diagonal operators</span>
+
+<span class="c1">#For a regular controlled gate, all D_i have to be identity matrices.</span>
+
+<span class="c1">#Phase tolerant controlled operations are usally more efficient than their controlled equivalent.</span>
+
+<span class="c1">#In many cases, they can replace the controlled version without changing the semantics,</span>
+<span class="c1">#because the phases introduced by the D_i are uncomputed at some later point.</span>
 <span class="k">class</span> <span class="nc">PTControlledOperation</span><span class="p">(</span><span class="n">Operation</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_operation</span><span class="p">,</span> <span class="n">num_ctrl_qubits</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">ctrl_state</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">):</span>
         <span class="c1"># Object which describes the method. Can be a string lr a callable function</span>
@@ -1027,12 +1093,13 @@ document.write(`
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ctrl_state</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;0&quot;</span><span class="p">:</span>
                 <span class="n">definition_circ</span><span class="o">.</span><span class="n">x</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span>
 
-            <span class="n">definition_circ</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">temp_gate</span><span class="p">,</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_ctrl_qubits</span><span class="p">))</span>
+            <span class="n">definition_circ</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">temp_gate</span><span class="p">,</span> <span class="n">definition_circ</span><span class="o">.</span><span class="n">qubits</span><span class="p">[:</span><span class="n">num_ctrl_qubits</span><span class="p">])</span>
 
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ctrl_state</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;0&quot;</span><span class="p">:</span>
                 <span class="n">definition_circ</span><span class="o">.</span><span class="n">x</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span>
 
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_operation</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;gray_phase_gate&quot;</span><span class="p">:</span>
+            <span class="k">raise</span>
             <span class="kn">from</span> <span class="nn">qrisp.circuit</span> <span class="kn">import</span> <span class="n">multi_controlled_gray_circ</span>
 
             <span class="n">definition_circ</span><span class="p">,</span> <span class="n">target_phases</span> <span class="o">=</span> <span class="n">multi_controlled_gray_circ</span><span class="p">(</span>
@@ -1056,17 +1123,17 @@ document.write(`
         <span class="p">):</span>
             <span class="k">if</span> <span class="n">base_operation</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;x&quot;</span><span class="p">:</span>
                 <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-                    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;cx&quot;</span><span class="p">,</span> <span class="n">num_qubits</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">num_clbits</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="p">[],</span> <span class="n">unitary</span><span class="o">=</span><span class="kc">None</span>
+                    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;cx&quot;</span><span class="p">,</span> <span class="n">num_qubits</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">num_clbits</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="p">[]</span>
                 <span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">permeability</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span> <span class="kc">False</span><span class="p">}</span>
             <span class="k">elif</span> <span class="n">base_operation</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;y&quot;</span><span class="p">:</span>
                 <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-                    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;cy&quot;</span><span class="p">,</span> <span class="n">num_qubits</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">num_clbits</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="p">[],</span> <span class="n">unitary</span><span class="o">=</span><span class="kc">None</span>
+                    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;cy&quot;</span><span class="p">,</span> <span class="n">num_qubits</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">num_clbits</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="p">[]</span>
                 <span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">permeability</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span> <span class="kc">False</span><span class="p">}</span>
             <span class="k">elif</span> <span class="n">base_operation</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;z&quot;</span><span class="p">:</span>
                 <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-                    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;cz&quot;</span><span class="p">,</span> <span class="n">num_qubits</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">num_clbits</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="p">[],</span> <span class="n">unitary</span><span class="o">=</span><span class="kc">None</span>
+                    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;cz&quot;</span><span class="p">,</span> <span class="n">num_qubits</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">num_clbits</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="p">[]</span>
                 <span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">permeability</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
 
@@ -1077,7 +1144,7 @@ document.write(`
         <span class="c1"># object is callable, we generate the definition circuit from this function.</span>
         <span class="c1"># Otherwise we call the algorithm for generating controlled u3 gates</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">base_operation</span><span class="p">,</span> <span class="n">U3Gate</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">callable</span><span class="p">(</span><span class="n">method</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">method</span><span class="p">):</span>
                 <span class="n">definition_circ</span> <span class="o">=</span> <span class="n">method</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_ctrl_qubits</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ctrl_state</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="kn">from</span> <span class="nn">qrisp.circuit.controlled_operations</span> <span class="kn">import</span> <span class="n">multi_controlled_u3_circ</span>
@@ -1122,7 +1189,6 @@ document.write(`
             <span class="n">num_clbits</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
             <span class="n">definition</span><span class="o">=</span><span class="n">definition_circ</span><span class="p">,</span>
             <span class="n">params</span><span class="o">=</span><span class="n">base_operation</span><span class="o">.</span><span class="n">params</span><span class="p">,</span>
-            <span class="n">unitary</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="p">)</span>
 
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_qubits</span><span class="p">):</span>
@@ -1161,18 +1227,10 @@ document.write(`
 
     <span class="k">def</span> <span class="nf">bind_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subs_dic</span><span class="p">):</span>
         <span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">copy</span>
-
         <span class="n">res</span> <span class="o">=</span> <span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">definition</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">)):</span>
             <span class="n">res</span><span class="o">.</span><span class="n">definition</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">definition</span><span class="o">.</span><span class="n">bind_parameters</span><span class="p">(</span><span class="n">subs_dic</span><span class="p">)</span>
         <span class="n">res</span><span class="o">.</span><span class="n">base_operation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_operation</span><span class="o">.</span><span class="n">bind_parameters</span><span class="p">(</span><span class="n">subs_dic</span><span class="p">)</span>
-
-        <span class="n">res</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">subs_dic</span><span class="p">:</span>
-                <span class="n">res</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">subs_dic</span><span class="p">[</span><span class="n">p</span><span class="p">])</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">res</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">res</span>
 
@@ -1221,9 +1279,38 @@ document.write(`
 
             <span class="bp">self</span><span class="o">.</span><span class="n">unitary</span> <span class="o">=</span> <span class="n">controlled_unitary</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_unitary</span><span class="p">(</span><span class="n">decimals</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">ClControlledOperation</span><span class="p">(</span><span class="n">Operation</span><span class="p">):</span>
+    
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_op</span><span class="p">,</span> <span class="n">num_control</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">ctrl_state</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+        
+        <span class="k">if</span> <span class="n">ctrl_state</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="n">ctrl_state</span> <span class="o">=</span> <span class="n">num_control</span><span class="o">*</span><span class="s2">&quot;1&quot;</span>
+        
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ctrl_state</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="kn">from</span> <span class="nn">qrisp.misc</span> <span class="kn">import</span> <span class="n">bin_rep</span>
+            <span class="n">ctrl_state</span> <span class="o">=</span> <span class="n">bin_rep</span><span class="p">(</span><span class="n">ctrl_state</span><span class="p">,</span> <span class="n">num_control</span><span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">base_op</span> <span class="o">=</span> <span class="n">base_op</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_control</span> <span class="o">=</span> <span class="n">num_control</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ctrl_state</span> <span class="o">=</span> <span class="n">ctrl_state</span>
+        
+        <span class="n">Operation</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> 
+                           <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;c_if_&quot;</span> <span class="o">+</span> <span class="n">base_op</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> 
+                           <span class="n">num_qubits</span> <span class="o">=</span> <span class="n">base_op</span><span class="o">.</span><span class="n">num_qubits</span><span class="p">,</span>
+                           <span class="n">num_clbits</span> <span class="o">=</span> <span class="n">base_op</span><span class="o">.</span><span class="n">num_clbits</span> <span class="o">+</span> <span class="n">num_control</span><span class="p">,</span>
+                           <span class="n">params</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">base_op</span><span class="o">.</span><span class="n">params</span><span class="p">))</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">permeability</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">base_op</span><span class="o">.</span><span class="n">permeability</span><span class="p">)</span>
+        
+        
+        
 </pre></div>
 
                 </article>
+              
+              
               
               
               
@@ -1244,6 +1331,20 @@ document.write(`
   </div>
 </div>
 
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
 </div></div>
               
             
@@ -1257,8 +1358,8 @@ document.write(`
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script src="../../../_static/scripts/bootstrap.js?digest=e353d410970836974a52"></script>
-<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52"></script>
+  <script src="../../../_static/scripts/bootstrap.js?digest=ac02cc09edc035673794"></script>
+<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=ac02cc09edc035673794"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -1276,7 +1377,7 @@ document.write(`
       
         <div class="footer-item">
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 6.2.1.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 4.5.0.
     <br/>
   </p>
 </div>
@@ -1284,10 +1385,11 @@ document.write(`
     </div>
   
   
+  
     <div class="footer-items__end">
       
         <div class="footer-item"><p class="theme-version">
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.13.4dev0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.14.1.
 </p></div>
       
     </div>

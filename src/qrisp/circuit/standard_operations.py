@@ -146,51 +146,63 @@ def RXXGate(phi=0):
     from qrisp.circuit.quantum_circuit import QuantumCircuit
 
     qc = QuantumCircuit(2)
-    qc.gphase(-phi / 2, 0)
-    qc.h(0)
-    qc.h(1)
-    qc.cx(0, 1)
-    qc.p(phi, 1)
-    qc.cx(0, 1)
-    qc.h(0)
-    qc.h(1)
+    qc.gphase(-phi / 2, qc.qubits[0])
+    qc.h(qc.qubits[0])
+    qc.h(qc.qubits[1])
+    qc.cx(qc.qubits[0], qc.qubits[1])
+    qc.p(phi, qc.qubits[1])
+    qc.cx(qc.qubits[0], qc.qubits[1])
+    qc.h(qc.qubits[0])
+    qc.h(qc.qubits[1])
 
-    return Operation(
+    res =  Operation(
         name="rxx", num_qubits=2, num_clbits=0, params=[phi], definition=qc
     )
+    
+    res.permeability = {0 : False, 1 : False}
+    res.is_qfree = False
+    
+    return res
 
 
 def RZZGate(phi=0):
     from qrisp.circuit.quantum_circuit import QuantumCircuit
 
     qc = QuantumCircuit(2)
-    qc.gphase(-phi / 2, 0)
-    qc.cx(0, 1)
-    qc.p(phi, 1)
-    qc.cx(0, 1)
-
-    return Operation(
+    qc.cx(qc.qubits[0], qc.qubits[1])
+    qc.gphase(-phi / 2, qc.qubits[0])
+    qc.p(phi, qc.qubits[1])
+    qc.cx(qc.qubits[0], qc.qubits[1])
+    
+    res = Operation(
         name="rzz", num_qubits=2, num_clbits=0, params=[phi], definition=qc
     )
+    
+    res.permeability = {0 : True, 1 : True}
+    res.is_qfree = True
+
+    return res
 
 def XXYYGate(phi=0, beta=0):
     from qrisp.circuit.quantum_circuit import QuantumCircuit
 
     qc = QuantumCircuit(2)
-    qc.rz(beta, 0)
-    qc.rz(-np.pi/2, 1)
-    qc.sx(1)
-    qc.rz(np.pi/2, 1)
-    qc.s(0)
-    qc.cx(1,0)
-    qc.ry(-phi/2, 1)
-    qc.ry(-phi/2, 0)
-    qc.cx(1,0)
-    qc.s_dg(0)
-    qc.rz(-np.pi/2,1)
-    qc.sx_dg(1)
-    qc.rz(np.pi/2,1)
-    qc.rz(-beta,0)
+    
+    
+    qc.rz(beta, qc.qubits[0])
+    qc.rz(-np.pi/2, qc.qubits[1])
+    qc.sx(qc.qubits[1])
+    qc.rz(np.pi/2, qc.qubits[1])
+    qc.s(qc.qubits[0])
+    qc.cx(qc.qubits[1],qc.qubits[0])
+    qc.ry(-phi/2, qc.qubits[1])
+    qc.ry(-phi/2, qc.qubits[0])
+    qc.cx(qc.qubits[1],qc.qubits[0])
+    qc.s_dg(qc.qubits[0])
+    qc.rz(-np.pi/2,qc.qubits[1])
+    qc.sx_dg(qc.qubits[1])
+    qc.rz(np.pi/2,qc.qubits[1])
+    qc.rz(-beta,qc.qubits[0])
 
     return Operation(
         name="xxyy", num_qubits=2, num_clbits=0, params=[phi,beta], definition=qc
@@ -213,6 +225,10 @@ def U1Gate(phi=0):
     res = RZGate(phi)
     res.name = "u1"
     res.params = [phi]
+    
+    res.permeability = {0 : True}
+    res.is_qfree = True
+    
     return res
 
 
@@ -226,6 +242,10 @@ def SXGate():
     res = RXGate(np.pi / 2)
     res.name = "sx"
     res.params = []
+    
+    res.permeability = {0 : False}
+    res.is_qfree = False
+    
     return res
 
 
@@ -233,6 +253,10 @@ def SXDGGate():
     res = RXGate(-np.pi / 2)
     res.name = "sx_dg"
     res.params = []
+    
+    res.permeability = {0 : False}
+    res.is_qfree = False
+    
     return res
 
 
@@ -240,13 +264,16 @@ def SwapGate():
     from qrisp.circuit.quantum_circuit import QuantumCircuit
 
     temp_qc = QuantumCircuit(2)
-    temp_qc.cx(0, 1)
-    temp_qc.cx(1, 0)
-    temp_qc.cx(0, 1)
+    temp_qc.cx(temp_qc.qubits[0], temp_qc.qubits[1])
+    temp_qc.cx(temp_qc.qubits[1], temp_qc.qubits[0])
+    temp_qc.cx(temp_qc.qubits[0], temp_qc.qubits[1])
 
     res = temp_qc.to_gate(name="swap")
 
     res.inverse = types.MethodType(lambda self: self.copy(), res)
+    
+    res.permeability = {0 : False, 1 : False}
+    res.is_qfree = True
 
     return res
 

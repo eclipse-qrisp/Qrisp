@@ -8,7 +8,7 @@ This tutorial will teach you how to build and utilize channelled constrained mix
 Constraints in QAOA
 -------------------
 
-Real-world applications of combinatoric optimization often come with a variety of constraints. One of the most prominent use-cases of QAOA is portfolio optimization. In this problem, a set of binary decision variables $x = (x_0, .. x_N)$ is given, indicating wether a certain stock should be in the portfolio. The goal is to find the vector $x$ which minimizes the following quantity:
+Real-world applications of combinatorial optimization often come with a variety of constraints. One of the most prominent use-cases of QAOA is portfolio optimization. In this problem, a set of binary decision variables $x = (x_0, .. x_N)$ is given, indicating whether a certain stock should be in the portfolio. The goal is to find the vector $x$ which minimizes the following quantity:
 
 .. math::
 
@@ -36,8 +36,8 @@ How do we usually incorporate these constrains in QAOA? Since QAOA is an approxi
 Where $g(x) = 1$ if $x$ is forbidden by the constraints and $0$ otherwise. This approach however comes with several disadvantages:
 
 * Compared to a classical algorithm, the quantum algorithm has a much larger search space because it also has to search through the forbidden states.
-* It is not clear how to choose $\lambda$. This parameter needs to be big enough, such that forbidden states are effectively surpressed but small enough such that the hardware precision can still "resolve" the contrast in the actual cost function.
-* Forbidden have a non-zero probability of appearing as a solution, reducing the overall effciency of the algorithm.
+* It is not clear how to choose $\lambda$. This parameter needs to be big enough, such that forbidden states are effectively suppressed but small enough such that the hardware precision can still "resolve" the contrast in the actual cost function.
+* Forbidden states have a non-zero probability of appearing as a solution, reducing the overall effciency of the algorithm.
 
 Constrained Mixers
 ------------------
@@ -78,7 +78,7 @@ Assume that there is a quantum circuit $U_f$ preparing $\ket{\psi_f}$ (a general
 
     U_f \ket{0} = \ket{\psi_f}
     
-We now :ref:`conjugate <ConjugationEnvironment>` a multi-controlled Phase-Gate controlled on the $\ket{0}$ state with $U_F$. This yields the following unitary:
+We now :ref:`conjugate <ConjugationEnvironment>` a multi-controlled Phase-Gate controlled on the $\ket{0}$ state with $U_f$. This yields the following unitary:
 
 .. math::
     
@@ -259,7 +259,7 @@ These operators have a similar purpose as the preparation circuit in the mono-ch
     
     \begin{align}
     V_f^i \ket{x_i} = \ket{\psi_f^i}\\
-    V_f^j \ket{x_i} = 0 \forall i \neq j\\
+    V_f^j \ket{x_i} = 0 \quad \forall i \neq j\\
     \end{align}
     
     
@@ -291,7 +291,7 @@ Note that this construction indeed satisfies the requirement that $V_f$ can be e
 
 .. math::
 
-    V_f = U_f \otimes 1 = \bigoplus_{i = 0}^{m-1} U_f
+    V_f = U_f \otimes 1_{m \times m} = \bigoplus_{i = 0}^{m-1} U_f
 
 To begin with the implementation, we first use the :meth:`as_hamiltonian <qrisp.as_hamiltonian>` decorator to implement the hamiltonian evolution:
 

@@ -42,9 +42,6 @@ class VirtualBackend(BackendClient):
         A name for the virtual backend. The default is None.
     port : int, optional
         The port on which to listen. The default is None.
-    ping_func : TYPE, optional
-        A function which returns a BackendStatus object. The default is None.
-
 
     Examples
     --------
@@ -53,11 +50,12 @@ class VirtualBackend(BackendClient):
     We set up a VirtualBackend, which prints the received QuantumCircuit and returns the
     results of the QASM simulator. ::
 
-        from qrisp.interface import convert_to_qiskit
 
-        def run_func(qc, shots, token = ""):
-
-            qiskit_qc = convert_to_qiskit(qc)
+        def run_func(qasm_str, shots, token = ""):
+            
+            from qiskit import QuantumCircuit
+            
+            qiskit_qc = QuantumCircuit.from_qasm_str(qasm_str)
 
             print(qiskit_qc)
 
@@ -90,23 +88,19 @@ class VirtualBackend(BackendClient):
 
     """
 
-    def __init__(self, run_func, name=None, port=None, ping_func=None):
-        if name is None:
-            name = "virtual_quantum_backend"
-        else:
-            name = "virtual_quantum_backend_" + name
+    def __init__(self, run_func, port=None):
 
         from qrisp.interface import BackendServer
 
         # Create BackendServer
         self.backend_server = BackendServer(
-            run_func, "::1", port=port, name=name, ping_func=ping_func
+            run_func, "127.0.0.1", port=port
         )
         # Run the server (runs in the background)
         self.backend_server.start()
         # Connect client
 
-        super().__init__(socket_ip="::1", port=port)
+        super().__init__(api_endpoint="127.0.0.1", port=port)
 
     def run(self, qc, shots, token=""):
         """
@@ -125,19 +119,7 @@ class VirtualBackend(BackendClient):
             A dictionary containing the measurement results.
 
         """
-        return super().run(qc, shots, token)
-
-    def ping(self):
-        """
-        Executes the function ping_func specified at object creation.
-
-
-        Returns
-        -------
-        res : BackendStatus object
-
-        """
-        return super().ping()
+        return super().run(qc, shots)
 
 
 class VirtualQiskitBackend(VirtualBackend):
@@ -181,11 +163,11 @@ class VirtualQiskitBackend(VirtualBackend):
             backend = Aer.get_backend("qasm_simulator")
 
         # Create the run method
-        def run(qc, shots, token):
+        def run(qasm_str, shots, token = ""):
             # Convert to qiskit
-            from qrisp.interface.circuit_converter import convert_circuit
+            from qiskit import QuantumCircuit
 
-            qiskit_qc = convert_circuit(qc, "qiskit", transpile=True)
+            qiskit_qc = QuantumCircuit.from_qasm_str(qasm_str)
 
             from qiskit import transpile
 
@@ -202,58 +184,13 @@ class VirtualQiskitBackend(VirtualBackend):
 
             return result_dic
 
-        # Create the ping method
-        def ping():
-            # Collect information about backend to create BackendStatus object
-
-            config = backend.configuration()
-
-            # Information about Qubits and their conznectivity
-            from qrisp.interface import ConnectivityEdge, PortableQubit
-
-            qubit_list = []
-            for i in range(config.n_qubits):
-                qubit_list.append(PortableQubit(str(i)))
-
-            connectivity_map = []
-
-            if config.coupling_map:
-                for edge in config.coupling_map:
-                    connectivity_map.append(
-                        ConnectivityEdge(qubit_list[edge[0]], qubit_list[edge[1]])
-                    )
-
-            # Information about elementary gates
-            from qrisp.circuit.standard_operations import op_list
-
-            # TO-DO fix elementary ops
-            for gate_name in config.basis_gates:
-                for op in op_list:
-                    if op().name == gate_name:
-                        pass
-                        # elementary_ops.append(op())
-
-            elementary_ops = []
-            from qrisp.interface import BackendStatus
-
-            # Create BackendStatus object
-            backend_status = BackendStatus(
-                name=config.backend_name,
-                qubit_list=qubit_list,
-                elementary_ops=elementary_ops,
-                connectivity_map=connectivity_map,
-                online=True,
-            )
-
-            return backend_status
-
         # Call VirtualBackend constructor
         if isinstance(backend.name, str):
             name = backend.name
         else:
             name = backend.name()
 
-        super().__init__(run, name=name, ping_func=ping, port=port)
+        super().__init__(run, port=port)
 
 
 class QiskitRuntimeBackend(VirtualBackend):
@@ -292,9 +229,6 @@ class QiskitRuntimeBackend(VirtualBackend):
 
     """
 
-
-    from qiskit_ibm_runtime import QiskitRuntimeService,Sampler,Session,Estimator
-
     def __init__(self, backend=None, port=8079, token=''):
         from qiskit_ibm_runtime import QiskitRuntimeService,Sampler,Session,Estimator
 
@@ -309,11 +243,10 @@ class QiskitRuntimeBackend(VirtualBackend):
         sampler = Sampler(session=session)
 
         # Create the run method
-        def run(qc, shots, token):
+        def run(qasm_str, shots, token = ""):
             # Convert to qiskit
-            from qrisp.interface.circuit_converter import convert_circuit
-
-            qiskit_qc = convert_circuit(qc, "qiskit", transpile=True)
+            from qiskit import QuantumCircuit
+            qiskit_qc = QuantumCircuit.from_qasm_str(qasm_str)
 
             from qiskit import transpile
 
@@ -332,58 +265,7 @@ class QiskitRuntimeBackend(VirtualBackend):
             
             return result_dic
 
-        # Create the ping method
-        def ping():
-            # Collect information about backend to create BackendStatus object
-
-            config = backend.configuration()
-
-            # Information about Qubits and their conznectivity
-            from qrisp.interface import ConnectivityEdge, PortableQubit
-
-            qubit_list = []
-            for i in range(config.n_qubits):
-                qubit_list.append(PortableQubit(str(i)))
-
-            connectivity_map = []
-
-            if config.coupling_map:
-                for edge in config.coupling_map:
-                    connectivity_map.append(
-                        ConnectivityEdge(qubit_list[edge[0]], qubit_list[edge[1]])
-                    )
-
-            # Information about elementary gates
-            from qrisp.circuit.standard_operations import op_list
-
-            # TO-DO fix elementary ops
-            for gate_name in config.basis_gates:
-                for op in op_list:
-                    if op().name == gate_name:
-                        pass
-                        # elementary_ops.append(op())
-
-            elementary_ops = []
-            from qrisp.interface import BackendStatus
-
-            # Create BackendStatus object
-            backend_status = BackendStatus(
-                name=config.backend_name,
-                qubit_list=qubit_list,
-                elementary_ops=elementary_ops,
-                connectivity_map=connectivity_map,
-                online=True,
-            )
-
-            return backend_status
-
-        # Call VirtualBackend constructor
-        if isinstance(backend.name, str):
-            name = backend.name
-        else:
-            name = backend.name()
-
-        super().__init__(run, name=name, ping_func=ping, port=port)
+        super().__init__(run, port=port)
 
     def close_session(self): 
         """

@@ -28,6 +28,9 @@ G = nx.Graph()
 # Add edges to the graph
 G.add_edges_from([[0,3],[0,4],[1,3],[1,4],[2,3],[2,4]])
 
+n = 21
+
+G = nx.random_regular_graph(4, n, seed=None)
 def cl_cost_function(counts):
     """
     The cl_cost_function provides the definition of the classical cost function for
@@ -159,7 +162,7 @@ import time
 
 # Creates a MaxCut problem instance using the information of the phase separator, mixer, and classical cost function
 maxcut_instance = QAOAProblem(cost_operator, RX_mixer, cl_cost_function)
-
+#%%
 start_time = time.time()
 
 # Run QAOA with given quantum arguments, depth, measurement keyword arguments and maximum iterations for optimization
@@ -169,7 +172,6 @@ res = maxcut_instance.run(qarg, depth, mes_kwargs={"backend" : qaoa_backend}, ma
 print(time.time()-start_time)
 #if qiskit runtime
 # qaoa_backend.close_session() 
-
 
 # Get the best solution and print it
 best_cut, best_solution = min([(maxcut_obj(x,G),x) for x in res.keys()], key=itemgetter(0))

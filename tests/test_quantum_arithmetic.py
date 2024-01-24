@@ -90,6 +90,24 @@ def test_quantum_arithmetic():
             [[[[0, 1], [0, 0]], [[1, 0], [0, 0]]], [[[0, 0], [0, 1]], [[0, 0], [1, 0]]]]
         ): 1.0
     }
+    
+        
+    qfloat_type = QuantumFloat(3, -2, signed = True)
+    num_qubits = 4
+    statevector = QuantumArray(shape = 2**num_qubits, qtype = qfloat_type)
+    statevector[:] = [1/(2**num_qubits)**0.5]*2**num_qubits
+    print(statevector)
+    z_gate = QuantumArray(shape = (2,2), qtype = qfloat_type)
+    z_gate[:] = [[1,0], [0,-1]]
+    print(z_gate)
+    
+    statevector = statevector.reshape(num_qubits*[2])
+    target_qubit = 3
+    new_statevector = tensordot(z_gate, statevector, (1, target_qubit))
+    new_statevector = new_statevector.reshape(2**num_qubits)
+    # assert new_statevector.get_measurement() == {OutcomeArray([ 0.25,  0.25,  0.25,  0.25,  0.25,  0.25,  0.25,  0.25,
+    #               -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25]): 1.0}
+    
 
     # Test inplace multiplication
     b = QuantumFloat(5, signed=True)

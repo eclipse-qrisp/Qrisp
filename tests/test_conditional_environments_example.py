@@ -54,7 +54,7 @@ def test_conditional_environments_example():
         h(q_array[0][0])
 
         with q_array[0] == -0.5:
-            q_array[2].encode(-0.5)
+            q_array[2].encode(-0.5, permit_dirtyness = True)
             q_array[1] -= -1
             with q_array[1] == 1:
                 q_array[3].init_from(q_array[2])

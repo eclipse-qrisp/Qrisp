@@ -3,7 +3,7 @@
 <!DOCTYPE html>
 
 
-<html lang="en" data-theme="light">
+<html data-theme="light">
 
   <head>
     <meta charset="utf-8" />
@@ -18,39 +18,48 @@
   </script>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../_static/styles/theme.css?digest=e353d410970836974a52" rel="stylesheet" />
-<link href="../../../_static/styles/bootstrap.css?digest=e353d410970836974a52" rel="stylesheet" />
-<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+  <link href="../../../_static/styles/theme.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+<link href="../../../_static/styles/bootstrap.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=ac02cc09edc035673794" rel="stylesheet" />
 
   
-  <link href="../../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=e353d410970836974a52" rel="stylesheet" />
+  <link href="../../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=ac02cc09edc035673794" rel="stylesheet" />
   <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
 <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
 <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
 
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-thebe.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/css/custom.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/custom03.css" />
   
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=e353d410970836974a52" />
-<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52" />
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=ac02cc09edc035673794" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=ac02cc09edc035673794" />
+  <script src="../../../_static/vendor/fontawesome/6.1.2/js/all.min.js?digest=ac02cc09edc035673794"></script>
 
     <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
     <script src="../../../_static/doctools.js"></script>
-    <script src="../../../_static/sphinx_highlight.js"></script>
     <script src="../../../_static/clipboard.min.js"></script>
     <script src="../../../_static/copybutton.js"></script>
     <script src="../../../_static/design-tabs.js"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"
+const thebe_selector = "div.highlight"
+const thebe_selector_input = "pre"
+const thebe_selector_output = "span.go"
+</script>
+    <script async="async" src="../../../_static/sphinx-thebe.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/qrisp/circuit/quantum_circuit';</script>
     <link rel="canonical" href="https://qrisp.eu/_modules/qrisp/circuit/quantum_circuit.html" />
-    <link rel="icon" href="../../../_static/qrisp_favicon.png"/>
+    <link rel="shortcut icon" href="../../../_static/qrisp_favicon.png"/>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:language" content="None"/>
   </head>
   
   
@@ -59,6 +68,15 @@
   
   
   <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>
+    Back to top
+  </button>
+
   
   <input type="checkbox"
           class="sidebar-toggle"
@@ -135,7 +153,7 @@
   <ul class="bd-navbar-elements navbar-nav">
     
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../../../general/tutorial.html">
+                      <a class="nav-link nav-internal" href="../../../general/tutorial/index.html">
                         Tutorial
                       </a>
                     </li>
@@ -178,13 +196,15 @@
       
         <div class="navbar-item navbar-persistent--container">
           
-<script>
-document.write(`
-  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
-  </button>
-`);
-</script>
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
         </div>
       
       
@@ -199,7 +219,7 @@ document.write(`
           
           
           
-          <a href="https://github.com/fraunhoferfokus/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square fa-lg" aria-hidden="true"></i></span>
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square fa-lg" aria-hidden="true"></i></span>
             <span class="sr-only">GitHub</span></a>
         </li>
 </ul></div>
@@ -210,18 +230,20 @@ document.write(`
   
   
     <div class="navbar-persistent--mobile">
-<script>
-document.write(`
-  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
-  </button>
-`);
-</script>
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
     </div>
   
 
   
-    <label class="sidebar-toggle secondary-toggle" for="__secondary">
+    <label class="sidebar-toggle secondary-toggle" for="__secondary" tabindex="0">
       <span class="fa-solid fa-outdent"></span>
     </label>
   
@@ -251,7 +273,7 @@ document.write(`
   <ul class="bd-navbar-elements navbar-nav">
     
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../../../general/tutorial.html">
+                      <a class="nav-link nav-internal" href="../../../general/tutorial/index.html">
                         Tutorial
                       </a>
                     </li>
@@ -304,7 +326,7 @@ document.write(`
           
           
           
-          <a href="https://github.com/fraunhoferfokus/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square fa-lg" aria-hidden="true"></i></span>
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square fa-lg" aria-hidden="true"></i></span>
             <span class="sr-only">GitHub</span></a>
         </li>
 </ul></div>
@@ -357,8 +379,8 @@ document.write(`
 
 
 
-<nav aria-label="Breadcrumbs">
-  <ul class="bd-breadcrumbs" role="navigation" aria-label="Breadcrumb">
+<nav aria-label="Breadcrumb">
+  <ul class="bd-breadcrumbs">
     
     <li class="breadcrumb-item breadcrumb-home">
       <a href="../../../index.html" class="nav-link" aria-label="Home">
@@ -368,7 +390,7 @@ document.write(`
     
     <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
     
-    <li class="breadcrumb-item active" aria-current="page">qrisp.circuit.quantum_circuit</li>
+    <li class="breadcrumb-item active" aria-current="page">qrisp.circui...</li>
   </ul>
 </nav>
 </div>
@@ -407,9 +429,10 @@ document.write(`
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">sympy</span>
+<span class="kn">from</span> <span class="nn">numba</span> <span class="kn">import</span> <span class="n">njit</span>
 
 <span class="kn">import</span> <span class="nn">qrisp.circuit.standard_operations</span> <span class="k">as</span> <span class="nn">ops</span>
-<span class="kn">from</span> <span class="nn">qrisp.circuit</span> <span class="kn">import</span> <span class="n">Clbit</span><span class="p">,</span> <span class="n">Instruction</span><span class="p">,</span> <span class="n">Operation</span><span class="p">,</span> <span class="n">Qubit</span>
+<span class="kn">from</span> <span class="nn">qrisp.circuit</span> <span class="kn">import</span> <span class="n">Clbit</span><span class="p">,</span> <span class="n">Instruction</span><span class="p">,</span> <span class="n">Operation</span><span class="p">,</span> <span class="n">Qubit</span><span class="p">,</span> <span class="n">ClControlledOperation</span>
 
 <span class="c1"># Class to describe quantum circuits</span>
 <span class="c1"># The naming of the attributes is rather similar to the qiskit equivalent</span>
@@ -422,7 +445,7 @@ document.write(`
 
 
 <div class="viewcode-block" id="QuantumCircuit"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/QuantumCircuit.html#qrisp.QuantumCircuit">[docs]</a><span class="k">class</span> <span class="nc">QuantumCircuit</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This class describes quantum circuits. Many of the attribute and method names are</span>
 <span class="sd">    oriented at the `Qiskit QuantumCircuit</span>
 <span class="sd">    &lt;https://qiskit.org/documentation/stubs/qiskit.circuit.QuantumCircuit.html&gt;`_ class</span>
@@ -455,14 +478,18 @@ document.write(`
 <span class="sd">    &gt;&gt;&gt; qc_0 = QuantumCircuit(4, name = &quot;fan out&quot;)</span>
 <span class="sd">    &gt;&gt;&gt; qc_0.cx(0, range(1,4))</span>
 <span class="sd">    &gt;&gt;&gt; print(qc_0)</span>
-<span class="sd">    qb_0: ──■────■────■──</span>
-<span class="sd">          ┌─┴─┐  │    │</span>
-<span class="sd">    qb_1: ┤ X ├──┼────┼──</span>
-<span class="sd">          └───┘┌─┴─┐  │</span>
-<span class="sd">    qb_2: ─────┤ X ├──┼──</span>
-<span class="sd">               └───┘┌─┴─┐</span>
-<span class="sd">    qb_3: ──────────┤ X ├</span>
-<span class="sd">                    └───┘</span>
+<span class="sd">    </span>
+<span class="sd">    </span>
+<span class="sd">    ::</span>
+<span class="sd">    </span>
+<span class="sd">        qb_0: ──■────■────■──</span>
+<span class="sd">              ┌─┴─┐  │    │</span>
+<span class="sd">        qb_1: ┤ X ├──┼────┼──</span>
+<span class="sd">              └───┘┌─┴─┐  │</span>
+<span class="sd">        qb_2: ─────┤ X ├──┼──</span>
+<span class="sd">                   └───┘┌─┴─┐</span>
+<span class="sd">        qb_3: ──────────┤ X ├</span>
+<span class="sd">                        └───┘</span>
 
 <span class="sd">    Note that the :meth:`cx gate appending method &lt;qrisp.QuantumCircuit.cx&gt;` (like all</span>
 <span class="sd">    other gate appending methods) can be called with integers, Qubit objects,</span>
@@ -475,36 +502,43 @@ document.write(`
 <span class="sd">    &gt;&gt;&gt; qc_1.h(0)</span>
 <span class="sd">    &gt;&gt;&gt; qc_1.append(qc_0.to_gate(), qc_1.qubits)</span>
 <span class="sd">    &gt;&gt;&gt; print(qc_1)</span>
-<span class="sd">          ┌───┐┌──────────┐</span>
-<span class="sd">    qb_4: ┤ H ├┤0         ├</span>
-<span class="sd">          └───┘│          │</span>
-<span class="sd">    qb_5: ─────┤1         ├</span>
-<span class="sd">               │  fan out │</span>
-<span class="sd">    qb_6: ─────┤2         ├</span>
-<span class="sd">               │          │</span>
-<span class="sd">    qb_7: ─────┤3         ├</span>
-<span class="sd">               └──────────┘</span>
+<span class="sd">    </span>
+<span class="sd">    ::</span>
+<span class="sd">        </span>
+<span class="sd">              ┌───┐┌──────────┐</span>
+<span class="sd">        qb_4: ┤ H ├┤0         ├</span>
+<span class="sd">              └───┘│          │</span>
+<span class="sd">        qb_5: ─────┤1         ├</span>
+<span class="sd">                   │  fan out │</span>
+<span class="sd">        qb_6: ─────┤2         ├</span>
+<span class="sd">                   │          │</span>
+<span class="sd">        qb_7: ─────┤3         ├</span>
+<span class="sd">                   └──────────┘</span>
 
 <span class="sd">    Finally, we add a measurement and evaluate the circuit:</span>
 
 <span class="sd">    &gt;&gt;&gt; qc_1.measure(qc_1.qubits)</span>
 <span class="sd">    &gt;&gt;&gt; print(qc_1)</span>
-<span class="sd">          ┌───┐┌──────────┐┌─┐</span>
-<span class="sd">    qb_4: ┤ H ├┤0         ├┤M├─────────</span>
-<span class="sd">          └───┘│          │└╥┘┌─┐</span>
-<span class="sd">    qb_5: ─────┤1         ├─╫─┤M├──────</span>
-<span class="sd">               │  fan out │ ║ └╥┘┌─┐</span>
-<span class="sd">    qb_6: ─────┤2         ├─╫──╫─┤M├───</span>
-<span class="sd">               │          │ ║  ║ └╥┘┌─┐</span>
-<span class="sd">    qb_7: ─────┤3         ├─╫──╫──╫─┤M├</span>
-<span class="sd">               └──────────┘ ║  ║  ║ └╥┘</span>
-<span class="sd">    cb_0: ══════════════════╩══╬══╬══╬═</span>
-<span class="sd">                               ║  ║  ║</span>
-<span class="sd">    cb_1: ═════════════════════╩══╬══╬═</span>
-<span class="sd">                                  ║  ║</span>
-<span class="sd">    cb_2: ════════════════════════╩══╬═</span>
-<span class="sd">                                     ║</span>
-<span class="sd">    cb_3: ═══════════════════════════╩═</span>
+<span class="sd">        </span>
+<span class="sd">    ::</span>
+<span class="sd">        </span>
+<span class="sd">              ┌───┐┌──────────┐┌─┐</span>
+<span class="sd">        qb_4: ┤ H ├┤0         ├┤M├─────────</span>
+<span class="sd">              └───┘│          │└╥┘┌─┐</span>
+<span class="sd">        qb_5: ─────┤1         ├─╫─┤M├──────</span>
+<span class="sd">                   │  fan out │ ║ └╥┘┌─┐</span>
+<span class="sd">        qb_6: ─────┤2         ├─╫──╫─┤M├───</span>
+<span class="sd">                   │          │ ║  ║ └╥┘┌─┐</span>
+<span class="sd">        qb_7: ─────┤3         ├─╫──╫──╫─┤M├</span>
+<span class="sd">                   └──────────┘ ║  ║  ║ └╥┘</span>
+<span class="sd">        cb_0: ══════════════════╩══╬══╬══╬═</span>
+<span class="sd">                                   ║  ║  ║</span>
+<span class="sd">        cb_1: ═════════════════════╩══╬══╬═</span>
+<span class="sd">                                      ║  ║</span>
+<span class="sd">        cb_2: ════════════════════════╩══╬═</span>
+<span class="sd">                                         ║</span>
+<span class="sd">        cb_3: ═══════════════════════════╩═</span>
+<span class="sd">        </span>
 <span class="sd">    &gt;&gt;&gt; qc_1.run(shots = 1000)</span>
 <span class="sd">    {&#39;0000&#39;: 500, &#39;1111&#39;: 500}</span>
 
@@ -516,14 +550,17 @@ document.write(`
 <span class="sd">    &gt;&gt;&gt; qc_2 = QiskitQuantumCircuit(4)</span>
 <span class="sd">    &gt;&gt;&gt; qc_2.cx(0, range(1,4))</span>
 <span class="sd">    &gt;&gt;&gt; print(qc_2)</span>
-<span class="sd">    q_0: ──■────■────■──</span>
-<span class="sd">         ┌─┴─┐  │    │</span>
-<span class="sd">    q_1: ┤ X ├──┼────┼──</span>
-<span class="sd">         └───┘┌─┴─┐  │</span>
-<span class="sd">    q_2: ─────┤ X ├──┼──</span>
-<span class="sd">              └───┘┌─┴─┐</span>
-<span class="sd">    q_3: ──────────┤ X ├</span>
-<span class="sd">                   └───┘</span>
+<span class="sd">    </span>
+<span class="sd">    ::</span>
+<span class="sd">        </span>
+<span class="sd">        q_0: ──■────■────■──</span>
+<span class="sd">             ┌─┴─┐  │    │</span>
+<span class="sd">        q_1: ┤ X ├──┼────┼──</span>
+<span class="sd">             └───┘┌─┴─┐  │</span>
+<span class="sd">        q_2: ─────┤ X ├──┼──</span>
+<span class="sd">                  └───┘┌─┴─┐</span>
+<span class="sd">        q_3: ──────────┤ X ├</span>
+<span class="sd">                       └───┘</span>
 
 <span class="sd">    To acquire the Qrisp QuantumCircuit we call the</span>
 <span class="sd">    :meth:`from_qiskit &lt;qrisp.QuantumCircuit.from_qiskit&gt;` method. Note that we don&#39;t</span>
@@ -531,14 +568,17 @@ document.write(`
 
 <span class="sd">    &gt;&gt;&gt; qrisp_qc_2 = QuantumCircuit.from_qiskit(qc_2)</span>
 <span class="sd">    &gt;&gt;&gt; print(qrisp_qc_2)</span>
-<span class="sd">     qb_8: ──■────■────■──</span>
-<span class="sd">           ┌─┴─┐  │    │</span>
-<span class="sd">     qb_9: ┤ X ├──┼────┼──</span>
-<span class="sd">           └───┘┌─┴─┐  │</span>
-<span class="sd">    qb_10: ─────┤ X ├──┼──</span>
-<span class="sd">                └───┘┌─┴─┐</span>
-<span class="sd">    qb_11: ──────────┤ X ├</span>
-<span class="sd">                     └───┘</span>
+<span class="sd">    </span>
+<span class="sd">    ::</span>
+<span class="sd">        </span>
+<span class="sd">         qb_8: ──■────■────■──</span>
+<span class="sd">               ┌─┴─┐  │    │</span>
+<span class="sd">         qb_9: ┤ X ├──┼────┼──</span>
+<span class="sd">               └───┘┌─┴─┐  │</span>
+<span class="sd">        qb_10: ─────┤ X ├──┼──</span>
+<span class="sd">                    └───┘┌─┴─┐</span>
+<span class="sd">        qb_11: ──────────┤ X ├</span>
+<span class="sd">                         └───┘</span>
 
 <span class="sd">    **Abstract Parameters**</span>
 
@@ -562,13 +602,16 @@ document.write(`
 <span class="sd">    &gt;&gt;&gt; subs_dic = {abstract_parameters[i] : i for i in range(3)}</span>
 <span class="sd">    &gt;&gt;&gt; bound_qc = qc.bind_parameters(subs_dic)</span>
 <span class="sd">    &gt;&gt;&gt; print(bound_qc)</span>
-<span class="sd">          ┌──────┐</span>
-<span class="sd">    qb_0: ┤ P(0) ├</span>
-<span class="sd">          ├──────┤</span>
-<span class="sd">    qb_1: ┤ P(1) ├</span>
-<span class="sd">          ├──────┤</span>
-<span class="sd">    qb_2: ┤ P(2) ├</span>
-<span class="sd">          └──────┘</span>
+<span class="sd">    </span>
+<span class="sd">    ::</span>
+<span class="sd">        </span>
+<span class="sd">              ┌──────┐</span>
+<span class="sd">        qb_0: ┤ P(0) ├</span>
+<span class="sd">              ├──────┤</span>
+<span class="sd">        qb_1: ┤ P(1) ├</span>
+<span class="sd">              ├──────┤</span>
+<span class="sd">        qb_2: ┤ P(2) ├</span>
+<span class="sd">              └──────┘</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -608,7 +651,7 @@ document.write(`
 
     <span class="c1"># Method to add qubit objects to the circuit</span>
 <div class="viewcode-block" id="QuantumCircuit.add_qubit"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.add_qubit.html#qrisp.QuantumCircuit.add_qubit">[docs]</a>    <span class="k">def</span> <span class="nf">add_qubit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">qubit</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Adds a Qubit to the QuantumCircuit.</span>
 
 <span class="sd">        Parameters</span>
@@ -649,7 +692,7 @@ document.write(`
 
     <span class="c1"># Method to add classical bit objects to the circuit</span>
 <div class="viewcode-block" id="QuantumCircuit.add_clbit"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.add_clbit.html#qrisp.QuantumCircuit.add_clbit">[docs]</a>    <span class="k">def</span> <span class="nf">add_clbit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clbit</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Adds a classical bit to the QuantumCircuit.</span>
 
 <span class="sd">        Parameters</span>
@@ -680,7 +723,7 @@ document.write(`
 
     <span class="c1"># Method to transform the given circuit into an operation object</span>
 <div class="viewcode-block" id="QuantumCircuit.to_op"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.to_op.html#qrisp.QuantumCircuit.to_op">[docs]</a>    <span class="k">def</span> <span class="nf">to_op</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Method to return an Operation object generated out of this QuantumCircuit.</span>
 
 <span class="sd">        Operation objects can be appended to other QuantumCircuits.</span>
@@ -732,7 +775,7 @@ document.write(`
 
     <span class="c1"># Wrapper to increase Qiskit compatibility</span>
 <div class="viewcode-block" id="QuantumCircuit.to_gate"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.to_gate.html#qrisp.QuantumCircuit.to_gate">[docs]</a>    <span class="k">def</span> <span class="nf">to_gate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Similar to :meth:`to_op &lt;qrisp.QuantumCircuit.to_op&gt;` but raises an exception</span>
 <span class="sd">        if self contains classical bits (like the</span>
 <span class="sd">        `Qiskit equivalent</span>
@@ -765,7 +808,7 @@ document.write(`
     <span class="c1"># Method to extend the given circuit with another circuit</span>
     <span class="c1"># The dic translation dic encodes how the qubits should be plugged into each other</span>
 <div class="viewcode-block" id="QuantumCircuit.extend"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.extend.html#qrisp.QuantumCircuit.extend">[docs]</a>    <span class="k">def</span> <span class="nf">extend</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">,</span> <span class="n">translation_dic</span><span class="o">=</span><span class="s2">&quot;id&quot;</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Extends self in-place by another QuantumCircuit.</span>
 
 <span class="sd">        Parameters</span>
@@ -792,26 +835,32 @@ document.write(`
 <span class="sd">        &gt;&gt;&gt; extension_qc.cy(0, 2)</span>
 <span class="sd">        &gt;&gt;&gt; extension_qc.cz(0, 3)</span>
 <span class="sd">        &gt;&gt;&gt; print(extension_qc)</span>
-<span class="sd">        qb_0: ──■────■────■──</span>
-<span class="sd">              ┌─┴─┐  │    │</span>
-<span class="sd">        qb_1: ┤ X ├──┼────┼──</span>
-<span class="sd">              └───┘┌─┴─┐  │</span>
-<span class="sd">        qb_2: ─────┤ Y ├──┼──</span>
-<span class="sd">                   └───┘┌─┴─┐</span>
-<span class="sd">        qb_3: ──────────┤ Z ├</span>
-<span class="sd">                        └───┘</span>
+<span class="sd">        </span>
+<span class="sd">        ::</span>
+<span class="sd">            </span>
+<span class="sd">            qb_0: ──■────■────■──</span>
+<span class="sd">                  ┌─┴─┐  │    │</span>
+<span class="sd">            qb_1: ┤ X ├──┼────┼──</span>
+<span class="sd">                  └───┘┌─┴─┐  │</span>
+<span class="sd">            qb_2: ─────┤ Y ├──┼──</span>
+<span class="sd">                       └───┘┌─┴─┐</span>
+<span class="sd">            qb_3: ──────────┤ Z ├</span>
+<span class="sd">                            └───┘</span>
 <span class="sd">        &gt;&gt;&gt; translation_dic = {extension_qc.qubits[i] : qc_to_extend.qubits[-1-i]</span>
 <span class="sd">        &gt;&gt;&gt; for i in range(4)}</span>
 <span class="sd">        &gt;&gt;&gt; qc_to_extend.extend(extension_qc, translation_dic)</span>
 <span class="sd">        &gt;&gt;&gt; print(qc_to_extend)</span>
-<span class="sd">                        ┌───┐</span>
-<span class="sd">        qb_4: ──────────┤ Z ├</span>
-<span class="sd">                   ┌───┐└─┬─┘</span>
-<span class="sd">        qb_5: ─────┤ Y ├──┼──</span>
-<span class="sd">              ┌───┐└─┬─┘  │</span>
-<span class="sd">        qb_6: ┤ X ├──┼────┼──</span>
-<span class="sd">              └─┬─┘  │    │</span>
-<span class="sd">        qb_7: ──■────■────■──</span>
+<span class="sd">        </span>
+<span class="sd">        ::</span>
+<span class="sd">            </span>
+<span class="sd">                            ┌───┐</span>
+<span class="sd">            qb_4: ──────────┤ Z ├</span>
+<span class="sd">                       ┌───┐└─┬─┘</span>
+<span class="sd">            qb_5: ─────┤ Y ├──┼──</span>
+<span class="sd">                  ┌───┐└─┬─┘  │</span>
+<span class="sd">            qb_6: ┤ X ├──┼────┼──</span>
+<span class="sd">                  └─┬─┘  │    │</span>
+<span class="sd">            qb_7: ──■────■────■──</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
 
@@ -845,7 +894,7 @@ document.write(`
 
     <span class="c1"># Returns a copy of self</span>
 <div class="viewcode-block" id="QuantumCircuit.copy"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.copy.html#qrisp.QuantumCircuit.copy">[docs]</a>    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns a copy of the given QuantumCircuit.</span>
 
 <span class="sd">        Returns</span>
@@ -873,7 +922,7 @@ document.write(`
 
     <span class="c1"># Returns a copy of self but with no instructions</span>
 <div class="viewcode-block" id="QuantumCircuit.clearcopy"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.clearcopy.html#qrisp.QuantumCircuit.clearcopy">[docs]</a>    <span class="k">def</span> <span class="nf">clearcopy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns a copy of the given QuantumCircuit but without any data</span>
 <span class="sd">        (i.e. just the Qubits and Clbits).</span>
 
@@ -902,7 +951,7 @@ document.write(`
             <span class="n">res_str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span>
                 <span class="n">circuit_drawer</span><span class="p">(</span>
                     <span class="n">convert_circuit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_api</span><span class="o">=</span><span class="s2">&quot;qiskit&quot;</span><span class="p">,</span> <span class="n">transpile</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
-                    <span class="n">style</span><span class="o">=</span><span class="s2">&quot;text&quot;</span><span class="p">,</span>
+                    <span class="n">output</span><span class="o">=</span><span class="s2">&quot;text&quot;</span><span class="p">,</span>
                     <span class="n">cregbundle</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                 <span class="p">)</span>
             <span class="p">)</span>
@@ -916,7 +965,7 @@ document.write(`
     <span class="c1"># Method which compares the unitary of two given circuits and returns</span>
     <span class="c1"># True if they are equivalent</span>
 <div class="viewcode-block" id="QuantumCircuit.compare_unitary"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.compare_unitary.html#qrisp.QuantumCircuit.compare_unitary">[docs]</a>    <span class="k">def</span> <span class="nf">compare_unitary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">ignore_gphase</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Compares the unitaries of two QuantumCircuits. This can be used to check if a</span>
 <span class="sd">        QuantumCircuit transformation is valid.</span>
 
@@ -948,19 +997,26 @@ document.write(`
 <span class="sd">        &gt;&gt;&gt; qc_0.z(0)</span>
 <span class="sd">        &gt;&gt;&gt; qc_0.cx(0,1)</span>
 <span class="sd">        &gt;&gt;&gt; print(qc_0)</span>
-<span class="sd">              ┌───┐</span>
-<span class="sd">        qb_0: ┤ Z ├──■──</span>
-<span class="sd">              └───┘┌─┴─┐</span>
-<span class="sd">        qb_1: ─────┤ X ├</span>
-<span class="sd">                   └───┘</span>
+<span class="sd">        </span>
+<span class="sd">        ::</span>
+<span class="sd">            </span>
+<span class="sd">                  ┌───┐</span>
+<span class="sd">            qb_0: ┤ Z ├──■──</span>
+<span class="sd">                  └───┘┌─┴─┐</span>
+<span class="sd">            qb_1: ─────┤ X ├</span>
+<span class="sd">                       └───┘</span>
 <span class="sd">        &gt;&gt;&gt; qc_1.cx(0,1)</span>
 <span class="sd">        &gt;&gt;&gt; qc_1.z(0)</span>
 <span class="sd">        &gt;&gt;&gt; print(qc_1)</span>
-<span class="sd">                   ┌───┐</span>
-<span class="sd">        qb_2: ──■──┤ Z ├</span>
-<span class="sd">              ┌─┴─┐└───┘</span>
-<span class="sd">        qb_3: ┤ X ├─────</span>
-<span class="sd">              └───┘</span>
+<span class="sd">        </span>
+<span class="sd">        ::</span>
+<span class="sd">                </span>
+<span class="sd">                       ┌───┐</span>
+<span class="sd">            qb_2: ──■──┤ Z ├</span>
+<span class="sd">                  ┌─┴─┐└───┘</span>
+<span class="sd">            qb_3: ┤ X ├─────</span>
+<span class="sd">                  └───┘</span>
+<span class="sd">                  </span>
 <span class="sd">        &gt;&gt;&gt; qc_0.compare_unitary(qc_1)</span>
 <span class="sd">        True</span>
 
@@ -1048,7 +1104,7 @@ document.write(`
 
     <span class="c1"># Generates the inverse of self by applying the inverse gates in reversed order</span>
 <div class="viewcode-block" id="QuantumCircuit.inverse"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.inverse.html#qrisp.QuantumCircuit.inverse">[docs]</a>    <span class="k">def</span> <span class="nf">inverse</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns the inverse/daggered QuantumCircuit.</span>
 
 <span class="sd">        Returns</span>
@@ -1068,9 +1124,12 @@ document.write(`
 <span class="sd">        &gt;&gt;&gt; qc.p(np.pi/2, 0)</span>
 <span class="sd">        &gt;&gt;&gt; qc.y(0)</span>
 <span class="sd">        &gt;&gt;&gt; print(qc.inverse())</span>
-<span class="sd">                ┌───┐┌─────────┐┌───┐</span>
-<span class="sd">          qb_0: ┤ Y ├┤ P(-π/2) ├┤ X ├</span>
-<span class="sd">                └───┘└─────────┘└───┘</span>
+<span class="sd">        </span>
+<span class="sd">        ::</span>
+<span class="sd">              </span>
+<span class="sd">                  ┌───┐┌─────────┐┌───┐</span>
+<span class="sd">            qb_0: ┤ Y ├┤ P(-π/2) ├┤ X ├</span>
+<span class="sd">                  └───┘└─────────┘└───┘</span>
 
 <span class="sd">        For the phase gate, a daggering implies the reversal of the phase -</span>
 <span class="sd">        Pauli gates however are invariant under daggering.</span>
@@ -1085,7 +1144,7 @@ document.write(`
 
     <span class="c1"># Generate the circuits unitary matrix</span>
 <div class="viewcode-block" id="QuantumCircuit.get_unitary"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.get_unitary.html#qrisp.QuantumCircuit.get_unitary">[docs]</a>    <span class="k">def</span> <span class="nf">get_unitary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">decimals</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Acquires the unitary matrix of the given QuantumCircuit as a Numpy array.</span>
 
 <span class="sd">        This method also works with abstract parameters. In this case a Numpy array</span>
@@ -1148,11 +1207,11 @@ document.write(`
             <span class="k">if</span> <span class="n">res</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="s2">&quot;O&quot;</span><span class="p">):</span>
                 <span class="n">raveled_res</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
                 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">raveled_res</span><span class="p">)):</span>
-                    <span class="n">expression</span> <span class="o">=</span> <span class="n">raveled_res</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                    <span class="n">expression</span> <span class="o">=</span> <span class="n">sympy</span><span class="o">.</span><span class="n">simplify</span><span class="p">(</span><span class="n">raveled_res</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
                     <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">sympy</span><span class="o">.</span><span class="n">preorder_traversal</span><span class="p">(</span><span class="n">expression</span><span class="p">):</span>
                         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">sympy</span><span class="o">.</span><span class="n">Float</span><span class="p">):</span>
                             <span class="n">rounded_float</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">decimals</span><span class="p">)</span>
-                            <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">rounded_float</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="o">**-</span><span class="n">decimals</span><span class="p">:</span>
+                            <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="o">**-</span><span class="p">(</span><span class="n">decimals</span><span class="p">):</span>
                                 <span class="n">expression</span> <span class="o">=</span> <span class="n">expression</span><span class="o">.</span><span class="n">subs</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
                             <span class="k">else</span><span class="p">:</span>
                                 <span class="n">expression</span> <span class="o">=</span> <span class="n">expression</span><span class="o">.</span><span class="n">subs</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">rounded_float</span><span class="p">)</span>
@@ -1169,7 +1228,7 @@ document.write(`
         <span class="k">return</span> <span class="n">get_depth_dic</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">cnot_count</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Method to determine the amount of CNOT gates used in this QuantumCircuit.</span>
 
 <span class="sd">        Returns</span>
@@ -1184,7 +1243,7 @@ document.write(`
         <span class="k">return</span> <span class="n">cnot_count</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
 <div class="viewcode-block" id="QuantumCircuit.transpile"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.transpile.html#qrisp.QuantumCircuit.transpile">[docs]</a>    <span class="k">def</span> <span class="nf">transpile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">transpilation_level</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="o">**</span><span class="n">qiskit_kwargs</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Transpiles the QuantumCircuit in the sense that there are no longer any</span>
 <span class="sd">        synthesized gate objects. Furthermore, we can call the `Qiskit transpiler</span>
 <span class="sd">        &lt;https://qiskit.org/documentation/stubs/qiskit.compiler.transpile.html&gt;`__</span>
@@ -1212,28 +1271,34 @@ document.write(`
 <span class="sd">        &gt;&gt;&gt; qc = QuantumCircuit(3)</span>
 <span class="sd">        &gt;&gt;&gt; qc.mcx([0,1], 2)</span>
 <span class="sd">        &gt;&gt;&gt; print(qc)</span>
-<span class="sd">        qb_0: ──■──</span>
-<span class="sd">                │</span>
-<span class="sd">        qb_1: ──■──</span>
-<span class="sd">              ┌─┴─┐</span>
-<span class="sd">        qb_2: ┤ X ├</span>
-<span class="sd">              └───┘</span>
+<span class="sd">        </span>
+<span class="sd">        ::</span>
+<span class="sd">            </span>
+<span class="sd">            qb_0: ──■──</span>
+<span class="sd">                    │</span>
+<span class="sd">            qb_1: ──■──</span>
+<span class="sd">                  ┌─┴─┐</span>
+<span class="sd">            qb_2: ┤ X ├</span>
+<span class="sd">                  └───┘</span>
 <span class="sd">        &gt;&gt;&gt; print(qc.transpile(basis_gates = [&quot;cx&quot;, &quot;rz&quot;, &quot;sx&quot;]))</span>
-<span class="sd">        global phase: 9π/8</span>
-<span class="sd">              ┌──────────┐                 ┌───┐┌─────────┐   ┌───┐   ┌──────────┐┌───┐»</span>
-<span class="sd">        qb_1: ┤ Rz(-π/4) ├─────────────────┤ X ├┤ Rz(π/4) ├───┤ X ├───┤ Rz(-π/4) ├┤ X ├»</span>
-<span class="sd">              ├──────────┤                 └─┬─┘└─────────┘   └─┬─┘   └──────────┘└─┬─┘»</span>
-<span class="sd">        qb_2: ┤ Rz(-π/4) ├───────────────────┼───────■──────────■──────────■────────┼──»</span>
-<span class="sd">              ├─────────┬┘┌────┐┌─────────┐  │     ┌─┴─┐   ┌─────────┐   ┌─┴─┐      │  »</span>
-<span class="sd">        qb_3: ┤ Rz(π/2) ├─┤ √X ├┤ Rz(π/2) ├──■─────┤ X ├───┤ Rz(π/4) ├───┤ X ├──────■──»</span>
-<span class="sd">              └─────────┘ └────┘└─────────┘        └───┘   └─────────┘   └───┘         »</span>
-<span class="sd">        «      ┌─────────┐┌───┐</span>
-<span class="sd">        «qb_1: ┤ Rz(π/4) ├┤ X ├────────────</span>
-<span class="sd">        «      └─────────┘└─┬─┘</span>
-<span class="sd">        «qb_2: ─────────────■──────────────</span>
-<span class="sd">        «      ┌─────────┐┌────┐┌─────────┐</span>
-<span class="sd">        «qb_3: ┤ Rz(π/4) ├┤ √X ├┤ Rz(π/2) ├</span>
-<span class="sd">        «      └─────────┘└────┘└─────────┘</span>
+<span class="sd">        </span>
+<span class="sd">        ::</span>
+<span class="sd">            </span>
+<span class="sd">            global phase: 9π/8</span>
+<span class="sd">                  ┌──────────┐                 ┌───┐┌─────────┐   ┌───┐   ┌──────────┐┌───┐»</span>
+<span class="sd">            qb_1: ┤ Rz(-π/4) ├─────────────────┤ X ├┤ Rz(π/4) ├───┤ X ├───┤ Rz(-π/4) ├┤ X ├»</span>
+<span class="sd">                  ├──────────┤                 └─┬─┘└─────────┘   └─┬─┘   └──────────┘└─┬─┘»</span>
+<span class="sd">            qb_2: ┤ Rz(-π/4) ├───────────────────┼───────■──────────■──────────■────────┼──»</span>
+<span class="sd">                  ├─────────┬┘┌────┐┌─────────┐  │     ┌─┴─┐   ┌─────────┐   ┌─┴─┐      │  »</span>
+<span class="sd">            qb_3: ┤ Rz(π/2) ├─┤ √X ├┤ Rz(π/2) ├──■─────┤ X ├───┤ Rz(π/4) ├───┤ X ├──────■──»</span>
+<span class="sd">                  └─────────┘ └────┘└─────────┘        └───┘   └─────────┘   └───┘         »</span>
+<span class="sd">            «      ┌─────────┐┌───┐</span>
+<span class="sd">            «qb_1: ┤ Rz(π/4) ├┤ X ├────────────</span>
+<span class="sd">            «      └─────────┘└─┬─┘</span>
+<span class="sd">            «qb_2: ─────────────■──────────────</span>
+<span class="sd">            «      ┌─────────┐┌────┐┌─────────┐</span>
+<span class="sd">            «qb_3: ┤ Rz(π/4) ├┤ √X ├┤ Rz(π/2) ├</span>
+<span class="sd">            «      └─────────┘└────┘└─────────┘</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="kn">from</span> <span class="nn">qrisp.circuit</span> <span class="kn">import</span> <span class="n">transpile</span>
@@ -1243,7 +1308,7 @@ document.write(`
     <span class="c1"># Counts the amount of operations self contains and returns</span>
     <span class="c1"># a dict {&quot;operatio_name&quot; : operation_count, ...}</span>
 <div class="viewcode-block" id="QuantumCircuit.count_ops"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.count_ops.html#qrisp.QuantumCircuit.count_ops">[docs]</a>    <span class="k">def</span> <span class="nf">count_ops</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Counts the amount of operations of each kind. Note that operations are</span>
 <span class="sd">        identified by their name.</span>
 
@@ -1293,7 +1358,7 @@ document.write(`
             <span class="k">return</span> <span class="n">res</span>
 
 <div class="viewcode-block" id="QuantumCircuit.bind_parameters"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.bind_parameters.html#qrisp.QuantumCircuit.bind_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">bind_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subs_dic</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns a QuantumCircuit where the abstract parameters in ``subs_dic`` are bound</span>
 <span class="sd">        to their specified values.</span>
 
@@ -1333,13 +1398,16 @@ document.write(`
 <span class="sd">        &gt;&gt;&gt; subs_dic = {abstract_parameters[i] : i for i in range(3)}</span>
 <span class="sd">        &gt;&gt;&gt; bound_qc = qc.bind_parameters(subs_dic)</span>
 <span class="sd">        &gt;&gt;&gt; print(bound_qc)</span>
-<span class="sd">              ┌──────┐</span>
-<span class="sd">        qb_0: ┤ P(0) ├</span>
-<span class="sd">              ├──────┤</span>
-<span class="sd">        qb_1: ┤ P(1) ├</span>
-<span class="sd">              ├──────┤</span>
-<span class="sd">        qb_2: ┤ P(2) ├</span>
-<span class="sd">              └──────┘</span>
+<span class="sd">        </span>
+<span class="sd">        ::</span>
+<span class="sd">                </span>
+<span class="sd">                  ┌──────┐</span>
+<span class="sd">            qb_0: ┤ P(0) ├</span>
+<span class="sd">                  ├──────┤</span>
+<span class="sd">            qb_1: ┤ P(1) ├</span>
+<span class="sd">                  ├──────┤</span>
+<span class="sd">            qb_2: ┤ P(2) ├</span>
+<span class="sd">                  └──────┘</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
 
@@ -1361,7 +1429,7 @@ document.write(`
         <span class="k">return</span> <span class="n">subs_circ</span></div>
 
 <div class="viewcode-block" id="QuantumCircuit.to_latex"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.to_latex.html#qrisp.QuantumCircuit.to_latex">[docs]</a>    <span class="k">def</span> <span class="nf">to_latex</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Deploys the Qiskit circuit drawer to generate LaTeX output.</span>
 
 <span class="sd">        Parameters</span>
@@ -1386,7 +1454,7 @@ document.write(`
         <span class="k">return</span> <span class="n">circuit_drawer</span><span class="p">(</span><span class="n">qiskit_qc</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="s2">&quot;latex_source&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="QuantumCircuit.qasm"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.qasm.html#qrisp.QuantumCircuit.qasm">[docs]</a>    <span class="k">def</span> <span class="nf">qasm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">formatted</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns the `OpenQASM &lt;https://en.wikipedia.org/wiki/OpenQASM&gt;`_ string of self.</span>
 
 <span class="sd">        Parameters</span>
@@ -1409,13 +1477,17 @@ document.write(`
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_qiskit</span><span class="p">()</span><span class="o">.</span><span class="n">qasm</span><span class="p">(</span><span class="n">formatted</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">encoding</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="QuantumCircuit.depth"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.depth.html#qrisp.QuantumCircuit.depth">[docs]</a>    <span class="k">def</span> <span class="nf">depth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">transpile</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="QuantumCircuit.depth"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.depth.html#qrisp.QuantumCircuit.depth">[docs]</a>    <span class="k">def</span> <span class="nf">depth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">depth_indicator</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span> <span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="n">transpile</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns the depth of the QuantumCircuit. Note that the depth on QuantumCircuit</span>
 <span class="sd">        which are not transpiled, might have very little correlation with the runtime.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
+<span class="sd">        depth_indicator : function, optional</span>
+<span class="sd">            A function which receives an :ref:`Operation` instance and returns the</span>
+<span class="sd">            time/logical depth this operation takes. By default every Operation takes</span>
+<span class="sd">            logical depth 1.</span>
 <span class="sd">        transpile : bool, optional</span>
 <span class="sd">            Boolean to indicate wether the QuantumCircuit should be transpiled before</span>
 <span class="sd">            the depth is calculated. The default is True.</span>
@@ -1428,13 +1500,166 @@ document.write(`
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="kn">from</span> <span class="nn">qrisp.misc</span> <span class="kn">import</span> <span class="n">get_depth_dic</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
 
-        <span class="n">depth_dic</span> <span class="o">=</span> <span class="n">get_depth_dic</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">transpile_qc</span><span class="o">=</span><span class="n">transpile</span><span class="p">)</span>
+        <span class="n">depth_dic</span> <span class="o">=</span> <span class="n">get_depth_dic</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">transpile_qc</span><span class="o">=</span><span class="n">transpile</span><span class="p">,</span> <span class="n">depth_indicator</span> <span class="o">=</span> <span class="n">depth_indicator</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="n">depth_dic</span><span class="o">.</span><span class="n">values</span><span class="p">())</span></div>
+    
+<div class="viewcode-block" id="QuantumCircuit.t_depth"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.t_depth.html#qrisp.QuantumCircuit.t_depth">[docs]</a>    <span class="k">def</span> <span class="nf">t_depth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">epsilon</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Estimates the T-depth of self. T-depth is an important metric for fault tolerant</span>
+<span class="sd">        quantum computing, because T gates are expected to be the bottleneck in fault tolerant</span>
+<span class="sd">        architectures.</span>
+<span class="sd">        </span>
+<span class="sd">        According to `this paper &lt;https://arxiv.org/abs/1403.2975&gt;`_, the synthesis of an $RZ(\phi)$</span>
+<span class="sd">        up to precision $\epsilon$ requires $3\text{log}_2(\frac{1}{\epsilon})$ </span>
+<span class="sd">        T-gates.</span>
+<span class="sd">        </span>
+<span class="sd">        Based on this formula, this method performs a conservative estimate of the T-depth</span>
+<span class="sd">        of self.</span>
+<span class="sd">            </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        epsilon : float, optional</span>
+<span class="sd">            The precision up to which parametrized gates should be approximated. If not given,</span>
+<span class="sd">            Qrisp will determine the parameter with the highest precision. For more information</span>
+<span class="sd">            on this feature see the examples</span>
+
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            The estimated T-depth.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        </span>
+<span class="sd">        We create a QuantumCircuit and evaluate the T-depth:</span>
+<span class="sd">            </span>
+<span class="sd">        &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">        &gt;&gt;&gt; from qrisp import QuantumCircuit</span>
+<span class="sd">        &gt;&gt;&gt; qc = QuantumCircuit(2)</span>
+<span class="sd">        &gt;&gt;&gt; qc.t(0)</span>
+<span class="sd">        &gt;&gt;&gt; qc.cx(0,1)</span>
+<span class="sd">        &gt;&gt;&gt; qc.rx(2*np.pi*3/2**4, 1)</span>
+<span class="sd">        &gt;&gt;&gt; qc.t_depth(epsilon = 2**-5)</span>
+<span class="sd">        16</span>
+<span class="sd">        </span>
+<span class="sd">        In this example we execute a T-Gate on the 0-th qubit (T-depth : 1) followed</span>
+<span class="sd">        by a CNOT gate (T-depth: 0) on qubits 0 and 1 and finally an RX gate.</span>
+<span class="sd">        </span>
+<span class="sd">        The RX-Gate can be executed by using the decomposition </span>
+<span class="sd">        </span>
+<span class="sd">        .. math::</span>
+<span class="sd">            </span>
+<span class="sd">            RX(\phi) = \text{H } \text{RZ}(\phi) \text{ H}</span>
+
+<span class="sd">        The T-depth of executing a parametrized RX gate is therefore the same</span>
+<span class="sd">        as the parametrized RZ. To determine the T-depth of the RZ-gate, executed</span>
+<span class="sd">        with precision $2^{-5}$ we use the above formula:</span>
+<span class="sd">            </span>
+<span class="sd">        .. math::</span>
+<span class="sd">            </span>
+<span class="sd">            \begin{align}</span>
+<span class="sd">            \text{TDEPTH}(\text{RZ}(\phi), \epsilon = 2^-5) = 3 \text{log}_2(2^5)\\</span>
+<span class="sd">            &amp;= 15</span>
+<span class="sd">            \end{align}</span>
+<span class="sd">            </span>
+<span class="sd">        We therefore arrive at 16.</span>
+<span class="sd">        </span>
+<span class="sd">        **Automatic precision determination**</span>
+<span class="sd">        </span>
+<span class="sd">        In the case of unknown precision, Qrisp assumes that every parameter in the </span>
+<span class="sd">        circuit is of the form.</span>
+<span class="sd">        </span>
+<span class="sd">        .. math::</span>
+<span class="sd">            </span>
+<span class="sd">            \phi = 2\pi\frac{m}{2^k}</span>
+<span class="sd">        </span>
+<span class="sd">        Where $m$ is an integer. Qrisp will then determine the parameter with the maximum $k$</span>
+<span class="sd">        and set $\epsilon = 2^{k_{max} +3}$.</span>
+<span class="sd">        </span>
+<span class="sd">        &gt;&gt;&gt; qc.t_depth()</span>
+<span class="sd">        22</span>
+<span class="sd">        </span>
+<span class="sd">        In this circuit $k_{max} = 4$ therefore, $\epsilon = 2^{-7}$ implying the T-depth is 22.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="k">if</span> <span class="n">epsilon</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">transpiled_qc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transpile</span><span class="p">()</span>
+            
+            
+            <span class="n">max_circuit_prec</span> <span class="o">=</span> <span class="mi">15</span>
+            <span class="k">for</span> <span class="n">instr</span> <span class="ow">in</span> <span class="n">transpiled_qc</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+                <span class="n">op</span> <span class="o">=</span> <span class="n">instr</span><span class="o">.</span><span class="n">op</span>
+                
+                <span class="k">for</span> <span class="n">par</span> <span class="ow">in</span> <span class="n">op</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+                    
+                    <span class="n">par</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">((</span><span class="n">par</span><span class="o">%</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">))</span><span class="o">/</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span><span class="o">*</span><span class="mi">2</span><span class="o">**</span><span class="mi">15</span><span class="p">))</span>
+                    
+                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_circuit_prec</span><span class="p">):</span>
+                        <span class="k">if</span> <span class="n">par</span><span class="o">%</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="n">i</span><span class="p">):</span>
+                            <span class="n">max_circuit_prec</span> <span class="o">=</span> <span class="n">i</span>
+                            <span class="k">break</span>
+        
+            <span class="n">max_circuit_prec</span> <span class="o">=</span> <span class="mi">16</span> <span class="o">-</span> <span class="n">max_circuit_prec</span>
+            
+            <span class="n">epsilon</span> <span class="o">=</span> <span class="mi">2</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="n">max_circuit_prec</span> <span class="o">-</span> <span class="mi">3</span><span class="p">)</span>
+                
+        <span class="kn">from</span> <span class="nn">qrisp.misc.utility</span> <span class="kn">import</span> <span class="n">t_depth_indicator</span>
+        
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">depth</span><span class="p">(</span><span class="n">depth_indicator</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span> <span class="p">:</span> <span class="n">t_depth_indicator</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">))</span></div>
+    
+<div class="viewcode-block" id="QuantumCircuit.cnot_depth"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.cnot_depth.html#qrisp.QuantumCircuit.cnot_depth">[docs]</a>    <span class="k">def</span> <span class="nf">cnot_depth</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This function returns the CNOT-depth of an self.</span>
+<span class="sd">        </span>
+<span class="sd">        In NISQ-era devices, CNOT gates are the restricting bottleneck for quantum </span>
+<span class="sd">        circuit execution. This function can be used as a gate-speed specifier for</span>
+<span class="sd">        the :meth:`compile &lt;qrisp.QuantumSession.compile&gt;`_ method.</span>
+
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        int</span>
+<span class="sd">            The CNOT depth of self.</span>
+<span class="sd">            </span>
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        </span>
+<span class="sd">        We create a QuantumCircuit and evaluate it&#39;s CNOT depth.</span>
+<span class="sd">        </span>
+<span class="sd">        &gt;&gt;&gt; from qrisp import QuantumCircuit</span>
+<span class="sd">        &gt;&gt;&gt; qc = QuantumCircuit(4)</span>
+<span class="sd">        &gt;&gt;&gt; qc.cx(0,1)</span>
+<span class="sd">        &gt;&gt;&gt; qc.x(1)</span>
+<span class="sd">        &gt;&gt;&gt; qc.cx(1,2)</span>
+<span class="sd">        &gt;&gt;&gt; qc.y(2)</span>
+<span class="sd">        &gt;&gt;&gt; qc.cx(2,3)</span>
+<span class="sd">        &gt;&gt;&gt; qc.cx(1,0)</span>
+<span class="sd">        &gt;&gt;&gt; print(qc)</span>
+<span class="sd">                              ┌───┐     </span>
+<span class="sd">        qb_59: ──■────────────┤ X ├─────</span>
+<span class="sd">               ┌─┴─┐┌───┐     └─┬─┘     </span>
+<span class="sd">        qb_60: ┤ X ├┤ X ├──■────■───────</span>
+<span class="sd">               └───┘└───┘┌─┴─┐┌───┐     </span>
+<span class="sd">        qb_61: ──────────┤ X ├┤ Y ├──■──</span>
+<span class="sd">                         └───┘└───┘┌─┴─┐</span>
+<span class="sd">        qb_62: ────────────────────┤ X ├</span>
+<span class="sd">                                   └───┘</span>
+<span class="sd">                                   </span>
+<span class="sd">        &gt;&gt;&gt; qc.cnot_depth()</span>
+<span class="sd">        3</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">qrisp.misc.utility</span> <span class="kn">import</span> <span class="n">cnot_depth_indicator</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">depth</span><span class="p">(</span><span class="n">depth_indicator</span> <span class="o">=</span> <span class="n">cnot_depth_indicator</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="QuantumCircuit.num_qubits"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.num_qubits.html#qrisp.QuantumCircuit.num_qubits">[docs]</a>    <span class="k">def</span> <span class="nf">num_qubits</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns the amount of qubits.</span>
 
 <span class="sd">        Returns</span>
@@ -1455,7 +1680,7 @@ document.write(`
     <span class="c1"># If it is required to apply a cx gate to the qubit pairs (1,2), (1,3), (1,4)</span>
     <span class="c1"># execute qc.append(CXGate(), [qubit_1, [qubit2, qubit3, qubit4]])</span>
 <div class="viewcode-block" id="QuantumCircuit.append"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.append.html#qrisp.QuantumCircuit.append">[docs]</a>    <span class="k">def</span> <span class="nf">append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">operation_or_instruction</span><span class="p">,</span> <span class="n">qubits</span><span class="o">=</span><span class="p">[],</span> <span class="n">clbits</span><span class="o">=</span><span class="p">[]):</span>
-        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Method for appending Operation or Instruction objects to the QuantumCircuit.</span>
 
 <span class="sd">        The parameter qubits can be an integer, a list of integers, a Qubit object or a</span>
@@ -1487,27 +1712,30 @@ document.write(`
 <span class="sd">        &gt;&gt;&gt; qc = QuantumCircuit(8)</span>
 <span class="sd">        &gt;&gt;&gt; qc.append(multi_h, [2*i for i in range(4)])</span>
 <span class="sd">        &gt;&gt;&gt; print(qc)</span>
-<span class="sd">               ┌──────────┐</span>
-<span class="sd">         qb_4: ┤0         ├</span>
-<span class="sd">               │          │</span>
-<span class="sd">         qb_5: ┤          ├</span>
-<span class="sd">               │          │</span>
-<span class="sd">         qb_6: ┤1         ├</span>
-<span class="sd">               │          │</span>
-<span class="sd">         qb_7: ┤  multi h ├</span>
-<span class="sd">               │          │</span>
-<span class="sd">         qb_8: ┤2         ├</span>
-<span class="sd">               │          │</span>
-<span class="sd">         qb_9: ┤          ├</span>
-<span class="sd">               │          │</span>
-<span class="sd">        qb_10: ┤3         ├</span>
-<span class="sd">               └──────────┘</span>
-<span class="sd">        qb_11: ────────────</span>
+<span class="sd">        </span>
+<span class="sd">        ::</span>
+<span class="sd">                </span>
+<span class="sd">                   ┌──────────┐</span>
+<span class="sd">             qb_4: ┤0         ├</span>
+<span class="sd">                   │          │</span>
+<span class="sd">             qb_5: ┤          ├</span>
+<span class="sd">                   │          │</span>
+<span class="sd">             qb_6: ┤1         ├</span>
+<span class="sd">                   │          │</span>
+<span class="sd">             qb_7: ┤  multi h ├</span>
+<span class="sd">                   │          │</span>
+<span class="sd">             qb_8: ┤2         ├</span>
+<span class="sd">                   │          │</span>
+<span class="sd">             qb_9: ┤          ├</span>
+<span class="sd">                   │          │</span>
+<span class="sd">            qb_10: ┤3         ├</span>
+<span class="sd">                   └──────────┘</span>
+<span class="sd">            qb_11: ────────────</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="c1"># Check the type of the instruction/operation</span>
-        <span class="kn">from</span> <span class="nn">qrisp.circuit</span> <span class="kn">import</span> <span class="n">Instruction</span><span class="p">,</span> <span class="n">Operation</span>
+        <span class="c1"># from qrisp.circuit import Instruction, Operation</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fast_append</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">operation_or_instruction</span><span class="p">,</span> <span class="n">Instruction</span><span class="p">):</span>
@@ -1515,9 +1743,15 @@ document.write(`
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">qubits</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
                     <span class="k">raise</span>
+                <span class="k">for</span> <span class="n">qb</span> <span class="ow">in</span> <span class="n">qubits</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">qb</span><span class="p">,</span> <span class="n">Qubit</span><span class="p">):</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="n">qubits</span><span class="p">)</span>
+                        <span class="k">raise</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Instruction</span><span class="p">(</span><span class="n">operation_or_instruction</span><span class="p">,</span> <span class="n">qubits</span><span class="p">,</span> <span class="n">clbits</span><span class="p">))</span>
             <span class="k">return</span>
 
+            
+            
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">operation_or_instruction</span><span class="p">,</span> <span class="n">Instruction</span><span class="p">):</span>
             <span class="n">instruction</span> <span class="o">=</span> <span class="n">operation_or_instruction</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">instruction</span><span class="o">.</span><span class="n">op</span><span class="p">,</span> <span class="n">instruction</span><span class="o">.</span><span class="n">qubits</span><span class="p">,</span> <span class="n">instruction</span><span class="o">.</span><span class="n">clbits</span><span class="p">)</span>
@@ -1604,7 +1838,7 @@ document.write(`
 
                 <span class="c1"># Append instruction (qubit_constellation and clbit_constellation) now</span>
                 <span class="c1"># contains no lists but only qubit/clbit arguments</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">operation</span><span class="p">,</span> <span class="n">qubit_constellation</span><span class="p">,</span> <span class="n">clbit_constellation</span><span class="p">)</span>
+                <span class="n">QuantumCircuit</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">operation</span><span class="p">,</span> <span class="n">qubit_constellation</span><span class="p">,</span> <span class="n">clbit_constellation</span><span class="p">)</span>
 
             <span class="k">return</span>
 
@@ -1612,12 +1846,14 @@ document.write(`
             <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;Provided incorrect amount (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">qubits</span><span class="p">)</span><span class="si">}</span><span class="s2">) of qubits for operation &quot;</span>
                 <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">operation</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+                <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot; (requires </span><span class="si">{</span><span class="n">operation</span><span class="o">.</span><span class="n">num_qubits</span><span class="si">}</span><span class="s2">)&quot;</span>
             <span class="p">)</span>
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">clbits</span><span class="p">)</span> <span class="o">!=</span> <span class="n">operation</span><span class="o">.</span><span class="n">num_clbits</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;Provided incorrect amount (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">clbits</span><span class="p">)</span><span class="si">}</span><span class="s2">) of clbits for operation &quot;</span>
                 <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">operation</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+                <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot; (requires </span><span class="si">{</span><span class="n">operation</span><span class="o">.</span><span class="n">num_clbits</span><span class="si">}</span><span class="s2">)&quot;</span>
             <span class="p">)</span>
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">qubits</span><span class="p">))</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">qubits</span><span class="p">):</span>
@@ -1653,7 +1889,7 @@ document.write(`
 
         <span class="c1"># Log which abstract parameters have been added to the circuit</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">abstract_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">abstract_params</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">operation</span><span class="o">.</span><span class="n">abstract_params</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">abstract_params</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">operation</span><span class="o">.</span><span class="n">abstract_params</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
             <span class="k">pass</span>
 
@@ -1695,7 +1931,7 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Instruction</span><span class="p">(</span><span class="n">operation</span><span class="p">,</span> <span class="n">qubits</span><span class="p">,</span> <span class="n">clbits</span><span class="p">))</span></div>
 
 <div class="viewcode-block" id="QuantumCircuit.run"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.run.html#qrisp.QuantumCircuit.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shots</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Runs a QuantumCircuit on a given backend.</span>
 
 <span class="sd">        Parameters</span>
@@ -1732,7 +1968,7 @@ document.write(`
         <span class="k">return</span> <span class="n">backend</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shots</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="QuantumCircuit.statevector_array"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.statevector_array.html#qrisp.QuantumCircuit.statevector_array">[docs]</a>    <span class="k">def</span> <span class="nf">statevector_array</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Performs a simulation of the statevector of self and returns a numpy array of</span>
 <span class="sd">        complex numbers.</span>
 
@@ -1829,9 +2065,59 @@ document.write(`
 
         <span class="k">return</span> <span class="nb">hash</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
 
+<div class="viewcode-block" id="QuantumCircuit.from_qasm_str"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.from_qasm_str.html#qrisp.QuantumCircuit.from_qasm_str">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_qasm_str</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">qasm_string</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Loads a QuantumCircuit from a QASM String.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        qasm_string : string</span>
+<span class="sd">            A string obeying the syntax of the OpenQASM specification.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        QuantumCircuit</span>
+<span class="sd">            The corresponding QuantumCircuit.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="kn">from</span> <span class="nn">qiskit</span> <span class="kn">import</span> <span class="n">QuantumCircuit</span>
+        
+        <span class="n">qiskit_qc</span> <span class="o">=</span> <span class="n">QuantumCircuit</span><span class="p">()</span><span class="o">.</span><span class="n">from_qasm_str</span><span class="p">(</span><span class="n">qasm_string</span><span class="p">)</span>
+        
+        <span class="kn">from</span> <span class="nn">qrisp</span> <span class="kn">import</span> <span class="n">QuantumCircuit</span>
+        
+        <span class="k">return</span> <span class="n">QuantumCircuit</span><span class="o">.</span><span class="n">from_qiskit</span><span class="p">(</span><span class="n">qiskit_qc</span><span class="p">)</span></div>
+    
+<div class="viewcode-block" id="QuantumCircuit.from_qasm_file"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.from_qasm_file.html#qrisp.QuantumCircuit.from_qasm_file">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_qasm_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Loads a QuantumCircuit from a QASM file.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        filename : string</span>
+<span class="sd">            A string pointing to a file obeying the OpenQASM syntax.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        QuantumCircuit</span>
+<span class="sd">            The corresponding QuantumCircuit.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">qiskit</span> <span class="kn">import</span> <span class="n">QuantumCircuit</span>
+        
+        <span class="n">qiskit_qc</span> <span class="o">=</span> <span class="n">QuantumCircuit</span><span class="p">()</span><span class="o">.</span><span class="n">from_qasm_file</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+        
+        <span class="kn">from</span> <span class="nn">qrisp</span> <span class="kn">import</span> <span class="n">QuantumCircuit</span>
+        
+        <span class="k">return</span> <span class="n">QuantumCircuit</span><span class="o">.</span><span class="n">from_qiskit</span><span class="p">(</span><span class="n">qiskit_qc</span><span class="p">)</span></div>
+    
+
 <div class="viewcode-block" id="QuantumCircuit.from_qiskit"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.from_qiskit.html#qrisp.QuantumCircuit.from_qiskit">[docs]</a>    <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">from_qiskit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">qiskit_qc</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Class method to create QuantumCircuits from Qiskit QuantumCircuits.</span>
 
 <span class="sd">        Parameters</span>
@@ -1853,28 +2139,34 @@ document.write(`
 <span class="sd">        &gt;&gt;&gt; qc_2 = QiskitQuantumCircuit(4)</span>
 <span class="sd">        &gt;&gt;&gt; qc_2.cx(0, range(1,4))</span>
 <span class="sd">        &gt;&gt;&gt; print(qc_2)</span>
-<span class="sd">        q_0: ──■────■────■──</span>
-<span class="sd">             ┌─┴─┐  │    │</span>
-<span class="sd">        q_1: ┤ X ├──┼────┼──</span>
-<span class="sd">             └───┘┌─┴─┐  │</span>
-<span class="sd">        q_2: ─────┤ X ├──┼──</span>
-<span class="sd">                  └───┘┌─┴─┐</span>
-<span class="sd">        q_3: ──────────┤ X ├</span>
-<span class="sd">                       └───┘</span>
+<span class="sd">        </span>
+<span class="sd">        ::</span>
+<span class="sd">                </span>
+<span class="sd">            q_0: ──■────■────■──</span>
+<span class="sd">                 ┌─┴─┐  │    │</span>
+<span class="sd">            q_1: ┤ X ├──┼────┼──</span>
+<span class="sd">                 └───┘┌─┴─┐  │</span>
+<span class="sd">            q_2: ─────┤ X ├──┼──</span>
+<span class="sd">                      └───┘┌─┴─┐</span>
+<span class="sd">            q_3: ──────────┤ X ├</span>
+<span class="sd">                           └───┘</span>
 
 <span class="sd">        Note that we don&#39;t need to create a QuantumCircuit object first as this is a</span>
 <span class="sd">        class method.</span>
 
 <span class="sd">        &gt;&gt;&gt; qrisp_qc_2 = QuantumCircuit.from_qiskit(qc_2)</span>
 <span class="sd">        &gt;&gt;&gt; print(qrisp_qc_2)</span>
-<span class="sd">         qb_8: ──■────■────■──</span>
-<span class="sd">               ┌─┴─┐  │    │</span>
-<span class="sd">         qb_9: ┤ X ├──┼────┼──</span>
-<span class="sd">               └───┘┌─┴─┐  │</span>
-<span class="sd">        qb_10: ─────┤ X ├──┼──</span>
-<span class="sd">                    └───┘┌─┴─┐</span>
-<span class="sd">        qb_11: ──────────┤ X ├</span>
-<span class="sd">                         └───┘</span>
+<span class="sd">        </span>
+<span class="sd">        ::</span>
+<span class="sd">            </span>
+<span class="sd">             qb_8: ──■────■────■──</span>
+<span class="sd">                   ┌─┴─┐  │    │</span>
+<span class="sd">             qb_9: ┤ X ├──┼────┼──</span>
+<span class="sd">                   └───┘┌─┴─┐  │</span>
+<span class="sd">            qb_10: ─────┤ X ├──┼──</span>
+<span class="sd">                        └───┘┌─┴─┐</span>
+<span class="sd">            qb_11: ──────────┤ X ├</span>
+<span class="sd">                             └───┘</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="kn">from</span> <span class="nn">qrisp.interface</span> <span class="kn">import</span> <span class="n">convert_from_qiskit</span>
@@ -1882,7 +2174,7 @@ document.write(`
         <span class="k">return</span> <span class="n">convert_from_qiskit</span><span class="p">(</span><span class="n">qiskit_qc</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="QuantumCircuit.to_qiskit"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.to_qiskit.html#qrisp.QuantumCircuit.to_qiskit">[docs]</a>    <span class="k">def</span> <span class="nf">to_qiskit</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Method to convert the given QuantumCircuit to a Qiskit QuantumCircuit.</span>
 
 <span class="sd">        Returns</span>
@@ -1894,11 +2186,39 @@ document.write(`
         <span class="kn">from</span> <span class="nn">qrisp.interface.circuit_converter</span> <span class="kn">import</span> <span class="n">convert_circuit</span>
 
         <span class="k">return</span> <span class="n">convert_circuit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_api</span><span class="o">=</span><span class="s2">&quot;qiskit&quot;</span><span class="p">,</span> <span class="n">transpile</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+    
+<div class="viewcode-block" id="QuantumCircuit.to_pennylane"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.to_pennylane.html#qrisp.QuantumCircuit.to_pennylane">[docs]</a>    <span class="k">def</span> <span class="nf">to_pennylane</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method to convert the given QuantumCircuit to a `Pennylane &lt;https://pennylane.ai/&gt;`_ Circuit.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        function</span>
+<span class="sd">            A function representing a pennylane QuantumCircuit.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="kn">from</span> <span class="nn">qrisp.interface.converter.convert_to_qml</span> <span class="kn">import</span> <span class="n">qml_converter</span>
+        
+        <span class="k">return</span> <span class="n">qml_converter</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+    
+<div class="viewcode-block" id="QuantumCircuit.to_pytket"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.to_pytket.html#qrisp.QuantumCircuit.to_pytket">[docs]</a>    <span class="k">def</span> <span class="nf">to_pytket</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method to convert the given QuantumCircuit to a `PyTket &lt;https://cqcl.github.io/tket/pytket/api/#&gt;`_ Circuit.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        function</span>
+<span class="sd">            A function representing a pennylane QuantumCircuit.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">qrisp.interface.converter.convert_to_pytket</span> <span class="kn">import</span> <span class="n">pytket_converter</span>
+        
+        <span class="k">return</span> <span class="n">pytket_converter</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
 
     <span class="c1"># Several methods to apply the standard operation defined in standard_operations.py</span>
-
 <div class="viewcode-block" id="QuantumCircuit.measure"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.measure.html#qrisp.QuantumCircuit.measure">[docs]</a>    <span class="k">def</span> <span class="nf">measure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">qubits</span><span class="p">,</span> <span class="n">clbits</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Instructs a measurement. If given no classical bits, the proper amount will be</span>
 <span class="sd">        created.</span>
 
@@ -1911,8 +2231,10 @@ document.write(`
 <span class="sd">            The Clbit to store the measurement result. The default is None.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
+        
         <span class="k">if</span> <span class="n">clbits</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">qubits</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="kn">from</span> <span class="nn">qrisp</span> <span class="kn">import</span> <span class="n">QuantumVariable</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">qubits</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="n">QuantumVariable</span><span class="p">)):</span>
                 <span class="n">clbits</span> <span class="o">=</span> <span class="p">[]</span>
                 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">qubits</span><span class="p">)):</span>
                     <span class="n">clbits</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">add_clbit</span><span class="p">())</span>
@@ -1922,7 +2244,7 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ops</span><span class="o">.</span><span class="n">Measurement</span><span class="p">(),</span> <span class="p">[</span><span class="n">qubits</span><span class="p">],</span> <span class="p">[</span><span class="n">clbits</span><span class="p">])</span></div>
 
 <div class="viewcode-block" id="QuantumCircuit.cx"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.cx.html#qrisp.QuantumCircuit.cx">[docs]</a>    <span class="k">def</span> <span class="nf">cx</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">qubits_0</span><span class="p">,</span> <span class="n">qubits_1</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Instruct a CX-gate.</span>
 
 <span class="sd">        Parameters</span>
@@ -1936,7 +2258,7 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ops</span><span class="o">.</span><span class="n">CXGate</span><span class="p">(),</span> <span class="p">[</span><span class="n">qubits_0</span><span class="p">,</span> <span class="n">qubits_1</span><span class="p">])</span></div>
 
 <div class="viewcode-block" id="QuantumCircuit.cy"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.cy.html#qrisp.QuantumCircuit.cy">[docs]</a>    <span class="k">def</span> <span class="nf">cy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">qubits_0</span><span class="p">,</span> <span class="n">qubits_1</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Instruct a CY-gate.</span>
 
 <span class="sd">        Parameters</span>
@@ -1950,7 +2272,7 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ops</span><span class="o">.</span><span class="n">CYGate</span><span class="p">(),</span> <span class="p">[</span><span class="n">qubits_0</span><span class="p">,</span> <span class="n">qubits_1</span><span class="p">])</span></div>
 
 <div class="viewcode-block" id="QuantumCircuit.cz"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.cz.html#qrisp.QuantumCircuit.cz">[docs]</a>    <span class="k">def</span> <span class="nf">cz</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">qubits_0</span><span class="p">,</span> <span class="n">qubits_1</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Instruct a CZ-gate.</span>
 
 <span class="sd">        Parameters</span>
@@ -1964,7 +2286,7 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ops</span><span class="o">.</span><span class="n">CZGate</span><span class="p">(),</span> <span class="p">[</span><span class="n">qubits_0</span><span class="p">,</span> <span class="n">qubits_1</span><span class="p">])</span></div>
 
 <div class="viewcode-block" id="QuantumCircuit.h"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.h.html#qrisp.QuantumCircuit.h">[docs]</a>    <span class="k">def</span> <span class="nf">h</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">qubits</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Instruct a Hadamard-gate.</span>
 
 <span class="sd">        Parameters</span>
@@ -1976,7 +2298,7 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ops</span><span class="o">.</span><span class="n">HGate</span><span class="p">(),</span> <span class="p">[</span><span class="n">qubits</span><span class="p">])</span></div>
 
 <div class="viewcode-block" id="QuantumCircuit.x"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.x.html#qrisp.QuantumCircuit.x">[docs]</a>    <span class="k">def</span> <span class="nf">x</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">qubits</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Instruct a Pauli-X-gate.</span>
 
 <span class="sd">        Parameters</span>
@@ -1987,7 +2309,7 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ops</span><span class="o">.</span><span class="n">XGate</span><span class="p">(),</span> <span class="p">[</span><span class="n">qubits</span><span class="p">])</span></div>
 
 <div class="viewcode-block" id="QuantumCircuit.y"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.y.html#qrisp.QuantumCircuit.y">[docs]</a>    <span class="k">def</span> <span class="nf">y</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">qubits</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Instruct a Pauli-Y-gate.</span>
 
 <span class="sd">        Parameters</span>
@@ -1998,7 +2320,7 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ops</span><span class="o">.</span><span class="n">YGate</span><span class="p">(),</span> <span class="p">[</span><span class="n">qubits</span><span class="p">])</span></div>
 
 <div class="viewcode-block" id="QuantumCircuit.z"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.z.html#qrisp.QuantumCircuit.z">[docs]</a>    <span class="k">def</span> <span class="nf">z</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">qubits</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Instruct a Pauli-Z-gate.</span>
 
 <span class="sd">        Parameters</span>
@@ -2009,7 +2331,7 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ops</span><span class="o">.</span><span class="n">ZGate</span><span class="p">(),</span> <span class="p">[</span><span class="n">qubits</span><span class="p">])</span></div>
 
 <div class="viewcode-block" id="QuantumCircuit.rx"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.rx.html#qrisp.QuantumCircuit.rx">[docs]</a>    <span class="k">def</span> <span class="nf">rx</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phi</span><span class="p">,</span> <span class="n">qubits</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Instruct a parametrized RX-gate.</span>
 
 <span class="sd">        Parameters</span>
@@ -2025,7 +2347,7 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ops</span><span class="o">.</span><span class="n">RXGate</span><span class="p">(</span><span class="n">phi</span><span class="p">),</span> <span class="p">[</span><span class="n">qubits</span><span class="p">])</span></div>
 
 <div class="viewcode-block" id="QuantumCircuit.ry"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.ry.html#qrisp.QuantumCircuit.ry">[docs]</a>    <span class="k">def</span> <span class="nf">ry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phi</span><span class="p">,</span> <span class="n">qubits</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Instruct a parametrized RY-gate.</span>
 
 <span class="sd">        Parameters</span>
@@ -2042,7 +2364,7 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ops</span><span class="o">.</span><span class="n">RYGate</span><span class="p">(</span><span class="n">phi</span><span class="p">),</span> <span class="p">[</span><span class="n">qubits</span><span class="p">])</span></div>
 
 <div class="viewcode-block" id="QuantumCircuit.rz"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.rz.html#qrisp.QuantumCircuit.rz">[docs]</a>    <span class="k">def</span> <span class="nf">rz</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phi</span><span class="p">,</span> <span class="n">qubits</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Instruct a parametrized RZ-gate.</span>
 
 <span class="sd">        Parameters</span>
@@ -2058,7 +2380,7 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ops</span><span class="o">.</span><span class="n">RZGate</span><span class="p">(</span><span class="n">phi</span><span class="p">),</span> <span class="p">[</span><span class="n">qubits</span><span class="p">])</span></div>
 
 <div class="viewcode-block" id="QuantumCircuit.cp"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.cp.html#qrisp.QuantumCircuit.cp">[docs]</a>    <span class="k">def</span> <span class="nf">cp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phi</span><span class="p">,</span> <span class="n">qubits_0</span><span class="p">,</span> <span class="n">qubits_1</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Instruct a controlled phase-gate.</span>
 
 <span class="sd">        Parameters</span>
@@ -2076,7 +2398,7 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ops</span><span class="o">.</span><span class="n">CPGate</span><span class="p">(</span><span class="n">phi</span><span class="p">),</span> <span class="p">[</span><span class="n">qubits_0</span><span class="p">,</span> <span class="n">qubits_1</span><span class="p">])</span></div>
 
 <div class="viewcode-block" id="QuantumCircuit.p"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.p.html#qrisp.QuantumCircuit.p">[docs]</a>    <span class="k">def</span> <span class="nf">p</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phi</span><span class="p">,</span> <span class="n">qubits</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Instruct a phase-gate.</span>
 
 <span class="sd">        Parameters</span>
@@ -2092,7 +2414,7 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ops</span><span class="o">.</span><span class="n">PGate</span><span class="p">(</span><span class="n">phi</span><span class="p">),</span> <span class="p">[</span><span class="n">qubits</span><span class="p">])</span></div>
 
 <div class="viewcode-block" id="QuantumCircuit.rxx"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.rxx.html#qrisp.QuantumCircuit.rxx">[docs]</a>    <span class="k">def</span> <span class="nf">rxx</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phi</span><span class="p">,</span> <span class="n">qubits_0</span><span class="p">,</span> <span class="n">qubits_1</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Instruct an RXX-gate.</span>
 
 <span class="sd">        Parameters</span>
@@ -2111,7 +2433,7 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ops</span><span class="o">.</span><span class="n">RXXGate</span><span class="p">(</span><span class="n">phi</span><span class="p">),</span> <span class="p">[</span><span class="n">qubits_0</span><span class="p">,</span> <span class="n">qubits_1</span><span class="p">])</span></div>
 
 <div class="viewcode-block" id="QuantumCircuit.rzz"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.rzz.html#qrisp.QuantumCircuit.rzz">[docs]</a>    <span class="k">def</span> <span class="nf">rzz</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phi</span><span class="p">,</span> <span class="n">qubits_0</span><span class="p">,</span> <span class="n">qubits_1</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Instruct an RZZ-gate.</span>
 
 <span class="sd">        Parameters</span>
@@ -2130,7 +2452,7 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ops</span><span class="o">.</span><span class="n">RZZGate</span><span class="p">(</span><span class="n">phi</span><span class="p">),</span> <span class="p">[</span><span class="n">qubits_0</span><span class="p">,</span> <span class="n">qubits_1</span><span class="p">])</span></div>
 
 <div class="viewcode-block" id="QuantumCircuit.xxyy"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.xxyy.html#qrisp.QuantumCircuit.xxyy">[docs]</a>    <span class="k">def</span> <span class="nf">xxyy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phi</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="n">qubits_0</span><span class="p">,</span> <span class="n">qubits_1</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Instruct an XXYY-gate.</span>
 
 <span class="sd">        Parameters</span>
@@ -2150,7 +2472,7 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ops</span><span class="o">.</span><span class="n">XXYYGate</span><span class="p">(</span><span class="n">phi</span><span class="p">,</span> <span class="n">beta</span><span class="p">),</span> <span class="p">[</span><span class="n">qubits_0</span><span class="p">,</span> <span class="n">qubits_1</span><span class="p">])</span></div>
 
 <div class="viewcode-block" id="QuantumCircuit.swap"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.swap.html#qrisp.QuantumCircuit.swap">[docs]</a>    <span class="k">def</span> <span class="nf">swap</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">qubits_0</span><span class="p">,</span> <span class="n">qubits_1</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Instruct a SWAP-gate.</span>
 
 <span class="sd">        Parameters</span>
@@ -2164,7 +2486,7 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ops</span><span class="o">.</span><span class="n">SwapGate</span><span class="p">(),</span> <span class="p">[</span><span class="n">qubits_0</span><span class="p">,</span> <span class="n">qubits_1</span><span class="p">])</span></div>
 
 <div class="viewcode-block" id="QuantumCircuit.mcx"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.mcx.html#qrisp.QuantumCircuit.mcx">[docs]</a>    <span class="k">def</span> <span class="nf">mcx</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">control_qubits</span><span class="p">,</span> <span class="n">target_qubits</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;gray&quot;</span><span class="p">,</span> <span class="n">ctrl_state</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Instruct a multi-controlled X-gate.</span>
 
 <span class="sd">        Parameters</span>
@@ -2187,7 +2509,7 @@ document.write(`
         <span class="p">)</span></div>
 
 <div class="viewcode-block" id="QuantumCircuit.ccx"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.ccx.html#qrisp.QuantumCircuit.ccx">[docs]</a>    <span class="k">def</span> <span class="nf">ccx</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctrl_qubit_0</span><span class="p">,</span> <span class="n">ctrl_qubit_1</span><span class="p">,</span> <span class="n">target_qubit</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;gray&quot;</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Instruct a Toffoli-gate.</span>
 
 <span class="sd">        Parameters</span>
@@ -2205,7 +2527,7 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">mcx</span><span class="p">([</span><span class="n">ctrl_qubit_0</span><span class="p">,</span> <span class="n">ctrl_qubit_1</span><span class="p">],</span> <span class="n">target_qubit</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="n">method</span><span class="p">)</span></div>
 
     <span class="k">def</span> <span class="nf">crx</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phi</span><span class="p">,</span> <span class="n">qubits_0</span><span class="p">,</span> <span class="n">qubits_1</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Instruct a controlled rx-gate.</span>
 
 <span class="sd">        Parameters</span>
@@ -2223,7 +2545,7 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ops</span><span class="o">.</span><span class="n">MCRXGate</span><span class="p">(</span><span class="n">phi</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">[</span><span class="n">qubits_0</span><span class="p">,</span> <span class="n">qubits_1</span><span class="p">])</span>
 
 <div class="viewcode-block" id="QuantumCircuit.t"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.t.html#qrisp.QuantumCircuit.t">[docs]</a>    <span class="k">def</span> <span class="nf">t</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">qubits</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Instruct a T-gate.</span>
 
 <span class="sd">        Parameters</span>
@@ -2234,7 +2556,7 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ops</span><span class="o">.</span><span class="n">TGate</span><span class="p">(),</span> <span class="p">[</span><span class="n">qubits</span><span class="p">])</span></div>
 
 <div class="viewcode-block" id="QuantumCircuit.t_dg"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.t_dg.html#qrisp.QuantumCircuit.t_dg">[docs]</a>    <span class="k">def</span> <span class="nf">t_dg</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">qubits</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Instruct a dagger T-gate.</span>
 
 <span class="sd">        Parameters</span>
@@ -2245,7 +2567,7 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ops</span><span class="o">.</span><span class="n">TGate</span><span class="p">()</span><span class="o">.</span><span class="n">inverse</span><span class="p">(),</span> <span class="p">[</span><span class="n">qubits</span><span class="p">])</span></div>
 
 <div class="viewcode-block" id="QuantumCircuit.s"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.s.html#qrisp.QuantumCircuit.s">[docs]</a>    <span class="k">def</span> <span class="nf">s</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">qubits</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Instruct an S-gate.</span>
 
 <span class="sd">        Parameters</span>
@@ -2256,7 +2578,7 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ops</span><span class="o">.</span><span class="n">SGate</span><span class="p">(),</span> <span class="p">[</span><span class="n">qubits</span><span class="p">])</span></div>
 
 <div class="viewcode-block" id="QuantumCircuit.s_dg"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.s_dg.html#qrisp.QuantumCircuit.s_dg">[docs]</a>    <span class="k">def</span> <span class="nf">s_dg</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">qubits</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Instruct a daggered S-gate.</span>
 
 <span class="sd">        Parameters</span>
@@ -2267,7 +2589,7 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ops</span><span class="o">.</span><span class="n">SGate</span><span class="p">()</span><span class="o">.</span><span class="n">inverse</span><span class="p">(),</span> <span class="p">[</span><span class="n">qubits</span><span class="p">])</span></div>
 
 <div class="viewcode-block" id="QuantumCircuit.sx"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.sx.html#qrisp.QuantumCircuit.sx">[docs]</a>    <span class="k">def</span> <span class="nf">sx</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">qubits</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Instruct a SX-gate.</span>
 
 <span class="sd">        Parameters</span>
@@ -2278,7 +2600,7 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ops</span><span class="o">.</span><span class="n">SXGate</span><span class="p">(),</span> <span class="p">[</span><span class="n">qubits</span><span class="p">])</span></div>
 
 <div class="viewcode-block" id="QuantumCircuit.sx_dg"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.sx_dg.html#qrisp.QuantumCircuit.sx_dg">[docs]</a>    <span class="k">def</span> <span class="nf">sx_dg</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">qubits</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Instruct a daggered SX-gate.</span>
 
 <span class="sd">        Parameters</span>
@@ -2289,7 +2611,7 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ops</span><span class="o">.</span><span class="n">SXGate</span><span class="p">()</span><span class="o">.</span><span class="n">inverse</span><span class="p">(),</span> <span class="p">[</span><span class="n">qubits</span><span class="p">])</span></div>
 
     <span class="k">def</span> <span class="nf">barrier</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">qubits</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">clbits</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Instruct a Barrier onto the given Qubit. Barriers can be used as visual markers</span>
 <span class="sd">        and compiler directives.</span>
 
@@ -2307,7 +2629,7 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ops</span><span class="o">.</span><span class="n">Barrier</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">qubits</span><span class="p">)),</span> <span class="n">qubits</span><span class="p">)</span>
 
 <div class="viewcode-block" id="QuantumCircuit.reset"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.reset.html#qrisp.QuantumCircuit.reset">[docs]</a>    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">qubits</span><span class="p">):</span>
-        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Instruct a reset. This resets this Qubit into the $\ket{0}$ state regardless</span>
 <span class="sd">        of its previous state.</span>
 
@@ -2320,7 +2642,7 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ops</span><span class="o">.</span><span class="n">Reset</span><span class="p">(),</span> <span class="p">[</span><span class="n">qubits</span><span class="p">])</span></div>
 
 <div class="viewcode-block" id="QuantumCircuit.u3"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.u3.html#qrisp.QuantumCircuit.u3">[docs]</a>    <span class="k">def</span> <span class="nf">u3</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">phi</span><span class="p">,</span> <span class="n">lam</span><span class="p">,</span> <span class="n">qubits</span><span class="p">):</span>
-        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Instruct a U3-gate from given Euler angles.</span>
 
 <span class="sd">        A U3 gate has the unitary:</span>
@@ -2347,7 +2669,7 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ops</span><span class="o">.</span><span class="n">u3Gate</span><span class="p">(</span><span class="n">theta</span><span class="p">,</span> <span class="n">phi</span><span class="p">,</span> <span class="n">lam</span><span class="p">),</span> <span class="p">[</span><span class="n">qubits</span><span class="p">])</span></div>
 
 <div class="viewcode-block" id="QuantumCircuit.unitary"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.unitary.html#qrisp.QuantumCircuit.unitary">[docs]</a>    <span class="k">def</span> <span class="nf">unitary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">unitary_array</span><span class="p">,</span> <span class="n">qubits</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Instruct a U3-gate from a given U3 matrix.</span>
 
 <span class="sd">        Parameters</span>
@@ -2386,7 +2708,7 @@ document.write(`
         <span class="c1"># self.u3(theta, phi, lam, [qubits], global_phase = gphase)</span>
 
 <div class="viewcode-block" id="QuantumCircuit.gphase"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.gphase.html#qrisp.QuantumCircuit.gphase">[docs]</a>    <span class="k">def</span> <span class="nf">gphase</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phi</span><span class="p">,</span> <span class="n">qubits</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Instruct a global phase. Global phases do not directly influence the</span>
 <span class="sd">        QuantumCircuits outcome however they can become physical if used as a base gate</span>
 <span class="sd">        for a controlled operation.</span>
@@ -2402,7 +2724,7 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ops</span><span class="o">.</span><span class="n">GPhaseGate</span><span class="p">(</span><span class="n">phi</span><span class="p">),</span> <span class="p">[</span><span class="n">qubits</span><span class="p">])</span></div>
 
 <div class="viewcode-block" id="QuantumCircuit.id"><a class="viewcode-back" href="../../../reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.id.html#qrisp.QuantumCircuit.id">[docs]</a>    <span class="k">def</span> <span class="nf">id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">qubits</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Instruct an identity gate. Identity gates are simply placeholders and have no</span>
 <span class="sd">        effect on the quantum state.</span>
 
@@ -2421,10 +2743,10 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">original_appending_mode</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">QuantumCircuit</span><span class="o">.</span><span class="n">fast_append</span><span class="p">)</span>
 
         <span class="n">QuantumCircuit</span><span class="o">.</span><span class="n">fast_append</span> <span class="o">=</span> <span class="kc">True</span>
+        
 
     <span class="k">def</span> <span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exception_type</span><span class="p">,</span> <span class="n">exception_value</span><span class="p">,</span> <span class="n">traceback</span><span class="p">):</span>
-        <span class="kn">from</span> <span class="nn">qrisp</span> <span class="kn">import</span> <span class="n">QuantumCircuit</span>
-
+        
         <span class="n">QuantumCircuit</span><span class="o">.</span><span class="n">fast_append</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">original_appending_mode</span>
 
 
@@ -2489,9 +2811,12 @@ document.write(`
             <span class="n">result</span> <span class="o">=</span> <span class="nb">input</span>
 
     <span class="k">return</span> <span class="n">result</span>
+
 </pre></div>
 
                 </article>
+              
+              
               
               
               
@@ -2512,6 +2837,20 @@ document.write(`
   </div>
 </div>
 
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
 </div></div>
               
             
@@ -2525,8 +2864,8 @@ document.write(`
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script src="../../../_static/scripts/bootstrap.js?digest=e353d410970836974a52"></script>
-<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52"></script>
+  <script src="../../../_static/scripts/bootstrap.js?digest=ac02cc09edc035673794"></script>
+<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=ac02cc09edc035673794"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -2544,7 +2883,7 @@ document.write(`
       
         <div class="footer-item">
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 6.2.1.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 4.5.0.
     <br/>
   </p>
 </div>
@@ -2552,10 +2891,11 @@ document.write(`
     </div>
   
   
+  
     <div class="footer-items__end">
       
         <div class="footer-item"><p class="theme-version">
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.13.4dev0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.14.1.
 </p></div>
       
     </div>

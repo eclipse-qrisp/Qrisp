@@ -22,7 +22,6 @@ import sympy as sp
 
 from qrisp import QuantumArray, p, z
 from qrisp.arithmetic.SBP_arithmetic import hybrid_mult, polynomial_encoder
-from qrisp.qtypes import QuantumFloat
 
 
 def q_matmul(
@@ -290,6 +289,7 @@ def semi_classic_matmul(q_matrix, cl_matrix, output_array=None, res_bit_shape="e
     J = cl_matrix.shape[1]
 
     from sympy import Symbol
+    from qrisp import QuantumFloat
 
     if output_array is None:
         if isinstance(res_bit_shape, QuantumFloat):
@@ -615,7 +615,7 @@ def dot(a, b, out=None):
                    [ 1,  0]]): 1.0}
 
     """
-    from qrisp.arithmetic import QuantumFloat
+    from qrisp import QuantumFloat
 
     if isinstance(a, QuantumFloat) or isinstance(b, QuantumFloat):
         return np.dot(a, b, out)

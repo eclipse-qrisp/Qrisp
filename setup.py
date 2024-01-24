@@ -26,7 +26,9 @@ REQUIREMENTS = ["connexion>=2.12.0",
                 "scipy>=1.10.0",
                 "numba",
                 "networkx",
-                "tdqm"]
+                "tdqm",
+                "dill",
+                "flask"]
 
 
 with open("README.md", "r", encoding="utf-8") as fh:

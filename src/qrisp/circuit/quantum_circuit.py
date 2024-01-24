@@ -19,9 +19,10 @@
 
 import numpy as np
 import sympy
+from numba import njit
 
 import qrisp.circuit.standard_operations as ops
-from qrisp.circuit import Clbit, Instruction, Operation, Qubit
+from qrisp.circuit import Clbit, Instruction, Operation, Qubit, ClControlledOperation
 
 # Class to describe quantum circuits
 # The naming of the attributes is rather similar to the qiskit equivalent
@@ -540,8 +541,8 @@ class QuantumCircuit:
             res_str = str(
                 circuit_drawer(
                     convert_circuit(self, target_api="qiskit", transpile=False),
+                    output="text",
                     cregbundle=False,
-                    output = "text",
                 )
             )
         except AttributeError:
@@ -796,11 +797,11 @@ class QuantumCircuit:
             if res.dtype == np.dtype("O"):
                 raveled_res = res.ravel()
                 for i in range(len(raveled_res)):
-                    expression = raveled_res[i]
+                    expression = sympy.simplify(raveled_res[i])
                     for a in sympy.preorder_traversal(expression):
                         if isinstance(a, sympy.Float):
                             rounded_float = round(a, decimals)
-                            if abs(rounded_float - 1) < 10**-decimals:
+                            if abs(float(a) - 1) < 10**-(decimals):
                                 expression = expression.subs(a, 1)
                             else:
                                 expression = expression.subs(a, rounded_float)
@@ -1066,13 +1067,17 @@ class QuantumCircuit:
         """
         return self.to_qiskit().qasm(formatted, filename, encoding)
 
-    def depth(self, transpile=True):
+    def depth(self, depth_indicator = lambda x : 1, transpile=True):
         """
         Returns the depth of the QuantumCircuit. Note that the depth on QuantumCircuit
         which are not transpiled, might have very little correlation with the runtime.
 
         Parameters
         ----------
+        depth_indicator : function, optional
+            A function which receives an :ref:`Operation` instance and returns the
+            time/logical depth this operation takes. By default every Operation takes
+            logical depth 1.
         transpile : bool, optional
             Boolean to indicate wether the QuantumCircuit should be transpiled before
             the depth is calculated. The default is True.
@@ -1085,10 +1090,163 @@ class QuantumCircuit:
         """
 
         from qrisp.misc import get_depth_dic
+        if len(self.data) == 0:
+            return 0
 
-        depth_dic = get_depth_dic(self, transpile_qc=transpile)
+        depth_dic = get_depth_dic(self, transpile_qc=transpile, depth_indicator = depth_indicator)
 
         return max(depth_dic.values())
+    
+    def t_depth(self, epsilon = None):
+        r"""
+        Estimates the T-depth of self. T-depth is an important metric for fault tolerant
+        quantum computing, because T gates are expected to be the bottleneck in fault tolerant
+        architectures.
+        
+        According to `this paper <https://arxiv.org/abs/1403.2975>`_, the synthesis of an $RZ(\phi)$
+        up to precision $\epsilon$ requires $3\text{log}_2(\frac{1}{\epsilon})$ 
+        T-gates.
+        
+        Based on this formula, this method performs a conservative estimate of the T-depth
+        of self.
+            
+        Parameters
+        ----------
+        epsilon : float, optional
+            The precision up to which parametrized gates should be approximated. If not given,
+            Qrisp will determine the parameter with the highest precision. For more information
+            on this feature see the examples
+
+
+        Returns
+        -------
+        float
+            The estimated T-depth.
+
+        Examples
+        --------
+        
+        We create a QuantumCircuit and evaluate the T-depth:
+            
+        >>> import numpy as np
+        >>> from qrisp import QuantumCircuit
+        >>> qc = QuantumCircuit(2)
+        >>> qc.t(0)
+        >>> qc.cx(0,1)
+        >>> qc.rx(2*np.pi*3/2**4, 1)
+        >>> qc.t_depth(epsilon = 2**-5)
+        16
+        
+        In this example we execute a T-Gate on the 0-th qubit (T-depth : 1) followed
+        by a CNOT gate (T-depth: 0) on qubits 0 and 1 and finally an RX gate.
+        
+        The RX-Gate can be executed by using the decomposition 
+        
+        .. math::
+            
+            RX(\phi) = \text{H } \text{RZ}(\phi) \text{ H}
+
+        The T-depth of executing a parametrized RX gate is therefore the same
+        as the parametrized RZ. To determine the T-depth of the RZ-gate, executed
+        with precision $2^{-5}$ we use the above formula:
+            
+        .. math::
+            
+            \begin{align}
+            \text{TDEPTH}(\text{RZ}(\phi), \epsilon = 2^-5) = 3 \text{log}_2(2^5)\\
+            &= 15
+            \end{align}
+            
+        We therefore arrive at 16.
+        
+        **Automatic precision determination**
+        
+        In the case of unknown precision, Qrisp assumes that every parameter in the 
+        circuit is of the form.
+        
+        .. math::
+            
+            \phi = 2\pi\frac{m}{2^k}
+        
+        Where $m$ is an integer. Qrisp will then determine the parameter with the maximum $k$
+        and set $\epsilon = 2^{k_{max} +3}$.
+        
+        >>> qc.t_depth()
+        22
+        
+        In this circuit $k_{max} = 4$ therefore, $\epsilon = 2^{-7}$ implying the T-depth is 22.
+        """
+        
+        if epsilon is None:
+            transpiled_qc = self.transpile()
+            
+            
+            max_circuit_prec = 15
+            for instr in transpiled_qc.data:
+                op = instr.op
+                
+                for par in op.params:
+                    
+                    par = int(np.round((par%(2*np.pi))/(2*np.pi)*2**15))
+                    
+                    for i in range(max_circuit_prec):
+                        if par%(2**i):
+                            max_circuit_prec = i
+                            break
+        
+            max_circuit_prec = 16 - max_circuit_prec
+            
+            epsilon = 2**(-max_circuit_prec - 3)
+                
+        from qrisp.misc.utility import t_depth_indicator
+        
+        return self.depth(depth_indicator = lambda x : t_depth_indicator(x, epsilon))
+    
+    def cnot_depth(self):
+        """
+        This function returns the CNOT-depth of an self.
+        
+        In NISQ-era devices, CNOT gates are the restricting bottleneck for quantum 
+        circuit execution. This function can be used as a gate-speed specifier for
+        the :meth:`compile <qrisp.QuantumSession.compile>`_ method.
+
+
+        Returns
+        -------
+        int
+            The CNOT depth of self.
+            
+        Examples
+        --------
+        
+        We create a QuantumCircuit and evaluate it's CNOT depth.
+        
+        >>> from qrisp import QuantumCircuit
+        >>> qc = QuantumCircuit(4)
+        >>> qc.cx(0,1)
+        >>> qc.x(1)
+        >>> qc.cx(1,2)
+        >>> qc.y(2)
+        >>> qc.cx(2,3)
+        >>> qc.cx(1,0)
+        >>> print(qc)
+                              ┌───┐     
+        qb_59: ──■────────────┤ X ├─────
+               ┌─┴─┐┌───┐     └─┬─┘     
+        qb_60: ┤ X ├┤ X ├──■────■───────
+               └───┘└───┘┌─┴─┐┌───┐     
+        qb_61: ──────────┤ X ├┤ Y ├──■──
+                         └───┘└───┘┌─┴─┐
+        qb_62: ────────────────────┤ X ├
+                                   └───┘
+                                   
+        >>> qc.cnot_depth()
+        3
+        
+        """
+        from qrisp.misc.utility import cnot_depth_indicator
+
+        return self.depth(depth_indicator = cnot_depth_indicator)
 
     def num_qubits(self):
         """
@@ -1167,7 +1325,7 @@ class QuantumCircuit:
         """
 
         # Check the type of the instruction/operation
-        from qrisp.circuit import Instruction, Operation
+        # from qrisp.circuit import Instruction, Operation
 
         if self.fast_append:
             if isinstance(operation_or_instruction, Instruction):
@@ -1175,9 +1333,15 @@ class QuantumCircuit:
             else:
                 if not isinstance(qubits, list):
                     raise
+                for qb in qubits:
+                    if not isinstance(qb, Qubit):
+                        print(qubits)
+                        raise
                 self.data.append(Instruction(operation_or_instruction, qubits, clbits))
             return
 
+            
+            
         if isinstance(operation_or_instruction, Instruction):
             instruction = operation_or_instruction
             self.append(instruction.op, instruction.qubits, instruction.clbits)
@@ -1264,7 +1428,7 @@ class QuantumCircuit:
 
                 # Append instruction (qubit_constellation and clbit_constellation) now
                 # contains no lists but only qubit/clbit arguments
-                self.append(operation, qubit_constellation, clbit_constellation)
+                QuantumCircuit.append(self, operation, qubit_constellation, clbit_constellation)
 
             return
 
@@ -1615,7 +1779,7 @@ class QuantumCircuit:
     
     def to_pennylane(self):
         """
-        Method to convert the given QuantumCircuit to a Pennylane Circuit.
+        Method to convert the given QuantumCircuit to a `Pennylane <https://pennylane.ai/>`_ Circuit.
 
         Returns
         -------
@@ -1630,7 +1794,7 @@ class QuantumCircuit:
     
     def to_pytket(self):
         """
-        Method to convert the given QuantumCircuit to a Pennylane Circuit.
+        Method to convert the given QuantumCircuit to a `PyTket <https://cqcl.github.io/tket/pytket/api/#>`_ Circuit.
 
         Returns
         -------
@@ -1657,8 +1821,10 @@ class QuantumCircuit:
             The Clbit to store the measurement result. The default is None.
 
         """
+        
         if clbits is None:
-            if isinstance(qubits, list):
+            from qrisp import QuantumVariable
+            if isinstance(qubits, (list, QuantumVariable)):
                 clbits = []
                 for i in range(len(qubits)):
                     clbits.append(self.add_clbit())
@@ -2167,10 +2333,10 @@ class AppendingAccelerator:
         self.original_appending_mode = bool(QuantumCircuit.fast_append)
 
         QuantumCircuit.fast_append = True
+        
 
     def __exit__(self, exception_type, exception_value, traceback):
-        from qrisp import QuantumCircuit
-
+        
         QuantumCircuit.fast_append = self.original_appending_mode
 
 
@@ -2235,3 +2401,4 @@ def convert_to_cb_list(input, circuit=None, top_level=True):
             result = input
 
     return result
+

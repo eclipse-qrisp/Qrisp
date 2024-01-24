@@ -62,43 +62,43 @@ def merge_sessions_inner(qs_0, qs_1, merge_env_stack_=True):
     if qs_0 == qs_1:
         return
 
-    from qrisp.quantum_network import QuantumNetworkSession
+    # from qrisp.quantum_network import QuantumNetworkSession
 
-    if isinstance(qs_0, QuantumNetworkSession):
-        if qs_0.backend is not qs_1.backend:
-            if isinstance(qs_1, QuantumNetworkSession):
-                raise Exception(
-                    "Tried to merge two QuantumNetworkSessions containing "
-                    "differing clients"
-                )
+    # if isinstance(qs_0, QuantumNetworkSession):
+    #     if qs_0.backend is not qs_1.backend:
+    #         if isinstance(qs_1, QuantumNetworkSession):
+    #             raise Exception(
+    #                 "Tried to merge two QuantumNetworkSessions containing "
+    #                 "differing clients"
+    #             )
 
-            if qs_1.backend is not None:
-                raise Exception(
-                    "Tried to merge a QuantumNetworkSession with a "
-                    "QuantumSession with a non-trivial backend"
-                )
+    #         if qs_1.backend is not None:
+    #             raise Exception(
+    #                 "Tried to merge a QuantumNetworkSession with a "
+    #                 "QuantumSession with a non-trivial backend"
+    #             )
 
-        qs_1.backend = qs_0.backend
-        qs_1.inbox = qs_0.inbox
-        qs_1.__class__ = qs_0.__class__
+    #     qs_1.backend = qs_0.backend
+    #     qs_1.inbox = qs_0.inbox
+    #     qs_1.__class__ = qs_0.__class__
 
-    if isinstance(qs_1, QuantumNetworkSession):
-        if qs_1.backend is not qs_0.backend:
-            if isinstance(qs_0, QuantumNetworkSession):
-                raise Exception(
-                    "Tried to merge two QuantumNetworkSessions containing "
-                    "differing clients"
-                )
+    # if isinstance(qs_1, QuantumNetworkSession):
+    #     if qs_1.backend is not qs_0.backend:
+    #         if isinstance(qs_0, QuantumNetworkSession):
+    #             raise Exception(
+    #                 "Tried to merge two QuantumNetworkSessions containing "
+    #                 "differing clients"
+    #             )
 
-            if qs_0.backend is not None:
-                raise Exception(
-                    "Tried to merge a QuantumNetworkSession with a "
-                    "QuantumSession with a non-trivial backend"
-                )
+    #         if qs_0.backend is not None:
+    #             raise Exception(
+    #                 "Tried to merge a QuantumNetworkSession with a "
+    #                 "QuantumSession with a non-trivial backend"
+    #             )
 
-        qs_0.backend = qs_1.backend
-        qs_0.inbox = qs_1.inbox
-        qs_0.__class__ = qs_1.__class__
+    #     qs_0.backend = qs_1.backend
+    #     qs_0.inbox = qs_1.inbox
+    #     qs_0.__class__ = qs_1.__class__
 
     # The problem we face here is the following:
     # If two sessions a, b are merged and b is merged with another session c at a later
@@ -318,7 +318,7 @@ def multi_session_merge(input_list):
 
         return QuantumSession()
 
-    for i in range(1, len(session_list)):
+    for i in range(len(session_list)):
         merge_sessions(session_list[0], session_list[i])
 
     return session_list[0]

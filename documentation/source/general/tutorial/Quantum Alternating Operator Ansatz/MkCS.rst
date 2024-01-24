@@ -28,7 +28,7 @@ In order to create your customized QuantumVariable, one first needs to import th
 - One approach is to represent colors as an array where only one element is 1 and the rest are 0. For instance, if there are four colors, :red:`red`, :green:`green`, :blue:`blue`, and :yellow:`yellow`, they can be represented this way as :red:`[1, 0, 0, 0]`, :green:`[0, 1, 0, 0]`, :blue:`[0, 0, 1, 0]`, and :yellow:`[0, 0, 0, 1]`. This is called the **one-hot encoding**. 
 - Another approach is to represent colors with a unique binary number. In the case of the same four colors, they can be represented, for example, as :red:`[0, 0]`, :green:`[0, 1]`, :blue:`[1, 0]`, and :yellow:`[1, 1]` respectively. This encoding scheme is called **binary encoding**. 
 
-In the code block below, we can define the initialization function `__init__` as well as find a way to tell our quantum algorithm which color is encoded with our array. In other words, we need to define a decoder function that will decode the color for a given index `i`. In our case we use the one-hot encoding scheme as default. 
+In the code block below, we can define the initialization function ``__init__`` as well as find a way to tell our quantum algorithm which color is encoded with our array. In other words, we need to define a decoder function that will decode the color for a given index ``i``. In our case we use the one-hot encoding scheme as default. 
 ::
     from qrisp import QuantumArray, QuantumVariable
     import numpy as np
@@ -57,11 +57,11 @@ In the code block below, we can define the initialization function `__init__` as
                 else:
                     return "undefined"
 
-The `else` condition returning "undefined" can come in extremely handy since it functions as an intuitive eye-test in the upcoming MkCS QAOA implementation. If any result of the simulation is "undefined", like [1, 0, 1, 0] for example, we know that something went wrong within our code.
+The ``else`` condition returning "undefined" can come in extremely handy since it functions as an intuitive eye-test in the upcoming MkCS QAOA implementation. If any result of the simulation is "undefined", like [1, 0, 1, 0] for example, we know that something went wrong within our code.
 
 The choice of encoding method has implications for how colors are represented in the quantum computation. Our simple QuantumColor class only needs a list of colors and a flag indicating the preferred encoding method as arguments. The breakdown above is meant to serve as inspiration for you, showcasing how custom QuantumVariables tailored to one specific problem can make life at least a little qubit more colorful.
 
-Having already implemented this custom QuantumVariable, you can also simply import it via `from qrisp.qaoa import QuantumColor`. In the example above we define a quantum box of crayons containing different colors. If one would then like to draw a meadow, one can take the green one out of the box and initialize a color using `box_of_crayons[:] = "green"`. 
+Having already implemented this custom QuantumVariable, you can also simply import it via ``from qrisp.qaoa import QuantumColor``. In the example above we define a quantum box of crayons containing different colors. If one would then like to draw a meadow, one can take the green one out of the box and initialize a color using ``box_of_crayons[:] = "green"``. 
 
 Run the code box below and see how that works with our custom QuantumVariable.
 ::
@@ -95,9 +95,9 @@ Time to prepare the ingrediends starting with defining a graph and the available
 
     color_list = ["red", "blue", "yellow", "green"]
 
-Before defining the classical cost function `cl_cost_function(counts)` for M$\kappa$CS we need to think about the objective (`mkcs_obj`). Since we're trying to color a graph in a way to prevent neighboring nodes being the same color, we will reward the instances where they are in fact not the same color. To increase the contrast between optimal and less optimal solutions we shall used multiplicaton for the aforementioned reward instead of simple addition. This little trick can already improve the results significantly instead of using the standard approach.
+Before defining the classical cost function ``cl_cost_function(counts)`` for M$\kappa$CS we need to think about the objective (``mkcs_obj``). Since we're trying to color a graph in a way to prevent neighboring nodes being the same color, we will reward the instances where they are in fact not the same color. To increase the contrast between optimal and less optimal solutions we shall used multiplicaton for the aforementioned reward instead of simple addition. This little trick can already improve the results significantly instead of using the standard approach.
 
-After iterating over all edges of graph `G`, the objective function `mkcs_obj` returns an integer valu of the free energy objective function. The remaining of the definition 
+After iterating over all edges of graph ``G``, the objective function ``mkcs_obj`` returns an integer valu of the free energy objective function. The remaining of the definition 
 ::
     def mkcs_obj(color_array, G):
    
@@ -112,7 +112,7 @@ After iterating over all edges of graph `G`, the objective function `mkcs_obj` r
 
         return -cost
     
-is similar to the one for MaxCut in the sense that calculates the relative energy in respect to the amount of counts for each sample. After setting the `energy` and `total_counts` to 0 we calculate the minimal result from `mkcs_obj`. Iteration over all items to calculate the objective function for current measurement is the same as in the MaxCut implementation, as is returning the energy calculated using the `mkcs_obj` objective funcion. Note that we don't need to normalize, since the measurement results are probabilities rather than counts.
+is similar to the one for MaxCut in the sense that calculates the relative energy in respect to the amount of counts for each sample. After setting the ``energy`` and ``total_counts`` to 0 we calculate the minimal result from ``mkcs_obj``. Iteration over all items to calculate the objective function for current measurement is the same as in the MaxCut implementation, as is returning the energy calculated using the ``mkcs_obj`` objective funcion. Note that we don't need to normalize, since the measurement results are probabilities rather than counts.
 ::
     def cl_cost_function(meas_res):
     
@@ -130,7 +130,7 @@ is similar to the one for MaxCut in the sense that calculates the relative energ
 
 As spoiled before, the superposition state is not the ideal initial state in this particular case. In principle a superposition state is viable, however, it needs to respect the one-hot encoding constraint. Instead we simply pick a random initial coloring of all the nodes and trust the QAOA to do the rest.
 
-To do this one first needs to import randomness and define the quantum argument (`qarg`), which is in this case a :ref:`QuantumArray <QuantumArray>` of QuantumColors. After setting the initial set to a random coloring we then define a function that sets all elements in `qarg`to the initial state.
+To do this one first needs to import randomness and define the quantum argument ``qarg``, which is in this case a :ref:`QuantumArray <QuantumArray>` of QuantumColors. After setting the initial set to a random coloring we then define a function that sets all elements in ``qarg`` to the initial state.
 ::
     import random
     
@@ -143,7 +143,7 @@ To do this one first needs to import randomness and define the quantum argument 
         qarg[:] = init_state
         return qarg
 
-Following along with the recipe in hand is taking care of the coloring operator. For simplicity and code readability reasons we first define `apply_phase_if_eq`, which indeed applies a phase if the colors of two arguments are matching. Having defined this, constructing the coloring operator is as easy as going through the list of all edges in our graph.
+Following along with the recipe in hand is taking care of the coloring operator. For simplicity and code readability reasons we first define ``apply_phase_if_eq``, which indeed applies a phase if the colors of two arguments are matching. Having defined this, constructing the coloring operator is as easy as going through the list of all edges in our graph.
 ::
     from qrisp import cp, cx, mcp
     def apply_phase_if_eq(qcolor_0, qcolor_1, gamma):
@@ -190,10 +190,10 @@ Putting all the ingredients we just prepared into the methaphorical oven, which 
 Let's speedrun through the steps we already got familiar with in the previous tutorial:
 
 - define the depth $p$ of our QAOA algorithm. 
-- create the `coloring operator`
-- create the `coloring_instance` problem instance with `QAOAProblem`
-- set initial state using the `.set_init_function` method
-- run QAOA using the `.run` method
+- create the ``coloring operator``
+- create the ``coloring_instance`` problem instance with ``QAOAProblem``
+- set initial state using the ``.set_init_function`` method
+- run QAOA using the ``.run`` method
 - display the solution.
 
 And most importantly: whisper the magic word: *QRISPIFYYY*
@@ -225,7 +225,7 @@ And most importantly: whisper the magic word: *QRISPIFYYY*
 
 🎉 aaand time! Whew, a new personal best! 🎉
 
-And this is how you conquer a complex problem instance like the Max-$\kappa$-Coloring Subgraph using Qrisp and the plethora of useful functionalities and customizabilities it brings.
+One can now benchmark the approach using the :meth:`benchmark <qrisp.qaoa.QAOAProblem.benchmark>` method following the same procedure as :ref:`explained in the previous tutorial <QuantumVariable>`, and conquer a complex problem instance like the Max-$\kappa$-Coloring Subgraph using Qrisp and the plethora of useful functionalities and customizabilities it brings.
 
 Summary and motivation
 ---------------------
@@ -233,7 +233,7 @@ Summary and motivation
 To sum up:
 - you created a colorful custom :ref:`quantum type <QuantumTypes>` known as QuantumColor; 
 - you explored two different color encoding techniques: one-hot encoding and binary encoding; 
-- a crucial step that cannot be overstated is the importance of elegantly specifying a complex problem instance using the four-step-recipe we provided before running QAOA using the `.run` method of the `QAOAProblem` class. 
+- a crucial step that cannot be overstated is the importance of elegantly specifying a complex problem instance using the four-step-recipe we provided before running QAOA using the ``.run`` method of the ``QAOAProblem`` class. 
 
 It's pedagogical to, similarly to what we have done in the previous MaxCut tutorial, provide a condensed code block of the full M$\kappa$CS QAOA implementation using our predefined functions and show how elegantly one can tackle this complex problem.
 ::

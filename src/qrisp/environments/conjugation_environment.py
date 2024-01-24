@@ -109,7 +109,7 @@ class ConjugationEnvironment(QuantumEnvironment):
     To see that indeed only the conjugand has been controlled we take a look
     at the circuit:
         
-    >>> print(qf.qs.transpile(2))
+    >>> print(qf.qs.transpile(1))
     
     ::
     
@@ -137,6 +137,8 @@ class ConjugationEnvironment(QuantumEnvironment):
         self.args = args
         
         self.kwargs = kwargs
+        
+        self.manual_allocation_management = True
         
         QuantumEnvironment.__init__(self)
         

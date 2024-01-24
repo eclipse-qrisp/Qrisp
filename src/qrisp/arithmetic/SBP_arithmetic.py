@@ -25,7 +25,7 @@ from qrisp.arithmetic.poly_tools import (
     filter_pow,
     get_ordered_symbol_list,
 )
-from qrisp.core import QuantumArray, QuantumVariable, cp, cx, cz, h, mcx, p, z, rz
+from qrisp.core import QuantumArray, QuantumVariable, cp, cx, cz, h, mcx, p, z, rz, crz
 from qrisp.misc import gate_wrap
 from qrisp.circuit import XGate
 
@@ -68,7 +68,6 @@ def multi_controlled_U_g(
     # For one control qubit, there is no advantage in calculating an ancilla qubit
     if len(control_qb_list) == 1:
         ancilla = control_qb_list
-
     # Otherwise request an ancilla qubit
     else:
         ancilla = QuantumVariable(1, qs=output_qf.qs, name="sbp_anc*")
@@ -90,24 +89,38 @@ def multi_controlled_U_g(
     # Either use regular phase gates or use GMS gates
     # GMS gates are ion-trap native gates, that allow the entanglement
     # of multiple qubits within a single laser pulse
+    
+    from qrisp.environments import QuantumEnvironment, control, GMSEnvironment, custom_control
     if use_gms:
         # GMSEnvironment is an environment that allows programming
         # with regular phase gates but converts everything programmed
         # into a GMS gate upon leaving the environment
-        from qrisp.environments.GMSEnvironmentironment import GMSEnvironment
 
         env = GMSEnvironment(qs)
 
     else:
         # This is an environment that simply does nothing
-        from qrisp.environments import QuantumEnvironment, control
-
-        # env = QuantumEnvironment()
-        env = control(ancilla[0])
+        env = QuantumEnvironment()
 
     # Enter environment
-    # if True:
     env.manual_allocation_management = True
+    
+    
+    @custom_control
+    def crz_helper(rot_angle, a, b, ctrl = None, use_gms = False):
+        if ctrl is None and not use_gms:
+            cx(a, b)
+            p(-rot_angle / 2, b)
+            cx(a, b)
+            p(rot_angle / 2, b)
+        elif use_gms:
+            crz(rot_angle, ancilla[0], output_qf[i])
+        else:
+            cx(a, b)
+            cp(-rot_angle / 2, ctrl, b)
+            cx(a, b)
+            cp(rot_angle / 2, ctrl, b)
+            
     
     with env:
         phase_accumulator = 0
@@ -136,18 +149,9 @@ def multi_controlled_U_g(
                     phase_accumulator += rot_angle / 2
                 # Otherwise execute cp gate
                 else:
-                    # cx(ancilla[0], output_qf[i])
-                    # p(-rot_angle / 2, output_qf[i])
-                    # cx(ancilla[0], output_qf[i])
-                    # p(rot_angle / 2, output_qf[i])
-                    
-                    rz(rot_angle, output_qf[i])
-                    
-                    
-
+                    crz_helper(rot_angle, ancilla[0], output_qf[i], use_gms = use_gms)
                     phase_accumulator += rot_angle / 2
-                    # cp(rot_angle, ancilla[0], output_qf[i])
-                    # crz(rot_angle, ancilla[0], output_qf.reg[i])
+        
         p(phase_accumulator - np.pi * cz_counter / 2, ancilla[0])
 
     # Uncompute boolean multiplication
@@ -165,7 +169,7 @@ def multi_controlled_U_g(
 # This is used for applying U_g gates which have no control-knobs
 def U_g(y, qv):
     for i in range(len(qv)):
-        rot_angle = rot_angle = np.pi * 2 ** (-i) * y
+        rot_angle = np.pi * 2 ** (-i) * y
         rot_angle = rot_angle % (2 * np.pi)
         if (
             np.round(rot_angle, pi_mult_round_threshold) != 0
@@ -830,7 +834,8 @@ def hybrid_mult(
             cx(y[-1], hybrid_mult_anc[0])
 
             for k in range(len(applied_phases)):
-                cp(-applied_phases[k] * 2, hybrid_mult_anc[0], x[k])
+                # cp(-applied_phases[k] * 2, hybrid_mult_anc[0], x[k])
+                cp(-applied_phases[k] * 2, x[k], hybrid_mult_anc[0])
 
     cx(y[0], output_qf)
     for i in range(y.msize):

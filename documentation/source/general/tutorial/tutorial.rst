@@ -235,7 +235,9 @@ The code for embedding the constructed oracle into Grover's algorithm is: ::
 First we create the :doc:`/./reference/Quantum Types/QuantumFloat` which will contain the solution. Note that the QuantumFloat constructor creates unsigned floats by default. We determine the number of iterations according to the formula given `here <https://arxiv.org/abs/quant-ph/9909040>`_, taking into consideration that we expect two solutions ($S = \{0.5, -0.5\}$). The next step is then to bring ``qf`` into uniform superposition, followed by the Grover iterations and finalized by a :meth:`measurement<qrisp.QuantumVariable.get_measurement>` (which is called by ``print``).
 
 Quantum Phase Estimation
-------------------------
+========================
+
+.. _qpe_tutorial::
 
 `Quantum phase estimation <https://en.wikipedia.org/wiki/Quantum_phase_estimation_algorithm>`_ is an important subroutine in many quantum algorithms. If you are not familiar with this algorithm, we recommend that you first read about it `elsewhere <https://qiskit.org/textbook/ch-algorithms/quantum-phase-estimation.html>`_ and then come back here. We shortly summarize the problem this algorithm solves:
 Given is a unitary $U$ and quantum state $\ket{\psi}$ which is an eigenvector of $U$:

@@ -22,7 +22,7 @@ import numpy as np
 import sympy as sp
 from numba import njit
 
-from qrisp import fast_append
+from qrisp import fast_append, ControlledOperation
 from qrisp.simulator.bi_arrays import BiArray, DenseBiArray, SparseBiArray, tensordot
 
 
@@ -31,7 +31,7 @@ np_dtype = np.complex64
 id_matrix = np.eye(2, dtype=np_dtype)
 
 pauli_x = np.asarray([[0, 1], [1, 0]], dtype=np_dtype)
-pauli_y = np.asarray([[0, 0], [0, 0]]) + 1j * np.asarray([[0, -1], [1, 0]], dtype = np_dtype)
+pauli_y = (np.asarray([[0, 0], [0, 0]]) + 1j * np.asarray([[0, -1], [1, 0]])).astype(np_dtype)
 pauli_z = np.asarray([[1, 0], [0, -1]], dtype=np_dtype)
 from sympy.core.expr import Expr
 import numpy
@@ -78,10 +78,11 @@ def controlled_unitary(controlled_gate):
 
     n = controlled_gate.num_qubits
     res = np.eye(2**n, dtype=temp.dtype)
+    control_state = int(controlled_gate.ctrl_state, 2)
+    
+    res[(control_state)*(2**m) : (control_state+1)*(2**m), (control_state)*(2**m) : (control_state+1)*(2**m)] = temp
 
-    res[-(2**m) :, -(2**m) :] = temp
-
-    controlled_gate.unitary = temp
+    controlled_gate.unitary = res
 
     return res
 
@@ -112,10 +113,16 @@ def calc_embedded_unitary(gate, n, destination_qubits):
     # However, this performs alot of unnecessary multiplications since the structure of
     # this matrix is simply the unitary of the gate on the diagonal 2**n/2**dim(gate)
     # times repeated
-    if gate.definition is not None:
+    if isinstance(gate, ControlledOperation):
+        gate_array = controlled_unitary(gate)
+        gate.unitary = gate_array
+    
+    elif gate.definition is not None:
+        
         gate_array = __calc_circuit_unitary(gate.definition)
         gate.unitary = gate_array
     else:
+        
         gate_array = gate.get_unitary()
 
     # Numpy arrays are only fast on a low scale than BiArrays. Therefore,  we generate
@@ -220,8 +227,8 @@ def generate_id_kron(input_tensor, n):
             input_tensor = SparseBiArray(input_tensor)
 
     k = int(np.log2(input_tensor.shape[0]))
-
-    data = np.ones(2 ** (n - k))
+    
+    data = np.ones(2 ** (n - k), dtype = input_tensor.data.dtype)
 
     nz_indices = np.arange(2 ** (n - k)).astype(np.int64)
     nz_indices = nz_indices * 2 ** (n - k) + nz_indices

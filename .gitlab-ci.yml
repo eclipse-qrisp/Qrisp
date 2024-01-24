@@ -28,6 +28,8 @@ before_script:
   - pip install qiskit-aer
   - pip install qiskit_ibm_runtime
   - pip install pennylane
+  - pip install pytket
+  - pip install pytket-qiskit
 
 
 # isort:

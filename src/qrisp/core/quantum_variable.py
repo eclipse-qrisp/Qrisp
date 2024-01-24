@@ -240,10 +240,10 @@ class QuantumVariable:
         # Store quantum session
         from qrisp.core import QuantumSession, merge_sessions
 
-        self.qs = QuantumSession()
-
         if qs is not None:
-            merge_sessions(self.qs, qs)
+            self.qs = qs
+        else:
+            self.qs = QuantumSession()
 
         self.size = int(size)
 
@@ -318,7 +318,54 @@ class QuantumVariable:
         QuantumVariable.live_qvs.append(weakref.ref(self))
         self.creation_time = int(self.creation_counter[0])
         self.creation_counter += 1
-
+    
+    def __or__(self, other):
+        from qrisp import mcx, x, cx
+        
+        if len(self) > len(other):
+            or_res = self.duplicate()
+        else:
+            or_res = other.duplicate()
+        
+        for i in range(min(len(self), len(other))):
+            mcx([self[i], other[i]], or_res[i], ctrl_state = 0)
+            x(or_res[i])
+        
+        for i in range(min(len(self), len(other)), len(self)):
+            cx(self[i], or_res[i])
+            
+        for i in range(min(len(self), len(other)), len(other)):
+            cx(other[i], or_res[i])
+        
+        return or_res
+        
+    def __and__(self, other):
+        from qrisp import mcx
+        
+        if len(self) > len(other):
+            and_res = self.duplicate()
+        else:
+            and_res = other.duplicate()
+        
+        for i in range(min(len(self), len(other))):
+            mcx([self[i], other[i]], and_res[i])
+        
+        return and_res
+    
+    def __xor__(self, other):
+        from qrisp import cx
+        
+        if len(self) > len(other):
+            and_res = self.duplicate()
+        else:
+            and_res = other.duplicate()
+        
+        for i in range(min(len(self), len(other))):
+            cx(self[i], and_res[i])
+            cx(other[i], and_res[i])
+        
+        return and_res
+        
     def delete(self, verify=False, recompute=False):
         r"""
         This method is for deleting a QuantumVariable and thus freeing up and resetting
@@ -400,10 +447,10 @@ class QuantumVariable:
 
     def is_deleted(self):
         for qb in self.reg:
-            if qb.allocated:
-                return False
+            if not qb.allocated:
+                return True
         else:
-            return True
+            return False
 
     def duplicate(self, name=None, qs=None, init=False):
         r"""
@@ -745,7 +792,7 @@ class QuantumVariable:
         insertion_qubits = self.qs.request_qubits(amount)
 
         for i in range(amount):
-            insertion_qubits[i].identifier = self.name + "." + str(self.size)
+            insertion_qubits[i].identifier =  self.name + "_ext_" + str(self.qs.qubit_index_counter[0]) + "." + str(self.size)
             self.reg.insert(position + i, insertion_qubits[i])
             self.size += 1
 
@@ -798,7 +845,7 @@ class QuantumVariable:
         for i in range(len(qubits)):
             for j in range(self.size):
                 if self.reg[j] == qubits[i]:
-                    self.reg[j].identifier = "qb_" + str(self.qs.qubit_index_counter[0])
+                    self.reg[j].identifier = "reduced_" + str(self.qs.qubit_index_counter[0])
                     self.qs.qubit_index_counter += 1
                     self.reg.pop(j)
                     break
@@ -912,11 +959,11 @@ class QuantumVariable:
             qc = combine_single_qubit_gates(qc)
 
         # Copy circuit in over to prevent modification
-        from qrisp.quantum_network import QuantumNetworkClient
+        # from qrisp.quantum_network import QuantumNetworkClient
 
-        if isinstance(backend, QuantumNetworkClient):
-            self.qs.data = []
-            shots = 1
+        # if isinstance(backend, QuantumNetworkClient):
+        #     self.qs.data = []
+        #     shots = 1
 
         # Execute user specified circuit_preprocessor
         if circuit_preprocessor is not None:

@@ -359,7 +359,7 @@ class ConditionEnvironment(QuantumEnvironment):
     # Compile method
     def compile(self):
         from qrisp.qtypes.quantum_bool import QuantumBool
-        from qrisp.environments.control_environment import ControlEnvironment
+        from qrisp.environments.control_environment import ControlEnvironment, convert_to_custom_control
 
         # Create the quantum variable where the condition truth value should be saved
         # Incase we have a parent environment we create two qubits because
@@ -394,7 +394,7 @@ class ConditionEnvironment(QuantumEnvironment):
                 # Create and execute phase tolerant toffoli gate
                 toffoli_qb_list = [
                     self.parent_cond_env.condition_truth_value,
-                    cond_eval_bool,
+                    cond_eval_bool[0],
                 ]
 
                 from qrisp import mcx
@@ -491,7 +491,8 @@ class ConditionEnvironment(QuantumEnvironment):
                     continue
 
                 if self.condition_truth_value in instruction.qubits:
-                    instruction = process_custom_control(instruction, self.condition_truth_value)
+                    self.env_qs.append(convert_to_custom_control(instruction, self.condition_truth_value))
+                    continue
                     
                 else:
                     # Create controlled instruction
@@ -605,8 +606,7 @@ def adaptive_condition(cond_eval_function):
 
 @adaptive_condition
 def q_eq(input_0, input_1, invert = False):
-    from qrisp import cx
-    from qrisp.qtypes.quantum_bool import QuantumBool
+    from qrisp import cx, conjugate, QuantumBool
 
     res = QuantumBool(name="eq_cond*")
 
@@ -617,13 +617,9 @@ def q_eq(input_0, input_1, invert = False):
                 "for QuantumVariables of differing size"
             )
 
-        # temp_qv = QuantumVariable(input_0.size)
-        cx(input_0, input_1)
-        # cx(input_1, temp_qv)
-        # x(temp_qv)
-        mcx(input_1, res, method="balauca", ctrl_state=0)
-        cx(input_0, input_1)
         
+        with conjugate(cx)(input_0, input_1):
+            mcx(input_1, res, method="balauca", ctrl_state=0)
         
 
 
@@ -636,35 +632,3 @@ def q_eq(input_0, input_1, invert = False):
         res.flip()
     
     return res
-
-def process_custom_control(instruction, control_qubit):
-    
-    from qrisp.environments import CustomControlOperation
-    
-    if isinstance(instruction.op, CustomControlOperation):
-        return instruction
-    
-    if instruction.op.definition is None:
-        raise Exception
-    
-    new_definition = instruction.op.definition.clearcopy()
-    
-    control_qubit = new_definition.qubits[instruction.qubits.index(control_qubit)]
-    
-    for def_instr in instruction.op.definition.data:
-            
-        if control_qubit in def_instr.qubits:
-            new_definition.append(process_custom_control(def_instr, control_qubit))
-        else:
-            new_op = def_instr.op.control(1)
-            new_definition.append(new_op, [control_qubit] + def_instr.qubits, def_instr.clbits)
-            
-    res = instruction.copy()
-    res.op.definition = new_definition
-    
-    res.op = CustomControlOperation(res.op, new_definition.qubits.index(control_qubit))
-    
-    
-    return res
-                
-    

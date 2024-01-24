@@ -18,7 +18,7 @@
 
 import numpy as np
 from qrisp.misc import array_as_int, gate_wrap, int_as_array
-from qrisp.circuit import QuantumCircuit, Operation, PTControlledOperation, ControlledOperation
+from qrisp.circuit import QuantumCircuit, Operation, PTControlledOperation, ControlledOperation, fast_append
 
 use_gray_code = False
 try:
@@ -324,10 +324,20 @@ def multi_qb_traversal(locations, bit_amount):
 compiled_gates = {}
 compiled_pt_gates = {}
 
+import time
+def gray_synth_qc(target_phases, phase_tolerant=False, flip_bit_order = False):
+    
+    start_time = time.time()
+    bit_amount = int(np.log2(len(target_phases)))
+    
+    if not flip_bit_order:
+        target_phases = np.array(target_phases)
+        target_phases = target_phases.reshape(bit_amount*[2])
+        for i in range(bit_amount//2):
+            target_phases = np.swapaxes(target_phases, i, bit_amount-i-1)
+        target_phases = target_phases.reshape(2**bit_amount)
 
-def gray_synth_qc(target_phases, phase_tolerant=False):
     target_phases_id = str(list(target_phases))
-
     if not phase_tolerant:
         if target_phases_id in compiled_gates:
             temp = compiled_gates[target_phases_id]
@@ -336,14 +346,6 @@ def gray_synth_qc(target_phases, phase_tolerant=False):
         if target_phases_id in compiled_pt_gates:
             temp = compiled_pt_gates[target_phases_id]
             return temp
-
-    bit_amount = int(np.log2(len(target_phases)))
-    
-    target_phases = np.array(target_phases)
-    target_phases = target_phases.reshape(bit_amount*[2])
-    for i in range(bit_amount//2):
-        target_phases = np.swapaxes(target_phases, i, bit_amount-i-1)
-    target_phases = target_phases.reshape(2**bit_amount)
 
     
 
@@ -369,61 +371,58 @@ def gray_synth_qc(target_phases, phase_tolerant=False):
     # Generate CNOT list
     cnot_list, p_op_seq = multi_qb_traversal(locations, bit_amount)
     qb_list = qc.qubits
-
-    # Apply CNOT list and add phases
-    for i in range(len(cnot_list)):
-        if phase_tolerant is True and cnot_list[i][1] != bit_amount - 1:
-            # If we are in the phase tolerant mode we don't need to apply a phase here,
-            # because we are only interested in the phase DIFFERENCE of the 0 and 1
-            # state of the output qubit. As these phase shifts dont act on the output
-            # qubit they do not change the phase difference and can therefore be ignored
-            break
-
-        # Set some aliases to keep the code readable
-        operation_qubit = qb_list[cnot_list[i][1]]
-        control_qubit = qb_list[cnot_list[i][0]]
-
-        # Apply CNOT gate
-        if cnot_list[i][0] != cnot_list[i][1]:
+    with fast_append():
+        # Apply CNOT list and add phases
+        for i in range(len(cnot_list)):
+            if phase_tolerant is True and cnot_list[i][1] != bit_amount - 1:
+                # If we are in the phase tolerant mode we don't need to apply a phase here,
+                # because we are only interested in the phase DIFFERENCE of the 0 and 1
+                # state of the output qubit. As these phase shifts dont act on the output
+                # qubit they do not change the phase difference and can therefore be ignored
+                break
+    
+            # Set some aliases to keep the code readable
+            operation_qubit = qb_list[cnot_list[i][1]]
             control_qubit = qb_list[cnot_list[i][0]]
-            qc.cx(control_qubit, operation_qubit)
+    
+            # Apply CNOT gate
+            if cnot_list[i][0] != cnot_list[i][1]:
+                control_qubit = qb_list[cnot_list[i][0]]
+                qc.cx(control_qubit, operation_qubit)
+    
+            # Apply phase shifts
+            if phase_shifts[p_op_seq[i]] == 0:
+                continue
+            qc.p(-phase_shifts[p_op_seq[i]], operation_qubit)
+            phase_shifts[p_op_seq[i]] = 0
 
-        # Apply phase shifts
-        if phase_shifts[p_op_seq[i]] == 0:
-            continue
-        qc.p(-phase_shifts[p_op_seq[i]], operation_qubit)
-        phase_shifts[p_op_seq[i]] = 0
-
-    from qrisp.core import reduce_depth
+    from qrisp.core import parallelize_qc
 
     if len(qc.qubits) < 8:
         try:
-            qc = reduce_depth(qc)
+            qc = parallelize_qc(qc)
         except TypeError:
             pass
 
-    # qc.qubits = qc.qubits[::-1]
-    res = qc.to_gate("gray_phase_gate")
+    if not phase_tolerant and not flip_bit_order and len(qc.qubits) < 9:
+        definition_reversed_bit = gray_synth_qc(target_phases, phase_tolerant, flip_bit_order = True)
+        if qc.depth() > definition_reversed_bit.depth():
+            definition_reversed_bit.qubits.reverse()
+            qc = definition_reversed_bit    
     
-    res.target_phases = target_phases
-    res.phase_tolerant = phase_tolerant
-
     if not phase_tolerant:
-        compiled_gates[target_phases_id] = res
+        compiled_gates[target_phases_id] = qc
     else:
-        compiled_pt_gates[target_phases_id] = res
+        compiled_pt_gates[target_phases_id] = qc
 
-    res.permeability = {i: True for i in range(len(qc.qubits))}
-    res.is_qfree = True
-
-    return res
+    return qc
 
 
 class GraySynthGate(Operation):
     
     def __init__(self, target_phases, phase_tolerant = False):
         
-        definition = gray_synth_qc(target_phases, phase_tolerant).definition
+        definition = gray_synth_qc(target_phases, phase_tolerant)
         
         Operation.__init__(self, num_qubits = len(definition.qubits), 
                            definition = definition, 
@@ -559,10 +558,17 @@ def gray_logic_synth(input_var, output_var, tt, phase_tolerant=False, lin_solve=
             "output variable does not contain enough qubits to encode truth table"
         )
 
+
+    if len(output_var) == 1:
+        gray_logic_synth_single_qb(
+            input_var, output_var, 0, tt.sub_table(0), phase_tolerant=False
+        )
+        return
+        
+        
     input_var_dupl = input_var.duplicate()
     output_var_dupl = output_var.duplicate(qs=input_var_dupl.qs)
 
-    # Iterate throgh all the truth table columns and synthesize each one separately
 
     residual_phases = np.zeros(tt.shape[0])
 
@@ -576,26 +582,22 @@ def gray_logic_synth(input_var, output_var, tt, phase_tolerant=False, lin_solve=
 
         residual_phases += temp
 
-    from qrisp.core import reduce_depth
+    from qrisp.core import parallelize_qc
 
     qc = input_var_dupl.qs.transpile()
 
     if len(qc.qubits) < 10 and input_var.size != 1:
-        # pass
-        qc = reduce_depth(qc)
+        qc = parallelize_qc(qc)
 
     input_var_dupl.qs.data = []
 
     if not phase_tolerant:
-        # input_var_dupl.reg = input_var_dupl.reg[::-1]
-
         gray_phase_synth(input_var_dupl, residual_phases)
-
-        # input_var_dupl.reg = input_var_dupl.reg[::-1]
 
     qc.data.extend(input_var_dupl.qs.data)
 
     input_var.qs.append(qc.to_gate(), input_var.reg + output_var.reg)
+
 
 
 # This function uses it's single qubit version iteratively to synthesize

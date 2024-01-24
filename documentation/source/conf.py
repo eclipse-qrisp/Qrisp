@@ -68,7 +68,7 @@ extensions = [
               #"nb2plots",
               ]
 
-imgmath_latex_preamble = r'\usepackage{braket}\n\usepackage{xcolor}\n\usepackage{emoji}'
+imgmath_latex_preamble = r'\usepackage{braket}\n\usepackage{xcolor}'
 
 thebe_config = {
     "repository_url": "https://github.com/fraunhoferfokus/Qrisp",
@@ -80,7 +80,7 @@ thebe_config = {
 
 imgmath_use_preview = True
 #github_username = 'positr0nium'
-github_repository = 'https://github.com/fraunhoferfokus/Qrisp'
+github_repository = 'https://github.com/eclipse-qrisp/Qrisp'
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -119,7 +119,7 @@ html_theme_options = {
     "icon_links": [
         {
             "name": "GitHub",
-            "url": "https://github.com/fraunhoferfokus/Qrisp",
+            "url": "https://github.com/eclipse-qrisp/Qrisp",
             "icon": "fab fa-github-square",
         },
     ],
@@ -167,7 +167,7 @@ html_logo = "../../logo/qrisp_logo.png"
 add_module_names = False
 
 html_css_files = [
-    'css/custom.css',
+    'css/custom03.css',
 ]
 
 source_suffix = ['.rst', '.md']

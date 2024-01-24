@@ -18,7 +18,7 @@
 
 
 from qrisp import Clbit, QuantumCircuit, Qubit
-from qrisp.simulator import ImpureQuantumState, QuantumState, run, single_shot_sim
+from qrisp.simulator import QuantumState, run, single_shot_sim
 
 
 class QuantumNetwork:

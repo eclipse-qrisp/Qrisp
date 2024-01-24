@@ -3,7 +3,7 @@
 <!DOCTYPE html>
 
 
-<html lang="en" data-theme="light">
+<html data-theme="light">
 
   <head>
     <meta charset="utf-8" />
@@ -18,39 +18,48 @@
   </script>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="_static/styles/theme.css?digest=e353d410970836974a52" rel="stylesheet" />
-<link href="_static/styles/bootstrap.css?digest=e353d410970836974a52" rel="stylesheet" />
-<link href="_static/styles/pydata-sphinx-theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+  <link href="_static/styles/theme.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+<link href="_static/styles/bootstrap.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=ac02cc09edc035673794" rel="stylesheet" />
 
   
-  <link href="_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=e353d410970836974a52" rel="stylesheet" />
+  <link href="_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=ac02cc09edc035673794" rel="stylesheet" />
   <link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
 <link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
 <link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
 
     <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="_static/copybutton.css" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx-thebe.css" />
     <link rel="stylesheet" type="text/css" href="_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css" />
-    <link rel="stylesheet" type="text/css" href="_static/css/custom.css" />
+    <link rel="stylesheet" type="text/css" href="_static/css/custom03.css" />
   
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=e353d410970836974a52" />
-<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52" />
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=ac02cc09edc035673794" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=ac02cc09edc035673794" />
+  <script src="_static/vendor/fontawesome/6.1.2/js/all.min.js?digest=ac02cc09edc035673794"></script>
 
     <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
     <script src="_static/doctools.js"></script>
-    <script src="_static/sphinx_highlight.js"></script>
     <script src="_static/clipboard.min.js"></script>
     <script src="_static/copybutton.js"></script>
     <script src="_static/design-tabs.js"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"
+const thebe_selector = "div.highlight"
+const thebe_selector_input = "pre"
+const thebe_selector_output = "span.go"
+</script>
+    <script async="async" src="_static/sphinx-thebe.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'genindex';</script>
     <link rel="canonical" href="https://qrisp.eu/genindex.html" />
-    <link rel="icon" href="_static/qrisp_favicon.png"/>
+    <link rel="shortcut icon" href="_static/qrisp_favicon.png"/>
     <link rel="index" title="Index" href="#" />
     <link rel="search" title="Search" href="search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:language" content="None"/>
   </head>
   
   
@@ -59,6 +68,15 @@
   
   
   <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>
+    Back to top
+  </button>
+
   
   <input type="checkbox"
           class="sidebar-toggle"
@@ -135,7 +153,7 @@
   <ul class="bd-navbar-elements navbar-nav">
     
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="general/tutorial.html">
+                      <a class="nav-link nav-internal" href="general/tutorial/index.html">
                         Tutorial
                       </a>
                     </li>
@@ -178,13 +196,15 @@
       
         <div class="navbar-item navbar-persistent--container">
           
-<script>
-document.write(`
-  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
-  </button>
-`);
-</script>
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
         </div>
       
       
@@ -199,7 +219,7 @@ document.write(`
           
           
           
-          <a href="https://github.com/fraunhoferfokus/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square fa-lg" aria-hidden="true"></i></span>
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square fa-lg" aria-hidden="true"></i></span>
             <span class="sr-only">GitHub</span></a>
         </li>
 </ul></div>
@@ -210,18 +230,20 @@ document.write(`
   
   
     <div class="navbar-persistent--mobile">
-<script>
-document.write(`
-  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
-  </button>
-`);
-</script>
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
     </div>
   
 
   
-    <label class="sidebar-toggle secondary-toggle" for="__secondary">
+    <label class="sidebar-toggle secondary-toggle" for="__secondary" tabindex="0">
       <span class="fa-solid fa-outdent"></span>
     </label>
   
@@ -251,7 +273,7 @@ document.write(`
   <ul class="bd-navbar-elements navbar-nav">
     
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="general/tutorial.html">
+                      <a class="nav-link nav-internal" href="general/tutorial/index.html">
                         Tutorial
                       </a>
                     </li>
@@ -304,7 +326,7 @@ document.write(`
           
           
           
-          <a href="https://github.com/fraunhoferfokus/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square fa-lg" aria-hidden="true"></i></span>
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square fa-lg" aria-hidden="true"></i></span>
             <span class="sr-only">GitHub</span></a>
         </li>
 </ul></div>
@@ -389,7 +411,7 @@ document.write(`
 <h2 id="_">_</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="reference/Backend%20Interface/generated/qrisp.interface.thrift_interface.BackendClient.__init__.html#qrisp.interface.thrift_interface.BackendClient.__init__">__init__() (BackendClient method)</a>
+      <li><a href="reference/Backend%20Interface/generated/qrisp.interface.qunicorn.BackendClient.__init__.html#qrisp.interface.qunicorn.BackendClient.__init__">__init__() (BackendClient method)</a>, <a href="reference/Backend%20Interface/generated/qrisp.interface.thrift_interface.BackendClient.__init__.html#qrisp.interface.thrift_interface.BackendClient.__init__">[1]</a>
 
       <ul>
         <li><a href="reference/Core/generated/qrisp.QuantumSession.__init__.html#qrisp.QuantumSession.__init__">(QuantumSession method)</a>
@@ -413,6 +435,8 @@ document.write(`
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/Algorithms/amplitude_amplification.html#qrisp.amplitude_amplification">amplitude_amplification() (in module qrisp)</a>
+</li>
       <li><a href="reference/Core/generated/qrisp.QuantumVariable.app_phase_function.html#qrisp.QuantumVariable.app_phase_function">app_phase_function() (QuantumVariable method)</a>
 </li>
       <li><a href="reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.append.html#qrisp.QuantumCircuit.append">append() (QuantumCircuit method)</a>
@@ -425,13 +449,15 @@ document.write(`
 <h2 id="B">B</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="reference/Backend%20Interface/BackendClient.html#qrisp.interface.thrift_interface.BackendClient">BackendClient (class in qrisp.interface.thrift_interface)</a>
+      <li><a href="reference/Backend%20Interface/BackendClient.html#qrisp.interface.qunicorn.BackendClient">BackendClient (class in qrisp.interface.qunicorn)</a>
 </li>
-      <li><a href="reference/Backend%20Interface/BackendServer.html#qrisp.interface.thrift_interface.BackendServer">BackendServer (class in qrisp.interface.thrift_interface)</a>
+      <li><a href="reference/Backend%20Interface/BackendServer.html#qrisp.interface.qunicorn.BackendServer">BackendServer (class in qrisp.interface.qunicorn)</a>
+</li>
+      <li><a href="reference/Miscellaneous%20Functions/generated/qrisp.barrier.html#qrisp.barrier">barrier() (in module qrisp)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="reference/Miscellaneous%20Functions/generated/qrisp.barrier.html#qrisp.barrier">barrier() (in module qrisp)</a>
+      <li><a href="reference/Algorithms/qaoa/generated/qrisp.qaoa.QAOAProblem.benchmark.html#qrisp.qaoa.QAOAProblem.benchmark">benchmark() (QAOAProblem method)</a>
 </li>
       <li><a href="reference/Circuit%20Construction/generated/qrisp.Operation.bind_parameters.html#qrisp.Operation.bind_parameters">bind_parameters() (Operation method)</a>
 
@@ -447,19 +473,29 @@ document.write(`
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.ccx.html#qrisp.QuantumCircuit.ccx">ccx() (QuantumCircuit method)</a>
 </li>
+      <li><a href="reference/Algorithms/qaoaProblems/qaoa.problems.maxSat.html#qaoa.problems.maxSatInfrastr.clausesdecoder">clausesdecoder() (in module qaoa.problems.maxSatInfrastr)</a>
+</li>
       <li><a href="reference/Circuit%20Construction/Clbit.html#qrisp.Clbit">Clbit (class in qrisp)</a>
 </li>
       <li><a href="reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.clearcopy.html#qrisp.QuantumCircuit.clearcopy">clearcopy() (QuantumCircuit method)</a>
 </li>
       <li><a href="reference/Core/generated/qrisp.QuantumSession.cnot_count.html#qrisp.QuantumSession.cnot_count">cnot_count() (QuantumSession method)</a>
 </li>
+      <li><a href="reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.cnot_depth.html#qrisp.QuantumCircuit.cnot_depth">cnot_depth() (QuantumCircuit method)</a>
+</li>
+      <li><a href="reference/Miscellaneous%20Functions/generated/qrisp.cnot_depth_indicator.html#qrisp.cnot_depth_indicator">cnot_depth_indicator() (in module qrisp)</a>
+</li>
       <li><a href="reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.compare_unitary.html#qrisp.QuantumCircuit.compare_unitary">compare_unitary() (QuantumCircuit method)</a>
 </li>
       <li><a href="reference/Core/generated/qrisp.QuantumSession.compile.html#qrisp.QuantumSession.compile">compile() (QuantumSession method)</a>
 </li>
+      <li><a href="reference/Algorithms/qaoa/generated/qrisp.qaoa.QAOAProblem.compile_circuit.html#qrisp.qaoa.QAOAProblem.compile_circuit">compile_circuit() (QAOAProblem method)</a>
+</li>
       <li><a href="reference/Quantum%20Environments/ConditionEnvironment.html#qrisp.ConditionEnvironment">ConditionEnvironment (class in qrisp)</a>
 </li>
       <li><a href="reference/Quantum%20Environments/ConjugationEnvironment.html#qrisp.ConjugationEnvironment">ConjugationEnvironment (class in qrisp)</a>
+</li>
+      <li><a href="reference/Algorithms/generated/qrisp.qaoa.constrained_mixer_gen.html#qrisp.qaoa.constrained_mixer_gen">constrained_mixer_gen() (in module qrisp.qaoa)</a>, <a href="reference/Algorithms/qrisp.qaoa.constrained_mixer_gen.html#qrisp.qaoa.constrained_mixer_gen">[1]</a>
 </li>
       <li><a href="reference/Circuit%20Construction/generated/qrisp.Operation.control.html#qrisp.Operation.control">control() (Operation method)</a>
 </li>
@@ -485,9 +521,15 @@ document.write(`
         <li><a href="reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.cp.html#qrisp.QuantumCircuit.cp">(QuantumCircuit method)</a>
 </li>
       </ul></li>
+      <li><a href="reference/Algorithms/qaoaProblems/qaoa.problems.create_rdm_graph.html#qaoa.problems.create_rdm_graph.create_rdm_graph">create_rdm_graph() (in module qaoa.problems.create_rdm_graph)</a>
+</li>
       <li><a href="reference/Miscellaneous%20Functions/generated/qrisp.crz.html#qrisp.crz">crz() (in module qrisp)</a>
 </li>
+      <li><a href="reference/Miscellaneous%20Functions/generated/qrisp.cuccaro_adder.html#qrisp.cuccaro_adder">cuccaro_adder() (in module qrisp)</a>
+</li>
       <li><a href="reference/Core/generated/qrisp.QuantumVariable.custom.html#qrisp.QuantumVariable.custom">custom() (QuantumVariable class method)</a>
+</li>
+      <li><a href="reference/Miscellaneous%20Functions/generated/qrisp.custom_control.html#qrisp.custom_control">custom_control() (in module qrisp)</a>
 </li>
       <li><a href="reference/Miscellaneous%20Functions/generated/qrisp.cx.html#qrisp.cx">cx() (in module qrisp)</a>
 
@@ -565,11 +607,17 @@ document.write(`
         <li><a href="reference/Core/generated/qrisp.QuantumVariable.encoder.html#qrisp.QuantumVariable.encoder">(QuantumVariable method)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="reference/Algorithms/generated/qrisp.quantum_backtracking.QuantumBacktrackingTree.estimate_phase.html#qrisp.quantum_backtracking.QuantumBacktrackingTree.estimate_phase">estimate_phase() (QuantumBacktrackingTree method)</a>
 </li>
-      <li><a href="reference/Quantum%20Types/generated/qrisp.QuantumFloat.exp_shift.html#qrisp.QuantumFloat.exp_shift">exp_shift() (QuantumFloat method)</a>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/Algorithms/qaoaProblems/qaoa.problems.eThrTwoLin.html#qaoa.problems.eThrTwoLinInfrastr.eThrTwocostOp">eThrTwocostOp() (in module qaoa.problems.eThrTwoLinInfrastr)</a>
+</li>
+      <li><a href="reference/Algorithms/qaoaProblems/qaoa.problems.eThrTwoLin.html#qaoa.problems.eThrTwoLinInfrastr.eTwoThrLinclCostfct">eTwoThrLinclCostfct() (in module qaoa.problems.eThrTwoLinInfrastr)</a>
+</li>
+      <li><a href="reference/Algorithms/qaoa/generated/qrisp.qaoa.QAOABenchmark.evaluate.html#qrisp.qaoa.QAOABenchmark.evaluate">evaluate() (QAOABenchmark method)</a>
+</li>
+      <li><a href="reference/Core/generated/qrisp.QuantumFloat.exp_shift.html#qrisp.QuantumFloat.exp_shift">exp_shift() (QuantumFloat method)</a>, <a href="reference/Quantum%20Types/generated/qrisp.QuantumFloat.exp_shift.html#qrisp.QuantumFloat.exp_shift">[1]</a>
 </li>
       <li><a href="reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.extend.html#qrisp.QuantumCircuit.extend">extend() (QuantumCircuit method)</a>
 
@@ -585,9 +633,15 @@ document.write(`
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="reference/Algorithms/generated/qrisp.quantum_backtracking.QuantumBacktrackingTree.find_solution.html#qrisp.quantum_backtracking.QuantumBacktrackingTree.find_solution">find_solution() (QuantumBacktrackingTree method)</a>
 </li>
+      <li><a href="reference/Quantum%20Types/generated/qrisp.QuantumBool.flip.html#qrisp.QuantumBool.flip">flip() (QuantumBool method)</a>
+</li>
+      <li><a href="reference/Miscellaneous%20Functions/generated/qrisp.fourier_adder.html#qrisp.fourier_adder">fourier_adder() (in module qrisp)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="reference/Quantum%20Types/generated/qrisp.QuantumBool.flip.html#qrisp.QuantumBool.flip">flip() (QuantumBool method)</a>
+      <li><a href="reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.from_qasm_file.html#qrisp.QuantumCircuit.from_qasm_file">from_qasm_file() (QuantumCircuit class method)</a>
+</li>
+      <li><a href="reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.from_qasm_str.html#qrisp.QuantumCircuit.from_qasm_str">from_qasm_str() (QuantumCircuit class method)</a>
 </li>
       <li><a href="reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.from_qiskit.html#qrisp.QuantumCircuit.from_qiskit">from_qiskit() (QuantumCircuit class method)</a>
 </li>
@@ -611,6 +665,12 @@ document.write(`
         <li><a href="reference/Core/generated/qrisp.QuantumVariable.get_measurement.html#qrisp.QuantumVariable.get_measurement">(QuantumVariable method)</a>
 </li>
       </ul></li>
+      <li><a href="reference/Algorithms/qaoaProblems/qaoa.problems.maxSetPack.html#qaoa.problems.maxSetPackInfrastr.get_neighbourhood_relations">get_neighbourhood_relations() (in module qaoa.problems.maxSetPackInfrastr)</a>
+
+      <ul>
+        <li><a href="reference/Algorithms/qaoaProblems/qaoa.problems.minSetCover.html#qaoa.problems.minSetCoverInfrastr.get_neighbourhood_relations">(in module qaoa.problems.minSetCoverInfrastr)</a>
+</li>
+      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="reference/Quantum%20Networks/generated/qrisp.quantum_network.QuantumNetworkClient.get_overall_qc.html#qrisp.quantum_network.QuantumNetworkClient.get_overall_qc">get_overall_qc() (QuantumNetworkClient method)</a>
@@ -621,6 +681,8 @@ document.write(`
         <li><a href="reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.get_unitary.html#qrisp.QuantumCircuit.get_unitary">(QuantumCircuit method)</a>
 </li>
       </ul></li>
+      <li><a href="reference/Miscellaneous%20Functions/generated/qrisp.gidney_adder.html#qrisp.gidney_adder">gidney_adder() (in module qrisp)</a>
+</li>
       <li><a href="reference/Quantum%20Environments/GMSEnvironment.html#qrisp.GMSEnvironment">GMSEnvironment (class in qrisp)</a>
 </li>
       <li><a href="reference/Miscellaneous%20Functions/generated/qrisp.gphase.html#qrisp.gphase">gphase() (in module qrisp)</a>
@@ -629,6 +691,8 @@ document.write(`
         <li><a href="reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.gphase.html#qrisp.QuantumCircuit.gphase">(QuantumCircuit method)</a>
 </li>
       </ul></li>
+      <li><a href="reference/Algorithms/generated/qrisp.qaoa.grover_mixer.html#qrisp.qaoa.grover_mixer">grover_mixer() (in module qrisp.qaoa)</a>
+</li>
       <li><a href="reference/Algorithms/grover.grovers_alg.html#qrisp.grover.grovers_alg">grovers_alg() (in module qrisp.grover)</a>, <a href="reference/Miscellaneous%20Functions/generated/qrisp.grover.grovers_alg.html#qrisp.grover.grovers_alg">[1]</a>
 </li>
   </ul></td>
@@ -683,6 +747,8 @@ document.write(`
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="reference/Miscellaneous%20Functions/generated/qrisp.inpl_add.html#qrisp.inpl_add">inpl_add() (in module qrisp)</a>
 </li>
+      <li><a href="reference/Miscellaneous%20Functions/generated/qrisp.inpl_adder_test.html#qrisp.inpl_adder_test">inpl_adder_test() (in module qrisp)</a>
+</li>
       <li><a href="reference/Miscellaneous%20Functions/generated/qrisp.inpl_mult.html#qrisp.inpl_mult">inpl_mult() (in module qrisp)</a>
 </li>
       <li><a href="reference/Miscellaneous%20Functions/generated/qrisp.inplace_matrix_app.html#qrisp.inplace_matrix_app">inplace_matrix_app() (in module qrisp)</a>
@@ -707,10 +773,14 @@ document.write(`
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="reference/Miscellaneous%20Functions/generated/qrisp.lifted.html#qrisp.lifted">lifted() (in module qrisp)</a>
 </li>
+      <li><a href="reference/Algorithms/qaoa/generated/qrisp.qaoa.QAOABenchmark.load.html#qrisp.qaoa.QAOABenchmark.load">load() (QAOABenchmark class method)</a>
+
+      <ul>
+        <li><a href="reference/Core/generated/qrisp.QuantumDictionary.load.html#qrisp.QuantumDictionary.load">(QuantumDictionary method)</a>
+</li>
+      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="reference/Core/generated/qrisp.QuantumDictionary.load.html#qrisp.QuantumDictionary.load">load() (QuantumDictionary method)</a>
-</li>
       <li><a href="reference/Miscellaneous%20Functions/generated/qrisp.lock.html#qrisp.lock">lock() (in module qrisp)</a>
 </li>
   </ul></td>
@@ -719,6 +789,22 @@ document.write(`
 <h2 id="M">M</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/Algorithms/qaoaProblems/qaoa.problems.maxClique.html#qaoa.problems.maxCliqueInfrastr.maxCliqueCostfct">maxCliqueCostfct() (in module qaoa.problems.maxCliqueInfrastr)</a>
+</li>
+      <li><a href="reference/Algorithms/qaoaProblems/qaoa.problems.maxClique.html#qaoa.problems.maxCliqueInfrastr.maxCliqueCostOp">maxCliqueCostOp() (in module qaoa.problems.maxCliqueInfrastr)</a>
+</li>
+      <li><a href="reference/Algorithms/qaoaProblems/qaoa.problems.maxIndepentSet.html#qaoa.problems.maxIndepSetInfrastr.maxIndepSetclCostfct">maxIndepSetclCostfct() (in module qaoa.problems.maxIndepSetInfrastr)</a>
+</li>
+      <li><a href="reference/Algorithms/qaoaProblems/qaoa.problems.maxIndepentSet.html#qaoa.problems.maxIndepSetInfrastr.maxIndepSetCostOp">maxIndepSetCostOp() (in module qaoa.problems.maxIndepSetInfrastr)</a>
+</li>
+      <li><a href="reference/Algorithms/qaoaProblems/qaoa.problems.maxSat.html#qaoa.problems.maxSatInfrastr.maxSatclCostfct">maxSatclCostfct() (in module qaoa.problems.maxSatInfrastr)</a>
+</li>
+      <li><a href="reference/Algorithms/qaoaProblems/qaoa.problems.maxSat.html#qaoa.problems.maxSatInfrastr.maxSatCostOp">maxSatCostOp() (in module qaoa.problems.maxSatInfrastr)</a>
+</li>
+      <li><a href="reference/Algorithms/qaoaProblems/qaoa.problems.maxSetPack.html#qaoa.problems.maxSetPackInfrastr.maxSetPackclCostfct">maxSetPackclCostfct() (in module qaoa.problems.maxSetPackInfrastr)</a>
+</li>
+      <li><a href="reference/Algorithms/qaoaProblems/qaoa.problems.maxSetPack.html#qaoa.problems.maxSetPackInfrastr.maxSetPackCostOp">maxSetPackCostOp() (in module qaoa.problems.maxSetPackInfrastr)</a>
+</li>
       <li><a href="reference/Miscellaneous%20Functions/generated/qrisp.mcp.html#qrisp.mcp">mcp() (in module qrisp)</a>
 </li>
       <li><a href="reference/Miscellaneous%20Functions/generated/qrisp.mcx.html#qrisp.mcx">mcx() (in module qrisp)</a>
@@ -727,6 +813,8 @@ document.write(`
         <li><a href="reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.mcx.html#qrisp.QuantumCircuit.mcx">(QuantumCircuit method)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="reference/Miscellaneous%20Functions/generated/qrisp.mcz.html#qrisp.mcz">mcz() (in module qrisp)</a>
 </li>
       <li><a href="reference/Miscellaneous%20Functions/generated/qrisp.measure.html#qrisp.measure">measure() (in module qrisp)</a>
@@ -735,9 +823,11 @@ document.write(`
         <li><a href="reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.measure.html#qrisp.QuantumCircuit.measure">(QuantumCircuit method)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="reference/Circuit%20Construction/generated/qrisp.Instruction.merge.html#qrisp.Instruction.merge">merge() (Instruction method)</a>
+</li>
+      <li><a href="reference/Algorithms/qaoaProblems/qaoa.problems.minSetCover.html#qaoa.problems.minSetCoverInfrastr.minSetCoverclCostfct">minSetCoverclCostfct() (in module qaoa.problems.minSetCoverInfrastr)</a>
+</li>
+      <li><a href="reference/Algorithms/qaoaProblems/qaoa.problems.minSetCover.html#qaoa.problems.minSetCoverInfrastr.minSetCoverCostOp">minSetCoverCostOp() (in module qaoa.problems.minSetCoverInfrastr)</a>
 </li>
       <li><a href="reference/Core/generated/qrisp.QuantumArray.most_likely.html#qrisp.QuantumArray.most_likely">most_likely() (QuantumArray method)</a>
 
@@ -799,11 +889,21 @@ document.write(`
 </li>
       <li><a href="reference/Miscellaneous%20Functions/generated/qrisp.q_matmul.html#qrisp.q_matmul">q_matmul() (in module qrisp)</a>
 </li>
+      <li><a href="reference/Algorithms/QAE.html#qrisp.QAE">QAE() (in module qrisp)</a>
+</li>
+      <li><a href="reference/Algorithms/qaoa/QAOABenchmark.html#qrisp.qaoa.QAOABenchmark">QAOABenchmark (class in qrisp.qaoa)</a>
+</li>
+      <li><a href="reference/Algorithms/qaoa/QAOAProblem.html#qrisp.qaoa.QAOAProblem">QAOAProblem (class in qrisp.qaoa)</a>
+</li>
       <li><a href="reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.qasm.html#qrisp.QuantumCircuit.qasm">qasm() (QuantumCircuit method)</a>
+</li>
+      <li><a href="reference/Miscellaneous%20Functions/generated/qrisp.qcla.html#qrisp.qcla">qcla() (in module qrisp)</a>
 </li>
       <li><a href="reference/Miscellaneous%20Functions/generated/qrisp.qf_inversion.html#qrisp.qf_inversion">qf_inversion() (in module qrisp)</a>
 </li>
       <li><a href="reference/Algorithms/QFT.html#qrisp.QFT">QFT() (in module qrisp)</a>
+</li>
+      <li><a href="reference/Backend%20Interface/QiskitRuntimeBackend.html#qrisp.interface.QiskitRuntimeBackend">QiskitRuntimeBackend (class in qrisp.interface)</a>
 </li>
       <li><a href="reference/Algorithms/QPE.html#qrisp.QPE">QPE() (in module qrisp)</a>
 </li>
@@ -815,12 +915,12 @@ document.write(`
 </li>
       <li><a href="reference/Algorithms/generated/qrisp.quantum_backtracking.QuantumBacktrackingTree.quantum_step.html#qrisp.quantum_backtracking.QuantumBacktrackingTree.quantum_step">quantum_step() (QuantumBacktrackingTree method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="reference/Core/QuantumArray.html#qrisp.QuantumArray">QuantumArray (class in qrisp)</a>
 </li>
       <li><a href="reference/Algorithms/QuantumBacktrackingTree.html#qrisp.quantum_backtracking.QuantumBacktrackingTree">QuantumBacktrackingTree (class in qrisp.quantum_backtracking)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="reference/Quantum%20Types/QuantumBool.html#qrisp.QuantumBool">QuantumBool (class in qrisp)</a>
 </li>
       <li><a href="reference/Quantum%20Types/QuantumChar.html#qrisp.QuantumChar">QuantumChar (class in qrisp)</a>
@@ -832,6 +932,8 @@ document.write(`
       <li><a href="reference/Quantum%20Environments/index.html#qrisp.QuantumEnvironment">QuantumEnvironment (class in qrisp)</a>
 </li>
       <li><a href="reference/Quantum%20Types/QuantumFloat.html#qrisp.QuantumFloat">QuantumFloat (class in qrisp)</a>
+</li>
+      <li><a href="reference/Quantum%20Types/QuantumModulus.html#qrisp.QuantumModulus">QuantumModulus (class in qrisp)</a>
 </li>
       <li><a href="reference/Quantum%20Networks/QuantumNetworkClient.html#qrisp.quantum_network.QuantumNetworkClient">QuantumNetworkClient (class in qrisp.quantum_network)</a>
 </li>
@@ -853,6 +955,8 @@ document.write(`
 <h2 id="R">R</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/Algorithms/qaoa/generated/qrisp.qaoa.QAOABenchmark.rank.html#qrisp.qaoa.QAOABenchmark.rank">rank() (QAOABenchmark method)</a>
+</li>
       <li><a href="reference/Miscellaneous%20Functions/generated/qrisp.redirect_qfunction.html#qrisp.redirect_qfunction">redirect_qfunction() (in module qrisp)</a>
 </li>
       <li><a href="reference/Core/generated/qrisp.QuantumVariable.reduce.html#qrisp.QuantumVariable.reduce">reduce() (QuantumVariable method)</a>
@@ -861,22 +965,34 @@ document.write(`
 </li>
       <li><a href="reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.reset.html#qrisp.QuantumCircuit.reset">reset() (QuantumCircuit method)</a>
 </li>
-      <li><a href="reference/Backend%20Interface/generated/qrisp.interface.thrift_interface.BackendClient.run.html#qrisp.interface.thrift_interface.BackendClient.run">run() (BackendClient method)</a>
+      <li><a href="reference/Algorithms/generated/qrisp.shor.rsa_decrypt.html#qrisp.shor.rsa_decrypt">rsa_decrypt() (in module qrisp.shor)</a>
+</li>
+      <li><a href="reference/Algorithms/generated/qrisp.shor.rsa_decrypt_string.html#qrisp.shor.rsa_decrypt_string">rsa_decrypt_string() (in module qrisp.shor)</a>
+</li>
+      <li><a href="reference/Algorithms/generated/qrisp.shor.rsa_encrypt.html#qrisp.shor.rsa_encrypt">rsa_encrypt() (in module qrisp.shor)</a>
+</li>
+      <li><a href="reference/Algorithms/generated/qrisp.shor.rsa_encrypt_string.html#qrisp.shor.rsa_encrypt_string">rsa_encrypt_string() (in module qrisp.shor)</a>
+</li>
+      <li><a href="reference/Backend%20Interface/generated/qrisp.interface.qunicorn.BackendClient.run.html#qrisp.interface.qunicorn.BackendClient.run">run() (BackendClient method)</a>, <a href="reference/Backend%20Interface/generated/qrisp.interface.thrift_interface.BackendClient.run.html#qrisp.interface.thrift_interface.BackendClient.run">[1]</a>
 
       <ul>
+        <li><a href="reference/Algorithms/qaoa/generated/qrisp.qaoa.QAOAProblem.run.html#qrisp.qaoa.QAOAProblem.run">(QAOAProblem method)</a>
+</li>
         <li><a href="reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.run.html#qrisp.QuantumCircuit.run">(QuantumCircuit method)</a>
 </li>
         <li><a href="reference/Quantum%20Networks/generated/qrisp.quantum_network.QuantumNetworkClient.run.html#qrisp.quantum_network.QuantumNetworkClient.run">(QuantumNetworkClient method)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="reference/Miscellaneous%20Functions/generated/qrisp.rx.html#qrisp.rx">rx() (in module qrisp)</a>
 
       <ul>
         <li><a href="reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.rx.html#qrisp.QuantumCircuit.rx">(QuantumCircuit method)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference/Algorithms/generated/qrisp.qaoa.RX_mixer.html#qrisp.qaoa.RX_mixer">RX_mixer() (in module qrisp.qaoa)</a>, <a href="reference/Algorithms/qrisp.qaoa.RX_mixer.html#qrisp.qaoa.RX_mixer">[1]</a>
+</li>
       <li><a href="reference/Miscellaneous%20Functions/generated/qrisp.rxx.html#qrisp.rxx">rxx() (in module qrisp)</a>
 
       <ul>
@@ -895,6 +1011,8 @@ document.write(`
         <li><a href="reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.rz.html#qrisp.QuantumCircuit.rz">(QuantumCircuit method)</a>
 </li>
       </ul></li>
+      <li><a href="reference/Algorithms/generated/qrisp.qaoa.RZ_mixer.html#qrisp.qaoa.RZ_mixer">RZ_mixer() (in module qrisp.qaoa)</a>, <a href="reference/Algorithms/qrisp.qaoa.RZ_mixer.html#qrisp.qaoa.RZ_mixer">[1]</a>
+</li>
       <li><a href="reference/Miscellaneous%20Functions/generated/qrisp.rzz.html#qrisp.rzz">rzz() (in module qrisp)</a>
 
       <ul>
@@ -919,6 +1037,8 @@ document.write(`
         <li><a href="reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.s_dg.html#qrisp.QuantumCircuit.s_dg">(QuantumCircuit method)</a>
 </li>
       </ul></li>
+      <li><a href="reference/Algorithms/qaoa/generated/qrisp.qaoa.QAOABenchmark.save.html#qrisp.qaoa.QAOABenchmark.save">save() (QAOABenchmark method)</a>
+</li>
       <li><a href="reference/Quantum%20Types/generated/qrisp.QuantumFloat.sb_poly.html#qrisp.QuantumFloat.sb_poly">sb_poly() (QuantumFloat method)</a>
 </li>
       <li><a href="reference/Miscellaneous%20Functions/generated/qrisp.sbp_add.html#qrisp.sbp_add">sbp_add() (in module qrisp)</a>
@@ -933,15 +1053,19 @@ document.write(`
 </li>
       <li><a href="reference/Quantum%20Networks/generated/qrisp.quantum_network.QuantumNetworkSession.send_qv.html#qrisp.quantum_network.QuantumNetworkSession.send_qv">send_qv() (QuantumNetworkSession method)</a>
 </li>
+      <li><a href="reference/Algorithms/qaoa/generated/qrisp.qaoa.QAOAProblem.set_init_function.html#qrisp.qaoa.QAOAProblem.set_init_function">set_init_function() (QAOAProblem method)</a>
+</li>
       <li><a href="reference/Core/generated/qrisp.QuantumArray.set_shape.html#qrisp.QuantumArray.set_shape">set_shape() (QuantumArray method)</a>
+</li>
+      <li><a href="reference/Algorithms/Shor.html#qrisp.shor.shors_alg">shors_alg() (in module qrisp.shor)</a>
 </li>
       <li><a href="reference/Quantum%20Types/generated/qrisp.QuantumFloat.sign.html#qrisp.QuantumFloat.sign">sign() (QuantumFloat method)</a>
 </li>
-      <li><a href="reference/Quantum%20Types/generated/qrisp.QuantumFloat.significant.html#qrisp.QuantumFloat.significant">significant() (QuantumFloat method)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="reference/Backend%20Interface/generated/qrisp.interface.thrift_interface.BackendServer.start.html#qrisp.interface.thrift_interface.BackendServer.start">start() (BackendServer method)</a>
+      <li><a href="reference/Quantum%20Types/generated/qrisp.QuantumFloat.significant.html#qrisp.QuantumFloat.significant">significant() (QuantumFloat method)</a>
+</li>
+      <li><a href="reference/Backend%20Interface/generated/qrisp.interface.qunicorn.BackendServer.start.html#qrisp.interface.qunicorn.BackendServer.start">start() (BackendServer method)</a>, <a href="reference/Backend%20Interface/generated/qrisp.interface.thrift_interface.BackendServer.start.html#qrisp.interface.thrift_interface.BackendServer.start">[1]</a>
 
       <ul>
         <li><a href="reference/Quantum%20Networks/generated/qrisp.quantum_network.QuantumNetworkServer.start.html#qrisp.quantum_network.QuantumNetworkServer.start">(QuantumNetworkServer method)</a>
@@ -995,6 +1119,10 @@ document.write(`
         <li><a href="reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.t.html#qrisp.QuantumCircuit.t">(QuantumCircuit method)</a>
 </li>
       </ul></li>
+      <li><a href="reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.t_depth.html#qrisp.QuantumCircuit.t_depth">t_depth() (QuantumCircuit method)</a>
+</li>
+      <li><a href="reference/Miscellaneous%20Functions/generated/qrisp.t_depth_indicator.html#qrisp.t_depth_indicator">t_depth_indicator() (in module qrisp)</a>
+</li>
       <li><a href="reference/Miscellaneous%20Functions/generated/qrisp.t_dg.html#qrisp.t_dg">t_dg() (in module qrisp)</a>
 
       <ul>
@@ -1013,7 +1141,13 @@ document.write(`
 </li>
       <li><a href="reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.to_op.html#qrisp.QuantumCircuit.to_op">to_op() (QuantumCircuit method)</a>
 </li>
+      <li><a href="reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.to_pennylane.html#qrisp.QuantumCircuit.to_pennylane">to_pennylane() (QuantumCircuit method)</a>
+</li>
+      <li><a href="reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.to_pytket.html#qrisp.QuantumCircuit.to_pytket">to_pytket() (QuantumCircuit method)</a>
+</li>
       <li><a href="reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.to_qiskit.html#qrisp.QuantumCircuit.to_qiskit">to_qiskit() (QuantumCircuit method)</a>
+</li>
+      <li><a href="reference/Algorithms/qaoa/generated/qrisp.qaoa.QAOAProblem.train_function.html#qrisp.qaoa.QAOAProblem.train_function">train_function() (QAOAProblem method)</a>
 </li>
       <li><a href="reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.transpile.html#qrisp.QuantumCircuit.transpile">transpile() (QuantumCircuit method)</a>
 </li>
@@ -1049,9 +1183,11 @@ document.write(`
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="reference/Backend%20Interface/VirtualBackend.html#qrisp.interface.VirtualBackend">VirtualBackend (class in qrisp.interface)</a>
 </li>
+      <li><a href="reference/Backend%20Interface/VirtualQiskitBackend.html#qrisp.interface.VirtualQiskitBackend">VirtualQiskitBackend (class in qrisp.interface)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="reference/Backend%20Interface/VirtualQiskitBackend.html#qrisp.interface.VirtualQiskitBackend">VirtualQiskitBackend (class in qrisp.interface)</a>
+      <li><a href="reference/Algorithms/qaoa/generated/qrisp.qaoa.QAOABenchmark.visualize.html#qrisp.qaoa.QAOABenchmark.visualize">visualize() (QAOABenchmark method)</a>
 </li>
       <li><a href="reference/Algorithms/generated/qrisp.quantum_backtracking.QuantumBacktrackingTree.visualize_statevector.html#qrisp.quantum_backtracking.QuantumBacktrackingTree.visualize_statevector">visualize_statevector() (QuantumBacktrackingTree method)</a>
 </li>
@@ -1075,6 +1211,8 @@ document.write(`
         <li><a href="reference/Circuit%20Construction/generated/qrisp.QuantumCircuit.xxyy.html#qrisp.QuantumCircuit.xxyy">(QuantumCircuit method)</a>
 </li>
       </ul></li>
+      <li><a href="reference/Algorithms/generated/qrisp.qaoa.XY_mixer.html#qrisp.qaoa.XY_mixer">XY_mixer() (in module qrisp.qaoa)</a>, <a href="reference/Algorithms/qrisp.qaoa.XY_mixer.html#qrisp.qaoa.XY_mixer">[1]</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -1108,6 +1246,8 @@ document.write(`
               
               
               
+              
+              
             </div>
             
             
@@ -1125,6 +1265,20 @@ document.write(`
   </div>
 </div>
 
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
 </div></div>
               
             
@@ -1138,8 +1292,8 @@ document.write(`
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script src="_static/scripts/bootstrap.js?digest=e353d410970836974a52"></script>
-<script src="_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52"></script>
+  <script src="_static/scripts/bootstrap.js?digest=ac02cc09edc035673794"></script>
+<script src="_static/scripts/pydata-sphinx-theme.js?digest=ac02cc09edc035673794"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -1157,7 +1311,7 @@ document.write(`
       
         <div class="footer-item">
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 6.2.1.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 4.5.0.
     <br/>
   </p>
 </div>
@@ -1165,10 +1319,11 @@ document.write(`
     </div>
   
   
+  
     <div class="footer-items__end">
       
         <div class="footer-item"><p class="theme-version">
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.13.4dev0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.14.1.
 </p></div>
       
     </div>

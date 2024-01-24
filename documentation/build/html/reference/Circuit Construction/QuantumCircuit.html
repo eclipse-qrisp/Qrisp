@@ -33,7 +33,7 @@
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/sphinx-thebe.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/custom03.css" />
   
   <!-- Pre-loaded scripts that we'll load fully later -->
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=ac02cc09edc035673794" />
@@ -222,7 +222,7 @@ const thebe_selector_output = "span.go"
           
           
           
-          <a href="https://github.com/fraunhoferfokus/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square fa-lg" aria-hidden="true"></i></span>
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square fa-lg" aria-hidden="true"></i></span>
             <span class="sr-only">GitHub</span></a>
         </li>
 </ul></div>
@@ -329,7 +329,7 @@ const thebe_selector_output = "span.go"
           
           
           
-          <a href="https://github.com/fraunhoferfokus/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square fa-lg" aria-hidden="true"></i></span>
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square fa-lg" aria-hidden="true"></i></span>
             <span class="sr-only">GitHub</span></a>
         </li>
 </ul></div>
@@ -376,8 +376,8 @@ const thebe_selector_output = "span.go"
 <li class="toctree-l2"><a class="reference internal" href="Clbit.html">Clbit</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="../Backend%20Interface/index.html">Backend Interface</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../Quantum%20Networks/index.html">Quantum Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Backend%20Interface/index.html">Backend Interface</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../Miscellaneous%20Functions/index.html">Miscellaneous Functions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../Examples/index.html">Examples</a></li>
 </ul>
@@ -658,8 +658,14 @@ qb_2: ┤ P(2) ├
 <tr class="row-even"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.statevector_array.html#qrisp.QuantumCircuit.statevector_array" title="qrisp.QuantumCircuit.statevector_array"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.statevector_array</span></code></a>()</p></td>
 <td><p>Performs a simulation of the statevector of self and returns a numpy array of complex numbers.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.depth.html#qrisp.QuantumCircuit.depth" title="qrisp.QuantumCircuit.depth"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.depth</span></code></a>([transpile])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.depth.html#qrisp.QuantumCircuit.depth" title="qrisp.QuantumCircuit.depth"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.depth</span></code></a>([depth_indicator, ...])</p></td>
 <td><p>Returns the depth of the QuantumCircuit.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.t_depth.html#qrisp.QuantumCircuit.t_depth" title="qrisp.QuantumCircuit.t_depth"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.t_depth</span></code></a>([epsilon])</p></td>
+<td><p>Estimates the T-depth of self.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.cnot_depth.html#qrisp.QuantumCircuit.cnot_depth" title="qrisp.QuantumCircuit.cnot_depth"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.cnot_depth</span></code></a>()</p></td>
+<td><p>This function returns the CNOT-depth of an self.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.num_qubits.html#qrisp.QuantumCircuit.num_qubits" title="qrisp.QuantumCircuit.num_qubits"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.num_qubits</span></code></a>()</p></td>
 <td><p>Returns the amount of qubits.</p></td>
@@ -697,10 +703,10 @@ qb_2: ┤ P(2) ├
 <td><p>Method to convert the given QuantumCircuit to a Qiskit QuantumCircuit.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.to_pennylane.html#qrisp.QuantumCircuit.to_pennylane" title="qrisp.QuantumCircuit.to_pennylane"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.to_pennylane</span></code></a>()</p></td>
-<td><p>Method to convert the given QuantumCircuit to a Pennylane Circuit.</p></td>
+<td><p>Method to convert the given QuantumCircuit to a <a class="reference external" href="https://pennylane.ai/">Pennylane</a> Circuit.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.to_pytket.html#qrisp.QuantumCircuit.to_pytket" title="qrisp.QuantumCircuit.to_pytket"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.to_pytket</span></code></a>()</p></td>
-<td><p>Method to convert the given QuantumCircuit to a Pennylane Circuit.</p></td>
+<td><p>Method to convert the given QuantumCircuit to a <a class="reference external" href="https://cqcl.github.io/tket/pytket/api/#">PyTket</a> Circuit.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.QuantumCircuit.from_qasm_str.html#qrisp.QuantumCircuit.from_qasm_str" title="qrisp.QuantumCircuit.from_qasm_str"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuantumCircuit.from_qasm_str</span></code></a>(qasm_string)</p></td>
 <td><p>Loads a QuantumCircuit from a QASM String.</p></td>

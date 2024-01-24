@@ -3,7 +3,7 @@
 <!DOCTYPE html>
 
 
-<html lang="en" data-theme="light">
+<html data-theme="light">
 
   <head>
     <meta charset="utf-8" />
@@ -18,39 +18,48 @@
   </script>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../_static/styles/theme.css?digest=e353d410970836974a52" rel="stylesheet" />
-<link href="../../../_static/styles/bootstrap.css?digest=e353d410970836974a52" rel="stylesheet" />
-<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+  <link href="../../../_static/styles/theme.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+<link href="../../../_static/styles/bootstrap.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=ac02cc09edc035673794" rel="stylesheet" />
 
   
-  <link href="../../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=e353d410970836974a52" rel="stylesheet" />
+  <link href="../../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=ac02cc09edc035673794" rel="stylesheet" />
   <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
 <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
 <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
 
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-thebe.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/css/custom.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/custom03.css" />
   
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=e353d410970836974a52" />
-<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52" />
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=ac02cc09edc035673794" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=ac02cc09edc035673794" />
+  <script src="../../../_static/vendor/fontawesome/6.1.2/js/all.min.js?digest=ac02cc09edc035673794"></script>
 
     <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
     <script src="../../../_static/doctools.js"></script>
-    <script src="../../../_static/sphinx_highlight.js"></script>
     <script src="../../../_static/clipboard.min.js"></script>
     <script src="../../../_static/copybutton.js"></script>
     <script src="../../../_static/design-tabs.js"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"
+const thebe_selector = "div.highlight"
+const thebe_selector_input = "pre"
+const thebe_selector_output = "span.go"
+</script>
+    <script async="async" src="../../../_static/sphinx-thebe.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/qrisp/qtypes/quantum_float';</script>
     <link rel="canonical" href="https://qrisp.eu/_modules/qrisp/qtypes/quantum_float.html" />
-    <link rel="icon" href="../../../_static/qrisp_favicon.png"/>
+    <link rel="shortcut icon" href="../../../_static/qrisp_favicon.png"/>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:language" content="None"/>
   </head>
   
   
@@ -59,6 +68,15 @@
   
   
   <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>
+    Back to top
+  </button>
+
   
   <input type="checkbox"
           class="sidebar-toggle"
@@ -135,7 +153,7 @@
   <ul class="bd-navbar-elements navbar-nav">
     
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../../../general/tutorial.html">
+                      <a class="nav-link nav-internal" href="../../../general/tutorial/index.html">
                         Tutorial
                       </a>
                     </li>
@@ -178,13 +196,15 @@
       
         <div class="navbar-item navbar-persistent--container">
           
-<script>
-document.write(`
-  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
-  </button>
-`);
-</script>
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
         </div>
       
       
@@ -199,7 +219,7 @@ document.write(`
           
           
           
-          <a href="https://github.com/fraunhoferfokus/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square fa-lg" aria-hidden="true"></i></span>
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square fa-lg" aria-hidden="true"></i></span>
             <span class="sr-only">GitHub</span></a>
         </li>
 </ul></div>
@@ -210,18 +230,20 @@ document.write(`
   
   
     <div class="navbar-persistent--mobile">
-<script>
-document.write(`
-  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
-  </button>
-`);
-</script>
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
     </div>
   
 
   
-    <label class="sidebar-toggle secondary-toggle" for="__secondary">
+    <label class="sidebar-toggle secondary-toggle" for="__secondary" tabindex="0">
       <span class="fa-solid fa-outdent"></span>
     </label>
   
@@ -251,7 +273,7 @@ document.write(`
   <ul class="bd-navbar-elements navbar-nav">
     
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../../../general/tutorial.html">
+                      <a class="nav-link nav-internal" href="../../../general/tutorial/index.html">
                         Tutorial
                       </a>
                     </li>
@@ -304,7 +326,7 @@ document.write(`
           
           
           
-          <a href="https://github.com/fraunhoferfokus/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square fa-lg" aria-hidden="true"></i></span>
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square fa-lg" aria-hidden="true"></i></span>
             <span class="sr-only">GitHub</span></a>
         </li>
 </ul></div>
@@ -357,8 +379,8 @@ document.write(`
 
 
 
-<nav aria-label="Breadcrumbs">
-  <ul class="bd-breadcrumbs" role="navigation" aria-label="Breadcrumb">
+<nav aria-label="Breadcrumb">
+  <ul class="bd-breadcrumbs">
     
     <li class="breadcrumb-item breadcrumb-home">
       <a href="../../../index.html" class="nav-link" aria-label="Home">
@@ -368,7 +390,7 @@ document.write(`
     
     <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
     
-    <li class="breadcrumb-item active" aria-current="page">qrisp.qtypes.quantum_float</li>
+    <li class="breadcrumb-item active" aria-current="page">qrisp.qtypes...</li>
   </ul>
 </nav>
 </div>
@@ -408,19 +430,19 @@ document.write(`
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">sympy</span> <span class="k">as</span> <span class="nn">sp</span>
 
-<span class="kn">from</span> <span class="nn">qrisp.arithmetic</span> <span class="kn">import</span> <span class="p">(</span>
-    <span class="n">eq</span><span class="p">,</span>
-    <span class="n">geq</span><span class="p">,</span>
-    <span class="n">gt</span><span class="p">,</span>
-    <span class="n">inpl_mult</span><span class="p">,</span>
-    <span class="n">leq</span><span class="p">,</span>
-    <span class="n">lt</span><span class="p">,</span>
-    <span class="n">neq</span><span class="p">,</span>
-    <span class="n">polynomial_encoder</span><span class="p">,</span>
-    <span class="n">q_mult</span><span class="p">,</span>
-    <span class="n">sbp_add</span><span class="p">,</span>
-    <span class="n">quantum_bit_shift</span><span class="p">,</span>
-<span class="p">)</span>
+<span class="c1"># from qrisp.arithmetic import (</span>
+<span class="c1">#     eq,</span>
+<span class="c1">#     geq,</span>
+<span class="c1">#     gt,</span>
+<span class="c1">#     inpl_mult,</span>
+<span class="c1">#     leq,</span>
+<span class="c1">#     lt,</span>
+<span class="c1">#     neq,</span>
+<span class="c1">#     polynomial_encoder,</span>
+<span class="c1">#     q_mult,</span>
+<span class="c1">#     sbp_add,</span>
+<span class="c1">#     quantum_bit_shift,</span>
+<span class="c1"># )</span>
 <span class="kn">from</span> <span class="nn">qrisp.core</span> <span class="kn">import</span> <span class="n">QuantumVariable</span>
 <span class="kn">from</span> <span class="nn">qrisp.misc</span> <span class="kn">import</span> <span class="n">gate_wrap</span>
 
@@ -462,7 +484,7 @@ document.write(`
 
 
 <div class="viewcode-block" id="QuantumFloat"><a class="viewcode-back" href="../../../reference/Quantum%20Types/QuantumFloat.html#qrisp.QuantumFloat">[docs]</a><span class="k">class</span> <span class="nc">QuantumFloat</span><span class="p">(</span><span class="n">QuantumVariable</span><span class="p">):</span>
-    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This subclass of :ref:`QuantumVariable` can represent floating point numbers</span>
 <span class="sd">    (signed and unsigned) up to an arbitrary precision.</span>
 
@@ -721,7 +743,7 @@ document.write(`
     <span class="c1">#     return res</span>
 
 <div class="viewcode-block" id="QuantumFloat.sb_poly"><a class="viewcode-back" href="../../../reference/Quantum%20Types/generated/qrisp.QuantumFloat.sb_poly.html#qrisp.QuantumFloat.sb_poly">[docs]</a>    <span class="k">def</span> <span class="nf">sb_poly</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns the semi-boolean polynomial of this `QuantumFloat` where `m` specifies</span>
 <span class="sd">        the image extension parameter.</span>
 
@@ -773,6 +795,9 @@ document.write(`
 
     <span class="nd">@gate_wrap</span><span class="p">(</span><span class="n">permeability</span><span class="o">=</span><span class="s2">&quot;args&quot;</span><span class="p">,</span> <span class="n">is_qfree</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="k">def</span> <span class="fm">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        
+        <span class="kn">from</span> <span class="nn">qrisp.arithmetic</span> <span class="kn">import</span> <span class="n">q_mult</span><span class="p">,</span> <span class="n">polynomial_encoder</span>
+        
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">QuantumFloat</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">q_mult</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
@@ -807,6 +832,9 @@ document.write(`
 
     <span class="nd">@gate_wrap</span><span class="p">(</span><span class="n">permeability</span><span class="o">=</span><span class="s2">&quot;args&quot;</span><span class="p">,</span> <span class="n">is_qfree</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="k">def</span> <span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        
+        <span class="kn">from</span> <span class="nn">qrisp.arithmetic</span> <span class="kn">import</span> <span class="n">sbp_add</span>
+        
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">QuantumFloat</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">sbp_add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
@@ -885,6 +913,9 @@ document.write(`
 
     <span class="nd">@gate_wrap</span><span class="p">(</span><span class="n">permeability</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">is_qfree</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="k">def</span> <span class="fm">__iadd__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        
+        <span class="kn">from</span> <span class="nn">qrisp.arithmetic</span> <span class="kn">import</span> <span class="n">polynomial_encoder</span>
+        
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">QuantumFloat</span><span class="p">):</span>
             <span class="n">input_qf_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">other</span><span class="p">]</span>
             <span class="n">poly</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">symbols</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">)</span>
@@ -914,6 +945,9 @@ document.write(`
 
     <span class="nd">@gate_wrap</span><span class="p">(</span><span class="n">permeability</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">is_qfree</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="k">def</span> <span class="fm">__isub__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        
+        <span class="kn">from</span> <span class="nn">qrisp.arithmetic</span> <span class="kn">import</span> <span class="n">polynomial_encoder</span>
+        
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">QuantumFloat</span><span class="p">):</span>
             <span class="n">input_qf_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">other</span><span class="p">]</span>
             <span class="n">poly</span> <span class="o">=</span> <span class="o">-</span><span class="n">sp</span><span class="o">.</span><span class="n">symbols</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">)</span>
@@ -943,6 +977,9 @@ document.write(`
 
     <span class="nd">@gate_wrap</span><span class="p">(</span><span class="n">permeability</span><span class="o">=</span><span class="p">[],</span> <span class="n">is_qfree</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="k">def</span> <span class="fm">__imul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        
+        <span class="kn">from</span> <span class="nn">qrisp.arithmetic</span> <span class="kn">import</span> <span class="n">inpl_mult</span>
+        
         <span class="n">inpl_mult</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="bp">self</span>
@@ -956,43 +993,61 @@ document.write(`
         <span class="k">return</span> <span class="bp">self</span>
 
     <span class="k">def</span> <span class="fm">__lt__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        
+        <span class="kn">from</span> <span class="nn">qrisp.arithmetic</span> <span class="kn">import</span> <span class="n">lt</span>
+        
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="p">(</span><span class="n">QuantumFloat</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
             <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Comparison with type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)</span><span class="si">}</span><span class="s2"> not implemented&quot;</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">lt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__gt__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        
+        <span class="kn">from</span> <span class="nn">qrisp.arithmetic</span> <span class="kn">import</span> <span class="n">gt</span>
+        
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="p">(</span><span class="n">QuantumFloat</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
             <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Comparison with type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)</span><span class="si">}</span><span class="s2"> not implemented&quot;</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">gt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__le__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        
+        <span class="kn">from</span> <span class="nn">qrisp.arithmetic</span> <span class="kn">import</span> <span class="n">leq</span>
+        
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="p">(</span><span class="n">QuantumFloat</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
             <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Comparison with type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)</span><span class="si">}</span><span class="s2"> not implemented&quot;</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">leq</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__ge__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        
+        <span class="kn">from</span> <span class="nn">qrisp.arithmetic</span> <span class="kn">import</span> <span class="n">geq</span>        
+        
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="p">(</span><span class="n">QuantumFloat</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
             <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Comparison with type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)</span><span class="si">}</span><span class="s2"> not implemented&quot;</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">geq</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        
+        <span class="kn">from</span> <span class="nn">qrisp.arithmetic</span> <span class="kn">import</span> <span class="n">eq</span>
+        
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="p">(</span><span class="n">QuantumFloat</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
             <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Comparison with type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)</span><span class="si">}</span><span class="s2"> not implemented&quot;</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">eq</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        
+        <span class="kn">from</span> <span class="nn">qrisp.arithmetic</span> <span class="kn">import</span> <span class="n">neq</span>
+        
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="p">(</span><span class="n">QuantumFloat</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
             <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Comparison with type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)</span><span class="si">}</span><span class="s2"> not implemented&quot;</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">neq</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
 
 <div class="viewcode-block" id="QuantumFloat.exp_shift"><a class="viewcode-back" href="../../../reference/Quantum%20Types/generated/qrisp.QuantumFloat.exp_shift.html#qrisp.QuantumFloat.exp_shift">[docs]</a>    <span class="k">def</span> <span class="nf">exp_shift</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shift</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Performs an internal bit shift. Note that this method doesn&#39;t cost any</span>
 <span class="sd">        quantum gates. For the quantum version of this method, see</span>
 <span class="sd">        :meth:`quantum_bit_shift&lt;qrisp.QuantumFloat.quantum_bitshift&gt;`.</span>
@@ -1019,19 +1074,22 @@ document.write(`
 <span class="sd">        &gt;&gt;&gt; print(a)</span>
 <span class="sd">        {8: 1.0}</span>
 <span class="sd">        &gt;&gt;&gt; print(a.qs)</span>
-<span class="sd">        QuantumCircuit:</span>
-<span class="sd">        ---------------</span>
-<span class="sd">        a.0: ─────</span>
-<span class="sd">             ┌───┐</span>
-<span class="sd">        a.1: ┤ X ├</span>
-<span class="sd">             └───┘</span>
-<span class="sd">        a.2: ─────</span>
-<span class="sd">        &lt;BLANKLINE&gt;</span>
-<span class="sd">        a.3: ─────</span>
-<span class="sd">        &lt;BLANKLINE&gt;          </span>
-<span class="sd">        Live QuantumVariables:</span>
-<span class="sd">        ----------------------</span>
-<span class="sd">        QuantumFloat a</span>
+<span class="sd">        </span>
+<span class="sd">        ::</span>
+<span class="sd">        </span>
+<span class="sd">            QuantumCircuit:</span>
+<span class="sd">            --------------</span>
+<span class="sd">            a.0: ─────</span>
+<span class="sd">                 ┌───┐</span>
+<span class="sd">            a.1: ┤ X ├</span>
+<span class="sd">                 └───┘</span>
+<span class="sd">            a.2: ─────</span>
+<span class="sd">            &lt;BLANKLINE&gt;</span>
+<span class="sd">            a.3: ─────</span>
+
+<span class="sd">            Live QuantumVariables:</span>
+<span class="sd">            ---------------------</span>
+<span class="sd">            QuantumFloat a</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">shift</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
@@ -1057,7 +1115,7 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">msize</span> <span class="o">+=</span> <span class="n">amount</span>
 
 <div class="viewcode-block" id="QuantumFloat.add_sign"><a class="viewcode-back" href="../../../reference/Quantum%20Types/generated/qrisp.QuantumFloat.add_sign.html#qrisp.QuantumFloat.add_sign">[docs]</a>    <span class="k">def</span> <span class="nf">add_sign</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Turns an unsigned QuantumFloat into its signed version.</span>
 
 <span class="sd">        Raises</span>
@@ -1081,13 +1139,13 @@ document.write(`
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">signed</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;Tried to add sign to signed QuantumFloat&#39;</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">mshape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-=</span> <span class="mi">1</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">msize</span> <span class="o">-=</span> <span class="mi">1</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">signed</span> <span class="o">=</span> <span class="kc">True</span></div>
 
 <div class="viewcode-block" id="QuantumFloat.sign"><a class="viewcode-back" href="../../../reference/Quantum%20Types/generated/qrisp.QuantumFloat.sign.html#qrisp.QuantumFloat.sign">[docs]</a>    <span class="k">def</span> <span class="nf">sign</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns the sign qubit.</span>
 
 <span class="sd">        This qubit is in state $\ket{1}$ if the QuantumFloat holds a negative value and</span>
@@ -1150,7 +1208,7 @@ document.write(`
         <span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">incr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="kn">from</span> <span class="nn">qrisp.arithmetic.incrementation</span> <span class="kn">import</span> <span class="n">increment</span>
+        <span class="kn">from</span> <span class="nn">qrisp.arithmetic.adders.incrementation</span> <span class="kn">import</span> <span class="n">increment</span>
 
         <span class="k">if</span> <span class="n">x</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">x</span> <span class="o">=</span> <span class="mi">2</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">exponent</span>
@@ -1160,7 +1218,7 @@ document.write(`
         <span class="k">return</span> <span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
 <div class="viewcode-block" id="QuantumFloat.significant"><a class="viewcode-back" href="../../../reference/Quantum%20Types/generated/qrisp.QuantumFloat.significant.html#qrisp.QuantumFloat.significant">[docs]</a>    <span class="k">def</span> <span class="nf">significant</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns the qubit with significance $k$.</span>
 
 <span class="sd">        Parameters</span>
@@ -1209,7 +1267,7 @@ document.write(`
         <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="n">sig_list</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">k</span><span class="p">)]</span></div>
 
 <div class="viewcode-block" id="QuantumFloat.truncate"><a class="viewcode-back" href="../../../reference/Quantum%20Types/generated/qrisp.QuantumFloat.truncate.html#qrisp.QuantumFloat.truncate">[docs]</a>    <span class="k">def</span> <span class="nf">truncate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Receives a regular float and returns the float that is closest to the input but</span>
 <span class="sd">        can still be encoded.</span>
 
@@ -1247,7 +1305,7 @@ document.write(`
         <span class="k">return</span> <span class="n">decoder_values</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">decoder_values</span> <span class="o">-</span> <span class="n">x</span><span class="p">))]</span></div>
     
 <div class="viewcode-block" id="QuantumFloat.get_ev"><a class="viewcode-back" href="../../../reference/Quantum%20Types/generated/qrisp.QuantumFloat.get_ev.html#qrisp.QuantumFloat.get_ev">[docs]</a>    <span class="k">def</span> <span class="nf">get_ev</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">mes_kwargs</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Retrieves the expectation value of self.</span>
 
 <span class="sd">        Parameters</span>
@@ -1278,7 +1336,7 @@ document.write(`
         <span class="k">return</span> <span class="nb">sum</span><span class="p">([</span><span class="n">k</span><span class="o">*</span><span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="n">mes_res</span><span class="o">.</span><span class="n">items</span><span class="p">()])</span></div>
     
 <div class="viewcode-block" id="QuantumFloat.quantum_bit_shift"><a class="viewcode-back" href="../../../reference/Quantum%20Types/generated/qrisp.QuantumFloat.quantum_bit_shift.html#qrisp.QuantumFloat.quantum_bit_shift">[docs]</a>    <span class="k">def</span> <span class="nf">quantum_bit_shift</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shift_amount</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Performs a bit shift in the quantum device.</span>
 <span class="sd">        While :meth:`exp_shift&lt;qrisp.QuantumFloat.exp_shift&gt;` performs a bit shift</span>
 <span class="sd">        in the compiler (thus costing no quantum gates) this method performs the</span>
@@ -1332,7 +1390,16 @@ document.write(`
 <span class="sd">        sqrt(2)*(|1&gt;*|False&gt; + |4&gt;*|True&gt;)/2</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">quantum_bit_shift</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shift_amount</span><span class="p">)</span></div></div>
+        
+        <span class="kn">from</span> <span class="nn">qrisp.arithmetic</span> <span class="kn">import</span> <span class="n">quantum_bit_shift</span>
+        
+        <span class="n">quantum_bit_shift</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shift_amount</span><span class="p">)</span></div>
+        
+    <span class="k">def</span> <span class="nf">duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">qs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">init</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        
+        <span class="n">res</span> <span class="o">=</span> <span class="n">QuantumVariable</span><span class="o">.</span><span class="n">duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">qs</span><span class="p">,</span> <span class="n">init</span><span class="p">)</span>
+        <span class="n">res</span><span class="o">.</span><span class="n">mshape</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mshape</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">res</span></div>
         
         
 
@@ -1482,6 +1549,8 @@ document.write(`
               
               
               
+              
+              
             </div>
             
             
@@ -1499,6 +1568,20 @@ document.write(`
   </div>
 </div>
 
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
 </div></div>
               
             
@@ -1512,8 +1595,8 @@ document.write(`
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script src="../../../_static/scripts/bootstrap.js?digest=e353d410970836974a52"></script>
-<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52"></script>
+  <script src="../../../_static/scripts/bootstrap.js?digest=ac02cc09edc035673794"></script>
+<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=ac02cc09edc035673794"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -1531,7 +1614,7 @@ document.write(`
       
         <div class="footer-item">
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 6.2.1.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 4.5.0.
     <br/>
   </p>
 </div>
@@ -1539,10 +1622,11 @@ document.write(`
     </div>
   
   
+  
     <div class="footer-items__end">
       
         <div class="footer-item"><p class="theme-version">
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.13.4dev0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.14.1.
 </p></div>
       
     </div>

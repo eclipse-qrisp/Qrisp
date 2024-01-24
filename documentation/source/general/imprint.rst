@@ -21,6 +21,12 @@ is a constituent entity of the Fraunhofer Gesellschaft, and as such has no separ
    *80686 München*
    *www.fraunhofer.de*
 
+.. image:: ../_static/fraunhofer_fokus_logo.png
+    :align: center
+    :width: 150
+    :class: no-scaled-link
+
+
 --------------------
 
 **VAT Identification Number in accordance with §27 a VAT Tax Act:**

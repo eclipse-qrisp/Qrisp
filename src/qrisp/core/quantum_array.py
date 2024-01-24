@@ -510,7 +510,7 @@ class QuantumArray(np.ndarray):
 
         qubits = sum([qv.reg for qv in self.flatten()[::-1]], [])
         # Copy circuit in over to prevent modification
-        from qrisp.quantum_network import QuantumNetworkClient
+        # from qrisp.quantum_network import QuantumNetworkClient
 
         if precompiled_qc is None:        
             if compile:

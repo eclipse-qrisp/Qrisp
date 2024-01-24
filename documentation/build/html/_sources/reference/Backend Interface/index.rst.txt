@@ -7,7 +7,7 @@ Backend Interface
 
    BackendServer
    BackendClient
-
+   DockerBackend/index
    VirtualBackend
    VirtualQiskitBackend
    
@@ -28,9 +28,7 @@ optionally a string called ``token``. The return value should be the measurement
    from qrisp.interface import BackendServer
    from backend_provider import run_func, ping_func
    
-   server = BackendServer( run_func,
-                           ping_func,
-                           port = 8080)
+   server = BackendServer( run_func, port = 8080)
                            
    server.start()
 
@@ -52,6 +50,16 @@ This class can be used to connect to :ref:`BackendServers <BackendServer>` in or
    res = qv.get_measurement(backend = backend)
 
 In this code snippet, we create connect a BackendClient, to the BackendServer running under the ip ``server_ip`` and ``port``. Subsequently, we run some quantum algorithm returing a :ref:`QuantumVariable` and call the :meth:`qrisp.QuantumVariable.get_measurement` method, to query the remote backend.
+
+
+:ref:`Docker Backend <DockerBackend>`
+-------------------------------------
+
+This module describes the inbuilt Docker container to enable utilization of alternative simulation frameworks.  
+It supports: Cirq (cirq.Simulator), MQT (ddsim qasm_simulator), Qiskit (Aer Backend), PyTket (AerBackend), Rigetti (numpy wavefunction simulator), Qulacs (sampler).  
+
+This functionality is meant to be accessed via a Docker container. Appropriate setup should be conducted.
+This setup includes: Installation of Docker, building of the image provided in this repo, and starting the container built with the image. Specific steps/ info for utilization in this context is given below.
 
 
 :ref:`VirtualBackend`

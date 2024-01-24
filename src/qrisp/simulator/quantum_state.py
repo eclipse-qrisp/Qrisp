@@ -16,10 +16,12 @@
 ********************************************************************************/
 """
 
-# -*- coding: utf-8 -*-
+from itertools import product
 
 from qrisp.simulator.numerics_config import xp
 from qrisp.simulator.tensor_factor import TensorFactor, multi_entangle
+
+from qrisp.misc.utility import bin_rep
 
 # This class describes a quantum state
 # This is achieved by another class, the TensorFactor.
@@ -45,6 +47,23 @@ class QuantumState:
         )
         involved_qubits = list(set(sum([tf.qubits for tf in involved_factors], [])))
 
+        # If the combined tensor factor has more than 63 qubits,
+        # even the sparse representation will result in an error because numpy can
+        # only process 64 bit integers. Therefore the entangling function would result
+        # in an error. As a last resort, we can try to disentangle every single involved qubit
+        if sum([len(tf.qubits) for tf in involved_factors]) > 63:
+            for tf in involved_factors:
+                for qb in tf.qubits:
+                    self.disentangle(qb)
+            
+            # Determine the new involved factors
+            involved_factors = list(
+                set(sum([[self.tensor_factors[qubits[i]]] for i in range(len(qubits))], []))
+            )
+            
+            involved_qubits = list(set(sum([tf.qubits for tf in involved_factors], [])))
+
+
         # Entangle all the factors involved in the operation
         entangled_factor = multi_entangle(involved_factors)
 
@@ -54,10 +73,34 @@ class QuantumState:
 
         # Get the unitary of the operation
         unitary = operation.get_unitary()
-        # unitary = operation.get
 
         # Apply the matrix
         entangled_factor.apply_matrix(unitary, qubits)
+        
+        if entangled_factor.tensor_array.data.dtype == xp.dtype("O"):
+            return
+        
+        p_list, tf_list, outcome_index_list = entangled_factor.multi_measure(qubits, False)
+        
+        disentangling_qubits = []
+        
+        for i in range(len(qubits)):
+            for j in outcome_index_list:
+                if j & (1<<i) == 0:
+                    break
+            else:
+                disentangling_qubits.append(qubits[i])
+                continue
+            
+            for j in outcome_index_list:
+                if (j^(1<<i)) & (1<<i) == 0:
+                    break
+            else:
+                disentangling_qubits.append(qubits[i])
+        
+        for qb in disentangling_qubits:
+            self.disentangle(qb)
+        
 
     # Method to retrieve the statevector in the form of an array of complex numbers
     def eval(self):
@@ -147,36 +190,131 @@ class QuantumState:
     
     def multi_measure(self, mes_qubits, return_res_states = True):
         
-        tf = multi_entangle(list(set([self.tensor_factors[i] for i in mes_qubits])))
+        involved_factors = []
+        involved_factors_dic = {}
         
-        p_list, tf_list, outcome_list = tf.multi_measure(mes_qubits, return_res_tf = return_res_states)
+        for i in range(len(mes_qubits)):
+            involved_factors.append(self.tensor_factors[mes_qubits[i]])
+            involved_factors_dic[mes_qubits[i]] = self.tensor_factors[mes_qubits[i]]
+            
+            
+        involved_factors = list(set(involved_factors))
+        
+        outcome_dic = {}
+        
+        outcome_dic_list = []
+        
+        for tf in involved_factors:
+            
+            tf_mes_qubits = []
+            for qb in mes_qubits:
+                if hash(involved_factors_dic[qb]) == hash(tf):
+                    tf_mes_qubits.append(qb)
+            
+            p_list, tf_list, outcome_list = tf.multi_measure(tf_mes_qubits, return_res_tf = False)
+            
+            
+            dic_list = []
+            
+            for i in range(len(p_list)):
+                dic_list.append({"p" : p_list[i], 
+                                 "tf" : tf_list[i], 
+                                 "outcome" : bin_rep(outcome_list[i], len(tf_mes_qubits)),
+                                 "qubits" : tf_mes_qubits})
+            
+            outcome_dic_list.append(dic_list)
+            outcome_dic[tf] = (p_list, tf_list, outcome_list)
+            
         
         outcome_states = []
+        p_list = []
+        outcome_list = []
         
-        for i in range(len(p_list)):
+        for dic_tuple in product(*outcome_dic_list):
             
-            if p_list[i] == 0:
-                outcome_states.append(None)
-                continue
+            p = 1
+            if return_res_states:
+                outcome_state = self.copy()
+            outcome_value = [0]*len(mes_qubits)
+            
+            for i in range(len(dic_tuple)):
+                
+                p *= dic_tuple[i]["p"]
+                
+                for j in range(len(dic_tuple[i]["qubits"])):
+                    qb = dic_tuple[i]["qubits"][j]
+                    
+                    outcome_value[mes_qubits.index(qb)] = dic_tuple[i]["outcome"][j]
+                
+                    if return_res_states:
+                        outcome_state.tensor_factors[qb] = dic_tuple[i]["tf"]
+                    
+            
+            outcome = "".join(outcome_value)
+            outcome = int(outcome, 2)
+            outcome_list.append(outcome)
             
             if return_res_states:
-                new_outcome_state = self.copy()
-                
-                for j in tf_list[i].qubits:
-                    new_outcome_state.tensor_factors[j] = tf_list[i]
-                    
-                for j in mes_qubits:
-                    new_outcome_state.tensor_factors[j] = TensorFactor([j])
-                    
-                outcome_states.append(new_outcome_state)
-                
+                outcome_states.append(outcome_state)
             else:
-                    
                 outcome_states.append(None)
+                
+            p_list.append(p)
+            
         
-        return p_list, outcome_states, outcome_list
+        if not return_res_states:
+            return outcome_list, p_list
+            
+        
+        
+    # def multi_measure(self, mes_qubits, return_res_states = True):
+            
+        
+    #     tf = multi_entangle(list(set([self.tensor_factors[i] for i in mes_qubits])))
+        
+    #     p_list, tf_list, outcome_list = tf.multi_measure(mes_qubits, return_res_tf = return_res_states)
+        
+    #     outcome_states = []
+        
+    #     for i in range(len(p_list)):
+            
+    #         if p_list[i] == 0:
+    #             outcome_states.append(None)
+    #             continue
+            
+    #         if return_res_states:
+    #             new_outcome_state = self.copy()
+                
+    #             for j in tf_list[i].qubits:
+    #                 new_outcome_state.tensor_factors[j] = tf_list[i]
+                    
+    #             for j in mes_qubits:
+    #                 new_outcome_state.tensor_factors[j] = TensorFactor([j])
+                    
+    #             outcome_states.append(new_outcome_state)
+                
+    #         else:
+                    
+    #             outcome_states.append(None)
+        
+    #     return p_list, outcome_states, outcome_list
             
 
     def add_qubit(self):
         self.tensor_factors.append(TensorFactor([self.n]))
         self.n += 1
+    
+    def disentangle(self, qb):
+        
+        tensor_factor = self.tensor_factors[qb]
+        
+        disent_tf, remain_tf = tensor_factor.disentangle(qb)
+        
+        for i in tensor_factor.qubits:
+            if qb == i:
+                self.tensor_factors[i] = disent_tf
+            else:
+                self.tensor_factors[i] = remain_tf
+        
+        
+        

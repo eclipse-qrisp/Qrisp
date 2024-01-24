@@ -33,7 +33,7 @@
     <link rel="stylesheet" type="text/css" href="_static/copybutton.css" />
     <link rel="stylesheet" type="text/css" href="_static/sphinx-thebe.css" />
     <link rel="stylesheet" type="text/css" href="_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css" />
-    <link rel="stylesheet" type="text/css" href="_static/css/custom.css" />
+    <link rel="stylesheet" type="text/css" href="_static/css/custom03.css" />
   
   <!-- Pre-loaded scripts that we'll load fully later -->
   <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=ac02cc09edc035673794" />
@@ -223,7 +223,7 @@ const thebe_selector_output = "span.go"
           
           
           
-          <a href="https://github.com/fraunhoferfokus/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square fa-lg" aria-hidden="true"></i></span>
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square fa-lg" aria-hidden="true"></i></span>
             <span class="sr-only">GitHub</span></a>
         </li>
 </ul></div>
@@ -330,7 +330,7 @@ const thebe_selector_output = "span.go"
           
           
           
-          <a href="https://github.com/fraunhoferfokus/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square fa-lg" aria-hidden="true"></i></span>
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square fa-lg" aria-hidden="true"></i></span>
             <span class="sr-only">GitHub</span></a>
         </li>
 </ul></div>
@@ -372,7 +372,8 @@ const thebe_selector_output = "span.go"
 }
 
 .frontpage-equation {
-    margin-top: 0.9em;
+    margin-top: 1.9em;
+    margin-bottom: 1.6em
 }
 
 .bd-main .bd-content .bd-article-container {
@@ -424,12 +425,18 @@ h3:not(#hero h3) {
     .homepage-button-container {
         margin-top: 1rem;
     }
+
+    img{
+
+        max-width: 76%;
+    }
 }
 </style>
 
 <div id="hero">
     <div id="hero-left">
-        <h2 style="font-size: 60px; font-weight: bold; margin: 2rem auto 0;">Qrisp</h2>
+        <img alt="./_static/ecplipse_font.png" class="align-bottom-left scaled-image" src="./_static/ecplipse_font.png" width="109" height="25">
+        <h2 style="font-size: 60px; font-weight: bold; margin: -0.4rem auto 0;">Qrisp</h2>
         <h3 style="font-weight: bold; margin-top: 0; color: #000000;">The next generation of quantum algorithm development</h3>
         <p>Qrisp is a high-level programming language for creating and compiling quantum algorithms. Its structured programming model enables scalable development and maintenance.</p>
 
@@ -459,11 +466,11 @@ h3:not(#hero h3) {
 <div class="sd-col sd-d-flex-row docutils">
 <div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-none docutils">
 <div class="sd-card-body docutils">
-<a href="./reference/Miscellaneous Functions/generated/qrisp.as_hamiltonian.html">
+<a href="./reference/Algorithms/Shor.html">
 <div class="example-img-plot-overlay">
-<p class="sd-card-text">Synthesize arbitrarily complex diagonal hamiltonians</p>
+<p class="sd-card-text">Factor integers using abitrary quantum adders with Shor's algorithm</p>
 </div>
-</a><img alt="_images/hamiltonian.svg" src="_images/hamiltonian.svg" /></div>
+</a><img alt="_images/period_finding.svg" src="_images/period_finding.svg" /></div>
 </div>
 </div>
 </div>
@@ -525,7 +532,7 @@ Qrisp algorithms are constituted of variables and functions instead of qubits an
 <div class="sd-card-body docutils">
 <a class="reference external image-reference" href="./reference/Core/Uncomputation.html"><img alt="_images/recycling.png" class="align-center" src="_images/recycling.png" /></a>
 <div class="key-features-text"><p class="sd-card-text"><strong>Automatic uncomputation</strong> <br />
-QuantumVariables can be uncomputed automatically once they are not needed anymore. The uncomputation module is tightly integrated with an advanced qubit resource managment system.</p>
+QuantumVariables can be uncomputed automatically once they are not needed anymore. The uncomputation module is tightly integrated with an advanced qubit resource management system.</p>
 </div></div>
 </div>
 </div>
@@ -534,7 +541,7 @@ QuantumVariables can be uncomputed automatically once they are not needed anymor
 <div class="sd-card-body docutils">
 <img alt="_images/puzzle.png" class="align-center" src="_images/puzzle.png" />
 <div class="key-features-text"><p class="sd-card-text"><strong>Modularity</strong> <br />
-Automated qubit allocation allow separate modules to recycle qubit resources for eachother without intertwining the code. This feature facilitates interoperability of code written by respective domain experts.</p>
+Automated qubit allocation allows separate modules to recycle qubit resources for each other without intertwining the code. This feature facilitates interoperability of code written by respective domain experts.</p>
 </div></div>
 </div>
 </div>
@@ -627,9 +634,9 @@ Qrisp ships with a high-performance simulator, that utilizes sparse matrices to 
 </div></section>
 <section id="who-is-behind-qrisp">
 <h1>Who is behind Qrisp<a class="headerlink" href="#who-is-behind-qrisp" title="Permalink to this headline">#</a></h1>
-<div class="code-example-text"><p>Qrisp is an open-source project developed at <a class="reference external" href="https://www.fokus.fraunhofer.de/en/">Fraunhofer FOKUS</a>, an industrial research facility based in Berlin. It is publicly funded by the German ministry of econmic affairs with the aim to enable commercial use of quantum computation. To achieve this, we aim to open this field of research to a broad audience of developers.</p>
+<div class="code-example-text"><p>Qrisp is an open-source project developed at <a class="reference external" href="https://www.fokus.fraunhofer.de/en/">Fraunhofer FOKUS</a>, an industrial research facility based in Berlin. It is publicly funded by the German ministry of econmic affairs with the aim to enable commercial use of quantum computation. To achieve this, we aim to open this field of research to a broad audience of developers. Furthermore we are proud to announce that Qrisp will become a part of the <a class="reference external" href="https://www.eclipse.org/">Eclipse foundation</a>!</p>
 </div><div class="sd-container-fluid sd-sphinx-override sd-mb-4 docutils">
-<div class="sd-row sd-row-cols-1 sd-row-cols-xs-1 sd-row-cols-sm-1 sd-row-cols-md-4 sd-row-cols-lg-4 docutils">
+<div class="sd-row sd-row-cols-1 sd-row-cols-xs-1 sd-row-cols-sm-1 sd-row-cols-md-5 sd-row-cols-lg-5 docutils">
 <div class="sd-col sd-d-flex-row docutils">
 <div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-none sd-border-0 docutils">
 <div class="sd-card-body docutils">
@@ -640,6 +647,13 @@ Qrisp ships with a high-performance simulator, that utilizes sparse matrices to 
 <div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-none sd-border-0 docutils">
 <div class="sd-card-body docutils">
 <img alt="_images/fraunhofer_fokus_logo.png" class="no-scaled-link align-center" src="_images/fraunhofer_fokus_logo.png" style="width: 150px;" />
+</div>
+</div>
+</div>
+<div class="sd-col sd-d-flex-row docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-none sd-border-0 docutils">
+<div class="sd-card-body docutils">
+<img alt="_images/incubating.png" class="no-scaled-link align-center" src="_images/incubating.png" style="width: 150px;" />
 </div>
 </div>
 </div>

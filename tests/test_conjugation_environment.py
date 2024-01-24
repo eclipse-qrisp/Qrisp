@@ -19,7 +19,7 @@
 from qrisp import conjugate, QuantumFloat, p, QFT, control, PTControlledOperation
 import numpy as np
 
-def test_iteration_env():
+def test_conjugation_env():
     
     def fourier_adder(qf, n):
     

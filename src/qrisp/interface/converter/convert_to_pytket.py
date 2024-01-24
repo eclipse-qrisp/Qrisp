@@ -1,8 +1,3 @@
-"""
-TODO:
-- clBits 
-- test extensively
-"""
 
 from qrisp import QuantumCircuit
 from qrisp.core import QuantumVariable
@@ -74,40 +69,43 @@ def pytket_converter(qc, boxFlag = False):
     from pytket.circuit import CircBox, QControlBox, Op
 
     # This dic gives the qiskit qubits/clbits when presented with their identifier
-    bit_dic = {}
+    qubit_dic = {}
     tket_qc = Circuit()
     #stringListQubs = []
     tketQubits = []
-
     for i in range(len(qc.qubits)):
         # add a named qubit
         tketQubits.append(Qubit(name = str(qc.qubits[i].identifier), index = i))
-        bit_dic[qc.qubits[i].identifier] = tketQubits[-1]
+        qubit_dic[qc.qubits[i].identifier] = tketQubits[-1]
         tket_qc.add_qubit(tketQubits[-1])
     
     # Flag for alternative qubit assignment if we try to create an abstract CircBox
     if boxFlag:
         tket_qc = Circuit(len(qc.qubits))
-        bit_dic = dict()
+        qubit_dic = dict()
         for i in range(len(qc.qubits)):
-            bit_dic[qc.qubits[i].identifier] = i
+            qubit_dic[qc.qubits[i].identifier] = i
 
-
+    clbit_dic = {}
     # Add Clbits
     tketClbits = []
+    if len(qc.clbits):
+        c_reg = tket_qc.add_c_register(name = "creg_std", size = len(qc.clbits))
     for i in range(len(qc.clbits)):
-        
-        tket_qc.add_bit(Bit( name = str(qc.clbits[i].identifier), index = i + len(qc.qubits)))
-        tketClbits.append(tket_qc.bits[-1])
-        bit_dic[qc.clbits[i].identifier] = tketClbits[-1]
+        clbit_dic[qc.clbits[i].identifier] = c_reg[i]
+        #this will hopefully be used one day, when other simulators other than Aer are used with this backend, or... quantinuum decides to fix their backend integration
+        # will throw an error on Aer backend and QASM converter, since they apparently only supports a single classical register, which is a lie
+        """ tketClbits.append(Bit( name = str(qc.clbits[i].identifier)))
+        clbit_dic[qc.clbits[i].identifier] = tketClbits[-1]
+        tket_qc.add_bit(tketClbits[-1]) """
 
     for i in range(len(qc.data)):
         op = qc.data[i].op
 
         params = list(op.params)
         # Prepare qubits
-        qubit_list = [bit_dic[qubit.identifier] for qubit in qc.data[i].qubits]
-        clbit_list = [bit_dic[clbit.identifier] for clbit in qc.data[i].clbits]
+        qubit_list = [qubit_dic[qubit.identifier] for qubit in qc.data[i].qubits]
+        clbit_list = [clbit_dic[clbit.identifier] for clbit in qc.data[i].clbits]
 
         if op.name in ["cp", "p", "rx", "rz", "ry", "rxx", "rzz", "ryy", "u1", "u3"]: #and not boxFlag:
             #pytket expects angles in pi multiples
@@ -145,11 +143,11 @@ def pytket_converter(qc, boxFlag = False):
         elif op.name == "sx":
             #bugged -> params empty
             params = []
-            tket_ins = OpType.SXdg
+            tket_ins = OpType.SX
         elif op.name == "sx_dg":
             #bugged -> params empty
             params = []
-            tket_ins = OpType.SX
+            tket_ins = OpType.SXdg
 
         elif op.name == "u1":
             params[0] = params[0]/np.pi
@@ -213,43 +211,6 @@ def pytket_converter(qc, boxFlag = False):
 
     return tket_qc
     
-
-
-# Suggested test and quality checks
-
-"""#convert and draw
-from qrisp.interface.converter.convert_to_tket import convert_to_tket, create_tket_instruction
-tket_qc = convert_to_tket(qc.qs)
-from pytket.circuit.display import get_circuit_renderer
-circuit_renderer = get_circuit_renderer() 
-circuit_renderer.render_circuit_as_html(tket_qc)
-print("Num of Ops for qiskit and tket")
-print(qc.qs.count_ops())
-print(tket_qc)
-
-
-# check if list of qubits for each operation appear in qrisp qc operations aswell 
-cmds = tket_qc.get_commands()
-liste = [False]*len(cmds)
-from pytket import Circuit, Qubit, Bit, OpType
-for index in range(len(cmds)):
-    for index2 in range(len(qc.qs.data)):
-        qubit_list = []
-        for index3 in range(len(qc.qs.data[index2].qubits)):           
-            qubit_list.append(Qubit( name = str(qc.qs.data[index2].qubits[index3].identifier)))
-        if cmds[index].args == qubit_list:
-            liste[index] = True
-print(liste)
-"""
-
-
-
-
-
-
-
-
-
 
 
 

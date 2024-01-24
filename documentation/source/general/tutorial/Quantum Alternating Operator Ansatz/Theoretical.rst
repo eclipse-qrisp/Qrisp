@@ -32,10 +32,11 @@ where $B$ represents a specific mixer operator that drives the transitions betwe
 After $p$ layers of QAOA, we can define the angle dependent quantum state
 $$|\\psi_p\\rangle=|\\boldsymbol\\gamma,\\boldsymbol\\beta\\rangle=U_M(B,\\beta_p)U_P(C,\\gamma_p)\\cdots U_M(B,\\beta_1)U_P(C,\\gamma_1)|s\\rangle.$$
 
-The end goal in QAOA is now to optimize the variational parameters $\gamma_p$ and $\beta_p$ in order to minimize the expectation value of the cost function with respect to the final state $∣\psi_p\rangle$. This is done using classical optimization techniques.
+The end goal in QAOA is now to optimize the variational parameters $\gamma_p$ and $\beta_p$ in order to minimize the expectation value of the cost function with respect to the final state $\ket{\psi_p}$. This is done using classical optimization techniques.
 
 It's important to remember that QAOA provides an approximate solution, and its performance depends on factors like problem size and structure, choice of initial state, and number of layers $p$. Increasing $p$ generally leads to better solutions but also increases computational cost.
 
+.. _AOA:
 Alternating Operator Ansatz
 ---------------------------
 
@@ -45,7 +46,7 @@ Exactly this concept is well illustrated in the paper `“From the Quantum Appro
 
 Similarly to the original QAOA, we have several key components when implementing the Quantum Alternating Operator Ansatz:
 
-- **COST FUNCTION:** The cost function is problem-specific and defines the optimization landscape. In the Quantum Alternating Operator Ansatz, cost functions can be represented by more general families of operators.
+- **COST FUNCTION:** the cost function is problem-specific and defines the optimization landscape. In the Quantum Alternating Operator Ansatz, cost functions can be represented by more general families of operators.
 - **INITIAL STATE:** initial state can be any state over all computational basis states. It is in most cases chosen to be superposition.
 - **PHASE SEPARATOR:** this applies a phase to each computational basis state based on its cost function value. In the Quantum Alternating Operator Ansatz, we can use a wider range of operators tailored to each problem instance.
 - **MIXER:** drives transitions between different states. In the Quantum Alternating Operator Ansatz, mixers can be chosen from a broader set of unitaries, which allows for more efficient implementation and potentially better exploration of the solution space.
@@ -65,6 +66,9 @@ In their paper, Hadfield and his colleagues give us some really useful examples 
    * - Max-$\ell$-SAT
      - X mixer
      -    ✅
+   * - :ref:`QUBO (NEW since 0.4!) <QUBOQAOA>`
+     - X mixer
+     -    ✅ 
    * - MaxIndependentSet
      - Controlled X mixer
      -    ✅

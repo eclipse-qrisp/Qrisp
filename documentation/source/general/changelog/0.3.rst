@@ -18,6 +18,8 @@ The following is new in Qrisp 0.3 with regard to QAOA
 * :ref:`7 different presolved problems <QAOAExample>` from combinatoric optimization.
 * `Qiskit runtime services <https://qiskit.org/ecosystem/ibm-runtime/>`_ can now be used as a :ref:`Qrisp backend <QiskitRuntimeBackend>`.
 
+With the release of Qrisp 0.3 we also introduce a novel mixer architecture that can keep arbitrary constraints intact and has polynomial complexity! Read more about this exciting idea :ref:`here <ConstrainedMixers>`.
+
 Upgraded Backtracking 
 ----------------------
 

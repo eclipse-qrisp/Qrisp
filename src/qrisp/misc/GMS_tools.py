@@ -40,7 +40,7 @@ class GXX_wrapper(Operation):
             for j in range(len(chi[i])):
                 if chi[i][j] == 0 or i == j:
                     continue
-                qc.rxx(chi[i][j] / 2, i, j)
+                qc.rxx(chi[i][j] / 2, qc.qubits[i], qc.qubits[j])
 
         self.definition = qc
 
@@ -291,23 +291,25 @@ def GXX_converter(qs):
     qc_res = qs.clearcopy()
 
     if global_phase[0] != 0:
-        qc_res.gphase(global_phase[0], 0)
+        qc_res.gphase(global_phase[0], qc_res.qubits[0])
 
     # Calculate the row-sum and the column sum of the phase matrix
     # to determine which single qubit phase has to be applied
     # This is because every entry with the same row / column represents a phase gate
     # where the qubit in question participated
     for i in range(n):
-        qc_res.p((sum(phase_matrix[i, :]) + sum(phase_matrix[:, i])) / 2, i)
+        qc_res.p((sum(phase_matrix[i, :]) + sum(phase_matrix[:, i])) / 2, qc_res.qubits[i])
         phase_matrix[i, i] = 0
 
     # Prepary Chi list for GXX gate
     chi_list = [[-phase_matrix[j, i] for i in range(n)] for j in range(n)]
 
     # Apply GXX Gate
-    qc_res.h(qc_res.qubits)
-    qc_res.append(GXX_wrapper(n, chi_list), range(n))
-    qc_res.h(qc_res.qubits)
+    for qb in qc_res.qubits:
+        qc_res.h(qb)
+    qc_res.append(GXX_wrapper(n, chi_list), qc_res.qubits[:n])
+    for qb in qc_res.qubits:
+        qc_res.h(qb)
 
     return qc_res
 

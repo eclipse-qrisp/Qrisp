@@ -16,7 +16,7 @@
 ********************************************************************************/
 """
 
-from qrisp import QuantumVariable, h, barrier, rz, rx , cx, QuantumArray,x 
+from qrisp import *
 import numpy as np
 from scipy.optimize import minimize
 from sympy import Symbol
@@ -60,6 +60,7 @@ def create_maxcut_cl_cost_function(G):
         for meas, meas_count in counts.items():
             obj_for_meas = maxcut_obj(meas, G)
             energy += obj_for_meas * meas_count
+        
         return energy
     
     return cl_cost_function
@@ -85,10 +86,11 @@ def create_maxcut_cost_operator(G):
             raise Exception(f"Tried to call MaxCut cost Operator for graph of size {len(G)} on argument of invalid size {len(qv)}")
         
         for pair in list(G.edges()):
-            cx(qv[pair[0]], qv[pair[1]])
-            rz(2 * gamma, qv[pair[1]])
-            cx(qv[pair[0]], qv[pair[1]])
-            barrier(qv)
+            rzz(2*gamma, qv[pair[0]], qv[pair[1]])
+            # cx(qv[pair[0]], qv[pair[1]])
+            # rz(2 * gamma, qv[pair[1]])
+            # cx(qv[pair[0]], qv[pair[1]])
+            # barrier(qv)
         
     return maxcut_cost_operator
 

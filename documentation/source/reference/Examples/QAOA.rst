@@ -18,6 +18,9 @@ The following problem instances, gathered in the table below with their correspo
    * - :ref:`Max-$\\ell$-SAT <maxsatQAOA>`
      - X mixer
      -    ✅
+   * - :ref:`QUBO (NEW since 0.4!) <QUBOQAOA>`
+     - X mixer
+     -    ✅ 
    * - :ref:`MaxIndependentSet <QAOAMaxIndependentSet>`
      - Controlled X mixer
      -    ✅
@@ -41,6 +44,7 @@ Our team’s experience validates the adage “practice makes perfect”, demons
 Some of the problem instances mentioned in the table above are condensed and presented below.
 
 .. _QAOAMaxCut:
+
 MaxCut
 ------
 
@@ -55,11 +59,9 @@ The MaxCut problem is defined as follows:
 
     Given a graph $G=(V,E)$, find a subset $S\subset V$ such that the number of edgest between $S$ and $V\text{\\} S$ is the largest.
 
-First we import the necessary functions and packages, create a graph `G` we will be cutting, define a quantum argument `qarg` we'll be acting on, as well as specify the depth of our algorithm.
+First we import the necessary functions and packages, create a graph ``G`` we will be cutting, define a quantum argument ``qarg`` we'll be acting on, as well as specify the depth of our algorithm.
 ::
-  from qrisp.qaoa import QAOAProblem
-  from qrisp.qaoa.problems.maxCut import maxcut_obj,create_maxcut_cl_cost_function,create_maxcut_cost_operator
-  from qrisp.qaoa import RX_mixer
+  from qrisp.qaoa import QAOAProblem, maxcut_obj,create_maxcut_cl_cost_function,create_maxcut_cost_operator, RX_mixer
   from qrisp import QuantumArray, QuantumVariable
   import networkx as nx
   from operator import itemgetter
@@ -79,7 +81,7 @@ Next we follow the recipe to run the algorithm with ``QAOAProblem``, feeding it 
   maxcut_instance = QAOAProblem(create_maxcut_cost_operator(G), RX_mixer, create_maxcut_cl_cost_function(G))
   
   start_time = time.time()
-  res = maxcut_instance.run(qarg, depth, mes_kwargs, max_iter = 50)
+  res = maxcut_instance.run(qarg, depth, max_iter = 50)
   print(time.time()-start_time)
 
 Result analysis
@@ -113,9 +115,9 @@ We will not stick to mathematical assignment of variable names.
 Imports:
 ::
   from qrisp.qaoa import QAOAProblem
-  from qrisp.qaoa.problems.create_rdm_graph import create_rdm_graph
-  from qrisp.qaoa.problems.maxIndepInfr import maxIndepSetCostOp, maxIndepSetCostfct,  init_state
-  from qrisp.qaoa.mixers import RX_mixer
+  from qrisp.qaoa import create_rdm_graph
+  from qrisp.qaoa import maxIndepSetCostOp, maxIndepSetclCostfct,  init_state
+  from qrisp.qaoa import RX_mixer
   from qrisp import QuantumVariable
   import networkx as nx
   import matplotlib.pyplot as plt 
@@ -145,7 +147,7 @@ where $V(G)$ is is the set of vertices of the input graph $G$, $E(G)$ is the set
  
 The mixer operator is a basic :ref:`X mixer <RXmixer>` applied to all qubits.
 ::
-  QAOAinstance = QAOAProblem(cost_operator = maxIndepSetCostOp(giraf), mixer = RX_mixer, cl_cost_function = maxIndepSetCostfct(giraf))
+  QAOAinstance = QAOAProblem(cost_operator = maxIndepSetCostOp(giraf), mixer = RX_mixer, cl_cost_function = maxIndepSetclCostfct(giraf))
   QAOAinstance.set_init_function(init_function = init_state)
   theNiceQAOA = QAOAinstance.run(qarg = qarg, depth = 5)
 
@@ -192,6 +194,7 @@ Print the solution as given by ``networkx``
   print(nx.max_weight_clique(giraf, weight = None))
 
 .. _QAOAMkCS:
+
 Max-$\\kappa$-Colorable Subgraph
 --------------------------------
 
@@ -206,11 +209,9 @@ The Max-$\kappa$-Colorable Subgraph problem is defined as follows:
 
     Given a graph $G$ and $\kappa$ colors, maximize the size (number of edges) of a properly colored subgraph.
 
-Similarly to the example of MaxCut above, we import the necessary functions and packages, create a graph `G` we will be cutting, define the colors we want to use, define a quantum argument `qarg` we'll be acting on (we provide options for one-hot and binary encoding schemes), as well as specify the depth of our algorithm.
+Similarly to the example of MaxCut above, we import the necessary functions and packages, create a graph ``G`` we will be cutting, define the colors we want to use, define a quantum argument ``qarg`` we'll be acting on (we provide options for one-hot and binary encoding schemes), as well as specify the depth of our algorithm.
 ::
-  from qrisp.qaoa import QAOAProblem
-  from qrisp.qaoa.problems.maxKColorableSubgraph import apply_phase_if_eq,create_coloring_operator,create_coloring_cl_cost_function,QuantumColor
-  from qrisp.qaoa import XY_mixer, apply_XY_mixer, RX_mixer
+  from qrisp.qaoa import QAOAProblem, mkcs_obj, apply_phase_if_eq, create_coloring_operator, create_coloring_cl_cost_function, QuantumColor, XY_mixer, apply_XY_mixer, RX_mixer
   from qrisp import QuantumArray
   import random
   import networkx as nx
@@ -237,7 +238,7 @@ Next we follow the recipe to run the algorithm with ``QAOAProblem``, feeding it 
   init_state = [random.choice(color_list) for _ in range(len(G))]
   coloring_instance.set_init_function(lambda x : x.encode(init_state))
 
-  res = coloring_instance.run(qarg, depth, mes_kwargs, max_iter = 25)
+  res = coloring_instance.run(qarg, depth, max_iter = 25)
 
 Result analysis
 ^^^^^^^^^^^^^^^

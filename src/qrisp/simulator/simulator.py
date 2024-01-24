@@ -29,15 +29,16 @@ from qrisp.circuit import (
     QuantumCircuit,
     fast_append,
     transpile,
+    ClControlledOperation
 )
 from qrisp.interface.circuit_converter import convert_circuit
 from qrisp.simulator.circuit_preprocessing import (
     circuit_preprocessor,
     count_measurements_and_treat_alloc,
     group_qc,
-    extract_measurements
+    extract_measurements,
+    insert_multiverse_measurements
 )
-from qrisp.simulator.impure_quantum_state import ImpureQuantumState
 from qrisp.simulator.quantum_state import QuantumState
 
 # This dictionary contains the qrisp operations as values and their names as keys.
@@ -50,6 +51,9 @@ from qrisp.simulator.quantum_state import QuantumState
 # This functions determines the quantum state after executing a quantum circuit
 # and afterwards extracts the probability of measuring certain bit strings
 def run(qc, shots, token="", iqs=None, insert_reset=True):
+    
+    if len(qc.data) == 0:
+        return {"": shots}
     
     progress_bar = tqdm(
         desc=f"Simulating {len(qc.qubits)} qubits..",
@@ -69,7 +73,9 @@ def run(qc, shots, token="", iqs=None, insert_reset=True):
     # of the QuantumCircuit class checks much less validity conditions and is also less
     # tolerant regarding inputs.
     with fast_append():
-        
+
+        # We convert the circuit which is given with portable objects to a qrisp circuit
+        # qc = convert_circuit(qc, "qrisp", transpile=True)
         qc = qc.transpile()
 
         # Count the amount of measurements (we can stop the simulation after all
@@ -91,45 +97,46 @@ def run(qc, shots, token="", iqs=None, insert_reset=True):
 
         qc.data = qc.data[: i + 1]
 
-        if iqs is None:
-            # Create impure quantum state object. This object tracks multiple decoherent
-            # quantum states that can appear when applying a non-unitary operation
-            iqs = ImpureQuantumState(len(qc.qubits), clbit_amount=len(qc.clbits))
-
         # Counter to track how many measurements have been performed
         measurement_counter = 0
 
-        total_flops = 0
-        for i in range(len(qc.data)):
-            total_flops += 2 ** qc.data[i].op.num_qubits
-
-        progress_bar.total = total_flops
         # Main loop - this loop successively executes operations onto the impure
         # quantum state object
         
         mes_list = []
         
-        if len(qc.qubits) < 22:
-            qc, mes_list = extract_measurements(qc)
+        # if len(qc.qubits) < 30 or True:
+            # qc, mes_list = extract_measurements(qc)
         
+            
+        qc, new_mes_list = insert_multiverse_measurements(qc)
+        
+        mes_list = mes_list + new_mes_list
+            
+        if iqs is None:
+            # Create impure quantum state object. This object tracks multiple decoherent
+            # quantum states that can appear when applying a non-unitary operation
+            # iqs = ImpureQuantumState(len(qc.qubits), clbit_amount=len(qc.clbits))
+            iqs = QuantumState(len(qc.qubits))
         
         mes_qubit_indices = []
         mes_clbit_indices = []
         
+        total_flops = 0
+        for i in range(len(qc.data)):
+            total_flops += 2 ** qc.data[i].op.num_qubits
+        
+        progress_bar.total = total_flops
+        
         for i in range(len(qc.data)):
             # Set alias for the instruction of this operation
             instr = qc.data[i]
-
             progress_bar.update(2**instr.op.num_qubits)
-
             # Gather the indices of the qubits from the circuits (i.e. integers instead
             # of the identifier strings)
             qubit_indices = [qc.qubits.index(qb) for qb in instr.qubits]
 
             # Perform instructions
-
-            if instr.op.name == "reset":
-                iqs.reset(qubit_indices[0])
 
             # Disentangling describes an operation, which mean that the superposition of
             # two states can be safely treated as two decoherent states. This is
@@ -138,21 +145,10 @@ def run(qc, shots, token="", iqs=None, insert_reset=True):
             # have non-zero amplitude, this still yields an improvement because
             # computing two decoherent states is more easily parallelized than the
             # combined coherent state
-            elif instr.op.name == "disentangle":
-                iqs.reset(qubit_indices[0], True)
+            if instr.op.name == "disentangle":
+                # iqs.reset(qubit_indices[0], True)
+                iqs.disentangle(qubit_indices[0])
 
-            elif instr.op.name == "measure":
-                
-                # mes_qubit_indices.append(qubit_indices[0])
-                # mes_clbit_indices.append(qc.clbits.index(instr.clbits[0]))
-                
-                iqs.measure(qubit_indices[0], qc.clbits.index(instr.clbits[0]))
-                measurement_counter += 1
-
-            elif instr.op.name[:4] == "c_if":
-                iqs.conditionally_apply_operation(
-                    instr.op, qubit_indices, qc.clbits.index(instr.clbits[-1])
-                )
             # If the operation is unitary, we apply this unitary on to the required
             # qubit indices
             else:
@@ -164,46 +160,36 @@ def run(qc, shots, token="", iqs=None, insert_reset=True):
                 break
 
 
+        mes_list.sort(key = lambda x : -qc.clbits.index(x.clbits[0]))
+        
         for instr in mes_list:
-            
             mes_qubit_indices.append(qc.qubits.index(instr.qubits[0]))
-            mes_clbit_indices.append(qc.clbits.index(instr.clbits[0]))
-
-
+            
         if len(mes_qubit_indices):
-            iqs.multi_measure(mes_qubit_indices, mes_clbit_indices, gen_new_states = False)
+            outcome_list, cl_prob = iqs.multi_measure(mes_qubit_indices, return_res_states = False)
             mes_qubit_indices = []
             mes_clbit_indices = []
             
-            
-            
-
 
         progress_bar.close()
-        print(LINE_CLEAR, end="\r")
+        print("\r" + 85*" ", end=LINE_CLEAR + "\r")
 
         # Prepare result dictionary
         # The iqs object contains the outcome bitstrings in the attribute .outcome_list
         # and the probablities in .cl_prob. In order to ensure qiskit compatibility, we
         # reverse the bitstrings
         prob_dict = {}
-        for i in range(len(iqs.cl_prob)):
-            if iqs.cl_prob[i] == 0:
-                continue
-
-            outcome_str = ""
-            for j in range(len(iqs.outcome_list[i])):
-                if iqs.outcome_list[i][j]:
-                    outcome_str += "1"
-                else:
-                    outcome_str += "0"
-
-            try:
-                prob_dict[outcome_str[::-1]] += iqs.cl_prob[i]
-            except KeyError:
-                prob_dict[outcome_str[::-1]] = iqs.cl_prob[i]
 
         
+        for j in range(len(outcome_list)):
+            
+            outcome_str = bin(outcome_list[j])[2:].zfill(len(mes_list))
+            
+            try:
+                prob_dict[outcome_str] += cl_prob[j]
+            except KeyError:
+                prob_dict[outcome_str] = cl_prob[j]
+
         #Normalize probabilities to 1 (can be slightly different due to
         #floating point errors)
         norm = 0
@@ -317,9 +303,7 @@ def statevector_sim(qc):
         res = qs.eval().tensor_array.to_array()
 
         progress_bar.close()
-
-        print(LINE_CLEAR, end="\r")
-        # print(LINE_UP, end = "")
+        print("\r" + 85*" ", end=LINE_CLEAR + "\r")
 
         # Deactivate the fast append mode
         QuantumCircuit.fast_append = False

@@ -19,7 +19,7 @@
 
 from qrisp.circuit.qubit import Qubit
 from qrisp.core.library import mcx, p, rz, x
-from qrisp.core.session_merging_tools import merge
+from qrisp.core.session_merging_tools import merge, merge_sessions, multi_session_merge
 from qrisp.environments import QuantumEnvironment
 from qrisp.misc import perm_lock, perm_unlock, bin_rep
 
@@ -67,6 +67,11 @@ class ControlEnvironment(QuantumEnvironment):
     """
 
     def __init__(self, ctrl_qubits, ctrl_state=-1, ctrl_method=None, invert = False):
+        
+        if isinstance(ctrl_qubits, list):
+            self.arg_qs = multi_session_merge([qb.qs() for qb in ctrl_qubits])
+        else:
+            self.arg_qs = ctrl_qubits.qs()
         self.arg_qs = merge(ctrl_qubits)
 
     
@@ -106,7 +111,7 @@ class ControlEnvironment(QuantumEnvironment):
 
         QuantumEnvironment.__enter__(self)
 
-        merge(self.env_qs, self.arg_qs)
+        merge_sessions(self.env_qs, self.arg_qs)
 
         return self.condition_truth_value
 
@@ -267,6 +272,13 @@ class ControlEnvironment(QuantumEnvironment):
                     continue
 
                 if set(instruction.qubits).intersection(subcondition_truth_values):
+                    # REWORK required: Condition environments evaluate their condition
+                    # and (if within another control/condition environment) combine
+                    # this QuantumBool (via pt toffoli) with the superior condition.
+                    # This "combining" is done, so the condition evaluation doesn't
+                    # have to be controlled. However, this is not properly realized
+                    # in this method. The condition evaluation could probably work
+                    # better using the custom control feature.
                     self.env_qs.append(instruction)
                     continue
 
@@ -283,7 +295,7 @@ class ControlEnvironment(QuantumEnvironment):
                         rz(instruction.op.params[0], self.condition_truth_value)
                     else:
                         raise Exception(
-                            "Tried to perform invalid operations "
+                            f"Tried to perform invalid operation {instruction.op.name} "
                             "on condition truth value (allowed are x, p, rz)"
                         )
                     continue
@@ -305,7 +317,8 @@ class ControlEnvironment(QuantumEnvironment):
                     ctrl_state = new_ctrl_state
                 
                 if self.condition_truth_value in instruction.qubits:
-                    instruction = process_custom_control(instruction, self.condition_truth_value)
+                    self.env_qs.append(convert_to_custom_control(instruction, self.condition_truth_value))
+                    continue
                     
                 else:
                     # Create controlled instruction
@@ -346,32 +359,46 @@ class ControlEnvironment(QuantumEnvironment):
             )
 
 
-def process_custom_control(instruction, control_qubit):
+# This function turns instructions where the definition contains CustomControlOperations
+# into CustomControlOperations. For this it checks that all Instructions that are acting
+# on the control_qubit are also CustomControlOperations.
+# For the conversion process, this function turns all Operations which are NO custom 
+# controls into their regular controls.
+def convert_to_custom_control(instruction, control_qubit):
     
     from qrisp.environments import CustomControlOperation
-    
+    #If the Operation is already a CustomControlOperation, do nothing
     if isinstance(instruction.op, CustomControlOperation):
         return instruction
     
+    # If the Operation is primitive, an error happened during compilation,
+    # since Operations which are not CustomControlledOperations should not target
+    # the control qubit
     if instruction.op.definition is None:
         raise Exception
     
+    #We now generate the new Instruction
     new_definition = instruction.op.definition.clearcopy()
+    new_control_qubit = new_definition.qubits[instruction.qubits.index(control_qubit)]
     
-    control_qubit = new_definition.qubits[instruction.qubits.index(control_qubit)]
-    
+    #Iterate through the data
     for def_instr in instruction.op.definition.data:
-            
-        if control_qubit in def_instr.qubits:
-            new_definition.append(process_custom_control(def_instr, control_qubit))
+        
+        if new_control_qubit in def_instr.qubits:
+            # If the instruction is targeting the control qubit, we call the function
+            # recursively to make sure that we are indeed appending a custom_control 
+            # operation
+            new_definition.append(convert_to_custom_control(def_instr, new_control_qubit))
         else:
+            # Else, we generate the operations regular control
             new_op = def_instr.op.control(1)
-            new_definition.append(new_op, [control_qubit] + def_instr.qubits, def_instr.clbits)
-            
+            new_definition.append(new_op, [new_control_qubit] + def_instr.qubits, def_instr.clbits)
+    
+    # Create the result and modify the definition
     res = instruction.copy()
     res.op.definition = new_definition
     
-    res.op = CustomControlOperation(res.op, new_definition.qubits.index(control_qubit))
+    res.op = CustomControlOperation(res.op, targeting_control = control_qubit in instruction.qubits)
     
     
     return res

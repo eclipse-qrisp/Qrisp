@@ -15,7 +15,7 @@
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************/
 """
-
+import numpy as np
 
 class Qubit:
     """
@@ -46,10 +46,12 @@ class Qubit:
 
 
     """
-
+    qubit_hash = np.zeros(1)
     def __init__(self, identifier):
         self.identifier = identifier
-        self.hash_value = id(self)
+        self.hash_value = int(self.qubit_hash[0])
+        self.qubit_hash += 1
+        # self.hash_value = id(self)#%(2**29)
         self.lock = False
         self.perm_lock = False
 
@@ -64,3 +66,4 @@ class Qubit:
 
     def __eq__(self, other):
         return self.hash_value == other.hash_value
+        return bool(self.hash_value & other.hash_value)

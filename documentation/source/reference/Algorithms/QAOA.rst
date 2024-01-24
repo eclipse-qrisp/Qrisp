@@ -11,11 +11,11 @@ Quantum Approximate Optimization Algorithm
    qaoa/QAOAProblem
    qaoa/QAOABenchmark
 
-This modules facilitates the execution of The `Quantum Approximate Optimization Algorithm (QAOA) <https://arxiv.org/abs/1411.4028>`_  and related techniques called the `Quantum Alternating Operator Ansatz” <https://arxiv.org/abs/1709.03489>`_. 
+This modules facilitates the execution of The `Quantum Approximate Optimization Algorithm (QAOA) <https://arxiv.org/abs/1411.4028>`_  and related techniques called the `Quantum Alternating Operator Ansatz <https://arxiv.org/abs/1709.03489>`_. 
 
-The end goal in QAOA is to optimize the variational parameters $\gamma_p$ and $\beta_p$ in order to minimize the expectation value of the cost function with respect to the final state $∣\psi_p\rangle$. You can read more about the theoretical fundamentals behind QAOA in the tutorial :ref:`Theoretical Overview <TheoryQAOA>`. You can also find efficient implementations of this algorithm for :ref:`MaxCut <MaxCutQAOA>` and :ref:`MkCSQAOA` in an easy to read, insightful tutorials in which we describe the recipe to implement QAOA for other problem instances in a modular way, and independent of the encoding used. 
+The end goal in QAOA is to optimize the variational parameters $\gamma_p$ and $\beta_p$ in order to minimize the expectation value of the cost function with respect to the final state $\ket{\psi_p}$. You can read more about the theoretical fundamentals behind QAOA in the tutorial :ref:`Theoretical Overview <TheoryQAOA>`. You can also find efficient implementations of this algorithm for :ref:`MaxCut <MaxCutQAOA>` and :ref:`MkCSQAOA` in an easy to read, insightful tutorials in which we describe the recipe to implement QAOA for other problem instances in a modular way, and independent of the encoding used. 
 
-The central datastructure of the QAOA module is the :ref:`QAOAProblem` class.
+The central data structure of the QAOA module is the :ref:`QAOAProblem` class.
 
 :ref:`QAOAProblem`
 ------------------
@@ -31,6 +31,8 @@ Apart from the basic three ingredients mentioned above, some problems require th
 The :meth:`.run <qrisp.qaoa.QAOAProblem.run>` method prepares the initial state, applies $p$ layers of phase separators and mixers, and compiles a quantum circuit with intended measurements. Subsequently, the optimization algorithm is executed and the measurement results of the optimized circuit are returned.
 
 For benchmarking, we provide the :meth:`.benchmark <qrisp.qaoa.QAOAProblem.benchmark>` method, which allows you to collect performance data about your implementation.
+
+Additionally, a circuit can be pretrained with the method :meth:`.train_function <qrisp.qaoa.QAOAProblem.train_function>` . This allows preparing a new QuantumVariable with already optimized parameters, such that no new optimization is conducted. The results will therefore be the same. 
    
 :ref:`QAOABenchmark`
 --------------------
@@ -66,6 +68,9 @@ The following problem instances have already been successfully implemented using
    * - :ref:`Max-$\\ell$-SAT <maxsatQAOA>`
      - X mixer
      -    ✅
+   * - :ref:`QUBO (NEW since 0.4!) <QUBOQAOA>`
+     - X mixer
+     -    ✅ 
    * - :ref:`MaxIndependentSet <QAOAMaxIndependentSet>`
      - Controlled X mixer
      -    ✅

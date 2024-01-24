@@ -9,6 +9,7 @@ Quantum Types
    
    QuantumFloat
    QuantumBool
+   QuantumModulus
    QuantumChar
    QuantumString
 
@@ -16,11 +17,13 @@ Quantum typing in Qrisp is smoothly integrated into the typing infractructure of
 
 A quantum type in Qrisp is a subclass of :ref:`QuantumVariable`.
 
-We include three basic built-in quantum types.
+We include four basic built-in quantum types.
 
 * :ref:`QuantumFloat <QuantumFloat>`
 
 * :ref:`QuantumBool <QuantumBool>`
+
+* :ref:`QuantumModulus <QuantumModulus>`
 
 * :ref:`QuantumChar <QuantumChar>`
 

@@ -82,7 +82,7 @@ class TensorFactor:
 
         # Convert matrix to BiArray
         matrix = DenseBiArray(matrix)
-
+        
         # Swap the qubits which the matrix is supposed to be applied on to the front
         for i in range(len(qubits)):
             qubit_index = self.qubits.index(qubits[i])
@@ -186,7 +186,6 @@ class TensorFactor:
             # Swap the index that is supposed to be measured to the front
             index = self.qubits.index(mes_qubits[i])
             self.swap(i, index)
-            
         
         # Split the array - the lower half corresponds to the state with outcome 0,
         # the upper half to 1
@@ -206,8 +205,48 @@ class TensorFactor:
             tf_list = len(p_list)*[None]
         
         return p_list, tf_list, outcome_index_list
+    
+    def disentangle(self, qubit):
         
+        # Swap the index that is supposed to be measured to the front
+        index = self.qubits.index(qubit)
+        self.swap(0, index)
             
+        
+        # Split the array - the lower half corresponds to the state with outcome 0,
+        # the upper half to 1
+        new_bi_arrays, p_list, outcome_index_list = self.tensor_array.multi_measure([0], return_new_arrays = True)
+        
+        new_qubits = list(self.qubits)
+        new_qubits.remove(qubit)
+        
+        if len(outcome_index_list) == 1:
+            temp = xp.zeros(2, dtype = self.tensor_array.data.dtype)
+            if outcome_index_list[0] == 1:
+                temp[1] = 1
+            else:
+                temp[0] = 1
+            
+            new_bi_arrays[0].data *= 1/p_list[0]**0.5
+            # print("disentangling successfull")
+            return TensorFactor([qubit], temp), TensorFactor(new_qubits, new_bi_arrays[0])
+        
+        vdot_value = new_bi_arrays[0].vdot(new_bi_arrays[1])
+        
+        
+        if xp.abs(xp.abs(vdot_value) - (p_list[0]*p_list[1])**0.5) > 1E-7:
+            # print("disentangling failed")
+            # print(vdot_value)
+            # print(xp.abs(xp.abs(vdot_value) - (p_list[0]*p_list[1])**0.5))
+            return self, self
+        temp = xp.zeros(2, dtype = self.tensor_array.data.dtype)
+        temp[0] = (p_list[0])**0.5
+        temp[1] = (p_list[1])**0.5*vdot_value/xp.abs(vdot_value)
+        
+        new_bi_arrays[0].data *= 1/p_list[0]**0.5
+        # print("disentangling successfull")
+        return TensorFactor([qubit], temp), TensorFactor(new_qubits, new_bi_arrays[0])
+    
 
 # This function allow entangling more than two TensorFactors.
 # Since we are free to choose a contraction order, we pick one

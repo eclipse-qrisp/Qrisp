@@ -18,6 +18,8 @@
 
 from qrisp.environments.quantum_environments import QuantumEnvironment
 from qrisp.environments.gate_wrap_environment import GateWrapEnvironment
+from qrisp.circuit import Operation, QuantumCircuit
+from qrisp.environments.iteration_environment import IterationEnvironment
 
 def custom_control(func):
     """
@@ -143,61 +145,109 @@ def custom_control(func):
         
         qs = qs_list[0]
         
+        # Search for a Control/Condition Environment and get the control qubit
         control_qb = None
         for env in qs.env_stack[::-1]:
             if isinstance(env, (ControlEnvironment, ConditionEnvironment)):
                 control_qb = env.condition_truth_value
                 break
-            if not isinstance(env, (QuantumEnvironment, InversionEnvironment, ConjugationEnvironment)):
+            if not isinstance(env, (InversionEnvironment, ConjugationEnvironment, GateWrapEnvironment)):
+                if isinstance(env, IterationEnvironment):
+                    if env.precompile:
+                        break
+                    else:
+                        continue
                 break
 
+        # If no control qubit was found, simply execute the function
         if control_qb is None:
             return func(*args, **kwargs)
         
-        
+        # In the case that a qubit was found, we use the CustomControlEnvironent (definded below)
+        # This environments gatewraps the function and compiles it to a specific Operation subtype
+        # called CustomControlledOperation.
+        # The Condition/Control Environment compiler recognizes this Operation type
+        # and processes it accordingly
         with CustomControlEnvironment(control_qb, func.__name__):
-            res = func(*args, ctrl = control_qb, **kwargs)
+            if "ctrl" in kwargs:
+                kwargs["ctrl"] = control_qb
+                res = func(*args, **kwargs)
+            else:
+                res = func(*args, ctrl = control_qb, **kwargs)
         
         return res
         
     return adaptive_control_function
 
 
-class CustomControlEnvironment(GateWrapEnvironment):
+class CustomControlEnvironment(QuantumEnvironment):
     
     def __init__(self, control_qb, name):
         
-        GateWrapEnvironment.__init__(self, name = name)
-        
         self.control_qb = control_qb
+        self.manual_allocation_management = True
     
     def compile(self):
         
-        GateWrapEnvironment.compile(self)
         
-        if hasattr(self, "instruction"):
-            if self.control_qb in self.instruction.qubits:
-                self.instruction.op = CustomControlOperation(self.instruction.op, self.instruction.qubits.index(self.control_qb))
+        original_data = list(self.env_qs.data)
+        self.env_qs.data = []
+        QuantumEnvironment.compile(self)
+        
+        temp = list(self.env_qs.data)
+        self.env_qs.data = []
+        
+        for instr in temp:
+            
+            if instr.op.name in ["qb_alloc", "qb_dealloc"]:
+                self.env_qs.append(instr)
+            elif self.control_qb in instr.qubits:
+                cusc_op = CustomControlOperation(instr.op, targeting_control = True)
+                self.env_qs.append(cusc_op, instr.qubits, instr.clbits)
+            else:
+                cusc_op = CustomControlOperation(instr.op)
+                self.env_qs.append(cusc_op, [self.control_qb] + instr.qubits, instr.clbits)
+                
+        self.env_qs.data = original_data + list(self.env_qs.data)
         
 
-from qrisp.circuit import Operation
 class CustomControlOperation(Operation):
     
-    def __init__(self, init_op, control_qubit_index):
+    def __init__(self, init_op, targeting_control = False):
         
-        Operation.__init__(self, init_op = init_op)
+        self.targeting_control = targeting_control
         
-        self.name = "c" + self.name
-        self.init_op = init_op
-        self.control_qubit_index = control_qubit_index
-        self.permeability = init_op.permeability
-        self.permeability[control_qubit_index] = True
-        self.is_qfree = init_op.is_qfree
+        if not targeting_control:
+            definition = QuantumCircuit(init_op.num_qubits + 1, init_op.num_clbits)
+            definition.append(init_op, definition.qubits[1:], definition.clbits)
+            
+            Operation.__init__(self, name = "cusc_" + init_op.name, num_qubits = init_op.num_qubits + 1, num_clbits = init_op.num_clbits, definition = definition)
+            
+            self.init_op = init_op
+            
+            self.permeability = {}
+            self.permeability[0] = True
+            for i in range(init_op.num_qubits):
+                self.permeability[i+1] = init_op.permeability[i]
+            
+            self.is_qfree = init_op.is_qfree
+        else:
+            
+            definition = QuantumCircuit(init_op.num_qubits, init_op.num_clbits)
+            definition.append(init_op, definition.qubits, definition.clbits)
+            
+            Operation.__init__(self, name = "cusc_" + init_op.name, num_qubits = init_op.num_qubits, num_clbits = init_op.num_clbits, definition = definition)
+            
+            self.init_op = init_op
+            
+            self.permeability = dict(init_op.permeability)
+            self.is_qfree = bool(init_op.is_qfree)
+            
 
     def inverse(self):
         temp = self.init_op.inverse()
-        return CustomControlOperation(temp, self.control_qubit_index)
+        return CustomControlOperation(temp, targeting_control = self.targeting_control)
     
     def copy(self):
-        return CustomControlOperation(self.init_op.copy(), self.control_qubit_index)
+        return CustomControlOperation(self.init_op.copy(), targeting_control = self.targeting_control)
 

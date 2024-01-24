@@ -223,7 +223,7 @@ def equal(qf_0, qf_1):
         significance_dict = {}
 
         for i in range(qf_0.msize):
-            significance_dict[qf_0.exponent + i] = [qf_0[i]]
+            significance_dict[qf_0.exponent + i] = qf_0[i]
             mcx_qubits.append(qf_0[i])
 
         for i in range(qf_1.msize):

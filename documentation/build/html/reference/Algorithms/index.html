@@ -33,7 +33,7 @@
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/sphinx-thebe.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/custom03.css" />
   
   <!-- Pre-loaded scripts that we'll load fully later -->
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=ac02cc09edc035673794" />
@@ -222,7 +222,7 @@ const thebe_selector_output = "span.go"
           
           
           
-          <a href="https://github.com/fraunhoferfokus/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square fa-lg" aria-hidden="true"></i></span>
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square fa-lg" aria-hidden="true"></i></span>
             <span class="sr-only">GitHub</span></a>
         </li>
 </ul></div>
@@ -329,7 +329,7 @@ const thebe_selector_output = "span.go"
           
           
           
-          <a href="https://github.com/fraunhoferfokus/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square fa-lg" aria-hidden="true"></i></span>
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square fa-lg" aria-hidden="true"></i></span>
             <span class="sr-only">GitHub</span></a>
         </li>
 </ul></div>
@@ -367,20 +367,23 @@ const thebe_selector_output = "span.go"
 <li class="toctree-l1 current active has-children"><a class="current reference internal" href="#">Algorithms</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-1"><i class="fa-solid fa-chevron-down"></i></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="QFT.html">Quantum Fourier Transformation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="QPE.html">Quantum Phase Estimation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="amplitude_amplification.html">Quantum Amplitude Amplification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="QAE.html">Quantum Amplitude Estimation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="QAOA.html">Quantum Approximate Optimization Algorithm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Shor.html">Shor’s algorithm</a></li>
+
 <li class="toctree-l2"><a class="reference internal" href="grover.grovers_alg.html">Grover’s Algorithm</a></li>
 <li class="toctree-l2"><a class="reference internal" href="QuantumBacktrackingTree.html">Quantum Backtracking</a></li>
 
 <li class="toctree-l2"><a class="reference internal" href="quantum_counting.html">Quantum Counting</a></li>
-<li class="toctree-l2"><a class="reference internal" href="HHL.html">HHL</a></li>
 <li class="toctree-l2"><a class="reference internal" href="demux.html">Iterable Demuxing</a></li>
 <li class="toctree-l2"><a class="reference internal" href="cyclic_shift.html">Iterable Shifting</a></li>
 <li class="toctree-l2"><a class="reference internal" href="iterable_permutation.html">Iterable Permutation</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../Circuit%20Construction/index.html">Circuit Construction</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../Backend%20Interface/index.html">Backend Interface</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../Quantum%20Networks/index.html">Quantum Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Backend%20Interface/index.html">Backend Interface</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../Miscellaneous%20Functions/index.html">Miscellaneous Functions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../Examples/index.html">Examples</a></li>
 </ul>
@@ -460,19 +463,28 @@ const thebe_selector_output = "span.go"
 <tr class="row-odd"><td><p><a class="reference internal" href="QPE.html#qpe"><span class="std std-ref">Quantum Phase Estimation</span></a></p></td>
 <td><p>estimating the eigenvalues of a unitary operator</p></td>
 </tr>
+<tr class="row-even"><td><p><a class="reference internal" href="amplitude_amplification.html#aa"><span class="std std-ref">Quantum Amplitude Amplification</span></a></p></td>
+<td><p>enhancing amplitude of a target state</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="QAE.html#qae"><span class="std std-ref">Quantum Amplitude Estimation</span></a></p></td>
+<td><p>estimating the amplitude of a target state</p></td>
+</tr>
 <tr class="row-even"><td><p><a class="reference internal" href="QAOA.html#qaoa"><span class="std std-ref">QAOA</span></a></p></td>
 <td><p>solving combinatorial optimizatin problems</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="grover.grovers_alg.html#grover"><span class="std std-ref">Grover’s Algorithm</span></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="Shor.html#shor"><span class="std std-ref">Shor’s Algorithm</span></a></p></td>
+<td><p>efficiently factoring large numbers</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="grover.grovers_alg.html#grover"><span class="std std-ref">Grover’s Algorithm</span></a></p></td>
 <td><p>unstructured search</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="QuantumBacktrackingTree.html#quantumbacktrackingtree"><span class="std std-ref">Quantum Backtracking Algorithms</span></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="QuantumBacktrackingTree.html#quantumbacktrackingtree"><span class="std std-ref">Quantum Backtracking Algorithms</span></a></p></td>
 <td><p>solving constraint-satisfaction problems like 3-SAT or the <a class="reference internal" href="../../general/tutorial/TSP.html#tsp"><span class="std std-ref">Traveling Salesman Problem (TSP)</span></a></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="quantum_counting.html#qcounting"><span class="std std-ref">Quantum Counting</span></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="quantum_counting.html#qcounting"><span class="std std-ref">Quantum Counting</span></a></p></td>
 <td><p>estimating the amount of solutions for a given Grover oracle</p></td>
 </tr>
-<tr class="row-even"><td><p>Iterable <a class="reference internal" href="demux.html#itdemuxing"><span class="std std-ref">Demuxing</span></a>, <a class="reference internal" href="cyclic_shift.html#itshifting"><span class="std std-ref">Shifting</span></a>, and <a class="reference internal" href="iterable_permutation.html#itpermutation"><span class="std std-ref">Permutation</span></a></p></td>
+<tr class="row-odd"><td><p>Iterable <a class="reference internal" href="demux.html#itdemuxing"><span class="std std-ref">Demuxing</span></a>, <a class="reference internal" href="cyclic_shift.html#itshifting"><span class="std std-ref">Shifting</span></a>, and <a class="reference internal" href="iterable_permutation.html#itpermutation"><span class="std std-ref">Permutation</span></a></p></td>
 <td><p>low-level manipulations of quantum arguments like <a class="reference internal" href="../Core/QuantumVariable.html#quantumvariable"><span class="std std-ref">QuantumVariable</span></a> or <a class="reference internal" href="../Core/QuantumArray.html#quantumarray"><span class="std std-ref">QuantumArray</span></a></p></td>
 </tr>
 </tbody>

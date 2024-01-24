@@ -22,8 +22,7 @@ import networkx as nx
 from numba import njit, prange
 
 from qrisp.circuit import QuantumCircuit, Qubit, PTControlledOperation, ControlledOperation, transpile, QubitAlloc, Instruction, fast_append
-from qrisp.misc import get_depth_dic, retarget_instructions, reduce_depth
-
+from qrisp.misc import get_depth_dic, retarget_instructions, parallelize_qc
 
 # The purpose of this function is to dynamically (de)allocate qubits when they are
 # needed or not needed anymore. The qompiler function knows when a qubit is ready to
@@ -50,9 +49,15 @@ def qompiler(
     disable_uncomputation=True,
     intended_measurements=[],
     cancel_qfts=True,
+    compile_mcm=False,
+    gate_speed = None,
+    use_dirty_anc_for_mcx_recomp=True
 ):
     if len(qs.data) == 0:
         return QuantumCircuit(0)
+    
+    if gate_speed is None:
+        gate_speed = lambda x : 1
 
     with fast_append():
         qc = qs.copy()
@@ -67,24 +72,38 @@ def qompiler(
                     qc = uncompute_qc(qc, qv.reg)
                 except:
                     print(f"Warning: Automatic uncomputation for {qv.name} failed")
-                    
+        
+        from qrisp.logic_synthesis import LogicSynthGate
 
         def reordering_transpile_predicate(op):
             if (
                 isinstance(op, PTControlledOperation)
                 and op.base_operation.name in ["x"]
-            ) or isinstance(op, LogicSynthGate):
+            ) or isinstance(op, LogicSynthGate) or isinstance(op, GidneyLogicalAND) or isinstance(op, JonesToffoli):
                 return False
             return True
 
         from qrisp.logic_synthesis import LogicSynthGate
+        from qrisp.mcx_algs import GidneyLogicalAND, JonesToffoli
 
+        
+        def qft_transpile_predicate(op):
+            return not "QFT" == op.name[:3] and reordering_transpile_predicate(op)
+        
+        def parallellization_transpile_predicate(op):
+            for v in op.permeability.values():
+                if v is None:
+                    return qft_transpile_predicate(op)
+            return False
+        
+        qc = transpile(qc, transpile_predicate = parallellization_transpile_predicate)
+        
+        qc = parallelize_qc(qc, depth_indicator = gate_speed)
+        
         if cancel_qfts:
             # The first step is to cancel adjacent QFT gates, which are inverse to each
             # other. This can happen alot because of the heavy use of Fourier arithmetic
-            qft_transpile_predicate = (
-                lambda op: "QFT" not in op.name and reordering_transpile_predicate(op)
-            )
+
 
             qc = transpile(qc, transpile_predicate=qft_transpile_predicate)
 
@@ -129,19 +148,17 @@ def qompiler(
         # Transpile logic synthesis
         reordered_qc = transpile(
             reordered_qc,
-            transpile_predicate=lambda op: not (
-                isinstance(op, PTControlledOperation)
-                and op.base_operation.name in ["x"]
-            ),
+            transpile_predicate=reordering_transpile_predicate,
         )
-
+        
         # We combine adjacent single qubit gates
-        if not qs.abstract_params:
+        if not qs.abstract_params and False:
             reordered_qc = combine_single_qubit_gates(reordered_qc)
 
         # We now determine the amount of Qubits the circuit will need
         required_qubits = 0
         max_required_qubits = 0
+
 
         for instr in reordered_qc.data:
             if instr.op.name == "qb_alloc":
@@ -169,8 +186,13 @@ def qompiler(
 
         allocated_qb_list = []
 
-        depth_dic = {b: 0 for b in qc.qubits + qc.clbits}
+        if compile_mcm:
+            # This list contains the clbits used for mcm mcx compilation
+            mcm_clbits = []
 
+        depth_dic = {b: 0 for b in qc.qubits + qc.clbits}
+        
+        
         # We now iterate through the data of the preprocessed QuantumCircuit
         for i in range(len(reordered_qc.data)):
             QuantumCircuit.fast_append = True
@@ -183,15 +205,15 @@ def qompiler(
                 if qb not in translation_dic:
                     # To pick a good allocation, we determine the depth dic and sort the
                     # available Qubits by their corresponding depth. Note that we add
-                    # the hash value in order to prevent non-deterministic behavior
-                    free_qb_list.sort(
-                        key=lambda x: depth_dic[x] + qc.qubits.index(x) * 1e-5
-                    )
-
+                    # the identifier in order to prevent non-deterministic behavior
+                    
+                    alloc_cost = lambda x: (str(depth_dic[x]).zfill(20) + x.identifier)
+                    
+                    free_qb_list.sort(key = alloc_cost)
+                    
                     translation_dic[qb] = free_qb_list.pop(0)
-                    allocated_qb_list.append(qb)
 
-                    # qc.append(QubitAlloc(), [translation_dic[qb]])
+                    allocated_qb_list.append(qb)
 
             if instr.op.name == "qb_dealloc":
                 # For the deallocation, we simply remove the qubits from the translation
@@ -225,13 +247,16 @@ def qompiler(
                     key=lambda x: depth_dic[x] + qc.qubits.index(x) * 1e-5
                 )
 
-                dirty_ancillae = list(
-                    set(translation_dic.values())
-                    - set([translation_dic[qb] for qb in instr.qubits])
-                )
-                dirty_ancillae.sort(
-                    key=lambda x: depth_dic[x] + qc.qubits.index(x) * 1e-5
-                )
+                if use_dirty_anc_for_mcx_recomp:
+                    dirty_ancillae = list(
+                        set(translation_dic.values())
+                        - set([translation_dic[qb] for qb in instr.qubits])
+                    )
+                    dirty_ancillae.sort(
+                        key=lambda x: depth_dic[x] + qc.qubits.index(x) * 1e-5
+                    )
+                else:
+                    dirty_ancillae = []
 
                 QuantumCircuit.fast_append = False
                 # This function generates the data for the hybrid implementation
@@ -249,7 +274,7 @@ def qompiler(
 
                 for instr in compiled_mcx_data:
                     qc.append(instr.op, [translation_dic[qb] for qb in instr.qubits])
-                    update_depth_dic(qc.data[-1], depth_dic)
+                    update_depth_dic(qc.data[-1], depth_dic, depth_indicator = gate_speed)
 
                 # And free up the qubits
                 for qb in clean_ancillae + dirty_ancillae:
@@ -257,6 +282,64 @@ def qompiler(
 
                 QuantumCircuit.fast_append = True
 
+            elif (
+                isinstance(instr.op, GidneyLogicalAND)
+                and compile_mcm
+            ):
+                
+                if not instr.op.inv:
+                    qc.append(instr.op.recompile(), 
+                              [translation_dic[qb] for qb in instr.qubits])
+                else:
+                    
+                    compile_qubits = [translation_dic[qb] for qb in instr.qubits]
+                    qb_depth = max([depth_dic[qb] for qb in compile_qubits])
+                    
+                    if len(mcm_clbits) == 0:
+                        clbit = qc.add_clbit()
+                        depth_dic[clbit] = 0
+                        mcm_clbits.append(clbit)
+                        
+                    min_clbit = np.argmin([depth_dic[cb] for cb in mcm_clbits])
+                    
+                    if depth_dic[mcm_clbits[min_clbit]] > qb_depth:
+                        clbit = qc.add_clbit()
+                        depth_dic[clbit] = 0
+                        mcm_clbits.append(clbit)
+                    else:
+                        clbit = mcm_clbits[min_clbit]
+                                        
+                    qc.append(instr.op.recompile(), 
+                              [translation_dic[qb] for qb in instr.qubits], 
+                              [clbit])
+                update_depth_dic(qc.data[-1], depth_dic, depth_indicator = gate_speed)
+                    
+            
+            elif (
+                isinstance(instr.op, JonesToffoli)
+                and compile_mcm
+            ):
+                compile_qubits = [translation_dic[qb] for qb in instr.qubits]
+                qb_depth = max([depth_dic[qb] for qb in compile_qubits])
+                
+                if len(mcm_clbits) == 0:
+                    clbit = qc.add_clbit()
+                    depth_dic[clbit] = 0
+                    mcm_clbits.append(clbit)
+                min_clbit = np.argmin([depth_dic[cb] for cb in mcm_clbits])
+                
+                if depth_dic[mcm_clbits[min_clbit]] > qb_depth:
+                    clbit = qc.add_clbit()
+                    depth_dic[clbit] = 0
+                    mcm_clbits.append(clbit)
+                else:
+                    clbit = mcm_clbits[min_clbit]
+                
+                qc.append(instr.op.recompile(),
+                          [translation_dic[qb] for qb in instr.qubits],
+                          [clbit])
+                update_depth_dic(qc.data[-1], depth_dic, depth_indicator = gate_speed)
+                
             # Finally if all of the above cases are not met, we simply append the
             # operation to the translated qubits
             else:
@@ -276,7 +359,7 @@ def qompiler(
                         + " on unallocated qubit during compilation."
                     )
 
-                update_depth_dic(qc.data[-1], depth_dic)
+                update_depth_dic(qc.data[-1], depth_dic, depth_indicator = gate_speed)
 
         # The following code is mostly about renaming and ordering the resulting circuit
         # in order to make the compiled circuit still comprehensible
@@ -318,9 +401,9 @@ def qompiler(
 
         qc.qubits = sorted_qubit_list
 
-        reduced_qc = reduce_depth(qc)
+        reduced_qc = parallelize_qc(qc, depth_indicator = gate_speed)
 
-    if reduced_qc.depth() > qc.depth():
+    if reduced_qc.depth(depth_indicator = gate_speed) > qc.depth(depth_indicator = gate_speed):
         return qc
     else:
         return reduced_qc
@@ -329,9 +412,8 @@ def qompiler(
 def gen_hybrid_mcx_data(controls, target, ctrl_state, clean_ancillae, dirty_ancillae):
     # This function generates the data for the hybrid mcx implementation
 
-    from qrisp.misc.multi_cx import hybrid_mcx
     from qrisp.core import QuantumVariable
-
+    from qrisp.mcx_algs import hybrid_mcx
     # Specify QuantumVariables to call mcx function
     control_qv = QuantumVariable(len(controls), name="control")
     target_qv = QuantumVariable(1, name="target")
@@ -398,7 +480,6 @@ def reorder_qc(qc):
     from qrisp.uncomputation import dag_from_qc
 
     G = dag_from_qc(qc, remove_init_nodes=True)
-
     qc_new = qc.clearcopy()
 
     dealloc_identifier = lambda x: x.op.name == "qb_dealloc"
@@ -425,7 +506,10 @@ def reorder_qc(qc):
         if instr.op.name == "qb_alloc":
             delayed_qubit_alloc_dic[instr.qubits[0]] = instr
         else:
-            for qb in set(delayed_qubit_alloc_dic.keys()).intersection(instr.qubits):
+            # We sort the qubits in order to prevent non-deterministic compilation behavior
+            alloc_qubits = list(set(delayed_qubit_alloc_dic.keys()).intersection(instr.qubits))
+            alloc_qubits.sort(key = lambda x : hash(x))
+            for qb in alloc_qubits:
                 new_data.append(delayed_qubit_alloc_dic[qb])
                 del delayed_qubit_alloc_dic[qb]
             
@@ -500,14 +584,18 @@ def topological_sort(G, prefer=None, delay=None, sub_sort=nx.topological_sort):
     # jitted version
     if len(G) * len(prefered_nodes) > 10000:
         anc_lists = ancestors(G, prefered_nodes)
-        node_ancs = {
-            prefered_nodes[i]: anc_lists[i] for i in range(len(prefered_nodes))
-        }
     else:
-        node_ancs = {
-            prefered_nodes[i]: list(nx.ancestors(G, prefered_nodes[i]))
-            for i in range(len(prefered_nodes))
-        }
+        anc_lists = []
+        for i in range(len(prefered_nodes)):
+            anc_lists.append(list(nx.ancestors(G, prefered_nodes[i])))
+
+    node_ancs = {
+        prefered_nodes[i]: anc_lists[i] for i in range(len(prefered_nodes))
+    }
+    
+    # We sort the nodes in order to prevent non-deterministic compilation behavior
+    prefered_nodes.sort(key=lambda x: len(node_ancs[x]) + 1/hash(x.instr))
+    
     # Determine the required delay nodes for each prefered nodes
     required_delay_nodes = {n: [] for n in prefered_nodes}
 
@@ -518,6 +606,7 @@ def topological_sort(G, prefer=None, delay=None, sub_sort=nx.topological_sort):
 
     required_delay_nodes = {n: set(required_delay_nodes[n]) for n in prefered_nodes}
 
+    
     # Generate linearization
     lin = []
 
@@ -636,6 +725,7 @@ def measurement_reduction(qc, intended_measurements):
     measure_identifier = (
         lambda x: x.op.name == "measure" and x.qubits[0] in intended_measurements
     )
+    
 
     # Perform topological sort
     for n in topological_sort(G, prefer=measure_identifier):
@@ -652,29 +742,6 @@ def measurement_reduction(qc, intended_measurements):
 
     G = dag_from_qc(redundant_qc, remove_init_nodes=True)
 
-    # alloc_graph = allocation_graph(redundant_qc)
-
-    for node in G.nodes():
-        if node.instr.op.name == "qb_dealloc":
-            ancs = nx.ancestors(G, node)
-            for pred in ancs:
-                if pred.instr.op.name == "qb_alloc":
-                    break
-            else:
-                redundant_qc.data.remove(node.instr)
-                # print(f"removed {node.instr}")
-                for pred in ancs:
-                    try:
-                        redundant_qc.data.remove(pred.instr)
-                    except ValueError:
-                        pass
-
-    # print(redundant_qc)
-
-    redundant_instructions = redundant_qc.data
-    # print(redundant_instructions)
-
-    # redundanct_instructions = qc_new.data[i+1:]
     # #Now we need to make sure we don't remove deallocation gates from the data
     # #because this would inflate the qubit count of the compiled circuit
 
@@ -682,26 +749,20 @@ def measurement_reduction(qc, intended_measurements):
     # #we remove any instruction involving the deallocated qubit from the list
     # #redundant instructions.
 
-    # #If we however find an allocation gate, this chain of instructions can be
-    # #safely removed and therefore stay in the redundant instructions
+    for node in G.nodes():
+        if node.instr.op.name == "qb_dealloc":
+            ancs = nx.ancestors(G, node)
+            
+            redundant_qc.data.remove(node.instr)
+            # print(f"removed {node.instr}")
+            for pred in ancs:
+                try:
+                    redundant_qc.data.remove(pred.instr)
+                except ValueError:
+                    pass
+            
 
-    # i = 0
-    # while i < len(redundant_instructions):
-    #     if redundant_instructions[i].op.name == "qb_dealloc":
-    #         dealloc_qubit = redundant_instructions[i].qubits[0]
-
-    #         j = 0
-    #         while j < len(redundant_instructions):
-    #             if dealloc_qubit in redundant_instructions[j].qubits:
-    #                 if redundant_instructions[j].op.name == "qb_alloc":
-    #                     i += 1
-    #                     break
-
-    #                 redundant_instructions.pop(j)
-    #                 continue
-    #             j += 1
-    #         continue
-    #     i += 1
+    redundant_instructions = redundant_qc.data
 
     # We now remove the redundant instructions and the inserted
     # measurements from the circuit data
@@ -740,10 +801,15 @@ def allocation_graph(qc):
     return n
 
 
-def update_depth_dic(instruction, depth_dic):
+def update_depth_dic(instruction, depth_dic, depth_indicator = None):
+    
+    if depth_indicator is None:
+        depth_indicator = lambda x : 1
+    
     if instruction.op.definition:
         qc = QuantumCircuit()
         qc.qubits = instruction.qubits
+        qc.clbits = instruction.clbits
         qc.append(instruction)
         instr_list = qc.transpile().data
     else:
@@ -765,7 +831,7 @@ def update_depth_dic(instruction, depth_dic):
     # The max stack height is the circuit depth.
 
     for instr in instr_list:
-        if instr.op.name in ["qb_alloc", "qb_dealloc"]:
+        if instr.op.name in ["qb_alloc", "qb_dealloc", "gphase"]:
             continue
         qargs = instr.qubits
         cargs = instr.clbits
@@ -776,7 +842,7 @@ def update_depth_dic(instruction, depth_dic):
         for b in qargs + cargs:
             # Add to the stacks of the qubits and
             # cbits used in the gate.
-            levels.append(depth_dic[b] + 1)
+            levels.append(depth_dic[b] + depth_indicator(instr.op))
 
         max_level = max(levels)
 
@@ -840,6 +906,9 @@ def ancestors(dag, start_nodes):
 
     return node_list
 
+# REWORK required: Instead of detecting a QFT by the gate name, a much more robust
+# approach is to create a Operation subtype, that describes QFT gates and do type-
+# checking here.
 
 # Function to cancel adjacent QFT, which are inverse to each other
 # Due to the heavy use of Fourier arithmetic, this can happen alot
@@ -860,7 +929,7 @@ def qft_cancellation(qc):
     for i in range(len(qc.data)):
         
         instr = qc.data[i]
-        if "QFT" in instr.op.name:
+        if "QFT" == instr.op.name[:3] and "adder" not in instr.op.name:
             previous_instruction_type = []
 
             for qb in instr.qubits:
@@ -881,8 +950,11 @@ def qft_cancellation(qc):
 
                 if qc.data.index(previous_instruction) in cancellation_indices:
                     break
+                
+                if qc.data.index(previous_instruction) in h_replacements:
+                    break
 
-                if "QFT" in previous_instruction.op.name:
+                if "QFT" == previous_instruction.op.name[:3]:
                     if instr.op.num_qubits < 8:
                         unitary_self = instr.op.get_unitary()
                         inv_unitary_other = (
@@ -948,6 +1020,7 @@ def qft_cancellation(qc):
         if i in h_replacements:
             for qb in qc.data[i].qubits:
                 new_qc.h(qb)
+            # print(qc.data[i].qubits)
             # print("H replacement successfull")
             continue
 

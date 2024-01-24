@@ -209,7 +209,8 @@ class Operation:
         """
 
         if self.name == "barrier":
-            return np.eye(2**self.num_qubits)
+            from qrisp.simulator.unitary_management import np_dtype
+            return np.eye(2**self.num_qubits, dtype = np_dtype)
 
         # Check if the unitary is already available
         if hasattr(self, "unitary"):
@@ -267,7 +268,12 @@ class Operation:
         # Check if a definition is available and invert it, if so
         if self.definition is not None:
             inverse_circ = self.definition.inverse()
-            res = inverse_circ.to_op(name=self.name + "_dg")
+            
+            if self.name[-3:] == "_dg":
+                res = inverse_circ.to_op(name=self.name[:-3])
+            else:
+                res = inverse_circ.to_op(name=self.name + "_dg")
+                
 
         elif self.name == "qb_alloc":
             from qrisp.circuit import QubitDealloc
@@ -277,6 +283,9 @@ class Operation:
             from qrisp.circuit import QubitAlloc
 
             res = QubitAlloc()
+        elif self.name == "barrier":
+
+            res = self.copy()
         # Otherwise raise an error
         else:
             raise Exception("Don't know how to invert Operation " + self.name)
@@ -352,7 +361,7 @@ class Operation:
             res_num_ctrl_qubits += len(self.controls)
         
         # Check if the method is phase tolerant
-        if method.find("pt") != -1 and res_num_ctrl_qubits != 1:
+        if (method.find("pt") != -1 or method.find("gidney") != -1) and res_num_ctrl_qubits != 1:
             
             return PTControlledOperation(
                 self, num_ctrl_qubits, ctrl_state=ctrl_state, method=method
@@ -424,7 +433,12 @@ class Operation:
             res.definition = res.definition.bind_parameters(subs_dic)
 
         return res
+    
+    def c_if(self, num_control=1, ctrl_state=-1):
+        if ctrl_state == -1:
+            ctrl_state = 2**num_control - 1
 
+        return ClControlledOperation(self, num_control, ctrl_state)
 
 # Class to describe 1-Qubit gates as unitaries of the form U(theta, phi, lam) =
 # = exp(-1j*phi/2*sigma_z) exp(-1j*theta/2*sigma_y) exp(-1j*lam/2*sigma_z)
@@ -548,29 +562,17 @@ class U3Gate(Operation):
         #     adaptive_substitution(self.global_phase, subs_dic),
         # )
 
-    def c_if(self, num_clbits=1, value=-1):
-        if value == -1:
-            value = 2**num_clbits - 1
-
-        res = self.copy()
-        res.num_clbits += 1
-        res.name = "c_if_" + res.name
-        return res
 
 
-id_matrix = np.eye(2, dtype=np.complex64)
-
-pauli_x = np.asarray([[0, 1], [1, 0]], dtype=np.complex64)
-pauli_y = np.asarray([[0, 0], [0, 0]]) + 1j * np.asarray([[0, -1], [1, 0]])
-pauli_z = np.asarray([[1, 0], [0, -1]], dtype=np.complex64)
 
 pi = float(np.pi)
-
 
 # This class is special for pauli gates. In principle, we could also use the U3Gate
 # class, but this could lead to unneccessary floating point errors
 class PauliGate(U3Gate):
     def __init__(self, name):
+        from qrisp.simulator.unitary_management import pauli_x, pauli_y, pauli_z
+        
         if name == "x":
             super().__init__(pi, 0, pi)
             self.unitary = pauli_x
@@ -681,7 +683,7 @@ class PTControlledOperation(Operation):
             if self.ctrl_state[0] == "0":
                 definition_circ.x(-2)
 
-            definition_circ.append(temp_gate, range(num_ctrl_qubits))
+            definition_circ.append(temp_gate, definition_circ.qubits[:num_ctrl_qubits])
 
             if self.ctrl_state[0] == "0":
                 definition_circ.x(-2)
@@ -867,3 +869,30 @@ class ControlledOperation(PTControlledOperation):
 
             self.unitary = controlled_unitary(self)
             return self.get_unitary(decimals)
+
+class ClControlledOperation(Operation):
+    
+    def __init__(self, base_op, num_control = 1, ctrl_state = -1):
+        
+        if ctrl_state == -1:
+            ctrl_state = num_control*"1"
+        
+        if isinstance(ctrl_state, int):
+            from qrisp.misc import bin_rep
+            ctrl_state = bin_rep(ctrl_state, num_control)[::-1]
+        
+        
+        self.base_op = base_op
+        self.num_control = num_control
+        self.ctrl_state = ctrl_state
+        
+        Operation.__init__(self, 
+                           name = "c_if_" + base_op.name, 
+                           num_qubits = base_op.num_qubits,
+                           num_clbits = base_op.num_clbits + num_control,
+                           params = list(base_op.params))
+        
+        self.permeability = dict(base_op.permeability)
+        
+        
+        

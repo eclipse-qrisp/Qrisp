@@ -20,7 +20,8 @@
     }
 
     .frontpage-equation {
-        margin-top: 0.9em;
+        margin-top: 1.9em;
+        margin-bottom: 1.6em
     }
 
     .bd-main .bd-content .bd-article-container {
@@ -72,12 +73,18 @@
         .homepage-button-container {
             margin-top: 1rem;
         }
+        
+        img{
+        
+            max-width: 76%;
+        }
     }
     </style>
 
     <div id="hero">
         <div id="hero-left">
-            <h2 style="font-size: 60px; font-weight: bold; margin: 2rem auto 0;">Qrisp</h2>
+            <img alt="./_static/ecplipse_font.png" class="align-bottom-left scaled-image" src="./_static/ecplipse_font.png" width="109" height="25">
+            <h2 style="font-size: 60px; font-weight: bold; margin: -0.4rem auto 0;">Qrisp</h2>
             <h3 style="font-weight: bold; margin-top: 0; color: #000000;">The next generation of quantum algorithm development</h3>
             <p>Qrisp is a high-level programming language for creating and compiling quantum algorithms. Its structured programming model enables scalable development and maintenance.</p>
 
@@ -117,14 +124,14 @@
     
         .. raw:: html
 
-            <a href="./reference/Miscellaneous Functions/generated/qrisp.as_hamiltonian.html">
+            <a href="./reference/Algorithms/Shor.html">
             <div class="example-img-plot-overlay">
-            <p class="sd-card-text">Synthesize arbitrarily complex diagonal hamiltonians</p>
+            <p class="sd-card-text">Factor integers using abitrary quantum adders with Shor's algorithm</p>
             </div>
             </a>
 
     
-        .. image:: ./_static/hamiltonian.svg
+        .. image:: ./_static/period_finding.svg
 
 .. grid:: 1 1 2 2
 
@@ -227,7 +234,7 @@ Key Features
 
     
         **Automatic uncomputation** |br|
-        QuantumVariables can be uncomputed automatically once they are not needed anymore. The uncomputation module is tightly integrated with an advanced qubit resource managment system.
+        QuantumVariables can be uncomputed automatically once they are not needed anymore. The uncomputation module is tightly integrated with an advanced qubit resource management system.
         
         .. raw:: html
         
@@ -247,7 +254,7 @@ Key Features
 
     
         **Modularity** |br|
-        Automated qubit allocation allow separate modules to recycle qubit resources for eachother without intertwining the code. This feature facilitates interoperability of code written by respective domain experts.
+        Automated qubit allocation allows separate modules to recycle qubit resources for each other without intertwining the code. This feature facilitates interoperability of code written by respective domain experts.
 
         .. raw:: html
         
@@ -390,13 +397,13 @@ Who is behind Qrisp
     <div class="code-example-text">
     
 
-Qrisp is an open-source project developed at `Fraunhofer FOKUS <https://www.fokus.fraunhofer.de/en/>`_, an industrial research facility based in Berlin. It is publicly funded by the German ministry of econmic affairs with the aim to enable commercial use of quantum computation. To achieve this, we aim to open this field of research to a broad audience of developers.
+Qrisp is an open-source project developed at `Fraunhofer FOKUS <https://www.fokus.fraunhofer.de/en/>`_, an industrial research facility based in Berlin. It is publicly funded by the German ministry of econmic affairs with the aim to enable commercial use of quantum computation. To achieve this, we aim to open this field of research to a broad audience of developers. Furthermore we are proud to announce that Qrisp will become a part of the `Eclipse foundation <https://www.eclipse.org/>`_!
 
 .. raw:: html
 
     </div>
 
-.. grid:: 1 1 4 4
+.. grid:: 1 1 5 5
 
     .. grid-item-card::
         :class-card: sd-border-0
@@ -420,6 +427,15 @@ Qrisp is an open-source project developed at `Fraunhofer FOKUS <https://www.foku
         :class-card: sd-border-0
         :shadow: none
     
+        .. image:: ./_static/incubating.png
+            :align: center
+            :width: 150
+            :class: no-scaled-link
+            
+    .. grid-item-card::
+        :class-card: sd-border-0
+        :shadow: none
+    
         .. image:: ./_static/eleqtron_logo.png
             :align: center
             :width: 150
@@ -433,6 +449,7 @@ Qrisp is an open-source project developed at `Fraunhofer FOKUS <https://www.foku
             :align: center
             :width: 150
             :class: no-scaled-link
+            
 
 .. toctree::
    :hidden:

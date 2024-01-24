@@ -33,7 +33,7 @@
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/sphinx-thebe.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/custom03.css" />
   
   <!-- Pre-loaded scripts that we'll load fully later -->
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=ac02cc09edc035673794" />
@@ -60,7 +60,7 @@ const thebe_selector_output = "span.go"
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="qrisp.interface.VirtualBackend.__init__" href="generated/qrisp.interface.VirtualBackend.__init__.html" />
-    <link rel="prev" title="qrisp.interface.thrift_interface.BackendClient.ping" href="generated/qrisp.interface.thrift_interface.BackendClient.ping.html" />
+    <link rel="prev" title="Docker Backend" href="DockerBackend/index.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="None"/>
   </head>
@@ -222,7 +222,7 @@ const thebe_selector_output = "span.go"
           
           
           
-          <a href="https://github.com/fraunhoferfokus/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square fa-lg" aria-hidden="true"></i></span>
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square fa-lg" aria-hidden="true"></i></span>
             <span class="sr-only">GitHub</span></a>
         </li>
 </ul></div>
@@ -329,7 +329,7 @@ const thebe_selector_output = "span.go"
           
           
           
-          <a href="https://github.com/fraunhoferfokus/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square fa-lg" aria-hidden="true"></i></span>
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square fa-lg" aria-hidden="true"></i></span>
             <span class="sr-only">GitHub</span></a>
         </li>
 </ul></div>
@@ -366,17 +366,18 @@ const thebe_selector_output = "span.go"
 <li class="toctree-l1"><a class="reference internal" href="../Quantum%20Environments/index.html">Quantum Environments</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../Algorithms/index.html">Algorithms</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../Circuit%20Construction/index.html">Circuit Construction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Quantum%20Networks/index.html">Quantum Networks</a></li>
 <li class="toctree-l1 current active has-children"><a class="reference internal" href="index.html">Backend Interface</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-1"><i class="fa-solid fa-chevron-down"></i></label><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="BackendServer.html">BackendServer</a></li>
 
 <li class="toctree-l2"><a class="reference internal" href="BackendClient.html">BackendClient</a></li>
 
+<li class="toctree-l2"><a class="reference internal" href="DockerBackend/index.html">Docker Backend</a></li>
 <li class="toctree-l2 current active"><a class="current reference internal" href="#">VirtualBackend</a></li>
 
 <li class="toctree-l2"><a class="reference internal" href="VirtualQiskitBackend.html">VirtualQiskitBackend</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="../Quantum%20Networks/index.html">Quantum Networks</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../Miscellaneous%20Functions/index.html">Miscellaneous Functions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../Examples/index.html">Examples</a></li>
 </ul>
@@ -465,7 +466,7 @@ const thebe_selector_output = "span.go"
 </table>
 <dl class="py class">
 <dt class="sig sig-object py" id="qrisp.interface.VirtualBackend">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">VirtualBackend</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run_func</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ping_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/qrisp/interface/backends.html#VirtualBackend"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qrisp.interface.VirtualBackend" title="Permalink to this definition">#</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">VirtualBackend</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run_func</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/qrisp/interface/backends.html#VirtualBackend"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qrisp.interface.VirtualBackend" title="Permalink to this definition">#</a></dt>
 <dd><p>This class provides a virtual backend for circuit execution.
 Virtual means that the server is running on the same machine as a separate
 Python thread. This structure allows setting up convenient wrappers for foreign/
@@ -484,19 +485,17 @@ of bitstrings.</p>
 </dd>
 <dt><strong>port</strong><span class="classifier">int, optional</span></dt><dd><p>The port on which to listen. The default is None.</p>
 </dd>
-<dt><strong>ping_func</strong><span class="classifier">TYPE, optional</span></dt><dd><p>A function which returns a BackendStatus object. The default is None.</p>
-</dd>
 </dl>
 </dd>
 </dl>
 <p class="rubric">Examples</p>
 <p>We set up a VirtualBackend, which prints the received QuantumCircuit and returns the
 results of the QASM simulator.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">qrisp.interface</span> <span class="kn">import</span> <span class="n">convert_to_qiskit</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">run_func</span><span class="p">(</span><span class="n">qasm_str</span><span class="p">,</span> <span class="n">shots</span><span class="p">,</span> <span class="n">token</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">):</span>
 
-<span class="k">def</span> <span class="nf">run_func</span><span class="p">(</span><span class="n">qc</span><span class="p">,</span> <span class="n">shots</span><span class="p">,</span> <span class="n">token</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">):</span>
+    <span class="kn">from</span> <span class="nn">qiskit</span> <span class="kn">import</span> <span class="n">QuantumCircuit</span>
 
-    <span class="n">qiskit_qc</span> <span class="o">=</span> <span class="n">convert_to_qiskit</span><span class="p">(</span><span class="n">qc</span><span class="p">)</span>
+    <span class="n">qiskit_qc</span> <span class="o">=</span> <span class="n">QuantumCircuit</span><span class="o">.</span><span class="n">from_qasm_str</span><span class="p">(</span><span class="n">qasm_str</span><span class="p">)</span>
 
     <span class="nb">print</span><span class="p">(</span><span class="n">qiskit_qc</span><span class="p">)</span>
 
@@ -540,7 +539,7 @@ results of the QASM simulator.</p>
 <col style="width: 90%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.interface.VirtualBackend.__init__.html#qrisp.interface.VirtualBackend.__init__" title="qrisp.interface.VirtualBackend.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VirtualBackend.__init__</span></code></a>(run_func[, name, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/qrisp.interface.VirtualBackend.__init__.html#qrisp.interface.VirtualBackend.__init__" title="qrisp.interface.VirtualBackend.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VirtualBackend.__init__</span></code></a>(run_func[, port])</p></td>
 <td><p></p></td>
 </tr>
 </tbody>

@@ -96,7 +96,6 @@ class BackendServer:
         example_server = BackendServer(run_func, socket_ip_address = "127.0.0.1", port = 8080)
         example_server.start()
 
-
     """
 
     def __init__(

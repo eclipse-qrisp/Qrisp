@@ -16,20 +16,14 @@
 ********************************************************************************/
 """
 
-# -*- coding: utf-8 -*-
-
 import threading
 import time
 
 import numpy as np
 from scipy.sparse import (
-    bsr_matrix,
     coo_array,
-    coo_matrix,
     csc_array,
-    csc_matrix,
     csr_array,
-    csr_matrix,
 )
 
 import qrisp.simulator.bi_array_helper as hlp
@@ -54,7 +48,10 @@ try:
 except:
     # print("Failed to import mkl sparse matrix multiplication. Install:
     # with conda install -c conda-forge sparse_dot_mkl. Using scipy algorithm.")
-    sparse_matrix_mult = lambda a, b: (a @ b)
+    sparse_matrix_mult = lambda a, b: (a @ b).tocoo()
+
+def sparse_matrix_mult(a, b):
+    return hlp.sparse_matrix_mult(a, b)
 
 
 # A quick helper function to evaluate the product of an iterable
@@ -187,7 +184,7 @@ class SparseBiArray(BiArray):
             # self.nz_indices, self.data = hlp.elim_zeros(self.nz_indices, self.data)
 
         # Handle the case that the init_object is a sparse matrix/array
-        elif isinstance(init_object, (coo_array, coo_matrix)):
+        elif isinstance(init_object, (coo_array)):
             if shape is None:
                 raise Exception(
                     "Tried to initialise SparseBiArray from sparse matrix without "
@@ -231,7 +228,15 @@ class SparseBiArray(BiArray):
         # Once the SparseBiArray is needed for a contraction, all these swaps are
         # applied within a single function call and then the corresponding matrix is
         # build from that.
-        self.index_bit_permutation = list(range(int(np.log2(self.size))))
+        try:
+            log_size = int(np.log2(self.size))
+        except:
+            size = int(self.size)
+            log_size = 0
+            while not size%2:
+                log_size += 1
+                size = size >> 1
+        self.index_bit_permutation = list(range(log_size))
 
         self.dtype = self.data.dtype
 
@@ -372,7 +377,15 @@ class SparseBiArray(BiArray):
         self.catch_up()
 
         # Check if any permutations have to be performed
-        if self.index_bit_permutation == list(range(int(np.log2(self.size)))):
+        try:
+            log_size = int(np.log2(self.size))
+        except:
+            size = int(self.size)
+            log_size = 0
+            while not size%2:
+                log_size += 1
+                size = size >> 1
+        if self.index_bit_permutation == list(range(log_size)):
             return
 
         # Apply permutations
@@ -383,7 +396,7 @@ class SparseBiArray(BiArray):
 
         # Reset the index_bit_permutation attribute, to
         # indicate that no permutation has to be executed now
-        self.index_bit_permutation = list(range(int(np.log2(self.size))))
+        self.index_bit_permutation = list(range(int(log_size)))
 
     # This method sums duplicates ie. if an index appears twice in nz_indices,
     # the corresponding data entries are summed
@@ -407,7 +420,7 @@ class SparseBiArray(BiArray):
 
         # Retrieve coordinates
         row, col = hlp.get_coordinates(self.nz_indices, shape)
-
+        
         # Create sparse matrix
         if not transpose:
             res = coo_array((self.data, (row, col)), shape=shape)
@@ -532,7 +545,7 @@ class SparseBiArray(BiArray):
 
             # Perform sparse matrix multiplication
 
-            res_sr_matrix = sparse_matrix_mult(sr_matrix_self, sr_matrix_other).tocoo()
+            res_sr_matrix = sparse_matrix_mult(sr_matrix_self, sr_matrix_other)
 
             # Acquire flattened coordinates from the helper function
             res.nz_indices = hlp.gen_flat_coords(
@@ -623,19 +636,55 @@ class SparseBiArray(BiArray):
         return lower_half, upper_half
 
     def multi_measure(self, indices, return_new_arrays = True):
-        sprs = self.build_sr_matrix(
-            [2 ** (len(indices)), self.size // 2 ** len(indices)]
-        ).tocsr()
-
-        col_indices = sprs.indices
-        row_ptr = sprs.indptr
-        data = sprs.data
-
+        
+        # print(np.log2(self.size))
+        # sprs = self.build_sr_matrix(
+        #     [2 ** (len(indices)), self.size // 2 ** len(indices)]
+        # ).tocsr()
+        
+        sprs = self.build_sr_matrix([2 ** (len(indices)), self.size // 2 ** len(indices)])
+        
+        sprs.row, sprs.col, sprs.data = hlp.sort_indices_jitted(sprs.row, sprs.col, sprs.data, sprs.shape[1])
+        unique_markers = hlp.find_unique_markers(sprs.row)
+        
+        
         p_list = []
         outcome_index_list = []
         new_bi_arrays = []
         
         
+        
+        for i in range(len(unique_markers)-1):
+            temp_data = sprs.data[unique_markers[i]:unique_markers[i+1]]
+            
+            p = np.abs(np.vdot(temp_data, temp_data))
+            
+            if p < float_tresh:
+                continue
+            
+            p_list.append(p)
+            outcome_index_list.append(sprs.row[unique_markers[i]])
+            
+            if return_new_arrays:
+                
+                new_bi_array = SparseBiArray((sprs.col[unique_markers[i]:unique_markers[i+1]],temp_data),
+                                            shape = (self.size // 2 ** len(indices),))
+                
+                new_bi_arrays.append(new_bi_array)
+            
+            else:
+                new_bi_arrays.append(None)
+                
+        
+        return new_bi_arrays, p_list, outcome_index_list
+        
+            
+            
+
+        col_indices = sprs.indices
+        row_ptr = sprs.indptr
+        data = sprs.data
+
         for r in range(len(row_ptr) - 1):
             if row_ptr[r] != row_ptr[r + 1]:
                 
@@ -669,6 +718,21 @@ class SparseBiArray(BiArray):
     # itself
     def squared_norm(self):
         return np.abs(np.vdot(self.data, self.data))
+    
+    def vdot(self, other):
+        self.apply_swaps()
+        other.apply_swaps()
+        
+        sparse_array_self = self.build_sr_matrix(shape = (1, self.size))
+        sparse_array_other = other.build_sr_matrix(shape = (other.size, 1))
+        
+        sparse_array_self.data = np.conjugate(sparse_array_self.data)
+        
+        return sparse_matrix_mult(sparse_array_self, sparse_array_other).todense()[0]
+        
+        return sparse_array_self.conjugate().dot(sparse_array_other).todense()[0]
+        
+        # return sparse_array_self.conjugate().dot(sparse_array_other).todense()[0]
 
     # Return self as a DenseBiArray
     def to_dense(self):
@@ -977,9 +1041,14 @@ class DenseBiArray(BiArray):
 
         res_sparsity = 1 - (1 - self.sparsity * other.sparsity) ** contraction_size
 
+        if self.dtype == np.dtype("O") or other.dtype == np.dtype("O"):
+            dtype = np.dtype("O")
+        else:
+            dtype = self.dtype
+
         # Prepare "unfinished" result
         res = DenseBiArray(
-            np.array([self.data.ravel()[0] * other.data.ravel()[0]]),
+            np.array([self.data.ravel()[0] * other.data.ravel()[0]], dtype = dtype),
             sparsity=res_sparsity,
             shape=res_shape,
         )
@@ -1048,6 +1117,11 @@ class DenseBiArray(BiArray):
     def squared_norm(self):
         self.apply_swaps()
         return np.abs(np.vdot(self.data, self.data))
+    
+    def vdot(self, other):
+        self.apply_swaps()
+        other.apply_swaps()
+        return np.vdot(self.data, other.data)
 
     # This method works similarly as it's equivalent in SparseBiArray
     def to_array(self):

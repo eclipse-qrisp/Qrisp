@@ -5,6 +5,17 @@ While syntactically more compact/elegant, infix arithmetic expressions allow bar
 
 .. currentmodule:: qrisp
 
+In-place adders
+---------------
+
+.. autosummary::
+   :toctree: generated/
+   
+   fourier_adder
+   cuccaro_adder
+   gidney_adder
+   qcla
+
 QuantumFloat processing
 -----------------------
 
@@ -20,8 +31,6 @@ QuantumFloat processing
    q_divmod
    q_div
    qf_inversion
-   
-   
    
 QuantumArray processing
 -----------------------

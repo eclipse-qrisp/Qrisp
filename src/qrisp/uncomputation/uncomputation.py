@@ -94,8 +94,6 @@ def uncompute(qs, uncomp_vars, recompute=False):
     temp_data = list(qs.data)
     qs.data = []
     
-    
-    
     for i in range(len(temp_data)):
         if isinstance(temp_data[i], QuantumEnvironment):
             env = temp_data[i]
@@ -141,12 +139,8 @@ def uncompute(qs, uncomp_vars, recompute=False):
 
     uncomputed_qc = uncompute_qc(qc_to_uncompute, qubits_to_uncompute, recompute_qubits)
 
-    from qrisp import QuantumCircuit
-
-    qs.data = []
-    QuantumCircuit.fast_append = True
-
     qs.data = uncomputed_qc.data
+
 
     for qv in uncomp_vars:
         # if recompute:
@@ -160,4 +154,3 @@ def uncompute(qs, uncomp_vars, recompute=False):
         for i in range(len(qv)):
             qv.qs.data.pop(-1)
 
-    QuantumCircuit.fast_append = False

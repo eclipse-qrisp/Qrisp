@@ -47,7 +47,7 @@ def RX_mixer(qv, beta):
 
 def XY_mixer(qv, beta):
     """
-    Applies multiple XX+YY gates to ``qv`` such that each qubit has interacted with it's neighbour atleast once.
+    Applies multiple XX+YY gates to ``qv`` such that each qubit has interacted with it's neighbour at least once.
 
     The XX+YY gate is a two-qubit gate that performs rotations around the XY plane. It is used as a mixer in QAOA to drive transitions between different states.
     

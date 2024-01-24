@@ -33,7 +33,7 @@
     <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-thebe.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/css/custom.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/custom03.css" />
   
   <!-- Pre-loaded scripts that we'll load fully later -->
   <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=ac02cc09edc035673794" />
@@ -59,7 +59,7 @@ const thebe_selector_output = "span.go"
     <link rel="shortcut icon" href="../../../_static/qrisp_favicon.png"/>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
-    <link rel="next" title="qrisp.QuantumCircuit.num_qubits" href="qrisp.QuantumCircuit.num_qubits.html" />
+    <link rel="next" title="qrisp.QuantumCircuit.t_depth" href="qrisp.QuantumCircuit.t_depth.html" />
     <link rel="prev" title="qrisp.QuantumCircuit.statevector_array" href="qrisp.QuantumCircuit.statevector_array.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="None"/>
@@ -222,7 +222,7 @@ const thebe_selector_output = "span.go"
           
           
           
-          <a href="https://github.com/fraunhoferfokus/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square fa-lg" aria-hidden="true"></i></span>
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square fa-lg" aria-hidden="true"></i></span>
             <span class="sr-only">GitHub</span></a>
         </li>
 </ul></div>
@@ -329,7 +329,7 @@ const thebe_selector_output = "span.go"
           
           
           
-          <a href="https://github.com/fraunhoferfokus/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square fa-lg" aria-hidden="true"></i></span>
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square fa-lg" aria-hidden="true"></i></span>
             <span class="sr-only">GitHub</span></a>
         </li>
 </ul></div>
@@ -376,8 +376,8 @@ const thebe_selector_output = "span.go"
 <li class="toctree-l2"><a class="reference internal" href="../Clbit.html">Clbit</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="../../Backend%20Interface/index.html">Backend Interface</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../Quantum%20Networks/index.html">Quantum Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../Backend%20Interface/index.html">Backend Interface</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../Miscellaneous%20Functions/index.html">Miscellaneous Functions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../Examples/index.html">Examples</a></li>
 </ul>
@@ -449,12 +449,16 @@ const thebe_selector_output = "span.go"
 <h1>qrisp.QuantumCircuit.depth<a class="headerlink" href="#qrisp-quantumcircuit-depth" title="Permalink to this headline">#</a></h1>
 <dl class="py method">
 <dt class="sig sig-object py" id="qrisp.QuantumCircuit.depth">
-<span class="sig-prename descclassname"><span class="pre">QuantumCircuit.</span></span><span class="sig-name descname"><span class="pre">depth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">transpile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/qrisp/circuit/quantum_circuit.html#QuantumCircuit.depth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qrisp.QuantumCircuit.depth" title="Permalink to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">QuantumCircuit.</span></span><span class="sig-name descname"><span class="pre">depth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">depth_indicator=&lt;function</span> <span class="pre">QuantumCircuit.&lt;lambda&gt;&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transpile=True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/qrisp/circuit/quantum_circuit.html#QuantumCircuit.depth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qrisp.QuantumCircuit.depth" title="Permalink to this definition">#</a></dt>
 <dd><p>Returns the depth of the QuantumCircuit. Note that the depth on QuantumCircuit
 which are not transpiled, might have very little correlation with the runtime.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
+<dt><strong>depth_indicator</strong><span class="classifier">function, optional</span></dt><dd><p>A function which receives an <a class="reference internal" href="../Operation.html#operation"><span class="std std-ref">Operation</span></a> instance and returns the
+time/logical depth this operation takes. By default every Operation takes
+logical depth 1.</p>
+</dd>
 <dt><strong>transpile</strong><span class="classifier">bool, optional</span></dt><dd><p>Boolean to indicate wether the QuantumCircuit should be transpiled before
 the depth is calculated. The default is True.</p>
 </dd>

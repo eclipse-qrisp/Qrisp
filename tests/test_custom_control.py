@@ -16,12 +16,11 @@
 ********************************************************************************/
 """
 
-# Created by ann81984 at 04.05.2022
 import time
 import random
 import numpy as np
 
-from qrisp import QuantumVariable, custom_control, x, y, cp, control, invert, QuantumFloat, cx
+from qrisp import QuantumVariable, QuantumBool, custom_control, h, x, y, cp, control, invert, QuantumFloat, cx, qcla
 
 def test_custom_control():
     
@@ -58,6 +57,41 @@ def test_custom_control():
                 test_function(qv_1)
                 
         test_function(qv_1)
-    print(qv_1.qs)
-    assert qv_1.get_measurement() == {"1" : 1.0}    
+    # print(qv_1.qs)
+    assert qv_1.get_measurement() == {"1" : 1.0}
+    
+    # Test whether qubit management and compilation are still working without performance loss
+    for n in [3,4,7,8]:
+        for a in range(2**n-1):
+            
+            for i in range(6):
+                b = QuantumFloat(n)
+                h(b)
+                
+                qbl = QuantumBool()
+                
+                # Semi classical qcla is custom controlled
+                with control(qbl):
+                    qcla(a, b)
+                
+                from qrisp import t_depth_indicator
+                gate_speed = lambda x : t_depth_indicator(x, epsilon = 2**-10)
+                qc = b.qs.compile(gate_speed = gate_speed, compile_mcm = True)
+                
+                env_num_qubits = qc.num_qubits()
+                env_t_depth = qc.t_depth()
+                
+                b = QuantumFloat(n)
+                h(b)
+                qbl = QuantumBool()
+                
+                qcla(a, b, ctrl = qbl[0])
+                
+                qc = b.qs.compile(gate_speed = gate_speed, compile_mcm = True)
+                if env_num_qubits <= qc.num_qubits() +2 and env_t_depth <= qc.t_depth() + 2:
+                    
+                    break
+                
+            else:
+                assert False
         

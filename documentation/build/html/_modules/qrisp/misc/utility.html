@@ -3,7 +3,7 @@
 <!DOCTYPE html>
 
 
-<html lang="en" data-theme="light">
+<html data-theme="light">
 
   <head>
     <meta charset="utf-8" />
@@ -18,39 +18,48 @@
   </script>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../_static/styles/theme.css?digest=e353d410970836974a52" rel="stylesheet" />
-<link href="../../../_static/styles/bootstrap.css?digest=e353d410970836974a52" rel="stylesheet" />
-<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+  <link href="../../../_static/styles/theme.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+<link href="../../../_static/styles/bootstrap.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=ac02cc09edc035673794" rel="stylesheet" />
 
   
-  <link href="../../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=e353d410970836974a52" rel="stylesheet" />
+  <link href="../../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=ac02cc09edc035673794" rel="stylesheet" />
   <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
 <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
 <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
 
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-thebe.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/css/custom.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/custom03.css" />
   
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=e353d410970836974a52" />
-<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52" />
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=ac02cc09edc035673794" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=ac02cc09edc035673794" />
+  <script src="../../../_static/vendor/fontawesome/6.1.2/js/all.min.js?digest=ac02cc09edc035673794"></script>
 
     <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
     <script src="../../../_static/doctools.js"></script>
-    <script src="../../../_static/sphinx_highlight.js"></script>
     <script src="../../../_static/clipboard.min.js"></script>
     <script src="../../../_static/copybutton.js"></script>
     <script src="../../../_static/design-tabs.js"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"
+const thebe_selector = "div.highlight"
+const thebe_selector_input = "pre"
+const thebe_selector_output = "span.go"
+</script>
+    <script async="async" src="../../../_static/sphinx-thebe.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/qrisp/misc/utility';</script>
     <link rel="canonical" href="https://qrisp.eu/_modules/qrisp/misc/utility.html" />
-    <link rel="icon" href="../../../_static/qrisp_favicon.png"/>
+    <link rel="shortcut icon" href="../../../_static/qrisp_favicon.png"/>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:language" content="None"/>
   </head>
   
   
@@ -59,6 +68,15 @@
   
   
   <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>
+    Back to top
+  </button>
+
   
   <input type="checkbox"
           class="sidebar-toggle"
@@ -135,7 +153,7 @@
   <ul class="bd-navbar-elements navbar-nav">
     
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../../../general/tutorial.html">
+                      <a class="nav-link nav-internal" href="../../../general/tutorial/index.html">
                         Tutorial
                       </a>
                     </li>
@@ -178,13 +196,15 @@
       
         <div class="navbar-item navbar-persistent--container">
           
-<script>
-document.write(`
-  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
-  </button>
-`);
-</script>
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
         </div>
       
       
@@ -199,7 +219,7 @@ document.write(`
           
           
           
-          <a href="https://github.com/fraunhoferfokus/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square fa-lg" aria-hidden="true"></i></span>
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square fa-lg" aria-hidden="true"></i></span>
             <span class="sr-only">GitHub</span></a>
         </li>
 </ul></div>
@@ -210,18 +230,20 @@ document.write(`
   
   
     <div class="navbar-persistent--mobile">
-<script>
-document.write(`
-  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
-  </button>
-`);
-</script>
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
     </div>
   
 
   
-    <label class="sidebar-toggle secondary-toggle" for="__secondary">
+    <label class="sidebar-toggle secondary-toggle" for="__secondary" tabindex="0">
       <span class="fa-solid fa-outdent"></span>
     </label>
   
@@ -251,7 +273,7 @@ document.write(`
   <ul class="bd-navbar-elements navbar-nav">
     
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../../../general/tutorial.html">
+                      <a class="nav-link nav-internal" href="../../../general/tutorial/index.html">
                         Tutorial
                       </a>
                     </li>
@@ -304,7 +326,7 @@ document.write(`
           
           
           
-          <a href="https://github.com/fraunhoferfokus/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square fa-lg" aria-hidden="true"></i></span>
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square fa-lg" aria-hidden="true"></i></span>
             <span class="sr-only">GitHub</span></a>
         </li>
 </ul></div>
@@ -357,8 +379,8 @@ document.write(`
 
 
 
-<nav aria-label="Breadcrumbs">
-  <ul class="bd-breadcrumbs" role="navigation" aria-label="Breadcrumb">
+<nav aria-label="Breadcrumb">
+  <ul class="bd-breadcrumbs">
     
     <li class="breadcrumb-item breadcrumb-home">
       <a href="../../../index.html" class="nav-link" aria-label="Home">
@@ -474,7 +496,7 @@ document.write(`
     <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">%</span> <span class="mi">2</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">get_depth_dic</span><span class="p">(</span><span class="n">qc</span><span class="p">,</span> <span class="n">transpile_qc</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">get_depth_dic</span><span class="p">(</span><span class="n">qc</span><span class="p">,</span> <span class="n">transpile_qc</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">depth_indicator</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span> <span class="p">:</span> <span class="mi">1</span><span class="p">):</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">qc</span><span class="o">.</span><span class="n">qubits</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">{}</span>
 
@@ -505,7 +527,7 @@ document.write(`
     <span class="c1"># The max stack height is the circuit depth.</span>
 
     <span class="k">for</span> <span class="n">instr</span> <span class="ow">in</span> <span class="n">qc</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">instr</span><span class="o">.</span><span class="n">op</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;qb_alloc&quot;</span><span class="p">,</span> <span class="s2">&quot;qb_dealloc&quot;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">instr</span><span class="o">.</span><span class="n">op</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;qb_alloc&quot;</span><span class="p">,</span> <span class="s2">&quot;qb_dealloc&quot;</span><span class="p">,</span> <span class="s2">&quot;gphase&quot;</span><span class="p">]:</span>
             <span class="k">continue</span>
         <span class="n">qargs</span> <span class="o">=</span> <span class="n">instr</span><span class="o">.</span><span class="n">qubits</span>
         <span class="n">cargs</span> <span class="o">=</span> <span class="n">instr</span><span class="o">.</span><span class="n">clbits</span>
@@ -513,16 +535,14 @@ document.write(`
         <span class="n">levels</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">reg_ints</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="c1"># If count then add one to stack heights</span>
-        <span class="n">count</span> <span class="o">=</span> <span class="kc">True</span>
-
+        
+        <span class="n">gate_depth</span> <span class="o">=</span> <span class="n">depth_indicator</span><span class="p">(</span><span class="n">instr</span><span class="o">.</span><span class="n">op</span><span class="p">)</span>
+        
         <span class="k">for</span> <span class="n">ind</span><span class="p">,</span> <span class="n">reg</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">qargs</span> <span class="o">+</span> <span class="n">cargs</span><span class="p">):</span>
             <span class="c1"># Add to the stacks of the qubits and</span>
             <span class="c1"># cbits used in the gate.</span>
             <span class="n">reg_ints</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">bit_indices</span><span class="p">[</span><span class="n">reg</span><span class="p">])</span>
-            <span class="k">if</span> <span class="n">count</span><span class="p">:</span>
-                <span class="n">levels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">op_stack</span><span class="p">[</span><span class="n">reg_ints</span><span class="p">[</span><span class="n">ind</span><span class="p">]]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">levels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">op_stack</span><span class="p">[</span><span class="n">reg_ints</span><span class="p">[</span><span class="n">ind</span><span class="p">]])</span>
+            <span class="n">levels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">op_stack</span><span class="p">[</span><span class="n">reg_ints</span><span class="p">[</span><span class="n">ind</span><span class="p">]]</span> <span class="o">+</span> <span class="n">gate_depth</span><span class="p">)</span>
 
         <span class="n">max_level</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">levels</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">ind</span> <span class="ow">in</span> <span class="n">reg_ints</span><span class="p">:</span>
@@ -532,7 +552,7 @@ document.write(`
 
 
 <div class="viewcode-block" id="gate_wrap"><a class="viewcode-back" href="../../../reference/Miscellaneous%20Functions/generated/qrisp.gate_wrap.html#qrisp.gate_wrap">[docs]</a><span class="k">def</span> <span class="nf">gate_wrap</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">permeability</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_qfree</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">verify</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Decorator to bundle up the quantum instructions of a function into a single gate</span>
 <span class="sd">    object. Bundled gate objects can help debugging as it allows for a more clear</span>
 <span class="sd">    QuantumCircuit visualisation.</span>
@@ -604,39 +624,46 @@ document.write(`
 <span class="sd">        example_function(a, b)</span>
 
 <span class="sd">    &gt;&gt;&gt; print(a.qs)</span>
-<span class="sd">    QuantumCircuit:</span>
-<span class="sd">    ---------------</span>
-<span class="sd">         ┌───────────────────┐</span>
-<span class="sd">    b.0: ┤0                  ├</span>
-<span class="sd">         │                   │</span>
-<span class="sd">    b.1: ┤1                  ├</span>
-<span class="sd">         │                   │</span>
-<span class="sd">    b.2: ┤2                  ├</span>
-<span class="sd">         │  example_function │</span>
-<span class="sd">    a.0: ┤3                  ├</span>
-<span class="sd">         │                   │</span>
-<span class="sd">    a.1: ┤4                  ├</span>
-<span class="sd">         │                   │</span>
-<span class="sd">    a.2: ┤5                  ├</span>
-<span class="sd">         └───────────────────┘</span>
-<span class="sd">    Live QuantumVariables:</span>
-<span class="sd">    ----------------------</span>
-<span class="sd">    QuantumVariable a</span>
-<span class="sd">    QuantumVariable b</span>
+<span class="sd">    </span>
+<span class="sd">    ::</span>
+<span class="sd">    </span>
+<span class="sd">        QuantumCircuit:</span>
+<span class="sd">        --------------</span>
+<span class="sd">             ┌───────────────────┐</span>
+<span class="sd">        b.0: ┤0                  ├</span>
+<span class="sd">             │                   │</span>
+<span class="sd">        b.1: ┤1                  ├</span>
+<span class="sd">             │                   │</span>
+<span class="sd">        b.2: ┤2                  ├</span>
+<span class="sd">             │  example_function │</span>
+<span class="sd">        a.0: ┤3                  ├</span>
+<span class="sd">             │                   │</span>
+<span class="sd">        a.1: ┤4                  ├</span>
+<span class="sd">             │                   │</span>
+<span class="sd">        a.2: ┤5                  ├</span>
+<span class="sd">             └───────────────────┘</span>
+<span class="sd">        Live QuantumVariables:</span>
+<span class="sd">        ---------------------</span>
+<span class="sd">        QuantumVariable a</span>
+<span class="sd">        QuantumVariable b</span>
+<span class="sd">    </span>
 <span class="sd">    &gt;&gt;&gt; print(a.qs.transpile())</span>
-<span class="sd">         ┌───┐                    ┌───┐</span>
-<span class="sd">    b.0: ┤ X ├─────────────────■──┤ H ├──────────</span>
-<span class="sd">         └─┬─┘┌───┐            │  └───┘┌───┐</span>
-<span class="sd">    b.1: ──┼──┤ X ├────────────┼────■──┤ H ├─────</span>
-<span class="sd">           │  └─┬─┘┌───┐       │    │  └───┘┌───┐</span>
-<span class="sd">    b.2: ──┼────┼──┤ X ├───────┼────┼────■──┤ H ├</span>
-<span class="sd">           │    │  └─┬─┘┌───┐┌─┴─┐  │    │  └───┘</span>
-<span class="sd">    a.0: ──■────┼────┼──┤ X ├┤ X ├──┼────┼───────</span>
-<span class="sd">                │    │  ├───┤└───┘┌─┴─┐  │</span>
-<span class="sd">    a.1: ───────■────┼──┤ X ├─────┤ X ├──┼───────</span>
-<span class="sd">                     │  ├───┤     └───┘┌─┴─┐</span>
-<span class="sd">    a.2: ────────────■──┤ X ├──────────┤ X ├─────</span>
-<span class="sd">                        └───┘          └───┘</span>
+<span class="sd">    </span>
+<span class="sd">    ::</span>
+<span class="sd">    </span>
+<span class="sd">             ┌───┐                    ┌───┐</span>
+<span class="sd">        b.0: ┤ X ├─────────────────■──┤ H ├──────────</span>
+<span class="sd">             └─┬─┘┌───┐            │  └───┘┌───┐</span>
+<span class="sd">        b.1: ──┼──┤ X ├────────────┼────■──┤ H ├─────</span>
+<span class="sd">               │  └─┬─┘┌───┐       │    │  └───┘┌───┐</span>
+<span class="sd">        b.2: ──┼────┼──┤ X ├───────┼────┼────■──┤ H ├</span>
+<span class="sd">               │    │  └─┬─┘┌───┐┌─┴─┐  │    │  └───┘</span>
+<span class="sd">        a.0: ──■────┼────┼──┤ X ├┤ X ├──┼────┼───────</span>
+<span class="sd">                    │    │  ├───┤└───┘┌─┴─┐  │</span>
+<span class="sd">        a.1: ───────■────┼──┤ X ├─────┤ X ├──┼───────</span>
+<span class="sd">                         │  ├───┤     └───┘┌─┴─┐</span>
+<span class="sd">        a.2: ────────────■──┤ X ├──────────┤ X ├─────</span>
+<span class="sd">                            └───┘          └───┘</span>
 
 
 <span class="sd">    In the next example, we create a function that performs no quantum gates and specify</span>
@@ -660,35 +687,43 @@ document.write(`
 <span class="sd">        res = example_function(qv_0, qv_1)</span>
 
 <span class="sd">    &gt;&gt;&gt; print(qv_0.qs)</span>
-<span class="sd">    QuantumCircuit:</span>
-<span class="sd">    ---------------</span>
-<span class="sd">            ┌───────────────────┐</span>
-<span class="sd">    qv_0.0: ┤0                  ├</span>
-<span class="sd">            │                   │</span>
-<span class="sd">    qv_1.0: ┤1 example_function ├</span>
-<span class="sd">            │                   │</span>
-<span class="sd">     res.0: ┤2                  ├</span>
-<span class="sd">            └───────────────────┘</span>
-<span class="sd">    Live QuantumVariables:</span>
-<span class="sd">    ----------------------</span>
-<span class="sd">    QuantumVariable qv_0</span>
-<span class="sd">    QuantumVariable qv_1</span>
-<span class="sd">    QuantumVariable res</span>
+<span class="sd">    </span>
+<span class="sd">    ::</span>
+<span class="sd">    </span>
+<span class="sd">        QuantumCircuit:</span>
+<span class="sd">        --------------</span>
+<span class="sd">                ┌───────────────────┐</span>
+<span class="sd">        qv_0.0: ┤0                  ├</span>
+<span class="sd">                │                   │</span>
+<span class="sd">        qv_1.0: ┤1 example_function ├</span>
+<span class="sd">                │                   │</span>
+<span class="sd">         res.0: ┤2                  ├</span>
+<span class="sd">                └───────────────────┘</span>
+<span class="sd">        Live QuantumVariables:</span>
+<span class="sd">        ---------------------</span>
+<span class="sd">        QuantumVariable qv_0</span>
+<span class="sd">        QuantumVariable qv_1</span>
+<span class="sd">        QuantumVariable res</span>
+<span class="sd">    </span>
+<span class="sd">    </span>
 <span class="sd">    &gt;&gt;&gt; qv_1.uncompute()</span>
 <span class="sd">    &gt;&gt;&gt; print(qv_0.qs)</span>
-<span class="sd">    QuantumCircuit:</span>
-<span class="sd">    ---------------</span>
-<span class="sd">            ┌───────────────────┐</span>
-<span class="sd">    qv_0.0: ┤0                  ├</span>
-<span class="sd">            │                   │</span>
-<span class="sd">    qv_1.0: ┤1 example_function ├</span>
-<span class="sd">            │                   │</span>
-<span class="sd">     res.0: ┤2                  ├</span>
-<span class="sd">            └───────────────────┘</span>
-<span class="sd">    Live QuantumVariables:</span>
-<span class="sd">    ----------------------</span>
-<span class="sd">    QuantumVariable qv_0</span>
-<span class="sd">    QuantumVariable res</span>
+<span class="sd">    </span>
+<span class="sd">    ::</span>
+<span class="sd">    </span>
+<span class="sd">        QuantumCircuit:</span>
+<span class="sd">        --------------</span>
+<span class="sd">                ┌───────────────────┐</span>
+<span class="sd">        qv_0.0: ┤0                  ├</span>
+<span class="sd">                │                   │</span>
+<span class="sd">        qv_1.0: ┤1 example_function ├</span>
+<span class="sd">                │                   │</span>
+<span class="sd">         res.0: ┤2                  ├</span>
+<span class="sd">                └───────────────────┘</span>
+<span class="sd">        Live QuantumVariables:</span>
+<span class="sd">        ---------------------</span>
+<span class="sd">        QuantumVariable qv_0</span>
+<span class="sd">        QuantumVariable res</span>
 
 <span class="sd">    Since ``arg_1`` is marked as permeable, there are no further gates required for</span>
 <span class="sd">    uncomputation. The situation is different for the other two QuantumVariables, where</span>
@@ -697,17 +732,20 @@ document.write(`
 <span class="sd">    &gt;&gt;&gt; qv_0.uncompute(do_it = False)</span>
 <span class="sd">    &gt;&gt;&gt; res.uncompute()</span>
 <span class="sd">    &gt;&gt;&gt; print(qv_0.qs)</span>
-<span class="sd">    QuantumCircuit:</span>
-<span class="sd">    ---------------</span>
-<span class="sd">            ┌───────────────────┐┌──────────────────────┐</span>
-<span class="sd">    qv_0.0: ┤0                  ├┤0                     ├</span>
-<span class="sd">            │                   ││                      │</span>
-<span class="sd">    qv_1.0: ┤1 example_function ├┤1 example_function_dg ├</span>
-<span class="sd">            │                   ││                      │</span>
-<span class="sd">     res.0: ┤2                  ├┤2                     ├</span>
-<span class="sd">            └───────────────────┘└──────────────────────┘</span>
-<span class="sd">    Live QuantumVariables:</span>
-<span class="sd">    ----------------------</span>
+<span class="sd">    </span>
+<span class="sd">    ::</span>
+<span class="sd">    </span>
+<span class="sd">        QuantumCircuit:</span>
+<span class="sd">        --------------</span>
+<span class="sd">                ┌───────────────────┐┌──────────────────────┐</span>
+<span class="sd">        qv_0.0: ┤0                  ├┤0                     ├</span>
+<span class="sd">                │                   ││                      │</span>
+<span class="sd">        qv_1.0: ┤1 example_function ├┤1 example_function_dg ├</span>
+<span class="sd">                │                   ││                      │</span>
+<span class="sd">         res.0: ┤2                  ├┤2                     ├</span>
+<span class="sd">                └───────────────────┘└──────────────────────┘</span>
+<span class="sd">        Live QuantumVariables:</span>
+<span class="sd">        ---------------------</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
@@ -737,17 +775,15 @@ document.write(`
         <span class="kn">from</span> <span class="nn">qrisp.circuit</span> <span class="kn">import</span> <span class="n">Qubit</span>
         <span class="kn">from</span> <span class="nn">qrisp.core</span> <span class="kn">import</span> <span class="n">recursive_qs_search</span><span class="p">,</span> <span class="n">recursive_qv_search</span>
         <span class="kn">from</span> <span class="nn">qrisp.environments</span> <span class="kn">import</span> <span class="n">GateWrapEnvironment</span>
-        <span class="kn">from</span> <span class="nn">qrisp</span> <span class="kn">import</span> <span class="n">merge</span>
+        <span class="kn">from</span> <span class="nn">qrisp</span> <span class="kn">import</span> <span class="n">merge</span><span class="p">,</span> <span class="n">QuantumVariable</span><span class="p">,</span> <span class="n">QuantumArray</span>
 
-        <span class="n">qs_list</span> <span class="o">=</span> <span class="n">recursive_qs_search</span><span class="p">([</span><span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">])</span>
 
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">qs_list</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
-                <span class="s2">&quot;Could not find QuantumSession object in function arguments during &quot;</span>
-                <span class="s2">&quot;gate-wrapping&quot;</span>
-            <span class="p">)</span>
-
-        <span class="n">qs</span> <span class="o">=</span> <span class="n">qs_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">qs</span> <span class="o">=</span> <span class="n">find_qs</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="n">qs_list</span> <span class="o">=</span> <span class="n">recursive_qs_search</span><span class="p">([</span><span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">])</span>
+            <span class="n">qs</span> <span class="o">=</span> <span class="n">qs_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            
 
         <span class="n">initial_qubits</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">qs</span><span class="o">.</span><span class="n">qubits</span><span class="p">)</span>
 
@@ -769,7 +805,7 @@ document.write(`
         <span class="k">if</span> <span class="n">gwe</span><span class="o">.</span><span class="n">instruction</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">result</span>
 
-        <span class="n">created_qubits</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">qs_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">qubits</span><span class="p">)</span> <span class="o">-</span> <span class="n">initial_qubits</span>
+        <span class="n">created_qubits</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">qs</span><span class="o">.</span><span class="n">qubits</span><span class="p">)</span> <span class="o">-</span> <span class="n">initial_qubits</span>
 
         <span class="n">ancillas</span> <span class="o">=</span> <span class="p">[]</span>
 
@@ -790,41 +826,92 @@ document.write(`
             <span class="n">gwe</span><span class="o">.</span><span class="n">instruction</span><span class="o">.</span><span class="n">op</span><span class="o">.</span><span class="n">is_qfree</span> <span class="o">=</span> <span class="n">is_qfree</span>
 
         <span class="k">if</span> <span class="n">permeability</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">permeability_dict</span> <span class="o">=</span> <span class="p">{}</span>
-            <span class="n">arg_qubits</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">permeability_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">i</span> <span class="p">:</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">gwe</span><span class="o">.</span><span class="n">instruction</span><span class="o">.</span><span class="n">op</span><span class="o">.</span><span class="n">num_qubits</span><span class="p">)}</span>
+            <span class="n">permeable_qubits</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">not_permeable_qubits</span> <span class="o">=</span> <span class="p">[]</span>
+            
 
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">permeability</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-                <span class="n">args</span> <span class="o">=</span> <span class="p">[</span><span class="n">args</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">permeability</span><span class="p">]</span>
-                <span class="n">permeability</span> <span class="o">=</span> <span class="s2">&quot;args&quot;</span>
+                
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)):</span>
+                    
+                    <span class="k">if</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">permeability</span><span class="p">:</span>
+                        <span class="n">extension_list</span> <span class="o">=</span> <span class="n">permeable_qubits</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">extension_list</span> <span class="o">=</span> <span class="n">not_permeable_qubits</span>
+                    
+                    <span class="n">arg</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                    
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">QuantumVariable</span><span class="p">):</span>
+                        <span class="n">extension_list</span> <span class="o">+=</span> <span class="n">arg</span><span class="o">.</span><span class="n">reg</span>
+                    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">)):</span>
+                        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">arg</span><span class="p">:</span>
+                            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">Qubit</span><span class="p">):</span>
+                                <span class="n">extension_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+                            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">QuantumVariable</span><span class="p">):</span>
+                                <span class="n">extension_list</span> <span class="o">+=</span> <span class="n">item</span><span class="o">.</span><span class="n">reg</span>
+                    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">QuantumArray</span><span class="p">):</span>
+                        <span class="k">for</span> <span class="n">qv</span> <span class="ow">in</span> <span class="n">arg</span><span class="o">.</span><span class="n">flatten</span><span class="p">():</span>
+                            <span class="n">extension_list</span> <span class="o">+=</span> <span class="n">qv</span><span class="o">.</span><span class="n">reg</span>
+                        
 
-            <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">args</span><span class="p">:</span>
-                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-                    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">arg</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">QuantumVariable</span><span class="p">):</span>
+                    <span class="n">not_permeable_qubits</span> <span class="o">+=</span> <span class="n">result</span><span class="o">.</span><span class="n">reg</span>
+                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">)):</span>
+                    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">result</span><span class="p">:</span>
                         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">Qubit</span><span class="p">):</span>
-                            <span class="n">arg_qubits</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
-                <span class="k">for</span> <span class="n">arg_qv</span> <span class="ow">in</span> <span class="n">recursive_qv_search</span><span class="p">([</span><span class="n">arg</span><span class="p">]):</span>
-                    <span class="n">arg_qubits</span> <span class="o">+=</span> <span class="n">arg_qv</span><span class="o">.</span><span class="n">reg</span>
+                            <span class="n">not_permeable_qubits</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+                        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">QuantumVariable</span><span class="p">):</span>
+                            <span class="n">not_permeable_qubits</span> <span class="o">+=</span> <span class="n">item</span><span class="o">.</span><span class="n">reg</span>
+                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">QuantumArray</span><span class="p">):</span>
+                    <span class="k">for</span> <span class="n">qv</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">flatten</span><span class="p">():</span>
+                        <span class="n">not_permeable_qubits</span> <span class="o">+=</span> <span class="n">qv</span><span class="o">.</span><span class="n">reg</span>
+                    
+                    
+            
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">permeability</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                
+                <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">args</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">QuantumVariable</span><span class="p">):</span>
+                        <span class="n">permeable_qubits</span> <span class="o">+=</span> <span class="n">arg</span><span class="o">.</span><span class="n">reg</span>
+                    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">)):</span>
+                        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">arg</span><span class="p">:</span>
+                            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">Qubit</span><span class="p">):</span>
+                                <span class="n">permeable_qubits</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+                            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">QuantumVariable</span><span class="p">):</span>
+                                <span class="n">permeable_qubits</span> <span class="o">+=</span> <span class="n">item</span><span class="o">.</span><span class="n">reg</span>
+                    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">QuantumArray</span><span class="p">):</span>
+                        <span class="k">for</span> <span class="n">qv</span> <span class="ow">in</span> <span class="n">arg</span><span class="o">.</span><span class="n">flatten</span><span class="p">():</span>
+                            <span class="n">permeable_qubits</span> <span class="o">+=</span> <span class="n">qv</span><span class="o">.</span><span class="n">reg</span>
 
-            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">gwe</span><span class="o">.</span><span class="n">instruction</span><span class="o">.</span><span class="n">qubits</span><span class="p">)):</span>
-                <span class="n">qb</span> <span class="o">=</span> <span class="n">gwe</span><span class="o">.</span><span class="n">instruction</span><span class="o">.</span><span class="n">qubits</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
-
-                <span class="k">if</span> <span class="n">qb</span> <span class="ow">in</span> <span class="n">arg_qubits</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="n">permeability</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;args&quot;</span><span class="p">,</span> <span class="s2">&quot;full&quot;</span><span class="p">]:</span>
-                        <span class="n">permeability_dict</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
-                    <span class="k">else</span><span class="p">:</span>
-                        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
-                            <span class="s2">&quot;Don&#39;t know permeability option &quot;</span> <span class="o">+</span> <span class="n">permeability</span>
-                        <span class="p">)</span>
+                <span class="k">if</span> <span class="n">permeability</span> <span class="o">==</span> <span class="s2">&quot;full&quot;</span><span class="p">:</span>
+                    <span class="n">extension_list</span> <span class="o">=</span> <span class="n">permeable_qubits</span>
+                <span class="k">elif</span> <span class="n">permeability</span> <span class="o">==</span> <span class="s2">&quot;args&quot;</span><span class="p">:</span>
+                    <span class="n">extension_list</span> <span class="o">=</span> <span class="n">not_permeable_qubits</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="n">permeability</span> <span class="o">==</span> <span class="s2">&quot;full&quot;</span><span class="p">:</span>
-                        <span class="n">permeability_dict</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
-                    <span class="k">else</span><span class="p">:</span>
-                        <span class="n">permeability_dict</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+                    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Don&#39;t know permeability option </span><span class="si">{</span><span class="n">permeability</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">QuantumVariable</span><span class="p">):</span>
+                    <span class="n">extension_list</span> <span class="o">+=</span> <span class="n">result</span><span class="o">.</span><span class="n">reg</span>
+                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">)):</span>
+                    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">result</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">Qubit</span><span class="p">):</span>
+                            <span class="n">extension_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+                        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">QuantumVariable</span><span class="p">):</span>
+                            <span class="n">extension_list</span> <span class="o">+=</span> <span class="n">item</span><span class="o">.</span><span class="n">reg</span>
+                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">QuantumArray</span><span class="p">):</span>
+                    <span class="k">for</span> <span class="n">qv</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">flatten</span><span class="p">():</span>
+                        <span class="n">extension_list</span> <span class="o">+=</span> <span class="n">qv</span><span class="o">.</span><span class="n">reg</span>
 
             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">gwe</span><span class="o">.</span><span class="n">instruction</span><span class="o">.</span><span class="n">qubits</span><span class="p">)):</span>
+                
                 <span class="n">qb</span> <span class="o">=</span> <span class="n">gwe</span><span class="o">.</span><span class="n">instruction</span><span class="o">.</span><span class="n">qubits</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
-
-                <span class="k">if</span> <span class="n">qb</span> <span class="ow">in</span> <span class="n">ancillas</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">qb</span> <span class="ow">in</span> <span class="n">permeable_qubits</span><span class="p">:</span>
+                    <span class="n">permeability_dict</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">elif</span> <span class="n">qb</span> <span class="ow">in</span> <span class="n">not_permeable_qubits</span><span class="p">:</span>
+                    <span class="n">permeability_dict</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+                <span class="k">elif</span> <span class="n">qb</span> <span class="ow">in</span> <span class="n">ancillas</span><span class="p">:</span>
+                    
                     <span class="c1"># Even though ancilla qubits are permeable, we want to be able to</span>
                     <span class="c1"># use the gate_wrap decorator as an interface to perform</span>
                     <span class="c1"># recomputation. If we mark them as permeable, Unqomp won&#39;t  wrap</span>
@@ -907,9 +994,9 @@ document.write(`
 
                     <span class="n">permeability_dict</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
 
-                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">gwe</span><span class="o">.</span><span class="n">instruction</span><span class="o">.</span><span class="n">qubits</span><span class="p">)):</span>
-                    <span class="k">if</span> <span class="n">permeability_dict</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                        <span class="n">permeability_dict</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+                <span class="c1"># for i in range(len(gwe.instruction.qubits)):</span>
+                <span class="c1">#     if permeability_dict[i] is None:</span>
+                <span class="c1">#         permeability_dict[i] = False</span>
 
                 <span class="k">if</span> <span class="n">verify</span><span class="p">:</span>
                     <span class="kn">from</span> <span class="nn">qrisp.uncomputation</span> <span class="kn">import</span> <span class="n">is_permeable</span>
@@ -933,9 +1020,37 @@ document.write(`
     <span class="k">return</span> <span class="n">wrapped_function</span>
 
 
+<span class="k">def</span> <span class="nf">find_qs</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+    
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="s2">&quot;qs&quot;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">args</span><span class="o">.</span><span class="n">qs</span><span class="p">()</span>
+    
+    <span class="kn">from</span> <span class="nn">qrisp</span> <span class="kn">import</span> <span class="n">QuantumVariable</span><span class="p">,</span> <span class="n">QuantumArray</span><span class="p">,</span> <span class="n">Qubit</span>
+    <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">args</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="p">(</span><span class="n">QuantumVariable</span><span class="p">,</span> <span class="n">QuantumArray</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="n">arg</span><span class="o">.</span><span class="n">qs</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">Qubit</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">arg</span><span class="o">.</span><span class="n">qs</span><span class="p">()</span>
+        
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">args</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">find_qs</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span>
+                <span class="k">except</span><span class="p">:</span>
+                    <span class="k">pass</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">find_qs</span><span class="p">(</span><span class="n">arg</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
+                <span class="k">except</span><span class="p">:</span>
+                    <span class="k">pass</span>
+    
+    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Couldn&#39;t find QuantumSession&quot;</span><span class="p">)</span>
+
+
 <span class="c1"># Function to measure multiple quantum variables at once to assess their entanglement</span>
 <div class="viewcode-block" id="multi_measurement"><a class="viewcode-back" href="../../../reference/Miscellaneous%20Functions/generated/qrisp.multi_measurement.html#qrisp.multi_measurement">[docs]</a><span class="k">def</span> <span class="nf">multi_measurement</span><span class="p">(</span><span class="n">qv_list</span><span class="p">,</span> <span class="n">shots</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This functions facilitates the measurement of multiple QuantumVariables at the same</span>
 <span class="sd">    time. This can be used if the entanglement structure between several</span>
 <span class="sd">    QuantumVariables is of interest.</span>
@@ -1114,7 +1229,7 @@ document.write(`
 
 
 <div class="viewcode-block" id="as_hamiltonian"><a class="viewcode-back" href="../../../reference/Miscellaneous%20Functions/generated/qrisp.as_hamiltonian.html#qrisp.as_hamiltonian">[docs]</a><span class="k">def</span> <span class="nf">as_hamiltonian</span><span class="p">(</span><span class="n">hamiltonian</span><span class="p">):</span>
-    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Decorator that recieves a regular Python function (returning a float) and returns a</span>
 <span class="sd">    function of QuantumVariables, applying phases based on the function&#39;s output.</span>
 
@@ -1234,7 +1349,7 @@ document.write(`
 
 
 <div class="viewcode-block" id="perm_lock"><a class="viewcode-back" href="../../../reference/Miscellaneous%20Functions/generated/qrisp.perm_lock.html#qrisp.perm_lock">[docs]</a><span class="k">def</span> <span class="nf">perm_lock</span><span class="p">(</span><span class="n">qubits</span><span class="p">,</span> <span class="n">message</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Locks a list of qubits such that only permeable gates can be executed on these</span>
 <span class="sd">    qubits. This means that an error will be raised if the user attempts to perform any</span>
 <span class="sd">    operation involving these qubits if the operation does not commute with the</span>
@@ -1290,7 +1405,7 @@ document.write(`
 
 
 <div class="viewcode-block" id="perm_unlock"><a class="viewcode-back" href="../../../reference/Miscellaneous%20Functions/generated/qrisp.perm_unlock.html#qrisp.perm_unlock">[docs]</a><span class="k">def</span> <span class="nf">perm_unlock</span><span class="p">(</span><span class="n">qubits</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Reverses the effect of &quot;perm_lock&quot;.</span>
 
 <span class="sd">    Parameters</span>
@@ -1328,7 +1443,7 @@ document.write(`
 
 
 <div class="viewcode-block" id="lock"><a class="viewcode-back" href="../../../reference/Miscellaneous%20Functions/generated/qrisp.lock.html#qrisp.lock">[docs]</a><span class="k">def</span> <span class="nf">lock</span><span class="p">(</span><span class="n">qubits</span><span class="p">,</span> <span class="n">message</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Locks a list of qubits, implying an error will be raised if the user tries to</span>
 <span class="sd">    perform any operation involving these qubits.</span>
 <span class="sd">    Using the keywoard message it is possible to extend the displayed error message.</span>
@@ -1367,7 +1482,7 @@ document.write(`
 
 
 <div class="viewcode-block" id="unlock"><a class="viewcode-back" href="../../../reference/Miscellaneous%20Functions/generated/qrisp.unlock.html#qrisp.unlock">[docs]</a><span class="k">def</span> <span class="nf">unlock</span><span class="p">(</span><span class="n">qubits</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Reverses the effect of &quot;lock&quot;.</span>
 
 <span class="sd">    Parameters</span>
@@ -1538,17 +1653,33 @@ document.write(`
         <span class="k">return</span> <span class="n">statevector</span>
 
 
-<span class="k">def</span> <span class="nf">check_if_fresh</span><span class="p">(</span><span class="n">qubits</span><span class="p">,</span> <span class="n">qs</span><span class="p">):</span>
-    <span class="n">qc</span> <span class="o">=</span> <span class="n">qs</span><span class="o">.</span><span class="n">transpile</span><span class="p">()</span>
-
-    <span class="n">reversed_data</span> <span class="o">=</span> <span class="n">qc</span><span class="o">.</span><span class="n">data</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+<span class="k">def</span> <span class="nf">check_if_fresh</span><span class="p">(</span><span class="n">qubits</span><span class="p">,</span> <span class="n">qs</span><span class="p">,</span> <span class="n">ignore_q_envs</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+    
+    <span class="kn">from</span> <span class="nn">qrisp</span> <span class="kn">import</span> <span class="n">QuantumEnvironment</span>
+    
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">ignore_q_envs</span><span class="p">:</span>
+        <span class="n">temp_data</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">qs</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+        <span class="n">qs</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="p">[]</span>
+        
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">temp_data</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">temp_data</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">QuantumEnvironment</span><span class="p">):</span>
+                <span class="n">env</span> <span class="o">=</span> <span class="n">temp_data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                <span class="n">env</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">qs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">temp_data</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+    
     <span class="k">for</span> <span class="n">qb</span> <span class="ow">in</span> <span class="n">qubits</span><span class="p">:</span>
+        <span class="n">reversed_data</span> <span class="o">=</span> <span class="n">qb</span><span class="o">.</span><span class="n">qs</span><span class="p">()</span><span class="o">.</span><span class="n">data</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
         <span class="k">for</span> <span class="n">instr</span> <span class="ow">in</span> <span class="n">reversed_data</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">instr</span><span class="p">,</span> <span class="n">QuantumEnvironment</span><span class="p">)</span> <span class="ow">and</span> <span class="n">ignore_q_envs</span><span class="p">:</span>
+                <span class="k">continue</span>
             <span class="k">if</span> <span class="n">qb</span> <span class="ow">in</span> <span class="n">instr</span><span class="o">.</span><span class="n">qubits</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">instr</span><span class="o">.</span><span class="n">op</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;qb_alloc&quot;</span><span class="p">:</span>
                     <span class="k">break</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
 
     <span class="k">return</span> <span class="kc">True</span>
 
@@ -1565,14 +1696,14 @@ document.write(`
 
     <span class="c1"># Execute circuit</span>
     <span class="n">counts</span> <span class="o">=</span> <span class="n">backend</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">qc</span><span class="p">,</span> <span class="n">shots</span><span class="p">)</span>
-
+    
     <span class="c1"># Remove other measurements outcomes from counts dic</span>
     <span class="n">new_counts_dic</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">counts</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
         <span class="c1"># Remove possible whitespaces</span>
         <span class="n">new_key</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
         <span class="c1"># Remove other measurements</span>
-        <span class="n">new_key</span> <span class="o">=</span> <span class="n">new_key</span><span class="p">[</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">cl</span><span class="p">)</span> <span class="p">:]</span>
+        <span class="n">new_key</span> <span class="o">=</span> <span class="n">new_key</span><span class="p">[:</span><span class="nb">len</span><span class="p">(</span><span class="n">cl</span><span class="p">)]</span>
 
         <span class="n">new_key</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">new_key</span><span class="p">,</span> <span class="n">base</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
@@ -1597,9 +1728,10 @@ document.write(`
     <span class="p">)</span>  <span class="c1"># prints &quot;a = fct1()&quot;</span>
 
 
-<span class="k">def</span> <span class="nf">retarget_instructions</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">source_qubits</span><span class="p">,</span> <span class="n">target_qubits</span><span class="p">):</span>
-    <span class="kn">from</span> <span class="nn">qrisp</span> <span class="kn">import</span> <span class="n">QuantumEnvironment</span>
 
+<span class="k">def</span> <span class="nf">retarget_instructions</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">source_qubits</span><span class="p">,</span> <span class="n">target_qubits</span><span class="p">):</span>
+    <span class="kn">from</span> <span class="nn">qrisp</span> <span class="kn">import</span> <span class="n">QuantumEnvironment</span><span class="p">,</span> <span class="n">recursive_qs_search</span><span class="p">,</span> <span class="n">multi_session_merge</span>
+    
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)):</span>
         <span class="n">instr</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
 
@@ -1612,9 +1744,8 @@ document.write(`
             <span class="k">if</span> <span class="n">instr</span><span class="o">.</span><span class="n">qubits</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="ow">in</span> <span class="n">source_qubits</span><span class="p">:</span>
                 <span class="n">instr</span><span class="o">.</span><span class="n">qubits</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">target_qubits</span><span class="p">[</span><span class="n">source_qubits</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">instr</span><span class="o">.</span><span class="n">qubits</span><span class="p">[</span><span class="n">j</span><span class="p">])]</span>
 
-
 <div class="viewcode-block" id="redirect_qfunction"><a class="viewcode-back" href="../../../reference/Miscellaneous%20Functions/generated/qrisp.redirect_qfunction.html#qrisp.redirect_qfunction">[docs]</a><span class="k">def</span> <span class="nf">redirect_qfunction</span><span class="p">(</span><span class="n">function_to_redirect</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Decorator to turn a function returning a QuantumVariable into an in-place function.</span>
 <span class="sd">    This can be helpful for manual uncomputation if we have a function returning some</span>
 <span class="sd">    QuantumVariable, but we want the result to operate on some other variable, which is</span>
@@ -1669,29 +1800,33 @@ document.write(`
 
 
 <span class="sd">    &gt;&gt;&gt; print(a.qs)</span>
-<span class="sd">    QuantumCircuit:</span>
-<span class="sd">    ---------------</span>
-<span class="sd">    b.0: ──■──</span>
-<span class="sd">           │</span>
-<span class="sd">    a.0: ──■──</span>
-<span class="sd">         ┌─┴─┐</span>
-<span class="sd">    c.0: ┤ X ├</span>
-<span class="sd">         └───┘</span>
-<span class="sd">    Live QuantumVariables:</span>
-<span class="sd">    ----------------------</span>
-<span class="sd">    QuantumBool b</span>
-<span class="sd">    QuantumBool a</span>
-<span class="sd">    QuantumBool c</span>
+<span class="sd">    </span>
+<span class="sd">    ::</span>
+<span class="sd">    </span>
+<span class="sd">        QuantumCircuit:</span>
+<span class="sd">        --------------</span>
+<span class="sd">        b.0: ──■──</span>
+<span class="sd">               │</span>
+<span class="sd">        a.0: ──■──</span>
+<span class="sd">             ┌─┴─┐</span>
+<span class="sd">        c.0: ┤ X ├</span>
+<span class="sd">             └───┘</span>
+<span class="sd">        Live QuantumVariables:</span>
+<span class="sd">        ---------------------</span>
+<span class="sd">        QuantumBool b</span>
+<span class="sd">        QuantumBool a</span>
+<span class="sd">        QuantumBool c</span>
 
 
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="kn">from</span> <span class="nn">qrisp</span> <span class="kn">import</span> <span class="n">QuantumEnvironment</span><span class="p">,</span> <span class="n">QuantumVariable</span>
-
+    <span class="kn">import</span> <span class="nn">weakref</span>
     <span class="k">def</span> <span class="nf">redirected_qfunction</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="n">env</span> <span class="o">=</span> <span class="n">QuantumEnvironment</span><span class="p">()</span>
         <span class="n">env</span><span class="o">.</span><span class="n">manual_allocation_management</span> <span class="o">=</span> <span class="kc">True</span>
-
+        <span class="n">qs</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">qs</span>
+        
         <span class="k">with</span> <span class="n">env</span><span class="p">:</span>
             <span class="n">res</span> <span class="o">=</span> <span class="n">function_to_redirect</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
@@ -1709,13 +1844,18 @@ document.write(`
             <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
             <span class="n">res_is_new</span> <span class="o">=</span> <span class="kc">False</span>
             <span class="k">while</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">env</span><span class="o">.</span><span class="n">env_qs</span><span class="o">.</span><span class="n">data</span><span class="p">):</span>
+                
                 <span class="n">instr</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">env_qs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">instr</span><span class="p">,</span> <span class="n">QuantumEnvironment</span><span class="p">):</span>
                     <span class="k">pass</span>
                 <span class="k">elif</span> <span class="n">instr</span><span class="o">.</span><span class="n">op</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;qb_alloc&quot;</span> <span class="ow">and</span> <span class="n">instr</span><span class="o">.</span><span class="n">qubits</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">res</span><span class="p">):</span>
                     <span class="n">env</span><span class="o">.</span><span class="n">env_qs</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
                     <span class="n">res_is_new</span> <span class="o">=</span> <span class="kc">True</span>
                     <span class="k">continue</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">qb</span> <span class="ow">in</span> <span class="n">instr</span><span class="o">.</span><span class="n">qubits</span><span class="p">:</span>
+                        <span class="n">qb</span><span class="o">.</span><span class="n">qs</span> <span class="o">=</span> <span class="n">weakref</span><span class="o">.</span><span class="n">ref</span><span class="p">(</span><span class="n">qs</span><span class="p">)</span>
 
                 <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
 
@@ -1777,6 +1917,9 @@ document.write(`
         <span class="k">if</span> <span class="n">decimals</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">sv_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">sv_array</span><span class="p">,</span> <span class="n">decimals</span><span class="p">)</span>
             <span class="n">angles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">angles</span><span class="p">,</span> <span class="n">decimals</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">sv_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">sv_array</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+            <span class="n">angles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">angles</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
 
         <span class="n">nz_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">sv_array</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">nnz</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">nz_indices</span><span class="p">)</span>
@@ -1791,7 +1934,7 @@ document.write(`
 
             <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">sp</span><span class="o">.</span><span class="n">preorder_traversal</span><span class="p">(</span><span class="n">entry</span><span class="p">):</span>
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">Float</span><span class="p">):</span>
-                    <span class="n">entry</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">subs</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="nb">round</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">decimals</span><span class="p">))</span>
+                    <span class="n">entry</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">subs</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="nb">round</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
 
             <span class="n">sv_array</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">entry</span>
 
@@ -1805,18 +1948,27 @@ document.write(`
         <span class="n">amplitude</span> <span class="o">=</span> <span class="n">sv_array</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">sv_array</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="s2">&quot;O&quot;</span><span class="p">):</span>
-            <span class="n">abs_amp</span> <span class="o">=</span> <span class="n">trigify_amp</span><span class="p">(</span><span class="n">amplitude</span><span class="p">,</span> <span class="n">decimals</span><span class="p">,</span> <span class="n">nnz</span><span class="p">)</span>
-
-            <span class="c1"># For some reason there is a sympy error, when the angle is equal to 1</span>
-            <span class="k">if</span> <span class="n">angles</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="n">phase</span> <span class="o">=</span> <span class="mi">1</span>
+            
+            <span class="k">if</span> <span class="n">decimals</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">abs_amp</span> <span class="o">=</span> <span class="n">trigify_amp</span><span class="p">(</span><span class="n">amplitude</span><span class="p">,</span> <span class="n">nnz</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+                    <span class="n">abs_amp</span> <span class="o">=</span> <span class="n">amplitude</span>
+                
+                <span class="c1"># For some reason there is a sympy error, when the angle is equal to 1</span>
+                <span class="k">if</span> <span class="n">angles</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">phase</span> <span class="o">=</span> <span class="mi">1</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">phase</span> <span class="o">=</span> <span class="n">nsimplify</span><span class="p">(</span><span class="n">angles</span><span class="p">[</span><span class="n">ind</span><span class="p">],</span> <span class="n">tolerance</span><span class="o">=</span><span class="mi">10</span> <span class="o">**</span> <span class="o">-</span><span class="mi">5</span><span class="p">)</span>
+    
+                <span class="k">if</span> <span class="n">count_ops</span><span class="p">(</span><span class="n">phase</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">5</span><span class="p">:</span>
+                    <span class="n">phase</span> <span class="o">=</span> <span class="n">angles</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
+    
+                <span class="n">ket_expr</span> <span class="o">=</span> <span class="n">exp</span><span class="p">(</span><span class="n">I</span> <span class="o">*</span> <span class="n">phase</span> <span class="o">*</span> <span class="n">pi</span><span class="p">)</span> <span class="o">*</span> <span class="n">abs_amp</span> <span class="o">*</span> <span class="n">nnz</span><span class="o">**</span><span class="mf">0.5</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">phase</span> <span class="o">=</span> <span class="n">nsimplify</span><span class="p">(</span><span class="n">angles</span><span class="p">[</span><span class="n">ind</span><span class="p">],</span> <span class="n">tolerance</span><span class="o">=</span><span class="mi">10</span> <span class="o">**</span> <span class="p">(</span><span class="n">decimals</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
-
-            <span class="k">if</span> <span class="n">count_ops</span><span class="p">(</span><span class="n">phase</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">5</span><span class="p">:</span>
-                <span class="n">phase</span> <span class="o">=</span> <span class="n">angles</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
-
-            <span class="n">ket_expr</span> <span class="o">=</span> <span class="n">exp</span><span class="p">(</span><span class="n">I</span> <span class="o">*</span> <span class="n">phase</span> <span class="o">*</span> <span class="n">pi</span><span class="p">)</span> <span class="o">*</span> <span class="n">abs_amp</span> <span class="o">*</span> <span class="n">nnz</span><span class="o">**</span><span class="mf">0.5</span>
+                
+                <span class="n">ket_expr</span> <span class="o">=</span> <span class="n">sympy</span><span class="o">.</span><span class="n">N</span><span class="p">(</span><span class="n">amplitude</span><span class="p">,</span> <span class="n">decimals</span><span class="p">)</span>
 
         <span class="k">else</span><span class="p">:</span>
             <span class="n">process_stack</span> <span class="o">=</span> <span class="p">[</span><span class="n">amplitude</span><span class="p">]</span>
@@ -1829,31 +1981,32 @@ document.write(`
                     <span class="n">process_stack</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">args</span><span class="p">)</span>
 
                 <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">free_symbols</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="n">sub_float</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="nb">complex</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">evalf</span><span class="p">()),</span> <span class="n">decimals</span><span class="p">)</span>
+                    <span class="n">sub_float</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="nb">complex</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">evalf</span><span class="p">()),</span> <span class="mi">5</span><span class="p">)</span>
 
-                    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">sub_float</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="o">**-</span><span class="n">decimals</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">sub_float</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="o">**-</span><span class="mi">5</span><span class="p">:</span>
                         <span class="n">abs_amp</span> <span class="o">=</span> <span class="mi">1</span>
                         <span class="k">continue</span>
-                    <span class="k">elif</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">sub_float</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="o">**-</span><span class="n">decimals</span><span class="p">:</span>
+                    <span class="k">elif</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">sub_float</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="o">**-</span><span class="mi">5</span><span class="p">:</span>
                         <span class="n">entry</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">subs</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
                         <span class="k">continue</span>
                     <span class="k">elif</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">sub_float</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
                         <span class="k">continue</span>
                     <span class="k">else</span><span class="p">:</span>
-                        <span class="n">abs_amp</span> <span class="o">=</span> <span class="n">trigify_amp</span><span class="p">(</span><span class="n">sub_float</span><span class="p">,</span> <span class="n">decimals</span><span class="p">,</span> <span class="n">nnz</span><span class="p">)</span>
+                        <span class="n">abs_amp</span> <span class="o">=</span> <span class="n">trigify_amp</span><span class="p">(</span><span class="n">sub_float</span><span class="p">,</span> <span class="n">nnz</span><span class="p">)</span>
 
                     <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">angle</span><span class="p">(</span><span class="nb">complex</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">evalf</span><span class="p">()))</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
                         <span class="n">phase</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
                     <span class="k">else</span><span class="p">:</span>
+                        
                         <span class="n">phase</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
                             <span class="n">sp</span><span class="o">.</span><span class="n">I</span>
                             <span class="o">*</span> <span class="n">nsimplify</span><span class="p">(</span>
                                 <span class="n">np</span><span class="o">.</span><span class="n">angle</span><span class="p">(</span><span class="nb">complex</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">evalf</span><span class="p">()))</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span>
-                                <span class="n">tolerance</span><span class="o">=</span><span class="mi">10</span> <span class="o">**</span> <span class="p">(</span><span class="n">decimals</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span>
+                                <span class="n">tolerance</span><span class="o">=</span><span class="mi">10</span> <span class="o">**</span> <span class="o">-</span><span class="mi">5</span><span class="p">,</span>
                             <span class="p">)</span>
                             <span class="o">*</span> <span class="n">Symbol</span><span class="p">(</span><span class="s2">&quot;pi&quot;</span><span class="p">)</span>
                         <span class="p">)</span>
-
+                        
                     <span class="n">expr</span> <span class="o">=</span> <span class="n">abs_amp</span> <span class="o">*</span> <span class="n">phase</span>
 
                     <span class="n">amplitude</span> <span class="o">=</span> <span class="n">amplitude</span><span class="o">.</span><span class="n">subs</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">expr</span><span class="p">)</span>
@@ -1874,8 +2027,9 @@ document.write(`
             <span class="n">ket_expr</span> <span class="o">*=</span> <span class="n">OrthogonalKet</span><span class="p">((</span><span class="n">label</span><span class="p">))</span>
 
         <span class="n">res</span> <span class="o">+=</span> <span class="n">ket_expr</span>
-
-    <span class="n">res</span> <span class="o">=</span> <span class="n">cancel</span><span class="p">(</span><span class="n">nsimplify</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">nnz</span><span class="o">**</span><span class="mf">0.5</span><span class="p">)</span> <span class="o">*</span> <span class="n">res</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="n">decimals</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">sv_array</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="s2">&quot;O&quot;</span><span class="p">):</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">cancel</span><span class="p">(</span><span class="n">nsimplify</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">nnz</span><span class="o">**</span><span class="mf">0.5</span><span class="p">)</span> <span class="o">*</span> <span class="n">res</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">sympy</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">mul</span><span class="o">.</span><span class="n">Mul</span><span class="p">):</span>
         <span class="n">temp</span> <span class="o">=</span> <span class="mi">1</span>
@@ -1888,7 +2042,7 @@ document.write(`
     <span class="k">return</span> <span class="n">res</span>
 
 
-<span class="k">def</span> <span class="nf">trigify_amp</span><span class="p">(</span><span class="n">amplitude</span><span class="p">,</span> <span class="n">decimals</span><span class="p">,</span> <span class="n">nnz</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">trigify_amp</span><span class="p">(</span><span class="n">amplitude</span><span class="p">,</span> <span class="n">nnz</span><span class="p">):</span>
     <span class="kn">from</span> <span class="nn">sympy</span> <span class="kn">import</span> <span class="p">(</span>
         <span class="n">I</span><span class="p">,</span>
         <span class="n">Rational</span><span class="p">,</span>
@@ -1906,10 +2060,10 @@ document.write(`
     <span class="p">)</span>
 
     <span class="n">cos_expr</span> <span class="o">=</span> <span class="n">nsimplify</span><span class="p">(</span>
-        <span class="n">np</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">amplitude</span><span class="p">))</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="n">tolerance</span><span class="o">=</span><span class="mi">10</span> <span class="o">**</span> <span class="o">-</span><span class="p">(</span><span class="n">decimals</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">amplitude</span><span class="p">))</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="n">tolerance</span><span class="o">=</span><span class="mi">10</span> <span class="o">**</span> <span class="o">-</span><span class="mi">5</span>
     <span class="p">)</span>
     <span class="n">sin_expr</span> <span class="o">=</span> <span class="n">nsimplify</span><span class="p">(</span>
-        <span class="n">np</span><span class="o">.</span><span class="n">arcsin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">amplitude</span><span class="p">))</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="n">tolerance</span><span class="o">=</span><span class="mi">10</span> <span class="o">**</span> <span class="o">-</span><span class="p">(</span><span class="n">decimals</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">arcsin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">amplitude</span><span class="p">))</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="n">tolerance</span><span class="o">=</span><span class="mi">10</span> <span class="o">**</span> <span class="o">-</span><span class="mi">5</span>
     <span class="p">)</span>
 
     <span class="c1"># if count_ops(sin_expr) &gt; count_ops(cos_expr):</span>
@@ -1929,14 +2083,14 @@ document.write(`
             <span class="n">temp</span> <span class="o">=</span> <span class="n">sin_expr</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">temp</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">nsimplify</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">amplitude</span><span class="p">)</span> <span class="o">*</span> <span class="n">nnz</span><span class="o">**</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">tolerance</span><span class="o">=</span><span class="mi">10</span> <span class="o">**</span> <span class="o">-</span><span class="p">(</span><span class="n">decimals</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+            <span class="n">nsimplify</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">amplitude</span><span class="p">)</span> <span class="o">*</span> <span class="n">nnz</span><span class="o">**</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">tolerance</span><span class="o">=</span><span class="mi">10</span> <span class="o">**</span> <span class="o">-</span><span class="mi">5</span><span class="p">)</span>
             <span class="o">/</span> <span class="n">nnz</span><span class="o">**</span><span class="mf">0.5</span>
         <span class="p">)</span>
 
     <span class="c1"># if count_ops(temp) &gt; 4:</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">latex</span><span class="p">(</span><span class="n">temp</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">20</span><span class="p">:</span>
         <span class="n">temp</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">nsimplify</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">amplitude</span><span class="p">)</span> <span class="o">*</span> <span class="n">nnz</span><span class="o">**</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">tolerance</span><span class="o">=</span><span class="mi">10</span> <span class="o">**</span> <span class="o">-</span><span class="p">(</span><span class="n">decimals</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+            <span class="n">nsimplify</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">amplitude</span><span class="p">)</span> <span class="o">*</span> <span class="n">nnz</span><span class="o">**</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">tolerance</span><span class="o">=</span><span class="mi">10</span> <span class="o">**</span> <span class="o">-</span><span class="mi">5</span><span class="p">)</span>
             <span class="o">/</span> <span class="n">nnz</span><span class="o">**</span><span class="mf">0.5</span>
         <span class="p">)</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">latex</span><span class="p">(</span><span class="n">temp</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">20</span><span class="p">:</span>
@@ -1986,7 +2140,7 @@ document.write(`
 
 
 <div class="viewcode-block" id="lifted"><a class="viewcode-back" href="../../../reference/Miscellaneous%20Functions/generated/qrisp.lifted.html#qrisp.lifted">[docs]</a><span class="k">def</span> <span class="nf">lifted</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">verify</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Shorthand for ``gate_wrap(permability = &quot;args&quot;, is_qfree = True)``.</span>
 
 <span class="sd">    A lifted function is ``qfree`` and permeable on its inputs. The results of lifted</span>
@@ -2043,34 +2197,40 @@ document.write(`
 <span class="sd">        res = margolus(control)</span>
 
 <span class="sd">    &gt;&gt;&gt; print(res.qs)</span>
-<span class="sd">    QuantumCircuit:</span>
-<span class="sd">    ---------------</span>
-<span class="sd">               ┌───────────┐</span>
-<span class="sd">    control.0: ┤0          ├</span>
-<span class="sd">               │           │</span>
-<span class="sd">    control.1: ┤1 margolus ├</span>
-<span class="sd">               │           │</span>
-<span class="sd">        res.0: ┤2          ├</span>
-<span class="sd">               └───────────┘</span>
-<span class="sd">    Live QuantumVariables:</span>
-<span class="sd">    ----------------------</span>
-<span class="sd">    QuantumVariable control</span>
-<span class="sd">    QuantumVariable res</span>
+<span class="sd">    </span>
+<span class="sd">    ::</span>
+<span class="sd">    </span>
+<span class="sd">        QuantumCircuit:</span>
+<span class="sd">        --------------</span>
+<span class="sd">                   ┌───────────┐</span>
+<span class="sd">        control.0: ┤0          ├</span>
+<span class="sd">                   │           │</span>
+<span class="sd">        control.1: ┤1 margolus ├</span>
+<span class="sd">                   │           │</span>
+<span class="sd">            res.0: ┤2          ├</span>
+<span class="sd">                   └───────────┘</span>
+<span class="sd">        Live QuantumVariables:</span>
+<span class="sd">        ---------------------</span>
+<span class="sd">        QuantumVariable control</span>
+<span class="sd">        QuantumVariable res</span>
 
 <span class="sd">    &gt;&gt;&gt; res.uncompute()</span>
 <span class="sd">    &gt;&gt;&gt; print(res.qs)</span>
-<span class="sd">    QuantumCircuit:</span>
-<span class="sd">    ---------------</span>
-<span class="sd">               ┌───────────┐┌──────────────┐</span>
-<span class="sd">    control.0: ┤0          ├┤0             ├</span>
-<span class="sd">               │           ││              │</span>
-<span class="sd">    control.1: ┤1 margolus ├┤1 margolus_dg ├</span>
-<span class="sd">               │           ││              │</span>
-<span class="sd">        res.0: ┤2          ├┤2             ├</span>
-<span class="sd">               └───────────┘└──────────────┘</span>
-<span class="sd">    Live QuantumVariables:</span>
-<span class="sd">    ----------------------</span>
-<span class="sd">    QuantumVariable control</span>
+<span class="sd">    </span>
+<span class="sd">    ::</span>
+<span class="sd">    </span>
+<span class="sd">        QuantumCircuit:</span>
+<span class="sd">        --------------</span>
+<span class="sd">                   ┌───────────┐┌──────────────┐</span>
+<span class="sd">        control.0: ┤0          ├┤0             ├</span>
+<span class="sd">                   │           ││              │</span>
+<span class="sd">        control.1: ┤1 margolus ├┤1 margolus_dg ├</span>
+<span class="sd">                   │           ││              │</span>
+<span class="sd">            res.0: ┤2          ├┤2             ├</span>
+<span class="sd">                   └───────────┘└──────────────┘</span>
+<span class="sd">        Live QuantumVariables:</span>
+<span class="sd">        ---------------------</span>
+<span class="sd">        QuantumVariable control</span>
 
 <span class="sd">    Note that we set the ``verify`` keyword to ``True`` in this example. In more complex</span>
 <span class="sd">    functions, involving many qubits this feature should only be used for bug-fixing on</span>
@@ -2089,9 +2249,265 @@ document.write(`
 
     <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">gate_wrap</span><span class="p">(</span><span class="n">permeability</span><span class="o">=</span><span class="s2">&quot;args&quot;</span><span class="p">,</span> <span class="n">is_qfree</span><span class="o">=</span><span class="kc">True</span><span class="p">)(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="t_depth_indicator"><a class="viewcode-back" href="../../../reference/Miscellaneous%20Functions/generated/qrisp.t_depth_indicator.html#qrisp.t_depth_indicator">[docs]</a><span class="k">def</span> <span class="nf">t_depth_indicator</span><span class="p">(</span><span class="n">op</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function returns the T-depth of an :ref:`Operation` object.</span>
+<span class="sd">    </span>
+<span class="sd">    According to `this paper &lt;https://arxiv.org/abs/1403.2975&gt;`_, the synthesis of an $RZ(\phi)$</span>
+<span class="sd">    up to precision $\epsilon$ requires $3\text{log}_2(\frac{1}{\epsilon})$ </span>
+<span class="sd">    T-gates.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    op : :ref:`Operation`</span>
+<span class="sd">        The operation, whose T-depth should be estimated.</span>
+<span class="sd">    epsilon : float</span>
+<span class="sd">        The precision of the RZ gate simulation.</span>
+
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">        The estimated T-depth of the Operation.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="kn">from</span> <span class="nn">qrisp</span> <span class="kn">import</span> <span class="n">ClControlledOperation</span>
+    
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">op</span><span class="p">,</span> <span class="n">ClControlledOperation</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">t_depth_indicator</span><span class="p">(</span><span class="n">op</span><span class="o">.</span><span class="n">base_op</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">op</span><span class="o">.</span><span class="n">definition</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">op</span><span class="o">.</span><span class="n">definition</span><span class="o">.</span><span class="n">t_depth</span><span class="p">(</span><span class="n">epsilon</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">op</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;cx&quot;</span><span class="p">,</span> <span class="s2">&quot;cx&quot;</span><span class="p">,</span> <span class="s2">&quot;cz&quot;</span><span class="p">,</span> <span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="s2">&quot;s&quot;</span><span class="p">,</span> <span class="s2">&quot;h&quot;</span><span class="p">,</span> <span class="s2">&quot;s_dg&quot;</span><span class="p">,</span> <span class="s2">&quot;measure&quot;</span><span class="p">,</span> <span class="s2">&quot;reset&quot;</span><span class="p">,</span> <span class="s2">&quot;qb_alloc&quot;</span><span class="p">,</span> <span class="s2">&quot;qb_dealloc&quot;</span><span class="p">,</span> <span class="s2">&quot;barrier&quot;</span><span class="p">,</span> <span class="s2">&quot;gphase&quot;</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="mi">0</span>
+    <span class="k">elif</span> <span class="n">op</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;rx&quot;</span><span class="p">,</span> <span class="s2">&quot;ry&quot;</span><span class="p">,</span> <span class="s2">&quot;rz&quot;</span><span class="p">,</span> <span class="s2">&quot;p&quot;</span><span class="p">]:</span>
+        <span class="n">par</span> <span class="o">=</span> <span class="n">op</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span><span class="o">%</span><span class="mi">1</span>
+        <span class="k">if</span> <span class="n">par</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="o">/</span><span class="mi">2</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+        <span class="k">elif</span> <span class="n">par</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">1</span><span class="o">/</span><span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="o">/</span><span class="mi">4</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">3</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">epsilon</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">op</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;t&quot;</span><span class="p">,</span> <span class="s2">&quot;t_dg&quot;</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="mi">1</span>
+    <span class="k">elif</span> <span class="n">op</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;u3&quot;</span><span class="p">:</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+            <span class="n">par</span> <span class="o">=</span> <span class="n">op</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span><span class="o">%</span><span class="mi">1</span>
+            <span class="k">if</span> <span class="n">par</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="o">/</span><span class="mi">2</span><span class="p">]:</span>
+                <span class="k">pass</span>
+            <span class="k">elif</span> <span class="n">par</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">1</span><span class="o">/</span><span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="o">/</span><span class="mi">4</span><span class="p">]:</span>
+                <span class="n">res</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">res</span> <span class="o">+=</span> <span class="mi">3</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">epsilon</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">res</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Gate </span><span class="si">{</span><span class="n">op</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> not implemented&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="cnot_depth_indicator"><a class="viewcode-back" href="../../../reference/Miscellaneous%20Functions/generated/qrisp.cnot_depth_indicator.html#qrisp.cnot_depth_indicator">[docs]</a><span class="k">def</span> <span class="nf">cnot_depth_indicator</span><span class="p">(</span><span class="n">op</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function returns the CNOT-depth of an :ref:`Operation` object.</span>
+<span class="sd">    </span>
+<span class="sd">    In NISQ-era devices, CNOT gates are the restricting bottleneck for quantum </span>
+<span class="sd">    circuit execution. This function can be used as a gate-speed specifier for</span>
+<span class="sd">    the :meth:`compile &lt;qrisp.QuantumSession.compile&gt;`_ method.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    op : :ref:`Operation`</span>
+<span class="sd">        The operation, whose CNOT-depth should be computed.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">        The CNOT-depth of the Operation.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="kn">from</span> <span class="nn">qrisp</span> <span class="kn">import</span> <span class="n">ClControlledOperation</span>
+    
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">op</span><span class="p">,</span> <span class="n">ClControlledOperation</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">cnot_depth_indicator</span><span class="p">(</span><span class="n">op</span><span class="o">.</span><span class="n">base_op</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">op</span><span class="o">.</span><span class="n">definition</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">op</span><span class="o">.</span><span class="n">definition</span><span class="o">.</span><span class="n">cnot_depth</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">op</span><span class="o">.</span><span class="n">num_qubits</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">0</span>
+    <span class="k">elif</span> <span class="n">op</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;cx&quot;</span><span class="p">,</span> <span class="s2">&quot;cx&quot;</span><span class="p">,</span> <span class="s2">&quot;cz&quot;</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="mi">1</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Gate </span><span class="si">{</span><span class="n">op</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> not implemented&quot;</span><span class="p">)</span></div>
+        
+<div class="viewcode-block" id="inpl_adder_test"><a class="viewcode-back" href="../../../reference/Miscellaneous%20Functions/generated/qrisp.inpl_adder_test.html#qrisp.inpl_adder_test">[docs]</a><span class="k">def</span> <span class="nf">inpl_adder_test</span><span class="p">(</span><span class="n">inpl_adder</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function runs tests on a desired inplace addition function.</span>
+<span class="sd">    An inplace addition function is a function mapping (a, b) to (a, a+b), </span>
+<span class="sd">    where a is a :ref:`QuantumVariable`, list[:ref:`Qubit`] or an integer</span>
+<span class="sd">    and b is either a :ref:`QuantumVariable` or a list[:ref:`Qubit`].</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    inpl_adder : callable</span>
+<span class="sd">        A quantum inplace addition function that can either act on single QuantumVariables or on lists of Qubits</span>
+<span class="sd">        by adding the first one to the second.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Bool:  </span>
+<span class="sd">        True if all tests are passed, else False/ Exceptions.</span>
+<span class="sd">        </span>
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    </span>
+<span class="sd">    We test the built-in Cuccaro adder:</span>
+<span class="sd">        </span>
+<span class="sd">    ::</span>
+<span class="sd">        </span>
+<span class="sd">        from qrisp import cuccaro_adder, inpl_adder_test</span>
+<span class="sd">        </span>
+<span class="sd">        inpl_adder_test(cuccaro_adder)</span>
+<span class="sd">        print(&quot;The cuccaro adder passed the tests without errors.&quot;)</span>
+<span class="sd">    </span>
+<span class="sd">    And now a new user-defined qcla adder:</span>
+<span class="sd">    ::</span>
+<span class="sd">        </span>
+<span class="sd">        from qrisp import inpl_adder_test, qcla</span>
+<span class="sd">        </span>
+<span class="sd">        qcla_2_0 = lambda x, y : qcla(x, y, radix_base = 2, radix_exponent = 0)</span>
+<span class="sd">        inpl_adder_test(qcla_2_0)</span>
+<span class="sd">        print(&quot;The qcla_2_0 adder passed the tests without errors.&quot;)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">qrisp</span> <span class="kn">import</span> <span class="n">QuantumFloat</span><span class="p">,</span> <span class="n">multi_measurement</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">control</span><span class="p">,</span> <span class="n">QuantumBool</span>
+    
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">7</span><span class="p">):</span>
+        
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">a</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="n">j</span><span class="p">)</span>
+            <span class="n">b</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+            <span class="n">c</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+            
+            <span class="n">h</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+            <span class="n">h</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+            
+            <span class="n">c</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">b</span>
+            
+            <span class="n">inpl_adder</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+            
+            <span class="n">statevector_arr</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span><span class="o">.</span><span class="n">statevector_array</span><span class="p">()</span>
+            <span class="n">angles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">angle</span><span class="p">(</span>
+                <span class="n">statevector_arr</span><span class="p">[</span>
+                    <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">statevector_arr</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">**</span> <span class="p">((</span><span class="n">a</span><span class="o">.</span><span class="n">size</span> <span class="o">+</span> <span class="n">b</span><span class="o">.</span><span class="n">size</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="p">]</span>
+            <span class="p">)</span>
+    
+            <span class="c1"># Test correct phase behavior</span>
+            <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">angles</span><span class="p">))</span> <span class="o">&lt;</span> <span class="mf">0.1</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Quantum-quantum adder produced a faulty phase shift on input sizes, </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">j</span><span class="si">}</span><span class="s2">.&quot;</span>
+            
+            
+            
+            <span class="n">mes_res</span> <span class="o">=</span> <span class="n">multi_measurement</span><span class="p">([</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">c</span><span class="p">])</span>
+            
+            <span class="k">for</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">mes_res</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="k">assert</span> <span class="p">(</span><span class="n">a</span> <span class="o">+</span> <span class="n">b</span><span class="p">)</span><span class="o">%</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="n">i</span><span class="p">)</span> <span class="o">==</span> <span class="n">c</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Quantum-quantum addition result was incorrect for input values </span><span class="si">{</span><span class="n">a</span><span class="si">}</span><span class="s2"> += </span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s2"> on input sizes, </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">j</span><span class="si">}</span><span class="s2">.&quot;</span>
+                
+            
+        
+        <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">6</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="o">**</span><span class="n">i</span><span class="p">):</span>
+                <span class="n">a</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                <span class="n">b</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                
+                <span class="n">h</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+                
+                <span class="n">b</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">a</span>
+                
+                <span class="n">inpl_adder</span><span class="p">(</span><span class="n">j</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span>
+                
+                <span class="n">statevector_arr</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span><span class="o">.</span><span class="n">statevector_array</span><span class="p">()</span>
+                <span class="n">angles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">angle</span><span class="p">(</span>
+                    <span class="n">statevector_arr</span><span class="p">[</span>
+                        <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">statevector_arr</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">**</span> <span class="p">((</span><span class="n">a</span><span class="o">.</span><span class="n">size</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+                    <span class="p">]</span>
+                <span class="p">)</span>
+                <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">angles</span><span class="p">))</span> <span class="o">&lt;</span> <span class="mf">0.1</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Classical-quantum adder produced a faulty phase shift on input size </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">.&quot;</span>
+                
+                <span class="n">mes_res</span> <span class="o">=</span> <span class="n">multi_measurement</span><span class="p">([</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">])</span>
+                
+                <span class="k">for</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">mes_res</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="k">assert</span> <span class="p">(</span><span class="n">b</span> <span class="o">+</span> <span class="n">j</span><span class="p">)</span><span class="o">%</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="n">i</span><span class="p">)</span> <span class="o">==</span> <span class="n">a</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Classical-quantum addition result was incorrect for input values </span><span class="si">{</span><span class="n">a</span><span class="si">}</span><span class="s2"> += </span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s2"> on input size </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">.&quot;</span>
+                    
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">7</span><span class="p">):</span>
+        
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">a</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="n">j</span><span class="p">)</span>
+            <span class="n">b</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+            <span class="n">c</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+            <span class="n">qbl</span> <span class="o">=</span> <span class="n">QuantumBool</span><span class="p">()</span>
+            
+            <span class="n">h</span><span class="p">(</span><span class="n">qbl</span><span class="p">)</span>
+            <span class="n">h</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+            <span class="n">h</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+            
+            <span class="n">c</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">b</span>
+            
+            <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">qbl</span><span class="p">):</span>
+                <span class="n">inpl_adder</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+                
+                
+            <span class="n">statevector_arr</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span><span class="o">.</span><span class="n">statevector_array</span><span class="p">()</span>
+            <span class="n">angles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">angle</span><span class="p">(</span>
+                <span class="n">statevector_arr</span><span class="p">[</span>
+                    <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">statevector_arr</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">**</span> <span class="p">((</span><span class="n">a</span><span class="o">.</span><span class="n">size</span><span class="o">+</span> <span class="n">b</span><span class="o">.</span><span class="n">size</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="p">]</span>
+            <span class="p">)</span>
+            <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">angles</span><span class="p">))</span> <span class="o">&lt;</span> <span class="mf">0.1</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Controlled quantum-quantum adder produced a faulty phase shift on input sizes, </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">j</span><span class="si">}</span><span class="s2">.&quot;</span>
+            
+            <span class="n">mes_res</span> <span class="o">=</span> <span class="n">multi_measurement</span><span class="p">([</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">c</span><span class="p">,</span> <span class="n">qbl</span><span class="p">])</span>
+            
+            <span class="k">for</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">qbl</span> <span class="ow">in</span> <span class="n">mes_res</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                
+                <span class="k">if</span> <span class="n">qbl</span><span class="p">:</span>
+                    <span class="k">assert</span> <span class="p">(</span><span class="n">a</span> <span class="o">+</span> <span class="n">b</span><span class="p">)</span><span class="o">%</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="n">i</span><span class="p">)</span> <span class="o">==</span> <span class="n">c</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Controlled quantum-quantum addition result was incorrect for input values </span><span class="si">{</span><span class="n">a</span><span class="si">}</span><span class="s2"> += </span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s2"> on input sizes, </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">j</span><span class="si">}</span><span class="s2">.&quot;</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">assert</span> <span class="n">c</span> <span class="o">==</span> <span class="n">b</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Controlled quantum-quantum addition behaviour was incorrect; an operation was performed without the control qubit in |1&gt; state.Faulty input sizes: </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">j</span><span class="si">}</span><span class="s2">&quot;</span>
+        
+        <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">6</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="o">**</span><span class="n">i</span><span class="p">):</span>
+                <span class="n">a</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                <span class="n">b</span> <span class="o">=</span> <span class="n">QuantumFloat</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                <span class="n">qbl</span> <span class="o">=</span> <span class="n">QuantumBool</span><span class="p">()</span>
+                
+                <span class="n">h</span><span class="p">(</span><span class="n">qbl</span><span class="p">)</span>
+                <span class="n">h</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+                
+                <span class="n">b</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">a</span>
+                
+                <span class="k">with</span> <span class="n">control</span><span class="p">(</span><span class="n">qbl</span><span class="p">):</span>
+                    <span class="n">inpl_adder</span><span class="p">(</span><span class="n">j</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span>
+                    
+                <span class="n">statevector_arr</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">qs</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span><span class="o">.</span><span class="n">statevector_array</span><span class="p">()</span>
+                <span class="n">angles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">angle</span><span class="p">(</span>
+                    <span class="n">statevector_arr</span><span class="p">[</span>
+                        <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">statevector_arr</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">**</span> <span class="p">((</span><span class="n">a</span><span class="o">.</span><span class="n">size</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+                    <span class="p">]</span>
+                <span class="p">)</span>    
+                <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">angles</span><span class="p">))</span> <span class="o">&lt;</span> <span class="mf">0.1</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Controlled classical-quantum adder produced a faulty phase shift on input size </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">.&quot;</span>
+                
+                
+                <span class="n">mes_res</span> <span class="o">=</span> <span class="n">multi_measurement</span><span class="p">([</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span> <span class="n">qbl</span><span class="p">])</span>
+                
+                <span class="k">for</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">qbl</span> <span class="ow">in</span> <span class="n">mes_res</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="k">if</span> <span class="n">qbl</span><span class="p">:</span>
+                        <span class="k">assert</span> <span class="p">(</span><span class="n">b</span> <span class="o">+</span> <span class="n">j</span><span class="p">)</span><span class="o">%</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="n">i</span><span class="p">)</span> <span class="o">==</span> <span class="n">a</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Controlled classical-quantum addition result was incorrect for input values </span><span class="si">{</span><span class="n">b</span><span class="si">}</span><span class="s2"> += </span><span class="si">{</span><span class="n">j</span><span class="si">}</span><span class="s2"> on input size, </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">.&quot;</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">assert</span> <span class="n">b</span> <span class="o">==</span> <span class="n">a</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Controlled classical-quantum addition behaviour was incorrect; an operation was performed without the control qubit in |1&gt; state. Faulty input sizes: </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span></div>
 </pre></div>
 
                 </article>
+              
+              
               
               
               
@@ -2112,6 +2528,20 @@ document.write(`
   </div>
 </div>
 
+  <div class="sidebar-secondary-item">
+<div class="related">
+  <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
+    <p>
+      <h2 style="font-size: 1.3em; margin-top: 0.9em;"></h2>
+      Enable interactive documentation via
+      <a href="https://thebe.readthedocs.io/en/stable/">Thebe.</a>
+    </p>
+    <button title="Start Kernel" class="thebelab-button thebe-launch-button" onclick="initThebe()" style="margin: 0 auto;">Start Kernel</button>
+    <p>
+  </div>
+</div>
+</div>
+
 </div></div>
               
             
@@ -2125,8 +2555,8 @@ document.write(`
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script src="../../../_static/scripts/bootstrap.js?digest=e353d410970836974a52"></script>
-<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52"></script>
+  <script src="../../../_static/scripts/bootstrap.js?digest=ac02cc09edc035673794"></script>
+<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=ac02cc09edc035673794"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -2144,7 +2574,7 @@ document.write(`
       
         <div class="footer-item">
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 6.2.1.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 4.5.0.
     <br/>
   </p>
 </div>
@@ -2152,10 +2582,11 @@ document.write(`
     </div>
   
   
+  
     <div class="footer-items__end">
       
         <div class="footer-item"><p class="theme-version">
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.13.4dev0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.14.1.
 </p></div>
       
     </div>

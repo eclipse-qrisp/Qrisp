@@ -3,7 +3,7 @@
 BackendClient
 ==============
 
-.. currentmodule:: qrisp.interface.thrift_interface
+.. currentmodule:: qrisp.interface.qunicorn
 .. autoclass:: BackendClient
 
 Methods
@@ -14,4 +14,3 @@ Methods
 
    BackendClient.__init__
    BackendClient.run
-   BackendClient.ping

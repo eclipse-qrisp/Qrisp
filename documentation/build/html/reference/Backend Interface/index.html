@@ -33,7 +33,7 @@
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/sphinx-thebe.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/custom03.css" />
   
   <!-- Pre-loaded scripts that we'll load fully later -->
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=ac02cc09edc035673794" />
@@ -60,7 +60,7 @@ const thebe_selector_output = "span.go"
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="BackendServer" href="BackendServer.html" />
-    <link rel="prev" title="Clbit" href="../Circuit%20Construction/Clbit.html" />
+    <link rel="prev" title="qrisp.quantum_network.QuantumNetworkSession.update" href="../Quantum%20Networks/generated/qrisp.quantum_network.QuantumNetworkSession.update.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="None"/>
   </head>
@@ -222,7 +222,7 @@ const thebe_selector_output = "span.go"
           
           
           
-          <a href="https://github.com/fraunhoferfokus/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square fa-lg" aria-hidden="true"></i></span>
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square fa-lg" aria-hidden="true"></i></span>
             <span class="sr-only">GitHub</span></a>
         </li>
 </ul></div>
@@ -329,7 +329,7 @@ const thebe_selector_output = "span.go"
           
           
           
-          <a href="https://github.com/fraunhoferfokus/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square fa-lg" aria-hidden="true"></i></span>
+          <a href="https://github.com/eclipse-qrisp/Qrisp" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-github-square fa-lg" aria-hidden="true"></i></span>
             <span class="sr-only">GitHub</span></a>
         </li>
 </ul></div>
@@ -366,17 +366,18 @@ const thebe_selector_output = "span.go"
 <li class="toctree-l1"><a class="reference internal" href="../Quantum%20Environments/index.html">Quantum Environments</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../Algorithms/index.html">Algorithms</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../Circuit%20Construction/index.html">Circuit Construction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Quantum%20Networks/index.html">Quantum Networks</a></li>
 <li class="toctree-l1 current active has-children"><a class="current reference internal" href="#">Backend Interface</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-1"><i class="fa-solid fa-chevron-down"></i></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="BackendServer.html">BackendServer</a></li>
 
 <li class="toctree-l2"><a class="reference internal" href="BackendClient.html">BackendClient</a></li>
 
+<li class="toctree-l2"><a class="reference internal" href="DockerBackend/index.html">Docker Backend</a></li>
 <li class="toctree-l2"><a class="reference internal" href="VirtualBackend.html">VirtualBackend</a></li>
 
 <li class="toctree-l2"><a class="reference internal" href="VirtualQiskitBackend.html">VirtualQiskitBackend</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="../Quantum%20Networks/index.html">Quantum Networks</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../Miscellaneous%20Functions/index.html">Miscellaneous Functions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../Examples/index.html">Examples</a></li>
 </ul>
@@ -452,9 +453,7 @@ optionally a string called <code class="docutils literal notranslate"><span clas
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">qrisp.interface</span> <span class="kn">import</span> <span class="n">BackendServer</span>
 <span class="kn">from</span> <span class="nn">backend_provider</span> <span class="kn">import</span> <span class="n">run_func</span><span class="p">,</span> <span class="n">ping_func</span>
 
-<span class="n">server</span> <span class="o">=</span> <span class="n">BackendServer</span><span class="p">(</span> <span class="n">run_func</span><span class="p">,</span>
-                        <span class="n">ping_func</span><span class="p">,</span>
-                        <span class="n">port</span> <span class="o">=</span> <span class="mi">8080</span><span class="p">)</span>
+<span class="n">server</span> <span class="o">=</span> <span class="n">BackendServer</span><span class="p">(</span> <span class="n">run_func</span><span class="p">,</span> <span class="n">port</span> <span class="o">=</span> <span class="mi">8080</span><span class="p">)</span>
 
 <span class="n">server</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
 </pre></div>
@@ -474,6 +473,13 @@ optionally a string called <code class="docutils literal notranslate"><span clas
 </pre></div>
 </div>
 <p>In this code snippet, we create connect a BackendClient, to the BackendServer running under the ip <code class="docutils literal notranslate"><span class="pre">server_ip</span></code> and <code class="docutils literal notranslate"><span class="pre">port</span></code>. Subsequently, we run some quantum algorithm returing a <a class="reference internal" href="../Core/QuantumVariable.html#quantumvariable"><span class="std std-ref">QuantumVariable</span></a> and call the <a class="reference internal" href="../Core/generated/qrisp.QuantumVariable.get_measurement.html#qrisp.QuantumVariable.get_measurement" title="qrisp.QuantumVariable.get_measurement"><code class="xref py py-meth docutils literal notranslate"><span class="pre">qrisp.QuantumVariable.get_measurement()</span></code></a> method, to query the remote backend.</p>
+</section>
+<section id="docker-backend">
+<h2><a class="reference internal" href="DockerBackend/index.html#dockerbackend"><span class="std std-ref">Docker Backend</span></a><a class="headerlink" href="#docker-backend" title="Permalink to this headline">#</a></h2>
+<p>This module describes the inbuilt Docker container to enable utilization of alternative simulation frameworks.
+It supports: Cirq (cirq.Simulator), MQT (ddsim qasm_simulator), Qiskit (Aer Backend), PyTket (AerBackend), Rigetti (numpy wavefunction simulator), Qulacs (sampler).</p>
+<p>This functionality is meant to be accessed via a Docker container. Appropriate setup should be conducted.
+This setup includes: Installation of Docker, building of the image provided in this repo, and starting the container built with the image. Specific steps/ info for utilization in this context is given below.</p>
 </section>
 <section id="virtualbackend">
 <h2><a class="reference internal" href="VirtualBackend.html#virtualbackend"><span class="std std-ref">VirtualBackend</span></a><a class="headerlink" href="#virtualbackend" title="Permalink to this headline">#</a></h2>
@@ -534,6 +540,7 @@ to use the (Python) infrastructure of any backend provider as a Qrisp backend.</
     <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#backendserver"><span class="xref std std-ref">BackendServer</span></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#backendclient"><span class="xref std std-ref">BackendClient</span></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#docker-backend"><span class="xref std std-ref">Docker Backend</span></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#virtualbackend"><span class="xref std std-ref">VirtualBackend</span></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#virtualqiskitbackend"><span class="xref std std-ref">VirtualQiskitBackend</span></a></li>
 </ul>

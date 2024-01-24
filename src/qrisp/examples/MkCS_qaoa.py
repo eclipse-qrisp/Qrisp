@@ -261,7 +261,7 @@ coloring_operator = create_coloring_operator(G)
 use_quantum_array = True
 
 # Define quantum argument as a QuantumArray of QuantumColors
-qarg = QuantumArray(qtype = QuantumColor(color_list, one_hot_enc = False), shape = num_nodes) 
+qarg = QuantumArray(qtype = QuantumColor(color_list, one_hot_enc = True), shape = num_nodes) 
 
 # Define the initial state, which is a random coloring of all nodes
 init_state = [random.choice(color_list) for _ in range(len(G))]
@@ -303,8 +303,8 @@ qaoa_backend = qrisp_sim
 import time
 
 # Creates a graph coloring problem instance using the information of the phase separator, mixer, and classical cost function
-# coloring_instance = QAOAProblem(coloring_operator, apply_XY_mixer, cl_cost_function) 
-coloring_instance = QAOAProblem(coloring_operator, RX_mixer, cl_cost_function) 
+coloring_instance = QAOAProblem(coloring_operator, apply_XY_mixer, cl_cost_function) 
+# coloring_instance = QAOAProblem(coloring_operator, RX_mixer, cl_cost_function) 
 
 # Sets the initial state to the one defined above. If no initial state is defined, it is automatically set to a superposition.
 coloring_instance.set_init_function(initial_state_mkcs) 

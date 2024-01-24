@@ -13,5 +13,6 @@ Methods
    :toctree: generated/
    
    QAOAProblem.run
-   QAOAProblem.set_init_function
+   QAOAProblem.train_function
+   QAOAProblem.compile_circuit
    QAOAProblem.benchmark

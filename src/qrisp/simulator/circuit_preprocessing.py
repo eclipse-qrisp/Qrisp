@@ -24,7 +24,8 @@ import threading
 import numpy as np
 from numba import njit
 
-from qrisp.circuit import Instruction, QuantumCircuit, transpile, Reset
+from qrisp.circuit import Instruction, QuantumCircuit, transpile, Reset, ClControlledOperation, CXGate, Operation, Measurement
+from qrisp.uncomputation.type_checker import is_permeable
 
 memory_bandwidth_penalty = 2
 
@@ -162,7 +163,6 @@ def find_group(int_qc, max_recursion_depth):
     grouping_options = find_grouping_options(int_qc, [], max_recursion_depth)
 
     int_qc.data = list(int_qc.data)
-    # print(len(grouping_options))
     return_index = np.argmax([gi.gain for gi in grouping_options])
 
     if grouping_options[return_index].gain > 0:
@@ -364,20 +364,22 @@ def optimal_grouping_recursion_parameter(qubit_amount):
 # U|0>|a> = exp(i*phi_0) |0> U_0 |a>
 # U|1>|b> = exp(i*phi_1) |0> U_1 |b>
 
+# Create disentangling operation
+disentangler = Operation("disentangle", num_qubits=1)
+disentangler.definition = QuantumCircuit(1)
+disentangler.permeability = {0: False}
+
 
 def insert_disentangling(qc):
     # This function checks for permeability on a given qubit
-    from qrisp import Instruction, Operation
     from qrisp.uncomputation import is_permeable
 
-    # Create disentangling operation
-    disentangler = Operation("disentangle", num_qubits=1)
-    disentangler.permeability = {0: False}
 
     # After all the operations have been performed on a qubit,
     # it can be reset without changing the statistics
     for i in range(len(qc.qubits)):
         qc.reset(qc.qubits[i])
+        pass
         # qc.append(disentangler, [qc.qubits[i]])
 
     # return qc
@@ -486,6 +488,8 @@ def count_measurements_and_treat_alloc(qc, insert_reset=True):
             qc.data.pop(i)
             if insert_reset:
                 qc.data.insert(i, Instruction(Reset(), qubits = instr.qubits))
+            else:
+                continue
 
         i += 1
     return counter
@@ -510,7 +514,7 @@ def qc_to_int_list(qc):
     for instr in qc.data:
         res_list.append(qb_set_to_int(instr.qubits, qc))
         if instr.op.name in ["measure", "reset", "disentangle"] or (
-            instr.op.name.find("c_if") != -1
+            isinstance(instr.op, ClControlledOperation)
         ):
             res_list[-1] *= -1
 
@@ -577,8 +581,7 @@ def binary_get_circuit_block_jitted(int_qc_list, qubits, n, established_indices)
         # If the instruction is non-unitary, no further instruction
         # on this qubit can be part of the group
         if instr_qubits < 0:
-            qubits = qubits & (((1 << n) - 1) ^ instr_qubits)
-            # qubits = qubits - instr_qubits
+            qubits = qubits & (((1 << n) - 1) ^ (-instr_qubits))
             continue
 
         # If the instruction qubits are part of the group qubits,
@@ -698,11 +701,13 @@ def average_group_size(qc):
 def extract_measurements(qc):
         
     qubits = list(qc.qubits)
+    clbits = list(qc.clbits)
     mes_list = []
     data = []
+    mes_dic = {}
     for instr in qc.data[::-1]:
         
-        if instr.op.name == "measure" and instr.qubits[0] in qubits:
+        if instr.op.name == "measure" and instr.qubits[0] in qubits and instr.clbits[0] in clbits:
             mes_list.append(instr)
         else:
             data.append(instr)
@@ -712,17 +717,134 @@ def extract_measurements(qc):
                 qubits.remove(qb)
             except:
                 pass
+        
+        for cb in instr.clbits:
+            try:
+                clbits.remove(cb)
+            except:
+                pass
     
-    qc.data = data[::-1]
     
-    return qc, mes_list
+    new_qc = qc.clearcopy()
+    
+    new_qc.data = data[::-1]
+    
+    return new_qc, mes_list
 
+
+def insert_multiverse_measurements(qc):
+    
+    new_data = []
+    new_measurements = []
+    
+    cb_to_qb_dic = {}
+    
+    data = list(qc.data)
+    while data:
+    # for i in range(len(qc.data)):
+        
+        instr = data.pop(0)
+        # instr = qc.data[i]
+        if instr.op.name == "measure":
+            meas_qubit = instr.qubits[0]
+            meas_clbit = instr.clbits[0]
+            
+            next_instr_is_reset = False
+            for j in range(len(data)):
+                if meas_qubit in data[j].qubits:
+                    
+                    if data[j].op.name == "reset":
+                        next_instr_is_reset = True
+                        data.pop(j)
+                        break
+                    elif not is_permeable(data[j].op, [data[j].qubits.index(meas_qubit)]):
+                        break
+                if meas_clbit in data[j].clbits and not isinstance(data[j], ClControlledOperation):
+                        break
+            else:
+                new_data.append(Instruction(disentangler, [meas_qubit]))
+                # new_measurements.append(instr)
+                new_measurements.append((instr.qubits[0], instr.clbits[0]))
+                continue
+            
+            qb = qc.add_qubit()
+            new_data.append(Instruction(CXGate(), instr.qubits + [qb]))
+            
+            if next_instr_is_reset:
+                new_data.append(Instruction(CXGate(), [qb] + instr.qubits))
+                new_data.append(Instruction(disentangler, [meas_qubit]))
+            
+            cb_to_qb_dic[instr.clbits[0]] = qb
+            
+            mes_instr = instr.copy()
+            mes_instr.qubits = [qb]
+            # new_measurements.append((qb, instr.clbits[0]))
+            # new_measurements.append(mes_instr)
+            
+        elif instr.op.name == "reset":
+            
+            meas_qubit = instr.qubits[0]
+            new_data.append(Instruction(disentangler, [meas_qubit]))
+            
+            for j in range(len(data)):
+                if meas_qubit in data[j].qubits:
+                    if not is_permeable(data[j].op, [data[j].qubits.index(meas_qubit)]):
+                        break
+            else:
+                continue
+            
+            qb = qc.add_qubit()
+            new_data.append(Instruction(CXGate(), instr.qubits + [qb]))
+            new_data.append(Instruction(CXGate(), [qb] + instr.qubits))
+            new_data.append(Instruction(disentangler, [qb]))
+        
+        elif isinstance(instr.op, ClControlledOperation):
+            
+            new_qubits = []
+            ctrl_state = instr.op.ctrl_state
+            control_qubits = []
+            for j in range(len(instr.clbits)):
+                
+                cb = instr.clbits[j]
+                
+                if cb not in cb_to_qb_dic:
+                    if ctrl_state[j] == "1":
+                        break
+                    else:
+                        qb = qc.add_qubit()
+                        new_qubits.append(qb)
+                        control_qubits.append(qb)
+                else:
+                    control_qubits.append(cb_to_qb_dic[cb])
+            else:
+                new_data.append(Instruction(instr.op.base_op.control(len(control_qubits), 
+                                                                     ctrl_state = ctrl_state), 
+                                            control_qubits + instr.qubits))
+            
+            for qb in control_qubits:
+                new_data.append(Instruction(disentangler, [qb]))
+        
+        else:
+            new_data.append(instr)
+        
+    
+    for cb, qb in cb_to_qb_dic.items():
+        new_measurements.append((qb, cb))
+        
+    new_measurements = list(set(new_measurements))
+    measurements = []
+    
+    for qb, cb in new_measurements:
+        measurements.append(Instruction(Measurement(), [qb], [cb]))
+    qc.data = new_data
+    
+    return qc, measurements
+            
 
 # Wrapping function for all preproccessing operations
 def circuit_preprocessor(qc):
-    # from qrisp.simulator.permutation_identification import group_pt_permutations
+    
     from qrisp.simulator import reorder_circuit
-
     if len(qc.data) == 0:
         return qc.copy()
 
@@ -735,5 +857,4 @@ def circuit_preprocessor(qc):
     else:
         qc = insert_disentangling(qc)
         qc = group_qc(qc)
-
     return reorder_circuit(qc, ["measure", "reset", "disentangle"])

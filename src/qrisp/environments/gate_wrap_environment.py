@@ -17,7 +17,7 @@
 """
 
 
-from qrisp.circuit import QuantumCircuit
+from qrisp.circuit import QuantumCircuit, QubitAlloc, QubitDealloc, XGate
 from qrisp.environments import QuantumEnvironment
 
 
@@ -165,10 +165,19 @@ class GateWrapEnvironment(QuantumEnvironment):
             )
             if instr.op.name == "qb_dealloc":
                 instr.qubits[0].allocated = True
-                dealloc_list.append(instr)
+                # dealloc_list.append(instr)
+                dealloc_list.append(instr.qubits[0])
                 continue
             if instr.op.name == "qb_alloc":
-                alloc_list.append(instr)
+                alloc_list.append(instr.qubits[0])
+                try:
+                    dealloc_list.remove(instr.qubits[0])
+                except ValueError:
+                    pass
+                continue
+                    
+                
+                
 
             qc.append(
                 instr.op,
@@ -190,8 +199,9 @@ class GateWrapEnvironment(QuantumEnvironment):
 
         gate = qc.to_gate(self.name)
 
-        for instr in alloc_list:
-            self.env_qs.append(instr)
+        alloc_list = list(set(alloc_list))
+        for qb in alloc_list:
+            self.env_qs.append(QubitAlloc(), qb)
 
         self.env_qs.append(
             gate,
@@ -200,6 +210,7 @@ class GateWrapEnvironment(QuantumEnvironment):
         )
         self.instruction = self.env_qs.data[-1]
 
-        for instr in dealloc_list:
-            self.env_qs.append(instr)
-            instr.qubits[0].allocated = False
+        dealloc_list = list(set(dealloc_list))
+        for qb in dealloc_list:
+            self.env_qs.append(QubitDealloc(), qb)
+            qb.allocated = False

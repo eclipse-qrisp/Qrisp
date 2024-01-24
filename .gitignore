@@ -10,3 +10,7 @@ __pycache__/
 /documentation/build/
 /src/qrisp.egg-info/
 .idea
+/docuenv/
+/eccvenv/
+/python311venv/
+/multiverseenv/

@@ -27,19 +27,120 @@ from numba import njit
 
 from qrisp.uncomputation.unqomp import dag_from_qc
 
+# The following code aims to represent quantum circuits as an array of integers.
+# The idea is here that in a 6 qubit quantum circuit, a gate that is executed 
+# on the qubits 1 and 3 is represented by the number 001010 = 5 (ie. the digits
+# with significance 2**1 and 2**3 are set to 1).
+# This construction might remove some of the information (ie. gate type or qubit order)
+# but allows efficient processing since, the quantum circuit can be given to numba
+# as a numpy array.
 
-def qb_set_to_int(qubits, qc):
-    res = 0
-    for qb in qubits:
-        res |= 1 << qc.qubits.index(qb)
+# Unfortunately, numpy integers can only represent 64 bit numbers. This means,
+# that this technique could only handle quantum circuits with up to 64 qubits.
+# We therefore SPLIT the number in the following way:
+# The qubits from 0 to 63 represented by a numpy int,
+# the qubits from 64 to 127 are represented by another numpy int,
+# the qubits from 128 to 255 are represented by another numpy int,
+# etc.
+# We therefore represent the quantum circuit with a two-index numpy array
+# where the first index indicates which gate is described and the second index
+# indicates what qubit range is meant.
+
+
+# This function receives the indices of the qubits of a gate and turns them into
+# the list according to the above construction. The parameter k indicates 
+# how many integers the result should contain.
+def split_integer(digit_list, k):
+    
+    digit_list.sort()
+    
+    if k <= 0:
+        raise ValueError("Parameter k must be greater than zero")
+
+    result = [0]*k
+    i = 0
+    for d in digit_list:
+        while d//64 > i:
+            i += 1
+        result[i] |= (1<<(d%64))
+        if result[i] >= 1<<64:
+            raise
+            
+    return result
+
+# This function receives a list of qubits and a quantum circuit and turns it into
+# a list according to the above construction
+def qb_set_to_int(qubits, index_dict):
+    qb_indices = [index_dict[qb] for qb in qubits]
+    return split_integer(qb_indices, int(np.ceil(len(index_dict)/64)))
+
+# This function reverses the split_integer function (usefull for debugging)
+def reverse_split(split_int, num_qubits):
+    
+    res = []
+    for i in range(num_qubits):
+        if not i%64:
+            current_partial_int = split_int.pop(0)
+        
+        if (current_partial_int) & (1<<(i%64)):
+            res.append(i)
+            
     return res
+
+# This function performs the parallelization. As described above, the idea is to
+# build up the DAG from the quantum circuit and determine a linearization, which
+# is in-turn used to achieve a more optimal quantum circuit.
+# The linearization is performed using a modified version of Kahn's algorithm.
+# This modification is informed about the depth of the circuit because of the above 
+# constructions.
+def parallelize_qc(qc, depth_indicator = None):
+    if len(qc.data) <= 1:
+        return qc.copy()
+    
+    if depth_indicator is None:
+        depth_indicator = lambda x : 1
+
+    dag = dag_from_qc(qc, remove_init_nodes=True)
+
+    sprs_mat = nx.to_scipy_sparse_array(dag, format="csr")
+
+    node_list = list(dag.nodes())
+    
+    # This list will contain the participating qubits of each gate in the above
+    # discussed representation
+    qubit_ints = []
+    
+    # This list will contain the depth of each gate, which can be specified via
+    # the depth indicator function.
+    depth_indicators = []
+    
+    index_dict = {qc.qubits[i] : i for i in range(len(qc.qubits))}
+    
+    for n in node_list:
+        qubit_ints.append(qb_set_to_int(n.instr.qubits, index_dict))
+        depth_indicators.append(depth_indicator(n.instr.op))
+    
+    # Convert to array
+    qubit_ints = np.array(qubit_ints, dtype = np.uint64)
+
+    # Execute topological sort
+    res = depth_sensitive_topological_sort_jitted(
+        sprs_mat.indices, sprs_mat.indptr, qubit_ints, num_qubits=qc.num_qubits(), depth_indicators = np.array(depth_indicators)
+    )
+
+    # Build new circuit
+    qc_new = qc.clearcopy()
+
+    for i in range(len(res)):
+        qc_new.append(node_list[res[i]].instr)
+
+    return qc_new
+
 
 
 # Kahns Algorithm based on
 # https://www.geeksforgeeks.org/topological-sorting-indegree-based-solution/
-
-
-def depth_sensitive_topological_sort(indices, indptr, int_qc, num_qubits):
+def depth_sensitive_topological_sort(indices, indptr, int_qc, num_qubits, depth_indicators):
     # Create a vector to store indegrees of all
     # vertices. Initialize all indegrees as 0.
     n = len(indptr) - 1
@@ -80,12 +181,15 @@ def depth_sensitive_topological_sort(indices, indptr, int_qc, num_qubits):
 
             qubits = int_qc[node]
 
-            depth_sum = 0
+            # Collect the depth of each participating qubit
+            depth_list = []
             for j in range(num_qubits):
-                if qubits & 1 << j:
-                    depth_sum += depths[j]
-
-            node_costs[i] = depth_sum
+                if qubits[j//64] & (1 << (j%64)):
+                    depth_list.append(depths[j])
+            
+            # If multiple gates have the same max depth, the faster ones should
+            # be executed first, because they might block other gates
+            node_costs[i] = np.max(np.array(depth_list)) + depth_indicators[node]/10**8
 
         u = queue.pop(np.argmin(node_costs))
 
@@ -95,13 +199,13 @@ def depth_sensitive_topological_sort(indices, indptr, int_qc, num_qubits):
         max_depth = 0
 
         for i in range(num_qubits):
-            if int_qc[u] & 1 << i:
+            if int_qc[u, i//64] & 1 << (i%64):
                 if depths[i] > max_depth:
                     max_depth = depths[i]
 
         for i in range(num_qubits):
-            if int_qc[u] & 1 << i:
-                depths[i] = max_depth + 1
+            if int_qc[u, i//64] & 1 << (i%64):
+                depths[i] = max_depth + depth_indicators[u]
 
         # Update in degree array
         for i in indices[indptr[u] : indptr[u + 1]]:
@@ -117,32 +221,3 @@ def depth_sensitive_topological_sort(indices, indptr, int_qc, num_qubits):
 depth_sensitive_topological_sort_jitted = njit(cache=True)(
     depth_sensitive_topological_sort
 )
-
-
-def reduce_depth(qc):
-    if len(qc.data) <= 1:
-        return qc.copy()
-
-    dag = dag_from_qc(qc, remove_init_nodes=True)
-
-    sprs_mat = nx.to_scipy_sparse_array(dag, format="csr")
-
-    node_list = list(dag.nodes())
-    qubit_ints = [qb_set_to_int(n.instr.qubits, qc) for n in node_list]
-
-    try:
-        qubit_ints = np.array(qubit_ints, dtype=np.int64)
-        res = depth_sensitive_topological_sort_jitted(
-            sprs_mat.indices, sprs_mat.indptr, qubit_ints, num_qubits=qc.num_qubits()
-        )
-    except OverflowError:
-        res = depth_sensitive_topological_sort(
-            sprs_mat.indices, sprs_mat.indptr, qubit_ints, num_qubits=qc.num_qubits()
-        )
-
-    qc_new = qc.clearcopy()
-
-    for i in range(len(res)):
-        qc_new.append(node_list[res[i]].instr)
-
-    return qc_new

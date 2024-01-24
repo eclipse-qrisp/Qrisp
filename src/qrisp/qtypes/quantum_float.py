@@ -20,19 +20,19 @@
 import numpy as np
 import sympy as sp
 
-from qrisp.arithmetic import (
-    eq,
-    geq,
-    gt,
-    inpl_mult,
-    leq,
-    lt,
-    neq,
-    polynomial_encoder,
-    q_mult,
-    sbp_add,
-    quantum_bit_shift,
-)
+# from qrisp.arithmetic import (
+#     eq,
+#     geq,
+#     gt,
+#     inpl_mult,
+#     leq,
+#     lt,
+#     neq,
+#     polynomial_encoder,
+#     q_mult,
+#     sbp_add,
+#     quantum_bit_shift,
+# )
 from qrisp.core import QuantumVariable
 from qrisp.misc import gate_wrap
 
@@ -385,6 +385,9 @@ class QuantumFloat(QuantumVariable):
 
     @gate_wrap(permeability="args", is_qfree=True)
     def __mul__(self, other):
+        
+        from qrisp.arithmetic import q_mult, polynomial_encoder
+        
         if isinstance(other, QuantumFloat):
             return q_mult(self, other)
         elif isinstance(other, int):
@@ -419,6 +422,9 @@ class QuantumFloat(QuantumVariable):
 
     @gate_wrap(permeability="args", is_qfree=True)
     def __add__(self, other):
+        
+        from qrisp.arithmetic import sbp_add
+        
         if isinstance(other, QuantumFloat):
             return sbp_add(self, other)
         elif isinstance(other, (int, float)):
@@ -497,6 +503,9 @@ class QuantumFloat(QuantumVariable):
 
     @gate_wrap(permeability=[1], is_qfree=True)
     def __iadd__(self, other):
+        
+        from qrisp.arithmetic import polynomial_encoder
+        
         if isinstance(other, QuantumFloat):
             input_qf_list = [other]
             poly = sp.symbols("x")
@@ -526,6 +535,9 @@ class QuantumFloat(QuantumVariable):
 
     @gate_wrap(permeability=[1], is_qfree=True)
     def __isub__(self, other):
+        
+        from qrisp.arithmetic import polynomial_encoder
+        
         if isinstance(other, QuantumFloat):
             input_qf_list = [other]
             poly = -sp.symbols("x")
@@ -555,6 +567,9 @@ class QuantumFloat(QuantumVariable):
 
     @gate_wrap(permeability=[], is_qfree=True)
     def __imul__(self, other):
+        
+        from qrisp.arithmetic import inpl_mult
+        
         inpl_mult(self, other)
 
         return self
@@ -568,36 +583,54 @@ class QuantumFloat(QuantumVariable):
         return self
 
     def __lt__(self, other):
+        
+        from qrisp.arithmetic import lt
+        
         if not isinstance(other, (QuantumFloat, int, float)):
             raise Exception(f"Comparison with type {type(other)} not implemented")
 
         return lt(self, other)
 
     def __gt__(self, other):
+        
+        from qrisp.arithmetic import gt
+        
         if not isinstance(other, (QuantumFloat, int, float)):
             raise Exception(f"Comparison with type {type(other)} not implemented")
 
         return gt(self, other)
 
     def __le__(self, other):
+        
+        from qrisp.arithmetic import leq
+        
         if not isinstance(other, (QuantumFloat, int, float)):
             raise Exception(f"Comparison with type {type(other)} not implemented")
 
         return leq(self, other)
 
     def __ge__(self, other):
+        
+        from qrisp.arithmetic import geq        
+        
         if not isinstance(other, (QuantumFloat, int, float)):
             raise Exception(f"Comparison with type {type(other)} not implemented")
 
         return geq(self, other)
 
     def __eq__(self, other):
+        
+        from qrisp.arithmetic import eq
+        
         if not isinstance(other, (QuantumFloat, int, float)):
             raise Exception(f"Comparison with type {type(other)} not implemented")
 
         return eq(self, other)
 
     def __ne__(self, other):
+        
+        from qrisp.arithmetic import neq
+        
         if not isinstance(other, (QuantumFloat, int, float)):
             raise Exception(f"Comparison with type {type(other)} not implemented")
 
@@ -696,7 +729,7 @@ class QuantumFloat(QuantumVariable):
         if self.signed:
             raise Exception(r'Tried to add sign to signed QuantumFloat')
 
-        self.extend(1, self.size - 1)
+        self.extend(1, self.size)
         self.mshape[1] -= 1
         self.msize -= 1
         self.signed = True
@@ -765,7 +798,7 @@ class QuantumFloat(QuantumVariable):
         )
 
     def incr(self, x=None):
-        from qrisp.arithmetic.incrementation import increment
+        from qrisp.arithmetic.adders.incrementation import increment
 
         if x is None:
             x = 2**self.exponent
@@ -947,7 +980,16 @@ class QuantumFloat(QuantumVariable):
         sqrt(2)*(|1>*|False> + |4>*|True>)/2
 
         """
+        
+        from qrisp.arithmetic import quantum_bit_shift
+        
         quantum_bit_shift(self, shift_amount)
+        
+    def duplicate(self, name=None, qs=None, init=False):
+        
+        res = QuantumVariable.duplicate(self, name, qs, init)
+        res.mshape = np.array(self.mshape)
+        return res
         
         
 

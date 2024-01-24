@@ -53,7 +53,7 @@ Minor Features
 * Implemented :meth:`cyclic_shift<qrisp.cyclic_shift>`.
 * Implemented :meth:`permute_iterable<qrisp.permute_iterable>`.
 * Implemented the :meth:`quantum_bit_shift<qrisp.QuantumFloat.quantum_bit_shift>` method for QuantumFloat.
-* Implemented the ``reduce_depth`` feature for :meth:`demux<qrisp.demux>`.
+* Implemented the ``parallelize_qc`` feature for :meth:`demux<qrisp.demux>`.
 * Implemented the ``invert`` feature for :ref:`ControlEnvironment`.
 * Implemented the :meth:`get_ev <qrisp.QuantumFloat.get_ev>` method to retrieve expectation values of QuantumFloats.
 * Gate application functions now also work on QuantumArrays.

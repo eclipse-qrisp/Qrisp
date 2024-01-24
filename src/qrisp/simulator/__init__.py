@@ -24,7 +24,6 @@ from qrisp.simulator.bi_arrays import (
     tensordot,
 )
 from qrisp.simulator.circuit_reordering import *
-from qrisp.simulator.impure_quantum_state import ImpureQuantumState
 from qrisp.simulator.quantum_state import QuantumState, TensorFactor
 from qrisp.simulator.simulator import *
 from qrisp.simulator.unitary_management import *

@@ -17,13 +17,16 @@
 """
 
 
-from qrisp import h, QuantumFloat, multi_measurement, auto_uncompute, QuantumBool, mcx
+from qrisp import h, QuantumFloat, multi_measurement, auto_uncompute, QuantumBool, mcx, cx
 from qrisp.quantum_backtracking import QuantumBacktrackingTree
 import numpy as np
 from sympy import nsimplify, Float
 
 def test_backtracking():
     
+    # This test is depracated (i.e., for previous implementation of backtracking). 
+    # In this example [1,1,1] is accepted and rejected and can be reached in the backtracking tree!
+    """
     @auto_uncompute    
     def P(tree):
         temp_0 = (tree.h == 0)
@@ -42,6 +45,35 @@ def test_backtracking():
     
     mes_res = res.get_measurement()
     
+    assert mes_res[0] < 0.25
+    """
+
+    # Reject states with two consecutive 0's or 1's in path
+    @auto_uncompute
+    def reject(tree):
+
+        reject_qbl = QuantumBool()
+        for i in range(tree.max_depth-1):
+            mcx([tree.h[i],tree.branch_qa[i],tree.branch_qa[i+1]],reject_qbl,ctrl_state="100")
+            mcx([tree.h[i],tree.branch_qa[i],tree.branch_qa[i+1]],reject_qbl)
+        return reject_qbl
+    
+    @auto_uncompute
+    def accept(tree):
+
+        height_condition = (tree.h == 0)
+
+        path_condition = QuantumBool()
+        mcx(tree.branch_qa[::-1], path_condition, ctrl_state = "001")
+
+        return height_condition & path_condition
+
+    tree = QuantumBacktrackingTree(max_depth = 3, branch_qv = QuantumFloat(1), accept = accept, reject = reject)
+    tree.init_node([])
+    qpe_res = tree.estimate_phase(precision = 4)
+
+    mes_res = qpe_res.get_measurement()
+
     assert mes_res[0] < 0.25
     
     

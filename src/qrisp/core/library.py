@@ -23,13 +23,11 @@ import qrisp.circuit.standard_operations as std_ops
 from qrisp.core import recursive_qs_search
 
 def append_operation(operation, qubits=[], clbits=[]):
+    from qrisp import find_qs
     
-    qs_list = recursive_qs_search([qubits, clbits])
-
-    if len(qs_list) == 0:
-        raise Exception("Could not find QuantumSession object to append operation")
-
-    qs_list[0].append(operation, qubits, clbits)
+    qs = find_qs(qubits)
+    
+    qs.append(operation, qubits, clbits)
 
 
 def cx(control, target):
@@ -146,35 +144,34 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
 
     The following methods are available:
 
-    * ``gray`` performs a gray code traversal which requires no ancillae 
-      but is rather inefficient for large numbers of control qubits.
     
-    * ``gray_pt`` and ``gray_pt_inv`` are more efficient but introduce extra 
-      phases that need to be uncomputed by performing the inverse of this gate 
-      on the same inputs. For more information on phase tolerance, check
-      `this paper <https://iopscience.iop.org/article/10.1088/2058-9565/acaf9d/meta>`_.
-    
-    * ``balauca`` is a method based on this `paper
-      <https://www.iccs-meeting.org/archive/iccs2022/papers/133530169.pdf>`_ with
-      logarithmic depth but requires many ancilla qubits.
-    
-    * ``maslov`` is documented `here <https://arxiv.org/abs/1508.03273>`_, requires less
-      ancilla qubits but is only available for 4 or less control qubits.
-    
-    * ``yong`` can be found int this `article
-      <https://link.springer.com/article/10.1007/s10773-017-3389-4>`_.This method requires
-      only a single ancilla and has moderate scaling in depth and gate count.
-    
-    * ``hybrid`` is a flexible method which combines the other available methods, such
-      that the amount of used ancillae is customizable. After several ``balauca``-layers,
-      the recursion is canceled by either a ``yong``, ``maslov`` or ``gray`` mcx,
-      depending on what fits the most.
-    
-    * ``auto`` recompiles the mcx gate at compile time using the hybrid algorithm
-      together with the information about how many clean/dirty ancillae qubits are
-      available. For more information check :meth:`qrisp.QuantumSession.compile`.
-    
-    
+    .. list-table::
+        :widths: 20 80
+        :header-rows: 1
+
+        *   - Method
+            - Description
+        *   - ``gray`` 
+            - Performs a gray code traversal which requires no ancillae but is rather inefficient for large numbers of control qubits.
+        *   - ``gray_pt``/``gray_pt_inv`` 
+            - More efficient but introduce extra phases that need to be uncomputed by performing the inverse of this gate on the same inputs. For more information on phase tolerance, check `this paper <https://iopscience.iop.org/article/10.1088/2058-9565/acaf9d/meta>`_.
+        *   - ``balauca`` 
+            - Method based on this `paper <https://www.iccs-meeting.org/archive/iccs2022/papers/133530169.pdf>`_ with logarithmic depth but requires many ancilla qubits.
+        *   - ``maslov``
+            - Documented `here <https://arxiv.org/abs/1508.03273>`_, requires less ancilla qubits but is only available for 4 or less control qubits.
+        *   - ``yong`` 
+            - Can be found int this `article <https://link.springer.com/article/10.1007/s10773-017-3389-4>`_.This method requires only a single ancilla and has moderate scaling in depth and gate count.
+        *   - ``amy``
+            - A Toffoli-circuit (ie. only two control qubits are possible), which (temporarily) requires one ancilla qubit. However, instead of the no-ancilla T-depth 4, this circuit achieves a T-depth of 2. Find the implementation details in `this paper <https://arxiv.org/pdf/1206.0758.pdf>`_.
+        *   - ``jones``
+            - Similar to ``amy`` but uses two ancilla qubits, and has a T-depth of 1. Read about it `here <https://arxiv.org/abs/1212.5069>`_.
+        *   - ``gidney``
+            - A very unique way for synthesizing a logical AND. The Gidney Logical AND performs a circuit with T-depth 1 to compute the truth value and performs another circuit involving a measurement and a classically controlled CZ gate for uncomputation. The uncomputation circuit has T-depth 0, such that the combined T-depth is 1. Requires no ancillae. More details `here <https://arxiv.org/abs/1709.06648>`_. Works only for two control qubits.
+        *   - ``hybrid``
+            - A flexible method which combines the other available methods, such that the amount of used ancillae is customizable. After several ``balauca``-layers, the recursion is canceled by either a ``yong``, ``maslov`` or ``gray`` mcx, depending on what fits the most.
+        *   - ``auto`` 
+            - Recompiles the mcx gate at compile time using the hybrid algorithm together with the information about how many clean/dirty ancillae qubits are available. For more information check :meth:`qrisp.QuantumSession.compile`.
+  
     .. note::
         Due to Qrisp's automatic qubit management, clean ancilla qubits are not as much
         of a sparse resource as one might think. Even though the ``balauca`` method
@@ -304,11 +301,172 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
     Depth:          621
     CNOT count:     264
     Qubit count:    12
+    
+    **Mid circuit measurement based methods**
+    
+    The ``gidney`` and ``jones`` method are unique in the way that they require
+    mid circuit measurements. The measurements are inserted retroactively by the 
+    :meth:`.compile <qrisp.QuantumSession.compile>` method, because immediate compilation
+    would prevent evaluation of the statevector (since a measurement is involved).
+    
+    Instead a tentative (measurement free) representative is inserted and replaced
+    at compile time.
+    
+    To get a better understanding consider the following script:
+        
+    >>> from qrisp import QuantumVariable, mcx
+    >>> control = QuantumVariable(2)
+    >>> target = QuantumVariable(1)
+    >>> mcx(control, target, method = "jones")
+    >>> print(control.qs)
+    QuantumCircuit:
+    ---------------
+                     ┌───────────────────────────┐
+          control.0: ┤0                          ├
+                     │                           │
+          control.1: ┤1                          ├
+                     │                           │
+           target.0: ┤2 uncompiled_jones_toffoli ├
+                     │                           │
+    jones_ancilla.0: ┤3                          ├
+                     │                           │
+    jones_ancilla.1: ┤4                          ├
+                     └───────────────────────────┘
+    Live QuantumVariables:
+    ----------------------
+    QuantumVariable control
+    QuantumVariable target    
+    
+    We see that there is no classical bit and therefore also no measurement.
+    The statevector can still be accessed:
+    
+    >>> print(control.qs.statevector())
+    |00>*|0>
+    
+    To introduce the measurement we simply call the :meth:`.compile <qrisp.QuantumSession.compile>` method
+    with the keyword ``compile_mcm = True``:
+        
+    >>> qc = control.qs.compile(compile_mcm = True)
+    >>> print(qc)
+                 ┌─────────────────────────┐
+      control.0: ┤0                        ├
+                 │                         │
+      control.1: ┤1                        ├
+                 │                         │
+       target.0: ┤2                        ├
+                 │  compiled_jones_toffoli │
+    workspace_0: ┤3                        ├
+                 │                         │
+    workspace_1: ┤4                        ├
+                 │                         │
+           cb_0: ╡0                        ╞
+                 └─────────────────────────┘
+                 
+    Because there is a measurement now, the statevector can no longer be accessed.
 
+    >>> qc.statevector_array()    
+    Exception: Unitary of operation measure not defined.
+    
+    However the T-depth went down by 50%:
+        
+    >>> print(qc.t_depth())
+    1
+    >>> print(control.qs.compile(compile_mcm = False).t_depth())
+    2
+    
+    A similar construction holds for the `Gidney's temporary logical AND <https://arxiv.org/abs/1709.06648>`_. 
+    However there are additional details: This technique always comes in pairs. A computation
+    and an uncomputation. The computation circuit has a T-depth of 1 and the uncomputation
+    circuit has a T-depth of 0. The uncomputation circuit however contains a measurement.
+    
+    As you can imagine, this measurement is also inserted at compile time.
+    
+    Even though both circuits are not the inverses of each other, Qrisp will use
+    the respective partner if called to invert:
+        
+    >>> control = QuantumVariable(2)
+    >>> target = QuantumVariable(1)
+    >>> mcx(control, target, method = "gidney")
+    >>> print(control.qs)
+    QuantumCircuit:
+    ---------------
+               ┌────────────────────────┐
+    control.0: ┤0                       ├
+               │                        │
+    control.1: ┤1 uncompiled_gidney_mcx ├
+               │                        │
+     target.0: ┤2                       ├
+               └────────────────────────┘
+    Live QuantumVariables:
+    ----------------------
+    QuantumVariable control
+    QuantumVariable target
+    
+    This even works in conjunction with the :ref:`uncomputation module <Uncomputation>`:
+        
+    >>> target.uncompute()
+    >>> print(target.qs)
+    QuantumCircuit:
+    ---------------
+               ┌────────────────────────┐┌────────────────────────────┐
+    control.0: ┤0                       ├┤0                           ├
+               │                        ││                            │
+    control.1: ┤1 uncompiled_gidney_mcx ├┤1 uncompiled_gidney_mcx_inv ├
+               │                        ││                            │
+     target.0: ┤2                       ├┤2                           ├
+               └────────────────────────┘└────────────────────────────┘
+    Live QuantumVariables:
+    ----------------------
+    QuantumVariable control
+
+    To introduce the measurement, we call the compile method.
+    
+    >>> print(target.qs.compile(compile_mcm = True))
+                 ┌──────────────────────┐┌──────────────────────────┐
+      control.0: ┤0                     ├┤0                         ├
+                 │                      ││                          │
+      control.1: ┤1 compiled_gidney_mcx ├┤1                         ├
+                 │                      ││  compiled_gidney_mcx_inv │
+    workspace_0: ┤2                     ├┤2                         ├
+                 └──────────────────────┘│                          │
+           cb_0: ════════════════════════╡0                         ╞
+                                         └──────────────────────────┘
+    
+    Apart from uncomputation, the inverted Gidney mcx can also be accessed via,
+    the :ref:`InversionEnvironment`:
+        
+    ::
+        
+        from qrisp import invert
+        
+        control = QuantumVariable(2)
+        target = QuantumVariable(1)
+        
+        with invert():
+            mcx(control, target, method = "gidney")
+            
+    
+    >>> print(control.qs)
+    QuantumCircuit:
+    ---------------
+               ┌────────────────────────────┐
+    control.0: ┤0                           ├
+               │                            │
+    control.1: ┤1 uncompiled_gidney_mcx_inv ├
+               │                            │
+     target.0: ┤2                           ├
+               └────────────────────────────┘
+    Live QuantumVariables:
+    ----------------------
+    QuantumVariable control
+    QuantumVariable target
+    
+    
     """
 
     from qrisp.circuit.quantum_circuit import convert_to_qb_list
     from qrisp.misc import bin_rep
+    from qrisp.mcx_algs import GidneyLogicalAND, amy_toffoli, jones_toffoli
 
     qubits_0 = convert_to_qb_list(controls)
     qubits_1 = convert_to_qb_list(target)
@@ -328,7 +486,7 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
             f"Given control state {ctrl_state} does not match control qubit amount {n}"
         )
 
-    from qrisp.misc.multi_cx import (
+    from qrisp.mcx_algs import (
         balauca_dirty,
         balauca_mcx,
         hybrid_mcx,
@@ -341,6 +499,23 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
             method = "gray"
         append_operation(
             std_ops.MCXGate(len(qubits_0), ctrl_state, method=method),
+            qubits_0 + qubits_1,
+        )
+    elif method == "gidney":
+        if len(qubits_0) != 2:
+            raise Exception(f"Tried to call Gidney logical AND with {len(qubits_0)} controls instead of two")
+        
+        append_operation(
+            GidneyLogicalAND(ctrl_state = ctrl_state),
+            qubits_0 + qubits_1,
+        )
+    
+    elif method == "gidney_inv":
+        if len(qubits_0) != 2:
+            raise Exception(f"Tried to call Gidney logical AND with {len(qubits_0)} controls instead of two")
+        
+        append_operation(
+            GidneyLogicalAND(ctrl_state = ctrl_state, inv = True),
             qubits_0 + qubits_1,
         )
 
@@ -366,7 +541,17 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
 
     elif method == "hybrid":
         hybrid_mcx(qubits_0, qubits_1, ctrl_state=ctrl_state, num_ancilla=num_ancilla)
-
+    
+    elif method == "amy":
+        if len(qubits_0) != 2:
+            raise Exception(f"Tried to call Amy MCX with {len(qubits_0)} controls instead of two")
+        amy_toffoli(qubits_0, qubits_1, ctrl_state = ctrl_state)
+    
+    elif method == "jones":
+        if len(qubits_0) != 2:
+            raise Exception(f"Tried to call Jones MCX with {len(qubits_0)} controls instead of two")
+        jones_toffoli(qubits_0, qubits_1, ctrl_state = ctrl_state)
+        
     elif method == "auto":
         # if n <= 3:
         #     return mcx(qubits_0, qubits_1, method = "gray", ctrl_state = ctrl_state)
@@ -441,12 +626,15 @@ def mcz(qubits, method="auto", ctrl_state=-1, num_ancilla=1):
         if ctrl_state[-1] == "0":
             x(qubits[-1])
 
-        append_operation(
-            std_ops.ZGate().control(
-                len(qubits) - 1, method=method, ctrl_state=ctrl_state[:-1]
-            ),
-            qubits,
-        )
+        if len(qubits) > 1:
+            append_operation(
+                std_ops.ZGate().control(
+                    len(qubits) - 1, method=method, ctrl_state=ctrl_state[:-1]
+                ),
+                qubits,
+            )
+        else:
+            z(qubits[0])
 
         if ctrl_state[-1] == "0":
             x(qubits[-1])
@@ -483,7 +671,7 @@ def mcp(phi, qubits, method="auto", ctrl_state=-1):
 
     """
 
-    from qrisp.misc.multi_cx import balauca_mcx
+    from qrisp.mcx_algs import balauca_mcx
     from qrisp.misc import bin_rep, gate_wrap
 
     @gate_wrap(permeability="full", is_qfree=True, name="anc supported mcp")
@@ -508,12 +696,12 @@ def mcp(phi, qubits, method="auto", ctrl_state=-1):
 
     n = len(qubits)
 
-    if method == "gray":
+    if method == "gray" or method == "gray_pt":
         if ctrl_state[-1] == "0":
             x(qubits[-1])
 
         append_operation(
-            std_ops.PGate(phi).control(n - 1, ctrl_state=ctrl_state[:-1]), qubits
+            std_ops.PGate(phi).control(n - 1, ctrl_state=ctrl_state[:-1], method = method), qubits
         )
 
         if ctrl_state[-1] == "0":
@@ -894,7 +1082,10 @@ def barrier(qubits):
         QuantumVariable qv
 
     """
-
+    from qrisp import Qubit
+    if isinstance(qubits, Qubit):
+        qubits = [qubits]
+    
     append_operation(std_ops.Barrier(len(qubits)), qubits)
 
     return qubits
@@ -932,7 +1123,7 @@ def id(qubits):
     return qubits
 
 
-def QFT_inner(qv, exec_swap=True, qiskit_endian=True, inplace_mult=1, use_gms=False):
+def QFT_inner(qv, exec_swap=True, qiskit_endian=True, inplace_mult=1, use_gms=False, inpl_adder = None):
     from qrisp.misc import is_inv
 
     qv = list(qv)
@@ -957,38 +1148,87 @@ def QFT_inner(qv, exec_swap=True, qiskit_endian=True, inplace_mult=1, use_gms=Fa
             "during Fourier-Transform"
         )
 
-    accumulated_phases = np.zeros(n)
-    for i in range(n):
-        if accumulated_phases[i] and not use_gms:
-            p(accumulated_phases[i], qv[i])
-            accumulated_phases[i] = 0
+
+    if inpl_adder is None:
+        accumulated_phases = np.zeros(n)
+        for i in range(n):
+            if accumulated_phases[i] and not use_gms:
+                p(accumulated_phases[i], qv[i])
+                accumulated_phases[i] = 0
+            
+            h(qv[i])
+    
+            if i == n - 1:
+                break
+    
+            with env():
+                for k in range(n - i - 1):
+                    # cp(inplace_mult * 2 * np.pi / 2 ** (k + 2), qv[k + i + 1], qv[i])
+                    
+                    if use_gms:
+                        cp(inplace_mult * 2 * np.pi / 2 ** (k + 2), qv[i], qv[k + i + 1])
+                    else:
+                        phase = inplace_mult * 2 * np.pi / 2 ** (k + 2)
+                        
+                        # cx(qv[k + i + 1], qv[i])
+                        # p(-phase/2, qv[i])
+                        # cx(qv[k + i + 1], qv[i])
+                        
+                        
+                        cx(qv[i], qv[k + i + 1])
+                        p(-phase/2, qv[k + i + 1])
+                        cx(qv[i], qv[k + i + 1])
+                        
+                        
+                        accumulated_phases[i] += phase/2
+                        accumulated_phases[k + i + 1] += phase/2
         
-        h(qv[i])
-
-        if i == n - 1:
-            break
-
-        with env():
-            for k in range(n - i - 1):
-                # cp(inplace_mult * 2 * np.pi / 2 ** (k + 2), qv[k + i + 1], qv[i])
+        
+                    
+        for i in range(n):
+            if accumulated_phases[i] and not use_gms:
+                p(accumulated_phases[i], qv[i])
+                accumulated_phases[i] = 0
                 
-                if use_gms:
-                    cp(inplace_mult * 2 * np.pi / 2 ** (k + 2), qv[i], qv[k + i + 1])
-                else:
-                    phase = inplace_mult * 2 * np.pi / 2 ** (k + 2)
-                    
-                    cx(qv[k + i + 1], qv[i])
-                    p(-phase/2, qv[i])
-                    cx(qv[k + i + 1], qv[i])
-                    
-                    
-                    accumulated_phases[i] += phase/2
-                    accumulated_phases[k + i + 1] += phase/2
+    else:
+        
+        from qrisp import QuantumFloat, conjugate
+        reservoir = QuantumFloat(n+1)
+        
+        def prepare_reservoir(reservoir):
+            n = len(reservoir)
+            h(reservoir)
+            for i in range(n):
+                p(np.pi*2**(i-n+1), reservoir[i])
+        
+        
+        with conjugate(prepare_reservoir)(reservoir):
+
+            for i in range(n):
                 
-    for i in range(n):
-        if accumulated_phases[i] and not use_gms:
-            p(accumulated_phases[i], qv[i])
-            accumulated_phases[i] = 0
+                h(qv[i])
+        
+                if i == n - 1:
+                    break
+        
+                phase_qubits = []
+                for k in range(n - i - 1):
+                    cx(qv[i], qv[k + i + 1])
+                    phase_qubits.append(qv[k + i + 1])
+                
+                inpl_adder(phase_qubits[::-1], reservoir[-len(phase_qubits)-2:])
+                    
+                for k in range(n - i - 1):
+                    cx(qv[i], qv[k + i + 1])
+                
+                x(reservoir)
+                inpl_adder(phase_qubits[::-1], reservoir[-len(phase_qubits)-2:])
+                x(reservoir)
+            
+            s(qv)
+            inpl_adder(qv, reservoir[-n-1:])
+        
+        reservoir.delete()
 
     if exec_swap:
         for i in range(n // 2):
@@ -998,7 +1238,7 @@ def QFT_inner(qv, exec_swap=True, qiskit_endian=True, inplace_mult=1, use_gms=Fa
 
 
 def QFT(
-    qv, inv=False, exec_swap=True, qiskit_endian=True, inplace_mult=1, use_gms=False
+    qv, inv=False, exec_swap=True, qiskit_endian=True, inplace_mult=1, use_gms=False, inpl_adder=None
 ):
     """
     Performs the quantum fourier transform on the input.
@@ -1021,6 +1261,9 @@ def QFT(
     use_gms : bool, optional
         If set to True, the QFT will be compiled using only GMS gates as entangling
         gates. The default is False.
+    inpl_adder : callable, optional
+        Uses an adder and a reservoir state to perform the QFT. Read more about 
+        it :ref:`here <adder_based_qft>`. The default is None
 
 
     """
@@ -1031,6 +1274,8 @@ def QFT(
         name += " no swap"
     if inplace_mult != 1:
         name += " inpl mult " + str(inplace_mult)
+    if inpl_adder is not None:
+        name += "_adder_supported"
 
     if inv:
         with invert():
@@ -1040,6 +1285,7 @@ def QFT(
                 qiskit_endian=qiskit_endian,
                 inplace_mult=inplace_mult,
                 use_gms=use_gms,
+                inpl_adder=inpl_adder
             )
     else:
         gate_wrap(permeability=[], is_qfree=False, name=name)(QFT_inner)(
@@ -1048,6 +1294,7 @@ def QFT(
             qiskit_endian=qiskit_endian,
             inplace_mult=inplace_mult,
             use_gms=use_gms,
+            inpl_adder=inpl_adder
         )
 
     return qv
@@ -1126,7 +1373,7 @@ def QPE(
     >>> res.qs.depth()
     66
 
-    During the phase estimation, ``U`` is called $2^{\\text{precision}}$ times. We can
+    During the phase estimation, ``U`` is called $2^{\text{precision}}$ times. We can
     reduce that number by abusing that we can bundle repeated calls into a single call
     with a modified phase. ::
 
@@ -1290,14 +1537,14 @@ def fredkin_qc(num_ctrl_qubits=1, ctrl_state=-1, method="gray"):
     mcx_gate = XGate().control().control(ctrl_state=ctrl_state, method=method)
 
     qc = QuantumCircuit(num_ctrl_qubits + 2)
-    qc.cx(-1, -2)
+    qc.cx(qc.qubits[-1], qc.qubits[-2])
     qc.append(mcx_gate, qc.qubits)
-    qc.cx(-1, -2)
+    qc.cx(qc.qubits[-1], qc.qubits[-2])
 
     return qc
 
 
-def demux(input, ctrl_qv, output=None, ctrl_method=None, permit_mismatching_size=False, reduce_depth = False):
+def demux(input, ctrl_qv, output=None, ctrl_method=None, permit_mismatching_size=False, parallelize_qc = False):
     """
     This functions allows moving an input value into an iterable output, where the
     position is specified by a ``QuantumFloat``. Demux is short for demultiplexer and
@@ -1329,7 +1576,7 @@ def demux(input, ctrl_qv, output=None, ctrl_method=None, permit_mismatching_size
     permit_mismatching_size : bool, optional
         If set to False, an exception will be raised, if the state-space dimension of
         `ctrl_qv`` is differing from the amount of outputs. The default is False.
-    reduce_depth : bool, optional
+    parallelize_qc : bool, optional
         If set to True, this option reduces (de)allocates additional qubits to
         reduce the depth. The default is False.
 
@@ -1439,7 +1686,7 @@ def demux(input, ctrl_qv, output=None, ctrl_method=None, permit_mismatching_size
 
     if n > 1:
         
-        if reduce_depth:
+        if parallelize_qc:
             demux_ancilla = QuantumVariable(len(ctrl_qv)-1)
             cx(ctrl_qv[:-1], demux_ancilla)
             ctrl_qubits = list(demux_ancilla)
@@ -1454,7 +1701,7 @@ def demux(input, ctrl_qv, output=None, ctrl_method=None, permit_mismatching_size
             output[: N // 2],
             ctrl_method=ctrl_method,
             permit_mismatching_size=permit_mismatching_size,
-            reduce_depth=reduce_depth
+            parallelize_qc=parallelize_qc
         )
         
         
@@ -1464,9 +1711,9 @@ def demux(input, ctrl_qv, output=None, ctrl_method=None, permit_mismatching_size
             output[N // 2 :],
             ctrl_method=ctrl_method,
             permit_mismatching_size=permit_mismatching_size,
-            reduce_depth=reduce_depth
+            parallelize_qc=parallelize_qc
         )
-        if reduce_depth:
+        if parallelize_qc:
             cx(ctrl_qv[:-1], demux_ancilla)
             demux_ancilla.delete()
         
@@ -1727,3 +1974,246 @@ def permute_iterable(iterable, perm):
     
     for c in cycles:
         cyclic_shift([iterable[i] for i in c], 1)
+
+
+def amplitude_amplification(args, state_function, oracle_function, kwargs_oracle={}, iter=1):
+    r"""
+    This method performs `quantum amplitude amplification <https://arxiv.org/abs/quant-ph/0005055>`_.
+
+    The problem of quantum amplitude amplification is described as follows:
+
+    * Given a unitary operator :math:`\mathcal{A}`, let :math:`\ket{\Psi}=\mathcal{A}\ket{0}`.
+    * Write :math:`\ket{\Psi}=\ket{\Psi_1}+\ket{\Psi_0}` as a superposition of the orthogonal good and bad components of :math:`\ket{\Psi}`.
+    * Enhance the probability :math:`a=\langle\Psi_1|\Psi_1\rangle` that a measurement of $\ket{\Psi}$ yields a good state.
+
+    Let $\theta_a\in [0,\pi/2]$ such that $\sin^2(\theta_a)=a$. Then the amplitude amplification operator $\mathcal Q$ acts as
+
+    .. math::
+
+        \mathcal Q^j\ket{\Psi}=\frac{1}{\sqrt{a}}\sin((2j+1)\theta_a)\ket{\Psi_1}+\frac{1}{\sqrt{1-a}}\cos((2j+1)\theta_a)\ket{\Psi_0}.
+
+    Therefore, after $m$ iterations the probability of measuring a good state is $\sin^2((2m+1)\theta_a)$. 
+    
+    Parameters
+    ----------
+
+    args : QuantumVariable or list[QuantumVariable]
+        The (list of) QuantumVariables which represent the state,
+        the amplitude amplification is performed on.
+    state_function : function
+        A Python function preparing the state $\ket{\Psi}$.
+        This function will receive the variables in the list ``args`` as arguments in the
+        course of this algorithm.
+    oracle_function : function
+        A Python function tagging the good state $\ket{\Psi_1}$.
+        This function will receive the variables in the list ``args`` as arguments in the
+        course of this algorithm.
+    kwargs_oracle : dict, optional
+        A dictionary containing keyword arguments for the oracle. The default is {}.
+    iter : int, optional
+        The amount of amplitude amplification iterations to perform. The default is 1.
+
+    Examples
+    --------
+
+    We define a function that prepares the state :math:`\ket{\Psi}=\cos(\frac{\pi}{16})\ket{0}+\sin(\frac{\pi}{16})\ket{1}`
+    and an oracle that tags the good state :math:`\ket{1}`. In this case, we have :math:`a=\sin^2(\frac{\pi}{16})\approx 0.19509`.
+     
+    ::
+
+        from qrisp import z, ry, QuantumBool, amplitude_amplification
+        import numpy as np
+
+        def state_function(qb):
+            ry(np.pi/8,qb)
+
+        def oracle_function(qb):   
+            z(qb)
+        
+        qb = QuantumBool()
+
+        state_function(qb)
+
+    >>> qb.qs.statevector(decimals=5)
+    0.98079∣False⟩+0.19509∣True⟩
+
+    We can enhance the probability of measuring the good state with amplitude amplification:
+
+    >>> amplitude_amplification([qb], state_function, oracle_function)
+    >>> qb.qs.statevector(decimals=5)
+    0.83147*|False> + 0.55557*|True> 
+
+    >>> amplitude_amplification([qb], state_function, oracle_function)
+    >>> qb.qs.statevector(decimals=5)
+    0.55557*|False> + 0.83147*|True> 
+
+    >>> amplitude_amplification([qb], state_function, oracle_function)
+    >>> qb.qs.statevector(decimals=5)
+    0.19509*|False> + 0.98079*|True>
+
+    """
+
+    from qrisp import merge, IterationEnvironment
+    from qrisp.grover import diffuser
+
+    merge(args)
+    qs = recursive_qs_search(args)[0]
+    with IterationEnvironment(qs, iter):
+        oracle_function(*args, **kwargs_oracle)
+        diffuser(args, state_function=state_function)
+
+
+def QAE(args, state_function, oracle_function, kwargs_oracle={}, precision=None, target=None):
+    r"""
+    This method implements the canonical quantum amplitude estimation (QAE) algorithm by `Brassard et al. <https://arxiv.org/abs/quant-ph/0005055>`_.
+
+    The problem of quantum amplitude estimation is described as follows:
+
+    * Given a unitary operator :math:`\mathcal{A}`, let :math:`\ket{\Psi}=\mathcal{A}\ket{0}`.
+    * Write :math:`\ket{\Psi}=\ket{\Psi_1}+\ket{\Psi_0}` as a superposition of the orthogonal good and bad components of :math:`\ket{\Psi}`.
+    * Find an estimate for :math:`a=\langle\Psi_1|\Psi_1\rangle`, the probability that a measurement of $\ket{\Psi}$ yields a good state.
+
+    Parameters
+    ----------
+    args : QuantumVariable or list[QuantumVariable]
+        The (list of) QuantumVariables which represent the state,
+        the quantum amplitude estimation is performed on.
+    state_function : function
+        A Python function preparing the state :math:`\ket{\Psi}`.
+        This function will receive the variables in the list ``args`` as arguments in the
+        course of this algorithm.
+    oracle_function : function
+        A Python function tagging the good state :math:`\ket{\Psi_1}`.
+        This function will receive the variables in the list ``args`` as arguments in the
+        course of this algorithm.
+    kwargs_oracle : dict, optional
+        A dictionary containing keyword arguments for the oracle. The default is {}.
+    precision : int, optional
+        The precision of the estimation. The default is None.
+    target : QuantumFloat, optional
+        A target QuantumFloat to perform the estimation into. The default is None.
+        If given neither a precision nor a target, an Exception will be raised.
+
+    Returns
+    -------
+    
+    res : QuantumFloat
+        A QuantumFloat encoding the angle :math:`\theta` as a fraction of :math:`\pi`,
+        such that :math:`\tilde{a}=\sin^2(\theta)` is an estimate for :math:`a`. 
+
+        More precisely, we have :math:`\theta=\pi\frac{y}{M}` for :math:`y\in\{0,\dotsc,M-1\}` and :math:`M=2^{\text{precision}}`.
+        After measurement, the estimate :math:`\tilde{a}=\sin^2(\theta)` satisfies
+
+        .. math::
+
+            |a-\tilde{a}|\leq\frac{2\pi}{M}+\frac{\pi^2}{M^2}
+
+        with probability of at least :math:`8/\pi^2`.
+
+    Examples
+    --------
+
+    We define a function that prepares the state :math:`\ket{\Psi}=\cos(\frac{\pi}{8})\ket{0}+\sin(\frac{\pi}{8})\ket{1}`
+    and an oracle that tags the good state :math:`\ket{1}`. In this case, we have :math:`a=\sin^2(\frac{\pi}{8})`.
+     
+    ::
+
+        from qrisp import z, ry, QuantumBool, QAE
+        import numpy as np
+
+        def state_function(qb):
+            ry(np.pi/4,qb)
+
+        def oracle_function(qb):   
+            z(qb)
+
+        qb = QuantumBool()
+
+        res = QAE([qb], state_function, oracle_function, precision=3)
+
+    >>> res.get_measurement()
+    {0.125: 0.5, 0.875: 0.5}
+
+    That is, after measurement we find $\theta=\frac{\pi}{8}$ or $\theta=\frac{7\pi}{8}$ with probability $\frac12$, respectively.
+    Therefore, we obtain the estimate $\tilde{a}=\sin^2(\frac{\pi}{8})$ or $\tilde{a}=\sin^2(\frac{7\pi}{8})$.
+    In this case, both results coincide with the exact value $a$.
+
+    
+    **Numerical integration**
+
+    
+    Here, we demonstarate how to use QAE for numerical integration. 
+
+    Consider a continuous function $f\colon[0,1]\rightarrow[0,1]$. We wish to evaluate
+
+    .. math::
+
+        A=\int_0^1f(x)\mathrm dx.
+
+    For this, we set up the corresponding ``state_function`` acting on the ``input_list``:
+
+    ::
+
+        from qrisp import QuantumFloat, QuantumBool, control, z, h, ry, QAE
+        import numpy as np
+
+        n = 6 
+        inp = QuantumFloat(n,-n)
+        tar = QuantumBool()
+        input_list = [inp, tar]
+
+    Here, $N=2^n$ is the number of sampling points the function $f$ is evaluated on. The ``state_function`` acts as
+
+    .. math::
+
+        \ket{0}\ket{0}\rightarrow\frac{1}{\sqrt{N}}\sum\limits_{x=0}^{N-1}\ket{x}\left(\sqrt{1-f(x/N)}\ket{0}+\sqrt{f(x/N)}\ket{1}\right).
+    
+    Then the probability of measuring $1$ in the target state ``tar`` is
+
+    .. math::
+
+            p(1)=\frac{1}{N}\sum\limits_{x=0}^{N-1}f(x/N),
+
+    which acts as an approximation for the value of the integral $A$.
+
+    The ``oracle_function``, therefore, tags the $\ket{1}$ state of the target state:
+
+    ::
+
+        def oracle_function(inp, tar):
+            z(tar)
+
+    For example, if $f(x)=\sin^2(x)$ the ``state_function`` can be implemented as follows:
+
+    ::
+
+        def state_function(inp, tar):
+            h(inp)
+    
+            N = 2**inp.size
+            for k in range(inp.size):
+                with control(inp[k]):
+                    ry(2**(k+1)/N,tar)
+
+    Finally, we apply QAE and obtain an estimate $a$ for the value of the integral $A=0.27268$.
+
+    ::
+
+        prec = 6
+        res = QAE(input_list, state_function, oracle_function, precision=prec)
+        meas_res = res.get_measurement()
+
+        theta = np.pi*max(meas_res, key=meas_res.get)
+        a = np.sin(theta)**2
+
+    >>> a
+    0.26430
+
+    """
+
+    state_function(*args)
+    res = QPE(args, amplitude_amplification, precision, target, iter_spec=True,
+                kwargs={'state_function':state_function, 'oracle_function':oracle_function, 'kwargs_oracle':kwargs_oracle})
+  
+    return res
+
