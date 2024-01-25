@@ -21,7 +21,7 @@ Try running the code on the website yourself and feel free to try the algorithm 
 As we will see in the next example, number 65 is easy to crack in terms of the private and public key pairings, which is used for encryption. However, the bacis principles of encryption remain the same even with using much greater numbers.
 
 A tale of encryption and decryption
-----------------------------------
+-----------------------------------
 
 Imagine a scenario where two characters, Alice and Bob, are trying to exchange a secure message. They decide to use RSA encryption, a popular method that uses the product of two prime numbers as a key. In this case, they choose 5 and 13 as their private keys, and 7 as one of the public keys.
 ::
@@ -46,7 +46,7 @@ He ran the command and simply smirked at the result and said "You've got that ri
 New adder, no problem
 ---------------------
 
-Stories like the one above are fun and exciting way to showcase the elegant approach of utilizing Eclipse Qrisp's high level structure. Learning from existing frameworks, however, it is also of utmost importance to ask ourselves the serious, hard hitting question of how to futureproof such an implementation. You asked the question, we got the answer - look under the hood and delve into the nitty-gritty.
+Stories like the one above are fun and exciting way to showcase the elegant approach of utilizing Eclipse Qrisp's high level structure. Learning from existing frameworks, however, it is also of utmost importance to ask ourselves the serious, hard hitting question of how to futureproof such an implementation. You've asked the question, we've got the answer - let's look under the hood and delve into the nitty-gritty!
 
 As elaborated on in the :ref:`Fault-Tolerant compilation tutorial <ft_compilation_shor>`, the Qrisp implementation of Shor's algorithm allows you to provide an arbitrary adder for the execution of the required arithmetic. With our Qrispy structure one can write ones own adder, or implement a shiny new one future research publications might bring, and test its performance claims.
 
@@ -60,7 +60,7 @@ As of right now, the following list of adders have been pre-implemented:
 
 * The :meth:`qcla <qrisp.qcla>` (`paper <https://arxiv.org/abs/2304.02921>`_) requires quite a lot of ancillae but has only logarithmic scaling when it comes to T-depth. It is faster than the Gidney adder for any input size larger than 7.
 
-Using a diffent adder is as easy as adding an inpl_adder keyword to the QuantumModulus variable. Literally!
+Using a diffent adder is as easy as adding an ``inpl_adder`` keyword to the :ref:`QuantumModulus <QuantumModulus>` variable. Literally!
 
 Let's provide an example of benchmarking the :meth:`gidney_adder <qrisp.gidney_adder>` and compare it to the :meth:`qcla <qrisp.qcla>` on the operation most relevant for Shor's algorithm: Controlled modular in-place multiplication.
 

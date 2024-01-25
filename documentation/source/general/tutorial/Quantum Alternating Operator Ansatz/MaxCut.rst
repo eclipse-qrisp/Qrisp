@@ -296,7 +296,7 @@ Again, since QAOA is probabilistic, every run returns different results. You can
     Approximation ratio:  0.8639683333333332
     Variance:  0.007950404719444411
 
-As we can see, the TQA initialization tends to return more consistently better approximation ratios. Feel free to play around with the :meth:`benchmark <qrisp.qaoa.QAOAProblem.benchmark>` method (or leave it running over night) to try and compare the two approaches further.
+As we can see, the TQA initialization tends to return better approximation ratios more consistently. Feel free to play around with the :meth:`benchmark <qrisp.qaoa.QAOAProblem.benchmark>` method (or leave it running over night) to try and compare the two approaches further.
 
 Summary and motivation
 ----------------------
