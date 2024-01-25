@@ -23,6 +23,7 @@ jobs:
           pip install pytest
           pip install -e ./
           pip install pennylane
+          pip install qiskit-aer
       - name: Test with pytest
         run: |
           pytest
