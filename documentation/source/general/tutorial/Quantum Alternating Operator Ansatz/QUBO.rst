@@ -6,9 +6,9 @@ QUBO as a QAOAProblem Problem Instance
 In this tutorial you’ll be guided through the process of defining a new phase separator to be used within the scope of the :ref:`Alternating Operator Ansatz <AOA>` focussed on solving various QUBO problems with only needing the QUBO matrix $Q$ as an input.
 QUBO, or `Quadratic Unconstrained Binary Optimization <https://en.wikipedia.org/wiki/Quadratic_unconstrained_binary_optimization>`_, is a type of problem that involves optimizing a quadratic function of binary variables.
 
-After first translating the QUBO Hamiltonian $H_C$ from the binary basis $x_i$​ to the state basis with the translation $x_i\rightarrow \frac{\mathbb{I}-Z_i}{2}$ we'll construct the phase separator unitary and run QAOA to solve the set partitioning problem.
+After first translating the QUBO Hamiltonian $H_C$ from the binary basis $x_i$​ to the state basis with the translation $x_i\rightarrow \frac{\mathbb{I}-Z_i}{2}$, we'll construct the phase separator unitary and run QAOA to solve the set partitioning problem.
 
-Not to get too ahed of ourselves with how to do it, let's first show how to solve a QUBO problem using Qrisp. To obtain the optimal solutions to a problem, we only need to know the QUBO matrix $Q$. In order to get familiar with that, we propose having a look at the `Tutorial on Formulating and Using QUBO Models <https://arxiv.org/abs/1811.11538>`_, which explains how to derive such a matrix $Q$. 
+Not to get too ahead of ourselves with how to do it, let's first show how to solve a QUBO problem using Qrisp. To obtain the optimal solutions to a problem, we only need to know the QUBO matrix $Q$. In order to get familiar with that, we propose having a look at the `Tutorial on Formulating and Using QUBO Models <https://arxiv.org/abs/1811.11538>`_, which explains how to derive such a matrix $Q$. 
 
 One can then simply minimize the cost function $\min C(x)=\min x^TQx$ for binary variables $x_i\in\{0,1\}$. This is done either by sending the QUBO matrix $Q$ to the annealer/quantum computer, which calculates and returns the bitstrings with corresponding values of $C(x)$. The lower the $C(x)$, the better the solution. In other words, we want to find the Hamiltonian $H_C|x\rangle=C(x)|x\rangle$.
 
@@ -16,7 +16,7 @@ Let's borrow the QUBO matrix (explained in depth in the above mentioned `tutoria
 
 $$Q = \\begin{pmatrix}-17&10&10&10&0&20\\\\10&-18&10&10&10&20\\\\10&10&-29&10&20&20\\\\10&10&10&-19&10&10\\\\0&10&20&10&-17&10\\\\20&20&20&10&10&-28\\end{pmatrix}$$
 
-Usually, QUBO matrices are upper triangular (by convention) - this means, that only elements above the diagonal (with the diagonal included) are not equal to zero. This is because in QUBO, the variables are binary, which results in the identity $q_iq_j=q_jq_i$ for binary variables. Because of this, the elements above the diagonal are doubled compared to the symmetrized version of $Q$ we wrote down above.
+Usually, QUBO matrices are upper triangular (by convention) - this means that only elements above the diagonal (with the diagonal included) are not equal to zero. This is because the variables in QUBO problems are binary, which results in the identity $q_iq_j=q_jq_i$ for binary variables. Because of this, the elements above the diagonal are doubled compared to the symmetrized version of $Q$ we wrote down above.
 
 Of course it's easy to go from the conventional QUBO $Q_{\text{up}\Delta}$ formulation to the symmetrized $Q_\text{sym}$ QUBO: $Q_\text{sym}=\frac{1}{2}\big(Q_{\text{up}\Delta}+Q_{\text{up}\Delta}^T\big)$, and back:
 ::
@@ -65,12 +65,12 @@ Swapping the indices $i$ and $j$ in the last sum, and using the identity $Z_iZ_i
 
 $$\\begin{align}\\begin{split}H_C&=\\frac{1}{4}\\sum_{i\\neq j}Q_{ij}Z_iZ_j-\\frac{1}{4}\\sum_{i=1}^n\\sum_{j=1}^n(Q_{ij}+Q_{ji})Z_i&+\\frac{1}{4}\\sum_{i,j=1}^nQ_{ij}+\\frac{1}{4}\\sum_{i=1}^nQ_{ii}\\end{split}\\end{align}$$
 
-Note that for each single $Z_i$ we sum the $i$th row and the $i$th column of the matrix $Q$. 
+Note that for each single $Z_i$ we sum the $i$-th row and the $i$-th column of the matrix $Q$. 
 
 
 For the cost operator $U_C$, which we feed into ``QAOAProblem``, we get
 
-$$\\begin{align}\\begin{split}U_C=e^{-i\\gamma H_C}\&=\\prod_{i,j=1}^nR_{Z_iZ_j}\\Bigg(\\frac{\\gamma}{2}Q_{ij}\\Bigg)\\times\\prod_{i=1}^nR_{Z_i}\\Bigg(-\\frac{\\gamma}{2}\\bigg(\\sum_{j=1}^n(Q_{ij}+Q_{ji})\\bigg)\\Bigg)\\\\&=\\times\\exp\\Bigg(-\\frac{i\\gamma}{4}\\sum_{i,j=1}^nQ_{ij}-\\frac{i\\gamma}{4}\\sum_{i=1}^nQ_{ii}\\Bigg)\\end{split}\\end{align}$$
+$$\\begin{align}\\begin{split}U_C=e^{-i\\gamma H_C}=\&\\prod_{i,j=1}^nR_{Z_iZ_j}\\Bigg(\\frac{\\gamma}{2}Q_{ij}\\Bigg)\\times\\prod_{i=1}^nR_{Z_i}\\Bigg(-\\frac{\\gamma}{2}\\bigg(\\sum_{j=1}^n(Q_{ij}+Q_{ji})\\bigg)\\Bigg)\\\\&\\times\\exp\\Bigg(-\\frac{i\\gamma}{4}\\sum_{i,j=1}^nQ_{ij}-\\frac{i\\gamma}{4}\\sum_{i=1}^nQ_{ii}\\Bigg)\\end{split}\\end{align}$$
 
 Here, the last factor correspods to a global phase.
 
@@ -121,12 +121,12 @@ Like we did for :ref:`MaxCut <MaxCutQAOA>` and :ref:`M$\\kappa$CS <MkCSQAOA>` we
     
         return QAOAProblem(create_QUBO_cost_operator(Q), RX_mixer, create_QUBO_cl_cost_function(Q),init_type=init_type)
 
-That's it for the necessary ingredients you learned about in the :ref:`QAOA theory 101 section <QAOA101>`! Let's solve the set partitioning problem from above using this newly acquired information, and combine with how we already ran the QAOA algorithm using the ``.run`` method:
+That's it for the necessary ingredients you learned about in the :ref:`QAOA theory 101 section <QAOA101>`! Let's solve the set partitioning problem from above using this newly acquired information, and combine with how we already ran the QAOA algorithm using the :meth:`run <qrisp.qaoa.QAOAProblem.run>` method:
 
 - define the QUBO matrix $Q$,
-- define the quantum argument `qarg` as a :ref:`QuantumArray <QuantumArray>` of :ref:`QuantumVariables <QuantumVariable>`,
-- create the QUBO instance using `QUBO_problem` we defined above,
-- run the algorithm using the `.run method <file:///C:/Users/mat70593/Desktop/qrisp_gitlab/qrisp/documentation/build/html/reference/Algorithms/qaoa/generated/qrisp.qaoa.QAOAProblem.run.html#qrisp.qaoa.QAOAProblem.run>`_, and last but not least,
+- define the quantum argument ``qarg`` as a :ref:`QuantumArray <QuantumArray>` of :ref:`QuantumVariables <QuantumVariable>`,
+- create the QUBO instance using ``QUBO_problem`` we defined above,
+- run the algorithm using the :meth:`run <qrisp.qaoa.QAOAProblem.run>` method, and last but not least,
 - examine the QAOA solutions with the highest probabilities for classical post processing: compute the cost functions, sort the solutions by their cost in ascending order, and print the solutions with their costs.
 
 These are exactly the pieces in the mosaic of code that ``solve_QUBO`` consists of and performs: 
