@@ -17,7 +17,6 @@
 """
 
 
-from qrisp.arithmetic.adders.qcla.quantum_quantum import *
-from qrisp.arithmetic.adders.qcla.classical_quantum import *
-
-from qrisp.arithmetic.adders.qcla.wrapper_function import qcla
+from qrisp.arithmetic.adders.qcla.quantum_quantum.qq_carry_path import *
+from qrisp.arithmetic.adders.qcla.quantum_quantum.qq_sum_path import *
+from qrisp.arithmetic.adders.qcla.quantum_quantum.qq_qcla_adder import *
