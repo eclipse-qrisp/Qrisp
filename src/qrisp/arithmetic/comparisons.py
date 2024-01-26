@@ -18,7 +18,7 @@
 
 
 from qrisp.misc.utility import lifted
-from qrisp.environments import adaptive_condition
+from qrisp.environments import adaptive_condition, conjugate
 
 
 def less_than_gate(a, b):
@@ -226,17 +226,17 @@ def equal(qf_0, qf_1):
             significance_dict[qf_0.exponent + i] = qf_0[i]
             mcx_qubits.append(qf_0[i])
 
+        def conjugator(qf_1, significance_dict):
+            for i in range(qf_1.msize):
+                if i + qf_1.exponent in significance_dict:
+                    cx(qf_1[i], significance_dict[i + qf_1.exponent])
+
         for i in range(qf_1.msize):
-            if i + qf_1.exponent in significance_dict:
-                cx(qf_1[i], significance_dict[i + qf_1.exponent])
-            else:
+            if i + qf_1.exponent not in significance_dict:
                 mcx_qubits.append(qf_1[i])
 
-        mcx(mcx_qubits, eq_qbl, ctrl_state=0)
-
-        for i in range(qf_1.msize):
-            if i + qf_1.exponent in significance_dict:
-                cx(qf_1[i], significance_dict[i + qf_1.exponent])
+        with conjugate(conjugator)(qf_1, significance_dict):
+            mcx(mcx_qubits, eq_qbl, ctrl_state=0)
 
         if qf_1.signed and qf_0.signed:
             cx(qf_1.sign(), qf_0.sign())
