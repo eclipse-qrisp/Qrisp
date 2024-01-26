@@ -14,16 +14,19 @@ This tutorial aims to demystify the intricacies of Shor's Algorithm by leveragin
 * `Tutorial paper <https://arxiv.org/pdf/quant-ph/0303175.pdf>`_
 * `Original paper <https://arxiv.org/abs/quant-ph/9508027>`_
 
-Our presentation below will follow the one given by the textbook from Nielsen & Chuang.
+Our presentation of the theory below will follow the one given by the textbook from Nielsen & Chuang. 
+
+
+The implementation that you find below is with 11 lines of quantum code not only relatively simple but also one of the :ref:`most efficient <shor_benchmark_plot>` that you can find (you don't find many!).
 
 The general idea
 ----------------
 
-Given the number to factorize $N \in \mathbb{N}$, the first step of Shor's algorithm is to find the `order <https://en.wikipedia.org/wiki/Multiplicative_order>`_ $r$ of a random number $a \in \mathbb{Z}/\mathbb{Z}_N$. Here,
+Given the number to factorize $N \in \mathbb{N}$, the first step of Shor's algorithm is to find the `order <https://en.wikipedia.org/wiki/Multiplicative_order>`_ $r$ of a random number $a \in \mathbb{Z}/N\mathbb{Z}$. Here,
 
 * $a$ is a random number $<N$, which is coprime to $N$ i.e., $\text{GCD}(a, N) = 1$ (otherwise $\text{GCD}(a, N)$ is a factor and we are done already).
 * $r$ is the order of $a$ i.e. a number such that $a^r = 1(\text{mod} N)$.
-* $a \in \mathbb{Z}/\mathbb{Z}_N$ is the `Quotient Ring <https://en.wikipedia.org/wiki/Quotient_ring>`_ of integers modulo $N$.
+* $a \in \mathbb{Z}/N\mathbb{Z}$ is the `Quotient Ring <https://en.wikipedia.org/wiki/Quotient_ring>`_ of integers modulo $N$.
 
 Assume now, that for a given classical number $x$, we have access to an operator $U_x$, which acts as
 
@@ -67,7 +70,6 @@ is preparing a superposition of different $\ket{u_s}$.
     \frac{1}{\sqrt{r}}\sum_{s = 0}^{r-1} \ket{u_s} = \ket{1}
     
 To get an intuition about this equation, it can be helpful to view the mapping $\ket{s} \rightarrow \ket{u_s}$ as the generalized quantum fourier transform over $\mathbb{F}_N$ (the regular $n$ qubit QFT would be $N = 2^n$). If you believe us that this Fourier transform is it's own inverse (maybe up to some signs), then the above equation should be no problem to understand. Otherwise feel free to investigate using one of the mentioned resources.
-.. TODO: ein bisschen an der Formulierung feilen (sbo)
 
 To commence with our factoring problem we now apply quantum phase estimation to $\ket{1}$.
 
@@ -218,4 +220,4 @@ To highlight once more how much Qrisp simplifies the construction, we summarize 
 
 11 lines - feel free to compare with other implementations!
 
-To learn how to compile this algorithm optimized for Fault-tolerant backends and deploy an exponentially faster adder, make sure to check out :ref:`the next tutorial<ft_compilation>`!
+To learn how to compile this algorithm optimized for fault-tolerant backends and deploy an exponentially faster adder, make sure to check out :ref:`the next tutorial<ft_compilation>`!

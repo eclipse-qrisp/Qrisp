@@ -1,0 +1,16 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.pyc
+*.egg-info/
+*.eggs
+*.DS_Store
+
+/build/
+/dist/
+/documentation/build/
+/src/qrisp.egg-info/
+.idea
+/docuenv/
+/eccvenv/
+/python311venv/
+/multiverseenv/

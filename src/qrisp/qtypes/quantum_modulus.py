@@ -106,7 +106,7 @@ class QuantumModulus(QuantumFloat):
     The quantum version of this algorithm can be found in `this paper <https://arxiv.org/abs/1801.01081>`_.
     The idea behind Montgomery reduction is to choose a differing representation of numbers to enhance
     the reduction step of modular arithmetic. This representation works as follows:
-    For an integer $m$ called Montgomery shift, the modular number $a \in \mathbb{Z}/\mathbb{Z}_N$ is represented as
+    For an integer $m$ called Montgomery shift, the modular number $a \in \mathbb{Z}/N\mathbb{Z}$ is represented as
     
     .. math::
         

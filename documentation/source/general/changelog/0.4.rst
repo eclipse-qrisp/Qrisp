@@ -17,11 +17,12 @@ With 0.4 we integrated the infrastructure to facility the implementation and com
 
 As we found out, implementations of Shor's algorithm that are able to return a QuantumCircuit in a finite amount of time are an extremely rare sight. After some searching, we could find `some <https://github.com/RevanthK/ShorsAlgorithmIBMQiskit>`_ `competitors <https://qiskit.org/documentation/stable/0.28/tutorials/algorithms/08_factorizers.html#:~:text=Shor's%20Factoring%20algorithm%20is%20one,N%20%3D%2015%20backend%20%3D%20Aer.>`_ for a benchmark:
 
+.. _shor_benchmark_plot:
 |
 
 .. image:: 04_shor_plot.svg
     
-This demonstrates how powerful the Qrisp version is compared to other compilers/implementations. The values for the T-depth and T-count are averaged over several choices of $a$ per $N$. Both values are computed under the (extremely optimistic) assumption that parametrized phase gates can be executed in unit time and unit cost. Without this assumption the Qrisp implementation brings a speed-up of almost 3 orders of magnitude!
+This demonstrates how powerful the Qrisp version is compared to other compilers/implementations. The presented values for the are averaged over several choices of $a$ per $N$. T-depth and T-count are computed under the (extremely optimistic) assumption that parametrized phase gates can be executed in unit time and unit cost. Without this assumption the Qrisp implementation brings a speed-up of almost 3 orders of magnitude!
 
 
 Compiler upgrades
