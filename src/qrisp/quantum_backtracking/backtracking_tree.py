@@ -703,8 +703,16 @@ class QuantumBacktrackingTree:
         # into a temporary container. This way the branching information is 0.
 
         # Check if |x> is root.
-        is_root = QuantumBool()
-        cx(self.h[self.max_depth],is_root)
+        
+        
+        # This
+        if self.max_depth%2 == even:
+            cx(self.h[self.max_depth],oddity_qbl)
+        
+        # Instead of this
+        
+        # is_root = QuantumBool()
+        # cx(self.h[self.max_depth],is_root)
         
         temporary_container = self.branch_qa.qtype.duplicate()
 
@@ -730,8 +738,8 @@ class QuantumBacktrackingTree:
         ctrl_state += "0"
 
         # Check if |x> is root. Otherwise, if the reject funtions returns "True" on the lift of the root a wrong phase (-1) may be applied to the root.
-        mcz_list.append(is_root)
-        ctrl_state += "0"
+        # mcz_list.append(is_root)
+        # ctrl_state += "0"
         
 
         # Add extra controls
