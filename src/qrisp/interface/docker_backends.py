@@ -17,8 +17,32 @@
 """
 
 
-from qrisp.interface.qunicorn import *
-from qrisp.interface.backends import *
-from qrisp.interface.circuit_converter import *
-from qrisp.interface.thrift_interface import PortableQubit, PortableQuantumCircuit, PortableClbit, PortableOperation, PortableInstruction
-from qrisp.interface.docker_backends import *
+from qrisp.interface import BackendClient
+
+api_endpoint = "127.0.0.1"
+
+def CirqSim():
+    return BackendClient(api_endpoint, port = 8083)
+
+def PennylaneSim():
+    return BackendClient(api_endpoint, port = 8084)
+    
+def MQTSim():
+    return BackendClient(api_endpoint, port = 8085)
+
+def PennylaneRigettiSim():
+    return BackendClient(api_endpoint, port = 8086)
+
+def PyTketStimSim():
+    return BackendClient(api_endpoint, port = 8087)
+
+def QulacsSim():
+    return BackendClient(api_endpoint, port = 8088)
+
+def QSimCirq():
+    return BackendClient(api_endpoint, port = 8089)
+    
+def QiboSim():
+    return BackendClient(api_endpoint, port = 8090)
+
+    
