@@ -148,6 +148,8 @@ def shors_alg(N, inpl_adder = None, mes_kwargs = {}):
     5
 
     """
+    if not N%2:
+        return 2
     
     a_proposals = find_optimal_a(N)
     
@@ -166,7 +168,7 @@ def shors_alg(N, inpl_adder = None, mes_kwargs = {}):
         
         g = int(np.gcd(a**(r//2)+1, N))
         
-        if g != 1:
+        if g not in[N, 1]:
             res = g
             break
     return res
