@@ -3,21 +3,21 @@
 Docker Simulators
 =================
 
-The Qrisp network interface enables convenient access to a variety of simulators through a docker container. You can simply download the docker container and obtain access to simulation without having to fight through installation and/or conversion issues. For this execute
+The Qrisp network interface enables convenient access to a variety of simulators through a docker container. You can simply download the docker container and obtain access to simulation without having to fight through installation and/or conversion issues. For this you need `Docker Desktop <https://www.docker.com/products/docker-desktop/>`_. This software allows you to install and execute the most complex software environments without the hassle of compatibility issues regarding your platform. It is therefore a perfect fit for hosting quantum simulators, which can be tricky to get running. After you are done installing, please execute:
 
 .. code-block:: console
     
     docker pull qrisp/qrisp_sim_collection:latest
     
-To start the docker container your run
+To start the docker container your run:
 
 .. code-block:: console
 
     docker run -p 8083:8083 -p 8084:8084 -p 8085:8085 -p 8086:8086 -p 8087:8087 -p 8088:8088 -p 8089:8089 -p 8090:8090 qrisp/qrisp_sim_collection
     
-The ``-p`` commands open the ports of the docker container such that Qrisp can send the simulation requests.
+The ``-p`` commands open the ports of the docker container such that Qrisp can send the simulation requests. Once you have run this command, the container should appear in the Docker GUI, so you can simply press start if you need it again.
 
-Once you have done so, you can start using the following backends on your machine:
+Once the container is running, you can start using the following backends on your machine:
 
 
 .. list-table::
@@ -41,11 +41,11 @@ Once you have done so, you can start using the following backends on your machin
    * - ``QSimCirq()``
      - `"qsim is a Schrödinger full state-vector simulator." <https://github.com/quantumlib/qsim/tree/master>`_
    * - ``QiboSim()``
-     - `"qsim is a Schrödinger full state-vector simulator." <https://github.com/quantumlib/qsim/tree/master>`_
+     - `The simulator of the Qibo framework <https://qibo.science/qibo/stable/index.html>`_
      
 
 
-To utilize these simulator you can import the corresponding backend in Python
+To utilize these simulators you can import the corresponding backend in Python
 
 >>> from qrisp import QuantumFloat
 >>> a = QuantumFloat(3)
