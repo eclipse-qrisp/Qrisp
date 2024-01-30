@@ -356,7 +356,7 @@ def sort_indices_jitted(row, col, data, shape_1):
     shifted_row = row << (int(np.log2(shape_1))+1)
     sorting_array = shifted_row ^ col
     
-    array_sort = np.argsort(sorting_array)
+    array_sort = np.argsort(sorting_array, kind = "mergesort")
     
     new_row = row[array_sort]
     new_col = col[array_sort]
