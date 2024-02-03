@@ -44,7 +44,7 @@ from qrisp.mcx_algs import hybrid_mcx
 
 # Returns the PROPAGATE status of a group of entries
 def calc_P_group(P):
-    new_p = QuantumBool(name = "p_group*")
+    new_p = QuantumBool(name = "p_group*", qs = P[0].qs())
     # Due to the semi-classical nature of the algorithm, it is possible
     # that some propagate values are known to be 0 (because some of the 
     # input values are known to be 0)
@@ -256,12 +256,12 @@ def cq_calc_carry(a, b, radix_base = 2, radix_exponent = 0, ctrl = None):
     # If b can be divided into k blocks of size R,
     # we only need k-1 ancillae qubit, because we have no need for
     # the carry of the last bock.
-    c = QuantumVariable(int(np.ceil(len(b)/R))-1, name = "carry*")
+    c = QuantumVariable(int(np.ceil(len(b)/R))-1, name = "carry*", qs = b[0].qs())
     
     # This variable will hold the intermediate GENERATE values, that are supposed 
     # to be uncomputed. The uncomputation is performed using the auto_uncompute 
     # decorator. This decorator uncomputes all local variables.
-    brent_kung_ancilla = QuantumVariable(c.size*(R-1))
+    brent_kung_ancilla = QuantumVariable(c.size*(R-1), qs = b[0].qs(), name = "bk_ancilla*")
     
     #Create the g list
     anc_list = list(brent_kung_ancilla)
@@ -319,7 +319,7 @@ def cq_calc_carry(a, b, radix_base = 2, radix_exponent = 0, ctrl = None):
                     # the control value.
                     # The permutation of the controls  that is necessary for 
                     # actual parallelization will be done by the the compiler.
-                    parll_qbl = QuantumBool(name = "parll_qbl*")
+                    parll_qbl = QuantumBool(name = "parll_qbl*", qs = b[0].qs())
                     cx(ctrl, parll_qbl[0])
                     mcx([parll_qbl[0], b[i]], g[i], method = "gidney", ctrl_state = "10")
                     parll_qbl.uncompute(recompute = True)

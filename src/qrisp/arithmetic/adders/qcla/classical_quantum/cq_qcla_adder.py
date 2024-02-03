@@ -25,6 +25,7 @@ from qrisp.arithmetic.adders.gidney import cq_gidney_adder
 from qrisp.misc.utility import bin_rep
 from qrisp.circuit import fast_append
 from qrisp.environments import QuantumEnvironment
+from qrisp.core.session_merging_tools import merge
 
 verify_manual_uncomputations = np.zeros(1)
 
@@ -45,7 +46,8 @@ def cq_qcla(a, b, radix_base = 2, radix_exponent = 1, t_depth_reduction = True, 
     
     R = radix_base**radix_exponent
     
-    with fast_append():
+    merge([a,b])
+    with fast_append(3):
         # The case that a only has a single qubit is simple.
         if len(b) == 1:
             if a[0] == "1":
@@ -62,6 +64,7 @@ def cq_qcla(a, b, radix_base = 2, radix_exponent = 1, t_depth_reduction = True, 
         # Executing within a QuantumEnvironemnt accelerates the uncomputation algorithm
         # because it doesn't have to consider the operations appended outside of this function
         with QuantumEnvironment():
+            merge([b[0].qs()])
             c = cq_calc_carry(a, b, radix_base, radix_exponent, ctrl = ctrl)
         
         

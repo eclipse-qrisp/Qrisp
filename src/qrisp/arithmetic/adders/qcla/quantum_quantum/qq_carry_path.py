@@ -36,7 +36,7 @@ from qrisp import gate_wrap
 
 # Returns the PROPAGATE status of a group of entries
 def calc_P_group(P):
-    new_p = QuantumBool(name = "p_group*")
+    new_p = QuantumBool(name = "p_group*", qs = P[0].qs())
     # Due to the semi-classical nature of the algorithm, it is possible
     # that some propagate values are known to be 0 (because some of the 
     # input values are known to be 0)
@@ -248,12 +248,12 @@ def qq_calc_carry(a, b, radix_base = 2, radix_exponent = 0):
     # we only need k-1 ancillae qubit, because we have no need for
     # the carry of the last bock.
     
-    c = QuantumVariable(int(np.ceil(len(b)/R))-1)
+    c = QuantumVariable(int(np.ceil(len(b)/R))-1, name = "carry*", qs = b[0].qs())
     
     # This variable will hold the intermediate GENERATE values, that are supposed 
     # to be uncomputed. The uncomputation is performed using the auto_uncompute 
     # decorator. This decorator uncomputes all local variables.
-    brent_kung_ancilla = QuantumVariable(c.size*(R-1))
+    brent_kung_ancilla = QuantumVariable(c.size*(R-1), name = "bk_ancilla*", qs = b[0].qs())
     
     #Create the g list
     anc_list = list(brent_kung_ancilla)

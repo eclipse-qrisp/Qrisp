@@ -361,7 +361,7 @@ class QuantumSession(QuantumCircuit):
                     raise Exception("Tried to delete qubits not in |0> state")
                     
         for qb in qubits:
-            self.append(QubitDealloc(), qb)
+            self.append(QubitDealloc(), [qb])
             
 
 
