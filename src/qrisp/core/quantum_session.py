@@ -176,6 +176,8 @@ class QuantumSession(QuantumCircuit):
         self.uncomp_stack = []
 
         self.qs_tracker.append(weakref.ref(self))
+        
+        self.will_be_uncomputed = False
 
         # This list will contain the QuantumSessions which have been merged into this
         # session. It needs to be tracked in order to also update the shadow sessions

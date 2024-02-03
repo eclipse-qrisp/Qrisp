@@ -22,7 +22,7 @@ from qrisp.qtypes import QuantumFloat
 from qrisp.arithmetic.comparisons import less_than
 from qrisp.arithmetic.modular_arithmetic.mod_tools import modinv, montgomery_encoder
 from qrisp.environments import custom_control
-from qrisp import cx, bin_rep, control, swap, invert, redirect_qfunction, QuantumModulus, mcx, fast_append
+from qrisp import cx, bin_rep, control, swap, invert, redirect_qfunction, QuantumModulus, mcx, fast_append, auto_uncompute
 # This file implements the techniques described in this paper: https://arxiv.org/abs/1801.01081
 # The goal is to have performant modular multiplication. To this end, instead of taking the
 # much explored path of creating a modular adder, that is used within the multiplication,
@@ -289,6 +289,7 @@ def ft_swap(a, b, ctrl = None):
 
 
 # This function perform semi-classical in-place multiplication
+@auto_uncompute
 @custom_control
 def semi_cl_inpl_mult(a, X, ctrl = None, treat_invalid = False):
     

@@ -197,6 +197,8 @@ def merge_sessions_inner(qs_0, qs_1, merge_env_stack_=True):
 
     reorder_quantum_variables(qs_0)
 
+
+    qs_0.will_be_uncomputed = bool(qs_0.will_be_uncomputed) or bool(qs_1.will_be_uncomputed)
     # Add variables to the uncomputation stack
     qs_0.uncomp_stack.extend(qs_1.uncomp_stack)
 

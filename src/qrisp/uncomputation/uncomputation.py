@@ -18,7 +18,7 @@
 
 
 import numpy as np
-
+from qrisp.circuit import fast_append
 
 def auto_uncompute(*args, recompute=False):
     if len(args):
@@ -55,12 +55,18 @@ def auto_uncompute_inner(function):
             return function(*args, **kwargs)
 
         qs = qs_list[0]
-
+        
+        requires_uncomputation = not bool(qs.will_be_uncomputed)
+        qs.will_be_uncomputed = True
+        
         # Determine quantum variables to uncompute
         initial_qvs = set([hash(qv()) for qv in QuantumVariable.live_qvs])
-
+        
         # Execute function
         result = function(*args, **kwargs)
+        
+        if not requires_uncomputation and False:
+            return result
 
         multi_session_merge(recursive_qs_search(result) + [qs])
 
@@ -94,13 +100,14 @@ def uncompute(qs, uncomp_vars, recompute=False):
     temp_data = list(qs.data)
     qs.data = []
     
-    for i in range(len(temp_data)):
-        if isinstance(temp_data[i], QuantumEnvironment):
-            env = temp_data[i]
-            env.compile()
-        else:
-            qs.append(temp_data[i])
-            
+    with fast_append(0):
+        for i in range(len(temp_data)):
+            if isinstance(temp_data[i], QuantumEnvironment):
+                env = temp_data[i]
+                env.compile()
+            else:
+                qs.append(temp_data[i])
+                    
             
     uncomp_vars = list(set(uncomp_vars).intersection(qs.qv_list))
     qubits_to_uncompute = sum([qv.reg for qv in uncomp_vars], [])
