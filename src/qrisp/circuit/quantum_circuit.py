@@ -206,7 +206,7 @@ class QuantumCircuit:
     """
 
     qubit_index_counter = np.zeros(1, dtype=int)
-    fast_append = False
+    xla_mode = 0
 
     def __init__(self, num_qubits=0, num_clbits=0, name=None):
         object.__setattr__(self, "data", [])
@@ -1327,16 +1327,17 @@ class QuantumCircuit:
         # Check the type of the instruction/operation
         # from qrisp.circuit import Instruction, Operation
 
-        if self.fast_append:
+        if self.xla_mode > 0:
             if isinstance(operation_or_instruction, Instruction):
                 self.data.append(operation_or_instruction)
             else:
-                if not isinstance(qubits, list):
-                    raise
-                for qb in qubits:
-                    if not isinstance(qb, Qubit):
-                        print(qubits)
+                if self.xla_mode <= 1:
+                    if not isinstance(qubits, list):
                         raise
+                    for qb in qubits:
+                        if not isinstance(qb, Qubit):
+                            print(qubits)
+                            raise
                 self.data.append(Instruction(operation_or_instruction, qubits, clbits))
             return
 
@@ -2326,21 +2327,6 @@ class QuantumCircuit:
         """
 
         self.append(ops.IDGate(), [qubits])
-
-
-class AppendingAccelerator:
-    def __enter__(self):
-        self.original_appending_mode = bool(QuantumCircuit.fast_append)
-
-        QuantumCircuit.fast_append = True
-        
-
-    def __exit__(self, exception_type, exception_value, traceback):
-        
-        QuantumCircuit.fast_append = self.original_appending_mode
-
-
-fast_append = AppendingAccelerator
 
 
 # Converts various inputs (eg. integers, qubits or quantum variables) to lists of qubit

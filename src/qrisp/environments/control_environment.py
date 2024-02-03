@@ -293,6 +293,8 @@ class ControlEnvironment(QuantumEnvironment):
                         p(instruction.op.params[0], self.condition_truth_value)
                     elif instruction.op.name == "rz":
                         rz(instruction.op.params[0], self.condition_truth_value)
+                    elif instruction.op.name in ["qb_alloc", "qb_dealloc"]:
+                        pass
                     else:
                         raise Exception(
                             f"Tried to perform invalid operation {instruction.op.name} "
@@ -375,6 +377,7 @@ def convert_to_custom_control(instruction, control_qubit):
     # since Operations which are not CustomControlledOperations should not target
     # the control qubit
     if instruction.op.definition is None:
+        print(instruction)
         raise Exception
     
     #We now generate the new Instruction
