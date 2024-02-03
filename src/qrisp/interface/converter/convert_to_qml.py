@@ -68,26 +68,35 @@ def create_qml_instruction(op):
         Exception("Cannot convert")
     return qml_ins
 
-
+import sympy
 
 def qml_converter(qc,circ= False):
-
-    def circuit():
+    
+    def circuit(*args, wires = None):
 
         circFlag = False
 
         qbit_dic = {}
         # add qubits
-        for qubit in qc.qubits:
-            qbit_dic[qubit.identifier] = qubit.identifier
+        if wires is None:
+            for qubit in qc.qubits:
+                qbit_dic[qubit.identifier] = qubit.identifier
+        else:
+            for i in range(len(qc.qubits)):
+                qbit_dic[qc.qubits[i].identifier] = wires[i]
+                
+            
         #save measurements
         measurelist = []
+        symbols = list(qc.abstract_params)
 
         for index in range(len(qc.data)):
             
             op = qc.data[index].op
             params = list(op.params)
-
+            for i in range(len(params)):
+                if isinstance(params[i], sympy.Symbol):
+                    params[i] = args[symbols.index(params[i])]
 
             qubit_list = [qbit_dic[qubit.identifier] for qubit in qc.data[index].qubits]
             op_qubits = qc.data[index].qubits
