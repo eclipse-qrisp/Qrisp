@@ -213,17 +213,12 @@ class QuantumCircuit:
         object.__setattr__(self, "qubits", [])
         object.__setattr__(self, "clbits", [])
 
-        self.abstract_params = set([])
-
-        if name is None:
-            self.name = "circuit_" + str(id(self))[-5:]
-        else:
-            self.name = name
+        self.abstract_params = set()
 
         if isinstance(num_qubits, int):
             for i in range(num_qubits):
-                self.qubit_index_counter[0] += 1
-                self.qubits.append(Qubit("qb_" + str(self.qubit_index_counter[0])))
+                self.qubits.append(Qubit("qb_" + str(self.qubit_index_counter[0]+i)))
+            self.qubit_index_counter[0] += num_qubits
         else:
             raise Exception(
                 f"Tried to initialize QuantumCircuit with type {type(num_qubits)}"
@@ -236,8 +231,6 @@ class QuantumCircuit:
             raise Exception(
                 f"Tried to initialize QuantumCircuit with type {type(num_clbits)}"
             )
-
-        self.last_qubit_count = -1
 
     # Method to add qubit objects to the circuit
     def add_qubit(self, qubit=None):
@@ -266,15 +259,18 @@ class QuantumCircuit:
         """
 
         self.qubit_index_counter += 1
+        
         if qubit is None:
             qubit = Qubit("qb_" + str(self.qubit_index_counter[0]))
+            
+        if self.xla_mode < 2:
+            for qb in self.qubits:
+                if qb.identifier == qubit.identifier:
+                    raise Exception(f"Qubit name {qubit.identifier} already exists")
+        
 
         if not isinstance(qubit, Qubit):
             raise Exception(f"Tried to add type {type(qubit)} as a qubit")
-
-        for qb in self.qubits:
-            if qb.identifier == qubit.identifier:
-                raise Exception(f"Qubit name {qubit.identifier} already exists")
 
         self.qubits.append(qubit)
 
@@ -344,7 +340,7 @@ class QuantumCircuit:
         """
 
         if name is None:
-            name = self.name
+            name = "circuit" + str(id(self))[:5]
 
         definition = self.copy()
         i = 0
@@ -507,8 +503,6 @@ class QuantumCircuit:
             pass
 
         return res
-
-        return QuantumCircuit(init_qc=self)
 
     # Returns a copy of self but with no instructions
     def clearcopy(self):

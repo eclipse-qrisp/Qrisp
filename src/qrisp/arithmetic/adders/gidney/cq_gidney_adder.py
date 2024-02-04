@@ -42,7 +42,7 @@ def cq_gidney_adder(a, b, c_in = None, c_out = None, ctrl = None):
     # (doesn't happen automatically with fast_append = 3)
     merge(b[0].qs())
     
-    with fast_append(1):
+    with fast_append(3):
     
         if isinstance(a, int):
             a = bin_rep(a%2**len(b), len(b))[::-1]

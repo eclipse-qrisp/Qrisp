@@ -147,7 +147,7 @@ class IterationEnvironment(QuantumEnvironment):
 
     def __exit__(self, exception_type, exception_value, traceback):
 
-        if set(self.env_qs.qv_list) != self.inital_qvs:
+        if set(self.env_qs.qv_list) != self.inital_qvs and self.iteration_amount > 1:
 
             if exception_value is None:
                 raise Exception(

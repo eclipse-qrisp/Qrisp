@@ -20,7 +20,7 @@ import weakref
 
 import numpy as np
 
-from qrisp.circuit import Clbit, QuantumCircuit, Qubit, QubitAlloc, QubitDealloc
+from qrisp.circuit import Clbit, QuantumCircuit, Qubit, QubitAlloc, QubitDealloc, Instruction, Operation
 from qrisp.core.session_merging_tools import multi_session_merge
 from qrisp.misc import get_depth_dic
 
@@ -436,16 +436,17 @@ class QuantumSession(QuantumCircuit):
 
     def __eq__(self, other):
         return id(self.data) == id(other.data)
-
+    
     def append(self, operation_or_instruction, qubits=[], clbits=[]):
         # Check the type of the instruction/operation
-        from qrisp.circuit import Instruction, Operation
-
+        
+        
         if issubclass(operation_or_instruction.__class__, Instruction):
             instruction = operation_or_instruction
             self.append(instruction.op, instruction.qubits, instruction.clbits)
             return
-
+        
+        
         elif issubclass(operation_or_instruction.__class__, Operation):
             operation = operation_or_instruction
 
@@ -466,7 +467,7 @@ class QuantumSession(QuantumCircuit):
             if operation.name == "qb_dealloc":
                 qubits[0].allocated = False
             return
-
+        
         # Convert arguments (possibly integers) to list
         # The logic here is that the list structure gets preserved ie.
         # [[0, 1] ,2] ==> [[qubit_0, qubit_1], qubit_2]
