@@ -261,10 +261,13 @@ def cq_calc_carry(a, b, radix_base = 2, radix_exponent = 0, ctrl = None):
     # This variable will hold the intermediate GENERATE values, that are supposed 
     # to be uncomputed. The uncomputation is performed using the auto_uncompute 
     # decorator. This decorator uncomputes all local variables.
-    brent_kung_ancilla = QuantumVariable(c.size*(R-1), qs = b[0].qs(), name = "bk_ancilla*")
+    if R > 1:
+        brent_kung_ancilla = QuantumVariable(c.size*(R-1), name = "bk_ancilla*", qs = b[0].qs())
+        anc_list = list(brent_kung_ancilla)
+    else:
+        anc_list = []
     
     #Create the g list
-    anc_list = list(brent_kung_ancilla)
     c_list = list(c)
     g = []
     for i in range(len(c)):
@@ -283,6 +286,12 @@ def cq_calc_carry(a, b, radix_base = 2, radix_exponent = 0, ctrl = None):
     # only execute the iterations where a_i is True
     
     use_parallel = False
+    
+    if not ctrl is None:
+        if sum(k == "1" for k in a) > 1:
+            parallel_anc_var = QuantumVariable(sum(k == "1" for k in a), name = "parll_qbl*", qs = b[0].qs())
+            parallel_ancillae = list(parallel_anc_var)
+    
     
     for i in range(min(len(g), len(a), len(b))):
         
@@ -319,12 +328,16 @@ def cq_calc_carry(a, b, radix_base = 2, radix_exponent = 0, ctrl = None):
                     # the control value.
                     # The permutation of the controls  that is necessary for 
                     # actual parallelization will be done by the the compiler.
-                    parll_qbl = QuantumBool(name = "parll_qbl*", qs = b[0].qs())
-                    cx(ctrl, parll_qbl[0])
-                    mcx([parll_qbl[0], b[i]], g[i], method = "gidney", ctrl_state = "10")
-                    parll_qbl.uncompute(recompute = True)
-            
-            
+                    # parll_qbl = QuantumBool(name = "parll_qbl*", qs = b[0].qs())
+                    parll_qbl = parallel_ancillae.pop(0)
+                    cx(ctrl, parll_qbl)
+                    mcx([parll_qbl, b[i]], g[i], method = "gidney", ctrl_state = "10")
+                    # parll_qbl.uncompute(recompute = True)
+    
+    try:
+        parallel_anc_var.uncompute(recompute = True)
+    except UnboundLocalError:
+        pass
     
     p = b
     

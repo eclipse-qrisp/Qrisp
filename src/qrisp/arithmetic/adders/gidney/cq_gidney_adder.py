@@ -23,7 +23,7 @@
 # For the quantum-quantum version please check qrisp.arithmetic.adders.gidney_adder
 
 
-from qrisp import bin_rep, x, cx, mcx, QuantumVariable, invert
+from qrisp import bin_rep, x, cx, mcx, QuantumVariable, invert, fast_append, merge, QuantumBool
 
 # This function inverts a bit represented by a character
 def c_inv(c):
@@ -38,134 +38,155 @@ def c_inv(c):
 
 def cq_gidney_adder(a, b, c_in = None, c_out = None, ctrl = None):
     
-    if isinstance(a, int):
-        a = bin_rep(a%2**len(b), len(b))[::-1]
-    elif not isinstance(a, str):
-        raise Exception(f"Tried to call semi-classical carry calculator with invalid type {type(a)}")
+    # Call merge to make the QuantumSession enter the inversion environment
+    # (doesn't happen automatically with fast_append = 3)
+    merge(b[0].qs())
     
-    if len(a) != len(b):
-        raise Exception("Tried to call Gidney adder with inputs of unequal length")
-
-    if c_out is not None:
-        b = list(b) + [c_out]
-        a = a + "0"
-        
-    if c_in is not None:
-        b = [c_in] + list(b)
-        a = "1" + a
-        
-    #Treat the case that b is only a single qubit
-    if len(b) == 1:
-        if a[0] == "1":
-            if ctrl is None:
-                x(b[0])
-            else:
-                cx(ctrl, b[0])
-        return
+    with fast_append(1):
     
-    gidney_anc = QuantumVariable(len(b) - 1)
+        if isinstance(a, int):
+            a = bin_rep(a%2**len(b), len(b))[::-1]
+        elif not isinstance(a, str):
+            raise Exception(f"Tried to call semi-classical carry calculator with invalid type {type(a)}")
+        
+        if len(a) != len(b):
+            raise Exception("Tried to call Gidney adder with inputs of unequal length")
     
-    # This loop now perform the iterations that are required to build up the circuit described
-    # in the paper
-    for i in range(len(b)-1):
-        
-        # The relevant observation to turn Gidney's adder into a semi-classical adder
-        # is that the "a_i" qubit (in his paper these qubits are called "i") 
-        # is only involved in two interactions:
-        #   1. The CNOT gate from the ancilla qubit of the previous iteration
-        #   2. The the quasi-toffoli gate into the ancilla of the current interaction
-        # If we consider "a_i" as a classically known value, we can recover the quantum
-        # value of the first step by applying an x gate onto the ancilla of the previous 
-        # iteration if a_i is True.
-        
-        # To "simulate" the quasi-toffoli we then simply use this ancilla as a control
-        # value instead.
-        
-        # Combining these steps results in a quasi-toffoli with a modified control-state
-        # If a is True, the quasi-toffoli receives the flipped value of the ancilla
-        if i != 0:
+        if c_out is not None:
             
-            if ctrl is not None:
-                if "1" == a[i]:
-                    cx(ctrl, gidney_anc[i-1])
-                mcx([gidney_anc[i-1], b[i]], gidney_anc[i], method = "gidney", ctrl_state = "11")
-                if "1" == a[i]:
-                    cx(ctrl, gidney_anc[i-1])
-            else:
-                mcx([gidney_anc[i-1], b[i]], gidney_anc[i], method = "gidney", ctrl_state = c_inv(a[i]) + "1")
-                
-            cx(gidney_anc[i-1], gidney_anc[i])
+            # Convert to qubit if neccessary
+            if isinstance(c_out, QuantumBool):
+                c_out = c_out[0]
             
-        else:
-            # For the first iteration, we can simply execute a CNOT gate if a_0 is True
-            if a[i] == "1":
+            b = list(b) + [c_out]
+            a = a + "0"
+            
+        if c_in is not None:
+            
+            # Convert to qubit if neccessary
+            if isinstance(c_in, QuantumBool):
+                c_in = c_in[0]
+            
+            b = [c_in] + list(b)
+            a = "1" + a
+            
+        #Treat the case that b is only a single qubit
+        if len(b) == 1:
+            if a[0] == "1":
                 if ctrl is None:
-                    cx(b[i], gidney_anc[i])
+                    x(b[0])
                 else:
-                    mcx([ctrl, b[i]], gidney_anc[i], method = "gidney")
+                    cx(ctrl, b[0])
+            return
         
+        gidney_anc = QuantumVariable(len(b) - 1, name = "gidney_anc*", qs = b[0].qs())
         
-        # To realize the controlled version of this adder, note that the V-shaped
-        # part of the circuit in the paper is consisting of two branches that are
-        # almost inverse to each other.
-        
-        # The one thing that stops the from being truly inverse is the CNOT gate
-        # from the ancilla into b (in his paper "t").
-        
-        # That is: If we only control this gate (and the "tip"), the two branches will be their
-        # perfect inverse and the whole computation will result in the identity
-        # if the control qubit is in the |0> state.
-        if i != len(b) -2:
-            cx(gidney_anc[i], b[i+1])
-
-    # This snippet makes sure that the "tip" of the V shaped circuit is also
-    # controlled
-    cx(gidney_anc[-1], b[-1])
-
-    # We now perform the right branch of the V shaped circuit
-    
-    with invert():
+        # This loop now perform the iterations that are required to build up the circuit described
+        # in the paper
         for i in range(len(b)-1):
             
-            # Regarding the treatment of the classical values, a similar logic as
-            # above is applied
+            # The relevant observation to turn Gidney's adder into a semi-classical adder
+            # is that the "a_i" qubit (in his paper these qubits are called "i") 
+            # is only involved in two interactions:
+            #   1. The CNOT gate from the ancilla qubit of the previous iteration
+            #   2. The the quasi-toffoli gate into the ancilla of the current interaction
+            # If we consider "a_i" as a classically known value, we can recover the quantum
+            # value of the first step by applying an x gate onto the ancilla of the previous 
+            # iteration if a_i is True.
+            
+            # To "simulate" the quasi-toffoli we then simply use this ancilla as a control
+            # value instead.
+            
+            # Combining these steps results in a quasi-toffoli with a modified control-state
+            # If a is True, the quasi-toffoli receives the flipped value of the ancilla
             if i != 0:
+                
                 if ctrl is not None:
-                    
                     if "1" == a[i]:
                         cx(ctrl, gidney_anc[i-1])
                     mcx([gidney_anc[i-1], b[i]], gidney_anc[i], method = "gidney", ctrl_state = "11")
                     if "1" == a[i]:
                         cx(ctrl, gidney_anc[i-1])
-                
                 else:
                     mcx([gidney_anc[i-1], b[i]], gidney_anc[i], method = "gidney", ctrl_state = c_inv(a[i]) + "1")
                     
                 cx(gidney_anc[i-1], gidney_anc[i])
                 
             else:
+                # For the first iteration, we can simply execute a CNOT gate if a_0 is True
                 if a[i] == "1":
                     if ctrl is None:
                         cx(b[i], gidney_anc[i])
                     else:
                         mcx([ctrl, b[i]], gidney_anc[i], method = "gidney")
-    
-    # Finally, the CNOT gates on the right side of the V shape are executed.
-    
-    for i in range(len(a)):
-        # Since the values of a (in his paper "i") are classically known we
-        # can use a classical condition
-        if a[i] == "1":
             
-            if c_in is not None and i == 0:
-                continue
-            # Here we need to again treat the control qubit, because in the 
-            # controlled case, the V shaped part of the circuit might be properly
-            # controlled because of the above construction but the right most
-            # CNOT gates are not.
-            if ctrl is None:
-                x(b[i])
-            else:
-                cx(ctrl, b[i])
+            
+            # To realize the controlled version of this adder, note that the V-shaped
+            # part of the circuit in the paper is consisting of two branches that are
+            # almost inverse to each other.
+            
+            # The one thing that stops the from being truly inverse is the CNOT gate
+            # from the ancilla into b (in his paper "t").
+            
+            # That is: If we only control this gate (and the "tip"), the two branches will be their
+            # perfect inverse and the whole computation will result in the identity
+            # if the control qubit is in the |0> state.
+            if i != len(b) -2:
+                cx(gidney_anc[i], b[i+1])
     
-    gidney_anc.delete(verify = False)
+        # This snippet makes sure that the "tip" of the V shaped circuit is also
+        # controlled
+        cx(gidney_anc[-1], b[-1])
+    
+        # We now perform the right branch of the V shaped circuit
+        
+        with invert():
+            
+            # Call merge to make the QuantumSession enter the inversion environment
+            # (doesn't happen automatically with fast_append = 3)
+            merge(b[0].qs())
+            
+            for i in range(len(b)-1):
+                
+                # Regarding the treatment of the classical values, a similar logic as
+                # above is applied
+                if i != 0:
+                    if ctrl is not None:
+                        
+                        if "1" == a[i]:
+                            cx(ctrl, gidney_anc[i-1])
+                        mcx([gidney_anc[i-1], b[i]], gidney_anc[i], method = "gidney", ctrl_state = "11")
+                        if "1" == a[i]:
+                            cx(ctrl, gidney_anc[i-1])
+                    
+                    else:
+                        mcx([gidney_anc[i-1], b[i]], gidney_anc[i], method = "gidney", ctrl_state = c_inv(a[i]) + "1")
+                        
+                    cx(gidney_anc[i-1], gidney_anc[i])
+                    
+                else:
+                    if a[i] == "1":
+                        if ctrl is None:
+                            cx(b[i], gidney_anc[i])
+                        else:
+                            mcx([ctrl, b[i]], gidney_anc[i], method = "gidney")
+        
+        # Finally, the CNOT gates on the right side of the V shape are executed.
+        
+        for i in range(len(a)):
+            # Since the values of a (in his paper "i") are classically known we
+            # can use a classical condition
+            if a[i] == "1":
+                
+                if c_in is not None and i == 0:
+                    continue
+                # Here we need to again treat the control qubit, because in the 
+                # controlled case, the V shaped part of the circuit might be properly
+                # controlled because of the above construction but the right most
+                # CNOT gates are not.
+                if ctrl is None:
+                    x(b[i])
+                else:
+                    cx(ctrl, b[i])
+        
+        gidney_anc.delete(verify = False)

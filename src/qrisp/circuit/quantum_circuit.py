@@ -1333,11 +1333,10 @@ class QuantumCircuit:
             else:
                 if self.xla_mode <= 1:
                     if not isinstance(qubits, list):
-                        raise
+                        raise Exception(f"Operation {operation_or_instruction.name} was appended with {qubits} in accelerated compilation mode (allowed is type List[Qubit]).")
                     for qb in qubits:
                         if not isinstance(qb, Qubit):
-                            print(qubits)
-                            raise
+                            raise Exception(f"Operation {operation_or_instruction.name} was appended with {qubits} in accelerated compilation mode (allowed is type List[Qubit]).")
                 self.data.append(Instruction(operation_or_instruction, qubits, clbits))
             return
 

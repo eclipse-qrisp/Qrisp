@@ -353,7 +353,8 @@ class QuantumSession(QuantumCircuit):
                     self.data.append(instr)
             
             for qb in qubits:
-                verification_qc.measure(qb)
+                clbit = verification_qc.add_clbit()
+                verification_qc.measure(qb, clbit)
 
             from qrisp.simulator import run
 

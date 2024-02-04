@@ -253,10 +253,13 @@ def qq_calc_carry(a, b, radix_base = 2, radix_exponent = 0):
     # This variable will hold the intermediate GENERATE values, that are supposed 
     # to be uncomputed. The uncomputation is performed using the auto_uncompute 
     # decorator. This decorator uncomputes all local variables.
-    brent_kung_ancilla = QuantumVariable(c.size*(R-1), name = "bk_ancilla*", qs = b[0].qs())
+    if R > 1:
+        brent_kung_ancilla = QuantumVariable(c.size*(R-1), name = "bk_ancilla*", qs = b[0].qs())
+        anc_list = list(brent_kung_ancilla)
+    else:
+        anc_list = []
     
     #Create the g list
-    anc_list = list(brent_kung_ancilla)
     c_list = list(c)
     g = []
     for i in range(len(c)):

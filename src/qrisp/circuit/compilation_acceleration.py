@@ -21,7 +21,7 @@ from qrisp.circuit.quantum_circuit import QuantumCircuit
 
 class CompilationAccelerator:
     
-    def __init__(self, xla_mode = 1):
+    def __init__(self, xla_mode = 2):
         self.xla_mode = xla_mode
     
     def __enter__(self):

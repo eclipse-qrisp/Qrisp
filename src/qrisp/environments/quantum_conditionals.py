@@ -608,7 +608,7 @@ def adaptive_condition(cond_eval_function):
 def q_eq(input_0, input_1, invert = False):
     from qrisp import cx, conjugate, QuantumBool
 
-    res = QuantumBool(name="eq_cond*")
+    res = QuantumBool(name="eq_cond*", qs = input_0[0].qs())
 
     if isinstance(input_1, QuantumVariable):
         if input_0.size != input_1.size:

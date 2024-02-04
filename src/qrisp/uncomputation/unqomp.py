@@ -83,8 +83,12 @@ def dag_from_qc(qc, remove_init_nodes=False):
         node = UnqompNode("qubit_" + str(i) + "_0")
 
         node.qubit = qc.qubits[i]
-
-        dag.add_node(node)
+        
+        # dag.add_node(node)
+        dag._succ[node] = {}
+        dag._pred[node] = {}
+        dag._node[node] = {}
+        
         recent_node_dic[qc.qubits[i]] = node
         node_counter[qc.qubits[i]] = 1
         init_nodes[qc.qubits[i]] = node
@@ -95,7 +99,12 @@ def dag_from_qc(qc, remove_init_nodes=False):
 
         node.clbit = qc.clbits[i]
 
-        dag.add_node(node)
+        # dag.add_node(node)
+        dag._succ[node] = {}
+        dag._pred[node] = {}
+        dag._node[node] = {}
+        
+        
         recent_node_dic[qc.clbits[i]] = node
         node_counter[qc.clbits[i]] = 1
         init_nodes[qc.clbits[i]] = node
@@ -118,7 +127,12 @@ def dag_from_qc(qc, remove_init_nodes=False):
         if instr.op.name == "qb_dealloc":
             dealloc_nodes.append(node)
 
-        dag.add_node(node)
+        # dag.add_node(node)
+        dag._succ[node] = {}
+        dag._pred[node] = {}
+        dag._node[node] = {}
+        
+        
         for j in range(len(instr.qubits)):
             qb = instr.qubits[j]
 

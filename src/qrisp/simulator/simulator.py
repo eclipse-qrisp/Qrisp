@@ -72,7 +72,7 @@ def run(qc, shots, token="", iqs=None, insert_reset=True):
     # This command enables fast appending. Fast appending means that the .append method
     # of the QuantumCircuit class checks much less validity conditions and is also less
     # tolerant regarding inputs.
-    with fast_append():
+    with fast_append(2):
 
         # We convert the circuit which is given with portable objects to a qrisp circuit
         # qc = convert_circuit(qc, "qrisp", transpile=True)

@@ -173,7 +173,7 @@ class ControlEnvironment(QuantumEnvironment):
                 if len(ctrl_qubits) == 1:
                     from qrisp.misc import retarget_instructions
 
-                    self.qbool = QuantumBool(name="ctrl_env*")
+                    self.qbool = QuantumBool(name="ctrl_env*", qs = self.env_qs)
                     retarget_instructions(
                         self.env_data, [self.condition_truth_value], [self.qbool[0]]
                     )

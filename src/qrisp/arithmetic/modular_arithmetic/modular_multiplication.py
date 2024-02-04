@@ -289,7 +289,6 @@ def ft_swap(a, b, ctrl = None):
 
 
 # This function perform semi-classical in-place multiplication
-@auto_uncompute
 @custom_control
 def semi_cl_inpl_mult(a, X, ctrl = None, treat_invalid = False):
     
