@@ -77,15 +77,7 @@ def create_QUBO_cost_operator(Q):
     cost_operator function.
 
     """
-    #def QUBO_cost_operator(qv, gamma):
-        
-    #    for i in range(len(Q)):
-    #        rz(-0.5*2*gamma*(0.5*Q[i][i]+0.5*sum(Q[i])), qv[i])
-    #        for j in range(i+1, len(qv)):
-    #            if Q[i][j] !=0:
-    #                rzz(0.25*2*gamma*Q[i][j], qv[i], qv[j])
-    #return QUBO_cost_operator
-    #new try
+
     def QUBO_cost_operator(qv, gamma):
 
         gphase(-gamma/4*(np.sum(Q)+np.trace(Q)),qv[0])
@@ -141,8 +133,8 @@ def solve_QUBO(Q, depth, backend = None, n_solutions = 1, print_res = True):
 
     Returns
     -------
-    None
-        The function prints the runtime of the QAOA algorithm and the ``n_solutions`` best solutions with their respective costs.
+    optimal_solution: tuple
+        The function returns the optimal solution as a tuple where the first element is the cost and the second element is the optimal bitstring. If print_res is set to True, the function prints the runtime of the QAOA algorithm and the ``n_solutions`` best solutions with their respective costs.
 
     """
 
@@ -168,7 +160,12 @@ def solve_QUBO(Q, depth, backend = None, n_solutions = 1, print_res = True):
     # Sort the solutions by their cost in ascending order
     sorted_costs_and_solutions = sorted(costs_and_solutions, key=itemgetter(0))
 
+    optimal_solution = sorted_costs_and_solutions[0]
+
     if print_res is True:
         # Get the top solutions and print them
         for i in range(n_solutions):
             print(f"Solution {i+1}: {sorted_costs_and_solutions[i][1]} with cost: {sorted_costs_and_solutions[i][0]}")
+    
+    return optimal_solution
+
