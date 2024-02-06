@@ -111,7 +111,7 @@ def QUBO_problem(Q):
     return QAOAProblem(create_QUBO_cost_operator(Q), RX_mixer, create_QUBO_cl_cost_function(Q))
 
 
-def solve_QUBO(Q, depth, backend = None, n_solutions = 1, print_res = True):
+def solve_QUBO(Q, depth, max_iter = 50, backend = None, n_solutions = 1, print_res = False):
     """
     Solves a Quadratic Unconstrained Binary Optimization (QUBO) problem using the Quantum Approximate Optimization Algorithm (QAOA). 
     The function imports the default backend from the 'qrisp.default_backend' module. 
@@ -126,6 +126,8 @@ def solve_QUBO(Q, depth, backend = None, n_solutions = 1, print_res = True):
         QUBO matrix to solve.
     depth : int
         The depth (amount of layers) of the QAOA circuit.
+    max_iter : int
+        The maximal amount of iterations of the COBYLA optimizer in the QAOA algorithm.
     backend : str
         The backend to be used for the quantum/annealing simulation.
     n_solutions : int
@@ -151,7 +153,7 @@ def solve_QUBO(Q, depth, backend = None, n_solutions = 1, print_res = True):
         backend = backend
 
     # Run QAOA with given quantum arguments, depth, measurement keyword arguments and maximum iterations for optimization
-    res = QUBO_instance.run(qarg, depth, mes_kwargs={"backend" : backend}, max_iter = 50) # runs the simulation
+    res = QUBO_instance.run(qarg, depth, mes_kwargs={"backend" : backend}, max_iter = max_iter) # runs the simulation
     res = dict(list(res.items())[:n_solutions])
 
     # Calculate the cost for each solution
