@@ -45,4 +45,8 @@ def QSimCirq():
 def QiboSim():
     return BackendClient(api_endpoint, port = 8090)
 
-    
+def QrispSim():
+    return BackendClient(api_endpoint, port = 8090)
+
+def QiskitSim():
+    return BackendClient(api_endpoint, port = 8090)    

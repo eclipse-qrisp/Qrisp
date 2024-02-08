@@ -198,7 +198,7 @@ def find_best_montgomery_shift(b, N):
     
     m = 0
     while True:
-        b_trial = montgomery_encoder(b, 2**m, N)%N
+        b_trial = montgomery_encoder(int(b), 1<<m, N)%N
         # Since a is reduced, in the worst case, it is equal to N-1
         if (N-1)*b_trial < N*2**m:
             return m

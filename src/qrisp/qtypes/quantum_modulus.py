@@ -159,6 +159,15 @@ class QuantumModulus(QuantumFloat):
             return np.nan
         return montgomery_decoder(i, 2**self.m, self.modulus)
     
+    def encoder(self, i):
+        
+        from qrisp.arithmetic.modular_arithmetic import montgomery_encoder
+        
+        if i >= self.modulus:# or (np.gcd(i, self.modulus) != 1 and i != 0):
+            return np.nan
+        
+        return montgomery_encoder(i, 1<<self.m, self.modulus)
+        
     def __mul__(self, other):
         from qrisp.arithmetic.modular_arithmetic import montgomery_mod_mul, montgomery_mod_semi_mul
         

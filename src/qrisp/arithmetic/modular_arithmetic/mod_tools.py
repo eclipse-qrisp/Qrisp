@@ -25,7 +25,7 @@ def montgomery_decoder(y, R, N):
 def montgomery_encoder(y, R, N):
     if 0 < R < 1:
         R = modinv(R**-1, N)
-    return (y*R)%N
+    return (int(y)%N*int(R)%N)%N
     
 
 def egcd(a, b):
