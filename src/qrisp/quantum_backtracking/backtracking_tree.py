@@ -1738,7 +1738,8 @@ class Subtree(QuantumBacktrackingTree):
                                          parent_tree.max_depth,
                                          parent_tree.branch_qa[0],
                                          parent_tree.accept_function,
-                                         parent_tree.reject_function
+                                         parent_tree.reject_function,
+                                         parent_tree.subspace_optimization
                                          )
 
         self.max_depth = parent_tree.max_depth - len(root_path)
