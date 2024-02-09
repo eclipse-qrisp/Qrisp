@@ -1735,15 +1735,13 @@ class Subtree(QuantumBacktrackingTree):
                 "Tried to initialise subtree with root path longer than maximum depth")
 
         QuantumBacktrackingTree.__init__(self,
-                                         parent_tree.max_depth - \
-                                             len(root_path),
+                                         parent_tree.max_depth,
                                          parent_tree.branch_qa[0],
                                          parent_tree.accept_function,
                                          parent_tree.reject_function
                                          )
 
-        self.embedding_array = QuantumArray(qtype = self.branch_qa.qtype, shape = len(root_path), qs = self.qs)
-        self.branch_qa = np.concatenate((self.branch_qa, self.embedding_array))
+        self.max_depth = parent_tree.max_depth - len(root_path)
 
         self.root_path = root_path
         self.original_tree = parent_tree
@@ -1783,7 +1781,7 @@ class Subtree(QuantumBacktrackingTree):
                     rev_branch_qa[k+i][:] = self.root_path[k]
 
     def subtree(self, path):
-        return self.original_tree.subtree(self.root_path + path)
+        return self.original_tree.subtree(path)
 
 
 
@@ -1814,7 +1812,7 @@ def find_solution(tree, precision, cl_accept=None, traversed_nodes=None, measure
         path = []
 
     if cl_accept(path):
-        return []
+        return path
     elif tree.max_depth == 0:
         return None
 
@@ -1876,14 +1874,13 @@ def find_solution(tree, precision, cl_accept=None, traversed_nodes=None, measure
             continue
 
         # Generate the subtree
-        subtree=tree.subtree(new_path)
+        subtree=tree.subtree(path + new_path)
 
         # Recursive call
-        sub_sol=find_solution(subtree, precision, cl_accept, traversed_nodes)
+        solution=find_solution(subtree, precision, cl_accept, traversed_nodes, measurement_kwargs=measurement_kwargs)
 
         # If a solution has been found, concatenate the pathes
-        if sub_sol is not None:
-            solution=path + new_path + sub_sol
+        if solution is not None:
             break
         else:
             traversed_nodes.append(tuple(path + new_path))
