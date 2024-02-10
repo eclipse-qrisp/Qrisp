@@ -1869,22 +1869,26 @@ def find_solution(tree, precision, cl_accept=None, traversed_nodes=None, measure
     for b in new_branches:
         
         # Get the path to the new node
-        new_path=tree.path_decoder(b[1], b[2])
+        if isinstance(tree, Subtree):
+            new_path=tree.original_tree.path_decoder(b[1], b[2])
+        else:
+            new_path=tree.path_decoder(b[1], b[2])
 
-        if tuple(path + new_path) in traversed_nodes or len(new_path) == 0:
-            continue
+        # Continue if new_path was already explored 
+        if tuple(new_path) in traversed_nodes or tuple(new_path)==tuple(path):
+            continue 
 
         # Generate the subtree
-        subtree=tree.subtree(path + new_path)
+        subtree=tree.subtree(new_path)
 
         # Recursive call
         solution=find_solution(subtree, precision, cl_accept, traversed_nodes, measurement_kwargs=measurement_kwargs)
 
-        # If a solution has been found, concatenate the pathes
+        # Leave loop if solution was found
         if solution is not None:
             break
         else:
-            traversed_nodes.append(tuple(path + new_path))
+            traversed_nodes.append(tuple(new_path))
 
     else:
         raise Exception(
