@@ -397,7 +397,7 @@ def coo_sparse_matrix_mult_jitted(A_row, A_col, A_data, B_row, B_col, B_data, A_
     
     for i in range(res.shape[0]):
         for j in range(res.shape[1]):
-            if np.abs(res[i,j]) > 1E-10:
+            if np.abs(res[i,j]) > float_tresh:
             # if res[i,j] != 0:
                 new_row.append(A_row[unique_marker_a[i]])
                 new_col.append(B_col[unique_marker_b[j]])
