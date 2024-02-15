@@ -141,7 +141,7 @@ def hybrid_mcx(
         if not structure[0] <= len(remainder):
             break
 
-        layer_output.append(QuantumBool(name="balauca_anc*"))
+        layer_output.append(QuantumBool(name="balauca_anc*", qs = input_qubits[0].qs()))
 
         for j in range(structure[0]):
             layer_input.append(remainder.pop(0))

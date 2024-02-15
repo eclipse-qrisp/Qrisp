@@ -169,9 +169,16 @@ class VirtualQiskitBackend(VirtualBackend):
 
             qiskit_qc = QuantumCircuit.from_qasm_str(qasm_str)
 
-            from qiskit import transpile
+            
+            #Make circuit with one monolithic register
+            new_qiskit_qc = QuantumCircuit(len(qiskit_qc.qubits), len(qiskit_qc.clbits))
+            for instr in qiskit_qc:
+                new_qiskit_qc.append(instr.operation, 
+                                     [qiskit_qc.qubits.index(qb) for qb in instr.qubits],
+                                     [qiskit_qc.clbits.index(cb) for cb in instr.clbits])
 
-            qiskit_qc = transpile(qiskit_qc, backend=backend)
+            from qiskit import transpile
+            qiskit_qc = transpile(new_qiskit_qc, backend=backend)
             # Run Circuit on the Qiskit backend
             qiskit_result = backend.run(qiskit_qc, shots=shots).result().get_counts()
             # Remove the spaces in the qiskit result keys

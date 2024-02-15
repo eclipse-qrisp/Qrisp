@@ -1872,7 +1872,7 @@ def t_depth_indicator(op, epsilon):
         return op.definition.t_depth(epsilon)
     elif op.name in ["cx", "cx", "cz", "x", "y", "z", "s", "h", "s_dg", "measure", "reset", "qb_alloc", "qb_dealloc", "barrier", "gphase"]:
         return 0
-    elif op.name in ["rx", "ry", "rz", "p"]:
+    elif op.name in ["rx", "ry", "rz", "p", "u1"]:
         par = op.params[0]/(np.pi)%1
         if par in [0, 1/2]:
             return 0

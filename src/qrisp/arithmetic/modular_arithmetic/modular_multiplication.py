@@ -22,7 +22,7 @@ from qrisp.qtypes import QuantumFloat
 from qrisp.arithmetic.comparisons import less_than
 from qrisp.arithmetic.modular_arithmetic.mod_tools import modinv, montgomery_encoder
 from qrisp.environments import custom_control
-from qrisp import cx, bin_rep, control, swap, invert, redirect_qfunction, QuantumModulus, mcx, fast_append
+from qrisp import cx, bin_rep, control, swap, invert, redirect_qfunction, QuantumModulus, mcx, fast_append, auto_uncompute
 # This file implements the techniques described in this paper: https://arxiv.org/abs/1801.01081
 # The goal is to have performant modular multiplication. To this end, instead of taking the
 # much explored path of creating a modular adder, that is used within the multiplication,
@@ -317,21 +317,23 @@ def semi_cl_inpl_mult(a, X, ctrl = None, treat_invalid = False):
     if X == 1:
         return a
 
-    # Create the temporary value    
-    tmp = a.duplicate(qs = a.qs)
     
-    # If treat_invalid is set to True, the function should leave the invalid values
-    # invariant. That is, values that are bigger than the modulus N.
-    
-    # We achieve this by computing a QuantumBool, which indicates wether the value is
-    # invalid and the controlling the multiplication on this QuantumBool.
-    if treat_invalid:
-        a.__class__ = QuantumFloat
-        reduced = a < a.modulus
-        a.__class__ = QuantumModulus
-        ctrl = [ctrl, reduced[0]]
-    
-    with fast_append():
+    with fast_append(3):
+        
+        # Create the temporary value    
+        tmp = a.duplicate(qs = a.qs)
+        
+        # If treat_invalid is set to True, the function should leave the invalid values
+        # invariant. That is, values that are bigger than the modulus N.
+        
+        # We achieve this by computing a QuantumBool, which indicates wether the value is
+        # invalid and the controlling the multiplication on this QuantumBool.
+        if treat_invalid:
+            a.__class__ = QuantumFloat
+            reduced = a < a.modulus
+            a.__class__ = QuantumModulus
+            ctrl = [ctrl, reduced[0]]
+        
         # If the controlled version of this function is required, we perform the swapping
         # strategy from above.
         if ctrl is not None:

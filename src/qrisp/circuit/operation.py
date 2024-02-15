@@ -93,13 +93,8 @@ class Operation:
             params = init_op.params
             definition = init_op.definition
 
-            try:
-                unitary = init_op.unitary
-            except AttributeError:
-                pass
-        else:
-            if name is None:
-                raise Exception("Tried to create a Operation object without name")
+        elif not isinstance(name, str):
+            raise Exception("Tried to create a Operation with name of type({type(name)} (required is str)")
 
         # Name of the operation - this is how the backend behind the interface will
         # identify the operation
@@ -114,9 +109,20 @@ class Operation:
         # List of parameters (also available behind the interface)
         self.params = []
 
-        # Find abstract parameters (ie. sympy expressions and log them)
-        self.abstract_params = set([])
+        # If a definition circuit is given, this means we are supposed to create a
+        # non-elementary operation
+        if definition is not None:
+            # Copy circuit in order to prevent modification
+            # self.definition = QuantumCircuit(init_qc = definition)
+            self.definition = definition
 
+            self.abstract_params = set(definition.abstract_params)
+        else:
+            self.definition = None
+            self.abstract_params = set()
+
+
+        # Find abstract parameters (ie. sympy expressions and log them)
         for par in params:
             if isinstance(par, (float, int, np.floating, np.int32)):
                 pass
@@ -128,20 +134,6 @@ class Operation:
                 )
 
             self.params.append(par)
-
-        # If a definition circuit is given, this means we are supposed to create a
-        # non-elementary operation
-        if definition is not None:
-            # Copy circuit in order to prevent modification
-            # self.definition = QuantumCircuit(init_qc = definition)
-            self.definition = definition
-
-            self.abstract_params = self.abstract_params.union(
-                definition.abstract_params
-            )
-
-        else:
-            self.definition = None
 
         # These attributes store some information for the uncomputation algorithm
         # Qfree basically means that the unitary is a permutation matrix

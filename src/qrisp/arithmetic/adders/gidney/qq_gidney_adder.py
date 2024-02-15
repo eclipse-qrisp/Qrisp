@@ -15,7 +15,7 @@
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************/
 """
-from qrisp import QuantumVariable, mcx, cx, invert
+from qrisp import QuantumVariable, mcx, cx, invert, QuantumBool
 
 # This function performs the Gidney adder from https://arxiv.org/pdf/1709.06648.pdf
 def qq_gidney_adder(a, b, c_in = None, c_out = None):
@@ -24,15 +24,24 @@ def qq_gidney_adder(a, b, c_in = None, c_out = None):
         raise Exception("Tried to call Gidney adder with inputs of unequal length")
 
     if c_out is not None:
+        # Convert to qubit if neccessary
+        if isinstance(c_out, QuantumBool):
+            c_out = c_out[0]
+        
+        
         b = list(b) + [c_out]
     
     if len(b) == 1:
         cx(a[0],b[0])
         if c_in is not None:
+            if isinstance(c_in, QuantumBool):
+                c_in = c_in[0]
+            
+            
             cx(c_in, b[0])
         return
     
-    gidney_anc = QuantumVariable(len(b) - 1)
+    gidney_anc = QuantumVariable(len(b) - 1, name ="gidney_anc*", qs = b[0].qs())
     
     for i in range(len(b)-1):
         

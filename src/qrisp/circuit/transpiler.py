@@ -22,7 +22,7 @@ from qrisp.circuit.instruction import Instruction
 from qrisp.circuit.operation import (
     Operation,
 )
-from qrisp.circuit.quantum_circuit import fast_append
+from qrisp.circuit import fast_append
 
 
 # This function dissolves any Operation objects that have a definition circuit such

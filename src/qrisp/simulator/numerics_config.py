@@ -22,4 +22,4 @@ import numpy as xp
 
 # import cupy as xp
 
-float_tresh = 1e-5
+float_tresh = 1e-7

@@ -46,7 +46,7 @@ def qq_qcla(a, b, radix_base = 2, radix_exponent = 1, t_depth_reduction = True):
             cx(a[0],b[0])
             return
         elif len(b) <= R:
-            qcla_anc = QuantumVariable(len(b) - len(a))
+            qcla_anc = QuantumVariable(len(b) - len(a), name = "qcla_anc*", qs = b[0].qs())
             gidney_adder(list(a) + list(qcla_anc), b)
             qcla_anc.delete(verify = bool(verify_manual_uncomputations[0]))
             return

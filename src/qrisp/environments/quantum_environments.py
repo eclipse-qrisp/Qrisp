@@ -457,7 +457,7 @@ class QuantumEnvironment:
             for qb in self.deallocated_qubits:
                 qb.allocated = True
             
-            with fast_append():
+            with fast_append(3):
                 self.compile()
 
         # Otherwise, we append self to the data of the parent environment

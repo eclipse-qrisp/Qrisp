@@ -44,7 +44,7 @@ from qrisp.mcx_algs import hybrid_mcx
 
 # Returns the PROPAGATE status of a group of entries
 def calc_P_group(P):
-    new_p = QuantumBool(name = "p_group*")
+    new_p = QuantumBool(name = "p_group*", qs = P[0].qs())
     # Due to the semi-classical nature of the algorithm, it is possible
     # that some propagate values are known to be 0 (because some of the 
     # input values are known to be 0)
@@ -256,15 +256,18 @@ def cq_calc_carry(a, b, radix_base = 2, radix_exponent = 0, ctrl = None):
     # If b can be divided into k blocks of size R,
     # we only need k-1 ancillae qubit, because we have no need for
     # the carry of the last bock.
-    c = QuantumVariable(int(np.ceil(len(b)/R))-1, name = "carry*")
+    c = QuantumVariable(int(np.ceil(len(b)/R))-1, name = "carry*", qs = b[0].qs())
     
     # This variable will hold the intermediate GENERATE values, that are supposed 
     # to be uncomputed. The uncomputation is performed using the auto_uncompute 
     # decorator. This decorator uncomputes all local variables.
-    brent_kung_ancilla = QuantumVariable(c.size*(R-1))
+    if R > 1:
+        brent_kung_ancilla = QuantumVariable(c.size*(R-1), name = "bk_ancilla*", qs = b[0].qs())
+        anc_list = list(brent_kung_ancilla)
+    else:
+        anc_list = []
     
     #Create the g list
-    anc_list = list(brent_kung_ancilla)
     c_list = list(c)
     g = []
     for i in range(len(c)):
@@ -283,6 +286,12 @@ def cq_calc_carry(a, b, radix_base = 2, radix_exponent = 0, ctrl = None):
     # only execute the iterations where a_i is True
     
     use_parallel = False
+    
+    if not ctrl is None:
+        if sum(k == "1" for k in a) > 1:
+            parallel_anc_var = QuantumVariable(sum(k == "1" for k in a), name = "parll_qbl*", qs = b[0].qs())
+            parallel_ancillae = list(parallel_anc_var)
+    
     
     for i in range(min(len(g), len(a), len(b))):
         
@@ -319,12 +328,16 @@ def cq_calc_carry(a, b, radix_base = 2, radix_exponent = 0, ctrl = None):
                     # the control value.
                     # The permutation of the controls  that is necessary for 
                     # actual parallelization will be done by the the compiler.
-                    parll_qbl = QuantumBool(name = "parll_qbl*")
-                    cx(ctrl, parll_qbl[0])
-                    mcx([parll_qbl[0], b[i]], g[i], method = "gidney", ctrl_state = "10")
-                    parll_qbl.uncompute(recompute = True)
-            
-            
+                    # parll_qbl = QuantumBool(name = "parll_qbl*", qs = b[0].qs())
+                    parll_qbl = parallel_ancillae.pop(0)
+                    cx(ctrl, parll_qbl)
+                    mcx([parll_qbl, b[i]], g[i], method = "gidney", ctrl_state = "10")
+                    # parll_qbl.uncompute(recompute = True)
+    
+    try:
+        parallel_anc_var.uncompute(recompute = True)
+    except UnboundLocalError:
+        pass
     
     p = b
     

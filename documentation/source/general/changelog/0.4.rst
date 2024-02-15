@@ -15,7 +15,11 @@ With 0.4 we integrated the infrastructure to facility the implementation and com
 * We wrote a :ref:`tutorial for Shor's algorithm in Qrisp <shor_tutorial>` and created a dead simple :ref:`interface for factoring numbers <Shor>`.
 * :ref:`Decrypt <crypto_tools>` your neighbors pizza delivery order to make them eat pineapples! 😈
 
-As we found out, implementations of Shor's algorithm that are able to return a QuantumCircuit in a finite amount of time are an extremely rare sight. After some searching, we could find `some <https://github.com/RevanthK/ShorsAlgorithmIBMQiskit>`_ `competitors <https://qiskit.org/documentation/stable/0.28/tutorials/algorithms/08_factorizers.html#:~:text=Shor's%20Factoring%20algorithm%20is%20one,N%20%3D%2015%20backend%20%3D%20Aer.>`_ for a benchmark:
+As we found out, implementations of Shor's algorithm that are able to return a QuantumCircuit in a finite amount of time are an extremely rare sight. After some searching, we could find some competitors for a benchmark:
+
+* `The (deprecated) Qiskit implementation <https://qiskit.org/documentation/stable/0.28/tutorials/algorithms/08_factorizers.html#:~:text=Shor's%20Factoring%20algorithm%20is%20one,N%20%3D%2015%20backend%20%3D%20Aer.>`_.
+* `The implementation found in the QIBO framework <https://qibo.science/qibo/stable/code-examples/tutorials/shor/README.html>`_.
+* `An implementation found in a public repository on GitHub <https://github.com/RevanthK/ShorsAlgorithmIBMQiskit>`_.
 
 .. _shor_benchmark_plot:
 |
@@ -65,6 +69,11 @@ Network interface
 -----------------
 
 For remote backend queries, Qrisp now uses the network inteface developed in the `SequenC project <https://sequenc.de/>`_. This project aims to build a uniform, open-source quantum cloud infrastructure. Note that specific backend vendors like IBMQuantum can still be called via :ref:`VirtualBackends <VirtualBackend>`.
+
+Docker Container
+----------------
+
+Using the new network interface, we set up a :ref:`Docker container with a bunch of simulators <DockerSimulators>`. This gives you access to 8 new simulators without having to go through the hassle of installing and converting the compilation results. You can simply call ``docker pull`` and ``docker run`` and that's it!
 
 Minor features
 --------------

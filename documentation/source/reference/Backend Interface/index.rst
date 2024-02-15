@@ -7,9 +7,9 @@ Backend Interface
 
    BackendServer
    BackendClient
-   DockerBackend/index
    VirtualBackend
    VirtualQiskitBackend
+   DockerSimulators
    
 The backend interface contains a minimal set of features that apply to every gate-based quantum computer.
 The main motivation in designing the interface, is to provide a convenient setup for both clients and providers of physical quantum

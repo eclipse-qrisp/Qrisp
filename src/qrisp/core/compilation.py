@@ -195,7 +195,6 @@ def qompiler(
         
         # We now iterate through the data of the preprocessed QuantumCircuit
         for i in range(len(reordered_qc.data)):
-            QuantumCircuit.fast_append = True
             instr = reordered_qc.data[i]
             if instr.op.name == "barrier":
                 continue
@@ -259,28 +258,27 @@ def qompiler(
                     dirty_ancillae = []
 
                 QuantumCircuit.fast_append = False
-                # This function generates the data for the hybrid implementation
-                compiled_mcx_data = gen_hybrid_mcx_data(
-                    instr.qubits[:-1],
-                    instr.qubits[-1],
-                    instr.op.ctrl_state,
-                    clean_ancillae,
-                    dirty_ancillae,
-                )
-
-                # We now append the data
-                for qb in clean_ancillae + dirty_ancillae:
-                    translation_dic[qb] = qb
-
-                for instr in compiled_mcx_data:
-                    qc.append(instr.op, [translation_dic[qb] for qb in instr.qubits])
-                    update_depth_dic(qc.data[-1], depth_dic, depth_indicator = gate_speed)
-
-                # And free up the qubits
-                for qb in clean_ancillae + dirty_ancillae:
-                    del translation_dic[qb]
-
-                QuantumCircuit.fast_append = True
+                with fast_append(0):
+                    # This function generates the data for the hybrid implementation
+                    compiled_mcx_data = gen_hybrid_mcx_data(
+                        instr.qubits[:-1],
+                        instr.qubits[-1],
+                        instr.op.ctrl_state,
+                        clean_ancillae,
+                        dirty_ancillae,
+                    )
+    
+                    # We now append the data
+                    for qb in clean_ancillae + dirty_ancillae:
+                        translation_dic[qb] = qb
+    
+                    for instr in compiled_mcx_data:
+                        qc.append(instr.op, [translation_dic[qb] for qb in instr.qubits])
+                        update_depth_dic(qc.data[-1], depth_dic, depth_indicator = gate_speed)
+    
+                    # And free up the qubits
+                    for qb in clean_ancillae + dirty_ancillae:
+                        del translation_dic[qb]
 
             elif (
                 isinstance(instr.op, GidneyLogicalAND)

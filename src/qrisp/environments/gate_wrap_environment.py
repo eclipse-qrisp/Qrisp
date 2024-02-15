@@ -201,7 +201,7 @@ class GateWrapEnvironment(QuantumEnvironment):
 
         alloc_list = list(set(alloc_list))
         for qb in alloc_list:
-            self.env_qs.append(QubitAlloc(), qb)
+            self.env_qs.append(QubitAlloc(), [qb])
 
         self.env_qs.append(
             gate,
@@ -212,5 +212,5 @@ class GateWrapEnvironment(QuantumEnvironment):
 
         dealloc_list = list(set(dealloc_list))
         for qb in dealloc_list:
-            self.env_qs.append(QubitDealloc(), qb)
+            self.env_qs.append(QubitDealloc(), [qb])
             qb.allocated = False

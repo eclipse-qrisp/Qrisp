@@ -20,7 +20,7 @@ import inspect
 
 from qrisp.environments.quantum_environments import QuantumEnvironment
 from qrisp.environments.gate_wrap_environment import GateWrapEnvironment
-from qrisp.circuit import Operation, QuantumCircuit
+from qrisp.circuit import Operation, QuantumCircuit, Instruction
 from qrisp.environments.iteration_environment import IterationEnvironment
 
 def custom_control(func):
@@ -228,16 +228,14 @@ class CustomControlOperation(Operation):
         
         if not targeting_control:
             definition = QuantumCircuit(init_op.num_qubits + 1, init_op.num_clbits)
-            definition.append(init_op, definition.qubits[1:], definition.clbits)
+            definition.data.append(Instruction(init_op, definition.qubits[1:], definition.clbits))
             
             Operation.__init__(self, name = "cusc_" + init_op.name, num_qubits = init_op.num_qubits + 1, num_clbits = init_op.num_clbits, definition = definition)
             
             self.init_op = init_op
             
-            self.permeability = {}
+            self.permeability = {i+1 : init_op.permeability[i] for i in range(init_op.num_qubits)}
             self.permeability[0] = True
-            for i in range(init_op.num_qubits):
-                self.permeability[i+1] = init_op.permeability[i]
             
             self.is_qfree = init_op.is_qfree
         else:

@@ -216,7 +216,7 @@ def lin_incr(a, c_in = None, c_out = None):
         cx(c_in,a[0])
         return
     
-    incr_anc = QuantumVariable(len(a)-1)
+    incr_anc = QuantumVariable(len(a)-1, name = "incr_anc*", qs = a[0].qs())
     
     if c_in is not None:
         mcx([c_in, a[0]], incr_anc[0], method = "gidney")

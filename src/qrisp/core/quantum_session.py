@@ -20,7 +20,7 @@ import weakref
 
 import numpy as np
 
-from qrisp.circuit import Clbit, QuantumCircuit, Qubit, QubitAlloc, QubitDealloc
+from qrisp.circuit import Clbit, QuantumCircuit, Qubit, QubitAlloc, QubitDealloc, Instruction, Operation
 from qrisp.core.session_merging_tools import multi_session_merge
 from qrisp.misc import get_depth_dic
 
@@ -176,6 +176,8 @@ class QuantumSession(QuantumCircuit):
         self.uncomp_stack = []
 
         self.qs_tracker.append(weakref.ref(self))
+        
+        self.will_be_uncomputed = False
 
         # This list will contain the QuantumSessions which have been merged into this
         # session. It needs to be tracked in order to also update the shadow sessions
@@ -300,7 +302,7 @@ class QuantumSession(QuantumCircuit):
             return_qubits.append(self.qubits[-1])
 
         for qb in return_qubits:
-            self.append(QubitAlloc(), qb)
+            self.append(QubitAlloc(), [qb])
 
         return return_qubits
 
@@ -351,7 +353,8 @@ class QuantumSession(QuantumCircuit):
                     self.data.append(instr)
             
             for qb in qubits:
-                verification_qc.measure(qb)
+                clbit = verification_qc.add_clbit()
+                verification_qc.measure(qb, clbit)
 
             from qrisp.simulator import run
 
@@ -361,7 +364,7 @@ class QuantumSession(QuantumCircuit):
                     raise Exception("Tried to delete qubits not in |0> state")
                     
         for qb in qubits:
-            self.append(QubitDealloc(), qb)
+            self.append(QubitDealloc(), [qb])
             
 
 
@@ -433,16 +436,17 @@ class QuantumSession(QuantumCircuit):
 
     def __eq__(self, other):
         return id(self.data) == id(other.data)
-
+    
     def append(self, operation_or_instruction, qubits=[], clbits=[]):
         # Check the type of the instruction/operation
-        from qrisp.circuit import Instruction, Operation
-
+        
+        
         if issubclass(operation_or_instruction.__class__, Instruction):
             instruction = operation_or_instruction
             self.append(instruction.op, instruction.qubits, instruction.clbits)
             return
-
+        
+        
         elif issubclass(operation_or_instruction.__class__, Operation):
             operation = operation_or_instruction
 
@@ -452,7 +456,18 @@ class QuantumSession(QuantumCircuit):
                 + str(type(operation_or_instruction))
                 + " which is neither Instruction nor Operation"
             )
-
+        
+        if operation.name == "qb_alloc":
+            qubits[0].allocated = True
+        
+        
+        if self.xla_mode >= 3:
+            
+            self.data.append(Instruction(operation, qubits, clbits))
+            if operation.name == "qb_dealloc":
+                qubits[0].allocated = False
+            return
+        
         # Convert arguments (possibly integers) to list
         # The logic here is that the list structure gets preserved ie.
         # [[0, 1] ,2] ==> [[qubit_0, qubit_1], qubit_2]
@@ -480,8 +495,6 @@ class QuantumSession(QuantumCircuit):
         if operation.name not in ["qb_alloc", "barrier"]:
             check_alloc(qubits)
 
-        elif operation.name == "qb_alloc":
-            qubits[0].allocated = True
 
         # We now need to merge the sessions and treat their differing environment
         # levels. The idea here is that if a quantum session A is not identical to the
@@ -489,7 +502,6 @@ class QuantumSession(QuantumCircuit):
         # environment so far (otherwise merging would have occured). Thus, all data of A
         # belongs into the original_data attribute of the environment with the highest
         # level environment, where the environment quantum session isn't identical to A.
-
         flattened_qubits = []
         for item in qubits:
             if isinstance(item, Qubit):
@@ -529,8 +541,10 @@ class QuantumSession(QuantumCircuit):
         # if not operation.name == "qb_alloc":
         multi_session_merge(qs_list)
 
+        # print([qb.identifier for qb in self.qubits])
         super().append(operation, qubits, clbits)
 
+        
         if operation.name == "qb_dealloc":
             qubits[0].allocated = False
 
