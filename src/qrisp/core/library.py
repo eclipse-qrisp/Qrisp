@@ -467,9 +467,21 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
     from qrisp.circuit.quantum_circuit import convert_to_qb_list
     from qrisp.misc import bin_rep
     from qrisp.mcx_algs import GidneyLogicalAND, amy_toffoli, jones_toffoli
+    from qrisp.qtypes import QuantumBool
 
-    qubits_0 = convert_to_qb_list(controls)
-    qubits_1 = convert_to_qb_list(target)
+    new_controls = []
+
+    for qbl in controls:
+        if isinstance(qbl, QuantumBool):
+            new_controls.append(qbl[0])
+        else:
+            new_controls.append(qbl)
+            
+    if isinstance(target, QuantumBool):
+        target = target[0]
+
+    qubits_0 = new_controls
+    qubits_1 = [target]
 
     n = len(qubits_0)
 
