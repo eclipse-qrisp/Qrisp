@@ -2,6 +2,8 @@ Solving Sudoku using Quantum Backtracking
 =========================================
 .. _sudoku:
 
+This tutorial is the practical hands on-part of `this paper <https://arxiv.org/abs/2402.10060>`_.
+
 Sudoku
 ------
 
@@ -12,6 +14,16 @@ The objective of Sudoku is simple: fill in the grid so that each row, column, an
 Sudoku puzzles come in various difficulty levels, ranging from easy to extremely challenging, based on the number and placement of initial clues provided. While the rules remain consistent, the complexity of solving the puzzle increases with fewer initial clues and the necessity for more advanced solving strategies.
 
 Over the years, Sudoku has evolved into a beloved pastime for enthusiasts of all ages, offering a stimulating mental exercise that promotes concentration, critical thinking, and problem-solving skills. Whether played casually in newspapers, puzzle books, or digital platforms, Sudoku continues to captivate individuals worldwide with its timeless appeal.
+
+In our case, we will be working with 4x4 Sudoku mostly because we want to keep the results still simulable. A 9x9 or even 16x16 implementation would of course however equally well.
+
+|
+
+.. image:: ./sudoku.png
+   :width: 400
+   :alt: Sudoku
+   :align: center
+
 
 Backtracking
 ------------
@@ -104,6 +116,8 @@ for the algorithm to function properly:
 * Both functions must not change the state of the tree.
 * Both functions must delete/uncompute all temporarily created QuantumVariables.
 * ``accept`` and ``reject`` must never return ``True`` on the same node.
+
+More details for the Qrisp interface to quantum backtracking (including visualisation features) kann be found :ref:`here <QuantumBacktrackingTree>`.
 
 Quantum backtracking for solving a Sudoku puzzle
 ------------------------------------------------
@@ -741,6 +755,7 @@ Note that, in order to achieve a speed-up in practical scenarios, it is necessar
 
     sol = tree.find_solution(precision = 3)
     print(sol[::-1][1:]) 
+    # Yields [1, 1, 2]
 
 With this, we can find the solution for Sudoku problems with up to 3 empty fields with the statevector simulator on our local computer. For instances with more empty fields, we can still find the solution with a matrix product state simulator that can be employd with the ``measurement_kwargs`` keyword.
 
