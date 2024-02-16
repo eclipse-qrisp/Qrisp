@@ -464,9 +464,9 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
     
     """
 
-    from qrisp.circuit.quantum_circuit import convert_to_qb_list
     from qrisp.misc import bin_rep
     from qrisp.mcx_algs import GidneyLogicalAND, amy_toffoli, jones_toffoli
+    from qrisp.core import QuantumVariable
     from qrisp.qtypes import QuantumBool
 
     new_controls = []
@@ -476,10 +476,14 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
             new_controls.append(qbl[0])
         else:
             new_controls.append(qbl)
-            
-    if isinstance(target, QuantumBool):
+    
+    if isinstance(target, (list, QuantumVariable)):
+        
+        if len(target) > 1:
+            raise Exception("Target of mcx contained more than one qubit")
         target = target[0]
-
+        
+        
     qubits_0 = new_controls
     qubits_1 = [target]
 
