@@ -22,12 +22,12 @@ import numpy as np
 from qrisp.core import QuantumSession
 from qrisp.interface.backends import VirtualBackend
 from qrisp.interface.backends import VirtualQiskitBackend
-from qiskit import Aer
+
 
 
 def test_qiskit_backend_client():
     # TO-DO prevent this test from crashing regardless of functionality
-    return
+    from qiskit import Aer
     # Create QuantumSession
     qs = QuantumSession()
 
