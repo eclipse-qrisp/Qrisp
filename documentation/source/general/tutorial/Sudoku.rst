@@ -16,9 +16,9 @@ Over the years, Sudoku has evolved into a beloved pastime for enthusiasts of all
 Backtracking
 ------------
 
-As they fall into the category of constraint satisfaction problems, Sudokus are a popular challenge for solving them with Grover's algorithm [links?]. In this case constructing the oracle is rather straight forward, if the circuits for evaluating numerical comparisons are available. This however comes with the drawback that the state space of the search grows exponentially, which the quadratic speed-up of the Grover search barely mitigates. Of course there are much better ways of solving a Sudoku than just trying out every single combination and the same also holds for the quantum realm. In this tutorial you will learn how a strategy called _backtracking_ can be used to utilize the problem structure to gain a performance advantage.
+As they fall into the category of constraint satisfaction problems, Sudokus are (in a quantum sense) usually tackled using Grover's algorithm (SPOILER ALERT: we won't be using that approach). In this case constructing the oracle is rather straight forward, if the circuits for evaluating numerical comparisons are available. This, however, comes with the drawback that the state space of the search grows exponentially, which the quadratic speed-up of the Grover search barely mitigates. Of course there are much better ways of solving a Sudoku than just trying out every single combination; the same also holds true for the quantum realm. In this tutorial you will learn how a strategy called *backtracking* can be used to utilize the problem structure to gain a performance advantage.
 
-Backtracking approaches encopass a large class of algorithms, which are usually specified by both an ``accept`` and ``reject`` function. Furthermore required is a set of possible assignments to an array of fixed length. For a more detailed introduction consider `this page <https://www.geeksforgeeks.org/introduction-to-backtracking-data-structure-and-algorithm-tutorials/>`_ or `this page <https://en.wikipedia.org/wiki/Backtracking>`_. In general, the algorithm in Python code usually boils down to:
+Backtracking approaches encopass a large class of algorithms, which are usually specified by both an ``accept`` and ``reject`` function. Furthermore, a set of possible assignments to an array of fixed length is also required. For a more detailed introduction consider `this page <https://www.geeksforgeeks.org/introduction-to-backtracking-data-structure-and-algorithm-tutorials/>`_ or `this page <https://en.wikipedia.org/wiki/Backtracking>`_. In general, the algorithm in Python code usually boils down to:
 
 ::
 
@@ -45,15 +45,15 @@ Quantum backtracking
 The quantum algorithm for solving backtracking problems has been
 `proposed by Ashley Montanaro <https://arxiv.org/abs/1509.02374>`_ and yields
 a 1 to 1 correspondence between an arbitrary classical backtracking algorithm
-and it's quantum equivalent. The quantum version achieves a quadratic speed up
+and its quantum equivalent. The quantum version achieves a quadratic speed up
 over the classical one.
 
-The algorithm is based on performing a quantum phase estimation on a quantum walk
+The algorithm is based on performing quantum phase estimation on a quantum walk
 operator, which traverses the backtracking tree. The core algorithm returns
-"Node exists" if the 0 component of the quantum phase estimation result
+"Solution exists" if the 0 component of the quantum phase estimation result
 has a higher probability then 3/8 = 0.375.
 
-Similar to the classical version, for the Qrisp implementation of this quantum
+Similar to the classical version, in our Qrispy implementation of this quantum
 algorithm, a backtracking problem is specified by a maximum recursion depth
 and two functions, each returning a :ref:`QuantumBool` respectively:
 
@@ -63,16 +63,15 @@ specifications.
 **reject**: Is the function that returns True, if called on a node, representing a
 branch that should no longer be considered.
 
-Furthermore required is a :ref:`QuantumVariable` that specifies the branches
+Also required is a :ref:`QuantumVariable` that specifies the branches
 that can be taken by the algorithm at each node.
 
 **Node encoding**
 
-An important aspect of this algorithm is the node encoding. In Montanaros
-paper a central quantity is the distance from the root $l(x)$. This however
+An important aspect of this algorithm is the node encoding. In Montanaro's
+paper, a central quantity is the distance from the root $\ell(x)$. We realized that this
 doesn't generalize well to the specification of subtrees, which is why
-we encode the height of a node. For example in a tree with maximum depth $n$
-a leaf has height 0 and the root has height $n$.
+we encode the height of a node. In a tree with maximum depth $n$, for example, a leaf has height 0 and the root has height $n$.
 
 This quantity is encoded as a one-hot integer QuantumVariable, which can be
 found under the attribute ``h``.
@@ -106,11 +105,11 @@ for the algorithm to function properly:
 * Both functions must delete/uncompute all temporarily created QuantumVariables.
 * ``accept`` and ``reject`` must never return ``True`` on the same node.
 
-Quantum backtracking for solving a Sudoku
------------------------------------------
+Quantum backtracking for solving a Sudoku puzzle
+------------------------------------------------
 
-Now that we understood each separate element of the problem, we can start putting it together. Since most of the quantum backtracking logic is already settled with the Qrisp interface we are just left to implement the ``accept`` and ``reject`` functions.
-The first step here is to set-up a Sudoku board. To keep the algorithm still treatable with Simulators, we will restrict ourselves to 4x4 Sudokus, however the traditional 9x9 is equally possible.
+Now that we understood each separate element of the problem, we can start putting them together. Since most of the quantum backtracking logic is already settled with the Qrisp interface we are just left to implement the ``accept`` and ``reject`` functions.
+The first step here is to set-up a Sudoku board. To keep the algorithm still treatable with simulators, we will restrict ourselves to 4x4 Sudokus, however the traditional 9x9 is equally possible.
 
 ::
 
@@ -118,7 +117,7 @@ The first step here is to set-up a Sudoku board. To keep the algorithm still tre
     
     sudoku_board = np.array([[ 0, -1,  2,  3],
                              [ 2,  3,  0, -1],
-                             [ 1,  0,  3,  2],
+                             [ -1,  0,  3,  2],
                              [ 3, -1,  1,  0]])
                              
     num_empty_fields = np.count_nonzero(sudoku_board == -1)
@@ -129,7 +128,6 @@ This array represents a Sudoku board with 3 empty fields, that are to be filled.
 
     from qrisp import *
     from qrisp.quantum_backtracking import QuantumBacktrackingTree as QBT
-    
 
     tree = QBT(max_depth = num_empty_fields+1,
                branch_qv = QuantumFloat(2),
@@ -137,25 +135,23 @@ This array represents a Sudoku board with 3 empty fields, that are to be filled.
                reject = reject)
 
 
-Here, the statement `branch_qv = QuantumFloat(2)`` indicates, that each assignment of the backtracking problem is a 2-qubit integer. These assignments are saved in a :ref: `QuantumArray` of size ``max_depth``. We have to add one additional entry because of reasons that will soon become clear.
+Here, the statement ``branch_qv = QuantumFloat(2)`` indicates, that each assignment of the backtracking problem is a 2-qubit integer. These assignments are saved in a :ref: `QuantumArray` of size ``max_depth``. We have to add one additional entry because of reasons that will soon become clear.
 
 The accept function
--------------------
+^^^^^^^^^^^^^^^^^^^
 
 This function is rather simple: A Sudoku board is solved correctly if all entries are filled with numbers that do not contradict the rules of Sudoku. In backtracking language this means, that a node is accepted if it has height $0$ and none of its ancestor nodes were rejected. Thus, the implementation of this function is rather simple:
 
 ::
-
-    from qrisp import *
     
     @auto_uncompute    
     def accept(tree):
         return tree.h == 0
 
-However, there is a caveat for practical reasons: While Montanaro suggests that the algorithm should never explore rejected nodes, in our implementation rejected nodes are explored but have no children. As described above, we need to pick the depth to be $d = k + 1$ where $k$ is the number of empty fields in the Sudoku board. Otherwise, i.e., if $d = k$, the sibling nodes of the solution might be rejected. Because of this fact, the algorithm will still explore them and evaluate ``accept`` to ``True`` (because they have height 0), leading to the ambiguous situation that a node returns ``True`` for both ``reject`` and ``accept``.
+However, there is a caveat for practical reasons: While Montanaro suggests that the algorithm should never explore rejected nodes, in our implementation rejected nodes are explored but have no children. As described above, we need to pick the depth to be $n = k + 1$ where $k$ is the number of empty fields in the Sudoku board. Otherwise, i.e., if $n = k$, the sibling nodes of the solution might be rejected. Because of this fact, the algorithm will still explore them and evaluate ``accept`` to ``True`` (because they have height 0), leading to the ambiguous situation that a node returns ``True`` for both ``reject`` and ``accept``.
 
 The reject function
--------------------
+^^^^^^^^^^^^^^^^^^^
 
 The ``reject`` function is more complicated because this function needs to consider the Sudoku board and check whether all the assignments are in compliance with the rules of Sudoku. Another layer of complexity is introduced by the fact that the ``reject`` function should only consider entries that have already been assigned. To keep our presentation comprehensive, we will first implement a function, which checks a fully assigned Sudoku board and then modify this function such that it can also ignore non-assigned values.
 
@@ -289,7 +285,7 @@ Evaluating the comparisons
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The next step is to evaluate the comparisons to check for element distinctness. This means that we iterate over the edges of the graph and compute a :ref:`QuantumBool` for each edge indicating distinctness of the two connected nodes.
-For this we distinguish between the quantum-quantum and the classical-quantum comparison cases. For the first case we simply call the ``==`` operator on the two participating quantum variables to compute the comparison :ref:`QuantumBool`. 
+For this, we distinguish between the quantum-quantum and the classical-quantum comparison cases. For the first case, we simply call the ``==`` operator on the two participating quantum variables to compute the comparison :ref:`QuantumBool`. 
 
 ::
 
@@ -319,7 +315,7 @@ For this we distinguish between the quantum-quantum and the classical-quantum co
         # Return results
         return res_qbls
         
-Perform some tests:
+We test the functionality: 
 
 ::
     
@@ -371,7 +367,7 @@ As mentioned earlier, classical-quantum comparisons can be batched together to b
         # Evaluate dictionary with quantum value
         return qd[q_value]
 
-Test the functionality: 
+We test the functionality: 
 
 ::
 
@@ -419,7 +415,7 @@ The next step is to write a function, which performs multiple of these checks an
         # Return results
         return res_qbls
 
-Testing:
+We test the functionality: 
 
 ::
 
@@ -428,6 +424,8 @@ Testing:
     
     res_qbls = eval_cq_checks({0: [1,2,3], 1 : [1,2,3], 2 : [1,2,3]}, q_assigments)
     
+    for qbl in res_qbls:
+        print(qbl)
     # Yields
     # {False: 1.0}
     # {True: 1.0}
@@ -476,12 +474,12 @@ We can now write the function that checks the Sudoku board.
         return sudoku_valid
         
         
-Test it:
+We test the functionality: 
 
 ::
 
-    q_assignments = QuantumArray(qtype = QuantumFloat(2), shape = (3,))
-    q_assignments[:] = [1,1,2]
+    q_assignments = QuantumArray(qtype = QuantumFloat(2), shape = (4,))
+    q_assignments[:] = [1,1,1,2]
 
     sudoku_check = check_sudoku_assignments(sudoku_board, q_assignments)
     print(sudoku_check)
@@ -489,20 +487,20 @@ Test it:
     
     # Another check
     
-    q_assignments = QuantumArray(qtype = QuantumFloat(2), shape = (3,))
-    q_assignments[:] = [1,1,0]
+    q_assignments = QuantumArray(qtype = QuantumFloat(2), shape = (4,))
+    q_assignments[:] = [1,2,1,0]
 
     sudoku_check = check_sudoku_assignments(sudoku_board, q_assignments)
     print(sudoku_check)
     # Yields {False: 1.0}
 
 
-So far so good! This could already be used in a Grover based implementation but as discussed before we want to utilize the **structure** of the problem.
+So far so good! This could have already been used in a Grover based implementation, but as discussed before, we want to utilize the **structure** of the problem!
 
-Adaption for Quantum Backtracking
----------------------------------
+Adaptation for Quantum Backtracking
+-----------------------------------
 
-As this is a backtracking implementation, our Sudoku compliance check also has to understand that the results of certain comparisons should be ignored, since the corresponding fields are not assigned yet. For example, consider a Sudoku field with 4 empty fields, where only one field has been assigned so far. In our implementation of the algorithm, the empty fields are encoded as zeros in ``branch_qa`` and we only know that they are not assigned yet by considering the height :ref:`QuantumVariable`. The implementation of the Sudoku-check algorithm given above would therefore return "not valid" for almost every single node, because it assumes that the 3 remaining empty fields carry the value 0 even though in reality they have not been assigned yet. We therefore need to consider the value of the height variable ``h``, describing the height of the node in the :ref:`QuantumBacktrackingTree`.
+As this is a backtracking implementation, our Sudoku compliance check also has to understand that the results of certain comparisons should be ignored, since the corresponding fields are not assigned yet. For example, consider a Sudoku field with 4 empty fields, where only one field has been assigned so far. In our implementation of the algorithm, the empty fields are encoded as zeros in ``branch_qa`` and we only know that they are not assigned yet by considering the height :ref:`QuantumVariable`. The implementation of the Sudoku-check algorithm given above would therefore return "not valid" for almost every single node, because it assumes that the 3 remaining empty fields carry the value 0 even though in reality they have not been assigned yet. Because of that we need to also take the value of the height variable ``h`` into consideration, describing the height of the node in the :ref:`QuantumBacktrackingTree`.
 
 Fortunately, the one-hot encoding of this variable makes this rather easy: The value that has been assigned most recently is indicated by the corresponding qubit in ``h`` being in the $\ket{1}$ state. For example, in a tree of maximum depth 5, if the ``branch_qa`` entry with height 3 has been assigned recently, ``h`` will be in the state $000100$. The next assignment would then be height 2, i.e. $001000$.
 For a quantum-classical comparison with the ``branch_qa`` entry $i$, we can therefore simply call the comparison evaluation controlled on the $i$-th qubit in ``h``. This implies that this comparison can only result in ``True``, and as a result cause the ``reject`` value to be ``True`` if $i$ was assigned most recently.
@@ -519,11 +517,11 @@ We reformulate the classical comparison function:
         
         {int : list[int]}
         
-        Where each key/value pair corresponds to 
+        Each key/value pair corresponds to 
         one batched quantum-classical comparison.
         The keys represent the the quantum values 
         as indices of q_assigments and the values
-        are the list of classical valuesthat 
+        are the list of classical values that 
         the quantum value should be compared with.
         q_assigments and height are the quantum values
         that specify the state of the tree.
@@ -629,11 +627,6 @@ Similarly to the previous case, we can now create the Sudoku checking function b
 We can now test it:
 
 ::
-
-    sudoku_board = np.array([[ 0, -1,  2,  3],
-                             [ -1,  3,  0, -1],
-                             [ 1,  0,  3,  2],
-                             [ 3, -1,  1,  0]])
                                  
     q_assigments = QuantumArray(qtype = QuantumFloat(2), shape = (4,))
     q_assigments[:] = [0,0,1,2]
@@ -672,11 +665,83 @@ We can therefore now finally formulate our reject function:
     @auto_uncompute
     def reject(tree):
         
+        # Cut off the assignment with height 0
+        # since it is not relevant for the sudoku
+        # checker
         q_assigments = tree.branch_qa[1:]
+        
+        # Modify the height to reflect the cut off
+        modified_height = tree.h[1:]
         
         assignment_valid = check_singular_sudoku_assignment(sudoku_board,
                                                             q_assigments,
-                                                            tree.h)
+                                                            modified_height)
         return assignment_valid.flip()
-        
-        
+
+
+Finding a solution 
+^^^^^^^^^^^^^^^^^^
+
+Finally, with the accept and reject funtions, we can encode our Sudoku puzzle as a backtracking tree and **detect** the existence of a solution.
+For this, the tree is initialized in the state $\ket{r}$ (indicating the root) and quantum phase estimation (QPE) for the quantum walk operator with the specified ``precision`` is applied.
+The algorithm returns "Solution exists" if the 0 component of the quantum phase estimation result
+has a higher probability then 3/8 = 0.375. If the probability is less than 0.25, the algorithm returns "No solution exists". Otherwise, the precision of the phase estimation has to be increased. To make the result still simulable on a laptop, we will decrease the amount of empty fields to 3. If you want to try higher more empty fields, we recommend using the IBM cloud MPS simulator. Find out how to deploy it in Qrisp :ref:`Qrisp101`.
+
+::
+    
+    # Decrease the empty field count
+    sudoku_board = np.array([[ 0, -1,  2,  3],
+                             [ 2,  3,  0, -1],
+                             [ 1,  0,  3,  2],
+                             [ 3, -1,  1,  0]])
+
+    num_empty_fields = np.count_nonzero(sudoku_board == -1)
+    
+
+    from qrisp import *
+    from qrisp.quantum_backtracking import QuantumBacktrackingTree as QBT
+
+    tree = QBT(max_depth = num_empty_fields+1,
+               branch_qv = QuantumFloat(2),
+               accept = accept,
+               reject = reject,
+               subspace_optimization = True)
+
+    # Initialize root
+    tree.init_node([])
+    
+    #Perform QPE
+    qpe_res = tree.estimate_phase(precision = 3)
+    
+    # Retrieve measurements
+    mes_res = qpe_res.get_measurement()
+    
+    
+    if mes_res[0]>0.375:
+        print("Solution exists")
+    elif mes_res[0]<0.25:
+        print("No solution exists")
+    else:
+        print("Insufficent precision")
+
+
+To **find** a solution, we employ the ``find_solution`` method. This method starts by applying the ``estimate_phase`` function to the entrire tree (initialized in the state $\ket{r}$) and, based on the (multi-) measurement results, recursively applies the ``estimate_phase`` function to subtrees in order to find a solution.
+Note that, in order to achieve a speed-up in practical scenarios, it is necessary to specify the ``precision`` and the number of measurements (by default 10000) for the ``estimate_phase`` method accordingly. 
+
+::
+
+    from qrisp import *
+    from qrisp.quantum_backtracking import QuantumBacktrackingTree as QBT
+
+    tree = QBT(max_depth = num_empty_fields+1,
+               branch_qv = QuantumFloat(2),
+               accept = accept,
+               reject = reject,
+               subspace_optimization = True)
+
+    sol = tree.find_solution(precision = 3)
+    print(sol[::-1][1:]) 
+
+With this, we can find the solution for Sudoku problems with up to 3 empty fields with the statevector simulator on our local computer. For instances with more empty fields, we can still find the solution with a matrix product state simulator that can be employd with the ``measurement_kwargs`` keyword.
+
+Well done on completing our quantum Sudoku-solving tutorial! You're now part of an exclusive club, as this is the only guide of its kind available online. Pretty cool, huh? Remember, what makes quantum computing so exciting is how it taps into the unique structure of problems (like how we utilized the problem structure above). By understanding this, you're diving headfirst into a world where quantum algorithms could outshine their classical counterparts.
