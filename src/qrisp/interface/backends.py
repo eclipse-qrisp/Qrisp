@@ -154,8 +154,6 @@ class VirtualQiskitBackend(VirtualBackend):
 
     """
 
-    from qiskit import Aer
-
     def __init__(self, backend=None, port=8079):
         if backend is None:
             from qiskit import Aer
