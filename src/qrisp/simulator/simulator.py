@@ -218,9 +218,13 @@ def run(qc, shots, token="", iqs=None, insert_reset=True):
             
             keys = list(prob_dict.keys())
             
-            res = {k : 0 for k in keys}
+            res = {}
+            
             for s in samples:
-                res[keys[s]] += 1
+                if keys[s] in res:
+                    res[keys[s]] += 1
+                else:
+                    res[keys[s]] = 1
                 
         return res
 

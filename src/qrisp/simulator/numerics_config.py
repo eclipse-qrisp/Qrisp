@@ -23,3 +23,4 @@ import numpy as xp
 # import cupy as xp
 
 float_tresh = 1e-7
+cutoff_ratio = 5e-4
