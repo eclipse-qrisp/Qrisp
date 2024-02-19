@@ -181,7 +181,7 @@ class ConjugationEnvironment(QuantumEnvironment):
         
     
     @custom_control
-    def perform_conjugation(self, ctrl = None):
+    def perform_conjugation(self, ctrl = None, ctrl_method = None):
         
         temp = list(self.env_qs.data)
         self.env_qs.data = []
@@ -192,7 +192,7 @@ class ConjugationEnvironment(QuantumEnvironment):
         # self.env_qs.data.extend(self.conjugation_circ.data)
         
         if ctrl is not None:
-            with control(ctrl):
+            with control(ctrl, ctrl_method = ctrl_method):
                 self.env_qs.data.extend(temp)
         else:
             

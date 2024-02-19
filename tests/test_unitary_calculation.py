@@ -22,11 +22,12 @@ import time
 from qrisp.core import QuantumSession
 from qrisp.arithmetic import QuantumFloat
 from numpy.linalg import norm
-from qiskit import execute, Aer
+
 from qrisp.interface import convert_circuit
 
 
 def test_unitary_calculation():
+    from qiskit import execute, Aer
     n = 2
 
     qs = QuantumSession()

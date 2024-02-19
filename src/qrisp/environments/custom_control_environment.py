@@ -16,6 +16,8 @@
 ********************************************************************************/
 """
 
+import inspect
+
 from qrisp.environments.quantum_environments import QuantumEnvironment
 from qrisp.environments.gate_wrap_environment import GateWrapEnvironment
 from qrisp.circuit import Operation, QuantumCircuit, Instruction
@@ -162,12 +164,19 @@ def custom_control(func):
         # If no control qubit was found, simply execute the function
         if control_qb is None:
             return func(*args, **kwargs)
+
+        # Check whether the function supports the ctrl_method kwarg and adjust
+        # the kwargs accordingly
+        if "ctrl_method" in list(inspect.getargspec(func))[0] and isinstance(env, ControlEnvironment):
+            kwargs.update({"ctrl_method" : env.ctrl_method})
+        
         
         # In the case that a qubit was found, we use the CustomControlEnvironent (definded below)
         # This environments gatewraps the function and compiles it to a specific Operation subtype
         # called CustomControlledOperation.
         # The Condition/Control Environment compiler recognizes this Operation type
         # and processes it accordingly
+
         with CustomControlEnvironment(control_qb, func.__name__):
             if "ctrl" in kwargs:
                 kwargs["ctrl"] = control_qb

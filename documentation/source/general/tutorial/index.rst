@@ -30,6 +30,7 @@ By the end of this tutorial, you'll have a solid foundation of our high-level fr
    tutorial
    Quantum Alternating Operator Ansatz/index
    TSP
+   Sudoku
    Shor
    FT_compilation
    

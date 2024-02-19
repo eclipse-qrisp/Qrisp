@@ -703,8 +703,16 @@ class QuantumBacktrackingTree:
         # into a temporary container. This way the branching information is 0.
 
         # Check if |x> is root.
-        is_root = QuantumBool()
-        cx(self.h[self.max_depth],is_root)
+        
+        
+        # This
+        if self.max_depth%2 == even:
+            cx(self.h[self.max_depth],oddity_qbl)
+        
+        # Instead of this
+        
+        # is_root = QuantumBool()
+        # cx(self.h[self.max_depth],is_root)
         
         temporary_container = self.branch_qa.qtype.duplicate()
 
@@ -730,8 +738,8 @@ class QuantumBacktrackingTree:
         ctrl_state += "0"
 
         # Check if |x> is root. Otherwise, if the reject funtions returns "True" on the lift of the root a wrong phase (-1) may be applied to the root.
-        mcz_list.append(is_root)
-        ctrl_state += "0"
+        # mcz_list.append(is_root)
+        # ctrl_state += "0"
         
 
         # Add extra controls
@@ -1735,15 +1743,14 @@ class Subtree(QuantumBacktrackingTree):
                 "Tried to initialise subtree with root path longer than maximum depth")
 
         QuantumBacktrackingTree.__init__(self,
-                                         parent_tree.max_depth - \
-                                             len(root_path),
+                                         parent_tree.max_depth,
                                          parent_tree.branch_qa[0],
                                          parent_tree.accept_function,
-                                         parent_tree.reject_function
+                                         parent_tree.reject_function,
+                                         parent_tree.subspace_optimization
                                          )
 
-        self.embedding_array = QuantumArray(qtype = self.branch_qa.qtype, shape = len(root_path), qs = self.qs)
-        self.branch_qa = np.concatenate((self.branch_qa, self.embedding_array))
+        self.max_depth = parent_tree.max_depth - len(root_path)
 
         self.root_path = root_path
         self.original_tree = parent_tree
@@ -1783,7 +1790,7 @@ class Subtree(QuantumBacktrackingTree):
                     rev_branch_qa[k+i][:] = self.root_path[k]
 
     def subtree(self, path):
-        return self.original_tree.subtree(self.root_path + path)
+        return self.original_tree.subtree(path)
 
 
 
@@ -1814,7 +1821,7 @@ def find_solution(tree, precision, cl_accept=None, traversed_nodes=None, measure
         path = []
 
     if cl_accept(path):
-        return []
+        return path
     elif tree.max_depth == 0:
         return None
 
@@ -1870,23 +1877,26 @@ def find_solution(tree, precision, cl_accept=None, traversed_nodes=None, measure
     for b in new_branches:
         
         # Get the path to the new node
-        new_path=tree.path_decoder(b[1], b[2])
+        if isinstance(tree, Subtree):
+            new_path=tree.original_tree.path_decoder(b[1], b[2])
+        else:
+            new_path=tree.path_decoder(b[1], b[2])
 
-        if tuple(path + new_path) in traversed_nodes or len(new_path) == 0:
-            continue
+        # Continue if new_path was already explored 
+        if tuple(new_path) in traversed_nodes or tuple(new_path)==tuple(path):
+            continue 
 
         # Generate the subtree
         subtree=tree.subtree(new_path)
 
         # Recursive call
-        sub_sol=find_solution(subtree, precision, cl_accept, traversed_nodes)
+        solution=find_solution(subtree, precision, cl_accept, traversed_nodes, measurement_kwargs=measurement_kwargs)
 
-        # If a solution has been found, concatenate the pathes
-        if sub_sol is not None:
-            solution=path + new_path + sub_sol
+        # Leave loop if solution was found
+        if solution is not None:
             break
         else:
-            traversed_nodes.append(tuple(path + new_path))
+            traversed_nodes.append(tuple(new_path))
 
     else:
         raise Exception(

@@ -75,10 +75,7 @@ class TensorFactor:
         import numpy as np
 
         if matrix.size >= 2**6:
-            if matrix.dtype == np.complex64:
-                matrix = matrix * (np.abs(matrix) > 1e-7)
-            if matrix.dtype == np.complex128:
-                matrix = matrix * (np.abs(matrix) > 1e-15)
+                matrix = matrix * (np.abs(matrix) > float_tresh)
 
         # Convert matrix to BiArray
         matrix = DenseBiArray(matrix)

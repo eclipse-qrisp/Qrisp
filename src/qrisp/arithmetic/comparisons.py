@@ -18,7 +18,7 @@
 
 
 from qrisp.misc.utility import lifted
-from qrisp.environments import adaptive_condition
+from qrisp.environments import adaptive_condition, conjugate
 
 
 def less_than_gate(a, b):
@@ -128,7 +128,7 @@ def less_than(a, b):
     if isinstance(a, QuantumFloat) and isinstance(b, QuantumFloat):
         lt_gate = less_than_gate(a, b)
 
-        lt_qbl = QuantumBool()
+        lt_qbl = QuantumBool(qs = a.qs, name = "lt_qbl*")
 
         anc_amount = lt_gate.num_qubits - a.size - b.size - 1
 
@@ -163,7 +163,7 @@ def less_than(a, b):
 
         lt_gate = less_than_gate(a, b)
 
-        lt_qbl = QuantumBool()
+        lt_qbl = QuantumBool(qs = a.qs, name = "lt_qbl*")
 
         anc_amount = lt_gate.num_qubits - a.size - 1
 
@@ -205,7 +205,7 @@ def less_than(a, b):
 def equal(qf_0, qf_1):
     from qrisp import QuantumBool, QuantumFloat, cx, mcx
 
-    eq_qbl = QuantumBool()
+    eq_qbl = QuantumBool(qs = qf_0.qs, name = "eq_qbl*")
 
     if isinstance(qf_1, QuantumFloat):
         if qf_1.signed and not qf_0.signed:
@@ -226,17 +226,17 @@ def equal(qf_0, qf_1):
             significance_dict[qf_0.exponent + i] = qf_0[i]
             mcx_qubits.append(qf_0[i])
 
+        def conjugator(qf_1, significance_dict):
+            for i in range(qf_1.msize):
+                if i + qf_1.exponent in significance_dict:
+                    cx(qf_1[i], significance_dict[i + qf_1.exponent])
+
         for i in range(qf_1.msize):
-            if i + qf_1.exponent in significance_dict:
-                cx(qf_1[i], significance_dict[i + qf_1.exponent])
-            else:
+            if i + qf_1.exponent not in significance_dict:
                 mcx_qubits.append(qf_1[i])
 
-        mcx(mcx_qubits, eq_qbl, ctrl_state=0)
-
-        for i in range(qf_1.msize):
-            if i + qf_1.exponent in significance_dict:
-                cx(qf_1[i], significance_dict[i + qf_1.exponent])
+        with conjugate(conjugator)(qf_1, significance_dict):
+            mcx(mcx_qubits, eq_qbl, ctrl_state=0)
 
         if qf_1.signed and qf_0.signed:
             cx(qf_1.sign(), qf_0.sign())
