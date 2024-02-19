@@ -15,7 +15,7 @@ Sudoku puzzles come in various difficulty levels, ranging from easy to extremely
 
 Over the years, Sudoku has evolved into a beloved pastime for enthusiasts of all ages, offering a stimulating mental exercise that promotes concentration, critical thinking, and problem-solving skills. Whether played casually in newspapers, puzzle books, or digital platforms, Sudoku continues to captivate individuals worldwide with its timeless appeal.
 
-In our case, we will be working with 4x4 Sudoku mostly because we want to keep the results still simulable. A 9x9 or even 16x16 implementation would of course however equally well.
+In our case, we will be working with 4x4 Sudoku mostly because we want to keep the results still simulable. A 9x9 or even 16x16 implementation would of course work equally well.
 
 |
 
@@ -117,7 +117,7 @@ for the algorithm to function properly:
 * Both functions must delete/uncompute all temporarily created QuantumVariables.
 * ``accept`` and ``reject`` must never return ``True`` on the same node.
 
-More details for the Qrisp interface to quantum backtracking (including visualisation features) kann be found :ref:`here <QuantumBacktrackingTree>`.
+More details for the Qrisp interface to quantum backtracking (including visualisation features) can be found :ref:`here <QuantumBacktrackingTree>`.
 
 Quantum backtracking for solving a Sudoku puzzle
 ------------------------------------------------
