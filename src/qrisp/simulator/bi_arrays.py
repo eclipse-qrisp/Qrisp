@@ -27,7 +27,7 @@ from scipy.sparse import (
 )
 
 import qrisp.simulator.bi_array_helper as hlp
-from qrisp.simulator.numerics_config import float_tresh
+from qrisp.simulator.numerics_config import float_tresh, sparsification_rate, cutoff_ratio
 
 try:
     # sparse_dot_mkl seems to be only faster in situations, where the shape of the
@@ -1067,11 +1067,20 @@ class DenseBiArray(BiArray):
             self.apply_swaps()
             other.apply_swaps()
 
-            res.data = np.matmul(self.data, other.data)
+            res.data = np.matmul(self.data, other.data).ravel()
 
             self.swapaxes(0, 1)
             self.reshape(original_shape_self)
             other.reshape(original_shape_other)
+            
+            if np.random.random(1)[0] < sparsification_rate and res.size > 2**14:
+                temp = np.abs(res.data.ravel())
+                max_abs = np.max(temp)
+                filter_arr = temp > max_abs*cutoff_ratio
+                res.data = res.data * filter_arr
+                res.data = res.data.reshape(res_shape)
+                res.sparsity = np.sum(filter_arr)/res.size
+            
 
         if res.size > multithreading_threshold:
             # Start the wrapper

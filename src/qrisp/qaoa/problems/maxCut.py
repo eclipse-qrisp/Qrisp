@@ -21,13 +21,27 @@ import numpy as np
 from scipy.optimize import minimize
 from sympy import Symbol
 import itertools
+from numba import njit, prange
 
-def maxcut_obj(x,G):
-        cut = 0
-        for i, j in G.edges():
-            if x[i] != x[j]:                        
-                cut -= 1    
-        return cut
+@njit(cache = True)
+def maxcut_obj(x, edge_list):
+    cut = 0
+    for i, j in edge_list:
+        # the edge is cut
+        if ((x >> i) ^ (x >>j)) & 1:
+        # if x[i] != x[j]:                          
+            cut -= 1
+    return cut
+
+@njit(parallel = True, cache = True)
+def maxcut_energy(outcome_array, count_array, edge_list):
+    
+    res_array = np.zeros(len(outcome_array))    
+    for i in prange(len(outcome_array)):
+        res_array[i] = maxcut_obj(outcome_array[i], edge_list)*count_array[i]
+        
+    return np.sum(res_array)
+
 
 def create_maxcut_cl_cost_function(G):
     """
@@ -48,20 +62,25 @@ def create_maxcut_cl_cost_function(G):
     """    
     def cl_cost_function(counts):
         
-        def maxcut_obj(x, G):
-            cut = 0
-            for i, j in G.edges():
-                # the edge is cut
-                if x[i] != x[j]:                          
-                    cut -= 1
-            return cut
+        edge_list = np.array(list(G.edges()), dtype = np.uint32)
         
-        energy = 0
-        for meas, meas_count in counts.items():
-            obj_for_meas = maxcut_obj(meas, G)
-            energy += obj_for_meas * meas_count
+        counts_keys = list(counts.keys())
         
-        return energy
+        int_list = []
+        if not isinstance(counts_keys[0], str):
+            
+            for c_array in counts_keys:
+                integer = int("".join([c for c in c_array]), 2)
+                int_list.append(integer)
+        else:
+            for c_str in counts_keys:
+                integer = int(c_str, 2)
+                int_list.append(integer)
+            
+        counts_array = np.array(list(counts.values()))
+        outcome_array = np.array(int_list, dtype = np.uint32)
+        
+        return maxcut_energy(outcome_array, counts_array, edge_list)
     
     return cl_cost_function
 

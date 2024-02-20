@@ -212,23 +212,37 @@ def permuter(index, new_index, bit_partition, permuted_bit_partition, perm):
         # bit_range = extract_bit_range(index, bit_partition[i], bit_partition[i+1])
         # insert_bit_range(new_index, bit_range, permuted_bit_partition[perm[i]])
         # Inlined version more efficient:
-        new_index |= (
-            (
-                index
-                & (
-                    (int(1 << (bit_partition[i + 1] - bit_partition[i])) - 1)
-                    << bit_partition[i]
+        if isinstance(new_index, np.ndarray):
+            new_index |= (
+                (
+                    index
+                    & (
+                        (int(1 << (bit_partition[i + 1] - bit_partition[i])) - 1)
+                        << bit_partition[i]
+                    )
                 )
-            )
-            >> bit_partition[i]
-        ) << permuted_bit_partition[perm[i]]
+                >> bit_partition[i]
+            ) << permuted_bit_partition[perm[i]]
+        else:
+            for j in range(len(index)):
+                new_index[j] |= (
+                    (
+                        index[j]
+                        & (
+                            (int(1 << (bit_partition[i + 1] - bit_partition[i])) - 1)
+                            << int(bit_partition[i])
+                        )
+                    )
+                    >> int(bit_partition[i])
+                ) << int(permuted_bit_partition[perm[i]])
+            
 
 
 def invert_perm(perm):
     return [perm.index(i) for i in range(len(perm))]
 
 
-def permute_axes(index, index_bit_permutation):
+def permute_axes(index, index_bit_permutation, jit = True):
     n = len(index_bit_permutation)
 
     index_bit_permutation = -np.array(index_bit_permutation) + n - 1
@@ -261,18 +275,21 @@ def permute_axes(index, index_bit_permutation):
         else:
             i += 1
 
-    # print(perm)
-    new_index = np.zeros(index.size, dtype=index.dtype)
+    if isinstance(index, np.ndarray):
+        new_index = np.zeros(index.size, dtype=index.dtype)
+        dtype = index.dtype
+    else:
+        new_index = [0 for _ in range(len(index))]
+        dtype = np.int64
 
     bit_partition = [sum(perm_shape[:i]) for i in range(len(perm_shape) + 1)]
 
-    # print(bit_partition)
     perm_shape_permuted = [perm_shape[i] for i in invert_perm(perm)]
     permuted_bit_partition = [
         sum(perm_shape_permuted[:i]) for i in range(len(perm_shape) + 1)
     ]
 
-    if len(perm) * index.size > 2**10:
+    if len(perm) * len(index) > 2**10 and jit:
         jitted_permuter(
             index,
             new_index,
@@ -281,12 +298,13 @@ def permute_axes(index, index_bit_permutation):
             np.array(perm),
         )
     else:
+        
         permuter(
             index,
             new_index,
-            np.array(bit_partition, dtype = index.dtype),
-            np.array(permuted_bit_partition, dtype = index.dtype),
-            np.array(perm, dtype = index.dtype),
+            np.array(bit_partition, dtype = dtype),
+            np.array(permuted_bit_partition, dtype = dtype),
+            np.array(perm, dtype = dtype),
         )
 
     return new_index
@@ -314,6 +332,7 @@ def bi_array_moveaxis(data_array, index_perm, f_index_array):
     # return f_index_array
     return data_array[f_index_array]
 
+
 @njit(parallel = True, cache = True)
 def dense_measurement_brute(input_array, mes_amount, outcome_index):
     
@@ -330,6 +349,10 @@ def dense_measurement_brute(input_array, mes_amount, outcome_index):
     p_array = np.abs(p_array)
     max_p_array = np.max(p_array)
     
+    indices = np.nonzero(p_array > max_p_array*cutoff_ratio)[0]
+    
+    return reshaped_array[indices,:], p_array[indices], indices
+
     new_arrays = []
     p_values = []
     outcome_indices = []
@@ -342,6 +365,7 @@ def dense_measurement_brute(input_array, mes_amount, outcome_index):
             outcome_indices.append(outcome_index+i)
     
     return new_arrays, p_values, outcome_indices
+
 
 @njit(nogil=True, cache=True)
 def dense_measurement_smart(input_array, mes_amount, outcome_index):
@@ -455,7 +479,7 @@ def find_unique_markers(arr):
     return unique_marker
     
 
-@njit
+@njit(cache = True)
 def find_agreements(block_a, block_b):
 
     a_pointer = 0

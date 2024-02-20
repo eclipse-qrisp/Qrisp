@@ -763,7 +763,6 @@ def insert_multiverse_measurements(qc):
                         break
             else:
                 new_data.append(Instruction(disentangler, [meas_qubit]))
-                # new_measurements.append(instr)
                 new_measurements.append((instr.qubits[0], instr.clbits[0]))
                 continue
             
@@ -778,8 +777,6 @@ def insert_multiverse_measurements(qc):
             
             mes_instr = instr.copy()
             mes_instr.qubits = [qb]
-            # new_measurements.append((qb, instr.clbits[0]))
-            # new_measurements.append(mes_instr)
             
         elif instr.op.name == "reset":
             
@@ -857,4 +854,5 @@ def circuit_preprocessor(qc):
     else:
         qc = insert_disentangling(qc)
         qc = group_qc(qc)
+    
     return reorder_circuit(qc, ["measure", "reset", "disentangle"])

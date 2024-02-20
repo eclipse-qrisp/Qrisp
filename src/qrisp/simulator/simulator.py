@@ -108,7 +108,6 @@ def run(qc, shots, token="", iqs=None, insert_reset=True):
         # if len(qc.qubits) < 30 or True:
             # qc, mes_list = extract_measurements(qc)
         
-            
         qc, new_mes_list = insert_multiverse_measurements(qc)
         
         mes_list = mes_list + new_mes_list
@@ -127,7 +126,6 @@ def run(qc, shots, token="", iqs=None, insert_reset=True):
             total_flops += 2 ** qc.data[i].op.num_qubits
         
         progress_bar.total = total_flops
-        
         for i in range(len(qc.data)):
             # Set alias for the instruction of this operation
             instr = qc.data[i]
@@ -166,7 +164,7 @@ def run(qc, shots, token="", iqs=None, insert_reset=True):
             mes_qubit_indices.append(qc.qubits.index(instr.qubits[0]))
             
         if len(mes_qubit_indices):
-            outcome_list, cl_prob = iqs.multi_measure(mes_qubit_indices, return_res_states = False)
+            outcome_list, cl_prob = iqs.multi_measure(mes_qubit_indices[::-1], return_res_states = False)
             mes_qubit_indices = []
             mes_clbit_indices = []
             
@@ -179,53 +177,48 @@ def run(qc, shots, token="", iqs=None, insert_reset=True):
         # and the probablities in .cl_prob. In order to ensure qiskit compatibility, we
         # reverse the bitstrings
         prob_dict = {}
-
         
-        for j in range(len(outcome_list)):
+        norm = np.sum(cl_prob)
+        cl_prob = cl_prob/norm
+        
             
-            outcome_str = bin(outcome_list[j])[2:].zfill(len(mes_list))
-            
-            try:
-                prob_dict[outcome_str] += cl_prob[j]
-            except KeyError:
-                prob_dict[outcome_str] = cl_prob[j]
-
-        #Normalize probabilities to 1 (can be slightly different due to
-        #floating point errors)
-        norm = 0
-        for v in prob_dict.values():
-            norm += v
-            
-        for k,v in prob_dict.items():
-            prob_dict[k] = prob_dict[k]/norm
-            
-
-        #If shots >= 10000, no samples will be drawn and the distribution will
+        res = {}
+        #If shots >= 1000000, no samples will be drawn and the distribution will
         #be returned instead
-        if shots >= 10000:
-            res = {}
+        if shots >= 100000:
             
-            for k, v in prob_dict.items():
-                res[k] = int(np.round(v*abs(shots)))
+            for j in range(len(outcome_list)):
                 
+                outcome_str = bin(outcome_list[j])[2:].zfill(len(mes_list))
+                
+                shot_val = int(np.round(cl_prob[j]*abs(shots)))
+                
+                try:
+                    res[outcome_str] += shot_val
+                except KeyError:
+                    res[outcome_str] = shot_val
+
         #Generate samples
         else:
             
             from numpy.random import choice
-            p_array = np.array(list(prob_dict.values()))
+            # p_array = np.array(list(prob_dict.values()))
             
-            samples = choice(len(p_array), shots, p=p_array)
+            # samples = choice(len(p_array), shots, p=p_array)
             
-            keys = list(prob_dict.keys())
+            samples = choice(len(cl_prob), shots, p=cl_prob)
             
             res = {}
             
             for s in samples:
-                if keys[s] in res:
-                    res[keys[s]] += 1
-                else:
-                    res[keys[s]] = 1
                 
+                outcome_str = bin(outcome_list[s])[2:].zfill(len(mes_list))
+                
+                if outcome_str in res:
+                    res[outcome_str] += 1
+                else:
+                    res[outcome_str] = 1
+        
         return res
 
 

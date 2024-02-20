@@ -19,7 +19,7 @@
 # Created by ann81984 at 23.05.2022
 import numpy as np
 
-from qrisp.core import QuantumSession
+from qrisp import QuantumCircuit
 from qrisp.interface.backends import VirtualBackend
 from qrisp.interface.backends import VirtualQiskitBackend
 
@@ -29,45 +29,40 @@ def test_qiskit_backend_client():
     # TO-DO prevent this test from crashing regardless of functionality
     from qiskit import Aer
     # Create QuantumSession
-    qs = QuantumSession()
+    qc = QuantumCircuit()
 
-    qs.add_qubit()
-    qs.add_qubit()
-    qs.add_clbit()
+    qc.add_qubit()
+    qc.add_qubit()
+    qc.add_clbit()
 
-    qs.h(0)
+    qc.h(0)
 
-    qs.rz(np.pi / 2, 0)
+    qc.rz(np.pi / 2, 0)
 
-    qs.x(0)
-    qs.cx(0, 1)
-    qs.measure(1, 0)
+    qc.x(0)
+    qc.cx(0, 1)
+    qc.measure(1, 0)
 
-    qs.append(qs.to_op("composed_op"), qs.qubits, qs.clbits)
 
-    qs.append(qs.to_op("multi_composed_op"), qs.qubits, qs.clbits)
-
-    print(qs)
+    print(qc)
 
     ###################
 
     # Create VirtualBackend
-    def sample_run_func(qc, shots):
+    def sample_run_func(qc, shots, token = ""):
         print("Executing Circuit")
         return {"0": shots}
 
     test_virtual_backend = VirtualBackend(sample_run_func)
 
-    print(test_virtual_backend.run(qs, 100))
-    assert str(test_virtual_backend.run(qs, 100)) == "{'0': 100}"
-    assert test_virtual_backend.run(qs, 100)["0"] == 100
+    print(test_virtual_backend.run(qc, 100))
+    assert str(test_virtual_backend.run(qc, 100)) == "{'0': 100}"
+    assert test_virtual_backend.run(qc, 100)["0"] == 100
 
     ###################
 
     # Create Qiskit Backend
     test_qiskit_backend = VirtualQiskitBackend(Aer.get_backend("qasm_simulator"))
-
-    from qrisp import QuantumCircuit
 
     qc = QuantumCircuit(4, 1)
     qc.x(0)

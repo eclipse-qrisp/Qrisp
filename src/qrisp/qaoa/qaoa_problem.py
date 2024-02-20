@@ -474,6 +474,8 @@ class QAOAProblem:
         #bound_qc = self.train_circuit(qarg, depth)
         #opt_res = bound_qc(qarg).get_measurement(**mes_kwargs)
         #return opt_res
+        if not "shots" in mes_kwargs:
+            mes_kwargs["shots"] = 5000
         
         #res_sample = self.optimization_routine(qarg, compiled_qc, symbols , depth,  mes_kwargs, max_iter)
         res_sample = self.optimization_routine(qarg, depth, mes_kwargs, max_iter)

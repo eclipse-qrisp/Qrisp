@@ -41,6 +41,7 @@ def test_string_test():
 
     q_str_3 = q_str.duplicate(init=True)
 
+    
     assert (type(q_str).__name__ and type(q_str_3).__name__) == "QuantumString"
     assert str(q_str + q_str_3) == "{'hello world! hello world! ': 1.0}"
     print(q_str + q_str_3)
