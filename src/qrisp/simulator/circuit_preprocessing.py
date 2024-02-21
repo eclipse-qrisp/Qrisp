@@ -846,13 +846,8 @@ def circuit_preprocessor(qc):
         return qc.copy()
 
     # TO-DO find reliable classifiaction when automatic disentangling works best
-    if len(qc.qubits) < 26:
-        qc = group_qc(qc)
-    elif len(qc.qubits) < 34:
-        qc = group_qc(qc)
+    if len(qc.qubits) > 45:
         qc = insert_disentangling(qc)
-    else:
-        qc = insert_disentangling(qc)
-        qc = group_qc(qc)
+    qc = group_qc(qc)
     
     return reorder_circuit(qc, ["measure", "reset", "disentangle"])

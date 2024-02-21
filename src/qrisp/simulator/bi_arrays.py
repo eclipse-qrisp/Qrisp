@@ -677,43 +677,15 @@ class SparseBiArray(BiArray):
                 
         
         return new_bi_arrays, p_list, outcome_index_list
-        
-            
-            
-
-        col_indices = sprs.indices
-        row_ptr = sprs.indptr
-        data = sprs.data
-
-        for r in range(len(row_ptr) - 1):
-            if row_ptr[r] != row_ptr[r + 1]:
-                
-                temp_data = data[row_ptr[r] : row_ptr[r + 1]]
-                p = np.abs(np.vdot(temp_data, temp_data))
-                
-                if p < float_tresh:
-                    continue
-                
-                p_list.append(p)
-                outcome_index_list.append(r)
-                
-                if return_new_arrays:
-                
-                    new_bi_array = SparseBiArray(
-                        (
-                            col_indices[row_ptr[r] : row_ptr[r + 1]].astype(np.int64),
-                            data[row_ptr[r] : row_ptr[r + 1]],
-                        ),
-                        shape=(self.size // 2 ** len(indices),),
-                    )
     
-                    new_bi_arrays.append(new_bi_array)
-                else:
-                    
-                    new_bi_arrays.append(None)
-
-        return new_bi_arrays, p_list, outcome_index_list
-
+    # Should return a cheap guess whether two inputs are linearly independent
+    def exclude_linear_indpendence(self, other):
+        
+        if not 0.5 < len(self.data)/len(other.data) < 2:
+            return False
+        return True
+        
+        
     # Calculate the squared norm, ie. the sesquilinear scalar product of self with
     # itself
     def squared_norm(self):
@@ -1135,6 +1107,10 @@ class DenseBiArray(BiArray):
         self.apply_swaps()
         other.apply_swaps()
         return np.vdot(self.data, other.data)
+    
+    # Should return a cheap guess whether two inputs are linearly independent
+    def exclude_linear_indpendence(self, other):
+        return True
 
     # This method works similarly as it's equivalent in SparseBiArray
     def to_array(self):

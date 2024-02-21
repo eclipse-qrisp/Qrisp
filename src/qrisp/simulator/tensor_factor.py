@@ -228,6 +228,9 @@ class TensorFactor:
             # print("disentangling successfull")
             return TensorFactor([qubit], temp), TensorFactor(new_qubits, new_bi_arrays[0])
         
+        if not new_bi_arrays[0].exclude_linear_indpendence(new_bi_arrays[1]):
+            return self, self
+        
         vdot_value = new_bi_arrays[0].vdot(new_bi_arrays[1])
         
         
