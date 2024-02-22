@@ -28,7 +28,7 @@ from _collections_abc import Iterable
 
 
 
-def maxSatCostOp(clauses):
+def maxSatCostOp(problem):
 
     """
     |  Implementation for MaxSat Cost-Operator, in accordance to the original QAOA-paper.
@@ -49,9 +49,10 @@ def maxSatCostOp(clauses):
 
     Examples
     --------
-    >>> clauses11 = [[1,2,-3], [1,4,-6], [4,5,6], [1,3,-4], [2,4,5], [1,3,5], [-2,-3,6]]
+    >>> clauses11 = (6, [[1,2,-3], [1,4,-6], [4,5,6], [1,3,-4], [2,4,5], [1,3,5], [-2,-3,6]])
     
     |  Explanation: 
+    |  First entry of tuple is the number of variables, second is the clauses
     |  Clause [1, 2, -4] is fulfilled by the QuantumStates "1100", "1110" 
 
     * if positive sign: the index has to be "1", if negative sign the index has to be "0".
@@ -68,7 +69,7 @@ def maxSatCostOp(clauses):
     """
     
 
-    
+    clauses = problem[1]
 
     if not isinstance(clauses, Iterable):
         raise Exception("Wrong structure of problem - clauses have to be iterable!")
@@ -133,7 +134,7 @@ def maxSatCostOp(clauses):
 
 
 
-def clausesdecoder(clauses, numVars): 
+def clausesdecoder(problem): 
     """
     Decodes the clause arrays to represent binary bitstrings, that fulfill the clauses
     --> used to calculate objective function, i.e. the classical cost function
@@ -165,6 +166,10 @@ def clausesdecoder(clauses, numVars):
     
 
     """
+
+    numVars = problem[0]
+    clauses = problem[1]
+
     # create all bitstring possibilites
     binStrings = list(itertools.product([0,1], repeat=numVars))
     decodedClauses = []
@@ -185,7 +190,7 @@ def clausesdecoder(clauses, numVars):
 
 
 
-def maxSatclCostfct(decodedClauses):
+def maxSatclCostfct(problem):
 
     """
 
@@ -201,6 +206,9 @@ def maxSatclCostfct(decodedClauses):
         the classical function for the problem instance, which takes a dictionary of measurement results as input
 
     """
+
+
+    decodedClauses = clausesdecoder(problem)
 
     def setupaClCostfct(res_dic):
         energy = 0
