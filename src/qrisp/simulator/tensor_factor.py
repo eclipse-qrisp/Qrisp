@@ -204,6 +204,8 @@ class TensorFactor:
         return p_list, tf_list, outcome_index_list
     
     def disentangle(self, qubit):
+        if len(self.qubits) == 1:
+            return self, self
         
         # Swap the index that is supposed to be measured to the front
         index = self.qubits.index(qubit)
