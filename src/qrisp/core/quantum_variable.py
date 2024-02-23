@@ -16,15 +16,14 @@
 ********************************************************************************/
 """
 
-
 import copy
 import weakref
-
 import matplotlib.pyplot as plt
 import numpy as np
-
 from qrisp.core.compilation import qompiler
 
+from catalyst.jax_primitives import *
+from qrisp.circuit import Qubit
 
 class QuantumVariable:
     """
@@ -231,12 +230,14 @@ class QuantumVariable:
             generic name is given.
 
         """
-
-        if size < 0:
-            raise Exception(
-                f"Tried to create QuantumVariable with invalid qubit amount {size}"
-            )
-
+        
+        
+        if isinstance(size, int):
+            if size < 0:
+                raise Exception(
+                    f"Tried to create QuantumVariable with invalid qubit amount {size}"
+                )
+        # raise
         # Store quantum session
         from qrisp.core import QuantumSession, merge_sessions
 
@@ -245,8 +246,8 @@ class QuantumVariable:
         else:
             self.qs = QuantumSession()
 
-        self.size = int(size)
-
+        self.size = size
+        
         self.user_given_name = False
         # If name is given, register variable in session manager
         if name is not None:
@@ -318,6 +319,8 @@ class QuantumVariable:
         QuantumVariable.live_qvs.append(weakref.ref(self))
         self.creation_time = int(self.creation_counter[0])
         self.creation_counter += 1
+        
+        
     
     def __or__(self, other):
         from qrisp import mcx, x, cx
@@ -924,7 +927,18 @@ class QuantumVariable:
         >>> print(mes_results)
         {1.0: 0.5, 3.0: 0.5}
         """
-
+        
+        if self.abstract_reg is not None:
+            
+            qb_0 = qextract_p.bind(self.abstract_reg, 0)
+            qb_1 = qextract_p.bind(self.abstract_reg, 1)
+            obs = compbasis_p.bind(qb_0, qb_1)
+            
+            counts_a, counts_b = counts_p.bind(obs, shots = 100, shape=(2**2,))
+            
+            return counts_a, counts_b
+            
+            
         if backend is None:
             if self.qs.backend is None:
                 from qrisp.default_backend import def_backend
@@ -1047,7 +1061,15 @@ class QuantumVariable:
         return list(self.get_measurement())[0]
 
     def __getitem__(self, key):
-        return self.reg[key]
+        if self.abstract_reg is None:
+            return self.reg[key]
+        else:
+            qb = Qubit(self.name + "." + str(key))
+            qb.qs = self.qs
+            qb.abstract_reg = self.abstract_reg
+            qb.index = key
+            
+            return qb
 
     def __str__(self):
         return str(self.get_measurement())

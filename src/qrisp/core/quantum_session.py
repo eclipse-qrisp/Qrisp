@@ -17,14 +17,13 @@
 """
 
 import weakref
-
 import numpy as np
 
 from qrisp.circuit import Clbit, QuantumCircuit, Qubit, QubitAlloc, QubitDealloc, Instruction, Operation
 from qrisp.core.session_merging_tools import multi_session_merge
 from qrisp.misc import get_depth_dic
 
-
+from catalyst.jax_primitives import *
 class QuantumSession(QuantumCircuit):
     """
     The QuantumSession class manages the life cycle of QuantumVariables and enables
@@ -210,9 +209,14 @@ class QuantumSession(QuantumCircuit):
 
         # Determine amount of required qubits
         req_qubits = qv.size
-
-        # Hand qubits to quantum variable
-        qv.reg = self.request_qubits(req_qubits, name=qv.name)
+        
+        try:
+            qv.abstract_reg = qalloc_p.bind(qv.size)
+            qv.reg = None
+        except TypeError:
+            qv.abstract_reg = None
+            # Hand qubits to quantum variable
+            qv.reg = self.request_qubits(req_qubits, name=qv.name)
 
         # Register in the list of active quantum variable
         self.qv_list.append(qv)
@@ -440,7 +444,30 @@ class QuantumSession(QuantumCircuit):
     def append(self, operation_or_instruction, qubits=[], clbits=[]):
         # Check the type of the instruction/operation
         
+        if operation_or_instruction.name == "h":
+            
+            abs_qubit_0 = qextract_p.bind(qubits[0].abstract_reg, qubits[0].index)
+            
+            qb0_1, = qinst_p.bind(abs_qubit_0, op="Hadamard", qubits_len=1)
+            
+            qinsert_p.bind(qubits[0].abstract_reg, qubits[0].index, qb0_1)
+            
+            return
         
+        if operation_or_instruction.name == "cx":
+            
+            abs_qubit_0 = qextract_p.bind(qubits[0].abstract_reg, qubits[0].index)
+            abs_qubit_1 = qextract_p.bind(qubits[1].abstract_reg, qubits[1].index)
+            
+            qb0_1, qb1_1 = qinst_p.bind(abs_qubit_0, abs_qubit_1, op="CNOT", qubits_len=2)
+            
+            qinsert_p.bind(qubits[0].abstract_reg, qubits[0].index, qb0_1)
+            qinsert_p.bind(qubits[1].abstract_reg, qubits[1].index, qb1_1)
+            return
+            
+            
+            
+            
         if issubclass(operation_or_instruction.__class__, Instruction):
             instruction = operation_or_instruction
             self.append(instruction.op, instruction.qubits, instruction.clbits)
