@@ -1065,10 +1065,9 @@ class QuantumVariable:
             return self.reg[key]
         else:
             qb = Qubit(self.name + "." + str(key))
-            qb.qs = self.qs
-            qb.abstract_reg = self.abstract_reg
+            qb.qv = self
             qb.index = key
-            
+            qb.qs = self.qs
             return qb
 
     def __str__(self):

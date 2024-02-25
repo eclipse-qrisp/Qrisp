@@ -446,23 +446,23 @@ class QuantumSession(QuantumCircuit):
         
         if operation_or_instruction.name == "h":
             
-            abs_qubit_0 = qextract_p.bind(qubits[0].abstract_reg, qubits[0].index)
+            abs_qubit_0 = qextract_p.bind(qubits[0].qv.abstract_reg, qubits[0].index)
             
             qb0_1, = qinst_p.bind(abs_qubit_0, op="Hadamard", qubits_len=1)
             
-            qinsert_p.bind(qubits[0].abstract_reg, qubits[0].index, qb0_1)
+            qubits[0].qv.abstract_reg = qinsert_p.bind(qubits[0].qv.abstract_reg, qubits[0].index, qb0_1)
             
             return
         
         if operation_or_instruction.name == "cx":
             
-            abs_qubit_0 = qextract_p.bind(qubits[0].abstract_reg, qubits[0].index)
-            abs_qubit_1 = qextract_p.bind(qubits[1].abstract_reg, qubits[1].index)
+            abs_qubit_0 = qextract_p.bind(qubits[0].qv.abstract_reg, qubits[0].index)
+            abs_qubit_1 = qextract_p.bind(qubits[1].qv.abstract_reg, qubits[1].index)
             
             qb0_1, qb1_1 = qinst_p.bind(abs_qubit_0, abs_qubit_1, op="CNOT", qubits_len=2)
             
-            qinsert_p.bind(qubits[0].abstract_reg, qubits[0].index, qb0_1)
-            qinsert_p.bind(qubits[1].abstract_reg, qubits[1].index, qb1_1)
+            qubits[0].qv.abstract_reg = qinsert_p.bind(qubits[0].qv.abstract_reg, qubits[0].index, qb0_1)
+            qubits[1].qv.abstract_reg = qinsert_p.bind(qubits[1].qv.abstract_reg, qubits[1].index, qb1_1)
             return
             
             
