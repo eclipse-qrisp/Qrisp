@@ -23,8 +23,12 @@ from sympy import Symbol
 import itertools
 from numba import njit, prange
 
+def maxcut_obj(x, G):
+    return maxcut_obj_jitted(int(x[::-1], 2), list(G.edges()))
+
+
 @njit(cache = True)
-def maxcut_obj(x, edge_list):
+def maxcut_obj_jitted(x, edge_list):
     cut = 0
     for i, j in edge_list:
         # the edge is cut
@@ -38,7 +42,7 @@ def maxcut_energy(outcome_array, count_array, edge_list):
     
     res_array = np.zeros(len(outcome_array))    
     for i in prange(len(outcome_array)):
-        res_array[i] = maxcut_obj(outcome_array[i], edge_list)*count_array[i]
+        res_array[i] = maxcut_obj_jitted(outcome_array[i], edge_list)*count_array[i]
         
     return np.sum(res_array)
 
@@ -70,11 +74,11 @@ def create_maxcut_cl_cost_function(G):
         if not isinstance(counts_keys[0], str):
             
             for c_array in counts_keys:
-                integer = int("".join([c for c in c_array]), 2)
+                integer = int("".join([c for c in c_array])[::-1], 2)
                 int_list.append(integer)
         else:
             for c_str in counts_keys:
-                integer = int(c_str, 2)
+                integer = int(c_str[::-1], 2)
                 int_list.append(integer)
             
         counts_array = np.array(list(counts.values()))
