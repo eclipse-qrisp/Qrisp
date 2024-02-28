@@ -44,10 +44,10 @@ This state :math:`\ket{\psi}` is the starting point of the **Quantum-Informed Re
 Establishing correlations 
 -------------------------
 
-For any problem specific QIRO implementation the next step is to evaluate the expected correlations in the solution space, i.e. computing the values of the matrix **M**, where
+For any problem specific QIRO implementation the next step is to evaluate the expected correlations in the solution space, i.e. computing the values of the matrix :math:`\text{M}`, where
 :math:`\text{M}_{ii} = \bra{\psi} Z_i \ket{\psi}` and :math:`\text{M}_{ij} = \bra{\psi} Z_i Z_j \ket{\psi}`.
 
-We then need to find the **maximum absolute value** of M.
+We then need to find the **maximum absolute value** of :math:`\text{M}`.
 
 Reducing the problem 
 --------------------
@@ -62,7 +62,7 @@ Based on the **maximum absolute entry** of M and its sign, one of the following 
 
 * If :math:`\text{M}_{ij} < 0,  (i, j) ∈ E` was selected, we remove all nodes that share an edge with both vertices :math:`i` and :math:`j`. Since one of the vertices :math:`i` and :math:`j` will be part of the final solution (but not both), any vertex that is connected to both :math:`i` and :math:`j` is guaranteed to violate the problem constraints, and can be removed from the graph. In this case it may be possible, that no vertex is found to be as a canditate for removing. We will then simple chose second biggest absolute value of **M** for the replacement routine.
 
-These operations are undertaken directly on the ``networkx`` graph that has been fed to instance of the ``QIROProblem`` class, see the code example [REF] below. 
+These operations are undertaken directly on the ``networkx`` graph that has been fed to instance of the ``QIROProblem`` class, see the code example below. 
 
 We then hand over the reduced problem graph to a new ``QAOAProblem`` instance, optimize the parameter, and reduce the problem again with the same subroutine as above. 
 
@@ -75,6 +75,7 @@ where we consider the excluded and included vertices from the above steps in the
 The final result is therefore a the classic ``dictionary`` return from the ``QAOAProblem`` class and poses an optimized solution to the initial full problem instance. 
 
 Try it out yourself with the example code below!
+
 
 QIRO implementation
 ===================
@@ -89,7 +90,7 @@ Upon instanciation, the :ref:`QIROProblem` class requires five arguments:
 * The ``cost_operator``, ``mixer``, ``init_function`` and ``cl_cost_function`` in analogy to :ref:`QAOAProblem` instanciation. 
 
 Why the ``cost_operator``, ``mixer``, and ``init_function`` undergo some slight adjustements, will be made clear in the code example below, aswell as the necessity 
-for directly assigning a ``cost_operator``, a ``mixer``, and an ``init_function``.
+for directly assigning a ``cost_operator``, a ``mixer``, and and ``init_function``.
 
 To run the instance and solve the optimization problem we use the [REF] ``run_qiro`` function, which takes the following arguments:
 qarg, depth, n_recursions,  mes_kwargs = {}, max_iter = 50
@@ -163,14 +164,14 @@ We therefore include some simple lines of code into the functions, for example i
 
 ::
 
-    def qiro_RXMixer(Graph, solutions = []):
-
+    def qiro_RXMixer(solutions = [], exclusions = []):
+        union = solutions + exclusions
         def RX_mixer(qv, beta):
-            for i in Graph.nodes():
-                #DONT mix solution states
-                if not i in solutions:
+            for i in range(len(qv)):
+                # DONT mix solutions or exclusions
+                if not i in union:
                     rx(2 * beta, qv[i])
-    return RX_mixer
+        return RX_mixer
 
 With the preliminaries out of the way, let us jump right into the code example:
 
@@ -191,8 +192,7 @@ We start off by importing all the relevant code and defining the graph of our pr
     from qrisp import QuantumVariable
     import networkx as nx
 
-
-    Define a graph via the number of nodes, and the QuantumVariable arguments
+    #Define a graph via the number of nodes, and the QuantumVariable arguments
     num_nodes = 13
     G = create_rdm_graph(num_nodes, 0.4, seed =  107)
     qarg = QuantumVariable(G.number_of_nodes())
@@ -237,7 +237,7 @@ But of course we also want to investigate our results, so lets find out about th
             print(key)
             print(costFunc({key:1}))
 
-We do not put example output here, since the algorithm is not deterministic, and the output you receive may differ from what we can put here as an example. So just go ahead and try it yourself!
+We do not put the example output here, since the algorithm is not deterministic, and the output you receive may differ from what the example shoes. So just go ahead and try it yourself!
 
 We can further compare our results to the `NetworkX MIS algorithm <https://networkx.org/documentation/stable/reference/algorithms/generated/networkx.algorithms.mis.maximal_independent_set.html>`_ for solving the MIS problem:
 

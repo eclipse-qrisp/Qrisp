@@ -11,6 +11,8 @@ To gradually qrispify your programming game you will start with the basics and g
 
 - :ref:`QAOA implementation and QAOAProblem <QAOA101>` will break down the **theory** behind this promising algorithm before implementing it for the **MaxCut** problem, the **graph coloring** problem, as well as providing a new **constrained mixer type** letting you reduce the search space! Since the 0.4 update we also include a tutorial on how to solve **QUBO problems** with QAOA. Disclaimer: the tutorial might or might not involve **crayons**.
 
+- :ref:`Quantum Informed Recursive Optimization <_qiro_tutorial>` will show you problem specific implementations for solving optimization problems. With this, we establishes a blueprint for developing alogrithms, that update the problem instance recursively based on the correlations in results obtained by QAOA.
+
 - :ref:`Solving the Traveling Salesman Problem (TSP) <tsp>` is again pretty self explanatory - you'll set up a **superposition** of all routes, **evaluate** route distance, and create a **Grover's oracle** to eventually evaluate it.
 
 - :ref:`Implementing Shor's algorithm <shor_tutorial>` will guide you through our state-of-the-art implementation of  **Shor's algorithm**, allowing you to factor numbers and fiddle around encrypting and decrypting hidden messages.
