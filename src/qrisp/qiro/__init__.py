@@ -22,3 +22,5 @@ from qrisp.qaoa.qaoa_benchmark_data import *
 from qrisp.qaoa.mixers import *
 from qrisp.qaoa.problems import *
 from qrisp.qiro.qiroproblems import *
+from qrisp.qiro.qiro_mixers import * 
+from qrisp.qiro.qiro_problem import * 

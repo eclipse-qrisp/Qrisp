@@ -17,15 +17,15 @@ sol = 12
 
 #create random sets:
 sets = []
-candi = list(range(sol))
+candidates = list(range(sol))
 for index in range(15):
     clause = []
     for index2 in range(3):
-        temp = random.choice(candi)
-        candi.remove(temp)
+        temp = random.choice(candidates)
+        candidates.remove(temp)
         clause.append(temp )
     sets.append(clause)
-    candi = list(range(sol))
+    candidates = list(range(sol))
 
 problem = [sol, sets]
 print(sets)

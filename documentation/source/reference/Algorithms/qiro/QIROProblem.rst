@@ -1,9 +1,9 @@
-.. _QIROProblem:
+﻿.. _QIROProblem:
 
 QIROProblem
 ===========
 
-.. currentmodule:: qrisp.qiro
+.. currentmodule:: qiro.qiro_problem
 .. autoclass:: QIROProblem
 
 Methods
