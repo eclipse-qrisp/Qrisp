@@ -1,4 +1,4 @@
-.. _maxcliqueQAOA:
+.. _maxSetPackingQIRO:
 
 QIRO MaxSetPacking problem implementation
 =========================================

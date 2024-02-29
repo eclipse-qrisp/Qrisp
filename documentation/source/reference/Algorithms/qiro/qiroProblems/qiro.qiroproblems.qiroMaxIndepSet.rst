@@ -1,4 +1,4 @@
-.. _maxcliqueQAOA:
+.. _maxIndependentSetQIRO:
 
 QIRO MaxIndependentSet problem implementation
 =============================================

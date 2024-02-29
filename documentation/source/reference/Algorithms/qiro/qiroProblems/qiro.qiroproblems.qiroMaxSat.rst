@@ -1,4 +1,4 @@
-.. _maxcliqueQAOA:
+.. _maxSatQIRO:
 
 QIRO MaxSat problem implementation
 =====================================

@@ -11,7 +11,7 @@ The paper `Quantum-Informed Recursive Optimization Algorithms (2023) <https://ar
 
 While QAOA cost functions are designed with specific problem instances in mind, this research has shown promising improvements to this to approach by further leveraging the problem structure.
 
-We have implemented this approach for different problem instances, namely [REF]. The explanation below tackles the `Maximum Indepent Set (MIS) <https://en.wikipedia.org/wiki/Maximal_independent_set>`_ instance, in analogy to the original paper by Finzgar et. al.
+We have implemented this approach for different problem instances, namely :ref:`MaxClique <maxcliqueQIRO>`, :ref:`MaxIndependentSet <maxIndependentSetQIRO>`, :ref:`MaxSat <maxSatQIRO>` and :ref:`MaxSetPacking <maxSetPackingQIRO>`. The explanation below tackles the `Maximum Indepent Set (MIS) <https://en.wikipedia.org/wiki/Maximal_independent_set>`_ instance, in analogy to the original paper by Finzgar et. al.
 
 Starting point of the algorithm
 ----------------
@@ -85,18 +85,18 @@ The QIRO class
 
 Upon instanciation, the :ref:`QIROProblem` class requires five arguments: 
 
-* The ``problem`` to be solved, which not necessarly a graph, since QIRO is also implemented for [REF] MaxSat.
+* The ``problem`` to be solved, which not necessarly a graph, since QIRO is also implemented for :ref:`MaxSat <maxSatQIRO>`.
 * The ``replacement_routine``, which has the job of performing the aforementioned specific reductions to the ``problem`` object.
 * The ``cost_operator``, ``mixer``, ``init_function`` and ``cl_cost_function`` in analogy to :ref:`QAOAProblem` instanciation. 
 
 Why the ``cost_operator``, ``mixer``, and ``init_function`` undergo some slight adjustements, will be made clear in the code example below, aswell as the necessity 
 for directly assigning a ``cost_operator``, a ``mixer``, and and ``init_function``.
 
-To run the instance and solve the optimization problem we use the [REF] ``run_qiro`` function, which takes the following arguments:
+To run the instance and solve the optimization problem we use the :ref:`.run_qiro <qiro.qiro_problem.QIROProblem.run_qiro>`  function, which takes the following arguments:
 qarg, depth, n_recursions,  mes_kwargs = {}, max_iter = 50
 
 * The :ref:`QuantumVariable` ``qarg``, which is the quantum argument the algorithm is evaluated on, in analogy to the QAOA module
-* The integer ``depth``, which is the [REF?] depth of QAOA optimization circuit.
+* The integer ``depth``, which is the depth of QAOA optimization circuit.
 * The integer ``n_recursions``, representing the number of QIRO update steps.
 * The dictionary ``mes_kwargs = {}``, empty by default, to define further specifications of the measurements, see :ref:`get_measurement`.
 * The integer ``max_iter = 50``, set to 50 by default, which defines the maximum number of the classical optimization loop with the ``COBYLA`` optimizer as part of the QAOA optimization routine
@@ -157,10 +157,10 @@ All in all, the function remains straight forward. We employ a ``find_max`` subr
         return newGraph, solutions, sign, exclusions
 
 As you might gave noticed in the code above, we add the nodes that are included into (respective excluded from) the solution to a list ``solutions`` (``exclusions``). 
-This allows us to directly recycle the code for the [REF the function?] ``cost_operator``, ``mixer`` and ``init_function`` of the original QAOA implementation with minor adjustments.
+This allows us to directly :ref:`recycle the QAOA code <maxcliqueQAOA>` for the  ``cost_operator``, ``mixer`` and ``init_function`` of the original QAOA implementation with minor adjustments.
 
 Since we have to consider nodes that are already asigned to be in the solution set, or exluded from the algorithm, we do not want to apply these functions to said nodes. 
-We therefore include some simple lines of code into the functions, for example in the [REF] ``qiro_RXMixer``:
+We therefore include some simple lines of code into the functions, for example in the ``qiro_RXMixer``:
 
 ::
 
@@ -199,7 +199,7 @@ We start off by importing all the relevant code and defining the graph of our pr
 
 
 
-With this, we can directly throw everything thats relevant at the [REF] ``QIROProblem`` class and create an instance.
+With this, we can directly throw everything thats relevant at the :ref:`QIROProblem <qiro.qiro_problem.QIROProblem>` class and create an instance.
 
 :: 
 
@@ -279,8 +279,9 @@ As a final caveat, we can look at the graph we are left with after all reduction
 Congratulations, you have reached the end of the tutorial and are now capable of solving the MIS problem in Qrisp!
 Should your appetite not be satisfied, we advise you to check out our other QIRO implementations:
 
-* maxClique
-[REF]
+* :ref:`MaxIndependentSet <maxIndependentSetQIRO>`, 
+* :ref:`MaxSat <maxSatQIRO>` and 
+* :ref:`MaxSetPacking <maxSetPackingQIRO>`
 
 and of course all the other material in the tutorial section.
 
