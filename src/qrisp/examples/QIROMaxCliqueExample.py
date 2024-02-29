@@ -47,16 +47,16 @@ res_qiro = qiro_instance.run_qiro(qarg=qarg, depth = 3, n_recursions = 2,
 final_Graph = qiro_instance.problem
 
 # get the normal QAOA results for a comparison
-res_qaoa = maxclique_instance.run( qarg = qarg2, depth = 3)
+#res_qaoa = maxclique_instance.run( qarg = qarg2, depth = 3)
 
 
-# We can then also print the top 5 results for each...
+""" # We can then also print the top 5 results for each...
 print("QAOA 5 best results")
 maxfive = sorted(res_qaoa, key=res_qaoa.get, reverse=True)[:5]
 for key, val in res_qaoa.items(): 
     if key in maxfive:
         print(key)
-        print(testCostFun({key:1}))
+        print(testCostFun({key:1})) """
 
 
 print("QIRO 5 best results")

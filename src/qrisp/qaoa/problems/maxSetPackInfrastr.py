@@ -33,7 +33,7 @@ from collections.abc import Iterable
 
 
 
-def maxSetPackCostOp(sets, universe):
+def maxSetPackCostOp(problem):
     
     """
     |  Create the cost/problem operator for this problem instance. The swapping rule is to swap a set in and out of the solution, if it is not intersecting with any other set.
@@ -63,10 +63,11 @@ def maxSetPackCostOp(sets, universe):
 
     Examples
     --------
-    Definition of the sets, given as list of lists. Full universe ``sol`` is given as a tuple
+    Definition of the sets, given as list of lists. Full universe ``sol`` is given by the amount of elements (+1, since its 0-indexed)
     
     >>> sets = [[0,7,1],[6,5],[2,3],[5,4],[8,7,0],[1]]
-    >>> sol = (0,1,2,3,4,5,6,7,8)
+    >>> sol = 9
+    >>> problem = [sol, sets]
 
     The relations between the sets, i.e. which vertice is in which other sets
 
@@ -74,10 +75,13 @@ def maxSetPackCostOp(sets, universe):
 
     Assign the operators
 
-    >>> cost_fun = maxSetPackclCostfct(sets=sets,universe=sol)
-    >>> mixerOp = RZ_Mixer()
-    >>> costOp = maxSetPackCostOp(sets=sets, universe=sol)
+    >>> cost_fun = maxSetPackclCostfct(problem)
+    >>> mixerOp = RZ_mixer
+    >>> costOp = maxSetPackCostOp(problem)
     """
+
+    universe = list(range(problem[0]))
+    sets = problem[1]
     
     if not isinstance(sets, Iterable):
         raise Exception("Wrong structure of problem - clauses have to be iterable!")
@@ -89,7 +93,7 @@ def maxSetPackCostOp(sets, universe):
                 raise Exception("Wrong structure of problem - each literal has to an int!")
 
     # get neigbhourhood relations from helper function
-    nbh_rel = get_neighbourhood_relations(sets, len(universe))
+    nbh_rel = get_neighbourhood_relations(problem)
 
 
     def theCostOpEmbedded(qv, gamma):
@@ -111,8 +115,6 @@ def maxSetPackCostOp(sets, universe):
             # perform mcrx gate on the qubit describing the considered set
             with control(ancillas):
                 rx(gamma, qv[set_index])  
-            #mcrx_gate = RXGate(gamma).control(len(ancillas))
-            #qv.qs.append(  mcrx_gate, [*ancillas, qv[set_index]])
 
             ancillas.uncompute()
 
@@ -122,18 +124,15 @@ def maxSetPackCostOp(sets, universe):
 
 
 
-def get_neighbourhood_relations(sets, len_universe):
+def get_neighbourhood_relations(problem):
     """
     helper function to return a dictionary describing neighbourhood relations in the sets, i.e. for each element in the universe, gives the info in which the element is contained in.
 
 
     Parameters
     ----------
-    sets : list(Lists)
-        The sets the universe is seperated into as by the problem definition
-
-    len_universe: int
-        The number of elements in the universe
+    problem : List 
+        The problem definition, as described above
 
     Returns
     -------
@@ -142,9 +141,11 @@ def get_neighbourhood_relations(sets, len_universe):
         |  values: per universe element the sets it is contained in
 
     """
+
+    sets = problem[1]
     
     n_dict = {}
-    for index_node in range(len_universe):
+    for index_node in range(problem[0]):
         adding_list = [index_set for index_set in range(len(sets)) if index_node in sets[index_set]]
         #if len(adding_list)>1: 
         n_dict[index_node] = adding_list
@@ -152,24 +153,24 @@ def get_neighbourhood_relations(sets, len_universe):
 
 
 
-def maxSetPackclCostfct(sets,universe):
+def maxSetPackclCostfct(problem):
 
     """
     create the classical cost function for the problem instance
 
     Parameters
     ----------
-    sets : list(Lists)
-        The sets the universe is seperated into as by the problem definition
-        
-    universe: Tuple
-        The universe for the problem instance, i.e. all possible values (all graph vertices)
+    problem : List 
+        The problem definition, as described above
 
     Returns
     -------
     Costfunction : function
         the classical function for the problem instance, which takes a dictionary of measurement results as input
     """
+
+    universe = list(range(problem[0]))
+    sets = problem[1]
 
     def setupaClCostfct(res_dic):
         energy = 0

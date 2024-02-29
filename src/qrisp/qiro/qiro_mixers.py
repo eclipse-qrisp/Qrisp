@@ -19,21 +19,22 @@
 
 from qrisp import x, rx
 
-def qiro_RXMixer(Graph, solutions = []):
-
+def qiro_RXMixer(solutions = [],exclusions = []):
+    union = solutions + exclusions
     def RX_mixer(qv, beta):
 
-        for i in Graph.nodes():
-            if not i in solutions:
+        for i in range(len(qv)):
+            if not i in union:
                 rx(2 * beta, qv[i])
     return RX_mixer
 
 
-def qiro_init_function(Graph, solutions = [], exclusions = []):
+def qiro_init_function(solutions = [], exclusions = []):
     union = solutions + exclusions
     def init_state(qv):
         from qrisp import h
-        for i in Graph.nodes():
+        #for i in problem.nodes:
+        for i in range(len(qv)):
             if not i in union:
                 h(qv[i])
         for i in solutions:

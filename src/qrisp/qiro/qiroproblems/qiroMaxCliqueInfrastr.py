@@ -68,12 +68,15 @@ def create_maxClique_replacement_routine( res, Graph, solutions, exclusions):
         if sign > 0:
             border = list(Graph.adj[max_item].keys())
             border.append(max_item)
+            to_remove = [int(item) for item in Graph.nodes() if item not in border]
             newGraph.remove_nodes_from( [item for item in Graph.nodes() if item not in border])
             solutions.append(max_item)
+            exclusions += to_remove
 
         elif sign < 0:
             #remove item
             newGraph.remove_node(max_item)
+            exclusions.append(max_item)
 
     else:
         if sign > 0:
@@ -82,10 +85,11 @@ def create_maxClique_replacement_routine( res, Graph, solutions, exclusions):
             intersect = list(set(list(Graph.adj[max_item[0]].keys())) & set(list(Graph.adj[max_item[0]].keys())))
             intersect.append(max_item[0])
             intersect.append(max_item[1])
-
+            to_remove = [int(item) for item in Graph.nodes() if item not in intersect]
             newGraph.remove_nodes_from([item for item in Graph.nodes() if item not in intersect])
             solutions.append(max_item[0])
             solutions.append(max_item[1])
+            exclusions += to_remove
 
         elif sign < 0:
             #remove all that do not border on either! node
@@ -93,9 +97,10 @@ def create_maxClique_replacement_routine( res, Graph, solutions, exclusions):
             union += list(Graph.adj[max_item[1]].keys())
             union.append(max_item[0])
             union.append(max_item[1])
-
+            to_remove = [int(item) for item in Graph.nodes() if item not in union]
             #to_delete = [item for item in Graph.nodes() if item not in union]
             newGraph.remove_nodes_from([item for item in Graph.nodes() if item not in union])
+            exclusions += to_remove
 
     return newGraph, solutions, sign, exclusions
 

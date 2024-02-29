@@ -103,9 +103,10 @@ def create_maxIndep_replacement_routine( res, Graph, solutions= [], exclusions= 
     # we just directly remove vertices from the graph 
     if isinstance(max_item, int):
         if sign > 0:
-            newGraph.remove_nodes_from(Graph.adj[max_item])
+            to_remove = Graph.adj[max_item]
+            newGraph.remove_nodes_from(to_remove)
             solutions.append(max_item)
-            exclusions.append(max_item)
+            exclusions += to_remove
 
         elif sign < 0:
             newGraph.remove_node(max_item)
@@ -114,7 +115,7 @@ def create_maxIndep_replacement_routine( res, Graph, solutions= [], exclusions= 
     else:
         if sign > 0:
             newGraph.remove_nodes_from(max_item)
-            exclusions += max_item
+            exclusions += list(max_item)
 
         elif sign < 0:
             #remove 

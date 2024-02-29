@@ -142,12 +142,12 @@ class QIROProblem(QAOAProblem):
         self.qiro_init_function = qiro_init_function """
     
     def __init__(self, problem, replacement_routine , cost_operator, mixer, cl_cost_function, init_function):
-        super().__init__(cost_operator(problem), mixer, cl_cost_function(problem))
+        super().__init__(cost_operator(problem), mixer(), cl_cost_function(problem))
         self.problem = problem
         self.replacement_routine = replacement_routine
         self.qiro_cost_operator = cost_operator
         self.qiro_mixer = mixer
-        self.init_function = init_function
+        self.init_function = init_function()
         self.qiro_init_function = init_function
     
     def run_qiro(self, qarg, depth, n_recursions,  mes_kwargs = {}, max_iter = 50):
@@ -184,11 +184,13 @@ class QIROProblem(QAOAProblem):
         for index in range(n_recursions):
             
             new_problem, solutions , sign, exclusions = self.replacement_routine(res, self.problem, solutions , exclusions)
+            
             corr_vals.append(sign)    
             self.problem = new_problem
             self.cost_operator = self.qiro_cost_operator(new_problem, solutions=solutions)
-            self.mixer = self.qiro_mixer(new_problem, solutions=solutions)
-            self.init_function = self.qiro_init_function(new_problem, solutions=solutions, exclusions = exclusions)
+            self.mixer = self.qiro_mixer(solutions=solutions, exclusions = exclusions)
+            self.init_function = self.qiro_init_function(#problem = new_problem, 
+                                                         solutions=solutions, exclusions = exclusions)
 
             new_qarg = QuantumVariable(len(qarg))
             res = QAOAProblem.run(self, new_qarg, depth,  mes_kwargs, max_iter)
