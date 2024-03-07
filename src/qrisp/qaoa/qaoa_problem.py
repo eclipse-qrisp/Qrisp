@@ -310,21 +310,11 @@ class QAOAProblem:
             The optimized parameters of the problem instance.
         """
         
-        compiled_qc, symbols = self.compile_circuit(qarg, depth)
-        
         # Set initial random values for optimization parameters 
     #    init_point = np.pi * np.random.rand(2 * depth)/2
         
         # initial point is set here, potentially subject to change
-        if not isinstance(self.fourier_depth, int):
-            init_point = np.pi * np.random.rand(2 * depth)/2
-        elif not isinstance(self.init_params, list):
-            init_point = np.pi * np.random.rand(2 * self.fourier_depth)/2
-        else:
 
-            if len(self.init_params)/2 != self.fourier_depth:
-                raise Exception("Fourier-depth does not match match length of init_params! (should be half the length)")
-            init_point = self.init_params
 
         # Define optimization wrapper function to be minimized using QAOA
         def optimization_wrapper(theta, qc, symbols, qarg, mes_kwargs):
@@ -403,24 +393,27 @@ class QAOAProblem:
             t_max = time[idx]
             return self.computeParams(p,t_max)
 
+
         if self.init_type=='random':
             # Set initial random values for optimization parameters
             init_point = np.pi * np.random.rand(2 * depth)/2
 
         elif self.init_type=='tqa':
             # TQA initialization
+            compiled_qc, symbols = self.compile_circuit(qarg, depth)
             init_point = tqa_angles(depth,compiled_qc, symbols, qarg, mes_kwargs)
 
+        elif self.init_type == "fourier":
+            if not isinstance(self.init_params, list):
+                init_point = np.pi * np.random.rand(2 * self.fourier_depth)/2
+            else:
+                if len(self.init_params)/2 != self.fourier_depth:
+                    raise Exception("Fourier-depth does not match match length of init_params! (should be half the length)")
+                init_point = self.init_params
 
 
-        # Perform optimization using COBYLA method
-        res_sample = minimize(optimization_wrapper,
-                              init_point, 
-                              method='COBYLA', 
-                              options={'maxiter':max_iter}, 
-                              args = (compiled_qc, symbols, qarg, mes_kwargs))
-        
-        if isinstance(self.fourier_depth, int):
+
+        if self.init_type == "fourier":
             from qrisp.qaoa.optimization_wrappers.fourier_wrapper import fourier_optimization_wrapper
             for index_p in range(1, depth + 1):
                 compiled_qc, symbols = self.compile_circuit(qarg, index_p)
