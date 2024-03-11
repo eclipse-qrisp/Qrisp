@@ -1,4 +1,4 @@
-.. _QIROProblem:
+﻿.. _QIROProblem:
 
 QIROProblem
 ===========
@@ -11,5 +11,6 @@ Methods
 
 .. autosummary::
    :toctree: generated/
-
+   
    QIROProblem.run_qiro
+   

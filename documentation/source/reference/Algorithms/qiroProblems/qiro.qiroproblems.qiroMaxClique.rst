@@ -1,4 +1,4 @@
-.. _maxcliqueQAOA:
+.. _maxcliqueQIRO:
 
 QIRO MaxClique problem implementation
 =====================================
