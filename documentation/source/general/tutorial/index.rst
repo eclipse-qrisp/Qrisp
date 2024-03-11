@@ -29,6 +29,7 @@ By the end of this tutorial, you'll have a solid foundation of our high-level fr
    
    tutorial
    Quantum Alternating Operator Ansatz/index
+   QIRO
    TSP
    Sudoku
    Shor

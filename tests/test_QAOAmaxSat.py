@@ -32,19 +32,19 @@ def test_QAOAmaxSat():
     #nx.draw(giraf,with_labels = True)
     #plt.show() 
 
-
-    clauses11 = [[1,2,-3],[1,4,-6], [4,5,6],[1,3,-4],[2,4,5],[1,3,5],[-2,-3,6]]
+    problem = [6, [[1,2,-3],[1,4,-6], [4,5,6],[1,3,-4],[2,4,5],[1,3,5],[-2,-3,6]]]
+    clauses11 = problem[1]
 
     #Clauses are decoded, s.t. the Cost-Optimizer can read them
     #numVars is the amount of considered variables, i.e. highest number (= Number of Qubits in Circuit aswell)
-    decodedClauses = clausesdecoder( clauses = clauses11, numVars = 6)
+    decodedClauses = clausesdecoder( problem)
     #print(decodedClauses)
 
     qarg = QuantumVariable(6)
 
     #CostOperator-Generator has to be called with the clauses
     #CostFct-Generator has to be called with decodedClauses
-    QAOAinstance = QAOAProblem(cost_operator=maxSatCostOp(clauses11), mixer=RX_mixer, cl_cost_function=maxSatclCostfct(decodedClauses))
+    QAOAinstance = QAOAProblem(cost_operator=maxSatCostOp(problem), mixer=RX_mixer, cl_cost_function=maxSatclCostfct(problem))
     QAOAinstance.set_init_function(init_function=init_state)
     theNiceQAOA = QAOAinstance.run(qarg=qarg, depth=5)
 
@@ -75,5 +75,5 @@ def test_QAOAmaxSat():
                     temp  = True
             assert temp
 
-
+test_QAOAmaxSat()
 

@@ -17,7 +17,7 @@
 """
 
 from qrisp.qaoa import QAOAProblem
-from qrisp.qaoa.mixers import RZ_Mixer
+from qrisp.qaoa.mixers import RZ_mixer
 from qrisp.qaoa.problems.maxSetPackInfrastr import maxSetPackclCostfct,maxSetPackCostOp, get_neighbourhood_relations, init_state
 
 from qrisp import QuantumVariable
@@ -32,16 +32,17 @@ We will not stick to mathematical assignment of variable names.
 
 # sets are given as list of lists
 sets = [[0,7,1],[6,5],[2,3],[5,4],[8,7,0],[1]]
-# full universe is given as a tuple
-sol = (0,1,2,3,4,5,6,7,8)
+# full universe is given as a number of nodes - 1
+sol = 9
+problem = [sol, sets]
 
 # the realtions between the sets, i.e. with vertice is in which other sets
-print(get_neighbourhood_relations(sets, len_universe=len(sol)))
+print(get_neighbourhood_relations(problem=problem))
 
 # assign the operators
-cost_fun = maxSetPackclCostfct(sets=sets,universe=sol)
-mixerOp = RZ_Mixer()
-costOp = maxSetPackCostOp(sets=sets, universe=sol)
+cost_fun = maxSetPackclCostfct(problem=problem)
+mixerOp = RZ_mixer
+costOp = maxSetPackCostOp(problem=problem)
 
 #initialize the qarg
 qarg = QuantumVariable(len(sets))
@@ -78,4 +79,4 @@ for name, age in InitTest.items():  # for name, age in dictionary.iteritems():  
     if name in maxfive:
 
         print((name, age))
-        print(testCostFun(name, universe=sol))  
+        print(testCostFun(name, universe=list(range(sol))))  

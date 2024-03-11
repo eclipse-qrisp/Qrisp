@@ -1059,7 +1059,10 @@ class QuantumCircuit:
             The OPENQASM string.
 
         """
-        return self.to_qiskit().qasm(formatted, filename, encoding)
+
+        #return self.to_qiskit().qasm(formatted, filename, encoding)
+        from qiskit.qasm2 import dumps
+        return dumps( self.to_qiskit())
 
     def depth(self, depth_indicator = lambda x : 1, transpile=True):
         """
