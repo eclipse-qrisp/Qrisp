@@ -3,7 +3,7 @@
 QIRO MaxSat problem implementation
 =====================================
 
-.. currentmodule:: qiro.qiroproblems.qiroMaxCliqueInfrastr
+.. currentmodule:: qiro.qiroproblems.qiroMaxSatInfrastr
 
 
 Problem description
@@ -46,12 +46,6 @@ Full Example implementation:
 
     qarg = QuantumVariable(problem[0])
 
-    # set simulator shots
-    mes_kwargs = {
-        #below should be 5k
-        "shots" : 5000
-        }
-
 
     # assign cost_function and maxclique_instance, normal QAOA
     testCostFun = maxSatclCostfct(problem)
@@ -70,7 +64,6 @@ Full Example implementation:
     res_qiro = qiro_instance.run_qiro(qarg=qarg, depth = 3, n_recursions = 2, 
                                     #mes_kwargs = mes_kwargs
                                     )
-
 
     print("QIRO 5 best results")
     maxfive = sorted(res_qiro, key=res_qiro.get, reverse=True)[:5]

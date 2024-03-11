@@ -55,10 +55,10 @@ def maxSatCostOp(problem):
     |  First entry of tuple is the number of variables, second is the clauses
     |  Clause [1, 2, -4] is fulfilled by the QuantumStates "1100", "1110" 
 
-    * if positive sign: the index has to be "1", if negative sign the index has to be "0".
+    * if the sign is positive : the index has of the QuantumVariable to be "1", if negative sign the index has to be "0".
     * indices not mentioned can be "0" or "1" (the third integer in this case).
-    * start with 1 in your clauses! because ``int 0`` has no sign and this problematic. 
-    * we want to stay with mathematical formulation, so no handing over strings!
+    * start with 1 in your clauses! because ``int 0`` has no sign and this is problematic. 
+    * we want to keep the mathematical formulation, so no handing over strings!
 
     Assign the operators
 

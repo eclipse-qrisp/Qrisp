@@ -46,11 +46,6 @@ Full Example implementation:
     G = create_rdm_graph(num_nodes, 0.4, seed =  107)
     qarg = QuantumVariable(G.number_of_nodes())
 
-    # set simulator shots
-    mes_kwargs = {
-        #below should be 5k
-        "shots" : 5000
-        }
 
     # assign the correct new update functions for qiro from above imports
     qiro_instance = QIROProblem(G, 

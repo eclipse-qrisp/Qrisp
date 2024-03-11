@@ -21,66 +21,6 @@ def trafo_maxPackToMIS(problem):
     G : nx.Graph
         The corresponding graph to be solved by an MIS implementation.
 
-    Examples
-    --------
-
-    ::
-
-    from qrisp.qiro.qiroproblems.qiroMaxSetPackInfrastr import trafo_maxPackToMIS
-    from qrisp.qiro.qiroproblems.qiroMaxIndepSetInfrastr import * 
-    from qrisp.qiro.qiro_problem import QIROProblem
-    from qrisp.qaoa.problems.maxIndepSetInfrastr import maxIndepSetclCostfct, maxIndepSetCostOp
-    from qrisp.qiro.qiroproblems.qiroMaxIndepSetInfrastr import * 
-    from qrisp.qiro.qiro_mixers import qiro_init_function, qiro_RXMixer
-    from qrisp import QuantumVariable
-    import networkx as nx
-
-
-    import random
-    random.seed(105)
-    # sets are given as list of lists
-    #sets = [[0,7,1],[6,5],[2,3],[5,4],[8,7,0], [2,4,7],[1,3,4],[7,9],[1,9],[1,3,8],[4,9],[0,7,9],[0,4,8],[1,4,8]]
-    # full universe is given as a number of nodes - 1
-    sol = 12
-
-    #create random sets:
-    sets = []
-    candi = list(range(sol))
-    for index in range(15):
-    clause = []
-    for index2 in range(3):
-        temp = random.choice(candi)
-        candi.remove(temp)
-        clause.append(temp )
-    sets.append(clause)
-    candi = list(range(sol))
-
-    problem = [sol, sets]
-    print(sets)
-
-    G = trafo_maxPackToMIS(problem=problem)
-    qarg = QuantumVariable(G.number_of_nodes())
-
-    # set simulator shots
-    mes_kwargs = {
-        #below should be 5k
-        "shots" : 5000
-        }
-
-    # assign the correct new update functions for qiro from above imports
-    qiro_instance = QIROProblem(G, 
-                                replacement_routine=create_maxIndep_replacement_routine, 
-                                cost_operator= create_maxIndep_cost_operator_reduced,
-                                mixer= qiro_RXMixer,
-                                cl_cost_function= maxIndepSetclCostfct,
-                                init_function= qiro_init_function
-                                )
-
-    # We run the qiro instance and get the results!
-    res_qiro = qiro_instance.run_qiro(qarg=qarg, depth = 3, n_recursions = 2, mes_kwargs = mes_kwargs)
-    # and also the final graph, that has been adjusted
-    final_Graph = qiro_instance.problem
-
 
     """
     # the MIS solution to G is equivalent to the solution of the maxSetPackingProblem

@@ -3,7 +3,7 @@
 QIRO MaxSetPacking problem implementation
 =========================================
 
-.. currentmodule:: qiro.qiroproblems.qiroMaxCliqueInfrastr
+.. currentmodule:: qiro.qiroproblems.qiroMaxSetPackInfrastr
 
 
 Problem description
@@ -40,24 +40,9 @@ Full Example implementation:
     import random
     random.seed(105)
     # sets are given as list of lists
-    #sets = [[0,7,1],[6,5],[2,3],[5,4],[8,7,0], [2,4,7],[1,3,4],[7,9],[1,9],[1,3,8],[4,9],[0,7,9],[0,4,8],[1,4,8]]
+    sets = [[0,7,1],[6,5],[2,3],[5,4],[8,7,0], [2,4,7],[1,3,4],[7,9],[1,9],[1,3,8],[4,9],[0,7,9],[0,4,8],[1,4,8]]
     # full universe is given as a number of nodes - 1
     sol = 12
-
-    #create random sets:
-    sets = []
-    candi = list(range(sol))
-    for index in range(15):
-        clause = []
-        for index2 in range(3):
-            temp = random.choice(candi)
-            candi.remove(temp)
-            clause.append(temp )
-        sets.append(clause)
-        candi = list(range(sol))
-
-    problem = [sol, sets]
-    print(sets)
 
     G = trafo_maxPackToMIS(problem=problem)
     qarg = QuantumVariable(G.number_of_nodes())

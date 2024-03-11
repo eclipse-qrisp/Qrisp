@@ -110,7 +110,6 @@ def create_maxClique_cost_operator_reduced(Graph, solutions = []):
     """
     |  Based on PennyLane unconstrained mixer implementation.
     |  Initial state in :math:`(|0>+|1>)^{\otimes n}` . 
-    |  For explanation see the PennyLane implementation.
     |  This operator is then adjusted to consider qubits that have been found to be a part of the problem solution.
 
     Parameters

@@ -11,10 +11,19 @@ An algorithm to facilitate the functionality of Quantum Informed Recursive Optim
 
 .. currentmodule:: qrisp.qiro
 
-.. toctree::
-   :hidden:
-   
-   qiro/QIROProblem
+QIROProblem
+===========
+
+.. currentmodule:: qrisp.qiro
+.. autoclass:: QIROProblem
+
+Methods
+=======
+
+.. autosummary::
+   :toctree: generated/
+
+   QIROProblem.run_qiro
 
 
 

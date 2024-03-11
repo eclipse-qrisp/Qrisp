@@ -53,12 +53,6 @@ Full Example implementation:
     qarg = QuantumVariable(G.number_of_nodes())
     qarg2 = QuantumVariable(Gtwo.number_of_nodes())
 
-    # set simulator shots
-    mes_kwargs = {
-        #below should be 5k
-        "shots" : 5000
-        }
-
     #assign cost_function and maxclique_instance, normal QAOA
     testCostFun = maxCliqueCostfct(Gtwo)
     maxclique_instance = QAOAProblem(maxCliqueCostOp(G), RX_mixer, maxCliqueCostfct(G))
@@ -82,24 +76,6 @@ Full Example implementation:
 
     # get the normal QAOA results for a comparison
     #res_qaoa = maxclique_instance.run( qarg = qarg2, depth = 3)
-
-
-    """ # We can then also print the top 5 results for each...
-    print("QAOA 5 best results")
-    maxfive = sorted(res_qaoa, key=res_qaoa.get, reverse=True)[:5]
-    for key, val in res_qaoa.items(): 
-        if key in maxfive:
-            print(key)
-            print(testCostFun({key:1})) """
-
-
-    print("QIRO 5 best results")
-    maxfive = sorted(res_qiro, key=res_qiro.get, reverse=True)[:5]
-    for key, val in res_qiro.items():  
-        if key in maxfive:
-            
-            print(key)
-            print(testCostFun({key:1}))
 
     # or compare it with the networkx result of the max_clique algorithm...
     print("Networkx solution")
