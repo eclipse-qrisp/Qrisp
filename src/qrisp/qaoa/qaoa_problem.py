@@ -74,7 +74,7 @@ class QAOAProblem:
 
     """
     
-    def __init__(self, cost_operator, mixer, cl_cost_function, init_function = None, init_type='random'):
+    def __init__(self, cost_operator, mixer, cl_cost_function, init_function = None, init_type='random', callback = False):
         self.cost_operator = cost_operator
         self.mixer = mixer
         self.cl_cost_function = cl_cost_function
@@ -84,8 +84,13 @@ class QAOAProblem:
         self.init_type = init_type
         # Fourier heuristic parameterization
         self.fourier_depth = None
-        # should be set in the 
+        # should be set in the set_fourier_depth function
         self.init_params = None
+        #parameters for callback
+        self.callback = False
+        self.optimization_params = []
+        self.optimization_cost = []
+
 
     def set_init_function(self, init_function):
         """
@@ -97,6 +102,9 @@ class QAOAProblem:
             The initial state preparation function for the specific QAOA problem instance.
         """
         self.init_function = init_function
+
+    def set_callback(self):
+        self.callback = True
     
     def computeParams(self,p,t_max):
         """
@@ -356,6 +364,9 @@ class QAOAProblem:
             res_dic = qarg.get_measurement(subs_dic = subs_dic, precompiled_qc = qc, **mes_kwargs)
             
             cl_cost = self.cl_cost_function(res_dic)
+
+            if self.callback:
+                self.optimization_cost.append(cl_cost)
             
             if self.cl_post_processor is not None:
                 return self.cl_post_processor(cl_cost)
@@ -411,14 +422,9 @@ class QAOAProblem:
             # TQA initialization
             init_point = tqa_angles(depth,compiled_qc, symbols, qarg, mes_kwargs)
 
-
-
-        # Perform optimization using COBYLA method
-        res_sample = minimize(optimization_wrapper,
-                              init_point, 
-                              method='COBYLA', 
-                              options={'maxiter':max_iter}, 
-                              args = (compiled_qc, symbols, qarg, mes_kwargs))
+        # callback for scipy optimizer
+        def optimization_CB(x):
+            self.optimization_params.append(x)
         
         if isinstance(self.fourier_depth, int):
             from qrisp.qaoa.optimization_wrappers.fourier_wrapper import fourier_optimization_wrapper
@@ -428,6 +434,7 @@ class QAOAProblem:
                                     init_point, 
                                     method='COBYLA', 
                                     options={'maxiter':max_iter}, 
+                                    callback=optimization_CB,
                                     args = (compiled_qc, symbols, qarg, self.cl_cost_function,self.fourier_depth, index_p , mes_kwargs))
                 init_point = res_sample['x']
                 
@@ -438,6 +445,7 @@ class QAOAProblem:
                                 init_point, 
                                 method='COBYLA', 
                                 options={'maxiter':max_iter}, 
+                                callback=optimization_CB,
                                 args = (compiled_qc, symbols, qarg, mes_kwargs))
             
         return res_sample['x']
@@ -685,13 +693,90 @@ class QAOAProblem:
         return QAOABenchmark(data_dict, optimal_solution, self.cl_cost_function)
     
 
-    def visualize_cost(self):
+        #choose which layers 
+    def visualize_cost(self, layers = (0,0)):
         """
-        TODO
+        This method allows for visualization of a QAOA instance after running the simulation.
+        The visualization is w.r.t. the cost value against the parameters :math:`\gamma` and :math:`\beta` , where the user can choose one :math:`\gamma_i` and :math:`\beta_j` to be plotted with the ``layers`` input.
 
-        Returns
-        -------
-        None.
+        Parameters
+        ----------
+        layers : Tuple
+            The layers
 
+        Examples
+        --------
+        
+        We create a MaxClique instance, run it and plot the cost-values afterwards
+        
+        ::
+            
+            from qrisp.qaoa import QAOAProblem
+            from qrisp.qaoa.problems.create_rdm_graph import create_rdm_graph
+            from qrisp.qaoa.problems.maxCliqueInfrastr import maxCliqueCostfct,maxCliqueCostOp,init_state
+            from qrisp.qaoa.mixers import RX_mixer
+            from qrisp import QuantumVariable
+            import networkx as nx
+            import matplotlib.pyplot as plt
+            
+            giraf = create_rdm_graph(9,0.7, seed =  133)
+            #draw graph
+            nx.draw(giraf,with_labels = True)
+            plt.show() 
+
+
+            qarg = QuantumVariable(giraf.number_of_nodes())
+            #Instanciate QAOA
+            #mixer gets Graph as argument
+            #cost function gets graph as argument 
+            QAOAinstance = QAOAProblem(cost_operator= maxCliqueCostOp(giraf), mixer= RX_mixer, cl_cost_function=maxCliqueCostfct(giraf),callback=True) 
+            QAOAinstance.set_init_function(init_function=init_state)
+            theNiceQAOA = QAOAinstance.run(qarg=qarg, depth= 2)
+
+            # print the cost values and optimization params for each optimizer iteration 
+            print(QAOAinstance.optimization_cost)
+            print(QAOAinstance.optimization_params)
+
+            QAOAinstance.visualize_cost()
+                        
         """
-        pass
+
+        import matplotlib.pyplot as plt
+        import matplotlib        as mpl
+
+
+        if not self.callback:
+            raise Exception("Visualization can only be perform on a QAOA instance with self.callback= True")
+        
+        depth = len(self.optimization_params[0])/2
+        if layers[0] > depth or layers[1] > depth:
+            raise Exception("Layers in invalid range, should be <= depth of the instance")
+
+        gamma = []
+        beta = []
+        
+        gamma_index = layers[0] 
+        beta_index = int(depth + layers[1])
+        max_iter = len(self.optimization_cost)
+        print(max_iter)
+        print(len(self.optimization_params))
+
+        for index in range(max_iter):
+            gamma.append(self.optimization_params[index][gamma_index])
+            beta.append(self.optimization_params[index][ beta_index])
+        
+        cmap = mpl.cm.Reds(np.linspace(0,1,max_iter *5))
+        cmap = mpl.colors.ListedColormap(cmap[max_iter:,:-1]).reversed()
+        vmin = min(self.optimization_cost)
+        vmax = max(self.optimization_cost)
+
+        sc = plt.scatter(x=gamma, y = beta, c = self.optimization_cost ,marker= "X",vmin=vmin, vmax=vmax , s=35 , cmap=cmap)
+        plt.xlabel("gamma")
+        plt.ylabel("beta")
+        plt.colorbar(sc)
+        plt.show()
+
+        # Define optimization wrapper function to be minimized using QAOA
+
+
+
