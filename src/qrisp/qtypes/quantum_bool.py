@@ -177,7 +177,7 @@ class QuantumBool(QuantumVariable):
 
         from qrisp import x
 
-        x(self)
+        x(self[0])
         return self
     
     def __invert__(self):

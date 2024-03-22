@@ -75,7 +75,7 @@ def less_than_gate(a, b):
         a.reduce(a[-1])
         a.qs.data.pop(-1)
     else:
-        res_qbl = QuantumBool()
+        res_qbl = QuantumBool(qs = a.qs)
         res = res_qbl[0]
         cx(a[-1], res)
 
@@ -133,7 +133,7 @@ def less_than(a, b):
         anc_amount = lt_gate.num_qubits - a.size - b.size - 1
 
         if anc_amount:
-            lt_ancilla = QuantumVariable(anc_amount)
+            lt_ancilla = QuantumVariable(anc_amount, qs = a.qs)
             ancillae = lt_ancilla.reg
         else:
             ancillae = []
@@ -168,7 +168,7 @@ def less_than(a, b):
         anc_amount = lt_gate.num_qubits - a.size - 1
 
         if anc_amount:
-            lt_ancilla = QuantumVariable(anc_amount)
+            lt_ancilla = QuantumVariable(anc_amount, qs = a.qs, name = "lt_ancilla*")
             ancillae = lt_ancilla.reg
         else:
             ancillae = []
@@ -188,10 +188,10 @@ def less_than(a, b):
             b.signed = True
             added_sign = True
 
-        x(b)
+        for qb in list(b): x(qb)
         res = less_than(b, -a - 2**b.exponent)
 
-        x(b)
+        for qb in list(b): x(qb)
 
         if added_sign:
             b.reduce(b.reg[-1])
