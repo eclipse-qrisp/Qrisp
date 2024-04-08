@@ -6,17 +6,16 @@ import numpy as np
 
 def portfolio_cost_operator(problem):
     """
-    Quantum cost operator  for the discrete portfolio rebalancing problem, as described in https://arxiv.org/pdf/1911.05296.pdf.
-    It is depended on the problem instance, including the old portfolio positions, the normalized covariance matrix, the normalized asset returns and 
-    trading costs. See example implementation for formatting. 
+    | Quantum cost operator  for the discrete portfolio rebalancing problem, as described in https://arxiv.org/pdf/1911.05296.pdf.
+    | It is depended on the problem instance, including the old portfolio positions, the normalized covariance matrix, the normalized asset returns and trading costs. See example implementation for formatting. 
 
-    Parameters: 
-    -----------
+    Parameters
+    ----------
     problem : List
         A list containing a the relevant data for the problem instance.
 
-    Returns:
-    --------
+    Returns
+    -------
     portfolio_cost_op: function
         A callable function to be applied to a QuantumArray for solving the problem instance.
 
@@ -71,17 +70,16 @@ def portfolio_cost_operator(problem):
 
 def portfolio_cl_cost_function(problem):
     """
-    Classical cost function for the discrete portfolio rebalancing problem, as described in https://arxiv.org/pdf/1911.05296.pdf.
-    It is depended on the problem instance, including the old portfolio positions, the normalized covariance matrix, the normalized asset returns and 
-    trading costs. See example implementation for formatting. 
+    | Classical cost function for the discrete portfolio rebalancing problem, as described in https://arxiv.org/pdf/1911.05296.pdf.
+    |It is depended on the problem instance, including the old portfolio positions, the normalized covariance matrix, the normalized asset returns and trading costs. See example implementation for formatting. 
 
-    Parameters: 
-    -----------
+    Parameters
+    ----------
     problem : List
         A list containing a the relevant data for the problem instance.
 
-    Returns:
-    --------
+    Returns
+    -------
     cl_cost_function: function
         A callable function to calculate the cost value of the problem solution.
 
@@ -123,16 +121,16 @@ def portfolio_cl_cost_function(problem):
 
 def portfolio_init(lots):
     """
-    Initial state for the discrete portfolio rebalancing problem, as described in https://arxiv.org/abs/1904.07358.
-    Depending on the number of lots a QuantumArray is prepared, where the first index describes the short positions held and the second index describes the long postions held.
+    | Initial state for the discrete portfolio rebalancing problem, as described in https://arxiv.org/abs/1904.07358.
+    | Depending on the number of lots a QuantumArray is prepared, where the first index describes the short positions held and the second index describes the long postions held.
 
-    Parameters: 
-    -----------
+    Parameters
+    ----------
     lots : Int
         The number of lots in the initial portfolio position
 
-    Returns:
-    --------
+    Returns
+    -------
     state_prep: function
         A callable function to be applied to a QuantumArray to receive the initial state for the problem.
 
