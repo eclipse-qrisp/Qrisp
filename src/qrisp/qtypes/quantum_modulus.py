@@ -235,7 +235,7 @@ class QuantumModulus(QuantumFloat):
         
         return res
     
-    def __rsub(self, other):
+    def __rsub__(self, other):
         if isinstance(other, int):
             other = self.encoder(other)
             
