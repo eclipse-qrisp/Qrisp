@@ -168,6 +168,14 @@ class QuantumSession(QuantumCircuit):
         # Set up environment stack
         # This list will be filled, once we enter an environment
         self.env_stack = []
+        
+        import jax
+        self.abstract_qs = hasattr(jax._src.core.thread_local_state.trace_state.trace_stack.dynamic, "jaxpr_stack")
+        if self.abstract_qs:            
+            from qrisp.core.jax import create_quantum_state_p
+            self.abs_state = [create_quantum_state_p.bind()]
+        else:
+            self.abs_state = None
 
         # This list will be filled with variables which are marked for uncomputation
         # Variables will be marked once there is no longer any reference to them apart
@@ -183,7 +191,7 @@ class QuantumSession(QuantumCircuit):
         # session. It needs to be tracked in order to also update the shadow sessions
         # when this session is merged into another session.
         self.shadow_sessions = []
-
+    
     def register_qv(self, qv):
         """
         Method to register QuantumVariables
@@ -210,9 +218,13 @@ class QuantumSession(QuantumCircuit):
 
         # Determine amount of required qubits
         req_qubits = qv.size
-
+        import jax
         # Hand qubits to quantum variable
-        qv.reg = self.request_qubits(req_qubits, name=qv.name)
+        if self.abstract_qs:
+            from qrisp.core.jax import create_register
+            self.abs_state[0], qv.reg = create_register(qv.size, self.abs_state[0])
+        else:
+            qv.reg = self.request_qubits(req_qubits, name=qv.name)
 
         # Register in the list of active quantum variable
         self.qv_list.append(qv)
@@ -539,15 +551,19 @@ class QuantumSession(QuantumCircuit):
         # We merge qs_list again since no merge happened incase there were no
         # environments.
         # if not operation.name == "qb_alloc":
+            
         multi_session_merge(qs_list)
-
-        # print([qb.identifier for qb in self.qubits])
-        super().append(operation, qubits, clbits)
-
+        import jax
+        if self.abstract_qs:
+            from qrisp.core.jax import translation_dic
+            from qrisp.core.jax import create_register
+            self.abs_state[0] = translation_dic[operation.name].bind(self.abs_state[0], *[b.abstract for b in qubits+clbits])
+        else:
+            super().append(operation, qubits, clbits)
         
         if operation.name == "qb_dealloc":
             qubits[0].allocated = False
-
+            
     def __getitem__(self, key):
         for qv in self.qv_list:
             if qv.name == key:

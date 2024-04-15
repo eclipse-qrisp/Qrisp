@@ -1043,20 +1043,29 @@ def measure(qubits, clbits=None):
         The Clbit to store the result in. By default, a new Clbit will be created.
 
     """
-    if clbits is None:
-        clbits = []
-        if hasattr(qubits, "__len__"):
-            for qb in qubits:
-                try:
-                    clbits.append(qubits[0].qs.add_clbit())
-                except AttributeError:
-                    clbits.append(qubits[0].qs().add_clbit())
-
-        else:
-            clbits = qubits.qs.add_clbit()
-    append_operation(std_ops.Measurement(), [qubits], [clbits])
-
-    return qubits
+    from qrisp import find_qs
+    qs = find_qs(qubits)
+    
+    if not qs.abstract_qs:
+        if clbits is None:
+            clbits = []
+            if hasattr(qubits, "__len__"):
+                for qb in qubits:
+                    try:
+                        clbits.append(qs.add_clbit())
+                    except AttributeError:
+                        clbits.append(qs.add_clbit())
+    
+            else:
+                clbits = qs.add_clbit()
+        append_operation(std_ops.Measurement(), [qubits], [clbits])
+        
+        return clbits
+    else:
+        from qrisp.core.jax import Measurement_p
+        
+        qs.abs_state[0], bl = Measurement_p.bind(qs.abs_state[0], qubits.abstract)
+        return bl
 
 
 def barrier(qubits):

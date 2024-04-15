@@ -232,11 +232,6 @@ class QuantumVariable:
 
         """
 
-        if size < 0:
-            raise Exception(
-                f"Tried to create QuantumVariable with invalid qubit amount {size}"
-            )
-
         # Store quantum session
         from qrisp.core import QuantumSession, merge_sessions
 
@@ -245,7 +240,7 @@ class QuantumVariable:
         else:
             self.qs = QuantumSession()
 
-        self.size = int(size)
+        self.size = size
 
         self.user_given_name = False
         # If name is given, register variable in session manager
@@ -1047,7 +1042,16 @@ class QuantumVariable:
         return list(self.get_measurement())[0]
 
     def __getitem__(self, key):
-        return self.reg[key]
+        if isinstance(self.reg, list):
+            return self.reg[key]
+        else:
+            from qrisp.core.jax import get_qubit
+            from qrisp import Qubit
+            qb = Qubit(self.name + "_abs")
+            qb.qs = self.qs
+            qb.abstract = get_qubit(self.reg, key)
+            qb.allocated = True
+            return qb
 
     def __str__(self):
         return str(self.get_measurement())
