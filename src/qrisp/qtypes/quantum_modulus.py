@@ -21,6 +21,32 @@ import numpy as np
 from qrisp.qtypes.quantum_float import QuantumFloat
 from qrisp.environments import invert
 
+def comparison_wrapper(func):
+    
+    def res_func(self, other):
+        
+        if self.m != 0:
+            raise Exception("Tried to evaluate QuantumModulus comparison with non-zero Montgomery shift")
+        
+        conversion_flag = False
+        if isinstance(other, QuantumModulus):
+            
+            if other.m != 0:
+                raise Exception("Tried to evaluate QuantumModulus comparison with non-zero Montgomery shift")
+            
+            if self.modulus != other.modulus:
+                raise Exception("Tried to compare QuantumModulus instances of differing modulus")
+            
+            other.__class__ = QuantumFloat
+        self.__class__ = QuantumFloat
+        res = func(self, other)
+        self.__class__ = QuantumModulus
+        if conversion_flag:
+            other.__class__ = QuantumModulus
+        return res
+    
+    return res_func
+
 class QuantumModulus(QuantumFloat):
     r"""
     This class is a subtype of :ref:`QuantumFloat`, which can be used to model and
@@ -258,7 +284,30 @@ class QuantumModulus(QuantumFloat):
             beauregard_adder(self, other, self.modulus)
         
         return self
+    
+    @comparison_wrapper
+    def __lt__(self, other):
+        return QuantumFloat.__lt__(self, other)
+    
+    @comparison_wrapper
+    def __gt__(self, other):
+        return QuantumFloat.__gt__(self, other)
 
+    @comparison_wrapper
+    def __le__(self, other):
+        return QuantumFloat.__le__(self, other)
 
+    @comparison_wrapper
+    def __ge__(self, other):
+        return QuantumFloat.__ge__(self, other)
+    
+    @comparison_wrapper
+    def __eq__(self, other):
+        return QuantumFloat.__eq__(self, other)
 
-        
+    @comparison_wrapper
+    def __ne__(self, other):
+        return QuantumFloat.__ne__(self, other)
+
+    def __hash__(self):
+        return QuantumFloat.__hash__(self)
