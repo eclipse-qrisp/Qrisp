@@ -122,7 +122,7 @@ def convert_to_catalyst_jaxpr(closed_jaxpr, args):
                 # This is the Qrisp primitive case
                 
                 
-                if eqn.primitive.name == "create_quantum_state":
+                if eqn.primitive.name == "create_quantum_circuit":
                     # This has no equivalent in Catalyst.
                     # The information that this variable would carry is in the
                     # var->tracer dictionary and the qubit_dictionary

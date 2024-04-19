@@ -16,44 +16,36 @@
 ********************************************************************************/
 """
 
-from jax.core import AbstractValue, Primitive, raise_to_shaped_mappings
+from jax.core import AbstractValue, raise_to_shaped_mappings
 from qrisp.jax import QuantumPrimitive
 
-class AbstractQuantumState(AbstractValue):
-    
-    def __init__(self):
-        AbstractValue.__init__(self)
-        self.burned = False
+class AbstractQuantumCircuit(AbstractValue):
+    pass
 
 def create_register(size, state):
     return create_register_p.bind(size, state)
         
-raise_to_shaped_mappings[AbstractQuantumState] = lambda aval, _: aval
+raise_to_shaped_mappings[AbstractQuantumCircuit] = lambda aval, _: aval
 
-create_quantum_state_p = QuantumPrimitive("create_quantum_state")
-def create_quantum_state_abstract_eval():
+create_quantum_circuit_p = QuantumPrimitive("create_quantum_circuit")
+
+@create_quantum_circuit_p.def_abstract_eval
+def create_quantum_circuit_abstract_eval():
     """Abstract evaluation of the primitive.
     
     This function does not need to be JAX traceable. It will be invoked with
     abstractions of the actual arguments. 
-    Args:
-      xs, ys, zs: abstractions of the arguments.
-    Result:
-      a ShapedArray for the result of the primitive.
     """
     
-    return AbstractQuantumState()
-
-create_quantum_state_p.def_abstract_eval(create_quantum_state_abstract_eval)
-
+    return AbstractQuantumCircuit()
 
 # Register Creation
-
 create_register_p = QuantumPrimitive("create_reg")
 create_register_p.multiple_results = True
 
 from qrisp.jax import AbstractQuantumRegister
 
+@create_register_p.def_abstract_eval
 def create_register_abstract_eval(size, state):
     """Abstract evaluation of the primitive.
     
@@ -66,25 +58,5 @@ def create_register_abstract_eval(size, state):
     """
     state.burned = True
     
-    return AbstractQuantumState(), AbstractQuantumRegister()
+    return AbstractQuantumCircuit(), AbstractQuantumRegister()
 
-create_register_p.def_abstract_eval(create_register_abstract_eval)
-
-# State entangling
-entangle_p = QuantumPrimitive("entangle")
-
-def entangle_abstract_eval(*states):
-    """Abstract evaluation of the primitive.
-    
-    This function does not need to be JAX traceable. It will be invoked with
-    abstractions of the actual arguments. 
-    Args:
-      xs, ys, zs: abstractions of the arguments.
-    Result:
-      a ShapedArray for the result of the primitive.
-    """
-    for state in states:
-        state.burned = True
-    return AbstractQuantumState()
-
-entangle_p.def_abstract_eval(entangle_abstract_eval)

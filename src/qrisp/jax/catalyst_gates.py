@@ -15,7 +15,7 @@ def append_operation(operation, qubits=[], clbits=[]):
 
 from jax.core import AbstractValue, Primitive, raise_to_shaped_mappings, ShapedArray
 
-from qrisp.jax import AbstractQuantumState, AbstractQubit, QuantumPrimitive
+from qrisp.jax import AbstractQuantumCircuit, AbstractQubit, QuantumPrimitive
 
 class QuantumGatePrimitive(QuantumPrimitive):
     pass
@@ -48,7 +48,7 @@ def x_abstract_eval(state, qb):
         raise Exception("Tried to apply gate onto burned state")
     state.burned = True
     
-    return AbstractQuantumState()
+    return AbstractQuantumCircuit()
 
 XGate_p.def_abstract_eval(x_abstract_eval)
 
@@ -80,7 +80,7 @@ def h_abstract_eval(state, qb):
         raise Exception("Tried to apply gate onto burned state")
     state.burned = True
     
-    return AbstractQuantumState()
+    return AbstractQuantumCircuit()
 
 HGate_p.def_abstract_eval(h_abstract_eval)
 
@@ -113,7 +113,7 @@ def cx_abstract_eval(state, qb_0, qb_1):
         raise Exception("Tried to apply gate onto burned state")
     state.burned = True
     
-    return AbstractQuantumState()
+    return AbstractQuantumCircuit()
 
 CXGate_p.def_abstract_eval(cx_abstract_eval)
 
@@ -138,12 +138,9 @@ def measure_abstract_eval(state, qb):
     Result:
       a ShapedArray for the result of the primitive.
     """
-    if state.burned:
-        raise Exception("Tried to apply gate onto burned state")
-    state.burned = True
     
     assert isinstance(qb, AbstractQubit)
-    return AbstractQuantumState(), ShapedArray((), bool)
+    return AbstractQuantumCircuit(), ShapedArray((), bool)
 
 Measurement_p.def_abstract_eval(measure_abstract_eval)
 Measurement_p.num_qubits = 1
