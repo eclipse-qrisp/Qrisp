@@ -5,7 +5,7 @@ Created on Thu Apr 11 17:55:09 2024
 @author: sea
 """
 
-import qrisp.circuit.standard_operations as std_ops
+# import qrisp.circuit.standard_operations as std_ops
 def append_operation(operation, qubits=[], clbits=[]):
     from qrisp import find_qs
     
@@ -15,13 +15,16 @@ def append_operation(operation, qubits=[], clbits=[]):
 
 from jax.core import AbstractValue, Primitive, raise_to_shaped_mappings, ShapedArray
 
-from qrisp.core.jax import AbstractQuantumState, AbstractQubit, QrispPrimitive
+from qrisp.jax import AbstractQuantumState, AbstractQubit, QuantumPrimitive
+
+class QuantumGatePrimitive(QuantumPrimitive):
+    pass
 
 ##########
 # X-Gate #
 ##########
 
-XGate_p = QrispPrimitive("XGate")  # Create the primitive
+XGate_p = QuantumGatePrimitive("XGate")  # Create the primitive
 
 def x_prim(qb, state):
     """The JAX-traceable way to use the JAX primitive.
@@ -53,7 +56,7 @@ XGate_p.def_abstract_eval(x_abstract_eval)
 # H-Gate #
 ##########
 
-HGate_p = QrispPrimitive("HGate")  # Create the primitive
+HGate_p = QuantumGatePrimitive("HGate")  # Create the primitive
 
 def h_prim(qb, state):
     """The JAX-traceable way to use the JAX primitive.
@@ -86,7 +89,7 @@ HGate_p.def_abstract_eval(h_abstract_eval)
 # CX-Gate #
 ###########
 
-CXGate_p = QrispPrimitive("CXGate")  # Create the primitive
+CXGate_p = QuantumGatePrimitive("CXGate")  # Create the primitive
 
 def cx_prim(state, qb_0, qb_1):
     """The JAX-traceable way to use the JAX primitive.
@@ -115,7 +118,7 @@ def cx_abstract_eval(state, qb_0, qb_1):
 CXGate_p.def_abstract_eval(cx_abstract_eval)
 
 
-Measurement_p = QrispPrimitive("measure")  # Create the primitive
+Measurement_p = QuantumGatePrimitive("measure")  # Create the primitive
 
 def measure_prim(state, qb):
     """The JAX-traceable way to use the JAX primitive.
@@ -143,8 +146,8 @@ def measure_abstract_eval(state, qb):
     return AbstractQuantumState(), ShapedArray((), bool)
 
 Measurement_p.def_abstract_eval(measure_abstract_eval)
-
+Measurement_p.num_qubits = 1
 Measurement_p.multiple_results = True
 
-import qrisp.circuit.standard_operations as std_ops
-translation_dic = {"x" : XGate_p, "cx" : CXGate_p, "measure" : Measurement_p, "h" : HGate_p}
+# import qrisp.circuit.standard_operations as std_ops
+# translation_dic = {"x" : XGate_p, "cx" : CXGate_p, "measure" : Measurement_p, "h" : HGate_p}

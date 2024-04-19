@@ -34,10 +34,11 @@ def adaptive_substitution(expr, subs_dic, precision=10):
         # TO-DO
         return expr
 
+from qrisp.jax import QuantumPrimitive, AbstractQuantumState
 
 # Class that describes an operation which can be performed on a quantum computer
 # Example would be an X gate or a measurement
-class Operation:
+class Operation(QuantumPrimitive):
     """
     This class describes operations like quantum gates, measurements or classical logic
     gates. Operation objects do not carry information about which Qubit/Clbits they are
@@ -108,6 +109,26 @@ class Operation:
 
         # List of parameters (also available behind the interface)
         self.params = []
+        
+        QuantumPrimitive.__init__(self, name)
+        
+        @self.def_abstract_eval
+        def abstract_eval(state, *bits):
+            """Abstract evaluation of the primitive.
+            
+            This function does not need to be JAX traceable. It will be invoked with
+            abstractions of the actual arguments. 
+            Args:
+              xs, ys, zs: abstractions of the arguments.
+            Result:
+              a ShapedArray for the result of the primitive.
+            """
+            if state.burned:
+                raise Exception("Tried to apply gate onto burned state")
+            state.burned = True
+            
+            return AbstractQuantumState()
+        
 
         # If a definition circuit is given, this means we are supposed to create a
         # non-elementary operation

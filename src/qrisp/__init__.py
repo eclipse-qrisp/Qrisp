@@ -16,7 +16,9 @@
 ********************************************************************************/
 """
 
+from qrisp.jax import *
 from qrisp.circuit import *
+
 
 from qrisp.core import *
 from qrisp.misc import *

@@ -7,5 +7,5 @@ Created on Mon Apr 15 11:36:11 2024
 
 from jax.core import Primitive
 # Wrapper to identify Qrisp primitives
-class QrispPrimitive(Primitive):
+class QuantumPrimitive(Primitive):
     pass

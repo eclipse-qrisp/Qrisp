@@ -1045,7 +1045,7 @@ class QuantumVariable:
         if isinstance(self.reg, list):
             return self.reg[key]
         else:
-            from qrisp.core.jax import get_qubit
+            from qrisp.jax import get_qubit
             from qrisp import Qubit
             qb = Qubit(self.name + "_abs")
             qb.qs = self.qs

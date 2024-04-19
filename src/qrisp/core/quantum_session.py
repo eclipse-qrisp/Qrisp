@@ -119,6 +119,8 @@ class QuantumSession(QuantumCircuit):
     """
 
     qs_tracker = []
+    
+    abs_state = lambda x : None
 
     def __init__(self, backend=None):
         """
@@ -172,11 +174,10 @@ class QuantumSession(QuantumCircuit):
         import jax
         self.abstract_qs = hasattr(jax._src.core.thread_local_state.trace_state.trace_stack.dynamic, "jaxpr_stack")
         if self.abstract_qs:            
-            from qrisp.core.jax import create_quantum_state_p
-            self.abs_state = [create_quantum_state_p.bind()]
-        else:
-            self.abs_state = None
-
+            from qrisp.jax import create_quantum_state_p
+            if self.abs_state() is None:
+                QuantumSession.abs_state = weakref.ref(create_quantum_state_p.bind())
+            
         # This list will be filled with variables which are marked for uncomputation
         # Variables will be marked once there is no longer any reference to them apart
         # from the one in qv_list. This is for instance the case with local variables
@@ -221,8 +222,10 @@ class QuantumSession(QuantumCircuit):
         import jax
         # Hand qubits to quantum variable
         if self.abstract_qs:
-            from qrisp.core.jax import create_register
-            self.abs_state[0], qv.reg = create_register(qv.size, self.abs_state[0])
+            from qrisp.jax import create_register
+            abs_state, qv.reg = create_register(qv.size, self.abs_state())
+            QuantumSession.abs_state = weakref.ref(abs_state)
+            
         else:
             qv.reg = self.request_qubits(req_qubits, name=qv.name)
 
@@ -555,9 +558,7 @@ class QuantumSession(QuantumCircuit):
         multi_session_merge(qs_list)
         import jax
         if self.abstract_qs:
-            from qrisp.core.jax import translation_dic
-            from qrisp.core.jax import create_register
-            self.abs_state[0] = translation_dic[operation.name].bind(self.abs_state[0], *[b.abstract for b in qubits+clbits])
+            self.abs_state = weakref.ref(operation.bind(self.abs_state(), *[b.abstract for b in qubits+clbits]))
         else:
             super().append(operation, qubits, clbits)
         

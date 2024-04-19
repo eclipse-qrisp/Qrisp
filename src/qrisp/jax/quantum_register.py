@@ -6,9 +6,9 @@ Created on Thu Apr 11 16:58:12 2024
 """
 
 from jax.core import AbstractValue, Primitive, raise_to_shaped_mappings
-from qrisp.core.jax import QrispPrimitive
+from qrisp.jax import QuantumPrimitive
 
-get_qubit_p = QrispPrimitive("get_qubit")
+get_qubit_p = QuantumPrimitive("get_qubit")
 
 class AbstractQuantumRegister(AbstractValue):
     pass
@@ -21,7 +21,7 @@ def get_qubit(reg, index):
 raise_to_shaped_mappings[AbstractQuantumRegister] = lambda aval, _: aval
 
 
-from qrisp.core.jax import AbstractQubit
+from qrisp.jax import AbstractQubit
 
 def get_qubit_abstract_eval(register, index):
     """Abstract evaluation of the primitive.

@@ -1062,9 +1062,12 @@ def measure(qubits, clbits=None):
         
         return clbits
     else:
-        from qrisp.core.jax import Measurement_p
+        from qrisp.jax import Measurement_p
+        import weakref
         
-        qs.abs_state[0], bl = Measurement_p.bind(qs.abs_state[0], qubits.abstract)
+        abs_state, bl = Measurement_p.bind(qs.abs_state(), qubits.abstract)
+        qs.abs_state = weakref.ref(abs_state)
+        
         return bl
 
 

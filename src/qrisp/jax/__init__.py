@@ -16,10 +16,11 @@
 ********************************************************************************/
 """
 
-from qrisp.core.jax.primitive import *
-from qrisp.core.jax.qubit import *
-from qrisp.core.jax.quantum_register import *
-from qrisp.core.jax.quantum_state import *
-from qrisp.core.jax.catalyst_gates import *
+from qrisp.jax.primitive import *
+from qrisp.jax.qubit import *
+from qrisp.jax.quantum_register import *
+from qrisp.jax.quantum_state import *
+from qrisp.jax.catalyst_gates import *
+from qrisp.jax.catalyst_converter import *
 
 

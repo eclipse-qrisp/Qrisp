@@ -17,7 +17,7 @@
 """
 
 from jax.core import AbstractValue, Primitive, raise_to_shaped_mappings
-from qrisp.core.jax import QrispPrimitive
+from qrisp.jax import QuantumPrimitive
 
 class AbstractQuantumState(AbstractValue):
     
@@ -30,7 +30,7 @@ def create_register(size, state):
         
 raise_to_shaped_mappings[AbstractQuantumState] = lambda aval, _: aval
 
-create_quantum_state_p = Primitive("create_quantum_state")
+create_quantum_state_p = QuantumPrimitive("create_quantum_state")
 def create_quantum_state_abstract_eval():
     """Abstract evaluation of the primitive.
     
@@ -49,10 +49,10 @@ create_quantum_state_p.def_abstract_eval(create_quantum_state_abstract_eval)
 
 # Register Creation
 
-create_register_p = QrispPrimitive("create_reg")
+create_register_p = QuantumPrimitive("create_reg")
 create_register_p.multiple_results = True
 
-from qrisp.core.jax import AbstractQuantumRegister
+from qrisp.jax import AbstractQuantumRegister
 
 def create_register_abstract_eval(size, state):
     """Abstract evaluation of the primitive.
@@ -71,7 +71,7 @@ def create_register_abstract_eval(size, state):
 create_register_p.def_abstract_eval(create_register_abstract_eval)
 
 # State entangling
-entangle_p = QrispPrimitive("entangle")
+entangle_p = QuantumPrimitive("entangle")
 
 def entangle_abstract_eval(*states):
     """Abstract evaluation of the primitive.

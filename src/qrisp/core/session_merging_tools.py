@@ -163,10 +163,6 @@ def merge_sessions_inner(qs_0, qs_1, merge_env_stack_=True):
                 "non-trivial default backends."
             )
 
-    if qs_0.abstract_qs:
-        from qrisp.core.jax import entangle_p
-        qs_0.abs_state[0] = entangle_p.bind(qs_0.abs_state[0], qs_1.abs_state[0])
-
     if qs_0.backend is None:
         qs_0.backend = qs_1.backend
 
