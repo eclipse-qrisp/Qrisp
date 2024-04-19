@@ -190,3 +190,26 @@ def convert_to_catalyst_jaxpr(closed_jaxpr, args):
         return tuple(var_to_tr(var) for var in jaxpr.outvars)
                     
     return make_jaxpr(tracing_function)(*args)
+
+def qjit(function):
+    import catalyst
+    
+    def jitted_function(*args):
+        
+        qrisp_jaxpr = make_jaxpr(function)(*args)
+        
+        catalyst_jaxpr = convert_to_catalyst_jaxpr(qrisp_jaxpr, args)
+
+        mlir_module, mlir_ctx = catalyst.utils.jax_extras.jaxpr_to_mlir(function.__name__, catalyst_jaxpr)
+
+        catalyst.utils.gen_mlir.inject_functions(mlir_module, mlir_ctx)
+
+        jit_object = catalyst.QJIT(function.__name__, catalyst.CompileOptions())
+        jit_object.compiling_from_textual_ir = False
+        jit_object.mlir_module = mlir_module
+
+        compiled_fn = jit_object.compile()
+
+        return compiled_fn(*args)
+    
+    return jitted_function
