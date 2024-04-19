@@ -16,11 +16,9 @@
 ********************************************************************************/
 """
 
-from qrisp.jax.quantum_primitive import *
-from qrisp.jax.abstract_qubit import *
-from qrisp.jax.abstract_quantum_register import *
-from qrisp.jax.abstract_quantum_circuit import *
-from qrisp.jax.measurement_primitive import *
-from qrisp.jax.catalyst_converter import *
+from jax.core import Primitive
 
+# Wrapper to identify Qrisp primitives
+class QuantumPrimitive(Primitive):
+    pass
 
