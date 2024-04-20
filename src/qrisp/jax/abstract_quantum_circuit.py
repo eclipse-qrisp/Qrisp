@@ -22,6 +22,9 @@ from qrisp.jax import QuantumPrimitive
 class AbstractQuantumCircuit(AbstractValue):
     pass
 
+    def __repr__(self):
+        return "QuantumCircuit"
+
 def create_qubits(size, state):
     return create_qubits_p.bind(size, state)
         
@@ -46,7 +49,7 @@ create_qubits_p.multiple_results = True
 from qrisp.jax import AbstractQubitArray
 
 @create_qubits_p.def_abstract_eval
-def create_qubits_abstract_eval(size, state):
+def create_qubits_abstract_eval(qc, size):
     """Abstract evaluation of the primitive.
     
     This function does not need to be JAX traceable. It will be invoked with
@@ -59,3 +62,20 @@ def create_qubits_abstract_eval(size, state):
     
     return AbstractQuantumCircuit(), AbstractQubitArray()
 
+# Call
+call_qc_p = QuantumPrimitive("call_qc")
+create_qubits_p.multiple_results = True
+
+@call_qc_p.def_abstract_eval
+def call_qc_abstract_eval(main_routine_qc, subroutine_qc, *qb_arrays):
+    """Abstract evaluation of the primitive.
+    
+    This function does not need to be JAX traceable. It will be invoked with
+    abstractions of the actual arguments. 
+    Args:
+      xs, ys, zs: abstractions of the arguments.
+    Result:
+      a ShapedArray for the result of the primitive.
+    """
+    
+    return AbstractQuantumCircuit()

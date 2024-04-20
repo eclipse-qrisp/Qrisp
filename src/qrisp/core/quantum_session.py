@@ -223,7 +223,7 @@ class QuantumSession(QuantumCircuit):
         # Hand qubits to quantum variable
         if self.abstract_qs:
             from qrisp.jax import create_qubits
-            abs_qc, qv.reg = create_qubits(qv.size, self.abs_qc())
+            abs_qc, qv.reg = create_qubits(self.abs_qc(), qv.size)
             QuantumSession.abs_qc = weakref.ref(abs_qc)
             
         else:
@@ -558,7 +558,7 @@ class QuantumSession(QuantumCircuit):
         multi_session_merge(qs_list)
         import jax
         if self.abstract_qs:
-            self.abs_qc = weakref.ref(operation.bind(self.abs_qc(), *[b.abstract for b in qubits+clbits]))
+            QuantumSession.abs_qc = weakref.ref(operation.bind(self.abs_qc(), *[b.abstract for b in qubits+clbits]))
         else:
             super().append(operation, qubits, clbits)
         

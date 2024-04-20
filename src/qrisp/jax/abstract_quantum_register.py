@@ -12,7 +12,10 @@ get_qubit_p = QuantumPrimitive("get_qubit")
 put_qubit_p = QuantumPrimitive("put_qubit")
 
 class AbstractQubitArray(AbstractValue):
-    pass
+    
+    def __repr__(self):
+        return "QubitArray"
+
     
 def get_qubit(qb_array, index):
     return get_qubit_p.bind(qb_array, index)

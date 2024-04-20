@@ -131,7 +131,7 @@ def convert_to_catalyst_jaxpr(closed_jaxpr, args):
                 
                 elif eqn.primitive.name == "create_qubits":
                     # This is the qalloc_p primitive
-                    new_reg = qalloc_p.bind(var_to_tr(eqn.invars[0]))
+                    new_reg = qalloc_p.bind(var_to_tr(eqn.invars[1]))
                     variable_to_tracer_dic[eqn.outvars[1]] = new_reg
                     
                     
