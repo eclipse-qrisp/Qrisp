@@ -174,9 +174,9 @@ class QuantumSession(QuantumCircuit):
         import jax
         self.abstract_qs = hasattr(jax._src.core.thread_local_state.trace_state.trace_stack.dynamic, "jaxpr_stack")
         if self.abstract_qs:            
-            from qrisp.jax import create_quantum_circuit_p
+            from qrisp.jax import qdef_p
             if self.abs_qc() is None:
-                QuantumSession.abs_qc = weakref.ref(create_quantum_circuit_p.bind())
+                QuantumSession.abs_qc = weakref.ref(qdef_p.bind()[0])
             
         # This list will be filled with variables which are marked for uncomputation
         # Variables will be marked once there is no longer any reference to them apart
