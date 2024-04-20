@@ -120,7 +120,7 @@ class QuantumSession(QuantumCircuit):
 
     qs_tracker = []
     
-    abs_state = lambda x : None
+    abs_qc = lambda x : None
 
     def __init__(self, backend=None):
         """
@@ -175,8 +175,8 @@ class QuantumSession(QuantumCircuit):
         self.abstract_qs = hasattr(jax._src.core.thread_local_state.trace_state.trace_stack.dynamic, "jaxpr_stack")
         if self.abstract_qs:            
             from qrisp.jax import create_quantum_circuit_p
-            if self.abs_state() is None:
-                QuantumSession.abs_state = weakref.ref(create_quantum_circuit_p.bind())
+            if self.abs_qc() is None:
+                QuantumSession.abs_qc = weakref.ref(create_quantum_circuit_p.bind())
             
         # This list will be filled with variables which are marked for uncomputation
         # Variables will be marked once there is no longer any reference to them apart
@@ -223,8 +223,8 @@ class QuantumSession(QuantumCircuit):
         # Hand qubits to quantum variable
         if self.abstract_qs:
             from qrisp.jax import create_qubits
-            abs_state, qv.reg = create_qubits(qv.size, self.abs_state())
-            QuantumSession.abs_state = weakref.ref(abs_state)
+            abs_qc, qv.reg = create_qubits(qv.size, self.abs_qc())
+            QuantumSession.abs_qc = weakref.ref(abs_qc)
             
         else:
             qv.reg = self.request_qubits(req_qubits, name=qv.name)
@@ -558,7 +558,7 @@ class QuantumSession(QuantumCircuit):
         multi_session_merge(qs_list)
         import jax
         if self.abstract_qs:
-            self.abs_state = weakref.ref(operation.bind(self.abs_state(), *[b.abstract for b in qubits+clbits]))
+            self.abs_qc = weakref.ref(operation.bind(self.abs_qc(), *[b.abstract for b in qubits+clbits]))
         else:
             super().append(operation, qubits, clbits)
         
