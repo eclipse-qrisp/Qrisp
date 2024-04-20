@@ -22,8 +22,8 @@ from qrisp.jax import QuantumPrimitive
 class AbstractQuantumCircuit(AbstractValue):
     pass
 
-def create_register(size, state):
-    return create_register_p.bind(size, state)
+def create_qubits(size, state):
+    return create_qubits_p.bind(size, state)
         
 raise_to_shaped_mappings[AbstractQuantumCircuit] = lambda aval, _: aval
 
@@ -40,13 +40,13 @@ def create_quantum_circuit_abstract_eval():
     return AbstractQuantumCircuit()
 
 # Register Creation
-create_register_p = QuantumPrimitive("create_reg")
-create_register_p.multiple_results = True
+create_qubits_p = QuantumPrimitive("create_qubits")
+create_qubits_p.multiple_results = True
 
-from qrisp.jax import AbstractQuantumRegister
+from qrisp.jax import AbstractQubitArray
 
-@create_register_p.def_abstract_eval
-def create_register_abstract_eval(size, state):
+@create_qubits_p.def_abstract_eval
+def create_qubits_abstract_eval(size, state):
     """Abstract evaluation of the primitive.
     
     This function does not need to be JAX traceable. It will be invoked with
@@ -56,7 +56,6 @@ def create_register_abstract_eval(size, state):
     Result:
       a ShapedArray for the result of the primitive.
     """
-    state.burned = True
     
-    return AbstractQuantumCircuit(), AbstractQuantumRegister()
+    return AbstractQuantumCircuit(), AbstractQubitArray()
 

@@ -222,8 +222,8 @@ class QuantumSession(QuantumCircuit):
         import jax
         # Hand qubits to quantum variable
         if self.abstract_qs:
-            from qrisp.jax import create_register
-            abs_state, qv.reg = create_register(qv.size, self.abs_state())
+            from qrisp.jax import create_qubits
+            abs_state, qv.reg = create_qubits(qv.size, self.abs_state())
             QuantumSession.abs_state = weakref.ref(abs_state)
             
         else:
