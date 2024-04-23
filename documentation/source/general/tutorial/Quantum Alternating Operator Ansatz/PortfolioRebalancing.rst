@@ -118,7 +118,7 @@ The code example below creates said initial superposition with correct weights f
 
 :: 
         
-        def state_prep(q_array):
+    def state_prep(q_array):
         # In the actual implementation the lots are defined outside of this function in a wrapper function
         # this function works for an arbitrary number of lots
         lots = 2
@@ -154,33 +154,31 @@ The code example defines our mixer. It calls the inverse conjugated formulation 
 
 :: 
         
-def portfolio_mixer():
+    def portfolio_mixer():
 
-    from qrisp.misc.dicke_state import dicke_state
+        from qrisp.misc.dicke_state import dicke_state
 
-    def inv_prepare_dicke(qv, k):
-        with invert():
-            dicke_state(qv, k)
+        def inv_prepare_dicke(qv, k):
+            with invert():
+                dicke_state(qv, k)
 
-    def apply_mixer(q_array, beta):
-        half = int(len(q_array[0])/2)
-        qv1 = q_array[0]
-        qv2 = q_array[1]
+        def apply_mixer(q_array, beta):
+            half = int(len(q_array[0])/2)
+            qv1 = q_array[0]
+            qv2 = q_array[1]
 
-        with conjugate(inv_prepare_dicke)(qv1, half):
-            # mehrere mcp-gates, as hamiltonian
-            mcp(beta, qv1, ctrl_state = "0001")
-            mcp(beta, qv1, ctrl_state = "0011")
-            mcp(beta, qv1, ctrl_state = "0111")
-            mcp(beta, qv1, ctrl_state = "1111")
-
-        with conjugate(inv_prepare_dicke)(qv2, half):
-            mcp(beta, qv2, ctrl_state = "0001")
-            mcp(beta, qv2, ctrl_state = "0011")
-            mcp(beta, qv2, ctrl_state = "0111")
-            mcp(beta, qv2, ctrl_state = "1111")
-        
-    return apply_mixer
+            # apply mcp gates for all dicke weights
+            with conjugate(inv_prepare_dicke)(qv1, half):
+                for i in range(half):
+                    ctrl_state = "0" * (half-i-1) + ("1"*(i+1))
+                    mcp(beta, qv1, ctrl_state = ctrl_state)
+            
+            with conjugate(inv_prepare_dicke)(qv2, half):
+                for i in range(half):
+                    ctrl_state = "0" * (half-i-1) + ("1"*(i+1))                   
+                    mcp(beta, qv2, ctrl_state = ctrl_state)
+            
+        return apply_mixer
 
 Et voilà! We now have what we need to run and optimize a portfolio rebalancing instance with QAOA! Well, except for the classical cost function, which is just the original equations for the portfolio costs translated into code. We will omit closer investigation, but feel free to look into the source code if you're interested!
 
@@ -200,31 +198,39 @@ Let us now look at what these building blocks look like in working code example.
     # lots
     lots = 2
 
-    # covariance between assets
-    A = [45, 37, 42, 35, 39]
-    B = [38, 31, 26, 28, 33]
-    C = [10, 15, 17, 21, 12]
-    D = [11,14,14,20,33]
-    data = np.array([A, B, C,D])
-    covar_matrix = np.cov(data, bias=True)
-
     # old positions
-    old_pos = [1, 1, 0, 0]
+    old_pos = [1, 1, 0, 1, 0, 0]
+    # risk return factor
+    risk_return = 0.9
+    # trading costs
+    T = 0 
 
-    #risk-return factor
-    risk_return = 0.5
+    # covariance between assets -- create covar_matrix 
+    covar_string = "99.8 42.5 37.2 40.3 38.0 30.0 46.8 14.9 42.5 100.5 41.1 15.2 71.1 27.8 47.5 12.7 37.2 41.1 181.3 17.9 38.4 27.9 39.0 8.3 40.3 15.2 17.9 253.1 12.4 48.7 33.3 3.8 38.0 71.1 38.4 12.4 84.7 28.5 42.0 13.1 30.0 27.8 27.9 48.7 28.5 173.1 28.9 -12.7 46.8 47.5 39.0 33.3 42.0 28.9 125.8 14.6 14.9 12.7 8.3 3.8 13.1 -12.7 14.6 179.0"
+    li = list(covar_string.split(" ")) 
+    fin_list = [float(item) for item in li]
+    norm_sigma_array = preprocessing.normalize([fin_list])
+    norm_sigma_full = np.reshape(norm_sigma_array, (8, 8))
+
 
     # normalized asset returns
-    asset_return = [1.2, 0.8, 1.3, 1.1]
+    import numpy as np
+    # first entry is return, second is covariance
+    data1 = [0.000401, 0.009988 ,-0.000316 ,0.014433, 0.000061, 0.010024  ,0.001230 ,0.014854 ,0.000916 ,0.013465 , -0.000176, 0.010974 ,-0.000619 ,0.015910 , 0.000396 ,0.010007 ,0.000212, 0.009201 , -0.000881, 0.013377 ,0.001477, 0.013156 , 0.000184, 0.009907 ,0.001047, 0.011216 , 0.000492, 0.008399 ,0.000794, 0.010052 , 0.000291, 0.013247 ,0.000204, 0.009193 , 0.000674 ,0.008477,0.001500, 0.014958 , 0.000491, 0.010873]
+    mu = [data1[i] for i in range(len(data1)) if i%2 ==0]
+    from sklearn import preprocessing
+    mu_array = np.array(mu)
+    #this is the normalized asset return array
+    norm_mu_full = preprocessing.normalize([mu_array])
 
-    # trading costs
-    tc = 0.1
 
     # full problem instance
+    asset_return = list(norm_mu_full[0][:n_assets])
+    covar_matrix = norm_sigma_full[0:n_assets,0:n_assets]
     problem = [old_pos,risk_return,covar_matrix,asset_return, tc]
 
 
-What you see above is a complete toy example. We hope to be able to provide real world application data soon!
+What you see above is the example from the original portfolio rebalancing paper as referenced in the introduction. We hope to be able to provide more real world application data soon!
 
 With established example, all that remains to do is assign the operators for the QAOA and we can run the optimization!
 

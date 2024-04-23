@@ -234,6 +234,19 @@ def constrained_mixer_gen(constraint_oracle, winner_state_amount):
     
 
 
+""" from qrisp import as_hamiltonian
+@as_hamiltonian
+def mcp_as_hamiltonian(qv, beta):
+    if qv == "0001":
+        p(beta, qv)
+    elif qv == "0011":
+        p(beta, qv)
+    elif qv == "0111":
+        p(beta, qv)
+    elif qv == "1111":
+        p(beta, qv) """
+
+    
 
 #formulate on q_array
 def portfolio_mixer():
@@ -274,21 +287,37 @@ def portfolio_mixer():
             dicke_state(qv, k)
 
     def apply_mixer(q_array, beta):
-        half = int(len(q_array[0])/2)
+        half = int(len(q_array[0]))
         qv1 = q_array[0]
         qv2 = q_array[1]
 
+        #omfg this is harcoded-- problematic one 
+
         with conjugate(inv_prepare_dicke)(qv1, half):
             # mehrere mcp-gates, as hamiltonian
-            mcp(beta, qv1, ctrl_state = "0001")
+            #mcp_as_hamiltonian(qv1, beta=beta)
+            for i in range(half):
+                ctrl_state = "0" * (half-i-1) + ("1"*(i+1))
+                #print(ctrl_state)
+                mcp(beta, qv1, ctrl_state = ctrl_state)
+            """ mcp(beta, qv1, ctrl_state = "0001")
             mcp(beta, qv1, ctrl_state = "0011")
             mcp(beta, qv1, ctrl_state = "0111")
-            mcp(beta, qv1, ctrl_state = "1111")
+            mcp(beta, qv1, ctrl_state = "1111") """
 
         with conjugate(inv_prepare_dicke)(qv2, half):
-            mcp(beta, qv2, ctrl_state = "0001")
+            for i in range(half):
+                ctrl_state = "0" * (half-i-1) + ("1"*(i+1))
+                #print(ctrl_state)
+                mcp(beta, qv2, ctrl_state = ctrl_state)
+            """ mcp(beta, qv2, ctrl_state = "0001")
             mcp(beta, qv2, ctrl_state = "0011")
             mcp(beta, qv2, ctrl_state = "0111")
-            mcp(beta, qv2, ctrl_state = "1111")
+            mcp(beta, qv2, ctrl_state = "1111") """
         
     return apply_mixer
+
+
+
+
+
