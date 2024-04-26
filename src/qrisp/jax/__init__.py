@@ -22,5 +22,6 @@ from qrisp.jax.abstract_quantum_register import *
 from qrisp.jax.abstract_quantum_circuit import *
 from qrisp.jax.measurement_primitive import *
 from qrisp.jax.catalyst_converter import *
+from qrisp.jax.quantum_funcdef import *
 
 
