@@ -19,55 +19,61 @@
 # Created by ann81984 at 23.05.2022
 import numpy as np
 
-from qrisp.core import QuantumSession
+from qrisp import QuantumCircuit
 from qrisp.interface.backends import VirtualBackend
 from qrisp.interface.backends import VirtualQiskitBackend
 
 
 
 def test_qiskit_backend_client():
-    # TO-DO prevent this test from crashing regardless of functionality
-    from qiskit import Aer
-    # Create QuantumSession
-    qs = QuantumSession()
+    
+    try:
+        from qiskit import Aer
+        backend = Aer.get_backend("qasm_simulator")
+    except ImportError:
+        from qiskit.providers.basic_provider import BasicProvider
+        backend = BasicProvider().get_backend('basic_simulator')
 
-    qs.add_qubit()
-    qs.add_qubit()
-    qs.add_clbit()
+    # Create QuantumCricuit
+    qc = QuantumCircuit()
 
-    qs.h(0)
+    qc.add_qubit()
+    qc.add_qubit()
+    
 
-    qs.rz(np.pi / 2, 0)
+    qc.h(0)
 
-    qs.x(0)
-    qs.cx(0, 1)
-    qs.measure(1, 0)
+    qc.rz(np.pi / 2, 0)
 
-    qs.append(qs.to_op("composed_op"), qs.qubits, qs.clbits)
+    qc.x(0)
+    qc.cx(0, 1)
+    
 
-    qs.append(qs.to_op("multi_composed_op"), qs.qubits, qs.clbits)
+    qc.append(qc.to_op("composed_op"), qc.qubits, qc.clbits)
 
-    print(qs)
+    qc.append(qc.to_op("multi_composed_op"), qc.qubits, qc.clbits)
+
+    qc.add_clbit()
+    qc.measure(1, 0)    
+    print(qc)
 
     ###################
 
     # Create VirtualBackend
-    def sample_run_func(qc, shots):
+    def sample_run_func(qc, shots, token):
         print("Executing Circuit")
         return {"0": shots}
 
     test_virtual_backend = VirtualBackend(sample_run_func)
 
-    print(test_virtual_backend.run(qs, 100))
-    assert str(test_virtual_backend.run(qs, 100)) == "{'0': 100}"
-    assert test_virtual_backend.run(qs, 100)["0"] == 100
+    print(test_virtual_backend.run(qc, 100))
+    assert str(test_virtual_backend.run(qc, 100)) == "{'0': 100}"
+    assert test_virtual_backend.run(qc, 100)["0"] == 100
 
     ###################
 
     # Create Qiskit Backend
-    test_qiskit_backend = VirtualQiskitBackend(Aer.get_backend("qasm_simulator"))
-
-    from qrisp import QuantumCircuit
+    test_qiskit_backend = VirtualQiskitBackend()
 
     qc = QuantumCircuit(4, 1)
     qc.x(0)
