@@ -156,9 +156,13 @@ class VirtualQiskitBackend(VirtualBackend):
 
     def __init__(self, backend=None, port=8079):
         if backend is None:
-            from qiskit import Aer
-
-            backend = Aer.get_backend("qasm_simulator")
+            
+            try:
+                from qiskit import Aer
+                backend = Aer.get_backend("qasm_simulator")
+            except ImportError:
+                from qiskit.providers.basic_provider import BasicProvider
+                backend = BasicProvider().get_backend('basic_simulator')
 
         # Create the run method
         def run(qasm_str, shots, token = ""):
