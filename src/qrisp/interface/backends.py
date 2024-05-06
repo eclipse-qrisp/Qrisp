@@ -94,13 +94,13 @@ class VirtualBackend(BackendClient):
 
         # Create BackendServer
         self.backend_server = BackendServer(
-            run_func, "127.0.0.1", port=port
+            run_func, "localhost", port=port
         )
         # Run the server (runs in the background)
         self.backend_server.start()
         # Connect client
 
-        super().__init__(api_endpoint="127.0.0.1", port=port)
+        super().__init__(api_endpoint="localhost", port=port)
 
     def run(self, qc, shots, token=""):
         """
