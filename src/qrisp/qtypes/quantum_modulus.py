@@ -20,6 +20,7 @@ import numpy as np
 
 from qrisp.qtypes.quantum_float import QuantumFloat
 from qrisp.environments import invert
+from qrisp.misc import gate_wrap
 
 def comparison_wrapper(func):
     
@@ -193,7 +194,8 @@ class QuantumModulus(QuantumFloat):
             return np.nan
         
         return montgomery_encoder(i, 2**self.m, self.modulus)
-        
+
+    @gate_wrap(permeability="args", is_qfree=True)    
     def __mul__(self, other):
         from qrisp.arithmetic.modular_arithmetic import montgomery_mod_mul, montgomery_mod_semi_mul
         
@@ -205,7 +207,8 @@ class QuantumModulus(QuantumFloat):
             raise Exception("Quantum modular multiplication with type {type(other)} not implemented")
             
     __rmul__ = __mul__
-    
+
+    @gate_wrap(permeability=[1], is_qfree=True)
     def __imul__(self, other):
         if isinstance(other, int):
             
@@ -219,7 +222,8 @@ class QuantumModulus(QuantumFloat):
                 return semi_cl_inpl_mult(self, other%self.modulus)
         else:
             raise Exception("Quantum modular multiplication with type {type(other)} not implemented")
-    
+
+    @gate_wrap(permeability="args", is_qfree=True)
     def __add__(self, other):
         if isinstance(other, int):
             other = self.encoder(other)
@@ -240,8 +244,8 @@ class QuantumModulus(QuantumFloat):
         return res
     
     __radd__ = __mul__
-    
-    
+
+    @gate_wrap(permeability=[1], is_qfree=True)
     def __iadd__(self, other):
         if isinstance(other, int):
             other = self.encoder(other)
@@ -256,8 +260,8 @@ class QuantumModulus(QuantumFloat):
         
         beauregard_adder(self, other, self.modulus)
         return self
-    
-    
+
+    @gate_wrap(permeability="args", is_qfree=True)
     def __sub__(self, other):
         if isinstance(other, int):
             other = self.encoder(other)
@@ -276,7 +280,8 @@ class QuantumModulus(QuantumFloat):
             beauregard_adder(res, other, self.modulus)
         
         return res
-    
+
+    @gate_wrap(permeability="args", is_qfree=True)
     def __rsub__(self, other):
         if isinstance(other, int):
             other = self.encoder(other)
@@ -295,8 +300,8 @@ class QuantumModulus(QuantumFloat):
         beauregard_adder(res, other, self.modulus)
         
         return res
-        
-    
+
+    @gate_wrap(permeability=[1], is_qfree=True)
     def __isub__(self, other):
         if isinstance(other, int):
             other = self.encoder(other)
