@@ -154,7 +154,7 @@ class VirtualQiskitBackend(VirtualBackend):
 
     """
 
-    def __init__(self, backend=None, port=None):
+    def __init__(self, backend=None, port=9011):
         if backend is None:
             
             try:
