@@ -58,9 +58,10 @@ def convert_to_catalyst_jaxpr(closed_jaxpr, args):
     
     # Name translator from Qrisp gate naming to Catalyst gate naming
     op_name_translation_dic = {"cx" : "CNOT",
-                               "cy" : "CY",
-                               "cz" : "CZ",
+                               "cy" : "CY", 
+                               "cz" : "CZ", 
                                "crx" : "CRX",
+                               "crz" : "CRZ",
                                "swap" : "SWAP",
                                "x" : "PauliX",
                                "y" : "PauliY",
