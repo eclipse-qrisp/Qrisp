@@ -57,7 +57,21 @@ def convert_to_catalyst_jaxpr(closed_jaxpr, args):
     qml.device("lightning.qubit", wires=0))
     
     # Name translator from Qrisp gate naming to Catalyst gate naming
-    op_name_translation_dic = {"cx" : "CNOT", "x" : "PauliX", "h" : "Hadamard"}
+    op_name_translation_dic = {"cx" : "CNOT",
+                               "cy" : "CY",
+                               "cz" : "CZ",
+                               "crx" : "CRX",
+                               "swap" : "SWAP",
+                               "x" : "PauliX",
+                               "y" : "PauliY",
+                               "z" : "PauliZ",
+                               "h" : "Hadamard",
+                               "rx" : "RX",
+                               "ry" : "RY",
+                               "rz" : "RZ",
+                               "s" : "S",
+                               "t" : "T",}
+    # TODO: Add other gates (weird though that e.g. they have S and Phasegate)
 
     # In the following there are two different types of objects involved:
         
