@@ -19,7 +19,7 @@
 import setuptools
 
 REQUIREMENTS = ["connexion>=2.12.0",
-                "qiskit==0.45.3",
+                "qiskit>=0.44.0",
                 "thrift>=0.15.0",
                 "matplotlib>=3.5.1",
                 "waitress>=2.1.1",

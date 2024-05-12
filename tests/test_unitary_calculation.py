@@ -27,7 +27,8 @@ from qrisp.interface import convert_circuit
 
 
 def test_unitary_calculation():
-    from qiskit import execute, Aer
+    
+    from qiskit_aer import AerSimulator
     n = 2
 
     qs = QuantumSession()
@@ -48,11 +49,12 @@ def test_unitary_calculation():
     ###################
     qc.qubits = qc.qubits[::-1]
     qiskit_qc = convert_circuit(qc, target_api="qiskit")
-
-    backend = Aer.get_backend("unitary_simulator")
+    
 
     start = time.time()
-    job = execute(qiskit_qc, backend)
+    qiskit_qc.save_unitary()
+    backend = AerSimulator(method='unitary')
+    job = backend.run(qiskit_qc)
     result = job.result()
     test_unitary_2 = result.get_unitary(qiskit_qc).data
     end = time.time()

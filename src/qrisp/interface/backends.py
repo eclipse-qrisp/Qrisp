@@ -94,13 +94,13 @@ class VirtualBackend(BackendClient):
 
         # Create BackendServer
         self.backend_server = BackendServer(
-            run_func, "127.0.0.1", port=port
+            run_func, "localhost", port=port
         )
         # Run the server (runs in the background)
         self.backend_server.start()
         # Connect client
 
-        super().__init__(api_endpoint="127.0.0.1", port=port)
+        super().__init__(api_endpoint="localhost", port=port)
 
     def run(self, qc, shots, token=""):
         """
@@ -154,11 +154,15 @@ class VirtualQiskitBackend(VirtualBackend):
 
     """
 
-    def __init__(self, backend=None, port=8079):
+    def __init__(self, backend=None, port=9011):
         if backend is None:
-            from qiskit import Aer
-
-            backend = Aer.get_backend("qasm_simulator")
+            
+            try:
+                from qiskit import Aer
+                backend = Aer.get_backend("qasm_simulator")
+            except ImportError:
+                from qiskit.providers.basic_provider import BasicProvider
+                backend = BasicProvider().get_backend('basic_simulator')
 
         # Create the run method
         def run(qasm_str, shots, token = ""):

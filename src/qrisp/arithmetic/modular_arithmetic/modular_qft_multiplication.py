@@ -120,6 +120,7 @@ def montgomery_mod_semi_mul(a, b, output_qg = None, permeable_if_zero = False):
     t.__class__ = QuantumModulus
     t.modulus = a.modulus
     t.m = a.m + m
+    t.inpl_adder = a.inpl_adder
     
     
     
@@ -156,7 +157,7 @@ def montgomery_red(t, a, b, N, m, permeable_if_zero = False):
 from qrisp import merge
 def montgomery_mod_mul(a, b, output_qg = None):
     
-    m = int(np.ceil(np.log2((a.modulus-1)**2))) - a.size
+    m = int(np.ceil(np.log2((a.modulus-1)**2)+1)) - a.size
     
     if a.modulus != b.modulus:
         raise Exception("Tried to multiply two QuantumModulus with differing modulus")
@@ -184,6 +185,7 @@ def montgomery_mod_mul(a, b, output_qg = None):
     t.__class__ = QuantumModulus
     t.modulus = a.modulus
     t.m = (a.m + b.m)
+    t.inpl_adder = a.inpl_adder
     
     t = montgomery_red(t, a, b, a.modulus, m)
     
