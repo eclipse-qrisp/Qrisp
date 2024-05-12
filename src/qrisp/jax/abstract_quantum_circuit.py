@@ -63,6 +63,25 @@ def create_qubits_abstract_eval(qc, size):
     
     return AbstractQuantumCircuit(), AbstractQubitArray()
 
+
+# Register Deletion
+delete_qubits_p = QuantumPrimitive("delete_qubits")
+
+@delete_qubits_p.def_abstract_eval
+def delete_qubits_abstract_eval(qc, qarr):
+    """Abstract evaluation of the primitive.
+    
+    This function does not need to be JAX traceable. It will be invoked with
+    abstractions of the actual arguments. 
+    Args:
+      xs, ys, zs: abstractions of the arguments.
+    Result:
+      a ShapedArray for the result of the primitive.
+    """
+    
+    return AbstractQuantumCircuit()
+
+
 # Call
 qcall_p = QuantumPrimitive("qcall")
 create_qubits_p.multiple_results = True

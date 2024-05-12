@@ -322,6 +322,13 @@ class QuantumSession(QuantumCircuit):
         return return_qubits
 
     def clear_qubits(self, qubits, verify=False):
+        
+        if self.abstract_qs:
+            from qrisp.jax import delete_qubits_p
+            self.abs_qc = weakref.ref(delete_qubits_p.bind(self.abs_qc(), qubits))
+            return
+            
+        
         # Apply initialization operation
         # The following is uncommented because the QASM simulator speed drastically
         # drops when having non unitary operations

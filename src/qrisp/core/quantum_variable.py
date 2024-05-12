@@ -419,7 +419,7 @@ class QuantumVariable:
 
         """
 
-        if self.is_deleted():
+        if not self.qs.abstract_qs and self.is_deleted():
             return
 
         self.qs.delete_qv(self, verify)
