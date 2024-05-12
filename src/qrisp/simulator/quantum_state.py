@@ -20,8 +20,11 @@ from itertools import product
 
 from qrisp.simulator.numerics_config import xp
 from qrisp.simulator.tensor_factor import TensorFactor, multi_entangle
+from qrisp.simulator.bi_array_helper import permute_axes, invert_permutation
+import numpy as np
 
 from qrisp.misc.utility import bin_rep
+
 
 # This class describes a quantum state
 # This is achieved by another class, the TensorFactor.
@@ -70,7 +73,7 @@ class QuantumState:
         # Update the entangled factor on the involved qubits
         for i in range(len(involved_qubits)):
             self.tensor_factors[involved_qubits[i]] = entangled_factor
-
+            
         # Get the unitary of the operation
         unitary = operation.get_unitary()
 
@@ -105,8 +108,6 @@ class QuantumState:
     # Method to retrieve the statevector in the form of an array of complex numbers
     def eval(self):
         [factor.unravel() for factor in self.tensor_factors]
-
-        # print(len(list(set(self.tensor_factors))))
 
         entangled_factor = multi_entangle(list(set(self.tensor_factors)))
 
@@ -197,12 +198,14 @@ class QuantumState:
             involved_factors.append(self.tensor_factors[mes_qubits[i]])
             involved_factors_dic[mes_qubits[i]] = self.tensor_factors[mes_qubits[i]]
             
-            
         involved_factors = list(set(involved_factors))
         
-        outcome_dic = {}
+        # involved_factors.sort(key = lambda x : len(x.qubits))
         
-        outcome_dic_list = []
+        grouped_qubits = []
+        
+        prob_array = np.ones(1)
+        ind_array = np.zeros(1, dtype = np.int64)
         
         for tf in involved_factors:
             
@@ -211,95 +214,31 @@ class QuantumState:
                 if hash(involved_factors_dic[qb]) == hash(tf):
                     tf_mes_qubits.append(qb)
             
+            tf.unravel()
             p_list, tf_list, outcome_list = tf.multi_measure(tf_mes_qubits, return_res_tf = False)
             
+            prob_array = np.tensordot(prob_array, np.array(p_list), ((), ())).ravel()
+            grouped_qubits.extend(tf_mes_qubits)
             
-            dic_list = []
             
-            for i in range(len(p_list)):
-                dic_list.append({"p" : p_list[i], 
-                                 "tf" : tf_list[i], 
-                                 "outcome" : bin_rep(outcome_list[i], len(tf_mes_qubits)),
-                                 "qubits" : tf_mes_qubits})
-            
-            outcome_dic_list.append(dic_list)
-            outcome_dic[tf] = (p_list, tf_list, outcome_list)
-            
-        
-        outcome_states = []
-        p_list = []
-        outcome_list = []
-        
-        for dic_tuple in product(*outcome_dic_list):
-            
-            p = 1
-            if return_res_states:
-                outcome_state = self.copy()
-            outcome_value = [0]*len(mes_qubits)
-            
-            for i in range(len(dic_tuple)):
-                
-                p *= dic_tuple[i]["p"]
-                
-                for j in range(len(dic_tuple[i]["qubits"])):
-                    qb = dic_tuple[i]["qubits"][j]
-                    
-                    outcome_value[mes_qubits.index(qb)] = dic_tuple[i]["outcome"][j]
-                
-                    if return_res_states:
-                        outcome_state.tensor_factors[qb] = dic_tuple[i]["tf"]
-                    
-            
-            outcome = "".join(outcome_value)
-            outcome = int(outcome, 2)
-            outcome_list.append(outcome)
-            
-            if return_res_states:
-                outcome_states.append(outcome_state)
+            if len(grouped_qubits) < 63:
+                ind_array = tensorize_indices_jitted(np.array(outcome_list, dtype = np.int64), ind_array, len(tf_mes_qubits))
             else:
-                outcome_states.append(None)
+                if not isinstance(ind_array, list):
+                    ind_array = [int(i) for i in ind_array]
                 
-            p_list.append(p)
+                ind_array = tensorize_indices([int(i) for i in outcome_list], ind_array, len(tf_mes_qubits))
+        
+        index_permutation = [mes_qubits.index(i) for i in grouped_qubits]
+        index_permutation = invert_permutation(np.array(index_permutation))[::-1]
+        
+        if len(grouped_qubits) < 63:
+            ind_array = permute_axes(ind_array, index_permutation)    
+        else:
+            ind_array = permute_axes(ind_array, index_permutation, jit = False)
+        
+        return ind_array, prob_array
             
-        
-        if not return_res_states:
-            return outcome_list, p_list
-            
-        
-        
-    # def multi_measure(self, mes_qubits, return_res_states = True):
-            
-        
-    #     tf = multi_entangle(list(set([self.tensor_factors[i] for i in mes_qubits])))
-        
-    #     p_list, tf_list, outcome_list = tf.multi_measure(mes_qubits, return_res_tf = return_res_states)
-        
-    #     outcome_states = []
-        
-    #     for i in range(len(p_list)):
-            
-    #         if p_list[i] == 0:
-    #             outcome_states.append(None)
-    #             continue
-            
-    #         if return_res_states:
-    #             new_outcome_state = self.copy()
-                
-    #             for j in tf_list[i].qubits:
-    #                 new_outcome_state.tensor_factors[j] = tf_list[i]
-                    
-    #             for j in mes_qubits:
-    #                 new_outcome_state.tensor_factors[j] = TensorFactor([j])
-                    
-    #             outcome_states.append(new_outcome_state)
-                
-    #         else:
-                    
-    #             outcome_states.append(None)
-        
-    #     return p_list, outcome_states, outcome_list
-            
-
     def add_qubit(self):
         self.tensor_factors.append(TensorFactor([self.n]))
         self.n += 1
@@ -311,10 +250,37 @@ class QuantumState:
         disent_tf, remain_tf = tensor_factor.disentangle(qb)
         
         for i in tensor_factor.qubits:
-            if qb == i:
-                self.tensor_factors[i] = disent_tf
-            else:
-                self.tensor_factors[i] = remain_tf
-        
-        
-        
+            self.tensor_factors[i] = remain_tf
+            
+        self.tensor_factors[tensor_factor.qubits[0]] = disent_tf
+
+
+from numba import njit
+
+@njit(cache = True)
+def tensorize_indices_jitted(ind_array_0, ind_array_1, ind_0_size):
+    
+    n = len(ind_array_0)
+    m = len(ind_array_1)
+    
+    res = np.zeros((m,n), dtype = np.int64)
+    
+    for i in range(m):
+        for j in range(n):
+            res[i,j] = (ind_array_1[i]<<ind_0_size) | ind_array_0[j]
+    
+    return res.ravel()
+
+
+def tensorize_indices(ind_array_0, ind_array_1, ind_0_size):
+    
+    n = len(ind_array_0)
+    m = len(ind_array_1)
+    
+    res = []
+    
+    for i in range(m):
+        for j in range(n):
+            res.append((ind_array_1[i]<<ind_0_size) | ind_array_0[j])
+            
+    return res

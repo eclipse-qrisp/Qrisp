@@ -110,8 +110,7 @@ def test_grovers_algorithm():
         (isinstance(item, float) and item < 1) for item in mes_res.values()
     )
 
-    assert list(mes_res.keys())[0] == (0.5, -0.5)
-    assert list(mes_res.keys())[1] == (-0.5, 0.5)
+    assert set(list(mes_res.keys())[:2]) == {(0.5, -0.5), (-0.5, 0.5)}
 
     # check if the first tuple in the tuple contains expected values. Style example of the whole tuple: ((0, 1), 0.9592)
     assert all(

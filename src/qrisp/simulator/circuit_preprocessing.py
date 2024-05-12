@@ -763,7 +763,6 @@ def insert_multiverse_measurements(qc):
                         break
             else:
                 new_data.append(Instruction(disentangler, [meas_qubit]))
-                # new_measurements.append(instr)
                 new_measurements.append((instr.qubits[0], instr.clbits[0]))
                 continue
             
@@ -778,8 +777,6 @@ def insert_multiverse_measurements(qc):
             
             mes_instr = instr.copy()
             mes_instr.qubits = [qb]
-            # new_measurements.append((qb, instr.clbits[0]))
-            # new_measurements.append(mes_instr)
             
         elif instr.op.name == "reset":
             
@@ -849,12 +846,8 @@ def circuit_preprocessor(qc):
         return qc.copy()
 
     # TO-DO find reliable classifiaction when automatic disentangling works best
-    if len(qc.qubits) < 26:
-        qc = group_qc(qc)
-    elif len(qc.qubits) < 34:
-        qc = group_qc(qc)
+    if len(qc.qubits) > 45:
         qc = insert_disentangling(qc)
-    else:
-        qc = insert_disentangling(qc)
-        qc = group_qc(qc)
+    qc = group_qc(qc)
+    
     return reorder_circuit(qc, ["measure", "reset", "disentangle"])

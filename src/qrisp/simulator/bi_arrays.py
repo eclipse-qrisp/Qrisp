@@ -27,7 +27,7 @@ from scipy.sparse import (
 )
 
 import qrisp.simulator.bi_array_helper as hlp
-from qrisp.simulator.numerics_config import float_tresh
+from qrisp.simulator.numerics_config import float_tresh, sparsification_rate, cutoff_ratio
 
 try:
     # sparse_dot_mkl seems to be only faster in situations, where the shape of the
@@ -677,43 +677,15 @@ class SparseBiArray(BiArray):
                 
         
         return new_bi_arrays, p_list, outcome_index_list
-        
-            
-            
-
-        col_indices = sprs.indices
-        row_ptr = sprs.indptr
-        data = sprs.data
-
-        for r in range(len(row_ptr) - 1):
-            if row_ptr[r] != row_ptr[r + 1]:
-                
-                temp_data = data[row_ptr[r] : row_ptr[r + 1]]
-                p = np.abs(np.vdot(temp_data, temp_data))
-                
-                if p < float_tresh:
-                    continue
-                
-                p_list.append(p)
-                outcome_index_list.append(r)
-                
-                if return_new_arrays:
-                
-                    new_bi_array = SparseBiArray(
-                        (
-                            col_indices[row_ptr[r] : row_ptr[r + 1]].astype(np.int64),
-                            data[row_ptr[r] : row_ptr[r + 1]],
-                        ),
-                        shape=(self.size // 2 ** len(indices),),
-                    )
     
-                    new_bi_arrays.append(new_bi_array)
-                else:
-                    
-                    new_bi_arrays.append(None)
-
-        return new_bi_arrays, p_list, outcome_index_list
-
+    # Should return a cheap guess whether two inputs are linearly independent
+    def exclude_linear_indpendence(self, other):
+        
+        if not 0.5 < len(self.data)/len(other.data) < 2:
+            return False
+        return True
+        
+        
     # Calculate the squared norm, ie. the sesquilinear scalar product of self with
     # itself
     def squared_norm(self):
@@ -1067,11 +1039,20 @@ class DenseBiArray(BiArray):
             self.apply_swaps()
             other.apply_swaps()
 
-            res.data = np.matmul(self.data, other.data)
+            res.data = np.matmul(self.data, other.data).ravel()
 
             self.swapaxes(0, 1)
             self.reshape(original_shape_self)
             other.reshape(original_shape_other)
+            
+            if np.random.random(1)[0] < sparsification_rate and res.size > 2**14:
+                temp = np.abs(res.data.ravel())
+                max_abs = np.max(temp)
+                filter_arr = temp > max_abs*cutoff_ratio
+                res.data = res.data * filter_arr
+                res.data = res.data.reshape(res_shape)
+                res.sparsity = np.sum(filter_arr)/res.size
+            
 
         if res.size > multithreading_threshold:
             # Start the wrapper
@@ -1099,8 +1080,12 @@ class DenseBiArray(BiArray):
 
         np_array = self.to_array()
 
-
-        new_arrays, p_list, outcome_index_list = hlp.dense_measurement(np_array, len(indices), 0)
+        if len(indices) > 10:
+            new_arrays, p_list, outcome_index_list = hlp.dense_measurement_brute(np_array, len(indices), 0)
+        else:
+            new_arrays, p_list, outcome_index_list = hlp.dense_measurement_smart(np_array, len(indices), 0)
+            
+            
         new_bi_arrays = []
         
         if return_new_arrays:
@@ -1122,6 +1107,10 @@ class DenseBiArray(BiArray):
         self.apply_swaps()
         other.apply_swaps()
         return np.vdot(self.data, other.data)
+    
+    # Should return a cheap guess whether two inputs are linearly independent
+    def exclude_linear_indpendence(self, other):
+        return True
 
     # This method works similarly as it's equivalent in SparseBiArray
     def to_array(self):

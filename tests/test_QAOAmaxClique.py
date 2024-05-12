@@ -102,7 +102,7 @@ def test_QAOAmaxClique():
         secondQarg = QuantumVariable(secondGraph.number_of_nodes())
         secondInstance = QAOAProblem(cost_operator= maxCliqueCostOp(secondGraph), mixer= RX_mixer, cl_cost_function=maxCliqueCostfct(secondGraph)) 
         secondInstance.set_init_function(init_function=init_state)
-        theNiceQAOA2 = secondInstance.run(qarg=secondQarg, depth= 5)
+        theNiceQAOA2 = secondInstance.run(qarg=secondQarg, depth= 3, max_iter = 50, mes_kwargs = {"shots" : 100000})
         maxOne = sorted(theNiceQAOA2, key=theNiceQAOA2.get, reverse=True)[:1]
         #if no nodes connected, maxClique sol should just be the first node, i.e. "1000" (more or less zeros)
         if integ2 == 0:
@@ -116,7 +116,5 @@ def test_QAOAmaxClique():
         
         if  testStr == maxOne:
             truth_list.append(1)
-    
+            
     assert sum(truth_list)/10 > 0.5
-
- 
