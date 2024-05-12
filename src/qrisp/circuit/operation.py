@@ -23,17 +23,6 @@ import numpy as np
 from sympy.core.expr import Expr
 from sympy import lambdify
 
-
-def adaptive_substitution(expr, subs_dic, precision=10):
-    if isinstance(expr, Expr):
-        return float(expr.evalf(precision, subs_dic))
-    elif isinstance(expr, (float, int)):
-        # TO-DO
-        return float(expr)
-    else:
-        # TO-DO
-        return expr
-
 from qrisp.jax import QuantumPrimitive, AbstractQuantumCircuit
 
 # Class that describes an operation which can be performed on a quantum computer
@@ -113,7 +102,7 @@ class Operation(QuantumPrimitive):
         QuantumPrimitive.__init__(self, name)
         
         @self.def_abstract_eval
-        def abstract_eval(state, *bits):
+        def abstract_eval(state, *args):
             """Abstract evaluation of the primitive.
             
             This function does not need to be JAX traceable. It will be invoked with
@@ -560,14 +549,6 @@ class U3Gate(Operation):
         
         return U3Gate(new_params[0], new_params[1], new_params[2], self.name, new_params[3])
         
-        # return U3Gate(
-        #     adaptive_substitution(self.theta, subs_dic),
-        #     adaptive_substitution(self.phi, subs_dic),
-        #     adaptive_substitution(self.lam, subs_dic),
-        #     self.name,
-        #     adaptive_substitution(self.global_phase, subs_dic),
-        # )
-
 
 
 

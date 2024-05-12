@@ -558,7 +558,9 @@ class QuantumSession(QuantumCircuit):
         multi_session_merge(qs_list)
         
         if self.abstract_qs:
-            QuantumSession.abs_qc = weakref.ref(operation.bind(QuantumSession.abs_qc(), *[b.abstract for b in qubits+clbits]))
+            if len(clbits):
+                raise Exception("Tried to append Operation with non-zero classical bits in JAX mode.")
+            QuantumSession.abs_qc = weakref.ref(operation.bind(QuantumSession.abs_qc(), *(operation.params + [b.abstract for b in qubits])))
         else:
             super().append(operation, qubits, clbits)
         
