@@ -32,7 +32,8 @@ def test_function_1(i):
     b = QuantumVariable(i+1)
     
     fan_out(a,b)
-    fan_out(a,b)
+    with invert():
+        cx(a[0], b[0])
     
     return measure(b[0])
 
@@ -42,50 +43,3 @@ jaxpr = make_jaxpr(test_function_1)(4)
 
 # Jaxpr darstellen
 print(jaxpr)
-"""
-{ lambda ; a:i32[]. let
-    b:QuantumCircuit = qdef 
-    c:QuantumCircuit d:QubitArray = create_qubits b a
-    e:i32[] = add a 1
-    f:QuantumCircuit g:QubitArray = create_qubits c e
-    h:QuantumCircuit i:QubitArray j:QubitArray = qdef[num_args=2] 
-    k:Qubit = get_qubit i 0
-    l:Qubit = get_qubit j 0
-    m:QuantumCircuit = cx h k l
-    n:Qubit = get_qubit i 0
-    o:Qubit = get_qubit j 1
-    p:QuantumCircuit = cx m n o
-    q:QuantumCircuit = qcall f p d g
-    r:QuantumCircuit = qcall q p d g
-    s:Qubit = get_qubit g 0
-    _:QuantumCircuit t:bool[] = measure r s
-  in (t,) }
-"""
-
-# Liste von eqns
-eqns = jaxpr.eqns
-
-# Einzelne equation
-eqn = eqns[7]
-print(eqn)
-# a:QuantumCircuit = cx b c d
-
-invars = eqn.invars
-print(invars)
-# [h, k, l]
-
-invars = eqn.outvars
-
-primitive = eqn.primitive
-print(primitive)
-# cx
-
-# Gatter-Primitive sind qrisp.Operation Objekte => Unitary via get_unitary
-print(primitive.get_unitary())
-"""
-[[1.+0.j 0.+0.j 0.+0.j 0.+0.j]
- [0.+0.j 1.+0.j 0.+0.j 0.+0.j]
- [0.+0.j 0.+0.j 0.+0.j 1.+0.j]
- [0.+0.j 0.+0.j 1.+0.j 0.+0.j]]
-"""
-pass

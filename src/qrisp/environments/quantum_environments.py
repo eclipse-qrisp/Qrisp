@@ -56,8 +56,9 @@
 from qrisp.circuit import QubitAlloc, QubitDealloc, fast_append
 from qrisp.core.quantum_session import QuantumSession
 
+from qrisp.jax import QuantumPrimitive, AbstractQuantumCircuit
 
-class QuantumEnvironment:
+class QuantumEnvironment(QuantumPrimitive):
     """
 
     QuantumEnvironments are blocks of code, that undergo some user-specified compilation
@@ -325,8 +326,23 @@ class QuantumEnvironment:
         QuantumVariable qv
 
     """
-
+    
     deepest_environment = [None]
+    
+    def __init__(self):
+        
+        QuantumPrimitive.__init__(self, name = str(type(self))[45:-2].lower())
+        
+                
+        @self.def_abstract_eval
+        def abstract_eval(abs_qc, stage = None):
+            """Abstract evaluation of the primitive.
+            
+            This function does not need to be JAX traceable. It will be invoked with
+            abstractions of the actual arguments. 
+            """
+            
+            return AbstractQuantumCircuit()
 
     # The methods to start the dumping process for this environment
     # The dumping basically consists of copying the original data into a temporary
@@ -362,6 +378,12 @@ class QuantumEnvironment:
 
     # Method to enter the environment
     def __enter__(self):
+        
+        if QuantumSession.abs_qc() is not None:
+            import weakref
+            QuantumSession.abs_qc = weakref.ref(self.bind(QuantumSession.abs_qc(), stage = "enter"))
+            return
+            
         # The QuantumSessions operating inside this environment will be merged
         # into this QuantumSession
         self.env_qs = QuantumSession()
@@ -404,6 +426,12 @@ class QuantumEnvironment:
 
     # Method to exit the environment
     def __exit__(self, exception_type, exception_value, traceback):
+        
+        if QuantumSession.abs_qc() is not None:
+            import weakref
+            QuantumSession.abs_qc = weakref.ref(self.bind(QuantumSession.abs_qc(), stage = "exit"))
+            return
+        
         self.deepest_environment[0] = self.parent
 
         # Stop dumping
