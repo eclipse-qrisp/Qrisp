@@ -17,62 +17,43 @@
 """
 
 from jax.core import JaxprEqn, Literal
+from qrisp.jax.flattening_tools import evaluate_eqn
 
-from qrisp.jax import QuantumPrimitive
-
-def eval_qcall(eqn, context_dic):
-
-    current_eq = context_dic[eqn.invars[1]]
-    while current_eq.primitive.name != "qdef":
-        current_eq = context_dic[current_eq.invars[0]]
+def evaluate_qcall(eqn, context_dic):
+    
+    # Evaluate the Variable representing the QuantumCircuit to be processed
+    qc_to_be_extended = eqn.invars[0]
+    if isinstance(context_dic[qc_to_be_extended], JaxprEqn):
         
+        sub_eq = context_dic[qc_to_be_extended]
+        res = evaluate_eqn(sub_eq, context_dic)
+        
+        # Update the context dict
+        if sub_eq.primitive.multiple_results:
+            for i in range(len(sub_eq.outvars)):
+                context_dic[sub_eq.outvars[i]] = res[i]
+        else:
+            context_dic[sub_eq.outvars[0]] = res
+
+
+    # Now the Variable representing the QuantumCircuit to extend with
+    
+    # First, we need to find the definition equation.
+    definition_eq = context_dic[eqn.invars[1]]
+    while definition_eq.primitive.name != "qdef":
+        definition_eq = context_dic[definition_eq.invars[0]]
+    
+    # Create the new context dictionary
+    # This context will have the arguments of qcall available
+    # for the Variables of qdef
     new_context_dic = dict(context_dic)
     
-    replacement_vars = eqn.invars[:1] + eqn.invars[2:]
-    for i in range(len(current_eq.outvars)):
-        new_context_dic[current_eq.outvars[i]] = context_dic[replacement_vars[i]]
+    replacement_vars = [qc_to_be_extended] + eqn.invars[2:]
+    for i in range(len(definition_eq.outvars)):
+        new_context_dic[definition_eq.outvars[i]] = context_dic[replacement_vars[i]]
     
-    return evaluate_eqn(context_dic[eqn.invars[1]], new_context_dic)
+    
+    # This is the last equation of the function definition
+    concluding_equation = context_dic[eqn.invars[1]]
+    return evaluate_eqn(concluding_equation, new_context_dic)
 
-
-def evaluate_eqn(eqn, context_dic):
-    
-    
-    invalues = []
-    for i in range(len(eqn.invars)):
-        
-        invar = eqn.invars[i]
-        
-        if eqn.primitive.name == "qcall" and i == 1:
-            continue
-        
-        if isinstance(invar, Literal):
-            invalues.append(invar.val)
-            continue
-        elif isinstance(context_dic[invar], JaxprEqn):
-            
-            sub_eq = context_dic[invar]
-            
-            res = evaluate_eqn(sub_eq, context_dic)
-            
-            if sub_eq.primitive.multiple_results:
-                for i in range(len(sub_eq.outvars)):
-                    context_dic[sub_eq.outvars[i]] = res[i]
-            else:
-                context_dic[sub_eq.outvars[0]] = res
-            
-        invalues.append(context_dic[invar])
-        
-    if eqn.primitive.name == "qcall":
-        return eval_qcall(eqn, context_dic)
-        
-    return eqn.primitive.bind(*invalues, **eqn.params)
-        
-                    
-            
-
-    
-    
-    
-    
-    
