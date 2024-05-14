@@ -226,7 +226,7 @@ class QuantumModulus(QuantumFloat):
     @gate_wrap(permeability="args", is_qfree=True)
     def __add__(self, other):
         if isinstance(other, int):
-            other = self.encoder(other)
+            other = self.encoder(other%self.modulus)
         elif isinstance(other, QuantumModulus):
             if self.m != other.m:
                 raise Exception("Tried to add two QuantumModulus with differing Montgomery shift")
@@ -248,7 +248,7 @@ class QuantumModulus(QuantumFloat):
     @gate_wrap(permeability=[1], is_qfree=True)
     def __iadd__(self, other):
         if isinstance(other, int):
-            other = self.encoder(other)
+            other = self.encoder(other%self.modulus)
         elif isinstance(other, QuantumModulus):
             if self.m != other.m:
                 raise Exception("Tried to add two QuantumModulus with differing Montgomery shift")
@@ -264,7 +264,7 @@ class QuantumModulus(QuantumFloat):
     @gate_wrap(permeability="args", is_qfree=True)
     def __sub__(self, other):
         if isinstance(other, int):
-            other = self.encoder(other)
+            other = self.encoder(other%self.modulus)
         elif isinstance(other, QuantumModulus):
             if self.m != other.m:
                 raise Exception("Tried to add subtract QuantumModulus with differing Montgomery shift")
@@ -284,7 +284,7 @@ class QuantumModulus(QuantumFloat):
     @gate_wrap(permeability="args", is_qfree=True)
     def __rsub__(self, other):
         if isinstance(other, int):
-            other = self.encoder(other)
+            other = self.encoder(other%self.modulus)
         elif isinstance(other, QuantumModulus):
             if self.m != other.m:
                 raise Exception("Tried to add subtract QuantumModulus with differing Montgomery shift")
@@ -304,7 +304,7 @@ class QuantumModulus(QuantumFloat):
     @gate_wrap(permeability=[1], is_qfree=True)
     def __isub__(self, other):
         if isinstance(other, int):
-            other = self.encoder(other)
+            other = self.encoder(other%self.modulus)
         elif isinstance(other, QuantumModulus):
             if self.m != other.m:
                 raise Exception("Tried to add subtract QuantumModulus with differing Montgomery shift")
