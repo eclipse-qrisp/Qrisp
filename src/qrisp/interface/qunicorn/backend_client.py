@@ -111,9 +111,9 @@ class BackendClient:
             }
         
         job_post_response = requests.post(f'{self.api_endpoint}/jobs', json = job_data, verify = False)
-        if deployment_response.status_code == 422:
-            raise Exception(f'Unprocessable quantum ciruict (status code: {job_post_response.status_code})')
-        elif deployment_response.status_code != 201:
+        if job_post_response.status_code == 422:
+            raise Exception(f'Unprocessable job (status code: {job_post_response.status_code})')
+        elif job_post_response.status_code != 201:
             raise Exception(f'Failed to post job (status code: {job_post_response.status_code})')
         
         job_id = job_post_response.json()["id"]
