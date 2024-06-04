@@ -22,8 +22,9 @@ from qrisp.qaoa.mixers import RX_mixer
 from qrisp import QuantumVariable
 
 """ 
-clauses11 = [[1,2,-3],[1,4,-6], [4,5,6],[1,3,-4],[2,4,5],[1,3,5],[-2,-3,6]]
+problem = [6 , [[1,2,-3],[1,4,-6], [4,5,6],[1,3,-4],[2,4,5],[1,3,5],[-2,-3,6]]]
 Explanation
+First index is number of variables
 Clause : [1, 2, -4] 
 fulfilled by : 1100, 1110 
 --> if pos sign: the index has to be one; if neg sign the index has to be zero
@@ -34,18 +35,20 @@ fulfilled by : 1100, 1110
 """
 
 
-clauses11 = [[1,2,-3],[1,4,-6], [4,5,6],[1,3,-4],[2,4,5],[1,3,5],[-2,-3,6]]
+problem = [6 , [[1,2,-3],[1,4,-6], [4,5,6],[1,3,-4],[2,4,5],[1,3,5],[-2,-3,6]]]
+
+clauses11 = problem[1]
 
 #Clauses are decoded, s.t. the Cost-Optimizer can read them
 #numVars is the amount of considered variables, i.e. highest number (= Number of Qubits in Circuit aswell)
-decodedClauses = clausesdecoder( clauses = clauses11, numVars = 6)
+decodedClauses = clausesdecoder( problem)
 #print(decodedClauses)
 
-qarg = QuantumVariable(len(clauses11))
+qarg = QuantumVariable(problem[0])
 
 #CostOperator-Generator has to be called with the clauses
 #CostFct-Generator has to be called with decodedClauses
-QAOAinstance = QAOAProblem(cost_operator=maxSatCostOp(clauses11), mixer=RX_mixer, cl_cost_function=maxSatclCostfct(decodedClauses))
+QAOAinstance = QAOAProblem(cost_operator=maxSatCostOp(problem), mixer=RX_mixer, cl_cost_function=maxSatclCostfct(problem))
 QAOAinstance.set_init_function(init_function=init_state)
 theNiceQAOA = QAOAinstance.run(qarg=qarg, depth=5)
 
@@ -58,7 +61,7 @@ print()
 
 
 print("Final energy value and associated solution values")
-costfct = maxSatclCostfct(decodedClauses)
+costfct = maxSatclCostfct(problem)
 print()
 print(costfct(theNiceQAOA))
 #Final Result-dictionary
