@@ -1413,9 +1413,11 @@ def redirect_qfunction(function_to_redirect):
 
 
     """
-    from qrisp import QuantumEnvironment, QuantumVariable
+    from qrisp import QuantumEnvironment, QuantumVariable, merge, QuantumArray
     import weakref
     def redirected_qfunction(*args, target=None, **kwargs):
+        
+        merge([arg for arg in list(args) + [target] if isinstance(arg, (QuantumVariable, QuantumArray))])
         env = QuantumEnvironment()
         env.manual_allocation_management = True
         qs = target.qs
