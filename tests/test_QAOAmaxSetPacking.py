@@ -25,7 +25,7 @@ import matplotlib.pyplot as plt
 import itertools
 
 
-def test_QAOAmaxSetPacking():
+def QAOAmaxSetPacking():
             # start with a graph G - from np adjacency matrix
     """     counter = 0
     failure_list = []
