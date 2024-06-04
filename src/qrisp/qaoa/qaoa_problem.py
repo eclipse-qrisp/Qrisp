@@ -414,12 +414,6 @@ class QAOAProblem:
 
 
         # Perform optimization using COBYLA method
-        res_sample = minimize(optimization_wrapper,
-                              init_point, 
-                              method='COBYLA', 
-                              options={'maxiter':max_iter}, 
-                              args = (compiled_qc, symbols, qarg, mes_kwargs))
-        
         if isinstance(self.fourier_depth, int):
             from qrisp.qaoa.optimization_wrappers.fourier_wrapper import fourier_optimization_wrapper
             for index_p in range(1, depth + 1):
