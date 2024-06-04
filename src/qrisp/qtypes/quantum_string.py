@@ -148,6 +148,7 @@ class QuantumString(QuantumArray):
                 self[i + len(self) - len(other)] = other[i]
 
         elif isinstance(other, QuantumChar):
+            merge(self, other)
             self.resize((len(self) + 1,), refcheck=False)
             np.ndarray.__setitem__(self, len(self) - 1, other)
 

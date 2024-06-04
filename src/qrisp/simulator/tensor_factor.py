@@ -204,6 +204,8 @@ class TensorFactor:
         return p_list, tf_list, outcome_index_list
     
     def disentangle(self, qubit):
+        if len(self.qubits) == 1:
+            return self, self
         
         # Swap the index that is supposed to be measured to the front
         index = self.qubits.index(qubit)
@@ -227,6 +229,9 @@ class TensorFactor:
             new_bi_arrays[0].data *= 1/p_list[0]**0.5
             # print("disentangling successfull")
             return TensorFactor([qubit], temp), TensorFactor(new_qubits, new_bi_arrays[0])
+        
+        if not new_bi_arrays[0].exclude_linear_indpendence(new_bi_arrays[1]):
+            return self, self
         
         vdot_value = new_bi_arrays[0].vdot(new_bi_arrays[1])
         

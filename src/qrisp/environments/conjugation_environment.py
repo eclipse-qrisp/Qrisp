@@ -162,10 +162,10 @@ class ConjugationEnvironment(QuantumEnvironment):
             if isinstance(instr, QuantumEnvironment):
                 instr.compile()
             else:
-                self.env_qs.data.append(instr)
+                self.env_qs.append(instr)
         
         if qv_set_before != set(self.env_qs.qv_list):
-            raise Exception("Tried to create/destroy QuantumVariables within a conjugation")
+            raise Exception(f"Tried to create/destroy QuantumVariables {qv_set_before.symmetric_difference(set(self.env_qs.qv_list))} within a conjugation")
         
         self.conjugation_circ = self.env_qs.copy()
         

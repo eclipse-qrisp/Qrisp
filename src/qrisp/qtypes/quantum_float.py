@@ -466,7 +466,7 @@ class QuantumFloat(QuantumVariable):
             if not res.signed:
                 res.add_sign()
             x(res)
-            res -= other - 2**res.exponent
+            res += other + 2**res.exponent
             return res
         else:
             raise Exception(

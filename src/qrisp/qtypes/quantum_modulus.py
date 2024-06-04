@@ -20,6 +20,33 @@ import numpy as np
 
 from qrisp.qtypes.quantum_float import QuantumFloat
 from qrisp.environments import invert
+from qrisp.misc import gate_wrap
+
+def comparison_wrapper(func):
+    
+    def res_func(self, other):
+        
+        if self.m != 0:
+            raise Exception("Tried to evaluate QuantumModulus comparison with non-zero Montgomery shift")
+        
+        conversion_flag = False
+        if isinstance(other, QuantumModulus):
+            
+            if other.m != 0:
+                raise Exception("Tried to evaluate QuantumModulus comparison with non-zero Montgomery shift")
+            
+            if self.modulus != other.modulus:
+                raise Exception("Tried to compare QuantumModulus instances of differing modulus")
+            
+            other.__class__ = QuantumFloat
+        self.__class__ = QuantumFloat
+        res = func(self, other)
+        self.__class__ = QuantumModulus
+        if conversion_flag:
+            other.__class__ = QuantumModulus
+        return res
+    
+    return res_func
 
 class QuantumModulus(QuantumFloat):
     r"""
@@ -166,29 +193,27 @@ class QuantumModulus(QuantumFloat):
         if i >= self.modulus:# or (np.gcd(i, self.modulus) != 1 and i != 0):
             return np.nan
         
-        return montgomery_encoder(i, 1<<self.m, self.modulus)
-        
+        return montgomery_encoder(i, 2**self.m, self.modulus)
+
+    @gate_wrap(permeability="args", is_qfree=True)    
     def __mul__(self, other):
         from qrisp.arithmetic.modular_arithmetic import montgomery_mod_mul, montgomery_mod_semi_mul
         
         if isinstance(other, QuantumModulus):
             return montgomery_mod_mul(self, other)
         elif isinstance(other, int):
-            if isinstance(other, int):
-                other = self.encoder(other)
-            
             return montgomery_mod_semi_mul(self, other)
         else:
             raise Exception("Quantum modular multiplication with type {type(other)} not implemented")
             
     __rmul__ = __mul__
-    
+
+    @gate_wrap(permeability=[1], is_qfree=True)
     def __imul__(self, other):
         if isinstance(other, int):
             
             from qrisp.arithmetic.modular_arithmetic import qft_semi_cl_inpl_mult, semi_cl_inpl_mult
             
-            other = self.encoder(other)
             from qrisp.arithmetic.adders import fourier_adder
             if self.inpl_adder is fourier_adder:
                 
@@ -197,10 +222,18 @@ class QuantumModulus(QuantumFloat):
                 return semi_cl_inpl_mult(self, other%self.modulus)
         else:
             raise Exception("Quantum modular multiplication with type {type(other)} not implemented")
-    
+
+    @gate_wrap(permeability="args", is_qfree=True)
     def __add__(self, other):
         if isinstance(other, int):
-            other = self.encoder(other)
+            other = self.encoder(other%self.modulus)
+        elif isinstance(other, QuantumModulus):
+            if self.m != other.m:
+                raise Exception("Tried to add two QuantumModulus with differing Montgomery shift")
+        elif isinstance(other, QuantumFloat):
+            if self.m != 0:
+                raise Exception("Tried to add a QuantumFloat and QuantumModulus with non-zero Montgomery shift")
+            
         
         from qrisp.arithmetic.modular_arithmetic import beauregard_adder
         
@@ -211,21 +244,34 @@ class QuantumModulus(QuantumFloat):
         return res
     
     __radd__ = __mul__
-    
-    
+
+    @gate_wrap(permeability=[1], is_qfree=True)
     def __iadd__(self, other):
         if isinstance(other, int):
-            other = self.encoder(other)
-        
+            other = self.encoder(other%self.modulus)
+        elif isinstance(other, QuantumModulus):
+            if self.m != other.m:
+                raise Exception("Tried to add two QuantumModulus with differing Montgomery shift")
+        elif isinstance(other, QuantumFloat):
+            if self.m != 0:
+                raise Exception("Tried to add a QuantumFloat and QuantumModulus with non-zero Montgomery shift")
+            
         from qrisp.arithmetic.modular_arithmetic import beauregard_adder
         
         beauregard_adder(self, other, self.modulus)
         return self
-    
-    
+
+    @gate_wrap(permeability="args", is_qfree=True)
     def __sub__(self, other):
         if isinstance(other, int):
-            other = self.encoder(other)
+            other = self.encoder(other%self.modulus)
+        elif isinstance(other, QuantumModulus):
+            if self.m != other.m:
+                raise Exception("Tried to add subtract QuantumModulus with differing Montgomery shift")
+        elif isinstance(other, QuantumFloat):
+            if self.m != 0:
+                raise Exception("Tried to subtract a QuantumFloat and QuantumModulus with non-zero Montgomery shift")
+            
         
         from qrisp.arithmetic.modular_arithmetic import beauregard_adder
         res = self.duplicate(init = True)
@@ -234,10 +280,17 @@ class QuantumModulus(QuantumFloat):
             beauregard_adder(res, other, self.modulus)
         
         return res
-    
-    def __rsub(self, other):
+
+    @gate_wrap(permeability="args", is_qfree=True)
+    def __rsub__(self, other):
         if isinstance(other, int):
-            other = self.encoder(other)
+            other = self.encoder(other%self.modulus)
+        elif isinstance(other, QuantumModulus):
+            if self.m != other.m:
+                raise Exception("Tried to add subtract QuantumModulus with differing Montgomery shift")
+        elif isinstance(other, QuantumFloat):
+            if self.m != 0:
+                raise Exception("Tried to subtract a QuantumFloat and QuantumModulus with non-zero Montgomery shift")
             
         from qrisp.arithmetic.modular_arithmetic import beauregard_adder
         res = self.duplicate()
@@ -247,18 +300,47 @@ class QuantumModulus(QuantumFloat):
         beauregard_adder(res, other, self.modulus)
         
         return res
-        
-    
+
+    @gate_wrap(permeability=[1], is_qfree=True)
     def __isub__(self, other):
         if isinstance(other, int):
-            other = self.encoder(other)
+            other = self.encoder(other%self.modulus)
+        elif isinstance(other, QuantumModulus):
+            if self.m != other.m:
+                raise Exception("Tried to add subtract QuantumModulus with differing Montgomery shift")
+        elif isinstance(other, QuantumFloat):
+            if self.m != 0:
+                raise Exception("Tried to subtract a QuantumFloat and QuantumModulus with non-zero Montgomery shift")
         
         from qrisp.arithmetic.modular_arithmetic import beauregard_adder
         with invert():
             beauregard_adder(self, other, self.modulus)
         
         return self
+    
+    @comparison_wrapper
+    def __lt__(self, other):
+        return QuantumFloat.__lt__(self, other)
+    
+    @comparison_wrapper
+    def __gt__(self, other):
+        return QuantumFloat.__gt__(self, other)
 
+    @comparison_wrapper
+    def __le__(self, other):
+        return QuantumFloat.__le__(self, other)
 
+    @comparison_wrapper
+    def __ge__(self, other):
+        return QuantumFloat.__ge__(self, other)
+    
+    @comparison_wrapper
+    def __eq__(self, other):
+        return QuantumFloat.__eq__(self, other)
 
-        
+    @comparison_wrapper
+    def __ne__(self, other):
+        return QuantumFloat.__ne__(self, other)
+
+    def __hash__(self):
+        return QuantumFloat.__hash__(self)

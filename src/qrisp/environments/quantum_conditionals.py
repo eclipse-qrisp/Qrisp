@@ -618,7 +618,11 @@ def q_eq(input_0, input_1, invert = False):
             )
 
         
-        with conjugate(cx)(input_0, input_1):
+        def multi_cx(input_0, input_1):
+            for i in range(len(input_0)):
+                cx(input_0[i], input_1[i])
+        
+        with conjugate(multi_cx)(input_0, input_1):
             mcx(input_1, res, method="balauca", ctrl_state=0)
         
 
