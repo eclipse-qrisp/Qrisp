@@ -16,7 +16,7 @@
 ********************************************************************************/
 """
 
-from qrisp import QFT, conjugate, p, cp, crz, cz, cx, x, QuantumBool, h, rzz, gphase, rz, QuantumCircuit, z, QuantumEnvironment
+from qrisp import QFT, conjugate, p, cp, crz, cz, cx, x, QuantumBool, h, rzz, gphase, rz, QuantumCircuit, z, QuantumEnvironment, Operation, PGate
 import numpy as np
 from sympy import Symbol
 
@@ -86,7 +86,7 @@ def fourier_adder(a, b, perform_QFT = True):
                     if 1+j+i-len(b) == 0:
                         cz(a[j], b[i])
                     else:
-                        b[i].qs().append(helper_op(-np.pi*2**(1+j+i-len(b))/2), [a[j], b[i]])
+                        b[i].qs().append(QuasiRZZ(-np.pi*2**(1+j+i-len(b))/2), [a[j], b[i]])
                         
                         phase_correction_a[j] += np.pi*2**(1+j+i-len(b))/2
                         phase_correction_b[i] += np.pi*2**(1+j+i-len(b))/2
@@ -99,16 +99,39 @@ def fourier_adder(a, b, perform_QFT = True):
                     p(phase_correction_a[i], a[i])
 
 
-symb = Symbol("symb")
-helper_qc = QuantumCircuit(2)
-helper_qc.cx(0, 1)
-helper_qc.p(symb, 1)
-helper_qc.cx(0, 1)
-
-def helper_op(phi):
+class QuasiRZZ(Operation):
     
-    qc = helper_qc.bind_parameters({symb : phi})
-    res = qc.to_gate("quasi_rzz")
-    res.permeability = {0 : True, 1 : True}
-    res.is_qfree = True
-    return res
+    def __init__(self, angle):
+        qc = QuantumCircuit(2)
+        qc.cx(qc.qubits[1], qc.qubits[0])
+        qc.p(angle, qc.qubits[0])
+        qc.cx(qc.qubits[1], qc.qubits[0])
+        
+        Operation.__init__(self, "quasi_rzz", num_qubits = 2, definition = qc, params = [angle])
+        
+        self.permeability = {0 : True, 1 : True}
+        self.is_qfree = True        
+    
+    def inverse(self):
+        return QuasiRZZ(-self.params[0])
+    
+    def control(self, num_ctrl_qubits=1, ctrl_state=-1, method=None):
+        
+        qc = QuantumCircuit(2 + num_ctrl_qubits)
+        qc.cx(qc.qubits[-1], qc.qubits[-2])
+        qc.append(PGate(self.params[0]).control(num_ctrl_qubits, ctrl_state=ctrl_state, method=method), qc.qubits[:-1])
+        qc.cx(qc.qubits[-1], qc.qubits[-2])
+        
+        res = Operation.control(self, num_ctrl_qubits, ctrl_state=ctrl_state, method=method)
+        
+        res.definition = qc
+        return res
+        
+
+# def helper_op(phi):
+    
+#     qc = helper_qc.bind_parameters({symb : phi})
+#     res = qc.to_gate("quasi_rzz")
+#     res.permeability = {0 : True, 1 : True}
+#     res.is_qfree = True
+#     return res
