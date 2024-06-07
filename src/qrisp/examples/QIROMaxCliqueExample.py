@@ -1,21 +1,15 @@
 # imports 
-from qrisp.qiro.qiro_problem import QIROProblem
-from qrisp.qaoa.qaoa_problem import QAOAProblem
-from qrisp.qaoa.problems.create_rdm_graph import create_rdm_graph
-from qrisp.qaoa.problems.maxCliqueInfrastr import maxCliqueCostfct, maxCliqueCostOp
-from qrisp.qiro.qiroproblems.qiroMaxCliqueInfrastr import * 
-from qrisp.qaoa.mixers import RX_mixer
-from qrisp.qiro.qiro_mixers import qiro_init_function, qiro_RXMixer
 from qrisp import QuantumVariable
 import matplotlib.pyplot as plt
 import networkx as nx
-
+from qrisp.qiro import QIROProblem, qiro_init_function, qiro_RXMixer, create_maxClique_cost_operator_reduced, create_maxClique_replacement_routine
+from qrisp.qaoa import QAOAProblem,  RX_mixer, maxCliqueCostfct, maxCliqueCostOp
 
 
 # First we define a graph via the number of nodes and the QuantumVariable arguments
 num_nodes = 15
-G = create_rdm_graph(num_nodes,0.7, seed =  99)
-Gtwo = create_rdm_graph(num_nodes,0.7, seed =  99)
+G = nx.erdos_renyi_graph(num_nodes,0.7, seed =  99)
+Gtwo = nx.erdos_renyi_graph(num_nodes,0.7, seed =  99)
 qarg = QuantumVariable(G.number_of_nodes())
 qarg2 = QuantumVariable(Gtwo.number_of_nodes())
 
@@ -48,15 +42,6 @@ final_Graph = qiro_instance.problem
 
 # get the normal QAOA results for a comparison
 #res_qaoa = maxclique_instance.run( qarg = qarg2, depth = 3)
-
-
-""" # We can then also print the top 5 results for each...
-print("QAOA 5 best results")
-maxfive = sorted(res_qaoa, key=res_qaoa.get, reverse=True)[:5]
-for key, val in res_qaoa.items(): 
-    if key in maxfive:
-        print(key)
-        print(testCostFun({key:1})) """
 
 
 print("QIRO 5 best results")

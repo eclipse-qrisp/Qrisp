@@ -19,4 +19,6 @@
 
 from qrisp.qiro.qiroproblems.qiroMaxCliqueInfrastr import * 
 from qrisp.qiro.qiroproblems.qiroMaxIndepSetInfrastr import *   
+from qrisp.qiro.qiroproblems.qiroMaxSatInfrastr import *   
+from qrisp.qiro.qiroproblems.qiroMaxSetPackInfrastr import *   
 

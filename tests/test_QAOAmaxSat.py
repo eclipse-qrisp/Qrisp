@@ -18,7 +18,6 @@
 
 
 from qrisp.qaoa import QAOAProblem
-from qrisp.qaoa.problems.create_rdm_graph import create_rdm_graph
 from qrisp.qaoa.problems.maxSatInfrastr import maxSatclCostfct, maxSatCostOp, init_state, clausesdecoder
 from qrisp.qaoa.mixers import RX_mixer
 from qrisp import QuantumVariable
@@ -74,6 +73,4 @@ def test_QAOAmaxSat():
                 if name in decodedClauses[index]:
                     temp  = True
             assert temp
-
-test_QAOAmaxSat()
 

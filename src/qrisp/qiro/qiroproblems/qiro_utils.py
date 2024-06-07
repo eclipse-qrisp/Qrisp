@@ -20,7 +20,7 @@ import numpy as np
 
 def find_max(single_cor, double_cor, res, solutions):
     """
-    General subroutine for finding the values with maximal correlation
+    General subroutine for finding the values with maximal correlation in the QIRO algorithm
 
     Parameters
     ----------

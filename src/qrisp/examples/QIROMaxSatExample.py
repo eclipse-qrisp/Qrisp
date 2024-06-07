@@ -1,8 +1,6 @@
 # imports 
-from qrisp.qiro.qiro_problem import QIROProblem
 from qrisp.qaoa.problems.maxSatInfrastr import maxSatclCostfct, clausesdecoder
-from qrisp.qiro.qiroproblems.qiroMaxSatInfrastr import * 
-from qrisp.qiro.qiro_mixers import qiro_init_function, qiro_RXMixer
+from qrisp.qiro import QIROProblem, qiro_init_function, qiro_RXMixer, create_maxSat_replacement_routine, create_maxSat_cost_operator_reduced
 from qrisp import QuantumVariable
 import matplotlib.pyplot as plt
 import networkx as nx

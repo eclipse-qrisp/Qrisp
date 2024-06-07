@@ -20,6 +20,22 @@
 from qrisp import x, rx
 
 def qiro_RXMixer(solutions = [],exclusions = []):
+    """
+    RX-Mixer for QIRO algorithm. Works analogously to the normal RX-Mixer, but respects solutions and exclusions that have been found in the QIRO reduction steps.
+
+    Parameters
+    ----------
+    solutions: List
+        Solutions that have been found in the QIRO reduction steps.
+    exclusions: List
+        Solutions that have been found in the QIRO reduction steps.
+
+    Returns
+    -------
+    RX_mixer: function
+        The RX-mixer, according to the update steps that have been undertaken
+
+    """
     union = solutions + exclusions
     def RX_mixer(qv, beta):
 
@@ -30,6 +46,22 @@ def qiro_RXMixer(solutions = [],exclusions = []):
 
 
 def qiro_init_function(solutions = [], exclusions = []):
+    """
+    State initiation function for QIRO algorithm. Works analogously to the normal initiation function, but respects solutions and exclusions that have been found in the QIRO reduction steps.
+
+    Parameters
+    ----------
+    solutions: List
+        Solutions that have been found in the QIRO reduction steps.
+    exclusions: List
+        Solutions that have been found in the QIRO reduction steps.
+
+    Returns
+    -------
+    init_state: function
+        The state initiation function, according to the update steps that have been undertaken
+
+    """
     union = solutions + exclusions
     def init_state(qv):
         from qrisp import h
