@@ -203,7 +203,7 @@ class TensorFactor:
         
         return p_list, tf_list, outcome_index_list
     
-    def disentangle(self, qubit):
+    def disentangle(self, qubit, warning = False):
         if len(self.qubits) == 1:
             return self, self
         
@@ -231,12 +231,16 @@ class TensorFactor:
             return TensorFactor([qubit], temp), TensorFactor(new_qubits, new_bi_arrays[0])
         
         if not new_bi_arrays[0].exclude_linear_indpendence(new_bi_arrays[1]):
+            if warning:
+                print("WARNING: Faulty uncomputation found during simulation.")
             return self, self
         
         vdot_value = new_bi_arrays[0].vdot(new_bi_arrays[1])
         
         
         if xp.abs(xp.abs(vdot_value) - (p_list[0]*p_list[1])**0.5) > 1E-7:
+            if warning:
+                print("WARNING: Faulty uncomputation found during simulation.")
             # print("disentangling failed")
             # print(vdot_value)
             # print(xp.abs(xp.abs(vdot_value) - (p_list[0]*p_list[1])**0.5))

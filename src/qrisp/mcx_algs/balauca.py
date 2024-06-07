@@ -103,7 +103,7 @@ def hybrid_mcx(
                 else:
                     qs.append(
                         XGate().control(2, ctrl_state=ctrl_state, method="gray"),
-                        input_qubits + [target],
+                        input_qubits + target,
                     )
             else:
                 qs.append(

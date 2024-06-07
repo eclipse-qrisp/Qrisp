@@ -368,6 +368,15 @@ def optimal_grouping_recursion_parameter(qubit_amount):
 disentangler = Operation("disentangle", num_qubits=1)
 disentangler.definition = QuantumCircuit(1)
 disentangler.permeability = {0: False}
+disentangler.warning = False
+
+def Disentangler(warning = False):
+    disentangler = Operation("disentangle", num_qubits=1)
+    disentangler.definition = QuantumCircuit(1)
+    disentangler.permeability = {0: False}
+    disentangler.warning = warning
+    return disentangler
+    
 
 
 def insert_disentangling(qc):
@@ -781,7 +790,7 @@ def insert_multiverse_measurements(qc):
         elif instr.op.name == "reset":
             
             meas_qubit = instr.qubits[0]
-            new_data.append(Instruction(disentangler, [meas_qubit]))
+            new_data.append(Instruction(Disentangler(warning = True), [meas_qubit]))
             
             for j in range(len(data)):
                 if meas_qubit in data[j].qubits:
@@ -793,7 +802,7 @@ def insert_multiverse_measurements(qc):
             qb = qc.add_qubit()
             new_data.append(Instruction(CXGate(), instr.qubits + [qb]))
             new_data.append(Instruction(CXGate(), [qb] + instr.qubits))
-            new_data.append(Instruction(disentangler, [qb]))
+            new_data.append(Instruction(Disentangler(), [qb]))
         
         elif isinstance(instr.op, ClControlledOperation):
             

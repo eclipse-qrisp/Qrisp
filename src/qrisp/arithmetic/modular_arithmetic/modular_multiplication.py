@@ -175,15 +175,15 @@ def montgomery_red(t, a, b, N, m, permeable_if_zero = False):
             t.inpl_adder(-((2**k*b))*modinv(N, 2**(m+1)), u)
     
     if permeable_if_zero:    
-        cx(t[0], u[-1])
+        # cx(t[0], u[-1])
         pass
-        # mcx(list(a) + [t[0]],  
-        #     u[-1], ctrl_state = "0"*len(a) + "1",
-        #     method = "balauca")
+        # mcx([a[-1]] + [t[0]], u[-1], ctrl_state = "01")
+        mcx(list(a) + [t[0]],  
+            u[-1], ctrl_state = "0"*len(a) + "1",
+            method = "balauca")
     
     # Delete the uncomputed value
     u.delete(verify = False)
-    
     return t
 
 
@@ -351,7 +351,6 @@ def semi_cl_inpl_mult(a, X, ctrl = None, treat_invalid = False):
                                       output_qg = tmp,
                                       permeable_if_zero = ctrl is not None)
         
-
         # Perform the intermediate swap
         if ctrl is not None:
             with control(ctrl, invert = True):
@@ -378,7 +377,6 @@ def semi_cl_inpl_mult(a, X, ctrl = None, treat_invalid = False):
                                         modinv(X, a.modulus), 
                                         output_qg = a, 
                                         permeable_if_zero = ctrl is not None)
-        
         
         # Perform the corresponding swaps
         if ctrl is not None:

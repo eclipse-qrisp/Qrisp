@@ -243,11 +243,11 @@ class QuantumState:
         self.tensor_factors.append(TensorFactor([self.n]))
         self.n += 1
     
-    def disentangle(self, qb):
+    def disentangle(self, qb, warning = False):
         
         tensor_factor = self.tensor_factors[qb]
         
-        disent_tf, remain_tf = tensor_factor.disentangle(qb)
+        disent_tf, remain_tf = tensor_factor.disentangle(qb, warning = warning)
         
         for i in tensor_factor.qubits:
             self.tensor_factors[i] = remain_tf

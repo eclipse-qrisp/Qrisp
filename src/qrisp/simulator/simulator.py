@@ -145,7 +145,7 @@ def run(qc, shots, token="", iqs=None, insert_reset=True):
             # combined coherent state
             if instr.op.name == "disentangle":
                 # iqs.reset(qubit_indices[0], True)
-                iqs.disentangle(qubit_indices[0])
+                iqs.disentangle(qubit_indices[0], warning = instr.op.warning)
 
             # If the operation is unitary, we apply this unitary on to the required
             # qubit indices
