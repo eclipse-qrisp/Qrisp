@@ -29,7 +29,7 @@ class CompilationAccelerator:
         self.original_xla_mode = QuantumCircuit.xla_mode
         
         QuantumCircuit.xla_mode = self.xla_mode
-        
+
 
     def __exit__(self, exception_type, exception_value, traceback):
         

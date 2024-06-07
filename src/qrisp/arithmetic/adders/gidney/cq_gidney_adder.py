@@ -40,7 +40,14 @@ def cq_gidney_adder(a, b, c_in = None, c_out = None, ctrl = None):
     
     # Call merge to make the QuantumSession enter the inversion environment
     # (doesn't happen automatically with fast_append = 3)
-    merge(b[0].qs())
+    
+    qs_list = [b[0].qs()]
+    
+    for qb in [c_in, c_out, ctrl]:
+        if qb is not None:
+            qs_list.append(qb.qs())
+    
+    merge(qs_list)
     
     with fast_append(3):
     

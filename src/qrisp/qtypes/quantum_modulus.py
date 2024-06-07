@@ -208,7 +208,7 @@ class QuantumModulus(QuantumFloat):
             
     __rmul__ = __mul__
 
-    # @gate_wrap(permeability=[1], is_qfree=True)
+    @gate_wrap(permeability=[1], is_qfree=True)
     def __imul__(self, other):
         if isinstance(other, int):
             

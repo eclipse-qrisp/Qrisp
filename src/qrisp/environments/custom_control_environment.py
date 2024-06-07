@@ -142,7 +142,8 @@ def custom_control(func):
         qs_list = recursive_qs_search(args)
            
         if "ctrl" in kwargs:
-            qs_list.append(kwargs["ctrl"].qs())
+            if kwargs["ctrl"] is not None:
+                qs_list.append(kwargs["ctrl"].qs())
         
         merge(qs_list)
         
