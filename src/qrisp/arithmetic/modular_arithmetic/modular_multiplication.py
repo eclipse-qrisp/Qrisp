@@ -242,7 +242,7 @@ def montgomery_mod_semi_mul(a, b, output_qg = None, permeable_if_zero = False):
     
     # If no output value is given, create it
     if output_qg is None:
-        t = QuantumFloat(a.size+m_shift, signed = True)
+        t = QuantumFloat(a.size+m_shift, signed = True, qs = a.qs)
     else:
         if output_qg.modulus != N:
             raise Exception("Output QuantumModulus has incompatible modulus")
@@ -318,7 +318,7 @@ def semi_cl_inpl_mult(a, X, ctrl = None, treat_invalid = False):
         return a
 
     
-    with fast_append(3):
+    with fast_append(2):
         
         # Create the temporary value    
         tmp = a.duplicate(qs = a.qs)
@@ -336,11 +336,14 @@ def semi_cl_inpl_mult(a, X, ctrl = None, treat_invalid = False):
         
         # If the controlled version of this function is required, we perform the swapping
         # strategy from above.
+                
         if ctrl is not None:
             with control(ctrl, invert = True):
                 for i in range(len(a)):
                     # swap(tmp[i], a[i])
                     ft_swap(tmp[i], a[i])
+
+
         
         # Perform the out of place multiplication
         tmp = montgomery_mod_semi_mul(a, 
@@ -348,6 +351,7 @@ def semi_cl_inpl_mult(a, X, ctrl = None, treat_invalid = False):
                                       output_qg = tmp,
                                       permeable_if_zero = ctrl is not None)
         
+
         # Perform the intermediate swap
         if ctrl is not None:
             with control(ctrl, invert = True):
@@ -374,6 +378,7 @@ def semi_cl_inpl_mult(a, X, ctrl = None, treat_invalid = False):
                                         modinv(X, a.modulus), 
                                         output_qg = a, 
                                         permeable_if_zero = ctrl is not None)
+        
         
         # Perform the corresponding swaps
         if ctrl is not None:

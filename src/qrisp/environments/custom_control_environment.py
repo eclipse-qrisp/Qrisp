@@ -22,6 +22,7 @@ from qrisp.environments.quantum_environments import QuantumEnvironment
 from qrisp.environments.gate_wrap_environment import GateWrapEnvironment
 from qrisp.circuit import Operation, QuantumCircuit, Instruction
 from qrisp.environments.iteration_environment import IterationEnvironment
+from qrisp.core import merge
 
 def custom_control(func):
     """
@@ -138,7 +139,10 @@ def custom_control(func):
         from qrisp.core import recursive_qs_search
         from qrisp import merge, ControlEnvironment, ConditionEnvironment, QuantumEnvironment, InversionEnvironment, ConjugationEnvironment
         
-        qs_list = recursive_qs_search([args, kwargs])
+        qs_list = recursive_qs_search(args)
+           
+        if "ctrl" in kwargs:
+            qs_list.append(kwargs["ctrl"].qs())
         
         merge(qs_list)
         
@@ -195,6 +199,11 @@ class CustomControlEnvironment(QuantumEnvironment):
         
         self.control_qb = control_qb
         self.manual_allocation_management = True
+    
+    def __enter__(self):
+        
+        QuantumEnvironment.__enter__(self)
+        merge([self.env_qs, self.control_qb.qs()])
     
     def compile(self):
         
