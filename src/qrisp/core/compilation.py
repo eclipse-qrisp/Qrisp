@@ -100,21 +100,28 @@ def qompiler(
         
         qc = parallelize_qc(qc, depth_indicator = gate_speed)
         
-        if cancel_qfts:
-            # The first step is to cancel adjacent QFT gates, which are inverse to each
-            # other. This can happen alot because of the heavy use of Fourier arithmetic
-
-
-            qc = transpile(qc, transpile_predicate=qft_transpile_predicate)
-
-            qc = qft_cancellation(qc)
+        qft_cancelation_qc = transpile(
+            qc, transpile_predicate=qft_transpile_predicate
+        )
+        
+        if len(qft_cancelation_qc.data) > 1E4:
+            reordering_qc = qc
+        else:
+            if cancel_qfts:
+                # The first step is to cancel adjacent QFT gates, which are inverse to each
+                # other. This can happen alot because of the heavy use of Fourier arithmetic
+    
+                qft_cancelation_qc = qft_cancellation(qft_cancelation_qc)
+                
+            reordering_qc = transpile(qft_cancelation_qc, transpile_predicate = reordering_transpile_predicate)
             
+                
         if intended_measurements:
             # This function reorders the circuit such that the intended measurements can
             # be executed as early as possible additionally, any instructions that are
             # not needed for the intended measurements are removed
             try:
-                qc = measurement_reduction(qc, intended_measurements)
+                reordering_qc = measurement_reduction(reordering_qc, intended_measurements)
                 # pass
             except Exception as e:
                 if "Unitary of operation " not in str(e):
@@ -140,16 +147,7 @@ def qompiler(
 
         # Only letting mcx and logic synthesis survive has shown to be a good compromise
 
-        transpiled_qc = transpile(
-            qc, transpile_predicate=reordering_transpile_predicate
-        )
-        reordered_qc = reorder_qc(transpiled_qc)
-
-        # Transpile logic synthesis
-        reordered_qc = transpile(
-            reordered_qc,
-            transpile_predicate=reordering_transpile_predicate,
-        )
+        reordered_qc = reorder_qc(reordering_qc)
         
         # We combine adjacent single qubit gates
         if not qs.abstract_params and False:
