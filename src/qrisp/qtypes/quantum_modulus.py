@@ -19,7 +19,7 @@
 import numpy as np
 
 from qrisp.qtypes.quantum_float import QuantumFloat
-from qrisp.environments import invert, control
+from qrisp.environments import invert
 from qrisp.misc import gate_wrap
 
 def comparison_wrapper(func):
@@ -47,14 +47,6 @@ def comparison_wrapper(func):
         return res
     
     return res_func
-
-# Performs the modular inplace addition b += a
-# where a and b don't need to have the same montgomery shift
-def montgomery_addition(a, b):
-    
-    for i in range(len(a)):
-        with control(a[i]):
-            b += pow(2, i-a.m, a.modulus)
 
 class QuantumModulus(QuantumFloat):
     r"""
@@ -259,6 +251,7 @@ class QuantumModulus(QuantumFloat):
             other = self.encoder(other%self.modulus)
         elif isinstance(other, QuantumModulus):
             if self.m != other.m:
+                from qrisp.arithmetic.modular_arithmetic import montgomery_addition
                 montgomery_addition(other, self)
                 return self
         elif isinstance(other, QuantumFloat):

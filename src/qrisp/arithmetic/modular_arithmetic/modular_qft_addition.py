@@ -38,6 +38,13 @@ def qft_basis_adder(addend, target):
         for i in range(*addend.mshape):
             multi_controlled_U_g(target, [addend.significant(i)], 2**i)
 
+# Performs the modular inplace addition b += a
+# where a and b don't need to have the same montgomery shift
+def montgomery_addition(a, b):
+    
+    for i in range(len(a)):
+        with control(a[i]):
+            b += pow(2, i-a.m, a.modulus)
 
 def beauregard_adder(a, b, modulus):
     
