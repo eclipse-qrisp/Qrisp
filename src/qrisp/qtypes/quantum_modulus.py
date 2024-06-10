@@ -235,11 +235,11 @@ class QuantumModulus(QuantumFloat):
                 raise Exception("Tried to add a QuantumFloat and QuantumModulus with non-zero Montgomery shift")
             
         
-        from qrisp.arithmetic.modular_arithmetic import beauregard_adder
+        from qrisp.arithmetic.modular_arithmetic import mod_adder
         
         res = self.duplicate(init = True)
         
-        beauregard_adder(res, other, self.modulus)
+        mod_adder(other, res, self.inpl_adder, self.modulus)
         
         return res
     
@@ -258,9 +258,9 @@ class QuantumModulus(QuantumFloat):
             if self.m != 0:
                 raise Exception("Tried to add a QuantumFloat and QuantumModulus with non-zero Montgomery shift")
             
-        from qrisp.arithmetic.modular_arithmetic import beauregard_adder
+        from qrisp.arithmetic.modular_arithmetic import mod_adder
         
-        beauregard_adder(self, other, self.modulus)
+        mod_adder(other, self, self.inpl_adder, self.modulus)
         return self
 
     @gate_wrap(permeability="args", is_qfree=True)
@@ -275,11 +275,11 @@ class QuantumModulus(QuantumFloat):
                 raise Exception("Tried to subtract a QuantumFloat and QuantumModulus with non-zero Montgomery shift")
             
         
-        from qrisp.arithmetic.modular_arithmetic import beauregard_adder
+        from qrisp.arithmetic.modular_arithmetic import mod_adder
         res = self.duplicate(init = True)
         
         with invert():
-            beauregard_adder(res, other, self.modulus)
+            mod_adder(other, res, self.inpl_adder, self.modulus)
         
         return res
 
@@ -294,12 +294,12 @@ class QuantumModulus(QuantumFloat):
             if self.m != 0:
                 raise Exception("Tried to subtract a QuantumFloat and QuantumModulus with non-zero Montgomery shift")
             
-        from qrisp.arithmetic.modular_arithmetic import beauregard_adder
+        from qrisp.arithmetic.modular_arithmetic import mod_adder
         res = self.duplicate()
         
         res -= self
         
-        beauregard_adder(res, other, self.modulus)
+        mod_adder(other, res, self.inpl_adder, self.modulus)
         
         return res
 
@@ -314,9 +314,9 @@ class QuantumModulus(QuantumFloat):
             if self.m != 0:
                 raise Exception("Tried to subtract a QuantumFloat and QuantumModulus with non-zero Montgomery shift")
         
-        from qrisp.arithmetic.modular_arithmetic import beauregard_adder
+        from qrisp.arithmetic.modular_arithmetic import mod_adder
         with invert():
-            beauregard_adder(self, other, self.modulus)
+            mod_adder(other, self, self.inpl_adder, self.modulus)
         
         return self
     
