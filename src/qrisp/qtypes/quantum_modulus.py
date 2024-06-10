@@ -251,7 +251,9 @@ class QuantumModulus(QuantumFloat):
             other = self.encoder(other%self.modulus)
         elif isinstance(other, QuantumModulus):
             if self.m != other.m:
-                raise Exception("Tried to add two QuantumModulus with differing Montgomery shift")
+                from qrisp.arithmetic.modular_arithmetic import montgomery_addition
+                montgomery_addition(other, self)
+                return self
         elif isinstance(other, QuantumFloat):
             if self.m != 0:
                 raise Exception("Tried to add a QuantumFloat and QuantumModulus with non-zero Montgomery shift")
