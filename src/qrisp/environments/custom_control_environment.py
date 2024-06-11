@@ -172,7 +172,7 @@ def custom_control(func):
 
         # Check whether the function supports the ctrl_method kwarg and adjust
         # the kwargs accordingly
-        if "ctrl_method" in list(inspect.getargspec(func))[0] and isinstance(env, ControlEnvironment):
+        if "ctrl_method" in list(inspect.getfullargspec(func))[0] and isinstance(env, ControlEnvironment):
             kwargs.update({"ctrl_method" : env.ctrl_method})
         
         
