@@ -1,9 +1,6 @@
-from qrisp.qiro.qiroproblems.qiroMaxSetPackInfrastr import trafo_maxPackToMIS
-from qrisp.qiro.qiroproblems.qiroMaxIndepSetInfrastr import * 
-from qrisp.qiro.qiro_problem import QIROProblem
+
 from qrisp.qaoa.problems.maxIndepSetInfrastr import maxIndepSetclCostfct, maxIndepSetCostOp
-from qrisp.qiro.qiroproblems.qiroMaxIndepSetInfrastr import * 
-from qrisp.qiro.qiro_mixers import qiro_init_function, qiro_RXMixer
+from qrisp.qiro import QIROProblem, trafo_maxPackToMIS, qiro_init_function, qiro_RXMixer, create_maxIndep_replacement_routine, create_maxIndep_cost_operator_reduced
 from qrisp import QuantumVariable
 import networkx as nx
 

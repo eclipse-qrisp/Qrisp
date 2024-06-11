@@ -23,7 +23,6 @@ from qrisp.qaoa.problems.eThrTwoLinInfrastr import *
 from qrisp.qaoa.problems.maxCliqueInfrastr import *
 from qrisp.qaoa.problems.maxIndepSetInfrastr import *
 from qrisp.qaoa.problems.maxSetPackInfrastr import *
-from qrisp.qaoa.problems.create_rdm_graph import *
 from qrisp.qaoa.problems.maxCut import *
 from qrisp.qaoa.problems.maxKColorableSubgraph import *
 from qrisp.qaoa.problems.QUBO import *

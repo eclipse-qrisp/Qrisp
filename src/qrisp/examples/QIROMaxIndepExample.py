@@ -1,16 +1,13 @@
 # imports 
-from qrisp.qiro.qiro_problem import QIROProblem
-from qrisp.qaoa.problems.create_rdm_graph import create_rdm_graph
 from qrisp.qaoa.problems.maxIndepSetInfrastr import maxIndepSetclCostfct, maxIndepSetCostOp
-from qrisp.qiro.qiroproblems.qiroMaxIndepSetInfrastr import * 
-from qrisp.qiro.qiro_mixers import qiro_init_function, qiro_RXMixer
+from qrisp.qiro import QIROProblem, qiro_init_function, qiro_RXMixer, create_maxIndep_replacement_routine, create_maxIndep_cost_operator_reduced
 from qrisp import QuantumVariable
 import networkx as nx
 
 
 # First we define a graph via the number of nodes and the QuantumVariable arguments
 num_nodes = 13
-G = create_rdm_graph(num_nodes, 0.4, seed =  107)
+G = nx.erdos_renyi_graph(num_nodes, 0.4, seed =  107)
 qarg = QuantumVariable(G.number_of_nodes())
 
 # set simulator shots
