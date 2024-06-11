@@ -23,7 +23,7 @@ from qrisp.qtypes.quantum_float import QuantumFloat
 from qrisp.qtypes.quantum_bool import QuantumBool
 from qrisp.arithmetic import multi_controlled_U_g, hybrid_mult, U_g
 from qrisp.core.library import QFT, h, cx, swap
-from qrisp.environments import conjugate, control, invert
+from qrisp.environments import conjugate, control, invert, custom_control
 from qrisp.circuit import Operation
 from qrisp.arithmetic.modular_arithmetic.mod_tools import modinv, montgomery_decoder, montgomery_encoder
 
@@ -49,7 +49,7 @@ def montgomery_addition(a, b):
 def beauregard_adder(a, b, modulus):
     
     if modulus > 2**a.size:
-        raise Exception("Tried to perform modular addition on QuantumFloat with to few qubits")
+        raise Exception("Tried to perform modular addition on QuantumFloat with too few qubits")
     if modulus == 2**a.size:
         with conjugate(QFT)(a, exec_swap = False):
             qft_basis_adder(b, a)
@@ -95,4 +95,47 @@ def beauregard_adder(a, b, modulus):
     sign.delete()
     reduction_not_necessary.delete()
 
+@custom_control
+def mod_adder(a, b, inpl_adder, modulus, ctrl = None):
+    
+    reduction_not_necessary = QuantumBool()
+    sign = QuantumBool()
+    
+    
+    if isinstance(a, int):
+        a = a%modulus
+    
+    b = list(b) + [sign[0]]
+    
+    if ctrl is None:
+        inpl_adder(a, b)
+    else:
+        with control(ctrl):
+            inpl_adder(a, b)
+            
+    with invert():
+        inpl_adder(modulus, b)
 
+    cx(sign, reduction_not_necessary)
+    
+    with control(reduction_not_necessary):
+        inpl_adder(modulus, b)
+        
+    with invert():
+        if ctrl is None:
+            inpl_adder(a, b)
+        else:
+            with control(ctrl):
+                inpl_adder(a, b)
+    
+    cx(sign, reduction_not_necessary)
+    reduction_not_necessary.flip()
+    
+    if ctrl is None:
+        inpl_adder(a, b)
+    else:
+        with control(ctrl):
+            inpl_adder(a, b)
+    
+    sign.delete()
+    reduction_not_necessary.delete()
