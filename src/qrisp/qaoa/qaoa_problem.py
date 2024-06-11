@@ -521,14 +521,13 @@ class QAOAProblem:
         ::
             
             from qrisp.qaoa import QAOAProblem
-            from qrisp.qaoa.problems.create_rdm_graph import create_rdm_graph
             from qrisp.qaoa.problems.maxCliqueInfrastr import maxCliqueCostfct,maxCliqueCostOp,init_state
             from qrisp.qaoa.mixers import RX_mixer
             from qrisp import QuantumVariable
             import networkx as nx
             
 	        #create QAOAinstance
-            G = create_rdm_graph(9,0.7, seed =  133)
+            G = nx.erdos_renyi_graph(9,0.7, seed =  133)
 	        QAOAinstance = QAOAProblem(maxCliqueCostOp(G), RX_mixer, maxCliqueCostfct(G))
 	        QAOAinstance.set_init_function(init_function=init_state)
 

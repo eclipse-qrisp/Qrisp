@@ -1,7 +1,6 @@
 # imports 
 from qrisp.qiro.qiro_problem import QIROProblem
 from qrisp.qaoa.qaoa_problem import QAOAProblem
-from qrisp.qaoa.problems.create_rdm_graph import create_rdm_graph
 from qrisp.qaoa.problems.maxCliqueInfrastr import maxCliqueCostfct, maxCliqueCostOp
 from qrisp.qiro.qiroproblems.qiroMaxCliqueInfrastr import * 
 from qrisp.qaoa.mixers import RX_mixer
@@ -14,8 +13,8 @@ def test_QIRO():
 
     # First we define a graph via the number of nodes and the QuantumVariable arguments
     num_nodes = 15
-    G = create_rdm_graph(num_nodes,0.7, seed =  99)
-    Gtwo = create_rdm_graph(num_nodes,0.7, seed =  99)
+    G = nx.erdos_renyi_graph(num_nodes,0.7, seed =  99)
+    Gtwo = nx.erdos_renyi_graph(num_nodes,0.7, seed =  99)
     qarg = QuantumVariable(G.number_of_nodes())
     # set simulator shots
     mes_kwargs = {
