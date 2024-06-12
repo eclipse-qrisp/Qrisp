@@ -74,12 +74,13 @@ def qompiler(
                     print(f"Warning: Automatic uncomputation for {qv.name} failed")
         
         from qrisp.logic_synthesis import LogicSynthGate
+        from qrisp.arithmetic import QuasiRZZ
 
         def reordering_transpile_predicate(op):
             if (
                 isinstance(op, PTControlledOperation)
                 and op.base_operation.name in ["x"]
-            ) or isinstance(op, LogicSynthGate) or isinstance(op, GidneyLogicalAND) or isinstance(op, JonesToffoli):
+            ) or isinstance(op, (LogicSynthGate, GidneyLogicalAND, JonesToffoli, ControlledOperation, QuasiRZZ)):
                 return False
             return True
 
