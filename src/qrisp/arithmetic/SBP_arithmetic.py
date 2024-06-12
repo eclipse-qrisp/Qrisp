@@ -1160,6 +1160,7 @@ def app_sb_phase_polynomial(input_qf_list, poly, symbol_list=None, t=1):
 
         qv = QuantumVariable(3)
         qv.init_state({'000': 0.5, '111': 0.5})
+        
         x, y, z = sp.symbols('x y z')
         P = np.pi*x*y*z
         app_sb_phase_polynomial([qv], P)
@@ -1287,6 +1288,7 @@ def app_phase_polynomial(qf_list, poly, symbol_list=None, t=1):
         qf2 = QuantumFloat(3,-1, signed = False)
         h(qf1[0])
         qf2[:]=0.5
+
         x=sp.Symbol('x')
         y=sp.Symbol('y')
         P = np.pi*x + np.pi*x*y
@@ -1308,6 +1310,7 @@ def app_phase_polynomial(qf_list, poly, symbol_list=None, t=1):
 
         qf = QuantumFloat(3,-3)
         h(qf)
+
         x = sp.symbols('x')
         P = 1-0.9*x**2+x**3
         app_phase_polynomial([qf],P)
@@ -1341,7 +1344,6 @@ def app_phase_polynomial(qf_list, poly, symbol_list=None, t=1):
 
         plt.plot(x_values, y_values, label = "P(x)")
         plt.plot(qf_values , sv_phase_array%(2*np.pi), "o", label = "Simulated phases")
-
         plt.ylabel("Phase [radian]")
         plt.xlabel("QuantumFloat outcome labels")
         plt.grid()
