@@ -1113,7 +1113,7 @@ def quantum_bit_shift(qf, bit_shift, treat_overflow = True):
         cyclic_shift(qf, bit_shift)
                 
 
-#@lifted
+@lifted
 def app_sb_phase_polynomial(input_qf_list, poly, symbol_list=None, t=1):
     """
     Applies a phase function specified by a (multivariate) SymPy polynomial on a list of QuantumVariables using
@@ -1239,7 +1239,7 @@ def app_sb_phase_polynomial(input_qf_list, poly, symbol_list=None, t=1):
             gphase(y*t,input_qubits[0])
 
 
-#@lifted
+@lifted
 def app_phase_polynomial(qf_list, poly, symbol_list=None, t=1):
     """
     Applies a phase function specified by a (multivariate) SymPy polynomial on a list of QuantumFloats using
@@ -1340,7 +1340,7 @@ def app_phase_polynomial(qf_list, poly, symbol_list=None, t=1):
     ::
 
         plt.plot(x_values, y_values, label = "P(x)")
-        plt.plot(phi , sv_phase_array%(2*np.pi), "o", label = "Simulated phases")
+        plt.plot(qf_values , sv_phase_array%(2*np.pi), "o", label = "Simulated phases")
 
         plt.ylabel("Phase [radian]")
         plt.xlabel("QuantumFloat outcome labels")
