@@ -1113,19 +1113,18 @@ def quantum_bit_shift(qf, bit_shift, treat_overflow = True):
         cyclic_shift(qf, bit_shift)
                 
 
-@lifted
-def app_sb_phase_polynomial(input_qf_list, poly, symbol_list=None, t=1):
+#@lifted
+def app_sb_phase_polynomial(qv_list, poly, symbol_list=None, t=1):
     """
-    Applies a phase function specified by a (multivariate) SymPy polynomial on a list of QuantumVariables using
-    `semi-Boolean polynomials <https://ieeexplore.ieee.org/document/9815035>`_. That is, this method implements
-    the transformation
+    Applies a phase function specified by a `semi-Boolean polynomial <https://ieeexplore.ieee.org/document/9815035>`_ acting on a list of QuantumVariables.
+    That is, this method implements the transformation
 
     .. math::
     
-        \ket{y_1}\dotsb\ket{y_n}\rightarrow e^{itP(y_1,\dotsc,y_n)}\ket{y_1}\dotsb\ket{y_n}
+        \ket{y_1}\dotsb\ket{y_n}\\rightarrow e^{itP(y_1,\dotsc,y_n)}\ket{y_1}\dotsb\ket{y_n}
 
     where :math:`\ket{y_1},\dotsc,\ket{y_n}` are QuantumVariables and :math:`P(y_1,\dotsc,y_n)=P(y_{1,1},\dotsc,y_{1,m_1},\dotsc,y_{n,1}\dotsc,y_{n,m_n})` is a semi-Boolean polynomial in variables
-    :math:`y_{1,1},\dotsc,y_{1,m_1},\dotsc,y_{n,1}\dotsc,y_{n,m_n}`.
+    :math:`y_{1,1},\dotsc,y_{1,m_1},\dotsc,y_{n,1}\dotsc,y_{n,m_n}`. Here, $m_i$ is the size of the $i$ th variable.
 
     Parameters
     ----------
@@ -1134,12 +1133,12 @@ def app_sb_phase_polynomial(input_qf_list, poly, symbol_list=None, t=1):
     poly : SymPy expression
         The semi-Boolean polynomial to evaluate.
     symbol_list : list, optional
-        An ordered list of SymPy symbols associated to the qubits of the QuantumVariables of ''qv_list''. 
-        For each QuantumVariable in ''qv_list'' a number of symbols according to its size is required.
+        An ordered list of SymPy symbols associated to the qubits of the QuantumVariables of ``qv_list``. 
+        For each QuantumVariable in ``qv_list`` a number of symbols according to its size is required.
         By default, the symbols of the polynomial
-        will be ordered alphabetically and then matched to the order in ''qv_list''.
+        will be ordered alphabetically and then matched to the order in ``qv_list``.
     t : Float or SymPy expression, optional
-        The argument ''t'' in the expression $\exp(itP)$.
+        The argument ``t`` in the expression $\exp(itP)$.
 
     Raises
     ------
@@ -1150,7 +1149,7 @@ def app_sb_phase_polynomial(input_qf_list, poly, symbol_list=None, t=1):
     Examples
     --------
 
-    We apply the phase function specified by the polynomial :math:`\pi xyz` on a QuantumVariable:
+    We apply the phase function specified by the polynomial :math:`P(x,y,z) = \pi xyz` on a QuantumVariable:
 
     ::
 
@@ -1158,22 +1157,23 @@ def app_sb_phase_polynomial(input_qf_list, poly, symbol_list=None, t=1):
         import numpy as np
         from qrisp import QuantumVariable, app_sb_phase_polynomial
 
-        qv = QuantumVariable(3)
-        qv.init_state({'000': 0.5, '111': 0.5})
-        
         x, y, z = sp.symbols('x y z')
         P = np.pi*x*y*z
+
+        qv = QuantumVariable(3)
+        qv.init_state({'000': 0.5, '111': 0.5})
+
         app_sb_phase_polynomial([qv], P)
 
-    ::
+    We print the ``statevector``:
 
-    >>>qv.qs.statevector()
-    :math:`\frac{\sqrt{2}}{2}(\ket{000}-\ket{111})`
+    >>> print(qv.qs.statevector())
+    sqrt(2)*(|000> - |111>)/2
 
     """
 
-    if isinstance(input_qf_list, QuantumArray):
-        input_qf_list = list(input_qf_list.flatten())
+    if isinstance(qv_list, QuantumArray):
+        qv_list = list(qv_list.flatten())
     
     # As the polynomial has only boolean variables,
     # powers can be ignored since x**k = x for x in GF(2)
@@ -1182,14 +1182,14 @@ def app_sb_phase_polynomial(input_qf_list, poly, symbol_list=None, t=1):
     if symbol_list is None:
         symbol_list = get_ordered_symbol_list(poly)
 
-    if len(symbol_list) != sum([var.size for var in input_qf_list]):
+    if len(symbol_list) != sum([var.size for var in qv_list]):
         raise Exception(
             "Provided QuantumVariable list does not include the appropriate amount "
             "of elements to evaluate the given polynomial"
         )
 
     # The list of qubits contained in the variables of input_var_list
-    input_qubits = sum([list(var.reg) for var in input_qf_list], [])
+    input_qubits = sum([list(var.reg) for var in qv_list], [])
     
     # Monomials in list form
     monomial_list = expr_to_list(poly)
@@ -1240,32 +1240,31 @@ def app_sb_phase_polynomial(input_qf_list, poly, symbol_list=None, t=1):
             gphase(y*t,input_qubits[0])
 
 
-@lifted
+#@lifted
 def app_phase_polynomial(qf_list, poly, symbol_list=None, t=1):
     """
-    Applies a phase function specified by a (multivariate) SymPy polynomial on a list of QuantumFloats using
-    `semi-boolean polynomials <https://ieeexplore.ieee.org/document/9815035>`_. That is, this method implements
-    the transformation
+    Applies a phase function specified by a polynomial acting on a list of QuantumFloats. 
+    That is, this method implements the transformation
 
     .. math::
     
-        \ket{y_1}\dotsb\ket{y_n}\rightarrow e^{itP(y_1,\dotsc,y_n)}\ket{y_1}\dotsb\ket{y_n}
+        \ket{y_1}\dotsb\ket{y_n}\\rightarrow e^{itP(y_1,\dotsc,y_n)}\ket{y_1}\dotsb\ket{y_n}
 
-    where :math:`\ket{y_1},\dotsc,\ket{y_n}` are QuantumFloats and :math:`P(y_1,\dotsc,y_n)` is a (multivariate) polynomial in variables
+    where :math:`\ket{y_1},\dotsc,\ket{y_n}` are QuantumFloats and :math:`P(y_1,\dotsc,y_n)` is a polynomial in variables
     :math:`y_1,\dotsc,y_n`.
 
     Parameters
     ----------
-    qf_list : list[QuantumFloat] or QuantumArray
+    qf_list : list[QuantumFloat] or QuantumArray[QuantumFloat] 
         The list of QuantumFloats to evaluate the polynomial on.
     poly : sympy expression
         The polynomial to evaluate.
-    symbol_list : dict, optional
-        An ordered list of SymPy symbols associated to the QuantumFloats of ''qf_list''.
+    symbol_list : list, optional
+        An ordered list of SymPy symbols associated to the QuantumFloats of ``qf_list``.
         By default, the symbols of the polynomial
-        will be ordered alphabetically and then matched to the order in ''qf_list''.
+        will be ordered alphabetically and then matched to the order in ``qf_list``.
     t : Float or SymPy expression, optional
-        The argument ''t'' in the expression $\exp(itP)$. The default is 1.
+        The argument ``t`` in the expression $\exp(itP)$. The default is 1.
 
     Raises
     ------
@@ -1284,51 +1283,50 @@ def app_phase_polynomial(qf_list, poly, symbol_list=None, t=1):
         import numpy as np
         from qrisp import QuantumFloat, h, app_phase_polynomial
 
+        x, y = sp.symbols('x y')
+        P = np.pi*x + np.pi*x*y
+
         qf1 = QuantumFloat(3, signed = False)
         qf2 = QuantumFloat(3,-1, signed = False)
         h(qf1[0])
         qf2[:]=0.5
 
-        x=sp.Symbol('x')
-        y=sp.Symbol('y')
-        P = np.pi*x + np.pi*x*y
         app_phase_polynomial([qf1,qf2], P)
-        
-    ::
 
-    >>>qf1.qs.statevector()
-    :math:`\frac{\sqrt{2}}{2}(\ket{0}\ket{0.5}-i\ket{1}\ket{0.5})`
+    We print the ``statevector``:
+
+    >>> print(qf1.qs.statevector())
+    sqrt(2)*(|0>*|0.5> - I*|1>*|0.5>)/2
 
     
     We apply the phase function specified by the polynomial :math:`P(x) = 1 - 0.9x^2 + x^3` on a QuantumFloat:
 
     ::
+
         import numpy as np
         import sympy as sp
         import matplotlib.pyplot as plt
         from qrisp import QuantumFloat, h, app_phase_polynomial
 
+        x = sp.symbols('x')
+        P = 1-0.9*x**2+x**3
+
         qf = QuantumFloat(3,-3)
         h(qf)
 
-        x = sp.symbols('x')
-        P = 1-0.9*x**2+x**3
         app_phase_polynomial([qf],P)
 
-    ::
-
-        To visualize the results we retrieve the ''statevector'' as a function and determine the phase of each entry.
+    To visualize the results we retrieve the ``statevector`` as a function and determine the phase of each entry.
 
     ::
 
         sv_function = qf.qs.statevector("function")
 
-    ::
-
-        This function receives a dictionary of QuantumVariables specifiying the desired label constellation and returns its complex amplitude. 
-        We calculate the phases corresponding to the complex amplitudes, and compare the results with the values of the function $P(x)$. 
+    This function receives a dictionary of QuantumVariables specifiying the desired label constellation and returns its complex amplitude. 
+    We calculate the phases corresponding to the complex amplitudes, and compare the results with the values of the function $P(x)$. 
 
     ::  
+
         qf_values = np.array([qf.decoder(i) for i in range(2 ** qf.size)])
         sv_phase_array = np.angle([sv_function({qf : i}) for i in qf_values])
 
@@ -1336,9 +1334,7 @@ def app_phase_polynomial(qf_list, poly, symbol_list=None, t=1):
         x_values = np.linspace(0, 1, 100)
         y_values = P_func(x_values)
 
-    ::
-
-        Finally, we plot the results.
+    Finally, we plot the results.
 
     ::
 
@@ -1350,7 +1346,10 @@ def app_phase_polynomial(qf_list, poly, symbol_list=None, t=1):
         plt.legend()
         plt.show()
 
-    ::
+    .. figure:: /_static/PhasePolynomialApplication.png
+        :alt: PhasePolynomialApplication
+        :scale: 80%
+        :align: center
 
     """
 

@@ -138,11 +138,12 @@ def test_phase_polynomial_application():
     from qrisp import QuantumFloat, h, app_phase_polynomial
 
     # We apply the phase function specified by the polynomial P(x) = 1 - 0.9x^2 + x^3 on a QuantumFloat
+    x = sp.symbols('x')
+    P = 1-0.9*x**2+x**3
+
     qf = QuantumFloat(3,-3)
     h(qf)
 
-    x = sp.symbols('x')
-    P = 1-0.9*x**2+x**3
     app_phase_polynomial([qf],P)
 
     sv_function = qf.qs.statevector("function")
