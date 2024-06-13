@@ -77,12 +77,19 @@ def qompiler(
         from qrisp.arithmetic import QuasiRZZ
 
         def reordering_transpile_predicate(op):
-            if (
-                isinstance(op, PTControlledOperation)
-                and (op.base_operation.name in ["x", "p"] or isinstance(op.base_operation, QuasiRZZ))
-            ) or isinstance(op, (LogicSynthGate, GidneyLogicalAND, JonesToffoli, QuasiRZZ)):
+            
+            if isinstance(op, PTControlledOperation):
+                
+                if op.base_operation.name == "x":
+                    return False
+                if op.base_operation.name == "p" and op.num_qubits == 2:
+                    return False
+            
+            if isinstance(op, (LogicSynthGate, GidneyLogicalAND, JonesToffoli, QuasiRZZ)):
                 return False
+            
             return True
+
 
         from qrisp.logic_synthesis import LogicSynthGate
         from qrisp.mcx_algs import GidneyLogicalAND, JonesToffoli
