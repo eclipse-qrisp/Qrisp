@@ -1370,7 +1370,7 @@ def app_phase_polynomial(qf_list, poly, symbol_list=None, t=1):
     for qf in qf_list:
         if qf.signed:
             # We do not use modular arithmetic.
-            sb_poly_list.append(qf.sb_poly()-2**(qf.msize+1+qf.exponent)*sp.symbols(qf.name + "_" + str(qf.msize)))
+            sb_poly_list.append(qf.sb_poly()-2**(qf.msize+2+qf.exponent)*sp.symbols(qf.name + "_" + str(qf.msize)))
         else:
             sb_poly_list.append(qf.sb_poly())
 
