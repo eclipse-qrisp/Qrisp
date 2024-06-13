@@ -79,8 +79,8 @@ def qompiler(
         def reordering_transpile_predicate(op):
             if (
                 isinstance(op, PTControlledOperation)
-                and op.base_operation.name in ["x"]
-            ) or isinstance(op, (LogicSynthGate, GidneyLogicalAND, JonesToffoli, ControlledOperation, QuasiRZZ)):
+                and (op.base_operation.name in ["x", "p"] or isinstance(op.base_operation, QuasiRZZ))
+            ) or isinstance(op, (LogicSynthGate, GidneyLogicalAND, JonesToffoli, QuasiRZZ)):
                 return False
             return True
 
