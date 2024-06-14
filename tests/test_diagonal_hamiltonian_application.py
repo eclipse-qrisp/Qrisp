@@ -137,11 +137,31 @@ def test_phase_polynomial_application():
     import sympy as sp
     from qrisp import QuantumFloat, h, app_phase_polynomial
 
-    # We apply the phase function specified by the polynomial P(x) = 1 - 0.9x^2 + x^3 on a QuantumFloat
+    # We apply the phase function specified by the polynomial P(x) = 1 - 0.9x^2 + x^3 on a QuantumFloat (unsigned)
     x = sp.symbols('x')
     P = 1-0.9*x**2+x**3
 
     qf = QuantumFloat(3,-3)
+    h(qf)
+
+    app_phase_polynomial([qf],P)
+
+    sv_function = qf.qs.statevector("function")
+    qf_values = np.array([qf.decoder(i) for i in range(2 ** qf.size)])
+    sv_phase_array = np.angle([sv_function({qf : i}) for i in qf_values])
+
+    P_func = sp.lambdify(x, P, 'numpy')
+
+    # Check if phases agree
+    from numpy.linalg import norm
+    assert norm((sv_phase_array - P_func(qf_values))) < 1e-4
+
+
+    # We apply the phase function specified by the polynomial P(x) = 1 - 0.9x^2 + x^3 on a QuantumFloat (signed)
+    x = sp.symbols('x')
+    P = 1-0.9*x**2+x**3
+
+    qf = QuantumFloat(3,-3,signed=True)
     h(qf)
 
     app_phase_polynomial([qf],P)
