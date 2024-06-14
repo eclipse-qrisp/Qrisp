@@ -1257,7 +1257,7 @@ def app_phase_polynomial(qf_list, poly, symbol_list=None, t=1):
     ----------
     qf_list : list[QuantumFloat] or QuantumArray[QuantumFloat] 
         The list of QuantumFloats to evaluate the polynomial on.
-    poly : sympy expression
+    poly : SymPy expression
         The polynomial to evaluate.
     symbol_list : list, optional
         An ordered list of SymPy symbols associated to the QuantumFloats of ``qf_list``.
