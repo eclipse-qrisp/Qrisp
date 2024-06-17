@@ -36,9 +36,9 @@ def test_unitary_calculation():
     x = QuantumFloat(n, 0, qs, signed=True)
     y = QuantumFloat(n, 0, qs, signed=False)
 
-    s = x * y
+    s = x + y
     # qs = s.qs
-    qc = qs.compile(1)
+    qc = qs.compile()
 
     start = time.time()
     test_unitary_1 = qc.get_unitary()
