@@ -1005,7 +1005,7 @@ class QuantumCircuit:
             )
 
         for ins in self.data:
-            if len(ins.op.params):
+            if len(ins.op.abstract_params):
                 op = ins.op.bind_parameters(subs_dic)
             else:
                 op = ins.op.copy()

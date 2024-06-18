@@ -431,6 +431,11 @@ class GraySynthGate(Operation):
         self.target_phases = target_phases
         self.phase_tolerant = phase_tolerant
         
+        self.abstract_params = set()
+        for i in range(len(target_phases)):
+            if not isinstance(target_phases[i], (int, float)):
+                self.abstract_params = self.abstract_params.union(target_phases[i].free_symbols)
+        
     def control(self, num_ctrl_qubits=1, ctrl_state=-1, method=None):
         
 
