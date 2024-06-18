@@ -88,6 +88,9 @@ def qompiler(
             if isinstance(op, (LogicSynthGate, GidneyLogicalAND, JonesToffoli, QuasiRZZ)):
                 return False
             
+            if "QFT" == op.name[:3]:
+                return False
+            
             return True
 
 
@@ -108,14 +111,6 @@ def qompiler(
         
         qc = parallelize_qc(qc, depth_indicator = gate_speed)
         
-        if cancel_qfts:
-            # The first step is to cancel adjacent QFT gates, which are inverse to each
-            # other. This can happen alot because of the heavy use of Fourier arithmetic
-
-
-            qc = transpile(qc, transpile_predicate=qft_transpile_predicate)
-
-            qc = qft_cancellation(qc)
             
         if intended_measurements:
             # This function reorders the circuit such that the intended measurements can
@@ -153,10 +148,32 @@ def qompiler(
         )
         reordered_qc = reorder_qc(transpiled_qc)
 
+        if cancel_qfts:
+            # The first step is to cancel adjacent QFT gates, which are inverse to each
+            # other. This can happen alot because of the heavy use of Fourier arithmetic
+
+            reordered_qc = transpile(reordered_qc, transpile_predicate=qft_transpile_predicate)
+
+            reordered_qc = qft_cancellation(reordered_qc)
+            
+
+        
+        def logic_synth_transpile_predicate(op):
+            
+            if isinstance(op, PTControlledOperation):
+                
+                if op.base_operation.name == "x":
+                    return False
+            
+            if isinstance(op, (LogicSynthGate, GidneyLogicalAND, JonesToffoli)):
+                return False
+            
+            return True
+
         # Transpile logic synthesis
         reordered_qc = transpile(
             reordered_qc,
-            transpile_predicate=reordering_transpile_predicate,
+            transpile_predicate=logic_synth_transpile_predicate,
         )
         
         # We combine adjacent single qubit gates
