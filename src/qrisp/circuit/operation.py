@@ -127,7 +127,10 @@ class Operation:
             if isinstance(par, (float, int, np.floating, np.int32)):
                 pass
             elif isinstance(par, Expr):
-                self.abstract_params = self.abstract_params.union(par.free_symbols)
+                if len(par.free_symbols):
+                    self.abstract_params = self.abstract_params.union(par.free_symbols)
+                else:
+                    par = float(par)
             else:
                 raise Exception(
                     f"Tried to create operation with parameters of type {type(par)}"
@@ -438,7 +441,7 @@ class Operation:
 # for more information
 class U3Gate(Operation):
     def __init__(self, theta, phi, lam, name="u3", global_phase=0):
-        self.global_phase = global_phase
+        
         # Initialize Operation instance
         super().__init__(
             name=name,
@@ -449,7 +452,11 @@ class U3Gate(Operation):
         )
         
         if isinstance(global_phase, Expr):
-            self.abstract_params = self.abstract_params.union(global_phase.free_symbols)
+            if len(global_phase.free_symbols):
+                self.abstract_params = self.abstract_params.union(global_phase.free_symbols)
+            else:
+                global_phase = float(global_phase)
+        self.global_phase = global_phase
 
         # Set parameters
         self.theta = self.params[0]
