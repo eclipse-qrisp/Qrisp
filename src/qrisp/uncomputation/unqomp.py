@@ -123,6 +123,8 @@ def dag_from_qc(qc, remove_init_nodes=False):
         # node = UnqompNode(str(qc.qubits.index(instr.qubits[-1])) + "_"
         #   + str(node_counter[instr.qubits[-1]]), instr)
         node = UnqompNode(str(node_counter[instr.qubits[-1]]), instr)
+        
+        node.qc_index = i
 
         if instr.op.name == "qb_dealloc":
             dealloc_nodes.append(node)

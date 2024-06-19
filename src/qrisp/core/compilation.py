@@ -513,7 +513,12 @@ def reorder_qc(qc):
     # sub_sort = lambda G : topological_sort(G, prefer = mcx_identifier, delay = nmcx_identifier)
     # for n in topological_sort(G, prefer = dealloc_identifier, delay = alloc_identifer, sub_sort = sub_sort):
 
-    for n in topological_sort(G, prefer=dealloc_identifier, delay=alloc_identifer):
+    def sub_sort(dag):
+        nodes = list(dag.nodes())
+        nodes.sort(key = lambda x : x.qc_index)
+        return nodes
+
+    for n in topological_sort(G, prefer=dealloc_identifier, delay=alloc_identifer, sub_sort = sub_sort):
         qc_new.append(n.instr)
 
     #The above algorithm does not move allocation gates to their latest possible
@@ -749,9 +754,13 @@ def measurement_reduction(qc, intended_measurements):
         lambda x: x.op.name == "measure" and x.qubits[0] in intended_measurements
     )
     
+    def sub_sort(dag):
+        nodes = list(dag.nodes())
+        nodes.sort(key = lambda x : x.qc_index)
+        return nodes
 
     # Perform topological sort
-    for n in topological_sort(G, prefer=measure_identifier):
+    for n in topological_sort(G, prefer=measure_identifier, sub_sort = sub_sort):
         qc_new.append(n.instr)
 
     # Check which instructions come after the final measurement
