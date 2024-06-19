@@ -111,18 +111,6 @@ def qompiler(
         
         qc = parallelize_qc(qc, depth_indicator = gate_speed)
         
-            
-        if intended_measurements:
-            # This function reorders the circuit such that the intended measurements can
-            # be executed as early as possible additionally, any instructions that are
-            # not needed for the intended measurements are removed
-            try:
-                qc = measurement_reduction(qc, intended_measurements)
-                # pass
-            except Exception as e:
-                if "Unitary of operation " not in str(e):
-                    raise e
-
 
         # We now reorder the transpiled QuantumCircuit. Reordering is performed based on
         # the DAG representation of Unqomp. The advantage of this representation is that
@@ -143,10 +131,25 @@ def qompiler(
 
         # Only letting mcx and logic synthesis survive has shown to be a good compromise
 
+        transpiled_qc = qc        
         transpiled_qc = transpile(
             qc, transpile_predicate=reordering_transpile_predicate
         )
+        
+        print(transpiled_qc.count_ops())
         reordered_qc = reorder_qc(transpiled_qc)
+        
+        if intended_measurements:
+            # This function reorders the circuit such that the intended measurements can
+            # be executed as early as possible additionally, any instructions that are
+            # not needed for the intended measurements are removed
+            try:
+                qc = measurement_reduction(qc, intended_measurements)
+                # pass
+            except Exception as e:
+                if "Unitary of operation " not in str(e):
+                    raise e
+        
 
         if cancel_qfts:
             # The first step is to cancel adjacent QFT gates, which are inverse to each
@@ -154,7 +157,7 @@ def qompiler(
 
             reordered_qc = transpile(reordered_qc, transpile_predicate=qft_transpile_predicate)
 
-            reordered_qc = qft_cancellation(reordered_qc)
+            #reordered_qc = qft_cancellation(reordered_qc)
             
 
         
@@ -173,7 +176,6 @@ def qompiler(
         # Transpile logic synthesis
         reordered_qc = transpile(
             reordered_qc,
-            transpile_predicate=logic_synth_transpile_predicate,
         )
         
         # We combine adjacent single qubit gates
