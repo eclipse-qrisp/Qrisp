@@ -17,6 +17,8 @@
 """
 
 import numpy as np
+import sympy as sp
+
 from qrisp.misc import array_as_int, gate_wrap, int_as_array
 from qrisp.circuit import QuantumCircuit, Operation, PTControlledOperation, ControlledOperation, fast_append
 
@@ -433,7 +435,7 @@ class GraySynthGate(Operation):
         
         self.abstract_params = set()
         for i in range(len(target_phases)):
-            if not isinstance(target_phases[i], (int, float, np.float64)):
+            if isinstance(target_phases[i], sp.Expr):
                 self.abstract_params = self.abstract_params.union(target_phases[i].free_symbols)
         
     def control(self, num_ctrl_qubits=1, ctrl_state=-1, method=None):
