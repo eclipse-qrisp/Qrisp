@@ -42,11 +42,14 @@ def u3matrix(theta, phi, lam, global_phase, use_sympy = False):
     if not use_sympy:
         module = numpy
         I = 1j
-        res = numpy.empty(shape=(2, 2), dtype=numpy.complex64)
+        res = numpy.empty(shape=(2, 2), dtype=np_dtype)
+        exp_gphase = module.exp(I * global_phase, dtype = np_dtype)
     else:
         module = sympy
         I = sympy.I
         res = numpy.empty(shape=(2, 2), dtype=numpy.dtype("O"))
+        
+        exp_gphase = module.exp(I * global_phase)
     
     
     
@@ -63,7 +66,7 @@ def u3matrix(theta, phi, lam, global_phase, use_sympy = False):
     res[1, 0] = module.exp(I * phi) * module.sin(theta / 2)
     res[1, 1] = module.exp(I * (phi + lam)) * module.cos(theta / 2)
 
-    return res * module.exp(I * global_phase, dtype = np_dtype)
+    return res*exp_gphase
 
 
 # Efficient function to generate the unitary of a controlled gate
