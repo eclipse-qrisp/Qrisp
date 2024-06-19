@@ -18,6 +18,17 @@ Given a Graph  :math:`G = (V,E)` maximize the size of a clique, i.e. a subset :m
 Replacement routine
 -------------------
 
+Based on the **maximum absolute entry** of the correlation matrix M and its sign, one of the following replacements is employed:
+
+* If :math:`\text{M}_{ii} \geq 0` is the maximum absolute value, then the :math:`i`-th vertex is set to be in the independent set (IS). In turn, we can remove all vertices that share an edge with this vertex can be removed from the graph, since including them in the solution would violate the problem constraints
+
+* If :math:`\text{M}_{ii} < 0` is the maximum absolute value we remove :math:`i`-th vertex from the graph
+
+* If :math:`\text{M}_{ij} > 0,  (i, j) ∈ E` was selected, we remove both nodes from the graph with the argument, that, since both of them would be in the same state in the final solution, including both as part of the solution would violate the constraint, as they share an edge. In turn, they can be removed from the graph. 
+
+* If :math:`\text{M}_{ij} < 0,  (i, j) ∈ E` was selected, we remove all nodes that share an edge with both vertices :math:`i` and :math:`j`. Since one of the vertices :math:`i` and :math:`j` will be part of the final solution (but not both), any vertex that is connected to both :math:`i` and :math:`j` is guaranteed to violate the problem constraints, and can be removed from the graph. In this case it may be possible, that no vertex is found to be as a canditate for removing. We will then simple chose second biggest absolute value of **M** for the replacement routine.
+
+
 .. autofunction:: create_maxIndep_replacement_routine
 
 
