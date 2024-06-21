@@ -15,6 +15,7 @@
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************/
 """
+from typing import Optional, List
 
 """
 This file sets up a client adhering to the interface specified by the Qunicorn middleware
@@ -28,6 +29,7 @@ https://qunicorn-core.readthedocs.io/en/latest/index.html
 """
 import requests
 import time
+
 
 class BackendClient:
     """
@@ -57,85 +59,134 @@ class BackendClient:
     {'00': 510, '11': 490}
 
     """
-    
-    def __init__(self, api_endpoint, port=None, token = ""):
-        
-        #https anstatt http
-        api_endpoint = 'http://' + api_endpoint
-        #if api_endpoint[:8] != 'http://':
+
+    def __init__(
+        self, api_endpoint: str, provider: str, device: str, port=None, token=""
+    ):
+        # https anstatt http
+        api_endpoint = "http://" + api_endpoint
+        # if api_endpoint[:8] != 'http://':
         #    api_endpoint = 'http://' + api_endpoint
 
-        
-        
-        
+        self.provider = provider
+        self.device = device
+
         if port is None:
             port = 9010
+
         self.port = port
         self.token = token
-        
+
         self.api_endpoint = api_endpoint + ":" + str(port)
-        
-    #Executes 
+
+    # Executes
     def run(self, qc, shots):
         qasm_str = qc.qasm()
-        
+
         deployment_data = {
-                        "programs": [
-                                {
-                                    "quantumCircuit": qasm_str,
-                                    "assemblerLanguage": "QASM2",
-                                    "pythonFilePath": "",
-                                    "pythonFileMetadata": ""
-                                    }
-                                    ],
-                                "name": ""
-                            }
-        deployment_response = requests.post(f'{self.api_endpoint}/deployments', json = deployment_data, verify = False)
+            "programs": [
+                {
+                    "quantumCircuit": qasm_str,
+                    "assemblerLanguage": "QASM2",
+                    "pythonFilePath": "",
+                    "pythonFileMetadata": "",
+                }
+            ],
+            "name": "",
+        }
+        deployment_response = requests.post(
+            f"{self.api_endpoint}/deployments", json=deployment_data, verify=False
+        )
 
         if deployment_response.status_code == 422:
-            raise Exception(f'Unprocessable quantum ciruict {deployment_response.status_code}')
+            raise Exception(
+                f"Unprocessable quantum circuit {deployment_response.status_code}"
+            )
         elif deployment_response.status_code != 201:
             print(deployment_response.status_code)
-            raise Exception(f'Failed to deploy quantum circuit {deployment_response.status_code}')
-        
+            raise Exception(
+                f"Failed to deploy quantum circuit {deployment_response.status_code}"
+            )
+
         deployment_id = deployment_response.json()["id"]
-        
+
         job_data = {
-              "name": "",
-              "providerName": "",
-              "deviceName": "",
-              "shots": shots,
-              "token": self.token,
-              "type": "RUNNER",
-              "deploymentId": deployment_id
-            }
-        
-        job_post_response = requests.post(f'{self.api_endpoint}/jobs', json = job_data, verify = False)
-        if deployment_response.status_code == 422:
-            raise Exception(f'Unprocessable quantum ciruict (status code: {job_post_response.status_code})')
-        elif deployment_response.status_code != 201:
-            raise Exception(f'Failed to post job (status code: {job_post_response.status_code})')
-        
+            "name": "",
+            "providerName": self.provider,
+            "deviceName": self.device,
+            "shots": shots,
+            "token": self.token,
+            "type": "RUNNER",
+            "deploymentId": deployment_id,
+        }
+
+        job_post_response = requests.post(
+            f"{self.api_endpoint}/jobs", json=job_data, verify=False
+        )
+        if job_post_response.status_code == 422:
+            raise Exception(
+                f"Unprocessable job (status code: {job_post_response.status_code})"
+            )
+        elif job_post_response.status_code != 201:
+            raise Exception(
+                f"Failed to post job (status code: {job_post_response.status_code})"
+            )
+
         job_id = job_post_response.json()["id"]
-        
-        job_running = True
-        
 
         while True:
-        
-            job_get_response = requests.get(f'{self.api_endpoint}/jobs/{job_id}', json = job_data, verify = False)
-            
-            if job_get_response.status_code != 201:
-                raise Exception(f'Quantum circuit execution failed: {job_get_response.json()["message"]}')
-            
+            job_get_response = requests.get(
+                f"{self.api_endpoint}/jobs/{job_id}", json=job_data, verify=False
+            )
+
+            if job_get_response.status_code != 200:
+                raise Exception(
+                    f'Quantum circuit execution failed: {job_get_response.json()["message"]}'
+                )
+
             job_state = job_get_response.json()["state"]
-        
-            if job_state == "finished":
+
+            if job_state == "FINISHED":
                 break
-                
+
             time.sleep(0.1)
-            
-        
-        results = job_get_response.json()["results"][0]["results"]
-        
-        return results
+
+        for job_result in job_get_response.json()["results"]:
+            if job_result["resultType"] == "COUNTS":
+                counts = job_result["data"]
+                metadata = job_result["metadata"]
+                counts_format = metadata["format"]
+                registers: List[int] | None = None
+
+                if counts_format == "hex":
+                    registers = [r["size"] for r in metadata["registers"]]
+
+                counts_binary = {
+                    self._ensure_binary(
+                        k, job_result["metadata"]["format"], registers
+                    ): v
+                    for k, v in counts.items()
+                }
+
+                return counts_binary
+
+        raise ValueError("No COUNTS result type in job response")
+
+    @staticmethod
+    def _ensure_binary(
+        result: str, counts_format: str, registers: Optional[list[int]]
+    ) -> str:
+        if counts_format == "bin":
+            return result  # result is already binary
+        elif counts_format == "hex":
+            if registers is None:
+                raise ValueError("Parameter registers is required for hex values!")
+
+            register_counts = result.split()
+
+            return "".join(
+                f"000{int(val, 16):b}"[-size:]
+                for val, size in zip(register_counts, registers)
+            )
+        else:
+            raise ValueError(f"Unknown format {counts_format}")
