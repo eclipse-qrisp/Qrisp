@@ -1138,7 +1138,7 @@ def app_sb_phase_polynomial(qv_list, poly, symbol_list=None, t=1):
         By default, the symbols of the polynomial
         will be ordered alphabetically and then matched to the order in ``qv_list``.
     t : Float or SymPy expression, optional
-        The argument ``t`` in the expression $\exp(itP)$.
+        The argument ``t`` in the expression $\exp(itP)$. The default is 1.
 
     Raises
     ------
@@ -1388,3 +1388,17 @@ def app_phase_polynomial(qf_list, poly, symbol_list=None, t=1):
     app_sb_phase_polynomial(qf_list, sb_polynomial, symbol_list=new_symbol_list, t=t)
 
         
+# Workaround to keep the docstring but still gatewrap
+
+temp = app_sb_phase_polynomial.__doc__
+
+app_sb_phase_polynomial = gate_wrap(permeability="args", is_qfree=True)(app_sb_phase_polynomial)
+
+app_sb_phase_polynomial.__doc__ = temp
+
+
+temp = app_phase_polynomial.__doc__
+
+app_phase_polynomial = gate_wrap(permeability="args", is_qfree=True)(app_phase_polynomial)
+
+app_phase_polynomial.__doc__ = temp
