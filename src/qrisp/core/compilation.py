@@ -73,52 +73,46 @@ def qompiler(
                 except:
                     print(f"Warning: Automatic uncomputation for {qv.name} failed")
         
-
-        def parallellization_transpile_predicate(op):
+        
+        # We now process the circuit in 3 important steps:
+        #
+        #   1. We use measurement reduction, i.e. we remove all gates that are not
+        #   directly relevant to perform the intended measurement
+        #
+        #   2. We parallelize the circuit using the parallelization algorithm
+        #
+        #   3. We run reorder the circuit another time such that (de)allocations
+        #   are executed in an advantageous order. The topological ordering algorithm
+        #   behind the allocation is "stable" in the sense that it preserves the 
+        #   previously induced order by the parallelization algorithm.
+        
+        # To achieve these steps we view the circuit from different levels of abstraction
+        # This is achieved by dissolving composite gates until a certain condition is met.
+        # Such conditions can be specified using the transpile_predicate keyword.
+        # The two relevant levels of abstractions are:
+        #
+        #   1. The permeability level: Composite gates are dissolved if they have incomplete
+        #   permeability information. In turn this implies that the resulting circuit contains
+        #   only gates with complete permeability information (such as adders, general arithmetic
+        #   or multi controlled X-gates). The resulting DAG can therefore use high-level
+        #   features for reordering.
+        
+        def permeability_transpile_predicate(op):
             for v in op.permeability.values():
                 if v is None:
                     return True
             return False
         
-        qc = transpile(qc, transpile_predicate = parallellization_transpile_predicate)
+        #   2. Allocation level: This level of abstraction leaves only a selected set of low
+        #   level gates alive. This comes with the advantage that the allocation algorithm
+        #   can also look into reordering the inner structure of high-level functions to also
+        #   get a good allocation strategy for this type of functions.
         
-        if intended_measurements:
-            # This function reorders the circuit such that the intended measurements can
-            # be executed as early as possible additionally, any instructions that are
-            # not needed for the intended measurements are removed
-            try:
-                qc = measurement_reduction(qc, intended_measurements)
-                # pass
-            except Exception as e:
-                if "Unitary of operation " not in str(e):
-                    raise e
-        
-        qc = parallelize_qc(qc, depth_indicator = gate_speed)
-        
-        # We now reorder the transpiled QuantumCircuit. Reordering is performed based on
-        # the DAG representation of Unqomp. The advantage of this representation is that
-        # it abstracts away non-trivial commutation relations between permeable gates.
-        # The actual ordering is performed by performing a topological sort on this dag.
-        # Contrary to unqomp, we don't use a modified version of Kahns algorithm here
-        # (for more information check the topological sort function)
-
-        # The reordering process aims to find an order that minimizes that maximum
-        # amount of qubits that is needed. Losely speaking it tries to reorder the data,
-        # that allocations are performed as late as possible and deallocations are
-        # performed as early as possible.
-
-        # Note that the more aggressive we transpile, the more optimization is possible
-        # through reordering i.e. less qubits. By reordering we however also destroy any
-        # previous order which might have been intentionally picked to optimize depth.
-        # In summary: Transpiling more aggressively leads to less qubits but more depth.
-
-        # Only letting mcx and logic synthesis survive has shown to be a good compromise
-
         from qrisp.logic_synthesis import LogicSynthGate
         from qrisp.mcx_algs import GidneyLogicalAND, JonesToffoli
         from qrisp.arithmetic import QuasiRZZ
         
-        def reordering_transpile_predicate(op):
+        def allocation_level_transpile_predicate(op):
             
             if isinstance(op, PTControlledOperation):
                 
@@ -134,32 +128,63 @@ def qompiler(
                 return False
             
             return True
+        
+        # Transpile to the first level
+        
+        qc = transpile(qc, transpile_predicate = permeability_transpile_predicate)
+        
+        if intended_measurements:
+            # This function reorders the circuit such that the intended measurements can
+            # be executed as early as possible additionally, any instructions that are
+            # not needed for the intended measurements are removed
+            try:
+                qc = measurement_reduction(qc, intended_measurements)
+                # pass
+            except Exception as e:
+                if "Unitary of operation " not in str(e):
+                    raise e
+        
+        # Reorder circuit for parallelization. 
+        # For more details check the implementation of this function
+        
+        qc = parallelize_qc(qc, depth_indicator = gate_speed)
+        
+        # We now reorder the transpiled circuit to achieve a good (de)allocation order. 
+        # Reordering is performed based on the DAG representation of Unqomp. 
+        # The advantage of this representation is that
+        # it abstracts away non-trivial commutation relations between permeable gates.
+        # The actual ordering is performed by performing a topological sort on this dag.
+        # Contrary to unqomp, we don't use a modified version of Kahns algorithm here
+        # (for more information check the topological sort function)
+
+        # The reordering process aims to find an order that minimizes that maximum
+        # amount of qubits that is needed. Losely speaking it tries to reorder the data,
+        # that allocations are performed as late as possible and deallocations are
+        # performed as early as possible.
+
+        # Note that the more aggressive we transpile, the more optimization is possible
+        # through reordering i.e. less qubits. By reordering we however also destroy any
+        # previous order which might have been intentionally picked to optimize depth.
+        # In summary: Transpiling more aggressively leads to less qubits but more depth.
 
         transpiled_qc = transpile(
-            qc, transpile_predicate=reordering_transpile_predicate
+            qc, transpile_predicate=allocation_level_transpile_predicate
         )
         
         reordered_qc = reorder_qc(transpiled_qc)
 
         if cancel_qfts:
-            # The first step is to cancel adjacent QFT gates, which are inverse to each
+            # Cancel adjacent QFT gates, which are inverse to each
             # other. This can happen alot because of the heavy use of Fourier arithmetic
             reordered_qc = qft_cancellation(reordered_qc)
             
-
+        
+        # Transpile logic synthesis
         def logic_synth_transpile_predicate(op):
             
-            if isinstance(op, PTControlledOperation):
-                
-                if op.base_operation.name == "x":
-                    return False
-            
-            if isinstance(op, (LogicSynthGate, GidneyLogicalAND, JonesToffoli)):
-                return False
-            
-            return True
-
-        # Transpile logic synthesis
+            return (allocation_level_transpile_predicate(op) or
+                    isinstance(op, LogicSynthGate))
+        
         reordered_qc = transpile(
             reordered_qc,
         )
