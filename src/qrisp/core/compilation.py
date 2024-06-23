@@ -181,7 +181,9 @@ def qompiler(
         
         # Transpile logic synthesis
         def logic_synth_transpile_predicate(op):
-            return isinstance(op, LogicSynthGate)
+            return (isinstance(op, LogicSynthGate) 
+                    or (op.name == "cp" and op.num_qubits == 2)
+                    or allocation_level_transpile_predicate(op))
         
         reordered_qc = transpile(
             reordered_qc, transpile_predicate = logic_synth_transpile_predicate)
