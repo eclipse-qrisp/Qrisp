@@ -181,13 +181,10 @@ def qompiler(
         
         # Transpile logic synthesis
         def logic_synth_transpile_predicate(op):
-            
-            return (allocation_level_transpile_predicate(op) or
-                    isinstance(op, LogicSynthGate))
+            return isinstance(op, LogicSynthGate)
         
         reordered_qc = transpile(
-            reordered_qc,
-        )
+            reordered_qc, transpile_predicate = logic_synth_transpile_predicate)
         
         # We combine adjacent single qubit gates
         if not qs.abstract_params and False:
