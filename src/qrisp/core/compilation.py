@@ -526,6 +526,8 @@ def reorder_qc(qc):
     # sub_sort = lambda G : topological_sort(G, prefer = mcx_identifier, delay = nmcx_identifier)
     # for n in topological_sort(G, prefer = dealloc_identifier, delay = alloc_identifer, sub_sort = sub_sort):
 
+    # The sub_sort function takes the indices of the gates in the source qc as
+    # a sorting index. This induces a valid topological ordering because of [proof]
     def sub_sort(dag):
         nodes = list(dag.nodes())
         nodes.sort(key = lambda x : x.qc_index)
