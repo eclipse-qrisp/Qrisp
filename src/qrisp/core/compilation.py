@@ -73,45 +73,28 @@ def qompiler(
                 except:
                     print(f"Warning: Automatic uncomputation for {qv.name} failed")
         
-        from qrisp.logic_synthesis import LogicSynthGate
-        from qrisp.arithmetic import QuasiRZZ
 
-        def reordering_transpile_predicate(op):
-            
-            if isinstance(op, PTControlledOperation):
-                
-                if op.base_operation.name == "x":
-                    return False
-                if op.base_operation.name == "p" and op.num_qubits == 2:
-                    return False
-            
-            if isinstance(op, (LogicSynthGate, GidneyLogicalAND, JonesToffoli, QuasiRZZ)):
-                return False
-            
-            if "QFT" == op.name[:3]:
-                return False
-            
-            return True
-
-
-        from qrisp.logic_synthesis import LogicSynthGate
-        from qrisp.mcx_algs import GidneyLogicalAND, JonesToffoli
-
-        
-        def qft_transpile_predicate(op):
-            return not "QFT" == op.name[:3] and reordering_transpile_predicate(op)
-        
         def parallellization_transpile_predicate(op):
             for v in op.permeability.values():
                 if v is None:
-                    return qft_transpile_predicate(op)
+                    return True
             return False
         
         qc = transpile(qc, transpile_predicate = parallellization_transpile_predicate)
         
+        if intended_measurements:
+            # This function reorders the circuit such that the intended measurements can
+            # be executed as early as possible additionally, any instructions that are
+            # not needed for the intended measurements are removed
+            try:
+                qc = measurement_reduction(qc, intended_measurements)
+                # pass
+            except Exception as e:
+                if "Unitary of operation " not in str(e):
+                    raise e
+        
         qc = parallelize_qc(qc, depth_indicator = gate_speed)
         
-
         # We now reorder the transpiled QuantumCircuit. Reordering is performed based on
         # the DAG representation of Unqomp. The advantage of this representation is that
         # it abstracts away non-trivial commutation relations between permeable gates.
@@ -131,36 +114,39 @@ def qompiler(
 
         # Only letting mcx and logic synthesis survive has shown to be a good compromise
 
-        transpiled_qc = qc        
+        from qrisp.logic_synthesis import LogicSynthGate
+        from qrisp.mcx_algs import GidneyLogicalAND, JonesToffoli
+        from qrisp.arithmetic import QuasiRZZ
+        
+        def reordering_transpile_predicate(op):
+            
+            if isinstance(op, PTControlledOperation):
+                
+                if op.base_operation.name == "x":
+                    return False
+                if op.base_operation.name == "p" and op.num_qubits == 2:
+                    return False
+            
+            if isinstance(op, (LogicSynthGate, GidneyLogicalAND, JonesToffoli, QuasiRZZ)):
+                return False
+            
+            if "QFT" == op.name[:3]:
+                return False
+            
+            return True
+
         transpiled_qc = transpile(
             qc, transpile_predicate=reordering_transpile_predicate
         )
         
-        print(transpiled_qc.count_ops())
         reordered_qc = reorder_qc(transpiled_qc)
-        
-        if intended_measurements:
-            # This function reorders the circuit such that the intended measurements can
-            # be executed as early as possible additionally, any instructions that are
-            # not needed for the intended measurements are removed
-            try:
-                qc = measurement_reduction(qc, intended_measurements)
-                # pass
-            except Exception as e:
-                if "Unitary of operation " not in str(e):
-                    raise e
-        
 
         if cancel_qfts:
             # The first step is to cancel adjacent QFT gates, which are inverse to each
             # other. This can happen alot because of the heavy use of Fourier arithmetic
-
-            reordered_qc = transpile(reordered_qc, transpile_predicate=qft_transpile_predicate)
-
-            #reordered_qc = qft_cancellation(reordered_qc)
+            reordered_qc = qft_cancellation(reordered_qc)
             
 
-        
         def logic_synth_transpile_predicate(op):
             
             if isinstance(op, PTControlledOperation):
