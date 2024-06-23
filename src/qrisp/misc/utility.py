@@ -1555,7 +1555,7 @@ def get_sympy_state(qs, decimals):
                 if angles[ind] == 1:
                     phase = 1
                 else:
-                    phase = nsimplify(angles[ind], tolerance=10 ** -5)
+                    phase = nsimplify(float(angles[ind]), tolerance=10 ** -5)
     
                 if count_ops(phase) > 5:
                     phase = angles[ind]
@@ -1655,10 +1655,10 @@ def trigify_amp(amplitude, nnz):
     )
 
     cos_expr = nsimplify(
-        np.arccos(np.abs(amplitude)) / np.pi, tolerance=10 ** -5
+        float(np.arccos(np.abs(amplitude)) / np.pi), tolerance=10 ** -5
     )
     sin_expr = nsimplify(
-        np.arcsin(np.abs(amplitude)) / np.pi, tolerance=10 ** -5
+        float(np.arcsin(np.abs(amplitude)) / np.pi), tolerance=10 ** -5
     )
 
     # if count_ops(sin_expr) > count_ops(cos_expr):
@@ -1685,7 +1685,7 @@ def trigify_amp(amplitude, nnz):
     # if count_ops(temp) > 4:
     if len(latex(temp)) > 20:
         temp = (
-            nsimplify(np.abs(amplitude) * nnz**0.5, tolerance=10 ** -5)
+            nsimplify(float(np.abs(amplitude) * nnz**0.5), tolerance=10 ** -5)
             / nnz**0.5
         )
         if len(latex(temp)) > 20:

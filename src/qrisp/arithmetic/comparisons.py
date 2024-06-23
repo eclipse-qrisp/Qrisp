@@ -133,7 +133,7 @@ def less_than(a, b):
         anc_amount = lt_gate.num_qubits - a.size - b.size - 1
 
         if anc_amount:
-            lt_ancilla = QuantumVariable(anc_amount)
+            lt_ancilla = QuantumVariable(anc_amount, qs = a.qs, name = "lt_ancilla*")
             ancillae = lt_ancilla.reg
         else:
             ancillae = []
@@ -168,7 +168,7 @@ def less_than(a, b):
         anc_amount = lt_gate.num_qubits - a.size - 1
 
         if anc_amount:
-            lt_ancilla = QuantumVariable(anc_amount)
+            lt_ancilla = QuantumVariable(anc_amount, qs = a.qs)
             ancillae = lt_ancilla.reg
         else:
             ancillae = []
