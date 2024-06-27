@@ -6,7 +6,7 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     strategy:
       matrix:
         python-version: ["3.9.16"]
@@ -24,6 +24,7 @@ jobs:
           pip install -e ./
           pip install pennylane
           pip install qiskit-aer
+          pip install jax
       - name: Test with pytest
         run: |
           pytest
