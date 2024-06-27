@@ -331,7 +331,7 @@ class QuantumEnvironment(QuantumPrimitive):
     
     def __init__(self):
         
-        QuantumPrimitive.__init__(self, name = str(type(self))[45:-2].lower())
+        QuantumPrimitive.__init__(self, name = str(type(self)).split(".")[-1][:-2].lower())
         
                 
         @self.def_abstract_eval
