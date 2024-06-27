@@ -25,6 +25,7 @@ import numpy as np
 
 from qrisp.core.compilation import qompiler
 
+from qrisp.jax import TracingQuantumSession
 
 class QuantumVariable:
     """
@@ -422,8 +423,8 @@ class QuantumVariable:
         Exception: Tried to perform operation x on unallocated qubit qv_1.0.
 
         """
-
-        if not self.qs.abstract_qs and self.is_deleted():
+        
+        if not isinstance(self.qs, TracingQuantumSession) and self.is_deleted():
             return
 
         self.qs.delete_qv(self, verify)
@@ -1453,7 +1454,7 @@ def plot_histogram(outcome_labels, counts, filename=None):
 
 
 from jax import tree_util
-from qrisp.jax.abstract_quantum_session import get_tracing_qs
+from qrisp.jax.tracing_quantum_session import get_tracing_qs
 from builtins import id
 
 

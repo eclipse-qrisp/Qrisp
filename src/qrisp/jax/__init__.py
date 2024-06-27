@@ -23,7 +23,7 @@ from qrisp.jax.abstract_quantum_circuit import *
 from qrisp.jax.measurement_primitive import *
 from qrisp.jax.catalyst_converter import *
 from qrisp.jax.flattening_tools import *
-from qrisp.jax.abstract_quantum_session import *
+from qrisp.jax.tracing_quantum_session import *
 from qrisp.jax.qaching import qache
 
 

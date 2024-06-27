@@ -41,10 +41,9 @@ class TracingQuantumSession:
         
     def register_qv(self, qv):
         if qv.name in [temp_qv.name for temp_qv in self.qv_list + self.deleted_qv_list]:
-            pass
-            # raise RuntimeError(
-            #     "Variable name " + str(qv.name) + " already exists in quantum session"
-            # )
+            raise RuntimeError(
+                "Variable name " + str(qv.name) + " already exists in quantum session"
+            )
 
         # Determine amount of required qubits
         self.abs_qc, qv.reg = create_qubits(self.abs_qc, qv.size)
