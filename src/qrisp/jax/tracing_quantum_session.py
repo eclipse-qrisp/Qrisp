@@ -98,4 +98,5 @@ def get_tracing_qs():
     else:
         if res is not None:
             tr_qs_container[0] = lambda : None
+            return None
     return res
