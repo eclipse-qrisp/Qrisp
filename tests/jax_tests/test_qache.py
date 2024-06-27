@@ -16,28 +16,40 @@
 ********************************************************************************/
 """
 
-from jax import tree_util
-from qrisp.core import QuantumVariable, QuantumSession
-from builtins import id
+from qrisp import *
+from qrisp.jax import *
+from jax import make_jaxpr
 
-
-def flatten_qv(qv):
-    # return the tracers and auxiliary data (structure of the object)
-    children = (qv.reg, qv.size)
-    aux_data = (id(qv), qv.name)  # No auxiliary data in this simple example
-    return children, aux_data
-
-def unflatten_qv(aux_data, children):
-    # reconstruct the object from children and auxiliary data
+def test_qache():
     
-    res = QuantumVariable.__new__(QuantumVariable)
+    class TracingCounter:
+        def __init__(self):
+            self.count = 0
     
-    res.reg = children[0]
-    res.size = children[1]
-    res.name = aux_data[1]
-    res.qs = QuantumSession()
-    
-    return res
+        def increment(self):
+            self.count += 1
 
-# Register as a PyTree with JAX
-tree_util.register_pytree_node(QuantumVariable, flatten_qv, unflatten_qv)
+    counter = TracingCounter()    
+    
+    @qache
+    def inner_function(qv):
+        counter.increment()
+        h(qv[0])
+        cx(qv[0], qv[1])
+        res_bl = measure(qv[0])
+        return res_bl
+
+    def outer_function():
+        qv = QuantumVariable(2)
+        temp_0 = inner_function(qv)
+        temp_1 = inner_function(qv)
+        temp_2 = inner_function(qv)
+        return temp_0 & temp_1 & temp_2
+    
+    print(make_jaxpr(outer_function)())
+    
+    assert counter.count == 1
+    
+
+
+

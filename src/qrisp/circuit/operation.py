@@ -23,7 +23,8 @@ import numpy as np
 from sympy.core.expr import Expr
 from sympy import lambdify
 
-from qrisp.jax import QuantumPrimitive, AbstractQuantumCircuit
+from qrisp.jax.abstract_quantum_circuit import AbstractQuantumCircuit
+from qrisp.jax.quantum_primitive import QuantumPrimitive
 
 # Class that describes an operation which can be performed on a quantum computer
 # Example would be an X gate or a measurement

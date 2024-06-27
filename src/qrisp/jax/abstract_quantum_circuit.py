@@ -37,17 +37,16 @@ def create_qubits(size, state):
 raise_to_shaped_mappings[AbstractQuantumCircuit] = lambda aval, _: aval
 
 qdef_p = QuantumPrimitive("qdef")
-qdef_p.multiple_results = True
 
 @qdef_p.def_abstract_eval
-def qdef_abstract_eval(num_args = 0):
+def qdef_abstract_eval():
     """Abstract evaluation of the primitive.
     
     This function does not need to be JAX traceable. It will be invoked with
     abstractions of the actual arguments. 
     """
     
-    return AbstractQuantumCircuit(), *[AbstractQubitArray() for _ in range(num_args)]
+    return AbstractQuantumCircuit()
 
 # Register Creation
 create_qubits_p = QuantumPrimitive("create_qubits")

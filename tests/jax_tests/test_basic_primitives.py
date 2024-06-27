@@ -16,9 +16,6 @@
 ********************************************************************************/
 """
 
-import pytest
-import time
-
 from qrisp import *
 from jax import make_jaxpr
 

@@ -1044,9 +1044,10 @@ def measure(qubits, clbits=None):
 
     """
     from qrisp import find_qs
+    from qrisp.jax import AbstractQuantumSession
     qs = find_qs(qubits)
     
-    if not qs.abstract_qs:
+    if not isinstance(qs, AbstractQuantumSession):
         if clbits is None:
             clbits = []
             if hasattr(qubits, "__len__"):
@@ -1065,8 +1066,8 @@ def measure(qubits, clbits=None):
         from qrisp.jax import Measurement_p
         import weakref
         
-        abs_qc, bl = Measurement_p.bind(qs.abs_qc(), qubits.abstract)
-        qs.abs_qc = weakref.ref(abs_qc)
+        abs_qc, bl = Measurement_p.bind(qs.abs_qc, qubits.abstract)
+        qs.abs_qc = abs_qc
         
         return bl
 

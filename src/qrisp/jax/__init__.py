@@ -22,9 +22,8 @@ from qrisp.jax.abstract_quantum_register import *
 from qrisp.jax.abstract_quantum_circuit import *
 from qrisp.jax.measurement_primitive import *
 from qrisp.jax.catalyst_converter import *
-from qrisp.jax.quantum_funcdef import *
 from qrisp.jax.flattening_tools import *
-from qrisp.jax.sub_qjit import sub_qjit
-from qrisp.jax.qv_pytree import *
+from qrisp.jax.abstract_quantum_session import *
+from qrisp.jax.qaching import qache
 
 

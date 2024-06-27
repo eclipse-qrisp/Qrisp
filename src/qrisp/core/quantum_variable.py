@@ -234,11 +234,15 @@ class QuantumVariable:
 
         # Store quantum session
         from qrisp.core import QuantumSession, merge_sessions
+        from qrisp.jax import check_for_tracing_mode, get_abstract_qs
 
-        if qs is not None:
-            self.qs = qs
+        if check_for_tracing_mode():
+            self.qs = get_abstract_qs()
         else:
-            self.qs = QuantumSession()
+            if qs is not None:
+                self.qs = qs
+            else:
+                self.qs = QuantumSession()
 
         self.size = size
 
@@ -1446,3 +1450,29 @@ def plot_histogram(outcome_labels, counts, filename=None):
         plt.savefig(filename, dpi=400, bbox_inches="tight")
     else:
         plt.show()
+
+
+from jax import tree_util
+from qrisp.jax.abstract_quantum_session import get_abstract_qs
+from builtins import id
+
+
+def flatten_qv(qv):
+    # return the tracers and auxiliary data (structure of the object)
+    children = (qv.reg, qv.size)
+    aux_data = (id(qv), qv.name)  # No auxiliary data in this simple example
+    return children, aux_data
+
+def unflatten_qv(aux_data, children):
+    # reconstruct the object from children and auxiliary data
+    res = QuantumVariable.__new__(QuantumVariable)
+    
+    res.reg = children[0]
+    res.size = children[1]
+    res.name = aux_data[1]
+    res.qs = get_abstract_qs()
+    
+    return res
+
+# Register as a PyTree with JAX
+tree_util.register_pytree_node(QuantumVariable, flatten_qv, unflatten_qv)

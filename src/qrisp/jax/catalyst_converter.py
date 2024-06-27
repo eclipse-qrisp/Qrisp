@@ -7,7 +7,7 @@ Created on Thu Apr 18 16:51:46 2024
 from jax import make_jaxpr
 from jax.core import Literal
 
-from qrisp.circuit import Operation
+
 from qrisp.jax import QuantumPrimitive
 
 
@@ -45,7 +45,7 @@ def convert_to_catalyst_jaxpr(closed_jaxpr, args):
         A Jaxpr using Catalyst primitives.
 
     """
-    
+    from qrisp.circuit import Operation    
     from catalyst.jax_primitives import qalloc_p, qinst_p, qmeasure_p, qdevice_p, qextract_p, qinsert_p
     import catalyst
     import pennylane as qml

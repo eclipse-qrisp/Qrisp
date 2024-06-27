@@ -119,8 +119,6 @@ class QuantumSession(QuantumCircuit):
     """
 
     qs_tracker = []
-    
-    abs_qc = lambda x : None
 
     def __init__(self, backend=None):
         """
@@ -170,14 +168,7 @@ class QuantumSession(QuantumCircuit):
         # Set up environment stack
         # This list will be filled, once we enter an environment
         self.env_stack = []
-        
-        import jax
-        self.abstract_qs = hasattr(jax._src.core.thread_local_state.trace_state.trace_stack.dynamic, "jaxpr_stack")
-        if self.abstract_qs:            
-            from qrisp.jax import qdef_p
-            if self.abs_qc() is None:
-                QuantumSession.abs_qc = weakref.ref(qdef_p.bind()[0])
-            
+
         # This list will be filled with variables which are marked for uncomputation
         # Variables will be marked once there is no longer any reference to them apart
         # from the one in qv_list. This is for instance the case with local variables
@@ -192,7 +183,7 @@ class QuantumSession(QuantumCircuit):
         # session. It needs to be tracked in order to also update the shadow sessions
         # when this session is merged into another session.
         self.shadow_sessions = []
-    
+
     def register_qv(self, qv):
         """
         Method to register QuantumVariables
@@ -219,15 +210,9 @@ class QuantumSession(QuantumCircuit):
 
         # Determine amount of required qubits
         req_qubits = qv.size
-        import jax
+
         # Hand qubits to quantum variable
-        if self.abstract_qs:
-            from qrisp.jax import create_qubits
-            abs_qc, qv.reg = create_qubits(self.abs_qc(), qv.size)
-            QuantumSession.abs_qc = weakref.ref(abs_qc)
-            
-        else:
-            qv.reg = self.request_qubits(req_qubits, name=qv.name)
+        qv.reg = self.request_qubits(req_qubits, name=qv.name)
 
         # Register in the list of active quantum variable
         self.qv_list.append(qv)
@@ -322,13 +307,6 @@ class QuantumSession(QuantumCircuit):
         return return_qubits
 
     def clear_qubits(self, qubits, verify=False):
-        
-        if self.abstract_qs:
-            from qrisp.jax import delete_qubits_p
-            self.abs_qc = weakref.ref(delete_qubits_p.bind(self.abs_qc(), qubits))
-            return
-            
-        
         # Apply initialization operation
         # The following is uncommented because the QASM simulator speed drastically
         # drops when having non unitary operations
@@ -561,19 +539,15 @@ class QuantumSession(QuantumCircuit):
         # We merge qs_list again since no merge happened incase there were no
         # environments.
         # if not operation.name == "qb_alloc":
-            
         multi_session_merge(qs_list)
-        
-        if self.abstract_qs:
-            if len(clbits):
-                raise Exception("Tried to append Operation with non-zero classical bits in JAX mode.")
-            QuantumSession.abs_qc = weakref.ref(operation.bind(QuantumSession.abs_qc(), *(operation.params + [b.abstract for b in qubits])))
-        else:
-            super().append(operation, qubits, clbits)
+
+        # print([qb.identifier for qb in self.qubits])
+        super().append(operation, qubits, clbits)
+
         
         if operation.name == "qb_dealloc":
             qubits[0].allocated = False
-            
+
     def __getitem__(self, key):
         for qv in self.qv_list:
             if qv.name == key:

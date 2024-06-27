@@ -16,9 +16,8 @@
 ********************************************************************************/
 """
 
-from qrisp.jax import *
-from qrisp.circuit import *
 
+from qrisp.circuit import *
 
 from qrisp.core import *
 from qrisp.misc import *
@@ -33,4 +32,4 @@ from qrisp.iterators.qrange import *
 from qrisp.mcx_algs import *
 
 from qrisp.default_backend import *
-
+from qrisp.jax import *

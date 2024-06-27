@@ -16,44 +16,34 @@
 ********************************************************************************/
 """
 
-import pytest
-import time
+from jax import jit
+from qrisp.jax import get_abstract_qs
 
-from qrisp import *
-from qrisp.jax import *
-from jax import make_jaxpr
-
-def test_sub_qjit():
+def qache(func):
     
-    class Counter:
-        def __init__(self):
-            self.count = 0
+    def ammended_function(abs_qc, *args):
+        
+        qs = get_abstract_qs()
+        qs.abs_qc = abs_qc
+        
+        res = func(*args)
+        
+        return qs.abs_qc, res
     
-        def increment(self):
-            self.count += 1
-
-    counter = Counter()    
+    ammended_function.__name__ = func.__name__
     
-    @sub_qjit
-    def inner_function(qv):
-        counter.increment()
-        h(qv[0])
-        cx(qv[0], qv[1])
-        res_bl = measure(qv[0])
-        return res_bl
-
-    def outer_function():
-        qv = QuantumVariable(2)
-        temp_0 = inner_function(qv)
-        temp_1 = inner_function(qv)
-        temp_2 = inner_function(qv)
-        return temp_0 & temp_1 & temp_2
+    ammended_function = jit(ammended_function)
     
+    def return_function(*args):
+        
+        abs_qs = get_abstract_qs()
+        
+        abs_qc_new, res = ammended_function(abs_qs.abs_qc, *args)
+        
+        abs_qs.abs_qc = abs_qc_new
+        
+        return res
     
-    print(make_jaxpr(outer_function)())
-    
-    assert counter.count == 1
-    
-
-
-
+    return return_function
+        
+        

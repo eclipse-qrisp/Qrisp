@@ -22,7 +22,6 @@ import traceback
 import numpy as np
 import sympy
 
-
 def bin_rep(n, bits):
     if n < 0:
         raise Exception("Only positive numbers are supported")
@@ -612,6 +611,10 @@ def gate_wrap_inner(
 
 
 def find_qs(args):
+    from qrisp.jax import get_abstract_qs
+    abs_qs = get_abstract_qs()
+    if abs_qs is not None:
+        return abs_qs
     
     if hasattr(args, "qs"):
         return args.qs()

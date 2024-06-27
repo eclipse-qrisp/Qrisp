@@ -56,7 +56,7 @@
 from qrisp.circuit import QubitAlloc, QubitDealloc, fast_append
 from qrisp.core.quantum_session import QuantumSession
 
-from qrisp.jax import QuantumPrimitive, AbstractQuantumCircuit
+from qrisp.jax import QuantumPrimitive, AbstractQuantumCircuit, get_abstract_qs
 
 class QuantumEnvironment(QuantumPrimitive):
     """
@@ -379,9 +379,9 @@ class QuantumEnvironment(QuantumPrimitive):
     # Method to enter the environment
     def __enter__(self):
         
-        if QuantumSession.abs_qc() is not None:
-            import weakref
-            QuantumSession.abs_qc = weakref.ref(self.bind(QuantumSession.abs_qc(), stage = "enter"))
+        abs_qs = get_abstract_qs()
+        if abs_qs is not None:
+            abs_qs.abs_qc = self.bind(abs_qs.abs_qc, stage = "enter")
             return
             
         # The QuantumSessions operating inside this environment will be merged
@@ -427,9 +427,10 @@ class QuantumEnvironment(QuantumPrimitive):
     # Method to exit the environment
     def __exit__(self, exception_type, exception_value, traceback):
         
-        if QuantumSession.abs_qc() is not None:
-            import weakref
-            QuantumSession.abs_qc = weakref.ref(self.bind(QuantumSession.abs_qc(), stage = "exit"))
+        
+        abs_qs = get_abstract_qs()
+        if abs_qs is not None:
+            abs_qs.abs_qc = self.bind(abs_qs.abs_qc, stage = "exit")
             return
         
         self.deepest_environment[0] = self.parent
