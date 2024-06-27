@@ -611,8 +611,8 @@ def gate_wrap_inner(
 
 
 def find_qs(args):
-    from qrisp.jax import get_abstract_qs
-    abs_qs = get_abstract_qs()
+    from qrisp.jax import get_tracing_qs
+    abs_qs = get_tracing_qs()
     if abs_qs is not None:
         return abs_qs
     

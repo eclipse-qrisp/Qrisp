@@ -17,13 +17,13 @@
 """
 
 from jax import jit
-from qrisp.jax import get_abstract_qs
+from qrisp.jax import get_tracing_qs
 
 def qache(func):
     
     def ammended_function(abs_qc, *args):
         
-        qs = get_abstract_qs()
+        qs = get_tracing_qs()
         qs.abs_qc = abs_qc
         
         res = func(*args)
@@ -36,7 +36,7 @@ def qache(func):
     
     def return_function(*args):
         
-        abs_qs = get_abstract_qs()
+        abs_qs = get_tracing_qs()
         
         abs_qc_new, res = ammended_function(abs_qs.abs_qc, *args)
         

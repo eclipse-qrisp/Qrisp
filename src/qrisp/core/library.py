@@ -1044,10 +1044,10 @@ def measure(qubits, clbits=None):
 
     """
     from qrisp import find_qs
-    from qrisp.jax import AbstractQuantumSession
+    from qrisp.jax import TracingQuantumSession
     qs = find_qs(qubits)
     
-    if not isinstance(qs, AbstractQuantumSession):
+    if not isinstance(qs, TracingQuantumSession):
         if clbits is None:
             clbits = []
             if hasattr(qubits, "__len__"):

@@ -22,10 +22,10 @@ import jax
 
 from qrisp.jax import qdef_p, create_qubits, delete_qubits_p
 
-abstract_qs = [lambda : None]
+tr_qs_container = [lambda : None]
 
 
-class AbstractQuantumSession:
+class TracingQuantumSession:
     
     def __init__(self):
         
@@ -85,18 +85,18 @@ def check_for_tracing_mode():
 def check_live(tracer):
     return bool(tracer._trace.main.jaxpr_stack)
 
-def get_abstract_qs():
-    res = abstract_qs[0]()
+def get_tracing_qs():
+    res = tr_qs_container[0]()
     if check_for_tracing_mode():
         if res is None:
-            res = AbstractQuantumSession()
-            abstract_qs[0] = weakref.ref(res)
+            res = TracingQuantumSession()
+            tr_qs_container[0] = weakref.ref(res)
             return res
         if not check_live(res.abs_qc):
-            res = AbstractQuantumSession()
-            abstract_qs[0] = weakref.ref(res)
+            res = TracingQuantumSession()
+            tr_qs_container[0] = weakref.ref(res)
             return res
     else:
         if res is not None:
-            abstract_qs[0] = lambda : None
+            tr_qs_container[0] = lambda : None
     return res

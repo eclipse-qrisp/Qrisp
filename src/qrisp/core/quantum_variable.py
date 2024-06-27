@@ -234,10 +234,10 @@ class QuantumVariable:
 
         # Store quantum session
         from qrisp.core import QuantumSession, merge_sessions
-        from qrisp.jax import check_for_tracing_mode, get_abstract_qs
+        from qrisp.jax import check_for_tracing_mode, get_tracing_qs
 
         if check_for_tracing_mode():
-            self.qs = get_abstract_qs()
+            self.qs = get_tracing_qs()
         else:
             if qs is not None:
                 self.qs = qs
@@ -1453,7 +1453,7 @@ def plot_histogram(outcome_labels, counts, filename=None):
 
 
 from jax import tree_util
-from qrisp.jax.abstract_quantum_session import get_abstract_qs
+from qrisp.jax.abstract_quantum_session import get_tracing_qs
 from builtins import id
 
 
@@ -1470,7 +1470,7 @@ def unflatten_qv(aux_data, children):
     res.reg = children[0]
     res.size = children[1]
     res.name = aux_data[1]
-    res.qs = get_abstract_qs()
+    res.qs = get_tracing_qs()
     
     return res
 
