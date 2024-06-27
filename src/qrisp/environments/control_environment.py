@@ -17,7 +17,7 @@
 """
 
 
-from qrisp.circuit.qubit import Qubit
+from qrisp.circuit import Qubit, QuantumCircuit, XGate
 from qrisp.core.library import mcx, p, rz, x
 from qrisp.core.session_merging_tools import merge, merge_sessions, multi_session_merge
 from qrisp.environments import QuantumEnvironment
@@ -233,7 +233,7 @@ class ControlEnvironment(QuantumEnvironment):
             inversion_tracker = 1
             
 
-            
+
             # Now we need to recover the instructions from the data list
             # and perform their controlled version on the condition_truth_value qubit
             while self.env_data:
@@ -319,7 +319,7 @@ class ControlEnvironment(QuantumEnvironment):
                     ctrl_state = new_ctrl_state
                 
                 if self.condition_truth_value in instruction.qubits:
-                    self.env_qs.append(convert_to_custom_control(instruction, self.condition_truth_value))
+                    self.env_qs.append(convert_to_custom_control(instruction, self.condition_truth_value, invert_control = ctrl_state == "0"))
                     continue
                     
                 else:
@@ -336,7 +336,7 @@ class ControlEnvironment(QuantumEnvironment):
                 self.env_qs.append(instruction)
 
             perm_unlock(ctrl_qubits)
-            
+
             if inversion_tracker == -1:
                 x(self.condition_truth_value)
 
@@ -366,9 +366,23 @@ class ControlEnvironment(QuantumEnvironment):
 # on the control_qubit are also CustomControlOperations.
 # For the conversion process, this function turns all Operations which are NO custom 
 # controls into their regular controls.
-def convert_to_custom_control(instruction, control_qubit):
+def convert_to_custom_control(instruction, control_qubit, invert_control = False):
     
     from qrisp.environments import CustomControlOperation
+    if invert_control:
+        qc = QuantumCircuit(len(instruction.qubits))
+        cusc_x = CustomControlOperation(XGate(), targeting_control = True)
+        qc.append(cusc_x, [qc.qubits[instruction.qubits.index(control_qubit)]])
+        qc.append(instruction.op, qc.qubits)
+        qc.append(cusc_x, [qc.qubits[instruction.qubits.index(control_qubit)]])
+        
+        res = instruction.copy()
+        res.op = qc.to_gate()
+        
+        return convert_to_custom_control(res, control_qubit)
+    
+    
+    
     #If the Operation is already a CustomControlOperation, do nothing
     if isinstance(instruction.op, CustomControlOperation):
         return instruction

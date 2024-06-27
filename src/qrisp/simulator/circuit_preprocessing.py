@@ -368,6 +368,15 @@ def optimal_grouping_recursion_parameter(qubit_amount):
 disentangler = Operation("disentangle", num_qubits=1)
 disentangler.definition = QuantumCircuit(1)
 disentangler.permeability = {0: False}
+disentangler.warning = False
+
+def Disentangler(warning = False):
+    disentangler = Operation("disentangle", num_qubits=1)
+    disentangler.definition = QuantumCircuit(1)
+    disentangler.permeability = {0: False}
+    disentangler.warning = warning
+    return disentangler
+    
 
 
 def insert_disentangling(qc):
@@ -763,7 +772,6 @@ def insert_multiverse_measurements(qc):
                         break
             else:
                 new_data.append(Instruction(disentangler, [meas_qubit]))
-                # new_measurements.append(instr)
                 new_measurements.append((instr.qubits[0], instr.clbits[0]))
                 continue
             
@@ -778,13 +786,11 @@ def insert_multiverse_measurements(qc):
             
             mes_instr = instr.copy()
             mes_instr.qubits = [qb]
-            # new_measurements.append((qb, instr.clbits[0]))
-            # new_measurements.append(mes_instr)
             
         elif instr.op.name == "reset":
             
             meas_qubit = instr.qubits[0]
-            new_data.append(Instruction(disentangler, [meas_qubit]))
+            new_data.append(Instruction(Disentangler(warning = True), [meas_qubit]))
             
             for j in range(len(data)):
                 if meas_qubit in data[j].qubits:
@@ -796,7 +802,7 @@ def insert_multiverse_measurements(qc):
             qb = qc.add_qubit()
             new_data.append(Instruction(CXGate(), instr.qubits + [qb]))
             new_data.append(Instruction(CXGate(), [qb] + instr.qubits))
-            new_data.append(Instruction(disentangler, [qb]))
+            new_data.append(Instruction(Disentangler(), [qb]))
         
         elif isinstance(instr.op, ClControlledOperation):
             
@@ -849,12 +855,8 @@ def circuit_preprocessor(qc):
         return qc.copy()
 
     # TO-DO find reliable classifiaction when automatic disentangling works best
-    if len(qc.qubits) < 26:
-        qc = group_qc(qc)
-    elif len(qc.qubits) < 34:
-        qc = group_qc(qc)
+    if len(qc.qubits) > 45:
         qc = insert_disentangling(qc)
-    else:
-        qc = insert_disentangling(qc)
-        qc = group_qc(qc)
+    qc = group_qc(qc)
+    
     return reorder_circuit(qc, ["measure", "reset", "disentangle"])

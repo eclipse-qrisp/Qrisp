@@ -32,6 +32,7 @@ def bin_rep(n, bits):
             str(n) + " can't be represented as a " + str(bits) + " bit number"
         )
 
+    return bin(n)[2:].zfill(bits)
     zero_string = "".join(["0" for k in range(bits)])
     return (zero_string + bin(n)[2:])[-bits:]
 
@@ -639,7 +640,7 @@ def find_qs(args):
 
 
 # Function to measure multiple quantum variables at once to assess their entanglement
-def multi_measurement(qv_list, shots=10000, backend=None):
+def multi_measurement(qv_list, shots=100000, backend=None):
     """
     This functions facilitates the measurement of multiple QuantumVariables at the same
     time. This can be used if the entanglement structure between several
@@ -711,6 +712,7 @@ def multi_measurement(qv_list, shots=10000, backend=None):
     # compiled_qc = qv_list[0].qs.copy()
     # Add classical registers for the measurement results to be stored in
     cl_reg_list = []
+    
 
     for var in qv_list[::-1]:
         cl_reg = []
@@ -1274,7 +1276,7 @@ def check_if_fresh(qubits, qs, ignore_q_envs = True):
     return True
 
 
-def get_measurement_from_qc(qc, qubits, backend, shots=10000):
+def get_measurement_from_qc(qc, qubits, backend, shots=100000):
     # Add classical registers for the measurement results to be stored in
     cl = []
     for i in range(len(qubits)):
@@ -1302,6 +1304,7 @@ def get_measurement_from_qc(qc, qubits, backend, shots=10000):
             new_counts_dic[new_key] = counts[key]
 
     counts = new_counts_dic
+    
     # Plot result (if needed)
 
     # Normalize counts
@@ -1410,9 +1413,11 @@ def redirect_qfunction(function_to_redirect):
 
 
     """
-    from qrisp import QuantumEnvironment, QuantumVariable
+    from qrisp import QuantumEnvironment, QuantumVariable, merge, QuantumArray
     import weakref
     def redirected_qfunction(*args, target=None, **kwargs):
+        
+        merge([arg for arg in list(args) + [target] if isinstance(arg, (QuantumVariable, QuantumArray))])
         env = QuantumEnvironment()
         env.manual_allocation_management = True
         qs = target.qs
@@ -1550,7 +1555,7 @@ def get_sympy_state(qs, decimals):
                 if angles[ind] == 1:
                     phase = 1
                 else:
-                    phase = nsimplify(angles[ind], tolerance=10 ** -5)
+                    phase = nsimplify(float(angles[ind]), tolerance=10 ** -5)
     
                 if count_ops(phase) > 5:
                     phase = angles[ind]
@@ -1650,10 +1655,10 @@ def trigify_amp(amplitude, nnz):
     )
 
     cos_expr = nsimplify(
-        np.arccos(np.abs(amplitude)) / np.pi, tolerance=10 ** -5
+        float(np.arccos(np.abs(amplitude)) / np.pi), tolerance=10 ** -5
     )
     sin_expr = nsimplify(
-        np.arcsin(np.abs(amplitude)) / np.pi, tolerance=10 ** -5
+        float(np.arcsin(np.abs(amplitude)) / np.pi), tolerance=10 ** -5
     )
 
     # if count_ops(sin_expr) > count_ops(cos_expr):
@@ -1680,7 +1685,7 @@ def trigify_amp(amplitude, nnz):
     # if count_ops(temp) > 4:
     if len(latex(temp)) > 20:
         temp = (
-            nsimplify(np.abs(amplitude) * nnz**0.5, tolerance=10 ** -5)
+            nsimplify(float(np.abs(amplitude) * nnz**0.5), tolerance=10 ** -5)
             / nnz**0.5
         )
         if len(latex(temp)) > 20:

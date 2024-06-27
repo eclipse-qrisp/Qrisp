@@ -482,10 +482,10 @@ class QuantumSession(QuantumCircuit):
         if operation.name == "qb_alloc":
             qubits[0].allocated = True
         
-        
         if self.xla_mode >= 3:
             
             self.data.append(Instruction(operation, qubits, clbits))
+            
             if operation.name == "qb_dealloc":
                 qubits[0].allocated = False
             return

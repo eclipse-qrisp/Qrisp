@@ -17,8 +17,7 @@
 """
 
 from qrisp.qaoa import QAOAProblem
-from qrisp.qaoa.problems.create_rdm_graph import create_rdm_graph
-from qrisp.qaoa.problems.maxIndepSetInfrastr import maxIndepSetCostOp, maxIndepSetCostfct,  init_state
+from qrisp.qaoa.problems.maxIndepSetInfrastr import maxIndepSetCostOp, maxIndepSetclCostfct,  init_state
 from qrisp.qaoa.mixers import RX_mixer
 from qrisp import QuantumVariable
 import networkx as nx
@@ -29,7 +28,7 @@ import matplotlib.pyplot as plt
 
 # start with a graph G - from np adjacency matrix
 
-giraf = create_rdm_graph(9,0.2,seed=  127)
+giraf = nx.erdos_renyi_graph(9,0.2,seed=  127)
 #draw graph
 
 
@@ -39,7 +38,7 @@ qarg = QuantumVariable(giraf.number_of_nodes())
 #Instanciate QAOA
 #mixer gets Graph as argument
 #cost function gets graph as argument 
-QAOAinstance = QAOAProblem(cost_operator=maxIndepSetCostOp(giraf), mixer=RX_mixer, cl_cost_function=maxIndepSetCostfct(giraf))
+QAOAinstance = QAOAProblem(cost_operator=maxIndepSetCostOp(giraf), mixer=RX_mixer, cl_cost_function=maxIndepSetclCostfct(giraf))
 QAOAinstance.set_init_function(init_function=init_state)
 theNiceQAOA = QAOAinstance.run(qarg=qarg,depth=5)
 

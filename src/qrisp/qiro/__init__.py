@@ -16,22 +16,11 @@
 ********************************************************************************/
 """
 
-
-import networkx as nx
-
-def create_rdm_graph(n,p, seed = 123):
-    """
-    Create a random networkx graph to be used for QAOAProblem implementations
-
-    Parameters
-    ----------
-
-    n : int 
-        number of nodes in the graph
-
-    p : float 
-        likelyhood of edge between any two nodes, chose between 0 and 1
-
-    """
-    G = nx.erdos_renyi_graph(n, p,seed = seed,  directed=False)
-    return G
+from qrisp.qaoa.qaoa_problem import *
+from qrisp.qiro.qiro_problem import * 
+from qrisp.qaoa.qaoa_benchmark_data import *
+from qrisp.qaoa.mixers import *
+from qrisp.qaoa.problems import *
+from qrisp.qiro.qiroproblems import *
+from qrisp.qiro.qiro_mixers import * 
+from qrisp.qiro.qiro_problem import * 

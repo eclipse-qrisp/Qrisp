@@ -72,7 +72,7 @@ imgmath_latex_preamble = r'\usepackage{braket}\n\usepackage{xcolor}'
 
 thebe_config = {
     "repository_url": "https://github.com/fraunhoferfokus/Qrisp",
-    "repository_branch": "main",
+    "repository_branch": "thebe_branch",
     "selector": "div.highlight",
     "selector_output": "span.go",
 }

@@ -18,7 +18,6 @@
 
 
 from qrisp.qaoa import QAOAProblem
-from qrisp.qaoa.problems.create_rdm_graph import create_rdm_graph
 from qrisp.qaoa.problems.maxCliqueInfrastr import maxCliqueCostfct,maxCliqueCostOp,init_state
 from qrisp.qaoa.mixers import RX_mixer
 from qrisp import QuantumVariable
@@ -29,13 +28,12 @@ import  numpy as np
 
 def test_QAOAtrain_func():
 
-    giraf = create_rdm_graph(9,0.7)
+    giraf = nx.erdos_renyi_graph(9,0.7)
     #draw graph
     #nx.draw(giraf,with_labels = True)
     #plt.show() 
 
 
-    qarg = QuantumVariable(giraf.number_of_nodes())
     #Instanciate QAOA
     #mixer gets Graph as argument
     #cost function gets graph as argument 
@@ -92,4 +90,3 @@ def test_QAOAtrain_func():
 
                 #assert set(intlist) in the_itt
             #assert aClcostFct(name, giraf) <= -1
-

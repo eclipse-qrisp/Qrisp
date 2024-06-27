@@ -23,7 +23,7 @@
 
 import numpy as np
 from numba import int64, int32, njit, prange, vectorize
-from qrisp.simulator.numerics_config import float_tresh
+from qrisp.simulator.numerics_config import float_tresh, cutoff_ratio
 from scipy.sparse import coo_array
 
 # It can happen that the coo-matrix multiplication puts two data entries
@@ -212,23 +212,37 @@ def permuter(index, new_index, bit_partition, permuted_bit_partition, perm):
         # bit_range = extract_bit_range(index, bit_partition[i], bit_partition[i+1])
         # insert_bit_range(new_index, bit_range, permuted_bit_partition[perm[i]])
         # Inlined version more efficient:
-        new_index |= (
-            (
-                index
-                & (
-                    (int(1 << (bit_partition[i + 1] - bit_partition[i])) - 1)
-                    << bit_partition[i]
+        if isinstance(new_index, np.ndarray):
+            new_index |= (
+                (
+                    index
+                    & (
+                        (int(1 << (bit_partition[i + 1] - bit_partition[i])) - 1)
+                        << bit_partition[i]
+                    )
                 )
-            )
-            >> bit_partition[i]
-        ) << permuted_bit_partition[perm[i]]
+                >> bit_partition[i]
+            ) << permuted_bit_partition[perm[i]]
+        else:
+            for j in range(len(index)):
+                new_index[j] |= (
+                    (
+                        index[j]
+                        & (
+                            (int(1 << (bit_partition[i + 1] - bit_partition[i])) - 1)
+                            << int(bit_partition[i])
+                        )
+                    )
+                    >> int(bit_partition[i])
+                ) << int(permuted_bit_partition[perm[i]])
+            
 
 
 def invert_perm(perm):
     return [perm.index(i) for i in range(len(perm))]
 
 
-def permute_axes(index, index_bit_permutation):
+def permute_axes(index, index_bit_permutation, jit = True):
     n = len(index_bit_permutation)
 
     index_bit_permutation = -np.array(index_bit_permutation) + n - 1
@@ -261,18 +275,21 @@ def permute_axes(index, index_bit_permutation):
         else:
             i += 1
 
-    # print(perm)
-    new_index = np.zeros(index.size, dtype=index.dtype)
+    if isinstance(index, np.ndarray):
+        new_index = np.zeros(index.size, dtype=index.dtype)
+        dtype = index.dtype
+    else:
+        new_index = [0 for _ in range(len(index))]
+        dtype = np.int64
 
     bit_partition = [sum(perm_shape[:i]) for i in range(len(perm_shape) + 1)]
 
-    # print(bit_partition)
     perm_shape_permuted = [perm_shape[i] for i in invert_perm(perm)]
     permuted_bit_partition = [
         sum(perm_shape_permuted[:i]) for i in range(len(perm_shape) + 1)
     ]
 
-    if len(perm) * index.size > 2**10:
+    if len(perm) * len(index) > 2**10 and jit:
         jitted_permuter(
             index,
             new_index,
@@ -281,12 +298,13 @@ def permute_axes(index, index_bit_permutation):
             np.array(perm),
         )
     else:
+        
         permuter(
             index,
             new_index,
-            np.array(bit_partition, dtype = index.dtype),
-            np.array(permuted_bit_partition, dtype = index.dtype),
-            np.array(perm, dtype = index.dtype),
+            np.array(bit_partition, dtype = dtype),
+            np.array(permuted_bit_partition, dtype = dtype),
+            np.array(perm, dtype = dtype),
         )
 
     return new_index
@@ -314,10 +332,45 @@ def bi_array_moveaxis(data_array, index_perm, f_index_array):
     # return f_index_array
     return data_array[f_index_array]
 
-@njit(nogil=True, cache=True)
-def dense_measurement(input_array, mes_amount, outcome_index):
+
+@njit(parallel = True, cache = True)
+def dense_measurement_brute(input_array, mes_amount, outcome_index):
     
-    p = np.abs(np.vdot(input_array, input_array))
+    n = int(np.log2(len(input_array)))
+    mes_amount = int(mes_amount)
+    reshaped_array = input_array.reshape((2**(mes_amount), 2**(n-mes_amount)))
+    
+    p_array = np.zeros(2**mes_amount, dtype = input_array.dtype)
+    
+    for i in prange(2**mes_amount):
+        new_array = reshaped_array[i,:]
+        p_array[i] = np.vdot(new_array, new_array)
+    
+    p_array = np.abs(p_array)
+    max_p_array = np.max(p_array)
+    
+    indices = np.nonzero(p_array > max_p_array*cutoff_ratio)[0]
+    
+    return reshaped_array[indices,:], p_array[indices], indices
+
+    new_arrays = []
+    p_values = []
+    outcome_indices = []
+    
+    for i in range(2**mes_amount):
+        p = p_array[i]
+        if p > max_p_array*cutoff_ratio:
+            new_arrays.append(reshaped_array[i, :])
+            p_values.append(p)
+            outcome_indices.append(outcome_index+i)
+    
+    return new_arrays, p_values, outcome_indices
+
+
+@njit(nogil=True, cache=True)
+def dense_measurement_smart(input_array, mes_amount, outcome_index):
+    
+    p = np.abs(np.vdot(input_array, input_array) )
     
     if p < float_tresh:
         return [input_array], [p], [-1]
@@ -330,14 +383,14 @@ def dense_measurement(input_array, mes_amount, outcome_index):
     p_list = []
     outcome_index_list = []
     
-    a, b, c = dense_measurement(input_array[:N//2], mes_amount - 1, outcome_index)
+    a, b, c = dense_measurement_smart(input_array[:N//2], mes_amount - 1, outcome_index)
     
     if c[0] != -1:
         new_arrays.extend(a)
         p_list.extend(b)
         outcome_index_list.extend(c)
     
-    a, b, c = dense_measurement(input_array[N//2:], mes_amount - 1, outcome_index + 2**(mes_amount-1))
+    a, b, c = dense_measurement_smart(input_array[N//2:], mes_amount - 1, outcome_index + 2**(mes_amount-1))
     
     if c[0] != -1:
         new_arrays.extend(a)
@@ -395,9 +448,13 @@ def coo_sparse_matrix_mult_jitted(A_row, A_col, A_data, B_row, B_col, B_data, A_
     new_col = []
     new_data = []
     
+    abs_res = np.abs(res)
+    max_abs = np.max(abs_res.ravel())
+    
+    
     for i in range(res.shape[0]):
         for j in range(res.shape[1]):
-            if np.abs(res[i,j]) > float_tresh:
+            if abs_res[i,j] > cutoff_ratio * max_abs:
             # if res[i,j] != 0:
                 new_row.append(A_row[unique_marker_a[i]])
                 new_col.append(B_col[unique_marker_b[j]])
@@ -422,7 +479,7 @@ def find_unique_markers(arr):
     return unique_marker
     
 
-@njit
+@njit(cache = True)
 def find_agreements(block_a, block_b):
 
     a_pointer = 0

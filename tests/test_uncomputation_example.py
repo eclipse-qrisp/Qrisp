@@ -71,17 +71,16 @@ def test_uncomputation_example():
         sqrt_oracle(qf)
         diffuser(qf)
         print(qf)
-
-    assert qf.get_measurement() == {
-        0.5: 0.9453,
-        0.0: 0.0078,
-        1.0: 0.0078,
-        1.5: 0.0078,
-        2.0: 0.0078,
-        2.5: 0.0078,
-        3.0: 0.0078,
-        3.5: 0.0078,
-    }
+    
+    print(qf)
+    assert qf.get_measurement() == {0.5: 0.94531, 
+                                    0.0: 0.00781, 
+                                    1.0: 0.00781, 
+                                    1.5: 0.00781, 
+                                    2.0: 0.00781, 
+                                    2.5: 0.00781, 
+                                    3.0: 0.00781, 
+                                    3.5: 0.00781}
 
     # ---------
     print("Test 2 passed")

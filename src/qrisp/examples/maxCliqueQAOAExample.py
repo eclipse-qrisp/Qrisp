@@ -17,7 +17,6 @@
 """
 
 from qrisp.qaoa import QAOAProblem
-from qrisp.qaoa.problems.create_rdm_graph import create_rdm_graph
 from qrisp.qaoa.problems.maxCliqueInfrastr import maxCliqueCostfct,maxCliqueCostOp,init_state
 from qrisp.qaoa.mixers import RX_mixer
 from qrisp import QuantumVariable
@@ -36,7 +35,7 @@ We will not stick to mathematical assignment of variable names.
 
  """
 
-giraf = create_rdm_graph(9,0.7, seed =  133)
+giraf = nx.erdos_renyi_graph(9,0.7, seed =  133)
 #draw graph
 #nx.draw(giraf,with_labels = True)
 #plt.show() 

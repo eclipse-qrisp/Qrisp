@@ -123,6 +123,15 @@ def dag_from_qc(qc, remove_init_nodes=False):
         # node = UnqompNode(str(qc.qubits.index(instr.qubits[-1])) + "_"
         #   + str(node_counter[instr.qubits[-1]]), instr)
         node = UnqompNode(str(node_counter[instr.qubits[-1]]), instr)
+        
+        # We add the index of the corresponding gate to the node object,
+        # because this information can be used for stable topological ordering:
+        # The allocation algorithm performs a topological order based on the ancestors
+        # of a certain nodes. The algorithm can subsequently use another topological
+        # ordering to sort the ancestors. To make the sorting algorithm "stable" ie.
+        # it preserves the previous order where possible, we use the indices of the source
+        # circuit as sorting index.
+        node.qc_index = i
 
         if instr.op.name == "qb_dealloc":
             dealloc_nodes.append(node)

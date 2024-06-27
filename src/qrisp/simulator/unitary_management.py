@@ -31,7 +31,7 @@ np_dtype = np.complex64
 id_matrix = np.eye(2, dtype=np_dtype)
 
 pauli_x = np.asarray([[0, 1], [1, 0]], dtype=np_dtype)
-pauli_y = (np.asarray([[0, 0], [0, 0]]) + 1j * np.asarray([[0, -1], [1, 0]])).astype(np_dtype)
+pauli_y = (np.asarray([[0, 0], [0, 0]], dtype = np_dtype) + 1j * np.asarray([[0, -1], [1, 0]])).astype(np_dtype)
 pauli_z = np.asarray([[1, 0], [0, -1]], dtype=np_dtype)
 from sympy.core.expr import Expr
 import numpy
@@ -42,11 +42,14 @@ def u3matrix(theta, phi, lam, global_phase, use_sympy = False):
     if not use_sympy:
         module = numpy
         I = 1j
-        res = numpy.empty(shape=(2, 2), dtype=numpy.complex64)
+        res = numpy.empty(shape=(2, 2), dtype=np_dtype)
+        exp_gphase = module.exp(I * global_phase, dtype = np_dtype)
     else:
         module = sympy
         I = sympy.I
         res = numpy.empty(shape=(2, 2), dtype=numpy.dtype("O"))
+        
+        exp_gphase = module.exp(I * global_phase)
     
     
     
@@ -63,7 +66,7 @@ def u3matrix(theta, phi, lam, global_phase, use_sympy = False):
     res[1, 0] = module.exp(I * phi) * module.sin(theta / 2)
     res[1, 1] = module.exp(I * (phi + lam)) * module.cos(theta / 2)
 
-    return res * module.exp(I * global_phase)
+    return res*exp_gphase
 
 
 # Efficient function to generate the unitary of a controlled gate
