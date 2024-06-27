@@ -16,15 +16,32 @@
 ********************************************************************************/
 """
 
-from qrisp.jax.quantum_primitive import *
-from qrisp.jax.abstract_qubit import *
-from qrisp.jax.abstract_quantum_register import *
-from qrisp.jax.abstract_quantum_circuit import *
-from qrisp.jax.measurement_primitive import *
-from qrisp.jax.catalyst_converter import *
-from qrisp.jax.quantum_funcdef import *
-from qrisp.jax.flattening_tools import *
-from qrisp.jax.sub_qjit import sub_qjit
-from qrisp.jax.qv_pytree import *
+from jax import jit
+from qrisp.core import QuantumSession
+import weakref
 
-
+def sub_qjit(func):
+    
+    @jit
+    def dummy_function(qc, *args):
+        
+        QuantumSession.abs_qc = weakref.ref(qc)
+        
+        res = func(*args)
+        
+        return QuantumSession.abs_qc(), res
+    
+    
+    def return_function(*args):
+        old_abs_qc = QuantumSession.abs_qc()
+        
+        qc_new, res = dummy_function(old_abs_qc, *args)
+        
+        QuantumSession.abs_qc = weakref.ref(qc_new)
+        
+        return res
+    
+    
+    return return_function
+        
+        

@@ -16,15 +16,28 @@
 ********************************************************************************/
 """
 
-from qrisp.jax.quantum_primitive import *
-from qrisp.jax.abstract_qubit import *
-from qrisp.jax.abstract_quantum_register import *
-from qrisp.jax.abstract_quantum_circuit import *
-from qrisp.jax.measurement_primitive import *
-from qrisp.jax.catalyst_converter import *
-from qrisp.jax.quantum_funcdef import *
-from qrisp.jax.flattening_tools import *
-from qrisp.jax.sub_qjit import sub_qjit
-from qrisp.jax.qv_pytree import *
+from jax import tree_util
+from qrisp.core import QuantumVariable, QuantumSession
+from builtins import id
 
 
+def flatten_qv(qv):
+    # return the tracers and auxiliary data (structure of the object)
+    children = (qv.reg, qv.size)
+    aux_data = (id(qv), qv.name)  # No auxiliary data in this simple example
+    return children, aux_data
+
+def unflatten_qv(aux_data, children):
+    # reconstruct the object from children and auxiliary data
+    
+    res = QuantumVariable.__new__(QuantumVariable)
+    
+    res.reg = children[0]
+    res.size = children[1]
+    res.name = aux_data[1]
+    res.qs = QuantumSession()
+    
+    return res
+
+# Register as a PyTree with JAX
+tree_util.register_pytree_node(QuantumVariable, flatten_qv, unflatten_qv)

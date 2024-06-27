@@ -24,6 +24,12 @@ class AbstractQuantumCircuit(AbstractValue):
 
     def __repr__(self):
         return "QuantumCircuit"
+    
+    def __hash__(self):
+        return hash("QuantumCircuit")
+    
+    def __eq__(self, other):
+        return isinstance(other, AbstractQuantumCircuit)
 
 def create_qubits(size, state):
     return create_qubits_p.bind(size, state)
