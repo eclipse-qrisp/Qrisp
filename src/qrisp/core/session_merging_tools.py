@@ -195,8 +195,7 @@ def merge_sessions_inner(qs_0, qs_1, merge_env_stack_=True):
         
     qs_0.deleted_qv_list.extend(qs_1.deleted_qv_list)
 
-    if not qs_0.abstract_qs:
-        reorder_quantum_variables(qs_0)
+    reorder_quantum_variables(qs_0)
 
 
     qs_0.will_be_uncomputed = bool(qs_0.will_be_uncomputed) or bool(qs_1.will_be_uncomputed)
