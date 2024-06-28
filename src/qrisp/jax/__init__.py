@@ -25,6 +25,7 @@ from qrisp.jax.catalyst_converter import *
 from qrisp.jax.flattening_tools import *
 from qrisp.jax.tracing_quantum_session import *
 from qrisp.jax.qaching import qache
+from qrisp.jax.jaxpr_to_qc import jaxpr_to_qc
 
 
 def compare_jaxpr(jaxpr, primitive_name_list):
