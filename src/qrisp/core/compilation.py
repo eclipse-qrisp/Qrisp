@@ -171,6 +171,9 @@ def qompiler(
             qc, transpile_predicate=allocation_level_transpile_predicate
         )
         
+        if len(transpiled_qc.data) > 5E3:
+            transpiled_qc = qc
+        
         reordered_qc = reorder_qc(transpiled_qc)
 
         if cancel_qfts:
