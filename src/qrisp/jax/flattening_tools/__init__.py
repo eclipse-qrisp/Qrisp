@@ -16,7 +16,6 @@
 ********************************************************************************/
 """
 
-from qrisp.jax.flattening_tools.lazy_evaluator import *
-from qrisp.jax.flattening_tools.qcall_flattening import *
+from qrisp.jax.flattening_tools.pjit_flattening import *
 
 
