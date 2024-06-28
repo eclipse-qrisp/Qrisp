@@ -20,13 +20,12 @@ from jax.core import AbstractValue, raise_to_shaped_mappings
 from qrisp.jax import QuantumPrimitive
 
 class AbstractQuantumCircuit(AbstractValue):
-    pass
 
     def __repr__(self):
         return "QuantumCircuit"
     
     def __hash__(self):
-        return hash("QuantumCircuit")
+        return hash(AbstractQuantumCircuit)
     
     def __eq__(self, other):
         return isinstance(other, AbstractQuantumCircuit)
