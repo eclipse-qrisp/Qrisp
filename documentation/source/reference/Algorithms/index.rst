@@ -18,9 +18,11 @@ This algorithms submodule of Qrisp provides a collection of commonly used quantu
    * - :ref:`Quantum Amplitude Estimation <QAE>`
      - estimating the amplitude of a target state
    * - :ref:`QAOA <QAOA>`
-     - solving combinatorial optimizatin problems
+     - solving combinatorial optimization problems
    * - :ref:`QIRO <QIRO>`
-     - solving combinatorial optimizatin problems, with quantum informed update rules
+     - solving combinatorial optimization problems, with quantum informed update rules
+   * - :ref:`VQE <VQE>`
+     - producing the ground state of a spin operator
    * - :ref:`Shor's Algorithm <Shor>`
      - efficiently factoring large numbers
    * - :ref:`Grover's Algorithm <Grover>`
@@ -47,6 +49,7 @@ We encourage you to explore these algorithms, delve into their documentation, an
    QAE
    QAOA
    QIRO
+   VQE
    Shor
    grover.grovers_alg  
    QuantumBacktrackingTree
