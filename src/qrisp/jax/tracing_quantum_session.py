@@ -24,7 +24,6 @@ from qrisp.jax import qdef_p, create_qubits, delete_qubits_p
 
 tr_qs_container = [lambda : None]
 
-
 class TracingQuantumSession:
     
     def __init__(self):
@@ -44,7 +43,7 @@ class TracingQuantumSession:
             raise RuntimeError(
                 "Variable name " + str(qv.name) + " already exists in quantum session"
             )
-
+            
         # Determine amount of required qubits
         self.abs_qc, qv.reg = create_qubits(self.abs_qc, qv.size)
         # Register in the list of active quantum variable
@@ -82,16 +81,16 @@ def check_for_tracing_mode():
     return hasattr(jax._src.core.thread_local_state.trace_state.trace_stack.dynamic, "jaxpr_stack")
 
 def check_live(tracer):
-    return bool(tracer._trace.main.jaxpr_stack)
+    return not not tracer._trace.main.jaxpr_stack
 
-def get_tracing_qs():
+def get_tracing_qs(check_validity = True):
     res = tr_qs_container[0]()
     if check_for_tracing_mode():
         if res is None:
             res = TracingQuantumSession()
             tr_qs_container[0] = weakref.ref(res)
             return res
-        if not check_live(res.abs_qc):
+        if check_validity and not check_live(res.abs_qc):
             res = TracingQuantumSession()
             tr_qs_container[0] = weakref.ref(res)
             return res

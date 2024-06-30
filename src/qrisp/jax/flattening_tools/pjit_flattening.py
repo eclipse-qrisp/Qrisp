@@ -110,12 +110,12 @@ def evaluate_pjit_eqn(pjit_eqn, context_dic):
         # Create new context dic and fill with invalues
         new_context_dic = {}
         for i in range(len(definition_jaxpr.invars)):
-            new_context_dic[pjit_eqn.invars[i]] = invalues[i]
+            new_context_dic[definition_jaxpr.invars[i]] = invalues[i]
         
         # Exchange the QuantumCircuit to an empty one to "track" the function
         if isinstance(invalues[0], QuantumCircuit):
             old_qc = context_dic[pjit_eqn.invars[0]]
-            new_qc = old_qc.copy()
+            new_qc = old_qc.clearcopy()
             new_context_dic[definition_jaxpr.invars[0]] = new_qc
 
         # Evaluate the definition
@@ -128,9 +128,22 @@ def evaluate_pjit_eqn(pjit_eqn, context_dic):
         for cb in set(new_qc.clbits) - set(old_qc.clbits):
             old_qc.add_clbit(cb)
         
-        # Append the wrapped old circuit to the new circuit
-        old_qc.append(new_qc.to_op(name = pjit_eqn.params["name"]), old_qc.qubits, old_qc.clbits)
         
+        # Remove unused qu/clbits from the new circuit
+        unused_qubits = set(new_qc.qubits)
+        unused_clbits = set(new_qc.clbits)
+        
+        for instr in new_qc.data:
+            unused_qubits -= set(instr.qubits)
+            unused_clbits -= set(instr.clbits)
+        
+        for qb in unused_qubits:
+            new_qc.qubits.remove(qb)
+        for cb in unused_clbits:
+            new_qc.clbits.remove(cb)
+        
+        # Append the wrapped old circuit to the new circuit
+        old_qc.append(new_qc.to_op(name = pjit_eqn.params["name"]), new_qc.qubits, new_qc.clbits)
         
         # Collect the return values
         return_values = []

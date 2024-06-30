@@ -113,10 +113,10 @@ class Operation(QuantumPrimitive):
         
         @self.def_impl
         def abstract_eval(qc, *args):
-            """Abstract evaluation of the primitive.
+            """Concrete evaluation of the primitive.
             
             This function does not need to be JAX traceable. It will be invoked with
-            abstractions of the actual arguments. 
+            actual instances. 
             """
             qc.append(self, args)
             return qc

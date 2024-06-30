@@ -16,7 +16,7 @@
 ********************************************************************************/
 """
 
-
+import numpy as np
 class Clbit:
     """
     This class represents classical bits. Classical bits are created by supplying the
@@ -38,15 +38,20 @@ class Clbit:
     {'0': 5000, '1': 5000}
 
     """
-
+    clbit_hash = np.zeros(1)
     def __init__(self, identifier):
         self.identifier = identifier
-
+        self.hash_value = int(self.clbit_hash[0])
+        self.clbit_hash += 1
+        
     def __str__(self):
         return self.identifier
 
     def __repr__(self):
-        return self.identifier
+        return "Clbit(" + self.identifier + ")"
 
     def __hash__(self):
-        return hash(self.identifier)
+        return self.hash_value
+
+    def __eq__(self, other):
+        return self.hash_value == other.hash_value

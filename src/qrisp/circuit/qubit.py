@@ -51,7 +51,6 @@ class Qubit:
         self.identifier = identifier
         self.hash_value = int(self.qubit_hash[0])
         self.qubit_hash += 1
-        # self.hash_value = id(self)#%(2**29)
         self.lock = False
         self.perm_lock = False
 
@@ -66,4 +65,3 @@ class Qubit:
 
     def __eq__(self, other):
         return self.hash_value == other.hash_value
-        return bool(self.hash_value & other.hash_value)

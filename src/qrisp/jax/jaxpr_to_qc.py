@@ -19,7 +19,7 @@
 from jax.core import Literal
 from qrisp.jax import QuantumPrimitive, flatten_pjit, eval_jaxpr
 
-def jaxpr_to_qc(jaxpr, args = [], in_place = True):
+def jaxpr_to_qc(jaxpr):
     """
     Converts a Qrisp-generated Jaxpr into a QuantumCircuit.
 
@@ -37,13 +37,20 @@ def jaxpr_to_qc(jaxpr, args = [], in_place = True):
 
     """
     
-    context_dic = {jaxpr.invars[i] : args[i] for i in range(len(jaxpr.invars))}
-    eval_jaxpr(jaxpr, context_dic)
-    
-    from qrisp.circuit import QuantumCircuit
-    for val in context_dic.values():
-        if isinstance(val, QuantumCircuit):
-            return val
+    def qc_eval_function(*args):
         
-    raise Exception("Could not find QuantumCircuit in Jaxpr")
+        if len(jaxpr.invars) != len(args):
+            raise Exception(f"Supplied inaccurate amount of arguments ({len(args)}) for Jaxpr (requires {len(jaxpr.invars)}).")
         
+        context_dic = {jaxpr.invars[i] : args[i] for i in range(len(jaxpr.invars))}
+        eval_jaxpr(jaxpr, context_dic)
+        
+        from qrisp.circuit import QuantumCircuit
+        for val in context_dic.values():
+            if isinstance(val, QuantumCircuit):
+                return val
+            
+        raise Exception("Could not find QuantumCircuit in Jaxpr")
+        
+    return qc_eval_function
+            

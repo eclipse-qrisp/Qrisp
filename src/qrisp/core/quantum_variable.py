@@ -1471,7 +1471,7 @@ def unflatten_qv(aux_data, children):
     res.reg = children[0]
     res.size = children[1]
     res.name = aux_data[1]
-    res.qs = get_tracing_qs()
+    res.qs = get_tracing_qs(check_validity = False)
     
     return res
 
