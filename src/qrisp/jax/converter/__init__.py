@@ -16,16 +16,8 @@
 ********************************************************************************/
 """
 
-from qrisp.jax.primitives import*
-from qrisp.jax.converter import *
-from qrisp.jax.tracing_quantum_session import *
-from qrisp.jax.qaching import qache
-
-
-def compare_jaxpr(jaxpr, primitive_name_list):
-    assert len(jaxpr.eqns) == len(primitive_name_list)
-    for i in range(len(primitive_name_list)):
-        assert jaxpr.eqns[i].primitive.name == primitive_name_list[i]
+from qrisp.jax.converter.jaxpr_to_qc import *
+from qrisp.jax.converter.catalyst_converter import *
     
 
 

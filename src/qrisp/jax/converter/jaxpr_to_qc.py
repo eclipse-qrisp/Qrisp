@@ -17,7 +17,8 @@
 """
 
 from jax.core import Literal, ClosedJaxpr
-from qrisp.jax import QuantumPrimitive, flatten_pjit, eval_jaxpr, evaluate_pjit_eqn
+from qrisp.jax.primitives import QuantumPrimitive
+from qrisp.jax.flattening_tools import eval_jaxpr
 
 def jaxpr_to_qc(jaxpr):
     """
