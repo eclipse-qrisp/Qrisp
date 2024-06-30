@@ -245,7 +245,7 @@ class QuantumVariable:
             else:
                 self.qs = QuantumSession()
 
-        self.size = size
+        # self.size = size
 
         self.user_given_name = False
         # If name is given, register variable in session manager
@@ -258,7 +258,7 @@ class QuantumVariable:
 
                 try:
                     self.name = name
-                    self.qs.register_qv(self)
+                    self.qs.register_qv(self, size)
 
                 except RuntimeError:
                     i = int(self.creation_counter)
@@ -273,7 +273,7 @@ class QuantumVariable:
 
             else:
                 self.name = name
-                self.qs.register_qv(self)
+                self.qs.register_qv(self, size)
 
         # Otherwise try to infer from code inspection
         else:
@@ -297,7 +297,7 @@ class QuantumVariable:
                     name = python_var_name
 
                     self.name = name
-                    self.qs.register_qv(self)
+                    self.qs.register_qv(self, size)
                     name_found = True
 
             # If this didn't work, generate a generic, unique name
@@ -305,7 +305,7 @@ class QuantumVariable:
                 while True:
                     try:
                         self.name = self.get_unique_name()
-                        self.qs.register_qv(self)
+                        self.qs.register_qv(self, size)
                         break
                     except RuntimeError:
                         pass
@@ -1077,6 +1077,15 @@ class QuantumVariable:
 
     def __len__(self):
         return self.size
+    
+    @property
+    def size(self):
+        if isinstance(self.reg, list):
+            return len(self.reg)
+        else:
+            from qrisp.jax import get_size
+            return get_size(self.reg)
+        
 
     # Overload equality operator to use python syntax for if environments?
     # Not sure if the possible user confusion is worth it
@@ -1460,7 +1469,7 @@ from builtins import id
 
 def flatten_qv(qv):
     # return the tracers and auxiliary data (structure of the object)
-    children = (qv.reg, qv.size)
+    children = (qv.reg,)
     aux_data = (id(qv), qv.name)  # No auxiliary data in this simple example
     return children, aux_data
 
@@ -1469,7 +1478,6 @@ def unflatten_qv(aux_data, children):
     res = QuantumVariable.__new__(QuantumVariable)
     
     res.reg = children[0]
-    res.size = children[1]
     res.name = aux_data[1]
     res.qs = get_tracing_qs(check_validity = False)
     

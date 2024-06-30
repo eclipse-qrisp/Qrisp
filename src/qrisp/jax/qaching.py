@@ -17,9 +17,10 @@
 """
 
 from jax import jit
-from qrisp.jax import get_tracing_qs
+from qrisp.jax import get_tracing_qs, check_for_tracing_mode
 
 def qache(func):
+    
     
     def ammended_function(abs_qc, *args):
         
@@ -34,11 +35,14 @@ def qache(func):
     
     ammended_function = jit(ammended_function)
     
-    def return_function(*args):
+    def return_function(*args, **kwargs):
+        
+        if not check_for_tracing_mode():
+            return func(*args, **kwargs)
         
         abs_qs = get_tracing_qs()
         
-        abs_qc_new, res = ammended_function(abs_qs.abs_qc, *args)
+        abs_qc_new, res = ammended_function(abs_qs.abs_qc, *args, **kwargs)
         
         abs_qs.abs_qc = abs_qc_new
         

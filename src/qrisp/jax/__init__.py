@@ -20,6 +20,7 @@ from qrisp.jax.primitives import*
 from qrisp.jax.converter import *
 from qrisp.jax.tracing_quantum_session import *
 from qrisp.jax.qaching import qache
+from qrisp.jax.testing_utils import *
 
 
 def compare_jaxpr(jaxpr, primitive_name_list):

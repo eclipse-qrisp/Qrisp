@@ -38,14 +38,14 @@ class TracingQuantumSession:
             raise Exception("Tried to append Operation with non-zero classical bits in JAX mode.")
         self.abs_qc = operation.bind(self.abs_qc, *(operation.params + [b.abstract for b in qubits]))
         
-    def register_qv(self, qv):
+    def register_qv(self, qv, size):
         if qv.name in [temp_qv.name for temp_qv in self.qv_list + self.deleted_qv_list]:
             raise RuntimeError(
                 "Variable name " + str(qv.name) + " already exists in quantum session"
             )
             
         # Determine amount of required qubits
-        self.abs_qc, qv.reg = create_qubits(self.abs_qc, qv.size)
+        self.abs_qc, qv.reg = create_qubits(self.abs_qc, size)
         # Register in the list of active quantum variable
         self.qv_list.append(qv)
         
