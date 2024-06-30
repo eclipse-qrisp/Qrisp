@@ -19,29 +19,69 @@
 from jax.core import Literal
 from qrisp.jax import QuantumPrimitive, flatten_pjit
 
+# 
+
 def jaxpr_to_qc(jaxpr, in_place = True):
+    """
+    Converts a Qrisp-generated Jaxpr into a QuantumCircuit.
+
+    Parameters
+    ----------
+    jaxpr : jax.core.Jaxpr
+        The Jaxpr to be converted.
+    in_place : TYPE, optional
+        If set to False, the AbstractCircuit is copied and the copy is continued to be processed. The default is True.
+
+    Returns
+    -------
+    qc : QuantumCircuit
+        The converted circuit.
+
+    """
     
+    # Inline Jaxpr to dissolve any pjit calls
     flattened_jaxpr = flatten_pjit(jaxpr)
     from qrisp.circuit import QuantumCircuit, Operation
     
+    # The context dic to translate variables to values
     context_dic = {}
+    
+    # Iterate over the equations
     for eqn in flattened_jaxpr.eqns:
+        
+        # Set alias for in/outvars
         invars = list(eqn.invars)
         outvars = list(eqn.outvars)
         
-        if isinstance(eqn.primitive, QuantumPrimitive):
+        # If the primitive is not a Qrisp primitive, we simply execute the .bind method
+        # to call the default implementation
+        if not isinstance(eqn.primitive, QuantumPrimitive):
+            eqn.primitive.bind(*[context_dic[var] for var in invars], **eqn.params)
+        
+        # Treat the Qrisp primitive
+        else:
             
+            # Circuit creation case
             if eqn.primitive.name == "qdef":
                 context_dic[outvars[0]] = QuantumCircuit()
+                
+            # Qubit creation will return a QuantumCircuit and a list of Qubit
             elif eqn.primitive.name == "create_qubits":
+                
+                # This will contain the list of qubits
                 qubit_list = []
+                
+                # Get the QuantumCircuit
                 qc = context_dic[invars[0]]
                 
+                # If necessary, copy
                 if not in_place:
                     qc = qc.copy()
                 
+                # This variable contains the information how many Qubits should be created
                 amount_var = invars[1]
                 
+                # Extract value
                 if isinstance(amount_var, Literal):
                     amount_val = amount_var.val
                 else:
@@ -49,10 +89,12 @@ def jaxpr_to_qc(jaxpr, in_place = True):
                 
                 for i in range(int(amount_val)):
                     qubit_list.append(qc.add_qubit())
-                    
+                
+                # Assign the new values to their variables
                 context_dic[eqn.outvars[0]] = qc
                 context_dic[eqn.outvars[1]] = qubit_list
             
+            # Retrieves a qubit
             elif eqn.primitive.name == "get_qubit":
                 
                 index_var = invars[1]
@@ -84,8 +126,6 @@ def jaxpr_to_qc(jaxpr, in_place = True):
                 
                 qc.append(eqn.primitive, [context_dic[qb_var] for qb_var in invars[1:]])
                 context_dic[outvars[0]] = qc
-                
-        else:
-            eqn.primitive.bind(*[context_dic[var] for var in invars], **eqn.params)
+
 
     return qc
