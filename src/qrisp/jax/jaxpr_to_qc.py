@@ -17,11 +17,9 @@
 """
 
 from jax.core import Literal
-from qrisp.jax import QuantumPrimitive, flatten_pjit
+from qrisp.jax import QuantumPrimitive, flatten_pjit, eval_jaxpr
 
-# 
-
-def jaxpr_to_qc(jaxpr, in_place = True):
+def jaxpr_to_qc(jaxpr, args = [], in_place = True):
     """
     Converts a Qrisp-generated Jaxpr into a QuantumCircuit.
 
@@ -39,93 +37,13 @@ def jaxpr_to_qc(jaxpr, in_place = True):
 
     """
     
-    # Inline Jaxpr to dissolve any pjit calls
-    flattened_jaxpr = flatten_pjit(jaxpr)
-    from qrisp.circuit import QuantumCircuit, Operation
+    context_dic = {jaxpr.invars[i] : args[i] for i in range(len(jaxpr.invars))}
+    eval_jaxpr(jaxpr, context_dic)
     
-    # The context dic to translate variables to values
-    context_dic = {}
-    
-    # Iterate over the equations
-    for eqn in flattened_jaxpr.eqns:
+    from qrisp.circuit import QuantumCircuit
+    for val in context_dic.values():
+        if isinstance(val, QuantumCircuit):
+            return val
         
-        # Set alias for in/outvars
-        invars = list(eqn.invars)
-        outvars = list(eqn.outvars)
+    raise Exception("Could not find QuantumCircuit in Jaxpr")
         
-        # If the primitive is not a Qrisp primitive, we simply execute the .bind method
-        # to call the default implementation
-        if not isinstance(eqn.primitive, QuantumPrimitive):
-            eqn.primitive.bind(*[context_dic[var] for var in invars], **eqn.params)
-        
-        # Treat the Qrisp primitive
-        else:
-            
-            # Circuit creation case
-            if eqn.primitive.name == "qdef":
-                context_dic[outvars[0]] = QuantumCircuit()
-                
-            # Qubit creation will return a QuantumCircuit and a list of Qubit
-            elif eqn.primitive.name == "create_qubits":
-                
-                # This will contain the list of qubits
-                qubit_list = []
-                
-                # Get the QuantumCircuit
-                qc = context_dic[invars[0]]
-                
-                # If necessary, copy
-                if not in_place:
-                    qc = qc.copy()
-                
-                # This variable contains the information how many Qubits should be created
-                amount_var = invars[1]
-                
-                # Extract value
-                if isinstance(amount_var, Literal):
-                    amount_val = amount_var.val
-                else:
-                    amount_val = context_dic[amount_var]
-                
-                for i in range(int(amount_val)):
-                    qubit_list.append(qc.add_qubit())
-                
-                # Assign the new values to their variables
-                context_dic[eqn.outvars[0]] = qc
-                context_dic[eqn.outvars[1]] = qubit_list
-            
-            # Retrieves a qubit
-            elif eqn.primitive.name == "get_qubit":
-                
-                index_var = invars[1]
-                if isinstance(index_var, Literal):
-                    index_val = index_var.val
-                else:
-                    index_val = context_dic[index_var]
-                
-                context_dic[outvars[0]] = context_dic[invars[0]][index_val]
-                
-            elif eqn.primitive.name == "measure":
-                qc = context_dic[invars[0]]
-                
-                if not in_place:
-                    qc = qc.copy()
-                
-                context_dic[outvars[1]] = qc.add_clbit()
-                
-                qc.measure(context_dic[invars[1]], context_dic[outvars[1]])
-                
-                context_dic[outvars[0]] = qc            
-                
-            
-            elif isinstance(eqn.primitive, Operation):
-                qc = context_dic[invars[0]]
-                
-                if not in_place:
-                    qc = qc.copy()
-                
-                qc.append(eqn.primitive, [context_dic[qb_var] for qb_var in invars[1:]])
-                context_dic[outvars[0]] = qc
-
-
-    return qc

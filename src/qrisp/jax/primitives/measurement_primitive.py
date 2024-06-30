@@ -24,7 +24,7 @@ from qrisp.jax.primitives import AbstractQuantumCircuit, AbstractQubit, QuantumP
 Measurement_p = QuantumPrimitive("measure")  
 
 @Measurement_p.def_abstract_eval
-def measure_abstract_eval(state, qb):
+def measure_abstract_eval(qc, qb):
     """Abstract evaluation of the primitive.
     
     This function does not need to be JAX traceable. It will be invoked with
@@ -40,3 +40,10 @@ def measure_abstract_eval(state, qb):
 
 Measurement_p.num_qubits = 1
 Measurement_p.multiple_results = True
+
+
+@Measurement_p.def_impl
+def measure_abstract_eval(qc, qb):
+    clbit = qc.add_clbit()
+    qc.measure(qb, clbit)
+    return qc, clbit

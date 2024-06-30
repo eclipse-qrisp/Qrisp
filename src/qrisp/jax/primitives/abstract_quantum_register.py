@@ -32,3 +32,17 @@ def get_qubit_abstract_eval(qb_array, index):
       a ShapedArray for the result of the primitive.
     """
     return AbstractQubit()
+
+
+@get_qubit_p.def_impl
+def get_qubit_abstract_eval(qb_array, index):
+    """Abstract evaluation of the primitive.
+    
+    This function does not need to be JAX traceable. It will be invoked with
+    abstractions of the actual arguments. 
+    Args:
+      xs, ys, zs: abstractions of the arguments.
+    Result:
+      a ShapedArray for the result of the primitive.
+    """
+    return qb_array[index]

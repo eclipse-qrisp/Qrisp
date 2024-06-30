@@ -102,7 +102,7 @@ class Operation(QuantumPrimitive):
         QuantumPrimitive.__init__(self, name)
         
         @self.def_abstract_eval
-        def abstract_eval(state, *args):
+        def abstract_eval(qc, *args):
             """Abstract evaluation of the primitive.
             
             This function does not need to be JAX traceable. It will be invoked with
@@ -110,6 +110,16 @@ class Operation(QuantumPrimitive):
             """
             
             return AbstractQuantumCircuit()
+        
+        @self.def_impl
+        def abstract_eval(qc, *args):
+            """Abstract evaluation of the primitive.
+            
+            This function does not need to be JAX traceable. It will be invoked with
+            abstractions of the actual arguments. 
+            """
+            qc.append(self, args)
+            return qc
         
 
         # If a definition circuit is given, this means we are supposed to create a
