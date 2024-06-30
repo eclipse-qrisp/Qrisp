@@ -17,7 +17,7 @@
 """
 
 from jax.core import AbstractValue, raise_to_shaped_mappings
-from qrisp.jax import QuantumPrimitive
+from qrisp.jax.primitives import QuantumPrimitive, AbstractQubitArray
 
 class AbstractQuantumCircuit(AbstractValue):
 
@@ -50,8 +50,6 @@ def qdef_abstract_eval():
 # Register Creation
 create_qubits_p = QuantumPrimitive("create_qubits")
 create_qubits_p.multiple_results = True
-
-from qrisp.jax import AbstractQubitArray
 
 @create_qubits_p.def_abstract_eval
 def create_qubits_abstract_eval(qc, size):

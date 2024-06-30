@@ -6,7 +6,7 @@ Created on Thu Apr 11 16:58:12 2024
 """
 
 from jax.core import AbstractValue, Primitive, raise_to_shaped_mappings
-from qrisp.jax import QuantumPrimitive
+from qrisp.jax.primitives import QuantumPrimitive, AbstractQubit
 
 get_qubit_p = QuantumPrimitive("get_qubit")
 
@@ -19,9 +19,6 @@ def get_qubit(qb_array, index):
     return get_qubit_p.bind(qb_array, index)
 
 raise_to_shaped_mappings[AbstractQubitArray] = lambda aval, _: aval
-
-
-from qrisp.jax import AbstractQubit
 
 @get_qubit_p.def_abstract_eval
 def get_qubit_abstract_eval(qb_array, index):

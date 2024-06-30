@@ -16,24 +16,27 @@
 ********************************************************************************/
 """
 
-# from qrisp.jax.quantum_primitive import *
-# from qrisp.jax.abstract_qubit import *
-# from qrisp.jax.abstract_quantum_register import *
-# from qrisp.jax.abstract_quantum_circuit import *
-# from qrisp.jax.measurement_primitive import *
+from jax.core import ShapedArray
 
-from qrisp.jax.primitives import*
-from qrisp.jax.catalyst_converter import *
-from qrisp.jax.flattening_tools import *
-from qrisp.jax.tracing_quantum_session import *
-from qrisp.jax.qaching import qache
-from qrisp.jax.jaxpr_to_qc import jaxpr_to_qc
+from qrisp.jax.primitives import AbstractQuantumCircuit, AbstractQubit, QuantumPrimitive
 
+# Create the primitive
+Measurement_p = QuantumPrimitive("measure")  
 
-def compare_jaxpr(jaxpr, primitive_name_list):
-    assert len(jaxpr.eqns) == len(primitive_name_list)
-    for i in range(len(primitive_name_list)):
-        assert jaxpr.eqns[i].primitive.name == primitive_name_list[i]
+@Measurement_p.def_abstract_eval
+def measure_abstract_eval(state, qb):
+    """Abstract evaluation of the primitive.
     
+    This function does not need to be JAX traceable. It will be invoked with
+    abstractions of the actual arguments. 
+    Args:
+      xs, ys, zs: abstractions of the arguments.
+    Result:
+      a ShapedArray for the result of the primitive.
+    """
+    
+    assert isinstance(qb, AbstractQubit)
+    return AbstractQuantumCircuit(), ShapedArray((), bool)
 
-
+Measurement_p.num_qubits = 1
+Measurement_p.multiple_results = True
