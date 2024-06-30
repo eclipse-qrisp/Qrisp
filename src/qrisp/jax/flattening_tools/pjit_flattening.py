@@ -36,10 +36,9 @@ def eval_jaxpr(jaxpr, context_dic = {}):
 
     """
     
+    from qrisp import QuantumCircuit
     # Iterate through the equations    
     for eqn in jaxpr.eqns:
-        
-        
         # Get the invalues (either Literals or from the context_dic)
         invalues = []
         for i in range(len(eqn.invars)):
@@ -48,8 +47,8 @@ def eval_jaxpr(jaxpr, context_dic = {}):
             if isinstance(invar, Literal):
                 invalues.append(invar.val)
                 continue
+                
             invalues.append(context_dic[invar])
-        
         
         # Evaluate the primitive
         if eqn.primitive.name == "pjit":
@@ -63,6 +62,25 @@ def eval_jaxpr(jaxpr, context_dic = {}):
                 context_dic[eqn.outvars[i]] = res[i]
         else:
             context_dic[eqn.outvars[0]] = res
+            
+            
+        # Mark any processed QuantumCircuit as "burned"
+        # In priniciple the syntax gives these QuantumCircuits a meaning
+        # However to avoid constant copying, we act in-place
+        # Tracing high-level code should never produce a Jaxpr such that
+        # this Exception is called
+        for i in range(len(eqn.invars)):
+            invar = eqn.invars[i]
+            val = invalues[i]
+            
+            if isinstance(invar, Literal):
+                continue
+            if isinstance(val, QuantumCircuit):
+                context_dic[invar] = "burned_qc"
+                continue
+            elif isinstance(val, str):
+                if val == "burned_qc":
+                    raise Exception("Tried to use a consumed QuantumCircuit")
 
 
 def evaluate_pjit_eqn(pjit_eqn, context_dic):
@@ -92,7 +110,6 @@ def evaluate_pjit_eqn(pjit_eqn, context_dic):
     
     # Collect the invalues
     for i in range(len(definition_jaxpr.invars)):
-        definition_invar = definition_jaxpr.invars[i]
         invar = pjit_eqn.invars[i]
         
         if isinstance(invar, Literal):
@@ -170,7 +187,7 @@ def exec_jaxpr(jaxpr, *args, **kwargs):
 
 # Flattens/Inlines a pjit calls in a jaxpr
 def flatten_pjit(jaxpr):
-    return make_jaxpr(eval_jaxpr, static_argnums = [0])(jaxpr)
+    return make_jaxpr(eval_jaxpr, static_argnums = [0])(jaxpr, *[var.aval for var in jaxpr.invars])
         
  
     
