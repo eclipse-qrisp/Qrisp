@@ -43,20 +43,37 @@ def test_converter():
         assert qc.compare_unitary(comparison_qc)
     
     @qache
-    def inner_function(qv):
-        cx(qv[0], qv[1])
-        cx(qv[2], qv[1])
+    def inner_function(qv, i):
+        cx(qv[i], qv[i+1])
+        cx(qv[i+2], qv[i+1])
     
     def test_function(i):
         qv = QuantumVariable(i)
         
-        inner_function(qv)
-        inner_function(qv)
-        inner_function(qv)
+        inner_function(qv, 0)
+        inner_function(qv, 1)
+        inner_function(qv, 2)
         
         
-    jaxpr = make_jaxpr(test_function)(i)
+    jaxpr = make_jaxpr(test_function)(5)
     
-    qc, = jaxpr_to_qc(jaxpr)(i)
+    qc, = jaxpr_to_qc(jaxpr)(5)
     
+    print(qc.transpile())
     assert len(qc.data) == 3
+    
+    comparison_qc = QuantumCircuit(5)
+    
+    comparison_qc.cx(0, 1)
+    comparison_qc.cx(2, 1)
+    comparison_qc.cx(1, 2)
+    comparison_qc.cx(3, 2)
+    comparison_qc.cx(2, 3)
+    comparison_qc.cx(4, 3)
+    
+    print(comparison_qc)
+    
+    assert qc.compare_unitary(comparison_qc)
+    
+    
+    
