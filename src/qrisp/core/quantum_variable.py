@@ -880,7 +880,7 @@ class QuantumVariable:
             The backend on which to evaluate the quantum circuit. The default can be
             specified in the file default_backend.py.
         shots : integer, optional
-            The amount of shots to evaluate the circuit. The default is 10000.
+            The amount of shots to evaluate the circuit. The default is 100000.
         compile : bool, optional
             Boolean indicating if the .compile method of the underlying QuantumSession
             should be called before. The default is True.
@@ -1022,6 +1022,145 @@ class QuantumVariable:
         # Return dictionary of measurement results
         return counts
 
+    def get_spin_measurement(
+        self,
+        spin_op,
+        method=None,
+        backend=None,
+        shots=100000,
+        compile=True,
+        compilation_kwargs={},
+        subs_dic={},
+        circuit_preprocessor=None,
+        precompiled_qc = None
+    ):
+        r"""
+        This method returns the expected value of a quantum Hamiltonian for the state of the variable.
+
+        Parameters
+        ----------
+        spin_op : SymPy expr
+            The quantum Hamiltonian.
+        method : string
+            The grouping method for grouping terms in the Hamiltonian for evaluating the expected value.
+            The default is None: The expected value of each term is computed independently.
+        backend : BackendClient, optional
+            The backend on which to evaluate the quantum circuit. The default can be
+            specified in the file default_backend.py.
+        shots : integer, optional
+            The amount of shots to evaluate the circuit. The default is 100000.
+        compile : bool, optional
+            Boolean indicating if the .compile method of the underlying QuantumSession
+            should be called before. The default is True.
+        compilation_kwargs  : dict, optional
+            Keyword arguments for the compile method. For more details check
+            :meth:`QuantumSession.compile <qrisp.QuantumSession.compile>`. The default
+            is ``{}``.
+        subs_dic : dict, optional
+            A dictionary of Sympy symbols and floats to specify parameters in the case
+            of a circuit with unspecified, :ref:`abstract parameters<QuantumCircuit>`.
+            The default is {}.
+        circuit_preprocessor : Python function, optional
+            A function which recieves a QuantumCircuit and returns one, which is applied
+            after compilation and parameter substitution. The default is None.
+
+        Raises
+        ------
+        Exception
+            If the containing QuantumSession is in a quantum environment, it is not
+            possible to execute measurements.
+
+        Returns
+        -------
+        float
+            The expected value of the quantum Hamiltonian.
+
+        Examples
+        --------
+
+        We create an integer :ref:`QuantumFloat`, encode the value 1 and bring the qubit
+        with significance 2 in superposition. We utilize the Qiskit transpiler by
+        transpiling into the gate set $\{\text{CX}, \text{U}\}$
+
+        >>> from qrisp import QuantumVariable, h
+        >>> from qrisp.misc.spin import Spin
+        >>> qv = QuantumVariable(2)
+        >>> h(qv)
+        >>> H = Spin("Z",0)*Spin("Z",1)
+        >>> res = qv.get_spin_measurement(H)
+        >>> print(res)
+        0.0
+        """
+
+        if backend is None:
+            if self.qs.backend is None:
+                from qrisp.default_backend import def_backend
+
+                backend = def_backend
+            else:
+                backend = self.qs.backend
+
+        if len(self.qs.env_stack) != 0:
+            raise Exception("Tried to get measurement within open environment")
+
+        if self.is_deleted():
+            raise Exception("Tried to get measurement from deleted QuantumVariable")
+
+        if self.size == 0:
+            return {"": 1.0}
+        
+        qc = self.qs.copy()
+
+        if precompiled_qc is None:        
+            if compile:
+                qc = qompiler(
+                    self.qs, intended_measurements=self.reg, **compilation_kwargs
+                )
+            else:
+                qc = self.qs.copy()
+        else:
+            qc = precompiled_qc.copy()
+
+
+        # Bind parameters
+        if subs_dic:
+            qc = qc.bind_parameters(subs_dic)
+            from qrisp.core.compilation import combine_single_qubit_gates
+            qc = combine_single_qubit_gates(qc)
+
+        # Copy circuit in over to prevent modification
+        # from qrisp.quantum_network import QuantumNetworkClient
+
+        # if isinstance(backend, QuantumNetworkClient):
+        #     self.qs.data = []
+        #     shots = 1
+
+        # Execute user specified circuit_preprocessor
+        if circuit_preprocessor is not None:
+            qc = circuit_preprocessor(qc)
+
+        qc = qc.transpile()
+
+        from qrisp.misc import get_measurement_from_qc
+        from qrisp.misc.spin import evaluate_observable, get_measurement_settings
+
+        # measurement settings
+        meas_circs, meas_ops, meas_coeffs = get_measurement_settings(self, spin_op)
+        N = len(meas_circs)
+
+        expectation = 0
+
+        for k in range(N):
+
+            curr = qc.copy()
+            curr.append(meas_circs[k].to_gate(),curr.qubits)
+            res = get_measurement_from_qc(curr, self.reg, backend, shots)
+            
+            for outcome,probability in res.items():
+                expectation += probability*evaluate_observable(meas_ops[k],outcome)*meas_coeffs[k]
+
+        return expectation
+    
     def most_likely(self, **kwargs):
         """
         Performs a measurement and returns the most likely outcome.
@@ -1422,139 +1561,6 @@ class QuantumVariable:
         from qrisp.misc import custom_qv
 
         return custom_qv(label_list, decoder=decoder, qs=qs, name=name)
-
-
-    def get_measurement_settings(self, spin_op, method=None):
-        """
-        todo 
-
-        """
-
-        from qrisp.misc.spin import Spin, simplify_spin, set_bit
-        from qrisp.circuit import QuantumCircuit
-        
-
-        measurement_circuits = []
-        measurement_coeffs = []
-        measurement_ops = []
-
-        expr = simplify_spin(spin_op)
-
-        for monomial in expr.as_ordered_terms():
-            factors = monomial.as_ordered_factors()
-
-            qc = QuantumCircuit(self.size)
-            meas_op = 0
-            coeff = 1
-
-            for arg in factors:
-                if isinstance(arg, Spin):
-                    if arg.index >= self.size:
-                        raise Exception("Insufficient number of qubits")
-
-                    if arg.axes=="X":
-                        qc.ry(-np.pi/2,arg.index)
-                    if arg.axes=="Y":
-                        qc.rx(np.pi/2,arg.index)
-
-                    meas_op = set_bit(meas_op, arg.index)
-                else:
-                    coeff *= arg
-        
-            measurement_circuits.append(qc)
-            measurement_ops.append(meas_op)
-            measurement_coeffs.append(coeff)
-        
-        return measurement_circuits, measurement_ops, measurement_coeffs
-    
-
-    def get_spin_measurement(
-        self,
-        spin_op,
-        method=None,
-        backend=None,
-        shots=100000,
-        compile=True,
-        compilation_kwargs={},
-        subs_dic={},
-        circuit_preprocessor=None,
-        precompiled_qc = None
-    ):
-        """
-        todo
-
-        """
-
-
-        if backend is None:
-            if self.qs.backend is None:
-                from qrisp.default_backend import def_backend
-
-                backend = def_backend
-            else:
-                backend = self.qs.backend
-
-        if len(self.qs.env_stack) != 0:
-            raise Exception("Tried to get measurement within open environment")
-
-        if self.is_deleted():
-            raise Exception("Tried to get measurement from deleted QuantumVariable")
-
-        if self.size == 0:
-            return {"": 1.0}
-        
-        qc = self.qs.copy()
-
-
-        if precompiled_qc is None:        
-            if compile:
-                qc = qompiler(
-                    self.qs, intended_measurements=self.reg, **compilation_kwargs
-                )
-            else:
-                qc = self.qs.copy()
-        else:
-            qc = precompiled_qc.copy()
-
-        # Bind parameters
-        if subs_dic:
-            qc = qc.bind_parameters(subs_dic)
-            from qrisp.core.compilation import combine_single_qubit_gates
-            qc = combine_single_qubit_gates(qc)
-
-        # Copy circuit in over to prevent modification
-        # from qrisp.quantum_network import QuantumNetworkClient
-
-        # if isinstance(backend, QuantumNetworkClient):
-        #     self.qs.data = []
-        #     shots = 1
-
-        # Execute user specified circuit_preprocessor
-        if circuit_preprocessor is not None:
-            qc = circuit_preprocessor(qc)
-
-        qc = qc.transpile()
-
-        from qrisp.misc import get_measurement_from_qc
-        from qrisp.misc.spin import evaluate_observable
-
-        # measurement settings
-        meas_circs, meas_ops, meas_coeffs = self.get_measurement_settings(spin_op)
-        N = len(meas_circs)
-
-        expectation = 0
-
-        for k in range(N):
-
-            curr = qc.copy()
-            curr.append(meas_circs[k].to_gate(),curr.qubits)
-            res = get_measurement_from_qc(curr, self.reg, backend, shots)
-            
-            for outcome,probability in res.items():
-                expectation += probability*evaluate_observable(meas_ops[k],outcome)*meas_coeffs[k]
-
-        return expectation
-
 
 def plot_histogram(outcome_labels, counts, filename=None):
     res_list = []

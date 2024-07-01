@@ -14,6 +14,7 @@ Methods
    
    QuantumArray.delete
    QuantumArray.get_measurement
+   QuantumArray.get_spin_measurement
    QuantumArray.most_likely
    QuantumArray.duplicate
    QuantumArray.set_shape

@@ -11,33 +11,47 @@ Variational Quantum Eigensolver
    vqe/VQEProblem
    vqe/VQEBenchmark
 
-This modules facilitates the execution of The `Quantum Approximate Optimization Algorithm (QAOA) <https://arxiv.org/abs/1411.4028>`_  and related techniques called the `Quantum Alternating Operator Ansatz <https://arxiv.org/abs/1709.03489>`_. 
+This modules implements the `Variational Quantum Eigensolver (VQE) <https://arxiv.org/pdf/2111.05176>`_. 
 
-The end goal in QAOA is to optimize the variational parameters $\gamma_p$ and $\beta_p$ in order to minimize the expectation value of the cost function with respect to the final state $\ket{\psi_p}$. You can read more about the theoretical fundamentals behind QAOA in the tutorial :ref:`Theoretical Overview <TheoryQAOA>`. You can also find efficient implementations of this algorithm for :ref:`MaxCut <MaxCutQAOA>` and :ref:`MkCSQAOA` in an easy to read, insightful tutorials in which we describe the recipe to implement QAOA for other problem instances in a modular way, and independent of the encoding used. 
+The VQE is a hybrid quantum-classical algorithm for finding eigenvalues of a quantum Hamiltonian. 
+It is an alternative to pure quantum algorithms such as quantum phase estimation that have higher requirements on quantum hardware.
+The method has been be applied to various problems in quantum chemistry and quantum physics.
+A VQE problem is given by:
 
-The central data structure of the QAOA module is the :ref:`QAOAProblem` class.
+- A quantum Hamiltonian $$H=\\sum\\limits_{j}\\alpha_jP_j$$ where $P_j=\prod_i\sigma_i^j$ is a Pauli product, and $\sigma_i^j\in\{I,X,Y,Z\}$ is the Pauli operator acting on qubit $i$.
+- A parameter dependend quantum state (ansatz) $$\\ket{\\psi(\\theta)}=U(\\theta)\\ket{\\psi_0}$$ for an initial state $\ket{\psi_0}$.
+  The unitary $U(\theta)$ consists of $p$ layers
+  $$U(\\theta)=\\prod\\limits_{l=1}^{p}\\tilde{U}(\\theta_l)$$
+  each depending on $m$ real parameters, i.e., $\theta_l=(\theta_{l,1},\dotsc,\theta_{l,m})$.
 
-:ref:`QAOAProblem`
+Then the minimum eigenvalue $E_0$ of the Hamiltonian $H$ satisfies
+$$E_0\\leq E(\\theta)=\\langle\\psi(\\theta)|H|\\psi(\\theta)\\rangle=\\sum\\limits_j\\alpha_j\\langle\\psi(\\theta)|P_j|\\psi(\\theta)\\rangle$$
+
+The ansatz parameters are variationally optimized in order to minimize the expected value $E(\theta)$. This serves as approximation for the ground state energy $E_0$.
+
+The central data structure of the VQE module is the :ref:`VQEProblem` class.
+
+:ref:`VQEProblem`
 ------------------
 
-The :ref:`QAOAProblem` class is like a blueprint for a implementing QAOA for a specific problem instance we're trying to solve. When we create an instance of this class, we need to provide three things:
+The :ref:`VQEProblem` class is like a blueprint for a implementing VQE for a specific problem instance we're trying to solve. When we create an instance of this class, we need to provide three things:
 
-- Cost operator aka phase separator: a function that represents the problem we’re trying to solve, defining what makes a good or bad solution.
-- Mixer operator: a function that drives transitions between different states. In the Quantum Alternating Operator Ansatz, mixers can be chosen from a broader set of unitaries, also specified below.
-- Classical cost function: a function that takes a potential solution and calculates its cost.
+- Spin operator aka quantum Hamiltonian.
+- Ansatz function: A function that implements the unitary $\tilde U(\theta)$ corresponding to one layer of the ansatz.
+- Number of parameters $m$ per layer.
 
-Apart from the basic three ingredients mentioned above, some problems require the specification of the initial state. This can be achieved using the :meth:`.set_init_function <qrisp.qaoa.QAOAProblem.set_init_function>` method.
+Apart from the basic three ingredients mentioned above, some problems require the specification of the initial state. This can be achieved using the :meth:`.set_init_function <qrisp.vqe.VQEProblem.set_init_function>` method.
 
-The :meth:`.run <qrisp.qaoa.QAOAProblem.run>` method prepares the initial state, applies $p$ layers of phase separators and mixers, and compiles a quantum circuit with intended measurements. Subsequently, the optimization algorithm is executed and the measurement results of the optimized circuit are returned.
+The :meth:`.run <qrisp.vqe.VQEProblem.run>` method prepares the initial state, applies $p$ layers of ansatz, and compiles a quantum circuit with intended measurements. Subsequently, the optimization algorithm is executed and the expected value of the Hamiltonian with respect to the optimized circuit are returned.
 
-For benchmarking, we provide the :meth:`.benchmark <qrisp.qaoa.QAOAProblem.benchmark>` method, which allows you to collect performance data about your implementation.
+For benchmarking, we provide the :meth:`.benchmark <qrisp.vqe.VQEProblem.benchmark>` method, which allows you to collect performance data about your implementation.
 
-Additionally, a circuit can be pretrained with the method :meth:`.train_function <qrisp.qaoa.QAOAProblem.train_function>` . This allows preparing a new QuantumVariable with already optimized parameters, such that no new optimization is conducted. The results will therefore be the same. 
+Additionally, a circuit can be pretrained with the method :meth:`.train_function <qrisp.vqe.VQEProblem.train_function>` . This allows preparing a new QuantumVariable with already optimized parameters, such that no new optimization is conducted.
    
-:ref:`QAOABenchmark`
+:ref:`VQEBenchmark`
 --------------------
 
-As an approximation algorithm, benchmarking various aspects such as solution quality and execution cost is a central question for QAOA. The results of the benchmarks of :ref:`QAOAProblem` are represented in a class called :ref:`QAOABenchmark`. This enables convenient evaluation of several important metrics as well as visualization of the results.
+As an approximation algorithm, benchmarking various aspects such as solution quality and execution cost is a central question for VQE. The results of the benchmarks of a :ref:`VQEProblem` are represented in a class called :ref:`VQEBenchmark`. This enables convenient evaluation of several important metrics as well as visualization of the results.
 
 .. _MIXers:
 
@@ -60,31 +74,9 @@ The following problem instances have already been successfully implemented using
    :header-rows: 1
 
    * - PROBLEM INSTANCE
-     - MIXER TYPE
+     - ANSATZ TYPE
      - IMPLEMENTED IN QRISP
-   * - :ref:`MaxCut <QAOAMaxCut>`
-     - X mixer
+   * - :ref:`Heisenberg model <VQEHeisenberg>`
+     - Hamiltonian Variational Ansatz
      -    ✅
-   * - :ref:`Max-$\\ell$-SAT <maxsatQAOA>`
-     - X mixer
-     -    ✅
-   * - :ref:`QUBO (NEW since 0.4!) <QUBOQAOA>`
-     - X mixer
-     -    ✅ 
-   * - :ref:`MaxIndependentSet <QAOAMaxIndependentSet>`
-     - Controlled X mixer
-     -    ✅
-   * - :ref:`MaxClique <maxcliqueQAOA>`
-     - Controlled X mixer
-     -    ✅
-   * - :ref:`MaxSetPacking <maxSetPackQAOA>`
-     - Controlled X mixer
-     -    ✅
-   * - :ref:`MinSetCover <minsetcoverQAOA>`
-     - Controlled X mixer
-     -    ✅
-   * - :ref:`Max-$\\kappa$-Colorable Subgraph <QAOAMkCS>`
-     - XY mixer
-     -    ✅ 
-     
 

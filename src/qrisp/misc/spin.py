@@ -19,6 +19,7 @@
 
 import sympy as sp
 from sympy import Symbol, Quaternion, I
+import numpy as np
 
 class Spin(Symbol):
 
@@ -73,7 +74,8 @@ def evaluate_observable(observable: int, x: int):
         return 1
     else:
         return -1    
-        
+
+
 def convert_to_spin(quaternion, index):
     return quaternion.a-I*quaternion.b*Spin("X",index)-I*quaternion.c*Spin("Y",index)-I*quaternion.d*Spin("Z",index)
 
@@ -81,7 +83,7 @@ def convert_to_spin(quaternion, index):
 def simplify_spin(expr):
     simplified_expr = 0
 
-    for monomial in expr.as_ordered_terms():
+    for monomial in expr.expand().as_ordered_terms():
         factors = monomial.as_ordered_factors()
 
         simplified_factor = 1
@@ -115,3 +117,202 @@ def simplify_spin(expr):
         simplified_expr += simplified_factor
 
     return simplified_expr
+
+
+def ground_state_energy(H):
+
+    from sympy import I as i
+    from sympy.physics.quantum import TensorProduct as TP
+    import numpy as np
+
+    I = sp.Matrix([[1,0],[0,1]])
+    X = sp.Matrix([[0,1],[1,0]])
+    Y = sp.Matrix([[0,-i],[i,0]])
+    Z = sp.Matrix([[1,0],[0,-1]])
+
+    def spin_matrix(str):
+        if str=="X":
+            return X
+        if str=="Y":
+            return Y
+        else:
+            return Z
+        
+    def recursive_TP(keys,spin_dict):
+        if len(keys)==1:
+            return spin_dict.get(keys[0],I)
+        return TP(spin_dict.get(keys.pop(0),I),recursive_TP(keys,spin_dict))
+
+    coeffs = []
+    spin_dicts = []
+
+    expr = simplify_spin(H)
+
+    for monomial in expr.expand().as_ordered_terms():
+        factors = monomial.as_ordered_factors()
+
+        spin_dict = {}
+        coeff = 1
+
+        for arg in factors:
+            if isinstance(arg, Spin):
+                spin_dict[arg.index] = spin_matrix(arg.axes)
+            else:
+                coeff *= arg
+
+        coeffs.append(coeff)
+        spin_dicts.append(spin_dict)
+
+    keys = set()
+    for item in spin_dicts:
+        keys.update(set(item.keys()))
+    keys = sorted(keys)
+    dim = len(keys)
+
+    m = len(coeffs)
+    M = sp.zeros(2**dim)
+    for k in range(m):
+        M += coeffs[k]*recursive_TP(keys.copy(),spin_dicts[k])
+
+    eigenvalues = M.eigenvals()
+    return min(eigenvalues)
+
+
+def spin_operator_to_matrix(H):
+
+    from numpy import kron as TP
+
+    I = np.array([[1,0],[0,1]])
+    X = np.array([[0,1],[1,0]])
+    Y = np.array([[0,-1j],[1j,0]])
+    Z = np.array([[1,0],[0,-1]])
+
+    def spin_matrix(str):
+        if str=="X":
+            return X
+        if str=="Y":
+            return Y
+        else:
+            return Z
+        
+    def recursive_TP(keys,spin_dict):
+        if len(keys)==1:
+            return spin_dict.get(keys[0],I)
+        return TP(spin_dict.get(keys.pop(0),I),recursive_TP(keys,spin_dict))
+
+    coeffs = []
+    spin_dicts = []
+
+    expr = simplify_spin(H)
+
+    for monomial in expr.expand().as_ordered_terms():
+        factors = monomial.as_ordered_factors()
+
+        spin_dict = {}
+        coeff = 1
+
+        for arg in factors:
+            if isinstance(arg, Spin):
+                spin_dict[arg.index] = spin_matrix(arg.axes)
+            else:
+                coeff *= arg
+
+        coeffs.append(coeff)
+        spin_dicts.append(spin_dict)
+
+    keys = set()
+    for item in spin_dicts:
+        keys.update(set(item.keys()))
+    keys = sorted(keys)
+    dim = len(keys)
+
+    m = len(coeffs)
+    M = np.zeros((2**dim, 2**dim)).astype(np.complex128)
+    for k in range(m):
+        M += complex(coeffs[k])*recursive_TP(keys.copy(),spin_dicts[k])
+
+    return M
+        
+
+def ground_state_energy(H):
+    """
+    Calculates the ground state energy of a spin operator classically.
+
+    Parameters
+    ----------
+    H : SymPy expression
+        The spin operator.
+    
+    Returns
+    -------
+    E : Float
+        The ground state energy. 
+
+    """
+
+    M = spin_operator_to_matrix(H)
+    eigenvalues = np.linalg.eigvals(M) 
+    E = min(eigenvalues)
+    return E
+
+
+def get_measurement_settings(qarg, spin_op, method=None):
+    """
+    todo 
+
+    Parameters
+    ----------
+    qarg : QuantumVariable or QuantumArray
+        The argument the spin operator is evaluated on.
+    spin_op : SymPy expr
+        The quantum Hamiltonian.
+    method : string, optional
+        The default is None.
+
+    Returns
+    -------
+
+    """
+    
+    from qrisp import QuantumVariable, QuantumArray, QuantumCircuit
+
+    if isinstance(qarg, QuantumArray):
+        num_qubits = sum(qv.size for qv in list(qarg.flatten()))
+    else:
+        num_qubits = qarg.size
+        
+    measurement_circuits = []
+    measurement_coeffs = []
+    measurement_ops = []
+
+    expr = simplify_spin(spin_op)
+
+    for monomial in expr.as_ordered_terms():
+        factors = monomial.as_ordered_factors()
+
+        qc = QuantumCircuit(num_qubits)
+        meas_op = 0
+        coeff = 1
+
+        for arg in factors:
+            if isinstance(arg, Spin):
+                if arg.index >= num_qubits:
+                    raise Exception("Insufficient number of qubits")
+
+                if arg.axes=="X":
+                    qc.ry(-np.pi/2,arg.index)
+                if arg.axes=="Y":
+                    qc.rx(np.pi/2,arg.index)
+
+                meas_op = set_bit(meas_op, arg.index)
+            else:
+                coeff *= arg
+        
+        measurement_circuits.append(qc)
+        measurement_ops.append(meas_op)
+        measurement_coeffs.append(coeff)
+        
+    return measurement_circuits, measurement_ops, measurement_coeffs
+
+
+

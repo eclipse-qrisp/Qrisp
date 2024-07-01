@@ -450,7 +450,7 @@ class QuantumArray(np.ndarray):
             The backend on which to evaluate the quantum circuit. The default can be
             specified in the file default_backend.py.
         shots : integer, optional
-            The amount of shots to evaluate the circuit. The default is 10000.
+            The amount of shots to evaluate the circuit. The default is 100000.
         compile : bool, optional
             Boolean indicating if the .compile method of the underlying QuantumSession
             should be called before. The default is True.
@@ -557,6 +557,144 @@ class QuantumArray(np.ndarray):
         counts = {key: counts[key] for key in sorted_key_list}
 
         return counts
+    
+    def get_spin_measurement(
+        self,
+        spin_op,
+        method=None,
+        backend=None,
+        shots=100000,
+        compile=True,
+        compilation_kwargs={},
+        subs_dic={},
+        circuit_preprocessor=None,
+        precompiled_qc = None
+    ):
+        r"""
+        This method returns the expected value of a quantum Hamiltonian for the state of the array.
+        The semantics are similar to the :meth:`get_measurement <qrisp.QuantumVariable.get_spin_measurement>`
+        method of QuantumVariable.
+
+        Parameters
+        ----------
+        spin_op : SymPy expr
+            The quantum Hamiltonian.
+        method : string
+            The grouping method for grouping terms in the Hamiltonian for evaluating the expected value.
+            The default is None: The expected value of each term is computed independently.
+        backend : BackendClient, optional
+            The backend on which to evaluate the quantum circuit. The default can be
+            specified in the file default_backend.py.
+        shots : integer, optional
+            The amount of shots to evaluate the circuit. The default is 100000.
+        compile : bool, optional
+            Boolean indicating if the .compile method of the underlying QuantumSession
+            should be called before. The default is True.
+        compilation_kwargs  : dict, optional
+            Keyword arguments for the compile method. For more details check
+            :meth:`QuantumSession.compile <qrisp.QuantumSession.compile>`. The default
+            is ``{}``.
+        subs_dic : dict, optional
+            A dictionary of Sympy symbols and floats to specify parameters in the case
+            of a circuit with unspecified, :ref:`abstract parameters<QuantumCircuit>`.
+            The default is {}.
+        circuit_preprocessor : Python function, optional
+            A function which recieves a QuantumCircuit and returns one, which is applied
+            after compilation and parameter substitution. The default is None.
+
+        Raises
+        ------
+        Exception
+            If the containing QuantumSession is in a quantum environment, it is not
+            possible to execute measurements.
+
+        Returns
+        -------
+        float
+            The expected value of the quantum Hamiltonian.
+
+        Examples
+        --------
+
+        >>> from qrisp import QuantumVariable, QuantumArray, h
+        >>> from qrisp.misc.spin import Spin
+        >>> qtype = QuantumVariable(2)
+        >>> q_array = QuantumArray(qtype, shape=(2))
+        >>> h(q_array)
+        >>> H = Spin("Z",0)*Spin("Z",1) + Spin("X",2)*Spin("X",3)
+        >>> res = q_array.get_spin_measurement(H)
+        >>> print(res)
+        1.0
+        """
+
+        for qv in self.flatten():
+            if qv.is_deleted():
+                raise Exception(
+                    "Tried to measure QuantumArray containing deleted QuantumVariables"
+                )
+
+        if not self.shape_specified:
+            raise Exception("Tried to measure QuantumArray without shape specification")
+
+        if backend is None:
+            if self.qs.backend is None:
+                from qrisp.default_backend import def_backend
+
+                backend = def_backend
+            else:
+                backend = self.qs.backend
+
+        if len(self.qs.env_stack) != 0:
+            raise Exception("Tried to get measurement within open environment")
+
+        #qubits = sum([qv.reg for qv in self.flatten()[::-1]], [])
+        qubits = sum([qv.reg for qv in self.flatten()], [])
+        # Copy circuit in over to prevent modification
+        # from qrisp.quantum_network import QuantumNetworkClient
+
+        if precompiled_qc is None:        
+            if compile:
+                qc = qompiler(
+                    self.qs, intended_measurements = qubits, **compilation_kwargs
+                )
+            else:
+                qc = self.qs.copy()
+                
+            # Transpile circuit
+            qc = transpile(qc)
+        else:
+            qc = precompiled_qc.copy()
+
+
+        # Bind parameters
+        if subs_dic:
+            qc = qc.bind_parameters(subs_dic)
+            from qrisp.core.compilation import combine_single_qubit_gates
+            qc = combine_single_qubit_gates(qc)
+
+        # Execute user specified circuit_preprocessor
+        if circuit_preprocessor is not None:
+            qc = circuit_preprocessor(qc)
+
+        from qrisp.misc import get_measurement_from_qc
+        from qrisp.misc.spin import evaluate_observable, get_measurement_settings
+
+        # measurement settings
+        meas_circs, meas_ops, meas_coeffs = get_measurement_settings(self, spin_op)
+        N = len(meas_circs)
+
+        expectation = 0
+
+        for k in range(N):
+
+            curr = qc.copy()
+            curr.append(meas_circs[k].to_gate(),curr.qubits)
+            res = get_measurement_from_qc(curr, qubits, backend, shots)
+            
+            for outcome,probability in res.items():
+                expectation += probability*evaluate_observable(meas_ops[k],outcome)*meas_coeffs[k]
+
+        return expectation
 
     def encode(self, encoding_array):
         """

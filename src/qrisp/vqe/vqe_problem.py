@@ -29,48 +29,74 @@ from qrisp.vqe.vqe_benchmark_data import VQEBenchmark
 class VQEProblem:
     r"""
     Central structure to facilitate treatment of VQE problems.
-
-    This class encapsulates the cost operator, mixer operator, and classical cost function for a specific QAOA problem instance. It also provides methods to set the initial state preparation function, classical cost post-processing function, and optimizer for the problem.
-
-    For a quick demonstration, we import the relevant functions from already implemented problem instances:
-        
-    ::
-        
-        from networkx import Graph
-
-        G = Graph()
-
-        G.add_edges_from([[0,3],[0,4],[1,3],[1,4],[2,3],[2,4]])
-
-        from qrisp.qaoa import (QAOAProblem, 
-                                create_maxcut_cost_operator, 
-                                create_maxcut_cl_cost_function,
-                                RX_mixer)
-
-        maxcut_instance = QAOAProblem(cost_operator = create_maxcut_cost_operator(G),
-                                       mixer = RX_mixer,
-                                       cl_cost_function = create_maxcut_cl_cost_function(G))
-        
-        
-        from qrisp import QuantumVariable
-        
-        res = maxcut_instance.run(qarg = QuantumVariable(5),
-                                  depth = 4, 
-                                  max_iter = 25)
-        
-        print(res)
-        #Yields: {'11100': 0.2847, '00011': 0.2847, '10000': 0.0219, '01000': 0.0219, '00100': 0.0219, '11011': 0.0219, '10111': 0.0219, '01111': 0.0219, '00010': 0.02, '11110': 0.02, '00001': 0.02, '11101': 0.02, '00000': 0.0173, '11111': 0.0173, '10010': 0.0143, '01010': 0.0143, '11010': 0.0143, '00110': 0.0143, '10110': 0.0143, '01110': 0.0143, '10001': 0.0143, '01001': 0.0143, '11001': 0.0143, '00101': 0.0143, '10101': 0.0143, '01101': 0.0143, '11000': 0.0021, '10100': 0.0021, '01100': 0.0021, '10011': 0.0021, '01011': 0.0021, '00111': 0.0021}
-        
-    For an in-depth tutorial, make sure to check out :ref:`MaxCutQAOA`!
-        
+    This class encapsulates the spin operator, the ansatz, and the initial state preparation function for a specific VQE problem instance. 
+    
     Parameters
     ----------
-    cost_operator : function
-        A function receiving a :ref:`QuantumVariable` or :ref:`QuantumArray` and parameter $\gamma$. This function should perform the application of the cost operator.
-    mixer : function
-        A function receiving a :ref:`QuantumVariable` or :ref:`QuantumArray` and parameter $\beta$. This function should perform the application mixing operator.
-    cl_cost_function : function
-        The classical cost function for the specific QAOA problem instance.
+    spin_operator : SymPy Expr
+        The quantum Hamiltonian.
+    ansatz_function : function
+        A function receiving a :ref:`QuantumVariable` or :ref:`QuantumArray` and a parameter list. This function implements the unitary 
+        corresponding to one layer of the ansatz.
+    num_params : int
+        The number of parameters per layer.
+    init_function : function, optional
+        A function preparing the initial state.
+        By default, the inital state is the $\ket{0}$ state.
+    callback : bool, optional
+        If ``True``, intermediate reults are stored. The default is ``False``.
+
+    Examples
+    --------
+
+    For a quick demonstration, we show how to calculate the ground sate energy of the $H_2$ molecule using VQE, as explained `here <https://arxiv.org/abs/2305.07092>`_.
+    Note that in the aforementioned paper, the energy is calculated setting the constant term in the Hamiltonian to 0.
+
+    ::
+
+        from qrisp import *
+        from qrisp.misc.spin import *
+
+        # The problem Hamiltonian
+        c = [-0.81054, 0.16614, 0.16892, 0.17218, -0.22573, 0.12091, 0.166145, 0.04523]
+        H = c[0] \
+            + c[1]*Spin("Z",0)*Spin("Z",2) \
+            + c[2]*Spin("Z",1)*Spin("Z",3) \
+            + c[3]*(Spin("Z",3) + Spin("Z",1)) \
+            + c[4]*(Spin("Z",2) + Spin("Z",0)) \
+            + c[5]*(Spin("Z",2)*Spin("Z",3) + Spin("Z",0)*Spin("Z",1)) \
+            + c[6]*(Spin("Z",0)*Spin("Z",3) + Spin("Z",1)*Spin("Z",2)) \
+            + c[7]*(Spin("Y",0)*Spin("Y",1)*Spin("Y",2)*Spin("Y",3) + Spin("X",0)*Spin("X",1)*Spin("Y",2)*Spin("Y",3) + Spin("Y",0)*Spin("Y",1)*Spin("X",2)*Spin("X",3) + Spin("X",0)*Spin("X",1)*Spin("X",2)*Spin("X",3))
+
+        # The ansatz
+        def ansatz(qv,theta):
+            for i in range(4):
+                ry(theta[i],qv[i])
+            for i in range(3):
+                cx(qv[i],qv[i+1])
+            cx(qv[3],qv[0])
+
+        from qrisp.vqe.vqe_problem import *
+
+        vqe = VQEProblem(spin_operator = H,
+                         ansatz_function = ansatz,
+                         num_params=4,
+                         callback=True)
+
+        energy = vqe.run(qarg = QuantumVariable(4),
+                      depth = 1,
+                      max_iter=50)
+        print(energy)
+        # Yields -1.864179046
+
+    We visualize the optimization process:
+
+    >>> vqe.visualize_energy(exact=True)
+
+    .. figure:: /_static/vqeH2.png
+        :alt: VQEH2
+        :scale: 80%
+        :align: center
 
     """
     
@@ -150,7 +176,7 @@ class VQEProblem:
         Parameters
         ----------
         qarg : QuantumVariable or QuantumArray
-            The argument the cost function is called on.
+            The argument to which the VQE circuit is applied.
         depth : int
             The amount of VQE layers.
 
@@ -171,8 +197,8 @@ class VQEProblem:
         # Prepare the initial state for particular problem instance
         if self.init_function is not None:
             self.init_function(qarg)
-        else:
-            h(qarg)
+        #else: # initial state \ket{0}
+        #    h(qarg)
             
         # Apply p layers of the ansatz
         for i in range(depth):                           
@@ -203,7 +229,7 @@ class VQEProblem:
         complied_qc : QuantumCircuit
             The compiled quantum circuit.
         depth : int
-            The amont of QAOA layers.
+            The amont of VQE layers.
         symbols : list
             The list of symbols used in the quantum circuit.
         mes_kwargs : dict, optional
@@ -260,10 +286,11 @@ class VQEProblem:
             float
                 The expected value of the spin operator.
             """         
+
             subs_dic = {symbols[i] : theta[i] for i in range(len(symbols))}
-            
+
             expectation = qarg.get_spin_measurement(self.spin_operator, subs_dic = subs_dic, precompiled_qc = qc, **mes_kwargs)
-            
+
             if self.callback:
                 self.optimization_costs.append(expectation)
 
@@ -315,14 +342,14 @@ class VQEProblem:
 
         if self.init_type=='random':
             # Set initial random values for optimization parameters
-            init_point = np.pi * np.random.rand(2 * depth)/2
+            init_point = np.pi * np.random.rand(depth * self.num_params)/2
 
         elif self.init_type=='tqa':
             # TQA initialization
             init_point = tqa_angles(depth,compiled_qc, symbols, qarg, mes_kwargs)
 
-        def optimization_cb(x):
-            self.optimization_params.append(x)
+        #def optimization_cb(x):
+        #    self.optimization_params.append(x)
 
         # Perform optimization using COBYLA method
         if isinstance(self.fourier_depth, int):
@@ -333,7 +360,6 @@ class VQEProblem:
                                     init_point, 
                                     method='COBYLA', 
                                     options={'maxiter':max_iter}, 
-                                    callback=optimization_cb,
                                     args = (compiled_qc, symbols, qarg, self.cl_cost_function,self.fourier_depth, index_p , mes_kwargs))
                 init_point = res_sample['x']
                 
@@ -342,9 +368,8 @@ class VQEProblem:
             # Perform optimization using COBYLA method
             res_sample = minimize(optimization_wrapper,
                                 init_point, 
-                                method='COBYLA', 
+                                method='COBYLA',
                                 options={'maxiter':max_iter}, 
-                                callback=optimization_cb,
                                 args = (compiled_qc, symbols, qarg, mes_kwargs))
             
         return res_sample['x']
@@ -358,21 +383,22 @@ class VQEProblem:
         
         Parameters
         ----------
-        qarg : QuantumVariable
-            The quantum variable to which the VQE circuit is applied.
+        qarg : QuantumVariable or QuantumArray
+            The argument to which the VQE circuit is applied.
         depth : int
-            The depth of the VQE circuit.
+            The amount of VQE layers.
         mes_kwargs : dict, optional
             The keyword arguments for the measurement function. Default is an empty dictionary.
         max_iter : int, optional
             The maximum number of iterations for the optimization method. Default is 50.
         init_type : string, optional
-            Specifies the way the initial optimization parameters are chosen. Available are ``random`` and TQA. The default is ``random``.
+            Specifies the way the initial optimization parameters are chosen. Available is ``random``. 
+            The default is ``random``: Parameters are initialized uniformly at random in the interval $[0,\pi/2)]$.
 
         Returns
         -------
-        opt_res : dict
-            The optimal result after running VQE problem for a specific problem instance. It contains the expectation of the spin operator after applying the optimal VQE circuit to the quantum variable.
+        energy : float
+            The expected value of the spin operator after applying the optimal VQE circuit to the quantum variable.
         """
 
         #init_point = np.pi * np.random.rand(2 * depth)/2
@@ -393,8 +419,8 @@ class VQEProblem:
         # Prepare initial state - in case this is not called, prepare superposition state
         if self.init_function is not None:
             self.init_function(qarg)
-        else:
-            h(qarg)
+        #else: # inital stqate \ket{0}
+        #   h(qarg)
 
         # Apply p layers of the ansatz    
         for i in range(depth):                          
@@ -407,14 +433,14 @@ class VQEProblem:
     def train_function(self, qarg, depth, mes_kwargs = {}, max_iter = 50, init_type = "random"):
         """
         This function allows for training of a circuit with a given instance of a ``VQEProblem``. It will then return a function that can be applied to a ``QuantumVariable``,
-        s.t. that it is a solution to the problem instance. The function therefore acts as a circuit for the problem instance with optimized parameters.
+        s.t. that it prepares a solution to the problem instance. The function therefore applies a circuit for the problem instance with optimized parameters.
 
         Parameters
         ----------
         qarg : QuantumVariable
-            The quantum variable to which the VQE circuit is applied.
+            The argument to which the VQE circuit is applied.
         depth : int
-            The depth of the VQE circuit.
+            The amount of VQE layers.
         mes_kwargs : dict, optional
             The keyword arguments for the measurement function. Default is an empty dictionary.
         max_iter : int, optional
@@ -423,7 +449,7 @@ class VQEProblem:
         Returns
         -------
         circuit_generator : function
-            A function that can be applied to a ```QuantumVariable`` , with optimized parameters for the problem instance. The ``QuantumVariable`` then represent a solution of the problem.
+            A function that can be applied to a ``QuantumVariable``, with optimized parameters for the problem instance. The ``QuantumVariable`` then represent a solution of the problem.
 
         """
 
@@ -433,8 +459,9 @@ class VQEProblem:
         def circuit_generator(qarg_gen):
             if self.init_function is not None:
                 self.init_function(qarg_gen)
-            else:
-                h(qarg_gen)
+            #else:
+                # initial state \ket{0}
+                #h(qarg_gen)
             for i in range(depth): 
                 self.ansatz_function(qarg,[optimal_theta[self.num_params*i+j] for j in range(self.num_params)])
             
@@ -447,21 +474,21 @@ class VQEProblem:
         Parameters
         ----------
         qarg : QuantumVariable or QuantumArray
-            The quantum argument, the benchmark is executed on. Compare to the :meth:`.run <qrisp.vqe.VQEProblem.run>` method.
+            The quantum argument the benchmark is executed on. Compare to the :meth:`.run <qrisp.vqe.VQEProblem.run>` method.
         depth_range : list[int]
             A list of integers indicating, which depth parameters should be explored. Depth means the amount of VQE layers.
         shot_range : list[int]
             A list of integers indicating, which shots parameters should be explored. Shots means the amount of repetitions, the backend performs per iteration.
         iter_range : list[int]
             A list of integers indicating, what iterations parameter should be explored. Iterations means the amount of backend calls, the optimizer is allowed to do.
-        optimal_solution : Float
+        optimal_solution : float
             The optimal solution to the problem. 
         repetitions : int, optional
             The amount of repetitions, each parameter constellation should go though. Can be used to get a better statistical significance. The default is 1.
         mes_kwargs : dict, optional
-            The keyword arguments, that are used for the ``qarg.get_measurement``. The default is {}.
+            The keyword arguments, that are used for the ``qarg.get_spin_measurement``. The default is {}.
         init_type : string, optional
-            Specifies the way the initial optimization parameters are chosen. Available are ``random`` and TQA. The default is ``random``.
+            Specifies the way the initial optimization parameters are chosen. Available is ``random``. The default is ``random``.
 
         Returns
         -------
@@ -501,7 +528,7 @@ class VQEProblem:
         
         .. image:: benchmark_plot.png
             
-        The :ref:`QAOABenchmark` class contains a variety of methods to help 
+        The :ref:`VQEBenchmark` class contains a variety of methods to help 
         you drawing conclusions from the collected data. Make sure to check them out!
 
         """
@@ -553,26 +580,35 @@ class VQEProblem:
         return VQEBenchmark(data_dict, optimal_solution, self.spin_operator)
     
 
-    def visualize_cost(self):
+    def visualize_energy(self,exact=False):
         """
-        todo
+        Visualizes the energy during the optimization process.
 
-        Returns
-        -------
-        None.
+        Parameters
+        ----------
+        exact : Boolean
+            If ``True``, the exact ground state energy of the spin operator is computed classically, and compared to the energy in the optimization process.
+            The default is ``False``.
 
         """
 
         import matplotlib.pyplot as plt
         import matplotlib as mpl
+        from qrisp.misc.spin import ground_state_energy
 
         if not self.callback:
             raise Exception("Visualization can only be perform on a VQE instance with self.callback=True")
         
+        if exact:
+            exact_solution = ground_state_energy(self.spin_operator)
+            plt.axhline(y=exact_solution, color="#6929C4", linestyle='--', linewidth=2, label='Exact energy')
+        
         x = list(range(len(self.optimization_costs)))
         y = self.optimization_costs
+        plt.scatter(x, y, color='#20306f',marker="o", linestyle='solid', linewidth=1)
+        plt.xlabel("Iterations", fontsize=15, color="#444444")
+        plt.ylabel("Energy", fontsize=15, color="#444444")
+        plt.grid()
+        plt.legend()
 
-        plt.scatter(x, y)
-        plt.xlabel("Iterations")
-        plt.ylabel("Expectation")
         plt.show()
