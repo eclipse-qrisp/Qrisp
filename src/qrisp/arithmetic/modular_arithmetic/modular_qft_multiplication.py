@@ -49,11 +49,9 @@ def QREDC(t, N, m):
     cx(t[0], t.sign())
     
     sgn = t.reg.pop(-1)
-    t.size -= 1
     t.signed = False
     
     u.reg.insert(len(u), sgn)
-    u.size += 1
     u.mshape[1] += 1
     
     
@@ -257,12 +255,10 @@ def qft_semi_cl_inpl_mult(a, X, ctrl = None, treat_invalid = False):
 
 def transfer_lsb(from_qv, to_qv):
     lsb = from_qv.reg.pop(0)
-    from_qv.size -= 1
     from_qv.msize -= 1
     from_qv.mshape[0] += 1
     from_qv.exponent += 1
 
     to_qv.reg.insert(len(to_qv), lsb)
-    to_qv.size += 1
     to_qv.msize += 1
     to_qv.mshape[1] += 1

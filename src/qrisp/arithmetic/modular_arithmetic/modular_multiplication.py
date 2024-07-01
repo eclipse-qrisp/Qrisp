@@ -80,7 +80,6 @@ def transfer_lsb(from_qv, to_qv):
     lsb = from_qv.reg.pop(0)
     
     # Adjust the relevant QuantumFloat attributes
-    from_qv.size -= 1
     from_qv.msize -= 1
     from_qv.mshape[0] += 1
     from_qv.exponent += 1
@@ -89,7 +88,6 @@ def transfer_lsb(from_qv, to_qv):
     to_qv.reg.insert(len(to_qv), lsb)
     
     # Adjust the relevant attributes
-    to_qv.size += 1
     to_qv.msize += 1
     to_qv.mshape[1] += 1
 
@@ -149,11 +147,9 @@ def QREDC(t, N, m):
     
     # Transfer the sign to u
     sgn = S.reg.pop(-1)
-    S.size -= 1
     S.signed = False
     
     u.reg.insert(len(u), sgn)
-    u.size += 1
     u.mshape[1] += 1
     
     # Adjust the m attribute, which indicates the current Montgomery shift of this
