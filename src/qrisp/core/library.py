@@ -1053,7 +1053,7 @@ def measure(qubits, clbits=None):
                     clbits.append(qubits[0].qs().add_clbit())
 
         else:
-            clbits = qubits.qs.add_clbit()
+            clbits = qubits.qs().add_clbit()
     append_operation(std_ops.Measurement(), [qubits], [clbits])
 
     return qubits
