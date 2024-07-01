@@ -20,7 +20,7 @@ from jax import make_jaxpr
 from qrisp.jax import extract_qc
 
 
-def test_qfunction(func):
+def jisp_function_test(func):
     
     def testing_function(*args, **kwargs):
         
