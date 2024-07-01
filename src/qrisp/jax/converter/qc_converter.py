@@ -16,11 +16,12 @@
 ********************************************************************************/
 """
 
+from jax import make_jaxpr
 from jax.core import Literal, ClosedJaxpr
 from qrisp.jax.primitives import QuantumPrimitive
 from qrisp.jax.flattening_tools import eval_jaxpr
 
-def jaxpr_to_qc(jaxpr):
+def extract_qc(jaxpr_or_function):
     """
     Converts a Qrisp-generated Jaxpr into a QuantumCircuit.
 
@@ -37,11 +38,18 @@ def jaxpr_to_qc(jaxpr):
         The converted circuit.
 
     """
-
-    if isinstance(jaxpr, ClosedJaxpr):
-        jaxpr = jaxpr.jaxpr
+        
+    if callable(jaxpr_or_function):
+        jaxpr_gen = lambda *args : make_jaxpr(jaxpr_or_function)(*args).jaxpr
+    else:
+        if isinstance(jaxpr_or_function, ClosedJaxpr):
+            jaxpr_or_function = jaxpr_or_function.jaxpr
+        
+        jaxpr_gen = lambda *args : jaxpr_or_function
     
     def qc_eval_function(*args):
+        
+        jaxpr = jaxpr_gen(*args)
         
         if len(jaxpr.invars) != len(args):
             raise Exception(f"Supplied inaccurate amount of arguments ({len(args)}) for Jaxpr (requires {len(jaxpr.invars)}).")

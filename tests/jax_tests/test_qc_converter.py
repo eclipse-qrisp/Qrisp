@@ -18,7 +18,7 @@
 
 from jax import make_jaxpr
 from qrisp import QuantumVariable, cx, QuantumCircuit
-from qrisp.jax import jaxpr_to_qc, qache
+from qrisp.jax import extract_qc, qache
 
 def test_converter():
     
@@ -31,9 +31,7 @@ def test_converter():
     
     for i in range(3, 7):
         
-        jaxpr = make_jaxpr(test_function)(i)
-        
-        qc, = jaxpr_to_qc(jaxpr)(i)
+        qc, = extract_qc(test_function)(i)
         
         comparison_qc = QuantumCircuit(i)
         qc.cx(0, 1)
@@ -54,10 +52,8 @@ def test_converter():
         inner_function(qv, 1)
         inner_function(qv, 2)
         
-        
-    jaxpr = make_jaxpr(test_function)(5)
     
-    qc, = jaxpr_to_qc(jaxpr)(5)
+    qc, = extract_qc(test_function)(5)
     
     print(qc.transpile())
     assert len(qc.data) == 3

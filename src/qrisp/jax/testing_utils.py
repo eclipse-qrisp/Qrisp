@@ -17,7 +17,7 @@
 """
 
 from jax import make_jaxpr
-from qrisp.jax import jaxpr_to_qc
+from qrisp.jax import extract_qc
 
 
 def test_qfunction(func):
@@ -32,7 +32,7 @@ def test_qfunction(func):
         
         jaxpr = make_jaxpr(func)(*args, **kwargs)
         
-        qc, qv_qubits = jaxpr_to_qc(jaxpr)(*args, **kwargs)
+        qc, qv_qubits = extract_qc(jaxpr)(*args, **kwargs)
         
         clbit_list = []
         for qb in qv_qubits:
