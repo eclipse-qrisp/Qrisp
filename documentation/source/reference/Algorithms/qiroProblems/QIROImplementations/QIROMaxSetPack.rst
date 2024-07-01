@@ -8,11 +8,12 @@ QIRO MaxSetPacking
 
 Problem description
 -------------------
-This implementation utilizes a Transformation to a MIS formulation. We therefore only need the Transformation function, and then use the MIS QIRO implementation.
+This implementation utilizes a Transformation to a MIS formulation. 
+
+We therefore only need the Transformation function, and then use the MIS QIRO implementation.
 
 Given a universe :math:`[n]` and :math:`m` subsets :math:`S = (S_j)^m_{j=1}` , :math:`S_j \subset [n]` find the maximum
 cardinality subcollection :math:`S' \subset S` of pairwise disjoint subsets.
-
 
 
 

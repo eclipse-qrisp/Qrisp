@@ -15,6 +15,19 @@ Given a Graph  :math:`G = (V,E)` maximize the size of a clique, i.e. a subset :m
 Replacement routine
 -------------------
 
+In this instance the replacements can be rather drastic. In-depth investigation may show relaxations to be better performant on larger instances.
+Based on the **maximum absolute entry** of the correlation matrix M and its sign, one of the following replacements is employed:
+
+* If :math:`\text{M}_{ii} \geq 0` is the maximum absolute value, then the :math:`i`-th vertex is set to be in the clique set. In turn, we can remove all vertices that **do not share an edge with this vertex can be removed from the graph**, since including them in the solution would violate the problem constraints.
+
+* If :math:`\text{M}_{ii} < 0` is the maximum absolute value we remove :math:`i`-th vertex from the graph
+
+* If :math:`\text{M}_{ij} > 0,  (i, j) ∈ E` was selected, we keep both nodes as part of the solution and remove all non-bordering nodes. The likelyhood of this behaviour failing is low, but remains to be investigated. 
+
+* If :math:`\text{M}_{ij} < 0,  (i, j) ∈ E` was selected, we remove all nodes that **do not** share an edge with either vertice :math:`i` or :math:`j`. Since one of the vertices :math:`i` and :math:`j` will be part of the final solution (but not both), any vertex that is **not** connected to either :math:`i` or :math:`j` (or both) is guaranteed to violate the problem constraints, and can be removed from the graph. 
+
+
+
 .. autofunction:: create_maxClique_replacement_routine
 
 
