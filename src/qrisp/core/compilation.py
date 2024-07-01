@@ -133,7 +133,7 @@ def qompiler(
         
         qc = transpile(qc, transpile_predicate = permeability_transpile_predicate)
         
-        if intended_measurements:
+        if intended_measurements and len(qc.clbits) == 0:
             # This function reorders the circuit such that the intended measurements can
             # be executed as early as possible additionally, any instructions that are
             # not needed for the intended measurements are removed

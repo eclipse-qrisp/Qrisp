@@ -1064,7 +1064,6 @@ def measure(qubits, clbits=None):
         return clbits
     else:
         from qrisp.jax import Measurement_p
-        import weakref
         
         abs_qc, bl = Measurement_p.bind(qs.abs_qc, qubits.abstract)
         qs.abs_qc = abs_qc
