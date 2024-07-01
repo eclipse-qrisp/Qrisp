@@ -770,6 +770,12 @@ def insert_multiverse_measurements(qc):
                         break
                 if meas_clbit in data[j].clbits and not isinstance(data[j], ClControlledOperation):
                         break
+                
+                # This treats the case that two measurements with the same outcome are performed
+                # in this case we break the loop to make the first measurement appear as a
+                # separate qubit.
+                if data[j].op.name == "measure":
+                    break
             else:
                 new_data.append(Instruction(disentangler, [meas_qubit]))
                 new_measurements.append((instr.qubits[0], instr.clbits[0]))
