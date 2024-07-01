@@ -265,7 +265,7 @@ class QuantumVariable:
                     while True:
                         try:
                             self.name = name + "_" + str(i)
-                            self.qs.register_qv(self)
+                            self.qs.register_qv(self, size)
                         except RuntimeError:
                             i += 1
                             continue
@@ -506,7 +506,7 @@ class QuantumVariable:
                 duplicate.user_given_name = True
             
             duplicate.name = name
-            new_qs.register_qv(duplicate)
+            new_qs.register_qv(duplicate, self.size)
             
             
 
@@ -515,13 +515,13 @@ class QuantumVariable:
 
             try:
                 duplicate.name = self.name + "_dupl"
-                new_qs.register_qv(duplicate)
+                new_qs.register_qv(duplicate, self.size)
             except NameError:
                 i = 0
                 while True:
                     try:
                         duplicate.name = self.name + "_dupl" + str(i)
-                        new_qs.register_qv(duplicate)
+                        new_qs.register_qv(duplicate, self.size)
                         break
                     except NameError:
                         pass
@@ -794,7 +794,6 @@ class QuantumVariable:
         for i in range(amount):
             insertion_qubits[i].identifier =  self.name + "_ext_" + str(self.qs.qubit_index_counter[0]) + "." + str(self.size)
             self.reg.insert(position + i, insertion_qubits[i])
-            self.size += 1
 
     def reduce(self, qubits, verify=False):
         r"""
@@ -852,7 +851,6 @@ class QuantumVariable:
 
         self.qs.clear_qubits(qubits, verify)
         # Adjust variable size
-        self.size -= len(qubits)
 
     def get_measurement(
         self,
