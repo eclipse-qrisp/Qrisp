@@ -44,12 +44,16 @@ def eval_jaxpr(jaxpr,
         
         context_dic = {jaxpr.invars[i] : args[i] for i in range(len(args))}
         
+        for eqn in jaxpr.eqns:
+            for outvar in eqn.outvars:
+                context_dic[outvar] = eqn
+        
         # Iterate through the equations    
         for eqn in jaxpr.eqns:
             
             # Evaluate the primitive
             if eqn.primitive.name in eqn_evaluator_function_dic.keys():
-                res = eqn_evaluator_function_dic[eqn.primitive.name](eqn, context_dic)
+                eqn_evaluator_function_dic[eqn.primitive.name](eqn, context_dic)
             else:
                 exec_eqn(eqn, context_dic)
             
@@ -85,9 +89,7 @@ def eval_jaxpr(jaxpr,
     
     return jaxpr_evaluator
 
-
 def exec_eqn(eqn, context_dic):
-    
     invalues = extract_invalues(eqn, context_dic)
     res = eqn.primitive.bind(*invalues, **eqn.params)
     insert_outvalues(eqn, context_dic, res)
@@ -95,17 +97,14 @@ def exec_eqn(eqn, context_dic):
 def extract_invalues(eqn, context_dic):
     invalues = []
     for i in range(len(eqn.invars)):
-        
         invar = eqn.invars[i]
         if isinstance(invar, Literal):
             invalues.append(invar.val)
             continue
-            
         invalues.append(context_dic[invar])
     return invalues
 
 def insert_outvalues(eqn, context_dic, outvalues):
-    # Insert the values into the context_dic
     if eqn.primitive.multiple_results:
         for i in range(len(eqn.outvars)):
             context_dic[eqn.outvars[i]] = outvalues[i]
