@@ -19,7 +19,7 @@
 from jax import make_jaxpr
 from jax.core import Literal, ClosedJaxpr
 from qrisp.jax.primitives import QuantumPrimitive
-from qrisp.jax.flattening_tools import eval_jaxpr
+from qrisp.jax.flattening_tools import eval_jaxpr, extract_invalues, insert_outvalues
 
 def extract_qc(jaxpr_or_function):
     """
@@ -72,7 +72,7 @@ def extract_qc(jaxpr_or_function):
         
     return qc_eval_function
 
-def pjit_to_gate(pjit_eqn, **kwargs):
+def pjit_to_gate(pjit_eqn, context_dic):
     """
     Wraps the content of a pjit primitive into a gate and appends the gate.
 
@@ -89,53 +89,56 @@ def pjit_to_gate(pjit_eqn, **kwargs):
     """
     
     # Set alias for the function definition
-    definition_jaxpr = kwargs["jaxpr"].jaxpr
+    definition_jaxpr = pjit_eqn.params["jaxpr"].jaxpr
     
-    def jaxpr_evaluator(*args):
+    # Extract the invalues from the context dic
+    invalues = extract_invalues(pjit_eqn, context_dic)
         
-        from qrisp.circuit import QuantumCircuit
-        # Create new context dic and fill with invalues
-        
-        # Exchange the QuantumCircuit to an empty one to "track" the function
-        if isinstance(args[0], QuantumCircuit):
-            old_qc = args[0]
-            new_qc = old_qc.clearcopy()
-            args = list(args)
-            args[0] = new_qc
+    from qrisp.circuit import QuantumCircuit
+    # Create new context dic and fill with invalues
+    
+    # Exchange the QuantumCircuit to an empty one to "track" the function
+    if isinstance(invalues[0], QuantumCircuit):
+        old_qc = invalues[0]
+        new_qc = old_qc.clearcopy()
+        invalues = list(invalues)
+        invalues[0] = new_qc
 
-        # Evaluate the definition
-        res = eval_jaxpr(definition_jaxpr)(*args)
+    # Evaluate the definition
+    res = eval_jaxpr(definition_jaxpr)(*invalues)
+    
+    if isinstance(invalues[0], QuantumCircuit):
         
-        if isinstance(args[0], QuantumCircuit):
-            
-            # Add new qubits/clbits to the circuit        
-            for qb in set(new_qc.qubits) - set(old_qc.qubits):
-                old_qc.add_qubit(qb)
-    
-            for cb in set(new_qc.clbits) - set(old_qc.clbits):
-                old_qc.add_clbit(cb)
-            
-            
-            # Remove unused qu/clbits from the new circuit
-            unused_qubits = set(new_qc.qubits)
-            unused_clbits = set(new_qc.clbits)
-            
-            for instr in new_qc.data:
-                unused_qubits -= set(instr.qubits)
-                unused_clbits -= set(instr.clbits)
-            
-            for qb in unused_qubits:
-                new_qc.qubits.remove(qb)
-            for cb in unused_clbits:
-                new_qc.clbits.remove(cb)
-            
-            # Append the wrapped old circuit to the new circuit
-            old_qc.append(new_qc.to_op(name = pjit_eqn.params["name"]), new_qc.qubits, new_qc.clbits)
-            
-            res = list(res)
-            res[0] = old_qc
+        # Add new qubits/clbits to the circuit        
+        for qb in set(new_qc.qubits) - set(old_qc.qubits):
+            old_qc.add_qubit(qb)
 
-        return tuple(res)
+        for cb in set(new_qc.clbits) - set(old_qc.clbits):
+            old_qc.add_clbit(cb)
+        
+        
+        # Remove unused qu/clbits from the new circuit
+        unused_qubits = set(new_qc.qubits)
+        unused_clbits = set(new_qc.clbits)
+        
+        for instr in new_qc.data:
+            unused_qubits -= set(instr.qubits)
+            unused_clbits -= set(instr.clbits)
+        
+        for qb in unused_qubits:
+            new_qc.qubits.remove(qb)
+        for cb in unused_clbits:
+            new_qc.clbits.remove(cb)
+        
+        # Append the wrapped old circuit to the new circuit
+        old_qc.append(new_qc.to_op(name = pjit_eqn.params["name"]), new_qc.qubits, new_qc.clbits)
+        
+        res = list(res)
+        res[0] = old_qc
+        
+    # Insert the result into the context dic
+    insert_outvalues(pjit_eqn, context_dic, res)
+
     
-    return jaxpr_evaluator
+    
 

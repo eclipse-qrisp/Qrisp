@@ -40,38 +40,19 @@ def eval_jaxpr(jaxpr,
     if isinstance(jaxpr, ClosedJaxpr):
         jaxpr = jaxpr.jaxpr
     
-    
     def jaxpr_evaluator(*args):
         
         context_dic = {jaxpr.invars[i] : args[i] for i in range(len(args))}
         
         # Iterate through the equations    
         for eqn in jaxpr.eqns:
-            # Get the invalues (either Literals or from the context_dic)
-            invalues = []
-            for i in range(len(eqn.invars)):
-                
-                invar = eqn.invars[i]
-                if isinstance(invar, Literal):
-                    invalues.append(invar.val)
-                    continue
-                    
-                invalues.append(context_dic[invar])
             
             # Evaluate the primitive
             if eqn.primitive.name in eqn_evaluator_function_dic.keys():
-                res = eqn_evaluator_function_dic[eqn.primitive.name](eqn, **eqn.params)(*invalues)
+                res = eqn_evaluator_function_dic[eqn.primitive.name](eqn, context_dic)
             else:
-                res = eqn.primitive.bind(*invalues, **eqn.params)
+                exec_eqn(eqn, context_dic)
             
-            # Insert the values into the context_dic
-            if eqn.primitive.multiple_results:
-                for i in range(len(eqn.outvars)):
-                    context_dic[eqn.outvars[i]] = res[i]
-            else:
-                context_dic[eqn.outvars[0]] = res
-                
-                
             # Mark any processed QuantumCircuit as "burned"
             # In priniciple the syntax gives these QuantumCircuits a meaning
             # However to avoid constant copying, we act in-place
@@ -79,10 +60,12 @@ def eval_jaxpr(jaxpr,
             # this Exception is called
             for i in range(len(eqn.invars)):
                 invar = eqn.invars[i]
-                val = invalues[i]
                 
                 if isinstance(invar, Literal):
                     continue
+                
+                val = context_dic[invar]
+                
                 if isinstance(val, QuantumCircuit):
                     context_dic[invar] = "burned_qc"
                     continue
@@ -101,3 +84,30 @@ def eval_jaxpr(jaxpr,
         return tuple(outvals)
     
     return jaxpr_evaluator
+
+
+def exec_eqn(eqn, context_dic):
+    
+    invalues = extract_invalues(eqn, context_dic)
+    res = eqn.primitive.bind(*invalues, **eqn.params)
+    insert_outvalues(eqn, context_dic, res)
+    
+def extract_invalues(eqn, context_dic):
+    invalues = []
+    for i in range(len(eqn.invars)):
+        
+        invar = eqn.invars[i]
+        if isinstance(invar, Literal):
+            invalues.append(invar.val)
+            continue
+            
+        invalues.append(context_dic[invar])
+    return invalues
+
+def insert_outvalues(eqn, context_dic, outvalues):
+    # Insert the values into the context_dic
+    if eqn.primitive.multiple_results:
+        for i in range(len(eqn.outvars)):
+            context_dic[eqn.outvars[i]] = outvalues[i]
+    else:
+        context_dic[eqn.outvars[0]] = outvalues

@@ -18,7 +18,7 @@
 
 from jax import make_jaxpr
 from qrisp import QuantumVariable, cx, QuantumCircuit
-from qrisp.jax import extract_qc, qache
+from qrisp.jax import extract_qc, qache, flatten_pjit
 
 def test_converter():
     
@@ -70,6 +70,14 @@ def test_converter():
     print(comparison_qc)
     
     assert qc.compare_unitary(comparison_qc)
+    
+    jaxpr = make_jaxpr(test_function)(5)
+    flattened_jaxpr = flatten_pjit(jaxpr)
+    
+    qc, extract_qc(flattened_jaxpr)
+    
+    assert qc.compare_unitary(comparison_qc)
+    
     
     
     

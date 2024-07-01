@@ -16,21 +16,28 @@
 ********************************************************************************/
 """
 
-from jax.core import JaxprEqn, Literal
+from jax.core import JaxprEqn, Literal, ClosedJaxpr
 from jax import jit, make_jaxpr
-from qrisp.jax.flattening_tools import eval_jaxpr
+from qrisp.jax.flattening_tools import eval_jaxpr, extract_invalues, insert_outvalues
 
-def evaluate_pjit_eqn(pjit_eqn, **kwargs):
+def evaluate_pjit_eqn(pjit_eqn, context_dic):
     
-    definition_jaxpr = kwargs["jaxpr"].jaxpr
+    definition_jaxpr = pjit_eqn.params["jaxpr"].jaxpr
     
-    def jaxpr_evaluator(*args):
-        return jit(eval_jaxpr(definition_jaxpr), inline = True)(*args)
- 
-    return jaxpr_evaluator
+    # Extract the invalues from the context dic
+    invalues = extract_invalues(pjit_eqn, context_dic)
+        
+    res = jit(eval_jaxpr(definition_jaxpr), inline = True)(*invalues)
+
+    # Insert the values into the context_dic
+    insert_outvalues(pjit_eqn, context_dic, res)
                 
 # Flattens/Inlines a pjit calls in a jaxpr
 def flatten_pjit(jaxpr):
+    
+    if isinstance(jaxpr, ClosedJaxpr):
+        jaxpr = jaxpr.jaxpr
+    
     eqn_evaluator_function_dic = {"pjit" : evaluate_pjit_eqn}
     return make_jaxpr(eval_jaxpr(jaxpr, 
                                  eqn_evaluator_function_dic = eqn_evaluator_function_dic))(*[var.aval for var in jaxpr.invars])
