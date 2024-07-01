@@ -774,7 +774,7 @@ def insert_multiverse_measurements(qc):
                 # This treats the case that two measurements with the same outcome are performed
                 # in this case we break the loop to make the first measurement appear as a
                 # separate qubit.
-                if data[j].op.name == "measure":
+                if data[j].op.name == "measure" and data[j].qubits[0] == meas_qubit:
                     break
             else:
                 new_data.append(Instruction(disentangler, [meas_qubit]))
