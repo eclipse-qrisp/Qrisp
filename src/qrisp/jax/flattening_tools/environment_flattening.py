@@ -27,15 +27,12 @@ def flatten_environment_eqn(env_eqn, context_dic):
     
     invalues = extract_invalues(env_eqn, context_dic)
     
-    new_context_dic = {}
+    new_context_dic = dict(context_dic)
         
     for i in range(len(body_jaxpr.invars)):
         new_context_dic[body_jaxpr.invars[i]] = invalues[i]
     
-    for i in range(len(body_jaxpr.constvars)):
-        new_context_dic[body_jaxpr.constvars[i]] = context_dic[body_jaxpr.constvars[i]]
-    
-    eval_jaxpr_with_context_dic(body_jaxpr, new_context_dic)
+    eval_jaxpr_with_context_dic(body_jaxpr, new_context_dic, eqn_evaluator_function_dic = {"q_env" :flatten_environment_eqn})
     
     for i in range(len(env_eqn.outvars)):
         context_dic[env_eqn.outvars[i]] = new_context_dic[body_jaxpr.outvars[i]]
@@ -126,6 +123,7 @@ def find_outvars(body_eqn_list, script_remainder_eqn_list):
 def flatten_environments(jaxpr):
     
     jaxpr = collect_environments(jaxpr)
+    
     eqn_evaluator_function_dic = {"q_env" : flatten_environment_eqn}
     return make_jaxpr(eval_jaxpr(jaxpr, 
                                  eqn_evaluator_function_dic = eqn_evaluator_function_dic))(*[var.aval for var in jaxpr.invars])
