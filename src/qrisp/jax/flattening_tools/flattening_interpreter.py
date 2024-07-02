@@ -85,7 +85,10 @@ def eval_jaxpr(jaxpr,
         for i in range(len(jaxpr.outvars)):
             outvals.append(context_dic[jaxpr.outvars[i]])
         
-        return tuple(outvals)
+        if len(outvals) == 1:
+            return outvals[0]
+        else:
+            return tuple(outvals)
     
     return jaxpr_evaluator
 

@@ -331,11 +331,11 @@ class QuantumEnvironment(QuantumPrimitive):
     
     def __init__(self):
         
-        QuantumPrimitive.__init__(self, name = str(type(self)).split(".")[-1][:-2].lower())
+        QuantumPrimitive.__init__(self, name = "q_env")
         
                 
         @self.def_abstract_eval
-        def abstract_eval(abs_qc, stage = None):
+        def abstract_eval(abs_qc, stage = None, type = None):
             """Abstract evaluation of the primitive.
             
             This function does not need to be JAX traceable. It will be invoked with
@@ -381,7 +381,7 @@ class QuantumEnvironment(QuantumPrimitive):
         
         abs_qs = get_tracing_qs()
         if abs_qs is not None:
-            abs_qs.abs_qc = self.bind(abs_qs.abs_qc, stage = "enter")
+            abs_qs.abs_qc = self.bind(abs_qs.abs_qc, stage = "enter", type = str(type(self)).split(".")[-1][:-2].lower())
             return
             
         # The QuantumSessions operating inside this environment will be merged
@@ -430,7 +430,7 @@ class QuantumEnvironment(QuantumPrimitive):
         
         abs_qs = get_tracing_qs()
         if abs_qs is not None:
-            abs_qs.abs_qc = self.bind(abs_qs.abs_qc, stage = "exit")
+            abs_qs.abs_qc = self.bind(abs_qs.abs_qc, stage = "exit", type = str(type(self)).split(".")[-1][:-2].lower())
             return
         
         self.deepest_environment[0] = self.parent
