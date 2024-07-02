@@ -16,23 +16,32 @@
 ********************************************************************************/
 """
 
-from jax.core import JaxprEqn, Jaxpr
+from jax.core import JaxprEqn, Jaxpr, Literal
 from jax import make_jaxpr
 
-from qrisp.jax.flattening_tools import exec_eqn, eval_jaxpr
+from qrisp.jax.flattening_tools import exec_eqn, eval_jaxpr, extract_invalues, eval_jaxpr_with_context_dic
 
 def flatten_environment_eqn(env_eqn, context_dic):
     
-    context_dic[env_eqn.params["circuit_var"]] = context_dic[env_eqn.invars[0]]
+    body_jaxpr = env_eqn.params["jaxpr"]
     
-    for eqn in env_eqn.params["env_data"]:
-        exec_eqn(eqn, context_dic)
+    invalues = extract_invalues(env_eqn, context_dic)
     
-    context_dic[env_eqn.outvars[0]] = context_dic[env_eqn.invars[0]]
+    new_context_dic = {}
+        
+    for i in range(len(body_jaxpr.invars)):
+        new_context_dic[body_jaxpr.invars[i]] = invalues[i]
+    
+    for i in range(len(body_jaxpr.constvars)):
+        new_context_dic[body_jaxpr.constvars[i]] = context_dic[body_jaxpr.constvars[i]]
+    
+    eval_jaxpr_with_context_dic(body_jaxpr, new_context_dic)
+    
+    for i in range(len(env_eqn.outvars)):
+        context_dic[env_eqn.outvars[i]] = new_context_dic[body_jaxpr.outvars[i]]
     
  
 def collect_environments(jaxpr):
-    
     
     eqn_list = jaxpr.eqns
     new_eqn_list = []
@@ -50,9 +59,21 @@ def collect_environments(jaxpr):
             else:
                 raise
             
+            environment_body_eqn_list = new_eqn_list[i+1:]
+            
+            invars = find_invars(environment_body_eqn_list)
+            
+            outvars = find_outvars(environment_body_eqn_list, [eqn] + eqn_list)
+            
+            invars.remove(enter_eq.outvars[0])
+            
+            environment_body_jaxpr = Jaxpr(constvars = invars,
+                                           invars = enter_eq.outvars,
+                                           outvars = outvars,
+                                           eqns = environment_body_eqn_list)
             
             eqn = JaxprEqn(
-                           params = {"stage" : "compile", "env_data" : new_eqn_list[i+1:], "circuit_var" : enter_eq.outvars[0]},
+                           params = {"stage" : "collected", "jaxpr" : environment_body_jaxpr},
                            primitive = eqn.primitive,
                            invars = list(enter_eq.invars),
                            outvars = list(eqn.outvars),
@@ -68,8 +89,40 @@ def collect_environments(jaxpr):
                  invars = jaxpr.invars,
                  outvars = jaxpr.outvars,
                  eqns = new_eqn_list)
+    
+                
+            
+def find_invars(eqn_list):
+    
+    defined_vars = {}
+    invars = []
+    
+    for eqn in eqn_list:
+        for var in eqn.invars:
+            if isinstance(var, Literal):
+                continue
+            if var not in defined_vars:
+                invars.append(var)
+        
+        for var in eqn.outvars:
+            defined_vars[var] = None
+    
+    return list(set(invars))
 
-
+def find_outvars(body_eqn_list, script_remainder_eqn_list):
+    
+    outvars = []
+    
+    for eqn in body_eqn_list:
+        outvars.extend(eqn.outvars)
+    
+    outvars = list(set(outvars))
+    
+    required_remainder_vars = find_invars(script_remainder_eqn_list)
+    
+    return list(set(outvars).intersection(required_remainder_vars))
+                
+    
 def flatten_environments(jaxpr):
     
     jaxpr = collect_environments(jaxpr)

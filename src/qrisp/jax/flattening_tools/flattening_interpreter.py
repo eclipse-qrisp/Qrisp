@@ -36,7 +36,6 @@ def eval_jaxpr(jaxpr,
 
     """
     
-    from qrisp import QuantumCircuit
     if isinstance(jaxpr, ClosedJaxpr):
         jaxpr = jaxpr.jaxpr
     
@@ -44,38 +43,7 @@ def eval_jaxpr(jaxpr,
         
         context_dic = {jaxpr.invars[i] : args[i] for i in range(len(args))}
         
-        for eqn in jaxpr.eqns:
-            for outvar in eqn.outvars:
-                context_dic[outvar] = eqn
-        
-        # Iterate through the equations    
-        for eqn in jaxpr.eqns:
-            
-            # Evaluate the primitive
-            if eqn.primitive.name in eqn_evaluator_function_dic.keys():
-                eqn_evaluator_function_dic[eqn.primitive.name](eqn, context_dic)
-            else:
-                exec_eqn(eqn, context_dic)
-            
-            # Mark any processed QuantumCircuit as "burned"
-            # In priniciple the syntax gives these QuantumCircuits a meaning
-            # However to avoid constant copying, we act in-place
-            # Tracing high-level code should never produce a Jaxpr such that
-            # this Exception is called
-            for i in range(len(eqn.invars)):
-                invar = eqn.invars[i]
-                
-                if isinstance(invar, Literal):
-                    continue
-                
-                val = context_dic[invar]
-                
-                if isinstance(val, QuantumCircuit):
-                    context_dic[invar] = "burned_qc"
-                    continue
-                elif isinstance(val, str):
-                    if val == "burned_qc":
-                        raise Exception("Tried to use a consumed QuantumCircuit")
+        eval_jaxpr_with_context_dic(jaxpr, context_dic, eqn_evaluator_function_dic)
         
         if return_context_dic:
             outvals = [context_dic]
@@ -92,10 +60,49 @@ def eval_jaxpr(jaxpr,
     
     return jaxpr_evaluator
 
+
+def eval_jaxpr_with_context_dic(jaxpr, context_dic, eqn_evaluator_function_dic = {}):
+    
+    from qrisp import QuantumCircuit
+    for eqn in jaxpr.eqns:
+        for outvar in eqn.outvars:
+            context_dic[outvar] = eqn
+    
+    # Iterate through the equations    
+    for eqn in jaxpr.eqns:
+        
+        # Evaluate the primitive
+        if eqn.primitive.name in eqn_evaluator_function_dic.keys():
+            eqn_evaluator_function_dic[eqn.primitive.name](eqn, context_dic)
+        else:
+            exec_eqn(eqn, context_dic)
+        
+        # Mark any processed QuantumCircuit as "burned"
+        # In priniciple the syntax gives these QuantumCircuits a meaning
+        # However to avoid constant copying, we act in-place
+        # Tracing high-level code should never produce a Jaxpr such that
+        # this Exception is called
+        for i in range(len(eqn.invars)):
+            invar = eqn.invars[i]
+            
+            if isinstance(invar, Literal):
+                continue
+            
+            val = context_dic[invar]
+            
+            if isinstance(val, QuantumCircuit):
+                context_dic[invar] = "burned_qc"
+                continue
+            elif isinstance(val, str):
+                if val == "burned_qc":
+                    raise Exception("Tried to use a consumed QuantumCircuit")
+    
+
 def exec_eqn(eqn, context_dic):
     invalues = extract_invalues(eqn, context_dic)
     res = eqn.primitive.bind(*invalues, **eqn.params)
     insert_outvalues(eqn, context_dic, res)
+
     
 def extract_invalues(eqn, context_dic):
     invalues = []
@@ -106,6 +113,16 @@ def extract_invalues(eqn, context_dic):
             continue
         invalues.append(context_dic[invar])
     return invalues
+
+def extract_constvalues(eqn, context_dic):
+    constvalues = []
+    for i in range(len(eqn.constvars)):
+        constvar = eqn.constvars[i]
+        if isinstance(constvar, Literal):
+            constvalues.append(constvar.val)
+            continue
+        constvalues.append(context_dic[constvar])
+    return constvalues
 
 def insert_outvalues(eqn, context_dic, outvalues):
     if eqn.primitive.multiple_results:
