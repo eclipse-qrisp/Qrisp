@@ -94,7 +94,6 @@ def flatten_environments(jaxpr):
     
     # It is now much easier to apply higher order transformations with this kind
     # of data structure.
-    
     eqn_evaluator_function_dic = {"q_env" : flatten_environment_eqn}
     
     # The flatten_environment_eqn function below executes the collected QuantumEnvironments
@@ -215,6 +214,9 @@ def collect_environments(jaxpr):
                            outvars = list(eqn.outvars),
                            effects = eqn.effects,
                            source_info = eqn.source_info)
+            
+            # Remove the collected equations from the new_eqn_list
+            new_eqn_list = new_eqn_list[:i]
         
         # Append the equation
         new_eqn_list.append(eqn)
