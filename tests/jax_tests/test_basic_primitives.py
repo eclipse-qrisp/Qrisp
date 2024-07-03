@@ -52,13 +52,13 @@ def test_basic_primitives():
     compare_jaxpr(make_jaxpr(test_function)(), 
                 ['qdef',
                  'create_qubits',
-                 'quantumenvironment',
+                 'q_env',
                  'get_qubit',
                  'h',
                  'get_qubit',
                  'get_qubit',
                  'cx',
-                 'quantumenvironment',
+                 'q_env',
                  'get_qubit',
                  'measure'])    
 

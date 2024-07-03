@@ -29,13 +29,14 @@ def extract_qc(jaxpr_or_function):
     ----------
     jaxpr : jax.core.Jaxpr
         The Jaxpr to be converted.
-    in_place : TYPE, optional
-        If set to False, the AbstractCircuit is copied and the copy is continued to be processed. The default is True.
-
+    
     Returns
     -------
     qc : QuantumCircuit
         The converted circuit.
+    func_res : tuple
+        A tuple of objects representing the result of the function.
+    
 
     """
         
@@ -60,13 +61,19 @@ def extract_qc(jaxpr_or_function):
                              return_context_dic = True, 
                              eqn_evaluator_function_dic = eqn_evaluator_function_dic)(*args)
         
+        if len(jaxpr.outvars) == 0:
+            outvals = [outvals]
+            
         context_dic = outvals[0]
         
         
         from qrisp.circuit import QuantumCircuit
         for val in context_dic.values():
             if isinstance(val, QuantumCircuit):
-                return tuple([val] + list(outvals)[1:])
+                if len(jaxpr.outvars) == 1:
+                    return val, outvals[1]
+                else:
+                    return val, tuple(outvals)[1:]
             
         raise Exception("Could not find QuantumCircuit in Jaxpr")
         
@@ -107,6 +114,9 @@ def pjit_to_gate(pjit_eqn, context_dic):
     # Evaluate the definition
     res = eval_jaxpr(definition_jaxpr)(*invalues)
     
+    if len(definition_jaxpr.outvars) == 1:
+        res = [res]
+    
     if isinstance(invalues[0], QuantumCircuit):
         
         # Add new qubits/clbits to the circuit        
@@ -135,7 +145,7 @@ def pjit_to_gate(pjit_eqn, context_dic):
         
         res = list(res)
         res[0] = old_qc
-        
+      
     # Insert the result into the context dic
     insert_outvalues(pjit_eqn, context_dic, res)
 

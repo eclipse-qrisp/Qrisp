@@ -28,6 +28,9 @@ def evaluate_pjit_eqn(pjit_eqn, context_dic):
     invalues = extract_invalues(pjit_eqn, context_dic)
         
     res = jit(eval_jaxpr(definition_jaxpr), inline = True)(*invalues)
+    
+    if len(definition_jaxpr.outvars) == 1:
+        res = [res]
 
     # Insert the values into the context_dic
     insert_outvalues(pjit_eqn, context_dic, res)

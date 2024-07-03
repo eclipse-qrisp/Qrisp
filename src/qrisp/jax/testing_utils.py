@@ -38,8 +38,6 @@ def jisp_function_test(func):
         for qb in qv_qubits:
             clbit_list.append(qc.measure(qb))
             
-        
-        
         counts = qc.run(shots = 100000)
         
         # Remove other measurements outcomes from counts dic

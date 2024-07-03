@@ -31,7 +31,7 @@ def test_converter():
     
     for i in range(3, 7):
         
-        qc, = extract_qc(test_function)(i)
+        qc, func_res = extract_qc(test_function)(i)
         
         comparison_qc = QuantumCircuit(i)
         qc.cx(0, 1)
@@ -53,7 +53,7 @@ def test_converter():
         inner_function(qv, 2)
         
     
-    qc, = extract_qc(test_function)(5)
+    qc, func_res = extract_qc(test_function)(5)
     
     print(qc.transpile())
     assert len(qc.data) == 3
@@ -74,7 +74,7 @@ def test_converter():
     jaxpr = make_jaxpr(test_function)(5)
     flattened_jaxpr = flatten_pjit(jaxpr)
     
-    qc, extract_qc(flattened_jaxpr)
+    qc, func_res = extract_qc(flattened_jaxpr)(5)
     
     assert qc.compare_unitary(comparison_qc)
     

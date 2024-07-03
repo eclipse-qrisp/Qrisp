@@ -19,7 +19,7 @@
 from jax.core import JaxprEqn, Jaxpr, Literal
 from jax import make_jaxpr
 
-from qrisp.jax.flattening_tools import exec_eqn, eval_jaxpr, extract_invalues, eval_jaxpr_with_context_dic
+from qrisp.jax.flattening_tools import eval_jaxpr, extract_invalues, eval_jaxpr_with_context_dic
 
 
 def flatten_environments(jaxpr):
