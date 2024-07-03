@@ -22,7 +22,8 @@ from qrisp.jax import get_tracing_qs, check_for_tracing_mode, flatten_collected_
 
 def invert_eqn(eqn):
     """
-    Returns an equation that describes the inverse operation.
+    Receives and equation that describes either an operation or a pjit primitive
+    and returns an equation that describes the inverse.
 
     Parameters
     ----------
@@ -67,11 +68,11 @@ def inv_transform(jaxpr):
 
     """
     
+    # Flatten all environments in the jaxpr
     jaxpr = flatten_collected_environments(jaxpr)
     
     # We separate the equations into classes where one executes Operations and
     # the one that doesn't execute Operations
-    
     op_eqs = []
     non_op_eqs = []
     

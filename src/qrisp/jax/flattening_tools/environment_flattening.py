@@ -325,8 +325,23 @@ def find_outvars(body_eqn_list, script_remainder_eqn_list):
                 
     
 def flatten_environments_in_pjit_eqn(eqn, context_dic):
+    """
+    Flattens environments in a pjit primitive
+
+    Parameters
+    ----------
+    eqn : jax.core.JaxprEqn
+        A pjit equation, with collected environments.
+    context_dic : dict
+        The context dictionary.
+
+    Returns
+    -------
+    None.
+
+    """
     
-    eqn.params["jaxpr"] = ClosedJaxpr(flatten_environments(eqn.params["jaxpr"].jaxpr),
+    eqn.params["jaxpr"] = ClosedJaxpr(flatten_collected_environments(eqn.params["jaxpr"].jaxpr),
                                       eqn.params["jaxpr"].consts)
     exec_eqn(eqn, context_dic)
     
