@@ -55,18 +55,18 @@ class VQEProblem:
     ::
 
         from qrisp import *
-        from qrisp.misc.spin import *
+        from qrisp.misc.spin import X, Y, Z
 
         # The problem Hamiltonian
         c = [-0.81054, 0.16614, 0.16892, 0.17218, -0.22573, 0.12091, 0.166145, 0.04523]
         H = c[0] \
-            + c[1]*Spin("Z",0)*Spin("Z",2) \
-            + c[2]*Spin("Z",1)*Spin("Z",3) \
-            + c[3]*(Spin("Z",3) + Spin("Z",1)) \
-            + c[4]*(Spin("Z",2) + Spin("Z",0)) \
-            + c[5]*(Spin("Z",2)*Spin("Z",3) + Spin("Z",0)*Spin("Z",1)) \
-            + c[6]*(Spin("Z",0)*Spin("Z",3) + Spin("Z",1)*Spin("Z",2)) \
-            + c[7]*(Spin("Y",0)*Spin("Y",1)*Spin("Y",2)*Spin("Y",3) + Spin("X",0)*Spin("X",1)*Spin("Y",2)*Spin("Y",3) + Spin("Y",0)*Spin("Y",1)*Spin("X",2)*Spin("X",3) + Spin("X",0)*Spin("X",1)*Spin("X",2)*Spin("X",3))
+            + c[1]*Z(0)*Z(2) \
+            + c[2]*Z(1)*Z(3) \
+            + c[3]*(Z(3) + Z(1)) \
+            + c[4]*(Z(2) + Z(0)) \
+            + c[5]*(Z(2)*Z(3) + Z(0)*Z(1)) \
+            + c[6]*(Z(0)*Z(3) + Z(1)*Z(2)) \
+            + c[7]*(Y(0)*Y(1)*Y(2)*Y(3) + X(0)*X(1)*Y(2)*Y(3) + Y(0)*Y(1)*X(2)*X(3) + X(0)*X(1)*X(2)*X(3))
 
         # The ansatz
         def ansatz(qv,theta):
@@ -593,7 +593,6 @@ class VQEProblem:
         """
 
         import matplotlib.pyplot as plt
-        import matplotlib as mpl
         from qrisp.misc.spin import ground_state_energy
 
         if not self.callback:

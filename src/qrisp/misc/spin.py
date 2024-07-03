@@ -16,34 +16,70 @@
 ********************************************************************************/
 """
 
-
 import sympy as sp
 from sympy import Symbol, Quaternion, I
 import numpy as np
 
-class Spin(Symbol):
+threshold = 1e-9
 
-    __slots__ = ("axes", "index")
+class X(Symbol):
 
-    def __new__(cls, axes, index):
-        if axes not in ["X", "Y", "Z"]:
-            raise IndexError("Invalid Pauli spin")
-        obj = Symbol.__new__(cls, "%s%d" %(axes,index), commutative=False, hermitian=True)
-        obj.axes = axes
+    __slots__ = ("index")
+
+    def __new__(cls, index):
+        obj = Symbol.__new__(cls, "%s%d" %("X",index), commutative=False, hermitian=True)
         obj.index = index
         return obj
 
     def get_quaternion(self):
-        if self.axes == "X":
-            return Quaternion(0,I,0,0)
-        elif self.axes == "Y":
-            return Quaternion(0,0,I,0)
-        else:
-            return Quaternion(0,0,0,I)
+        return Quaternion(0,I,0,0)
+    
+    def get_matrix(self):
+        return np.array([[0,1],[1,0]])
+    
+    def get_string(self):
+        return "X"
+
+class Y(Symbol):
+
+    __slots__ = ("index")
+
+    def __new__(cls, index):
+        obj = Symbol.__new__(cls, "%s%d" %("Y",index), commutative=False, hermitian=True)
+        obj.index = index
+        return obj
+
+    def get_quaternion(self):
+        return Quaternion(0,0,I,0)
+    
+    def get_matrix(self):
+        return np.array([[0,-1j],[1j,0]])
+    
+    def get_string(self):
+        return "Y"
+    
+class Z(Symbol):
+
+    __slots__ = ("index")
+
+    def __new__(cls, index):
+        obj = Symbol.__new__(cls, "%s%d" %("Z",index), commutative=False, hermitian=True)
+        obj.index = index
+        return obj
+
+    def get_quaternion(self):
+        return Quaternion(0,0,0,I)
+    
+    def get_matrix(self):
+        return np.array([[1,0],[0,-1]])
+    
+    def get_string(self):
+        return "Z"
 
 
 def set_bit(n,k):
     return n | (1 << k)        
+
 
 def evaluate_observable(observable: int, x: int):
     """
@@ -77,7 +113,7 @@ def evaluate_observable(observable: int, x: int):
 
 
 def convert_to_spin(quaternion, index):
-    return quaternion.a-I*quaternion.b*Spin("X",index)-I*quaternion.c*Spin("Y",index)-I*quaternion.d*Spin("Z",index)
+    return quaternion.a-I*quaternion.b*X(index)-I*quaternion.c*Y(index)-I*quaternion.d*Z(index)
 
 
 def simplify_spin(expr):
@@ -91,14 +127,14 @@ def simplify_spin(expr):
         pauli_dict = {}
 
         for arg in factors:
-            if isinstance(arg, Spin):
+            if isinstance(arg, (X,Y,Z)):
                 if arg.index in pauli_indices:
                     pauli_dict[arg.index] *= arg.get_quaternion()
                 else:
                     pauli_dict[arg.index] = arg.get_quaternion()   
                     pauli_indices.append(arg.index) 
 
-            elif isinstance(arg, sp.core.power.Pow,) and isinstance(arg.args[0], Spin):
+            elif isinstance(arg, sp.core.power.Pow,) and isinstance(arg.args[0], (X,Y,Z)):
                 if arg.args[1]%2!=0:
                     if arg.args[0].index in pauli_indices:
                         pauli_dict[arg.args[0].index] *= arg.args[0].get_quaternion()
@@ -116,66 +152,10 @@ def simplify_spin(expr):
         
         simplified_expr += simplified_factor
 
-    return simplified_expr
+    # filter terms with small coefficient
+    filtered_expr = sp.Add(*[term for term in simplified_expr.as_ordered_terms() if abs(term.as_coeff_Mul()[0]) >= threshold])
 
-
-def ground_state_energy(H):
-
-    from sympy import I as i
-    from sympy.physics.quantum import TensorProduct as TP
-    import numpy as np
-
-    I = sp.Matrix([[1,0],[0,1]])
-    X = sp.Matrix([[0,1],[1,0]])
-    Y = sp.Matrix([[0,-i],[i,0]])
-    Z = sp.Matrix([[1,0],[0,-1]])
-
-    def spin_matrix(str):
-        if str=="X":
-            return X
-        if str=="Y":
-            return Y
-        else:
-            return Z
-        
-    def recursive_TP(keys,spin_dict):
-        if len(keys)==1:
-            return spin_dict.get(keys[0],I)
-        return TP(spin_dict.get(keys.pop(0),I),recursive_TP(keys,spin_dict))
-
-    coeffs = []
-    spin_dicts = []
-
-    expr = simplify_spin(H)
-
-    for monomial in expr.expand().as_ordered_terms():
-        factors = monomial.as_ordered_factors()
-
-        spin_dict = {}
-        coeff = 1
-
-        for arg in factors:
-            if isinstance(arg, Spin):
-                spin_dict[arg.index] = spin_matrix(arg.axes)
-            else:
-                coeff *= arg
-
-        coeffs.append(coeff)
-        spin_dicts.append(spin_dict)
-
-    keys = set()
-    for item in spin_dicts:
-        keys.update(set(item.keys()))
-    keys = sorted(keys)
-    dim = len(keys)
-
-    m = len(coeffs)
-    M = sp.zeros(2**dim)
-    for k in range(m):
-        M += coeffs[k]*recursive_TP(keys.copy(),spin_dicts[k])
-
-    eigenvalues = M.eigenvals()
-    return min(eigenvalues)
+    return filtered_expr
 
 
 def spin_operator_to_matrix(H):
@@ -183,18 +163,7 @@ def spin_operator_to_matrix(H):
     from numpy import kron as TP
 
     I = np.array([[1,0],[0,1]])
-    X = np.array([[0,1],[1,0]])
-    Y = np.array([[0,-1j],[1j,0]])
-    Z = np.array([[1,0],[0,-1]])
 
-    def spin_matrix(str):
-        if str=="X":
-            return X
-        if str=="Y":
-            return Y
-        else:
-            return Z
-        
     def recursive_TP(keys,spin_dict):
         if len(keys)==1:
             return spin_dict.get(keys[0],I)
@@ -212,8 +181,8 @@ def spin_operator_to_matrix(H):
         coeff = 1
 
         for arg in factors:
-            if isinstance(arg, Spin):
-                spin_dict[arg.index] = spin_matrix(arg.axes)
+            if isinstance(arg, (X,Y,Z)):
+                spin_dict[arg.index] = arg.get_matrix()
             else:
                 coeff *= arg
 
@@ -267,13 +236,28 @@ def get_measurement_settings(qarg, spin_op, method=None):
     spin_op : SymPy expr
         The quantum Hamiltonian.
     method : string, optional
-        The default is None.
+        The method for evaluating the expected value of the Hamiltonian.
+        Available is ``QWC``: Pauli terms are grouped based on qubit-wise commutativity.
+        The default is None: The expected value of each Pauli term is computed independently.
 
     Returns
     -------
+    measurement_circuits : list[QuantumCircuit]
+    
+    measurement_ops : list[list[int]]
+    
+    measurement_coeffs : list[list[float]]
+
+    constant_term : float
+        The constant term in the quantum Hamiltonian.
 
     """
-    
+
+    if method=='QWC':
+        return qubit_wise_commutativity(qarg,spin_op)
+
+    # no grouping (default):
+
     from qrisp import QuantumVariable, QuantumArray, QuantumCircuit
 
     if isinstance(qarg, QuantumArray):
@@ -284,6 +268,7 @@ def get_measurement_settings(qarg, spin_op, method=None):
     measurement_circuits = []
     measurement_coeffs = []
     measurement_ops = []
+    constant_term = 0
 
     expr = simplify_spin(spin_op)
 
@@ -295,24 +280,117 @@ def get_measurement_settings(qarg, spin_op, method=None):
         coeff = 1
 
         for arg in factors:
-            if isinstance(arg, Spin):
+            if isinstance(arg, (X,Y,Z)):
                 if arg.index >= num_qubits:
                     raise Exception("Insufficient number of qubits")
 
-                if arg.axes=="X":
+                if isinstance(arg, X):
                     qc.ry(-np.pi/2,arg.index)
-                if arg.axes=="Y":
+                if isinstance(arg, Y):
                     qc.rx(np.pi/2,arg.index)
 
                 meas_op = set_bit(meas_op, arg.index)
             else:
                 coeff *= arg
         
-        measurement_circuits.append(qc)
-        measurement_ops.append(meas_op)
-        measurement_coeffs.append(coeff)
+        # exclude constant terms
+        if meas_op==0:
+            constant_term += coeff
+        else:
+            measurement_circuits.append(qc)
+            measurement_ops.append([meas_op])
+            measurement_coeffs.append([coeff])
         
-    return measurement_circuits, measurement_ops, measurement_coeffs
+    return measurement_circuits, measurement_ops, measurement_coeffs, constant_term
 
+
+def qubit_wise_commutativity(qarg,spin_op):
+    """
+
+
+    """
+
+    from qrisp import QuantumVariable, QuantumArray, QuantumCircuit
+
+    if isinstance(qarg, QuantumArray):
+        num_qubits = sum(qv.size for qv in list(qarg.flatten()))
+    else:
+        num_qubits = qarg.size
+
+    pauli_dicts = []
+    measurement_circuits = []
+    measurement_coeffs = []
+    measurement_ops = []
+    constant_term = 0
+
+    expr = simplify_spin(spin_op)
+
+    for monomial in expr.as_ordered_terms():
+        factors = monomial.as_ordered_factors()
+
+        qc = QuantumCircuit(num_qubits)
+        meas_op = 0
+        coeff = 1
+
+        curr_dict = {}
+        for arg in factors:
+            if isinstance(arg, (X,Y,Z)):
+                if arg.index >= num_qubits:
+                    raise Exception("Insufficient number of qubits")    
+                
+                curr_dict[arg.index]=arg.get_string
+                
+                if isinstance(arg, X):
+                    qc.ry(-np.pi/2,arg.index)
+                if isinstance(arg, Y):
+                    qc.rx(np.pi/2,arg.index)
+
+                meas_op = set_bit(meas_op, arg.index)
+            else:
+                coeff *= arg
+        
+        # exclude constant terms
+        if meas_op==0:
+            constant_term += coeff
+        else:
+            # number of distict meaurement settings
+            settings = len(pauli_dicts)
+            commute_bool = False
+
+            if settings > 0:   
+                for k in range(settings):
+                    # check if Pauli terms commute qubit-wise
+                    commute_bool = commute(pauli_dicts[k],curr_dict)
+                    if commute_bool:
+                        measurement_ops[k].append(meas_op)
+                        measurement_coeffs[k].append(coeff)
+                        break
+            if settings==0 or not commute_bool: 
+                measurement_circuits.append(qc)
+                measurement_ops.append([meas_op])
+                measurement_coeffs.append([coeff])
+                pauli_dicts.append(curr_dict)
+
+    #print(len(measurement_circuits))
+    #print(measurement_circuits)
+    #print(measurement_ops)
+    #print(measurement_coeffs)
+
+    return measurement_circuits, measurement_ops, measurement_coeffs, constant_term
+
+
+# check if Pauli terms commute qubit-wise
+def commute(a,b):
+
+    keys = set()
+    keys.update(set(a.keys()))
+    keys.update(set(b.keys()))
+
+    for key in keys:
+        if a.get(key,"I")!="I" and b.get(key,"I")!="I" and a.get(key,"I")!=b.get(key,"I"):
+            return False
+    return True
+
+    
 
 

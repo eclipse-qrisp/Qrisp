@@ -1042,8 +1042,9 @@ class QuantumVariable:
         spin_op : SymPy expr
             The quantum Hamiltonian.
         method : string
-            The grouping method for grouping terms in the Hamiltonian for evaluating the expected value.
-            The default is None: The expected value of each term is computed independently.
+            The method for evaluating the expected value of the Hamiltonian.
+            Available is ``QWC``: Pauli terms are grouped based on qubit-wise commutativity.
+            The default is None: The expected value of each Pauli term is computed independently.
         backend : BackendClient, optional
             The backend on which to evaluate the quantum circuit. The default can be
             specified in the file default_backend.py.
@@ -1145,10 +1146,10 @@ class QuantumVariable:
         from qrisp.misc.spin import evaluate_observable, get_measurement_settings
 
         # measurement settings
-        meas_circs, meas_ops, meas_coeffs = get_measurement_settings(self, spin_op)
+        meas_circs, meas_ops, meas_coeffs, constant_term = get_measurement_settings(self, spin_op, method=method)
         N = len(meas_circs)
 
-        expectation = 0
+        expectation = constant_term
 
         for k in range(N):
 
@@ -1156,8 +1157,11 @@ class QuantumVariable:
             curr.append(meas_circs[k].to_gate(),curr.qubits)
             res = get_measurement_from_qc(curr, self.reg, backend, shots)
             
-            for outcome,probability in res.items():
-                expectation += probability*evaluate_observable(meas_ops[k],outcome)*meas_coeffs[k]
+            # allow groupings
+            M = len(meas_ops[k])
+            for l in range(M):
+                for outcome,probability in res.items():
+                    expectation += probability*evaluate_observable(meas_ops[k][l],outcome)*meas_coeffs[k][l]
 
         return expectation
     

@@ -580,8 +580,9 @@ class QuantumArray(np.ndarray):
         spin_op : SymPy expr
             The quantum Hamiltonian.
         method : string
-            The grouping method for grouping terms in the Hamiltonian for evaluating the expected value.
-            The default is None: The expected value of each term is computed independently.
+            The method for evaluating the expected value of the Hamiltonian.
+            Available is ``QWC``: Pauli terms are grouped based on qubit-wise commutativity.
+            The default is None: The expected value of each Pauli term is computed independently.
         backend : BackendClient, optional
             The backend on which to evaluate the quantum circuit. The default can be
             specified in the file default_backend.py.
@@ -680,10 +681,10 @@ class QuantumArray(np.ndarray):
         from qrisp.misc.spin import evaluate_observable, get_measurement_settings
 
         # measurement settings
-        meas_circs, meas_ops, meas_coeffs = get_measurement_settings(self, spin_op)
+        meas_circs, meas_ops, meas_coeffs, constant_term = get_measurement_settings(self, spin_op)
         N = len(meas_circs)
 
-        expectation = 0
+        expectation = constant_term
 
         for k in range(N):
 

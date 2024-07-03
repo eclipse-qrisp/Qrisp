@@ -17,7 +17,7 @@
 """
 
 from qrisp import *
-from qrisp.misc.spin import Spin
+from qrisp.misc.spin import X, Y, Z
 import networkx as nx
 
 
@@ -91,8 +91,8 @@ def create_heisenberg_spin_operator(G, J, B):
 
     """
 
-    spin_op = sum(J*Spin("X",i)*Spin("X",j)+Spin("Y",i)*Spin("Y",j)+Spin("Z",i)*Spin("Z",j) for (i,j) in G.edges())
-    spin_op += sum(B*Spin("Z",i) for i in G.nodes)
+    spin_op = sum(J*X(i)*X(j)+Y(i)*Y(j)+Z(i)*Z(j) for (i,j) in G.edges())
+    spin_op += sum(B*Z(i) for i in G.nodes)
 
     return spin_op
 
