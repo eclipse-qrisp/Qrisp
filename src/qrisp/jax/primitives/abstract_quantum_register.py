@@ -16,6 +16,12 @@ class AbstractQubitArray(AbstractValue):
     def __repr__(self):
         return "QubitArray"
     
+    def __eq__(self, other):
+        return isinstance(other, AbstractQubitArray)
+    
+    def __hash__(self):
+        return hash(type(self))
+    
 def get_qubit(qb_array, index):
     return get_qubit_p.bind(qb_array, index)
 

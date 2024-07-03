@@ -29,7 +29,7 @@ def test_qache():
         def increment(self):
             self.count += 1
 
-    counter = TracingCounter()    
+    counter = TracingCounter()
     
     @qache
     def inner_function(qv):
@@ -40,10 +40,12 @@ def test_qache():
         return res_bl
 
     def outer_function():
-        qv = QuantumVariable(2)
-        temp_0 = inner_function(qv)
-        temp_1 = inner_function(qv)
-        temp_2 = inner_function(qv)
+        qv_0 = QuantumVariable(2)
+        qv_1 = QuantumVariable(2)
+        
+        temp_0 = inner_function(qv_0)
+        temp_1 = inner_function(qv_1)
+        temp_2 = inner_function(qv_0)
         return temp_0 & temp_1 & temp_2
     
     print(make_jaxpr(outer_function)())

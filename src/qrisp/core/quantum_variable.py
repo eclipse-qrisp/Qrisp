@@ -1464,11 +1464,21 @@ from jax import tree_util
 from qrisp.jax.tracing_quantum_session import get_tracing_qs
 from builtins import id
 
-
+class QVNameContainer:
+    
+    def __init__(self, name):
+        self.name = name
+        
+    def __hash__(self):
+        return hash(type(self))
+    
+    def __eq__(self, other):
+        return isinstance(other, QVNameContainer)
+        
 def flatten_qv(qv):
     # return the tracers and auxiliary data (structure of the object)
     children = (qv.reg,)
-    aux_data = (id(qv), qv.name)  # No auxiliary data in this simple example
+    aux_data = (QVNameContainer(qv.name),)
     return children, aux_data
 
 def unflatten_qv(aux_data, children):
@@ -1476,7 +1486,7 @@ def unflatten_qv(aux_data, children):
     res = QuantumVariable.__new__(QuantumVariable)
     
     res.reg = children[0]
-    res.name = aux_data[1]
+    res.name = aux_data[0].name
     res.qs = get_tracing_qs(check_validity = False)
     
     return res
