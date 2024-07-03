@@ -18,7 +18,7 @@
 
 from jax import jit
 from jax.core import Jaxpr, JaxprEqn
-from qrisp.jax import get_tracing_qs, check_for_tracing_mode
+from qrisp.jax import get_tracing_qs, check_for_tracing_mode, flatten_collected_environments
 
 def invert_eqn(eqn):
     """
@@ -60,6 +60,8 @@ def inv_transform(jaxpr):
         A jaxpr returning the inverse QuantumCircuit.
 
     """
+    
+    jaxpr = flatten_collected_environments(jaxpr)
     
     # We separate the equations into classes where one executes Operations and
     # the one that doesn't execute Operations

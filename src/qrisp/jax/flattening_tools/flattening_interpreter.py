@@ -41,7 +41,8 @@ def eval_jaxpr(jaxpr,
     
     def jaxpr_evaluator(*args):
         
-        context_dic = {jaxpr.invars[i] : args[i] for i in range(len(args))}
+        temp_var_list = (jaxpr.invars + jaxpr.constvars)
+        context_dic = {temp_var_list[i] : args[i] for i in range(len(args))}
         
         eval_jaxpr_with_context_dic(jaxpr, context_dic, eqn_evaluator_function_dic)
         
