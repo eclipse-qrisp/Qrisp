@@ -151,6 +151,8 @@ def flatten_environment_eqn(env_eqn, context_dic):
         
     # Fill the new context dic with the constvalues
     for i in range(len(transformed_jaxpr.constvars)):
+        # The constvars of the jaxpr of the collected environment are given as 
+        # the invars of the equation. See the corresponding line in collect_environments.
         new_context_dic[transformed_jaxpr.constvars[i]] = context_dic[env_eqn.invars[i+len(transformed_jaxpr.invars)]]
     
     # Execute the transformed jaxpr for flattening
@@ -232,10 +234,11 @@ def collect_environments(jaxpr):
             eqn = JaxprEqn(
                            params = {"stage" : "collected", "jaxpr" : environment_body_jaxpr},
                            primitive = eqn.primitive,
-                           invars = list(enter_eq.invars) + constvars,
+                           invars = list(enter_eq.invars) + constvars, # Note that the constvars of the jaxpr are appended to the invars of the equation
                            outvars = list(eqn.outvars),
                            effects = eqn.effects,
-                           source_info = eqn.source_info)
+                           source_info = eqn.source_info,
+                           ctx = eqn.ctx)
             
             # Remove the collected equations from the new_eqn_list
             new_eqn_list = new_eqn_list[:i]

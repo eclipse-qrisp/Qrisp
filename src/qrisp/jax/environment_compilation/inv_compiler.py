@@ -46,7 +46,8 @@ def invert_eqn(eqn):
                         outvars = eqn.outvars,
                         params = eqn.params,
                         source_info = eqn.source_info,
-                        effects = eqn.effects)
+                        effects = eqn.effects,
+                        ctx = eqn.ctx)
         
         
 
