@@ -125,6 +125,15 @@ def flatten_environment_eqn(env_eqn, context_dic):
     # Set an alias for the function body
     body_jaxpr = env_eqn.params["jaxpr"]
     
+    from qrisp.environments import InversionEnvironment
+    from qrisp.jax.environment_compilation import inv_transform
+    
+    # Perform the environment compilation logic
+    if isinstance(env_eqn.primitive, InversionEnvironment):
+        transformed_jaxpr = inv_transform(body_jaxpr)
+    else:
+        transformed_jaxpr = body_jaxpr
+    
     # Extract the invalues
     invalues = extract_invalues(env_eqn, context_dic)
     
@@ -135,8 +144,7 @@ def flatten_environment_eqn(env_eqn, context_dic):
     for i in range(len(body_jaxpr.invars)):
         new_context_dic[body_jaxpr.invars[i]] = invalues[i]
     
-    # Perform the environment compilation logic
-    eval_jaxpr_with_context_dic(body_jaxpr, new_context_dic, eqn_evaluator_function_dic = {"q_env" :flatten_environment_eqn})
+    eval_jaxpr_with_context_dic(transformed_jaxpr, new_context_dic, eqn_evaluator_function_dic = {"q_env" :flatten_environment_eqn})
     
     # Insert the outvalues into the context dic
     for i in range(len(env_eqn.outvars)):
