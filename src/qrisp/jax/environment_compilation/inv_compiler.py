@@ -17,7 +17,7 @@
 """
 
 from jax import jit
-from jax.core import Jaxpr, JaxprEqn
+from jax.core import Jaxpr, JaxprEqn, ClosedJaxpr
 from qrisp.jax import get_tracing_qs, check_for_tracing_mode, flatten_collected_environments
 
 def invert_eqn(eqn):
@@ -35,13 +35,19 @@ def invert_eqn(eqn):
         The equation with inverted operation.
 
     """
-    
-    return JaxprEqn(primitive = eqn.primitive.inverse(),
-                    invars = eqn.invars,
-                    outvars = eqn.outvars,
-                    params = eqn.params,
-                    source_info = eqn.source_info,
-                    effects = eqn.effects)
+    if eqn.primitive.name == "pjit":
+        eqn.params["jaxpr"] = ClosedJaxpr(inv_transform(eqn.params["jaxpr"].jaxpr),
+                                          eqn.params["jaxpr"].consts)
+        return eqn
+    else:
+        return JaxprEqn(primitive = eqn.primitive.inverse(),
+                        invars = eqn.invars,
+                        outvars = eqn.outvars,
+                        params = eqn.params,
+                        source_info = eqn.source_info,
+                        effects = eqn.effects)
+        
+        
 
 
 def inv_transform(jaxpr):
@@ -75,7 +81,7 @@ def inv_transform(jaxpr):
     
     from qrisp.circuit import Operation
     for eqn in jaxpr.eqns:
-        if isinstance(eqn.primitive, Operation):
+        if isinstance(eqn.primitive, Operation) or eqn.primitive.name == "pjit":
             # Insert the inverted equation at the front
             op_eqs.insert(0, invert_eqn(eqn))
         else:

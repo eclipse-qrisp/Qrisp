@@ -17,7 +17,7 @@
 """
 
 from jax import make_jaxpr
-from qrisp.jax import extract_qc
+from qrisp.jax import extract_qc, flatten_environments
 
 
 def jisp_function_test(func):
@@ -30,7 +30,9 @@ def jisp_function_test(func):
         
         old_counts_dic = qv.get_measurement()
         
-        jaxpr = make_jaxpr(func)(*args, **kwargs)
+        jaxpr = make_jaxpr(func)(*args, **kwargs).jaxpr
+        
+        jaxpr = flatten_environments(jaxpr)
         
         qc, qv_qubits = extract_qc(jaxpr)(*args, **kwargs)
         

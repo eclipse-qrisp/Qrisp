@@ -16,10 +16,10 @@
 ********************************************************************************/
 """
 
-from jax.core import JaxprEqn, Jaxpr, Literal
+from jax.core import JaxprEqn, Jaxpr, Literal, ClosedJaxpr
 from jax import make_jaxpr
 
-from qrisp.jax.flattening_tools import eval_jaxpr, extract_invalues, eval_jaxpr_with_context_dic
+from qrisp.jax.flattening_tools import eval_jaxpr, extract_invalues, eval_jaxpr_with_context_dic, exec_eqn
 
 
 def flatten_environments(jaxpr):
@@ -99,7 +99,8 @@ def flatten_collected_environments(jaxpr):
     
     # It is now much easier to apply higher order transformations with this kind
     # of data structure.
-    eqn_evaluator_function_dic = {"q_env" : flatten_environment_eqn}
+    eqn_evaluator_function_dic = {"q_env" : flatten_environment_eqn,
+                                  "pjit" : flatten_environments_in_pjit_eqn}
     
     # The flatten_environment_eqn function below executes the collected QuantumEnvironments
     # according to their semantics
@@ -108,7 +109,6 @@ def flatten_collected_environments(jaxpr):
     return make_jaxpr(eval_jaxpr(jaxpr, 
                                  eqn_evaluator_function_dic = eqn_evaluator_function_dic))(*[var.aval for var in jaxpr.invars + jaxpr.constvars]).jaxpr
     
-
 
 def flatten_environment_eqn(env_eqn, context_dic):
     """
@@ -191,6 +191,10 @@ def collect_environments(jaxpr):
     while len(eqn_list) != 0:
         
         eqn = eqn_list.pop(0)
+        
+        if eqn.primitive.name == "pjit":
+            eqn.params["jaxpr"] = ClosedJaxpr(collect_environments(eqn.params["jaxpr"].jaxpr),
+                                              eqn.params["jaxpr"].consts)
         
         # If an exit primitive is found, start the collecting mechanism.
         if eqn.primitive.name == "q_env" and eqn.params["stage"] == "exit":
@@ -319,4 +323,10 @@ def find_outvars(body_eqn_list, script_remainder_eqn_list):
     # The result is the intersection between both sets of variables
     return list(set(outvars).intersection(required_remainder_vars))
                 
+    
+def flatten_environments_in_pjit_eqn(eqn, context_dic):
+    
+    eqn.params["jaxpr"] = ClosedJaxpr(flatten_environments(eqn.params["jaxpr"].jaxpr),
+                                      eqn.params["jaxpr"].consts)
+    exec_eqn(eqn, context_dic)
     
