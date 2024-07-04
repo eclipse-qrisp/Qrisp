@@ -16,19 +16,54 @@
 ********************************************************************************/
 """
 
+from qrisp import *
 import sympy as sp
 from sympy import Symbol, Quaternion, I
 import numpy as np
 
 threshold = 1e-9
 
+#
+# helper functions
+#
+
+def delta(i, j):
+    if i==j:
+        return 1
+    else:
+        return 0
+    
+
+def epsilon(i, j, k):
+    if (i, j, k) in (("X", "Y", "Z"), ("Y", "Z", "X"), ("Z", "X", "Y")):
+        return 1
+    if (i, j, k) in (("Z", "Y", "X"), ("Y", "X", "Z"), ("X", "Z", "Y")):
+        return -1
+    return 0
+
+
+#
+# Pauli symbols
+#
+
+#class Spin(Symbol):
+#    __slots__ = ("axis","index")
+
+#    def __new__(cls, axis, index):
+#        obj = Symbol.__new__(cls, "%s%d" %(axis,index), commutative=False, hermitian=True)
+#        obj.index = index
+#        obj.axis = axis
+#        return obj   
+    
+
 class X(Symbol):
 
-    __slots__ = ("index")
+    __slots__ = ("axis","index")
 
     def __new__(cls, index):
         obj = Symbol.__new__(cls, "%s%d" %("X",index), commutative=False, hermitian=True)
         obj.index = index
+        obj.axis = "X"
         return obj
 
     def get_quaternion(self):
@@ -37,16 +72,33 @@ class X(Symbol):
     def get_matrix(self):
         return np.array([[0,1],[1,0]])
     
-    def get_string(self):
-        return "X"
+    def get_axis(self):
+        return "X" 
+    
+    def _eval_power(b, e):
+        if e.is_Integer and e.is_positive:
+            return super().__pow__(int(e) % 2)
+        
+    def __mul__(self, other):
+        if isinstance(other, (X,Y,Z)):
+            if self.index == other.index:
+                i = self.axis
+                j = other.axis
+                return delta(i, j) \
+                    + I*epsilon(i, j, "X")*X(self.index) \
+                    + I*epsilon(i, j, "Y")*Y(self.index) \
+                    + I*epsilon(i, j, "Z")*Z(self.index)
+        return super().__mul__(other)
+
 
 class Y(Symbol):
 
-    __slots__ = ("index")
+    __slots__ = ("axis","index")
 
     def __new__(cls, index):
         obj = Symbol.__new__(cls, "%s%d" %("Y",index), commutative=False, hermitian=True)
         obj.index = index
+        obj.axis = "Y"
         return obj
 
     def get_quaternion(self):
@@ -55,16 +107,33 @@ class Y(Symbol):
     def get_matrix(self):
         return np.array([[0,-1j],[1j,0]])
     
-    def get_string(self):
+    def get_axis(self):
         return "Y"
     
+    def _eval_power(b, e):
+        if e.is_Integer and e.is_positive:
+            return super().__pow__(int(e) % 2)
+
+    def __mul__(self, other):
+        if isinstance(other, (X,Y,Z)):
+            if self.index == other.index:
+                i = self.axis
+                j = other.axis
+                return delta(i, j) \
+                    + I*epsilon(i, j, "X")*X(self.index) \
+                    + I*epsilon(i, j, "Y")*Y(self.index) \
+                    + I*epsilon(i, j, "Z")*Z(self.index)
+        return super().__mul__(other)
+        
+       
 class Z(Symbol):
 
-    __slots__ = ("index")
+    __slots__ = ("axis","index")
 
     def __new__(cls, index):
         obj = Symbol.__new__(cls, "%s%d" %("Z",index), commutative=False, hermitian=True)
         obj.index = index
+        obj.axis = "Z"
         return obj
 
     def get_quaternion(self):
@@ -73,9 +142,28 @@ class Z(Symbol):
     def get_matrix(self):
         return np.array([[1,0],[0,-1]])
     
-    def get_string(self):
+    def get_axis(self):
         return "Z"
+    
+    def _eval_power(b, e):
+        if e.is_Integer and e.is_positive:
+            return super().__pow__(int(e) % 2)
+        
+    def __mul__(self, other):
+        if isinstance(other, (X,Y,Z)):
+            if self.index == other.index:
+                i = self.axis
+                j = other.axis
+                return delta(i, j) \
+                    + I*epsilon(i, j, "X")*X(self.index) \
+                    + I*epsilon(i, j, "Y")*Y(self.index) \
+                    + I*epsilon(i, j, "Z")*Z(self.index)
+        return super().__mul__(other)
+    
 
+#
+#
+#
 
 def set_bit(n,k):
     return n | (1 << k)        
@@ -134,13 +222,13 @@ def simplify_spin(expr):
                     pauli_dict[arg.index] = arg.get_quaternion()   
                     pauli_indices.append(arg.index) 
 
-            elif isinstance(arg, sp.core.power.Pow,) and isinstance(arg.args[0], (X,Y,Z)):
-                if arg.args[1]%2!=0:
-                    if arg.args[0].index in pauli_indices:
-                        pauli_dict[arg.args[0].index] *= arg.args[0].get_quaternion()
-                    else:
-                        pauli_dict[arg.args[0].index] = arg.args[0].get_quaternion()  
-                        pauli_indices.append(arg.args[0].index)
+            #elif isinstance(arg, sp.core.power.Pow,) and isinstance(arg.args[0], (X,Y,Z)):
+            #    if arg.args[1]%2!=0:
+            #        if arg.args[0].index in pauli_indices:
+            #            pauli_dict[arg.args[0].index] *= arg.args[0].get_quaternion()
+            #        else:
+            #            pauli_dict[arg.args[0].index] = arg.args[0].get_quaternion()  
+            #            pauli_indices.append(arg.args[0].index)
 
             else:
                 simplified_factor *= arg
@@ -158,7 +246,62 @@ def simplify_spin(expr):
     return filtered_expr
 
 
+def spin_operator_to_list(H):
+    """
+
+    Parameters
+    ----------
+    H : SymPy expr
+        The quantum Hamiltonian.
+    
+    Returns
+    -------
+    terms : list
+        The quantum Hamiltonian as list. 
+        Each term is represetend by a tuple of a dictionary specifiying the Pauli product and a complex coefficient.
+
+    Examples
+    --------
+
+    """
+
+    terms = []
+    expr = simplify_spin(H)
+
+    for monomial in expr.expand().as_ordered_terms():
+        factors = monomial.as_ordered_factors()
+
+        pauli_dict = {}
+        coeff = 1
+
+        for arg in factors:
+            if isinstance(arg, (X,Y,Z)):
+                pauli_dict[arg.index] = arg.axis
+            else:
+                coeff *= arg
+
+        terms.append((pauli_dict,coeff))
+
+    return terms
+
+
 def spin_operator_to_matrix(H):
+    """
+
+    Parameters
+    ----------
+    H : SymPy expr
+        The quantum Hamiltonian.
+    
+    Returns
+    -------
+    M : numpy.array
+        A matrix representation of the quantum Hamiltonian.
+
+    Examples
+    --------
+
+    """
 
     from numpy import kron as TP
 
@@ -328,7 +471,6 @@ def qubit_wise_commutativity(qarg,spin_op):
     for monomial in expr.as_ordered_terms():
         factors = monomial.as_ordered_factors()
 
-        qc = QuantumCircuit(num_qubits)
         meas_op = 0
         coeff = 1
 
@@ -338,17 +480,11 @@ def qubit_wise_commutativity(qarg,spin_op):
                 if arg.index >= num_qubits:
                     raise Exception("Insufficient number of qubits")    
                 
-                curr_dict[arg.index]=arg.get_string
-                
-                if isinstance(arg, X):
-                    qc.ry(-np.pi/2,arg.index)
-                if isinstance(arg, Y):
-                    qc.rx(np.pi/2,arg.index)
-
+                curr_dict[arg.index]=arg.axis
                 meas_op = set_bit(meas_op, arg.index)
             else:
                 coeff *= arg
-        
+
         # exclude constant terms
         if meas_op==0:
             constant_term += coeff
@@ -359,28 +495,48 @@ def qubit_wise_commutativity(qarg,spin_op):
 
             if settings > 0:   
                 for k in range(settings):
-                    # check if Pauli terms commute qubit-wise
-                    commute_bool = commute(pauli_dicts[k],curr_dict)
+                    # check if Pauli terms commute qubit-wise 
+                    commute_bool = commute_qw(pauli_dicts[k],curr_dict)
                     if commute_bool:
+                        pauli_dicts[k].update(curr_dict)
                         measurement_ops[k].append(meas_op)
                         measurement_coeffs[k].append(coeff)
                         break
             if settings==0 or not commute_bool: 
-                measurement_circuits.append(qc)
+                pauli_dicts.append(curr_dict)
                 measurement_ops.append([meas_op])
                 measurement_coeffs.append([coeff])
-                pauli_dicts.append(curr_dict)
 
-    #print(len(measurement_circuits))
-    #print(measurement_circuits)
-    #print(measurement_ops)
-    #print(measurement_coeffs)
+    # construct change of basis circuits
+    for dict in pauli_dicts:
+        qc = QuantumCircuit(num_qubits)
+        for index,axis in dict.items():
+            if axis=="X":
+                qc.ry(-np.pi/2,index)
+            if axis=="Y":
+                qc.rx(np.pi/2,index)  
+        measurement_circuits.append(qc)      
 
     return measurement_circuits, measurement_ops, measurement_coeffs, constant_term
 
 
-# check if Pauli terms commute qubit-wise
-def commute(a,b):
+#
+# commutativity checks
+#
+
+
+def commute_qw(a,b):
+    """
+    Check if two Pauli products commute qubit-wise.
+
+    Parameters
+    ----------
+    a : dict
+        A dictionary encoding a Pauli product.
+    b : dict
+        A dictionary encoding a Pauli product.
+
+    """
 
     keys = set()
     keys.update(set(a.keys()))
@@ -390,6 +546,87 @@ def commute(a,b):
         if a.get(key,"I")!="I" and b.get(key,"I")!="I" and a.get(key,"I")!=b.get(key,"I"):
             return False
     return True
+
+
+def commute(a,b):
+    """
+    Check if two Pauli products commute.
+
+    Parameters
+    ----------
+    a : dict
+        A dictionary encoding a Pauli product.
+    b : dict
+        A dictionary encoding a Pauli product.
+
+    """
+
+    keys = set()
+    keys.update(set(a.keys()))
+    keys.update(set(b.keys()))
+
+    #for key in keys:
+    #    if a.get(key,"I")!="I" and b.get(key,"I")!="I" and a.get(key,"I")!=b.get(key,"I"):
+    #        return False
+    #return True
+    return False
+
+#
+# Hamiltonian simulation
+#
+
+def change_of_basis(qv, pauli_dict):
+    for index, axis in pauli_dict:
+        if axis=="X":
+            qv.ry(-np.pi/2,index)
+        if axis=="Y":
+            qv.rx(np.pi/2,index)
+
+
+def parity(qv, indices):
+    n = len(indices)
+    for i in range(n-1):
+        cx(qv[indices[i]],qv[indices[i+1]])
+
+
+def apply_Pauli(qv, pauli_dict, theta):
+
+    indices = pauli_dict.keys()
+
+    change_of_basis(qv, pauli_dict)
+    parity(qv, indices)
+
+    rz(theta,qv[indices[-1]])
+
+    with invert():
+        change_of_basis(qv, pauli_dict)
+        parity(qv, indices)        
+
+
+def trotterization(qarg, H, theta, n):
+    """
+
+
+
+
+    """
+
+    terms = spin_operator_to_list(H)
+    groups = []
+    global_phase = 0
+
+    for term in terms:
+        if len(term[0])==0:
+            global_phase += term[1]
+        
+
+
+    return 0
+
+
+
+
+
 
     
 
