@@ -17,7 +17,8 @@
 """
 
 from jax import make_jaxpr
-from qrisp.jax import extract_qc, flatten_environments
+from jax.core import ClosedJaxpr
+from qrisp.jax import extract_qc, flatten_environments, flatten_pjit, eval_jaxpr
 
 
 def jisp_function_test(func):
@@ -65,6 +66,23 @@ def jisp_function_test(func):
         return True
         
     return testing_function
+        
+
+def exec_jisp(jaxpr):
+    
+    if isinstance(jaxpr, ClosedJaxpr):
+        jaxpr = jaxpr.jaxpr
+    
+    def jisp_executer(*args):
+        
+        new_jaxpr = flatten_environments(jaxpr)
+        new_jaxpr = flatten_pjit(new_jaxpr)
+        
+        return eval_jaxpr(new_jaxpr)(*args)
+    
+    return jisp_executer
+        
+        
         
         
         

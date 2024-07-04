@@ -18,13 +18,13 @@
 
 from jax.core import ShapedArray
 
-from qrisp.jax.primitives import AbstractQuantumCircuit, AbstractQubit, QuantumPrimitive
+from qrisp.jax.primitives import AbstractQuantumCircuit, AbstractQubit, QuantumPrimitive, AbstractQubitArray
 
 # Create the primitive
 Measurement_p = QuantumPrimitive("measure")  
 
 @Measurement_p.def_abstract_eval
-def measure_abstract_eval(qc, qb):
+def measure_abstract_eval(qc, meas_object):
     """Abstract evaluation of the primitive.
     
     This function does not need to be JAX traceable. It will be invoked with
@@ -35,15 +35,24 @@ def measure_abstract_eval(qc, qb):
       a ShapedArray for the result of the primitive.
     """
     
-    assert isinstance(qb, AbstractQubit)
-    return AbstractQuantumCircuit(), ShapedArray((), bool)
+    if isinstance(meas_object, AbstractQubit):
+        return AbstractQuantumCircuit(), ShapedArray((), bool)
+    elif isinstance(meas_object, AbstractQubitArray):
+        return AbstractQuantumCircuit(), ShapedArray((), int)
+    else:
+        raise Exception(f"Tried to call measurement primitive with type {type(meas_object)}")
 
-Measurement_p.num_qubits = 1
+# Measurement_p.num_qubits = 1
 Measurement_p.multiple_results = True
 
 
 @Measurement_p.def_impl
-def measure_abstract_eval(qc, qb):
-    clbit = qc.add_clbit()
-    qc.measure(qb, clbit)
-    return qc, clbit
+def measure_abstract_eval(qc, meas_object):
+    from qrisp import get_measurement_from_qc, Qubit, default_backend
+    
+    if isinstance(meas_object, Qubit):
+        res = get_measurement_from_qc(qc, [meas_object], shots = 1, backend = default_backend)
+        return qc, bool(list(res.keys())[0])
+    else:
+        res = get_measurement_from_qc(qc, meas_object, shots = 1, backend = default_backend)
+        return qc, int(list(res.keys())[0])

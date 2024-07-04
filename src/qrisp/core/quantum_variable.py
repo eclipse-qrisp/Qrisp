@@ -667,10 +667,12 @@ class QuantumVariable:
         """
 
         from qrisp.misc import check_if_fresh, int_encoder
+        from qrisp.jax import TracingQuantumSession
         
-        if not permit_dirtyness:
-            if not check_if_fresh(self.reg, self.qs):
-                raise Exception("Tried to initialize qubits which are not fresh anymore.")
+        if not isinstance(self.qs, TracingQuantumSession):
+            if not permit_dirtyness:
+                if not check_if_fresh(self.reg, self.qs):
+                    raise Exception("Tried to initialize qubits which are not fresh anymore.")
 
         int_encoder(self, self.encoder(value))
 

@@ -1064,11 +1064,16 @@ def measure(qubits, clbits=None):
         return clbits
     else:
         from qrisp.jax import Measurement_p
+        from qrisp import Qubit, QuantumVariable
         
-        abs_qc, bl = Measurement_p.bind(qs.abs_qc, qubits.abstract)
+        if isinstance(qubits, Qubit):
+            abs_qc, res = Measurement_p.bind(qs.abs_qc, qubits.abstract)
+        elif isinstance(qubits, QuantumVariable):
+            abs_qc, res = Measurement_p.bind(qs.abs_qc, qubits.reg)
+            res = qubits.decoder(res)
         qs.abs_qc = abs_qc
         
-        return bl
+        return res
 
 
 def barrier(qubits):

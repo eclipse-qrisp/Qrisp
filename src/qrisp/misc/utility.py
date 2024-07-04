@@ -21,6 +21,7 @@ import traceback
 
 import numpy as np
 import sympy
+from jax.lax import fori_loop, cond
 
 def bin_rep(n, bits):
     if n < 0:
@@ -37,15 +38,46 @@ def bin_rep(n, bits):
 
 
 def int_encoder(qv, encoding_number):
-    if encoding_number > 2 ** len(qv) - 1:
-        raise Exception("Not enough qubits to encode integer " + str(encoding_number))
-
-    binary_rep = bin_rep(encoding_number, len(qv))[::-1]
+    
     from qrisp import x
-
-    for i in range(len(binary_rep)):
-        if int(binary_rep[i]):
-            x(qv[i])
+    from qrisp.jax import get_tracing_qs, TracingQuantumSession
+    if not isinstance(qv.qs, TracingQuantumSession):
+        if encoding_number > 2 ** len(qv) - 1:
+            raise Exception("Not enough qubits to encode integer " + str(encoding_number))
+    
+        for i in range(qv.size):
+            if (1<<i) & encoding_number:
+                x(qv[i])
+    
+    else:
+        
+        qs = get_tracing_qs()
+        
+        def true_fun(qc, cond, qb):
+            qs.abs_qc = qc
+            x(qb)
+            return qs.abs_qc
+        
+        def false_fun(qc, cond, qb):
+            return qc
+        
+        def loop_fun(i, qc):
+            cond_bool = (1<<i) & encoding_number
+            qb = qv[i]
+            qc = cond(cond_bool, true_fun, false_fun, qc, cond_bool, qb)
+            return qc
+        
+        qc = fori_loop(0, qv.size, loop_fun, qs.abs_qc)
+        
+        qs.abs_qc = qc
+        
+        
+        # def false_fun()
+            
+            
+            
+            
+        
 
 
 # Calculates the binary expression of a given integer and returns it as an array of

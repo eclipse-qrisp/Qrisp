@@ -55,7 +55,7 @@ def extract_qc(jaxpr_or_function):
         if len(jaxpr.invars) != len(args):
             raise Exception(f"Supplied inaccurate amount of arguments ({len(args)}) for Jaxpr (requires {len(jaxpr.invars)}).")
         
-        eqn_evaluator_function_dic = {"pjit" : pjit_to_gate}
+        eqn_evaluator_function_dic = {"pjit" : pjit_to_gate, "measure" : measure_to_clbit}
         
         outvals = eval_jaxpr(jaxpr, 
                              return_context_dic = True, 
@@ -149,6 +149,29 @@ def pjit_to_gate(pjit_eqn, context_dic):
     # Insert the result into the context dic
     insert_outvalues(pjit_eqn, context_dic, res)
 
-    
-    
 
+def measure_to_clbit(measure_eqn, context_dic):
+    """
+    Wraps the content of a pjit primitive into a gate and appends the gate.
+
+    Parameters
+    ----------
+    pjit_eqn : An equation with a pjit primitive
+        The equation to execute.
+
+    Returns
+    -------
+    return values
+        The values/tracers of the pjit execution.
+
+    """
+    
+    qc = context_dic[measure_eqn.invars[0]]
+    meas_qubit = context_dic[measure_eqn.invars[1]]
+    
+    clbit = qc.add_clbit()
+    
+    qc.measure(meas_qubit, clbit)
+    
+    insert_outvalues(measure_eqn, context_dic, ["burned_qc", clbit])
+    

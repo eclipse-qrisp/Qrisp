@@ -304,7 +304,7 @@ class QuantumFloat(QuantumVariable):
         # Array that consists of (log2(min), log2(max)) where min and max are the
         # minimal and maximal values of the absolutes that the QuantumFloat can
         # represent.
-        self.mshape = np.array([exponent, exponent + msize])
+        # self.mshape = np.array([exponent, exponent + msize])
 
         # Initialize QuantumVariable
         if signed:
@@ -320,17 +320,23 @@ class QuantumFloat(QuantumVariable):
             res = i * 2**self.exponent
 
         if self.exponent >= 0:
-            return int(res)
+            if isinstance(res, (int, float)):
+                return int(res)
+            else:
+                return res.astype(int)
         else:
             return res
 
-    # def encoder(self, i):
-    #     if self.signed:
-    #         res = int(signed_int_iso(i/2**self.exponent, self.size-1))
-    #     else:
-    #         res =  int(i/2**self.exponent)
-
-    #     return res
+    def encoder(self, i):
+        if self.signed:
+            res = signed_int_iso(i/2**self.exponent, self.size-1)
+        else:
+            res = i/2**self.exponent
+        
+        if isinstance(res, (int, float)):
+            return int(res)
+        else:
+            return res.astype(int)
 
     def sb_poly(self, m=0):
         """
@@ -1133,3 +1139,39 @@ def copy_qf(qf1, qf2, ignore_overflow_errors=False, ignore_rounding_errors=False
     # Copy the sign bit
     if qf2.signed:
         qs.cx(qf2[-1], qf1[-1])
+
+
+from jax import tree_util
+from qrisp.jax.tracing_quantum_session import get_tracing_qs
+
+class QFNameContainer:
+    
+    def __init__(self, name):
+        self.name = name
+        
+    def __hash__(self):
+        return hash(type(self))
+    
+    def __eq__(self, other):
+        return isinstance(other, QFNameContainer)
+        
+def flatten_qf(qf):
+    # return the tracers and auxiliary data (structure of the object)
+    children = (qf.reg,)
+    aux_data = (QFNameContainer(qf.name), qf.signed, qf.exponent)
+    return children, aux_data
+
+def unflatten_qf(aux_data, children):
+    # reconstruct the object from children and auxiliary data
+    res = QuantumFloat.__new__(QuantumFloat)
+    
+    res.reg = children[0]
+    res.name = aux_data[0].name
+    res.signed = aux_data[1]
+    res.exponent = aux_data[2]
+    res.qs = get_tracing_qs(check_validity = False)
+    
+    return res
+
+# Register as a PyTree with JAX
+tree_util.register_pytree_node(QuantumFloat, flatten_qf, unflatten_qf)
