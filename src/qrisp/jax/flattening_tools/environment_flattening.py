@@ -16,6 +16,8 @@
 ********************************************************************************/
 """
 
+from functools import lru_cache
+
 from jax.core import JaxprEqn, Jaxpr, Literal, ClosedJaxpr
 from jax import make_jaxpr
 
@@ -71,9 +73,9 @@ def flatten_environments(jaxpr):
     #   in (d,) }
     
     # We now apply the collecting mechanism:
-    
+
     jaxpr = collect_environments(jaxpr)
-    
+
     # { lambda ; a:i32[]. let
     #     b:QuantumCircuit = qdef 
     #     c:QuantumCircuit d:QubitArray = create_qubits b a
@@ -92,9 +94,12 @@ def flatten_environments(jaxpr):
     # We see that the QuantumEnvironment no longer is specified by enter/exit
     # statements but a q_env[jaxpr = {...}] call.
     
-    return flatten_collected_environments(jaxpr)
+    res = flatten_collected_environments(jaxpr)
+    
+    return res
     
 
+@lru_cache(maxsize = int(1E5))
 def flatten_collected_environments(jaxpr):
     
     # It is now much easier to apply higher order transformations with this kind
@@ -107,7 +112,8 @@ def flatten_collected_environments(jaxpr):
     
     # To perform the flattening, we evaluate with the usual tools
     return make_jaxpr(eval_jaxpr(jaxpr, 
-                                 eqn_evaluator_function_dic = eqn_evaluator_function_dic))(*[var.aval for var in jaxpr.invars + jaxpr.constvars]).jaxpr
+                                eqn_evaluator_function_dic = eqn_evaluator_function_dic))(*[var.aval for var in jaxpr.invars + jaxpr.constvars]).jaxpr
+    
     
 
 def flatten_environment_eqn(env_eqn, context_dic):
@@ -163,7 +169,7 @@ def flatten_environment_eqn(env_eqn, context_dic):
         context_dic[env_eqn.outvars[i]] = new_context_dic[transformed_jaxpr.outvars[i]]
     
     
-    
+@lru_cache(maxsize = int(1E5))
 def collect_environments(jaxpr):
     """
     This function turns Jaxpr that contain QuantumEnvironment primitive in enter/exit
@@ -195,8 +201,18 @@ def collect_environments(jaxpr):
         eqn = eqn_list.pop(0)
         
         if eqn.primitive.name == "pjit":
-            eqn.params["jaxpr"] = ClosedJaxpr(collect_environments(eqn.params["jaxpr"].jaxpr),
+            
+            new_params = dict(eqn.params)
+            new_params["jaxpr"] = ClosedJaxpr(collect_environments(eqn.params["jaxpr"].jaxpr),
                                               eqn.params["jaxpr"].consts)
+            
+            new_jaxpr_eqn = JaxprEqn(params = new_params,
+                                     primitive = eqn.primitive,
+                                     invars = list(eqn.invars), # Note that the constvars of the jaxpr are appended to the invars of the equation
+                                     outvars = list(eqn.outvars),
+                                     effects = eqn.effects,
+                                     source_info = eqn.source_info,
+                                     ctx = eqn.ctx)
         
         # If an exit primitive is found, start the collecting mechanism.
         if eqn.primitive.name == "q_env" and eqn.params["stage"] == "exit":
@@ -251,6 +267,7 @@ def collect_environments(jaxpr):
                  invars = jaxpr.invars,
                  outvars = jaxpr.outvars,
                  eqns = new_eqn_list)
+    
     
 
 def find_invars(eqn_list):

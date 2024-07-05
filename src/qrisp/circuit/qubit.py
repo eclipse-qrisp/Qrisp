@@ -65,3 +65,35 @@ class Qubit:
 
     def __eq__(self, other):
         return self.hash_value == other.hash_value
+    
+
+from jax import tree_util
+
+class QBNameContainer:
+    
+    def __init__(self, identifier):
+        self.identifier = identifier
+        
+    def __hash__(self):
+        return hash(type(self))
+    
+    def __eq__(self, other):
+        return isinstance(other, QBNameContainer)
+        
+def flatten_qb(qb):
+    # return the tracers and auxiliary data (structure of the object)
+    children = (qb.abstract,)
+    aux_data = (QBNameContainer(qb.identifier),)
+    return children, aux_data
+
+def unflatten_qb(aux_data, children):
+    # reconstruct the object from children and auxiliary data
+    res = Qubit.__new__(Qubit)
+    
+    res.abstract = children[0]
+    res.identifier = aux_data[0].identifier
+    
+    return res
+
+# Register as a PyTree with JAX
+tree_util.register_pytree_node(Qubit, flatten_qb, unflatten_qb)

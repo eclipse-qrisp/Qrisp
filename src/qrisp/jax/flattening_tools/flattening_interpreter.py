@@ -16,7 +16,7 @@
 ********************************************************************************/
 """
 
-from jax.core import JaxprEqn, Literal, ClosedJaxpr
+from jax.core import JaxprEqn, Literal, ClosedJaxpr, Tracer
 from jax import jit, make_jaxpr
 
 def eval_jaxpr(jaxpr, 
@@ -41,8 +41,10 @@ def eval_jaxpr(jaxpr,
     
     def jaxpr_evaluator(*args):
         
-        temp_var_list = (jaxpr.invars + jaxpr.constvars)
+        temp_var_list = jaxpr.invars
         context_dic = {temp_var_list[i] : args[i] for i in range(len(args))}
+        if len(args) != len(jaxpr.invars):
+            raise Exception("Tried to evaluate jaxpr with insufficient arguments")
         
         eval_jaxpr_with_context_dic(jaxpr, context_dic, eqn_evaluator_function_dic)
         
@@ -101,6 +103,23 @@ def eval_jaxpr_with_context_dic(jaxpr, context_dic, eqn_evaluator_function_dic =
 
 def exec_eqn(eqn, context_dic):
     invalues = extract_invalues(eqn, context_dic)
+    
+    if eqn.primitive.name in ["while", "cond"]:
+        for val in invalues:
+            if isinstance(val, Tracer):
+                break
+        else:
+            from qrisp.jax import evaluate_cond_eqn, evaluate_while_loop
+            
+            if eqn.primitive.name == "while":
+                evaluate_while_loop(eqn, context_dic)
+            else:
+                evaluate_cond_eqn(eqn, context_dic)
+            
+            return
+            
+            
+    
     res = eqn.primitive.bind(*invalues, **eqn.params)
     insert_outvalues(eqn, context_dic, res)
 

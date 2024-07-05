@@ -19,5 +19,5 @@
 from qrisp.jax.flattening_tools.flattening_interpreter import *
 from qrisp.jax.flattening_tools.pjit_flattening import *
 from qrisp.jax.flattening_tools.environment_flattening import *
-
+from qrisp.jax.flattening_tools.control_flow_interpretation import *
 

@@ -68,7 +68,7 @@ def jisp_function_test(func):
     return testing_function
         
 
-def exec_jisp(jaxpr):
+def jisp_interpreter(jaxpr):
     
     if isinstance(jaxpr, ClosedJaxpr):
         jaxpr = jaxpr.jaxpr
@@ -77,7 +77,7 @@ def exec_jisp(jaxpr):
         
         new_jaxpr = flatten_environments(jaxpr)
         new_jaxpr = flatten_pjit(new_jaxpr)
-        
+
         return eval_jaxpr(new_jaxpr)(*args)
     
     return jisp_executer
