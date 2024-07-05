@@ -17,6 +17,8 @@
 """
 from typing import Optional, List
 
+from qrisp.interface.request_manager import RequestManager
+
 """
 This file sets up a client adhering to the interface specified by the Qunicorn middleware
 developed in the SeQuenC project: https://sequenc.de/
@@ -27,7 +29,6 @@ https://qunicorn-core.readthedocs.io/en/latest/index.html
 
 
 """
-import requests
 import time
 
 
@@ -61,23 +62,12 @@ class BackendClient:
     """
 
     def __init__(
-        self, api_endpoint: str, provider: str, device: str, port=None, token=""
+            self, requestManager: RequestManager, provider: str, device: str, token="",
     ):
-        # https anstatt http
-        api_endpoint = "http://" + api_endpoint
-        # if api_endpoint[:8] != 'http://':
-        #    api_endpoint = 'http://' + api_endpoint
-
         self.provider = provider
         self.device = device
-
-        if port is None:
-            port = 9010
-
-        self.port = port
         self.token = token
-
-        self.api_endpoint = api_endpoint + ":" + str(port)
+        self.request_manager = requestManager
 
     # Executes
     def run(self, qc, shots):
@@ -94,8 +84,9 @@ class BackendClient:
             ],
             "name": "",
         }
-        deployment_response = requests.post(
-            f"{self.api_endpoint}/deployments", json=deployment_data, verify=False
+        deployment_response = self.request_manager.post(
+            f"/deployments/",
+            json=deployment_data, verify=False
         )
 
         if deployment_response.status_code == 422:
@@ -120,8 +111,8 @@ class BackendClient:
             "deploymentId": deployment_id,
         }
 
-        job_post_response = requests.post(
-            f"{self.api_endpoint}/jobs", json=job_data, verify=False
+        job_post_response = self.request_manager.post(
+            f"/jobs/", json=job_data, verify=False
         )
         if job_post_response.status_code == 422:
             raise Exception(
@@ -135,8 +126,9 @@ class BackendClient:
         job_id = job_post_response.json()["id"]
 
         while True:
-            job_get_response = requests.get(
-                f"{self.api_endpoint}/jobs/{job_id}", json=job_data, verify=False
+            job_get_response = self.request_manager.get(
+                f"/jobs/{job_id}/",
+                json=job_data, verify=False
             )
 
             if job_get_response.status_code != 200:
@@ -145,7 +137,6 @@ class BackendClient:
                 )
 
             job_state = job_get_response.json()["state"]
-
             if job_state == "FINISHED":
                 break
 
@@ -174,7 +165,7 @@ class BackendClient:
 
     @staticmethod
     def _ensure_binary(
-        result: str, counts_format: str, registers: Optional[list[int]]
+            result: str, counts_format: str, registers: Optional[list[int]]
     ) -> str:
         if counts_format == "bin":
             return result  # result is already binary
