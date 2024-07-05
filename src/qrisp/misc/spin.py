@@ -21,8 +21,6 @@ import sympy as sp
 from sympy import Symbol, Quaternion, I
 import numpy as np
 
-threshold = 1e-9
-
 #
 # helper functions
 #
@@ -33,7 +31,6 @@ def delta(i, j):
     else:
         return 0
     
-
 def epsilon(i, j, k):
     if (i, j, k) in (("X", "Y", "Z"), ("Y", "Z", "X"), ("Z", "X", "Y")):
         return 1
@@ -41,6 +38,8 @@ def epsilon(i, j, k):
         return -1
     return 0
 
+def set_bit(n,k):
+    return n | (1 << k)        
 
 #
 # Pauli symbols
@@ -53,8 +52,7 @@ def epsilon(i, j, k):
 #        obj = Symbol.__new__(cls, "%s%d" %(axis,index), commutative=False, hermitian=True)
 #        obj.index = index
 #        obj.axis = axis
-#        return obj   
-    
+#        return obj       
 
 class X(Symbol):
 
@@ -90,7 +88,6 @@ class X(Symbol):
                     + I*epsilon(i, j, "Z")*Z(self.index)
         return super().__mul__(other)
 
-
 class Y(Symbol):
 
     __slots__ = ("axis","index")
@@ -123,8 +120,7 @@ class Y(Symbol):
                     + I*epsilon(i, j, "X")*X(self.index) \
                     + I*epsilon(i, j, "Y")*Y(self.index) \
                     + I*epsilon(i, j, "Z")*Z(self.index)
-        return super().__mul__(other)
-        
+        return super().__mul__(other)       
        
 class Z(Symbol):
 
@@ -160,14 +156,9 @@ class Z(Symbol):
                     + I*epsilon(i, j, "Z")*Z(self.index)
         return super().__mul__(other)
     
-
 #
 #
 #
-
-def set_bit(n,k):
-    return n | (1 << k)        
-
 
 def evaluate_observable(observable: int, x: int):
     """
@@ -176,7 +167,7 @@ def evaluate_observable(observable: int, x: int):
         
     A Pauli operator of the form :math:`\prod_{i\in I}Z_i`, for some finite set of indices :math:`I\subset \mathbb N`, 
     is identified with an integer:
-    we identify the Pauli operator with the binary string that has ones at positions :math:`i\in I`
+    We identify the Pauli operator with the binary string that has ones at positions :math:`i\in I`
     and zeros otherwise, and then convert this binary string to an integer.
         
     Parameters
@@ -205,6 +196,21 @@ def convert_to_spin(quaternion, index):
 
 
 def simplify_spin(expr):
+    """
+    Simplifies a quantum Hamiltonian
+
+    Parameters
+    ----------
+    H : sympy.expr
+
+    Returns
+    -------
+
+
+    """
+
+    threshold = 1e-9
+
     simplified_expr = 0
 
     for monomial in expr.expand().as_ordered_terms():
@@ -221,15 +227,6 @@ def simplify_spin(expr):
                 else:
                     pauli_dict[arg.index] = arg.get_quaternion()   
                     pauli_indices.append(arg.index) 
-
-            #elif isinstance(arg, sp.core.power.Pow,) and isinstance(arg.args[0], (X,Y,Z)):
-            #    if arg.args[1]%2!=0:
-            #        if arg.args[0].index in pauli_indices:
-            #            pauli_dict[arg.args[0].index] *= arg.args[0].get_quaternion()
-            #        else:
-            #            pauli_dict[arg.args[0].index] = arg.args[0].get_quaternion()  
-            #            pauli_indices.append(arg.args[0].index)
-
             else:
                 simplified_factor *= arg
 
@@ -572,7 +569,7 @@ def commute(a,b):
     return False
 
 #
-# Hamiltonian simulation
+# helper functions for Hamiltonian simulation
 #
 
 def change_of_basis(qv, pauli_dict):
@@ -601,30 +598,6 @@ def apply_Pauli(qv, pauli_dict, theta):
     with invert():
         change_of_basis(qv, pauli_dict)
         parity(qv, indices)        
-
-
-def trotterization(qarg, H, theta, n):
-    """
-
-
-
-
-    """
-
-    terms = spin_operator_to_list(H)
-    groups = []
-    global_phase = 0
-
-    for term in terms:
-        if len(term[0])==0:
-            global_phase += term[1]
-        
-
-
-    return 0
-
-
-
 
 
 

@@ -100,18 +100,17 @@ class VQEProblem:
 
     """
     
-    def __init__(self, spin_operator, ansatz_function, num_params, init_function = None, init_type='random', callback=False):
+    def __init__(self, spin_operator, ansatz_function, num_params, init_function = None, callback=False):
         self.spin_operator = spin_operator
         self.ansatz_function = ansatz_function
         self.num_params = num_params
-        
         self.init_function = init_function
         self.cl_post_processor = None
-        self.init_type = init_type
-        # Fourier heuristic parameterization
-        self.fourier_depth = None
-        # should be set in the 
+
+        self.optimizer = "COBYLA"
+        self.init_type = "random"
         self.init_params = None
+
         # parameters for callback
         self.callback = callback
         self.optimization_params = []
@@ -130,44 +129,6 @@ class VQEProblem:
             The initial state preparation function for the specific VQE problem instance.
         """
         self.init_function = init_function
-    
-    def computeParams(self,p,t_max):
-        """
-        Compute the angle parameters gamma and beta based on the given inputs. Used for the TQA warm starting the initial state for QAOA.
-
-        Parameters
-        ----------
-        p : int
-            The number of partitions for the time interval.
-        t_max : float
-            The maximum time value.
-
-        Returns
-        -------
-        np.array
-            A concatenated numpy array of gamma and beta values.
-        """
-        dt = t_max / p
-        t = dt * (np.arange(1, p + 1) - 0.5)
-        gamma = (t / t_max) * dt
-        beta = (1 - (t / t_max)) * dt
-        return  np.concatenate((gamma,beta)) 
-
-    def set_fourier_depth(self, fourier_depth, init_params = None):
-        """
-        Set the FOURIER heuristic for a QAOA problem.
-
-        Parameters
-        ----------
-        fourier_depth : int
-            Number of Fourier parameters.
-        init_params : np.array
-            (Optional) NumPy array of initial Fourier Parameters.
-        """
-        
-        self.fourier_depth = fourier_depth
-        self.init_params = init_params
-
       
     def compile_circuit(self, qarg, depth):
         """
@@ -216,8 +177,6 @@ class VQEProblem:
         
         return compiled_qc, theta
 
-    # Set initial random values for optimization parameters 
-    #def optimization_routine(self, qarg, compiled_qc, symbols , depth, mes_kwargs, max_iter):    
     def optimization_routine(self, qarg, depth, mes_kwargs, max_iter): 
         """
         Wrapper subroutine for the optimization method used in QAOA. The initial values are set and the optimization via ``COBYLA`` is conducted here.
@@ -226,18 +185,12 @@ class VQEProblem:
         ----------
         qarg : QuantumVariable or QuantumArray
             The argument the cost function is called on.
-        complied_qc : QuantumCircuit
-            The compiled quantum circuit.
         depth : int
             The amont of VQE layers.
-        symbols : list
-            The list of symbols used in the quantum circuit.
         mes_kwargs : dict, optional
             The keyword arguments for the measurement function. Default is an empty dictionary, as defined in previous functions.
         max_iter : int, optional
             The maximum number of iterations for the optimization method. Default is 50, as defined in previous functions.
-        init_type : string, optional
-            Specifies the way the initial optimization parameters are chosen. Available are ``random`` and TQA. The default is ``random``.
 
         Returns
         -------
@@ -246,20 +199,6 @@ class VQEProblem:
         """
         
         compiled_qc, symbols = self.compile_circuit(qarg, depth)
-        
-        # Set initial random values for optimization parameters 
-    #    init_point = np.pi * np.random.rand(2 * depth)/2
-        
-        # initial point is set here, potentially subject to change
-        if not isinstance(self.fourier_depth, int):
-            init_point = np.pi * np.random.rand(2 * depth)/2
-        elif not isinstance(self.init_params, list):
-            init_point = np.pi * np.random.rand(2 * self.fourier_depth)/2
-        else:
-
-            if len(self.init_params)/2 != self.fourier_depth:
-                raise Exception("Fourier-depth does not match match length of init_params! (should be half the length)")
-            init_point = self.init_params
 
         # Define optimization wrapper function to be minimized using VQE
         def optimization_wrapper(theta, qc, symbols, qarg, mes_kwargs):
@@ -298,85 +237,27 @@ class VQEProblem:
                 return self.cl_post_processor(expectation)
             else:
                 return expectation
-            
-        def tqa_angles(p,qc, symbols, qarg_dupl, mes_kwargs,steps=10): #qarg only before
-            """
-            Compute the optimal parameters for the Time-dependent Quantum Adiabatic (TQA) algorithm.
 
-            The function first creates a linspace array `time` from 0.1 to 10 with `steps` steps. 
-            Then for each `t_max` in `time`, it computes the parameters `x` using the `computeParams` 
-            function and calculates the energy `qcut` using the `optimization_wrapper` function. 
-            The energy values are stored in the `energy` list. The `t_max` corresponding to the 
-            minimum energy is found and used to compute the optimal parameters which are returned.
-
-            Parameters
-            ----------
-            p : int
-                The number of partitions for the time interval.
-            qc : QuantumCircuit
-                The quantum circuit for the specific problem instance.
-            symbols : list
-                The list of symbols in the quantum circuit.
-            qarg_dupl : list
-                The list of quantum arguments.
-            mes_kwargs : dict
-                The measurement keyword arguments.
-            steps : int, optional
-                The number of steps for the linspace function, default is 10.
-
-            Returns
-            -------
-            np.array
-                A concatenated numpy array of optimal gamma and beta values.
-            """
-            time = np.linspace(0.1, 10, steps)
-            energy = []
-            for t_max in time:      
-                x=self.computeParams(p,t_max)
-                qcut=optimization_wrapper(x,qc,symbols,qarg_dupl,mes_kwargs)
-                energy.append(qcut)
-            
-            idx = np.argmin(energy)
-            t_max = time[idx]
-            return self.computeParams(p,t_max)
-
+        # Set initial random values for optimization parameters 
         if self.init_type=='random':
-            # Set initial random values for optimization parameters
             init_point = np.pi * np.random.rand(depth * self.num_params)/2
-
-        elif self.init_type=='tqa':
-            # TQA initialization
-            init_point = tqa_angles(depth,compiled_qc, symbols, qarg, mes_kwargs)
+        if self.init_point is not None:
+            init_point = self.init_point
 
         #def optimization_cb(x):
         #    self.optimization_params.append(x)
 
         # Perform optimization using COBYLA method
-        if isinstance(self.fourier_depth, int):
-            from qrisp.qaoa.optimization_wrappers.fourier_wrapper import fourier_optimization_wrapper
-            for index_p in range(1, depth + 1):
-                compiled_qc, symbols = self.compile_circuit(qarg, index_p)
-                res_sample =  minimize(fourier_optimization_wrapper,
-                                    init_point, 
-                                    method='COBYLA', 
-                                    options={'maxiter':max_iter}, 
-                                    args = (compiled_qc, symbols, qarg, self.cl_cost_function,self.fourier_depth, index_p , mes_kwargs))
-                init_point = res_sample['x']
-                
-        else:
-            compiled_qc, symbols = self.compile_circuit(qarg, depth)
-            # Perform optimization using COBYLA method
-            res_sample = minimize(optimization_wrapper,
+        compiled_qc, symbols = self.compile_circuit(qarg, depth)
+        res_sample = minimize(optimization_wrapper,
                                 init_point, 
                                 method='COBYLA',
                                 options={'maxiter':max_iter}, 
                                 args = (compiled_qc, symbols, qarg, mes_kwargs))
             
         return res_sample['x']
-    
-        
 
-    def run(self, qarg, depth, mes_kwargs = {}, max_iter = 50, init_type = "random"):
+    def run(self, qarg, depth, mes_kwargs = {}, max_iter = 50, init_type = "random", init_point=None):
         """
         Run the specific VQE problem instance with given quantum arguments, depth of VQE circuit,
         measurement keyword arguments (mes_kwargs) and maximum iterations for optimization (max_iter).
@@ -394,12 +275,17 @@ class VQEProblem:
         init_type : string, optional
             Specifies the way the initial optimization parameters are chosen. Available is ``random``. 
             The default is ``random``: Parameters are initialized uniformly at random in the interval $[0,\pi/2)]$.
+        init_point : list[float], optional
+            Specifies the initial optimization parameters. 
 
         Returns
         -------
         energy : float
             The expected value of the spin operator after applying the optimal VQE circuit to the quantum variable.
         """
+
+        self.init_type = init_type
+        self.init_point = init_point
 
         #init_point = np.pi * np.random.rand(2 * depth)/2
 
@@ -412,15 +298,10 @@ class VQEProblem:
         
         #res_sample = self.optimization_routine(qarg, compiled_qc, symbols , depth,  mes_kwargs, max_iter)
         optimal_theta = self.optimization_routine(qarg, depth, mes_kwargs, max_iter)
-        #if isinstance(self.fourier_depth, int):
-        #    from qrisp.qaoa.parameters.fourier_params import fourier_params_helper
-        #    optimal_theta = fourier_params_helper(optimal_theta, self.fourier_depth , depth) 
         
-        # Prepare initial state - in case this is not called, prepare superposition state
+        # Prepare initial state 
         if self.init_function is not None:
             self.init_function(qarg)
-        #else: # inital stqate \ket{0}
-        #   h(qarg)
 
         # Apply p layers of the ansatz    
         for i in range(depth):                          
@@ -488,7 +369,8 @@ class VQEProblem:
         mes_kwargs : dict, optional
             The keyword arguments, that are used for the ``qarg.get_spin_measurement``. The default is {}.
         init_type : string, optional
-            Specifies the way the initial optimization parameters are chosen. Available is ``random``. The default is ``random``.
+            Specifies the way the initial optimization parameters are chosen. Available is ``random``. 
+            The default is ``random``: Parameters are initialized uniformly at random in the interval $[0,\pi/2)]$.
 
         Returns
         -------
@@ -559,10 +441,7 @@ class VQEProblem:
                         
                         temp_mes_kwargs = dict(mes_kwargs)
                         temp_mes_kwargs["shots"] = s
-                        if init_type=='random':
-                            energy = self.run(qarg=qarg_dupl, depth = p, max_iter = it, mes_kwargs = temp_mes_kwargs, init_type='random')
-                        elif init_type=='tqa':
-                            energy = self.run(qarg=qarg_dupl, depth = p, max_iter = it, mes_kwargs = temp_mes_kwargs, init_type='tqa')
+                        energy = self.run(qarg=qarg_dupl, depth = p, max_iter = it, mes_kwargs = temp_mes_kwargs, init_type='random')
                         final_time = time.time() - start_time
                         
                         compiled_qc = qarg_dupl.qs.compile(intended_measurements=mes_qubits)
