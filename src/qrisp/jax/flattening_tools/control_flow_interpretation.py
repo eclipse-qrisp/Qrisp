@@ -38,16 +38,21 @@ def evaluate_cond_eqn(cond_eqn, context_dic):
     
 def evaluate_while_loop(while_loop_eqn, context_dic):
     
-    num_const_args = while_loop_eqn.params["body_nconsts"]
+    num_const_cond_args = while_loop_eqn.params["body_nconsts"]
+    num_const_body_args = while_loop_eqn.params["body_nconsts"]
     
     def break_condition(invalues):
-        non_const_values = invalues[num_const_args:]
+        non_const_values = invalues[num_const_cond_args:]
         return eval_jaxpr(while_loop_eqn.params["cond_jaxpr"])(*non_const_values)
     
     # Extract the invalues from the context dic
     invalues = extract_invalues(while_loop_eqn, context_dic)
     
     while break_condition(invalues):
-        invalues = eval_jaxpr(while_loop_eqn.params["body_jaxpr"])(*invalues)
+        outvalues = eval_jaxpr(while_loop_eqn.params["body_jaxpr"])(*invalues)
         
-    insert_outvalues(while_loop_eqn, context_dic, invalues)
+        # Update the non-const invalues
+        for i in range(len(invalues) - num_const_body_args):
+            invalues[i + num_const_body_args] = outvalues[i]
+    
+    insert_outvalues(while_loop_eqn, context_dic, outvalues)

@@ -113,7 +113,7 @@ def flatten_collected_environments(jaxpr):
     
     # To perform the flattening, we evaluate with the usual tools
     return make_jaxpr(eval_jaxpr(jaxpr, 
-                                eqn_evaluator_function_dic = eqn_evaluator_function_dic))(*[var.aval for var in jaxpr.invars + jaxpr.constvars]).jaxpr
+                                eqn_evaluator_function_dic = eqn_evaluator_function_dic))(*[var.aval for var in jaxpr.constvars + jaxpr.invars]).jaxpr
     
     
 
@@ -152,15 +152,15 @@ def flatten_environment_eqn(env_eqn, context_dic):
     # Create a new context_dic
     new_context_dic = {}
     
-    # Fill the new context dic with the previously collected invalues
-    for i in range(len(transformed_jaxpr.invars)):
-        new_context_dic[transformed_jaxpr.invars[i]] = invalues[i]
-        
     # Fill the new context dic with the constvalues
     for i in range(len(transformed_jaxpr.constvars)):
         # The constvars of the jaxpr of the collected environment are given as 
         # the invars of the equation. See the corresponding line in collect_environments.
-        new_context_dic[transformed_jaxpr.constvars[i]] = context_dic[env_eqn.invars[i+len(transformed_jaxpr.invars)]]
+        new_context_dic[transformed_jaxpr.constvars[i]] = invalues.pop(0)
+    
+    # Fill the new context dic with the previously collected invalues
+    for i in range(len(transformed_jaxpr.invars)):
+        new_context_dic[transformed_jaxpr.invars[i]] = invalues.pop(0)
     
     # Execute the transformed jaxpr for flattening
     eval_jaxpr_with_context_dic(transformed_jaxpr, new_context_dic, eqn_evaluator_function_dic = {"q_env" : flatten_environment_eqn})
@@ -251,7 +251,7 @@ def collect_environments(jaxpr):
             eqn = JaxprEqn(
                            params = {"stage" : "collected", "jaxpr" : environment_body_jaxpr},
                            primitive = eqn.primitive,
-                           invars = list(enter_eq.invars) + constvars, # Note that the constvars of the jaxpr are appended to the invars of the equation
+                           invars = constvars + list(enter_eq.invars), # Note that the constvars of the jaxpr are appended to the invars of the equation
                            outvars = list(eqn.outvars),
                            effects = eqn.effects,
                            source_info = eqn.source_info,

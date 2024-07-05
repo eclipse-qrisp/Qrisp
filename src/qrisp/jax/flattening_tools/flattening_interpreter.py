@@ -41,7 +41,7 @@ def eval_jaxpr(jaxpr,
     
     def jaxpr_evaluator(*args):
         
-        temp_var_list = jaxpr.invars + jaxpr.constvars
+        temp_var_list = jaxpr.constvars + jaxpr.invars 
         
         if len(temp_var_list) != len(args):
             raise Exception("Tried to evaluate jaxpr with insufficient arguments")
