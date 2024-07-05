@@ -52,7 +52,6 @@ def evaluate_while_loop(while_loop_eqn, context_dic):
         outvalues = eval_jaxpr(while_loop_eqn.params["body_jaxpr"])(*invalues)
         
         # Update the non-const invalues
-        for i in range(len(invalues) - num_const_body_args):
-            invalues[i + num_const_body_args] = outvalues[i]
+        invalues[num_const_body_args:] = outvalues
     
     insert_outvalues(while_loop_eqn, context_dic, outvalues)

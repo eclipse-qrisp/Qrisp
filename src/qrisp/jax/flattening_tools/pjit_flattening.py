@@ -41,7 +41,7 @@ def flatten_pjit(jaxpr):
     if isinstance(jaxpr, ClosedJaxpr):
         jaxpr = jaxpr.jaxpr
     
-    eqn_evaluator_function_dic = {"pjit" : evaluate_pjit_eqn}
+    eqn_eval_dic = {"pjit" : evaluate_pjit_eqn}
     return make_jaxpr(eval_jaxpr(jaxpr, 
-                                 eqn_evaluator_function_dic = eqn_evaluator_function_dic))(*[var.aval for var in jaxpr.invars])
+                                 eqn_eval_dic = eqn_eval_dic))(*[var.aval for var in jaxpr.invars])
     

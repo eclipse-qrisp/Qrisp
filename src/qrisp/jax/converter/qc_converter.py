@@ -55,11 +55,11 @@ def extract_qc(jaxpr_or_function):
         if len(jaxpr.invars) != len(args):
             raise Exception(f"Supplied inaccurate amount of arguments ({len(args)}) for Jaxpr (requires {len(jaxpr.invars)}).")
         
-        eqn_evaluator_function_dic = {"pjit" : pjit_to_gate, "measure" : measure_to_clbit}
+        eqn_eval_dic = {"pjit" : pjit_to_gate, "measure" : measure_to_clbit}
         
         outvals = eval_jaxpr(jaxpr, 
                              return_context_dic = True, 
-                             eqn_evaluator_function_dic = eqn_evaluator_function_dic)(*args)
+                             eqn_eval_dic = eqn_eval_dic)(*args)
         
         if len(jaxpr.outvars) == 0:
             outvals = [outvals]

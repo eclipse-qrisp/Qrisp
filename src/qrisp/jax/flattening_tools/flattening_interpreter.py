@@ -21,7 +21,7 @@ from jax import jit, make_jaxpr
 
 def eval_jaxpr(jaxpr, 
                return_context_dic = False, 
-               eqn_evaluator_function_dic = {}):
+               eqn_eval_dic = {}):
     """
     Evaluates a Jaxpr using the given context dic to replace variables
 
@@ -48,7 +48,7 @@ def eval_jaxpr(jaxpr,
         
         context_dic = {temp_var_list[i] : args[i] for i in range(len(args))}
         
-        eval_jaxpr_with_context_dic(jaxpr, context_dic, eqn_evaluator_function_dic)
+        eval_jaxpr_with_context_dic(jaxpr, context_dic, eqn_eval_dic)
         
         if return_context_dic:
             outvals = [context_dic]
@@ -65,8 +65,23 @@ def eval_jaxpr(jaxpr,
     
     return jaxpr_evaluator
 
+def reinterpret(jaxpr, eqn_eval_dic = {}):
+    
+    if isinstance(jaxpr, ClosedJaxpr):
+        inter_jaxpr = jaxpr.jaxpr
+    else:
+        inter_jaxpr = jaxpr
+        
+    res = make_jaxpr(eval_jaxpr(inter_jaxpr,
+                                eqn_eval_dic = eqn_eval_dic))(*[var.aval for var in jaxpr.constvars + jaxpr.invars]).jaxpr
+    
+    if isinstance(jaxpr, ClosedJaxpr):
+        res = ClosedJaxpr(res, jaxpr.consts)    
+    
+    return res
 
-def eval_jaxpr_with_context_dic(jaxpr, context_dic, eqn_evaluator_function_dic = {}):
+
+def eval_jaxpr_with_context_dic(jaxpr, context_dic, eqn_eval_dic = {}):
     
     from qrisp import QuantumCircuit
     for eqn in jaxpr.eqns:
@@ -77,8 +92,8 @@ def eval_jaxpr_with_context_dic(jaxpr, context_dic, eqn_evaluator_function_dic =
     for eqn in jaxpr.eqns:
         
         # Evaluate the primitive
-        if eqn.primitive.name in eqn_evaluator_function_dic.keys():
-            eqn_evaluator_function_dic[eqn.primitive.name](eqn, context_dic)
+        if eqn.primitive.name in eqn_eval_dic.keys():
+            eqn_eval_dic[eqn.primitive.name](eqn, context_dic)
         else:
             exec_eqn(eqn, context_dic)
         
