@@ -304,7 +304,7 @@ class QuantumFloat(QuantumVariable):
         # Array that consists of (log2(min), log2(max)) where min and max are the
         # minimal and maximal values of the absolutes that the QuantumFloat can
         # represent.
-        # self.mshape = np.array([exponent, exponent + msize])
+        self.mshape = (exponent, exponent + msize)
 
         # Initialize QuantumVariable
         if signed:
@@ -994,7 +994,7 @@ class QuantumFloat(QuantumVariable):
     def duplicate(self, name=None, qs=None, init=False):
         
         res = QuantumVariable.duplicate(self, name, qs, init)
-        res.mshape = np.array(self.mshape)
+        res.mshape = tuple(self.mshape)
         return res
         
         

@@ -107,6 +107,7 @@ def flatten_collected_environments(jaxpr):
     eqn_evaluator_function_dic = {"q_env" : flatten_environment_eqn,
                                   "pjit" : flatten_environments_in_pjit_eqn}
     
+    
     # The flatten_environment_eqn function below executes the collected QuantumEnvironments
     # according to their semantics
     

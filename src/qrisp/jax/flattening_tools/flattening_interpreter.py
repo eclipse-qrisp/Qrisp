@@ -41,10 +41,12 @@ def eval_jaxpr(jaxpr,
     
     def jaxpr_evaluator(*args):
         
-        temp_var_list = jaxpr.invars
-        context_dic = {temp_var_list[i] : args[i] for i in range(len(args))}
-        if len(args) != len(jaxpr.invars):
+        temp_var_list = jaxpr.invars + jaxpr.constvars
+        
+        if len(temp_var_list) != len(args):
             raise Exception("Tried to evaluate jaxpr with insufficient arguments")
+        
+        context_dic = {temp_var_list[i] : args[i] for i in range(len(args))}
         
         eval_jaxpr_with_context_dic(jaxpr, context_dic, eqn_evaluator_function_dic)
         

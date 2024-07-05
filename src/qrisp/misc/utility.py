@@ -41,35 +41,35 @@ def int_encoder(qv, encoding_number):
     
     from qrisp import x
     from qrisp.jax import get_tracing_qs, TracingQuantumSession
-    if not isinstance(qv.qs, TracingQuantumSession):
+    
+    tr_qs = get_tracing_qs()
+    if tr_qs is None:
         if encoding_number > 2 ** len(qv) - 1:
             raise Exception("Not enough qubits to encode integer " + str(encoding_number))
     
-        for i in range(qv.size):
+        for i in range(len(qv)):
             if (1<<i) & encoding_number:
                 x(qv[i])
     
     else:
         
-        qs = get_tracing_qs()
-        
         def true_fun(qc, cond, qb):
-            qs.abs_qc = qc
+            tr_qs.abs_qc = qc
             x(qb)
-            return qs.abs_qc
+            return tr_qs.abs_qc
         
         def false_fun(qc, cond, qb):
             return qc
         
         def loop_fun(i, val):
             cond_bool = (1<<i) & encoding_number
-            qb = val[0][i]
-            qc = cond(cond_bool, true_fun, false_fun, val[1], cond_bool, qb)
-            return (val[0], qc)
+            qb = val[1][i]
+            qc = cond(cond_bool, true_fun, false_fun, val[0], cond_bool, qb)
+            return (qc, val[0])
         
-        qv, qc = fori_loop(0, qv.size, loop_fun, (qv, qs.abs_qc))
+        qc, qv = fori_loop(0, qv.size, loop_fun, (tr_qs.abs_qc, qv))
         
-        qs.abs_qc = qc
+        tr_qs.abs_qc = qc
         
         
         # def false_fun()
