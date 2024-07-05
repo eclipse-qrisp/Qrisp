@@ -61,14 +61,13 @@ def int_encoder(qv, encoding_number):
         def false_fun(qc, cond, qb):
             return qc
         
-        def loop_fun(i, val):
+        def loop_fun(i, qc):
             cond_bool = (1<<i) & encoding_number
-            qb = val[1][i]
-            qc = cond(cond_bool, true_fun, false_fun, val[0], cond_bool, qb)
-            return (qc, val[1])
+            qb = qv[i]
+            qc = cond(cond_bool, true_fun, false_fun, qc, cond_bool, qb)
+            return qc
         
-        qc, qv = fori_loop(0, qv.size, loop_fun, (tr_qs.abs_qc, qv))
-        
+        qc = fori_loop(0, qv.size, loop_fun, (tr_qs.abs_qc))
         tr_qs.abs_qc = qc
         
         
