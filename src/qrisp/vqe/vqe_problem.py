@@ -33,7 +33,7 @@ class VQEProblem:
     
     Parameters
     ----------
-    spin_operator : SymPy Expr
+    spin_operator : sympy.Expr
         The quantum Hamiltonian.
     ansatz_function : function
         A function receiving a :ref:`QuantumVariable` or :ref:`QuantumArray` and a parameter list. This function implements the unitary 
@@ -44,7 +44,7 @@ class VQEProblem:
         A function preparing the initial state.
         By default, the inital state is the $\ket{0}$ state.
     callback : bool, optional
-        If ``True``, intermediate reults are stored. The default is ``False``.
+        If ``True``, intermediate results are stored. The default is ``False``.
 
     Examples
     --------
@@ -107,10 +107,6 @@ class VQEProblem:
         self.init_function = init_function
         self.cl_post_processor = None
 
-        self.optimizer = "COBYLA"
-        self.init_type = "random"
-        self.init_params = None
-
         # parameters for callback
         self.callback = callback
         self.optimization_params = []
@@ -155,11 +151,9 @@ class VQEProblem:
         # Define VQE angle parameters theta for VQE circuit
         theta = [Symbol("theta_" + str(i) + str(j)) for i in range(depth) for j in range(self.num_params)]
 
-        # Prepare the initial state for particular problem instance
+        # Prepare the initial state for particular problem instance, the default is the \ket{0} state
         if self.init_function is not None:
             self.init_function(qarg)
-        #else: # initial state \ket{0}
-        #    h(qarg)
             
         # Apply p layers of the ansatz
         for i in range(depth):                           
@@ -177,7 +171,7 @@ class VQEProblem:
         
         return compiled_qc, theta
 
-    def optimization_routine(self, qarg, depth, mes_kwargs, max_iter): 
+    def optimization_routine(self, qarg, depth, mes_kwargs, max_iter, init_type="random", init_point=None, optimizer="COBYLA"): 
         """
         Wrapper subroutine for the optimization method used in QAOA. The initial values are set and the optimization via ``COBYLA`` is conducted here.
 
@@ -191,6 +185,14 @@ class VQEProblem:
             The keyword arguments for the measurement function. Default is an empty dictionary, as defined in previous functions.
         max_iter : int, optional
             The maximum number of iterations for the optimization method. Default is 50, as defined in previous functions.
+        init_type : string, optional
+            Specifies the way the initial optimization parameters are chosen. Available is ``random``. 
+            The default is ``random``: Parameters are initialized uniformly at random in the interval $[0,\pi/2)]$.
+        init_point : list[float], optional
+            Specifies the initial optimization parameters. 
+        optimizer : str, optional
+            Specifies the optimization routine. Available are "COBYLA", "COBYQA". 
+            The Default is "COBYLA". 
 
         Returns
         -------
@@ -238,11 +240,10 @@ class VQEProblem:
             else:
                 return expectation
 
-        # Set initial random values for optimization parameters 
-        if self.init_type=='random':
-            init_point = np.pi * np.random.rand(depth * self.num_params)/2
-        if self.init_point is not None:
-            init_point = self.init_point
+        if init_point is None:
+            # Set initial random values for optimization parameters 
+            if init_type=='random':
+                init_point = np.pi * np.random.rand(depth * self.num_params)/2
 
         #def optimization_cb(x):
         #    self.optimization_params.append(x)
@@ -251,13 +252,13 @@ class VQEProblem:
         compiled_qc, symbols = self.compile_circuit(qarg, depth)
         res_sample = minimize(optimization_wrapper,
                                 init_point, 
-                                method='COBYLA',
+                                method=optimizer,
                                 options={'maxiter':max_iter}, 
                                 args = (compiled_qc, symbols, qarg, mes_kwargs))
             
         return res_sample['x']
 
-    def run(self, qarg, depth, mes_kwargs = {}, max_iter = 50, init_type = "random", init_point=None):
+    def run(self, qarg, depth, mes_kwargs = {}, max_iter = 50, init_type = "random", init_point=None, optimizer="COBYLA"):
         """
         Run the specific VQE problem instance with given quantum arguments, depth of VQE circuit,
         measurement keyword arguments (mes_kwargs) and maximum iterations for optimization (max_iter).
@@ -277,6 +278,9 @@ class VQEProblem:
             The default is ``random``: Parameters are initialized uniformly at random in the interval $[0,\pi/2)]$.
         init_point : list[float], optional
             Specifies the initial optimization parameters. 
+        optimizer : str, optional
+            Specifies the optimization routine. Available are ``COBYLA``, ``COBYQA``, ``Nelder-Mead``. 
+            The Default is ``COBYLA``. 
 
         Returns
         -------
@@ -284,22 +288,12 @@ class VQEProblem:
             The expected value of the spin operator after applying the optimal VQE circuit to the quantum variable.
         """
 
-        self.init_type = init_type
-        self.init_point = init_point
-
-        #init_point = np.pi * np.random.rand(2 * depth)/2
-
-        #alternative to everything below:
-        #bound_qc = self.train_circuit(qarg, depth)
-        #opt_res = bound_qc(qarg).get_measurement(**mes_kwargs)
-        #return opt_res
         if not "shots" in mes_kwargs:
             mes_kwargs["shots"] = 5000
         
-        #res_sample = self.optimization_routine(qarg, compiled_qc, symbols , depth,  mes_kwargs, max_iter)
-        optimal_theta = self.optimization_routine(qarg, depth, mes_kwargs, max_iter)
+        optimal_theta = self.optimization_routine(qarg, depth, mes_kwargs, max_iter, init_type, init_point, optimizer)
         
-        # Prepare initial state 
+        # Prepare the initial state for particular problem instance, the default is the \ket{0} state
         if self.init_function is not None:
             self.init_function(qarg)
 
@@ -311,7 +305,7 @@ class VQEProblem:
         
         return opt_res
     
-    def train_function(self, qarg, depth, mes_kwargs = {}, max_iter = 50, init_type = "random"):
+    def train_function(self, qarg, depth, mes_kwargs = {}, max_iter = 50, init_type = "random", init_point=None, optimizer="COBYLA"):
         """
         This function allows for training of a circuit with a given instance of a ``VQEProblem``. It will then return a function that can be applied to a ``QuantumVariable``,
         s.t. that it prepares a solution to the problem instance. The function therefore applies a circuit for the problem instance with optimized parameters.
@@ -326,6 +320,14 @@ class VQEProblem:
             The keyword arguments for the measurement function. Default is an empty dictionary.
         max_iter : int, optional
             The maximum number of iterations for the optimization method. Default is 50.
+        init_type : string, optional
+            Specifies the way the initial optimization parameters are chosen. Available is ``random``. 
+            The default is ``random``: Parameters are initialized uniformly at random in the interval $[0,\pi/2)]$.
+        init_point : list[float], optional
+            Specifies the initial optimization parameters. 
+        optimizer : str, optional
+            Specifies the optimization routine. Available are ``COBYLA``, ``COBYQA``, ``Nelder-Mead``.
+            The Default is "COBYLA". 
 
         Returns
         -------
@@ -334,15 +336,13 @@ class VQEProblem:
 
         """
 
-        compiled_qc, symbols = self.compile_circuit(qarg, depth)
-        optimal_theta = self.optimization_routine(qarg, depth, mes_kwargs, max_iter)
+        optimal_theta = self.optimization_routine(qarg, depth, mes_kwargs, max_iter, init_type, init_point, optimizer)
         
         def circuit_generator(qarg_gen):
+            # Prepare the initial state for particular problem instance, the default is the \ket{0} state
             if self.init_function is not None:
                 self.init_function(qarg_gen)
-            #else:
-                # initial state \ket{0}
-                #h(qarg_gen)
+
             for i in range(depth): 
                 self.ansatz_function(qarg,[optimal_theta[self.num_params*i+j] for j in range(self.num_params)])
             
@@ -420,9 +420,8 @@ class VQEProblem:
                      "qubit_amount" : [],
                      "shots" : [],
                      "iterations" : [],
-                     "energy" : [],
                      "runtime" : [],
-                     "cl_cost" : []
+                     "energy" : []
                      }
         
         for p in depth_range:
@@ -441,7 +440,9 @@ class VQEProblem:
                         
                         temp_mes_kwargs = dict(mes_kwargs)
                         temp_mes_kwargs["shots"] = s
-                        energy = self.run(qarg=qarg_dupl, depth = p, max_iter = it, mes_kwargs = temp_mes_kwargs, init_type='random')
+
+                        energy = self.run(qarg=qarg_dupl, depth = p, max_iter = it, mes_kwargs = temp_mes_kwargs, init_type=init_type)
+
                         final_time = time.time() - start_time
                         
                         compiled_qc = qarg_dupl.qs.compile(intended_measurements=mes_qubits)
@@ -451,7 +452,6 @@ class VQEProblem:
                         data_dict["qubit_amount"].append(compiled_qc.num_qubits())
                         data_dict["shots"].append(s)
                         data_dict["iterations"].append(it)
-                        #data_dict["counts"].append(counts)
                         data_dict["energy"].append(energy)
                         data_dict["runtime"].append(final_time)
                         
@@ -475,7 +475,7 @@ class VQEProblem:
         from qrisp.misc.spin import ground_state_energy
 
         if not self.callback:
-            raise Exception("Visualization can only be perform on a VQE instance with self.callback=True")
+            raise Exception("Visualization can only be performed for a VQE instance with callback=True")
         
         if exact:
             exact_solution = ground_state_energy(self.spin_operator)

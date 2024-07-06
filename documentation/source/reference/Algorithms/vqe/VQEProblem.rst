@@ -16,3 +16,4 @@ Methods
    VQEProblem.train_function
    VQEProblem.compile_circuit
    VQEProblem.benchmark
+   VQEProblem.visualize_energy

@@ -5,18 +5,19 @@ VQE Heisenberg problem implementation
 
 .. currentmodule:: vqe.problems.heisenberg
 
-Problem description
--------------------
+Heisenberg problem
+------------------
 
-Given a Graph  :math:`G = (V,E)` maximize the size of a clique, i.e. a subset :math:`V' \subset V` in which all pairs of vertices are mutually non-adjacent.
+.. autofunction:: heisenberg_problem
 
-Cost operator
--------------
+Hamiltonian
+-----------
 
-todo
+.. autofunction:: create_heisenberg_hamiltonian
 
+Ansatz
+------
 
-Classical cost function
------------------------
+.. autofunction:: create_heisenberg_ansatz
 
-todo
+.. autofunction:: create_heisenberg_init_function
