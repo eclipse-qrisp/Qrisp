@@ -28,7 +28,7 @@ class TracingQuantumSession:
     
     def __init__(self):
         
-        self.abs_qc = qdef_p.bind()
+        self.abs_qc = None
         self.qv_list = []
         self.deleted_qv_list = []
         
@@ -36,6 +36,10 @@ class TracingQuantumSession:
     
         if len(clbits):
             raise Exception("Tried to append Operation with non-zero classical bits in JAX mode.")
+            
+        if self.abs_qc is None:
+            self.abs_qc = qdef_p.bind()
+            
         self.abs_qc = operation.bind(self.abs_qc, *(operation.params + [b.abstract for b in qubits]))
         
     def register_qv(self, qv, size):
@@ -43,6 +47,9 @@ class TracingQuantumSession:
             raise RuntimeError(
                 "Variable name " + str(qv.name) + " already exists in quantum session"
             )
+            
+        if self.abs_qc is None:
+            self.abs_qc = qdef_p.bind()
             
         # Determine amount of required qubits
         self.abs_qc, qv.reg = create_qubits(self.abs_qc, size)
