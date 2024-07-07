@@ -18,7 +18,7 @@
 
 from jax import jit, make_jaxpr
 from jax.core import Jaxpr, JaxprEqn, ClosedJaxpr, Var
-from qrisp.jax import get_tracing_qs, check_for_tracing_mode, flatten_collected_environments, eval_jaxpr
+from qrisp.jax import get_tracing_qs, check_for_tracing_mode, flatten_collected_environments, eval_jaxpr, AbstractQuantumCircuit
 
 def control_eqn(eqn, ctrl_qubit_var):
     """
@@ -42,13 +42,12 @@ def control_eqn(eqn, ctrl_qubit_var):
         return eqn
     else:
         return JaxprEqn(primitive = eqn.primitive.control(),
-                        invars = eqn.invars,
+                        invars = [eqn.invars[0], ctrl_qubit_var] + eqn.invars[1:],
                         outvars = eqn.outvars,
                         params = eqn.params,
                         source_info = eqn.source_info,
                         effects = eqn.effects,
                         ctx = eqn.ctx)
-
 
 def control_jispr(jispr):
     """
@@ -81,7 +80,13 @@ def control_jispr(jispr):
         else:
             new_eqns.append(eqn)
     
-    return Jispr(constvars = [ctrl_qubit_var] + jispr.constvars, 
+    
+    permeability = dict(jispr.permeability)
+    permeability[ctrl_qubit_var] = True
+    
+    return Jispr(permeability = permeability,
+                 isqfree = jispr.isqfree,
+                 constvars = [ctrl_qubit_var] + jispr.constvars, 
                  invars = jispr.invars, 
                  outvars = jispr.outvars, 
                  eqns = new_eqns)
@@ -92,7 +97,28 @@ def multi_control_jispr(jispr, num_ctrl = 1, ctrl_state = -1):
     ctrl_vars = [Var(suffix = "", aval = AbstractQubit()) for _ in range(num_ctrl)]
     ctrl_avals = [x.aval for x in ctrl_vars]
     
-    return Jispr(make_jaxpr(exec_multi_controlled_jispr(jispr))(ctrl_avals, *[var.aval for var in jispr.constvars + jispr.invars]).jaxpr)
+    temp_jaxpr = make_jaxpr(exec_multi_controlled_jispr(jispr))(ctrl_avals, *[var.aval for var in jispr.constvars + jispr.invars]).jaxpr
+    
+    permeability = {}
+    
+    for i in range(len(jispr.invars)):
+        permeability[temp_jaxpr.invars[num_ctrl + i]] = jispr.permeability[jispr.invars[i]]
+    
+    for i in range(len(jispr.outvars)):
+        permeability[temp_jaxpr.outvars[i]] = jispr.permeability[jispr.outvars[i]]
+    
+    for i in range(len(jispr.constvars)):
+        permeability[temp_jaxpr.invars[i]] = jispr.permeability[jispr.constvars[i]]
+        
+    for i in range(num_ctrl):
+        permeability[temp_jaxpr.invars[i]] = True
+        
+    
+    return Jispr(permeability = permeability,
+                 invars = temp_jaxpr.invars[num_ctrl:],
+                 constvars = temp_jaxpr.invars[:num_ctrl] + temp_jaxpr.constvars,
+                 outvars = temp_jaxpr.outvars,
+                 eqns = temp_jaxpr.eqns)
     
     
 
@@ -103,19 +129,34 @@ def exec_multi_controlled_jispr(jispr):
         
         if len(ctrls) == 1:
             controlled_jispr = control_jispr(jispr)
-            eval_jaxpr(controlled_jispr)(ctrls[0], *args)
+            return eval_jaxpr(controlled_jispr)(ctrls[0], *args)
             
         else:
-            
             from qrisp.circuit import XGate
             from qrisp.jax import get_tracing_qs
+            from qrisp import QuantumBool
+            
             qs = get_tracing_qs()
             
+            args = list(args)
+            for arg in args:
+                if isinstance(arg.aval, AbstractQuantumCircuit):
+                    qs.abs_qc = arg
+                    args.remove(arg)
+                    break
+            
+            controlled_jispr = control_jispr(jispr)
+            
             mcx_operation = XGate().control(len(ctrls))
+            ctrl_qbl = QuantumBool()
             
-            qs.append(mcx_operation, ctrls)
+            qs.append(mcx_operation, ctrls + [ctrl_qbl[0]])
             
+            res = controlled_jispr.eval(*([ctrl_qbl[0]] + args))
             
+            qs.append(mcx_operation, ctrls + [ctrl_qbl[0]])
+            
+            return qs.abs_qc, res
             
     return multi_controlled_jispr_executor
         

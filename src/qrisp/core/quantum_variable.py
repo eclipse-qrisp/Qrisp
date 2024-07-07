@@ -1051,12 +1051,7 @@ class QuantumVariable:
             return self.reg[key]
         else:
             from qrisp.jax import get_qubit
-            from qrisp import Qubit
-            qb = Qubit(self.name + "_abs")
-            qb.qs = self.qs
-            qb.abstract = get_qubit(self.reg, key)
-            qb.allocated = True
-            return qb
+            return get_qubit(self.reg, key)
 
     def __str__(self):
         return str(self.get_measurement())

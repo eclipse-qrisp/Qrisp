@@ -16,20 +16,17 @@
 ********************************************************************************/
 """
 
-from jax import jit, make_jaxpr
+from jax import make_jaxpr
 from jax.core import Jaxpr
 
-from qrisp.jax.jisp_expression import invert_jispr
-from qrisp.jax import AbstractQuantumCircuit
+from qrisp.jax.jisp_expression import invert_jispr, multi_control_jispr
+from qrisp.jax import AbstractQuantumCircuit, eval_jaxpr
 
 class Jispr(Jaxpr):
     
     __slots__ = "permeability", "isqfree", "hashvalue"
     
-    def __init__(self, *args, permeability = {}, isqfree = None, **kwargs):
-        
-        self.permeability = permeability
-        self.isqfree = isqfree
+    def __init__(self, *args, permeability = None, isqfree = None, **kwargs):
         
         if len(args) == 1:
             kwargs["jaxpr"] = args[0]
@@ -52,9 +49,19 @@ class Jispr(Jaxpr):
             
             Jaxpr.__init__(self, **kwargs)
             
+        self.permeability = {}
+        if permeability is None:
+            permeability = {}
+        for var in self.constvars + self.invars + self.outvars:
+            self.permeability[var] = permeability.get(var, None)
+        
+        self.isqfree = isqfree
+            
         if not isinstance(self.invars[0].aval, AbstractQuantumCircuit):
-            print(type(self.invars[0].aval))
-            raise Exception
+            raise Exception(f"Tried to create a Jispr from data that doesn't have a QuantumCircuit as first argument (got {type(self.invars[0].aval)} instead)")
+        
+        if not isinstance(self.outvars[0].aval, AbstractQuantumCircuit):
+            raise Exception(f"Tried to create a Jispr from data that doesn't have a QuantumCircuit as first entry of return type (got {type(self.outvars[0].aval)} instead)")
         
     def __hash__(self):
         
@@ -67,6 +74,33 @@ class Jispr(Jaxpr):
     
     def inverse(self):
         return invert_jispr(self)
+    
+    def control(self, num_ctrl, ctrl_state = -1):
+        return multi_control_jispr(self, num_ctrl, ctrl_state)
+        
+            
+        
+    
+    def eval(self, *args, **kwargs):
+        
+        from qrisp.jax import get_tracing_qs
+        
+        qs = get_tracing_qs()
+        
+        const_args = args[:len(self.constvars)]
+        in_args = args[len(self.constvars):]
+        
+        res = eval_jaxpr(self)(*const_args, qs.abs_qc, *in_args, **kwargs)
+        
+        qs = get_tracing_qs()
+        if len(self.outvars) == 1:
+            qs.abs_qc = res
+            return
+        else:
+            qs.abs_qc = res[0]
+            return res[1:]
+        
+        
 
 
 def make_jispr(fun):
@@ -75,7 +109,7 @@ def make_jispr(fun):
         
         def ammended_function(qc, *args, **kwargs):
             
-            qs = get_tracing_qs()
+            qs = get_tracing_qs(check_validity = False)
             temp = qs.abs_qc
             qs.abs_qc = qc
             
@@ -84,7 +118,7 @@ def make_jispr(fun):
             res_qc = qs.abs_qc
             qs.abs_qc = temp
             
-            return qc, res
+            return res_qc, res
         
         jaxpr = make_jaxpr(ammended_function)(AbstractQuantumCircuit(), *args, **kwargs).jaxpr
         

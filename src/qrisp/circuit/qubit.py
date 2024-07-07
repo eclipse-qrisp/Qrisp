@@ -16,6 +16,7 @@
 ********************************************************************************/
 """
 import numpy as np
+from jax.core import AbstractValue, Primitive, raise_to_shaped_mappings
 
 class Qubit:
     """
@@ -67,6 +68,7 @@ class Qubit:
         return self.hash_value == other.hash_value
     
 
+"""
 from jax import tree_util
 
 class QBNameContainer:
@@ -97,3 +99,5 @@ def unflatten_qb(aux_data, children):
 
 # Register as a PyTree with JAX
 tree_util.register_pytree_node(Qubit, flatten_qb, unflatten_qb)
+"""
+pass

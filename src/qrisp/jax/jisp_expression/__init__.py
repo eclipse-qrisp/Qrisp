@@ -17,5 +17,6 @@
 """
 
 from qrisp.jax.jisp_expression.inv_transform import *
+from qrisp.jax.jisp_expression.control_transform import *
 from qrisp.jax.jisp_expression.centerclass import *
 

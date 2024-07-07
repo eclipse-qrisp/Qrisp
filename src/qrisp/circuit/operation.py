@@ -108,11 +108,13 @@ class Operation(QuantumPrimitive):
             This function does not need to be JAX traceable. It will be invoked with
             abstractions of the actual arguments. 
             """
+            if not isinstance(qc, AbstractQuantumCircuit):
+                raise Exception(f"Tried to execute Operation.bind with the first argument of tpye {type(qc)} instead of AbstractQuantumCircuit")
             
             return AbstractQuantumCircuit()
         
         @self.def_impl
-        def abstract_eval(qc, *args):
+        def append_impl(qc, *args):
             """Concrete evaluation of the primitive.
             
             This function does not need to be JAX traceable. It will be invoked with
@@ -742,13 +744,14 @@ class PTControlledOperation(Operation):
                 definition_circ = method(self, num_ctrl_qubits, self.ctrl_state)
             else:
                 from qrisp.circuit.controlled_operations import multi_controlled_u3_circ
-
-                definition_circ = multi_controlled_u3_circ(
-                    base_operation,
-                    num_ctrl_qubits,
-                    ctrl_state=self.ctrl_state,
-                    method=method,
-                )
+                from qrisp.circuit import fast_append
+                with fast_append(3):
+                    definition_circ = multi_controlled_u3_circ(
+                        base_operation,
+                        num_ctrl_qubits,
+                        ctrl_state=self.ctrl_state,
+                        method=method,
+                    )
 
         # If the base operation has a definition, we can simply apply the phase tolerant
         # control algorithm to every gate contained in this defintion.

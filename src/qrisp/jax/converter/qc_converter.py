@@ -52,7 +52,7 @@ def extract_qc(jaxpr_or_function):
         
         jaxpr = jaxpr_gen(*args)
         
-        if len(jaxpr.invars) != len(args):
+        if len(jaxpr.invars) + len(jaxpr.constvars) != len(args):
             raise Exception(f"Supplied inaccurate amount of arguments ({len(args)}) for Jaxpr (requires {len(jaxpr.invars)}).")
         
         eqn_eval_dic = {"pjit" : pjit_to_gate, "measure" : measure_to_clbit}

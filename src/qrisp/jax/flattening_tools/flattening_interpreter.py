@@ -84,9 +84,9 @@ def reinterpret(jaxpr, eqn_eval_dic = {}):
 def eval_jaxpr_with_context_dic(jaxpr, context_dic, eqn_eval_dic = {}):
     
     from qrisp import QuantumCircuit
-    for eqn in jaxpr.eqns:
-        for outvar in eqn.outvars:
-            context_dic[outvar] = eqn
+    # for eqn in jaxpr.eqns:
+        # for outvar in eqn.outvars:
+            # context_dic[outvar] = eqn
     
     # Iterate through the equations    
     for eqn in jaxpr.eqns:
@@ -134,8 +134,6 @@ def exec_eqn(eqn, context_dic):
                 evaluate_cond_eqn(eqn, context_dic)
             
             return
-            
-            
     
     res = eqn.primitive.bind(*invalues, **eqn.params)
     insert_outvalues(eqn, context_dic, res)

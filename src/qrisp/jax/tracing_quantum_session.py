@@ -40,7 +40,7 @@ class TracingQuantumSession:
         if self.abs_qc is None:
             self.abs_qc = qdef_p.bind()
             
-        self.abs_qc = operation.bind(self.abs_qc, *(operation.params + [b.abstract for b in qubits]))
+        self.abs_qc = operation.bind(self.abs_qc, *(operation.params + [b for b in qubits]))
         
     def register_qv(self, qv, size):
         if qv.name in [temp_qv.name for temp_qv in self.qv_list + self.deleted_qv_list]:
@@ -88,6 +88,8 @@ def check_for_tracing_mode():
     return hasattr(jax._src.core.thread_local_state.trace_state.trace_stack.dynamic, "jaxpr_stack")
 
 def check_live(tracer):
+    if tracer is None:
+        return True
     return not not tracer._trace.main.jaxpr_stack
 
 def get_tracing_qs(check_validity = True):
@@ -98,6 +100,10 @@ def get_tracing_qs(check_validity = True):
             tr_qs_container[0] = weakref.ref(res)
             return res
         if check_validity and not check_live(res.abs_qc):
+            res = TracingQuantumSession()
+            tr_qs_container[0] = weakref.ref(res)
+            return res
+        if res.abs_qc is None and len(res.qv_list):
             res = TracingQuantumSession()
             tr_qs_container[0] = weakref.ref(res)
             return res
