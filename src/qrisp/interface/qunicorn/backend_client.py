@@ -71,7 +71,13 @@ class BackendClient:
 
     # Executes
     def run(self, qc, shots):
-        qasm_str = qc.qasm()
+        
+        qiskit_qc = monolithical_clreg(qc)
+        try:
+            qasm_str = qiskit_qc.qasm()
+        except:
+            from qiskit.qasm2 import dumps
+            qasm_str = dumps(qiskit_qc)
 
         deployment_data = {
             "programs": [
@@ -181,3 +187,19 @@ class BackendClient:
             )
         else:
             raise ValueError(f"Unknown format {counts_format}")
+
+def monolithical_clreg(qc):
+    import qiskit
+    qiskit_qc = qc.to_qiskit()
+    
+    new_qiskit_qc = qiskit.QuantumCircuit(len(qc.qubits), len(qc.clbits))
+    
+    for i in range(len(qiskit_qc.data)):
+        qrisp_instr = qc.data[i]
+        qubit_indices = [qc.qubits.index(qubit) for qubit in qrisp_instr.qubits]
+        clbit_indices = [qc.clbits.index(clbit) for clbit in qrisp_instr.clbits]
+        
+        qiskit_instr = qiskit_qc.data[i]
+        new_qiskit_qc.append(qiskit_instr.operation, qubit_indices, clbit_indices)
+            
+    return new_qiskit_qc
