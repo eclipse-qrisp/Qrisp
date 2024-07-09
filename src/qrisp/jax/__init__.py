@@ -17,10 +17,10 @@
 """
 
 from qrisp.jax.primitives import*
-from qrisp.jax.flattening_tools import *
-from qrisp.jax.converter import *
 from qrisp.jax.tracing_quantum_session import *
 from qrisp.jax.qaching import qache
+from qrisp.jax.flattening_tools import *
+from qrisp.jax.converter import *
 from qrisp.jax.testing_utils import *
 from qrisp.jax.jisp_expression import *
 

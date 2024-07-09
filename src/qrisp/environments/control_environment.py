@@ -22,6 +22,7 @@ from qrisp.core.library import mcx, p, rz, x
 from qrisp.core.session_merging_tools import merge, merge_sessions, multi_session_merge
 from qrisp.environments import QuantumEnvironment
 from qrisp.misc import perm_lock, perm_unlock, bin_rep
+from qrisp.jax import check_for_tracing_mode, AbstractQubit
 
 
 class ControlEnvironment(QuantumEnvironment):
@@ -68,39 +69,54 @@ class ControlEnvironment(QuantumEnvironment):
 
     def __init__(self, ctrl_qubits, ctrl_state=-1, ctrl_method=None, invert = False):
         
-        if isinstance(ctrl_qubits, list):
-            self.arg_qs = multi_session_merge([qb.qs() for qb in ctrl_qubits])
-        else:
-            self.arg_qs = ctrl_qubits.qs()
-        self.arg_qs = merge(ctrl_qubits)
-
-    
-        self.ctrl_method = ctrl_method
-        if isinstance(ctrl_qubits, Qubit):
-            ctrl_qubits = [ctrl_qubits]
+        if check_for_tracing_mode():
             
-        if isinstance(ctrl_state, int):
-            if ctrl_state < 0:
-                ctrl_state += 2**len(ctrl_qubits)
-                
-            self.ctrl_state = bin_rep(ctrl_state, len(ctrl_qubits))[::-1]
+            QuantumEnvironment.__init__(self)
+            if not isinstance(ctrl_qubits, list):
+                ctrl_qubits = [ctrl_qubits]
+            self.env_args = list(ctrl_qubits)
+            
         else:
-            self.ctrl_state = str(ctrl_state)
         
+            if isinstance(ctrl_qubits, list):
+                self.arg_qs = multi_session_merge([qb.qs() for qb in ctrl_qubits])
+            else:
+                self.arg_qs = ctrl_qubits.qs()
+            self.arg_qs = merge(ctrl_qubits)
+    
+        
+            self.ctrl_method = ctrl_method
+            if isinstance(ctrl_qubits, Qubit):
+                ctrl_qubits = [ctrl_qubits]
+                
+            if isinstance(ctrl_state, int):
+                if ctrl_state < 0:
+                    ctrl_state += 2**len(ctrl_qubits)
+                    
+                self.ctrl_state = bin_rep(ctrl_state, len(ctrl_qubits))[::-1]
+            else:
+                self.ctrl_state = str(ctrl_state)
             
-        self.ctrl_qubits = ctrl_qubits
-        self.invert = invert
-
-        self.manual_allocation_management = True
-
-        # For more information on why this attribute is neccessary check the comment
-        # on the line containing subcondition_truth_values = []
-        self.sub_condition_envs = []
-
-        QuantumEnvironment.__init__(self)
+                
+            self.ctrl_qubits = ctrl_qubits
+            self.invert = invert
+    
+            self.manual_allocation_management = True
+    
+            # For more information on why this attribute is neccessary check the comment
+            # on the line containing subcondition_truth_values = []
+            self.sub_condition_envs = []
+    
+            QuantumEnvironment.__init__(self)
+            
 
     # Method to enter the environment
     def __enter__(self):
+        
+        if check_for_tracing_mode():
+            QuantumEnvironment.__enter__(self)
+            return
+            
         from qrisp.qtypes.quantum_bool import QuantumBool
 
         if len(self.ctrl_qubits) == 1:
@@ -122,6 +138,9 @@ class ControlEnvironment(QuantumEnvironment):
             InversionEnvironment,
         )
 
+        if check_for_tracing_mode():
+            QuantumEnvironment.__exit__(self, exception_type, exception_value, traceback)
+            return
         self.parent_cond_env = None
 
         QuantumEnvironment.__exit__(self, exception_type, exception_value, traceback)

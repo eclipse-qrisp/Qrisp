@@ -18,7 +18,7 @@
 
 from jax.core import JaxprEqn, Literal, ClosedJaxpr
 from jax import jit, make_jaxpr
-from qrisp.jax.flattening_tools import eval_jaxpr, extract_invalues, insert_outvalues
+from qrisp.jax.flattening_tools import eval_jaxpr, extract_invalues, insert_outvalues, reinterpret
 
 def evaluate_pjit_eqn(pjit_eqn, context_dic):
     
@@ -42,6 +42,6 @@ def flatten_pjit(jaxpr):
         jaxpr = jaxpr.jaxpr
     
     eqn_eval_dic = {"pjit" : evaluate_pjit_eqn}
-    return make_jaxpr(eval_jaxpr(jaxpr, 
-                                 eqn_eval_dic = eqn_eval_dic))(*[var.aval for var in jaxpr.invars])
+    
+    return reinterpret(jaxpr, eqn_eval_dic)
     

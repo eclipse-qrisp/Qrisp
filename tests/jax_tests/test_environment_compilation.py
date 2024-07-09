@@ -31,7 +31,7 @@ def test_environment_compilation():
 
     jaxpr = make_jaxpr(outer_function)(2).jaxpr
     jaxpr = flatten_environments(jaxpr)
-
+    
     jisp_function_test(outer_function)
     
     @qache

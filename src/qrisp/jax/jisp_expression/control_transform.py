@@ -92,37 +92,29 @@ def control_jispr(jispr):
                  eqns = new_eqns)
         
 def multi_control_jispr(jispr, num_ctrl = 1, ctrl_state = -1):
+    
+    if num_ctrl == 1:
+        return control_jispr(jispr)
+    
     from qrisp.jax import Jispr, AbstractQubit
     
     ctrl_vars = [Var(suffix = "", aval = AbstractQubit()) for _ in range(num_ctrl)]
     ctrl_avals = [x.aval for x in ctrl_vars]
     
-    temp_jaxpr = make_jaxpr(exec_multi_controlled_jispr(jispr))(ctrl_avals, *[var.aval for var in jispr.constvars + jispr.invars]).jaxpr
+    temp_jaxpr = make_jaxpr(exec_multi_controlled_jispr(jispr))(ctrl_avals, *[var.aval for var in jispr.invars + jispr.constvars]).jaxpr
     
-    permeability = {}
+    invars = temp_jaxpr.invars[num_ctrl:-len(jispr.constvars)]
+    constvars = temp_jaxpr.invars[:num_ctrl] + temp_jaxpr.invars[-len(jispr.constvars):]
     
-    for i in range(len(jispr.invars)):
-        permeability[temp_jaxpr.invars[num_ctrl + i]] = jispr.permeability[jispr.invars[i]]
-    
-    for i in range(len(jispr.outvars)):
-        permeability[temp_jaxpr.outvars[i]] = jispr.permeability[jispr.outvars[i]]
-    
-    for i in range(len(jispr.constvars)):
-        permeability[temp_jaxpr.invars[i]] = jispr.permeability[jispr.constvars[i]]
-        
-    for i in range(num_ctrl):
-        permeability[temp_jaxpr.invars[i]] = True
-        
-    
-    return Jispr(permeability = permeability,
-                 invars = temp_jaxpr.invars[num_ctrl:],
-                 constvars = temp_jaxpr.invars[:num_ctrl] + temp_jaxpr.constvars,
+    res = Jispr(
+                 invars = invars,
+                 constvars = constvars,
                  outvars = temp_jaxpr.outvars,
                  eqns = temp_jaxpr.eqns)
     
+    return res
     
-
-
+    
 def exec_multi_controlled_jispr(jispr):
     
     def multi_controlled_jispr_executor(ctrls, *args):
@@ -133,28 +125,28 @@ def exec_multi_controlled_jispr(jispr):
             
         else:
             from qrisp.circuit import XGate
-            from qrisp.jax import get_tracing_qs
             from qrisp import QuantumBool
             
             qs = get_tracing_qs()
-            
             args = list(args)
-            for arg in args:
-                if isinstance(arg.aval, AbstractQuantumCircuit):
-                    qs.abs_qc = arg
-                    args.remove(arg)
-                    break
+            qs.abs_qc = args.pop(0)
+            
+            invalues = []
+            for i in range(len(jispr.invars)-1):
+                invalues.append(args.pop(0))
+            constvalues = args
             
             controlled_jispr = control_jispr(jispr)
-            
             mcx_operation = XGate().control(len(ctrls))
+            
             ctrl_qbl = QuantumBool()
+            ctrl_qb = ctrl_qbl[0]
             
-            qs.append(mcx_operation, ctrls + [ctrl_qbl[0]])
+            qs.append(mcx_operation, ctrls + [ctrl_qb])
             
-            res = controlled_jispr.eval(*([ctrl_qbl[0]] + args))
+            res = controlled_jispr.eval(*(invalues + [ctrl_qb] + constvalues))
             
-            qs.append(mcx_operation, ctrls + [ctrl_qbl[0]])
+            qs.append(mcx_operation, ctrls + [ctrl_qb])
             
             return qs.abs_qc, res
             

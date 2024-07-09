@@ -335,7 +335,7 @@ class QuantumEnvironment(QuantumPrimitive):
         
                 
         @self.def_abstract_eval
-        def abstract_eval(abs_qc, stage = None, type = None, jaxpr = None):
+        def abstract_eval(abs_qc, *env_args, stage = None, type = None, jaxpr = None):
             """Abstract evaluation of the primitive.
             
             This function does not need to be JAX traceable. It will be invoked with
@@ -343,6 +343,8 @@ class QuantumEnvironment(QuantumPrimitive):
             """
             
             return AbstractQuantumCircuit()
+        
+        self.env_args = []
 
     # The methods to start the dumping process for this environment
     # The dumping basically consists of copying the original data into a temporary
@@ -381,7 +383,7 @@ class QuantumEnvironment(QuantumPrimitive):
         
         abs_qs = get_tracing_qs()
         if abs_qs is not None:
-            abs_qs.abs_qc = self.bind(abs_qs.abs_qc, stage = "enter", type = str(type(self)).split(".")[-1][:-2].lower())
+            abs_qs.abs_qc = self.bind(abs_qs.abs_qc, *self.env_args, stage = "enter", type = str(type(self)).split(".")[-1][:-2].lower())
             return
             
         # The QuantumSessions operating inside this environment will be merged

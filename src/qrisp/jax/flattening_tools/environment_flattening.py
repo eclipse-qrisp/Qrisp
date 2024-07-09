@@ -93,7 +93,6 @@ def flatten_environments(jaxpr):
     
     # We see that the QuantumEnvironment no longer is specified by enter/exit
     # statements but a q_env[jaxpr = {...}] call.
-    
     res = flatten_collected_environments(jaxpr)
     
     return res
@@ -135,30 +134,34 @@ def flatten_environment_eqn(env_eqn, context_dic):
     # Set an alias for the function body
     body_jaxpr = env_eqn.params["jaxpr"]
     
-    from qrisp.environments import InversionEnvironment
+    from qrisp.environments import InversionEnvironment, ControlEnvironment
     from qrisp.jax.environment_compilation import inv_transform
+
     
     # Perform the environment compilation logic
     if isinstance(env_eqn.primitive, InversionEnvironment):
         transformed_jaxpr = inv_transform(body_jaxpr)
+    elif isinstance(env_eqn.primitive, ControlEnvironment):
+        num_ctrl = len(env_eqn.invars)-len(body_jaxpr.invars)-len(body_jaxpr.constvars)
+        transformed_jaxpr = body_jaxpr.control(num_ctrl)
     else:
         transformed_jaxpr = body_jaxpr
-    
+        
     # Extract the invalues
     invalues = extract_invalues(env_eqn, context_dic)
     
     # Create a new context_dic
     new_context_dic = {}
+        
+    # Fill the new context dic with the previously collected invalues
+    for i in range(len(transformed_jaxpr.invars)):
+        new_context_dic[transformed_jaxpr.invars[i]] = invalues.pop(0)
     
     # Fill the new context dic with the constvalues
     for i in range(len(transformed_jaxpr.constvars)):
         # The constvars of the jaxpr of the collected environment are given as 
         # the invars of the equation. See the corresponding line in collect_environments.
         new_context_dic[transformed_jaxpr.constvars[i]] = invalues.pop(0)
-    
-    # Fill the new context dic with the previously collected invalues
-    for i in range(len(transformed_jaxpr.invars)):
-        new_context_dic[transformed_jaxpr.invars[i]] = invalues.pop(0)
     
     # Execute the transformed jaxpr for flattening
     eval_jaxpr_with_context_dic(transformed_jaxpr, new_context_dic, eqn_eval_dic = {"q_env" : flatten_environment_eqn})
@@ -194,6 +197,8 @@ def collect_environments(jaxpr):
     # and exit primitive.    
     eqn_list = list(jaxpr.eqns)
     new_eqn_list = []
+    
+    from qrisp.jax import Jispr
     
     while len(eqn_list) != 0:
         
@@ -240,7 +245,7 @@ def collect_environments(jaxpr):
             constvars.remove(enter_eq.outvars[0])
             
             # Create the Jaxpr
-            environment_body_jaxpr = Jaxpr(constvars = constvars,
+            environment_body_jaxpr = Jispr(constvars = constvars,
                                            invars = enter_eq.outvars,
                                            outvars = outvars,
                                            eqns = environment_body_eqn_list)
@@ -249,7 +254,7 @@ def collect_environments(jaxpr):
             eqn = JaxprEqn(
                            params = {"stage" : "collected", "jaxpr" : environment_body_jaxpr},
                            primitive = eqn.primitive,
-                           invars = constvars + list(enter_eq.invars), # Note that the constvars of the jaxpr are appended to the invars of the equation
+                           invars = list(enter_eq.invars) + constvars, # Note that the constvars of the jaxpr are appended to the invars of the equation
                            outvars = list(eqn.outvars),
                            effects = eqn.effects,
                            source_info = eqn.source_info,
@@ -262,7 +267,7 @@ def collect_environments(jaxpr):
         new_eqn_list.append(eqn)
     
     # Return the transformed equation
-    return Jaxpr(constvars = jaxpr.constvars, 
+    return type(jaxpr)(constvars = jaxpr.constvars, 
                  invars = jaxpr.invars,
                  outvars = jaxpr.outvars,
                  eqns = new_eqn_list)

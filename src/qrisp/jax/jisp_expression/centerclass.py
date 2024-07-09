@@ -78,7 +78,6 @@ class Jispr(Jaxpr):
     def control(self, num_ctrl, ctrl_state = -1):
         return multi_control_jispr(self, num_ctrl, ctrl_state)
         
-            
         
     
     def eval(self, *args, **kwargs):
@@ -87,10 +86,7 @@ class Jispr(Jaxpr):
         
         qs = get_tracing_qs()
         
-        const_args = args[:len(self.constvars)]
-        in_args = args[len(self.constvars):]
-        
-        res = eval_jaxpr(self)(*const_args, qs.abs_qc, *in_args, **kwargs)
+        res = eval_jaxpr(self)(qs.abs_qc, *args, **kwargs)
         
         qs = get_tracing_qs()
         if len(self.outvars) == 1:

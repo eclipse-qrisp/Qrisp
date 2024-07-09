@@ -41,7 +41,7 @@ def eval_jaxpr(jaxpr,
     
     def jaxpr_evaluator(*args):
         
-        temp_var_list = jaxpr.constvars + jaxpr.invars 
+        temp_var_list = jaxpr.invars + jaxpr.constvars
         
         if len(temp_var_list) != len(args):
             raise Exception("Tried to evaluate jaxpr with insufficient arguments")
@@ -73,7 +73,7 @@ def reinterpret(jaxpr, eqn_eval_dic = {}):
         inter_jaxpr = jaxpr
         
     res = make_jaxpr(eval_jaxpr(inter_jaxpr,
-                                eqn_eval_dic = eqn_eval_dic))(*[var.aval for var in jaxpr.constvars + jaxpr.invars]).jaxpr
+                                eqn_eval_dic = eqn_eval_dic))(*[var.aval for var in jaxpr.invars + jaxpr.constvars]).jaxpr
     
     if isinstance(jaxpr, ClosedJaxpr):
         res = ClosedJaxpr(res, jaxpr.consts)    
@@ -88,7 +88,7 @@ def eval_jaxpr_with_context_dic(jaxpr, context_dic, eqn_eval_dic = {}):
         # for outvar in eqn.outvars:
             # context_dic[outvar] = eqn
     
-    # Iterate through the equations    
+    # Iterate through the equations
     for eqn in jaxpr.eqns:
         
         # Evaluate the primitive
