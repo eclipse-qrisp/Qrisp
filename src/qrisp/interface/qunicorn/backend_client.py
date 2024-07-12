@@ -190,6 +190,15 @@ class BackendClient:
 
 def monolithical_clreg(qc):
     import qiskit
+    
+    # Filter (de)allocations
+    new_qc = qc.clearcopy()
+    for instr in qc.data:
+        if instr.op.name not in ["qb_alloc", "qb_dealloc"]:
+            new_qc.append(instr)
+    
+    qc = new_qc
+    
     qiskit_qc = qc.to_qiskit()
     
     new_qiskit_qc = qiskit.QuantumCircuit(len(qc.qubits), len(qc.clbits))
