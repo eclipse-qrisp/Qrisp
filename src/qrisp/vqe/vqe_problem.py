@@ -349,7 +349,7 @@ class VQEProblem:
                 self.init_function(qarg_gen)
 
             for i in range(depth): 
-                self.ansatz_function(qarg,[optimal_theta[self.num_params*i+j] for j in range(self.num_params)])
+                self.ansatz_function(qarg_gen,[optimal_theta[self.num_params*i+j] for j in range(self.num_params)])
             
         return circuit_generator
     
