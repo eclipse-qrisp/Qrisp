@@ -36,7 +36,7 @@ class VQEBenchmark:
     iterations : list[int]
         The amount of backend calls of each run.
     energy : list[dict]
-        The iptimal energy of the problem.
+        The optimal energy of the problem.
     runtime : list[float]
         The amount of time passed (in seconds) of each run.
     optimal_solution : -

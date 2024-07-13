@@ -113,6 +113,11 @@ class VQEProblem:
         self.optimization_costs = []
 
     def set_callback(self):
+        """
+        Sets ``callback=True`` for saving intermediate results.
+
+        """
+
         self.callback = True
 
     def set_init_function(self, init_function):
