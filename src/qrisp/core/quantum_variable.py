@@ -1155,7 +1155,8 @@ class QuantumVariable:
         for k in range(N):
 
             curr = qc.copy()
-            curr.append(meas_circs[k].to_gate(),curr.qubits)
+            #curr.append(meas_circs[k].to_gate(),curr.qubits)
+            curr.append(meas_circs[k].to_gate(),list(range(self.size)))
             res = get_measurement_from_qc(curr, self.reg, backend, shots)
             
             # allow groupings

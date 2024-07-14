@@ -563,11 +563,13 @@ def commute(a,b):
     keys.update(set(a.keys()))
     keys.update(set(b.keys()))
 
-    #for key in keys:
-    #    if a.get(key,"I")!="I" and b.get(key,"I")!="I" and a.get(key,"I")!=b.get(key,"I"):
-    #        return False
-    #return True
-    return False
+    # Count non-commuting Pauli operators
+    commute = True
+
+    for key in keys:
+        if a.get(key,"I")!="I" and b.get(key,"I")!="I" and a.get(key,"I")!=b.get(key,"I"):
+            commute = not commute
+    return commute
 
 #
 # helper functions for Hamiltonian simulation

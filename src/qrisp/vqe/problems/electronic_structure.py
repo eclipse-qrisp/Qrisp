@@ -259,4 +259,4 @@ def electronic_structure_problem(one_int, two_int, M, N, mapping_type='jordan_wi
             #xxyy(theta[1],0,qv[1],qv[3])
         z(qv[3])
 
-    return VQEProblem(H, ansatz2, M+1, init_function=hartree_fock)
+    return VQEProblem(H, ansatz, 2, init_function=hartree_fock)
