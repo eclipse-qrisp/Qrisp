@@ -170,7 +170,8 @@ class VQEProblem:
         else:
             intended_measurement_qubits = list(qarg)
         
-        compiled_qc = qarg.qs.compile(intended_measurements=intended_measurement_qubits)
+        #compiled_qc = qarg.qs.compile(intended_measurements=intended_measurement_qubits)
+        compiled_qc = qarg.qs.compile()
         
         qarg.qs.data = temp
         
@@ -205,7 +206,7 @@ class VQEProblem:
             The optimized parameters of the problem instance.
         """
         
-        compiled_qc, symbols = self.compile_circuit(qarg, depth)
+        #compiled_qc, symbols = self.compile_circuit(qarg, depth)
 
         # Define optimization wrapper function to be minimized using VQE
         def optimization_wrapper(theta, qc, symbols, qarg, mes_kwargs):
@@ -292,6 +293,10 @@ class VQEProblem:
         energy : float
             The expected value of the spin operator after applying the optimal VQE circuit to the quantum variable.
         """
+
+        # Delete callback
+        self.optimization_params = []
+        self.optimization_costs = []
 
         if not "shots" in mes_kwargs:
             mes_kwargs["shots"] = 5000
