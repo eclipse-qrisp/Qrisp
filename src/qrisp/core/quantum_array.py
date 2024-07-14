@@ -656,7 +656,8 @@ class QuantumArray(np.ndarray):
         if precompiled_qc is None:        
             if compile:
                 qc = qompiler(
-                    self.qs, intended_measurements = qubits, **compilation_kwargs
+                    #self.qs, intended_measurements = qubits, **compilation_kwargs
+                    self.qs, **compilation_kwargs
                 )
             else:
                 qc = self.qs.copy()

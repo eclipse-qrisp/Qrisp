@@ -209,7 +209,8 @@ def simplify_spin(expr):
 
     """
 
-    threshold = 1e-9
+    #threshold = 1e-9
+    threshold = 1e-12
 
     simplified_expr = 0
 

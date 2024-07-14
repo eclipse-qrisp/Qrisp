@@ -149,10 +149,6 @@ hello
 
 
 
-
-
-
-
 .. math::
     
     H=\sum\limits_{i,j=1}^{M}h_{ij}a_i^{\dagger}a_j+\frac{1}{2}\sum\limits_{i,j,k,l}^{M}h_{i,j,k,l}a_i^{\dagger}a_j^{\dagger}a_ka_l

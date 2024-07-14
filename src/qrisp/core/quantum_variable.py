@@ -1115,7 +1115,8 @@ class QuantumVariable:
         if precompiled_qc is None:        
             if compile:
                 qc = qompiler(
-                    self.qs, intended_measurements=self.reg, **compilation_kwargs
+                    #self.qs, intended_measurements=self.reg, **compilation_kwargs
+                    self.qs, **compilation_kwargs
                 )
             else:
                 qc = self.qs.copy()

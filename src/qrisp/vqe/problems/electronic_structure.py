@@ -19,6 +19,7 @@
 #todo
 import sympy as sp
 from sympy import I
+from sympy import *
 from qrisp.misc.spin import *
 
 #
@@ -36,8 +37,8 @@ def delta(i,j):
 # \Psi_1,...,\\
 
 # spin to spacial
-def sp(x):
-    return x//2
+#def sp(x):
+#    return x//2
 
 def omega(x):
     return x%2
@@ -78,13 +79,13 @@ def spacial_to_spin(int_one,int_two):
 
     """
 
-    n_spin_orbs = int_one.shape[0]
+    n_spin_orbs = 2*int_one.shape[0]
 
     # Initialize the spin-orbital one-electron integral tensor
     int_one_spin = np.zeros((n_spin_orbs, n_spin_orbs))
     for i in range(n_spin_orbs):
         for j in range(n_spin_orbs):
-            int_one_spin[i][j] = delta(omega(i),omega(j))*int_one[sp(i)][sp(j)]
+            int_one_spin[i][j] = delta(omega(i),omega(j))*int_one[i//2][j//2]
 
     # Initialize the spin-orbital two-electron integral tensor
     int_two_spin = np.zeros((n_spin_orbs, n_spin_orbs, n_spin_orbs, n_spin_orbs))
@@ -92,7 +93,7 @@ def spacial_to_spin(int_one,int_two):
         for j in range(n_spin_orbs):
             for k in range(n_spin_orbs):
                 for l in range (n_spin_orbs):
-                    int_two_spin[i][j][k][l] = delta(omega(i),omega(j))*delta(omega(k),omega(l))*int_two[sp(i)][sp(j)][sp(k)][sp(l)]
+                    int_two_spin[i][j][k][l] = delta(omega(i),omega(j))*delta(omega(k),omega(l))*int_two[i//2][j//2][k//2][l//2]
 
     return int_one_spin, int_two_spin
 
@@ -181,7 +182,7 @@ def parity(one_int, two_int):
 
 
 
-def electronic_structure_problem(one_int, two_int):
+def electronic_structure_problem(one_int, two_int, M, N, mapping_type='jordan_wigner', ansatz_type=None):
     r"""
     Creates a VQE problem instance for a electronic structure problem (in terms of spin orbitals)
     defined by the one-electron and two-electron integrals for the spacial orbitals (in chemists' notation).
@@ -203,7 +204,58 @@ def electronic_structure_problem(one_int, two_int):
     .. math::
 
         h_{i,j,k,l} = \int\mathrm dx_1 \mathrm dx_2 
-        
+
+    Parameters
+    ----------
+    int_one : numpy.ndarray
+        The one-electron integrals w.r.t. spacial orbitals.
+    int_two : numpy.ndarray
+        The two-electron integrals w.r.t. spacial orbitals.
+    M : int
+        The number of spin orbitals.
+    N : int
+        The number of electrons.
+    ansatz_type : string, optional
+        The ansatz type.
+    mapping_type : string, optinal
+        The
+
+    Returns
+    -------
+    VQEProblem
+        The VQE problem instance.
+
+    Examples
+    --------
+
+    We denonstrate how to use pyscf to obtain the 
+    
     
     """
-    return 0
+    from qrisp.vqe import VQEProblem
+    from qrisp.qaoa import XY_mixer
+
+    one_int_spin, two_int_spin = spacial_to_spin(one_int, two_int)
+
+    H = jordan_wigner(one_int,two_int)
+
+    def hartree_fock(qv):
+        for i in range(N):
+            x(qv[i])
+
+    def ansatz(qv, theta):
+        rz(theta[0],qv)
+        XY_mixer(qv,theta[1])
+
+    def ansatz2(qv, theta):
+        for i in range(M):
+            rz(theta[i],qv[i])
+        XY_mixer(qv,theta[M])
+
+    def ansatz3(qv, theta):
+        xxyy(theta[0],np.pi/2,qv[0],qv[2])
+        with control(qv[2]):
+            swap(qv[1],qv[3])
+            #xxyy(theta[1],0,qv[1],qv[3])
+
+    return VQEProblem(H, ansatz3, 2, init_function=hartree_fock)
