@@ -20,3 +20,4 @@
 from qrisp.uncomputation.uncomputation import *
 from qrisp.uncomputation.unqomp import *
 from qrisp.uncomputation.type_checker import *
+import qrisp.uncomputation.X_permeability_dag
