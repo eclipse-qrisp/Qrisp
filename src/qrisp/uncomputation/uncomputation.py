@@ -142,6 +142,7 @@ def uncompute(qs, uncomp_vars, recompute=False):
             recompute_qubits.append(qb)
 
     from qrisp.uncomputation.unqomp import uncompute_qc
+    from qrisp.uncomputation.X_perm_unqomp import uncompute_qc
 
     uncomputed_qc = uncompute_qc(qc_to_uncompute, qubits_to_uncompute, recompute_qubits)
 

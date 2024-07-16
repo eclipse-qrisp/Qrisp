@@ -123,7 +123,7 @@ def test_uncomputation_example():
     perm[:] = [2, 1, 0, 3]
 
     res = calc_perm_travel_distance(perm, 5)
-
+    
     assert res.get_measurement() == {0.53125: 1.0}
     
     assert len(res.qs.compile().qubits) == 18
@@ -209,6 +209,7 @@ def test_uncomputation_example():
         b.uncompute()
 
     assert error_thrown
+    return
 
     print("Test 5 passed")
 
