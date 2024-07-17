@@ -1,8 +1,19 @@
-# -*- coding: utf-8 -*-
 """
-Created on Mon Jul 15 23:12:55 2024
-
-@author: sea
+\********************************************************************************
+* Copyright (c) 2023 the Qrisp authors
+*
+* This program and the accompanying materials are made available under the
+* terms of the Eclipse Public License 2.0 which is available at
+* http://www.eclipse.org/legal/epl-2.0.
+*
+* This Source Code may also be made available under the following Secondary
+* Licenses when the conditions for such availability set forth in the Eclipse
+* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+* with the GNU Classpath Exception which is
+* available at https://www.gnu.org/software/classpath/license.html.
+*
+* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+********************************************************************************/
 """
 
 import networkx as nx
@@ -14,19 +25,56 @@ from qrisp.uncomputation.type_checker import is_qfree
 from qrisp.uncomputation.X_permeability_dag import PermeabilityGraph, InstructionNode, TerminatorNode
 
 def uncompute_qc(qc, uncomp_qbs, recompute_qubits=[]):
+    """
+    This function applies the Unqomp algorithm to the QuantumCircuit qc, uncomputing
+    the qubits uncomp_qbs. It is possible to specify a set of qubits that has been
+    uncomputed earlier, which is allowed to be recomputed.
+
+    Parameters
+    ----------
+    qc : QuantumCircuit
+        The QuantumCircuit to uncompute.
+    uncomp_qbs : list[Qubit]
+        A list of Qubits to uncompute using the Unqomp algorithm.
+    recompute_qubits : list[Qubit], optional
+        A list of Qubits, that have been uncomputed earlier, which the algorithm
+        is allowed to recompute. The default is [].
+
+    Raises
+    ------
+    Exception
+        Cyclic dependency detected in DAG during uncomputation.
+    Exception
+        Uncomputation failed because gate needs to be uncomputed
+        but is also targeting qubits which are not up for uncomputation
+
+    Returns
+    -------
+    uncomputed_qc
+        The result of the Unqomp algorithm.
+
+    """
     
-    with fast_append(0):
+    with fast_append():
+        
+        # To speed up the uncomputation, the first step is to filter 
+        # out instruction that are guaranteed that they don't need to be uncomputed.
+        
+        # The idea is that every instruction before the first instruction that operators
+        # on the uncomputation qubits satisfies this property.
+        # Same for every instruction after the last instruction.
         qc_new = qc.copy()
         previous_instructions = []
         follow_up_instructions = []
     
+        # Determine the the previous instructions.
         while len(qc_new.data):
             instr = qc_new.data[0]
             if set(uncomp_qbs + recompute_qubits).intersection(instr.qubits):
                 break
             previous_instructions.append(qc_new.data.pop(0))
             
-    
+        # Determine the the follow-up instructions.
         while len(qc_new.data):
             instr = qc_new.data[-1]
             if set(uncomp_qbs + recompute_qubits).intersection(instr.qubits):
@@ -35,21 +83,33 @@ def uncompute_qc(qc, uncomp_qbs, recompute_qubits=[]):
     
         follow_up_instructions = follow_up_instructions[::-1]
     
-        dag = PermeabilityGraph(qc_new)
+        # Build up the pdag
+        pdag = PermeabilityGraph(qc_new)
     
-        lin = list(nx.topological_sort(dag))
+        # Now come the steps of the Unqomp algorithm
+        
+        # We iterate over a reversed topological sort and successively
+        # uncompute all relevant nodes.
+        lin = list(nx.topological_sort(pdag))
         lin.reverse()
     
         for i in range(len(lin)):
     
+            # Set an alias
             node = lin[i]
     
+            # If the node is a terminator it needs no uncomputation
             if isinstance(node, TerminatorNode):
                 continue
     
-            targets = dag.get_target_qubits(node)
+            # Get the target qubits
+            # target qubits means the qubits the corresponding instruction is
+            # operating either with X-permeability or neutral
+            target_qubits = pdag.get_target_qubits(node)
             
-            if not set(targets).intersection(uncomp_qbs):
+            # If there is no intersection between the target qubits of the instruction
+            # and the qubits to uncompute, this instruction needs no uncomputation
+            if not set(target_qubits).intersection(uncomp_qbs):
                 continue
     
             # This function checks if there is more than one allocation gate in
@@ -58,8 +118,16 @@ def uncompute_qc(qc, uncomp_qbs, recompute_qubits=[]):
             if detect_double_alloc(lin[i:], node.instr.qubits):
                 continue
     
-            if set(targets).issubset(uncomp_qbs) and node.instr and targets:
-                recompute = uncompute_node(dag, node, uncomp_qbs, recompute_qubits)
+            # This case represents the neccesity to uncompute
+            if set(target_qubits).issubset(uncomp_qbs) and node.instr and target_qubits:
+                
+                # The uncompute node function inserts an uncomputation node into the pdag
+                # If a recomputation is required, no nodes are inserted and it returns True
+                recompute = uncompute_node(pdag, node, uncomp_qbs, recompute_qubits)
+                
+                # If a recomputation is required, we call the algorithm with the approriate
+                # recomputation qubits. Qubits that could require recomputation can only
+                # be part of the controls
                 if recompute:
                     return uncompute_qc(
                         qc,
@@ -69,18 +137,26 @@ def uncompute_qc(qc, uncomp_qbs, recompute_qubits=[]):
                     )
                 continue
     
-            off_target_qubits = list(set(targets) - set(uncomp_qbs))
+            # This case treats the possibility that the instruction is targeting qubits
+            # which are not part of the uncomputation qubits.
+            
+            # This would is usually not uncomputable, however it could also imply
+            # that these qubits have been uncomputed allready but gate_wrapped.
+            # The gate_wrap decorator makes ancilla slots as non-permeable,
+            # so these qubits appear as target qubits here.
+            off_target_qubits = list(set(target_qubits) - set(uncomp_qbs))
             
             if off_target_qubits:
-                not_uncomputable_qubits = []
+                
+                non_uncomputable_qubits = []
                 for qb in off_target_qubits:
                     if qb.allocated:
-                        not_uncomputable_qubits.append(qb)
+                        non_uncomputable_qubits.append(qb)
     
-                if not_uncomputable_qubits:
+                if non_uncomputable_qubits:
                     raise Exception(
                         f'Uncomputation failed because gate "{node.instr.op.name}" needs to be uncomputed '
-                        f'but is also targeting qubits {not_uncomputable_qubits} which are not up for uncomputation'
+                        f'but is also targeting qubits {non_uncomputable_qubits} which are not up for uncomputation'
                     )
                 else:
                     return uncompute_qc(
@@ -90,41 +166,80 @@ def uncompute_qc(qc, uncomp_qbs, recompute_qubits=[]):
                     )
     
         try:
-            uncomputed_qc = dag.to_qc()
+            # Retrieve the uncomputed QuantumCircuit            
+            uncomputed_qc = pdag.to_qc()
         except nx.NetworkXUnfeasible:
             raise Exception("Cyclic dependency detected in DAG during uncomputation")
     
+        # Insert the previous and follow_up instructions
         uncomputed_qc.data = (
             previous_instructions + uncomputed_qc.data + follow_up_instructions
         )
         
+        # Return the uncomputed QuantumCircuit
         return uncomputed_qc
 
 
 
-def uncompute_node(dag, uncomp_node, uncomp_qbs, recompute_qubits=[]):
+def uncompute_node(pdag, node, uncomp_qbs, recompute_qubits=[]):
+    """
+    Uncomputes a node in a given PermeabilityGraph (in-place) according to the 
+    Unqomp algorithm.
 
-    target_qubits = dag.get_target_qubits(uncomp_node)
+    Parameters
+    ----------
+    pdag : PermeabilityGraph
+        The PermeabilityGraph to perform the uncomputation in.
+    node : UnqompNode
+        The node to uncompute.
+    uncomp_qbs : list[Qubit]
+        A list of Qubits that are supposed to be uncomputed.
+    recompute_qubits : list[Qubit], optional
+        A list of Qubit, where the algorithm is allowed to recompute them. The default is [].
+
+    Raises
+    ------
+    Exception
+        Tried to uncompute non-qfree instruction
+
+    Returns
+    -------
+    bool
+        A bool indicating whether a recomputation is required.
+
+    """
     
-    a_star_n_list = [dag.recent_node_dic[qb] for qb in set(target_qubits)]
+    # Get the target qubits
+    target_qubits = pdag.get_target_qubits(node)
+    
+    # In the Unqomp paper there is only one a* node.
+    # However since we also allow multiple target operations, our case also
+    # includes the possibility of having multiple a*
+    
+    # Retrieve the list of a* nodes
+    a_star_n_list = [pdag.recent_node_dic[qb] for qb in set(target_qubits)]
+    # Remove duplicates
     a_star_n_list = list(set(a_star_n_list))
     
-    if not is_qfree(uncomp_node.instr.op):
-        raise Exception(f"Tried to uncompute non-qfree instruction {uncomp_node.instr}")
+    if not is_qfree(node.instr.op):
+        raise Exception(f"Tried to uncompute non-qfree instruction {node.instr}")
 
-    ctrls = dag.get_control_nodes(uncomp_node)
+    # Retrieve the list of nodes that are connected to node by a control edges.
+    ctrls = pdag.get_control_nodes(node)
 
-    for i in range(len(ctrls)):
-        if not ctrls[i].uncomputed_node is None:
-            ctrls[i] = ctrls[i].uncomputed_node
+    # If the control node is already uncomputed, we use this node instead.
+    # for i in range(len(ctrls)):
+    #     if not ctrls[i].uncomputed_node is None:
+    #         ctrls[i] = ctrls[i].uncomputed_node
+
 
     # Replace controlled operations by phase tolerant controlled operations
-    if isinstance(uncomp_node.instr.op, ControlledOperation):
-        op = uncomp_node.instr.op
+    if isinstance(node.instr.op, ControlledOperation):
+        op = node.instr.op
 
         if op.method == "auto" and len(op.controls) < 5 or op.method == "gray":
             if len(op.controls) != 1:
-                uncomp_node.instr.op = PTControlledOperation(
+                node.instr.op = PTControlledOperation(
                     op.base_operation,
                     num_ctrl_qubits=len(op.controls),
                     ctrl_state=op.ctrl_state,
@@ -132,11 +247,11 @@ def uncompute_node(dag, uncomp_node, uncomp_qbs, recompute_qubits=[]):
                 )
 
     # Replace results of logic synthesis by phase tolerant logic synthesis
-    if isinstance(uncomp_node.instr.op, LogicSynthGate):
-        if uncomp_node.instr.op.logic_synth_method == "gray":
+    if isinstance(node.instr.op, LogicSynthGate):
+        if node.instr.op.logic_synth_method == "gray":
             from qrisp import QuantumVariable
 
-            tt = uncomp_node.instr.op.tt
+            tt = node.instr.op.tt
 
             input_qv = QuantumVariable(tt.bit_amount)
             output_qv = QuantumVariable(tt.shape[1], qs=input_qv.qs)
@@ -144,30 +259,44 @@ def uncompute_node(dag, uncomp_node, uncomp_qbs, recompute_qubits=[]):
             tt.q_synth(input_qv, output_qv, method="gray_pt")
 
             temp = input_qv.qs.data[-1].op
-            temp.name = uncomp_node.instr.op.name
+            temp.name = node.instr.op.name
             
-            uncomp_node.instr.op = temp
+            node.instr.op = temp
 
-    new_instr = uncomp_node.instr.inverse()
+    # Create the instruction for the new UnqompNode
+    new_instr = node.instr.inverse()
 
+    # Create the new UnqompNode
     reversed_node = InstructionNode(new_instr)
 
-    uncomp_node.uncomputed_node = reversed_node
+    # Link the uncomputed node to the original node
+    node.uncomputed_node = reversed_node
 
-    dag.add_node(reversed_node)
+    # Add the uncomputed node to the pdag
+    pdag.add_node(reversed_node)
     
+    # Update the recent_node_dic with the reversed node
     for qb in target_qubits:
-        dag.recent_node_dic[qb] = reversed_node
+        pdag.recent_node_dic[qb] = reversed_node
 
+    # We now connect the edges of the reversed node.
+    
+    # The first step is to connect the controls.
+    # The idea here is to connect the reversed node to the
+    # controls of the original node.
     for i in range(len(ctrls)):
+        
+        # Set alias
         c = ctrls[i]
+        
+        # Get the qubits of the control edge
+        control_edge_qubits = pdag.get_edge_qubits(c, node)
 
-        control_edge_qubits = dag.get_edge_qubits(c, uncomp_node)
-
+        # This treats the case that a control edge is amoung the recomputable qubits
         if set(control_edge_qubits).intersection(recompute_qubits):
-            for k in dag.successors(c):
-                if dag.get_edge_data(c, k)["edge_type"] in ["X", "neutral"] and set(
-                    dag.get_edge_data(c, k)["qubits"]
+            for k in pdag.successors(c):
+                if pdag.get_edge_data(c, k)["edge_type"] in ["X", "neutral"] and set(
+                    pdag.get_edge_qubits(c, k)
                 ).intersection(control_edge_qubits):
                     if k.uncomputed_node is None:
                         return True
@@ -176,32 +305,57 @@ def uncompute_node(dag, uncomp_node, uncomp_qbs, recompute_qubits=[]):
             else:
                 return True
 
-        dag.add_edge(
-            ctrls[i], reversed_node, edge_type="Z", qubits=control_edge_qubits
-        )
+        # Add the edge from the control node of the original node to the reversed node.
+        pdag.add_edge(ctrls[i], 
+                      reversed_node, 
+                      edge_type="Z", 
+                      qubits=control_edge_qubits)
 
+
+    # The next step is to connect the targets.
+    # For that we use the a_star_n_list which represents all the nodes, that are 
+    # targetted by the operation
     for a_star_n in a_star_n_list:
-        dag.add_edge(
-            a_star_n,
-            reversed_node,
-            edge_type="neutral",
-            qubits=list(
-                set(uncomp_qbs).intersection(dag.get_target_qubits(a_star_n)).intersection(new_instr.qubits)
-            ),
-        )
+        
+        # We first add the edge to the qubits targetted by a_star_n
+        
+        # The qubits of this edge are the qubits which are:
+        #   1. Part of the uncomputation qubits
+        #   2. Targeting a_star_n
+        #   3. Part of the instruction
+        
+        connection_qubits = set(uncomp_qbs).intersection(pdag.get_target_qubits(a_star_n))
+        connection_qubits = connection_qubits.intersection(new_instr.qubits)
+        
+        # Add the edge
+        pdag.add_edge(a_star_n,
+                      reversed_node,
+                      edge_type="neutral",
+                      qubits=list(connection_qubits))
 
-        for v in dag.successors(a_star_n):
-            if dag.get_edge_data(a_star_n, v)["edge_type"] == "Z":
-                dag.add_edge(v, reversed_node, edge_type="anti_dependency")
+        # Next we add the edge to connect to the controls of a_star_n
+        successors = pdag.successors(a_star_n)
+        control_nodes = [v for v in successors if pdag.get_edge_data(a_star_n, v)["edge_type"] == "Z"]
+        
+        # Add the edges
+        for v in control_nodes:
+            pdag.add_edge(v, reversed_node, edge_type="anti_dependency")
 
+    # Finally we connect the missing anti-depdendency edges starting at the reversed node
+    
+    # Iterate over the control nodes
     for c in ctrls:
-        for v in dag.successors(c):
-            if dag.get_edge_data(c, v)["edge_type"] in ["X", "neutral"]:
-                target_edge_qubits = dag.get_edge_qubits(c, v)
-                control_edge_qubits = dag.get_edge_qubits(c, uncomp_node)
+        
+        # Find the streak members attached to the control node c
+        for v in pdag.successors(c):
+            
+            if pdag.get_edge_data(c, v)["edge_type"] in ["X", "neutral"]:
+                target_edge_qubits = pdag.get_edge_qubits(c, v)
+                control_edge_qubits = pdag.get_edge_qubits(c, node)
 
                 if set(target_edge_qubits).intersection(control_edge_qubits):
-                    dag.add_edge(reversed_node, v, edge_type="anti_dependency")
+                    print("test")
+                    pdag.add_edge(reversed_node, v, edge_type="anti_dependency")
 
     return False
 
