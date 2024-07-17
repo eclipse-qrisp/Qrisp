@@ -98,7 +98,7 @@ def spacial_to_spin(int_one,int_two):
     return int_one_spin, int_two_spin
 
 #
-#
+# Fermion to qubit mappings
 #
 
 # annihilation operator
@@ -133,8 +133,6 @@ def jordan_wigner(one_int, two_int):
     H = simplify_spin(H)
 
     return H
-
-
 
 # annihilation operator
 def b(j,M):
@@ -179,25 +177,120 @@ def parity(one_int, two_int):
 
     return H
 
+#
+# Hamiltonian
+#
+
+def create_electronic_hamiltonian(one_int, two_int, M, N, mapping_type='jordan_wigner'):
+    """
+    Creates the qubit Hamiltonian for an electronic structure problem defined by the 
+    one-electron and two-electron integrals for the spin orbitals (in chemists' notation).
+    
+    Parameters
+    ----------
+    int_one : numpy.ndarray
+        The one-electron integrals w.r.t. spacial orbitals.
+    int_two : numpy.ndarray
+        The two-electron integrals w.r.t. spacial orbitals.
+    M : int
+        The number of spin orbitals.
+    N : int
+        The number of electrons.
+    mapping_type : string, optinal
+        The mapping from the fermionic Hamiltonian to the qubit Hamiltonian. Available are ``jordan_wigner``, ``parity``.
+        The default is ``jordan_wigner``.
+
+    Returns
+    -------
+    H : sympr.Expr
+        THe electronic Hamiltonian.
+    
+    """
+
+    H = jordan_wigner(one_int,two_int)
+
+    return H
 
 #
-# QCCSD 
+# Ansatz
 #
 
-def cswap2(i,j,k,l,phi):
+def conjugator(i,j):
+    h(i)
     cx(i,j)
-    cx(k,l)
-    with control([j,l],ctrl_state='00'):
-        xxyy(phi,np.pi/2,i,k)
+
+def pswap(phi,i,j):
+    with conjugate(conjugator)(i,j):
+        ry(-phi/2, [i,j])  
+
+def conjugator2(i,j,k,l):
     cx(i,j)
-    cx(k,l)
+    cx(k,l) 
+
+def pswap2(phi,i,j,k,l):
+    with conjugate(conjugator2)(i,j,k,l):
+        with control([j,l],ctrl_state='00'):
+            pswap(phi,i,k)
+
+def create_QCCSD_ansatz(M,N):
+    """
+    This method implements the `QCCSD ansatz <https://arxiv.org/abs/2005.08451>`_.
+
+    Parameters
+    ----------
+    M : int
+        The number of spin orbitals.
+    N : int
+        The number of electrons.
+
+    Returns
+    -------
+    ansatz : function
+
+    num_params : int
+        The number of parameters.
+    
+    """
+
+    num_params = N*(M-N) + N*(N-1)*(M-N)*(M-N-1)//4
+
+    def ansatz(qv, theta):
+
+        num_params = 0
+        # Single excitations
+        for i in range(N):
+            for j in range(N,M):
+                pswap(theta[num_params],qv[i],qv[j])
+                num_params += 1
+        
+        # Double excitations
+        for i in range(N-1):
+            for j in range(i+1,N):
+                for k in range(N,M-1):
+                    for l in range(k+1,M):
+                        pswap2(theta[num_params],qv[i],qv[j],qv[k],qv[l])
+                        num_params += 1
+
+    return ansatz, num_params
+
+def create_hartree_fock_init_function(N):
+    """
+    
+    
+    """
+
+    def init_function(qv):
+        for i in range(N):
+            x(qv[i])
+
+    return init_function
 
 
 
-def electronic_structure_problem(one_int, two_int, M, N, mapping_type='jordan_wigner', ansatz_type=None):
+def electronic_structure_problem(one_int, two_int, M, N, mapping_type='jordan_wigner', ansatz_type='QCCSD'):
     r"""
-    Creates a VQE problem instance for a electronic structure problem (in terms of spin orbitals)
-    defined by the one-electron and two-electron integrals for the spacial orbitals (in chemists' notation).
+    Creates a VQE problem instance for an electronic structure problem defined by the 
+    one-electron and two-electron integrals for the spin orbitals (in chemists' notation).
 
     The problem Hamiltonian is given by:
 
@@ -205,13 +298,13 @@ def electronic_structure_problem(one_int, two_int, M, N, mapping_type='jordan_wi
 
         H = \sum\limits_{i,j=1}^{M}h_{i,j}a^{\dagger}_ia_j + \sum\limits_{i,j,k,l=1}^{M}h_{i,j,k,l}a^{\dagger}_i\a^{\dagger}_ja_ka_l
     
-    Here,
+    for one-electron integrals:
 
     .. math::
 
         h_{i,j}=\int\mathrm dx \chi_i^*(x)\chi_j(x)
 
-    and
+    and two-electron integrals:
 
     .. math::
 
@@ -227,10 +320,11 @@ def electronic_structure_problem(one_int, two_int, M, N, mapping_type='jordan_wi
         The number of spin orbitals.
     N : int
         The number of electrons.
+    mapping_type : string, optinal
+        The mapping from fermionic Hamiltonian to qubit Hamiltonian. Available are ``jordan_wigner``, ``parity``.
+        The default is ``jordan_wigner``.
     ansatz_type : string, optional
         The ansatz type.
-    mapping_type : string, optinal
-        The
 
     Returns
     -------
@@ -245,45 +339,7 @@ def electronic_structure_problem(one_int, two_int, M, N, mapping_type='jordan_wi
     
     """
     from qrisp.vqe import VQEProblem
-    from qrisp.qaoa import XY_mixer
 
-    one_int_spin, two_int_spin = spacial_to_spin(one_int, two_int)
+    ansatz, num_params = create_QCCSD_ansatz(M,N)
 
-    H = jordan_wigner(one_int,two_int)
-
-    def hartree_fock(qv):
-        for i in range(N):
-            x(qv[i])
-
-    def ansatz_QCCSD(qv, theta):
-        count = 0
-        # Single excitations
-        for i in range(N):
-            for j in range(N,M):
-                xxyy(theta[count],np.pi/2,qv[i],qv[j])
-                count += 1
-        
-        # Double excitations
-        for i in range(N-1):
-            for j in range(i+1,N):
-                for k in range(N,M-1):
-                    for l in range(k+1,M):
-                        cswap2(qv[i],qv[j],qv[k],qv[l],theta[count])
-                        count += 1
-    
-    def count_params():
-        count = 0
-        # Single excitations
-        for i in range(N):
-            for j in range(N,M):
-                count += 1
-        
-        # Double excitations
-        for i in range(N-1):
-            for j in range(i+1,N):
-                for k in range(N,M-1):
-                    for l in range(k+1,M):
-                        count += 1
-        return count
-
-    return VQEProblem(H, ansatz_QCCSD, count_params(), init_function=hartree_fock)
+    return VQEProblem(create_electronic_hamiltonian(one_int,two_int,M,N,), ansatz, num_params, init_function=create_hartree_fock_init_function(N))
