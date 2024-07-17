@@ -690,7 +690,8 @@ class QuantumArray(np.ndarray):
         for k in range(N):
 
             curr = qc.copy()
-            curr.append(meas_circs[k].to_gate(),curr.qubits)
+            #curr.append(meas_circs[k].to_gate(),curr.qubits)
+            curr.append(meas_circs[k].to_gate(),qubits)
             res = get_measurement_from_qc(curr, qubits, backend, shots)
             
             for outcome,probability in res.items():

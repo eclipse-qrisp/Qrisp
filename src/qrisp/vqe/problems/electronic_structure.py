@@ -180,6 +180,18 @@ def parity(one_int, two_int):
     return H
 
 
+#
+# QCCSD 
+#
+
+def cswap2(i,j,k,l,phi):
+    cx(i,j)
+    cx(k,l)
+    with control([j,l],ctrl_state='00'):
+        xxyy(phi,np.pi/2,i,k)
+    cx(i,j)
+    cx(k,l)
+
 
 
 def electronic_structure_problem(one_int, two_int, M, N, mapping_type='jordan_wigner', ansatz_type=None):
@@ -243,20 +255,35 @@ def electronic_structure_problem(one_int, two_int, M, N, mapping_type='jordan_wi
         for i in range(N):
             x(qv[i])
 
-    def ansatz(qv, theta):
-        rz(theta[0],qv)
-        XY_mixer(qv,theta[1])
+    def ansatz_QCCSD(qv, theta):
+        count = 0
+        # Single excitations
+        for i in range(N):
+            for j in range(N,M):
+                xxyy(theta[count],np.pi/2,qv[i],qv[j])
+                count += 1
+        
+        # Double excitations
+        for i in range(N-1):
+            for j in range(i+1,N):
+                for k in range(N,M-1):
+                    for l in range(k+1,M):
+                        cswap2(qv[i],qv[j],qv[k],qv[l],theta[count])
+                        count += 1
+    
+    def count_params():
+        count = 0
+        # Single excitations
+        for i in range(N):
+            for j in range(N,M):
+                count += 1
+        
+        # Double excitations
+        for i in range(N-1):
+            for j in range(i+1,N):
+                for k in range(N,M-1):
+                    for l in range(k+1,M):
+                        count += 1
+        return count
 
-    def ansatz2(qv, theta):
-        for i in range(M):
-            rz(theta[i],qv[i])
-        XY_mixer(qv,theta[M])
-
-    def ansatz3(qv, theta):
-        xxyy(theta[0],np.pi/2,qv[0],qv[2])
-        with control(qv[2]):
-            swap(qv[1],qv[3])
-            #xxyy(theta[1],0,qv[1],qv[3])
-        z(qv[3])
-
-    return VQEProblem(H, ansatz, 2, init_function=hartree_fock)
+    return VQEProblem(H, ansatz_QCCSD, count_params(), init_function=hartree_fock)
