@@ -251,3 +251,13 @@ Timeliness and Amendments to this Data Protection Information
 -------------------------------------------------------------
 
 The further development of our website and the products and services offered or changed due to statutory or regulatory requirements, respectively, may make it necessary to amend this data protection information. You may access and print out the latest data protection information at any time from our website.
+
+Icon Attribution
+----------------
+
+The following icons have been used on the Thinq Qrisp page:
+
+* `business networking icons <https://www.flaticon.com/free-icons/business-networking>`_.
+* `Hackathon icons created by Hervv <https://www.flaticon.com/free-icons/hackathon>`_.
+* `Lecture icons created by istar_design_bureau <https://www.flaticon.com/free-icons/lecture>`_.
+* `Desktop icons created by turkkub <https://www.flaticon.com/free-icons/desktop>`_.
