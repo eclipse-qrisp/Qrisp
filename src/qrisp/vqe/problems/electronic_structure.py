@@ -97,6 +97,62 @@ def spacial_to_spin(int_one,int_two):
 
     return int_one_spin, int_two_spin
 
+def electronic_data(mol):
+    """
+    A wrapper function that utilizes restricted Hartree-Fock (RHF) calculation 
+    in the pyscf quantum chemistry package to obtain the electronic data for
+    defining an electronic structure problem.
+
+    Parameters
+    ---------
+    mol : pyscf.gto.Mole
+        The `molecule <https://pyscf.org/user/gto.html#>`_.
+
+    Returns
+    -------
+    data : dict
+        
+        * ``mol`` 
+        * ``one_int``
+        * ``two_int``
+        * ``num_orb``
+        * ``num_elec``
+        * ``energy_nuc``
+        * ``energy_scf``
+
+    """
+    from pyscf import gto, scf, ao2mo
+
+    data = {}
+
+    threshold = 1e-9
+    def apply_threshold(matrix, threshold):
+        matrix[np.abs(matrix) < threshold] = 0
+        return matrix
+    
+    # Perform a Hartree-Fock calculation
+    mf = scf.RHF(mol)
+    energy_scf = mf.kernel()
+
+    # Extract one-electron integrals
+    one_int = apply_threshold(mf.mo_coeff.T @ mf.get_hcore() @ mf.mo_coeff,threshold)
+    # Extract two-electron integrals (electron repulsion integrals)
+    two_int = ao2mo.kernel(mol,mf.mo_coeff)
+    # Full tensor with chemist's notation
+    two_int = apply_threshold(ao2mo.restore(1,two_int,mol.nao_nr()),threshold)  
+    # Convert spacial orbital to spin orbitals
+    one_int, two_int  = spacial_to_spin(one_int,two_int)
+
+    data['mol'] = mol
+    data['one_int'] = one_int
+    data['two_int'] = two_int
+    data['num_orb'] = 2*mf.mo_coeff.shape[0]  # Number of spin orbitals
+    data['num_elec'] = mol.nelectron
+    data['energy_nuc'] = mol.energy_nuc()
+    data['energy_scf'] = energy_scf
+
+    return data
+
 #
 # Fermion to qubit mappings
 #
@@ -284,7 +340,6 @@ def create_hartree_fock_init_function(N):
             x(qv[i])
 
     return init_function
-
 
 
 def electronic_structure_problem(one_int, two_int, M, N, mapping_type='jordan_wigner', ansatz_type='QCCSD'):

@@ -158,15 +158,25 @@ The coefficients :math:`h_{ij}` and :math:`h_{ijkl}` are one- and two-electron i
 Solving the electronic structure problem on a quantum computer requires transforming the fermionic representation into a qubit representation.
 This is achieved by, e.g., the Jordan-Wigner, Parity, or Bravyi-Kitaev transformations.
 
+Electronic Structure problem
+----------------------------
 
+.. autofunction:: electronic_structure_problem
 
-Cost operator
--------------
+Helper functions
+----------------
 
-.. autofunction:: spacial_to_spin
+.. autofunction:: electronic_data
 
+Hamiltonian
+-----------
 
-Classical cost function
------------------------
+.. autofunction:: create_electronic_hamiltonian
 
-todo
+Ansatz
+------
+
+.. autofunction:: create_QCCSD_ansatz
+
+.. autofunction:: create_hartree_fock_init_function
+
