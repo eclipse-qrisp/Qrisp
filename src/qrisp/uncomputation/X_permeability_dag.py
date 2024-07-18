@@ -112,7 +112,7 @@ class AllocNode(UnqompNode):
         self.artificial = artificial
     
     def __repr__(self):
-        return r"$\langle 0|$"
+        return r"$|0 \rangle$"
     
 # Node describing deallocations.
 class DeallocNode(UnqompNode):
@@ -121,7 +121,7 @@ class DeallocNode(UnqompNode):
         UnqompNode.__init__(self, name, instr)
         
     def __repr__(self):
-        return r"$|0 \rangle$"
+        return r"$\langle 0|$"
 
 # Node describing terminations.
 class TerminatorNode(UnqompNode):
@@ -594,6 +594,8 @@ def visualize_dag(G, layout_seed = None):
     # Deactivate frame
     plt.box(False)
     
+    # plt.savefig("mm_dag.png", dpi = 300, bbox_inches = "tight")
     # Show plot
     plt.show()
+    
 
