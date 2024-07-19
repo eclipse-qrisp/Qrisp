@@ -22,6 +22,7 @@ from sympy import I
 from sympy import *
 from qrisp.misc.spin import *
 from qrisp.misc.pauli_op import *
+from functools import cache
 
 #
 # helper functions
@@ -166,12 +167,36 @@ def a(j):
 def A(j):
     return sp.prod(Z(i) for i in range(j))*(X(j)-I*Y(j))/2
 
+#def c_jw(j):
+#    return PauliOperator({tuple([(i,3) for i in range(j)]+[(j,1)]):0.5,tuple([(i,3) for i in range(j)]+[(j,2)]):-0.5j},0)
 
+#def a_jw(j):
+#    return PauliOperator({tuple([(i,3) for i in range(j)]+[(j,1)]):0.5,tuple([(i,3) for i in range(j)]+[(j,2)]):0.5j},0)
+
+"""
+@cache
 def c_jw(j):
+    return {tuple([(i,"Z") for i in range(j)]+[(j,"X")]):0.5,tuple([(i,"Z") for i in range(j)]+[(j,"Y")]):-0.5j}
+
+def c_jwo(j):
+    return PauliOperator(c_jw(j).copy(),0)
+
+@cache
+def a_jw(j):
+    return {tuple([(i,"Z") for i in range(j)]+[(j,"X")]):0.5,tuple([(i,"Z") for i in range(j)]+[(j,"Y")]):0.5j}
+
+def a_jwo(j):
+    return PauliOperator(a_jw(j).copy(),0)
+
+"""
+@cache
+def c_jwo(j):
     return PauliOperator({tuple([(i,"Z") for i in range(j)]+[(j,"X")]):0.5,tuple([(i,"Z") for i in range(j)]+[(j,"Y")]):-0.5j},0)
 
-def a_jw(j):
+@cache
+def a_jwo(j):
     return PauliOperator({tuple([(i,"Z") for i in range(j)]+[(j,"X")]):0.5,tuple([(i,"Z") for i in range(j)]+[(j,"Y")]):0.5j},0)
+
 
 def jordan_wigner(one_int, two_int):
     """
@@ -210,22 +235,35 @@ def jordan_wigner(one_int, two_int):
             for k in range(M):
                 for l in range(M):
                     H.add(PauliOperator.from_expr(-(1/2)*two_int[i][k][j][l]*A(i)*A(j)*a(k)*a(l)))
-    
 
     """
 
     H = PauliOperator()
     for i in range(M):
         for j in range(M):
-            H.add( c_jw(i)*a_jw(j).scalar_mul(one_int[i][j]) )
+            if one_int[i][j]!=0:
+                H.inpl_add( c_jwo(i)*a_jwo(j).scalar_mul(one_int[i][j]) )
     
     for i in range(M):
         for j in range(M): 
             for k in range(M):
                 for l in range(M):
-                    H.add( c_jw(i)*c_jw(j)*a_jw(k)*a_jw(l).scalar_mul(-0.5*two_int[i][k][j][l]) )
+                    if two_int[i][k][j][l]!=0:
+                        H.inpl_add( c_jwo(i)*c_jwo(j)*a_jwo(k)*a_jwo(l).scalar_mul(-0.5*two_int[i][k][j][l]) )
     
 
+    """
+    H = PauliOperator()
+    for i in range(M):
+        for j in range(M):
+            H = H + c_jwo(i)*a_jwo(j).inpl_scalar_mul(one_int[i][j])
+    
+    for i in range(M):
+        for j in range(M): 
+            for k in range(M):
+                for l in range(M):
+                    H = H + c_jwo(i)*c_jwo(j)*a_jwo(k)*a_jwo(l).inpl_scalar_mul(-0.5*two_int[i][k][j][l])
+    """
     print("Hamiltonian defined")
 
     return H

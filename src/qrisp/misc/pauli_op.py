@@ -20,15 +20,19 @@ from qrisp.misc.spin import *
 
 threshold = 1e-9
 
+#pauli_table = {(1,1):(0,1),(1,2):(3,1j),(1,3):(2,-1j),
+#            (2,1):(3,-1j),(2,2):(0,1),(2,3):(1,1j),
+#            (3,1):(2,1j),(3,2):(1,-1j),(3,3):(1,1)}
+
+pauli_table = {("X","X"):("I",1),("X","Y"):("Z",1j),("X","Z"):("Y",-1j),
+            ("Y","X"):("Z",-1j),("Y","Y"):("I",1),("Y","Z"):("X",1j),
+            ("Z","X"):("Y",1j),("Z","Y"):("X",-1j),("Z","Z"):("I",1)}
+
 #
 # Helper functions
 #
 
-def pauli_mul_np(P1,P2):
-    pauli_table = {("X","X"):("I",1),("X","Y"):("Z",1j),("X","Z"):("Y",-1j),
-            ("Y","X"):("Z",-1j),("Y","Y"):("I",1),("Y","Z"):("X",1j),
-            ("Z","X"):("Y",1j),("Z","Y"):("X",-1j),("Z","Z"):("I",1)}
-
+def pauli_mul_np3(P1,P2):
     if P1=="I":
         return (P2,1)
     if P2=="I":
@@ -44,7 +48,7 @@ def mul2(pauli1,pauli2):
     keys.update(set(pauli_dict1.keys()))
     keys.update(set(pauli_dict2.keys()))
     for key in sorted(keys):
-        pauli, coeff = pauli_mul_np(pauli_dict1.get(key,"I"),pauli_dict2.get(key,"I"))
+        pauli, coeff = pauli_mul_np3(pauli_dict1.get(key,"I"),pauli_dict2.get(key,"I"))
         if pauli!="I":
             result_list.append((key,pauli))
         result_coeff *= coeff
@@ -68,17 +72,33 @@ class PauliOperator:
         pauli_dict, constant = to_Pauli_dict(expr)
         return cls(pauli_dict, constant)
 
-    def add(self,other):
+    
+    def inpl_add(self,other):
         for pauli,coeff in other.pauli_dict.items():
             self.pauli_dict[pauli] = self.pauli_dict.get(pauli,0)+coeff
             if abs(self.pauli_dict[pauli])<threshold:
                 del self.pauli_dict[pauli]
         self.constant += other.constant
+    
 
-    def scalar_mul(self,constant):
+    def __add__(self,other):
+
+        result = PauliOperator()
+        res_pauli_dict = {}
+        result.constant = self.constant+other.constant
+
         for pauli,coeff in self.pauli_dict.items():
-            self.pauli_dict[pauli] *= constant
-        return self
+            res_pauli_dict[pauli] = res_pauli_dict.get(pauli,0)+coeff
+            if abs(res_pauli_dict[pauli])<threshold:
+                del res_pauli_dict[pauli]
+    
+        for pauli,coeff in other.pauli_dict.items():
+            res_pauli_dict[pauli] = res_pauli_dict.get(pauli,0)+coeff
+            if abs(res_pauli_dict[pauli])<threshold:
+                del res_pauli_dict[pauli]
+        
+        result.pauli_dict = res_pauli_dict
+        return result
 
     def __mul__(self,other):
 
@@ -105,7 +125,19 @@ class PauliOperator:
         result.pauli_dict = res_pauli_dict
         return result
 
+    def inpl_scalar_mul(self,constant):
+        for pauli,coeff in self.pauli_dict.items():
+            self.pauli_dict[pauli] *= constant
+        return self
 
+    def scalar_mul(self,constant):
+        result = PauliOperator()
+        res_pauli_dict = {}
+        result.constant = self.constant*constant
+        for pauli,coeff in self.pauli_dict.items():
+            res_pauli_dict[pauli] = coeff*constant
+        result.pauli_dict = res_pauli_dict
+        return result
 
     def to_expr(self):
 
