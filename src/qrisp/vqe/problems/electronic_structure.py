@@ -21,6 +21,7 @@ import sympy as sp
 from sympy import I
 from sympy import *
 from qrisp.misc.spin import *
+from qrisp.misc.pauli_op import *
 
 #
 # helper functions
@@ -165,6 +166,13 @@ def a(j):
 def A(j):
     return sp.prod(Z(i) for i in range(j))*(X(j)-I*Y(j))/2
 
+
+def c_jw(j):
+    return PauliOperator({tuple([(i,"Z") for i in range(j)]+[(j,"X")]):0.5,tuple([(i,"Z") for i in range(j)]+[(j,"Y")]):-0.5j},0)
+
+def a_jw(j):
+    return PauliOperator({tuple([(i,"Z") for i in range(j)]+[(j,"X")]):0.5,tuple([(i,"Z") for i in range(j)]+[(j,"Y")]):0.5j},0)
+
 def jordan_wigner(one_int, two_int):
     """
 
@@ -184,11 +192,46 @@ def jordan_wigner(one_int, two_int):
     M = one_int.shape[0]
 
     H = 0
-    H += sum(sum(one_int[i][j]*A(i)*a(j) for i in range(M)) for j in range(M))
-    H += -(1/2)*sum(sum(sum(sum(two_int[i][k][j][l]*A(i)*A(j)*a(k)*a(l) for i in range(M)) for j in range(M)) for k in range(M)) for l in range(M))
-    H = simplify_spin(H)
+    #H += sum(sum(one_int[i][j]*A(i)*a(j) for i in range(M)) for j in range(M))
+    #H += -(1/2)*sum(sum(sum(sum(two_int[i][k][j][l]*A(i)*A(j)*a(k)*a(l) for i in range(M)) for j in range(M)) for k in range(M)) for l in range(M))
+
+
+    #H += sum(sum(simplify_spin(one_int[i][j]*A(i)*a(j)) for i in range(M)) for j in range(M))
+    #H += -(1/2)*sum(sum(sum(sum(simplify_spin(two_int[i][k][j][l]*A(i)*A(j)*a(k)*a(l)) for i in range(M)) for j in range(M)) for k in range(M)) for l in range(M))
+
+    """
+    H = PauliOperator()
+    for i in range(M):
+        for j in range(M):
+            H.add( PauliOperator.from_expr(one_int[i][j]*A(i)*a(j)))
+
+    for i in range(M):
+        for j in range(M): 
+            for k in range(M):
+                for l in range(M):
+                    H.add(PauliOperator.from_expr(-(1/2)*two_int[i][k][j][l]*A(i)*A(j)*a(k)*a(l)))
+    
+
+    """
+
+    H = PauliOperator()
+    for i in range(M):
+        for j in range(M):
+            H.add( c_jw(i)*a_jw(j).scalar_mul(one_int[i][j]) )
+    
+    for i in range(M):
+        for j in range(M): 
+            for k in range(M):
+                for l in range(M):
+                    H.add( c_jw(i)*c_jw(j)*a_jw(k)*a_jw(l).scalar_mul(-0.5*two_int[i][k][j][l]) )
+    
+
+    print("Hamiltonian defined")
 
     return H
+    #H = simplify_spin(H)
+
+    #return H
 
 # annihilation operator
 def b(j,M):

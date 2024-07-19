@@ -39,7 +39,29 @@ def epsilon(i, j, k):
     return 0
 
 def set_bit(n,k):
-    return n | (1 << k)        
+    return n | (1 << k)   
+
+def pauli_mul(P1,P2):
+    pauli_table = {("X","X"):("I",1),("X","Y"):("Z",I),("X","Z"):("Y",-I),
+            ("Y","X"):("Z",-I),("Y","Y"):("I",1),("Y","Z"):("X",I),
+            ("Z","X"):("Y",I),("Z","Y"):("X",-I),("Z","Z"):("I",1)}
+
+    if P1=="I":
+        return (P2,1)
+    if P2=="I":
+        return (P1,1)
+    return pauli_table[(P1,P2)]
+
+def pauli_mul_np(P1,P2):
+    pauli_table = {("X","X"):("I",1),("X","Y"):("Z",1j),("X","Z"):("Y",-1j),
+            ("Y","X"):("Z",-1j),("Y","Y"):("I",1),("Y","Z"):("X",1j),
+            ("Z","X"):("Y",1j),("Z","Y"):("X",-1j),("Z","Z"):("I",1)}
+
+    if P1=="I":
+        return (P2,1)
+    if P2=="I":
+        return (P1,1)
+    return pauli_table[(P1,P2)]
 
 #
 # Pauli symbols
@@ -156,46 +178,20 @@ class Z(Symbol):
                     + I*epsilon(i, j, "Z")*Z(self.index)
         return super().__mul__(other)
     
-#
-#
-#
-
-def evaluate_observable(observable: int, x: int):
-    """
-    This method evaluates an observable that is a tensor product of Pauli-:math:`Z` operators
-    with respect to a measurement outcome. 
-        
-    A Pauli operator of the form :math:`\prod_{i\in I}Z_i`, for some finite set of indices :math:`I\subset \mathbb N`, 
-    is identified with an integer:
-    We identify the Pauli operator with the binary string that has ones at positions :math:`i\in I`
-    and zeros otherwise, and then convert this binary string to an integer.
-        
-    Parameters
-    ----------
-        
-    observable : int
-        The observable represented as integer.
-     x : int 
-         The measurement outcome represented as integer.
-        
-    Returns
-    -------
-    int
-        The value of the observable with respect to the measurement outcome.
-        
-    """
-        
-    if bin(observable & x).count('1') % 2 == 0:
-        return 1
-    else:
-        return -1    
-
-
 def convert_to_spin(quaternion, index):
     return quaternion.a-I*quaternion.b*X(index)-I*quaternion.c*Y(index)-I*quaternion.d*Z(index)
 
+def convert_to_spin2(P, index):
+    if P=="I":
+        return 1
+    if P=="X":
+        return X(index)
+    if P=="Y":
+        return Y(index)
+    else:
+        return Z(index)
 
-def simplify_spin(expr):
+def simplify_spin_old(expr):
     """
     Simplifies a quantum Hamiltonian
 
@@ -243,6 +239,172 @@ def simplify_spin(expr):
 
     return filtered_expr
 
+def simplify_spin(expr):
+    """
+    Simplifies a quantum Hamiltonian
+
+    Parameters
+    ----------
+    H : sympy.expr
+
+    Returns
+    -------
+
+
+    """
+
+    threshold = 1e-9
+    #threshold = 1e-12
+
+    simplified_expr = 0
+
+    for monomial in expr.expand().as_ordered_terms():
+        factors = monomial.as_ordered_factors()
+
+        simplified_factor = 1
+        #pauli_indices = []
+        pauli_dict = {}
+
+        for arg in factors:
+            if isinstance(arg, (X,Y,Z)):
+                P = pauli_dict.get(arg.index,"I")
+                pauli_dict[arg.index], factor = pauli_mul(P,arg.get_axis())
+                simplified_factor *= factor
+
+                #if arg.index in pauli_indices:
+                #    pauli_dict[arg.index] *= arg.get_quaternion()
+                #else:
+                #    pauli_dict[arg.index] = arg.get_quaternion()   
+                #    pauli_indices.append(arg.index) 
+            else:
+                simplified_factor *= arg
+
+        sorted_pauli_dict = dict(sorted(pauli_dict.items()))
+
+        for index,P in sorted_pauli_dict.items():
+            simplified_factor *= convert_to_spin2(P, index)
+
+        
+        simplified_expr += simplified_factor
+
+    # filter terms with small coefficient
+    filtered_expr = sp.Add(*[term for term in simplified_expr.as_ordered_terms() if abs(term.as_coeff_Mul()[0]) >= threshold])
+
+    return filtered_expr
+
+def to_Pauli_dict(expr):
+    """
+    Simplifies a quantum Hamiltonian
+
+    Parameters
+    ----------
+    H : sympy.expr
+
+    Returns
+    -------
+
+
+    """
+
+    result_dict = {}
+
+    threshold = 1e-9
+    #threshold = 1e-12
+
+    constant = 0
+
+    for monomial in expr.expand().as_ordered_terms():
+        factors = monomial.as_ordered_factors()
+
+        simplified_factor = 1
+        #pauli_indices = []
+        pauli_dict = {}
+
+        for arg in factors:
+            if isinstance(arg, (X,Y,Z)):
+                P = pauli_dict.get(arg.index,"I")
+                pauli, factor = pauli_mul_np(P,arg.get_axis())
+                if pauli!="I":
+                    pauli_dict[arg.index] = pauli
+                else:
+                    del pauli_dict[arg.index]
+                simplified_factor *= factor
+            else:
+                simplified_factor *= arg
+        if len(pauli_dict)>0:
+            sorted_pauli = tuple(sorted(pauli_dict.items()))
+            result_dict[sorted_pauli] = result_dict.get(sorted_pauli,0)+simplified_factor
+        else:
+            constant += simplified_factor
+
+    return result_dict, constant
+
+
+def from_Pauli_dict(pauli_dict):
+    """
+    Simplifies a quantum Hamiltonian
+
+    Parameters
+    ----------
+    H : sympy.expr
+
+    Returns
+    -------
+
+
+    """
+
+    result_expr = 0
+
+    threshold = 1e-9
+    #threshold = 1e-12
+
+    for pauli,coeff in pauli_dict.items():
+        expr = coeff
+        for index,P in dict(pauli).items():
+            expr *= convert_to_spin2(P,index)
+        result_expr += expr
+
+    return result_expr
+        
+
+def convert_to_spin(quaternion, index):
+    return quaternion.a-I*quaternion.b*X(index)-I*quaternion.c*Y(index)-I*quaternion.d*Z(index)
+
+#
+#
+#
+
+def evaluate_observable(observable: int, x: int):
+    """
+    This method evaluates an observable that is a tensor product of Pauli-:math:`Z` operators
+    with respect to a measurement outcome. 
+        
+    A Pauli operator of the form :math:`\prod_{i\in I}Z_i`, for some finite set of indices :math:`I\subset \mathbb N`, 
+    is identified with an integer:
+    We identify the Pauli operator with the binary string that has ones at positions :math:`i\in I`
+    and zeros otherwise, and then convert this binary string to an integer.
+        
+    Parameters
+    ----------
+        
+    observable : int
+        The observable represented as integer.
+     x : int 
+         The measurement outcome represented as integer.
+        
+    Returns
+    -------
+    int
+        The value of the observable with respect to the measurement outcome.
+        
+    """
+        
+    if bin(observable & x).count('1') % 2 == 0:
+        return 1
+    else:
+        return -1    
+    
 
 def spin_operator_to_list(H):
     """
