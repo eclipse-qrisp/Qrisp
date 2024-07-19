@@ -242,14 +242,14 @@ def jordan_wigner(one_int, two_int):
     for i in range(M):
         for j in range(M):
             if one_int[i][j]!=0:
-                H.inpl_add( c_jwo(i)*a_jwo(j).scalar_mul(one_int[i][j]) )
+                H.inpl_add( c_jwo(i)*a_jwo(j),one_int[i][j] )
     
     for i in range(M):
         for j in range(M): 
             for k in range(M):
                 for l in range(M):
                     if two_int[i][k][j][l]!=0:
-                        H.inpl_add( c_jwo(i)*c_jwo(j)*a_jwo(k)*a_jwo(l).scalar_mul(-0.5*two_int[i][k][j][l]) )
+                        H.inpl_add( c_jwo(i)*c_jwo(j)*a_jwo(k)*a_jwo(l), -0.5*two_int[i][k][j][l] )
     
 
     """

@@ -73,12 +73,12 @@ class PauliOperator:
         return cls(pauli_dict, constant)
 
     
-    def inpl_add(self,other):
+    def inpl_add(self,other,factor=1):
         for pauli,coeff in other.pauli_dict.items():
-            self.pauli_dict[pauli] = self.pauli_dict.get(pauli,0)+coeff
+            self.pauli_dict[pauli] = self.pauli_dict.get(pauli,0)+coeff*factor
             if abs(self.pauli_dict[pauli])<threshold:
                 del self.pauli_dict[pauli]
-        self.constant += other.constant
+        self.constant += other.constant*factor
     
 
     def __add__(self,other):
