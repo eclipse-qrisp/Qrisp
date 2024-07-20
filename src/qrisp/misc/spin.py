@@ -1,6 +1,6 @@
 """
 \********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+* Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -309,7 +309,6 @@ def to_Pauli_dict(expr):
     result_dict = {}
 
     threshold = 1e-9
-    #threshold = 1e-12
 
     constant = 0
 
@@ -339,34 +338,6 @@ def to_Pauli_dict(expr):
 
     return result_dict, constant
 
-
-def from_Pauli_dict(pauli_dict):
-    """
-    Simplifies a quantum Hamiltonian
-
-    Parameters
-    ----------
-    H : sympy.expr
-
-    Returns
-    -------
-
-
-    """
-
-    result_expr = 0
-
-    threshold = 1e-9
-    #threshold = 1e-12
-
-    for pauli,coeff in pauli_dict.items():
-        expr = coeff
-        for index,P in dict(pauli).items():
-            expr *= convert_to_spin2(P,index)
-        result_expr += expr
-
-    return result_expr
-        
 
 def convert_to_spin(quaternion, index):
     return quaternion.a-I*quaternion.b*X(index)-I*quaternion.c*Y(index)-I*quaternion.d*Z(index)

@@ -177,7 +177,7 @@ class VQEProblem:
         
         return compiled_qc, theta
 
-    def optimization_routine(self, qarg, depth, mes_kwargs, max_iter, init_type="random", init_point=None, optimizer="COBYLA"): 
+    def optimization_routine(self, qarg, depth, mes_kwargs, mes_settings, max_iter, init_type="random", init_point=None, optimizer="COBYLA"): 
         """
         Wrapper subroutine for the optimization method used in QAOA. The initial values are set and the optimization via ``COBYLA`` is conducted here.
 
@@ -189,6 +189,8 @@ class VQEProblem:
             The amont of VQE layers.
         mes_kwargs : dict, optional
             The keyword arguments for the measurement function. Default is an empty dictionary, as defined in previous functions.
+        mes_settings : list, optional
+            THe keyword argument 
         max_iter : int, optional
             The maximum number of iterations for the optimization method. Default is 50, as defined in previous functions.
         init_type : string, optional
@@ -209,7 +211,7 @@ class VQEProblem:
         #compiled_qc, symbols = self.compile_circuit(qarg, depth)
 
         # Define optimization wrapper function to be minimized using VQE
-        def optimization_wrapper(theta, qc, symbols, qarg, mes_kwargs):
+        def optimization_wrapper(theta, qc, symbols, qarg, mes_kwargs, mes_settings):
             """
             Wrapper function for the optimization method used in VQE.
 
@@ -236,7 +238,7 @@ class VQEProblem:
 
             subs_dic = {symbols[i] : theta[i] for i in range(len(symbols))}
 
-            expectation = qarg.get_spin_measurement(self.spin_operator, subs_dic = subs_dic, precompiled_qc = qc, **mes_kwargs)
+            expectation = qarg.get_spin_measurement(self.spin_operator, subs_dic = subs_dic, precompiled_qc = qc, mes_settings=mes_settings, **mes_kwargs)
 
             if self.callback:
                 self.optimization_costs.append(expectation)
@@ -260,7 +262,7 @@ class VQEProblem:
                                 init_point, 
                                 method=optimizer,
                                 options={'maxiter':max_iter}, 
-                                args = (compiled_qc, symbols, qarg, mes_kwargs))
+                                args = (compiled_qc, symbols, qarg, mes_kwargs, mes_settings))
             
         return res_sample['x']
 
@@ -300,8 +302,12 @@ class VQEProblem:
 
         if not "shots" in mes_kwargs:
             mes_kwargs["shots"] = 5000
+
+        # Measurement settings
+        meas_circs, meas_ops, meas_coeffs, constant_term = self.spin_operator.get_measurement_settings(qarg, method=mes_kwargs.get("method",None)) 
+        mes_settings = [meas_circs, meas_ops, meas_coeffs, constant_term]
         
-        optimal_theta = self.optimization_routine(qarg, depth, mes_kwargs, max_iter, init_type, init_point, optimizer)
+        optimal_theta = self.optimization_routine(qarg, depth, mes_kwargs, mes_settings, max_iter, init_type, init_point, optimizer)
         
         # Prepare the initial state for particular problem instance, the default is the \ket{0} state
         if self.init_function is not None:
@@ -311,7 +317,7 @@ class VQEProblem:
         for i in range(depth):                          
             self.ansatz_function(qarg,[optimal_theta[self.num_params*i+j] for j in range(self.num_params)])
 
-        opt_res = qarg.get_spin_measurement(self.spin_operator,**mes_kwargs)
+        opt_res = qarg.get_spin_measurement(self.spin_operator,mes_settings=mes_settings,**mes_kwargs)
         
         return opt_res
     
@@ -346,7 +352,14 @@ class VQEProblem:
 
         """
 
-        optimal_theta = self.optimization_routine(qarg, depth, mes_kwargs, max_iter, init_type, init_point, optimizer)
+        if not "shots" in mes_kwargs:
+            mes_kwargs["shots"] = 5000
+
+        # Measurement settings
+        meas_circs, meas_ops, meas_coeffs, constant_term = self.spin_operator.get_measurement_settings(qarg, method=mes_kwargs.get("method",None)) 
+        mes_settings = [meas_circs, meas_ops, meas_coeffs, constant_term]
+
+        optimal_theta = self.optimization_routine(qarg, depth, mes_kwargs, mes_settings, max_iter, init_type, init_point, optimizer)
         
         def circuit_generator(qarg_gen):
             # Prepare the initial state for particular problem instance, the default is the \ket{0} state
@@ -455,7 +468,8 @@ class VQEProblem:
 
                         final_time = time.time() - start_time
                         
-                        compiled_qc = qarg_dupl.qs.compile(intended_measurements=mes_qubits)
+                        #compiled_qc = qarg_dupl.qs.compile(intended_measurements=mes_qubits)
+                        compiled_qc = qarg_dupl.qs.compile()
                         
                         data_dict["layer_depth"].append(p)
                         data_dict["circuit_depth"].append(compiled_qc.depth())
@@ -488,12 +502,12 @@ class VQEProblem:
             raise Exception("Visualization can only be performed for a VQE instance with callback=True")
         
         if exact:
-            exact_solution = ground_state_energy(self.spin_operator)
+            exact_solution = self.spin_operator.ground_state_energy()
             plt.axhline(y=exact_solution, color="#6929C4", linestyle='--', linewidth=2, label='Exact energy')
         
         x = list(range(len(self.optimization_costs)))
         y = self.optimization_costs
-        plt.scatter(x, y, color='#20306f',marker="o", linestyle='solid', linewidth=1)
+        plt.scatter(x, y, color='#20306f',marker="o", linestyle='solid', linewidth=1, label='VQE energy')
         plt.xlabel("Iterations", fontsize=15, color="#444444")
         plt.ylabel("Energy", fontsize=15, color="#444444")
         plt.grid()

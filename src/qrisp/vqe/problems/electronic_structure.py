@@ -21,7 +21,7 @@ import sympy as sp
 from sympy import I
 from sympy import *
 from qrisp.misc.spin import *
-from qrisp.misc.pauli_op import *
+from qrisp.misc.PauliOperator import *
 from functools import cache
 
 #
@@ -190,11 +190,11 @@ def a_jwo(j):
 
 """
 @cache
-def c_jwo(j):
+def c_jw(j):
     return PauliOperator({tuple([(i,"Z") for i in range(j)]+[(j,"X")]):0.5,tuple([(i,"Z") for i in range(j)]+[(j,"Y")]):-0.5j},0)
 
 @cache
-def a_jwo(j):
+def a_jw(j):
     return PauliOperator({tuple([(i,"Z") for i in range(j)]+[(j,"X")]):0.5,tuple([(i,"Z") for i in range(j)]+[(j,"Y")]):0.5j},0)
 
 
@@ -242,28 +242,15 @@ def jordan_wigner(one_int, two_int):
     for i in range(M):
         for j in range(M):
             if one_int[i][j]!=0:
-                H.inpl_add( c_jwo(i)*a_jwo(j),one_int[i][j] )
+                H.inpl_add( c_jw(i)*a_jw(j), one_int[i][j] )
     
     for i in range(M):
         for j in range(M): 
             for k in range(M):
                 for l in range(M):
                     if two_int[i][k][j][l]!=0:
-                        H.inpl_add( c_jwo(i)*c_jwo(j)*a_jwo(k)*a_jwo(l), -0.5*two_int[i][k][j][l] )
+                        H.inpl_add( c_jw(i)*c_jw(j)*a_jw(k)*a_jw(l), -0.5*two_int[i][k][j][l] )
     
-
-    """
-    H = PauliOperator()
-    for i in range(M):
-        for j in range(M):
-            H = H + c_jwo(i)*a_jwo(j).inpl_scalar_mul(one_int[i][j])
-    
-    for i in range(M):
-        for j in range(M): 
-            for k in range(M):
-                for l in range(M):
-                    H = H + c_jwo(i)*c_jwo(j)*a_jwo(k)*a_jwo(l).inpl_scalar_mul(-0.5*two_int[i][k][j][l])
-    """
     print("Hamiltonian defined")
 
     return H
@@ -478,4 +465,4 @@ def electronic_structure_problem(one_int, two_int, M, N, mapping_type='jordan_wi
 
     ansatz, num_params = create_QCCSD_ansatz(M,N)
 
-    return VQEProblem(create_electronic_hamiltonian(one_int,two_int,M,N,), ansatz, num_params, init_function=create_hartree_fock_init_function(N))
+    return VQEProblem(create_electronic_hamiltonian(one_int,two_int,M,N), ansatz, num_params, init_function=create_hartree_fock_init_function(N))

@@ -1032,7 +1032,8 @@ class QuantumVariable:
         compilation_kwargs={},
         subs_dic={},
         circuit_preprocessor=None,
-        precompiled_qc = None
+        precompiled_qc = None,
+        mes_settings = None
     ):
         r"""
         This method returns the expected value of a quantum Hamiltonian for the state of the variable.
@@ -1144,10 +1145,15 @@ class QuantumVariable:
         qc = qc.transpile()
 
         from qrisp.misc import get_measurement_from_qc
-        from qrisp.misc.spin import evaluate_observable, get_measurement_settings
+        #from qrisp.misc.spin import  get_measurement_settings
+        from qrisp.misc.PauliOperator import PauliOperator, evaluate_observable
 
         # measurement settings
-        meas_circs, meas_ops, meas_coeffs, constant_term = get_measurement_settings(self, spin_op, method=method)
+        if mes_settings is None:
+            meas_circs, meas_ops, meas_coeffs, constant_term = spin_op.get_measurement_settings(self, method=method)
+        else:
+            meas_circs, meas_ops, meas_coeffs, constant_term = mes_settings
+        #meas_circs, meas_ops, meas_coeffs, constant_term = get_measurement_settings(self, spin_op, method=method)
         N = len(meas_circs)
 
         expectation = constant_term
