@@ -292,7 +292,7 @@ def simplify_spin(expr):
 
     return filtered_expr
 
-def to_Pauli_dict(expr):
+def to_pauli_dict(expr):
     """
     Simplifies a quantum Hamiltonian
 

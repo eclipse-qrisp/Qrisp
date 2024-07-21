@@ -150,15 +150,29 @@ def evaluate_observable(observable: int, x: int):
 
 class PauliOperator:
 
-    def __init__(self, pauli_dict=None, constant=0):
+    def __init__(self, arg=None, constant=0):
         """
 
+        Parameters
+        ----------
+        arg : dict or sympy.Basic
+            The 
+        constant : float
+
         """
-        if pauli_dict is None:
+
+        if arg is None:
             self.pauli_dict = {}
-        else:
+            self.constant = constant
+        elif isinstance(arg, dict):
+            self.pauli_dict = arg
+            self.constant = constant
+        elif isinstance(arg, sympy.Basic):
+            pauli_dict, constant = to_pauli_dict(arg)
             self.pauli_dict = pauli_dict
-        self.constant = constant
+            self.constant = constant     
+        else:
+            raise TypeError("TYPE ERROR")
 
     @classmethod
     def from_expr(cls, expr):
@@ -478,6 +492,67 @@ class PauliOperator:
 
         return M
 
+    def to_sparse_matrix(self):
+        """
+        Matrix representation of the PauliOperator.
+    
+        Returns
+        -------
+        M : numpy.array
+            A matrix representation of the quantum Hamiltonian.
+
+        Examples
+        --------
+
+        """
+
+        #from numpy import kron as TP
+        import scipy.sparse as sp
+        from scipy.sparse import kron as TP, csr_matrix
+
+        I = csr_matrix([[1,0],[0,1]])
+
+        def get_matrix(P):
+            if P=="I":
+                return csr_matrix([[1,0],[0,1]])
+            if P=="X":
+                return csr_matrix([[0,1],[1,0]])
+            if P=="Y":
+                return csr_matrix([[0,-1j],[1j,0]])
+            else:
+                return csr_matrix([[1,0],[0,-1]])
+
+        def recursive_TP(keys,pauli_dict):
+            if len(keys)==1:
+                return get_matrix(pauli_dict.get(keys[0],"I"))
+            return TP(get_matrix(pauli_dict.get(keys.pop(0),"I")),recursive_TP(keys,pauli_dict))
+
+        self.pauli_dict
+        self.constant
+
+        pauli_dicts = []
+        coeffs = []
+
+        keys = set()
+        for pauli,coeff in self.pauli_dict.items():
+            curr_dict = dict(pauli)
+            keys.update(set(curr_dict.keys()))
+            pauli_dicts.append(curr_dict)    
+            coeffs.append(coeff)
+
+        keys = set()
+        for item in pauli_dicts:
+            keys.update(set(item.keys()))
+        keys = sorted(keys)
+        dim = len(keys)
+
+        m = len(coeffs)
+        M = complex(self.constant)*sp.identity(2**dim, format='csr')
+        for k in range(m):
+            M += complex(coeffs[k])*recursive_TP(keys.copy(),pauli_dicts[k])
+
+        return M
+
     def ground_state_energy(self):
         """
         Calculates the ground state energy of a PauliOperator classically.
@@ -489,7 +564,11 @@ class PauliOperator:
 
         """
 
-        M = self.to_matrix()
-        eigenvalues = np.linalg.eigvals(M) 
-        E = min(eigenvalues)
+        from scipy.sparse.linalg import eigsh
+
+        M = self.to_sparse_matrix()
+        # Compute the smallest eigenvalue
+        eigenvalues, _ = eigsh(M, k=1, which='SA')  # 'SA' stands for smallest algebraic
+        E = eigenvalues[0]
+        
         return E

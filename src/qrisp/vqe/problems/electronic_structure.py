@@ -21,12 +21,38 @@ import sympy as sp
 from sympy import I
 from sympy import *
 from qrisp.misc.spin import *
-from qrisp.misc.PauliOperator import *
+from qrisp.misc.pauli_operator import *
 from functools import cache
 
 #
 # helper functions
 #
+
+def verify_symmetries(two_int):
+    """
+    Checks the symmetries of the two_electron integrals tensor in physicist's notation.
+
+    Parameters
+    ----------
+    int_two : numpy.ndarray
+        The two-electron integrals w.r.t. spin orbitals in physicist's notation.
+
+    Returns
+    -------
+    
+    """
+
+    M = two_int.shape[0]
+    for i in range(M):
+        for j in range(M):
+            for k in range(M):
+                for l in range(M):
+                    test1 = abs(two_int[i][j][k][l]-two_int[j][i][l][k])
+                    test2 = abs(two_int[i][j][k][l]-two_int[k][l][i][j])
+                    test3 = abs(two_int[i][j][k][l]-two_int[l][k][j][i])
+                    if test1>1e-9 or test2>1e-9 or test3>1e-9:
+                        return False
+    return True
 
 def delta(i,j):
     if i==j:
@@ -141,13 +167,13 @@ def electronic_data(mol):
     # Extract two-electron integrals (electron repulsion integrals)
     two_int = ao2mo.kernel(mol,mf.mo_coeff)
     # Full tensor with chemist's notation
-    two_int = apply_threshold(ao2mo.restore(1,two_int,mol.nao_nr()),threshold)  
+    two_int = apply_threshold(ao2mo.restore(1,two_int,mol.nao_nr()),threshold)
     # Convert spacial orbital to spin orbitals
     one_int, two_int  = spacial_to_spin(one_int,two_int)
 
     data['mol'] = mol
     data['one_int'] = one_int
-    data['two_int'] = two_int
+    data['two_int'] = np.transpose(two_int,(0,2,1,3))
     data['num_orb'] = 2*mf.mo_coeff.shape[0]  # Number of spin orbitals
     data['num_elec'] = mol.nelectron
     data['energy_nuc'] = mol.energy_nuc()
@@ -214,30 +240,8 @@ def jordan_wigner(one_int, two_int):
         The qubit Hamiltonian for the electronic structure problem.
 
     """
+
     M = one_int.shape[0]
-
-    H = 0
-    #H += sum(sum(one_int[i][j]*A(i)*a(j) for i in range(M)) for j in range(M))
-    #H += -(1/2)*sum(sum(sum(sum(two_int[i][k][j][l]*A(i)*A(j)*a(k)*a(l) for i in range(M)) for j in range(M)) for k in range(M)) for l in range(M))
-
-
-    #H += sum(sum(simplify_spin(one_int[i][j]*A(i)*a(j)) for i in range(M)) for j in range(M))
-    #H += -(1/2)*sum(sum(sum(sum(simplify_spin(two_int[i][k][j][l]*A(i)*A(j)*a(k)*a(l)) for i in range(M)) for j in range(M)) for k in range(M)) for l in range(M))
-
-    """
-    H = PauliOperator()
-    for i in range(M):
-        for j in range(M):
-            H.add( PauliOperator.from_expr(one_int[i][j]*A(i)*a(j)))
-
-    for i in range(M):
-        for j in range(M): 
-            for k in range(M):
-                for l in range(M):
-                    H.add(PauliOperator.from_expr(-(1/2)*two_int[i][k][j][l]*A(i)*A(j)*a(k)*a(l)))
-
-    """
-
     H = PauliOperator()
     for i in range(M):
         for j in range(M):
@@ -248,15 +252,70 @@ def jordan_wigner(one_int, two_int):
         for j in range(M): 
             for k in range(M):
                 for l in range(M):
-                    if two_int[i][k][j][l]!=0:
-                        H.inpl_add( c_jw(i)*c_jw(j)*a_jw(k)*a_jw(l), -0.5*two_int[i][k][j][l] )
-    
-    print("Hamiltonian defined")
+                    if two_int[i][j][k][l]!=0: 
+                        H.inpl_add( c_jw(i)*c_jw(j)*a_jw(k)*a_jw(l), -0.5*two_int[i][j][k][l] )
 
     return H
-    #H = simplify_spin(H)
 
-    #return H
+def active(one_int, two_int, M, N, K, L):
+    """
+    Creates the qubit Hamiltonain for a specified Active Spase (AS) (see `here <https://arxiv.org/abs/2009.01872>`_).
+
+    Parameters
+    ----------
+    int_one : numpy.ndarray
+        The one-electron integrals w.r.t. spin orbitals.
+    int_two : numpy.ndarray
+        The two-electron integrals w.r.t. spin orbitals.
+    M : int
+        The number of spin orbitals.
+    N : int
+        The number of electrons.
+    K : int
+        The number of active spin orbitals.
+    L : int
+        The number of active electrons.
+
+    Returns
+    -------
+    H : PauliOperator
+        The qubit Hamiltonian
+
+    """
+
+    if L>N or K>M or K<L or K+N-L>M:
+        raise Exception("Invalid number of active electrons or orbitals")
+
+    # number of inactive electrons 
+    I = N-L
+
+    # inactive Fock operator
+    F = one_int.copy()
+    for p in range(M):
+        for q in range(M):
+            for i in range(I):
+                F[p][q] += (two_int[i][p][i][q]-two_int[i][q][p][i])
+
+    # inactive energy
+    E = 0
+    for j in range(I):
+        E += (one_int[j][j]+F[j][j])/2
+
+    # Hamiltonian
+    H = PauliOperator({},E)
+    for i in range(K):
+        for j in range(K):
+            if F[I+i][I+j]!=0:
+                H.inpl_add( c_jw(i)*a_jw(j), F[I+i][I+j] )
+    
+    for i in range(K):
+        for j in range(K): 
+            for k in range(K):
+                for l in range(K):
+                    if two_int[I+i][I+j][I+k][I+l]!=0:
+                        H.inpl_add( c_jw(i)*c_jw(j)*a_jw(k)*a_jw(l), -0.5*two_int[I+i][I+j][I+k][I+l] )  
+
+    return H
 
 # annihilation operator
 def b(j,M):
@@ -305,7 +364,7 @@ def parity(one_int, two_int):
 # Hamiltonian
 #
 
-def create_electronic_hamiltonian(one_int, two_int, M, N, mapping_type='jordan_wigner'):
+def create_electronic_hamiltonian(one_int, two_int, M, N, K=None, L=None, mapping_type='jordan_wigner'):
     """
     Creates the qubit Hamiltonian for an electronic structure problem defined by the 
     one-electron and two-electron integrals for the spin orbitals (in chemists' notation).
@@ -313,13 +372,17 @@ def create_electronic_hamiltonian(one_int, two_int, M, N, mapping_type='jordan_w
     Parameters
     ----------
     int_one : numpy.ndarray
-        The one-electron integrals w.r.t. spacial orbitals.
+        The one-electron integrals w.r.t. spin orbitals.
     int_two : numpy.ndarray
-        The two-electron integrals w.r.t. spacial orbitals.
+        The two-electron integrals w.r.t. spin orbitals.
     M : int
         The number of spin orbitals.
     N : int
         The number of electrons.
+    K : int, optional
+        The number of active spin orbitals.
+    L : int, optional
+        The number of active electrons.
     mapping_type : string, optinal
         The mapping from the fermionic Hamiltonian to the qubit Hamiltonian. Available are ``jordan_wigner``, ``parity``.
         The default is ``jordan_wigner``.
@@ -331,7 +394,10 @@ def create_electronic_hamiltonian(one_int, two_int, M, N, mapping_type='jordan_w
     
     """
 
-    H = jordan_wigner(one_int,two_int)
+    if not K is None and not L is None:
+        H = active(one_int, two_int, M, N, K, L)
+    else:
+        H = jordan_wigner(one_int,two_int)
 
     return H
 
@@ -410,7 +476,7 @@ def create_hartree_fock_init_function(N):
     return init_function
 
 
-def electronic_structure_problem(one_int, two_int, M, N, mapping_type='jordan_wigner', ansatz_type='QCCSD'):
+def electronic_structure_problem(one_int, two_int, M, N, K=None, L=None, mapping_type='jordan_wigner', ansatz_type='QCCSD'):
     r"""
     Creates a VQE problem instance for an electronic structure problem defined by the 
     one-electron and two-electron integrals for the spin orbitals (in chemists' notation).
@@ -463,6 +529,10 @@ def electronic_structure_problem(one_int, two_int, M, N, mapping_type='jordan_wi
     """
     from qrisp.vqe import VQEProblem
 
-    ansatz, num_params = create_QCCSD_ansatz(M,N)
+    if K is None or L is None:
+        K = M
+        L = N
 
-    return VQEProblem(create_electronic_hamiltonian(one_int,two_int,M,N), ansatz, num_params, init_function=create_hartree_fock_init_function(N))
+    ansatz, num_params = create_QCCSD_ansatz(K,L)
+
+    return VQEProblem(create_electronic_hamiltonian(one_int,two_int,M,N,K,L), ansatz, num_params, init_function=create_hartree_fock_init_function(L))

@@ -1146,7 +1146,7 @@ class QuantumVariable:
 
         from qrisp.misc import get_measurement_from_qc
         #from qrisp.misc.spin import  get_measurement_settings
-        from qrisp.misc.PauliOperator import PauliOperator, evaluate_observable
+        from qrisp.misc.pauli_operator import PauliOperator, evaluate_observable
 
         # measurement settings
         if mes_settings is None:
