@@ -522,7 +522,7 @@ def electronic_structure_problem(one_int, two_int, M, N, K=None, L=None, mapping
         The mapping from fermionic Hamiltonian to qubit Hamiltonian. Available are ``jordan_wigner``, ``parity``.
         The default is ``jordan_wigner``.
     ansatz_type : string, optional
-        The ansatz type.
+        The ansatz type. Availabe is ``QCCSD``. The default is ``QCCSD``.
     threshold : float, optional
         The threshold for the absolute value of the coefficients of Pauli products in the quantum Hamiltonian. The default is 1e-4.
 
@@ -546,4 +546,4 @@ def electronic_structure_problem(one_int, two_int, M, N, K=None, L=None, mapping
 
     ansatz, num_params = create_QCCSD_ansatz(K,L)
 
-    return VQEProblem(create_electronic_hamiltonian(one_int,two_int,M,N,K,L), ansatz, num_params, init_function=create_hartree_fock_init_function(L))
+    return VQEProblem(create_electronic_hamiltonian(one_int,two_int,M,N,K,L,mapping_type=mapping_type,threshold=threshold), ansatz, num_params, init_function=create_hartree_fock_init_function(L))
