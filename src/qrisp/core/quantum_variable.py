@@ -318,6 +318,13 @@ class QuantumVariable:
         QuantumVariable.live_qvs.append(weakref.ref(self))
         self.creation_time = int(self.creation_counter[0])
         self.creation_counter += 1
+        
+        try:
+            # Register as a PyTree with JAX
+            tree_util.register_pytree_node(type(self), flatten_qv, unflatten_qv)
+        except ValueError:
+            pass
+        
     
     def __or__(self, other):
         from qrisp import mcx, x, cx
@@ -1461,32 +1468,19 @@ from jax import tree_util
 from qrisp.jax.tracing_quantum_session import get_tracing_qs
 from builtins import id
 
-class QVNameContainer:
-    
-    def __init__(self, name):
-        self.name = name
-        
-    def __hash__(self):
-        return hash(type(self))
-    
-    def __eq__(self, other):
-        return isinstance(other, QVNameContainer)
-        
 def flatten_qv(qv):
     # return the tracers and auxiliary data (structure of the object)
     children = (qv.reg,)
-    aux_data = (QVNameContainer(qv.name),)
-    return children, aux_data
+    # aux_data = (QVNameContainer(qv.name),)
+    return children, None
 
 def unflatten_qv(aux_data, children):
-    # reconstruct the object from children and auxiliary data
-    res = QuantumVariable.__new__(QuantumVariable)
+    qs = get_tracing_qs(check_validity = False)
     
-    res.reg = children[0]
-    res.name = aux_data[0].name
-    res.qs = get_tracing_qs(check_validity = False)
-    
-    return res
-
-# Register as a PyTree with JAX
-tree_util.register_pytree_node(QuantumVariable, flatten_qv, unflatten_qv)
+    for qv in qs.qv_list:
+        
+        if qv.reg.aval is children[0].aval:
+            qv.reg = children[0]
+            return qv
+    else:
+        raise Exception("Could not find QuantumVariable object in QuantumSession during unflattening")
