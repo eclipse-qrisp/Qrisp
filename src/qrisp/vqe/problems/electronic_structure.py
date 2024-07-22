@@ -193,146 +193,86 @@ def a(j):
 def A(j):
     return sp.prod(Z(i) for i in range(j))*(X(j)-I*Y(j))/2
 
-#def c_jw(j):
-#    return PauliOperator({tuple([(i,3) for i in range(j)]+[(j,1)]):0.5,tuple([(i,3) for i in range(j)]+[(j,2)]):-0.5j},0)
+#
+# Fermion to qubit mappings
+#
 
-#def a_jw(j):
-#    return PauliOperator({tuple([(i,3) for i in range(j)]+[(j,1)]):0.5,tuple([(i,3) for i in range(j)]+[(j,2)]):0.5j},0)
-
-"""
-@cache
-def c_jw(j):
-    return {tuple([(i,"Z") for i in range(j)]+[(j,"X")]):0.5,tuple([(i,"Z") for i in range(j)]+[(j,"Y")]):-0.5j}
-
-def c_jwo(j):
-    return PauliOperator(c_jw(j).copy(),0)
-
-@cache
-def a_jw(j):
-    return {tuple([(i,"Z") for i in range(j)]+[(j,"X")]):0.5,tuple([(i,"Z") for i in range(j)]+[(j,"Y")]):0.5j}
-
-def a_jwo(j):
-    return PauliOperator(a_jw(j).copy(),0)
-
-"""
-@cache
-def c_jw(j):
-    return PauliOperator({tuple([(i,"Z") for i in range(j)]+[(j,"X")]):0.5,tuple([(i,"Z") for i in range(j)]+[(j,"Y")]):-0.5j},0)
-
+# Jordan-Wigner annihilation operaror 
 @cache
 def a_jw(j):
     return PauliOperator({tuple([(i,"Z") for i in range(j)]+[(j,"X")]):0.5,tuple([(i,"Z") for i in range(j)]+[(j,"Y")]):0.5j},0)
 
+# Jordan-Wigner creation operator 
+@cache
+def c_jw(j):
+    return PauliOperator({tuple([(i,"Z") for i in range(j)]+[(j,"X")]):0.5,tuple([(i,"Z") for i in range(j)]+[(j,"Y")]):-0.5j},0)
 
-def jordan_wigner(one_int, two_int):
+# Parity annihilation operator
+@cache
+def a_par(j,M):
+    if j>0:
+        return PauliOperator({tuple([(j-1,"Z"),(j,"X")]+[(i,"X") for i in range(j+1,M)]):0.5,tuple([(j,"Y")]+[(i,"X") for i in range(j+1,M)]):0.5j},0)
+    else:
+        return PauliOperator({tuple([(j,"X")]+[(i,"X") for i in range(j+1,M)]):0.5,tuple([(j,"Y")]+[(i,"X") for i in range(j+1,M)]):0.5j},0)
+
+# Parity creation operator
+@cache
+def c_par(j,M):
+    if j>0:
+        return PauliOperator({tuple([(j-1,"Z"),(j,"X")]+[(i,"X") for i in range(j+1,M)]):0.5,tuple([(j,"Y")]+[(i,"X") for i in range(j+1,M)]):-0.5j},0)
+    else:
+        return PauliOperator({tuple([(j,"X")]+[(i,"X") for i in range(j+1,M)]):0.5,tuple([(j,"Y")]+[(i,"X") for i in range(j+1,M)]):-0.5j},0)
+
+def ann(i, M, mapping_type):
     """
+    Returns the qubit operator for the fermionic annihilation operator $a_i$.
 
     Parameters
     ----------
-    one_int : list[float]
-        The one-body integrals.
-    two_int : list[float]
-        The two-body integrals.
+    i : int
+        The index of the annihilation operator $a_i$.
+    M: int
+        The number of fermions.
+    mapping_type : str
+        The mapping type. Available are ``jordan_wigner``, ``parity``.
 
     Returns
     -------
-    H : SymPy expr
-        The qubit Hamiltonian for the electronic structure problem.
+    PauliOperator
+        The qubit PauliOperator for the annihilation operator $a_i$.
 
     """
 
-    M = one_int.shape[0]
-    H = PauliOperator()
-    for i in range(M):
-        for j in range(M):
-            if one_int[i][j]!=0:
-                H.inpl_add( c_jw(i)*a_jw(j), one_int[i][j] )
-    
-    for i in range(M):
-        for j in range(M): 
-            for k in range(M):
-                for l in range(M):
-                    if two_int[i][j][k][l]!=0: 
-                        H.inpl_add( c_jw(i)*c_jw(j)*a_jw(k)*a_jw(l), -0.5*two_int[i][j][k][l] )
-
-    return H
-
-def active(one_int, two_int, M, N, K, L):
+    if mapping_type=='jordan_wigner':
+        return a_jw(i)
+    if mapping_type=='parity':
+        return a_par(i,M)
+        
+def cre(i,M,mapping_type):
     """
-    Creates the qubit Hamiltonain for a specified Active Spase (AS) (see `here <https://arxiv.org/abs/2009.01872>`_).
+    Returns the qubit operator for the fermionic creation operator $a_i^{\dagger}$.
 
     Parameters
     ----------
-    int_one : numpy.ndarray
-        The one-electron integrals w.r.t. spin orbitals.
-    int_two : numpy.ndarray
-        The two-electron integrals w.r.t. spin orbitals.
-    M : int
-        The number of spin orbitals.
-    N : int
-        The number of electrons.
-    K : int
-        The number of active spin orbitals.
-    L : int
-        The number of active electrons.
+    i : int
+        The index of the annihilation operator $a_i^{\dagger}$.
+    M: int
+        The number of fermions.
+    mapping_type : str
+        The mapping type. Available are ``jordan_wigner``, ``parity``.
 
     Returns
     -------
-    H : PauliOperator
-        The qubit Hamiltonian
+    PauliOperator
+        The qubit PauliOperator for the annihilation operator $a_i$.
 
     """
 
-    if L>N or K>M or K<L or K+N-L>M:
-        raise Exception("Invalid number of active electrons or orbitals")
-
-    # number of inactive electrons 
-    I = N-L
-
-    # inactive Fock operator
-    F = one_int.copy()
-    for p in range(M):
-        for q in range(M):
-            for i in range(I):
-                F[p][q] += (two_int[i][p][i][q]-two_int[i][q][p][i])
-
-    # inactive energy
-    E = 0
-    for j in range(I):
-        E += (one_int[j][j]+F[j][j])/2
-
-    # Hamiltonian
-    H = PauliOperator({},E)
-    for i in range(K):
-        for j in range(K):
-            if F[I+i][I+j]!=0:
-                H.inpl_add( c_jw(i)*a_jw(j), F[I+i][I+j] )
+    if mapping_type=='jordan_wigner':
+        return c_jw(i)
+    if mapping_type=='parity':
+        return c_par(i,M)
     
-    for i in range(K):
-        for j in range(K): 
-            for k in range(K):
-                for l in range(K):
-                    if two_int[I+i][I+j][I+k][I+l]!=0:
-                        H.inpl_add( c_jw(i)*c_jw(j)*a_jw(k)*a_jw(l), -0.5*two_int[I+i][I+j][I+k][I+l] )  
-
-    return H
-
-# annihilation operator
-def b(j,M):
-    if j>0:
-        return (Z(j-1)*X(j)+I*Y(j))/2*sp.prod(X(i) for i in range(j+1,M))
-    else:
-        return (X(j)+I*Y(j))/2*sp.prod(X(i) for i in range(j+1,M))
-
-
-# creation operator
-def B(j,M):
-    if j>0:
-        return (Z(j-1)*X(j)-I*Y(j))/2*sp.prod(X(i) for i in range(j+1,M))
-    else:
-        return (X(j)-I*Y(j))/2*sp.prod(X(i) for i in range(j+1,M))
-    
-
 def parity(one_int, two_int):
     """
 
@@ -366,15 +306,15 @@ def parity(one_int, two_int):
 
 def create_electronic_hamiltonian(one_int, two_int, M, N, K=None, L=None, mapping_type='jordan_wigner', threshold=1e-4):
     """
-    Creates the qubit Hamiltonian for an electronic structure problem defined by the 
-    one-electron and two-electron integrals for the spin orbitals (in chemists' notation).
+    Creates the qubit Hamiltonian for an electronic structure problem. 
+    If an Active Space (AS) is specified, the Hamiltonian is calculated following this `paper <https://arxiv.org/abs/2009.01872>`_.
     
     Parameters
     ----------
     int_one : numpy.ndarray
-        The one-electron integrals w.r.t. spin orbitals.
+        The one-electron integrals w.r.t. spin orbitals (in physicists' notation).
     int_two : numpy.ndarray
-        The two-electron integrals w.r.t. spin orbitals.
+        The two-electron integrals w.r.t. spin orbitals (in physicists' notation).
     M : int
         The number of spin orbitals.
     N : int
@@ -391,23 +331,53 @@ def create_electronic_hamiltonian(one_int, two_int, M, N, K=None, L=None, mappin
 
     Returns
     -------
-    H : sympr.Expr
-        THe electronic Hamiltonian.
+    H : PauliOperator
+        The qubit Hamiltonian.
     
     """
 
-    if not K is None and not L is None:
-        H = active(one_int, two_int, M, N, K, L)
-    else:
-        H = jordan_wigner(one_int,two_int)
+    if K is None or L is None:
+        K = M
+        L = N
 
-    # Apply threshold
+    if L>N or K>M or K<L or K+N-L>M:
+        raise Exception("Invalid number of active electrons or orbitals")
+
+    # number of inactive electrons 
+    I = N-L
+
+    # inactive Fock operator
+    F = one_int.copy()
+    for p in range(M):
+        for q in range(M):
+            for i in range(I):
+                F[p][q] += (two_int[i][p][i][q]-two_int[i][q][p][i])
+
+    # inactive energy
+    E = 0
+    for j in range(I):
+        E += (one_int[j][j]+F[j][j])/2
+
+    # Hamiltonian
+    H = PauliOperator({},E)
+    for i in range(K):
+        for j in range(K):
+            if F[I+i][I+j]!=0:
+                H.inpl_add(cre(i,K,mapping_type)*ann(j,K,mapping_type), F[I+i][I+j] )
+    
+    for i in range(K):
+        for j in range(K): 
+            for k in range(K):
+                for l in range(K):
+                    if two_int[I+i][I+j][I+k][I+l]!=0 and i!=j and k!=l:
+                        H.inpl_add( cre(i,K,mapping_type)*cre(j,K,mapping_type)*ann(k,K,mapping_type)*ann(l,K,mapping_type), -0.5*two_int[I+i][I+j][I+k][I+l] )  
+
+    # apply threshold
     H.apply_threshold(threshold)
-
     return H
 
 #
-# Ansatz
+# ansatz
 #
 
 def conjugator(i,j):
@@ -428,20 +398,45 @@ def pswap2(phi,i,j,k,l):
             pswap(phi,i,k)
 
 def create_QCCSD_ansatz(M,N):
-    """
+    r"""
     This method implements the `QCCSD ansatz <https://arxiv.org/abs/2005.08451>`_.
+
+    A chemistry-inspired Coupled Cluster Single Double (CCSD) ansatz assumes that the ground state of the electronic Hamiltonian 
+    is a superposition of the Hartree-Fock state:
+
+    .. math::
+
+        \ket{\Psi_{\text{HF}}}=\ket{1_0,\dotsc,1_N,0_{N+1},\dotsc,0_M}
+    
+    and the single (S) electron excitation states:
+
+    .. math::
+
+        \ket{\Psi_i^r}=\ket{1_0,0_i,\dotsc,1_N,0_{N+1},\dotsc,1_r,\dotsc,0_M}
+
+    and the double (D) electron excitation states:
+
+    .. math::
+
+        \ket{\Psi_{ij}^{rs}}=\ket{1_0,0_i,\dotsc,0_j,\dotsc,1_N,0_{N+1},\dotsc,1_r,\dotsc,1_s,\dotsc,0_M}
+
+    That is, the ansatz assumes the following form of the ground state:
+
+    .. math::
+
+        \ket{\Psi_{\text{CCSD}}}=c_0\ket{\Psi_{\text{HF}}}+\sum_{i,r}c_i^r\ket{\Psi_i^r}+\sum_{i<j,r<s}c_{ij}^{rs}\ket{\Psi_i^r}
 
     Parameters
     ----------
     M : int
-        The number of spin orbitals.
+        The number of (active) spin orbitals.
     N : int
-        The number of electrons.
+        The number of (active) electrons.
 
     Returns
     -------
     ansatz : function
-
+        This method creates a function for applying one layer of the ansatz.
     num_params : int
         The number of parameters.
     
@@ -468,15 +463,31 @@ def create_QCCSD_ansatz(M,N):
 
     return ansatz, num_params
 
-def create_hartree_fock_init_function(N):
+def create_hartree_fock_init_function(N, mapping_type='jordan_wigner'):
     """
+    Creates a function for initializing the Hartee-Fock state, i.e., the first ``N`` qubits are initialized in the $\ket{1}$ state.
+
+    Parameters
+    ----------
+    N : int
+        The number of (active) electrons.
     
-    
+    Returns
+    -------
+    init_function : function
+        A function for initializing the Hartee-Fock state.
+
     """
 
-    def init_function(qv):
-        for i in range(N):
-            x(qv[i])
+    if mapping_type=='jordan_wigner':
+        def init_function(qv):
+            for i in range(N):
+                x(qv[i])
+
+    if mapping_type=='parity':
+        def init_function(qv):
+            for i in range(N//2):
+                x(qv[2*i])
 
     return init_function
 
@@ -484,7 +495,7 @@ def create_hartree_fock_init_function(N):
 def electronic_structure_problem(one_int, two_int, M, N, K=None, L=None, mapping_type='jordan_wigner', ansatz_type='QCCSD', threshold=1e-4):
     r"""
     Creates a VQE problem instance for an electronic structure problem defined by the 
-    one-electron and two-electron integrals for the spin orbitals (in chemists' notation).
+    one-electron and two-electron integrals for the spin orbitals (in physicists' notation).
 
     The problem Hamiltonian is given by:
 
@@ -502,14 +513,14 @@ def electronic_structure_problem(one_int, two_int, M, N, K=None, L=None, mapping
 
     .. math::
 
-        h_{i,j,k,l} = \int\mathrm dx_1 \mathrm dx_2 
+        h_{i,j,k,l} = \int\mathrm dx_1\mathrm dx_2\chi_i^*(x_1)\chi_j^*(x_2)\frac{1}{|r_1-r_2|}\chi_k(x_1)\chi_l(x_2)
 
     Parameters
     ----------
     int_one : numpy.ndarray
-        The one-electron integrals w.r.t. spacial orbitals.
+        The one-electron integrals w.r.t. spin orbitals (in physicists' notation).
     int_two : numpy.ndarray
-        The two-electron integrals w.r.t. spacial orbitals.
+        The two-electron integrals w.r.t. spin orbitals (in physicists' notation).
     M : int
         The number of spin orbitals.
     N : int
@@ -546,4 +557,4 @@ def electronic_structure_problem(one_int, two_int, M, N, K=None, L=None, mapping
 
     ansatz, num_params = create_QCCSD_ansatz(K,L)
 
-    return VQEProblem(create_electronic_hamiltonian(one_int,two_int,M,N,K,L,mapping_type=mapping_type,threshold=threshold), ansatz, num_params, init_function=create_hartree_fock_init_function(L))
+    return VQEProblem(create_electronic_hamiltonian(one_int,two_int,M,N,K,L,mapping_type=mapping_type,threshold=threshold), ansatz, num_params, init_function=create_hartree_fock_init_function(L,mapping_type))
