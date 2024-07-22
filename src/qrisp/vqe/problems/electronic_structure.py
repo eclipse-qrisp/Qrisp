@@ -39,7 +39,7 @@ def verify_symmetries(two_int):
 
     Returns
     -------
-    
+
     """
 
     M = two_int.shape[0]
@@ -364,7 +364,7 @@ def parity(one_int, two_int):
 # Hamiltonian
 #
 
-def create_electronic_hamiltonian(one_int, two_int, M, N, K=None, L=None, mapping_type='jordan_wigner'):
+def create_electronic_hamiltonian(one_int, two_int, M, N, K=None, L=None, mapping_type='jordan_wigner', threshold=1e-4):
     """
     Creates the qubit Hamiltonian for an electronic structure problem defined by the 
     one-electron and two-electron integrals for the spin orbitals (in chemists' notation).
@@ -386,6 +386,8 @@ def create_electronic_hamiltonian(one_int, two_int, M, N, K=None, L=None, mappin
     mapping_type : string, optinal
         The mapping from the fermionic Hamiltonian to the qubit Hamiltonian. Available are ``jordan_wigner``, ``parity``.
         The default is ``jordan_wigner``.
+    threshold : float, optional
+        The threshold for the absolute value of the coefficients of Pauli products in the quantum Hamiltonian. The default is 1e-4.
 
     Returns
     -------
@@ -398,6 +400,9 @@ def create_electronic_hamiltonian(one_int, two_int, M, N, K=None, L=None, mappin
         H = active(one_int, two_int, M, N, K, L)
     else:
         H = jordan_wigner(one_int,two_int)
+
+    # Apply threshold
+    H.apply_threshold(threshold)
 
     return H
 
@@ -476,7 +481,7 @@ def create_hartree_fock_init_function(N):
     return init_function
 
 
-def electronic_structure_problem(one_int, two_int, M, N, K=None, L=None, mapping_type='jordan_wigner', ansatz_type='QCCSD'):
+def electronic_structure_problem(one_int, two_int, M, N, K=None, L=None, mapping_type='jordan_wigner', ansatz_type='QCCSD', threshold=1e-4):
     r"""
     Creates a VQE problem instance for an electronic structure problem defined by the 
     one-electron and two-electron integrals for the spin orbitals (in chemists' notation).
@@ -509,11 +514,17 @@ def electronic_structure_problem(one_int, two_int, M, N, K=None, L=None, mapping
         The number of spin orbitals.
     N : int
         The number of electrons.
+    K : int, optional
+        The number of active spin orbitals.
+    L : int, optional
+        The number of active electrons.
     mapping_type : string, optinal
         The mapping from fermionic Hamiltonian to qubit Hamiltonian. Available are ``jordan_wigner``, ``parity``.
         The default is ``jordan_wigner``.
     ansatz_type : string, optional
         The ansatz type.
+    threshold : float, optional
+        The threshold for the absolute value of the coefficients of Pauli products in the quantum Hamiltonian. The default is 1e-4.
 
     Returns
     -------

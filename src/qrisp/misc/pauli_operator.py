@@ -275,6 +275,14 @@ class PauliOperator:
                 del res_pauli_dict[pauli]
         result.pauli_dict = res_pauli_dict
         return result
+    
+    def apply_threshold(self,threshold):
+        delete_list = []
+        for pauli,coeff in self.pauli_dict.items():
+            if abs(coeff)<threshold:
+                delete_list.append(pauli)
+        for pauli in delete_list:
+            del self.pauli_dict[pauli]
 
     def to_expr(self):
         """
@@ -570,5 +578,5 @@ class PauliOperator:
         # Compute the smallest eigenvalue
         eigenvalues, _ = eigsh(M, k=1, which='SA')  # 'SA' stands for smallest algebraic
         E = eigenvalues[0]
-        
+
         return E
