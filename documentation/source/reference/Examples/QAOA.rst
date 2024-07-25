@@ -115,7 +115,6 @@ We will not stick to mathematical assignment of variable names.
 Imports:
 ::
   from qrisp.qaoa import QAOAProblem
-  from qrisp.qaoa import create_rdm_graph
   from qrisp.qaoa import maxIndepSetCostOp, maxIndepSetclCostfct,  init_state
   from qrisp.qaoa import RX_mixer
   from qrisp import QuantumVariable
@@ -124,11 +123,11 @@ Imports:
 
 Problem Definition
 ^^^^^^^^^^^^^^^^^^
-We begin by specifiying the graph considered for the problem, using the ``create_rdm_graph``-function. 
+We begin by specifiying the graph considered for the problem, using the ``erdos_renyi_graph``-function . 
 
 Additionally, we define the ``QuantumVariable`` to operate on.
 ::
-  giraf = create_rdm_graph(9,0.2, seed = 127)
+  giraf = nx.erdos_renyi_graph(9,0.2, seed = 127)
   nx.draw(giraf,with_labels = True) #draw graph
   plt.show() 
   qarg = QuantumVariable(giraf.number_of_nodes())
