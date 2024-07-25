@@ -52,7 +52,7 @@ This class can be used to connect to :ref:`BackendServers <BackendServer>` in or
 In this code snippet, we create connect a BackendClient, to the BackendServer running under the ip ``server_ip`` and ``port``. Subsequently, we run some quantum algorithm returing a :ref:`QuantumVariable` and call the :meth:`qrisp.QuantumVariable.get_measurement` method, to query the remote backend.
 
 
-:ref:`Docker Backend <DockerBackend>`
+:ref:`Docker Backend <DockerSimulators>`
 -------------------------------------
 
 This module describes the inbuilt Docker container to enable utilization of alternative simulation frameworks.  

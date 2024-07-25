@@ -9,10 +9,4 @@ QIROProblem
 .. autoclass:: QIROProblem
 
 
-Methods
--------
-
-.. autosummary::
-   :toctree: generated/
-   
-   QIROProblem.run_qiro
+.. automethod:: QIROProblem.run_qiro
