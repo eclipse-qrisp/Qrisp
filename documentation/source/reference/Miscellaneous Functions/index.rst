@@ -13,6 +13,8 @@ This section contains the documentation of several functions that don't belong i
 
 * :doc:`Utilities` contains some functions that help with general management tasks.
 
+* :doc:`PauliOperator` todo
+
 .. toctree::
    :maxdepth: 2
    :hidden:
@@ -22,3 +24,4 @@ This section contains the documentation of several functions that don't belong i
    Grover tools
    Phase polynomial tools
    Utilities
+   PauliOperator

@@ -185,35 +185,23 @@ def electronic_data(mol):
 # Fermion to qubit mappings
 #
 
-# annihilation operator
-def a(j):
-    return sp.prod(Z(i) for i in range(j))*(X(j)+I*Y(j))/2
-
-# creation operator
-def A(j):
-    return sp.prod(Z(i) for i in range(j))*(X(j)-I*Y(j))/2
-
-#
-# Fermion to qubit mappings
-#
-
 # Jordan-Wigner annihilation operaror 
 @cache
 def a_jw(j):
-    return PauliOperator({tuple([(i,"Z") for i in range(j)]+[(j,"X")]):0.5,tuple([(i,"Z") for i in range(j)]+[(j,"Y")]):0.5j},0)
+    return PauliOperator({tuple([(i,"Z") for i in range(j)]+[(j,"X")]):0.5,tuple([(i,"Z") for i in range(j)]+[(j,"Y")]):0.5j})
 
 # Jordan-Wigner creation operator 
 @cache
 def c_jw(j):
-    return PauliOperator({tuple([(i,"Z") for i in range(j)]+[(j,"X")]):0.5,tuple([(i,"Z") for i in range(j)]+[(j,"Y")]):-0.5j},0)
+    return PauliOperator({tuple([(i,"Z") for i in range(j)]+[(j,"X")]):0.5,tuple([(i,"Z") for i in range(j)]+[(j,"Y")]):-0.5j})
 
 # Parity annihilation operator
 @cache
 def a_par(j,M):
     if j>0:
-        return PauliOperator({tuple([(j-1,"Z"),(j,"X")]+[(i,"X") for i in range(j+1,M)]):0.5,tuple([(j,"Y")]+[(i,"X") for i in range(j+1,M)]):0.5j},0)
+        return PauliOperator({tuple([(j-1,"Z"),(j,"X")]+[(i,"X") for i in range(j+1,M)]):0.5,tuple([(j,"Y")]+[(i,"X") for i in range(j+1,M)]):0.5j})
     else:
-        return PauliOperator({tuple([(j,"X")]+[(i,"X") for i in range(j+1,M)]):0.5,tuple([(j,"Y")]+[(i,"X") for i in range(j+1,M)]):0.5j},0)
+        return PauliOperator({tuple([(j,"X")]+[(i,"X") for i in range(j+1,M)]):0.5,tuple([(j,"Y")]+[(i,"X") for i in range(j+1,M)]):0.5j})
 
 # Parity creation operator
 @cache
@@ -223,7 +211,8 @@ def c_par(j,M):
     else:
         return PauliOperator({tuple([(j,"X")]+[(i,"X") for i in range(j+1,M)]):0.5,tuple([(j,"Y")]+[(i,"X") for i in range(j+1,M)]):-0.5j},0)
 
-def ann(i, M, mapping_type):
+@cache
+def ann(i,M,mapping_type):
     """
     Returns the qubit operator for the fermionic annihilation operator $a_i$.
 
@@ -247,7 +236,8 @@ def ann(i, M, mapping_type):
         return a_jw(i)
     if mapping_type=='parity':
         return a_par(i,M)
-        
+
+@cache
 def cre(i,M,mapping_type):
     """
     Returns the qubit operator for the fermionic creation operator $a_i^{\dagger}$.
@@ -272,33 +262,22 @@ def cre(i,M,mapping_type):
         return c_jw(i)
     if mapping_type=='parity':
         return c_par(i,M)
-    
-def parity(one_int, two_int):
-    """
 
-    Parameters
-    ----------
-    one_int : list[float]
-        The one-body integrals.
-    two_int : list[float]
-        The two-body integrals.
+@cache
+def cre2(i,j,M,mapping_type):
 
-    Returns
-    -------
-    H : SymPy expr
-        The qubit Hamiltonian for the electronic structure problem.
+    if mapping_type=='jordan_wigner':
+        return c_jw(i)*c_jw(j)
+    if mapping_type=='parity':
+        return c_par(i,M)*c_par(j,M)
 
-    """
+@cache
+def ann2(i,j,M,mapping_type):
 
-    # number of electrons
-    M = one_int.shape[0]
-
-    H = 0
-    H += sum(sum(one_int[i][j]*B(i,M)*b(j,M) for i in range(M)) for j in range(M))
-    H += -(1/2)*sum(sum(sum(sum(two_int[i][k][j][l]*B(i,M)*B(j,M)*b(k,M)*b(l,M) for i in range(M)) for j in range(M)) for k in range(M)) for l in range(M))
-    H = simplify_spin(H)
-
-    return H
+    if mapping_type=='jordan_wigner':
+        return a_jw(i)*a_jw(j)
+    if mapping_type=='parity':
+        return a_par(i,M)*a_par(j,M)
 
 #
 # Hamiltonian
@@ -359,18 +338,18 @@ def create_electronic_hamiltonian(one_int, two_int, M, N, K=None, L=None, mappin
         E += (one_int[j][j]+F[j][j])/2
 
     # Hamiltonian
-    H = PauliOperator({},E)
+    H = PauliOperator({():E})
     for i in range(K):
         for j in range(K):
             if F[I+i][I+j]!=0:
-                H.inpl_add(cre(i,K,mapping_type)*ann(j,K,mapping_type), F[I+i][I+j] )
+                H += F[I+i][I+j]*cre(i,K,mapping_type)*ann(j,K,mapping_type)
     
     for i in range(K):
         for j in range(K): 
             for k in range(K):
                 for l in range(K):
                     if two_int[I+i][I+j][I+k][I+l]!=0 and i!=j and k!=l:
-                        H.inpl_add( cre(i,K,mapping_type)*cre(j,K,mapping_type)*ann(k,K,mapping_type)*ann(l,K,mapping_type), -0.5*two_int[I+i][I+j][I+k][I+l] )  
+                        H += -0.5*two_int[I+i][I+j][I+k][I+l]*cre2(i,j,K,mapping_type)*ann2(k,l,K,mapping_type)
 
     # apply threshold
     H.apply_threshold(threshold)

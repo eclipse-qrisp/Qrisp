@@ -336,7 +336,8 @@ def to_pauli_dict(expr):
         else:
             constant += float(simplified_factor)
 
-    return result_dict, constant
+    result_dict[()] = constant
+    return result_dict #, constant
 
 
 def convert_to_spin(quaternion, index):
@@ -707,33 +708,7 @@ def commute(a,b):
 #
 # helper functions for Hamiltonian simulation
 #
-
-def change_of_basis(qv, pauli_dict):
-    for index, axis in pauli_dict:
-        if axis=="X":
-            qv.ry(-np.pi/2,index)
-        if axis=="Y":
-            qv.rx(np.pi/2,index)
-
-
-def parity(qv, indices):
-    n = len(indices)
-    for i in range(n-1):
-        cx(qv[indices[i]],qv[indices[i+1]])
-
-
-def apply_Pauli(qv, pauli_dict, theta):
-
-    indices = pauli_dict.keys()
-
-    change_of_basis(qv, pauli_dict)
-    parity(qv, indices)
-
-    rz(theta,qv[indices[-1]])
-
-    with invert():
-        change_of_basis(qv, pauli_dict)
-        parity(qv, indices)        
+  
 
 
 
