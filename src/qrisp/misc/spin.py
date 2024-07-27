@@ -332,9 +332,9 @@ def to_pauli_dict(expr):
                 simplified_factor *= arg
         if len(pauli_dict)>0:
             sorted_pauli = tuple(sorted(pauli_dict.items()))
-            result_dict[sorted_pauli] = result_dict.get(sorted_pauli,0)+simplified_factor
+            result_dict[sorted_pauli] = result_dict.get(sorted_pauli,0)+float(simplified_factor)
         else:
-            constant += simplified_factor
+            constant += float(simplified_factor)
 
     return result_dict, constant
 

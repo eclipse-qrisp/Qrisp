@@ -176,7 +176,7 @@ class PauliOperator:
 
     @classmethod
     def from_expr(cls, expr):
-        pauli_dict, constant = to_Pauli_dict(expr)
+        pauli_dict, constant = to_pauli_dict(expr)
         return cls(pauli_dict, constant)
 
     
@@ -441,76 +441,14 @@ class PauliOperator:
     # Tools
     #
 
-    def to_matrix(self):
-        """
-        Matrix representation of the PauliOperator.
-    
-        Returns
-        -------
-        M : numpy.array
-            A matrix representation of the quantum Hamiltonian.
-
-        Examples
-        --------
-
-        """
-
-        from numpy import kron as TP
-
-        I = np.array([[1,0],[0,1]])
-
-        def get_matrix(P):
-            if P=="I":
-                return np.array([[1,0],[0,1]])
-            if P=="X":
-                return np.array([[0,1],[1,0]])
-            if P=="Y":
-                return np.array([[0,-1j],[1j,0]])
-            else:
-                return np.array([[1,0],[0,-1]])
-
-        def recursive_TP(keys,pauli_dict):
-            if len(keys)==1:
-                return get_matrix(pauli_dict.get(keys[0],"I"))
-            return TP(get_matrix(pauli_dict.get(keys.pop(0),"I")),recursive_TP(keys,pauli_dict))
-
-        self.pauli_dict
-        self.constant
-
-        pauli_dicts = []
-        coeffs = []
-
-        keys = set()
-        for pauli,coeff in self.pauli_dict.items():
-            curr_dict = dict(pauli)
-            keys.update(set(curr_dict.keys()))
-            pauli_dicts.append(curr_dict)    
-            coeffs.append(coeff)
-
-        keys = set()
-        for item in pauli_dicts:
-            keys.update(set(item.keys()))
-        keys = sorted(keys)
-        dim = len(keys)
-
-        m = len(coeffs)
-        M = complex(self.constant)*np.identity(2**dim).astype(np.complex128)
-        for k in range(m):
-            M += complex(coeffs[k])*recursive_TP(keys.copy(),pauli_dicts[k])
-
-        return M
-
     def to_sparse_matrix(self):
         """
         Matrix representation of the PauliOperator.
     
         Returns
         -------
-        M : numpy.array
-            A matrix representation of the quantum Hamiltonian.
-
-        Examples
-        --------
+        M : scipy.sparse.csr_matrix
+            A sparse matrix representation of the ``PauliOperator``.
 
         """
 
@@ -563,7 +501,7 @@ class PauliOperator:
 
     def ground_state_energy(self):
         """
-        Calculates the ground state energy of a PauliOperator classically.
+        Calculates the ground state energy (i.e., the minimum eigenvalue) of a PauliOperator classically.
     
         Returns
         -------

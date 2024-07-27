@@ -20,7 +20,7 @@ import time
 
 import numpy as np
 from scipy.optimize import minimize
-from sympy import Symbol
+from sympy import Symbol, Basic
 
 from qrisp import h, QuantumArray, parallelize_qc
 from qrisp.vqe.vqe_benchmark_data import VQEBenchmark
@@ -35,7 +35,7 @@ class VQEProblem:
     Parameters
     ----------
     hamiltonian : PauliOperator of sympy.Basic
-        The quantum Hamiltonian. It may be specified as ``PauliOperator`` of as a sympy expresion in terms of spin operators.
+        The quantum Hamiltonian. It may be specified as ``PauliOperator`` or as a sympy expresion in terms of spin operators.
     ansatz_function : function
         A function receiving a :ref:`QuantumVariable` or :ref:`QuantumArray` and a parameter list. This function implements the unitary 
         corresponding to one layer of the ansatz.
@@ -105,7 +105,7 @@ class VQEProblem:
         
         if isinstance(spin_operator,PauliOperator):
             self.spin_operator = spin_operator
-        elif isinstance(spin_operator,sympy.Basic):
+        elif isinstance(spin_operator,Basic):
             self.spin_operator = PauliOperator(spin_operator)
         else:
             raise TypeError("TYPE ERROR")

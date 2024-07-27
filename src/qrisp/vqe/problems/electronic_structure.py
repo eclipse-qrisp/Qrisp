@@ -374,6 +374,7 @@ def create_electronic_hamiltonian(one_int, two_int, M, N, K=None, L=None, mappin
 
     # apply threshold
     H.apply_threshold(threshold)
+    
     return H
 
 #
@@ -412,13 +413,13 @@ def create_QCCSD_ansatz(M,N):
 
     .. math::
 
-        \ket{\Psi_i^r}=\ket{1_0,0_i,\dotsc,1_N,0_{N+1},\dotsc,1_r,\dotsc,0_M}
+        \ket{\Psi_i^r}=\ket{1_0,\dotsc,0_i,\dotsc,1_N,0_{N+1},\dotsc,1_r,\dotsc,0_M}
 
     and the double (D) electron excitation states:
 
     .. math::
 
-        \ket{\Psi_{ij}^{rs}}=\ket{1_0,0_i,\dotsc,0_j,\dotsc,1_N,0_{N+1},\dotsc,1_r,\dotsc,1_s,\dotsc,0_M}
+        \ket{\Psi_{ij}^{rs}}=\ket{1_0,\dotsc,0_i,\dotsc,0_j,\dotsc,1_N,0_{N+1},\dotsc,1_r,\dotsc,1_s,\dotsc,0_M}
 
     That is, the ansatz assumes the following form of the ground state:
 
@@ -501,7 +502,7 @@ def electronic_structure_problem(one_int, two_int, M, N, K=None, L=None, mapping
 
     .. math::
 
-        H = \sum\limits_{i,j=1}^{M}h_{i,j}a^{\dagger}_ia_j + \sum\limits_{i,j,k,l=1}^{M}h_{i,j,k,l}a^{\dagger}_i\a^{\dagger}_ja_ka_l
+        H = \sum\limits_{i,j=1}^{M}h_{i,j}a^{\dagger}_ia_j + \sum\limits_{i,j,k,l=1}^{M}h_{i,j,k,l}a^{\dagger}_ia^{\dagger}_ja_ka_l
     
     for one-electron integrals:
 
@@ -545,8 +546,25 @@ def electronic_structure_problem(one_int, two_int, M, N, K=None, L=None, mapping
     Examples
     --------
 
-    We denonstrate how to use pyscf to obtain the 
-    
+    We calculate the electronic energy for the Hydrogen molecule at bond distance 0.74 angstroms:
+
+    ::
+
+        from pyscf import gto
+        from qrisp import QuantumVariable
+        from qrisp.vqe.problems.electronic_structure import *
+
+        mol = gto.M(
+            atom = '''H 0 0 0; H 0 0 0.74''',
+            basis = 'sto-3g')
+        data = electronic_data(mol)
+
+        vqe = electronic_structure_problem(data['one_int'],data['two_int'],data['num_orb'],data['num_elec'])
+        vqe.set_callback()
+
+        energy = vqe.run(QuantumVariable(4),depth=1,max_iter=50,mes_kwargs={'method':'QWC'})
+        print(energy)
+        #Yields -1.8461290172512965
     
     """
     from qrisp.vqe import VQEProblem

@@ -1040,8 +1040,8 @@ class QuantumVariable:
 
         Parameters
         ----------
-        spin_op : SymPy expr
-            The quantum Hamiltonian.
+        spin_op : PauliOperator of sympy.Basic
+            The quantum Hamiltonian. It may be specified as ``PauliOperator'' or as a sympy expresion in terms of spin operators.
         method : string
             The method for evaluating the expected value of the Hamiltonian.
             Available is ``QWC``: Pauli terms are grouped based on qubit-wise commutativity.
@@ -1080,15 +1080,11 @@ class QuantumVariable:
         Examples
         --------
 
-        We create an integer :ref:`QuantumFloat`, encode the value 1 and bring the qubit
-        with significance 2 in superposition. We utilize the Qiskit transpiler by
-        transpiling into the gate set $\{\text{CX}, \text{U}\}$
-
         >>> from qrisp import QuantumVariable, h
-        >>> from qrisp.misc.spin import Spin
+        >>> from qrisp.misc.spin import X,Y,Z
         >>> qv = QuantumVariable(2)
         >>> h(qv)
-        >>> H = Spin("Z",0)*Spin("Z",1)
+        >>> H = Z(0)*Z(1)
         >>> res = qv.get_spin_measurement(H)
         >>> print(res)
         0.0
@@ -1145,15 +1141,21 @@ class QuantumVariable:
         qc = qc.transpile()
 
         from qrisp.misc import get_measurement_from_qc
-        #from qrisp.misc.spin import  get_measurement_settings
         from qrisp.misc.pauli_operator import PauliOperator, evaluate_observable
+        from sympy import Basic
+
+        if isinstance(spin_op,PauliOperator):
+            pass
+        elif isinstance(spin_op,Basic):
+            spin_op = PauliOperator(spin_op)
+        else:
+            raise TypeError("TYPE ERROR")
 
         # measurement settings
         if mes_settings is None:
             meas_circs, meas_ops, meas_coeffs, constant_term = spin_op.get_measurement_settings(self, method=method)
         else:
             meas_circs, meas_ops, meas_coeffs, constant_term = mes_settings
-        #meas_circs, meas_ops, meas_coeffs, constant_term = get_measurement_settings(self, spin_op, method=method)
         N = len(meas_circs)
 
         expectation = constant_term
