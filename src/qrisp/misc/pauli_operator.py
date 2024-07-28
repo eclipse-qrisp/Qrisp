@@ -16,17 +16,11 @@
 ********************************************************************************/
 """
 
-from qrisp.misc.spin import *
+from qrisp import *
+from qrisp.misc.spin import X,Y,Z, to_pauli_dict
+import numpy as np
 
 threshold = 1e-9
-
-#pauli_table = {(1,1):(0,1),(1,2):(3,1j),(1,3):(2,-1j),
-#            (2,1):(3,-1j),(2,2):(0,1),(2,3):(1,1j),
-#            (3,1):(2,1j),(3,2):(1,-1j),(3,3):(1,1)}
-
-pauli_table = {("X","X"):("I",1),("X","Y"):("Z",1j),("X","Z"):("Y",-1j),
-            ("Y","X"):("Z",-1j),("Y","Y"):("I",1),("Y","Z"):("X",1j),
-            ("Z","X"):("Y",1j),("Z","Y"):("X",-1j),("Z","Z"):("I",1)}
 
 #
 # Helper functions
@@ -36,6 +30,10 @@ def set_bit(n,k):
     return n | (1 << k)   
 
 def mul_helper(P1,P2):
+    pauli_table = {("X","X"):("I",1),("X","Y"):("Z",1j),("X","Z"):("Y",-1j),
+            ("Y","X"):("Z",-1j),("Y","Y"):("I",1),("Y","Z"):("X",1j),
+            ("Z","X"):("Y",1j),("Z","Y"):("X",-1j),("Z","Z"):("I",1)}
+    
     if P1=="I":
         return (P2,1)
     if P2=="I":
@@ -45,33 +43,17 @@ def mul_helper(P1,P2):
 def mul_paulis(pauli1,pauli2):
     result_list = []
     result_coeff = 1
-    pauli_dict1 = dict(pauli1)
-    pauli_dict2 = dict(pauli2)
+    a = dict(pauli1)
+    b = dict(pauli2)
     keys = set()
-    keys.update(set(pauli_dict1.keys()))
-    keys.update(set(pauli_dict2.keys()))
+    keys.update(set(a.keys()))
+    keys.update(set(b.keys()))
     for key in sorted(keys):
-        pauli, coeff = mul_helper(pauli_dict1.get(key,"I"),pauli_dict2.get(key,"I"))
+        pauli, coeff = mul_helper(a.get(key,"I"),b.get(key,"I"))
         if pauli!="I":
             result_list.append((key,pauli))
         result_coeff *= coeff
     return tuple(result_list), result_coeff
-
-#
-# Trotterization
-#
-
-def change_of_basis(qarg, pauli_dict):
-    for index, axis in pauli_dict.items():
-        if axis=="X":
-            ry(-np.pi/2,qarg[index])
-        if axis=="Y":
-            rx(np.pi/2,qarg[index])
-
-def parity(qarg, indices):
-    n = len(indices)
-    for i in range(n-1):
-        cx(qarg[indices[i]],qarg[indices[i+1]])
 
 #
 # Commutativity checks
@@ -125,6 +107,22 @@ def commute(a,b):
         if a.get(key,"I")!="I" and b.get(key,"I")!="I" and a.get(key,"I")!=b.get(key,"I"):
             commute = not commute
     return commute
+
+#
+# Trotterization
+#
+
+def change_of_basis(qarg, pauli_dict):
+    for index, axis in pauli_dict.items():
+        if axis=="X":
+            ry(-np.pi/2,qarg[index])
+        if axis=="Y":
+            rx(np.pi/2,qarg[index])
+
+def parity(qarg, indices):
+    n = len(indices)
+    for i in range(n-1):
+        cx(qarg[indices[i]],qarg[indices[i+1]])
 
 #
 # Evaluate observable
@@ -181,7 +179,7 @@ class PauliOperator:
     * The key is an (ordered) tuple encoding a Pauli product.
       Each Pauli operator is represented by a tuple ``(i,"P")`` for P=X,Y,Z.
       For example: the Pauli product $X_0Y_1Z_2$ is represented as 
-      ``((0,"X"),(1,"Y"),(2,("Z")))``
+      ``((0,"X"),(1,"Y"),(2,"Z"))``
     * The value is the coefficent of the Pauli product.
 
     For example, the operator 
@@ -194,7 +192,7 @@ class PauliOperator:
 
     ::
     
-        {():1, ((0,"X")):2, ((0,"X"),(1,"Y")):3}
+        {():1, ((0,"X"),):2, ((0,"X"),(1,"Y")):3}
 
     Parameters
     ----------
@@ -242,7 +240,6 @@ class PauliOperator:
         if not isinstance(other,PauliOperator):
             raise TypeError("Cannot add PauliOperator and "+str(type(other)))
 
-        result = PauliOperator()
         res_pauli_dict = {}
 
         for pauli,coeff in self.pauli_dict.items():
@@ -255,7 +252,7 @@ class PauliOperator:
             if abs(res_pauli_dict[pauli])<threshold:
                 del res_pauli_dict[pauli]
         
-        result.pauli_dict = res_pauli_dict
+        result = PauliOperator(res_pauli_dict)
         return result
 
     def __sub__(self,other):
@@ -279,7 +276,6 @@ class PauliOperator:
         if not isinstance(other,PauliOperator):
             raise TypeError("Cannot substract PauliOperator and "+str(type(other)))
 
-        result = PauliOperator()
         res_pauli_dict = {}
 
         for pauli,coeff in self.pauli_dict.items():
@@ -292,7 +288,7 @@ class PauliOperator:
             if abs(res_pauli_dict[pauli])<threshold:
                 del res_pauli_dict[pauli]
         
-        result.pauli_dict = res_pauli_dict
+        result = PauliOperator(res_pauli_dict)
         return result
     
     def __mul__(self,other):
@@ -316,7 +312,6 @@ class PauliOperator:
         if not isinstance(other,PauliOperator):
             raise TypeError("Cannot multipliy PauliOperator and "+str(type(other)))
 
-        result = PauliOperator()
         res_pauli_dict = {}
 
         for pauli1, coeff1 in self.pauli_dict.items():
@@ -324,7 +319,7 @@ class PauliOperator:
                 curr_tuple, curr_coeff = mul_paulis(pauli1,pauli2)
                 res_pauli_dict[curr_tuple] = res_pauli_dict.get(curr_tuple,0) + curr_coeff*coeff1*coeff2
 
-        result.pauli_dict = res_pauli_dict
+        result = PauliOperator(res_pauli_dict)
         return result
 
     __radd__ = __add__
@@ -485,11 +480,13 @@ class PauliOperator:
         # construct change of basis circuits
         for pauli in pauli_dicts:
             qc = QuantumCircuit(num_qubits)
-            for index,axis in pauli.items():
-                if axis=="X":
-                    qc.ry(-np.pi/2,index)
-                if axis=="Y":
-                    qc.rx(np.pi/2,index)  
+            for item in pauli.items():
+                if item[0] >= num_qubits:
+                    raise Exception("Insufficient number of qubits")
+                if item[1]=="X":
+                    qc.ry(-np.pi/2,item[0])
+                if item[1]=="Y":
+                    qc.rx(np.pi/2,item[0])  
             measurement_circuits.append(qc)    
 
         return measurement_circuits, measurement_ops, measurement_coeffs, constant_term
@@ -580,7 +577,6 @@ class PauliOperator:
 
         """
 
-        #from numpy import kron as TP
         import scipy.sparse as sp
         from scipy.sparse import kron as TP, csr_matrix
 

@@ -16,6 +16,7 @@ Methods
     PauliOperator.__sub__
     PauliOperator.__mul__
     PauliOperator.__iadd__
+    PauliOperator.__isub__
     PauliOperator.apply_threshold
     PauliOperator.get_measurement_settings
     PauliOperator.to_expr

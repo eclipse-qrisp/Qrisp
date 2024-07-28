@@ -504,7 +504,6 @@ class VQEProblem:
         """
 
         import matplotlib.pyplot as plt
-        from qrisp.misc.spin import ground_state_energy
 
         if not self.callback:
             raise Exception("Visualization can only be performed for a VQE instance with callback=True")
