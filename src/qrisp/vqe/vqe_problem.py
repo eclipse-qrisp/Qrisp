@@ -24,7 +24,7 @@ from sympy import Symbol, Basic
 
 from qrisp import h, QuantumArray, parallelize_qc
 from qrisp.vqe.vqe_benchmark_data import VQEBenchmark
-from qrisp.misc.pauli_operator import PauliOperator
+from qrisp.operators.pauli_operator import PauliOperator
 
 
 class VQEProblem:

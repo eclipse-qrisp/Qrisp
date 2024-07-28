@@ -679,7 +679,7 @@ class QuantumArray(np.ndarray):
             qc = circuit_preprocessor(qc)
 
         from qrisp.misc import get_measurement_from_qc
-        from qrisp.misc.spin import evaluate_observable, get_measurement_settings
+        from qrisp.operators.spin import evaluate_observable, get_measurement_settings
 
         # measurement settings
         meas_circs, meas_ops, meas_coeffs, constant_term = get_measurement_settings(self, spin_op)

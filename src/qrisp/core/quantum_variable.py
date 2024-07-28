@@ -1141,7 +1141,7 @@ class QuantumVariable:
         qc = qc.transpile()
 
         from qrisp.misc import get_measurement_from_qc
-        from qrisp.misc.pauli_operator import PauliOperator, evaluate_observable
+        from qrisp.operators import PauliOperator, evaluate_observable
         from sympy import Basic
 
         if isinstance(spin_op,PauliOperator):

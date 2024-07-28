@@ -51,7 +51,7 @@ def mul_helper(P1,P2):
 # Pauli symbols
 #  
 
-class X(Symbol):
+class X_(Symbol):
 
     __slots__ = ("axis","index")
 
@@ -75,19 +75,19 @@ class X(Symbol):
             return super().__pow__(int(e) % 2)
         
     def __mul__(self, other):
-        if isinstance(other, (X,Y,Z)):
+        if isinstance(other, (X_,Y_,Z_)):
             if self.index == other.index:
                 i = self.axis
                 j = other.axis
                 return delta(i, j) \
-                    + I*epsilon(i, j, "X")*X(self.index) \
-                    + I*epsilon(i, j, "Y")*Y(self.index) \
-                    + I*epsilon(i, j, "Z")*Z(self.index)
+                    + I*epsilon(i, j, "X")*X_(self.index) \
+                    + I*epsilon(i, j, "Y")*Y_(self.index) \
+                    + I*epsilon(i, j, "Z")*Z_(self.index)
         return super().__mul__(other)
     
     __rmul__ = __mul__
 
-class Y(Symbol):
+class Y_(Symbol):
 
     __slots__ = ("axis","index")
 
@@ -111,19 +111,19 @@ class Y(Symbol):
             return super().__pow__(int(e) % 2)
 
     def __mul__(self, other):
-        if isinstance(other, (X,Y,Z)):
+        if isinstance(other, (X_,Y_,Z_)):
             if self.index == other.index:
                 i = self.axis
                 j = other.axis
                 return delta(i, j) \
-                    + I*epsilon(i, j, "X")*X(self.index) \
-                    + I*epsilon(i, j, "Y")*Y(self.index) \
-                    + I*epsilon(i, j, "Z")*Z(self.index)
+                    + I*epsilon(i, j, "X")*X_(self.index) \
+                    + I*epsilon(i, j, "Y")*Y_(self.index) \
+                    + I*epsilon(i, j, "Z")*Z_(self.index)
         return super().__mul__(other)     
       
     __rmul__ = __mul__
        
-class Z(Symbol):
+class Z_(Symbol):
 
     __slots__ = ("axis","index")
 
@@ -147,14 +147,14 @@ class Z(Symbol):
             return super().__pow__(int(e) % 2)
         
     def __mul__(self, other):
-        if isinstance(other, (X,Y,Z)):
+        if isinstance(other, (X_,Y_,Z_)):
             if self.index == other.index:
                 i = self.axis
                 j = other.axis
                 return delta(i, j) \
-                    + I*epsilon(i, j, "X")*X(self.index) \
-                    + I*epsilon(i, j, "Y")*Y(self.index) \
-                    + I*epsilon(i, j, "Z")*Z(self.index)
+                    + I*epsilon(i, j, "X")*X_(self.index) \
+                    + I*epsilon(i, j, "Y")*Y_(self.index) \
+                    + I*epsilon(i, j, "Z")*Z_(self.index)
         return super().__mul__(other)
     
     __rmul__ = __mul__
@@ -171,7 +171,7 @@ def to_pauli_dict(expr):
         coeff = 1
 
         for arg in factors:
-            if isinstance(arg, (X,Y,Z)):
+            if isinstance(arg, (X_,Y_,Z_)):
                 pauli, coeff_ = mul_helper(p_dict.get(arg.index,"I"),arg.get_axis())
                 if pauli!="I":
                     p_dict[arg.index] = pauli

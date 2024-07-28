@@ -20,8 +20,8 @@
 import sympy as sp
 from sympy import I
 from sympy import *
-from qrisp.misc.spin import *
-from qrisp.misc.pauli_operator import *
+from qrisp.operators.spin import *
+from qrisp.operators.pauli_operator import *
 from functools import cache
 
 #

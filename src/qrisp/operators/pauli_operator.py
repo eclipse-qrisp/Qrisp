@@ -17,8 +17,13 @@
 """
 
 from qrisp import *
-from qrisp.misc.spin import X,Y,Z, to_pauli_dict
+from qrisp.operators.spin import X_,Y_,Z_, to_pauli_dict
 import numpy as np
+import sympy as sp
+from sympy import init_printing
+
+# Initialize automatic LaTeX rendering
+init_printing()
 
 threshold = 1e-9
 
@@ -201,6 +206,16 @@ class PauliOperator:
 
     Examples
     --------
+
+    ::
+        
+        from qrisp.operators import PauliOperator, X,Y,Z
+
+        P1 = PauliOperator(1+2*X(0)+3*X(0)*Y(1))
+        P2 = PauliOperator({():1,((0,'X'),):2,((0,'X'),(1,'Y')):3})
+        P3 = P1+P2
+        P3.to_expr()
+        #Yields $X_1$
 
     """
 
@@ -396,6 +411,11 @@ class PauliOperator:
                 delete_list.append(pauli)
         for pauli in delete_list:
             del self.pauli_dict[pauli]
+    
+    def _repr_latex_(self):
+        # Convert the sympy expression to LaTeX and return it
+        expr = self.to_expr()
+        return f"${sp.latex(expr)}$"
 
     #
     # Measurement settings
@@ -552,11 +572,11 @@ class PauliOperator:
             if P=="I":
                 return 1
             if P=="X":
-                return X(index)
+                return X_(index)
             if P=="Y":
-                return Y(index)
+                return Y_(index)
             else:
-                return Z(index)
+                return Z_(index)
         
         for pauli,coeff in self.pauli_dict.items():
             curr_expr = coeff
