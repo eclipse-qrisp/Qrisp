@@ -30,12 +30,12 @@ from qrisp.operators.pauli_operator import PauliOperator
 class VQEProblem:
     r"""
     Central structure to facilitate treatment of VQE problems.
-    This class encapsulates the spin operator, the ansatz, and the initial state preparation function for a specific VQE problem instance. 
+    This class encapsulates the Hamiltonian, the ansatz, and the initial state preparation function for a specific VQE problem instance. 
     
     Parameters
     ----------
-    hamiltonian : PauliOperator of sympy.Basic
-        The quantum Hamiltonian. It may be specified as ``PauliOperator`` or as a sympy expresion in terms of spin operators.
+    hamiltonian : PauliOperator
+        The quantum Hamiltonian.
     ansatz_function : function
         A function receiving a :ref:`QuantumVariable` or :ref:`QuantumArray` and a parameter list. This function implements the unitary 
         corresponding to one layer of the ansatz.
@@ -56,9 +56,9 @@ class VQEProblem:
     ::
 
         from qrisp import *
-        from qrisp.misc.spin import X, Y, Z
+        from qrisp.operators import X,Y,Z
 
-        # The problem Hamiltonian
+        # Problem Hamiltonian
         c = [-0.81054, 0.16614, 0.16892, 0.17218, -0.22573, 0.12091, 0.166145, 0.04523]
         H = c[0] \
             + c[1]*Z(0)*Z(2) \
@@ -69,7 +69,7 @@ class VQEProblem:
             + c[6]*(Z(0)*Z(3) + Z(1)*Z(2)) \
             + c[7]*(Y(0)*Y(1)*Y(2)*Y(3) + X(0)*X(1)*Y(2)*Y(3) + Y(0)*Y(1)*X(2)*X(3) + X(0)*X(1)*X(2)*X(3))
 
-        # The ansatz
+        # Ansatz
         def ansatz(qv,theta):
             for i in range(4):
                 ry(theta[i],qv[i])
@@ -79,7 +79,7 @@ class VQEProblem:
 
         from qrisp.vqe.vqe_problem import *
 
-        vqe = VQEProblem(spin_operator = H,
+        vqe = VQEProblem(hamiltonian = H,
                          ansatz_function = ansatz,
                          num_params=4,
                          callback=True)
@@ -101,15 +101,9 @@ class VQEProblem:
 
     """
     
-    def __init__(self, spin_operator, ansatz_function, num_params, init_function = None, callback=False):
+    def __init__(self, hamiltonian, ansatz_function, num_params, init_function = None, callback=False):
         
-        if isinstance(spin_operator,PauliOperator):
-            self.spin_operator = spin_operator
-        elif isinstance(spin_operator,Basic):
-            self.spin_operator = PauliOperator(spin_operator)
-        else:
-            raise TypeError("TYPE ERROR")
-
+        self.hamiltonian = hamiltonian
         self.ansatz_function = ansatz_function
         self.num_params = num_params
         self.init_function = init_function
@@ -161,7 +155,7 @@ class VQEProblem:
         
         temp = list(qarg.qs.data)
         
-        # Define VQE angle parameters theta for VQE circuit
+        # Define parameters theta for VQE circuit
         theta = [Symbol("theta_" + str(i) + str(j)) for i in range(depth) for j in range(self.num_params)]
 
         # Prepare the initial state for particular problem instance, the default is the \ket{0} state
@@ -172,13 +166,7 @@ class VQEProblem:
         for i in range(depth):                           
             self.ansatz_function(qarg,[theta[self.num_params*i+j] for j in range(self.num_params)])
 
-        # Compile quantum circuit with intended measurements    
-        if isinstance(qarg, QuantumArray):
-            intended_measurement_qubits = sum([list(qv) for qv in qarg.flatten()], [])
-        else:
-            intended_measurement_qubits = list(qarg)
-        
-        #compiled_qc = qarg.qs.compile(intended_measurements=intended_measurement_qubits)
+        # Compile quantum circuit
         compiled_qc = qarg.qs.compile()
         
         qarg.qs.data = temp
@@ -195,19 +183,19 @@ class VQEProblem:
             The argument the cost function is called on.
         depth : int
             The amont of VQE layers.
-        mes_kwargs : dict, optional
-            The keyword arguments for the measurement function. Default is an empty dictionary, as defined in previous functions.
-        mes_settings : list, optional
-            THe keyword argument 
-        max_iter : int, optional
-            The maximum number of iterations for the optimization method. Default is 50, as defined in previous functions.
+        mes_kwargs : dict
+            The keyword arguments for the measurement function.
+        mes_settings : list
+            The measurement setttings for the measurement function.
+        max_iter : int
+            The maximum number of iterations for the optimization method.
         init_type : string, optional
             Specifies the way the initial optimization parameters are chosen. Available is ``random``. 
             The default is ``random``: Parameters are initialized uniformly at random in the interval $[0,\pi/2)]$.
         init_point : list[float], optional
             Specifies the initial optimization parameters. 
         optimizer : str, optional
-            Specifies the optimization routine. Available are "COBYLA", "COBYQA". 
+            Specifies the optimization routine. Available are ``COBYLA``, ``COBYQA``, ``Nelder-Mead``. 
             The Default is "COBYLA". 
 
         Returns
@@ -215,15 +203,13 @@ class VQEProblem:
         res_sample
             The optimized parameters of the problem instance.
         """
-        
-        #compiled_qc, symbols = self.compile_circuit(qarg, depth)
 
         # Define optimization wrapper function to be minimized using VQE
         def optimization_wrapper(theta, qc, symbols, qarg, mes_kwargs, mes_settings):
             """
             Wrapper function for the optimization method used in VQE.
 
-            This function calculates the expected value of the spin operator after post-processing if a post-processing function is set, otherwise it calculates the expexted value of the spin operator.
+            This function calculates the expected value of the Hamiltonian after post-processing if a post-processing function is set, otherwise it calculates the expected value of the Hamiltonian.
 
             Parameters
             ----------
@@ -237,16 +223,18 @@ class VQEProblem:
                 The duplicated quantum variable to which the quantum circuit is applied.
             mes_kwargs : dict
                 The keyword arguments for the measurement function.
+            mes_settings : list
+                The measurement setttings for the measurement function.
 
             Returns
             -------
             float
-                The expected value of the spin operator.
+                The expected value of the Hamiltonian.
             """         
 
             subs_dic = {symbols[i] : theta[i] for i in range(len(symbols))}
 
-            expectation = qarg.get_spin_measurement(self.spin_operator, subs_dic = subs_dic, precompiled_qc = qc, mes_settings=mes_settings, **mes_kwargs)
+            expectation = qarg.get_spin_measurement(self.hamiltonian, subs_dic = subs_dic, precompiled_qc = qc, mes_settings=mes_settings, **mes_kwargs)
 
             if self.callback:
                 self.optimization_costs.append(expectation)
@@ -264,7 +252,7 @@ class VQEProblem:
         #def optimization_cb(x):
         #    self.optimization_params.append(x)
 
-        # Perform optimization using COBYLA method
+        # Perform optimization using specified method
         compiled_qc, symbols = self.compile_circuit(qarg, depth)
         res_sample = minimize(optimization_wrapper,
                                 init_point, 
@@ -287,6 +275,7 @@ class VQEProblem:
             The amount of VQE layers.
         mes_kwargs : dict, optional
             The keyword arguments for the measurement function. Default is an empty dictionary.
+            By default, 5000 shots are executed per measurement setting.
         max_iter : int, optional
             The maximum number of iterations for the optimization method. Default is 50.
         init_type : string, optional
@@ -301,7 +290,7 @@ class VQEProblem:
         Returns
         -------
         energy : float
-            The expected value of the spin operator after applying the optimal VQE circuit to the quantum variable.
+            The expected value of the Hamiltonian after applying the optimal VQE circuit to the quantum variable.
         """
 
         # Delete callback
@@ -312,7 +301,7 @@ class VQEProblem:
             mes_kwargs["shots"] = 5000
 
         # Measurement settings
-        meas_circs, meas_ops, meas_coeffs, constant_term = self.spin_operator.get_measurement_settings(qarg, method=mes_kwargs.get("method",None)) 
+        meas_circs, meas_ops, meas_coeffs, constant_term = self.hamiltonian.get_measurement_settings(qarg, method=mes_kwargs.get("method",None)) 
         mes_settings = [meas_circs, meas_ops, meas_coeffs, constant_term]
         
         optimal_theta = self.optimization_routine(qarg, depth, mes_kwargs, mes_settings, max_iter, init_type, init_point, optimizer)
@@ -325,14 +314,14 @@ class VQEProblem:
         for i in range(depth):                          
             self.ansatz_function(qarg,[optimal_theta[self.num_params*i+j] for j in range(self.num_params)])
 
-        opt_res = qarg.get_spin_measurement(self.spin_operator,mes_settings=mes_settings,**mes_kwargs)
+        opt_res = qarg.get_spin_measurement(self.hamiltonian,mes_settings=mes_settings,**mes_kwargs)
         
         return opt_res
     
     def train_function(self, qarg, depth, mes_kwargs = {}, max_iter = 50, init_type = "random", init_point=None, optimizer="COBYLA"):
         """
         This function allows for training of a circuit with a given instance of a ``VQEProblem``. It will then return a function that can be applied to a ``QuantumVariable``,
-        s.t. that it prepares a solution to the problem instance. The function therefore applies a circuit for the problem instance with optimized parameters.
+        such that it prepares the ground state of the problem Hamiltonian. The function therefore applies a circuit for the problem instance with optimized parameters.
 
         Parameters
         ----------
@@ -342,6 +331,7 @@ class VQEProblem:
             The amount of VQE layers.
         mes_kwargs : dict, optional
             The keyword arguments for the measurement function. Default is an empty dictionary.
+            By default, 5000 shots are executed per measurement setting.
         max_iter : int, optional
             The maximum number of iterations for the optimization method. Default is 50.
         init_type : string, optional
@@ -356,7 +346,8 @@ class VQEProblem:
         Returns
         -------
         circuit_generator : function
-            A function that can be applied to a ``QuantumVariable``, with optimized parameters for the problem instance. The ``QuantumVariable`` then represent a solution of the problem.
+            A function that can be applied to a ``QuantumVariable``, with optimized parameters for the problem instance. 
+            The ``QuantumVariable`` then represents the ground state of the problem Hamiltonian.
 
         """
 
@@ -364,7 +355,7 @@ class VQEProblem:
             mes_kwargs["shots"] = 5000
 
         # Measurement settings
-        meas_circs, meas_ops, meas_coeffs, constant_term = self.spin_operator.get_measurement_settings(qarg, method=mes_kwargs.get("method",None)) 
+        meas_circs, meas_ops, meas_coeffs, constant_term = self.hamiltonian.get_measurement_settings(qarg, method=mes_kwargs.get("method",None)) 
         mes_settings = [meas_circs, meas_ops, meas_coeffs, constant_term]
 
         optimal_theta = self.optimization_routine(qarg, depth, mes_kwargs, mes_settings, max_iter, init_type, init_point, optimizer)
@@ -390,7 +381,7 @@ class VQEProblem:
         depth_range : list[int]
             A list of integers indicating, which depth parameters should be explored. Depth means the amount of VQE layers.
         shot_range : list[int]
-            A list of integers indicating, which shots parameters should be explored. Shots means the amount of repetitions, the backend performs per iteration.
+            A list of integers indicating, which shots parameters should be explored. Shots means the amount of repetitions, the backend performs per iteration and per measurement setting.
         iter_range : list[int]
             A list of integers indicating, what iterations parameter should be explored. Iterations means the amount of backend calls, the optimizer is allowed to do.
         optimal_solution : float
@@ -462,10 +453,8 @@ class VQEProblem:
                         
                         if isinstance(qarg, QuantumArray):
                             qarg_dupl = QuantumArray(qtype = qarg.qtype, shape = qarg.shape)
-                            mes_qubits = sum([qv.reg for qv in qarg_dupl.flatten()], [])
                         else:
                             qarg_dupl = qarg.duplicate()
-                            mes_qubits = list(qarg_dupl)
                             
                         start_time = time.time()
                         
@@ -475,8 +464,7 @@ class VQEProblem:
                         energy = self.run(qarg=qarg_dupl, depth = p, max_iter = it, mes_kwargs = temp_mes_kwargs, init_type=init_type)
 
                         final_time = time.time() - start_time
-                        
-                        #compiled_qc = qarg_dupl.qs.compile(intended_measurements=mes_qubits)
+                    
                         compiled_qc = qarg_dupl.qs.compile()
                         
                         data_dict["layer_depth"].append(p)
@@ -488,7 +476,7 @@ class VQEProblem:
                         data_dict["runtime"].append(final_time)
                         
                         
-        return VQEBenchmark(data_dict, optimal_solution, self.spin_operator)
+        return VQEBenchmark(data_dict, optimal_solution, self.hamiltonian)
     
 
     def visualize_energy(self,exact=False):
@@ -509,7 +497,7 @@ class VQEProblem:
             raise Exception("Visualization can only be performed for a VQE instance with callback=True")
         
         if exact:
-            exact_solution = self.spin_operator.ground_state_energy()
+            exact_solution = self.hamiltonian.ground_state_energy()
             plt.axhline(y=exact_solution, color="#6929C4", linestyle='--', linewidth=2, label='Exact energy')
         
         x = list(range(len(self.optimization_costs)))

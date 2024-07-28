@@ -1024,7 +1024,7 @@ class QuantumVariable:
 
     def get_spin_measurement(
         self,
-        spin_op,
+        hamiltonian,
         method=None,
         backend=None,
         shots=100000,
@@ -1040,8 +1040,8 @@ class QuantumVariable:
 
         Parameters
         ----------
-        spin_op : PauliOperator of sympy.Basic
-            The quantum Hamiltonian. It may be specified as ``PauliOperator'' or as a sympy expresion in terms of spin operators.
+        hamiltonian : PauliOperator
+            The quantum Hamiltonian.
         method : string
             The method for evaluating the expected value of the Hamiltonian.
             Available is ``QWC``: Pauli terms are grouped based on qubit-wise commutativity.
@@ -1065,6 +1065,8 @@ class QuantumVariable:
         circuit_preprocessor : Python function, optional
             A function which recieves a QuantumCircuit and returns one, which is applied
             after compilation and parameter substitution. The default is None.
+        mes_settings : list, optional 
+            The measurement settings. The default is None.
 
         Raises
         ------
@@ -1081,7 +1083,7 @@ class QuantumVariable:
         --------
 
         >>> from qrisp import QuantumVariable, h
-        >>> from qrisp.misc.spin import X,Y,Z
+        >>> from qrisp.operators import X,Y,Z
         >>> qv = QuantumVariable(2)
         >>> h(qv)
         >>> H = Z(0)*Z(1)
@@ -1109,10 +1111,10 @@ class QuantumVariable:
         
         qc = self.qs.copy()
 
+        # Copy circuit in over to prevent modification
         if precompiled_qc is None:        
             if compile:
                 qc = qompiler(
-                    #self.qs, intended_measurements=self.reg, **compilation_kwargs
                     self.qs, **compilation_kwargs
                 )
             else:
@@ -1120,19 +1122,11 @@ class QuantumVariable:
         else:
             qc = precompiled_qc.copy()
 
-
         # Bind parameters
         if subs_dic:
             qc = qc.bind_parameters(subs_dic)
             from qrisp.core.compilation import combine_single_qubit_gates
             qc = combine_single_qubit_gates(qc)
-
-        # Copy circuit in over to prevent modification
-        # from qrisp.quantum_network import QuantumNetworkClient
-
-        # if isinstance(backend, QuantumNetworkClient):
-        #     self.qs.data = []
-        #     shots = 1
 
         # Execute user specified circuit_preprocessor
         if circuit_preprocessor is not None:
@@ -1142,18 +1136,10 @@ class QuantumVariable:
 
         from qrisp.misc import get_measurement_from_qc
         from qrisp.operators import PauliOperator, evaluate_observable
-        from sympy import Basic
-
-        if isinstance(spin_op,PauliOperator):
-            pass
-        elif isinstance(spin_op,Basic):
-            spin_op = PauliOperator(spin_op)
-        else:
-            raise TypeError("TYPE ERROR")
 
         # measurement settings
         if mes_settings is None:
-            meas_circs, meas_ops, meas_coeffs, constant_term = spin_op.get_measurement_settings(self, method=method)
+            meas_circs, meas_ops, meas_coeffs, constant_term = hamiltonian.get_measurement_settings(self, method=method)
         else:
             meas_circs, meas_ops, meas_coeffs, constant_term = mes_settings
         N = len(meas_circs)
@@ -1163,8 +1149,7 @@ class QuantumVariable:
         for k in range(N):
 
             curr = qc.copy()
-            #curr.append(meas_circs[k].to_gate(),curr.qubits)
-            curr.append(meas_circs[k].to_gate(),list(range(self.size)))
+            curr.append(meas_circs[k].to_gate(), self.reg)
             res = get_measurement_from_qc(curr, self.reg, backend, shots)
             
             # allow groupings

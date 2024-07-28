@@ -560,7 +560,7 @@ class QuantumArray(np.ndarray):
     
     def get_spin_measurement(
         self,
-        spin_op,
+        hamiltonian,
         method=None,
         backend=None,
         shots=100000,
@@ -568,7 +568,8 @@ class QuantumArray(np.ndarray):
         compilation_kwargs={},
         subs_dic={},
         circuit_preprocessor=None,
-        precompiled_qc = None
+        precompiled_qc = None,
+        mes_settings = None
     ):
         r"""
         This method returns the expected value of a quantum Hamiltonian for the state of the array.
@@ -577,7 +578,7 @@ class QuantumArray(np.ndarray):
 
         Parameters
         ----------
-        spin_op : SymPy expr
+        hamiltonian : PauliOperator
             The quantum Hamiltonian.
         method : string
             The method for evaluating the expected value of the Hamiltonian.
@@ -602,6 +603,8 @@ class QuantumArray(np.ndarray):
         circuit_preprocessor : Python function, optional
             A function which recieves a QuantumCircuit and returns one, which is applied
             after compilation and parameter substitution. The default is None.
+        mes_settings : list, optional 
+            The measurement settings. The default is None.
 
         Raises
         ------
@@ -618,11 +621,11 @@ class QuantumArray(np.ndarray):
         --------
 
         >>> from qrisp import QuantumVariable, QuantumArray, h
-        >>> from qrisp.misc.spin import Spin
+        >>> from qrisp.operators import X,Y,Z
         >>> qtype = QuantumVariable(2)
         >>> q_array = QuantumArray(qtype, shape=(2))
         >>> h(q_array)
-        >>> H = Spin("Z",0)*Spin("Z",1) + Spin("X",2)*Spin("X",3)
+        >>> H = Z(0)*Z(1) + X(2)*X(3)
         >>> res = q_array.get_spin_measurement(H)
         >>> print(res)
         1.0
@@ -650,23 +653,17 @@ class QuantumArray(np.ndarray):
 
         #qubits = sum([qv.reg for qv in self.flatten()[::-1]], [])
         qubits = sum([qv.reg for qv in self.flatten()], [])
-        # Copy circuit in over to prevent modification
-        # from qrisp.quantum_network import QuantumNetworkClient
 
+        # Copy circuit in over to prevent modification
         if precompiled_qc is None:        
             if compile:
                 qc = qompiler(
-                    #self.qs, intended_measurements = qubits, **compilation_kwargs
                     self.qs, **compilation_kwargs
                 )
             else:
                 qc = self.qs.copy()
-                
-            # Transpile circuit
-            qc = transpile(qc)
         else:
             qc = precompiled_qc.copy()
-
 
         # Bind parameters
         if subs_dic:
@@ -678,11 +675,16 @@ class QuantumArray(np.ndarray):
         if circuit_preprocessor is not None:
             qc = circuit_preprocessor(qc)
 
+        qc = transpile(qc)
+
         from qrisp.misc import get_measurement_from_qc
-        from qrisp.operators.spin import evaluate_observable, get_measurement_settings
+        from qrisp.operators import PauliOperator, evaluate_observable
 
         # measurement settings
-        meas_circs, meas_ops, meas_coeffs, constant_term = get_measurement_settings(self, spin_op)
+        if mes_settings is None:
+            meas_circs, meas_ops, meas_coeffs, constant_term = hamiltonian.get_measurement_settings(self, method=method)
+        else:
+            meas_circs, meas_ops, meas_coeffs, constant_term = mes_settings
         N = len(meas_circs)
 
         expectation = constant_term
@@ -690,12 +692,14 @@ class QuantumArray(np.ndarray):
         for k in range(N):
 
             curr = qc.copy()
-            #curr.append(meas_circs[k].to_gate(),curr.qubits)
             curr.append(meas_circs[k].to_gate(),qubits)
             res = get_measurement_from_qc(curr, qubits, backend, shots)
             
-            for outcome,probability in res.items():
-                expectation += probability*evaluate_observable(meas_ops[k],outcome)*meas_coeffs[k]
+            # allow groupings
+            M = len(meas_ops[k])
+            for l in range(M):
+                for outcome,probability in res.items():
+                    expectation += probability*evaluate_observable(meas_ops[k][l],outcome)*meas_coeffs[k][l]
 
         return expectation
 
