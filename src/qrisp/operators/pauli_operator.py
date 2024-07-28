@@ -182,7 +182,7 @@ class PauliOperator:
     Pauli operators are implemented by Python dictionaries where:
 
     * The key is an (ordered) tuple encoding a Pauli product.
-      Each Pauli operator is represented by a tuple ``(i,"P")`` for P=X,Y,Z.
+      Each Pauli operator is represented by a tuple ``(i,"P")`` for $P=X,Y,Z$.
       For example: the Pauli product $X_0Y_1Z_2$ is represented as 
       ``((0,"X"),(1,"Y"),(2,"Z"))``
     * The value is the coefficent of the Pauli product.
@@ -201,21 +201,27 @@ class PauliOperator:
 
     Parameters
     ----------
-    arg : dict or sympy.Basic, optional
-        A dictionary representing a Pauli operator or a SymPy expression.
+    arg : dict, optional
+        A dictionary representing a Pauli operator.
 
     Examples
     --------
+
+    An operator can be specified by a dictionary, or more conveniently expressed in terms of ``X``, ``Y``, ``Z``operators:
 
     ::
         
         from qrisp.operators import PauliOperator, X,Y,Z
 
-        P1 = PauliOperator(1+2*X(0)+3*X(0)*Y(1))
+        P1 = 1+2*X(0)+3*X(0)*Y(1)
         P2 = PauliOperator({():1,((0,'X'),):2,((0,'X'),(1,'Y')):3})
-        P3 = P1+P2
-        P3.to_expr()
-        #Yields $X_1$
+        P1+P2
+
+    yields:
+
+    .. math::
+
+        2+4X_0+6X_0Y_1
 
     """
 

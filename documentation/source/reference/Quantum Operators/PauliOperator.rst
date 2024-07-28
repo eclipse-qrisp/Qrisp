@@ -3,7 +3,7 @@
 PauliOperator
 =============
 
-.. currentmodule:: qrisp.misc.pauli_operator
+.. currentmodule:: qrisp.operators.pauli_operator
 .. autoclass:: PauliOperator
 
 Methods
