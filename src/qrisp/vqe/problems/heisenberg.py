@@ -17,7 +17,7 @@
 """
 
 from qrisp import *
-from qrisp.misc.spin import X, Y, Z
+from qrisp.operators import X,Y,Z
 import networkx as nx
 
 
@@ -54,21 +54,19 @@ def sing(a,b):
     x(b)
     cx(a,b)
 
+# change of basis
+def conjugator(a,b):
+    cx(a,b)
+    h(a)
+
 #  heis gate corresponding to the unitary exp(-i*theta*(XX+YY+ZZ)).
 def heis(theta,a,b):
-    # change of basis
-    cx(a,b)
-    h(a)
-
-    cx(a,b)
-    rz(-theta,b)
-    cx(a,b)
-    rz(theta,a)
-    rz(theta,b)
-
-    # change of basis
-    h(a)
-    cx(a,b)
+    with conjugate(conjugator)(a,b):
+        cx(a,b)
+        rz(-theta,b)
+        cx(a,b)
+        rz(theta,a)
+        rz(theta,b)
 
 def create_heisenberg_hamiltonian(G, J, B):
     """
@@ -306,7 +304,7 @@ def heisenberg_problem(G, J, B, ansatz_type="per hamiltonian"):
 
         vqe = heisenberg_problem(G,1,1)
         vqe.set_callback()
-        energy = vqe.run(QuantumVariable(G.number_of_nodes()),depth=2,max_iter=50)
+        energy = vqe.run(QuantumVariable(G.number_of_nodes()),depth=2,max_iter=50,mes_kwargs={'method':'QWC'})
         print(energy)
         # Yields -8.061600000000002
     
