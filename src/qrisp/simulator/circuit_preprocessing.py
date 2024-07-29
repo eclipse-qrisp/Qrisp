@@ -387,9 +387,9 @@ def insert_disentangling(qc):
     # After all the operations have been performed on a qubit,
     # it can be reset without changing the statistics
     for i in range(len(qc.qubits)):
-        qc.reset(qc.qubits[i])
-        pass
-        # qc.append(disentangler, [qc.qubits[i]])
+        # qc.reset(qc.qubits[i])
+        # pass
+        qc.append(Disentangler(), [qc.qubits[i]])
 
     # return qc
 
