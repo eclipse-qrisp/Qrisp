@@ -219,14 +219,10 @@ class PermeabilityGraph(nx.DiGraph):
 
         """
         
-        if edge_type == "anti_depedency":
-            nx.DiGraph.add_edge(self, in_node, out_node, edge_type=edge_type)
+        if self.has_edge(in_node, out_node):
+            nx.DiGraph.get_edge_data(self, in_node, out_node)["qubits"].extend(qubits)
         else:
-            
-            if self.has_edge(in_node, out_node):
-                nx.DiGraph.get_edge_data(self, in_node, out_node)["qubits"].extend(qubits)
-            else:
-                nx.DiGraph.add_edge(self, in_node, out_node, edge_type=edge_type, qubits = list(qubits))
+            nx.DiGraph.add_edge(self, in_node, out_node, edge_type=edge_type, qubits = list(qubits))
                 
     def get_target_qubits(self, node):
         """
@@ -263,6 +259,41 @@ class PermeabilityGraph(nx.DiGraph):
                 
         return target_qubits
     
+    def get_control_qubits(self, node):
+        """
+        Returns the control qubits of a node, i.e. the qubits that have Z-permeability.
+
+        Parameters
+        ----------
+        node : UnqompNode
+            The node to be investigated.
+
+        Raises
+        ------
+        Exception
+            Tried to retrieve control qubits of TerminatorNode.
+
+        Returns
+        -------
+        list[Qubit]
+            The list of control qubits.
+
+        """
+        control_qubits = []
+        
+        if isinstance(node, TerminatorNode):
+            raise Exception("Tried to retrieve target qubits of TerminatorNode")
+        
+        if isinstance(node, AllocNode):
+            return list(node.instr.qubits)
+        
+        in_edges = self.in_edges(node, data = True)
+        for (in_node, _, data) in in_edges:
+            if data["edge_type"] == "Z":
+                control_qubits.extend(data["qubits"])
+                
+        return control_qubits
+    
     def get_control_nodes(self, node):
         """
         Returns the list of control nodes of a node, i.e. the nodes that are connected via an
@@ -296,6 +327,39 @@ class PermeabilityGraph(nx.DiGraph):
                 
         return control_nodes
     
+    def get_target_nodes(self, node):
+        """
+        Returns the list of control nodes of a node, i.e. the nodes that are connected via an
+        outgoing edge with X-permeability or neutral type.
+
+        Parameters
+        ----------
+        node : UnqompNode
+            The node to be investigated.
+
+        Raises
+        ------
+        Exception
+            Tried to retrieve target qubits of TerminatorNode.
+
+        Returns
+        -------
+        list[UnqompNode]
+            The list of target nodes.
+
+        """
+        target_nodes = []
+        
+        if isinstance(node, TerminatorNode):
+            raise Exception("Tried to retrieve control qubits of TerminatorNode")
+        
+        in_edges = self.in_edges(node, data = True)
+        for (in_node, _, data) in in_edges:
+            if data["edge_type"] != "Z":
+                target_nodes.append(in_node)
+                
+        return target_nodes 
+    
     def get_edge_qubits(self, in_node, out_node):
         """
         Returns the list of qubits that a given edge is representing.
@@ -318,9 +382,15 @@ class PermeabilityGraph(nx.DiGraph):
             The list of Qubits.
 
         """
-        if isinstance(out_node, TerminatorNode):
-            raise Exception("Tried to retrieve edge qubits from Anti-Dependency edge.")
         return self.get_edge_data(in_node, out_node)["qubits"]
+    
+    def get_streak_children(self, node, qb):
+        successors = self.successors(node)
+        return [suc for suc in successors if qb in self.get_edge_data(node, suc)["qubits"]]
+    
+    def get_edge_type(self, node_out, node_in):
+        return self.get_edge_data(node_out, node_in)["edge_type"]
+
 
 
 def dag_from_qc(dag, qc):
@@ -460,7 +530,7 @@ def dag_from_qc(dag, qc):
                     for s in streak_members:
                         
                         # Add anti-depedency edge
-                        dag.add_edge(s, terminator, edge_type="anti_dependency")
+                        dag.add_edge(s, terminator, edge_type="anti_dependency", qubits = [qb])
                         value_layers.append(s.value_layer)
                     
                     terminator.value_layer = max(value_layers) + 1

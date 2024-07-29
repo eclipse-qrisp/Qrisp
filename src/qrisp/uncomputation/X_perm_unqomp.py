@@ -132,7 +132,7 @@ def uncompute_qc(qc, uncomp_qbs, recompute_qubits=[]):
                     return uncompute_qc(
                         qc,
                         uncomp_qbs
-                        + list(set(node.controls).intersection(recompute_qubits)),
+                        + list(set(pdag.get_control_qubits(node)).intersection(recompute_qubits)),
                         recompute_qubits,
                     )
                 continue
@@ -292,26 +292,62 @@ def uncompute_node(pdag, node, uncomp_qbs, recompute_qubits=[]):
         # Get the qubits of the control edge
         control_edge_qubits = pdag.get_edge_qubits(c, node)
 
-        # This treats the case that a control edge is amoung the recomputable qubits
+        # This treats the case that the control edge is among the recomputable qubits
+        # implying this node needs to be recomputed.
         if set(control_edge_qubits).intersection(recompute_qubits):
-            for k in pdag.successors(c):
-                if pdag.get_edge_data(c, k)["edge_type"] in ["X", "neutral"] and set(
-                    pdag.get_edge_qubits(c, k)
-                ).intersection(control_edge_qubits):
+            
+            for k in pdag.successors(node):
+                print(pdag.get_edge_data(node, k))
+                print(pdag.get_edge_qubits(node, k))
+                if (pdag.get_edge_data(node, k)["edge_type"] in ["X", "neutral", "anti_dependency"] and 
+                    set(pdag.get_edge_qubits(node, k)).intersection(control_edge_qubits)):
+                    
+                    if isinstance(k, TerminatorNode):
+                        for l in pdag.successors(k):
+                            if set(pdag.get_edge_qubits(k,l)).intersection(control_edge_qubits):
+                                if l.uncomputed_node is None:
+                                    k = l
+                                    break
+                        else:
+                            return True
+                       
                     if k.uncomputed_node is None:
                         return True
                     ctrls[i] = k.uncomputed_node
                     break
             else:
+                raise
                 return True
 
+
+        # We now add the anti_dependency edges starting at the reversed node
+        
+        # For this we iterate over the control qubits and check the streak 
+        # associated to that qubit
+        for qb in control_edge_qubits:
+            
+            streak_children = pdag.get_streak_children(c, qb)
+            
+            # Iterate over the streak
+            for streak_child in streak_children:
+                
+                # The streak is cancelled by the streak children of the streak_child
+                for cancellation_node in pdag.get_streak_children(streak_child, qb):
+                    
+                    pdag.add_edge(reversed_node,
+                                  cancellation_node,
+                                  edge_type = "anti_dependency",
+                                  qubits = [qb])
+                    
+                    cancellation_node.value_layer = max(cancellation_node.value_layer, reversed_node.value_layer + 1)
+                    
         # Add the edge from the control node of the original node to the reversed node.
         pdag.add_edge(ctrls[i], 
                       reversed_node, 
                       edge_type="Z", 
                       qubits=control_edge_qubits)
-
-
+    
+        
     # The next step is to connect the targets.
     # For that we use the a_star_n_list which represents all the nodes, that are 
     # targetted by the operation
@@ -324,38 +360,56 @@ def uncompute_node(pdag, node, uncomp_qbs, recompute_qubits=[]):
         #   2. Targeting a_star_n
         #   3. Part of the instruction
         
-        connection_qubits = set(uncomp_qbs).intersection(pdag.get_target_qubits(a_star_n))
-        connection_qubits = connection_qubits.intersection(new_instr.qubits)
-        
         # Add the edge
-        pdag.add_edge(a_star_n,
-                      reversed_node,
-                      edge_type="neutral",
-                      qubits=list(connection_qubits))
 
-        # Next we add the edge to connect to the controls of a_star_n
-        successors = pdag.successors(a_star_n)
-        control_nodes = [v for v in successors if pdag.get_edge_data(a_star_n, v)["edge_type"] == "Z"]
+        # We need to consider the possibility that we end a streak by adding this node
+        # we therefore consider the nodes that use a_star_n as a control node
         
-        # Add the edges
-        for v in control_nodes:
-            pdag.add_edge(v, reversed_node, edge_type="anti_dependency")
-
-    # Finally we connect the missing anti-depdendency edges starting at the reversed node
-    
-    # Iterate over the control nodes
-    for c in ctrls:
-        
-        # Find the streak members attached to the control node c
-        for v in pdag.successors(c):
+        # We now iterate over the targets of the node to connect the edges
+        for qb in target_qubits:
             
-            if pdag.get_edge_data(c, v)["edge_type"] in ["X", "neutral"]:
-                target_edge_qubits = pdag.get_edge_qubits(c, v)
-                control_edge_qubits = pdag.get_edge_qubits(c, node)
+            if qb not in pdag.get_target_qubits(a_star_n):
+                continue
+            
+            # These are the nodes which form a streak on that qubit
+            streak_children = pdag.get_streak_children(a_star_n, qb)
+            # Depending on how long the streak is, we have ton insert a TerminatorNode
+            
+            if len(streak_children) == 0:
+                pdag.add_edge(a_star_n,
+                              reversed_node,
+                              edge_type="neutral",
+                              qubits=[qb])
+            
+            # If there is only one control, we can safely append a neutral edge to that control node
+            elif len(streak_children) == 1:
+                pdag.add_edge(streak_children[0],
+                              reversed_node,
+                              edge_type="neutral",
+                              qubits=[qb])
+                
+            # If there is a streak, we need to insert a terminator edge
+            else:
+                t_node = TerminatorNode(qb)
+                t_node.value_layer = 0
+                for v in streak_children:
+                    pdag.add_edge(v,
+                                  t_node,
+                                  edge_type="anti_dependency",
+                                  qubits=[qb])
+                    
+                    if v.value_layer > t_node.value_layer:
+                        t_node.value_layer = v.value_layer + 1
+                    
+                # Add the edge
+                pdag.add_edge(t_node,
+                              reversed_node,
+                              edge_type="neutral",
+                              qubits=[qb])                
 
-                if set(target_edge_qubits).intersection(control_edge_qubits):
-                    print("test")
-                    pdag.add_edge(reversed_node, v, edge_type="anti_dependency")
+               
+    reversed_node.value_layer = max([n.value_layer for n in pdag.get_control_nodes(reversed_node)]
+                                    +[n.value_layer +1 for n in pdag.get_target_nodes(reversed_node)] )
 
     return False
 
