@@ -23,7 +23,7 @@ We define the problem of portfolio rebalancing to be a discrete portfolio optimi
 
 .. math::
 
-    \textbf{z} = \argmin_{\textbf{z}} C_{RR}(\textbf{z}) + C_{TC}(\textbf{z}),
+    \textbf{z} = \text{argmin}_{\textbf{z}} C_{RR}(\textbf{z}) + C_{TC}(\textbf{z}),
 
 where
 
@@ -104,13 +104,13 @@ As mentioned in the introduction, `the paper by A. Baertschi et. al <https://arx
 We therefore start by creating a properly weighted intitial state. A clear description on the conditions here are given in the paper above in page 9 onwards. So, instead of copying the text you can find there word for word, we will refer to this paper here. The two important terms here are *lots* and *bands*. The number of *lots* :math:`d`, is the net total of long minus short positions in the portfolio, and determines the feasible subspace in this context.
 The solution state for a portfolio with 4 assets, that is defined via the number of lots being 1, can have 
 
-* 4 ones in the long, 3 ones in the short position ``QuantumVariable``s of the QuantumArray, i.e. a state such as :math:`|0111>|1111>`
-* 3 ones in the long, 2 ones in the short position, i.e. a state such as :math:`|0011>|0111>`
-* 2 ones in the long, 1 ones in the short position, i.e. a state such as :math:`|0001>|0011>`
-* 1 one in the long, 0 ones in the short position, i.e. a state such as :math:`|0000>|0001>`
+* 4 ones in the long, 3 ones in the short position ``QuantumVariable``s of the QuantumArray, i.e. a state such as $\ket{0111}\ket{1111}$
+* 3 ones in the long, 2 ones in the short position, i.e. a state such as $\ket{0011}\ket{0111}$
+* 2 ones in the long, 1 ones in the short position, i.e. a state such as $\ket{0001}\ket{0011}$
+* 1 one in the long, 0 ones in the short position, i.e. a state such as $\ket{0000}\ket{0001}$
 
 The *band* refers to the number of short positions held.
-Now, any permutation within the short and long postions, that still contain the correct number of ones (i.e. for the first example state :math:`|1110>|1111>`) is also a valid solution, and part of *band* 3. This resembles the subspace of Dicke states, which we aim to prepare with our mixer.
+Now, any permutation within the short and long postions, that still contain the correct number of ones (i.e. for the first example state $\ket{1110}\ket{1111}$) is also a valid solution, and part of *band* 3. This resembles the subspace of Dicke states, which we aim to prepare with our mixer.
 
 We therfore start by a correctly weighted superposition with one state from each band, and turn this superposition into a superposition of **all** allowed states with a Dicke mixer. 
 
@@ -148,7 +148,7 @@ The code example below creates said initial superposition with correct weights f
             cx(s[-index2],l[-lots -index2])
 
 
-With this initial superposition we now turn to the creation of the multichannel constrained Dicke mixer to receive the superposition of all allowed states. It is based on the ``dicke_state`` function, with creates the Dicke state :math:`|D^n_k>` with Hamming weight :math:`k` from an input state with Hamming weight k, i.e. :math:`|0>^{\otimes n-k} |1>^{\otimes k}`. This function is in turn based on the `deterministic algorithm by A. Baertschi et. al. <https://arxiv.org/pdf/1904.07358.pdf>`_ 
+With this initial superposition we now turn to the creation of the multichannel constrained Dicke mixer to receive the superposition of all allowed states. It is based on the ``dicke_state`` function, with creates the Dicke state $\ket{D^n_k}$ with Hamming weight :math:`k` from an input state with Hamming weight k, i.e. $\ket{0}^{\otimes n-k} \ket{1}^{\otimes k}$. This function is in turn based on the `deterministic algorithm by A. Baertschi et. al. <https://arxiv.org/pdf/1904.07358.pdf>`_ 
 
 The code example defines our mixer. It calls the inverse conjugated formulation of the ``dicke_state`` function on the short and long position ``QuantumVariables`` separately. With additional multi-controlled phase gates we then create our multi-channeled mixer.
 
