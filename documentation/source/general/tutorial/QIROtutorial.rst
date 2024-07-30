@@ -1,4 +1,4 @@
-.. _qiro_tutorial:
+.. _Qiro_tutorial:
 
 Quantum-Informed Recursive Optimization
 =======================================
@@ -98,13 +98,13 @@ Upon instanciation, the :ref:`QIROProblem` class requires five arguments:
 Why the ``cost_operator``, ``mixer``, and ``init_function`` undergo some slight adjustements, will be made clear in the code example below, aswell as the necessity 
 for directly assigning a ``cost_operator``, a ``mixer``, and and ``init_function``.
 
-To run the instance and solve the optimization problem we use the :ref:`.run_qiro <qiro.qiro_problem.QIROProblem.run_qiro>`  function, which takes the following arguments:
+To run the instance and solve the optimization problem we use the ``.run_qiro``  function, which takes the following arguments:
 qarg, depth, n_recursions,  mes_kwargs = {}, max_iter = 50
 
 * The :ref:`QuantumVariable` ``qarg``, which is the quantum argument the algorithm is evaluated on, in analogy to the QAOA module
 * The integer ``depth``, which is the depth of QAOA optimization circuit.
 * The integer ``n_recursions``, representing the number of QIRO update steps.
-* The dictionary ``mes_kwargs = {}``, empty by default, to define further specifications of the measurements, see :ref:`get_measurement`.
+* The dictionary ``mes_kwargs = {}``, empty by default, to define further specifications of the measurements.
 * The integer ``max_iter = 50``, set to 50 by default, which defines the maximum number of the classical optimization loop with the ``COBYLA`` optimizer as part of the QAOA optimization routine
 
 
@@ -202,7 +202,7 @@ We start off by importing all the relevant code and defining the graph of our pr
 
 
 
-With this, we can directly throw everything thats relevant at the :ref:`QIROProblem <qiro.qiro_problem.QIROProblem>` class and create an instance.
+With this, we can directly throw everything thats relevant at the :ref:`QIROProblem` class and create an instance.
 
 :: 
 
