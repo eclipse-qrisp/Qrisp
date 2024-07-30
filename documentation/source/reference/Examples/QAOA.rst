@@ -21,7 +21,7 @@ The following problem instances, gathered in the table below with their correspo
    * - :ref:`QUBO (NEW since 0.4!) <QUBOQAOA>`
      - X mixer
      -    ✅ 
-   * - :ref:`MaxIndependentSet <QAOAMaxIndependentSet>`
+   * - :ref:`MaxIndependentSet <maxindependentsetQAOA>`
      - Controlled X mixer
      -    ✅
    * - :ref:`MaxClique <maxcliqueQAOA>`
