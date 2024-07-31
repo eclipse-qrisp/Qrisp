@@ -21,7 +21,7 @@ from qrisp.operators import X,Y,Z
 import networkx as nx
 
 
-def greedy_edge_coloring(G):
+def greedy_edge_coloring(G, E=None):
     """
     This methods computes an edge coloring of a given graph.
 
@@ -29,6 +29,8 @@ def greedy_edge_coloring(G):
     ----------
     G : nx.Graph
         The graph defining the lattice.
+    E : list, optional
+        A list of edges not to be considered for the first color.
     
     Returns
     -------
@@ -40,6 +42,14 @@ def greedy_edge_coloring(G):
     edge_coloring = []
 
     G = G.copy()
+
+    if E is not None and G.number_of_edges()>1:
+        G.remove_edges_from(E)
+        M = nx.maximal_matching(G)
+        edge_coloring.append(M)
+        G.remove_edges_from(M)
+        G.add_edges_from(E)
+
     while G.number_of_edges()>0:
         M = nx.maximal_matching(G)
         edge_coloring.append(M)
@@ -83,13 +93,13 @@ def create_heisenberg_hamiltonian(G, J, B):
 
     Returns
     -------
-    hamiltonian : sympy.Expr
+    hamiltonian : Hamiltonian
         The quantum Hamiltonian.
 
     """
 
     hamiltonian = sum(J*X(i)*X(j)+Y(i)*Y(j)+Z(i)*Z(j) for (i,j) in G.edges()) + sum(B*Z(i) for i in G.nodes)
-    return hamiltonian
+    return hamiltonian()
 
 
 def create_heisenberg_ansatz(G, J, B, M, C, ansatz_type="per hamiltonian"):
@@ -320,7 +330,7 @@ def heisenberg_problem(G, J, B, ansatz_type="per hamiltonian"):
     from qrisp.vqe import VQEProblem
 
     M = nx.maximal_matching(G)
-    C = greedy_edge_coloring(G)
+    C = greedy_edge_coloring(G,M)
     num_params = 2
     if ansatz_type=="per edge color":
         num_params = 2+len(C)

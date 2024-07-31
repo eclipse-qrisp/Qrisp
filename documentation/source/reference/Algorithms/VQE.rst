@@ -72,5 +72,5 @@ The following problem instances have already been successfully implemented using
      - Hamiltonian Variational Ansatz
      -    ✅
    * - :ref:`Electronic structure <VQEElectronicStructure>`
-     - Ansatz
+     - QCCSD
      -    ✅ 

@@ -16,7 +16,9 @@
 ********************************************************************************/
 """
 
-from qrisp import *
+#from qrisp import *
+from qrisp import QuantumVariable, QuantumArray, rx, ry, h
+from qrisp.operators.hamiltonian import Hamiltonian
 from qrisp.operators.spin import X_,Y_,Z_, to_pauli_dict
 import numpy as np
 import sympy as sp
@@ -130,46 +132,12 @@ def parity(qarg, indices):
         cx(qarg[indices[i]],qarg[indices[i+1]])
 
 #
-# Evaluate observable
-#
-
-def evaluate_observable(observable: int, x: int):
-    """
-    This method evaluates an observable that is a tensor product of Pauli-:math:`Z` operators
-    with respect to a measurement outcome. 
-        
-    A Pauli operator of the form :math:`\prod_{i\in I}Z_i`, for some finite set of indices :math:`I\subset \mathbb N`, 
-    is identified with an integer:
-    We identify the Pauli operator with the binary string that has ones at positions :math:`i\in I`
-    and zeros otherwise, and then convert this binary string to an integer.
-        
-    Parameters
-    ----------
-        
-    observable : int
-        The observable represented as integer.
-     x : int 
-        The measurement outcome represented as integer.
-        
-    Returns
-    -------
-    int
-        The value of the observable with respect to the measurement outcome.
-        
-    """
-        
-    if bin(observable & x).count('1') % 2 == 0:
-        return 1
-    else:
-        return -1    
-
-#
 # PauliOperator
 #
 
 class PauliOperator:
     r"""
-    This class provides an efficient implementation of Pauli operators i.e.,
+    This class provides an efficient implementation of Pauli operators, i.e.,
     operators of the form
 
     .. math::
@@ -179,13 +147,13 @@ class PauliOperator:
     where $P_j=\prod_i\sigma_i^j$ is a Pauli product, 
     and $\sigma_i^j\in\{I,X,Y,Z\}$ is the Pauli operator acting on qubit $i$.
 
-    Pauli operators are implemented by Python dictionaries where:
+    Pauli operators are implemented by Python dictionaries (as proposed `here <https://arxiv.org/abs/1710.07629>`_), where:
 
     * The key is an (ordered) tuple encoding a Pauli product.
       Each Pauli operator is represented by a tuple ``(i,"P")`` for $P=X,Y,Z$.
       For example: the Pauli product $X_0Y_1Z_2$ is represented as 
       ``((0,"X"),(1,"Y"),(2,"Z"))``
-    * The value is the coefficent of the Pauli product.
+    * The value is the coefficient of the Pauli product.
 
     For example, the operator 
 
@@ -207,7 +175,7 @@ class PauliOperator:
     Examples
     --------
 
-    An operator can be specified by a dictionary, or more conveniently expressed in terms of ``X``, ``Y``, ``Z``operators:
+    An operator can be specified by a dictionary, or more conveniently expressed in terms of ``X``, ``Y``, ``Z`` operators:
 
     ::
         
@@ -231,11 +199,22 @@ class PauliOperator:
             self.pauli_dict = {():0}
         elif isinstance(arg, dict):
             self.pauli_dict = arg
-        elif isinstance(arg, sympy.Basic):
-            self.pauli_dict = to_pauli_dict(arg)
         else:
             raise TypeError("Cannot initialize from "+str(type(arg)))
 
+    def __call__(self):
+        """
+        Returns the :ref:`Hamiltonian`.
+
+        """
+
+        return Hamiltonian(self)
+
+    def _repr_latex_(self):
+        # Convert the sympy expression to LaTeX and return it
+        expr = self.to_expr()
+        return f"${sp.latex(expr)}$"
+    
     #
     # Arithmetic
     #
@@ -417,11 +396,6 @@ class PauliOperator:
                 delete_list.append(pauli)
         for pauli in delete_list:
             del self.pauli_dict[pauli]
-    
-    def _repr_latex_(self):
-        # Convert the sympy expression to LaTeX and return it
-        expr = self.to_expr()
-        return f"${sp.latex(expr)}$"
 
     #
     # Measurement settings
@@ -438,7 +412,7 @@ class PauliOperator:
         method : string, optional
             The method for evaluating the expected value of the Hamiltonian.
             Available is ``QWC``: Pauli terms are grouped based on qubit-wise commutativity.
-            The default is ``None`: The expected value of each Pauli term is computed independently.
+            The default is ``None``: The expected value of each Pauli term is computed independently.
 
         Returns
         -------
@@ -707,5 +681,54 @@ class PauliOperator:
                 trotter_step(qarg, t, steps)
 
         return trotterize
+
+#
+# Define X,Y,Z operators
+#
+
+class X(PauliOperator):
+
+    def __init__(self, index):
+        super().__init__({((index,'X'),):1})
+
+    def __pow__(self, e):
+        if isinstance(e, int) and e>=0:
+            if e%2==0:
+                return PauliOperator({():1})
+            else:
+                return self
+        else:
+            raise TypeError("Unsupported operand type(s) for ** or pow(): "+str(type(self))+" and "+str(type(e)))
+
+class Y(PauliOperator):
+
+    def __init__(self, index):
+        super().__init__({((index,'Y'),):1})
+
+    def __pow__(self, e):
+        if isinstance(e, int) and e>=0:
+            if e%2==0:
+                return PauliOperator({():1})
+            else:
+                return self
+        else:
+            raise TypeError("Unsupported operand type(s) for ** or pow(): "+str(type(self))+" and "+str(type(e)))
+
+class Z(PauliOperator):
+
+    def __init__(self, index):
+        super().__init__({((index,'Z'),):1})
+
+    def __pow__(self, e):
+        if isinstance(e, int) and e>=0:
+            if e%2==0:
+                return PauliOperator({():1})
+            else:
+                return self
+        else:
+            raise TypeError("Unsupported operand type(s) for ** or pow(): "+str(type(self))+" and "+str(type(e)))
+
+
+
     
 

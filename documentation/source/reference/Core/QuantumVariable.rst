@@ -15,7 +15,6 @@ Methods
    QuantumVariable.__init__
    QuantumVariable.delete
    QuantumVariable.get_measurement
-   QuantumVariable.get_spin_measurement
    QuantumVariable.most_likely
    QuantumVariable.duplicate
    QuantumVariable.uncompute

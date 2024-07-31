@@ -36,28 +36,27 @@ class VQEBenchmark:
     iterations : list[int]
         The amount of backend calls of each run.
     energy : list[dict]
-        The optimal energy of the problem.
+        The energy of the problem Hamiltonian for the optimized ciruits for each run.
     runtime : list[float]
         The amount of time passed (in seconds) of each run.
-    optimal_solution : -
-        The optimal solution of the problem.
-    cost_function : callable
-        The classical cost function of the benchmarked problem.
+    optimal_energy : float
+        The exact ground state energy of the problem Hamiltonian.
+    hamiltonian : Hamiltonian
+        The problem Hamiltonian.
     
     """
     
-    def __init__(self, benchmark_data, optimal_solution, cost_function):
+    def __init__(self, benchmark_data, optimal_energy, hamiltonian):
         
         self.layer_depth = benchmark_data["layer_depth"]
         self.circuit_depth = benchmark_data["circuit_depth"]
         self.qubit_amount = benchmark_data["qubit_amount"]
         self.shots = benchmark_data["shots"]
         self.iterations = benchmark_data["iterations"]
-        self.counts = benchmark_data["counts"]
+        self.energy= benchmark_data["energy"]
         self.runtime = benchmark_data["runtime"]
-        
-        #self.optimal_solution = optimal_solution
-        #self.cost_function = cost_function
+        self.optimal_energy= optimal_energy
+        self.hamiltonian = hamiltonian
         
     def evaluate(self, cost_metric = "oqv", gain_metric = "approx_ratio"):
         r"""
@@ -69,7 +68,7 @@ class VQEBenchmark:
         
         .. math::
             
-            \text{OQV} = \text{circuit\_depth} \times \text{qubits} \times \text{shots} \times \text{iterations}
+            \text{OQV} = \text{circuit_depth} \times \text{qubits} \times \text{shots} \times \text{iterations}
         
         **Gain metric**
         
@@ -77,10 +76,7 @@ class VQEBenchmark:
         
         The `approximation ratio <https://en.wikipedia.org/wiki/Approximation_algorithm>`_ 
         is a standard quantity in approximation algorithms and can be selected by
-        setting ``gain_metric = "approx_ration"``.
-        
-        The time to solution metric as used in `this paper <http://arxiv.org/abs/2308.02342>`_
-        can be selected with ``gain_metric = "tts"``.
+        setting ``gain_metric = "approx_ratio"``.
         
         Users can implement their own cost/gain metric by calling ``.evaluate`` with a suited function. 
         For more information check the examples.
@@ -103,27 +99,27 @@ class VQEBenchmark:
         Examples
         --------
         
-        We set up a MaxCut instance and perform some benchmarking.
+        We set up a Heisenberg problem instance and perform some benchmarking.
         
         ::
-            
-            from qrisp import *
+
             from networkx import Graph
-            G = Graph()
 
-            G.add_edges_from([[0,3],[0,4],[1,3],[1,4],[2,3],[2,4]])
+            G =Graph()
+            G.add_edges_from([(0,1),(1,2),(2,3),(3,4)]
+            from qrisp.vqe.problems.heisenberg import *
 
-            from qrisp.qaoa import maxcut_problem
+            vqe = heisenberg_problem(G,1,0)
+            H = create_heisenberg_hamiltonian(G,1,0)
 
-            max_cut_instance = maxcut_problem(G)
-
-            benchmark_data = max_cut_instance.benchmark(qarg = QuantumVariable(5),
-                                       depth_range = [3,4,5],
-                                       shot_range = [5000, 10000],
-                                       iter_range = [25, 50],
-                                       optimal_solution = "11100",
-                                       repetitions = 2
-                                       )
+            benchmark_data = vqe.benchmark(qarg = QuantumVariable(5),
+                                depth_range = [1,2,3],
+                                shot_range = [5000,10000],
+                                iter_range = [25,50],
+                                optimal_energy = H.ground_state_energy(),
+                                repetitions = 2,
+                                mes_kwargs = {'method':'QWC'}
+                                )
         
         We now evaluate the cost using the default metrics.
         
@@ -132,10 +128,10 @@ class VQEBenchmark:
             cost_data, gain_data = benchmark_data.evaluate()
             
             print(cost_data[:10])
-            #Yields: [17500000, 17500000, 35000000, 35000000, 35000000, 35000000, 70000000, 70000000, 22500000, 22500000]
+            #Yields: [15625000, 15625000, 31250000, 31250000, 31250000, 31250000, 62500000, 62500000, 29375000, 29375000]
             print(gain_data[:10])
-            #Yields: [0.8425333333333328, 0.9379999999999996, 0.9256666666666667, 0.8816999999999998, 0.764399999999999, 0.6228000000000001, 0.8136000000000001, 0.9213999999999997, 0.8541333333333333, 0.6424333333333333]
-        
+            #Yields: [0.8580900440328681, 0.8543553838641942, 0.8510356859364849, 0.8539404216232306, 0.8587643576744335, 0.8635364234455172, 0.8497389289334728, 0.8600092443973252, 0.884232665213583, 0.8656112346503356]
+
         To set up a user specified cost metric we create a customized function
         
         ::
@@ -153,10 +149,10 @@ class VQEBenchmark:
         * ``qubit_amount``: The amount of qubits of the compiled circuit.
         * ``shots``: The amount of shots that have been performed in this run.
         * ``iterations``: The amount of backend calls, that the optimizer was allowed to do.
-        * ``counts``: The measurement results as returned by ``qarg.get_measurement()``.
-        * ``runtime``: The time (in seconds) that the ``run`` method of :ref:`QAOAProblem` took.
-        * ``optimal_solution``: The optimal solution of the problem
-
+        * ``energy``: The energy of the problem Hamiltonian for the optimized ciruits for each run.
+        * ``runtime``: The time (in seconds) that the ``run`` method of :ref:`VQEProblem` took.
+        * ``optimal_energy``: The exact ground state energy of the problem Hamiltonian.
+        
         """
         
         if isinstance(cost_metric, str):
@@ -170,10 +166,7 @@ class VQEBenchmark:
         if isinstance(gain_metric, str):
             
             if gain_metric == "approx_ratio":
-                gain_metric = lambda x : approximation_ratio(x["counts"], self.optimal_solution, self.cost_function)
-            
-            elif gain_metric == "tts":
-                gain_metric = lambda x : time_to_solution(x["counts"], self.optimal_solution, self.cost_function)
+                gain_metric = lambda x : approximation_ratio(x["energy"], self.optimal_energy)
             else:
                 raise Exception(f"Gain metric {gain_metric} is unknown")
                 
@@ -188,9 +181,9 @@ class VQEBenchmark:
                          "qubit_amount" : self.qubit_amount[i],
                          "shots" : self.shots[i],
                          "iterations" : self.iterations[i],
-                         "counts" : self.counts[i],
+                         "energy" : self.energy[i],
                          "runtime" : self.runtime[i],
-                         "optimal_solution" : self.optimal_solution
+                         "optimal_energy" : self.optimal_energy
                          }
             
             cost_data.append(cost_metric(run_data))
@@ -212,27 +205,27 @@ class VQEBenchmark:
         Examples
         --------
         
-        We create a MaxCut instance and benchmark several parameters
+        We create a Heisenberg problem instance and benchmark several parameters:
         
         ::
             
-            from qrisp import *
             from networkx import Graph
-            G = Graph()
+            G =Graph()
+            G.add_edges_from([(0,1),(1,2),(2,3),(3,4)]
 
-            G.add_edges_from([[0,3],[0,4],[1,3],[1,4],[2,3],[2,4]])
+            from qrisp.vqe.problems.heisenberg import *
 
-            from qrisp.qaoa import maxcut_problem
+            vqe = heisenberg_problem(G,1,0)
+            H = create_heisenberg_hamiltonian(G,1,0)
 
-            max_cut_instance = maxcut_problem(G)
-
-            benchmark_data = max_cut_instance.benchmark(qarg = QuantumVariable(5),
-                                       depth_range = [3,4,5],
-                                       shot_range = [5000, 10000],
-                                       iter_range = [25, 50],
-                                       optimal_solution = "11100",
-                                       repetitions = 2
-                                       )
+            benchmark_data = vqe.benchmark(qarg = QuantumVariable(5),
+                                depth_range = [1,2,3],
+                                shot_range = [5000,10000],
+                                iter_range = [25,50],
+                                optimal_energy = H.ground_state_energy(),
+                                repetitions = 2,
+                                mes_kwargs = {'method':'QWC'}
+                                )
             
         To visualize the results, we call the corresponding method.
         
@@ -240,7 +233,7 @@ class VQEBenchmark:
             
             benchmark_data.visualize()
             
-        .. image:: benchmark_plot.png
+        .. image:: vqe_benchmark_plot.png
             
             
         """
@@ -255,12 +248,9 @@ class VQEBenchmark:
         else:
             cost_name = cost_metric.__name__
             
-        if isinstance(gain_metric, str):
-            
+        if isinstance(gain_metric, str):           
             if gain_metric == "approx_ratio":
                 gain_name = "Approximation ratio"
-            elif gain_metric == "tts":
-                gain_name = "Time to solution"
         else:
             gain_name = gain_metric.__name__
             
@@ -289,47 +279,44 @@ class VQEBenchmark:
         Examples
         --------
         
-        We create a MaxCut instance and benchmark several parameters
+        We create a Heisenberg problem instance and benchmark several parameters:
         
         ::
             
-            from qrisp import *
             from networkx import Graph
-            G = Graph()
+            G =Graph()
+            G.add_edges_from([(0,1),(1,2),(2,3),(3,4)]
 
-            G.add_edges_from([[0,3],[0,4],[1,3],[1,4],[2,3],[2,4]])
+            from qrisp.vqe.problems.heisenberg import *
 
-            from qrisp.qaoa import maxcut_problem
+            vqe = heisenberg_problem(G,1,0)
+            H = create_heisenberg_hamiltonian(G,1,0)
 
-            max_cut_instance = maxcut_problem(G)
-
-            benchmark_data = max_cut_instance.benchmark(qarg = QuantumVariable(5),
-                                       depth_range = [3,4,5],
-                                       shot_range = [5000, 10000],
-                                       iter_range = [25, 50],
-                                       optimal_solution = "11100",
-                                       repetitions = 2
-                                       )
+            benchmark_data = vqe.benchmark(qarg = QuantumVariable(5),
+                                depth_range = [1,2,3],
+                                shot_range = [5000,10000],
+                                iter_range = [25,50],
+                                optimal_energy = H.ground_state_energy(),
+                                repetitions = 2,
+                                mes_kwargs = {'method':'QWC'}
+                                )
             
         To rank the results, we call the according method:
         
         ::
             
             print(benchmark_data.rank()[0])
-            #Yields: {'layer_depth': 5, 'circuit_depth': 44, 'qubit_amount': 5, 'shots': 10000, 'iterations': 50, 'counts': {'11100': 0.4909, '00011': 0.4909, '00010': 0.002, '11110': 0.002, '00001': 0.002, '11101': 0.002, '10000': 0.0015, '01000': 0.0015, '00100': 0.0015, '11011': 0.0015, '10111': 0.0015, '01111': 0.0015, '00000': 0.0001, '10010': 0.0001, '01010': 0.0001, '11010': 0.0001, '00110': 0.0001, '10110': 0.0001, '01110': 0.0001, '10001': 0.0001, '01001': 0.0001, '11001': 0.0001, '00101': 0.0001, '10101': 0.0001, '01101': 0.0001, '11111': 0.0001, '11000': 0.0, '10100': 0.0, '01100': 0.0, '10011': 0.0, '01011': 0.0, '00111': 0.0}, 'runtime': 1.4269020557403564, 'optimal_solution': '11100'}
-            
+            #Yields: {'layer_depth': 3, 'circuit_depth': 69, 'qubit_amount': 5, 'shots': 10000, 'iterations': 50, 'runtime': 2.202655076980591, 'optimal_energy': -7.711545013271984, 'energy': -7.465600000000004, 'metric': 0.9681069081683767}
+
         """
         
         if isinstance(metric, str):
     
             if metric == "approx_ratio":
                 def approx_ratio(x):
-                    return approximation_ratio(x["counts"], self.optimal_solution, self.cost_function)
+                    return approximation_ratio(x["energy"], self.optimal_energy)
     
                 metric = approx_ratio
-    
-            elif metric == "time_to_sol":
-                metric = lambda x: time_to_solution(x["counts"], self.optimal_solution, self.cost_function)
     
         run_data_list = []
     
@@ -345,8 +332,8 @@ class VQEBenchmark:
                         "shots": self.shots[i],
                         "iterations": self.iterations[i],
                         "runtime": self.runtime[i],
-                        "optimal_solution": self.optimal_solution,
-                        "counts" : self.counts[i]
+                        "optimal_energy": self.optimal_energy,
+                        "energy" : self.energy[i]
                         }
     
             run_data["metric"] = metric(run_data)
@@ -377,7 +364,7 @@ class VQEBenchmark:
                     continue
                 
                 run_data['metric'] = average_dict[key]['total_metric'] / average_dict[key]['count']
-                del run_data["counts"]
+                del run_data["energy"]
                 del run_data["runtime"]
                 run_data_list.append(run_data)
                 
@@ -434,33 +421,33 @@ class VQEBenchmark:
         Examples
         --------
         
-        We create a MaxCut instance and benchmark several parameters
+        We create a Heisenberg problem and benchmark several parameters:
         
         ::
             
-            from qrisp import *
             from networkx import Graph
-            G = Graph()
+            G =Graph()
+            G.add_edges_from([(0,1),(1,2),(2,3),(3,4)]
 
-            G.add_edges_from([[0,3],[0,4],[1,3],[1,4],[2,3],[2,4]])
+            from qrisp.vqe.problems.heisenberg import *
 
-            from qrisp.qaoa import maxcut_problem
+            vqe = heisenberg_problem(G,1,0)
+            H = create_heisenberg_hamiltonian(G,1,0)
 
-            max_cut_instance = maxcut_problem(G)
-
-            benchmark_data = max_cut_instance.benchmark(qarg = QuantumVariable(5),
-                                       depth_range = [3,4,5],
-                                       shot_range = [5000, 10000],
-                                       iter_range = [25, 50],
-                                       optimal_solution = "11100",
-                                       repetitions = 2
-                                       )
+            benchmark_data = vqe.benchmark(qarg = QuantumVariable(5),
+                                depth_range = [1,2,3],
+                                shot_range = [5000,10000],
+                                iter_range = [25,50],
+                                optimal_energy = H.ground_state_energy(),
+                                repetitions = 2,
+                                mes_kwargs = {'method':'QWC'}
+                                )
             
         To save the results, we call the according method.
         
         ::
             
-            benchmark_data.save("example.qaoa")
+            benchmark_data.save("example.vqe")
             
 
         """
@@ -475,7 +462,7 @@ class VQEBenchmark:
     def load(cls, filename):
         """
         Loads benchmark data from the harddrive that has been saved by 
-        :meth:`.save <qrisp.qaoa.QAOABenchmark.save>`.
+        :meth:`.save <qrisp.vqe.VQEBenchmark.save>`.
 
         Parameters
         ----------
@@ -484,20 +471,20 @@ class VQEBenchmark:
 
         Returns
         -------
-        obj : QAOABenchmark
+        obj : VQEBenchmark
             The loaded data.
 
         Examples
         --------
         
-        We assume that the code from the example in :meth:`.save <qrisp.qaoa.QAOABenchmark.save>`
+        We assume that the code from the example in :meth:`.save <qrisp.vqe.VQEBenchmark.save>`
         has been executed and load the corresponding data:
             
         ::
             
-            from qrisp.qaoa import QAOABenchmark
+            from qrisp.vqe import VQEBenchmark
             
-            benchmark_data = QAOABenchmark.load("example.qaoa")
+            benchmark_data = VQEBenchmark.load("example.vqe")
             
             
         """
@@ -508,8 +495,6 @@ class VQEBenchmark:
         except Exception as e:
             print(f"Error loading benchmark data: {e}")
             return None
-        
-        
     
 
 # create qScore        
@@ -517,61 +502,22 @@ class VQEBenchmark:
 def overall_quantum_volume(run_data):
     return run_data["circuit_depth"]*run_data["qubit_amount"]*run_data["shots"]*run_data["iterations"]
 
-def max_five_metric(metric_dict):
-    counts = metric_dict["counts"].copy()
-    maxfive = sorted(counts , key=counts.get, reverse=True)[:5]
-    fivesol = []
-    for name, age in counts.items():  
-        if name in maxfive:
-            fivesol.append((name, age))
-    return fivesol
-
-
-def time_to_solution(run_data, optimal_solution, cost_function):
+def approximation_ratio(energy, optimal_energy):
     """
     Parameters
     ----------
-    obj_function : objective function of the problem
-                    (i.e. the "maxcut_obj" method for the MaxCut Problem).
-
-    counts : the result dictionary from the QAOA method, contaning the 
-                    bitstrings as keys and the counts divided by the number
-                    of shots as values.
-
-    optimal_solution: the optimal solution of the problem
-
-    G : the Graph related to the problem
+    energy : float
+        The energy of the problem Hamiltonian for the optimized ciruit.
+    optimal_energy: float
+        The optimal energy of the problem Hamiltonian.
 
     Returns
     -------
-    time to solution measure from http://arxiv.org/abs/2308.02342.
-    
-    It corresponds to 1/p_opt, where p_opt is the sum of the squared 
-    amplitudes associated to the binary strings encoding the optimal solution.
+    float
+        The approximation ratio. 
 
     """
-    obj_function = lambda x : cost_function({x : 1})
-    optimal_solution_cost = obj_function(optimal_solution)
-    
-    return 1/sum([v for k,v in run_data["counts"].items() if obj_function(k)==optimal_solution_cost])
-
-
-def approximation_ratio(counts, optimal_solution, cost_function):
-    """
-    Parameters
-    ----------
-    counts : the result dictionary from the QAOA method, contaning the 
-                    bitstrings as keys and the counts divided by the number
-                    of shots as values.
-    optimal_solution: the optimal solution of the problem
-    cost_function : Cost Function used to evaluate the optimization
-
-    Returns
-    -------
-    approximation ratio measure, commonly used to evaluate the MaxCut Problem
-
-    """
-    return cost_function(counts)/cost_function({optimal_solution: 1})
+    return energy/optimal_energy
 
 def ilog(n, base):
     """

@@ -12,6 +12,7 @@ Methods
 .. autosummary::
    :toctree: generated/
    
+    PauliOperator.__call__
     PauliOperator.__add__
     PauliOperator.__sub__
     PauliOperator.__mul__

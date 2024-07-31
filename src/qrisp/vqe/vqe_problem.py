@@ -25,6 +25,7 @@ from sympy import Symbol, Basic
 from qrisp import h, QuantumArray, parallelize_qc
 from qrisp.vqe.vqe_benchmark_data import VQEBenchmark
 from qrisp.operators.pauli_operator import PauliOperator
+from qrisp.operators.hamiltonian import Hamiltonian
 
 
 class VQEProblem:
@@ -34,7 +35,7 @@ class VQEProblem:
     
     Parameters
     ----------
-    hamiltonian : PauliOperator
+    hamiltonian : Hamiltonian
         The quantum Hamiltonian.
     ansatz_function : function
         A function receiving a :ref:`QuantumVariable` or :ref:`QuantumArray` and a parameter list. This function implements the unitary 
@@ -50,8 +51,7 @@ class VQEProblem:
     Examples
     --------
 
-    For a quick demonstration, we show how to calculate the ground sate energy of the $H_2$ molecule using VQE, as explained `here <https://arxiv.org/abs/2305.07092>`_.
-    Note that in the aforementioned paper, the energy is calculated setting the constant term in the Hamiltonian to 0.
+    For a quick demonstration, we show how to calculate the ground state energy of the $H_2$ molecule using VQE, as explained `here <https://arxiv.org/abs/2305.07092>`_.
 
     ::
 
@@ -79,7 +79,7 @@ class VQEProblem:
 
         from qrisp.vqe.vqe_problem import *
 
-        vqe = VQEProblem(hamiltonian = H,
+        vqe = VQEProblem(hamiltonian = H(),
                          ansatz_function = ansatz,
                          num_params=4,
                          callback=True)
@@ -89,6 +89,8 @@ class VQEProblem:
                       max_iter=50)
         print(energy)
         # Yields -1.864179046
+    
+    Note that for comparing to the results in the aforementioned paper, we have to add the nuclear repulsion energy $E_{\text{nuc}}=0.72$ to the calculated electronic energy $E_{\text{el}}$.
 
     We visualize the optimization process:
 
@@ -234,7 +236,7 @@ class VQEProblem:
 
             subs_dic = {symbols[i] : theta[i] for i in range(len(symbols))}
 
-            expectation = qarg.get_spin_measurement(self.hamiltonian, subs_dic = subs_dic, precompiled_qc = qc, mes_settings=mes_settings, **mes_kwargs)
+            expectation = self.hamiltonian.get_measurement(qarg, subs_dic = subs_dic, precompiled_qc = qc, mes_settings=mes_settings, **mes_kwargs)
 
             if self.callback:
                 self.optimization_costs.append(expectation)
@@ -314,7 +316,7 @@ class VQEProblem:
         for i in range(depth):                          
             self.ansatz_function(qarg,[optimal_theta[self.num_params*i+j] for j in range(self.num_params)])
 
-        opt_res = qarg.get_spin_measurement(self.hamiltonian,mes_settings=mes_settings,**mes_kwargs)
+        opt_res = self.hamiltonian.get_measurement(qarg,mes_settings=mes_settings,**mes_kwargs)
         
         return opt_res
     
@@ -370,7 +372,7 @@ class VQEProblem:
             
         return circuit_generator
     
-    def benchmark(self, qarg, depth_range, shot_range, iter_range, optimal_solution, repetitions = 1, mes_kwargs = {}, init_type = "random"):
+    def benchmark(self, qarg, depth_range, shot_range, iter_range, optimal_energy, repetitions = 1, mes_kwargs = {}, init_type = "random"):
         """
         This method enables convenient data collection regarding performance of the implementation.
 
@@ -384,8 +386,8 @@ class VQEProblem:
             A list of integers indicating, which shots parameters should be explored. Shots means the amount of repetitions, the backend performs per iteration and per measurement setting.
         iter_range : list[int]
             A list of integers indicating, what iterations parameter should be explored. Iterations means the amount of backend calls, the optimizer is allowed to do.
-        optimal_solution : float
-            The optimal solution to the problem. 
+        optimal_energy: float
+            The exact ground state energy of the problem Hamiltonian. 
         repetitions : int, optional
             The amount of repetitions, each parameter constellation should go though. Can be used to get a better statistical significance. The default is 1.
         mes_kwargs : dict, optional
@@ -402,27 +404,27 @@ class VQEProblem:
         Examples
         --------
         
-        We create a MaxCut instance and benchmark several parameters
+        We create a Heisenberg problem instance and benchmark several parameters:
         
         ::
             
-            from qrisp import *
             from networkx import Graph
-            G = Graph()
 
-            G.add_edges_from([[0,3],[0,4],[1,3],[1,4],[2,3],[2,4]])
+            G =Graph()
+            G.add_edges_from([(0,1),(1,2),(2,3),(3,4)]
+            from qrisp.vqe.problems.heisenberg import *
 
-            from qrisp.qaoa import maxcut_problem
+            vqe = heisenberg_problem(G,1,0)
+            H = create_heisenberg_hamiltonian(G,1,0)
 
-            max_cut_instance = maxcut_problem(G)
-
-            benchmark_data = max_cut_instance.benchmark(qarg = QuantumVariable(5),
-                                       depth_range = [3,4,5],
-                                       shot_range = [5000, 10000],
-                                       iter_range = [25, 50],
-                                       optimal_solution = "11100",
-                                       repetitions = 2
-                                       )
+            benchmark_data = vqe.benchmark(qarg = QuantumVariable(5),
+                                depth_range = [1,2,3],
+                                shot_range = [5000,10000],
+                                iter_range = [25,50],
+                                optimal_energy = H.ground_state_energy(),
+                                repetitions = 2,
+                                mes_kwargs = {'method':'QWC'}
+                                )
         
         We can investigate the data by calling ``visualize``:
         
@@ -430,7 +432,7 @@ class VQEProblem:
             
             benchmark_data.visualize()
         
-        .. image:: benchmark_plot.png
+        .. image:: vqe_benchmark_plot.png
             
         The :ref:`VQEBenchmark` class contains a variety of methods to help 
         you drawing conclusions from the collected data. Make sure to check them out!
@@ -476,7 +478,7 @@ class VQEProblem:
                         data_dict["runtime"].append(final_time)
                         
                         
-        return VQEBenchmark(data_dict, optimal_solution, self.hamiltonian)
+        return VQEBenchmark(data_dict, optimal_energy, self.hamiltonian)
     
 
     def visualize_energy(self,exact=False):

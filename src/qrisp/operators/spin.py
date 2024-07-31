@@ -48,7 +48,7 @@ def mul_helper(P1,P2):
         return (P1,1)
     return pauli_table[(P1,P2)]
 #
-# Pauli symbols
+# Pauli symbols (only used for visualization, i.e., LateX printing with SymPy)
 #  
 
 class X_(Symbol):

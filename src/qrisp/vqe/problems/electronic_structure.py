@@ -16,12 +16,8 @@
 ********************************************************************************/
 """
 
-#todo
-import sympy as sp
-from sympy import I
-from sympy import *
-from qrisp.operators.spin import *
-from qrisp.operators.pauli_operator import *
+from qrisp import x, cx, ry, control, conjugate
+from qrisp.operators import *
 from functools import cache
 
 #
@@ -354,7 +350,7 @@ def create_electronic_hamiltonian(one_int, two_int, M, N, K=None, L=None, mappin
     # apply threshold
     H.apply_threshold(threshold)
     
-    return H
+    return H()
 
 #
 # ansatz
