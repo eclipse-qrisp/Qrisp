@@ -1907,7 +1907,7 @@ def cnot_depth_indicator(op):
     
     In NISQ-era devices, CNOT gates are the restricting bottleneck for quantum 
     circuit execution. This function can be used as a gate-speed specifier for
-    the :meth:`compile <qrisp.QuantumSession.compile>`_ method.
+    the :meth:`compile <qrisp.QuantumSession.compile>` method.
     
     Parameters
     ----------

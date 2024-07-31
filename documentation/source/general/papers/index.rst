@@ -13,7 +13,7 @@ Research from within the Qrisp community
     .. grid-item-card:: Qrisp: A Framework for Compilable High-Level Programming of Gate-Based Quantum Computers
 
         | Raphael Seidel, Sebastian Bock, René Zander, Matic Petrič, Niklas Steinmann, Nikolay Tcholtchev, Manfred Hauswirth 
-        | `ArXiv, 2024 <https://arxiv.org/abs/2406.14792>`_
+        | `ArXiv, 2024 <https://arxiv.org/abs/2406.14792>`__
 
         .. dropdown:: :fa:`eye me-1` Abstract
             :color: primary
@@ -30,12 +30,12 @@ Research from within the Qrisp community
             algorithm. For the latter, the resulting circuit shows significantly reduced quantum resource requirements, strongly supporting the claim that 
             systematic quantum algorithm development can give quantitative benefits.
 
-.. grid::
+.. grid:
 
     .. grid-item-card:: Solving the Product Breakdown Structure Problem with constrained QAOA
 
         | René Zander, Raphael Seidel, Matteo Inajetovic, Niklas Steinmann, Matic Petrič 
-        | `ArXiv, 2024 <https://arxiv.org/pdf/2406.15228>`_
+        | `ArXiv, 2024 <https://arxiv.org/pdf/2406.15228>`__
 
         .. dropdown:: :fa:`eye me-1` Abstract
             :color: primary
@@ -63,7 +63,7 @@ Research from within the Qrisp community
     .. grid-item-card:: **Quantum Backtracking in Qrisp Applied to Sudoku Problems** 
 
         | Raphael Seidel, René Zander, Matic Petrič, Niklas Steinmann, David Q.\ Liu, Nikolay Tcholtchev, Manfred Hauswirth
-        | `ArXiv, 2024 <https://arxiv.org/abs/2402.10060>`_ 
+        | `ArXiv, 2024 <https://arxiv.org/abs/2402.10060>`__ 
 
         .. dropdown:: :fa:`eye me-1` Abstract
             :color: primary
@@ -86,7 +86,7 @@ Research from within the Qrisp community
     .. grid-item-card:: Uncomputation in the Qrisp high-level Quantum Programming Framework
 
         | Raphael Seidel, Nikolay Tcholtchev, Sebastian Bock, Manfred Hauswirth
-        | `ArXiv, 2023 <https://arxiv.org/abs/2307.11417>`_ 
+        | `ArXiv, 2023 <https://arxiv.org/abs/2307.11417>`__
 
         .. dropdown:: :fa:`eye me-1` Abstract
             :color: primary
@@ -113,45 +113,45 @@ Exterior research using or citing Qrisp
     * - Title
       - Authors
       - Year
-    * - `Towards Higher Abstraction Levels in Quantum Computing <https://link.springer.com/chapter/10.1007/978-981-97-0989-2_13>`_
+    * - `Towards Higher Abstraction Levels in Quantum Computing <https://link.springer.com/chapter/10.1007/978-981-97-0989-2_13>`__
       - H. Fürntratt, P. Schnabel et al.
       - 2024
-    * - `Eclipse Qrisp QAOA: description and preliminary comparison with Qiskit counterparts <https://arxiv.org/abs/2405.20173>`_
+    * - `Eclipse Qrisp QAOA: description and preliminary comparison with Qiskit counterparts <https://arxiv.org/abs/2405.20173>`__
       - E. Osaba, Matic Petrič, Izaskun Oregi et al. 
       - 2023
-    * - `A Testing Pipeline for Quantum Computing Applications <https://publica.fraunhofer.de/entities/publication/ff4f1dc4-ab7d-41a6-8157-0b663aee83eb/details>`_
+    * - `A Testing Pipeline for Quantum Computing Applications <https://publica.fraunhofer.de/entities/publication/ff4f1dc4-ab7d-41a6-8157-0b663aee83eb/details>`__
       - C. Becker, I.D. Gheorghe-Pop, N. Tscholtchev
       - 2023
-    * - `Quantum computing with Qiskit <https://arxiv.org/pdf/2405.08810>`_
+    * - `Quantum computing with Qiskit <https://arxiv.org/pdf/2405.08810>`__
       - A. Javadi-Abhari, M. Treinish, K. Krsulich et al.
       - 2024
-    * - `Testing multi-subroutine quantum programs: From unit testing to integration testing <https://dl.acm.org/doi/full/10.1145/3656339>`_
+    * - `Testing multi-subroutine quantum programs: From unit testing to integration testing <https://dl.acm.org/doi/full/10.1145/3656339>`__
       - P. Long, J. Zhao
       - 2024
-    * - `Quantum Software Ecosystem: Stakeholders, Interactions and Challenges <https://www.researchgate.net/publication/378066784_Quantum_Software_Ecosystem_Stakeholders_Interactions_and_Challenges>`_
+    * - `Quantum Software Ecosystem: Stakeholders, Interactions and Challenges <https://www.researchgate.net/publication/378066784_Quantum_Software_Ecosystem_Stakeholders_Interactions_and_Challenges>`__
       - V. Stirbu, T. Mikkonen 
       - 2024
-    * - `The T-Complexity Costs of Error Correction for Control Flow in Quantum Computation <https://dl.acm.org/doi/pdf/10.1145/3656397>`_
+    * - `The T-Complexity Costs of Error Correction for Control Flow in Quantum Computation <https://dl.acm.org/doi/pdf/10.1145/3656397>`__
       - C. Yuan, M. Carbin
       - 2024
-    * - `UAV Swarm Management Platform for Autonomous Area and Infrastructure Inspection <https://ieeexplore.ieee.org/abstract/document/10497082>`_,
+    * - `UAV Swarm Management Platform for Autonomous Area and Infrastructure Inspection <https://ieeexplore.ieee.org/abstract/document/10497082>`__,
       - M. Batistatos; A. Mazilu et al. 
       - 2024
-    * - `Hybrid Meta-Solving for Practical Quantum Computing <https://arxiv.org/pdf/2405.09115>`_
+    * - `Hybrid Meta-Solving for Practical Quantum Computing <https://arxiv.org/pdf/2405.09115>`__
       - D. Eichhorn, M. Schweikart, N. Poser et al. 
       - 2024
-    * - `Quantum Software Ecosystem Design <https://arxiv.org/abs/2405.13244>`_
+    * - `Quantum Software Ecosystem Design <https://arxiv.org/abs/2405.13244>`__
       - A. Basermann, M. Epping et al. 
       - 2024
-    * - `Towards Continuous Development for Quantum Programming in Decentralized IoT environments <https://www.sciencedirect.com/science/article/pii/S1877050924012286>`_
+    * - `Towards Continuous Development for Quantum Programming in Decentralized IoT environments <https://www.sciencedirect.com/science/article/pii/S1877050924012286>`__
       - M. Kourtis, N Tcholtchev, I.D. Gheorghe-Pop et al. 
       - 2024
-    * - `An Abstraction Hierarchy Toward Productive Quantum Programming <https://arxiv.org/abs/2405.13918>`_
+    * - `An Abstraction Hierarchy Toward Productive Quantum Programming <https://arxiv.org/abs/2405.13918>`__
       - O. Di Matteo, S. Núñez-Corrales, M. Stęchły et al. 
       - 2024
-    * - `High-Level Quantum Programming <https://www.research-collection.ethz.ch/bitstream/handle/20.500.11850/634879/1/thesis_electronic.pdf>`_
+    * - `High-Level Quantum Programming <https://www.research-collection.ethz.ch/bitstream/handle/20.500.11850/634879/1/thesis_electronic.pdf>`__
       - B. Bichsel  
       - 2023
-    * - `Automated Software Engineering (2024) 31:36 <https://link.springer.com/article/10.1007/s10515-024-00436-x>`_
+    * - `Automated Software Engineering (2024) 31:36 <https://link.springer.com/article/10.1007/s10515-024-00436-x>`__
       - A. Sarkar 
       - 2024

@@ -105,7 +105,7 @@ def qcla(a, b, radix_base = 2, radix_exponent = 1, t_depth_reduction = True, ctr
     of that Operation. For more information check out the 
     :meth:`compile <qrisp.QuantumSession.compile>` documentation page.
     
-    For T-depth, there is already a pre-coded function: :ref:`qrisp.t_depth_indicator`.
+    For T-depth, there is already a pre-coded function: :meth:`T-depth <qrisp.t_depth_indicator>`.
         
     >>> from qrisp import t_depth_indicator
     >>> gate_speed = lambda x : t_depth_indicator(x, epsilon = 2**-10)

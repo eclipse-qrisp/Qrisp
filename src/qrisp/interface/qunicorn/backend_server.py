@@ -53,7 +53,7 @@ def get_ip():
 
 class BackendServer:
     """
-    This class allows convenient setup of a server respecting the `Qunicorn<https://qunicorn-core.readthedocs.io/en/latest/index.html>`_ interface.
+    This class allows convenient setup of a server respecting the `Qunicorn <https://qunicorn-core.readthedocs.io/en/latest/index.html>`_ interface.
 
     Parameters
     ----------
