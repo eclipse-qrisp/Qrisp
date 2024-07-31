@@ -209,7 +209,6 @@ def test_uncomputation_example():
         b.uncompute()
 
     assert error_thrown
-    return
 
     print("Test 5 passed")
 
@@ -241,5 +240,25 @@ def test_uncomputation_example():
     qv_2.uncompute()
     qv_3.uncompute()
     assert qv_1.qs.cnot_count() == 10
+    
+    print("Test 6 passed")
+    
+    qv_0 = QuantumVariable(1)
+    qv_1 = QuantumVariable(1)
+    qv_2 = QuantumVariable(1)
+    qv_3 = QuantumVariable(1)
+
+    cy(qv_0, qv_1)
+    cx(qv_1, qv_2)
+    cx(qv_1, qv_3)
+    x(qv_2)
+
+    qv_1.uncompute(recompute=True)
+    qv_2.uncompute()
+    qv_3.uncompute()
+
+    assert qv_1.qs.cnot_count() == 10
+    
+    print("Test 7 passed")
 
     verify[0] = 0

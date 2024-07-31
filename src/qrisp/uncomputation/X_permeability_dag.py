@@ -456,7 +456,7 @@ def dag_from_qc(dag, qc):
 
         # If the instruction is an allocation, we already processed it with the
         # code above        
-        if instr.op.name == "qb_alloc":
+        if instr.op.name == "qb_alloc" and value_layer[qb] == 1:
             continue
         
         # This treats the case of a general Instruction

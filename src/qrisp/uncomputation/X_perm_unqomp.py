@@ -22,7 +22,7 @@ from qrisp.circuit import fast_append, ControlledOperation, PTControlledOperatio
 from qrisp.logic_synthesis import LogicSynthGate
 from qrisp.uncomputation.type_checker import is_qfree
 
-from qrisp.uncomputation.X_permeability_dag import PermeabilityGraph, InstructionNode, TerminatorNode
+from qrisp.uncomputation.X_permeability_dag import PermeabilityGraph, InstructionNode, TerminatorNode, AllocNode
 
 def uncompute_qc(qc, uncomp_qbs, recompute_qubits=[]):
     """
@@ -85,14 +85,13 @@ def uncompute_qc(qc, uncomp_qbs, recompute_qubits=[]):
     
         # Build up the pdag
         pdag = PermeabilityGraph(qc_new)
-    
         # Now come the steps of the Unqomp algorithm
         
         # We iterate over a reversed topological sort and successively
         # uncompute all relevant nodes.
         lin = list(nx.topological_sort(pdag))
         lin.reverse()
-    
+        
         for i in range(len(lin)):
     
             # Set an alias
@@ -273,7 +272,7 @@ def uncompute_node(pdag, node, uncomp_qbs, recompute_qubits=[]):
     node.uncomputed_node = reversed_node
 
     # Add the uncomputed node to the pdag
-    pdag.add_node(reversed_node)
+    # pdag.add_node(reversed_node)
     
     # Update the recent_node_dic with the reversed node
     for qb in target_qubits:
@@ -284,42 +283,42 @@ def uncompute_node(pdag, node, uncomp_qbs, recompute_qubits=[]):
     # The first step is to connect the controls.
     # The idea here is to connect the reversed node to the
     # controls of the original node.
-    for i in range(len(ctrls)):
+    
+    # This dictionary will hold the control qubits of each control edge
+    ctrl_qubit_dic = {}
+    for c in ctrls:
+        ctrl_qubit_dic[c] = pdag.get_edge_qubits(c, node)
+    
+    while len(ctrls):
         
         # Set alias
-        c = ctrls[i]
+        c = ctrls.pop(0)
         
         # Get the qubits of the control edge
-        control_edge_qubits = pdag.get_edge_qubits(c, node)
+        control_edge_qubits = ctrl_qubit_dic[c]
 
+        
+        recomputation_required = set(control_edge_qubits).intersection(recompute_qubits)
+        
         # This treats the case that the control edge is among the recomputable qubits
         # implying this node needs to be recomputed.
-        if set(control_edge_qubits).intersection(recompute_qubits):
+        if recomputation_required and pdag.has_edge(c, node):
             
-            for k in pdag.successors(node):
-                print(pdag.get_edge_data(node, k))
-                print(pdag.get_edge_qubits(node, k))
-                if (pdag.get_edge_data(node, k)["edge_type"] in ["X", "neutral", "anti_dependency"] and 
-                    set(pdag.get_edge_qubits(node, k)).intersection(control_edge_qubits)):
-                    
-                    if isinstance(k, TerminatorNode):
-                        for l in pdag.successors(k):
-                            if set(pdag.get_edge_qubits(k,l)).intersection(control_edge_qubits):
-                                if l.uncomputed_node is None:
-                                    k = l
-                                    break
-                        else:
-                            return True
-                       
-                    if k.uncomputed_node is None:
-                        return True
-                    ctrls[i] = k.uncomputed_node
-                    break
-            else:
-                raise
+            # If the required qubits for recomputation are not among the uncomputation
+            # qubits, we cancel the function by returning True
+            # The parent function will then start a new uncomputation attempt,
+            # where the recompute qubits are among the uncomputation qubits.            
+            if not recomputation_required.issubset(uncomp_qbs):
                 return True
-
-
+            
+            # Instead of connecting to the previos control node, we connect to the
+            # "latest" control node that operated on that qubit.
+            for qb in recomputation_required:
+                ctrls.append(pdag.recent_node_dic[qb])
+                ctrl_qubit_dic[pdag.recent_node_dic[qb]] = [qb]
+            
+            continue
+            
         # We now add the anti_dependency edges starting at the reversed node
         
         # For this we iterate over the control qubits and check the streak 
@@ -342,10 +341,13 @@ def uncompute_node(pdag, node, uncomp_qbs, recompute_qubits=[]):
                     cancellation_node.value_layer = max(cancellation_node.value_layer, reversed_node.value_layer + 1)
                     
         # Add the edge from the control node of the original node to the reversed node.
-        pdag.add_edge(ctrls[i], 
+        pdag.add_edge(c, 
                       reversed_node, 
                       edge_type="Z", 
                       qubits=control_edge_qubits)
+        
+        
+        
     
         
     # The next step is to connect the targets.

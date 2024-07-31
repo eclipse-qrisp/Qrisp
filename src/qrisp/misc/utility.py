@@ -71,11 +71,11 @@ def cnot_count(qc):
     qc = qc.transpile()
 
     gate_count_dic = qc.count_ops()
-
-    try:
-        return gate_count_dic["cx"]
-    except KeyError:
-        return 0
+    cnot_count = 0
+    for gate_name in ["cx", "cy", "cz"]:
+        cnot_count += gate_count_dic.get(gate_name, 0)
+    
+    return cnot_count
 
 
 def is_inv(x, bit):
