@@ -8,7 +8,7 @@ from jax import make_jaxpr
 from jax.core import Literal
 
 
-from qrisp.jax import QuantumPrimitive
+from qrisp.jax import QuantumPrimitive, AbstractQubitArray
 
 
 def convert_to_catalyst_jaxpr(closed_jaxpr, args):
@@ -66,14 +66,14 @@ def convert_to_catalyst_jaxpr(closed_jaxpr, args):
 
     # This dictionary translates the variables (as found in the Qrisp Jaxpr) to the 
     # corresponding tracer objects for tracing the Catalyst Jaxpr
-    variable_to_tracer_dic = {}
+    context_dic = {}
     
     # Wrapper around the dictionary to also treat literals
     def var_to_tr(var):
         if isinstance(var, Literal):
             return var.val
         else:
-            return variable_to_tracer_dic[var]
+            return context_dic[var]
 
     # Since the compiling model of both Jaxpr differ a bit, we have to perform
     # some non-trivial translation.
@@ -97,10 +97,13 @@ def convert_to_catalyst_jaxpr(closed_jaxpr, args):
         
         # Insert the appropriate variable/tracer relation of the arguments into the dictionary
         for i in range(len(args)):
-            variable_to_tracer_dic[jaxpr.invars[i]] = args[i]
+            context_dic[jaxpr.invars[i]] = args[i]
             
         # Loop through equations and process Qrisp primitive accordingly
         for eqn in jaxpr.eqns:
+            
+            invars = eqn.invars
+            outvars = eqn.outvars
             
             # This is the case that the primitive is not given by Qrisp
             if not isinstance(eqn.primitive, QuantumPrimitive):
@@ -116,30 +119,23 @@ def convert_to_catalyst_jaxpr(closed_jaxpr, args):
                 # Subsequently the resulting tracers need to be inserted into the 
                 # dictionary
                 for var in eqn.outvars:
-                    variable_to_tracer_dic[var] = tracer
+                    context_dic[var] = tracer
             
             else:
                 # This is the Qrisp primitive case
                 if eqn.primitive.name == "qdef":
-                    # This has no equivalent in Catalyst.
-                    # The information that this variable would carry is in the
-                    # var->tracer dictionary and the qubit_dictionary
-                    continue
+                    context_dic[outvars[0]] = (qalloc_p.bind(10), 0)
                 
                 
                 elif eqn.primitive.name == "create_qubits":
-                    # This is the qalloc_p primitive
-                    new_reg = qalloc_p.bind(var_to_tr(eqn.invars[1]))
-                    variable_to_tracer_dic[eqn.outvars[1]] = new_reg
+                    
+                    qreg, stack_size = var_to_tr(invars[0])
+                    context_dic[outvars[1]] = (stack_size, var_to_tr(invars[1]))
+                    context_dic[outvars[0]] = (qreg, stack_size + var_to_tr(invars[1]))
                     
                     
                 elif eqn.primitive.name == "get_qubit":
-                    # Instead of calling qextract now, we delay the call
-                    # until we know there is a quantum gate upcoming.
-                    # This prevents the situation that two qubits representing the same
-                    # index have been extracted and operated on
-                    qubit_dictionary[eqn.outvars[0]] = eqn.invars
-                    
+                    context_dic[outvars[0]] = context_dic[invars[0]][0] + var_to_tr(invars[1])
                     
                 elif isinstance(eqn.primitive, Operation) or eqn.primitive.name == "measure":
                     # This case is applies a quantum operation
@@ -149,17 +145,31 @@ def convert_to_catalyst_jaxpr(closed_jaxpr, args):
                     # that are required for the Operation
                     qb_vars = []
                     
-                    for i in range(op.num_qubits):
-                        qb_vars.append(eqn.invars[i+1])
+                    qb_pos = []
+                    if op.name == "measure":
+                        
+                        if isinstance(invars[1].aval, AbstractQubitArray):
+                            
+                            qubit_array_data = var_to_tr(invars[1])
+                            pos = qubit_array_data[0]
+                            length = qubit_array_data[1]
+                            
+                            for i in range(length):
+                                qb_pos.append(pos + i)
+                        else:
+                            qb_pos.append(var_to_tr(invars[1]))
+                    else:
+                        
+                        for i in range(op.num_qubits):
+                            qb_vars.append(invars[i+1])
+                            qb_pos.append(var_to_tr(invars[i+1]))
                     
+                    num_qubits = len(qb_pos)
+                    catalyst_register_tracer = var_to_tr(invars[0])[0]
                     catalyst_qb_tracers = []
-                    for qb in qb_vars:
-                        
-                        reg, qb_index = qubit_dictionary[qb]
-                        
-                        catalyst_qb_tracer = qextract_p.bind(var_to_tr(reg), 
-                                                             var_to_tr(qb_index))
-                        
+                    for i in range(num_qubits):
+                        catalyst_qb_tracer = qextract_p.bind(catalyst_register_tracer, 
+                                                             qb_pos[i])
                         catalyst_qb_tracers.append(catalyst_qb_tracer)
                     
                     # We can now apply the gate primitive
@@ -167,22 +177,24 @@ def convert_to_catalyst_jaxpr(closed_jaxpr, args):
                     if op.name == "measure":
                         res_bl, res_qb = qmeasure_p.bind(*catalyst_qb_tracers)
                         res_qbs = [res_qb]
-                        variable_to_tracer_dic[eqn.outvars[1]] = res_bl
+                        context_dic[outvars[1]] = res_bl
+                        
                     else:
                     
                         res_qbs = qinst_p.bind(*catalyst_qb_tracers, 
                                                op = op_name_translation_dic[op.name], 
                                                qubits_len = op.num_qubits)
+                        
                     
                     # Finally, we reinsert the qubits and update the register tracer
-                    for i in range(op.num_qubits):
-                        qb = qb_vars[i]
-                        reg, qb_index = qubit_dictionary[qb]
-                        new_register_tracer = qinsert_p.bind(var_to_tr(reg), 
-                                                             var_to_tr(qb_index),
+                    for i in range(num_qubits):
+
+                        catalyst_register_tracer = qinsert_p.bind(catalyst_register_tracer, 
+                                                             qb_pos[i],
                                                              res_qbs[i])
                         
-                        variable_to_tracer_dic[reg] = new_register_tracer
+                        
+                    context_dic[outvars[0]] = (catalyst_register_tracer, var_to_tr(invars[0])[1])
 
         # Return the appropriate tracers
         return tuple(var_to_tr(var) for var in jaxpr.outvars)
@@ -210,6 +222,7 @@ def qjit(function):
         jit_object.mlir_module = mlir_module
 
         compiled_fn = jit_object.compile()[0]
+        print(jit_object.qir)
 
         return compiled_fn(*args)
     

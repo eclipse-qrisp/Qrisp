@@ -1063,14 +1063,15 @@ def measure(qubits, clbits=None):
         
         return clbits
     else:
-        from qrisp.jax import Measurement_p
+        from qrisp.jax import Measurement_p, AbstractQubit
         from qrisp import Qubit, QuantumVariable
         
-        if isinstance(qubits, Qubit):
-            abs_qc, res = Measurement_p.bind(qs.abs_qc, qubits.abstract)
-        elif isinstance(qubits, QuantumVariable):
+        if isinstance(qubits, QuantumVariable):
             abs_qc, res = Measurement_p.bind(qs.abs_qc, qubits.reg)
             res = qubits.decoder(res)
+        elif isinstance(qubits.aval, AbstractQubit):
+            abs_qc, res = Measurement_p.bind(qs.abs_qc, qubits)
+        
         qs.abs_qc = abs_qc
         
         return res
