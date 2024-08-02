@@ -246,9 +246,6 @@ class PermeabilityGraph(nx.DiGraph):
         """
         target_qubits = []
         
-        if isinstance(node, TerminatorNode):
-            raise Exception("Tried to retrieve target qubits of TerminatorNode")
-        
         if isinstance(node, AllocNode):
             return list(node.instr.qubits)
         
@@ -542,7 +539,7 @@ def dag_from_qc(dag, qc):
                 # If there is only one member of the streak, the new recent_node
                 # is that member
                 elif len(streak_members) == 1:
-                    recent_node_dic[qb] = streak_members[0]                        
+                    recent_node_dic[qb] = streak_members[0]
                 
                 # Add the edge to the dag
                 dag.add_edge(recent_node_dic[qb], node, edge_type=edge_type, qubits = [qb])

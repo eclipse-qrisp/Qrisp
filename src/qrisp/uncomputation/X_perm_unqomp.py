@@ -163,6 +163,7 @@ def uncompute_qc(qc, uncomp_qbs, recompute_qubits=[]):
                         uncomp_qbs + off_target_qubits,
                         recompute_qubits=recompute_qubits,
                     )
+
     
         try:
             # Retrieve the uncomputed QuantumCircuit            
@@ -217,6 +218,7 @@ def uncompute_node(pdag, node, uncomp_qbs, recompute_qubits=[]):
     
     # Retrieve the list of a* nodes
     a_star_n_list = [pdag.recent_node_dic[qb] for qb in set(target_qubits)]
+    
     # Remove duplicates
     a_star_n_list = list(set(a_star_n_list))
     
@@ -272,7 +274,10 @@ def uncompute_node(pdag, node, uncomp_qbs, recompute_qubits=[]):
     node.uncomputed_node = reversed_node
 
     # Add the uncomputed node to the pdag
-    # pdag.add_node(reversed_node)
+    pdag.add_node(reversed_node)
+
+    reversed_node.value_layer = max([n.value_layer+1 for n in a_star_n_list + ctrls])
+
     
     # Update the recent_node_dic with the reversed node
     for qb in target_qubits:
@@ -345,11 +350,7 @@ def uncompute_node(pdag, node, uncomp_qbs, recompute_qubits=[]):
                       reversed_node, 
                       edge_type="Z", 
                       qubits=control_edge_qubits)
-        
-        
-        
     
-        
     # The next step is to connect the targets.
     # For that we use the a_star_n_list which represents all the nodes, that are 
     # targetted by the operation
@@ -370,9 +371,6 @@ def uncompute_node(pdag, node, uncomp_qbs, recompute_qubits=[]):
         # We now iterate over the targets of the node to connect the edges
         for qb in target_qubits:
             
-            if qb not in pdag.get_target_qubits(a_star_n):
-                continue
-            
             # These are the nodes which form a streak on that qubit
             streak_children = pdag.get_streak_children(a_star_n, qb)
             # Depending on how long the streak is, we have ton insert a TerminatorNode
@@ -382,7 +380,7 @@ def uncompute_node(pdag, node, uncomp_qbs, recompute_qubits=[]):
                               reversed_node,
                               edge_type="neutral",
                               qubits=[qb])
-            
+                
             # If there is only one control, we can safely append a neutral edge to that control node
             elif len(streak_children) == 1:
                 pdag.add_edge(streak_children[0],
@@ -408,10 +406,6 @@ def uncompute_node(pdag, node, uncomp_qbs, recompute_qubits=[]):
                               reversed_node,
                               edge_type="neutral",
                               qubits=[qb])                
-
-               
-    reversed_node.value_layer = max([n.value_layer for n in pdag.get_control_nodes(reversed_node)]
-                                    +[n.value_layer +1 for n in pdag.get_target_nodes(reversed_node)] )
 
     return False
 
