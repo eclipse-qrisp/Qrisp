@@ -145,6 +145,8 @@ class BackendClient:
             job_state = job_get_response.json()["state"]
             if job_state == "FINISHED":
                 break
+            elif job_state in ["ERROR", "CANCELED"]:
+                raise Exception("Backend call terminated with an error message: " + job_get_response.json()["state"]["data"])
 
             time.sleep(0.1)
 
