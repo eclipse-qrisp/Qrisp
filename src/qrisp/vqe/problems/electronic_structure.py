@@ -19,6 +19,7 @@
 from qrisp import x, cx, ry, control, conjugate
 from qrisp.operators import *
 from functools import cache
+import pyscf
 
 #
 # helper functions
@@ -58,11 +59,7 @@ def delta(i,j):
 
 #
 # spacial orbitals to spin orbitals
-# \Psi_1,...,\\
-
-# spin to spacial
-#def sp(x):
-#    return x//2
+# 
 
 def omega(x):
     return x%2
@@ -123,26 +120,32 @@ def spacial_to_spin(int_one,int_two):
 
 def electronic_data(mol):
     """
-    A wrapper function that utilizes restricted Hartree-Fock (RHF) calculation 
-    in the pyscf quantum chemistry package to obtain the electronic data for
+    A wrapper function that utilizes `restricted Hartree-Fock (RHF) <https://pyscf.org/user/scf.html>`_
+    calculation in the `PySCF <https://pyscf.org>`_ quantum chemistry package to obtain the electronic data for
     defining an electronic structure problem.
 
     Parameters
-    ---------
+    ----------
     mol : pyscf.gto.Mole
         The `molecule <https://pyscf.org/user/gto.html#>`_.
 
     Returns
     -------
     data : dict
+        A dictionary specifying the electronic data for a molecule. The following data is provided:
         
-        * ``mol`` 
-        * ``one_int``
-        * ``two_int``
-        * ``num_orb``
-        * ``num_elec``
+        * ``one_int`` : numpy.ndarray
+            The one-electron integrals w.r.t. spin orbitals (in physicists' notation).
+        * ``two_int`` : numpy.ndarray
+            The two-electron integrals w.r.t. spin orbitals (in physicists' notation).
+        * ``num_orb`` : int
+            The number of spin orbitals.
+        * ``num_elec`` : int
+            The number of electrons.
         * ``energy_nuc``
-        * ``energy_scf``
+            The nuclear repulsion energy.
+        * ``energy_hf``    
+            The Hartree-Fock ground state energy.
 
     """
     from pyscf import gto, scf, ao2mo
@@ -156,7 +159,7 @@ def electronic_data(mol):
     
     # Perform a Hartree-Fock calculation
     mf = scf.RHF(mol)
-    energy_scf = mf.kernel()
+    energy_hf = mf.kernel()
 
     # Extract one-electron integrals
     one_int = apply_threshold(mf.mo_coeff.T @ mf.get_hcore() @ mf.mo_coeff,threshold)
@@ -169,11 +172,12 @@ def electronic_data(mol):
 
     data['mol'] = mol
     data['one_int'] = one_int
-    data['two_int'] = np.transpose(two_int,(0,2,1,3))
+    #data['two_int'] = np.transpose(two_int,(0,2,1,3))
+    data['two_int'] = np.transpose(two_int,(0,2,3,1))
     data['num_orb'] = 2*mf.mo_coeff.shape[0]  # Number of spin orbitals
     data['num_elec'] = mol.nelectron
     data['energy_nuc'] = mol.energy_nuc()
-    data['energy_scf'] = energy_scf
+    data['energy_hf'] = energy_hf
 
     return data
 
@@ -279,24 +283,29 @@ def ann2(i,j,M,mapping_type):
 # Hamiltonian
 #
 
-def create_electronic_hamiltonian(one_int, two_int, M, N, K=None, L=None, mapping_type='jordan_wigner', threshold=1e-4):
+def create_electronic_hamiltonian(arg, active_orb=None, active_elec=None, mapping_type='jordan_wigner', threshold=1e-4):
     """
     Creates the qubit Hamiltonian for an electronic structure problem. 
     If an Active Space (AS) is specified, the Hamiltonian is calculated following this `paper <https://arxiv.org/abs/2009.01872>`_.
     
     Parameters
     ----------
-    int_one : numpy.ndarray
-        The one-electron integrals w.r.t. spin orbitals (in physicists' notation).
-    int_two : numpy.ndarray
-        The two-electron integrals w.r.t. spin orbitals (in physicists' notation).
-    M : int
-        The number of spin orbitals.
-    N : int
-        The number of electrons.
-    K : int, optional
+    arg : pyscf.gto.Mole or dict
+        A PySCF `molecule <https://pyscf.org/user/gto.html#>`_ or
+        a dictionary specifying the electronic data for a molecule. The following data is required:
+        
+        * ``one_int`` : numpy.ndarray
+            The one-electron integrals w.r.t. spin orbitals (in physicists' notation).
+        * ``two_int`` : numpy.ndarray
+            The two-electron integrals w.r.t. spin orbitals (in physicists' notation).
+        * ``num_orb`` : int
+            The number of spin orbitals.
+        * ``num_elec`` : int
+            The number of electrons.
+
+    active_orb : int, optional
         The number of active spin orbitals.
-    L : int, optional
+    active_elec : int, optional
         The number of active electrons.
     mapping_type : string, optinal
         The mapping from the fermionic Hamiltonian to the qubit Hamiltonian. Available are ``jordan_wigner``, ``parity``.
@@ -306,10 +315,51 @@ def create_electronic_hamiltonian(one_int, two_int, M, N, K=None, L=None, mappin
 
     Returns
     -------
-    H : PauliOperator
-        The qubit Hamiltonian.
+    H : Hamiltonian
+        The quantum :ref:`Hamiltonian`.
     
+    Examples
+    --------
+
+    ::
+
+        from pyscf import gto
+        from qrisp.vqe.problems.electronic_structure import *
+
+        mol = gto.M(
+            atom = '''H 0 0 0; H 0 0 0.74''',
+            basis = 'sto-3g')
+
+        H = create_electronic_hamiltonian(mol)
+        H   
+
+    Yields:
+
+    .. math::
+
+        -&0.812170607248714 - 0.0453026155037992 X_0X_1Y_2Y_3 + 0.0453026155037992 X_0Y_1Y_2X_3 - 0.0453026155037992 Y_0Y_1X_2X_3
+
+        &+0.171412826447769 Z_0 + 0.168688981703612 Z_0Z_1 + 0.120625234833904 Z_0Z_2 + 0.165927850337703 Z_0Z_3 + 0.171412826447769 Z_1
+
+        &+0.165927850337703 Z_1Z_2 + 0.120625234833904 Z_1Z_3 - 0.223431536908133 Z_2 + 0.174412876122615Z Z_2Z_3 - 0.223431536908133 Z_3
+
     """
+
+    if isinstance(arg,pyscf.gto.Mole):
+        data = electronic_data(arg)
+    elif isinstance(arg,dict):
+        data = arg
+        if not verify_symmetries(data['two_int']):
+            raise Warning("Failed to verify symmetries for two-electron integrals")
+    else:
+        raise TypeError("Cannot create electronic Hamiltonian from type "+str(type(arg)))
+
+    one_int = data['one_int']
+    two_int = data['two_int']
+    M = data['num_orb']
+    N = data['num_elec']
+    K = active_orb
+    L = active_elec
 
     if K is None or L is None:
         K = M
@@ -326,7 +376,8 @@ def create_electronic_hamiltonian(one_int, two_int, M, N, K=None, L=None, mappin
     for p in range(M):
         for q in range(M):
             for i in range(I):
-                F[p][q] += (two_int[i][p][i][q]-two_int[i][q][p][i])
+                #F[p][q] += (two_int[i][p][i][q]-two_int[i][q][p][i])
+                F[p][q] += (two_int[i][p][q][i]-two_int[i][q][i][p])
 
     # inactive energy
     E = 0
@@ -345,12 +396,11 @@ def create_electronic_hamiltonian(one_int, two_int, M, N, K=None, L=None, mappin
             for k in range(K):
                 for l in range(K):
                     if two_int[I+i][I+j][I+k][I+l]!=0 and i!=j and k!=l:
-                        H += -0.5*two_int[I+i][I+j][I+k][I+l]*cre2(i,j,K,mapping_type)*ann2(k,l,K,mapping_type)
+                        H += 0.5*two_int[I+i][I+j][I+k][I+l]*cre2(i,j,K,mapping_type)*ann2(k,l,K,mapping_type)
 
     # apply threshold
-    H.apply_threshold(threshold)
-    
-    return H()
+    H.apply_threshold(threshold) 
+    return H
 
 #
 # ansatz
@@ -377,31 +427,29 @@ def create_QCCSD_ansatz(M,N):
     r"""
     This method implements the `QCCSD ansatz <https://arxiv.org/abs/2005.08451>`_.
 
-    A chemistry-inspired Coupled Cluster Single Double (CCSD) ansatz assumes that the ground state of the electronic Hamiltonian 
-    is a superposition of the Hartree-Fock state:
+    The chemistry-inspired Qubit Coupled Cluster Single Double (QCCSD) ansatz evolves the initial state, 
+    usually, the Hartree-Fock state
 
     .. math::
 
         \ket{\Psi_{\text{HF}}}=\ket{1_0,\dotsc,1_N,0_{N+1},\dotsc,0_M}
     
-    and the single (S) electron excitation states:
-
+    under the action of parametrized (non-commuting) single and double excitation unitaries.
+    
+    The single (S) excitation unitaries $U_i^r$ implement a continuous swap for qubits $i$ and $r$:
+    
     .. math::
 
-        \ket{\Psi_i^r}=\ket{1_0,\dotsc,0_i,\dotsc,1_N,0_{N+1},\dotsc,1_r,\dotsc,0_M}
+        U_i^r(\theta) = \begin{pmatrix}
+                        1&0&0&0\\
+                        0&\cos(\theta)&-\sin(\theta)&0\\
+                        0&\sin(\theta)&\cos(\theta)&0\\
+                        0&0&0&1
+                        \end{pmatrix}
 
-    and the double (D) electron excitation states:
-
-    .. math::
-
-        \ket{\Psi_{ij}^{rs}}=\ket{1_0,\dotsc,0_i,\dotsc,0_j,\dotsc,1_N,0_{N+1},\dotsc,1_r,\dotsc,1_s,\dotsc,0_M}
-
-    That is, the ansatz assumes the following form of the ground state:
-
-    .. math::
-
-        \ket{\Psi_{\text{CCSD}}}=c_0\ket{\Psi_{\text{HF}}}+\sum_{i,r}c_i^r\ket{\Psi_i^r}+\sum_{i<j,r<s}c_{ij}^{rs}\ket{\Psi_i^r}
-
+    Similarly, the double (D) excitation unitaries $U_{ij}^{rs}(\theta)$ implement a continuous swap 
+    for qubit pairs $i,j$ and $r,s$ depending on their parity.
+        
     Parameters
     ----------
     M : int
@@ -441,13 +489,18 @@ def create_QCCSD_ansatz(M,N):
 
 def create_hartree_fock_init_function(N, mapping_type='jordan_wigner'):
     """
-    Creates a function for initializing the Hartee-Fock state, i.e., the first ``N`` qubits are initialized in the $\ket{1}$ state.
+    Creates a function for initializing the Hartee-Fock state:
+    If the mapping type is ``jordan_wigner``, the first ``N`` qubits are initialized in the $\ket{1}$ state.
+    If the mapping type is ``parity``, the first ``N`` qubits with even index are initialized in the $\ket{1}$ state.
 
     Parameters
     ----------
     N : int
         The number of (active) electrons.
-    
+    mapping_type : string, optinal
+        The mapping from fermionic Hamiltonian to qubit Hamiltonian. Available are ``jordan_wigner``, ``parity``.
+        The default is ``jordan_wigner``.
+
     Returns
     -------
     init_function : function
@@ -468,7 +521,7 @@ def create_hartree_fock_init_function(N, mapping_type='jordan_wigner'):
     return init_function
 
 
-def electronic_structure_problem(one_int, two_int, M, N, K=None, L=None, mapping_type='jordan_wigner', ansatz_type='QCCSD', threshold=1e-4):
+def electronic_structure_problem(arg, active_orb=None, active_elec=None, mapping_type='jordan_wigner', ansatz_type='QCCSD', threshold=1e-4):
     r"""
     Creates a VQE problem instance for an electronic structure problem defined by the 
     one-electron and two-electron integrals for the spin orbitals (in physicists' notation).
@@ -477,7 +530,7 @@ def electronic_structure_problem(one_int, two_int, M, N, K=None, L=None, mapping
 
     .. math::
 
-        H = \sum\limits_{i,j=1}^{M}h_{i,j}a^{\dagger}_ia_j + \sum\limits_{i,j,k,l=1}^{M}h_{i,j,k,l}a^{\dagger}_ia^{\dagger}_ja_ka_l
+        H = \sum\limits_{i,j=0}^{M-1}h_{i,j}a^{\dagger}_ia_j + \sum\limits_{i,j,k,l=0}^{M-1}h_{i,j,k,l}a^{\dagger}_ia^{\dagger}_ja_ka_l
     
     for one-electron integrals:
 
@@ -493,17 +546,22 @@ def electronic_structure_problem(one_int, two_int, M, N, K=None, L=None, mapping
 
     Parameters
     ----------
-    int_one : numpy.ndarray
-        The one-electron integrals w.r.t. spin orbitals (in physicists' notation).
-    int_two : numpy.ndarray
-        The two-electron integrals w.r.t. spin orbitals (in physicists' notation).
-    M : int
-        The number of spin orbitals.
-    N : int
-        The number of electrons.
-    K : int, optional
+    arg : pyscf.gto.Mole or dict
+        A PySCF `molecule <https://pyscf.org/user/gto.html#>`_ or
+        a dictionary specifying the electronic data for a molecule. The following data is required:
+        
+        * ``one_int`` : numpy.ndarray
+            The one-electron integrals w.r.t. spin orbitals (in physicists' notation).
+        * ``two_int`` : numpy.ndarray
+            The two-electron integrals w.r.t. spin orbitals (in physicists' notation).
+        * ``num_orb`` : int
+            The number of spin orbitals.
+        * ``num_elec`` : int
+            The number of electrons.
+
+    active_orb : int, optional
         The number of active spin orbitals.
-    L : int, optional
+    active_elec : int, optional
         The number of active electrons.
     mapping_type : string, optinal
         The mapping from fermionic Hamiltonian to qubit Hamiltonian. Available are ``jordan_wigner``, ``parity``.
@@ -532,9 +590,8 @@ def electronic_structure_problem(one_int, two_int, M, N, K=None, L=None, mapping
         mol = gto.M(
             atom = '''H 0 0 0; H 0 0 0.74''',
             basis = 'sto-3g')
-        data = electronic_data(mol)
 
-        vqe = electronic_structure_problem(data['one_int'],data['two_int'],data['num_orb'],data['num_elec'])
+        vqe = electronic_structure_problem(mol)
         vqe.set_callback()
 
         energy = vqe.run(QuantumVariable(4),depth=1,max_iter=50,mes_kwargs={'method':'QWC'})
@@ -544,10 +601,24 @@ def electronic_structure_problem(one_int, two_int, M, N, K=None, L=None, mapping
     """
     from qrisp.vqe import VQEProblem
 
+    if isinstance(arg,pyscf.gto.Mole):
+        data = electronic_data(arg)
+    elif isinstance(arg,dict):
+        data = arg
+        if not verify_symmetries(data['two_int']):
+            raise Warning("Failed to verify symmetries for two-electron integrals")
+    else:
+        raise TypeError("Cannot instantiate VQEProblem from type "+str(type(arg)))
+    
+    M = data['num_orb']
+    N = data['num_elec']
+    K = active_orb
+    L = active_elec
+
     if K is None or L is None:
         K = M
         L = N
 
     ansatz, num_params = create_QCCSD_ansatz(K,L)
 
-    return VQEProblem(create_electronic_hamiltonian(one_int,two_int,M,N,K,L,mapping_type=mapping_type,threshold=threshold), ansatz, num_params, init_function=create_hartree_fock_init_function(L,mapping_type))
+    return VQEProblem(create_electronic_hamiltonian(data,K,L,mapping_type=mapping_type,threshold=threshold), ansatz, num_params, init_function=create_hartree_fock_init_function(L,mapping_type))

@@ -18,7 +18,7 @@ It is an alternative to pure quantum algorithms such as quantum phase estimation
 The method has been be applied to various problems in quantum chemistry and quantum physics.
 A VQE problem is given by:
 
-- A quantum Hamiltonian $$H=\\sum\\limits_{j}\\alpha_jP_j$$ where $P_j=\prod_i\sigma_i^j$ is a Pauli product, and $\sigma_i^j\in\{I,X,Y,Z\}$ is the Pauli operator acting on qubit $i$.
+- A quantum :ref:`Hamiltonian` $$H=\\sum\\limits_{j}\\alpha_jP_j$$ where each $P_j=\prod_i\sigma_i^j$ is a Pauli product, and $\sigma_i^j\in\{I,X,Y,Z\}$ is the Pauli operator acting on qubit $i$.
 - A parameter dependend quantum state (ansatz) $$\\ket{\\psi(\\theta)}=U(\\theta)\\ket{\\psi_0}$$ for an initial state $\ket{\psi_0}$.
   The unitary $U(\theta)$ consists of $p$ layers
   $$U(\\theta)=\\prod\\limits_{l=1}^{p}\\tilde{U}(\\theta_l)$$

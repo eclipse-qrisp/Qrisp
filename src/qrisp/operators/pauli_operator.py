@@ -135,7 +135,7 @@ def parity(qarg, indices):
 # PauliOperator
 #
 
-class PauliOperator:
+class PauliOperator(Hamiltonian):
     r"""
     This class provides an efficient implementation of Pauli operators, i.e.,
     operators of the form
@@ -147,26 +147,6 @@ class PauliOperator:
     where $P_j=\prod_i\sigma_i^j$ is a Pauli product, 
     and $\sigma_i^j\in\{I,X,Y,Z\}$ is the Pauli operator acting on qubit $i$.
 
-    Pauli operators are implemented by Python dictionaries (as proposed `here <https://arxiv.org/abs/1710.07629>`_), where:
-
-    * The key is an (ordered) tuple encoding a Pauli product.
-      Each Pauli operator is represented by a tuple ``(i,"P")`` for $P=X,Y,Z$.
-      For example: the Pauli product $X_0Y_1Z_2$ is represented as 
-      ``((0,"X"),(1,"Y"),(2,"Z"))``
-    * The value is the coefficient of the Pauli product.
-
-    For example, the operator 
-
-    .. math::
-
-        1+2X_0+3X_0Y_1
-
-    is represented as 
-
-    ::
-    
-        {():1, ((0,"X"),):2, ((0,"X"),(1,"Y")):3}
-
     Parameters
     ----------
     arg : dict, optional
@@ -175,21 +155,13 @@ class PauliOperator:
     Examples
     --------
 
-    An operator can be specified by a dictionary, or more conveniently expressed in terms of ``X``, ``Y``, ``Z`` operators:
+    A Pauli operator can be specified conveniently in terms of ``X``, ``Y``, ``Z`` operators:
 
     ::
         
         from qrisp.operators import PauliOperator, X,Y,Z
 
         P1 = 1+2*X(0)+3*X(0)*Y(1)
-        P2 = PauliOperator({():1,((0,'X'),):2,((0,'X'),(1,'Y')):3})
-        P1+P2
-
-    yields:
-
-    .. math::
-
-        2+4X_0+6X_0Y_1
 
     """
 
@@ -202,18 +174,15 @@ class PauliOperator:
         else:
             raise TypeError("Cannot initialize from "+str(type(arg)))
 
-    def __call__(self):
-        """
-        Returns the :ref:`Hamiltonian`.
-
-        """
-
-        return Hamiltonian(self)
-
     def _repr_latex_(self):
         # Convert the sympy expression to LaTeX and return it
         expr = self.to_expr()
         return f"${sp.latex(expr)}$"
+    
+    def __str__(self):
+        # Convert the sympy expression to a string and return it
+        expr = self.to_expr()
+        return str(expr)
     
     #
     # Arithmetic
@@ -225,7 +194,7 @@ class PauliOperator:
 
         Parameters
         ----------
-        other : int, float, commplex or PauliOperator
+        other : int, float, complex or PauliOperator
             A scalar or a PauliOperator to add to the operator self.
 
         Returns
@@ -261,7 +230,7 @@ class PauliOperator:
 
         Parameters
         ----------
-        other : int, float, commplex or PauliOperator
+        other : int, float, complex or PauliOperator
             A scalar or a PauliOperator to substract from the operator self.
 
         Returns
@@ -297,7 +266,7 @@ class PauliOperator:
 
         Parameters
         ----------
-        other : int, float, commplex or PauliOperator
+        other : int, float, complex or PauliOperator
             A scalar or a PauliOperator to multiply with the operator self.
 
         Returns
@@ -335,7 +304,7 @@ class PauliOperator:
 
         Parameters
         ----------
-        other : int, float, commplex or PauliOperator
+        other : int, float, complex or PauliOperator
             A scalar or a PauliOperator to add to the operator self.
 
         """
@@ -358,7 +327,7 @@ class PauliOperator:
 
         Parameters
         ----------
-        other : int, float, commplex or PauliOperator
+        other : int, float, complex or PauliOperator
             A scalar or a PauliOperator to substract from the operator self.
 
         """
@@ -374,6 +343,31 @@ class PauliOperator:
             if abs(self.pauli_dict[pauli])<threshold:
                 del self.pauli_dict[pauli]  
         return self
+    
+    def __imul__(self,other):
+        """
+        Multiplys other to the operator self.
+
+        Parameters
+        ----------
+        other : int, float, complex or PauliOperator
+            A scalar or a PauliOperator to multiply with the operator self.
+
+        """
+
+        if isinstance(other,(int,float,complex)):
+            other = PauliOperator({():other})
+        if not isinstance(other,PauliOperator):
+            raise TypeError("Cannot multipliy PauliOperator and "+str(type(other)))
+
+        res_pauli_dict = {}
+
+        for pauli1, coeff1 in self.pauli_dict.items():
+            for pauli2, coeff2 in other.pauli_dict.items():
+                curr_tuple, curr_coeff = mul_paulis(pauli1,pauli2)
+                res_pauli_dict[curr_tuple] = res_pauli_dict.get(curr_tuple,0) + curr_coeff*coeff1*coeff2
+
+        self.pauli_dict = res_pauli_dict
     
     #
     # Miscellaneous

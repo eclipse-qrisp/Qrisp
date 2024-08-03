@@ -70,7 +70,7 @@ With Qrisp we hope to open the creation of quantum algorithms to a much broader 
    Core/index
    Quantum Types/index
    Quantum Environments/index
-   Hamiltonians/index
+   Hamiltonians <Hamiltonians/Hamiltonian>
    Algorithms/index
    Circuit Construction/index
    Quantum Networks/index

@@ -36,7 +36,7 @@ class VQEProblem:
     Parameters
     ----------
     hamiltonian : Hamiltonian
-        The quantum Hamiltonian.
+        The quantum :ref:`Hamiltonian`.
     ansatz_function : function
         A function receiving a :ref:`QuantumVariable` or :ref:`QuantumArray` and a parameter list. This function implements the unitary 
         corresponding to one layer of the ansatz.
@@ -79,7 +79,7 @@ class VQEProblem:
 
         from qrisp.vqe.vqe_problem import *
 
-        vqe = VQEProblem(hamiltonian = H(),
+        vqe = VQEProblem(hamiltonian = H,
                          ansatz_function = ansatz,
                          num_params=4,
                          callback=True)
@@ -236,7 +236,7 @@ class VQEProblem:
 
             subs_dic = {symbols[i] : theta[i] for i in range(len(symbols))}
 
-            expectation = self.hamiltonian.get_measurement(qarg, subs_dic = subs_dic, precompiled_qc = qc, mes_settings=mes_settings, **mes_kwargs)
+            expectation = self.hamiltonian.get_measurement(qarg, subs_dic = subs_dic, precompiled_qc = qc, _mes_settings=mes_settings, **mes_kwargs)
 
             if self.callback:
                 self.optimization_costs.append(expectation)
@@ -316,7 +316,7 @@ class VQEProblem:
         for i in range(depth):                          
             self.ansatz_function(qarg,[optimal_theta[self.num_params*i+j] for j in range(self.num_params)])
 
-        opt_res = self.hamiltonian.get_measurement(qarg,mes_settings=mes_settings,**mes_kwargs)
+        opt_res = self.hamiltonian.get_measurement(qarg,_mes_settings=mes_settings,**mes_kwargs)
         
         return opt_res
     

@@ -3,7 +3,7 @@
 Hamiltonian
 ===========
 
-.. currentmodule:: qrisp.operators.hamiltonian
+.. currentmodule:: qrisp.operators
 .. autoclass:: Hamiltonian
 
 Methods
@@ -12,5 +12,12 @@ Methods
 .. autosummary::
    :toctree: generated/
    
-    Hamiltonian.get_measurement
-    Hamiltonian.ground_state_energy
+   Hamiltonian.__add__
+   Hamiltonian.__sub__
+   Hamiltonian.__mul__
+   Hamiltonian.__iadd__
+   Hamiltonian.__isub__
+   Hamiltonian.__imul__
+   Hamiltonian.__str__
+   Hamiltonian.ground_state_energy
+   Hamiltonian.get_measurement

@@ -57,7 +57,7 @@ def greedy_edge_coloring(G, E=None):
     
     return edge_coloring
 
-# sing gate corresponding to the singlet state $\ket{10}-\ket{01} of two qubits.
+# sing gate corresponding to the singlet state $\ket{10}-\ket{01} of two qubits
 def sing(a,b):
     x(a)
     h(a)
@@ -69,14 +69,11 @@ def conjugator(a,b):
     cx(a,b)
     h(a)
 
-#  heis gate corresponding to the unitary exp(-i*theta*(XX+YY+ZZ)).
+#  heis gate corresponding to the unitary exp(-i*theta*(XX+YY+ZZ))
 def heis(theta,a,b):
     with conjugate(conjugator)(a,b):
-        cx(a,b)
-        rz(-theta,b)
-        cx(a,b)
-        rz(theta,a)
-        rz(theta,b)
+        cp(theta,a,b)
+        gphase(-theta/2,a)
 
 def create_heisenberg_hamiltonian(G, J, B):
     """
@@ -93,13 +90,13 @@ def create_heisenberg_hamiltonian(G, J, B):
 
     Returns
     -------
-    hamiltonian : Hamiltonian
-        The quantum Hamiltonian.
+    H : Hamiltonian
+        The quantum :ref:`Hamiltonian`.
 
     """
 
-    hamiltonian = sum(J*X(i)*X(j)+Y(i)*Y(j)+Z(i)*Z(j) for (i,j) in G.edges()) + sum(B*Z(i) for i in G.nodes)
-    return hamiltonian()
+    H = sum(J*X(i)*X(j)+Y(i)*Y(j)+Z(i)*Z(j) for (i,j) in G.edges()) + sum(B*Z(i) for i in G.nodes)
+    return H
 
 
 def create_heisenberg_ansatz(G, J, B, M, C, ansatz_type="per hamiltonian"):
@@ -261,6 +258,20 @@ def heisenberg_problem(G, J, B, ansatz_type="per hamiltonian"):
 
     where $E_1,\dotsc,E_q$ is an edge coloring of the graph $G$, and $H_B$ is the magnetic field Hamiltonian.
     Then all unitaries $e^{-i\theta H_{ij}}$ for $(i,j)\in E_k$ commute. 
+    For implementing such unitaries, note that each two-qubit `Heisenberg interaction unitary <https://arxiv.org/abs/2108.02175>`_
+    
+    .. math:: 
+
+        \text{Heis}(\theta) \equiv e^{-i\theta/4}e^{-i\theta H_{ij}} = 
+        \begin{pmatrix}
+        e^{-i\theta/2}&0&0&0\\
+        0&\cos(\theta/2)&-i\sin(\theta/2)&0\\
+        0&-i\sin(\theta/2)&\cos(\theta/2)&0\\
+        0&0&0&e^{-i\theta/2}
+        \end{pmatrix}
+
+    becomes diagonal in Bell basis, i.e., $e^{-i\theta/2}\text{diag}(1,1,1,e^{i\theta})$.
+
     This ansatz can be further generalized by introducing parameters
 
     * per edge color (one parameter for each color)
@@ -294,9 +305,8 @@ def heisenberg_problem(G, J, B, ansatz_type="per hamiltonian"):
         import matplotlib.pyplot as plt
 
         # Create a graph
-        coupling_list = [(0,1),(1,2),(2,3),(0,3)]
         G = nx.Graph()
-        G.add_edges_from(coupling_list)
+        G.add_edges_from([(0,1),(1,2),(2,3),(0,3)])
 
         # Draw the graph with labels
         pos = nx.spring_layout(G)
