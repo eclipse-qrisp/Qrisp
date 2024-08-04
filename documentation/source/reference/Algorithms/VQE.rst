@@ -54,10 +54,8 @@ Additionally, a circuit can be pretrained with the method :meth:`.train_function
 As an approximation algorithm, benchmarking various aspects such as solution quality and execution cost is a central question for VQE. The results of the benchmarks of a :ref:`VQEProblem` are represented in a class called :ref:`VQEBenchmark`. This enables convenient evaluation of several important metrics as well as visualization of the results.
 
 
-Collection of mixers and implemented problem instances
-------------------------------------------------------
-Qrisp comes with a variety of predefined mixers to tackle various types of problem instances:
-
+Collection of implemented problem instances
+-------------------------------------------
    
 The following problem instances have already been successfully implemented using the Qrisp framework:
 

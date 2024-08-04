@@ -1,13 +1,12 @@
 .. _VQEElectronicStructure:
 
-VQE Electronic structure problem implementation
+VQE electronic structure problem implementation
 ===============================================
 
 .. currentmodule:: vqe.problems.electronic_structure
 
 Problem description
 -------------------
-
 
 Consider the problem of finding approximate solutions to the non-relativistic time-independent Schrödinger equation
 
@@ -34,7 +33,7 @@ The Hamiltonian describing the motion of $N$ electrons in the field of $M$ fixed
 
     H_{\text{el}} = -\sum_{i=1}^N\frac12\nabla_i^2-\sum_{i=1}^N\sum_{A=1}^M\frac{Z_A}{r_{iA}}+\sum_{i=1}^N\sum_{j>i}^N\frac{1}{r_{ij}}
 
-The **Electronic Stucture problem** consists of finding solutions to the Schrödinger equation for the electronic Hamiltonian
+The **electronic stucture problem** consists of finding solutions to the Schrödinger equation for the electronic Hamiltonian
 
 .. math::
 
@@ -115,7 +114,7 @@ Solving the electronic structure problem, i.e., finding a ground state $\ket{\ha
 with a quantum computer requires transforming the fermionic representation into a qubit representation.
 This is achieved by, e.g., the Jordan-Wigner, Parity, or Bravyi-Kitaev transformation.
 
-Electronic Structure problem
+Electronic structure problem
 ----------------------------
 
 .. autofunction:: electronic_structure_problem
