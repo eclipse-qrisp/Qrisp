@@ -305,7 +305,7 @@ class Hamiltonian(ABC):
         Examples
         --------
 
-        We define a Hamiltonian, and measure its expected value for the state of a QuantumVariable.
+        We define a Hamiltonian, and measure its expected value for the state of a :ref:`QuantumVariable`.
 
         ::
 
@@ -318,7 +318,7 @@ class Hamiltonian(ABC):
             print(res)
             #Yields 0.0
 
-        We define a Hamiltonian, and measure its expected value for the state of a QuantumArray.
+        We define a Hamiltonian, and measure its expected value for the state of a :ref:`QuantumArray`.
 
         ::
 

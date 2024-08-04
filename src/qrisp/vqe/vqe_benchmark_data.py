@@ -106,7 +106,7 @@ class VQEBenchmark:
             from networkx import Graph
 
             G =Graph()
-            G.add_edges_from([(0,1),(1,2),(2,3),(3,4)]
+            G.add_edges_from([(0,1),(1,2),(2,3),(3,4)])
             from qrisp.vqe.problems.heisenberg import *
 
             vqe = heisenberg_problem(G,1,0)
@@ -211,7 +211,7 @@ class VQEBenchmark:
             
             from networkx import Graph
             G =Graph()
-            G.add_edges_from([(0,1),(1,2),(2,3),(3,4)]
+            G.add_edges_from([(0,1),(1,2),(2,3),(3,4)])
 
             from qrisp.vqe.problems.heisenberg import *
 
@@ -285,7 +285,7 @@ class VQEBenchmark:
             
             from networkx import Graph
             G =Graph()
-            G.add_edges_from([(0,1),(1,2),(2,3),(3,4)]
+            G.add_edges_from([(0,1),(1,2),(2,3),(3,4)])
 
             from qrisp.vqe.problems.heisenberg import *
 
@@ -427,7 +427,7 @@ class VQEBenchmark:
             
             from networkx import Graph
             G =Graph()
-            G.add_edges_from([(0,1),(1,2),(2,3),(3,4)]
+            G.add_edges_from([(0,1),(1,2),(2,3),(3,4)])
 
             from qrisp.vqe.problems.heisenberg import *
 

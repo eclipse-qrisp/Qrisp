@@ -120,7 +120,7 @@ def spacial_to_spin(int_one,int_two):
 
 def electronic_data(mol):
     """
-    A wrapper function that utilizes `restricted Hartree-Fock (RHF) <https://pyscf.org/user/scf.html>`_
+    A function that utilizes `restricted Hartree-Fock (RHF) <https://pyscf.org/user/scf.html>`_
     calculation in the `PySCF <https://pyscf.org>`_ quantum chemistry package to obtain the electronic data for
     defining an electronic structure problem.
 
@@ -425,7 +425,7 @@ def pswap2(phi,i,j,k,l):
 
 def create_QCCSD_ansatz(M,N):
     r"""
-    This method implements the `QCCSD ansatz <https://arxiv.org/abs/2005.08451>`_.
+    This method creates a function for applying one layer of the `QCCSD ansatz <https://arxiv.org/abs/2005.08451>`_.
 
     The chemistry-inspired Qubit Coupled Cluster Single Double (QCCSD) ansatz evolves the initial state, 
     usually, the Hartree-Fock state
@@ -460,7 +460,7 @@ def create_QCCSD_ansatz(M,N):
     Returns
     -------
     ansatz : function
-        This method creates a function for applying one layer of the ansatz.
+        A function that can be applied to a :ref:`QuantumVariable` and a list of parameters.
     num_params : int
         The number of parameters.
     
@@ -487,14 +487,16 @@ def create_QCCSD_ansatz(M,N):
 
     return ansatz, num_params
 
-def create_hartree_fock_init_function(N, mapping_type='jordan_wigner'):
+def create_hartree_fock_init_function(M, N, mapping_type='jordan_wigner'):
     """
-    Creates a function for initializing the Hartee-Fock state:
+    Creates the function that, when applied to a :ref:`QuantumVariable`, initializes the Hartee-Fock state:
     If the mapping type is ``jordan_wigner``, the first ``N`` qubits are initialized in the $\ket{1}$ state.
     If the mapping type is ``parity``, the first ``N`` qubits with even index are initialized in the $\ket{1}$ state.
 
     Parameters
     ----------
+    M : int
+        The number of (active) spin orbitals.
     N : int
         The number of (active) electrons.
     mapping_type : string, optinal
@@ -504,7 +506,7 @@ def create_hartree_fock_init_function(N, mapping_type='jordan_wigner'):
     Returns
     -------
     init_function : function
-        A function for initializing the Hartee-Fock state.
+        A function that can be applied to a :ref:`QuantumVariable`.
 
     """
 
@@ -517,6 +519,10 @@ def create_hartree_fock_init_function(N, mapping_type='jordan_wigner'):
         def init_function(qv):
             for i in range(N//2):
                 x(qv[2*i])
+            # odd number of electrons
+            if N%2==1:
+                for i in range(N-1,M):
+                    x(qv[i])
 
     return init_function
 
@@ -621,4 +627,4 @@ def electronic_structure_problem(arg, active_orb=None, active_elec=None, mapping
 
     ansatz, num_params = create_QCCSD_ansatz(K,L)
 
-    return VQEProblem(create_electronic_hamiltonian(data,K,L,mapping_type=mapping_type,threshold=threshold), ansatz, num_params, init_function=create_hartree_fock_init_function(L,mapping_type))
+    return VQEProblem(create_electronic_hamiltonian(data,K,L,mapping_type=mapping_type,threshold=threshold), ansatz, num_params, init_function=create_hartree_fock_init_function(K,L,mapping_type))

@@ -123,7 +123,7 @@ def create_heisenberg_ansatz(G, J, B, M, C, ansatz_type="per hamiltonian"):
     -------
 
     ansatz : function 
-        A function that can be applied to a ``QuantumVariable`` and a list of parameters.
+        A function that can be applied to a :ref:`QuantumVariable` and a list of parameters.
     
     """
 
@@ -179,7 +179,7 @@ def create_heisenberg_ansatz(G, J, B, M, C, ansatz_type="per hamiltonian"):
 
 def create_heisenberg_init_function(M):
     """
-    Creates the function that, when applied to a ``QuantumVariable``, initializes a tensor product of singlet sates corresponding to a given matching.
+    Creates the function that, when applied to a :ref:`QuantumVariable`, initializes a tensor product of singlet sates corresponding to a given matching.
 
     Parameters
     ----------
@@ -189,7 +189,7 @@ def create_heisenberg_init_function(M):
     Returns
     -------
     init_function : function 
-        A function that can be applied to a ``QuantumVariable``.
+        A function that can be applied to a :ref:`QuantumVariable`.
 
     """
 

@@ -286,8 +286,8 @@ class VQEProblem:
         init_point : list[float], optional
             Specifies the initial optimization parameters. 
         optimizer : str, optional
-            Specifies the optimization routine. Available are ``COBYLA``, ``COBYQA``, ``Nelder-Mead``. 
-            The Default is ``COBYLA``. 
+            Specifies the `optimization routine <https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html>`_. 
+            Available are ``COBYLA``, ``COBYQA``, ``Nelder-Mead``. The Default is ``COBYLA``. 
 
         Returns
         -------
@@ -342,8 +342,8 @@ class VQEProblem:
         init_point : list[float], optional
             Specifies the initial optimization parameters. 
         optimizer : str, optional
-            Specifies the optimization routine. Available are ``COBYLA``, ``COBYQA``, ``Nelder-Mead``.
-            The Default is "COBYLA". 
+            Specifies the `optimization routine <https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html>`_. 
+            Available are ``COBYLA``, ``COBYQA``, ``Nelder-Mead``. The Default is "COBYLA". 
 
         Returns
         -------
@@ -411,7 +411,7 @@ class VQEProblem:
             from networkx import Graph
 
             G =Graph()
-            G.add_edges_from([(0,1),(1,2),(2,3),(3,4)]
+            G.add_edges_from([(0,1),(1,2),(2,3),(3,4)])
             from qrisp.vqe.problems.heisenberg import *
 
             vqe = heisenberg_problem(G,1,0)
@@ -508,6 +508,6 @@ class VQEProblem:
         plt.xlabel("Iterations", fontsize=15, color="#444444")
         plt.ylabel("Energy", fontsize=15, color="#444444")
         plt.grid()
-        plt.legend()
+        plt.legend(fontsize=12, labelcolor="#444444")
 
         plt.show()
