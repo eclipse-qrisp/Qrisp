@@ -157,6 +157,9 @@ def electronic_data(mol):
         matrix[np.abs(matrix) < threshold] = 0
         return matrix
     
+    # Set verbosity level to 0 to suppress output
+    mol.verbose = 0
+    
     # Perform a Hartree-Fock calculation
     mf = scf.RHF(mol)
     energy_hf = mf.kernel()
