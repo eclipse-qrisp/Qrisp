@@ -10,6 +10,7 @@ Variational Quantum Eigensolver
    
    vqe/VQEProblem
    vqe/VQEBenchmark
+   vqe/VQEImplementations
 
 This modules implements the `Variational Quantum Eigensolver (VQE) <https://arxiv.org/pdf/2111.05176>`_. 
 
@@ -42,7 +43,7 @@ The :ref:`VQEProblem` class is like a blueprint for a implementing VQE for a spe
 
 Apart from the basic three ingredients mentioned above, some problems require the specification of the initial state. This can be achieved using the :meth:`.set_init_function <qrisp.vqe.VQEProblem.set_init_function>` method.
 
-The :meth:`.run <qrisp.vqe.VQEProblem.run>` method prepares the initial state, applies $p$ layers of ansatz, and compiles a quantum circuit with intended measurements. Subsequently, the optimization algorithm is executed and the expected value of the Hamiltonian with respect to the optimized circuit is returned.
+The :meth:`.run <qrisp.vqe.VQEProblem.run>` method prepares the initial state, applies $p$ layers of ansatz, and compiles a quantum circuit. Subsequently, the optimization algorithm is executed and the expected value of the Hamiltonian with respect to the optimized circuit is returned.
 
 For benchmarking, we provide the :meth:`.benchmark <qrisp.vqe.VQEProblem.benchmark>` method, which allows you to collect performance data about your implementation.
 

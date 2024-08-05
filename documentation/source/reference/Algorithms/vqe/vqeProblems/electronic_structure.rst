@@ -1,7 +1,7 @@
 .. _VQEElectronicStructure:
 
-VQE electronic structure problem implementation
-===============================================
+VQE Electronic structure problem 
+================================
 
 .. currentmodule:: vqe.problems.electronic_structure
 

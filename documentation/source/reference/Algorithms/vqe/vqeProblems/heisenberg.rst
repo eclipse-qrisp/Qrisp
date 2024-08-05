@@ -1,7 +1,7 @@
 .. _VQEHeisenberg:
 
-VQE Heisenberg problem implementation
-=====================================
+VQE Heisenberg model
+====================
 
 .. currentmodule:: vqe.problems.heisenberg
 
