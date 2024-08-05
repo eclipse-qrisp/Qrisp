@@ -7,9 +7,9 @@ The Qrisp network interface enables convenient access to a variety of simulators
 
 .. code-block:: console
     
-    docker pull qrisp/qrisp_sim_collection:latest
+    docker pull qrisp/qrisp_sim_collection:x86-version
     
-To start the docker container your run:
+If you have an ARM based CPU (as many Macs tend to), please replace the ``x86-version`` with ``arm-version``. To start the docker container your run:
 
 .. code-block:: console
 

@@ -103,8 +103,8 @@ Research from within the Qrisp community
             many of the underlying hardware details. Qrisp's goal is to support a high-level programming paradigm as known from classical software development.
 
 
-Exterior research using or citing Qrisp
-=======================================
+Research conducted externally that utilizes or cites Qrisp
+==========================================================
 
 .. list-table::
     :widths: 50 30 10
