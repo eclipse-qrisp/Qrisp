@@ -13,9 +13,9 @@ If you have an ARM based CPU (as many Macs tend to), please replace the ``x86-ve
 
 .. code-block:: console
 
-    docker run -p 8083:8083 -p 8084:8084 -p 8085:8085 -p 8086:8086 -p 8087:8087 -p 8088:8088 -p 8089:8089 -p 8090:8090 qrisp/qrisp_sim_collection
+    docker run -p 8083:8083 -p 8084:8084 -p 8085:8085 -p 8086:8086 -p 8087:8087 -p 8088:8088 -p 8089:8089 -p 8090:8090 qrisp/qrisp_sim_collection:x86-version
     
-The ``-p`` commands open the ports of the docker container such that Qrisp can send the simulation requests. Once you have run this command, the container should appear in the Docker GUI, so you can simply press start if you need it again.
+If you are on ARM, make sure to also put ``arm-version`` at the end of the command. The ``-p`` commands open the ports of the docker container such that Qrisp can send the simulation requests. Once you have run this command, the container should appear in the Docker GUI, so you can simply press start if you need it again.
 
 Once the container is running, you can start using the following backends on your machine:
 
@@ -42,6 +42,8 @@ Once the container is running, you can start using the following backends on you
      - `"qsim is a Schrödinger full state-vector simulator." <https://github.com/quantumlib/qsim/tree/master>`_
    * - ``QiboSim()``
      - `The simulator of the Qibo framework <https://qibo.science/qibo/stable/index.html>`_
+    * - ``QiboSim()``
+ - `The simulator of the Qibo framework <https://qibo.science/qibo/stable/index.html>`_
      
 
 
