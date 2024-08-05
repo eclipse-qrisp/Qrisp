@@ -42,8 +42,8 @@ Once the container is running, you can start using the following backends on you
      - `"qsim is a Schrödinger full state-vector simulator." <https://github.com/quantumlib/qsim/tree/master>`_
    * - ``QiboSim()``
      - `The simulator of the Qibo framework <https://qibo.science/qibo/stable/index.html>`_
-    * - ``QiboSim()``
- - `The simulator of the Qibo framework <https://qibo.science/qibo/stable/index.html>`_
+   * - ``QiboSim()``
+     - `The simulator of the Qibo framework <https://qibo.science/qibo/stable/index.html>`_
      
 
 
