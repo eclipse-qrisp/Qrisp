@@ -22,7 +22,7 @@ This algorithms submodule of Qrisp provides a collection of commonly used quantu
    * - :ref:`QIRO <QIRO>`
      - solving combinatorial optimization problems, with quantum informed update rules
    * - :ref:`VQE <VQE>`
-     - producing the ground state of a spin operator
+     - finding the ground state energy of a Hamiltonian
    * - :ref:`Shor's Algorithm <Shor>`
      - efficiently factoring large numbers
    * - :ref:`Grover's Algorithm <Grover>`

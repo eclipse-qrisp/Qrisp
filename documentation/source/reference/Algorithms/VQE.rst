@@ -36,17 +36,17 @@ The central data structure of the VQE module is the :ref:`VQEProblem` class.
 
 The :ref:`VQEProblem` class is like a blueprint for a implementing VQE for a specific problem instance we're trying to solve. When we create an instance of this class, we need to provide three things:
 
-- Spin operator aka quantum Hamiltonian.
+- Hamiltonian : A :ref:`Hamiltonian` for which the ground state energy is to be determined.
 - Ansatz function: A function that implements the unitary $\tilde U(\theta)$ corresponding to one layer of the ansatz.
 - Number of parameters $m$ per layer.
 
 Apart from the basic three ingredients mentioned above, some problems require the specification of the initial state. This can be achieved using the :meth:`.set_init_function <qrisp.vqe.VQEProblem.set_init_function>` method.
 
-The :meth:`.run <qrisp.vqe.VQEProblem.run>` method prepares the initial state, applies $p$ layers of ansatz, and compiles a quantum circuit with intended measurements. Subsequently, the optimization algorithm is executed and the expected value of the Hamiltonian with respect to the optimized circuit are returned.
+The :meth:`.run <qrisp.vqe.VQEProblem.run>` method prepares the initial state, applies $p$ layers of ansatz, and compiles a quantum circuit with intended measurements. Subsequently, the optimization algorithm is executed and the expected value of the Hamiltonian with respect to the optimized circuit is returned.
 
 For benchmarking, we provide the :meth:`.benchmark <qrisp.vqe.VQEProblem.benchmark>` method, which allows you to collect performance data about your implementation.
 
-Additionally, a circuit can be pretrained with the method :meth:`.train_function <qrisp.vqe.VQEProblem.train_function>` . This allows preparing a new QuantumVariable with already optimized parameters, such that no new optimization is conducted.
+Additionally, a circuit can be pretrained with the method :meth:`.train_function <qrisp.vqe.VQEProblem.train_function>` . This allows preparing a new :ref:`QuantumVariable` with already optimized parameters, such that no new optimization is conducted.
    
 :ref:`VQEBenchmark`
 --------------------
