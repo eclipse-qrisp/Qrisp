@@ -820,6 +820,8 @@ class PTControlledOperation(Operation):
         if not isinstance(self.definition, type(None)):
             res.definition = self.definition.bind_parameters(subs_dic)
         res.base_operation = self.base_operation.bind_parameters(subs_dic)
+        res.params = res.base_operation.params
+        res.abstract_params = set(self.base_operation.params) - set(subs_dic.keys())
 
         return res
 

@@ -103,8 +103,8 @@ Research from within the Qrisp community
             many of the underlying hardware details. Qrisp's goal is to support a high-level programming paradigm as known from classical software development.
 
 
-Exterior research using or citing Qrisp
-=======================================
+External research utilizing or citing Qrisp
+===========================================
 
 .. list-table::
     :widths: 50 30 10
@@ -113,45 +113,45 @@ Exterior research using or citing Qrisp
     * - Title
       - Authors
       - Year
-    * - `Towards Higher Abstraction Levels in Quantum Computing <https://link.springer.com/chapter/10.1007/978-981-97-0989-2_13>`__
-      - H. Fürntratt, P. Schnabel et al.
+    * - `Towards Higher Abstraction Levels in Quantum Computing <https://link.springer.com/chapter/10.1007/978-981-97-0989-2_13>`_
+      - H\. Fürntratt, P. Schnabel et al.
       - 2024
-    * - `Eclipse Qrisp QAOA: description and preliminary comparison with Qiskit counterparts <https://arxiv.org/abs/2405.20173>`__
-      - E. Osaba, Matic Petrič, Izaskun Oregi et al. 
+    * - `Eclipse Qrisp QAOA: description and preliminary comparison with Qiskit counterparts <https://arxiv.org/abs/2405.20173>`_
+      - E\. Osaba, Matic Petrič, Izaskun Oregi et al. 
       - 2023
-    * - `A Testing Pipeline for Quantum Computing Applications <https://publica.fraunhofer.de/entities/publication/ff4f1dc4-ab7d-41a6-8157-0b663aee83eb/details>`__
-      - C. Becker, I.D. Gheorghe-Pop, N. Tscholtchev
+    * - `A Testing Pipeline for Quantum Computing Applications <https://publica.fraunhofer.de/entities/publication/ff4f1dc4-ab7d-41a6-8157-0b663aee83eb/details>`_
+      - C\. Becker, I.D. Gheorghe-Pop, N. Tscholtchev
       - 2023
-    * - `Quantum computing with Qiskit <https://arxiv.org/pdf/2405.08810>`__
-      - A. Javadi-Abhari, M. Treinish, K. Krsulich et al.
+    * - `Quantum computing with Qiskit <https://arxiv.org/pdf/2405.08810>`_
+      - A\. Javadi-Abhari, M. Treinish, K. Krsulich et al.
       - 2024
-    * - `Testing multi-subroutine quantum programs: From unit testing to integration testing <https://dl.acm.org/doi/full/10.1145/3656339>`__
-      - P. Long, J. Zhao
+    * - `Testing multi-subroutine quantum programs: From unit testing to integration testing <https://dl.acm.org/doi/full/10.1145/3656339>`_
+      - P\. Long, J. Zhao
       - 2024
-    * - `Quantum Software Ecosystem: Stakeholders, Interactions and Challenges <https://www.researchgate.net/publication/378066784_Quantum_Software_Ecosystem_Stakeholders_Interactions_and_Challenges>`__
-      - V. Stirbu, T. Mikkonen 
+    * - `Quantum Software Ecosystem: Stakeholders, Interactions and Challenges <https://www.researchgate.net/publication/378066784_Quantum_Software_Ecosystem_Stakeholders_Interactions_and_Challenges>`_
+      - V\. Stirbu, T. Mikkonen 
       - 2024
-    * - `The T-Complexity Costs of Error Correction for Control Flow in Quantum Computation <https://dl.acm.org/doi/pdf/10.1145/3656397>`__
-      - C. Yuan, M. Carbin
+    * - `The T-Complexity Costs of Error Correction for Control Flow in Quantum Computation <https://dl.acm.org/doi/pdf/10.1145/3656397>`_
+      - C\. Yuan, M. Carbin
       - 2024
-    * - `UAV Swarm Management Platform for Autonomous Area and Infrastructure Inspection <https://ieeexplore.ieee.org/abstract/document/10497082>`__,
-      - M. Batistatos; A. Mazilu et al. 
+    * - `UAV Swarm Management Platform for Autonomous Area and Infrastructure Inspection <https://ieeexplore.ieee.org/abstract/document/10497082>`_,
+      - M\. Batistatos; A. Mazilu et al. 
       - 2024
-    * - `Hybrid Meta-Solving for Practical Quantum Computing <https://arxiv.org/pdf/2405.09115>`__
-      - D. Eichhorn, M. Schweikart, N. Poser et al. 
+    * - `Hybrid Meta-Solving for Practical Quantum Computing <https://arxiv.org/pdf/2405.09115>`_
+      - D\. Eichhorn, M. Schweikart, N. Poser et al. 
       - 2024
-    * - `Quantum Software Ecosystem Design <https://arxiv.org/abs/2405.13244>`__
-      - A. Basermann, M. Epping et al. 
+    * - `Quantum Software Ecosystem Design <https://arxiv.org/abs/2405.13244>`_
+      - A\. Basermann, M. Epping et al. 
       - 2024
-    * - `Towards Continuous Development for Quantum Programming in Decentralized IoT environments <https://www.sciencedirect.com/science/article/pii/S1877050924012286>`__
-      - M. Kourtis, N Tcholtchev, I.D. Gheorghe-Pop et al. 
+    * - `Towards Continuous Development for Quantum Programming in Decentralized IoT environments <https://www.sciencedirect.com/science/article/pii/S1877050924012286>`_
+      - M\. Kourtis, N Tcholtchev, I.D. Gheorghe-Pop et al. 
       - 2024
-    * - `An Abstraction Hierarchy Toward Productive Quantum Programming <https://arxiv.org/abs/2405.13918>`__
-      - O. Di Matteo, S. Núñez-Corrales, M. Stęchły et al. 
+    * - `An Abstraction Hierarchy Toward Productive Quantum Programming <https://arxiv.org/abs/2405.13918>`_
+      - O\. Di Matteo, S. Núñez-Corrales, M. Stęchły et al. 
       - 2024
-    * - `High-Level Quantum Programming <https://www.research-collection.ethz.ch/bitstream/handle/20.500.11850/634879/1/thesis_electronic.pdf>`__
-      - B. Bichsel  
+    * - `High-Level Quantum Programming <https://www.research-collection.ethz.ch/bitstream/handle/20.500.11850/634879/1/thesis_electronic.pdf>`_
+      - B\. Bichsel  
       - 2023
-    * - `Automated Software Engineering (2024) 31:36 <https://link.springer.com/article/10.1007/s10515-024-00436-x>`__
-      - A. Sarkar 
+    * - `Automated Software Engineering (2024) 31:36 <https://link.springer.com/article/10.1007/s10515-024-00436-x>`_
+      - A\. Sarkar 
       - 2024

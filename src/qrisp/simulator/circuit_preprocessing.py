@@ -387,9 +387,9 @@ def insert_disentangling(qc):
     # After all the operations have been performed on a qubit,
     # it can be reset without changing the statistics
     for i in range(len(qc.qubits)):
-        # qc.reset(qc.qubits[i])
+        qc.reset(qc.qubits[i])
         # pass
-        qc.append(Disentangler(), [qc.qubits[i]])
+        # qc.append(Disentangler(), [qc.qubits[i]])
 
     # return qc
 
@@ -496,7 +496,7 @@ def count_measurements_and_treat_alloc(qc, insert_reset=True):
         elif instr.op.name == "qb_dealloc":
             qc.data.pop(i)
             if insert_reset:
-                qc.data.insert(i, Instruction(Reset(), qubits = instr.qubits))
+                qc.data.insert(i, Instruction(Disentangler(True), qubits = instr.qubits))
             else:
                 continue
 
@@ -796,7 +796,7 @@ def insert_multiverse_measurements(qc):
         elif instr.op.name == "reset":
             
             meas_qubit = instr.qubits[0]
-            new_data.append(Instruction(Disentangler(warning = True), [meas_qubit]))
+            new_data.append(Instruction(Disentangler(warning = False), [meas_qubit]))
             
             for j in range(len(data)):
                 if meas_qubit in data[j].qubits:
