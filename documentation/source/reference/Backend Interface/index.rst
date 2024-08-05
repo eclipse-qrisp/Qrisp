@@ -9,6 +9,7 @@ Backend Interface
    BackendClient
    VirtualBackend
    VirtualQiskitBackend
+   QiskitRuntimeBackend
    DockerSimulators
    
 The backend interface contains a minimal set of features that apply to every gate-based quantum computer.
