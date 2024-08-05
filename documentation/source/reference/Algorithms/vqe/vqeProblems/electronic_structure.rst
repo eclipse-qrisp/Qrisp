@@ -96,11 +96,15 @@ All feasible $N$-electron states are expressed as a superposition of the Hartree
 
         \ket{\Psi_i^r}=\ket{1_0,\dotsc,0_i,\dotsc,1_{N-1}0_{N},\dotsc,1_r,\dotsc,0_{M-1}}
 
+    One electron is moved from the occupied orbital $\chi_i$ to the unoccupied (virtual) orbital $\chi_r$.
+
 - double electron excitation states:
 
     .. math::
 
         \ket{\Psi_{ij}^{rs}}=\ket{1_0,\dotsc,0_i,\dotsc,0_j,\dotsc,1_{N-1},0_{N},\dotsc,1_r,\dotsc,1_s,\dotsc,0_{M-1}}
+
+    Two electrons are moved from the occupied orbitals $\chi_i, \chi_j$ to the unoccupied (virtual) orbitals $\chi_r, \chi_s$.
 
 - higher order (triple, quadruple, ect.) excitation states.
 

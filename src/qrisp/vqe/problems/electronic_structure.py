@@ -451,7 +451,7 @@ def create_QCCSD_ansatz(M,N):
                         \end{pmatrix}
 
     Similarly, the double (D) excitation unitaries $U_{ij}^{rs}(\theta)$ implement a continuous swap 
-    for qubit pairs $i,j$ and $r,s$ depending on their parity.
+    for qubit pairs $i,j$ and $r,s$.
         
     Parameters
     ----------
