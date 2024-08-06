@@ -22,7 +22,7 @@ from qrisp.circuit import fast_append, ControlledOperation, PTControlledOperatio
 from qrisp.logic_synthesis import LogicSynthGate
 from qrisp.uncomputation.type_checker import is_qfree
 
-from qrisp.uncomputation.X_permeability_dag import PermeabilityGraph, InstructionNode, TerminatorNode, AllocNode
+from qrisp.uncomputation.permeability_dag import PermeabilityGraph, InstructionNode, TerminatorNode, AllocNode
 
 def uncompute_qc(qc, uncomp_qbs, recompute_qubits=[]):
     """

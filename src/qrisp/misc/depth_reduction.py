@@ -26,7 +26,6 @@ import numpy as np
 from numba import njit
 
 from qrisp.uncomputation import PermeabilityGraph, TerminatorNode
-from qrisp.uncomputation.unqomp_ import dag_from_qc
 
 # The following code aims to represent quantum circuits as an array of integers.
 # The idea is here that in a 6 qubit quantum circuit, a gate that is executed 
@@ -101,8 +100,8 @@ def parallelize_qc(qc, depth_indicator = None):
     if depth_indicator is None:
         depth_indicator = lambda x : 1
 
-    # dag = PermeabilityGraph(qc, remove_artificials=True)
-    dag = dag_from_qc(qc, True)
+    dag = PermeabilityGraph(qc, remove_artificials=True)
+    # dag = dag_from_qc(qc, True)
 
     sprs_mat = nx.to_scipy_sparse_array(dag, format="csr")
 
