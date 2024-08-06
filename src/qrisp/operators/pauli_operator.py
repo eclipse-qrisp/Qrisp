@@ -19,7 +19,7 @@
 #from qrisp import *
 from qrisp import QuantumVariable, QuantumArray, rx, ry, h
 from qrisp.operators.hamiltonian import Hamiltonian
-from qrisp.operators.spin import X_,Y_,Z_, to_pauli_dict
+from qrisp.operators.spin import X_,Y_,Z_
 import numpy as np
 import sympy as sp
 from sympy import init_printing

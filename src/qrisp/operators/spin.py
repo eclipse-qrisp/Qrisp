@@ -16,8 +16,12 @@
 ********************************************************************************/
 """
 
+#
+# ONLY USED FOR LATEX PRINTING
+#
+
 import sympy as sp
-from sympy import Symbol, I, Quaternion
+from sympy import Symbol, I
 import numpy as np
 
 #
@@ -58,17 +62,7 @@ class X_(Symbol):
     def __new__(cls, index):
         obj = Symbol.__new__(cls, "%s%d" %("X",index), commutative=False, hermitian=True)
         obj.index = index
-        obj.axis = "X"
         return obj
-
-    def get_quaternion(self):
-        return Quaternion(0,I,0,0)
-    
-    def get_matrix(self):
-        return np.array([[0,1],[1,0]])
-    
-    def get_axis(self):
-        return "X" 
     
     def _eval_power(b, e):
         if e.is_Integer and e.is_positive:
@@ -94,17 +88,7 @@ class Y_(Symbol):
     def __new__(cls, index):
         obj = Symbol.__new__(cls, "%s%d" %("Y",index), commutative=False, hermitian=True)
         obj.index = index
-        obj.axis = "Y"
         return obj
-
-    def get_quaternion(self):
-        return Quaternion(0,0,I,0)
-    
-    def get_matrix(self):
-        return np.array([[0,-1j],[1j,0]])
-    
-    def get_axis(self):
-        return "Y"
     
     def _eval_power(b, e):
         if e.is_Integer and e.is_positive:
@@ -130,17 +114,7 @@ class Z_(Symbol):
     def __new__(cls, index):
         obj = Symbol.__new__(cls, "%s%d" %("Z",index), commutative=False, hermitian=True)
         obj.index = index
-        obj.axis = "Z"
         return obj
-
-    def get_quaternion(self):
-        return Quaternion(0,0,0,I)
-    
-    def get_matrix(self):
-        return np.array([[1,0],[0,-1]])
-    
-    def get_axis(self):
-        return "Z"
     
     def _eval_power(b, e):
         if e.is_Integer and e.is_positive:
@@ -159,32 +133,6 @@ class Z_(Symbol):
     
     __rmul__ = __mul__
 
-
-def to_pauli_dict(expr):
-
-    pauli_dict = {}
-
-    for monomial in expr.expand().as_ordered_terms():
-        factors = monomial.as_ordered_factors()
-
-        p_dict = {} # dictionary encoding a Pauli product
-        coeff = 1
-
-        for arg in factors:
-            if isinstance(arg, (X_,Y_,Z_)):
-                pauli, coeff_ = mul_helper(p_dict.get(arg.index,"I"),arg.get_axis())
-                if pauli!="I":
-                    p_dict[arg.index] = pauli
-                else:
-                    del p_dict[arg.index]
-                coeff *= coeff_
-            else:
-                coeff *= arg
-
-        sorted_pauli = tuple(sorted(p_dict.items()))
-        pauli_dict[sorted_pauli] = pauli_dict.get(sorted_pauli,0)+complex(coeff)
-
-    return pauli_dict 
 
 
 
