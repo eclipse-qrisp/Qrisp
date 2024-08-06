@@ -25,7 +25,8 @@ import networkx as nx
 import numpy as np
 from numba import njit
 
-from qrisp.uncomputation.unqomp import dag_from_qc
+from qrisp.uncomputation import PermeabilityGraph, TerminatorNode
+from qrisp.uncomputation.unqomp_ import dag_from_qc
 
 # The following code aims to represent quantum circuits as an array of integers.
 # The idea is here that in a 6 qubit quantum circuit, a gate that is executed 
@@ -100,7 +101,8 @@ def parallelize_qc(qc, depth_indicator = None):
     if depth_indicator is None:
         depth_indicator = lambda x : 1
 
-    dag = dag_from_qc(qc, remove_init_nodes=True)
+    # dag = PermeabilityGraph(qc, remove_artificials=True)
+    dag = dag_from_qc(qc, True)
 
     sprs_mat = nx.to_scipy_sparse_array(dag, format="csr")
 
@@ -117,8 +119,13 @@ def parallelize_qc(qc, depth_indicator = None):
     index_dict = {qc.qubits[i] : i for i in range(len(qc.qubits))}
     
     for n in node_list:
-        qubit_ints.append(qb_set_to_int(n.instr.qubits, index_dict))
-        depth_indicators.append(depth_indicator(n.instr.op))
+        if not isinstance(n, TerminatorNode):
+            qubit_ints.append(qb_set_to_int(n.instr.qubits, index_dict))
+            depth_indicators.append(depth_indicator(n.instr.op))
+        else:
+            qubit_ints.append(qb_set_to_int([n.qubit], index_dict))
+            depth_indicators.append(0)
+            
     
     # Convert to array
     qubit_ints = np.array(qubit_ints, dtype = np.uint64)
@@ -132,7 +139,8 @@ def parallelize_qc(qc, depth_indicator = None):
     qc_new = qc.clearcopy()
 
     for i in range(len(res)):
-        qc_new.append(node_list[res[i]].instr)
+        if not isinstance(node_list[res[i]], TerminatorNode):
+            qc_new.append(node_list[res[i]].instr)
 
     return qc_new
 

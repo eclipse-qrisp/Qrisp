@@ -67,7 +67,7 @@ def get_perm_dic(gate):
     # it requires the unitary of the gate, which can be expensive.
     # By not doing this, we miss out on permeability information in some situations
     # but have significantly fast uncomputation.
-    return res
+    # return res
     
     # To check for X-permeability in general, we wrap the gate in H-gates and 
     # determine Z permeability.
@@ -441,9 +441,13 @@ def dag_from_qc(dag, qc, remove_artificials = False):
         for qb in instr.qubits:
             if qb not in recent_node_dic:
                 
+                # If the qubit has not been allocated yet but the first instruction being
+                # executed is not an allocation, we insert and "artificial" allocation node
+                is_artificial = (instr.op.name != "qb_alloc")
+                
                 # Create the allocation node.
                 alloc_node = AllocNode(instr = Instruction(QubitAlloc(), [qb]), 
-                                       artificial = (instr.op.name != "qb_alloc"))
+                                       artificial = is_artificial)
                 
                 if alloc_node.artificial:
                     artificial_init_nodes.append(alloc_node)
