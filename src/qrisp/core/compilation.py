@@ -132,7 +132,6 @@ def qompiler(
         # Transpile to the first level
         
         qc = transpile(qc, transpile_predicate = permeability_transpile_predicate)
-        
         if intended_measurements and len(qc.clbits) == 0:
             # This function reorders the circuit such that the intended measurements can
             # be executed as early as possible additionally, any instructions that are
@@ -171,7 +170,9 @@ def qompiler(
             qc, transpile_predicate=allocation_level_transpile_predicate
         )
         
+        
         reordered_qc = reorder_qc(transpiled_qc)
+        
 
         if cancel_qfts:
             # Cancel adjacent QFT gates, which are inverse to each
@@ -228,7 +229,6 @@ def qompiler(
             mcm_clbits = []
 
         depth_dic = {b: 0 for b in qc.qubits + qc.clbits}
-        
         
         # We now iterate through the data of the preprocessed QuantumCircuit
         for i in range(len(reordered_qc.data)):
@@ -515,7 +515,7 @@ def reorder_qc(qc):
     from qrisp.uncomputation import PermeabilityGraph, TerminatorNode
 
     # G = dag_from_qc(qc, remove_init_nodes=True)
-    G = PermeabilityGraph(qc)
+    G = PermeabilityGraph(qc, remove_artificials = True)
     qc_new = qc.clearcopy()
 
     dealloc_identifier = lambda x: x.op.name == "qb_dealloc"
@@ -770,7 +770,7 @@ def measurement_reduction(qc, intended_measurements):
     # Generate dag representation
     from qrisp.uncomputation import PermeabilityGraph, TerminatorNode
     
-    G = PermeabilityGraph(qc)
+    G = PermeabilityGraph(qc, remove_artificials = True)
 
     # Create result qc
     qc_new = qc.clearcopy()
@@ -805,7 +805,7 @@ def measurement_reduction(qc, intended_measurements):
 
     redundant_qc.data = qc_new.data[i + 1 :]
 
-    G = PermeabilityGraph(redundant_qc)
+    G = PermeabilityGraph(redundant_qc, remove_artificials = True)
 
     # #Now we need to make sure we don't remove deallocation gates from the data
     # #because this would inflate the qubit count of the compiled circuit

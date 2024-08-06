@@ -147,7 +147,7 @@ class InstructionNode(UnqompNode):
 # many of networkx's algorithms.
 class PermeabilityGraph(nx.DiGraph):
     
-    def __init__(self, qc):
+    def __init__(self, qc, remove_artificials = False):
         
         nx.DiGraph.__init__(self)
         
@@ -156,7 +156,7 @@ class PermeabilityGraph(nx.DiGraph):
         # which describes which nodes represent the
         # operations that have been carried ot most 
         # recently on the corresponding Qubit.
-        self.recent_node_dic = dag_from_qc(self, qc)
+        self.recent_node_dic = dag_from_qc(self, qc, remove_artificials = remove_artificials)
     
     # Visualizes the DAG
     def draw(self, layout_seed = None):
@@ -396,7 +396,7 @@ class PermeabilityGraph(nx.DiGraph):
 
 
 
-def dag_from_qc(dag, qc):
+def dag_from_qc(dag, qc, remove_artificials = False):
     """
     This function receives an (empty) PermeabilityGraph and builds up the corresponding
     nodes/edges according to the given QuantumCircuit.
@@ -428,11 +428,14 @@ def dag_from_qc(dag, qc):
     # are grouped into the same layer.
     value_layer = {}
 
+    artificial_init_nodes = []
+    
     # We iterate through the QuantumCircuit and process each Instruction
     for i in range(len(qc.data)):
         
         # Set alias
         instr = qc.data[i]
+        
         
         # We check whether the relevant Qubit already have an allocation node.
         for qb in instr.qubits:
@@ -441,6 +444,11 @@ def dag_from_qc(dag, qc):
                 # Create the allocation node.
                 alloc_node = AllocNode(instr = Instruction(QubitAlloc(), [qb]), 
                                        artificial = (instr.op.name != "qb_alloc"))
+                
+                if alloc_node.artificial:
+                    artificial_init_nodes.append(alloc_node)
+                else:
+                    alloc_node.instr = instr
                 
                 # Faster version of adding a node
                 # dag.add_node(node)
@@ -457,6 +465,8 @@ def dag_from_qc(dag, qc):
                 streak_dic[qb] = "neutral"
                 value_layer[qb] = 1
                 alloc_node.qc_index = 0
+                
+                
 
         # If the instruction is an allocation, we already processed it with the
         # code above        
@@ -562,6 +572,9 @@ def dag_from_qc(dag, qc):
             
     # Save the original_qc
     dag.original_qc = qc
+    
+    if remove_artificials:
+        dag.remove_nodes_from(artificial_init_nodes)
     
     return recent_node_dic
 
