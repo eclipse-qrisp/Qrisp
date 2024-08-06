@@ -20,5 +20,5 @@
 from qrisp.uncomputation.uncomputation import *
 from qrisp.uncomputation.unqomp import *
 from qrisp.uncomputation.type_checker import *
-import qrisp.uncomputation.X_permeability_dag
-import qrisp.uncomputation.X_perm_unqomp
+from qrisp.uncomputation.X_permeability_dag import *
+from qrisp.uncomputation.X_perm_unqomp import *

@@ -512,9 +512,10 @@ def gen_hybrid_mcx_data(controls, target, ctrl_state, clean_ancillae, dirty_anci
 
 
 def reorder_qc(qc):
-    from qrisp.uncomputation import dag_from_qc
+    from qrisp.uncomputation import PermeabilityGraph, TerminatorNode
 
-    G = dag_from_qc(qc, remove_init_nodes=True)
+    # G = dag_from_qc(qc, remove_init_nodes=True)
+    G = PermeabilityGraph(qc)
     qc_new = qc.clearcopy()
 
     dealloc_identifier = lambda x: x.op.name == "qb_dealloc"
@@ -529,11 +530,17 @@ def reorder_qc(qc):
     # a sorting index. This induces a valid topological ordering because of [proof]
     def sub_sort(dag):
         nodes = list(dag.nodes())
-        nodes.sort(key = lambda x : x.qc_index)
+        def sort_key(x):
+            if isinstance(x, TerminatorNode):
+                return 0
+            else:
+                return x.qc_index
+        nodes.sort(key = sort_key)
         return nodes
 
     for n in topological_sort(G, prefer=dealloc_identifier, delay=alloc_identifer, sub_sort = sub_sort):
-        qc_new.append(n.instr)
+        if n.instr:
+            qc_new.append(n.instr)
 
     #The above algorithm does not move allocation gates to their latest possible
     #position (only compared to other deallocation gates)    
@@ -617,10 +624,14 @@ def topological_sort(G, prefer=None, delay=None, sub_sort=nx.topological_sort):
     prefered_nodes = []
 
     for n in G.nodes():
+        n.processed = False
+        if n.instr is None:
+            continue
+        
         if prefer(n.instr):
             prefered_nodes.append(n)
 
-        n.processed = False
+        
 
     # For large scales, finding the ancestors is a bottleneck. We therefore use a
     # jitted version
@@ -643,8 +654,9 @@ def topological_sort(G, prefer=None, delay=None, sub_sort=nx.topological_sort):
 
     for n in prefered_nodes:
         for k in node_ancs[n]:
-            if delay(k.instr):
-                required_delay_nodes[n].append(k)
+            if k.instr:
+                if delay(k.instr):
+                    required_delay_nodes[n].append(k)
 
     required_delay_nodes = {n: set(required_delay_nodes[n]) for n in prefered_nodes}
 
@@ -756,13 +768,13 @@ def measurement_reduction(qc, intended_measurements):
         qc.measure(qb)
 
     # Generate dag representation
-    from qrisp.uncomputation import dag_from_qc
-
-    G = dag_from_qc(qc, remove_init_nodes=True)
+    from qrisp.uncomputation import PermeabilityGraph, TerminatorNode
+    
+    G = PermeabilityGraph(qc)
 
     # Create result qc
     qc_new = qc.clearcopy()
-
+    
     # Define prefered instructions
     measure_identifier = (
         lambda x: x.op.name == "measure" and x.qubits[0] in intended_measurements
@@ -770,12 +782,19 @@ def measurement_reduction(qc, intended_measurements):
     
     def sub_sort(dag):
         nodes = list(dag.nodes())
-        nodes.sort(key = lambda x : x.qc_index)
+        def sort_key(x):
+            if isinstance(x, TerminatorNode):
+                return 0
+            else:
+                return x.qc_index
+        
+        nodes.sort(key = sort_key)
         return nodes
 
     # Perform topological sort
     for n in topological_sort(G, prefer=measure_identifier, sub_sort = sub_sort):
-        qc_new.append(n.instr)
+        if n.instr:
+            qc_new.append(n.instr)
 
     # Check which instructions come after the final measurement
     for i in range(len(qc_new.data))[::-1]:
@@ -786,7 +805,7 @@ def measurement_reduction(qc, intended_measurements):
 
     redundant_qc.data = qc_new.data[i + 1 :]
 
-    G = dag_from_qc(redundant_qc, remove_init_nodes=True)
+    G = PermeabilityGraph(redundant_qc)
 
     # #Now we need to make sure we don't remove deallocation gates from the data
     # #because this would inflate the qubit count of the compiled circuit
@@ -796,6 +815,9 @@ def measurement_reduction(qc, intended_measurements):
     # #redundant instructions.
 
     for node in G.nodes():
+        if node.instr is None:
+            continue
+        
         if node.instr.op.name == "qb_dealloc":
             ancs = nx.ancestors(G, node)
             

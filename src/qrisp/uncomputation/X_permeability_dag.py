@@ -387,6 +387,12 @@ class PermeabilityGraph(nx.DiGraph):
     
     def get_edge_type(self, node_out, node_in):
         return self.get_edge_data(node_out, node_in)["edge_type"]
+    
+    def copy(self):
+        self.__class__ = nx.DiGraph
+        res = self.copy()
+        self.__class__ = PermeabilityGraph
+        return res
 
 
 
@@ -450,6 +456,7 @@ def dag_from_qc(dag, qc):
                 recent_node_dic[qb] = alloc_node
                 streak_dic[qb] = "neutral"
                 value_layer[qb] = 1
+                alloc_node.qc_index = 0
 
         # If the instruction is an allocation, we already processed it with the
         # code above        
