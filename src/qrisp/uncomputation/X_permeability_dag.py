@@ -22,7 +22,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 
-from qrisp.circuit import QuantumCircuit, fast_append, Instruction, Qubit, QubitDealloc, QubitAlloc, PTControlledOperation
+from qrisp.circuit import QuantumCircuit, fast_append, Instruction, Qubit, QubitDealloc, QubitAlloc, ControlledOperation
 from qrisp.uncomputation.type_checker import is_permeable
 
 def get_perm_dic(gate):
@@ -58,7 +58,7 @@ def get_perm_dic(gate):
     
     # If the gate is a controlled operation, we can determine based on the permeability of
     # the base operation
-    if isinstance(gate, PTControlledOperation):
+    if isinstance(gate, ControlledOperation):
         base_op_perm = get_perm_dic(gate.base_operation)
         for i in range(gate.base_operation.num_qubits):
             res[i+gate.num_qubits-gate.base_operation.num_qubits] = base_op_perm[i]
@@ -67,7 +67,7 @@ def get_perm_dic(gate):
     # it requires the unitary of the gate, which can be expensive.
     # By not doing this, we miss out on permeability information in some situations
     # but have significantly fast uncomputation.
-    # return res
+    return res
     
     # To check for X-permeability in general, we wrap the gate in H-gates and 
     # determine Z permeability.
