@@ -1298,6 +1298,11 @@ class QuantumVariable:
                 break
 
         return name
+    
+    def __ilshift__(self, other):
+        from qrisp.misc.utility import redirection_operator
+        redirection_operator(self, other)
+        return self
 
     def init_from(self, other):
         r"""

@@ -18,6 +18,7 @@
 
 
 import traceback
+import weakref
 
 import numpy as np
 import sympy
@@ -2098,3 +2099,54 @@ def inpl_adder_test(inpl_adder):
                         assert (b + j)%(2**i) == a, f"Controlled classical-quantum addition result was incorrect for input values {b} += {j} on input size, {i}."
                     else:
                         assert b == a, f"Controlled classical-quantum addition behaviour was incorrect; an operation was performed without the control qubit in |1> state. Faulty input sizes: {i}"
+                        
+def redirection_operator(target, value):
+    
+    from qrisp import merge_sessions, QuantumVariable, QuantumEnvironment
+    merge_sessions(target.qs, value.qs)
+    res = value
+
+    if not isinstance(value, QuantumVariable):
+        raise Exception("Given function did not return a QuantumVariable")
+
+    target = list(target)
+
+    if len(value) != len(target):
+        raise Exception(
+            "Tried to redirect quantum function into QuantumVariable of "
+            "differing size"
+        )
+
+    i = 0
+    value_is_new = False
+    while i < len(value.qs.data):
+        
+        instr = value.qs.data[i]
+        
+        if isinstance(instr, QuantumEnvironment):
+            raise
+        elif instr.op.name == "qb_alloc" and instr.qubits[0] in list(value):
+            value.qs.data.pop(i)
+            value_is_new = True
+            continue
+        else:
+            for qb in instr.qubits:
+                qb.qs = weakref.ref(value.qs)
+
+        i += 1
+
+    retarget_instructions(value.qs.data, list(value), target)
+
+    if value_is_new:
+        # Remove all traces of value
+        value.delete()
+    
+        for i in range(value.size):
+            value.qs.qubits.remove(value[i])
+            value.qs.data.pop(-1)
+    
+        for i in range(len(value.qs.deleted_qv_list)):
+            qv = value.qs.deleted_qv_list[i]
+            if qv.name == value.name:
+                value.qs.deleted_qv_list.pop(i)
+                break
