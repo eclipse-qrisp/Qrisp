@@ -3,4 +3,4 @@
 
 .. currentmodule:: qrisp.qaoa
 
-.. autofunction:: constrained_mixer_gen
+constrained_mixer_gen

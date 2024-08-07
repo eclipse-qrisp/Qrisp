@@ -37,6 +37,7 @@ The end goal in QAOA is now to optimize the variational parameters $\gamma_p$ an
 It's important to remember that QAOA provides an approximate solution, and its performance depends on factors like problem size and structure, choice of initial state, and number of layers $p$. Increasing $p$ generally leads to better solutions but also increases computational cost.
 
 .. _AOA:
+
 Alternating Operator Ansatz
 ---------------------------
 
