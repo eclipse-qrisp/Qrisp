@@ -162,6 +162,8 @@ import time
 
 # Creates a MaxCut problem instance using the information of the phase separator, mixer, and classical cost function
 maxcut_instance = QAOAProblem(cost_operator, RX_mixer, cl_cost_function)
+
+print(maxcut_instance.compile_circuit(qarg, depth = 5)[0].depth())
 #%%
 start_time = time.time()
 

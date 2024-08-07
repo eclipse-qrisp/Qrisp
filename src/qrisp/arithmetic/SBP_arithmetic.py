@@ -19,14 +19,15 @@
 
 import numpy as np
 import sympy as sp
+from sympy.polys.polytools import degree
 
 from qrisp.arithmetic.poly_tools import (
     expr_to_list,
     filter_pow,
     get_ordered_symbol_list,
 )
-from qrisp.core import QuantumArray, QuantumVariable, cp, cx, cz, h, mcx, p, z, rz, crz
-from qrisp.misc import gate_wrap
+from qrisp.core import QuantumArray, QuantumVariable, cp, cx, cz, h, mcx, p, z, rz, rzz, crz, mcp, gphase
+from qrisp.misc import gate_wrap, lifted
 from qrisp.circuit import XGate
 
 # Threshold of rounding used in detecting integer multiples of pi
@@ -1110,6 +1111,294 @@ def quantum_bit_shift(qf, bit_shift, treat_overflow = True):
         cyclic_shift(qf[:-1], bit_shift)
     else:
         cyclic_shift(qf, bit_shift)
+                
+
+#@lifted
+def app_sb_phase_polynomial(qv_list, poly, symbol_list=None, t=1):
+    """
+    Applies a phase function specified by a `semi-Boolean polynomial <https://ieeexplore.ieee.org/document/9815035>`_ acting on a list of QuantumVariables.
+    That is, this method implements the transformation
+
+    .. math::
+    
+        \ket{y_1}\dotsb\ket{y_n}\\rightarrow e^{itP(y_1,\dotsc,y_n)}\ket{y_1}\dotsb\ket{y_n}
+
+    where :math:`\ket{y_1},\dotsc,\ket{y_n}` are QuantumVariables and :math:`P(y_1,\dotsc,y_n)=P(y_{1,1},\dotsc,y_{1,m_1},\dotsc,y_{n,1}\dotsc,y_{n,m_n})` is a semi-Boolean polynomial in variables
+    :math:`y_{1,1},\dotsc,y_{1,m_1},\dotsc,y_{n,1}\dotsc,y_{n,m_n}`. Here, $m_i$ is the size of the $i$ th variable.
+
+    Parameters
+    ----------
+    qv_list : list[QuantumVariable] or QuantumArray
+        The list of QuantumVariables to evaluate the semi-Boolean polynomial on.
+    poly : SymPy expression
+        The semi-Boolean polynomial to evaluate.
+    symbol_list : list, optional
+        An ordered list of SymPy symbols associated to the qubits of the QuantumVariables of ``qv_list``. 
+        For each QuantumVariable in ``qv_list`` a number of symbols according to its size is required.
+        By default, the symbols of the polynomial
+        will be ordered alphabetically and then matched to the order in ``qv_list``.
+    t : Float or SymPy expression, optional
+        The argument ``t`` in the expression $\exp(itP)$. The default is 1.
+
+    Raises
+    ------
+    Exception
+        Provided QuantumVariable list does not include the appropriate amount
+        of elements to evaluate the given polynomial.
+
+    Examples
+    --------
+
+    We apply the phase function specified by the polynomial :math:`P(x,y,z) = \pi xyz` on a QuantumVariable:
+
+    ::
+
+        import sympy as sp
+        import numpy as np
+        from qrisp import QuantumVariable, app_sb_phase_polynomial
+
+        x, y, z = sp.symbols('x y z')
+        P = np.pi*x*y*z
+
+        qv = QuantumVariable(3)
+        qv.init_state({'000': 0.5, '111': 0.5})
+
+        app_sb_phase_polynomial([qv], P)
+
+    We print the ``statevector``:
+
+    >>> print(qv.qs.statevector())
+    sqrt(2)*(|000> - |111>)/2
+
+    """
+
+    if isinstance(qv_list, QuantumArray):
+        qv_list = list(qv_list.flatten())
+    
+    # As the polynomial has only boolean variables,
+    # powers can be ignored since x**k = x for x in GF(2)
+    poly = filter_pow(poly.expand()).expand()
+
+    if symbol_list is None:
+        symbol_list = get_ordered_symbol_list(poly)
+
+    if len(symbol_list) != sum([var.size for var in qv_list]):
+        raise Exception(
+            "Provided QuantumVariable list does not include the appropriate amount "
+            "of elements to evaluate the given polynomial"
+        )
+
+    # The list of qubits contained in the variables of input_var_list
+    input_qubits = sum([list(var.reg) for var in qv_list], [])
+    
+    # Monomials in list form
+    monomial_list = expr_to_list(poly)
+
+    control_qubit_list = []
+    y_list = []
+    
+    # Iterate through the monomials
+    for monom in monomial_list:
+        # Prepare coeff (coefficient of the monomial) and variables (list of variables from symbol_list in the monomial)
+        # Note: coeff may also contain symbolic variables
+        coeff = float(1)
+        variables = []
+        for term in monom:
+            if isinstance(term, sp.core.symbol.Symbol) and term in symbol_list:
+                variables.append(term)
+            elif isinstance(term, sp.core.symbol.Symbol):
+                coeff = coeff*term
+            else:
+                coeff = coeff*float(term)
+    
+        # Append coefficient to y_list
+        y_list.append(coeff)
+    
+        # Prepare the qubits on which the phase gate should be controlled
+        control_qubit_numbers = [symbol_list.index(var) for var in variables]
+
+        control_qubits = [input_qubits[nr] for nr in control_qubit_numbers]
+    
+        control_qubits = list(set(control_qubits))
+    
+        control_qubits.sort(key=lambda x: x.identifier)
+    
+        control_qubit_list.append(control_qubits)
+    
+    # Now we apply the multi controlled phase gates
+    # Iterate through the list of phase gates
+    while control_qubit_list:
+        monomial_index = 0
+        # Find control qubits and their coefficient
+        control_qubits = control_qubit_list.pop(monomial_index)
+        y = y_list.pop(monomial_index)
+    
+        # Apply (controlled) phase gate
+        if len(control_qubits):
+            mcp(y*t,control_qubits)
+        else:
+            gphase(y*t,input_qubits[0])
+
+
+#@lifted
+def app_phase_polynomial(qf_list, poly, symbol_list=None, t=1):
+    """
+    Applies a phase function specified by a polynomial acting on a list of QuantumFloats. 
+    That is, this method implements the transformation
+
+    .. math::
+    
+        \ket{y_1}\dotsb\ket{y_n}\\rightarrow e^{itP(y_1,\dotsc,y_n)}\ket{y_1}\dotsb\ket{y_n}
+
+    where :math:`\ket{y_1},\dotsc,\ket{y_n}` are QuantumFloats and :math:`P(y_1,\dotsc,y_n)` is a polynomial in variables
+    :math:`y_1,\dotsc,y_n`.
+
+    Parameters
+    ----------
+    qf_list : list[QuantumFloat] or QuantumArray[QuantumFloat] 
+        The list of QuantumFloats to evaluate the polynomial on.
+    poly : SymPy expression
+        The polynomial to evaluate.
+    symbol_list : list, optional
+        An ordered list of SymPy symbols associated to the QuantumFloats of ``qf_list``.
+        By default, the symbols of the polynomial
+        will be ordered alphabetically and then matched to the order in ``qf_list``.
+    t : Float or SymPy expression, optional
+        The argument ``t`` in the expression $\exp(itP)$. The default is 1.
+
+    Raises
+    ------
+    Exception
+        Provided QuantumFloat list does not include the appropriate amount of elements
+        to encode given polynomial.
+
+    Examples
+    --------
+
+    We apply the phase function specified by the polynomial :math:`P(x,y) = \pi x + \pi xy` on two QuantumFloats:
+
+    ::
+    
+        import sympy as sp
+        import numpy as np
+        from qrisp import QuantumFloat, h, app_phase_polynomial
+
+        x, y = sp.symbols('x y')
+        P = np.pi*x + np.pi*x*y
+
+        qf1 = QuantumFloat(3, signed = False)
+        qf2 = QuantumFloat(3,-1, signed = False)
+        h(qf1[0])
+        qf2[:]=0.5
+
+        app_phase_polynomial([qf1,qf2], P)
+
+    We print the ``statevector``:
+
+    >>> print(qf1.qs.statevector())
+    sqrt(2)*(|0>*|0.5> - I*|1>*|0.5>)/2
+
+    
+    We apply the phase function specified by the polynomial :math:`P(x) = 1 - 0.9x^2 + x^3` on a QuantumFloat:
+
+    ::
+
+        import numpy as np
+        import sympy as sp
+        import matplotlib.pyplot as plt
+        from qrisp import QuantumFloat, h, app_phase_polynomial
+
+        x = sp.symbols('x')
+        P = 1-0.9*x**2+x**3
+
+        qf = QuantumFloat(3,-3)
+        h(qf)
+
+        app_phase_polynomial([qf],P)
+
+    To visualize the results we retrieve the ``statevector`` as a function and determine the phase of each entry.
+
+    ::
+
+        sv_function = qf.qs.statevector("function")
+
+    This function receives a dictionary of QuantumVariables specifiying the desired label constellation and returns its complex amplitude. 
+    We calculate the phases corresponding to the complex amplitudes, and compare the results with the values of the function $P(x)$. 
+
+    ::  
+
+        qf_values = np.array([qf.decoder(i) for i in range(2 ** qf.size)])
+        sv_phase_array = np.angle([sv_function({qf : i}) for i in qf_values])
+
+        P_func = sp.lambdify(x, P, 'numpy')
+        x_values = np.linspace(0, 1, 100)
+        y_values = P_func(x_values)
+
+    Finally, we plot the results.
+
+    ::
+
+        plt.plot(x_values, y_values, label = "P(x)")
+        plt.plot(qf_values , sv_phase_array%(2*np.pi), "o", label = "Simulated phases")
+        plt.ylabel("Phase [radian]")
+        plt.xlabel("QuantumFloat outcome labels")
+        plt.grid()
+        plt.legend()
+        plt.show()
+
+    .. figure:: /_static/PhasePolynomialApplication.png
+        :alt: PhasePolynomialApplication
+        :scale: 80%
+        :align: center
+
+    """
+
+    if isinstance(qf_list, QuantumArray):
+        qf_list = list(qf_list.flatten())
+
+    if symbol_list is None:
+        symbol_list = get_ordered_symbol_list(poly)
+
+    if len(symbol_list) != len(qf_list):
+        raise Exception(
+            "Provided QuantumFloat list does not include the appropriate amount "
+            "of elements to evaluate the given polynomial"
+        )
+
+    sb_poly_list = []
+    new_symbol_list = []
+    for qf in qf_list:
+        if qf.signed:
+            # We do not use modular arithmetic.
+            sb_poly_list.append(qf.sb_poly()-2**(qf.msize+2+qf.exponent)*sp.symbols(qf.name + "_" + str(qf.msize)))
+        else:
+            sb_poly_list.append(qf.sb_poly())
+
+        temp_var_list = list(sp.symbols(qf.name + "_" + "0:" + str(qf.size)))
+        new_symbol_list += temp_var_list    
+
+    repl_dic = {symbol_list[i]: sb_poly_list[i] for i in range(len(qf_list))}
+    # Substitute semi-Boolean polynomials
+    sb_polynomial = poly.subs(repl_dic).expand()
+    # As the polynomial has only boolean variables,
+    # powers can be ignored since x**k = x for x in GF(2)
+    sb_polynomial = filter_pow(sb_polynomial.expand()).expand()
+
+    # Apply sb phase polynomial
+    app_sb_phase_polynomial(qf_list, sb_polynomial, symbol_list=new_symbol_list, t=t)
+
         
-        
-        
+# Workaround to keep the docstring but still gatewrap
+
+temp = app_sb_phase_polynomial.__doc__
+
+app_sb_phase_polynomial = gate_wrap(permeability="args", is_qfree=True)(app_sb_phase_polynomial)
+
+app_sb_phase_polynomial.__doc__ = temp
+
+
+temp = app_phase_polynomial.__doc__
+
+app_phase_polynomial = gate_wrap(permeability="args", is_qfree=True)(app_phase_polynomial)
+
+app_phase_polynomial.__doc__ = temp
