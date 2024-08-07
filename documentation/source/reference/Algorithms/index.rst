@@ -29,6 +29,8 @@ This algorithms submodule of Qrisp provides a collection of commonly used quantu
      - solving constraint-satisfaction problems like 3-SAT or the :ref:`Traveling Salesman Problem (TSP) <tsp>`
    * - :ref:`Quantum Counting <QCounting>`
      - estimating the amount of solutions for a given Grover oracle
+   * - :ref:`Dicke state preparation <DickeStates>`
+     - algorithm for the preparation of Dicke states, i.e. states with a given Hamming weight. 
    * - Iterable :ref:`Demuxing <ItDemuxing>`, :ref:`Shifting <ItShifting>`, and :ref:`Permutation <ItPermutation>`
      - low-level manipulations of quantum arguments like :ref:`QuantumVariable <QuantumVariable>` or :ref:`QuantumArray <QuantumArray>`
 
@@ -51,6 +53,8 @@ We encourage you to explore these algorithms, delve into their documentation, an
    grover.grovers_alg  
    QuantumBacktrackingTree
    quantum_counting
+   HHL
+   DickeStates
    demux
    cyclic_shift
    iterable_permutation

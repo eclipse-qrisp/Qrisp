@@ -24,9 +24,9 @@ import itertools
 def maxIndepSetCostOp(G):
     
     """
-    |  Based on PennyLane unconstrained mixer implementation, initial state in (|0>+|1>)^(\otimes n)
-    |  For explanation see the Pennylane implementation
+    Based on PennyLane unconstrained mixer implementation, initial state in :math:`(|0>+|1>)^(\otimes n)`. For explanation see the Pennylane implementation
 
+    
     Parameters
     ----------
     G : nx.Graph
@@ -38,6 +38,7 @@ def maxIndepSetCostOp(G):
         the Operator applied to the circuit-QuantumVariable
 
     """
+
     def partialcostMixer(qv, gamma):
         for pair in list(G.edges()):
             #cx(qv[pair[0]], qv[pair[1]])
