@@ -220,7 +220,8 @@ def qft_semi_cl_inpl_mult(a, X, ctrl = None, treat_invalid = False):
             
     tmp = montgomery_mod_semi_mul(a, 
                                   X, 
-                                  output_qg = tmp)
+                                  output_qg = tmp,
+                                  permeable_if_zero = ctrl is not None)
     
     if ctrl is not None:
         with control(ctrl, invert = True):

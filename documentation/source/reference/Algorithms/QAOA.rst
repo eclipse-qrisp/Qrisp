@@ -10,6 +10,7 @@ Quantum Approximate Optimization Algorithm
    
    qaoa/QAOAProblem
    qaoa/QAOABenchmark
+   qaoa/QAOAImplemens
 
 This modules facilitates the execution of The `Quantum Approximate Optimization Algorithm (QAOA) <https://arxiv.org/abs/1411.4028>`_  and related techniques called the `Quantum Alternating Operator Ansatz <https://arxiv.org/abs/1709.03489>`_. 
 
