@@ -23,7 +23,7 @@ from qrisp.misc import *
 from qrisp.qtypes import *
 from qrisp.environments import *
 
-from qrisp.uncomputation import *
+from qrisp.permeability import *
 from qrisp.arithmetic import *
 
 from qrisp.iterators.qrange import *

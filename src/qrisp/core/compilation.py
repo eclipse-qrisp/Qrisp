@@ -65,7 +65,7 @@ def qompiler(
         if not disable_uncomputation:
             local_qvs = qs.get_local_qvs()
 
-            from qrisp.uncomputation.unqomp import uncompute_qc
+            from qrisp.permeability.unqomp import uncompute_qc
 
             for qv in local_qvs:
                 try:
@@ -512,7 +512,7 @@ def gen_hybrid_mcx_data(controls, target, ctrl_state, clean_ancillae, dirty_anci
 
 
 def reorder_qc(qc):
-    from qrisp.uncomputation import PermeabilityGraph, TerminatorNode
+    from qrisp.permeability import PermeabilityGraph, TerminatorNode
 
     # G = dag_from_qc(qc, remove_init_nodes=True)
     G = PermeabilityGraph(qc, remove_artificials = True)
@@ -768,7 +768,7 @@ def measurement_reduction(qc, intended_measurements):
         qc.measure(qb)
 
     # Generate dag representation
-    from qrisp.uncomputation import PermeabilityGraph, TerminatorNode
+    from qrisp.permeability import PermeabilityGraph, TerminatorNode
     
     G = PermeabilityGraph(qc, remove_artificials = True)
 
@@ -848,7 +848,7 @@ def measurement_reduction(qc, intended_measurements):
 
 
 def allocation_graph(qc):
-    from qrisp.uncomputation.unqomp import dag_from_qc
+    from qrisp.permeability.unqomp import dag_from_qc
 
     dag = dag_from_qc(qc, remove_init_nodes=True)
 

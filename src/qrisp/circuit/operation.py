@@ -371,7 +371,7 @@ class Operation:
         return hash(hash(self.name) + hash(tuple(self.params)))
 
     def is_permeable(self, indices):
-        from qrisp.uncomputation import is_permeable
+        from qrisp.permeability import is_permeable
 
         return is_permeable(self, indices)
 

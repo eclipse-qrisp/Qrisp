@@ -23,7 +23,7 @@ import networkx as nx
 import numpy as np
 
 from qrisp.circuit import QuantumCircuit, fast_append, Instruction, Qubit, QubitDealloc, QubitAlloc, ControlledOperation
-from qrisp.uncomputation.type_checker import is_permeable
+from qrisp.permeability.type_checker import is_permeable
 
 def get_perm_dic(gate):
     """

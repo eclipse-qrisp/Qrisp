@@ -25,7 +25,7 @@ import networkx as nx
 import numpy as np
 from numba import njit
 
-from qrisp.uncomputation import PermeabilityGraph, TerminatorNode
+from qrisp.permeability import PermeabilityGraph, TerminatorNode
 
 # The following code aims to represent quantum circuits as an array of integers.
 # The idea is here that in a 6 qubit quantum circuit, a gate that is executed 
