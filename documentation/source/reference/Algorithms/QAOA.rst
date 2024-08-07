@@ -49,16 +49,16 @@ Qrisp comes with a variety of predefined mixers to tackle various types of probl
 .. autofunction:: RX_mixer
   :noindex:
 
- .. autofunction:: RZ_mixer
+.. autofunction:: RZ_mixer
   :noindex:
 
- .. autofunction:: XY_mixer
+.. autofunction:: XY_mixer
   :noindex:
 
- .. autofunction:: grover_mixer
+.. autofunction:: grover_mixer
   :noindex:
 
- .. autofunction:: constrained_mixer_gen
+.. autofunction:: constrained_mixer_gen
   :noindex:
    
 The following problem instances have already been successfully implemented using the Qrisp framework:

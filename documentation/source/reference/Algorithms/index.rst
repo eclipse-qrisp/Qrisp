@@ -48,6 +48,7 @@ We encourage you to explore these algorithms, delve into their documentation, an
    amplitude_amplification
    QAE
    QAOA
+   qaoa/index
    QIRO
    Shor
    grover.grovers_alg  
