@@ -9,6 +9,7 @@ Backend Interface
    BackendClient
    VirtualBackend
    VirtualQiskitBackend
+   QiskitRuntimeBackend
    DockerSimulators
    
 The backend interface contains a minimal set of features that apply to every gate-based quantum computer.
@@ -53,7 +54,7 @@ In this code snippet, we create connect a BackendClient, to the BackendServer ru
 
 
 :ref:`Docker Backend <DockerSimulators>`
--------------------------------------
+----------------------------------------
 
 This module describes the inbuilt Docker container to enable utilization of alternative simulation frameworks.  
 It supports: Cirq (cirq.Simulator), MQT (ddsim qasm_simulator), Qiskit (Aer Backend), PyTket (AerBackend), Rigetti (numpy wavefunction simulator), Qulacs (sampler).  

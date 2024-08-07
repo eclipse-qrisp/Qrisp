@@ -157,7 +157,7 @@ class QuantumModulus(QuantumFloat):
     {8: 1.0}
     
     Note that this shift is only a compiler shift - ie. no quantum gates are applied.
-    Instead the :ref:`decoder <qrisp.QuantumVariable.decoder>` function is modified.
+    Instead the :meth:`decoder <qrisp.QuantumVariable.decoder>` function is modified.
     
     """
     

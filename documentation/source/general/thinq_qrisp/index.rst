@@ -73,20 +73,24 @@ How to join?
 
 The community will start with the Kick-Off event:
 
-.. grid-item-card:: Thinq Qrisp Kick-Off
+.. grid::
 
-    .. dropdown:: :fa:`eye me-1` Event Details
+    .. grid-item-card:: Thinq Qrisp Kick-Off
 
-        | **Date:**     10. September 2024.
-        | **Location:** Fraunhofer FOKUS (Kaiserin-Augusta-Allee 31, 10589 Berlin).
-        | **How?**      Registration will be opened soon.
+        .. dropdown:: :fa:`eye me-1` Event Details
+
+            | **Date:**     10. September 2024.
+            | **Location:** Fraunhofer FOKUS (Kaiserin-Augusta-Allee 31, 10589 Berlin).
+            | **How?**      Registration will be opened soon.
 
 Prior to the launch event you will have the chance to exchange with us to learn more details about our plans and how you can benefit from a membership. For that, we welcome you to our initial Webinar:
 
-.. grid-item-card:: Initial Webinar
+.. grid::
 
-    .. dropdown:: :fa:`eye me-1` Event Details
+    .. grid-item-card:: Initial Webinar
 
-        | **Date:**     5. August 2024, 10:30.
-        | **Location:** Online.
-        | **How?**      Please register `here <https://www.fokus.fraunhofer.de/en/akademie/schulungen/qrisp-quantum-programming-language>`_.
+        .. dropdown:: :fa:`eye me-1` Event Details
+
+            | **Date:**     5. August 2024, 10:30.
+            | **Location:** Online.
+            | **How?**      Please register `here <https://www.fokus.fraunhofer.de/en/akademie/schulungen/qrisp-quantum-programming-language>`_.

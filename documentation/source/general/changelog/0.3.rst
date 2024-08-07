@@ -28,7 +28,8 @@ Due to a new encoding we could improve the performance of the backtracking modul
 .. image:: backtracking_comparison.svg
     :width: 550
 
-|
+| 
+
 Furthermore the backtracking implementation now has to call the ``reject`` function only once per quantum step (previously twice).
 
 Documentation

@@ -13,7 +13,7 @@ Research from within the Qrisp community
     .. grid-item-card:: Qrisp: A Framework for Compilable High-Level Programming of Gate-Based Quantum Computers
 
         | Raphael Seidel, Sebastian Bock, René Zander, Matic Petrič, Niklas Steinmann, Nikolay Tcholtchev, Manfred Hauswirth 
-        | `ArXiv, 2024 <https://arxiv.org/abs/2406.14792>`_
+        | `ArXiv, 2024 <https://arxiv.org/abs/2406.14792>`__
 
         .. dropdown:: :fa:`eye me-1` Abstract
             :color: primary
@@ -30,12 +30,12 @@ Research from within the Qrisp community
             algorithm. For the latter, the resulting circuit shows significantly reduced quantum resource requirements, strongly supporting the claim that 
             systematic quantum algorithm development can give quantitative benefits.
 
-.. grid::
+.. grid:
 
     .. grid-item-card:: Solving the Product Breakdown Structure Problem with constrained QAOA
 
         | René Zander, Raphael Seidel, Matteo Inajetovic, Niklas Steinmann, Matic Petrič 
-        | `ArXiv, 2024 <https://arxiv.org/pdf/2406.15228>`_
+        | `ArXiv, 2024 <https://arxiv.org/pdf/2406.15228>`__
 
         .. dropdown:: :fa:`eye me-1` Abstract
             :color: primary
@@ -63,7 +63,7 @@ Research from within the Qrisp community
     .. grid-item-card:: **Quantum Backtracking in Qrisp Applied to Sudoku Problems** 
 
         | Raphael Seidel, René Zander, Matic Petrič, Niklas Steinmann, David Q.\ Liu, Nikolay Tcholtchev, Manfred Hauswirth
-        | `ArXiv, 2024 <https://arxiv.org/abs/2402.10060>`_ 
+        | `ArXiv, 2024 <https://arxiv.org/abs/2402.10060>`__ 
 
         .. dropdown:: :fa:`eye me-1` Abstract
             :color: primary
@@ -86,7 +86,7 @@ Research from within the Qrisp community
     .. grid-item-card:: Uncomputation in the Qrisp high-level Quantum Programming Framework
 
         | Raphael Seidel, Nikolay Tcholtchev, Sebastian Bock, Manfred Hauswirth
-        | `ArXiv, 2023 <https://arxiv.org/abs/2307.11417>`_ 
+        | `ArXiv, 2023 <https://arxiv.org/abs/2307.11417>`__
 
         .. dropdown:: :fa:`eye me-1` Abstract
             :color: primary

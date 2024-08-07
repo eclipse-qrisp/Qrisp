@@ -796,7 +796,7 @@ class QuantumSession(QuantumCircuit):
         the ``gate_speed`` keyword argument exists. This argument should be a 
         function of :ref:`Operation` objects, that returns a float indicating
         the gate speed. For an example of such a function, check out
-        :ref:`qrisp.t_depth_indicator`. For further details, check the examples.
+        :meth:`T-depth <qrisp.t_depth_indicator>`. For further details, check the examples.
         
 
         The .compile method is called by default, when executing the

@@ -106,7 +106,7 @@ def cuccaro_procedure(qs, qubit_list_1, qubit_list_2, output_qubit=None, carry_i
 
 def cuccaro_adder(a, b, c_in=None, c_out=None):
     """
-    In-place adder function based on `this paper <https://arxiv.org/abs/quant-ph/0410184>`_
+    In-place adder function based on `this paper <https://arxiv.org/abs/quant-ph/0410184>`__
     Performs the addition
     
     ::
