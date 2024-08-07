@@ -240,6 +240,8 @@ def convert_to_qiskit(qc, transpile=False):
 
 
         if op.name in ["qb_alloc", "qb_dealloc"]:
+            # if op.name == "qb_alloc":
+                # continue
             continue
             temp = QuantumCircuit(1)
             qiskit_ins = temp.to_gate()

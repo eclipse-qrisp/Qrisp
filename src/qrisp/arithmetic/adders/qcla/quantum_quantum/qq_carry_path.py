@@ -28,7 +28,7 @@ import numpy as np
 from qrisp.core import x, cx, mcx, barrier
 from qrisp.qtypes import QuantumVariable, QuantumBool
 from qrisp.circuit import QuantumCircuit
-from qrisp.uncomputation import auto_uncompute
+from qrisp.permeability import auto_uncompute
 from qrisp.misc import check_if_fresh
 from qrisp.mcx_algs import hybrid_mcx
 from qrisp import gate_wrap

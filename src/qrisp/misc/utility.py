@@ -71,11 +71,11 @@ def cnot_count(qc):
     qc = qc.transpile()
 
     gate_count_dic = qc.count_ops()
-
-    try:
-        return gate_count_dic["cx"]
-    except KeyError:
-        return 0
+    cnot_count = 0
+    for gate_name in ["cx", "cy", "cz"]:
+        cnot_count += gate_count_dic.get(gate_name, 0)
+    
+    return cnot_count
 
 
 def is_inv(x, bit):
@@ -406,7 +406,7 @@ def gate_wrap_inner(
 
         if is_qfree is not None:
             if verify and is_qfree:
-                from qrisp.uncomputation import is_qfree as is_qfree_function
+                from qrisp.permeability import is_qfree as is_qfree_function
 
                 if not is_qfree_function(gwe.instruction.op):
                     raise Exception(
@@ -590,7 +590,7 @@ def gate_wrap_inner(
                 #         permeability_dict[i] = False
 
                 if verify:
-                    from qrisp.uncomputation import is_permeable
+                    from qrisp.permeability import is_permeable
 
                     permeable_qubit_indices = []
 

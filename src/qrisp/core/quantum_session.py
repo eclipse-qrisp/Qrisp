@@ -486,7 +486,6 @@ class QuantumSession(QuantumCircuit):
                     check_alloc(item)
             else:
                 if not input.allocated:
-                    # pass
                     raise Exception(
                         f"Tried to perform operation {operation.name} on "
                         f"unallocated qubit {input}"

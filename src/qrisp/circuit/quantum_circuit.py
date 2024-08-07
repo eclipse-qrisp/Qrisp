@@ -1509,7 +1509,7 @@ class QuantumCircuit:
         critical_qubits = [qb for qb in qubits if qb.perm_lock]
 
         if critical_qubits:
-            from qrisp.uncomputation import is_permeable
+            from qrisp.permeability import is_permeable
 
             critical_qubit_indices = [qubits.index(qb) for qb in critical_qubits]
             if not is_permeable(operation, critical_qubit_indices):
