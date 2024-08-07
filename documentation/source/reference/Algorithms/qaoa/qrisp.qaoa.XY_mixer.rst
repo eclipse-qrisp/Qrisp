@@ -3,4 +3,4 @@
 
 .. currentmodule:: qrisp.qaoa
 
-.. autofunction:: XY_mixer
+XY_mixer

@@ -12,6 +12,7 @@ Factorizing numbers
 
 Let's start with a simple example of using Shor's algorithm to factor a number. As stated above, up to our implementation, the highest factorized number was 15. So let's factor number 65!
 ::
+
     from qrisp.shor import shors_alg
     shors_alg(65)
 
@@ -25,6 +26,7 @@ A tale of encryption and decryption
 
 Imagine a scenario where two characters, Alice and Bob, are trying to exchange a secure message. They decide to use RSA encryption, a popular method that uses the product of two prime numbers as a key. In this case, they choose 5 and 13 as their private keys, and 7 as one of the public keys.
 ::
+
     from qrisp.shor import rsa_encrypt_string
     rsa_encrypt_string(p = 5, q = 13, e = 7, message = "Qrisp is awesome!")
 
@@ -34,6 +36,7 @@ Luckily for the future of his career as a detective, he remembered that he has r
 
 His console read:
 ::
+
     intercepted_message = '01010000000101001010001100100110010010000101000010001101000010100011010101110011101000100100011100000100000100110111101000011000111110111111'
 
     from qrisp.shor import rsa_decrypt_string
