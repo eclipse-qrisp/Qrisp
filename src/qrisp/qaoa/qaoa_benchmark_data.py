@@ -79,7 +79,7 @@ class QAOABenchmark:
         is a standard quantity in approximation algorithms and can be selected by
         setting ``gain_metric = "approx_ration"``.
         
-        The time to solution metric as used in `this paper <http://arxiv.org/abs/2308.02342>`_
+        The time to solution metric as used in `this paper <http://arxiv.org/abs/2308.02342>`__
         can be selected with ``gain_metric = "tts"``.
         
         Users can implement their own cost/gain metric by calling ``.evaluate`` with a suited function. 

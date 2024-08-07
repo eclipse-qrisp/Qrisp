@@ -130,7 +130,7 @@ class QuantumModulus(QuantumFloat):
     **Advanced usage**
     
     The modular multiplication uses a technique called `Montgomery reduction <https://en.wikipedia.org/wiki/Montgomery_modular_multiplication>`_.
-    The quantum version of this algorithm can be found in `this paper <https://arxiv.org/abs/1801.01081>`_.
+    The quantum version of this algorithm can be found in `this paper <https://arxiv.org/abs/1801.01081>`__.
     The idea behind Montgomery reduction is to choose a differing representation of numbers to enhance
     the reduction step of modular arithmetic. This representation works as follows:
     For an integer $m$ called Montgomery shift, the modular number $a \in \mathbb{Z}/N\mathbb{Z}$ is represented as

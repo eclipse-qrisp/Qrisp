@@ -23,7 +23,7 @@ from qrisp.environments import custom_control
 
 def gidney_adder(a, b, c_in = None, c_out = None):
     """
-    In-place adder function based on `this paper <https://arxiv.org/abs/1709.06648>`_
+    In-place adder function based on `this paper <https://arxiv.org/abs/1709.06648>`__
     performs the addition
     
     ::
