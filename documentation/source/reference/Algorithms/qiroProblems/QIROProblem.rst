@@ -8,5 +8,11 @@ QIROProblem
 .. currentmodule:: qrisp.qiro
 .. autoclass:: QIROProblem
 
+Methods
+=======
 
-.. automethod:: QIROProblem.run_qiro
+.. autosummary::
+   :toctree: generated/
+
+    QIROProblem.run_qiro
+   

@@ -14,7 +14,7 @@ While QAOA cost functions are designed with specific problem instances in mind, 
 We have implemented this approach for different problem instances, namely :ref:`MaxClique <maxcliqueQIRO>`, :ref:`MaxIndependentSet <maxIndependentSetQIRO>`, :ref:`MaxSat <maxSatQIRO>` and :ref:`MaxSetPacking <maxSetPackingQIRO>`. The explanation below tackles the `Maximum Indepent Set (MIS) <https://en.wikipedia.org/wiki/Maximal_independent_set>`_ instance, in analogy to the original paper by Finzgar et. al.
 
 Starting point of the algorithm
-----------------
+-------------------------------
 
 The algorithm evaluates the result of a :ref:`QAOA <QAOA>` optimization procedure to establish correlations in the solution space, then recursively updates the problem structure. We will further assume that you are already mostly familiar with QAOA.  
 

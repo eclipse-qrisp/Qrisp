@@ -20,5 +20,4 @@ Utilities
    t_depth_indicator
    cnot_depth_indicator
    inpl_adder_test
-   dicke_state
    

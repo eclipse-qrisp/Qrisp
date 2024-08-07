@@ -154,19 +154,19 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
         *   - ``gray`` 
             - Performs a gray code traversal which requires no ancillae but is rather inefficient for large numbers of control qubits.
         *   - ``gray_pt``/``gray_pt_inv`` 
-            - More efficient but introduce extra phases that need to be uncomputed by performing the inverse of this gate on the same inputs. For more information on phase tolerance, check `this paper <https://iopscience.iop.org/article/10.1088/2058-9565/acaf9d/meta>`__.
+            - More efficient but introduce extra phases that need to be uncomputed by performing the inverse of this gate on the same inputs. For more information on phase tolerance, check `this paper <https://iopscience.iop.org/article/10.1088/2058-9565/acaf9d/meta>`_.
         *   - ``balauca`` 
-            - Method based on this `paper <https://www.iccs-meeting.org/archive/iccs2022/papers/133530169.pdf>`__ with logarithmic depth but requires many ancilla qubits.
+            - Method based on this `paper <https://www.iccs-meeting.org/archive/iccs2022/papers/133530169.pdf>`_ with logarithmic depth but requires many ancilla qubits.
         *   - ``maslov``
             - Documented `here <https://arxiv.org/abs/1508.03273>`_, requires less ancilla qubits but is only available for 4 or less control qubits.
         *   - ``yong`` 
-            - Can be found int this `article <https://link.springer.com/article/10.1007/s10773-017-3389-4>`__.This method requires only a single ancilla and has moderate scaling in depth and gate count.
+            - Can be found int this `article <https://link.springer.com/article/10.1007/s10773-017-3389-4>`_.This method requires only a single ancilla and has moderate scaling in depth and gate count.
         *   - ``amy``
             - A Toffoli-circuit (ie. only two control qubits are possible), which (temporarily) requires one ancilla qubit. However, instead of the no-ancilla T-depth 4, this circuit achieves a T-depth of 2. Find the implementation details in `this paper <https://arxiv.org/pdf/1206.0758.pdf>`_.
         *   - ``jones``
-            - Similar to ``amy`` but uses two ancilla qubits, and has a T-depth of 1. Read about it `here <https://arxiv.org/abs/1212.5069>`__.
+            - Similar to ``amy`` but uses two ancilla qubits, and has a T-depth of 1. Read about it `here <https://arxiv.org/abs/1212.5069>`_.
         *   - ``gidney``
-            - A very unique way for synthesizing a logical AND. The Gidney Logical AND performs a circuit with T-depth 1 to compute the truth value and performs another circuit involving a measurement and a classically controlled CZ gate for uncomputation. The uncomputation circuit has T-depth 0, such that the combined T-depth is 1. Requires no ancillae. More details `here <https://arxiv.org/abs/1709.06648>`__. Works only for two control qubits.
+            - A very unique way for synthesizing a logical AND. The Gidney Logical AND performs a circuit with T-depth 1 to compute the truth value and performs another circuit involving a measurement and a classically controlled CZ gate for uncomputation. The uncomputation circuit has T-depth 0, such that the combined T-depth is 1. Requires no ancillae. More details `here <https://arxiv.org/abs/1709.06648>`_. Works only for two control qubits.
         *   - ``hybrid``
             - A flexible method which combines the other available methods, such that the amount of used ancillae is customizable. After several ``balauca``-layers, the recursion is canceled by either a ``yong``, ``maslov`` or ``gray`` mcx, depending on what fits the most.
         *   - ``auto`` 
@@ -2233,3 +2233,79 @@ def QAE(args, state_function, oracle_function, kwargs_oracle={}, precision=None,
   
     return res
 
+
+
+import numpy as np
+
+
+def dicke_state(qv, k):
+    """
+    Dicke State initialization of a QuantumVariable, based on the deterministic alogrithm in https://arxiv.org/abs/1904.07358. 
+    This algorithm creates an equal superposition of Dicke states for a given Hamming weight. The initial input variable has to be within this subspace.
+
+    Parameters
+    ----------
+    qv : QuantumVariable
+        Initial quantum variable to be prepared. Has to be in target subspace.
+    k : Int
+        The Hamming weight (i.e. number of "ones") for the desired dicke state
+        
+
+    Examples
+    --------
+    We initiate a QuantumVariable in the "0011" state and from this create the Dicke state with Hamming weight 2.
+
+    ::
+        
+        from qrisp import QuantumVariable, x
+        from qrisp.misc.dicke_state import dicke_state
+        
+        qv = QuantumVariable(4)
+        x(qv[2])
+        x(qv[3])
+
+        dicke_state(qv, 2)
+
+    """
+
+    n = len(qv)
+    for index2 in reversed(range(k+1, n+1)):
+        split_cycle_shift(qv, index2, k)
+
+    for index in reversed(range(2,k+1)):
+        split_cycle_shift(qv, index, index-1)
+    
+    
+
+def split_cycle_shift(qv, highIndex, lowIndex):
+
+    """
+    Helper function for Dicke State initialization of a QuantumVariable, based on the deterministic alogrithm in https://arxiv.org/abs/1904.07358. 
+    
+    Parameters
+    ----------
+    qv : QuantumVariable
+        Initial quantum variable to be prepared. Has to be in target subspace.
+    highIndex : Int
+        Index for indication of preparation steps, as seen in original algorithm.
+    lowIndex : Int
+        Index for indication of preparation steps, as seen in original algorithm.
+    """
+
+    from qrisp import control
+
+    index_range = [highIndex - i for i in range(lowIndex)]
+    for index in index_range:
+        param = 2 * np.arccos(np.sqrt((highIndex - index + 1 ) /(highIndex)) )
+
+        if index == highIndex:
+            cx(qv[highIndex - 2], qv[highIndex-1]) 
+            with control( qv[highIndex-1] ):
+                ry(param, qv[highIndex - 2])
+            cx(qv[highIndex - 2], qv[highIndex -1])
+
+        else: 
+            cx(qv[index -2], qv[highIndex-1]) 
+            with control([qv[highIndex -1],qv[index -1]]):
+                ry(param, qv[index - 2])
+            cx(qv[index -2], qv[highIndex-1]) 

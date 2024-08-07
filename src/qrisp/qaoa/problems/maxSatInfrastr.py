@@ -31,8 +31,9 @@ from _collections_abc import Iterable
 def maxSatCostOp(problem):
 
     """
-    |  Implementation for MaxSat Cost-Operator, in accordance to the original QAOA-paper.
-    |  For each clause :math:`C_i` apply :math:`C_i(x) = 1 - \prod_j x_j` (replace :math:`x_j` with 
+    Implementation for MaxSat Cost-Operator, in accordance to the original QAOA-paper.
+    
+    For each clause :math:`C_i` apply :math:`C_i(x) = 1 - \prod_j x_j` (replace :math:`x_j` with 
     :math:`(1-x_j)` if :math:`x_j` is negated). The problem operator is acquired with the substitution 
     :math:`x_j = (I - Z_j)` , where :math:`Z_j` is the Pauli- :math:`Z` operator applied to the :math:`j` -th qubit.
     
@@ -62,10 +63,9 @@ def maxSatCostOp(problem):
 
     Assign the operators
 
-    >>> cost_operator=maxSatCostOp(clauses11),
+    >>> cost_operator=maxSatCostOp(clauses11)
     >>> mixer=RX_mixer 
 
-    
     """
     
 
@@ -164,7 +164,6 @@ def clausesdecoder(problem):
     >>> cl_cost_function=maxSatclCostfct(decodedClauses)
 
     
-
     """
 
     numVars = problem[0]

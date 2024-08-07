@@ -27,7 +27,7 @@ We define the problem of portfolio rebalancing to be a discrete portfolio optimi
 
 where
 
-*  :math:`\textbf{z} = \{ -1, 0, +1 \}^N` defines the solution vector of discrete portfolio asset positions to be held, representing long (+1), short (−1) or no-hold (0) states, with :math:`N ` being the number of available portfolio assets,
+*  :math:`\textbf{z} = \{ -1, 0, +1 \}^N` defines the solution vector of discrete portfolio asset positions to be held, representing long (+1), short (−1) or no-hold (0) states, with :math:`N` being the number of available portfolio assets,
 *  :math:`C_{RR}(\textbf{z})` describes the normalized risk-return function, and
 *  :math:`C_{TC}(\textbf{z})` describes the normalized trading cost function
 
@@ -104,7 +104,7 @@ As mentioned in the introduction, `the paper by A. Baertschi et. al <https://arx
 We therefore start by creating a properly weighted intitial state. A clear description on the conditions here are given in the paper above in page 9 onwards. So, instead of copying the text you can find there word for word, we will refer to this paper here. The two important terms here are *lots* and *bands*. The number of *lots* :math:`d`, is the net total of long minus short positions in the portfolio, and determines the feasible subspace in this context.
 The solution state for a portfolio with 4 assets, that is defined via the number of lots being 1, can have 
 
-* 4 ones in the long, 3 ones in the short position ``QuantumVariable``s of the QuantumArray, i.e. a state such as $\ket{0111}\ket{1111}$
+* 4 ones in the long, 3 ones in the short position ``QuantumVariable`` s of the QuantumArray, i.e. a state such as $\ket{0111}\ket{1111}$
 * 3 ones in the long, 2 ones in the short position, i.e. a state such as $\ket{0011}\ket{0111}$
 * 2 ones in the long, 1 ones in the short position, i.e. a state such as $\ket{0001}\ket{0011}$
 * 1 one in the long, 0 ones in the short position, i.e. a state such as $\ket{0000}\ket{0001}$
