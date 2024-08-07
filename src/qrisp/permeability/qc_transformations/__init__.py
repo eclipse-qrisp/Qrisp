@@ -17,7 +17,7 @@
 """
 
 
-from qrisp.permeability.uncomputation import *
-from qrisp.permeability.type_checker import *
-from qrisp.permeability.permeability_dag import *
-from qrisp.permeability.qc_transformations import *
+from qrisp.permeability.qc_transformations.light_cone_reduction import *
+from qrisp.permeability.qc_transformations.memory_management import *
+from qrisp.permeability.qc_transformations.qc_parallelization import *
+from qrisp.permeability.qc_transformations.unqomp import *

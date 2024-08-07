@@ -141,7 +141,7 @@ def uncompute(qs, uncomp_vars, recompute=False):
         if hasattr(qb, "recompute"):
             recompute_qubits.append(qb)
 
-    from qrisp.permeability.unqomp import uncompute_qc
+    from qrisp.permeability import uncompute_qc
 
     uncomputed_qc = uncompute_qc(qc_to_uncompute, qubits_to_uncompute, recompute_qubits)
 
