@@ -135,7 +135,7 @@ def constrained_mixer_gen(constraint_oracle, winner_state_amount):
     Parameters
     ----------
     constraint_oracle : function
-        A function of a :ref:`QuantumVariable` or :ref:`QuantumArray. Also needs to
+        A function of a :ref:`QuantumVariable` or :ref:`QuantumArray`. Also needs to
         support the keyword argument ``phase``. This function should apply the phase
         specified by the keyword argument to the allowed states.
     winner_state_amount : function

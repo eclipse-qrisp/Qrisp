@@ -1,3 +1,5 @@
+.. _grover_tools:
+
 Grover tools
 ============
 

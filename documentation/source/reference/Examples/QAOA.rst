@@ -149,7 +149,7 @@ $$H_C = 3 \\sum _{(i,j) \\in E(G)} Z_i Z_j - Z_i - Z_j + \\sum _{i \\in V(G)} Z_
 
 where $V(G)$ is is the set of vertices of the input graph $G$, $E(G)$ is the set of edges of $G$, and $Z_i$ is the Pauli-$Z$ operator applied to the $i$-th vertex.
  
-The mixer operator is a basic :ref:`X mixer <RXmixer>` applied to all qubits.
+The mixer operator is a basic :meth:`X mixer <qrisp.qaoa.RX_mixer>` applied to all qubits.
 ::
 
   QAOAinstance = QAOAProblem(cost_operator = maxIndepSetCostOp(giraf), mixer = RX_mixer, cl_cost_function = maxIndepSetclCostfct(giraf))

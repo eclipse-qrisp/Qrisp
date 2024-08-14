@@ -23,7 +23,7 @@ This algorithms submodule of Qrisp provides a collection of commonly used quantu
      - solving combinatorial optimizatin problems, with quantum informed update rules
    * - :ref:`Shor's Algorithm <Shor>`
      - efficiently factoring large numbers
-   * - :ref:`Grover's Algorithm <Grover>`
+   * - :ref:`Grover's Algorithm <grover_tools>`
      - unstructured search
    * - :ref:`Quantum Backtracking Algorithms <QuantumBacktrackingTree>`
      - solving constraint-satisfaction problems like 3-SAT or the :ref:`Traveling Salesman Problem (TSP) <tsp>`
@@ -47,11 +47,10 @@ We encourage you to explore these algorithms, delve into their documentation, an
    QPE
    amplitude_amplification
    QAE
-   QAOA
-   qaoa/index
+   QAOA/index
    QIRO
    Shor
-   grover.grovers_alg  
+   Grover tools
    QuantumBacktrackingTree
    quantum_counting
    HHL
