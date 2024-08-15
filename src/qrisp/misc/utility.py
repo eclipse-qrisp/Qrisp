@@ -1927,7 +1927,7 @@ def cnot_depth_indicator(op):
         return cnot_depth_indicator(op.base_op)
     elif op.definition is not None:
         return op.definition.cnot_depth()
-    if op.num_qubits == 1:
+    if op.num_qubits == 1 or op.name == "barrier":
         return 0
     elif op.name in ["cx", "cx", "cz"]:
         return 1
