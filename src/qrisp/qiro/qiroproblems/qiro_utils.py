@@ -59,6 +59,7 @@ def find_max(single_cor, double_cor, res, solutions):
     for node in single_cor:
         if node in solutions:
             continue
+        summe = 0
 
         for key, val in res.items():
             summe += val * pow(-1, int(key[int(node)])) 

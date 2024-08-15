@@ -23,12 +23,14 @@ This algorithms submodule of Qrisp provides a collection of commonly used quantu
      - solving combinatorial optimizatin problems, with quantum informed update rules
    * - :ref:`Shor's Algorithm <Shor>`
      - efficiently factoring large numbers
-   * - :ref:`Grover's Algorithm <Grover>`
+   * - :ref:`Grover's Algorithm <grover_tools>`
      - unstructured search
    * - :ref:`Quantum Backtracking Algorithms <QuantumBacktrackingTree>`
      - solving constraint-satisfaction problems like 3-SAT or the :ref:`Traveling Salesman Problem (TSP) <tsp>`
    * - :ref:`Quantum Counting <QCounting>`
      - estimating the amount of solutions for a given Grover oracle
+   * - :ref:`Dicke state preparation <DickeStates>`
+     - algorithm for the preparation of Dicke states, i.e. states with a given Hamming weight. 
    * - Iterable :ref:`Demuxing <ItDemuxing>`, :ref:`Shifting <ItShifting>`, and :ref:`Permutation <ItPermutation>`
      - low-level manipulations of quantum arguments like :ref:`QuantumVariable <QuantumVariable>` or :ref:`QuantumArray <QuantumArray>`
 
@@ -45,12 +47,14 @@ We encourage you to explore these algorithms, delve into their documentation, an
    QPE
    amplitude_amplification
    QAE
-   QAOA
+   QAOA/index
    QIRO
    Shor
-   grover.grovers_alg  
+   Grover tools
    QuantumBacktrackingTree
    quantum_counting
+   HHL
+   DickeStates
    demux
    cyclic_shift
    iterable_permutation

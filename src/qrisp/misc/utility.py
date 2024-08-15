@@ -101,11 +101,11 @@ def cnot_count(qc):
     qc = qc.transpile()
 
     gate_count_dic = qc.count_ops()
-
-    try:
-        return gate_count_dic["cx"]
-    except KeyError:
-        return 0
+    cnot_count = 0
+    for gate_name in ["cx", "cy", "cz"]:
+        cnot_count += gate_count_dic.get(gate_name, 0)
+    
+    return cnot_count
 
 
 def is_inv(x, bit):
@@ -436,7 +436,7 @@ def gate_wrap_inner(
 
         if is_qfree is not None:
             if verify and is_qfree:
-                from qrisp.uncomputation import is_qfree as is_qfree_function
+                from qrisp.permeability import is_qfree as is_qfree_function
 
                 if not is_qfree_function(gwe.instruction.op):
                     raise Exception(
@@ -620,7 +620,7 @@ def gate_wrap_inner(
                 #         permeability_dict[i] = False
 
                 if verify:
-                    from qrisp.uncomputation import is_permeable
+                    from qrisp.permeability import is_permeable
 
                     permeable_qubit_indices = []
 
@@ -1941,7 +1941,7 @@ def cnot_depth_indicator(op):
     
     In NISQ-era devices, CNOT gates are the restricting bottleneck for quantum 
     circuit execution. This function can be used as a gate-speed specifier for
-    the :meth:`compile <qrisp.QuantumSession.compile>`_ method.
+    the :meth:`compile <qrisp.QuantumSession.compile>` method.
     
     Parameters
     ----------
@@ -1961,7 +1961,7 @@ def cnot_depth_indicator(op):
         return cnot_depth_indicator(op.base_op)
     elif op.definition is not None:
         return op.definition.cnot_depth()
-    if op.num_qubits == 1:
+    if op.num_qubits == 1 or op.name == "barrier":
         return 0
     elif op.name in ["cx", "cx", "cz"]:
         return 1

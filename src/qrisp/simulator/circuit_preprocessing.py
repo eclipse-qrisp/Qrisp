@@ -25,7 +25,7 @@ import numpy as np
 from numba import njit
 
 from qrisp.circuit import Instruction, QuantumCircuit, transpile, Reset, ClControlledOperation, CXGate, Operation, Measurement
-from qrisp.uncomputation.type_checker import is_permeable
+from qrisp.permeability.type_checker import is_permeable
 
 memory_bandwidth_penalty = 2
 
@@ -381,15 +381,15 @@ def Disentangler(warning = False):
 
 def insert_disentangling(qc):
     # This function checks for permeability on a given qubit
-    from qrisp.uncomputation import is_permeable
+    from qrisp.permeability import is_permeable
 
 
     # After all the operations have been performed on a qubit,
     # it can be reset without changing the statistics
     for i in range(len(qc.qubits)):
         qc.reset(qc.qubits[i])
-        pass
-        # qc.append(disentangler, [qc.qubits[i]])
+        # pass
+        # qc.append(Disentangler(), [qc.qubits[i]])
 
     # return qc
 
@@ -496,7 +496,7 @@ def count_measurements_and_treat_alloc(qc, insert_reset=True):
         elif instr.op.name == "qb_dealloc":
             qc.data.pop(i)
             if insert_reset:
-                qc.data.insert(i, Instruction(Reset(), qubits = instr.qubits))
+                qc.data.insert(i, Instruction(Disentangler(True), qubits = instr.qubits))
             else:
                 continue
 
@@ -796,7 +796,7 @@ def insert_multiverse_measurements(qc):
         elif instr.op.name == "reset":
             
             meas_qubit = instr.qubits[0]
-            new_data.append(Instruction(Disentangler(warning = True), [meas_qubit]))
+            new_data.append(Instruction(Disentangler(warning = False), [meas_qubit]))
             
             for j in range(len(data)):
                 if meas_qubit in data[j].qubits:

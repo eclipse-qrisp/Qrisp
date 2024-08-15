@@ -237,7 +237,7 @@ First we create the :doc:`/./reference/Quantum Types/QuantumFloat` which will co
 Quantum Phase Estimation
 ========================
 
-.. _qpe_tutorial::
+.. _qpe_tutorial:
 
 `Quantum phase estimation <https://en.wikipedia.org/wiki/Quantum_phase_estimation_algorithm>`_ is an important subroutine in many quantum algorithms. If you are not familiar with this algorithm, we recommend that you first read about it `elsewhere <https://qiskit.org/textbook/ch-algorithms/quantum-phase-estimation.html>`_ and then come back here. We shortly summarize the problem this algorithm solves:
 Given is a unitary $U$ and quantum state $\ket{\psi}$ which is an eigenvector of $U$:

@@ -351,6 +351,7 @@ def recursive_qs_search(input):
                 result += recursive_qs_search(key)
                 result += recursive_qs_search(input[key])
         else:
+            input = list(input)
             for i in range(len(input)):
                 result += recursive_qs_search(input[i])
     else:

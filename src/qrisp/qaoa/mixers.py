@@ -135,7 +135,7 @@ def constrained_mixer_gen(constraint_oracle, winner_state_amount):
     Parameters
     ----------
     constraint_oracle : function
-        A function of a :ref:`QuantumVariable` or :ref:`QuantumArray. Also needs to
+        A function of a :ref:`QuantumVariable` or :ref:`QuantumArray`. Also needs to
         support the keyword argument ``phase``. This function should apply the phase
         specified by the keyword argument to the allowed states.
     winner_state_amount : function
@@ -232,4 +232,92 @@ def constrained_mixer_gen(constraint_oracle, winner_state_amount):
     
     return constrained_mixer
     
+
+
+""" from qrisp import as_hamiltonian
+@as_hamiltonian
+def mcp_as_hamiltonian(qv, beta):
+    if qv == "0001":
+        p(beta, qv)
+    elif qv == "0011":
+        p(beta, qv)
+    elif qv == "0111":
+        p(beta, qv)
+    elif qv == "1111":
+        p(beta, qv) """
+
+    
+
+#formulate on q_array
+def portfolio_mixer():
+    """
+    Multi-Channel constrained mixer to be applied for a discrete portfolio rebalancing problem, as seen in https://arxiv.org/pdf/2006.00354.pdf.
+    This Mixer keeps the constraints in terms of lots on the portfolio intact. This is achieved by mixing between Dicke States.
+    
+
+    Returns:
+    --------
+
+    apply_mixer : function 
+        The Mixer to be applied to a QuantumVariable 
+
+    Examples:
+    ---------
+
+    We initiate a QuantumVariable in the "0011" state and from this partially mix into the Dicke state space with Hamming weight 2.
+
+    ::
+
+        from qrisp import QuantumVariable, x
+        import numpy as np
+
+        qv = QuantumVariable(4)
+        x(qv[2])
+        x(qv[3])
+
+        from qrisp.qaoa.mixers import portfolio_mixer
+        mixer_op = portfolio_mixer()
+        mixer_op(qv, np.pi/8)
+
+    """
+    from qrisp.misc.dicke_state import dicke_state
+
+    def inv_prepare_dicke(qv, k):
+        with invert():
+            dicke_state(qv, k)
+
+    def apply_mixer(q_array, beta):
+        half = int(len(q_array[0]))
+        qv1 = q_array[0]
+        qv2 = q_array[1]
+
+        #omfg this is harcoded-- problematic one 
+
+        with conjugate(inv_prepare_dicke)(qv1, half):
+            # mehrere mcp-gates, as hamiltonian
+            #mcp_as_hamiltonian(qv1, beta=beta)
+            for i in range(half):
+                ctrl_state = "0" * (half-i-1) + ("1"*(i+1))
+                #print(ctrl_state)
+                mcp(beta, qv1, ctrl_state = ctrl_state)
+            """ mcp(beta, qv1, ctrl_state = "0001")
+            mcp(beta, qv1, ctrl_state = "0011")
+            mcp(beta, qv1, ctrl_state = "0111")
+            mcp(beta, qv1, ctrl_state = "1111") """
+
+        with conjugate(inv_prepare_dicke)(qv2, half):
+            for i in range(half):
+                ctrl_state = "0" * (half-i-1) + ("1"*(i+1))
+                #print(ctrl_state)
+                mcp(beta, qv2, ctrl_state = ctrl_state)
+            """ mcp(beta, qv2, ctrl_state = "0001")
+            mcp(beta, qv2, ctrl_state = "0011")
+            mcp(beta, qv2, ctrl_state = "0111")
+            mcp(beta, qv2, ctrl_state = "1111") """
+        
+    return apply_mixer
+
+
+
+
 

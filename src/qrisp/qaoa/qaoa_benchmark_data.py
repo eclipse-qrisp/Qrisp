@@ -79,7 +79,7 @@ class QAOABenchmark:
         is a standard quantity in approximation algorithms and can be selected by
         setting ``gain_metric = "approx_ration"``.
         
-        The time to solution metric as used in `this paper <http://arxiv.org/abs/2308.02342>`_
+        The time to solution metric as used in `this paper <http://arxiv.org/abs/2308.02342>`__
         can be selected with ``gain_metric = "tts"``.
         
         Users can implement their own cost/gain metric by calling ``.evaluate`` with a suited function. 
@@ -527,20 +527,15 @@ def max_five_metric(metric_dict):
     return fivesol
 
 
-def time_to_solution(run_data, optimal_solution, cost_function):
+def time_to_solution(counts, optimal_solution, cost_function):
     """
     Parameters
     ----------
-    obj_function : objective function of the problem
-                    (i.e. the "maxcut_obj" method for the MaxCut Problem).
-
     counts : the result dictionary from the QAOA method, contaning the 
                     bitstrings as keys and the counts divided by the number
                     of shots as values.
-
     optimal_solution: the optimal solution of the problem
-
-    G : the Graph related to the problem
+    cost_function : Cost Function used to evaluate the optimization
 
     Returns
     -------
@@ -553,7 +548,7 @@ def time_to_solution(run_data, optimal_solution, cost_function):
     obj_function = lambda x : cost_function({x : 1})
     optimal_solution_cost = obj_function(optimal_solution)
     
-    return 1/sum([v for k,v in run_data["counts"].items() if obj_function(k)==optimal_solution_cost])
+    return 1/sum([v for k,v in counts.items() if obj_function(k)==optimal_solution_cost])
 
 
 def approximation_ratio(counts, optimal_solution, cost_function):

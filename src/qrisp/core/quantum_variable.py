@@ -1276,7 +1276,7 @@ class QuantumVariable:
             raise Exception("Tried to uncompute deleted QuantumVariable")
 
         if do_it:
-            from qrisp.uncomputation import uncompute
+            from qrisp.permeability import uncompute
 
             uncompute(self.qs, self.qs.uncomp_stack + [self], recompute)
             self.qs.uncomp_stack = []

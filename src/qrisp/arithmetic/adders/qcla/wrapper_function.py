@@ -28,7 +28,7 @@ from qrisp.arithmetic.adders.qcla.classical_quantum.cq_qcla_adder import *
 def qcla(a, b, radix_base = 2, radix_exponent = 1, t_depth_reduction = True, ctrl = None):
     r"""
     Implementation of the higher radix quantum carry lookahead adder (QCLA) as described 
-    `here <https://arxiv.org/abs/2304.02921>`_. This adder stands out for having logarithmic
+    `here <https://arxiv.org/abs/2304.02921>`__. This adder stands out for having logarithmic
     T-depth like `Drapers QCLA <https://arxiv.org/abs/quant-ph/0406142>`_. Compared to Drapers
     QCLA, the higher radix QCLA allows a more dynamic structure and the use of customizable
     "sub-adders" which enables this adder to beat Drapers QCLA in terms of speed (ie. T-depth).
@@ -105,7 +105,7 @@ def qcla(a, b, radix_base = 2, radix_exponent = 1, t_depth_reduction = True, ctr
     of that Operation. For more information check out the 
     :meth:`compile <qrisp.QuantumSession.compile>` documentation page.
     
-    For T-depth, there is already a pre-coded function: :ref:`qrisp.t_depth_indicator`.
+    For T-depth, there is already a pre-coded function: :meth:`T-depth <qrisp.t_depth_indicator>`.
         
     >>> from qrisp import t_depth_indicator
     >>> gate_speed = lambda x : t_depth_indicator(x, epsilon = 2**-10)
