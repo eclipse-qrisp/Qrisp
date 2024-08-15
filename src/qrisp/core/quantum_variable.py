@@ -322,6 +322,7 @@ class QuantumVariable:
         try:
             # Register as a PyTree with JAX
             tree_util.register_pytree_node(type(self), flatten_qv, unflatten_qv)
+            self.traced_attributes = []
         except ValueError:
             pass
         
@@ -1470,9 +1471,13 @@ from builtins import id
 
 def flatten_qv(qv):
     # return the tracers and auxiliary data (structure of the object)
-    children = (qv.reg,)
+    children = [qv.reg]
     # aux_data = (QVNameContainer(qv.name),)
-    return children, None
+    # Iterate through the attributes that are marked as traced
+    for traced_attribute in qv.traced_attributes:
+        children.append(getattr(qv, traced_attribute))
+    
+    return tuple(children), None
 
 def unflatten_qv(aux_data, children):
     qs = get_tracing_qs(check_validity = False)
@@ -1481,6 +1486,9 @@ def unflatten_qv(aux_data, children):
         
         if qv.reg.aval is children[0].aval:
             qv.reg = children[0]
+            for i in range(len(qv.traced_attributes)):
+                setattr(qv, qv.traced_attributes[i], children[i+1])
             return qv
     else:
         raise Exception("Could not find QuantumVariable object in QuantumSession during unflattening")
+

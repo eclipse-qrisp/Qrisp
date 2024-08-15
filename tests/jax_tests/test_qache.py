@@ -41,16 +41,18 @@ def test_qache():
 
     def outer_function():
         qv_0 = QuantumVariable(2)
-        qv_1 = QuantumVariable(2)
+        qv_1 = QuantumFloat(2)
         
         temp_0 = inner_function(qv_0)
         temp_1 = inner_function(qv_1)
         temp_2 = inner_function(qv_0)
+        temp_3 = inner_function(qv_1)
         return temp_0 & temp_1 & temp_2
     
     print(make_jaxpr(outer_function)())
     
-    assert counter.count == 1
+    # The function has been called four times but only for two different types
+    assert counter.count == 2
     
 
 

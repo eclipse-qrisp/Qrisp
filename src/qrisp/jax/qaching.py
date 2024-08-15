@@ -20,7 +20,7 @@ from jax import jit
 from qrisp.jax import get_tracing_qs, check_for_tracing_mode
 
 def qache(func):
-    
+    from qrisp.core.quantum_variable import QuantumVariable, flatten_qv, unflatten_qv
     
     def ammended_function(abs_qc, *args):
         
@@ -42,7 +42,17 @@ def qache(func):
         
         abs_qs = get_tracing_qs()
         
+        flattened_qvs = []
+        
+        for arg in args:
+            if isinstance(arg, QuantumVariable):
+                flattened_qvs.append(flatten_qv(arg))
+                
+        
         abs_qc_new, res = ammended_function(abs_qs.abs_qc, *args, **kwargs)
+        
+        for tup in flattened_qvs:
+            unflatten_qv(*tup[::-1])
         
         abs_qs.abs_qc = abs_qc_new
         

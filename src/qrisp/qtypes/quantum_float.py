@@ -311,6 +311,8 @@ class QuantumFloat(QuantumVariable):
             super().__init__(msize + 1, qs, name=name)
         else:
             super().__init__(msize, qs, name=name)
+            
+        self.traced_attributes = ["exponent", "signed"]
 
     # Define outcome_labels
     def decoder(self, i):
@@ -1139,39 +1141,3 @@ def copy_qf(qf1, qf2, ignore_overflow_errors=False, ignore_rounding_errors=False
     # Copy the sign bit
     if qf2.signed:
         qs.cx(qf2[-1], qf1[-1])
-
-
-from jax import tree_util
-from qrisp.jax.tracing_quantum_session import get_tracing_qs
-
-class QFNameContainer:
-    
-    def __init__(self, name):
-        self.name = name
-        
-    def __hash__(self):
-        return hash(type(self))
-    
-    def __eq__(self, other):
-        return isinstance(other, QFNameContainer)
-        
-def flatten_qf(qf):
-    # return the tracers and auxiliary data (structure of the object)
-    children = (qf.reg,)
-    aux_data = (QFNameContainer(qf.name), qf.signed, qf.exponent)
-    return children, aux_data
-
-def unflatten_qf(aux_data, children):
-    # reconstruct the object from children and auxiliary data
-    res = QuantumFloat.__new__(QuantumFloat)
-    
-    res.reg = children[0]
-    res.name = aux_data[0].name
-    res.signed = aux_data[1]
-    res.exponent = aux_data[2]
-    res.qs = get_tracing_qs(check_validity = False)
-    
-    return res
-
-# Register as a PyTree with JAX
-tree_util.register_pytree_node(QuantumFloat, flatten_qf, unflatten_qf)
