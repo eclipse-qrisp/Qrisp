@@ -80,17 +80,11 @@ def transfer_lsb(from_qv, to_qv):
     lsb = from_qv.reg.pop(0)
     
     # Adjust the relevant QuantumFloat attributes
-    from_qv.msize -= 1
-    from_qv.mshape[0] += 1
     from_qv.exponent += 1
 
     # Insert the qubit in the target
     to_qv.reg.insert(len(to_qv), lsb)
     
-    # Adjust the relevant attributes
-    to_qv.msize += 1
-    to_qv.mshape[1] += 1
-
 
 # This function realizes the first step of the Montgomery reduction
 
@@ -150,7 +144,6 @@ def QREDC(t, N, m):
     S.signed = False
     
     u.reg.insert(len(u), sgn)
-    u.mshape[1] += 1
     
     # Adjust the m attribute, which indicates the current Montgomery shift of this
     # QuantumModulus

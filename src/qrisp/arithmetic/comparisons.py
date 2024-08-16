@@ -33,7 +33,6 @@ def less_than_gate(a, b):
     added_sign = False
     if not a.signed:
         a.extend(1, position=-1)
-        a.mshape[1] -= 1
         a.signed = True
         added_sign = True
 
@@ -59,7 +58,6 @@ def less_than_gate(a, b):
         while a.mshape[0] > b.mshape[0]:
             a.extend(1, position=0)
 
-            a.mshape -= 1
             a.exponent -= 1
 
             added_qubits_lower += 1
@@ -93,11 +91,9 @@ def less_than_gate(a, b):
 
     for i in range(added_qubits_lower):
         a.reduce(a[0], verify=False)
-        a.mshape += 1
         a.exponent += 1
 
     if added_sign:
-        a.mshape[1] += 1
         a.signed = False
 
     if isinstance(b, QuantumFloat):
@@ -184,7 +180,6 @@ def less_than(a, b):
         added_sign = False
         if not b.signed:
             b.extend(1, b.size)
-            b.mshape[1] -= 1
             b.signed = True
             added_sign = True
 
@@ -195,7 +190,6 @@ def less_than(a, b):
 
         if added_sign:
             b.reduce(b.reg[-1])
-            b.mshape[1] += 1
             b.signed = False
 
         return res

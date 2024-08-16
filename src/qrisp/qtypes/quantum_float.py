@@ -20,22 +20,12 @@
 import numpy as np
 import sympy as sp
 
-# from qrisp.arithmetic import (
-#     eq,
-#     geq,
-#     gt,
-#     inpl_mult,
-#     leq,
-#     lt,
-#     neq,
-#     polynomial_encoder,
-#     q_mult,
-#     sbp_add,
-#     quantum_bit_shift,
-# )
 from qrisp.core import QuantumVariable
 from qrisp.misc import gate_wrap
 
+
+def signed_int_iso_2(x, n):
+    return x % (int(1)<<(n))
 
 def signed_int_iso(x, n):
     if int(x) < -(2**n) or int(x) >= 2**n:
@@ -294,17 +284,8 @@ class QuantumFloat(QuantumVariable):
     def __init__(self, msize, exponent=0, qs=None, name=None, signed=False):
         # Boolean to indicate if the float is signed
         self.signed = signed
-
         # Exponent
         self.exponent = exponent
-
-        # Size of the mantissa
-        self.msize = msize
-
-        # Array that consists of (log2(min), log2(max)) where min and max are the
-        # minimal and maximal values of the absolutes that the QuantumFloat can
-        # represent.
-        self.mshape = (exponent, exponent + msize)
 
         # Initialize QuantumVariable
         if signed:
@@ -313,6 +294,17 @@ class QuantumFloat(QuantumVariable):
             super().__init__(msize, qs, name=name)
             
         self.traced_attributes = ["exponent", "signed"]
+
+    @property
+    def msize(self):
+        return self.size - self.signed
+    
+    @property
+    def mshape(self):
+        # Tuple that consists of (log2(min), log2(max)) where min and max are the
+        # minimal and maximal values of the absolutes that the QuantumFloat can
+        # represent.
+        return (self.exponent, self.exponent + self.msize)
 
     # Define outcome_labels
     def decoder(self, i):
@@ -330,10 +322,11 @@ class QuantumFloat(QuantumVariable):
             return res
 
     def encoder(self, i):
-        if self.signed:
-            res = signed_int_iso(i/2**self.exponent, self.size-1)
-        else:
-            res = i/2**self.exponent
+        res = signed_int_iso_2(i/(2.**self.exponent), self.size)
+        # if self.signed:
+        #     res = signed_int_iso(i/2**self.exponent, self.size-1)
+        # else:
+        #     res = i/2**self.exponent
         
         if isinstance(res, (int, float)):
             return int(res)
@@ -694,23 +687,6 @@ class QuantumFloat(QuantumVariable):
             raise Exception("Tried to shift QuantumFloat exponent by non-integer value")
 
         self.exponent += shift
-        self.mshape = self.mshape + shift
-
-    def reduce(self, qubits, verify=False):
-        QuantumVariable.reduce(self, qubits, verify)
-
-        try:
-            self.mshape[1] -= len(qubits)
-            self.msize -= len(qubits)
-        except TypeError:
-            self.mshape[1] -= 1
-            self.msize -= 1
-
-    def extend(self, amount, position=-1):
-        QuantumVariable.extend(self, amount, position=position)
-
-        self.mshape[1] += amount
-        self.msize += amount
 
     def add_sign(self):
         """
@@ -738,8 +714,6 @@ class QuantumFloat(QuantumVariable):
             raise Exception(r'Tried to add sign to signed QuantumFloat')
 
         self.extend(1, self.size)
-        self.mshape[1] -= 1
-        self.msize -= 1
         self.signed = True
 
     def sign(self):
@@ -993,14 +967,6 @@ class QuantumFloat(QuantumVariable):
         
         quantum_bit_shift(self, shift_amount)
         
-    def duplicate(self, name=None, qs=None, init=False):
-        
-        res = QuantumVariable.duplicate(self, name, qs, init)
-        res.mshape = tuple(self.mshape)
-        return res
-        
-        
-
 
 def create_output_qf(operands, op):
     if isinstance(op, sp.core.expr.Expr):

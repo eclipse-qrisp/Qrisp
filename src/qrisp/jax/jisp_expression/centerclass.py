@@ -15,6 +15,7 @@
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************/
 """
+from functools import lru_cache
 
 from jax import make_jaxpr
 from jax.core import Jaxpr
@@ -95,8 +96,12 @@ class Jispr(Jaxpr):
         else:
             qs.abs_qc = res[0]
             return res[1:]
-        
-        
+    
+    @classmethod
+    @lru_cache(maxsize = int(1E5))
+    def from_cache(cls, jaxpr):
+        return Jispr(jaxpr)
+    
 
 
 def make_jispr(fun):

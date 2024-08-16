@@ -322,9 +322,11 @@ class QuantumVariable:
         try:
             # Register as a PyTree with JAX
             tree_util.register_pytree_node(type(self), flatten_qv, unflatten_qv)
-            self.traced_attributes = []
         except ValueError:
             pass
+        
+        # Specify the traced attributes (None for base type QuantumVariable)
+        self.traced_attributes = []
         
     
     def __or__(self, other):

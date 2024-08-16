@@ -36,6 +36,7 @@ def jisp_function_test(func):
         jaxpr = flatten_environments(jaxpr)
         
         qc, qv_qubits = extract_qc(jaxpr)(*args, **kwargs)
+        print(qc)
         
         clbit_list = []
         for qb in qv_qubits:

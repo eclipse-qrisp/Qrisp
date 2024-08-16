@@ -367,5 +367,6 @@ def flatten_environments_in_pjit_eqn(eqn, context_dic):
     
     eqn.params["jaxpr"] = ClosedJaxpr(flatten_collected_environments(eqn.params["jaxpr"].jaxpr),
                                       eqn.params["jaxpr"].consts)
+    
     exec_eqn(eqn, context_dic)
     

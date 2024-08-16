@@ -16,7 +16,7 @@
 ********************************************************************************/
 """
 
-from jax import jit
+import jax
 from qrisp.jax import get_tracing_qs, check_for_tracing_mode
 
 def qache(func):
@@ -157,9 +157,11 @@ def qache(func):
     # Modify the name of the ammended function to reflect the input
     ammended_function.__name__ = func.__name__
     # Wrap in jax.jit
-    ammended_function = jit(ammended_function)
+    ammended_function = jax.jit(ammended_function)
     
     from qrisp.core.quantum_variable import QuantumVariable, flatten_qv, unflatten_qv
+    from qrisp.jax import Jispr
+    
     
     # We now prepare the return function
     def return_function(*args, **kwargs):
@@ -183,6 +185,10 @@ def qache(func):
         
         # Excecute the function
         abs_qc_new, res = ammended_function(abs_qs.abs_qc, *args, **kwargs)
+        
+        # eqn = jax._src.core.thread_local_state.trace_state.trace_stack.dynamic.jaxpr_stack[0].eqns[-1]
+        # eqn.params["jaxpr"] = "="
+        
         abs_qs.abs_qc = abs_qc_new
         
         # Update the QuantumVariable objects to their former tracers (happens in-place)

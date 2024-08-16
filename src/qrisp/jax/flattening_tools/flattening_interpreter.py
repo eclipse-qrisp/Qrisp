@@ -56,7 +56,7 @@ def eval_jaxpr(jaxpr,
             outvals = []
         
         for i in range(len(jaxpr.outvars)):
-            outvals.append(context_dic[jaxpr.outvars[i]])
+            outvals.append(assert_value(jaxpr.outvars[i], context_dic))
         
         if len(outvals) == 1:
             return outvals[0]
@@ -135,6 +135,7 @@ def exec_eqn(eqn, context_dic):
             
             return
     
+    
     res = eqn.primitive.bind(*invalues, **eqn.params)
     insert_outvalues(eqn, context_dic, res)
 
@@ -143,25 +144,28 @@ def extract_invalues(eqn, context_dic):
     invalues = []
     for i in range(len(eqn.invars)):
         invar = eqn.invars[i]
-        if isinstance(invar, Literal):
-            invalues.append(invar.val)
-            continue
-        invalues.append(context_dic[invar])
+        invalues.append(assert_value(invar, context_dic))
     return invalues
 
 def extract_constvalues(eqn, context_dic):
     constvalues = []
     for i in range(len(eqn.constvars)):
         constvar = eqn.constvars[i]
-        if isinstance(constvar, Literal):
-            constvalues.append(constvar.val)
-            continue
-        constvalues.append(context_dic[constvar])
+        constvalues.append(assert_value(constvar, context_dic))
+        
     return constvalues
 
 def insert_outvalues(eqn, context_dic, outvalues):
+    
     if eqn.primitive.multiple_results:
         for i in range(len(eqn.outvars)):
             context_dic[eqn.outvars[i]] = outvalues[i]
     else:
         context_dic[eqn.outvars[0]] = outvalues
+        
+def assert_value(var, context_dic):
+    
+    if isinstance(var, Literal):
+        return var.val
+    else:
+        return context_dic[var]

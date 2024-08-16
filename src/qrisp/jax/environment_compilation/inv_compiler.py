@@ -18,7 +18,7 @@
 
 from jax import jit
 from jax.core import Jaxpr, JaxprEqn, ClosedJaxpr
-from qrisp.jax import get_tracing_qs, check_for_tracing_mode, flatten_collected_environments
+from qrisp.jax import get_tracing_qs, check_for_tracing_mode, flatten_collected_environments, AbstractQuantumCircuit
 
 def invert_eqn(eqn):
     """
@@ -83,7 +83,8 @@ def inv_transform(jaxpr):
     
     from qrisp.circuit import Operation
     for eqn in jaxpr.eqns:
-        if isinstance(eqn.primitive, Operation) or eqn.primitive.name == "pjit":
+        if isinstance(eqn.primitive, Operation) or (eqn.primitive.name == "pjit" and isinstance(eqn.outvars[0].aval, AbstractQuantumCircuit)):
+
             # Insert the inverted equation at the front
             op_eqs.insert(0, invert_eqn(eqn))
         else:

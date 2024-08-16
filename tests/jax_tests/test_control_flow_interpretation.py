@@ -23,7 +23,6 @@ def test_control_flow_interpretation():
     @qache
     def inner_function(qf, i):
         qf[:] = i
-        
 
     def test_f(i):
         a = QuantumFloat(5, -1)
