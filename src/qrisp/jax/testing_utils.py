@@ -18,7 +18,7 @@
 
 from jax import make_jaxpr
 from jax.core import ClosedJaxpr
-from qrisp.jax import extract_qc, flatten_environments, flatten_pjit, eval_jaxpr, make_jispr
+from qrisp.jax import flatten_environments, flatten_pjit, eval_jaxpr, make_jispr
 
 
 def jisp_function_test(func):
@@ -58,9 +58,6 @@ def jisp_function_test(func):
                 new_counts_dic[new_key] += counts[key]/100000
             except KeyError:
                 new_counts_dic[new_key] = counts[key]/100000
-        
-        dynamic_counts = new_counts_dic
-        
         
         for k in old_counts_dic.keys():
             if abs(old_counts_dic[k] - new_counts_dic[k]) > 1E-4:

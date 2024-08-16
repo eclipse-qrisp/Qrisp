@@ -21,7 +21,7 @@ from jax import make_jaxpr
 from jax.core import Jaxpr, ClosedJaxpr
 
 from qrisp.jax.jisp_expression import invert_jispr, multi_control_jispr, collect_environments
-from qrisp.jax import AbstractQuantumCircuit, eval_jaxpr, flatten_pjit
+from qrisp.jax import AbstractQuantumCircuit, eval_jaxpr, flatten_pjit, pjit_to_gate
 
 class Jispr(Jaxpr):
     
@@ -81,13 +81,15 @@ class Jispr(Jaxpr):
         
     @lru_cache(maxsize = int(1E5))
     def eval(self, *args, **kwargs):
-        flattened_jaxpr = flatten_pjit(self)
+        # flattened_jaxpr = flatten_pjit(self)
         
         if len(args) == len(self.invars) - 1:
             from qrisp import QuantumCircuit
             args = [QuantumCircuit()] + list(args)
         
-        return eval_jaxpr(flattened_jaxpr)(*args, **kwargs)
+        eqn_eval_dic = {"pjit" : pjit_to_gate}
+        
+        return eval_jaxpr(self, eqn_eval_dic = eqn_eval_dic)(*args, **kwargs)
         
     @classmethod
     @lru_cache(maxsize = int(1E5))

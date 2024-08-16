@@ -35,24 +35,6 @@ def create_qubits(size, state):
         
 raise_to_shaped_mappings[AbstractQuantumCircuit] = lambda aval, _: aval
 
-qdef_p = QuantumPrimitive("qdef")
-
-@qdef_p.def_abstract_eval
-def qdef_abstract_eval():
-    """Abstract evaluation of the primitive.
-    
-    This function does not need to be JAX traceable. It will be invoked with
-    abstractions of the actual arguments. 
-    """
-    
-    return AbstractQuantumCircuit()
-
-
-@qdef_p.def_impl
-def qdef_abstract_eval():
-    from qrisp.circuit import QuantumCircuit
-    return QuantumCircuit()
-
 # Register Creation
 create_qubits_p = QuantumPrimitive("create_qubits")
 create_qubits_p.multiple_results = True
@@ -73,10 +55,12 @@ def create_qubits_abstract_eval(qc, size):
 
 @create_qubits_p.def_impl
 def create_qubit_impl(qc, size):
+    from qrisp.circuit import QubitAlloc
     qubit_list = []
     
     for i in range(int(size)):
         qubit_list.append(qc.add_qubit())
+        qc.append(QubitAlloc(), qubit_list[-1])
     
     return qc, qubit_list
 

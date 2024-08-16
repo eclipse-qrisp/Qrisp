@@ -20,7 +20,7 @@ import weakref
 
 import jax
 
-from qrisp.jax import qdef_p, create_qubits, delete_qubits_p
+from qrisp.jax import create_qubits, delete_qubits_p
 
 
 class TracingQuantumSession:
@@ -49,9 +49,6 @@ class TracingQuantumSession:
             raise RuntimeError(
                 "Variable name " + str(qv.name) + " already exists in quantum session"
             )
-            
-        if self.abs_qc is None:
-            self.abs_qc = qdef_p.bind()
             
         # Determine amount of required qubits
         self.abs_qc, qv.reg = create_qubits(self.abs_qc, size)

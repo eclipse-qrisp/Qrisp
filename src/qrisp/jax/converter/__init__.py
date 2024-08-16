@@ -16,7 +16,6 @@
 ********************************************************************************/
 """
 
-from qrisp.jax.converter.qc_converter import *
 from qrisp.jax.converter.catalyst_converter import *
     
 

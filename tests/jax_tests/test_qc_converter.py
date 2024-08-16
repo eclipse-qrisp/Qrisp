@@ -18,9 +18,9 @@
 
 from jax import make_jaxpr
 from qrisp import QuantumVariable, cx, QuantumCircuit
-from qrisp.jax import extract_qc, qache, flatten_pjit, make_jispr
+from qrisp.jax import qache, flatten_pjit, make_jispr
 
-def test_converter():
+def test_qc_converter():
     
     def test_function(i):
         qv = QuantumVariable(i)
@@ -57,6 +57,8 @@ def test_converter():
     jispr = make_jispr(test_function)(5)
     qc = jispr.eval(5)
     
+    assert len(qc.data) == 3 + len(qc.qubits)
+    print(qc)
     comparison_qc = QuantumCircuit(5)
     
     comparison_qc.cx(0, 1)
