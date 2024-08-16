@@ -18,7 +18,7 @@
 
 from jax import make_jaxpr
 from qrisp import QuantumVariable, cx, QuantumCircuit
-from qrisp.jax import extract_qc, qache, flatten_pjit
+from qrisp.jax import extract_qc, qache, flatten_pjit, make_jispr
 
 def test_converter():
     
@@ -31,12 +31,13 @@ def test_converter():
     
     for i in range(3, 7):
         
-        qc, func_res = extract_qc(test_function)(i)
+        jispr = make_jispr(test_function)(i)
+        qc = jispr.eval(i)
         
         comparison_qc = QuantumCircuit(i)
-        qc.cx(0, 1)
-        qc.cx(1, 2)
-        qc.cx(1, 2)
+        comparison_qc.cx(0, 1)
+        comparison_qc.cx(1, 2)
+        comparison_qc.cx(1, 2)
         
         assert qc.compare_unitary(comparison_qc)
     
@@ -53,10 +54,8 @@ def test_converter():
         inner_function(qv, 2)
         
     
-    qc, func_res = extract_qc(test_function)(5)
-    
-    print(qc.transpile())
-    assert len(qc.data) == 3
+    jispr = make_jispr(test_function)(5)
+    qc = jispr.eval(5)
     
     comparison_qc = QuantumCircuit(5)
     
@@ -71,10 +70,10 @@ def test_converter():
     
     assert qc.compare_unitary(comparison_qc)
     
-    jaxpr = make_jaxpr(test_function)(5)
-    flattened_jaxpr = flatten_pjit(jaxpr)
+    jispr = make_jispr(test_function)(5)
+    flattened_jispr = flatten_pjit(jispr)
     
-    qc, func_res = extract_qc(flattened_jaxpr)(5)
+    qc = flattened_jispr.eval(5)
     
     assert qc.compare_unitary(comparison_qc)
     

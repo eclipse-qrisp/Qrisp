@@ -34,7 +34,7 @@ def test_control_flow_interpretation():
         b += 4
         return b
     
-    jisp_program = make_jaxpr(test_f)(0.5)
+    jisp_program = make_jispr(test_f)(0.5)
     
     eval_function = jisp_interpreter(jisp_program)
     

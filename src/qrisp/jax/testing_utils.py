@@ -18,7 +18,7 @@
 
 from jax import make_jaxpr
 from jax.core import ClosedJaxpr
-from qrisp.jax import extract_qc, flatten_environments, flatten_pjit, eval_jaxpr
+from qrisp.jax import extract_qc, flatten_environments, flatten_pjit, eval_jaxpr, make_jispr
 
 
 def jisp_function_test(func):
@@ -31,12 +31,13 @@ def jisp_function_test(func):
         
         old_counts_dic = qv.get_measurement()
         
-        jaxpr = make_jaxpr(func)(*args, **kwargs).jaxpr
+        jispr = make_jispr(func)(*args, **kwargs)
         
-        jaxpr = flatten_environments(jaxpr)
+        jispr = flatten_environments(jispr)
         
-        qc, qv_qubits = extract_qc(jaxpr)(*args, **kwargs)
-        print(qc)
+        qc, qv_qubits = jispr.eval(*args, **kwargs)
+        
+        # qc, qv_qubits = extract_qc(jaxpr)(*args, **kwargs)
         
         clbit_list = []
         for qb in qv_qubits:
@@ -69,17 +70,21 @@ def jisp_function_test(func):
     return testing_function
         
 
-def jisp_interpreter(jaxpr):
+def jisp_interpreter(jispr):
     
-    if isinstance(jaxpr, ClosedJaxpr):
-        jaxpr = jaxpr.jaxpr
+    from qrisp import QuantumCircuit
     
     def jisp_executer(*args):
         
-        new_jaxpr = flatten_environments(jaxpr)
-        new_jaxpr = flatten_pjit(new_jaxpr)
+        new_jispr = flatten_environments(jispr)
+        new_jispr = flatten_pjit(new_jispr)
+        
+        res = eval_jaxpr(new_jispr)(QuantumCircuit(), *args)[1:]
+        
+        if len(res) == 1:
+            res = res[0]
 
-        return eval_jaxpr(new_jaxpr)(*args)
+        return res
     
     return jisp_executer
         

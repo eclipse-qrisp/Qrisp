@@ -20,8 +20,8 @@ from functools import lru_cache
 from jax import make_jaxpr
 from jax.core import Jaxpr, ClosedJaxpr
 
-from qrisp.jax.jisp_expression import invert_jispr, multi_control_jispr
-from qrisp.jax import AbstractQuantumCircuit, eval_jaxpr, collect_environments
+from qrisp.jax.jisp_expression import invert_jispr, multi_control_jispr, collect_environments
+from qrisp.jax import AbstractQuantumCircuit, eval_jaxpr, flatten_pjit
 
 class Jispr(Jaxpr):
     
@@ -79,28 +79,23 @@ class Jispr(Jaxpr):
     def control(self, num_ctrl, ctrl_state = -1):
         return multi_control_jispr(self, num_ctrl, ctrl_state)
         
-        
-    
+    @lru_cache(maxsize = int(1E5))
     def eval(self, *args, **kwargs):
+        flattened_jaxpr = flatten_pjit(self)
         
-        from qrisp.jax import get_tracing_qs
+        if len(args) == len(self.invars) - 1:
+            from qrisp import QuantumCircuit
+            args = [QuantumCircuit()] + list(args)
         
-        qs = get_tracing_qs()
+        return eval_jaxpr(flattened_jaxpr)(*args, **kwargs)
         
-        res = eval_jaxpr(self)(qs.abs_qc, *args, **kwargs)
-        
-        qs = get_tracing_qs()
-        if len(self.outvars) == 1:
-            qs.abs_qc = res
-            return
-        else:
-            qs.abs_qc = res[0]
-            return res[1:]
-    
     @classmethod
     @lru_cache(maxsize = int(1E5))
     def from_cache(cls, jaxpr):
         return Jispr(jaxpr)
+    
+    
+    
     
 
 
@@ -108,18 +103,14 @@ def make_jispr(fun):
     from qrisp.jax import get_tracing_qs, AbstractQuantumCircuit, TracingQuantumSession
     def jispr_creator(*args, **kwargs):
         
-        def ammended_function(qc, *args, **kwargs):
+        def ammended_function(abs_qc, *args, **kwargs):
             
-            TracingQuantumSession.reset()
-            qs = get_tracing_qs(check_validity = False)
-            temp = qs.abs_qc
-            qs.abs_qc = qc
+            qs = TracingQuantumSession(abs_qc)
             
             res = fun(*args, **kwargs)
-                
             res_qc = qs.abs_qc
-            qs.abs_qc = temp
-            TracingQuantumSession.reset()
+            
+            TracingQuantumSession.release()
             
             return res_qc, res
         
@@ -135,6 +126,36 @@ def recursive_convert(jaxpr):
         if eqn.primitive.name == "pjit" and isinstance(eqn.outvars[0].aval, AbstractQuantumCircuit):
             eqn.params["jaxpr"] = ClosedJaxpr(recursive_convert(eqn.params["jaxpr"].jaxpr), eqn.params["jaxpr"].consts)
     
+    # We "collect" the QuantumEnvironments.
+    # Collect means that the enter/exit statements are transformed into Jispr
+    # which are subsequently called. Example:
+        
+    # from qrisp import *
+    # from qrisp.jax import *
+    # import jax
+
+    # def outer_function(x):
+    #     qv = QuantumVariable(x)
+    #     with QuantumEnvironment():
+    #         cx(qv[0], qv[1])
+    #         h(qv[0])
+    #     return qv
+
+    # jaxpr = make_jaxpr(outer_function)(2).jaxpr
+    
+    # This piece of code results in the following jaxpr
+    
+    # { lambda ; a:i32[]. let
+    #     b:QuantumCircuit = qdef 
+    #     c:QuantumCircuit d:QubitArray = create_qubits b a
+    #     e:QuantumCircuit = q_env[stage=enter type=quantumenvironment] c
+    #     f:Qubit = get_qubit d 0
+    #     g:Qubit = get_qubit d 1
+    #     h:QuantumCircuit = cx e f g
+    #     i:Qubit = get_qubit d 0
+    #     j:QuantumCircuit = h h i
+    #     _:QuantumCircuit = q_env[stage=exit type=quantumenvironment] j
+    #   in (d,) }
     jaxpr = collect_environments(jaxpr)
     
     return Jispr.from_cache(jaxpr)

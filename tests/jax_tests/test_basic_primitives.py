@@ -28,16 +28,15 @@ def test_basic_primitives():
         res_bl = measure(qv[0])
         return res_bl
 
-    compare_jaxpr(make_jaxpr(test_function)(), 
-                ['qdef',
-                 'create_qubits',
+    compare_jaxpr(make_jispr(test_function)(), 
+                ['create_qubits',
                  'get_qubit',
                  'h',
                  'get_qubit',
                  'get_qubit',
                  'cx',
                  'get_qubit',
-                 'measure'])    
+                 'measure'])
     
     def test_function():
         qv = QuantumVariable(2)
@@ -49,15 +48,8 @@ def test_basic_primitives():
         res_bl = measure(qv[0])
         return res_bl
     
-    compare_jaxpr(make_jaxpr(test_function)(), 
-                ['qdef',
-                 'create_qubits',
-                 'q_env',
-                 'get_qubit',
-                 'h',
-                 'get_qubit',
-                 'get_qubit',
-                 'cx',
+    compare_jaxpr(make_jispr(test_function)(), 
+                ['create_qubits',
                  'q_env',
                  'get_qubit',
                  'measure'])    
@@ -73,9 +65,8 @@ def test_basic_primitives():
         qv.delete()
         return res_bl
 
-    compare_jaxpr(make_jaxpr(test_function)(), 
-                ['qdef',
-                 'create_qubits',
+    compare_jaxpr(make_jispr(test_function)(), 
+                ['create_qubits',
                  'get_qubit',
                  'h',
                  'get_qubit',

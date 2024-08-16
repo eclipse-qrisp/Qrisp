@@ -43,5 +43,5 @@ def flatten_pjit(jaxpr):
     
     eqn_eval_dic = {"pjit" : evaluate_pjit_eqn}
     
-    return reinterpret(jaxpr, eqn_eval_dic)
+    return type(jaxpr)(reinterpret(jaxpr, eqn_eval_dic))
     

@@ -17,7 +17,7 @@
 """
 
 import jax
-from qrisp.jax import get_tracing_qs, check_for_tracing_mode
+from qrisp.jax import TracingQuantumSession, check_for_tracing_mode
 
 def qache(func):
     """
@@ -145,7 +145,7 @@ def qache(func):
         
         # Set the given AbstractQuantumCircuit as the 
         # one carried by the tracing QuantumSession
-        qs = get_tracing_qs()
+        qs = TracingQuantumSession.get_instance()
         qs.abs_qc = abs_qc
         
         # Execute the function
@@ -160,7 +160,6 @@ def qache(func):
     ammended_function = jax.jit(ammended_function)
     
     from qrisp.core.quantum_variable import QuantumVariable, flatten_qv, unflatten_qv
-    from qrisp.jax import Jispr
     
     
     # We now prepare the return function
@@ -181,7 +180,7 @@ def qache(func):
                 flattened_qvs.append(flatten_qv(arg))
         
         # Get the AbstractQuantumCircuit for tracing
-        abs_qs = get_tracing_qs()
+        abs_qs = TracingQuantumSession.get_instance()
         
         # Excecute the function
         abs_qc_new, res = ammended_function(abs_qs.abs_qc, *args, **kwargs)

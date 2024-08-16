@@ -56,7 +56,7 @@
 from qrisp.circuit import QubitAlloc, QubitDealloc, fast_append
 from qrisp.core.quantum_session import QuantumSession
 
-from qrisp.jax import QuantumPrimitive, AbstractQuantumCircuit, get_tracing_qs
+from qrisp.jax import QuantumPrimitive, AbstractQuantumCircuit, TracingQuantumSession
 
 class QuantumEnvironment(QuantumPrimitive):
     """
@@ -381,7 +381,7 @@ class QuantumEnvironment(QuantumPrimitive):
     # Method to enter the environment
     def __enter__(self):
         
-        abs_qs = get_tracing_qs()
+        abs_qs = TracingQuantumSession.get_instance()
         if abs_qs is not None:
             abs_qs.abs_qc = self.bind(abs_qs.abs_qc, *self.env_args, stage = "enter", type = str(type(self)).split(".")[-1][:-2].lower())
             return
@@ -430,7 +430,7 @@ class QuantumEnvironment(QuantumPrimitive):
     def __exit__(self, exception_type, exception_value, traceback):
         
         
-        abs_qs = get_tracing_qs()
+        abs_qs = TracingQuantumSession.get_instance()
         if abs_qs is not None:
             abs_qs.abs_qc = self.bind(abs_qs.abs_qc, stage = "exit", type = str(type(self)).split(".")[-1][:-2].lower())
             return

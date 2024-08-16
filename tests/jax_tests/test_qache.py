@@ -49,7 +49,7 @@ def test_qache():
         temp_3 = inner_function(qv_1)
         return temp_0 & temp_1 & temp_2
     
-    print(make_jaxpr(outer_function)())
+    print(make_jispr(outer_function)())
     
     # The function has been called four times but only for two different types
     assert counter.count == 2

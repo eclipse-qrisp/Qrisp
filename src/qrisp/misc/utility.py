@@ -40,9 +40,9 @@ def bin_rep(n, bits):
 def int_encoder(qv, encoding_number):
     
     from qrisp import x
-    from qrisp.jax import get_tracing_qs, TracingQuantumSession
+    from qrisp.jax import TracingQuantumSession
     
-    tr_qs = get_tracing_qs()
+    tr_qs = TracingQuantumSession.get_instance()
     if tr_qs is None:
         if encoding_number > 2 ** len(qv) - 1:
             raise Exception("Not enough qubits to encode integer " + str(encoding_number))
@@ -65,19 +65,11 @@ def int_encoder(qv, encoding_number):
             cond_bool = (1<<i) & encoding_number
             qb = qv[i]
             qc = cond(cond_bool, true_fun, false_fun, qc, cond_bool, qb)
+            
             return qc
-        
         qc = fori_loop(0, qv.size, loop_fun, (tr_qs.abs_qc))
         tr_qs.abs_qc = qc
         
-        
-        # def false_fun()
-            
-            
-            
-            
-        
-
 
 # Calculates the binary expression of a given integer and returns it as an array of
 # length bits
@@ -642,8 +634,8 @@ def gate_wrap_inner(
 
 
 def find_qs(args):
-    from qrisp.jax import get_tracing_qs
-    abs_qs = get_tracing_qs()
+    from qrisp.jax import TracingQuantumSession
+    abs_qs = TracingQuantumSession.get_instance()
     if abs_qs is not None:
         return abs_qs
     

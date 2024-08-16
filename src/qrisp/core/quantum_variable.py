@@ -25,8 +25,6 @@ import numpy as np
 
 from qrisp.core.compilation import qompiler
 
-from qrisp.jax import TracingQuantumSession
-
 class QuantumVariable:
     """
     The QuantumVariable is the quantum equivalent of a regular variable in classical
@@ -235,10 +233,12 @@ class QuantumVariable:
 
         # Store quantum session
         from qrisp.core import QuantumSession, merge_sessions
-        from qrisp.jax import check_for_tracing_mode, get_tracing_qs
+        from qrisp.jax import check_for_tracing_mode, TracingQuantumSession
 
         if check_for_tracing_mode():
-            self.qs = get_tracing_qs()
+            self.qs = TracingQuantumSession.get_instance()
+            if self.qs is None:
+                raise Exception("Tried to trace Qrisp code using make_jaxpr (use make_jispr instead)")
         else:
             if qs is not None:
                 self.qs = qs
@@ -1468,7 +1468,7 @@ def plot_histogram(outcome_labels, counts, filename=None):
 
 
 from jax import tree_util
-from qrisp.jax.tracing_quantum_session import get_tracing_qs
+from qrisp.jax.tracing_quantum_session import TracingQuantumSession
 from builtins import id
 
 def flatten_qv(qv):
@@ -1482,7 +1482,7 @@ def flatten_qv(qv):
     return tuple(children), None
 
 def unflatten_qv(aux_data, children):
-    qs = get_tracing_qs(check_validity = False)
+    qs = TracingQuantumSession.get_instance()
     
     for qv in qs.qv_list:
         

@@ -24,13 +24,14 @@ from qrisp.jax import qdef_p, create_qubits, delete_qubits_p
 
 
 class TracingQuantumSession:
-    tr_qs_container = [lambda : None]
+    tr_qs_container = [None]
     
-    def __init__(self):
+    def __init__(self, abs_qc):
         
-        self.abs_qc = None
+        self.abs_qc = abs_qc
         self.qv_list = []
         self.deleted_qv_list = []
+        TracingQuantumSession.tr_qs_container = [self]
         
     def append(self, operation, qubits = [], clbits = []):
     
@@ -38,7 +39,8 @@ class TracingQuantumSession:
             raise Exception("Tried to append Operation with non-zero classical bits in JAX mode.")
             
         if self.abs_qc is None:
-            self.abs_qc = qdef_p.bind()
+            raise
+            # self.abs_qc = qdef_p.bind()
             
         self.abs_qc = operation.bind(self.abs_qc, *(operation.params + [b for b in qubits]))
         
@@ -84,8 +86,13 @@ class TracingQuantumSession:
         self.abs_qc = delete_qubits_p.bind(self.abs_qc, qubits)
     
     @classmethod
-    def reset(cls):
-        cls.tr_qs_container = [lambda : None]
+    def release(cls):
+        cls.tr_qs_container = [None]
+    
+    @classmethod
+    def get_instance(cls):
+        return cls.tr_qs_container[0]
+        
         
 
 def check_for_tracing_mode():
@@ -97,9 +104,11 @@ def check_live(tracer):
     return not not tracer._trace.main.jaxpr_stack
 
 def get_tracing_qs(check_validity = True):
+    raise
     res = TracingQuantumSession.tr_qs_container[0]()
     if check_for_tracing_mode():
         if res is None:
+            raise
             res = TracingQuantumSession()
             TracingQuantumSession.tr_qs_container[0] = weakref.ref(res)
             return res

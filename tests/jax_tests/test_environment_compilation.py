@@ -29,8 +29,8 @@ def test_environment_compilation():
                 h(qv[0])
         return qv
 
-    jaxpr = make_jaxpr(outer_function)(2).jaxpr
-    jaxpr = flatten_environments(jaxpr)
+    jispr = make_jispr(outer_function)(2)
+    jispr = flatten_environments(jispr)
     
     jisp_function_test(outer_function)
     

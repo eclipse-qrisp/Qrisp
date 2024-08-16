@@ -21,7 +21,7 @@ from jax.core import Literal, ClosedJaxpr
 from qrisp.jax.primitives import QuantumPrimitive
 from qrisp.jax.flattening_tools import eval_jaxpr, extract_invalues, insert_outvalues
 
-def extract_qc(jaxpr_or_function):
+def extract_qc(jispr_or_function):
     """
     Converts a Qrisp-generated Jaxpr into a QuantumCircuit.
 
@@ -40,42 +40,31 @@ def extract_qc(jaxpr_or_function):
 
     """
         
-    if callable(jaxpr_or_function):
-        jaxpr_gen = lambda *args : make_jaxpr(jaxpr_or_function)(*args).jaxpr
+    if callable(jispr_or_function):
+        from qrisp.jax.jisp_expression import make_jispr
+        jispr_gen = lambda *args : make_jispr(jispr_or_function)(*args)
     else:
-        if isinstance(jaxpr_or_function, ClosedJaxpr):
-            jaxpr_or_function = jaxpr_or_function.jaxpr
-        
-        jaxpr_gen = lambda *args : jaxpr_or_function
+        jispr_gen = lambda *args : jispr_or_function
     
     def qc_eval_function(*args):
         
-        jaxpr = jaxpr_gen(*args)
+        jispr = jispr_gen(*args)
         
-        if len(jaxpr.invars) + len(jaxpr.constvars) != len(args):
-            raise Exception(f"Supplied inaccurate amount of arguments ({len(args)}) for Jaxpr (requires {len(jaxpr.invars)}).")
+        if len(jispr.invars) + len(jispr.constvars) != len(args):
+            raise Exception(f"Supplied inaccurate amount of arguments ({len(args)}) for Jispr (requires {len(jispr.invars)}).")
         
         eqn_eval_dic = {"pjit" : pjit_to_gate, "measure" : measure_to_clbit}
         
-        outvals = eval_jaxpr(jaxpr, 
-                             return_context_dic = True, 
-                             eqn_eval_dic = eqn_eval_dic)(*args)
-        
-        if len(jaxpr.outvars) == 0:
-            outvals = [outvals]
-            
-        context_dic = outvals[0]
-        
-        
         from qrisp.circuit import QuantumCircuit
-        for val in context_dic.values():
-            if isinstance(val, QuantumCircuit):
-                if len(jaxpr.outvars) == 1:
-                    return val, outvals[1]
-                else:
-                    return val, tuple(outvals)[1:]
-            
-        raise Exception("Could not find QuantumCircuit in Jaxpr")
+        qc = QuantumCircuit()
+        outvals = eval_jaxpr(jispr, 
+                             return_context_dic = True, 
+                             eqn_eval_dic = eqn_eval_dic)(*([qc] + list(args)))
+        
+        if isinstance(outvals, QuantumCircuit):
+            return outvals
+        else:
+            return outvals[0]        
         
     return qc_eval_function
 
