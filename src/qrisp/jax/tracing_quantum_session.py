@@ -22,9 +22,9 @@ import jax
 
 from qrisp.jax import qdef_p, create_qubits, delete_qubits_p
 
-tr_qs_container = [lambda : None]
 
 class TracingQuantumSession:
+    tr_qs_container = [lambda : None]
     
     def __init__(self):
         
@@ -82,7 +82,11 @@ class TracingQuantumSession:
     def clear_qubits(self, qubits, verify=False):
         
         self.abs_qc = delete_qubits_p.bind(self.abs_qc, qubits)
-
+    
+    @classmethod
+    def reset(cls):
+        cls.tr_qs_container = [lambda : None]
+        
 
 def check_for_tracing_mode():
     return hasattr(jax._src.core.thread_local_state.trace_state.trace_stack.dynamic, "jaxpr_stack")
@@ -93,22 +97,22 @@ def check_live(tracer):
     return not not tracer._trace.main.jaxpr_stack
 
 def get_tracing_qs(check_validity = True):
-    res = tr_qs_container[0]()
+    res = TracingQuantumSession.tr_qs_container[0]()
     if check_for_tracing_mode():
         if res is None:
             res = TracingQuantumSession()
-            tr_qs_container[0] = weakref.ref(res)
+            TracingQuantumSession.tr_qs_container[0] = weakref.ref(res)
             return res
         if check_validity and not check_live(res.abs_qc):
             res = TracingQuantumSession()
-            tr_qs_container[0] = weakref.ref(res)
+            TracingQuantumSession.tr_qs_container[0] = weakref.ref(res)
             return res
         if res.abs_qc is None and len(res.qv_list):
             res = TracingQuantumSession()
-            tr_qs_container[0] = weakref.ref(res)
+            TracingQuantumSession.tr_qs_container[0] = weakref.ref(res)
             return res
     else:
         if res is not None:
-            tr_qs_container[0] = lambda : None
+            TracingQuantumSession.tr_qs_container[0] = lambda : None
             return None
     return res

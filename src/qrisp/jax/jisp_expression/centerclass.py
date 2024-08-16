@@ -18,10 +18,10 @@
 from functools import lru_cache
 
 from jax import make_jaxpr
-from jax.core import Jaxpr
+from jax.core import Jaxpr, ClosedJaxpr
 
 from qrisp.jax.jisp_expression import invert_jispr, multi_control_jispr
-from qrisp.jax import AbstractQuantumCircuit, eval_jaxpr
+from qrisp.jax import AbstractQuantumCircuit, eval_jaxpr, collect_environments
 
 class Jispr(Jaxpr):
     
@@ -105,11 +105,12 @@ class Jispr(Jaxpr):
 
 
 def make_jispr(fun):
-    from qrisp.jax import get_tracing_qs, AbstractQuantumCircuit
+    from qrisp.jax import get_tracing_qs, AbstractQuantumCircuit, TracingQuantumSession
     def jispr_creator(*args, **kwargs):
         
         def ammended_function(qc, *args, **kwargs):
             
+            TracingQuantumSession.reset()
             qs = get_tracing_qs(check_validity = False)
             temp = qs.abs_qc
             qs.abs_qc = qc
@@ -118,21 +119,29 @@ def make_jispr(fun):
                 
             res_qc = qs.abs_qc
             qs.abs_qc = temp
+            TracingQuantumSession.reset()
             
             return res_qc, res
         
         jaxpr = make_jaxpr(ammended_function)(AbstractQuantumCircuit(), *args, **kwargs).jaxpr
         
-        return Jispr(jaxpr)
+        return recursive_convert(jaxpr)
     
     return jispr_creator
+
+def recursive_convert(jaxpr):
+    
+    for eqn in jaxpr.eqns:
+        if eqn.primitive.name == "pjit" and isinstance(eqn.outvars[0].aval, AbstractQuantumCircuit):
+            eqn.params["jaxpr"] = ClosedJaxpr(recursive_convert(eqn.params["jaxpr"].jaxpr), eqn.params["jaxpr"].consts)
+    
+    jaxpr = collect_environments(jaxpr)
+    
+    return Jispr.from_cache(jaxpr)
+
+    
         
         
-        
-            
-            
-            
-            
             
             
     

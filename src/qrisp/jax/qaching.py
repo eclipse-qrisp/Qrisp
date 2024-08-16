@@ -188,6 +188,8 @@ def qache(func):
         
         # eqn = jax._src.core.thread_local_state.trace_state.trace_stack.dynamic.jaxpr_stack[0].eqns[-1]
         # eqn.params["jaxpr"] = "="
+        #eqn.params["jaxpr"] = jax.core.ClosedJaxpr(Jispr.from_cache(eqn.params["jaxpr"].jaxpr), eqn.params["jaxpr"].consts)
+        # print(type(eqn.params["jaxpr"].jaxpr))
         
         abs_qs.abs_qc = abs_qc_new
         

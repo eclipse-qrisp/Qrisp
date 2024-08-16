@@ -132,7 +132,7 @@ def flatten_environment_eqn(env_eqn, context_dic):
     """
     
     # Set an alias for the function body
-    body_jaxpr = env_eqn.params["jaxpr"]
+    body_jispr = env_eqn.params["jispr"]
     
     from qrisp.environments import InversionEnvironment, ControlEnvironment
     from qrisp.jax.environment_compilation import inv_transform
@@ -140,12 +140,12 @@ def flatten_environment_eqn(env_eqn, context_dic):
     
     # Perform the environment compilation logic
     if isinstance(env_eqn.primitive, InversionEnvironment):
-        transformed_jaxpr = inv_transform(body_jaxpr)
+        transformed_jaxpr = inv_transform(body_jispr)
     elif isinstance(env_eqn.primitive, ControlEnvironment):
-        num_ctrl = len(env_eqn.invars)-len(body_jaxpr.invars)-len(body_jaxpr.constvars)
-        transformed_jaxpr = body_jaxpr.control(num_ctrl)
+        num_ctrl = len(env_eqn.invars)-len(body_jispr.invars)-len(body_jispr.constvars)
+        transformed_jaxpr = body_jispr.control(num_ctrl)
     else:
-        transformed_jaxpr = body_jaxpr
+        transformed_jaxpr = body_jispr
         
     # Extract the invalues
     invalues = extract_invalues(env_eqn, context_dic)
@@ -245,14 +245,14 @@ def collect_environments(jaxpr):
             constvars.remove(enter_eq.outvars[0])
             
             # Create the Jaxpr
-            environment_body_jaxpr = Jispr(constvars = constvars,
+            environment_body_jispr = Jispr(constvars = constvars,
                                            invars = enter_eq.outvars,
                                            outvars = outvars,
                                            eqns = environment_body_eqn_list)
             
             # Create the Equation
             eqn = JaxprEqn(
-                           params = {"stage" : "collected", "jaxpr" : environment_body_jaxpr},
+                           params = {"stage" : "collected", "jispr" : environment_body_jispr},
                            primitive = eqn.primitive,
                            invars = list(enter_eq.invars) + constvars, # Note that the constvars of the jaxpr are appended to the invars of the equation
                            outvars = list(eqn.outvars),
