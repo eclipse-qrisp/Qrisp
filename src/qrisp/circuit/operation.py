@@ -458,12 +458,13 @@ class U3Gate(Operation):
     def __init__(self, theta, phi, lam, name="u3", global_phase=0):
         
         # Initialize Operation instance
-        super().__init__(
-            name=name,
-            num_qubits=1,
-            num_clbits=0,
-            definition=None,
-            params=[theta, phi, lam],
+        Operation.__init__(
+                            self,
+                            name=name,
+                            num_qubits=1,
+                            num_clbits=0,
+                            definition=None,
+                            params=[theta, phi, lam],
         )
         
         if isinstance(global_phase, Expr):
@@ -580,21 +581,21 @@ class PauliGate(U3Gate):
         from qrisp.simulator.unitary_management import pauli_x, pauli_y, pauli_z
         
         if name == "x":
-            super().__init__(pi, 0, pi)
+            U3Gate.__init__(self, pi, 0, pi)
             self.unitary = pauli_x
 
             self.is_qfree = True
             self.permeability[0] = False
 
         elif name == "y":
-            super().__init__(pi, pi / 2, pi / 2)
+            U3Gate.__init__(self, pi, pi / 2, pi / 2)
             self.unitary = pauli_y
 
             self.is_qfree = True
             self.permeability[0] = False
 
         elif name == "z":
-            super().__init__(0, 0, pi)
+            U3Gate.__init__(self, 0, 0, pi)
             self.unitary = pauli_z
 
             self.is_qfree = True
@@ -718,18 +719,18 @@ class PTControlledOperation(Operation):
             and self.ctrl_state == "1"
         ):
             if base_operation.name == "x":
-                super().__init__(
-                    name="cx", num_qubits=2, num_clbits=0, params=[]
+                Operation.__init__(
+                    self, name="cx", num_qubits=2, num_clbits=0, params=[]
                 )
                 self.permeability = {0: True, 1: False}
             elif base_operation.name == "y":
-                super().__init__(
-                    name="cy", num_qubits=2, num_clbits=0, params=[]
+                Operation.__init__(
+                    self, name="cy", num_qubits=2, num_clbits=0, params=[]
                 )
                 self.permeability = {0: True, 1: False}
             elif base_operation.name == "z":
-                super().__init__(
-                    name="cz", num_qubits=2, num_clbits=0, params=[]
+                Operation.__init__(
+                    self, name="cz", num_qubits=2, num_clbits=0, params=[]
                 )
                 self.permeability = {0: True, 1: True}
 
@@ -839,11 +840,12 @@ class PTControlledOperation(Operation):
 # convention, inversion algorithm and unitary generation algorithm
 class ControlledOperation(PTControlledOperation):
     def __init__(self, base_operation, num_ctrl_qubits=1, ctrl_state=-1, method="gray"):
-        super().__init__(
-            base_operation,
-            num_ctrl_qubits=num_ctrl_qubits,
-            ctrl_state=ctrl_state,
-            method=method,
+        PTControlledOperation.__init__(
+                                        self,
+                                        base_operation,
+                                        num_ctrl_qubits=num_ctrl_qubits,
+                                        ctrl_state=ctrl_state,
+                                        method=method,
         )
 
         if num_ctrl_qubits == 1:

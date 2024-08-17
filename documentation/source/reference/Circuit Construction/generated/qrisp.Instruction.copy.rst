@@ -1,4 +1,4 @@
-﻿qrisp.Instruction.copy
+qrisp.Instruction.copy
 ======================
 
 .. currentmodule:: qrisp
