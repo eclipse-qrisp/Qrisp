@@ -124,14 +124,14 @@ class Operation:
 
         # Find abstract parameters (ie. sympy expressions and log them)
         for par in params:
-            if isinstance(par, (float, int, complex, np.floating, np.int32, np.complex128, np.complex64)):
-                pass
+            if isinstance(par, (np.int32, np.int64, np.float64, np.float32, np.complex128, np.complex64)):
+                par = par.item()
             elif isinstance(par, Expr):
                 if len(par.free_symbols):
                     self.abstract_params = self.abstract_params.union(par.free_symbols)
                 else:
                     par = float(par)
-            else:
+            elif not isinstance(par, (float, int, complex)):
                 raise Exception(
                     f"Tried to create operation with parameters of type {type(par)}"
                 )
