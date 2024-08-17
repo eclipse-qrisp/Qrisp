@@ -16,18 +16,5 @@
 ********************************************************************************/
 """
 
-from qrisp.jisp.primitives import*
-from qrisp.jisp.tracing_quantum_session import *
-from qrisp.jisp.qaching import qache
-from qrisp.jisp.interpreter_tools import *
-from qrisp.jisp.converter import *
-from qrisp.jisp.jisp_expression import *
-from qrisp.jisp.testing_utils import *
-
-def compare_jaxpr(jaxpr, primitive_name_list):
-    assert len(jaxpr.eqns) == len(primitive_name_list)
-    for i in range(len(primitive_name_list)):
-        assert jaxpr.eqns[i].primitive.name == primitive_name_list[i]
-    
-
-
+from qrisp.jisp.interpreter_tools.abstract_interpreter import *
+from qrisp.jisp.interpreter_tools.interpreters import *

@@ -21,7 +21,7 @@ from functools import lru_cache
 from jax.core import JaxprEqn, Jaxpr, Literal, ClosedJaxpr
 from jax import make_jaxpr
 
-from qrisp.jisp.flattening_tools import eval_jaxpr, extract_invalues, eval_jaxpr_with_context_dic, exec_eqn, reinterpret
+from qrisp.jisp.interpreter_tools import eval_jaxpr, extract_invalues, eval_jaxpr_with_context_dic, exec_eqn, reinterpret
 
 @lru_cache(maxsize = int(1E5))
 def flatten_environments(jaxpr):
