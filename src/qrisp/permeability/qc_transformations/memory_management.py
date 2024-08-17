@@ -131,6 +131,10 @@ def topological_sort(G, prefer=None, delay=None, sub_sort=nx.topological_sort):
     G = G.copy()
     # Collect the prefered nodes
     prefered_nodes = []
+    prefered_node_indices = {}
+    
+    delay_nodes = []
+    delay_node_indices = {}
 
     for n in G.nodes():
         n.processed = False
@@ -138,7 +142,13 @@ def topological_sort(G, prefer=None, delay=None, sub_sort=nx.topological_sort):
             continue
         
         if prefer(n.instr):
+            prefered_node_indices[n] = len(prefered_nodes)
             prefered_nodes.append(n)
+            
+        if delay(n.instr):
+            delay_node_indices[n] = len(delay_nodes)
+            delay_nodes.append(n)
+            
 
         
 
@@ -156,47 +166,49 @@ def topological_sort(G, prefer=None, delay=None, sub_sort=nx.topological_sort):
     }
     
     # We sort the nodes in order to prevent non-deterministic compilation behavior
-    prefered_nodes.sort(key=lambda x: len(node_ancs[x]) + 1/hash(x.instr))
+    # prefered_nodes.sort(key=lambda x: len(node_ancs[x]) + 1/hash(x.instr))
     
     # Determine the required delay nodes for each prefered nodes
-    required_delay_nodes = {n: [] for n in prefered_nodes}
-
+    
+    # For this we set up a matrix with boolean entriesthat indicates which 
+    # delay nodes are required to execute a prefered node.
+    dependency_matrix = np.zeros((len(prefered_nodes), len(delay_nodes)), dtype = np.int8)
+    
+    # Fill the matrix
     for n in prefered_nodes:
+        n_index = prefered_node_indices[n]
         for k in node_ancs[n]:
             if k.instr:
                 if delay(k.instr):
-                    required_delay_nodes[n].append(k)
-
-    required_delay_nodes = {n: set(required_delay_nodes[n]) for n in prefered_nodes}
-
+                    dependency_matrix[n_index, delay_node_indices[k]] = 1
     
     # Generate linearization
     lin = []
 
     while prefered_nodes:
-        # Sort nodes accordingly
-        prefered_nodes.sort(key=lambda x: len(required_delay_nodes[x]))
-
-        node = prefered_nodes.pop(0)
+        
+        # Find the node with least requirements
+        required_delay_nodes = np.sum(dependency_matrix, axis = 1)
+        prefered_node_index_array = np.array(list(map(lambda n : prefered_node_indices[n], prefered_nodes)), dtype = np.int32)
+        min_node_index = np.argmin(required_delay_nodes[prefered_node_index_array])
+        
+        node = prefered_nodes.pop(min_node_index)
         ancs = []
 
+        # Find the ancestors subgraph of nodes that have not been processed yet
         for n in node_ancs[node] + [node]:
             if n.processed:
                 continue
             else:
                 n.processed = True
                 ancs.append(n)
-
         sub_graph = G.subgraph(ancs)
 
+        # Generate the linearization
         lin += list(sub_sort(sub_graph))
 
-        continue
-
-        for n in prefered_nodes:
-            required_delay_nodes[n] = (
-                required_delay_nodes[n] - required_delay_nodes[node]
-            )
+        # Update the depedency matrix
+        dependency_matrix = np.clip(dependency_matrix - dependency_matrix[prefered_node_indices[n], :], 0, 1)
 
     # Linearize the remainder
     remainder = []
