@@ -124,7 +124,7 @@ class Operation:
 
         # Find abstract parameters (ie. sympy expressions and log them)
         for par in params:
-            if isinstance(par, (np.int32, np.int64, np.float64, np.float32, np.complex128, np.complex64)):
+            if isinstance(par, np.number):
                 par = par.item()
             elif isinstance(par, Expr):
                 if len(par.free_symbols):
