@@ -17,7 +17,7 @@
 """
 
 from qrisp import *
-from qrisp.jax import *
+from qrisp.jisp import *
 
 def test_testing_function():
     

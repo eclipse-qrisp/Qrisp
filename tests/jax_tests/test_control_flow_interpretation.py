@@ -36,9 +36,8 @@ def test_control_flow_interpretation():
     
     jisp_program = make_jispr(test_f)(0.5)
     
-    eval_function = jisp_interpreter(jisp_program)
-    
     for i in range(5):
-        res = eval_function(i + 0.5)
+        
+        res = jisp_program(i + 0.5)[1]
         
         assert res == i + 4.5

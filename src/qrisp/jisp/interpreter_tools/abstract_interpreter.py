@@ -18,6 +18,8 @@
 
 from jax.core import JaxprEqn, Literal, ClosedJaxpr, Tracer
 from jax import jit, make_jaxpr
+from qrisp.jisp import check_for_tracing_mode
+
 
 def eval_jaxpr(jaxpr, 
                return_context_dic = False, 
@@ -134,7 +136,6 @@ def exec_eqn(eqn, context_dic):
                 evaluate_cond_eqn(eqn, context_dic)
             
             return
-    
     
     res = eqn.primitive.bind(*invalues, **eqn.params)
     insert_outvalues(eqn, context_dic, res)

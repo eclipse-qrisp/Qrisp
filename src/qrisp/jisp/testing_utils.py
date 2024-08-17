@@ -23,21 +23,17 @@ from qrisp.jisp import flatten_environments, flatten_pjit, eval_jaxpr, make_jisp
 
 def jisp_function_test(func):
     
-    def testing_function(*args, **kwargs):
+    def testing_function(*args):
         
-        qv = func(*args, **kwargs)
+        qv = func(*args)
         from qrisp.core import QuantumVariable
         qv.__class__ = QuantumVariable
         
         old_counts_dic = qv.get_measurement()
         
-        jispr = make_jispr(func)(*args, **kwargs)
+        jispr = make_jispr(func)(*args)
         
-        jispr = flatten_environments(jispr)
-        
-        qc, qv_qubits = jispr.eval(*args, **kwargs)
-        
-        # qc, qv_qubits = extract_qc(jaxpr)(*args, **kwargs)
+        qc, qv_qubits = jispr(*args)
         
         clbit_list = []
         for qb in qv_qubits:
@@ -65,30 +61,6 @@ def jisp_function_test(func):
         return True
         
     return testing_function
-        
-
-def jisp_interpreter(jispr):
-    
-    from qrisp import QuantumCircuit
-    
-    def jisp_executer(*args):
-        
-        new_jispr = flatten_environments(jispr)
-        new_jispr = flatten_pjit(new_jispr)
-        
-        res = eval_jaxpr(new_jispr)(QuantumCircuit(), *args)[1:]
-        
-        if len(res) == 1:
-            res = res[0]
-
-        return res
-    
-    return jisp_executer
-        
-        
-        
-        
-        
         
             
             

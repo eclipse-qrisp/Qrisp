@@ -16,8 +16,6 @@
 ********************************************************************************/
 """
 
-import weakref
-
 import jax
 
 from qrisp.jisp import create_qubits, delete_qubits_p
@@ -99,26 +97,3 @@ def check_live(tracer):
     if tracer is None:
         return True
     return not not tracer._trace.main.jaxpr_stack
-
-def get_tracing_qs(check_validity = True):
-    raise
-    res = TracingQuantumSession.tr_qs_container[0]()
-    if check_for_tracing_mode():
-        if res is None:
-            raise
-            res = TracingQuantumSession()
-            TracingQuantumSession.tr_qs_container[0] = weakref.ref(res)
-            return res
-        if check_validity and not check_live(res.abs_qc):
-            res = TracingQuantumSession()
-            TracingQuantumSession.tr_qs_container[0] = weakref.ref(res)
-            return res
-        if res.abs_qc is None and len(res.qv_list):
-            res = TracingQuantumSession()
-            TracingQuantumSession.tr_qs_container[0] = weakref.ref(res)
-            return res
-    else:
-        if res is not None:
-            TracingQuantumSession.tr_qs_container[0] = lambda : None
-            return None
-    return res

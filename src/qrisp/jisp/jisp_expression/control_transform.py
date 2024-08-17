@@ -18,7 +18,7 @@
 
 from jax import jit, make_jaxpr
 from jax.core import Jaxpr, JaxprEqn, ClosedJaxpr, Var
-from qrisp.jisp import get_tracing_qs, check_for_tracing_mode, flatten_collected_environments, eval_jaxpr, AbstractQuantumCircuit
+from qrisp.jisp import check_for_tracing_mode, flatten_collected_environments, eval_jaxpr, AbstractQuantumCircuit, TracingQuantumSession
 
 def control_eqn(eqn, ctrl_qubit_var):
     """
@@ -127,7 +127,7 @@ def exec_multi_controlled_jispr(jispr):
             from qrisp.circuit import XGate
             from qrisp import QuantumBool
             
-            qs = get_tracing_qs()
+            qs = TracingQuantumSession.get_instance()
             args = list(args)
             qs.abs_qc = args.pop(0)
             

@@ -17,7 +17,7 @@
 """
 
 from qrisp import *
-from qrisp.jax import *
+from qrisp.jisp import *
 from jax import make_jaxpr
 
 def test_qache():

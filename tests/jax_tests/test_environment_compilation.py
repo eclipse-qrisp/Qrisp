@@ -17,7 +17,7 @@
 """
 
 from qrisp import *
-from qrisp.jax import *
+from qrisp.jisp import *
 
 def test_environment_compilation():
     
@@ -30,7 +30,6 @@ def test_environment_compilation():
         return qv
 
     jispr = make_jispr(outer_function)(2)
-    jispr = flatten_environments(jispr)
     
     jisp_function_test(outer_function)
     
