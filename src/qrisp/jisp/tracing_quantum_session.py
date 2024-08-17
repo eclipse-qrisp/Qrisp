@@ -20,7 +20,7 @@ import weakref
 
 import jax
 
-from qrisp.jax import create_qubits, delete_qubits_p
+from qrisp.jisp import create_qubits, delete_qubits_p
 
 
 class TracingQuantumSession:

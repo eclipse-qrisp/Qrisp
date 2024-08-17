@@ -8,7 +8,7 @@ from jax import make_jaxpr
 from jax.core import Literal
 
 
-from qrisp.jax import QuantumPrimitive, AbstractQubitArray
+from qrisp.jisp import QuantumPrimitive, AbstractQubitArray
 
 
 def convert_to_catalyst_jaxpr(closed_jaxpr, args):

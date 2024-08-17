@@ -1044,7 +1044,7 @@ def measure(qubits, clbits=None):
 
     """
     from qrisp import find_qs
-    from qrisp.jax import TracingQuantumSession
+    from qrisp.jisp import TracingQuantumSession
     qs = find_qs(qubits)
     
     if not isinstance(qs, TracingQuantumSession):
@@ -1063,7 +1063,7 @@ def measure(qubits, clbits=None):
         
         return clbits
     else:
-        from qrisp.jax import Measurement_p, AbstractQubit
+        from qrisp.jisp import Measurement_p, AbstractQubit
         from qrisp import Qubit, QuantumVariable
         
         if isinstance(qubits, QuantumVariable):

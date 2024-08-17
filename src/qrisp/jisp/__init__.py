@@ -16,8 +16,18 @@
 ********************************************************************************/
 """
 
-from qrisp.jax.jisp_expression.inv_transform import *
-from qrisp.jax.jisp_expression.control_transform import *
-from qrisp.jax.jisp_expression.environment_collection import *
-from qrisp.jax.jisp_expression.centerclass import *
+from qrisp.jisp.primitives import*
+from qrisp.jisp.tracing_quantum_session import *
+from qrisp.jisp.qaching import qache
+from qrisp.jisp.flattening_tools import *
+from qrisp.jisp.converter import *
+from qrisp.jisp.jisp_expression import *
+from qrisp.jisp.testing_utils import *
+
+def compare_jaxpr(jaxpr, primitive_name_list):
+    assert len(jaxpr.eqns) == len(primitive_name_list)
+    for i in range(len(primitive_name_list)):
+        assert jaxpr.eqns[i].primitive.name == primitive_name_list[i]
+    
+
 

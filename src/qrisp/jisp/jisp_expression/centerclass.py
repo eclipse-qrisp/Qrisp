@@ -20,8 +20,8 @@ from functools import lru_cache
 from jax import make_jaxpr
 from jax.core import Jaxpr, ClosedJaxpr
 
-from qrisp.jax.jisp_expression import invert_jispr, multi_control_jispr, collect_environments
-from qrisp.jax import AbstractQuantumCircuit, eval_jaxpr, flatten_pjit, pjit_to_gate
+from qrisp.jisp.jisp_expression import invert_jispr, multi_control_jispr, collect_environments
+from qrisp.jisp import AbstractQuantumCircuit, eval_jaxpr, flatten_pjit, pjit_to_gate
 
 class Jispr(Jaxpr):
     
@@ -102,7 +102,7 @@ class Jispr(Jaxpr):
 
 
 def make_jispr(fun):
-    from qrisp.jax import get_tracing_qs, AbstractQuantumCircuit, TracingQuantumSession
+    from qrisp.jisp import get_tracing_qs, AbstractQuantumCircuit, TracingQuantumSession
     def jispr_creator(*args, **kwargs):
         
         def ammended_function(abs_qc, *args, **kwargs):
@@ -133,7 +133,7 @@ def recursive_convert(jaxpr):
     # which are subsequently called. Example:
         
     # from qrisp import *
-    # from qrisp.jax import *
+    # from qrisp.jisp import *
     # import jax
 
     # def outer_function(x):

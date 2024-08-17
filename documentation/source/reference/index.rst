@@ -72,6 +72,7 @@ With Qrisp we hope to open the creation of quantum algorithms to a much broader 
    Quantum Environments/index
    Algorithms/index
    Circuit Construction/index
+   Jisp/index
    Quantum Networks/index
    Backend Interface/index
    Miscellaneous Functions/index

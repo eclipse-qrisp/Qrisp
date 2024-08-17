@@ -16,8 +16,8 @@
 ********************************************************************************/
 """
 
-from qrisp.jax.primitives import QuantumPrimitive
-from qrisp.jax.flattening_tools import eval_jaxpr, extract_invalues, insert_outvalues
+from qrisp.jisp.primitives import QuantumPrimitive
+from qrisp.jisp.flattening_tools import eval_jaxpr, extract_invalues, insert_outvalues
 
 def pjit_to_gate(pjit_eqn, context_dic):
     """

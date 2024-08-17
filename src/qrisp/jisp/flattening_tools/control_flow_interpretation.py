@@ -18,7 +18,7 @@
 
 from jax.core import JaxprEqn, Literal, ClosedJaxpr
 from jax import jit, make_jaxpr
-from qrisp.jax.flattening_tools import eval_jaxpr, extract_invalues, insert_outvalues
+from qrisp.jisp.flattening_tools import eval_jaxpr, extract_invalues, insert_outvalues
 
 def evaluate_cond_eqn(cond_eqn, context_dic):
     

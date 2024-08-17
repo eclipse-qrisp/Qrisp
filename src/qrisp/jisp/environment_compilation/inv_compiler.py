@@ -18,7 +18,7 @@
 
 from jax import jit
 from jax.core import Jaxpr, JaxprEqn, ClosedJaxpr
-from qrisp.jax import get_tracing_qs, check_for_tracing_mode, flatten_collected_environments, AbstractQuantumCircuit
+from qrisp.jisp import get_tracing_qs, check_for_tracing_mode, flatten_collected_environments, AbstractQuantumCircuit
 
 def invert_eqn(eqn):
     """

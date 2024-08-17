@@ -32,4 +32,4 @@ from qrisp.iterators.qrange import *
 from qrisp.mcx_algs import *
 
 from qrisp.default_backend import *
-from qrisp.jax import *
+from qrisp.jisp import *

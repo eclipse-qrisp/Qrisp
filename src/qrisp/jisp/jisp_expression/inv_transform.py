@@ -18,7 +18,7 @@
 
 from jax import jit
 from jax.core import Jaxpr, JaxprEqn, ClosedJaxpr
-from qrisp.jax import get_tracing_qs, check_for_tracing_mode, flatten_collected_environments
+from qrisp.jisp import get_tracing_qs, check_for_tracing_mode, flatten_collected_environments
 
 def invert_eqn(eqn):
     """
@@ -96,7 +96,7 @@ def invert_jispr(jispr):
         op_eqs[i].invars[0], op_eqs[n-i-1].invars[0] = op_eqs[n-i-1].invars[0], op_eqs[i].invars[0]
         op_eqs[i].outvars[0], op_eqs[n-i-1].outvars[0] = op_eqs[n-i-1].outvars[0], op_eqs[i].outvars[0]
     
-    from qrisp.jax import Jispr
+    from qrisp.jisp import Jispr
     
     return Jispr(constvars = jaxpr.constvars, 
                  invars = jaxpr.invars, 

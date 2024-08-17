@@ -233,7 +233,7 @@ class QuantumVariable:
 
         # Store quantum session
         from qrisp.core import QuantumSession, merge_sessions
-        from qrisp.jax import check_for_tracing_mode, TracingQuantumSession
+        from qrisp.jisp import check_for_tracing_mode, TracingQuantumSession
 
         if check_for_tracing_mode():
             self.qs = TracingQuantumSession.get_instance()
@@ -677,7 +677,7 @@ class QuantumVariable:
         """
 
         from qrisp.misc import check_if_fresh, int_encoder
-        from qrisp.jax import TracingQuantumSession
+        from qrisp.jisp import TracingQuantumSession
         
         if not isinstance(self.qs, TracingQuantumSession):
             if not permit_dirtyness:
@@ -1060,7 +1060,7 @@ class QuantumVariable:
         if isinstance(self.reg, list):
             return self.reg[key]
         else:
-            from qrisp.jax import get_qubit
+            from qrisp.jisp import get_qubit
             return get_qubit(self.reg, key)
 
     def __str__(self):
@@ -1088,7 +1088,7 @@ class QuantumVariable:
         if isinstance(self.reg, list):
             return len(self.reg)
         else:
-            from qrisp.jax import get_size
+            from qrisp.jisp import get_size
             return get_size(self.reg)
         
 
@@ -1468,7 +1468,7 @@ def plot_histogram(outcome_labels, counts, filename=None):
 
 
 from jax import tree_util
-from qrisp.jax.tracing_quantum_session import TracingQuantumSession
+from qrisp.jisp.tracing_quantum_session import TracingQuantumSession
 from builtins import id
 
 def flatten_qv(qv):

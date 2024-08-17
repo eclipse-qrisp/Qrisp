@@ -40,7 +40,7 @@ def bin_rep(n, bits):
 def int_encoder(qv, encoding_number):
     
     from qrisp import x
-    from qrisp.jax import TracingQuantumSession
+    from qrisp.jisp import TracingQuantumSession
     
     tr_qs = TracingQuantumSession.get_instance()
     if tr_qs is None:
@@ -634,7 +634,7 @@ def gate_wrap_inner(
 
 
 def find_qs(args):
-    from qrisp.jax import TracingQuantumSession
+    from qrisp.jisp import TracingQuantumSession
     abs_qs = TracingQuantumSession.get_instance()
     if abs_qs is not None:
         return abs_qs

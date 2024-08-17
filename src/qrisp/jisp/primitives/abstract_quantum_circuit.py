@@ -17,7 +17,7 @@
 """
 
 from jax.core import AbstractValue, raise_to_shaped_mappings
-from qrisp.jax.primitives import QuantumPrimitive, AbstractQubitArray
+from qrisp.jisp.primitives import QuantumPrimitive, AbstractQubitArray
 
 class AbstractQuantumCircuit(AbstractValue):
 

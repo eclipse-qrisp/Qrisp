@@ -22,7 +22,7 @@ from qrisp.core.library import mcx, p, rz, x
 from qrisp.core.session_merging_tools import merge, merge_sessions, multi_session_merge
 from qrisp.environments import QuantumEnvironment
 from qrisp.misc import perm_lock, perm_unlock, bin_rep
-from qrisp.jax import check_for_tracing_mode, AbstractQubit
+from qrisp.jisp import check_for_tracing_mode, AbstractQubit
 
 
 class ControlEnvironment(QuantumEnvironment):

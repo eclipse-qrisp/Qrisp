@@ -16,4 +16,9 @@
 ********************************************************************************/
 """
 
-from qrisp.jax.environment_compilation.inv_compiler import *
+from qrisp.jisp.primitives.quantum_primitive import *
+from qrisp.jisp.primitives.abstract_qubit import *
+from qrisp.jisp.primitives.abstract_quantum_register import *
+from qrisp.jisp.primitives.abstract_quantum_circuit import *
+from qrisp.jisp.primitives.measurement_primitive import *
+

@@ -21,7 +21,7 @@ from functools import lru_cache
 from jax.core import JaxprEqn, Jaxpr, Literal, ClosedJaxpr
 from jax import make_jaxpr
 
-from qrisp.jax.flattening_tools import eval_jaxpr, extract_invalues, eval_jaxpr_with_context_dic, exec_eqn, reinterpret
+from qrisp.jisp.flattening_tools import eval_jaxpr, extract_invalues, eval_jaxpr_with_context_dic, exec_eqn, reinterpret
 
 @lru_cache(maxsize = int(1E5))
 def flatten_environments(jaxpr):
@@ -73,7 +73,7 @@ def flatten_collected_environments(jispr):
     
     # The flatten_environment_eqn function below executes the collected QuantumEnvironments
     # according to their semantics
-    from qrisp.jax import Jispr
+    from qrisp.jisp import Jispr
     # To perform the flattening, we evaluate with the usual tools
     return Jispr(reinterpret(jispr, eqn_eval_dic))
     
@@ -100,7 +100,7 @@ def flatten_environment_eqn(env_eqn, context_dic):
     body_jispr = env_eqn.params["jispr"]
     
     from qrisp.environments import InversionEnvironment, ControlEnvironment
-    from qrisp.jax.environment_compilation import inv_transform
+    from qrisp.jisp.environment_compilation import inv_transform
 
     
     # Perform the environment compilation logic
@@ -153,7 +153,7 @@ def flatten_environments_in_pjit_eqn(eqn, context_dic):
 
     """
     
-    from qrisp.jax import Jispr
+    from qrisp.jisp import Jispr
     if isinstance(eqn.params["jaxpr"].jaxpr, Jispr):
         eqn.params["jaxpr"] = ClosedJaxpr(flatten_collected_environments(eqn.params["jaxpr"].jaxpr),
                                           eqn.params["jaxpr"].consts)

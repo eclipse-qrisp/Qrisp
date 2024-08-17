@@ -46,7 +46,7 @@ def collect_environments(jaxpr):
     eqn_list = list(jaxpr.eqns)
     new_eqn_list = []
     
-    from qrisp.jax import Jispr
+    from qrisp.jisp import Jispr
     
     while len(eqn_list) != 0:
         

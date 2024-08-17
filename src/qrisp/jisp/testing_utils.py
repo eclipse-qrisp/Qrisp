@@ -18,7 +18,7 @@
 
 from jax import make_jaxpr
 from jax.core import ClosedJaxpr
-from qrisp.jax import flatten_environments, flatten_pjit, eval_jaxpr, make_jispr
+from qrisp.jisp import flatten_environments, flatten_pjit, eval_jaxpr, make_jispr
 
 
 def jisp_function_test(func):

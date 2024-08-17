@@ -18,7 +18,7 @@
 
 from jax.core import ShapedArray
 
-from qrisp.jax.primitives import AbstractQuantumCircuit, AbstractQubit, QuantumPrimitive, AbstractQubitArray
+from qrisp.jisp.primitives import AbstractQuantumCircuit, AbstractQubit, QuantumPrimitive, AbstractQubitArray
 
 # Create the primitive
 Measurement_p = QuantumPrimitive("measure")  

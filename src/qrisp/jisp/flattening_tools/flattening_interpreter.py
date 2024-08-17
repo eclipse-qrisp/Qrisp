@@ -126,7 +126,7 @@ def exec_eqn(eqn, context_dic):
             if isinstance(val, Tracer):
                 break
         else:
-            from qrisp.jax import evaluate_cond_eqn, evaluate_while_loop
+            from qrisp.jisp import evaluate_cond_eqn, evaluate_while_loop
             
             if eqn.primitive.name == "while":
                 evaluate_while_loop(eqn, context_dic)

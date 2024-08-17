@@ -18,7 +18,7 @@
 
 from jax import jit, make_jaxpr
 from jax.core import Jaxpr, JaxprEqn, ClosedJaxpr, Var
-from qrisp.jax import get_tracing_qs, check_for_tracing_mode, flatten_collected_environments, eval_jaxpr, AbstractQuantumCircuit
+from qrisp.jisp import get_tracing_qs, check_for_tracing_mode, flatten_collected_environments, eval_jaxpr, AbstractQuantumCircuit
 
 def control_eqn(eqn, ctrl_qubit_var):
     """
@@ -67,7 +67,7 @@ def control_jispr(jispr):
     """
     
     from qrisp.circuit import Operation
-    from qrisp.jax import Jispr, AbstractQubit
+    from qrisp.jisp import Jispr, AbstractQubit
     
     ctrl_qubit_var = Var(suffix = "", aval = AbstractQubit())
     
@@ -96,7 +96,7 @@ def multi_control_jispr(jispr, num_ctrl = 1, ctrl_state = -1):
     if num_ctrl == 1:
         return control_jispr(jispr)
     
-    from qrisp.jax import Jispr, AbstractQubit
+    from qrisp.jisp import Jispr, AbstractQubit
     
     ctrl_vars = [Var(suffix = "", aval = AbstractQubit()) for _ in range(num_ctrl)]
     ctrl_avals = [x.aval for x in ctrl_vars]

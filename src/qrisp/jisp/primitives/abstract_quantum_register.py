@@ -6,7 +6,7 @@ Created on Thu Apr 11 16:58:12 2024
 """
 
 from jax.core import AbstractValue, Primitive, raise_to_shaped_mappings, ShapedArray
-from qrisp.jax.primitives import QuantumPrimitive, AbstractQubit
+from qrisp.jisp.primitives import QuantumPrimitive, AbstractQubit
 
 get_qubit_p = QuantumPrimitive("get_qubit")
 get_size_p = QuantumPrimitive("get_size")

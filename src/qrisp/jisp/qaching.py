@@ -17,7 +17,7 @@
 """
 
 import jax
-from qrisp.jax import TracingQuantumSession, check_for_tracing_mode
+from qrisp.jisp import TracingQuantumSession, check_for_tracing_mode
 
 def qache(func):
     """
@@ -53,7 +53,7 @@ def qache(func):
         
         import time
         from qrisp import *
-        from qrisp.jax import qache
+        from qrisp.jisp import qache
         
         @qache
         def inner_function(qv):
