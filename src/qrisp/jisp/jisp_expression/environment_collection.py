@@ -80,21 +80,16 @@ def collect_environments(jaxpr):
             # Set an alias for the equations marked as the body
             environment_body_eqn_list = new_eqn_list[i+1:]
             
-            # To turn these equations into a Jaxpr, we need to figure out which
-            # variables are constvars of this Jaxpr. For this we use the helper function
-            # defined below.
-            constvars = find_invars(environment_body_eqn_list)
+            # Remove the AbstractQuantumCircuit variable and prepend it.            
+            invars = find_invars(environment_body_eqn_list)
+            invars.remove(enter_eq.outvars[0])
             
             # Same for the outvars
             outvars = find_outvars(environment_body_eqn_list, [eqn] + eqn_list)
             
-            # We only want to denote the non QuantumCircuit arguments as constvars
-            # The QuantumCircuit should be an actual invar
-            constvars.remove(enter_eq.outvars[0])
-            
             # Create the Jaxpr
-            environment_body_jispr = Jispr(constvars = constvars,
-                                           invars = enter_eq.outvars,
+            environment_body_jispr = Jispr(constvars = [],
+                                           invars = enter_eq.outvars + invars,
                                            outvars = outvars,
                                            eqns = environment_body_eqn_list)
             
@@ -102,7 +97,7 @@ def collect_environments(jaxpr):
             eqn = JaxprEqn(
                            params = {"stage" : "collected", "jispr" : environment_body_jispr},
                            primitive = eqn.primitive,
-                           invars = list(enter_eq.invars) + constvars, # Note that the constvars of the jaxpr are appended to the invars of the equation
+                           invars = enter_eq.invars + invars,
                            outvars = list(eqn.outvars),
                            effects = eqn.effects,
                            source_info = eqn.source_info,

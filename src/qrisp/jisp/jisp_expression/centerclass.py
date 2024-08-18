@@ -18,7 +18,7 @@
 from functools import lru_cache
 
 from jax import make_jaxpr
-from jax.core import Jaxpr, ClosedJaxpr
+from jax.core import Jaxpr, ClosedJaxpr, Literal
 
 from qrisp.jisp.jisp_expression import invert_jispr, multi_control_jispr, collect_environments
 from qrisp.jisp import AbstractQuantumCircuit, eval_jaxpr, flatten_pjit, pjit_to_gate, flatten_environments
@@ -54,6 +54,8 @@ class Jispr(Jaxpr):
         if permeability is None:
             permeability = {}
         for var in self.constvars + self.invars + self.outvars:
+            if isinstance(var, Literal):
+                continue
             self.permeability[var] = permeability.get(var, None)
         
         self.isqfree = isqfree
@@ -88,11 +90,30 @@ class Jispr(Jaxpr):
         eqn_eval_dic = {"pjit" : pjit_to_gate}
         
         return eval_jaxpr(jispr, eqn_eval_dic = eqn_eval_dic)(*args)
+    
+    def inline(self, *args):
+        
+        from qrisp.jisp import TracingQuantumSession
+        
+        qs = TracingQuantumSession.get_instance()
+        abs_qc = qs.abs_qc
+        
+        res = eval_jaxpr(self)(*([abs_qc] + list(args)))
+        
+        if isinstance(res, tuple):
+            new_abs_qc = res[0]
+            res = res[1:]
+        else:
+            new_abs_qc = res
+            res = None
+        qs.abs_qc = new_abs_qc
+        return res
+        
         
     @classmethod
     @lru_cache(maxsize = int(1E5))
     def from_cache(cls, jaxpr):
-        return Jispr(jaxpr)
+        return Jispr(jaxpr = jaxpr)
     
     
     

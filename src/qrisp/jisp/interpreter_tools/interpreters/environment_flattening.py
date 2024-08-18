@@ -102,12 +102,11 @@ def flatten_environment_eqn(env_eqn, context_dic):
     from qrisp.environments import InversionEnvironment, ControlEnvironment
     from qrisp.jisp.environment_compilation import inv_transform
 
-    
     # Perform the environment compilation logic
     if isinstance(env_eqn.primitive, InversionEnvironment):
         transformed_jaxpr = inv_transform(body_jispr)
     elif isinstance(env_eqn.primitive, ControlEnvironment):
-        num_ctrl = len(env_eqn.invars)-len(body_jispr.invars)-len(body_jispr.constvars)
+        num_ctrl = len(env_eqn.invars) - len(env_eqn.params["jispr"].invars)
         transformed_jaxpr = body_jispr.control(num_ctrl)
     else:
         transformed_jaxpr = body_jispr

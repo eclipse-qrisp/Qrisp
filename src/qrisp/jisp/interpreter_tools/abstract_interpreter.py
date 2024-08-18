@@ -92,7 +92,6 @@ def eval_jaxpr_with_context_dic(jaxpr, context_dic, eqn_eval_dic = {}):
     
     # Iterate through the equations
     for eqn in jaxpr.eqns:
-        
         # Evaluate the primitive
         if eqn.primitive.name in eqn_eval_dic.keys():
             eqn_eval_dic[eqn.primitive.name](eqn, context_dic)

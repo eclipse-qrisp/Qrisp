@@ -96,59 +96,59 @@ def multi_control_jispr(jispr, num_ctrl = 1, ctrl_state = -1):
     if num_ctrl == 1:
         return control_jispr(jispr)
     
-    from qrisp.jisp import Jispr, AbstractQubit
+    from qrisp.jisp import Jispr, AbstractQubit, make_jispr
     
     ctrl_vars = [Var(suffix = "", aval = AbstractQubit()) for _ in range(num_ctrl)]
     ctrl_avals = [x.aval for x in ctrl_vars]
     
-    temp_jaxpr = make_jaxpr(exec_multi_controlled_jispr(jispr))(ctrl_avals, *[var.aval for var in jispr.invars + jispr.constvars]).jaxpr
+    temp_jaxpr = make_jispr(exec_multi_controlled_jispr(jispr, num_ctrl))(*(ctrl_avals + [var.aval for var in jispr.invars[1:] + jispr.constvars]))
     
     invars = temp_jaxpr.invars[num_ctrl:-len(jispr.constvars)]
     constvars = temp_jaxpr.invars[:num_ctrl] + temp_jaxpr.invars[-len(jispr.constvars):]
     
-    res = Jispr(
-                 invars = invars,
-                 constvars = constvars,
-                 outvars = temp_jaxpr.outvars,
-                 eqns = temp_jaxpr.eqns)
+    res = Jispr(temp_jaxpr)
     
     return res
     
     
-def exec_multi_controlled_jispr(jispr):
+def exec_multi_controlled_jispr(jispr, num_ctrls):
     
-    def multi_controlled_jispr_executor(ctrls, *args):
+    def multi_controlled_jispr_executor(*args):
         
-        if len(ctrls) == 1:
+        if num_ctrls == 1:
             controlled_jispr = control_jispr(jispr)
-            return eval_jaxpr(controlled_jispr)(ctrls[0], *args)
+            return eval_jaxpr(controlled_jispr)(args[0], *args)
             
         else:
             from qrisp.circuit import XGate
             from qrisp import QuantumBool
             
-            qs = TracingQuantumSession.get_instance()
-            args = list(args)
-            qs.abs_qc = args.pop(0)
             
-            invalues = []
-            for i in range(len(jispr.invars)-1):
-                invalues.append(args.pop(0))
-            constvalues = args
+
+            qs = TracingQuantumSession.get_instance()
+            # args = list(args)
+            # qs.abs_qc = args.pop(0)
+            
+            # invalues = []
+            # for i in range(len(jispr.invars)-1):
+                # invalues.append(args.pop(0))
+            # constvalues = args
+            ctrls = list(args)[:num_ctrls]
+            invalues = list(args)[num_ctrls:]
             
             controlled_jispr = control_jispr(jispr)
-            mcx_operation = XGate().control(len(ctrls))
+            mcx_operation = XGate().control(num_ctrls)
             
             ctrl_qbl = QuantumBool()
             ctrl_qb = ctrl_qbl[0]
             
             qs.append(mcx_operation, ctrls + [ctrl_qb])
-            
-            res = controlled_jispr.eval(*(invalues + [ctrl_qb] + constvalues))
+                        
+            res = controlled_jispr.inline(*(invalues + [ctrl_qb]))
             
             qs.append(mcx_operation, ctrls + [ctrl_qb])
             
-            return qs.abs_qc, res
+            return res
             
     return multi_controlled_jispr_executor
         
