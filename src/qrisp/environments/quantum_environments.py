@@ -383,7 +383,7 @@ class QuantumEnvironment(QuantumPrimitive):
         
         abs_qs = TracingQuantumSession.get_instance()
         if abs_qs is not None:
-            abs_qs.abs_qc = self.bind(abs_qs.abs_qc, *self.env_args, stage = "enter", type = str(type(self)).split(".")[-1][:-2].lower())
+            abs_qs.abs_qc = self.bind(abs_qs.abs_qc, *self.env_args, stage = "enter", type = str(type(self)).split(".")[-1][:-2])
             return
             
         # The QuantumSessions operating inside this environment will be merged
@@ -432,7 +432,7 @@ class QuantumEnvironment(QuantumPrimitive):
         
         abs_qs = TracingQuantumSession.get_instance()
         if abs_qs is not None:
-            abs_qs.abs_qc = self.bind(abs_qs.abs_qc, stage = "exit", type = str(type(self)).split(".")[-1][:-2].lower())
+            abs_qs.abs_qc = self.bind(abs_qs.abs_qc, stage = "exit", type = str(type(self)).split(".")[-1][:-2])
             return
         
         self.deepest_environment[0] = self.parent

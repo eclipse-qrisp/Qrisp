@@ -95,7 +95,7 @@ def collect_environments(jaxpr):
             
             # Create the Equation
             eqn = JaxprEqn(
-                           params = {"stage" : "collected", "jispr" : environment_body_jispr},
+                           params = {"type" : eqn.params["type"], "jispr" : environment_body_jispr},
                            primitive = eqn.primitive,
                            invars = enter_eq.invars + invars,
                            outvars = list(eqn.outvars),
