@@ -17,7 +17,7 @@
 """
 
 # Created by ann81984 at 06.05.2022
-from qrisp.arithmetic import QuantumFloat, q_divmod
+from qrisp.alg_primitives.arithmetic import QuantumFloat, q_divmod
 from qrisp.misc import multi_measurement
 
 

@@ -638,12 +638,12 @@ class QuantumArray(np.ndarray):
 
         if isinstance(self.qtype, QuantumFloat):
             if isinstance(other, QuantumArray):
-                from qrisp.arithmetic import q_matmul
+                from qrisp.alg_primitives.arithmetic import q_matmul
 
                 return q_matmul(self, other)
 
             elif isinstance(other, np.ndarray):
-                from qrisp.arithmetic import semi_classic_matmul
+                from qrisp.alg_primitives.arithmetic import semi_classic_matmul
 
                 return semi_classic_matmul(self, other)
 

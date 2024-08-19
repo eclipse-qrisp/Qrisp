@@ -21,7 +21,7 @@ import numpy as np
 
 from qrisp.misc import multi_measurement
 from qrisp.core import QuantumSession
-from qrisp.arithmetic import QuantumFloat, sbp_mult
+from qrisp.alg_primitives.arithmetic import QuantumFloat, sbp_mult
 from qrisp.grover import tag_state, grovers_alg
 from qrisp.environments import invert
 from itertools import product

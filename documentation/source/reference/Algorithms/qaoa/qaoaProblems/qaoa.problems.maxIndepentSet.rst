@@ -5,7 +5,7 @@ QAOA MaxIndependentSet
 
 
 
-.. currentmodule:: qaoa.problems.maxIndepSetInfrastr
+.. currentmodule:: qrisp.qaoa.problems.maxIndepSetInfrastr
 
 
 Problem description

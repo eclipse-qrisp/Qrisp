@@ -17,9 +17,7 @@
 """
 
 
-from qrisp.arithmetic import QuantumFloat
-from qrisp.iterators.qrange import qRange
-from qrisp import h, merge
+from qrisp import h, qRange, QuantumFloat
 
 
 def test_loop():

@@ -3,7 +3,7 @@
 QIRO MaxSetPacking
 ==================
 
-.. currentmodule:: qiro.qiroproblems.qiroMaxSetPackInfrastr
+.. currentmodule:: qrisp.qiro.qiroproblems.qiroMaxSetPackInfrastr
 
 
 Problem description

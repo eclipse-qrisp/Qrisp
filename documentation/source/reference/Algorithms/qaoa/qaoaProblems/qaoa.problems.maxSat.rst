@@ -4,7 +4,7 @@ QAOA MaxSat
 ===========
 
 
-.. currentmodule:: qaoa.problems.maxSatInfrastr
+.. currentmodule:: qrisp.qaoa.problems.maxSatInfrastr
 
 Problem description
 -------------------

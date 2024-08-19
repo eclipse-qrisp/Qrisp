@@ -24,7 +24,7 @@ from qrisp import QuantumFloat, QuantumVariable, QuantumBool, qq_calc_carry, cq_
 def test_qq_carry_generation():
     from qrisp.permeability import verify
     verify[0] = 1
-    from qrisp.arithmetic.adders.qcla.quantum_quantum.qq_qcla_adder import verify_manual_uncomputations
+    from qrisp.alg_primitives.arithmetic.adders.qcla.quantum_quantum.qq_qcla_adder import verify_manual_uncomputations
     verify_manual_uncomputations[0] = 1
     
     
@@ -78,14 +78,14 @@ def test_qq_carry_generation():
                     
     from qrisp.permeability import verify
     verify[0] = 0
-    from qrisp.arithmetic.adders.qcla.quantum_quantum.qq_qcla_adder import verify_manual_uncomputations
+    from qrisp.alg_primitives.arithmetic.adders.qcla.quantum_quantum.qq_qcla_adder import verify_manual_uncomputations
     verify_manual_uncomputations[0] = 0
 
 def test_qq_qcla_adder():
     
     from qrisp.permeability import verify
     verify[0] = 1
-    from qrisp.arithmetic.adders.qcla.quantum_quantum.qq_qcla_adder import verify_manual_uncomputations
+    from qrisp.alg_primitives.arithmetic.adders.qcla.quantum_quantum.qq_qcla_adder import verify_manual_uncomputations
     verify_manual_uncomputations[0] = 1
     
     import time
@@ -130,7 +130,7 @@ def test_qq_qcla_adder():
     print(time.time()-t0)
     from qrisp.permeability import verify
     verify[0] = 0
-    from qrisp.arithmetic.adders.qcla.quantum_quantum.qq_qcla_adder import verify_manual_uncomputations
+    from qrisp.alg_primitives.arithmetic.adders.qcla.quantum_quantum.qq_qcla_adder import verify_manual_uncomputations
     verify_manual_uncomputations[0] = 0
     
     a = QuantumFloat(8)
@@ -159,7 +159,7 @@ def test_qq_qcla_adder():
 def test_cq_carry_generation():
     from qrisp.permeability import verify
     verify[0] = 1
-    from qrisp.arithmetic.adders.qcla.classical_quantum.cq_qcla_adder import verify_manual_uncomputations
+    from qrisp.alg_primitives.arithmetic.adders.qcla.classical_quantum.cq_qcla_adder import verify_manual_uncomputations
     verify_manual_uncomputations[0] = 1
     
     # Test functions
@@ -235,7 +235,7 @@ def test_cq_carry_generation():
                     
     from qrisp.permeability import verify
     verify[0] = 0
-    from qrisp.arithmetic.adders.qcla.classical_quantum.cq_qcla_adder import verify_manual_uncomputations
+    from qrisp.alg_primitives.arithmetic.adders.qcla.classical_quantum.cq_qcla_adder import verify_manual_uncomputations
     verify_manual_uncomputations[0] = 0
     
 
@@ -244,7 +244,7 @@ def test_cq_qcla_adder():
     
     from qrisp.permeability import verify
     verify[0] = 1
-    from qrisp.arithmetic.adders.qcla.classical_quantum.cq_qcla_adder import verify_manual_uncomputations
+    from qrisp.alg_primitives.arithmetic.adders.qcla.classical_quantum.cq_qcla_adder import verify_manual_uncomputations
     verify_manual_uncomputations[0] = 1
     
     import time
@@ -321,7 +321,7 @@ def test_cq_qcla_adder():
                     
     from qrisp.permeability import verify
     verify[0] = 0
-    from qrisp.arithmetic.adders.qcla.classical_quantum.cq_qcla_adder import verify_manual_uncomputations
+    from qrisp.alg_primitives.arithmetic.adders.qcla.classical_quantum.cq_qcla_adder import verify_manual_uncomputations
     verify_manual_uncomputations[0] = 0
     
     b = QuantumFloat(10)

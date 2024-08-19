@@ -813,7 +813,7 @@ def app_phase_function(qv_list, phase_function, t=1, **kwargs):
         phases.append(phase_function(*labels, **kwargs) * t)
 
     # Synthesize phase
-    from qrisp.logic_synthesis import gray_phase_synth_qb_list
+    from qrisp import gray_phase_synth_qb_list
 
     gray_phase_synth_qb_list(
         qv_list[0].qs, sum([qv.reg[::-1] for qv in qv_list], []), phases

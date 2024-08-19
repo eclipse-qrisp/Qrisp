@@ -3,7 +3,7 @@
 QIRO MaxSat
 ===========
 
-.. currentmodule:: qiro.qiroproblems.qiroMaxSatInfrastr
+.. currentmodule:: qrisp.qiro.qiroproblems.qiroMaxSatInfrastr
 
 
 Problem description

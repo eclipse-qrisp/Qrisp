@@ -15,20 +15,17 @@
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************/
 """
+import sys
 
 from qrisp.circuit import *
-
 from qrisp.core import *
 from qrisp.misc import *
 from qrisp.qtypes import *
 from qrisp.environments import *
-
 from qrisp.permeability import *
-from qrisp.arithmetic import *
+from qrisp.alg_primitives import *
+from qrisp.algorithms import *
 
-from qrisp.iterators.qrange import *
-
-from qrisp.mcx_algs import *
-
+for i in ['shor','qaoa','qiro','grover','quantum_backtracking']:
+  sys.modules['qrisp.'+i] = sys.modules['qrisp.algorithms.'+i]
 from qrisp.default_backend import *
-

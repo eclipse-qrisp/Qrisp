@@ -3,7 +3,7 @@
 QIRO MaxClique 
 ==============
 
-.. currentmodule:: qiro.qiroproblems.qiroMaxCliqueInfrastr
+.. currentmodule:: qrisp.qiro.qiroproblems.qiroMaxCliqueInfrastr
 
 
 Problem description

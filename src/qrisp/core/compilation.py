@@ -106,9 +106,9 @@ def qompiler(
         #   can also look into reordering the inner structure of high-level functions to also
         #   get a good allocation strategy for this type of functions.
         
-        from qrisp.logic_synthesis import LogicSynthGate
-        from qrisp.mcx_algs import GidneyLogicalAND, JonesToffoli
-        from qrisp.arithmetic import QuasiRZZ
+        from qrisp.alg_primitives.logic_synthesis import LogicSynthGate
+        from qrisp.alg_primitives.mcx_algs import GidneyLogicalAND, JonesToffoli
+        from qrisp.alg_primitives.arithmetic import QuasiRZZ
         
         def allocation_level_transpile_predicate(op):
             
@@ -446,7 +446,7 @@ def gen_hybrid_mcx_data(controls, target, ctrl_state, clean_ancillae, dirty_anci
     # This function generates the data for the hybrid mcx implementation
 
     from qrisp.core import QuantumVariable
-    from qrisp.mcx_algs import hybrid_mcx
+    from qrisp.alg_primitives.mcx_algs import hybrid_mcx
     # Specify QuantumVariables to call mcx function
     control_qv = QuantumVariable(len(controls), name="control")
     target_qv = QuantumVariable(1, name="target")
