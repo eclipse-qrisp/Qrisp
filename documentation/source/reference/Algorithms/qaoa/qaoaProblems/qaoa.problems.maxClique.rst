@@ -3,7 +3,7 @@
 QAOA MaxClique
 ==============
 
-.. currentmodule:: qaoa.problems.maxCliqueInfrastr
+.. currentmodule:: qrisp.qaoa.problems.maxCliqueInfrastr
 
 
 Problem description

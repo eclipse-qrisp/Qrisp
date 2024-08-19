@@ -839,7 +839,7 @@ def app_phase_function(qv_list, phase_function, t=1, **kwargs):
         phases.append(phase_function(*labels, **kwargs) * t)
 
     # Synthesize phase
-    from qrisp.logic_synthesis import gray_phase_synth_qb_list
+    from qrisp import gray_phase_synth_qb_list
 
     gray_phase_synth_qb_list(
         qv_list[0].qs, sum([qv.reg[::-1] for qv in qv_list], []), phases
@@ -966,7 +966,7 @@ def as_hamiltonian(hamiltonian):
     return hamiltonian_application
 
 
-def perm_lock(qubits, message=""):
+def perm_lock(qubits):
     """
     Locks a list of qubits such that only permeable gates can be executed on these
     qubits. This means that an error will be raised if the user attempts to perform any
@@ -978,7 +978,6 @@ def perm_lock(qubits, message=""):
     basis state of this qubit but still allow controling on this qubit or applying
     phase gates.
 
-    Using the keywoard message it is possible to extend the displayed error message.
 
     The effect of this function can be reversed using perm_unlock.
 
@@ -986,8 +985,6 @@ def perm_lock(qubits, message=""):
     ----------
     qubits : list[Qubit] or QuantumVariable
         The qubits to phase-tolerantly lock.
-    message : str, optional
-        The message why these qubits are locked.
 
     Examples
     --------
@@ -1019,7 +1016,6 @@ def perm_lock(qubits, message=""):
 
             continue
         qb.perm_lock = True
-        qb.perm_lock_message = message
 
 
 def perm_unlock(qubits):
@@ -1038,9 +1034,9 @@ def perm_unlock(qubits):
 
     >>> from qrisp import QuantumChar, perm_lock, perm_unlock
     >>> q_ch = QuantumChar()
-    >>> perm_lock(q_ch, message = "Qubits are perm-locked due to testing purposes")
+    >>> perm_lock(q_ch)
     >>> q_ch[:] = "g"
-    Exception: Qubits are perm-locked due to testing purposes
+    Exception: Tried to perform non-permeable operations on perm_locked qubits
 
     >>> perm_unlock(q_ch)
     >>> q_ch[:] = "g"
@@ -1056,15 +1052,12 @@ def perm_unlock(qubits):
                 perm_unlock(item)
             continue
         qb.perm_lock = False
-        if hasattr(qb, "perm_lock_message"):
-            del qb.perm_lock_message
 
 
-def lock(qubits, message=""):
+def lock(qubits):
     """
     Locks a list of qubits, implying an error will be raised if the user tries to
     perform any operation involving these qubits.
-    Using the keywoard message it is possible to extend the displayed error message.
 
     This can be reversed by calling unlock.
 
@@ -1072,8 +1065,6 @@ def lock(qubits, message=""):
     ----------
     qubits : list[Qubit] or QuantumVariable
         The list of Qubits to lock.
-    message : str, optional
-        The message why these qubits are locked.
 
     Examples
     --------
@@ -1082,10 +1073,9 @@ def lock(qubits, message=""):
 
     >>> from qrisp import QuantumChar, lock
     >>> q_ch = QuantumChar()
-    >>> lock(q_ch, message = "Qubits are locked due to testing purposes")
+    >>> lock(q_ch)
     >>> q_ch[:] = "g"
-    Exception: Qubits are locked due to testing purposes
-
+    Exception: Tried to operation on locked qubits
     """
     from qrisp.circuit.quantum_circuit import convert_to_qb_list
 
@@ -1096,7 +1086,6 @@ def lock(qubits, message=""):
             continue
 
         qb.lock = True
-        qb.lock_message = message
 
 
 def unlock(qubits):
@@ -1135,8 +1124,6 @@ def unlock(qubits):
                 unlock(item)
             continue
         qb.lock = False
-        if hasattr(qb, "lock_message"):
-            del qb.lock_message
 
 
 def benchmark_function(function):

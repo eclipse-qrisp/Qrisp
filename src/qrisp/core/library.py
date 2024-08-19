@@ -465,7 +465,7 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
     """
 
     from qrisp.misc import bin_rep
-    from qrisp.mcx_algs import GidneyLogicalAND, amy_toffoli, jones_toffoli
+    from qrisp.alg_primitives.mcx_algs import GidneyLogicalAND, amy_toffoli, jones_toffoli
     from qrisp.core import QuantumVariable
     from qrisp.qtypes import QuantumBool
 
@@ -502,7 +502,7 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
             f"Given control state {ctrl_state} does not match control qubit amount {n}"
         )
 
-    from qrisp.mcx_algs import (
+    from qrisp.alg_primitives.mcx_algs import (
         balauca_dirty,
         balauca_mcx,
         hybrid_mcx,
@@ -687,7 +687,7 @@ def mcp(phi, qubits, method="auto", ctrl_state=-1):
 
     """
 
-    from qrisp.mcx_algs import balauca_mcx
+    from qrisp.alg_primitives.mcx_algs import balauca_mcx
     from qrisp.misc import bin_rep, gate_wrap
 
     @gate_wrap(permeability="full", is_qfree=True, name="anc supported mcp")
@@ -698,7 +698,7 @@ def mcp(phi, qubits, method="auto", ctrl_state=-1):
         if ctrl_state[-1] == "0":
             x(qubits[-1])
 
-        balauca_mcx(qubits[:-1], [qubits[-1]], ctrl_state=ctrl_state, phase=phi)
+        balauca_mcx(qubits[:-1], [qubits[-1]], ctrl_state=ctrl_state[:-1], phase=phi)
 
         if ctrl_state[-1] == "0":
             x(qubits[-1])
@@ -1064,7 +1064,7 @@ def measure(qubits, clbits=None):
         return clbits
     else:
         from qrisp.jisp import Measurement_p, AbstractQubit
-        from qrisp import Qubit, QuantumVariable, QuantumFloat
+        from qrisp import QuantumVariable
         
         if isinstance(qubits, QuantumVariable):
             abs_qc, res = Measurement_p.bind(qs.abs_qc, qubits.reg)

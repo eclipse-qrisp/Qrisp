@@ -21,7 +21,7 @@ from qrisp import QuantumFloat, h, qRange
 import time
 
 # Create some QuantumFloats
-n = QuantumFloat(5, signed=False)
+n = QuantumFloat(3, signed=False)
 qf = QuantumFloat(4)
 # Initialize the value 4
 n[:] = 4

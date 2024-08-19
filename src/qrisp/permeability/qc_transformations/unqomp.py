@@ -19,7 +19,6 @@
 import networkx as nx
 
 from qrisp.circuit import fast_append, ControlledOperation, PTControlledOperation
-from qrisp.logic_synthesis import LogicSynthGate
 from qrisp.permeability.type_checker import is_qfree
 
 from qrisp.permeability.permeability_dag import PermeabilityGraph, InstructionNode, TerminatorNode, AllocNode
@@ -246,7 +245,8 @@ def uncompute_node(pdag, node, uncomp_qbs, recompute_qubits=[]):
                     ctrl_state=op.ctrl_state,
                     method = "gray_pt"
                 )
-
+                
+    from qrisp.alg_primitives.logic_synthesis import LogicSynthGate
     # Replace results of logic synthesis by phase tolerant logic synthesis
     if isinstance(node.instr.op, LogicSynthGate):
         if node.instr.op.logic_synth_method == "gray":

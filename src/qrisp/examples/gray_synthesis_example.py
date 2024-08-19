@@ -21,7 +21,7 @@
 # The user-interface for this feautre is the QuantumDictionary
 
 from qrisp.core import QuantumVariable
-from qrisp.logic_synthesis import TruthTable, gray_logic_synth  # , pprm
+from qrisp.alg_primitives.logic_synthesis import TruthTable, gray_logic_synth  # , pprm
 from qrisp.misc import int_encoder
 from qrisp import h
 

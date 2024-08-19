@@ -20,7 +20,7 @@
 import time
 
 from qrisp.core import QuantumSession
-from qrisp.arithmetic import QuantumFloat
+from qrisp.alg_primitives.arithmetic import QuantumFloat
 from numpy.linalg import norm
 
 from qrisp.interface import convert_circuit

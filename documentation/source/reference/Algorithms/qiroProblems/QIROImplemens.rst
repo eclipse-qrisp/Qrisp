@@ -4,7 +4,7 @@
 .. currentmodule:: qrisp.qiro
 
 Implementations
-=======================================
+===============
 
 .. toctree::
      :hidden:

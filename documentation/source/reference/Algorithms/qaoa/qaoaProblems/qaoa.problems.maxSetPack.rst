@@ -5,7 +5,7 @@ QAOA MaxSetPacking
 
 
 
-.. currentmodule:: qaoa.problems.maxSetPackInfrastr
+.. currentmodule:: qrisp.qaoa.problems.maxSetPackInfrastr
 
 
 Problem description

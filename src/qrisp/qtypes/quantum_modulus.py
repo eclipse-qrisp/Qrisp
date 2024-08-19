@@ -171,7 +171,7 @@ class QuantumModulus(QuantumFloat):
         QuantumFloat.__init__(self, msize = self.m, qs = qs)
         
         if inpl_adder is None:
-            from qrisp.arithmetic import fourier_adder
+            from qrisp.alg_primitives.arithmetic import fourier_adder
             inpl_adder = fourier_adder
         
         self.inpl_adder = inpl_adder
@@ -180,7 +180,7 @@ class QuantumModulus(QuantumFloat):
     
     def decoder(self, i):
         
-        from qrisp.arithmetic.modular_arithmetic import montgomery_decoder
+        from qrisp.alg_primitives.arithmetic.modular_arithmetic import montgomery_decoder
         
         if i >= self.modulus:# or (np.gcd(i, self.modulus) != 1 and i != 0):
             return np.nan
@@ -188,7 +188,7 @@ class QuantumModulus(QuantumFloat):
     
     def encoder(self, i):
         
-        from qrisp.arithmetic.modular_arithmetic import montgomery_encoder
+        from qrisp.alg_primitives.arithmetic.modular_arithmetic import montgomery_encoder
         
         if i >= self.modulus:# or (np.gcd(i, self.modulus) != 1 and i != 0):
             return np.nan
@@ -197,7 +197,7 @@ class QuantumModulus(QuantumFloat):
 
     @gate_wrap(permeability="args", is_qfree=True)    
     def __mul__(self, other):
-        from qrisp.arithmetic.modular_arithmetic import montgomery_mod_mul, montgomery_mod_semi_mul
+        from qrisp.alg_primitives.arithmetic.modular_arithmetic import montgomery_mod_mul, montgomery_mod_semi_mul
         
         if isinstance(other, QuantumModulus):
             return montgomery_mod_mul(self, other)
@@ -212,9 +212,9 @@ class QuantumModulus(QuantumFloat):
     def __imul__(self, other):
         if isinstance(other, int):
             
-            from qrisp.arithmetic.modular_arithmetic import qft_semi_cl_inpl_mult, semi_cl_inpl_mult
+            from qrisp.alg_primitives.arithmetic.modular_arithmetic import qft_semi_cl_inpl_mult, semi_cl_inpl_mult
             
-            from qrisp.arithmetic.adders import fourier_adder
+            from qrisp.alg_primitives.arithmetic.adders import fourier_adder
             if self.inpl_adder is fourier_adder:
                 
                 return qft_semi_cl_inpl_mult(self, other%self.modulus)
@@ -235,7 +235,7 @@ class QuantumModulus(QuantumFloat):
                 raise Exception("Tried to add a QuantumFloat and QuantumModulus with non-zero Montgomery shift")
             
         
-        from qrisp.arithmetic.modular_arithmetic import mod_adder
+        from qrisp.alg_primitives.arithmetic.modular_arithmetic import mod_adder
         
         res = self.duplicate(init = True)
         
@@ -251,14 +251,14 @@ class QuantumModulus(QuantumFloat):
             other = self.encoder(other%self.modulus)
         elif isinstance(other, QuantumModulus):
             if self.m != other.m:
-                from qrisp.arithmetic.modular_arithmetic import montgomery_addition
+                from qrisp.alg_primitives.arithmetic.modular_arithmetic import montgomery_addition
                 montgomery_addition(other, self)
                 return self
         elif isinstance(other, QuantumFloat):
             if self.m != 0:
                 raise Exception("Tried to add a QuantumFloat and QuantumModulus with non-zero Montgomery shift")
             
-        from qrisp.arithmetic.modular_arithmetic import mod_adder
+        from qrisp.alg_primitives.arithmetic.modular_arithmetic import mod_adder
         
         mod_adder(other, self, self.inpl_adder, self.modulus)
         return self
@@ -275,7 +275,7 @@ class QuantumModulus(QuantumFloat):
                 raise Exception("Tried to subtract a QuantumFloat and QuantumModulus with non-zero Montgomery shift")
             
         
-        from qrisp.arithmetic.modular_arithmetic import mod_adder
+        from qrisp.alg_primitives.arithmetic.modular_arithmetic import mod_adder
         res = self.duplicate(init = True)
         
         with invert():
@@ -294,7 +294,7 @@ class QuantumModulus(QuantumFloat):
             if self.m != 0:
                 raise Exception("Tried to subtract a QuantumFloat and QuantumModulus with non-zero Montgomery shift")
             
-        from qrisp.arithmetic.modular_arithmetic import mod_adder
+        from qrisp.alg_primitives.arithmetic.modular_arithmetic import mod_adder
         res = self.duplicate()
         
         res -= self
@@ -314,7 +314,7 @@ class QuantumModulus(QuantumFloat):
             if self.m != 0:
                 raise Exception("Tried to subtract a QuantumFloat and QuantumModulus with non-zero Montgomery shift")
         
-        from qrisp.arithmetic.modular_arithmetic import mod_adder
+        from qrisp.alg_primitives.arithmetic.modular_arithmetic import mod_adder
         with invert():
             mod_adder(other, self, self.inpl_adder, self.modulus)
         

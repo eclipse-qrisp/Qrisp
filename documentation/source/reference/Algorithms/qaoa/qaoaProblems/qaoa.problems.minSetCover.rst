@@ -3,7 +3,7 @@
 QAOA MinSetCover
 ================
 
-.. currentmodule:: qaoa.problems.minSetCoverInfrastr
+.. currentmodule:: qrisp.qaoa.problems.minSetCoverInfrastr
 
 Problem description
 -------------------

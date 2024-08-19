@@ -3,7 +3,7 @@
 QIRO MaxIndependentSet
 ======================
 
-.. currentmodule:: qiro.qiroproblems.qiroMaxIndepSetInfrastr
+.. currentmodule:: qrisp.qiro.qiroproblems.qiroMaxIndepSetInfrastr
 
 
 
