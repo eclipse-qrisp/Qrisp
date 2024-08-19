@@ -17,13 +17,5 @@
 """
 
 
-interface = "thrift"
-
-
-if interface == "thrift":
-    from qrisp.interface.thrift_interface import *
-else:
-    from qrisp.interface.openapi_interface import *
-
 from qrisp.interface.backends import *
 from qrisp.interface.circuit_converter import *
