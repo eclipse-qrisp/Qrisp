@@ -48,11 +48,20 @@ Measurement_p.multiple_results = True
 
 @Measurement_p.def_impl
 def measure_abstract_eval(qc, meas_object):
-    from qrisp import get_measurement_from_qc, Qubit, default_backend
-    
+    from qrisp import Qubit, QuantumCircuit
+    return_bool = False
     if isinstance(meas_object, Qubit):
-        res = get_measurement_from_qc(qc, [meas_object], shots = 1, backend = default_backend)
-        return qc, bool(list(res.keys())[0])
+        meas_object = [meas_object]
+        return_bool = True
+    
+    if isinstance(qc, QuantumCircuit):
+        qc.measure(meas_object)
+        return qc, qc.clbits[-len(meas_object)]
     else:
-        res = get_measurement_from_qc(qc, meas_object, shots = 1, backend = default_backend)
-        return qc, int(list(res.keys())[0])
+        res = 0
+        for i in range(len(meas_object)):
+            res += 2**i*qc.measure(meas_object[i])
+            
+        if return_bool:
+            return qc, bool(res)
+        return qc, res        

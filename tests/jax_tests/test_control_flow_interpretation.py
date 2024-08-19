@@ -38,6 +38,6 @@ def test_control_flow_interpretation():
     
     for i in range(5):
         
-        res = jisp_program(i + 0.5)[1]
+        res = jisp_program(i + 0.5)
         
         assert res == i + 4.5

@@ -413,3 +413,87 @@ def single_shot_sim(qc, quantum_state=None):
                 quantum_state.apply_operation(instr.op, qubit_indices)
 
         return "".join(result_str)[::-1], quantum_state
+
+def advance_quantum_state(qc, quantum_state):
+    if len(qc.data) == 0:
+        return quantum_state
+
+    # This command enables fast appending. Fast appending means that the .append method
+    # of the QuantumCircuit class checks much less validity conditions and is also less
+    # tolerant regarding inputs.
+    with fast_append():
+        # We convert the circuit which is given with portable objects to a qrisp circuit
+
+        # Treat allocation gates (ie. remove them)
+        count_measurements_and_treat_alloc(qc, insert_reset=True)
+
+        qc = group_qc(qc)
+
+        import random
+        # Main loop - this loop successively executes operations onto the impure
+        # quantum state object
+        for i in range(len(qc.data)):
+
+            # Set alias for the instruction of this operation
+            instr = qc.data[i]
+
+            # Gather the indices of the qubits from the circuits (i.e. integers instead
+            # of the identifier strings)
+            qubit_indices = [qc.qubits.index(qb) for qb in instr.qubits]
+
+            # Perform instructions
+            if instr.op.name == "reset":
+                quantum_state.measure(qubit_indices[0])
+
+                p_0, state_0, p_1, state_1 = quantum_state.last_mes_outcome
+
+                rng = random.random()
+
+                if rng < p_0:
+                    quantum_state = state_0
+                else:
+                    quantum_state = state_1
+
+            # Disentangling describes an operation, which mean that the superposition of
+            # two states can be safely treated as two decoherent states. This is
+            # advantageous because it might be possible that the amplitude of one state
+            # is 0, which means that we halfed the workload. Even if both states have
+            # non-zero amplitude, this still yields an improvement because computing two
+            # decoherent states is more easily parallelized than the combined coherent
+            # state.
+
+            # If the operation is unitary, we apply this unitary on to the required qubit
+            # indices
+            else:
+                quantum_state.apply_operation(instr.op, qubit_indices)
+
+        return quantum_state
+    
+class BufferedQuantumState:
+    
+    def __init__(self):
+        
+        self.quantum_state = QuantumState(n = 0)
+        self.buffer_qc = QuantumCircuit(0)
+    
+    def add_qubit(self):
+        self.quantum_state.add_qubit()
+        return self.buffer_qc.add_qubit()
+    
+    def append(self, op, qubits):
+        self.buffer_qc.append(op, qubits)
+            
+    def apply_buffer(self):
+        self.quantum_state = advance_quantum_state(self.buffer_qc, self.quantum_state)
+        self.buffer_qc = self.buffer_qc.clearcopy()
+    
+    def measure(self, qubit):
+        self.apply_buffer()
+        mes_res = self.quantum_state.measure(self.buffer_qc.qubits.index(qubit), keep_res = True)
+        rnd = np.random.random(1)
+        if rnd < mes_res[0]:
+            self.quantum_state = mes_res[1]
+            return False
+        else:
+            self.quantum_state = mes_res[3]
+            return True

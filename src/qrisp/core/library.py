@@ -1064,11 +1064,11 @@ def measure(qubits, clbits=None):
         return clbits
     else:
         from qrisp.jisp import Measurement_p, AbstractQubit
-        from qrisp import Qubit, QuantumVariable
+        from qrisp import Qubit, QuantumVariable, QuantumFloat
         
         if isinstance(qubits, QuantumVariable):
             abs_qc, res = Measurement_p.bind(qs.abs_qc, qubits.reg)
-            res = qubits.decoder(res)
+            res = qubits.jdecoder(res)
         elif isinstance(qubits.aval, AbstractQubit):
             abs_qc, res = Measurement_p.bind(qs.abs_qc, qubits)
         

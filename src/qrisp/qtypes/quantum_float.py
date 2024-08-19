@@ -321,6 +321,9 @@ class QuantumFloat(QuantumVariable):
         else:
             return res
 
+    def jdecoder(self, i):
+        return self.decoder(i)
+    
     def encoder(self, i):
         res = signed_int_iso_2(i/(2.**self.exponent), self.size)
         # if self.signed:

@@ -80,17 +80,35 @@ class Jispr(Jaxpr):
     
     def control(self, num_ctrl, ctrl_state = -1):
         return multi_control_jispr(self, num_ctrl, ctrl_state)
+    
+    def extract_qc(self, *args):
+        from qrisp import QuantumCircuit
+        jispr = flatten_environments(self)
+        eqn_eval_dic = {"pjit" : pjit_to_gate}
+        
+        res = eval_jaxpr(jispr, eqn_eval_dic = eqn_eval_dic)(*([QuantumCircuit()] + list(args)))
+        
+        return res
+        
         
     def __call__(self, *args):
-        if len(args) == len(self.invars) - 1:
-            from qrisp import QuantumCircuit
-            args = [QuantumCircuit()] + list(args)
+        
+        if len(self.outvars) == 1:
+            return None
+        
+        from qrisp.simulator import BufferedQuantumState
+        args = [BufferedQuantumState()] + list(args)
         
         jispr = flatten_environments(self)
         eqn_eval_dic = {"pjit" : pjit_to_gate}
         
-        return eval_jaxpr(jispr, eqn_eval_dic = eqn_eval_dic)(*args)
-    
+        res = eval_jaxpr(jispr, eqn_eval_dic = eqn_eval_dic)(*args)
+        
+        if len(self.outvars) == 2:
+            return res[1]
+        else:
+            return res[1:]
+        
     def inline(self, *args):
         
         from qrisp.jisp import TracingQuantumSession

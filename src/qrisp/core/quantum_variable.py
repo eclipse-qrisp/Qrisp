@@ -594,6 +594,9 @@ class QuantumVariable:
         from qrisp.misc import bin_rep
 
         return bin_rep(i, self.size)[::-1]
+    
+    def jdecoder(self, i):
+        return i
 
     def encoder(self, value):
         """
