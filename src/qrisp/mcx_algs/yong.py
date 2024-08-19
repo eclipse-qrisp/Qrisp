@@ -16,7 +16,7 @@
 ********************************************************************************/
 """
 
-from qrisp import mcx, h, s, s_dg, invert
+from qrisp import mcx, h, s, s_dg, x, invert
 from qrisp.qtypes import QuantumBool
 
 # Algorithm based on https://link.springer.com/article/10.1007/s10773-017-3389-4
@@ -26,28 +26,23 @@ def yong_mcx(input_qubits, target, ancilla=None, ctrl_state=None):
             raise Exception("Tried to execute yong algorithm with multiple targets")
         target = target[0]
 
-    if ctrl_state is not None:
-        for i in range(len(input_qubits)):
-            input_qubits[i].ctrl_state = ctrl_state[i]
-
-    if len(input_qubits) < 3:
-        ctrl_state = ""
-        for i in range(len(input_qubits)):
-            if hasattr(input_qubits[i], "ctrl_state"):
-                ctrl_state += input_qubits[i].ctrl_state
-            else:
-                ctrl_state += "1"
-
+    if ctrl_state is None:
+        ctrl_state = len(input_qubits)*"1"
+    
     from qrisp.mcx_algs import gray_pt_mcx
     if len(input_qubits) == 2:
         if ancilla is None:
-            mcx(input_qubits, target, method="gray", ctrl_state=ctrl_state)
+            mcx(input_qubits, target, method="gray", ctrl_state = ctrl_state)
         else:
             target.qs().append(
-                gray_pt_mcx(2, ctrl_state=ctrl_state), input_qubits + [target]
+                gray_pt_mcx(2, ctrl_state = ctrl_state), input_qubits + [target]
             )
             # mcx(input_qubits, target, method = "gray_pt", ctrl_state = ctrl_state)
         return
+    
+    for i in range(len(input_qubits)):
+        if ctrl_state[i] == "0":
+            x(input_qubits[i])
 
     ancilla_allocated = False
 
@@ -90,7 +85,8 @@ def yong_mcx(input_qubits, target, ancilla=None, ctrl_state=None):
 
     if ancilla_allocated:
         ancilla_bl.delete()
+        
+    for i in range(len(input_qubits)):
+        if ctrl_state[i] == "0":
+            x(input_qubits[i])
 
-    if ctrl_state is not None:
-        for i in range(len(input_qubits)):
-            del input_qubits[i].ctrl_state

@@ -62,8 +62,6 @@ def beauregard_adder(a, b, modulus):
     if isinstance(b, int):
         b = b%modulus
     
-    temp = a.duplicate()
-    
     a = list(a) + [sign[0]]
     
     

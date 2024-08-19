@@ -79,23 +79,14 @@ def hybrid_mcx(
     elif isinstance(target, QuantumVariable):
         target = list(target)
 
-    if ctrl_state is not None:
-        for i in range(len(input_qubits)):
-            input_qubits[i].ctrl_state = ctrl_state[i]
-
-    
-
+    if ctrl_state is None:
+        ctrl_state = len(input_qubits)*"1"
     qs = target[0].qs()
-
+    
     if len(input_qubits) <= 2 + int(not use_mcm) or num_ancilla == 0:
-        ctrl_state = ""
-        for qb in input_qubits:
-            if hasattr(qb, "ctrl_state"):
-                ctrl_state += qb.ctrl_state
-            else:
-                ctrl_state += "1"
 
         if len(input_qubits) == 2:
+            
             if phase is None:
                 
                 if use_mcm:
@@ -136,6 +127,8 @@ def hybrid_mcx(
     layer_structure = []
     layer_output = []
     remainder = list(input_qubits)
+    ctrl_state = list(ctrl_state)
+    sub_ctrl_list = []
 
     for i in range(len(structure)):
         if not structure[0] <= len(remainder):
@@ -145,10 +138,11 @@ def hybrid_mcx(
 
         for j in range(structure[0]):
             layer_input.append(remainder.pop(0))
+            sub_ctrl_list.append(ctrl_state.pop(0))
 
         layer_structure.append(structure.pop(0))
 
-    balauca_layer(layer_input, layer_output, structure=layer_structure, invert=False, use_mcm=use_mcm)
+    balauca_layer(layer_input, layer_output, structure=layer_structure, invert=False, use_mcm=use_mcm, ctrl_list = sub_ctrl_list)
 
     hybrid_mcx(
         layer_output + remainder,
@@ -156,21 +150,18 @@ def hybrid_mcx(
         num_ancilla=num_ancilla - len(layer_output),
         num_dirty_ancilla=num_dirty_ancilla,
         phase=phase,
-        use_mcm = use_mcm
+        use_mcm = use_mcm,
+        ctrl_state = "".join(["1"*len(layer_output)] + ctrl_state)
     )
 
-    balauca_layer(layer_input, layer_output, structure=layer_structure, invert=True, use_mcm=use_mcm)
+    balauca_layer(layer_input, layer_output, structure=layer_structure, invert=True, use_mcm=use_mcm, ctrl_list = sub_ctrl_list)
 
     [qbl.delete() for qbl in layer_output]
-
-    if ctrl_state is not None:
-        for i in range(len(input_qubits)):
-            del input_qubits[i].ctrl_state
 
     return
 
 
-def balauca_layer(input_qubits, output_qubits, structure, invert=False, use_mcm = False):
+def balauca_layer(input_qubits, output_qubits, structure, invert=False, use_mcm = False, ctrl_list = None):
     if not output_qubits:
         return
 
@@ -185,14 +176,12 @@ def balauca_layer(input_qubits, output_qubits, structure, invert=False, use_mcm 
                 input_qubits[counter + 1],
                 input_qubits[counter + 2],
             ]
-            counter += 3
 
-            ctrl_state = ""
-            for qb in ctrl_qubits:
-                if hasattr(qb, "ctrl_state"):
-                    ctrl_state += qb.ctrl_state
-                else:
-                    ctrl_state += "1"
+            ctrl_state = "".join([ctrl_list[counter],
+                                  ctrl_list[counter+1],
+                                  ctrl_list[counter+2]])
+            
+            counter += 3
 
             gate = XGate().control(3, method="gray_pt", ctrl_state=ctrl_state)
 
@@ -208,14 +197,11 @@ def balauca_layer(input_qubits, output_qubits, structure, invert=False, use_mcm 
             
         else:
             ctrl_qubits = [input_qubits[counter], input_qubits[counter + 1]]
-            counter += 2
 
-            ctrl_state = ""
-            for qb in ctrl_qubits:
-                if hasattr(qb, "ctrl_state"):
-                    ctrl_state += qb.ctrl_state
-                else:
-                    ctrl_state += "1"
+            ctrl_state = "".join([ctrl_list[counter],
+                                  ctrl_list[counter+1]])
+            
+            counter += 2
 
             if use_mcm:
                 gate = GidneyLogicalAND(ctrl_state=ctrl_state)

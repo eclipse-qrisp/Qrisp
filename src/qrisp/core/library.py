@@ -698,7 +698,7 @@ def mcp(phi, qubits, method="auto", ctrl_state=-1):
         if ctrl_state[-1] == "0":
             x(qubits[-1])
 
-        balauca_mcx(qubits[:-1], [qubits[-1]], ctrl_state=ctrl_state, phase=phi)
+        balauca_mcx(qubits[:-1], [qubits[-1]], ctrl_state=ctrl_state[:-1], phase=phi)
 
         if ctrl_state[-1] == "0":
             x(qubits[-1])
