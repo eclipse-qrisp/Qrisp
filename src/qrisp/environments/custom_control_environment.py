@@ -155,6 +155,8 @@ def custom_control(func):
         # Search for a Control/Condition Environment and get the control qubit
         control_qb = None
         for env in qs.env_stack[::-1]:
+            if type(env) == QuantumEnvironment:
+                continue
             if isinstance(env, (ControlEnvironment, ConditionEnvironment)):
                 control_qb = env.condition_truth_value
                 break

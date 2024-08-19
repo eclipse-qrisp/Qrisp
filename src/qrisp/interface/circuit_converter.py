@@ -16,6 +16,7 @@
 ********************************************************************************/
 """
 
+import numpy as np
 
 from qrisp.misc import bin_rep
 from qrisp.circuit.standard_operations import op_list
@@ -462,8 +463,13 @@ def convert_from_qiskit(qiskit_qc):
         
         qrisp_params = []
 
-        for p in params:
-            if isinstance(p, ParameterExpression):
+        while len(params):
+            p = params.pop(0)
+            if isinstance(p, np.ndarray):
+                params = list(p.flatten()) + params
+            elif isinstance(p, np.number):
+                qrisp_params.append(p.item())
+            elif isinstance(p, ParameterExpression):
                 
                 lambd_expr = sympify(ParameterExpression.sympify(p))
                 
@@ -474,6 +480,7 @@ def convert_from_qiskit(qiskit_qc):
             elif isinstance(p, complex):
                 qrisp_params.append(p)
             else:
+                print(p)
                 raise Exception(f"Could not convert parameter type {type(p)}")
 
         params = qrisp_params
