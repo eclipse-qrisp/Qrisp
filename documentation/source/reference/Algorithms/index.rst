@@ -58,4 +58,5 @@ We encourage you to explore these algorithms, delve into their documentation, an
    demux
    cyclic_shift
    iterable_permutation
+   probabilityLoading
    
