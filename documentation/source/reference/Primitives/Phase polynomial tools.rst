@@ -1,4 +1,6 @@
-Phase polynomial tools
+.. _phase_polynomials:
+
+Phase Polynomial Tools
 ======================
 
 These methods facilitate the efficient application of diagonal Hamiltonians defined by polynomials.

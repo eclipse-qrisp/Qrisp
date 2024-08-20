@@ -698,7 +698,7 @@ class PTControlledOperation(Operation):
             self.phase_tolerant = False
 
         elif self.base_operation.name == "swap":
-            from qrisp.core import fredkin_qc
+            from qrisp.circuit import fredkin_qc
 
             definition_circ = fredkin_qc(num_ctrl_qubits, ctrl_state, method)
 

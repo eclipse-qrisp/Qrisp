@@ -15,7 +15,11 @@
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************/
 """
-from qrisp import QuantumVariable, mcx, cx, invert, QuantumBool
+
+from qrisp.core import QuantumVariable
+from qrisp.qtypes import QuantumBool
+from qrisp.environments import invert
+from qrisp.alg_primitives import mcx, cx
 
 # This function performs the Gidney adder from https://arxiv.org/pdf/1709.06648.pdf
 def qq_gidney_adder(a, b, c_in = None, c_out = None):

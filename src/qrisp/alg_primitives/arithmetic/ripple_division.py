@@ -16,7 +16,8 @@
 ********************************************************************************/
 """
 
-from qrisp import gate_wrap, x
+from qrisp.alg_primitives.gate_application_functions import x
+from qrisp import gate_wrap
 
 
 @gate_wrap(is_qfree=True, permeability="args")

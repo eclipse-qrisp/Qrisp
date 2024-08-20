@@ -18,11 +18,15 @@
 
 import numpy as np
 
-from qrisp.qtypes import QuantumFloat
+from qrisp.qtypes import QuantumFloat, QuantumModulus
 from qrisp.alg_primitives.arithmetic.comparisons import less_than
 from qrisp.alg_primitives.arithmetic.modular_arithmetic.mod_tools import modinv, montgomery_encoder
 from qrisp.environments import custom_control
-from qrisp import cx, bin_rep, control, swap, invert, redirect_qfunction, QuantumModulus, mcx, fast_append, auto_uncompute
+from qrisp.alg_primitives import cx, swap, mcx
+from qrisp.misc.utility import bin_rep, redirect_qfunction
+from qrisp.environments import control, invert
+from qrisp.circuit import fast_append
+from qrisp.permeability import auto_uncompute
 # This file implements the techniques described in this paper: https://arxiv.org/abs/1801.01081
 # The goal is to have performant modular multiplication. To this end, instead of taking the
 # much explored path of creating a modular adder, that is used within the multiplication,

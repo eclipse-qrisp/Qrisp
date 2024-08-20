@@ -16,9 +16,7 @@
 ********************************************************************************/
 """
 
-from qrisp import QFT, conjugate, p, cp, QuantumFloat, QuantumVariable
-import numpy as np
-
+from qrisp.qtypes import QuantumFloat, QuantumVariable
 
 def ammend_inpl_adder(raw_inpl_adder, ammend_cl_int = True):
     
