@@ -1,5 +1,5 @@
 import numpy as np
-
+from qrisp import rx, ry, cx
 
 def dicke_state(qv, k):
     """
