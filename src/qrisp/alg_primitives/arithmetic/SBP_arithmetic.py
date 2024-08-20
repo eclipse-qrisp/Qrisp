@@ -26,7 +26,8 @@ from qrisp.alg_primitives.arithmetic.poly_tools import (
     filter_pow,
     get_ordered_symbol_list,
 )
-from qrisp.core import QuantumArray, QuantumVariable, cp, cx, cz, h, mcx, p, z, rz, rzz, crz, mcp, gphase
+from qrisp.core import QuantumArray, QuantumVariable
+from qrisp.alg_primitives import cp, cx, cz, h, mcx, p, z, rz, rzz, crz, mcp, gphase
 from qrisp.misc import gate_wrap, lifted
 from qrisp.circuit import XGate
 

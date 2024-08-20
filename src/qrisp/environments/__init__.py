@@ -18,8 +18,8 @@
 
 
 from qrisp.environments.quantum_environments import *
-from qrisp.environments.quantum_conditionals import *
 from qrisp.environments.quantum_inversion import *
+from qrisp.environments.quantum_conditionals import *
 from qrisp.environments.control_environment import *
 from qrisp.environments.gate_wrap_environment import *
 from qrisp.environments.conjugation_environment import *

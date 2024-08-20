@@ -23,9 +23,7 @@
 # For this we implement the Brent-Kung-Tree in a recursive manner. See:
 # https://web.stanford.edu/class/archive/ee/ee371/ee371.1066/lectures/lect_04.pdf Page 13
 
-import numpy as np
-
-from qrisp.core import x, cx
+from qrisp.alg_primitives import x, cx
 from qrisp.misc.utility import check_if_fresh
 from qrisp.alg_primitives.arithmetic.adders.gidney import gidney_adder, cq_gidney_adder
 from qrisp.alg_primitives.arithmetic.adders.incrementation import lin_incr

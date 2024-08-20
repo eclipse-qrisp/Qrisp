@@ -25,13 +25,12 @@
 
 import numpy as np
 
-from qrisp.core import x, cx, mcx, barrier
+from qrisp.alg_primitives import cx, mcx
 from qrisp.qtypes import QuantumVariable, QuantumBool
 from qrisp.circuit import QuantumCircuit
 from qrisp.permeability import auto_uncompute
 from qrisp.misc import check_if_fresh
 from qrisp.alg_primitives.mcx_algs import hybrid_mcx
-from qrisp import gate_wrap
 
 
 # Returns the PROPAGATE status of a group of entries
