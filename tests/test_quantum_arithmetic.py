@@ -105,8 +105,8 @@ def test_quantum_arithmetic():
     target_qubit = 3
     new_statevector = tensordot(z_gate, statevector, (1, target_qubit))
     new_statevector = new_statevector.reshape(2**num_qubits)
-    # assert new_statevector.get_measurement() == {OutcomeArray([ 0.25,  0.25,  0.25,  0.25,  0.25,  0.25,  0.25,  0.25,
-    #               -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25]): 1.0}
+    assert new_statevector.get_measurement() == {OutcomeArray([ 0.25,  0.25,  0.25,  0.25,  0.25,  0.25,  0.25,  0.25,
+                  -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25]): 1.0}
     
 
     # Test inplace multiplication

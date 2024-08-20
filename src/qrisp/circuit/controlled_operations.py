@@ -54,8 +54,8 @@ def multi_controlled_circuit(
 
 # This function takes an U3Gate object and turns it into it's controlled version
 def multi_controlled_u3_circ(u3_gate, control_amount, ctrl_state, method=None):
-    from qrisp.mcx_algs import multi_cx
-    from qrisp.logic_synthesis import gray_phase_synth_qb_list
+    from qrisp.alg_primitives.mcx_algs import multi_cx
+    from qrisp.alg_primitives.logic_synthesis import gray_phase_synth_qb_list
 
     qc = QuantumCircuit(control_amount + 1)
     target_qubit = qc.qubits[-1]
@@ -209,7 +209,7 @@ def multi_controlled_u3_circ(u3_gate, control_amount, ctrl_state, method=None):
 
 
 def multi_controlled_gray_circ(gray_gate, control_amount, ctrl_state):
-    from qrisp.logic_synthesis.gray_synthesis import gray_synth_gate
+    from qrisp.alg_primitives.logic_synthesis.gray_synthesis import gray_synth_gate
 
     target_phases_old = gray_gate.target_phases
 

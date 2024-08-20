@@ -381,7 +381,7 @@ Qrisp code can be significantly shorter and also more readable than the equivale
          print(res)
          #Yields: {12: 1.0}
 
-Apart from simple scripts like the above, our :doc:`tutorial <general/tutorial/TSP>` showcases the utilization of Qrisp in solving the traveling salesman problem. This solution involves over 10 distinct :ref:`QuantumVariables <QuantumVariable>`, with their respective qubits being repeatedly disentangled and repurposed for other variables. The presented approach scales better in the qubit count than the previously known QUBO based solution:  $\mathcal{O}(n \text{log}(n))$ vs. $\mathcal{O}(n^2)$. 
+Apart from simple scripts like the above, our :doc:`tutorial <general/tutorial/Shor>` showcases the utilization of Qrisp implementing Shor's algorithm leveraging `Montgomery reduction <https://en.wikipedia.org/wiki/Montgomery_modular_multiplication>`_, fully agnostic to the particular quantum adder. This solution involves several conceptually distinct :ref:`QuantumVariables <QuantumVariable>`, with their respective qubits being repeatedly disentangled and repurposed for other variables. The presented approach improves the resource requirement of known open source implementations :ref:`significantly <shor_benchmark_plot>`, while retaining an :ref:`accesible form <shor_tutorial>`.
 
 This example illustrates how Qrisp, as a high-level language, permits novel and scalable solutions to intricate problems and furthermore that high-level quantum programming languages will be an integral part of the future of quantum information science.
 
@@ -457,6 +457,7 @@ Qrisp is an open-source project developed at `Fraunhofer FOKUS <https://www.foku
    general/tutorial/index
    reference/index
    general/setup
+   general/thinq_qrisp/index
+   general/papers/index
    general/changelog/index
    general/imprint
- 

@@ -124,14 +124,14 @@ class Operation:
 
         # Find abstract parameters (ie. sympy expressions and log them)
         for par in params:
-            if isinstance(par, (float, int, np.floating, np.int32)):
-                pass
+            if isinstance(par, np.number):
+                par = par.item()
             elif isinstance(par, Expr):
                 if len(par.free_symbols):
                     self.abstract_params = self.abstract_params.union(par.free_symbols)
                 else:
                     par = float(par)
-            else:
+            elif not isinstance(par, (float, int, complex)):
                 raise Exception(
                     f"Tried to create operation with parameters of type {type(par)}"
                 )
@@ -371,7 +371,7 @@ class Operation:
         return hash(hash(self.name) + hash(tuple(self.params)))
 
     def is_permeable(self, indices):
-        from qrisp.uncomputation import is_permeable
+        from qrisp.permeability import is_permeable
 
         return is_permeable(self, indices)
 
@@ -820,6 +820,8 @@ class PTControlledOperation(Operation):
         if not isinstance(self.definition, type(None)):
             res.definition = self.definition.bind_parameters(subs_dic)
         res.base_operation = self.base_operation.bind_parameters(subs_dic)
+        res.params = res.base_operation.params
+        res.abstract_params = set(self.base_operation.params) - set(subs_dic.keys())
 
         return res
 

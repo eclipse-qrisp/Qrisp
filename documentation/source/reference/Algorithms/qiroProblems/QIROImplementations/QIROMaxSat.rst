@@ -3,7 +3,7 @@
 QIRO MaxSat
 ===========
 
-.. currentmodule:: qiro.qiroproblems.qiroMaxSatInfrastr
+.. currentmodule:: qrisp.qiro.qiroproblems.qiroMaxSatInfrastr
 
 
 Problem description
@@ -17,6 +17,19 @@ satisfied clauses.
 
 Replacement routine
 -------------------
+
+The replacements work based on the problem encoding. We look throw out clauses, based on the truth value assigments as those are what is described by the qubits.
+Based on the **maximum absolute entry** of the correlation matrix M and its sign, one of the following replacements is employed:
+
+* If :math:`\text{M}_{ii} \geq 0` is the maximum absolute value, then the :math:`i`-th value is set to be true. In turn, we can remove all clauses that negate that value. 
+
+* If :math:`\text{M}_{ii} < 0` is the maximum absolute value we remove :math:`i`-th value is set to be false and we will exclude clause that include that value. 
+
+* If :math:`\text{M}_{ij} > 0,  (i, j) ∈ E` was selected, we transfer this correlation to the clauses, by replacing the first item with the second one. 
+
+* If :math:`\text{M}_{ij} < 0,  (i, j) ∈ E` was selected, we transfer this correlation to the clauses, by replacing the first item with the **negation** of the second one. 
+
+
 
 .. autofunction:: create_maxSat_replacement_routine
 

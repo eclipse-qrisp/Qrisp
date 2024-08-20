@@ -20,7 +20,7 @@
 import numpy as np
 
 from qrisp import QuantumArray
-from qrisp.arithmetic import QuantumFloat, inplace_matrix_app
+from qrisp.alg_primitives.arithmetic import QuantumFloat, inplace_matrix_app
 
 
 def generate_random_inv_matrix(n, bit):

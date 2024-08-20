@@ -2,7 +2,7 @@ Solving Sudoku using Quantum Backtracking
 =========================================
 .. _sudoku:
 
-This tutorial is the practical hands on-part of `this paper <https://arxiv.org/abs/2402.10060>`_.
+This tutorial is the practical hands on-part of `this paper <https://arxiv.org/abs/2402.10060>`__.
 
 Sudoku
 ------
@@ -30,7 +30,7 @@ Backtracking
 
 As they fall into the category of constraint satisfaction problems, Sudokus are (in a quantum sense) usually tackled using Grover's algorithm (SPOILER ALERT: we won't be using that approach). In this case constructing the oracle is rather straight forward, if the circuits for evaluating numerical comparisons are available. This, however, comes with the drawback that the state space of the search grows exponentially, which the quadratic speed-up of the Grover search barely mitigates. Of course there are much better ways of solving a Sudoku than just trying out every single combination; the same also holds true for the quantum realm. In this tutorial you will learn how a strategy called *backtracking* can be used to utilize the problem structure to gain a performance advantage.
 
-Backtracking approaches encopass a large class of algorithms, which are usually specified by both an ``accept`` and ``reject`` function. Furthermore, a set of possible assignments to an array of fixed length is also required. For a more detailed introduction consider `this page <https://www.geeksforgeeks.org/introduction-to-backtracking-data-structure-and-algorithm-tutorials/>`_ or `this page <https://en.wikipedia.org/wiki/Backtracking>`_. In general, the algorithm in Python code usually boils down to:
+Backtracking approaches encopass a large class of algorithms, which are usually specified by both an ``accept`` and ``reject`` function. Furthermore, a set of possible assignments to an array of fixed length is also required. For a more detailed introduction consider `this page <https://www.geeksforgeeks.org/introduction-to-backtracking-data-structure-and-algorithm-tutorials/>`__ or `this page <https://en.wikipedia.org/wiki/Backtracking>`__. In general, the algorithm in Python code usually boils down to:
 
 ::
 

@@ -18,7 +18,7 @@
 
 # Created by ann81984 at 22.07.2022
 from qrisp import QuantumSession, QuantumArray
-from qrisp.arithmetic import QuantumFloat, inplace_matrix_app
+from qrisp.alg_primitives.arithmetic import QuantumFloat, inplace_matrix_app
 import numpy as np
 
 

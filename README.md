@@ -58,6 +58,19 @@ sebastian.bock@fokus.fraunhofer.de
 
 nikolay.tcholtchev@fokus.fraunhofer.de
 
+If you want to cite Qrisp in your work, please use:
+
+```
+@misc{seidel2024qrisp,
+      title={Qrisp: A Framework for Compilable High-Level Programming of Gate-Based Quantum Computers}, 
+      author={Raphael Seidel and Sebastian Bock and René Zander and Matic Petrič and Niklas Steinmann and Nikolay Tcholtchev and Manfred Hauswirth},
+      year={2024},
+      eprint={2406.14792},
+      archivePrefix={arXiv},
+      primaryClass={quant-ph},
+      url={https://arxiv.org/abs/2406.14792}, 
+}
+```
 
 
 ## License

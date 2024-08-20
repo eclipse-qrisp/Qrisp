@@ -20,12 +20,14 @@ Usually, QUBO matrices are upper triangular (by convention) - this means that on
 
 Of course it's easy to go from the conventional QUBO $Q_{\text{up}\Delta}$ formulation to the symmetrized $Q_\text{sym}$ QUBO: $Q_\text{sym}=\frac{1}{2}\big(Q_{\text{up}\Delta}+Q_{\text{up}\Delta}^T\big)$, and back:
 ::
+
     import numpy as np
     Q_up_triang = 2 * np.triu(Q_sym) - np.diag(np.diag(Q_sym))
 
 
 Our implementation of solving QUBO problems using QAOA works for both the upper triangular, as well as symmetrized matrix conventions. As promised, we can now immediately solve the QUBO by calling the ``solve_QUBO`` function:
 ::
+
     from qrisp.qaoa import *
     import numpy as np
 
@@ -76,6 +78,7 @@ Here, the last factor correspods to a global phase.
 
 Let's translate this into a function:
 ::
+
     def create_QUBO_cost_operator(Q):
 
         def QUBO_cost_operator(qv, gamma):
@@ -90,6 +93,7 @@ Let's translate this into a function:
 
 Like we did for :ref:`MaxCut <MaxCutQAOA>` and :ref:`M$\\kappa$CS <MkCSQAOA>` we also define the general QUBO objective function, the classical cost function, as well as construct the ``QUBOProblem`` blueprint bringing everything together.
 ::
+
     from qrisp import rzz, rz, gphase
     import numpy as np
 
@@ -131,6 +135,7 @@ That's it for the necessary ingredients you learned about in the :ref:`QAOA theo
 
 These are exactly the pieces in the mosaic of code that ``solve_QUBO`` consists of and performs: 
 ::
+    
     from qrisp.default_backend import def_backend
     from qrisp import QuantumVariable, QuantumArray
     from operator import itemgetter

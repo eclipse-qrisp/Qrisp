@@ -123,7 +123,7 @@ def test_uncomputation_example():
     perm[:] = [2, 1, 0, 3]
 
     res = calc_perm_travel_distance(perm, 5)
-
+    
     assert res.get_measurement() == {0.53125: 1.0}
     
     assert len(res.qs.compile().qubits) == 18
@@ -240,5 +240,25 @@ def test_uncomputation_example():
     qv_2.uncompute()
     qv_3.uncompute()
     assert qv_1.qs.cnot_count() == 10
+    
+    print("Test 6 passed")
+    
+    qv_0 = QuantumVariable(1)
+    qv_1 = QuantumVariable(1)
+    qv_2 = QuantumVariable(1)
+    qv_3 = QuantumVariable(1)
+
+    cy(qv_0, qv_1)
+    cx(qv_1, qv_2)
+    cx(qv_1, qv_3)
+    x(qv_2)
+
+    qv_1.uncompute(recompute=True)
+    qv_2.uncompute()
+    qv_3.uncompute()
+
+    assert qv_1.qs.cnot_count() == 10
+    
+    print("Test 7 passed")
 
     verify[0] = 0

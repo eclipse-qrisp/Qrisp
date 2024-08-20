@@ -17,7 +17,7 @@
 """
 
 import time
-from qrisp.arithmetic import (
+from qrisp.alg_primitives.arithmetic import (
     QuantumFloat,
     q_div,
     q_divmod,
