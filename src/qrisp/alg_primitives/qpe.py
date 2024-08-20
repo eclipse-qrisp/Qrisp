@@ -15,10 +15,9 @@
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************/
 """
-import numpy as np
 
-from qrisp.alg_primitives.gate_application_functions import *
-from qrisp.alg_primitives.qft import *
+from qrisp.core.gate_application_functions import h
+from qrisp.alg_primitives.qft import QFT
 
 
 def QPE(

@@ -16,9 +16,10 @@
 ********************************************************************************/
 """
 
-from qrisp.alg_primitives.gate_application_functions import *
-from qrisp.alg_primitives.qft import *
+import numpy as np
 
+from qrisp.core import h
+from qrisp.alg_primitives import QPE
 
 def quantum_counting(qv, oracle, precision):
     """

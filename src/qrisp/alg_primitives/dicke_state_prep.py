@@ -15,12 +15,9 @@
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************/
 """
-
-from qrisp.alg_primitives.gate_application_functions import *
-from qrisp.alg_primitives.qpe import *
-
 import numpy as np
 
+from qrisp.core import cx, ry
 
 def dicke_state(qv, k):
     """
