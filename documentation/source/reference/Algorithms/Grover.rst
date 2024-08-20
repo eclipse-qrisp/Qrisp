@@ -1,5 +1,7 @@
-﻿qrisp.grover.grovers\_alg
-=========================
+﻿.. _grovers_alg:
+
+Grover's Algorithm
+==================
 
 .. currentmodule:: qrisp.grover
 

@@ -1,6 +1,6 @@
 .. _DickeStates:
 
-Dicke state preparation
+Dicke State Preparation
 =======================
 
 .. currentmodule:: qrisp

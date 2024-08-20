@@ -1,3 +1,5 @@
+.. _prefix_arithmetic:
+
 Prefix Arithmetic
 =================
 
