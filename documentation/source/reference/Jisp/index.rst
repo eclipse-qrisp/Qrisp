@@ -112,7 +112,7 @@ This will give you the following output:
       
 Assuming you already have some `understanding of the Jaxpr language <https://jax.readthedocs.io/en/latest/_tutorials/jaxpr.html>`_ you see a function, that receives a ``QuantumCircuit`` and an integer, does some processing and then returns a ``QuantumCircuit`` and a float. Here you can see one of the defining features of Jisprs: They always receive and return a ``QuantumCircuit`` within their signature.
 
-Furthermore it is interesting to note, that you can already see some real-time computation happening there: The result of the measurement is and integer (compared to a ClassicalBit as in Qiskit) and is decoded according to the decoder by multiplying with 0.5. In subsequent parts of the program, this float could be processed by literally any other Jax component.
+Furthermore it is interesting to note, that you can already see some real-time computation happening there: The result of the measurement is an integer (compared to a `ClBit as in Qiskit <https://docs.quantum.ibm.com/api/qiskit/circuit#clbit>`_) and is decoded according to the decoder by multiplying with $0.5$. In subsequent parts of the program, this float could be processed by literally any other Jax component.
 
 Jisprs can be simulated using the built-in real-time simulator. You achieve this by calling the Jispr like a function:
 
