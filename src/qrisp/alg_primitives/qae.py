@@ -16,8 +16,7 @@
 ********************************************************************************/
 """
 
-from qrisp.alg_primitives.gate_application_functions import *
-from qrisp.alg_primitives.qpe import *
+from qrisp.alg_primitives.qpe import QPE
 
 def amplitude_amplification(args, state_function, oracle_function, kwargs_oracle={}, iter=1):
     r"""

@@ -16,7 +16,6 @@
 ********************************************************************************/
 """
 
-from qrisp.alg_primitives.gate_application_functions import *
 from qrisp.alg_primitives.qft import *
 from qrisp.alg_primitives.qpe import *
 from qrisp.alg_primitives.qae import *

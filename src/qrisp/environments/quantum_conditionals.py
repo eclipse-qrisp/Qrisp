@@ -17,6 +17,7 @@
 """
 
 from qrisp.core.quantum_variable import QuantumVariable
+from qrisp.core.gate_application_functions import p, rz, x, z
 from qrisp.core.session_merging_tools import merge
 from qrisp.environments.quantum_environments import QuantumEnvironment
 from qrisp.environments.quantum_inversion import invert
@@ -359,7 +360,6 @@ class ConditionEnvironment(QuantumEnvironment):
     def compile(self):
         from qrisp.qtypes.quantum_bool import QuantumBool
         from qrisp.environments.control_environment import ControlEnvironment, convert_to_custom_control
-        from qrisp.alg_primitives.gate_application_functions import mcx, p, rz, x, z
 
         # Create the quantum variable where the condition truth value should be saved
         # Incase we have a parent environment we create two qubits because

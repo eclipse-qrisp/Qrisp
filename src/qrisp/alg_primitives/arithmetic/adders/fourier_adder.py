@@ -18,7 +18,8 @@
 
 import numpy as np
 
-from qrisp.alg_primitives import QFT, p, cz
+from qrisp.alg_primitives import QFT
+from qrisp.core.gate_application_functions import p, cz
 from qrisp.environments import QuantumEnvironment, conjugate
 from qrisp.circuit import Operation, PGate, QuantumCircuit
 

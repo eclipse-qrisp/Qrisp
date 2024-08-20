@@ -16,7 +16,7 @@
 ********************************************************************************/
 """
 
-from qrisp.alg_primitives.gate_application_functions import x
+from qrisp.core.gate_application_functions import x
 from qrisp import gate_wrap
 
 

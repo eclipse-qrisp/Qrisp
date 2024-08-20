@@ -19,7 +19,7 @@
 import numpy as np
 from qrisp.circuit import XGate, PGate, convert_to_qb_list, Qubit
 from qrisp.qtypes import QuantumBool, QuantumVariable
-from qrisp.alg_primitives.gate_application_functions import x, cx, mcx
+from qrisp.core.gate_application_functions import x, cx, mcx
 from qrisp.alg_primitives.mcx_algs.circuit_library import reduced_maslov_qc, margolus_qc, reduced_margolus_qc
 from qrisp.alg_primitives.mcx_algs.gidney import GidneyLogicalAND
 from qrisp.alg_primitives.mcx_algs.jones import jones_toffoli

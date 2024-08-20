@@ -18,7 +18,7 @@
 
 import numpy as np
 
-from qrisp.alg_primitives.gate_application_functions import *
+from qrisp.core import p, h, cp, cx, x, s, swap
 
 def QFT_inner(qv, exec_swap=True, qiskit_endian=True, inplace_mult=1, use_gms=False, inpl_adder = None):
     from qrisp.misc import is_inv

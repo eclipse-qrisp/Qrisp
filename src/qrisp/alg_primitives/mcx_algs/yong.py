@@ -16,7 +16,7 @@
 ********************************************************************************/
 """
 
-from qrisp.alg_primitives import mcx, h, s, s_dg, x
+from qrisp.core import mcx, h, s, s_dg, x
 from qrisp.qtypes import QuantumBool
 from qrisp.environments import invert
 

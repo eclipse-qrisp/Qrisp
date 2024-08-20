@@ -18,7 +18,7 @@
 
 import numpy as np
 
-from qrisp.alg_primitives.gate_application_functions import *
+from qrisp.core import cx, swap
 
 def demux(input, ctrl_qv, output=None, ctrl_method=None, permit_mismatching_size=False, parallelize_qc = False):
     """
