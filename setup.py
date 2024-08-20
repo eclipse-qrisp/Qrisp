@@ -28,8 +28,7 @@ REQUIREMENTS = ["connexion>=2.12.0",
                 "networkx",
                 "tdqm",
                 "dill",
-                "flask",
-                "pyscf"]
+                "flask"]
 
 
 with open("README.md", "r", encoding="utf-8") as fh:

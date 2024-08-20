@@ -19,7 +19,6 @@
 from qrisp import x, cx, ry, control, conjugate
 from qrisp.operators import *
 from functools import cache
-import pyscf
 
 #
 # helper functions
