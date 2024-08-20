@@ -20,13 +20,10 @@ import time
 
 import numpy as np
 from scipy.optimize import minimize
-from sympy import Symbol, Basic
+from sympy import Symbol
 
-from qrisp import h, QuantumArray, parallelize_qc
-from qrisp.vqe.vqe_benchmark_data import VQEBenchmark
-from qrisp.operators.pauli_operator import PauliOperator
-from qrisp.operators.hamiltonian import Hamiltonian
-
+from qrisp import QuantumArray
+from qrisp.algorithms.vqe.vqe_benchmark_data import VQEBenchmark
 
 class VQEProblem:
     r"""

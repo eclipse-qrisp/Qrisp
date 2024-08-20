@@ -3,7 +3,7 @@
 VQE Heisenberg model
 ====================
 
-.. currentmodule:: vqe.problems.heisenberg
+.. currentmodule:: qrisp.vqe.problems.heisenberg
 
 Heisenberg problem
 ------------------

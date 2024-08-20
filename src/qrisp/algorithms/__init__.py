@@ -22,3 +22,4 @@ import qrisp.algorithms.qaoa as qaoa
 import qrisp.algorithms.qiro as qiro
 import qrisp.algorithms.quantum_backtracking as quantum_backtracking
 import qrisp.algorithms.quantum_counting as quantum_counting
+import qrisp.algorithms.vqe as vqe

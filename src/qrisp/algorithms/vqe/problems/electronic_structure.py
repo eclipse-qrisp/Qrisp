@@ -16,8 +16,10 @@
 ********************************************************************************/
 """
 
-from qrisp import x, cx, ry, control, conjugate
-from qrisp.operators import *
+import numpy as np
+
+from qrisp import h, x, cx, ry, control, conjugate
+from qrisp.operators import PauliOperator
 from functools import cache
 
 #
@@ -147,7 +149,7 @@ def electronic_data(mol):
             The Hartree-Fock ground state energy.
 
     """
-    from pyscf import gto, scf, ao2mo
+    from pyscf import scf, ao2mo
 
     data = {}
 
@@ -346,7 +348,7 @@ def create_electronic_hamiltonian(arg, active_orb=None, active_elec=None, mappin
         &+0.165927850337703 Z_1Z_2 + 0.120625234833904 Z_1Z_3 - 0.223431536908133 Z_2 + 0.174412876122615Z Z_2Z_3 - 0.223431536908133 Z_3
 
     """
-
+    import pyscf
     if isinstance(arg,pyscf.gto.Mole):
         data = electronic_data(arg)
     elif isinstance(arg,dict):
@@ -608,7 +610,7 @@ def electronic_structure_problem(arg, active_orb=None, active_elec=None, mapping
     
     """
     from qrisp.vqe import VQEProblem
-
+    import pyscf
     if isinstance(arg,pyscf.gto.Mole):
         data = electronic_data(arg)
     elif isinstance(arg,dict):

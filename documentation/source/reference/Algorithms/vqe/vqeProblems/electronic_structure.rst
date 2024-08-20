@@ -3,7 +3,7 @@
 VQE Electronic structure problem 
 ================================
 
-.. currentmodule:: vqe.problems.electronic_structure
+.. currentmodule:: qrisp.vqe.problems.electronic_structure
 
 Problem description
 -------------------
