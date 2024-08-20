@@ -19,7 +19,6 @@
 import numpy as np
 
 from qrisp.qtypes.quantum_float import QuantumFloat
-from qrisp.environments import invert
 from qrisp.misc import gate_wrap
 
 def comparison_wrapper(func):
@@ -276,6 +275,7 @@ class QuantumModulus(QuantumFloat):
             
         
         from qrisp.alg_primitives.arithmetic.modular_arithmetic import mod_adder
+        from qrisp.environments import invert
         res = self.duplicate(init = True)
         
         with invert():
@@ -315,6 +315,8 @@ class QuantumModulus(QuantumFloat):
                 raise Exception("Tried to subtract a QuantumFloat and QuantumModulus with non-zero Montgomery shift")
         
         from qrisp.alg_primitives.arithmetic.modular_arithmetic import mod_adder
+        from qrisp.environments import invert
+        
         with invert():
             mod_adder(other, self, self.inpl_adder, self.modulus)
         

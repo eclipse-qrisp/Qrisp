@@ -1,7 +1,7 @@
 .. _gate_application_functions:
 
-Gate application functions
-==========================
+Gate Functions
+==============
 
 These functions facilitate the application of (elementary) quantum gates. Note that these functions only work for Qubits registered in QuantumSessions and not for QuantumCircuits.
 

@@ -1,5 +1,4 @@
-from qrisp import QuantumCircuit
-from qrisp.core import QuantumVariable, cx , x, rz
+from qrisp import QuantumCircuit, QuantumVariable, cx , x, rz
 from qrisp import ControlledOperation
 from qrisp.interface import BackendClient
 import numpy as np

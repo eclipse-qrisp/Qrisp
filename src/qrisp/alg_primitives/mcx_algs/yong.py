@@ -16,8 +16,9 @@
 ********************************************************************************/
 """
 
-from qrisp import mcx, h, s, s_dg, x, invert
+from qrisp.core import mcx, h, s, s_dg, x
 from qrisp.qtypes import QuantumBool
+from qrisp.environments import invert
 
 # Algorithm based on https://link.springer.com/article/10.1007/s10773-017-3389-4
 def yong_mcx(input_qubits, target, ancilla=None, ctrl_state=None):

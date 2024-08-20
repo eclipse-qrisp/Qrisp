@@ -16,13 +16,11 @@
 ********************************************************************************/
 """
 
-import numpy as np
-
-from qrisp import QuantumCircuit, QuantumVariable
 from qrisp.alg_primitives.mcx_algs.circuit_library import amy_toffoli_qc
 
 #Implementation of the depth 2 Toffoli found in https://arxiv.org/pdf/1206.0758.pdf
 def amy_toffoli(ctrl, target, ctrl_state = "11"):
+    from qrisp import QuantumCircuit, QuantumVariable
     
     qc = QuantumCircuit(4)
     

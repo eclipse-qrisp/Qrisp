@@ -20,8 +20,6 @@
 import sys
 
 from qrisp.core.quantum_variable import QuantumVariable
-from qrisp.environments import control
-
 
 class QuantumBool(QuantumVariable):
     """
@@ -189,6 +187,7 @@ class QuantumBool(QuantumVariable):
         
 
     def __enter__(self):
+        from qrisp.environments import control
         self.env = control(self)
         self.env.__enter__()
 

@@ -21,10 +21,9 @@ import numpy as np
 
 from qrisp.qtypes.quantum_float import QuantumFloat
 from qrisp.alg_primitives.arithmetic import multi_controlled_U_g, hybrid_mult
-from qrisp.core.library import QFT, h, cx, swap, x, mcx
+from qrisp.alg_primitives import QFT, h, cx, swap, mcx
 from qrisp.environments import conjugate, control
-from qrisp.circuit import Operation
-from qrisp.alg_primitives.arithmetic.modular_arithmetic.mod_tools import modinv, montgomery_decoder, montgomery_encoder
+from qrisp.alg_primitives.arithmetic.modular_arithmetic.mod_tools import modinv, montgomery_encoder
 
 def QREDC(t, N, m):
     

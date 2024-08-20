@@ -16,8 +16,6 @@
 ********************************************************************************/
 """
 
-from qrisp import QFT, conjugate, p, cp
-import numpy as np
 from qrisp import QuantumCircuit
 from qrisp.alg_primitives.arithmetic.adders.adder_tools import ammend_inpl_adder
 

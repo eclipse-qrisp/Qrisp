@@ -16,9 +16,8 @@
 ********************************************************************************/
 """
 
-from qrisp import mcx, h, s, s_dg, invert, QuantumCircuit, Operation
-from qrisp.qtypes import QuantumBool
 from qrisp.alg_primitives.mcx_algs.circuit_library import gidney_qc, gidney_qc_inv, margolus_qc, ctrl_state_wrap
+from qrisp.circuit import QuantumCircuit, Operation
 
 class GidneyLogicalAND(Operation):
     

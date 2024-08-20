@@ -22,7 +22,7 @@ import numpy as np
 from qrisp.qtypes.quantum_float import QuantumFloat
 from qrisp.qtypes.quantum_bool import QuantumBool
 from qrisp.alg_primitives.arithmetic import multi_controlled_U_g, hybrid_mult, U_g
-from qrisp.core.library import QFT, h, cx, swap
+from qrisp.alg_primitives import QFT, h, cx, swap
 from qrisp.environments import conjugate, control, invert, custom_control
 from qrisp.circuit import Operation
 from qrisp.alg_primitives.arithmetic.modular_arithmetic.mod_tools import modinv, montgomery_decoder, montgomery_encoder

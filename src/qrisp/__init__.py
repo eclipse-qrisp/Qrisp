@@ -17,17 +17,18 @@
 """
 import sys
 
-
 from qrisp.circuit import *
 from qrisp.core import *
 from qrisp.misc import *
+from qrisp.circuit import *
+from qrisp.permeability import *
+from qrisp.core import *
 from qrisp.qtypes import *
 from qrisp.environments import *
-from qrisp.permeability import *
 from qrisp.alg_primitives import *
 from qrisp.algorithms import *
 
-for i in ['shor','qaoa','qiro','grover','quantum_backtracking']:
+for i in ['shor','qaoa','qiro','grover','quantum_backtracking','quantum_counting']:
   sys.modules['qrisp.'+i] = sys.modules['qrisp.algorithms.'+i]
 from qrisp.default_backend import *
 from qrisp.jisp import *

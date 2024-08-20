@@ -34,7 +34,7 @@
 
 import numpy as np
 
-from qrisp.core import x, cx, mcx, barrier
+from qrisp.core.gate_application_functions import x, cx, mcx, barrier
 from qrisp.qtypes import QuantumVariable, QuantumBool
 from qrisp.circuit import QuantumCircuit
 from qrisp.permeability import auto_uncompute

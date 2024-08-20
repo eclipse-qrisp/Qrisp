@@ -16,9 +16,13 @@
 ********************************************************************************/
 """
 
-from qrisp import QFT, conjugate, p, cp, crz, cz, cx, x, QuantumBool, h, rzz, gphase, rz, QuantumCircuit, z, QuantumEnvironment, Operation, PGate
 import numpy as np
-from sympy import Symbol
+
+from qrisp.alg_primitives import QFT
+from qrisp.core.gate_application_functions import p, cz
+from qrisp.environments import QuantumEnvironment, conjugate
+from qrisp.circuit import Operation, PGate, QuantumCircuit
+
 
 def fourier_adder(a, b, perform_QFT = True):
     """
@@ -126,12 +130,3 @@ class QuasiRZZ(Operation):
         
         res.definition = qc
         return res
-        
-
-# def helper_op(phi):
-    
-#     qc = helper_qc.bind_parameters({symb : phi})
-#     res = qc.to_gate("quasi_rzz")
-#     res.permeability = {0 : True, 1 : True}
-#     res.is_qfree = True
-#     return res

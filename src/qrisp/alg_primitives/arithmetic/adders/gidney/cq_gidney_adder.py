@@ -23,7 +23,13 @@
 # For the quantum-quantum version please check qrisp.alg_primitives.arithmetic.adders.gidney_adder
 
 
-from qrisp import bin_rep, x, cx, mcx, QuantumVariable, invert, fast_append, merge, QuantumBool
+from qrisp.qtypes import QuantumBool
+from qrisp.core import QuantumVariable, merge
+from qrisp.misc.utility import bin_rep
+from qrisp.alg_primitives import x, cx, mcx
+from qrisp.circuit import fast_append
+from qrisp.environments import invert
+
 
 # This function inverts a bit represented by a character
 def c_inv(c):

@@ -1,9 +1,9 @@
-.. _CircuitConstruction:
+.. _CircuitManipulation:
 
-Circuit Construction
+Circuit Manipulation
 ====================
 
-The circuit construction module allows the user to implement low level functions to integrate them in routines of higher complexity. For classical languages, this is a `common feature <https://en.wikipedia.org/wiki/Inline_assembler>`_ of many compilers. 
+The circuit manipulation module allows the user to export Qrisp algorithms to the QuantumCircuit format and convert them to other libraries such as Qiskit. Furthermore it is possible to integrate low-level functions into the high-level infrastructure. For classical languages, this is a `common feature <https://en.wikipedia.org/wiki/Inline_assembler>`_ of many compilers. 
 Since :ref:`QuantumSession` is an inheritor of QuantumCircuit, it also exposes an append method, implying that once a QuantumCircuit is created it can be smoothly integrated into Qrisps high-level infrastructure using the :meth:`to_gate <qrisp.QuantumCircuit.to_gate>` method:
 
 ::

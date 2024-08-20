@@ -20,7 +20,8 @@
 import numpy as np
 import sympy as sp
 
-from qrisp import QuantumArray, p, z
+from qrisp.core.gate_application_functions import p, z
+from qrisp.core import QuantumArray
 from qrisp.alg_primitives.arithmetic.SBP_arithmetic import hybrid_mult, polynomial_encoder
 
 

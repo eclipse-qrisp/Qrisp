@@ -1,6 +1,6 @@
 .. _grover_tools:
 
-Grover tools
+Grover Tools
 ============
 
 These functions facilitate convenient construction and evaluation of Grover oracles.
@@ -10,7 +10,5 @@ These functions facilitate convenient construction and evaluation of Grover orac
 .. autosummary::
    :toctree: generated/
    
-   
    grover.diffuser
    grover.tag_state
-   grover.grovers_alg

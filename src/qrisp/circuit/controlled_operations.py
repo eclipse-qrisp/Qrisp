@@ -226,3 +226,15 @@ def multi_controlled_gray_circ(gray_gate, control_amount, ctrl_state):
     new_gray_gate = gray_synth_gate(target_phases_new)
     print(new_gray_gate.definition)
     return new_gray_gate.definition, target_phases_new
+
+
+def fredkin_qc(num_ctrl_qubits=1, ctrl_state=-1, method="gray"):
+    from qrisp import QuantumCircuit, XGate
+    mcx_gate = XGate().control().control(ctrl_state=ctrl_state, method=method)
+
+    qc = QuantumCircuit(num_ctrl_qubits + 2)
+    qc.cx(qc.qubits[-1], qc.qubits[-2])
+    qc.append(mcx_gate, qc.qubits)
+    qc.cx(qc.qubits[-1], qc.qubits[-2])
+
+    return qc

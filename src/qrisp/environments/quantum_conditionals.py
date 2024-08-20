@@ -16,8 +16,8 @@
 ********************************************************************************/
 """
 
-from qrisp.core.library import mcx, p, rz, x, z
 from qrisp.core.quantum_variable import QuantumVariable
+from qrisp.core.gate_application_functions import p, rz, x, z
 from qrisp.core.session_merging_tools import merge
 from qrisp.environments.quantum_environments import QuantumEnvironment
 from qrisp.environments.quantum_inversion import invert
@@ -606,7 +606,7 @@ def adaptive_condition(cond_eval_function):
 
 @adaptive_condition
 def q_eq(input_0, input_1, invert = False):
-    from qrisp import cx, conjugate, QuantumBool
+    from qrisp import mcx, cx, conjugate, QuantumBool
 
     res = QuantumBool(name="eq_cond*", qs = input_0[0].qs())
 

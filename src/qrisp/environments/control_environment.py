@@ -18,12 +18,11 @@
 
 
 from qrisp.circuit import Qubit, QuantumCircuit, XGate
-from qrisp.core.library import mcx, p, rz, x
 from qrisp.core.session_merging_tools import merge, merge_sessions, multi_session_merge
 from qrisp.environments import QuantumEnvironment
 from qrisp.misc import perm_lock, perm_unlock, bin_rep
-from qrisp.jisp import check_for_tracing_mode, AbstractQubit
-
+from qrisp.jisp import check_for_tracing_mode
+from qrisp.core import mcx, p, rz, x
 
 class ControlEnvironment(QuantumEnvironment):
     """
@@ -159,7 +158,7 @@ class ControlEnvironment(QuantumEnvironment):
 
     def compile(self):
         from qrisp import QuantumBool
-        from qrisp.environments import ConditionEnvironment, CustomControlOperation
+        from qrisp.environments import ConditionEnvironment
 
         # Create the quantum variable where the condition truth value should be saved
         # Incase we have a parent environment we create two qubits because
