@@ -17,6 +17,8 @@ This submodule of Qrisp provides a collection of commonly used buildings blocks 
      - enhancing amplitude of a target state
    * - :ref:`Quantum Amplitude Estimation <QAE>`
      - estimating the amplitude of a target state
+   * - :ref:`accelerated Iterative Quantum Amplitude Estimation <accIQAE>`
+     - recource efficient QAE.
    * - :ref:`phase_polynomials` 
      - provides functions for applying diagonal Hamiltonians given by polynomials.
    * - :ref:`Grover's Algorithm <grover_tools>`
@@ -42,6 +44,7 @@ We encourage you to explore these algorithms, delve into their documentation, an
    QPE
    amplitude_amplification
    QAE
+   accIQAE
    Phase polynomial tools
    Grover tools
    DickeStates

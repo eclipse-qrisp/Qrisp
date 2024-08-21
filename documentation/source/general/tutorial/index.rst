@@ -35,6 +35,7 @@ By the end of this tutorial, you'll have a solid foundation of our high-level fr
    TSP
    Sudoku
    Shor
+   QMCItutorial
    FT_compilation
    
    
