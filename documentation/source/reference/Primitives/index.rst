@@ -44,7 +44,7 @@ We encourage you to explore these algorithms, delve into their documentation, an
    QPE
    amplitude_amplification
    QAE
-   accIQAE
+   acciqae
    Phase polynomial tools
    Grover tools
    DickeStates

@@ -17,6 +17,8 @@ To gradually qrispify your programming game you will start with the basics and g
 
 - :ref:`Implementing Shor's algorithm <shor_tutorial>` will guide you through our state-of-the-art implementation of  **Shor's algorithm**, allowing you to factor numbers and fiddle around encrypting and decrypting hidden messages.
 
+- :ref:`The Quantum Monte Carlo Integration tutorial <QMCItutorial>` will show you how to integrate functions with **Quantum Monte Carlo methods**, using **accelerated Iterative Quantum Ampltide Estimation**. 
+
 - :ref:`Fault-Tolerant compilation of Shor's algorithm <ft_compilation_shor>` delves into the realm of **compiling for fault-tolerant quantum devices**, exploring the specialized techniques and considerations that set this stage apart from the compilation challenges encountered in NISQ environments. At the end you will also optimize the implementation of Shor's from the tutorial above.
 
 
