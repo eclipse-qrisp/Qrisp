@@ -6,9 +6,7 @@ Quantum Monte Carlo Integration with Iterative QAE
 This tutorial will provide you with an introduction of Quantum Monte Carlo Integration within Qrisp.
 
 For this purpose we will first give you a theoretical overview of what this technique is about and where it is used. 
-
 Then we will dive into the practical implemention within Qrisp. This also includes the usage of :ref:`Iterative Quantum Amplitude estimation <acciqae>` . 
-
 To finish of this tutorial, we investigate the full implementation of simple example by integrating :math:`x^2` over a uniform distribution in the interval :math:`\lbrack 0,1 \rbrack` .
 
 The relevant literature can be found in the following papers: `A general quantum algorithm for numerical integration <https://www.nature.com/articles/s41598-024-61010-9>`_ and `Option pricing using Quantum computers <https://arxiv.org/pdf/1905.02666>`_ for QMCI and `Accelerated Quantum Amplitude Estimation
@@ -40,7 +38,7 @@ We can then simply count, in quantum fashion, the number of points under the fun
 
 Don't give up just yet, the mathematical description will bring you more clarity!
 
-We start with a ``state_function`` that encodes the ``QuantumFloats`` .
+We start with a ``state_function`` that encodes the ``QuantumFloats`` as follows
 
 .. math::
 
@@ -56,7 +54,7 @@ We now arrive at the central step of this algorithm, which is :ref:`Quantum Ampl
 
 .. math::
 
-    p(\{ (x,y) \mid f(x) \leq y \}) = \frac{1}{N} \sum^{N-1}_{x=0} \frac{1}{M} \sum^{M-1}_{y=0}  \mathbb{1}_{f(x) \leq y} \approx \frac{1}{N} \sum{N-1}_{x=0} \frac{f(x)}{M}
+    p(\{ (x,y) \mid f(x) \leq y \}) = \frac{1}{N} \sum^{N-1}_{x=0} \frac{1}{M} \sum^{M-1}_{y=0}  \mathbb{1}_{f(x) \leq y} \approx \frac{1}{N} \sum^{N-1}_{x=0} \frac{f(x)}{M}
 
 The last expression is then the approximation for the integral in question. 
 
@@ -89,7 +87,7 @@ The implementations of subroutines can found in the :ref:`accelerated IQAE <acci
 
 ::
 
-    def acc_QAE(qargs,state_function, oracle_function, eps, alpha, kwargs_oracle = {}):
+    def acc_IQAE(qargs,state_function, oracle_function, eps, alpha, kwargs_oracle = {}):
         
         # start by defining the relevant constants 
         E = 1/2 * pow(np.sin(np.pi * 3/14), 2) -  1/2 * pow(np.sin(np.pi * 1/6), 2) 
@@ -176,7 +174,7 @@ Next, we create the ``QuantumFloat``, on which we evaluate our function and a du
     dupl_res_qf.delete()
 
 
-We also have consider whether the ``QuantumFloat`` is not definded within a :math:`\lbrack 0, 1 \rbrack` . 
+We also have consider whether the ``QuantumFloat`` is not definded within a interval that differs from :math:`\lbrack 0, 1 \rbrack` . 
 In a way we calculate the volume of space over which the ``QuantumFloat`` is defined.
 
 We also append a ``QuantumBool`` to our input ``qargs``, which will serve as the final qubit to be measured, i.e. the qubit in register :math:`w+1`.  
@@ -207,9 +205,9 @@ Let us first look at the ``state_function``:
         cx(qbl,tar)
 
 It receives the ``@auto_uncompute`` :ref:`decorator <uncomputation>`. We apply the chosen distribution to ``qf_x``, which represents the :math:`x`-axis support. As explained earlier, we also discretize the :math:`y`-axis by appling an ``h``-gate to ``qf_y``.
-We then evaluate in superposition which states in ``qf_y`` are smaller than the chosen function acting ``qf_x``, i.e. its support in the distribution.
+We then evaluate in superposition which states in ``qf_y`` are smaller than the chosen function acting on ``qf_x``, i.e. the function's support in the distribution.
 
-We save the result of the comparison in a ``QuantumBool`` from which we can extract the measurement of the final qubit in register :math:`w+1` by applying a ``cx`` gate on the previously mentioned ``QuantumBool``
+We save the result of the comparison in a ``QuantumBool``, from which we can extract the measurement of the final qubit in register :math:`w+1` by applying a ``cx`` gate on the previously mentioned ``QuantumBool``
 
 This leads us to the ``oracle_function``
 
