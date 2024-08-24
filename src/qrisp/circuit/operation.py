@@ -19,6 +19,7 @@
 
 import copy
 
+import jax
 import numpy as np
 from sympy.core.expr import Expr
 from sympy import lambdify
@@ -120,7 +121,9 @@ class Operation(QuantumPrimitive):
             This function does not need to be JAX traceable. It will be invoked with
             actual instances. 
             """
-            qc.append(self, args)
+            temp = self.copy()
+            temp.params = [float(x) for x in list(args[:len(self.params)])]
+            qc.append(temp, args[len(self.params):])
             return qc
         
 
@@ -146,7 +149,7 @@ class Operation(QuantumPrimitive):
                     self.abstract_params = self.abstract_params.union(par.free_symbols)
                 else:
                     par = float(par)
-            elif not isinstance(par, (float, int, complex)):
+            elif not isinstance(par, (float, int, complex, jax.core.Tracer)):
                 raise Exception(
                     f"Tried to create operation with parameters of type {type(par)}"
                 )
