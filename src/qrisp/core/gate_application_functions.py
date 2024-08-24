@@ -1066,7 +1066,7 @@ def measure(qubits, clbits=None):
         
         if isinstance(qubits, QuantumVariable):
             abs_qc, res = Measurement_p.bind(qs.abs_qc, qubits.reg)
-            res = qubits.decoder(res)
+            res = qubits.jdecoder(res)
         elif isinstance(qubits.aval, AbstractQubit):
             abs_qc, res = Measurement_p.bind(qs.abs_qc, qubits)
         
