@@ -133,6 +133,14 @@ class Jispr(Jaxpr):
     def from_cache(cls, jaxpr):
         return Jispr(jaxpr = jaxpr)
     
+    def to_qir(self, *args):
+        from qrisp.jisp import jispr_to_qir
+        
+        return jispr_to_qir(self, args)
+    
+    def to_mlir(self, *args):
+        from qrisp.jisp import jispr_to_mlir
+        return jispr_to_mlir(self, args)
     
     
     

@@ -1,9 +1,21 @@
-# -*- coding: utf-8 -*-
 """
-Created on Thu Apr 18 16:51:46 2024
+\********************************************************************************
+* Copyright (c) 2023 the Qrisp authors
+*
+* This program and the accompanying materials are made available under the
+* terms of the Eclipse Public License 2.0 which is available at
+* http://www.eclipse.org/legal/epl-2.0.
+*
+* This Source Code may also be made available under the following Secondary
+* Licenses when the conditions for such availability set forth in the Eclipse
+* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+* with the GNU Classpath Exception which is
+* available at https://www.gnu.org/software/classpath/license.html.
+*
+* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+********************************************************************************/
+"""
 
-@author: sea
-"""
 from jax import make_jaxpr
 from jax.core import Literal
 
@@ -220,10 +232,10 @@ def convert_to_catalyst_function(closed_jaxpr, args):
 
 def jispr_to_qir(jispr, args):
     import catalyst
-    catalyst_function = convert_to_catalyst_function(qrisp_jaxpr, args)
+    catalyst_function = convert_to_catalyst_function(jispr, args)
     catalyst_jaxpr = make_jaxpr(catalyst_function)()
     
-    mlir_module, mlir_ctx = catalyst.jax_extras.jaxpr_to_mlir(function.__name__, catalyst_jaxpr)
+    mlir_module, mlir_ctx = catalyst.jax_extras.jaxpr_to_mlir("jisp_function", catalyst_jaxpr)
 
     catalyst.utils.gen_mlir.inject_functions(mlir_module, mlir_ctx)
 
@@ -234,12 +246,12 @@ def jispr_to_qir(jispr, args):
     compiled_fn = jit_object.compile()[0]
     return jit_object.qir
     
-def jispr_to_qir(jispr, args):
+def jispr_to_mlir(jispr, args):
     import catalyst
-    catalyst_function = convert_to_catalyst_function(qrisp_jaxpr, args)
+    catalyst_function = convert_to_catalyst_function(jispr, args)
     catalyst_jaxpr = make_jaxpr(catalyst_function)()
     
-    mlir_module, mlir_ctx = catalyst.jax_extras.jaxpr_to_mlir(function.__name__, catalyst_jaxpr)
+    mlir_module, mlir_ctx = catalyst.jax_extras.jaxpr_to_mlir("jisp_function", catalyst_jaxpr)
 
     catalyst.utils.gen_mlir.inject_functions(mlir_module, mlir_ctx)
 
