@@ -11,7 +11,7 @@ from jax.core import Literal
 from qrisp.jisp import QuantumPrimitive, AbstractQubitArray
 
 
-def convert_to_catalyst_jaxpr(closed_jaxpr, args):
+def convert_to_catalyst_function(closed_jaxpr, args):
     """
     This function converts a Qrisp Jaxpr to the equivalent in Catalyst.
     
@@ -50,11 +50,16 @@ def convert_to_catalyst_jaxpr(closed_jaxpr, args):
     import catalyst
     import pennylane as qml
     # Extract the Jaxpr from the ClosedJaxpr
-    jaxpr = closed_jaxpr.jaxpr
+    jaxpr = closed_jaxpr
 
     # Initiate Catalyst backend
-    _, device_name, device_libpath, device_kwargs = catalyst.utils.runtime.extract_backend_info(
-    qml.device("lightning.qubit", wires=0))
+    # _, device_name, device_libpath, device_kwargs = catalyst.utils.runtime.extract_backend_info(
+    # qml.device("lightning.qubit", wires=0))
+    
+    device = qml.device("lightning.qubit", wires=0)        
+    program_features = catalyst.utils.toml.ProgramFeatures(shots_present=False)
+    device_capabilities = catalyst.device.get_device_capabilities(device, program_features)
+    backend_info = catalyst.device.extract_backend_info(device, device_capabilities)
     
     # Name translator from Qrisp gate naming to Catalyst gate naming
     op_name_translation_dic = {"cx" : "CNOT", "x" : "PauliX", "h" : "Hadamard"}
@@ -86,18 +91,21 @@ def convert_to_catalyst_jaxpr(closed_jaxpr, args):
     
     
     # This function will be traced
-    def tracing_function(*args):
+    def tracing_function():
         
         # Initiate the backend
         qdevice_p.bind(
-        rtd_lib=device_libpath,
-        rtd_name=device_name,
-        rtd_kwargs=str(device_kwargs),
+        rtd_lib=backend_info.lpath,
+        rtd_name=backend_info.device_name,
+        rtd_kwargs=str(backend_info.kwargs),
         )
+        
         
         # Insert the appropriate variable/tracer relation of the arguments into the dictionary
         for i in range(len(args)):
-            context_dic[jaxpr.invars[i]] = args[i]
+            context_dic[jaxpr.invars[i+1]] = args[i]
+            
+        context_dic[jaxpr.invars[0]] = (qalloc_p.bind(20), 0)
             
         # Loop through equations and process Qrisp primitive accordingly
         for eqn in jaxpr.eqns:
@@ -111,9 +119,9 @@ def convert_to_catalyst_jaxpr(closed_jaxpr, args):
                 # Basically the only thing that needs to be done is to translate the
                 # variables to tracers and bind the primitive to the tracer argument
                 if eqn.primitive.multiple_results:
-                    tracers = eqn.primitive.bind(*[var_to_tr(var) for var in eqn.invars])
+                    tracers = eqn.primitive.bind(*[var_to_tr(var) for var in eqn.invars], **eqn.params)
                 else:
-                    tracer = eqn.primitive.bind(*[var_to_tr(var) for var in eqn.invars])
+                    tracer = eqn.primitive.bind(*[var_to_tr(var) for var in eqn.invars], **eqn.params)
                     tracers = [tracer]
                 
                 # Subsequently the resulting tracers need to be inserted into the 
@@ -123,11 +131,8 @@ def convert_to_catalyst_jaxpr(closed_jaxpr, args):
             
             else:
                 # This is the Qrisp primitive case
-                if eqn.primitive.name == "qdef":
-                    context_dic[outvars[0]] = (qalloc_p.bind(10), 0)
                 
-                
-                elif eqn.primitive.name == "create_qubits":
+                if eqn.primitive.name == "create_qubits":
                     
                     qreg, stack_size = var_to_tr(invars[0])
                     context_dic[outvars[1]] = (stack_size, var_to_tr(invars[1]))
@@ -175,9 +180,20 @@ def convert_to_catalyst_jaxpr(closed_jaxpr, args):
                     # We can now apply the gate primitive
                     
                     if op.name == "measure":
-                        res_bl, res_qb = qmeasure_p.bind(*catalyst_qb_tracers)
-                        res_qbs = [res_qb]
-                        context_dic[outvars[1]] = res_bl
+                        if len(catalyst_qb_tracers) == 1:
+                            res_bl, res_qb = qmeasure_p.bind(*catalyst_qb_tracers)
+                            res_qbs = [res_qb]
+                            context_dic[outvars[1]] = res_bl
+                        else:
+                            res_qbs = []
+                            meas_res = 0
+                            for i in range(len(catalyst_qb_tracers)):
+                                res_bl, res_qb = qmeasure_p.bind(catalyst_qb_tracers[0])
+                                meas_res += 2**i*res_bl
+                                res_qbs.append(res_qb)
+                            
+                            context_dic[outvars[1]] = meas_res
+                                
                         
                     else:
                     
@@ -197,32 +213,64 @@ def convert_to_catalyst_jaxpr(closed_jaxpr, args):
                     context_dic[outvars[0]] = (catalyst_register_tracer, var_to_tr(invars[0])[1])
 
         # Return the appropriate tracers
-        return tuple(var_to_tr(var) for var in jaxpr.outvars)
+        return tuple(var_to_tr(var) for var in jaxpr.outvars[1:])
                     
-    return make_jaxpr(tracing_function)(*args)
+    return tracing_function
+
+
+def jispr_to_qir(jispr, args):
+    import catalyst
+    catalyst_function = convert_to_catalyst_function(qrisp_jaxpr, args)
+    catalyst_jaxpr = make_jaxpr(catalyst_function)()
+    
+    mlir_module, mlir_ctx = catalyst.jax_extras.jaxpr_to_mlir(function.__name__, catalyst_jaxpr)
+
+    catalyst.utils.gen_mlir.inject_functions(mlir_module, mlir_ctx)
+
+    jit_object = catalyst.QJIT(catalyst_function, catalyst.CompileOptions())
+    jit_object.compiling_from_textual_ir = False
+    jit_object.mlir_module = mlir_module
+
+    compiled_fn = jit_object.compile()[0]
+    return jit_object.qir
+    
+def jispr_to_qir(jispr, args):
+    import catalyst
+    catalyst_function = convert_to_catalyst_function(qrisp_jaxpr, args)
+    catalyst_jaxpr = make_jaxpr(catalyst_function)()
+    
+    mlir_module, mlir_ctx = catalyst.jax_extras.jaxpr_to_mlir(function.__name__, catalyst_jaxpr)
+
+    catalyst.utils.gen_mlir.inject_functions(mlir_module, mlir_ctx)
+
+    jit_object = catalyst.QJIT(catalyst_function, catalyst.CompileOptions())
+    jit_object.compiling_from_textual_ir = False
+    jit_object.mlir_module = mlir_module
+
+    compiled_fn = jit_object.compile()[0]
+    return jit_object.mlir
 
 def qjit(function):
     import catalyst
+    from qrisp.jisp import make_jispr
     
     def jitted_function(*args):
         
-        qrisp_jaxpr = make_jaxpr(function)(*args)
+        qrisp_jaxpr = make_jispr(function)(*args)
         
-        catalyst_jaxpr = convert_to_catalyst_jaxpr(qrisp_jaxpr, args)
+        catalyst_function = convert_to_catalyst_function(qrisp_jaxpr, args)
+        catalyst_jaxpr = make_jaxpr(catalyst_function)()
         
         mlir_module, mlir_ctx = catalyst.jax_extras.jaxpr_to_mlir(function.__name__, catalyst_jaxpr)
 
         catalyst.utils.gen_mlir.inject_functions(mlir_module, mlir_ctx)
 
-        def dummy():
-            return 0
-
-        jit_object = catalyst.QJIT(dummy, catalyst.CompileOptions())
+        jit_object = catalyst.QJIT(catalyst_function, catalyst.CompileOptions())
         jit_object.compiling_from_textual_ir = False
         jit_object.mlir_module = mlir_module
 
         compiled_fn = jit_object.compile()[0]
-        print(jit_object.qir)
+        print(jit_object.mlir)
 
         return compiled_fn(*args)
     
