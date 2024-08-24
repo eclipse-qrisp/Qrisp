@@ -232,13 +232,15 @@ class QuantumVariable:
         """
 
         # Store quantum session
-        from qrisp.core import QuantumSession, merge_sessions
+        from qrisp.core import QuantumSession
         from qrisp.jisp import check_for_tracing_mode, TracingQuantumSession
 
         if check_for_tracing_mode():
             self.qs = TracingQuantumSession.get_instance()
             if self.qs is None:
                 raise Exception("Tried to trace Qrisp code using make_jaxpr (use make_jispr instead)")
+            
+            self.qubit_cache = {}
         else:
             if qs is not None:
                 self.qs = qs
@@ -1063,9 +1065,11 @@ class QuantumVariable:
         if isinstance(self.reg, list):
             return self.reg[key]
         else:
-            from qrisp.jisp import get_qubit
-            return get_qubit(self.reg, key)
-
+            id_tuple = (id(self.reg), id(key))
+            if not id_tuple in self.qubit_cache:
+                from qrisp.jisp import get_qubit
+                self.qubit_cache[id_tuple] = get_qubit(self.reg, key)
+            return self.qubit_cache[id_tuple]
     def __str__(self):
         return str(self.get_measurement())
     
