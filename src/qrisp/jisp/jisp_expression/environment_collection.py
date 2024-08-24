@@ -100,8 +100,7 @@ def collect_environments(jaxpr):
                            invars = enter_eq.invars + invars,
                            outvars = list(eqn.outvars),
                            effects = eqn.effects,
-                           source_info = eqn.source_info,
-                           ctx = eqn.ctx)
+                           source_info = eqn.source_info)
             
             # Remove the collected equations from the new_eqn_list
             new_eqn_list = new_eqn_list[:i]

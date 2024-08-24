@@ -22,6 +22,24 @@ from jax.core import Literal
 
 from qrisp.jisp import QuantumPrimitive, AbstractQubitArray
 
+# Name translator from Qrisp gate naming to Catalyst gate naming
+op_name_translation_dic = {"cx" : "CNOT",
+                       "cy" : "CY", 
+                       "cz" : "CZ", 
+                       "crx" : "CRX",
+                       "crz" : "CRZ",
+                       "swap" : "SWAP",
+                       "x" : "PauliX",
+                       "y" : "PauliY",
+                       "z" : "PauliZ",
+                       "h" : "Hadamard",
+                       "rx" : "RX",
+                       "ry" : "RY",
+                       "rz" : "RZ",
+                       "s" : "S",
+                       "t" : "T",
+                       "p" : "Phasegate"}
+
 
 def convert_to_catalyst_function(closed_jaxpr, args):
     """
@@ -73,8 +91,6 @@ def convert_to_catalyst_function(closed_jaxpr, args):
     device_capabilities = catalyst.device.get_device_capabilities(device, program_features)
     backend_info = catalyst.device.extract_backend_info(device, device_capabilities)
     
-    # Name translator from Qrisp gate naming to Catalyst gate naming
-    op_name_translation_dic = {"cx" : "CNOT", "x" : "PauliX", "h" : "Hadamard"}
 
     # In the following there are two different types of objects involved:
         
@@ -178,8 +194,8 @@ def convert_to_catalyst_function(closed_jaxpr, args):
                     else:
                         
                         for i in range(op.num_qubits):
-                            qb_vars.append(invars[i+1])
-                            qb_pos.append(var_to_tr(invars[i+1]))
+                            qb_vars.append(invars[i+1+len(op.params)])
+                            qb_pos.append(var_to_tr(invars[i+1+len(op.params)]))
                     
                     num_qubits = len(qb_pos)
                     catalyst_register_tracer = var_to_tr(invars[0])[0]
@@ -200,7 +216,7 @@ def convert_to_catalyst_function(closed_jaxpr, args):
                             res_qbs = []
                             meas_res = 0
                             for i in range(len(catalyst_qb_tracers)):
-                                res_bl, res_qb = qmeasure_p.bind(catalyst_qb_tracers[0])
+                                res_bl, res_qb = qmeasure_p.bind(catalyst_qb_tracers[i])
                                 meas_res += 2**i*res_bl
                                 res_qbs.append(res_qb)
                             
@@ -208,10 +224,7 @@ def convert_to_catalyst_function(closed_jaxpr, args):
                                 
                         
                     else:
-                    
-                        res_qbs = qinst_p.bind(*catalyst_qb_tracers, 
-                                               op = op_name_translation_dic[op.name], 
-                                               qubits_len = op.num_qubits)
+                        res_qbs = exec_qrisp_op(op, catalyst_qb_tracers)
                         
                     
                     # Finally, we reinsert the qubits and update the register tracer
@@ -262,6 +275,12 @@ def jispr_to_mlir(jispr, args):
     compiled_fn = jit_object.compile()[0]
     return jit_object.mlir
 
+def jispr_to_catalyst_jaxpr(jispr, args):
+    import catalyst
+    catalyst_function = convert_to_catalyst_function(jispr, args)
+    return make_jaxpr(catalyst_function)().jaxpr
+    
+
 def qjit(function):
     import catalyst
     from qrisp.jisp import make_jispr
@@ -287,3 +306,41 @@ def qjit(function):
         return compiled_fn(*args)
     
     return jitted_function
+
+def exec_qrisp_op(op, catalyst_qbs):
+    
+    if op.definition:
+        defn = op.definition
+        for instr in defn.data:
+            qubits = instr.qubits
+            qubit_indices = [defn.qubits.index(qb) for qb in qubits]
+            temp_catalyst_qbs = [catalyst_qbs[i] for i in qubit_indices]
+            res_qbs = exec_qrisp_op(instr.op, temp_catalyst_qbs)
+            
+            for i in range(len(qubit_indices)):
+                catalyst_qbs[qubit_indices[i]] = res_qbs[i]
+                
+        return catalyst_qbs
+    
+    else:
+            
+        from catalyst.jax_primitives import qinst_p
+        res_qbs = qinst_p.bind(*catalyst_qbs, 
+                               op = op_name_translation_dic[op.name], 
+                               qubits_len = op.num_qubits)
+        
+        return res_qbs
+    
+def exec_multi_measurement(catalyst_register, start, stop):
+    
+    from catalyst.jax_primitives import qmeasure_p
+    from jax.lax import fori_loop
+    
+    def loop_body(i, acc, reg):
+        qb = qextract_p.bind(reg, i)
+        res_bl, res_qb = qmeasure_p.bind(qb)
+        acc = acc + 2**i*res_bl
+        reg = qinsert_p.bind(reg, i, res_qb)
+        return acc, reg
+    
+    return fori_loop.bind(start, stop, loop_body, (0, catalyst_register))

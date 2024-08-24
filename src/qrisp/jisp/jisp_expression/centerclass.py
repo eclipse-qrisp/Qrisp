@@ -142,6 +142,10 @@ class Jispr(Jaxpr):
         from qrisp.jisp import jispr_to_mlir
         return jispr_to_mlir(self, args)
     
+    def to_catalyst_jaxpr(self, *args):
+        from qrisp.jisp import jispr_to_catalyst_jaxpr
+        return jispr_to_catalyst_jaxpr(self, args)
+    
     
     
 
