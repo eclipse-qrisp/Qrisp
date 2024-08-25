@@ -105,15 +105,12 @@ def RYGate(phi=0):
 
 
 def RZGate(phi=0):
-    res = U3Gate(0, phi, 0, name="rz", global_phase=-phi / 2)
+    res = U3Gate(0, phi, 0, name="rz")
     return res
 
 
 def GPhaseGate(phi=0):
-    res = U3Gate(0, 0, 0, name="gphase", global_phase=phi)
-    res.params = [phi]
-    res.permeability[0] = True
-    res.is_qfree = True
+    res = U3Gate(0, 0, 0, name="gphase", global_phase = phi)
     return res
 
 

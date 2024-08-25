@@ -458,7 +458,7 @@ class Operation(QuantumPrimitive):
 # See https://qiskit.org/documentation/stubs/qiskit.circuit.library.U3Gate.html
 # for more information
 class U3Gate(Operation):
-    def __init__(self, theta, phi, lam, name="u3", global_phase=0):
+    def __init__(self, theta, phi, lam, name="u3", global_phase = 0):
         
         # Initialize Operation instance
         super().__init__(
@@ -466,36 +466,30 @@ class U3Gate(Operation):
             num_qubits=1,
             num_clbits=0,
             definition=None,
-            params=[theta, phi, lam],
+            params=[theta, phi, lam, global_phase],
         )
         
-        if isinstance(global_phase, Expr):
-            if len(global_phase.free_symbols):
-                self.abstract_params = self.abstract_params.union(global_phase.free_symbols)
-            else:
-                global_phase = float(global_phase)
-        # self.global_phase = global_phase
-
-        # Set parameters
-        # self.theta = self.params[0]
-        # self.phi = self.params[1]
-        # self.lam = self.params[2]
-        
-        if self.name in ["rx", "ry", "rz", "p"]:
-            self.params = [sum(self.params)]
-
-            if self.name in ["rz", "p"]:
-                self.permeability[0] = True
-                self.is_qfree = True
-            else:
-                self.permeability[0] = False
-                self.is_qfree = False
-
-        elif self.name in ["h"]:
-            self.params = []
-
+        if name in ["rx", "ry"]:
             self.permeability[0] = False
             self.is_qfree = False
+            self.params = [self.params[0]]
+        elif self.name == "rz":
+            self.permeability[0] = True
+            self.is_qfree = True
+            self.params = [self.params[1]]
+        elif self.name == "p":
+            self.permeability[0] = True
+            self.is_qfree = True
+            self.params = [self.params[2]]
+        elif self.name in ["h"]:
+            self.permeability[0] = False
+            self.is_qfree = False
+            self.params = []
+        elif self.name == "gphase":
+            self.permeability[0] = True
+            self.is_qfree = True
+            self.params = [global_phase]
+            
         
     @property
     def theta(self):
@@ -512,7 +506,6 @@ class U3Gate(Operation):
         elif self.name == ["x", "y"]:
             return np.pi
         else:
-            print(self.name)
             return self.params[0]
     
     @property
@@ -547,7 +540,6 @@ class U3Gate(Operation):
         elif self.name == "t_dg":
             return -np.pi/4
         else:
-            print(self.name)
             return self.params[2]
     
     @property
@@ -580,8 +572,7 @@ class U3Gate(Operation):
             -self.lam,
             -self.phi,
             name=new_name,
-            global_phase=-self.global_phase,
-        )
+            global_phase = -self.global_phase)
 
         if self.name == "u3":
             res.name = "u3"
