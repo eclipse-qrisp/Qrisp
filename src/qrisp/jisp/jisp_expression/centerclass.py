@@ -207,6 +207,7 @@ def recursive_convert(jaxpr):
     #     j:QuantumCircuit = h h i
     #     _:QuantumCircuit = q_env[stage=exit type=quantumenvironment] j
     #   in (d,) }
+    
     jaxpr = collect_environments(jaxpr)
     
     return Jispr.from_cache(jaxpr)

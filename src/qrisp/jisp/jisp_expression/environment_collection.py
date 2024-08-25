@@ -85,8 +85,8 @@ def collect_environments(jaxpr):
             invars.remove(enter_eq.outvars[0])
             
             # Same for the outvars
-            outvars = find_outvars(environment_body_eqn_list, [eqn] + eqn_list)
-            
+            outvars = find_outvars(environment_body_eqn_list, eqn_list)
+            outvars.insert(0, eqn.outvars[0])
             # Create the Jaxpr
             environment_body_jispr = Jispr(constvars = [],
                                            invars = enter_eq.outvars + invars,
@@ -98,9 +98,10 @@ def collect_environments(jaxpr):
                            params = {"type" : eqn.params["type"], "jispr" : environment_body_jispr},
                            primitive = eqn.primitive,
                            invars = enter_eq.invars + invars,
-                           outvars = list(eqn.outvars),
+                           outvars = outvars,
                            effects = eqn.effects,
-                           source_info = eqn.source_info)
+                           source_info = eqn.source_info,
+                           ctx = eqn.ctx)
             
             # Remove the collected equations from the new_eqn_list
             new_eqn_list = new_eqn_list[:i]

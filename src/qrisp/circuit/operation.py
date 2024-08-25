@@ -474,13 +474,13 @@ class U3Gate(Operation):
                 self.abstract_params = self.abstract_params.union(global_phase.free_symbols)
             else:
                 global_phase = float(global_phase)
-        self.global_phase = global_phase
+        # self.global_phase = global_phase
 
         # Set parameters
-        self.theta = self.params[0]
-        self.phi = self.params[1]
-        self.lam = self.params[2]
-
+        # self.theta = self.params[0]
+        # self.phi = self.params[1]
+        # self.lam = self.params[2]
+        
         if self.name in ["rx", "ry", "rz", "p"]:
             self.params = [sum(self.params)]
 
@@ -496,7 +496,72 @@ class U3Gate(Operation):
 
             self.permeability[0] = False
             self.is_qfree = False
-
+        
+    @property
+    def theta(self):
+        if self.name in ["rz", "p", "gphase", "s", "s_dg", "t", "t_dg", "z"]:
+            return 0
+        elif self.name in ["rx", "ry"]:
+            return self.params[0]
+        elif self.name == "sx":
+            return np.pi/2
+        elif self.name == "sx_dg":
+            return np.pi/4
+        elif self.name == "h":
+            return np.pi/2
+        elif self.name == ["x", "y"]:
+            return np.pi
+        else:
+            print(self.name)
+            return self.params[0]
+    
+    @property
+    def phi(self):
+        if self.name in ["rz"]:
+            return self.params[0]
+        elif self.name in ["ry", "h", "p", "s", "s_dg", "t", "t_dg", "gphase", "x", "z"]:
+            return 0
+        elif self.name in ["rx", "sx", "sx_dg"]:
+            return -np.pi/2
+        elif self.name == "z":
+            return np.pi
+        elif self.name == "y":
+            return np.pi/2
+        else:
+            return self.params[1]
+    
+    @property
+    def lam(self):
+        if self.name == "p":
+            return self.params[0]
+        elif self.name in ["ry", "rz", "gphase", "sx", "sx_dg"]:
+            return 0
+        elif self.name in ["rx", "sx", "y", "s"]:
+            return np.pi/2
+        elif self.name in ["h", "x", "z"]:
+            return np.pi
+        elif self.name == "s_dg":
+            return -np.pi/2
+        elif self.name == "t":
+            return np.pi/4
+        elif self.name == "t_dg":
+            return -np.pi/4
+        else:
+            print(self.name)
+            return self.params[2]
+    
+    @property
+    def global_phase(self):
+        if self.name == "rz":
+            return -self.params[0]/2
+        elif self.name == "gphase":
+            return self.params[0]
+        elif self.name in ["rx", "ry", "p", "h"]:
+            return 0
+        else:
+            return 0
+        
+        
     # Specify inversion method
     def inverse(self):
         # The inverse of a product of matrices if the reverted product of the inverses,
