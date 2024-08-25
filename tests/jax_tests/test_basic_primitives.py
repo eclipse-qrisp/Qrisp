@@ -29,14 +29,12 @@ def test_basic_primitives():
         return res_bl
 
     compare_jaxpr(make_jispr(test_function)(), 
-                ['create_qubits',
-                 'get_qubit',
-                 'h',
-                 'get_qubit',
-                 'get_qubit',
-                 'cx',
-                 'get_qubit',
-                 'measure'])
+            ['create_qubits',
+             'get_qubit',
+             'h',
+             'get_qubit',
+             'cx',
+             'measure'])
     
     def test_function():
         qv = QuantumVariable(2)
@@ -51,7 +49,6 @@ def test_basic_primitives():
     compare_jaxpr(make_jispr(test_function)(), 
                 ['create_qubits',
                  'q_env',
-                 'get_qubit',
                  'measure'])    
 
     def test_function():
@@ -70,13 +67,8 @@ def test_basic_primitives():
                  'get_qubit',
                  'h',
                  'get_qubit',
-                 'get_qubit',
                  'cx',
-                 'get_qubit',
-                 'get_qubit',
                  'cx',
-                 'get_qubit',
                  'h',
-                 'get_qubit',
                  'measure',
                  'delete_qubits'])

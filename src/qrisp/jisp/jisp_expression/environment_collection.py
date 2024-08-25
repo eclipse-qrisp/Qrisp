@@ -86,11 +86,11 @@ def collect_environments(jaxpr):
             
             # Same for the outvars
             outvars = find_outvars(environment_body_eqn_list, eqn_list)
-            outvars.insert(0, eqn.outvars[0])
+            
             # Create the Jaxpr
             environment_body_jispr = Jispr(constvars = [],
                                            invars = enter_eq.outvars + invars,
-                                           outvars = outvars,
+                                           outvars = eqn.invars[:1] + outvars,
                                            eqns = environment_body_eqn_list)
             
             # Create the Equation
@@ -98,7 +98,7 @@ def collect_environments(jaxpr):
                            params = {"type" : eqn.params["type"], "jispr" : environment_body_jispr},
                            primitive = eqn.primitive,
                            invars = enter_eq.invars + invars,
-                           outvars = outvars,
+                           outvars = eqn.outvars[:1] + outvars,
                            effects = eqn.effects,
                            source_info = eqn.source_info,
                            ctx = eqn.ctx)
