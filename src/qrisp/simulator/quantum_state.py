@@ -80,7 +80,7 @@ class QuantumState:
         # Apply the matrix
         entangled_factor.apply_matrix(unitary, qubits)
         
-        if entangled_factor.tensor_array.data.dtype == xp.dtype("O"):
+        if len(entangled_factor.qubits) < 25 or entangled_factor.tensor_array.data.dtype == xp.dtype("O"):
             return
         
         p_list, tf_list, outcome_index_list = entangled_factor.multi_measure(qubits, False)
