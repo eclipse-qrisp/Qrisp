@@ -16,10 +16,17 @@
 ********************************************************************************/
 """
 
-from jax.core import JaxprEqn, Literal, ClosedJaxpr, Tracer
+from jax.core import JaxprEqn, Literal, ClosedJaxpr, Tracer, Literal
 from jax import jit, make_jaxpr
 from qrisp.jisp import check_for_tracing_mode
 
+class ContextDict(dict):
+    
+    def __getitem__(self, key):
+        if isinstance(key, Literal):
+            return key.val
+        else:
+            return dict.__getitem__(self, key)
 
 def exec_eqn(eqn, context_dic):
     invalues = extract_invalues(eqn, context_dic)
@@ -69,7 +76,7 @@ def eval_jaxpr(jaxpr,
         if len(temp_var_list) != len(args):
             raise Exception("Tried to evaluate jaxpr with insufficient arguments")
         
-        context_dic = {temp_var_list[i] : args[i] for i in range(len(args))}
+        context_dic = ContextDict({temp_var_list[i] : args[i] for i in range(len(args))})
         
         eval_jaxpr_with_context_dic(jaxpr, context_dic, eqn_evaluator)
         

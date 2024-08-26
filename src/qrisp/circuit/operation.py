@@ -489,7 +489,6 @@ class U3Gate(Operation):
             self.permeability[0] = True
             self.is_qfree = True
             self.params = [self.params[3]]
-            
         
     @property
     def theta(self):
@@ -604,7 +603,6 @@ class U3Gate(Operation):
             from qrisp.simulator.unitary_management import u3matrix
 
             # Generate unitary
-
             self.unitary = u3matrix(self.theta, self.phi, self.lam, self.global_phase, use_sympy = bool(len(self.abstract_params)))
 
             return self.get_unitary(decimals)

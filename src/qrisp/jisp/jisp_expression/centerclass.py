@@ -144,16 +144,15 @@ class Jispr(Jaxpr):
         return Jispr(jaxpr = jaxpr)
     
     def to_qir(self, *args):
-        from qrisp.jisp import jispr_to_qir
-        
+        from qrisp.jisp.catalyst_interface import jispr_to_qir
         return jispr_to_qir(self, args)
     
     def to_mlir(self, *args):
-        from qrisp.jisp import jispr_to_mlir
+        from qrisp.jisp.catalyst_interface import jispr_to_mlir
         return jispr_to_mlir(self, args)
     
     def to_catalyst_jaxpr(self):
-        from qrisp.jisp import jispr_to_catalyst_jaxpr
+        from qrisp.jisp.catalyst_interface import jispr_to_catalyst_jaxpr
         return jispr_to_catalyst_jaxpr(self)
     
     

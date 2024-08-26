@@ -15,10 +15,35 @@
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************/
 """
-from qrisp import Operation
-from catalyst.jax_primitives import AbstractQreg, AbstractQbit, qalloc_p, qinst_p, qmeasure_p, qdevice_p, qextract_p, qinsert_p
 
-def jispr_to_catalyst_converter(jispr):
+from jax import make_jaxpr
+
+from catalyst.jax_primitives import AbstractQreg, qinst_p, qmeasure_p, qextract_p, qinsert_p
+
+from qrisp.circuit import Operation
+from qrisp.jisp import QuantumPrimitive, AbstractQuantumCircuit, AbstractQubitArray, AbstractQubit, eval_jaxpr
+
+
+# Name translator from Qrisp gate naming to Catalyst gate naming
+op_name_translation_dic = {"cx" : "CNOT",
+                       "cy" : "CY", 
+                       "cz" : "CZ", 
+                       "crx" : "CRX",
+                       "crz" : "CRZ",
+                       "swap" : "SWAP",
+                       "x" : "PauliX",
+                       "y" : "PauliY",
+                       "z" : "PauliZ",
+                       "h" : "Hadamard",
+                       "rx" : "RX",
+                       "ry" : "RY",
+                       "rz" : "RZ",
+                       "s" : "S",
+                       "t" : "T",
+                       "p" : "Phasegate"}
+
+
+def jispr_to_catalyst_jaxpr(jispr):
     
     args = []
     for invar in jispr.invars:
@@ -56,31 +81,22 @@ def catalyst_eqn_evaluator(eqn, context_dic):
     else:
         return True
             
-            
-            
 
-
-# Wrapper around the dictionary to also treat literals
-def var_to_tr(var, context_dic):
-    if isinstance(var, Literal):
-        return var.val
-    else:
-        return context_dic[var]
 
 def process_create_qubits(invars, outvars, context_dic):
     
-    qreg, stack_size = var_to_tr(invars[0], context_dic)
-    context_dic[outvars[1]] = (stack_size, var_to_tr(invars[1], context_dic))
-    context_dic[outvars[0]] = (qreg, stack_size + var_to_tr(invars[1], context_dic))
+    qreg, stack_size = context_dic[invars[0]]
+    context_dic[outvars[1]] = (stack_size, context_dic[invars[1]])
+    context_dic[outvars[0]] = (qreg, stack_size + context_dic[invars[1]])
     
 
 def process_get_qubit(invars, outvars, context_dic):
-    context_dic[outvars[0]] = context_dic[invars[0]][0] + var_to_tr(invars[1], context_dic)
+    context_dic[outvars[0]] = context_dic[invars[0]][0] + context_dic[invars[1]]
     
 def process_op(op, invars, outvars, context_dic):
     
     # This case is applies a quantum operation
-    catalyst_register_tracer = var_to_tr(invars[0], context_dic)[0]
+    catalyst_register_tracer = context_dic[invars[0]][0]
     
     # For this the first step is to collect all the Catalyst qubit tracers
     # that are required for the Operation
@@ -89,7 +105,7 @@ def process_op(op, invars, outvars, context_dic):
     qb_pos = []
     for i in range(op.num_qubits):
         qb_vars.append(invars[i+1+len(op.params)])
-        qb_pos.append(var_to_tr(invars[i+1+len(op.params)], context_dic))
+        qb_pos.append(context_dic[invars[i+1+len(op.params)]])
     
     num_qubits = len(qb_pos)
     
@@ -109,7 +125,7 @@ def process_op(op, invars, outvars, context_dic):
                                              qb_pos[i],
                                              res_qbs[i])
         
-    context_dic[outvars[0]] = (catalyst_register_tracer, var_to_tr(invars[0], context_dic)[1])
+    context_dic[outvars[0]] = (catalyst_register_tracer, context_dic[invars[0]][1])
 
 def exec_qrisp_op(op, catalyst_qbs):
     
@@ -127,28 +143,25 @@ def exec_qrisp_op(op, catalyst_qbs):
         return catalyst_qbs
     
     else:
-            
-        from catalyst.jax_primitives import qinst_p
         res_qbs = qinst_p.bind(*catalyst_qbs, 
                                op = op_name_translation_dic[op.name], 
                                qubits_len = op.num_qubits)
-        
         return res_qbs
 
 
 def process_measurement(invars, outvars, context_dic):
     
-    catalyst_register_tracer = var_to_tr(invars[0], context_dic)[0]
+    catalyst_register_tracer = context_dic[invars[0]][0]
                             
     if isinstance(invars[1].aval, AbstractQubitArray):
         
-        qubit_array_data = var_to_tr(invars[1], context_dic)
+        qubit_array_data = context_dic[invars[1]]
         start = qubit_array_data[0]
         stop = start + qubit_array_data[1]
         catalyst_register_tracer, meas_res = exec_multi_measurement(catalyst_register_tracer, start, stop)
         
     else:
-        qb_pos = var_to_tr(invars[1], context_dic)
+        qb_pos = context_dic[invars[1]]
         catalyst_qb_tracer = qextract_p.bind(catalyst_register_tracer, 
                                              qb_pos)
         meas_res, res_qb = qmeasure_p.bind(catalyst_qb_tracer)
@@ -156,7 +169,7 @@ def process_measurement(invars, outvars, context_dic):
                                              qb_pos,
                                              res_qb)
         
-    context_dic[outvars[0]] = (catalyst_register_tracer, var_to_tr(invars[0], context_dic)[1])
+    context_dic[outvars[0]] = (catalyst_register_tracer, context_dic[invars[0]][1])
     context_dic[outvars[1]] = meas_res
         
         
@@ -176,7 +189,3 @@ def exec_multi_measurement(catalyst_register, start, stop):
         return (reg, acc)
     
     return fori_loop(start, stop, loop_body, (catalyst_register, 0))
-
-
-jispr_to_catalyst_converter(jispr)
-

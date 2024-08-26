@@ -17,8 +17,6 @@
 """
 
 from jax import make_jaxpr
-from jax.numpy import float64
-from jax.core import Literal
 
 import pennylane as qml
 import catalyst
