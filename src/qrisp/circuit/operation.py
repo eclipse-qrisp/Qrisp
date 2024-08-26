@@ -488,7 +488,7 @@ class U3Gate(Operation):
         elif self.name == "gphase":
             self.permeability[0] = True
             self.is_qfree = True
-            self.params = [global_phase]
+            self.params = [self.params[3]]
             
         
     @property
