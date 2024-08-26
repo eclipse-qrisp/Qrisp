@@ -16,9 +16,14 @@
 ********************************************************************************/
 """
 
+import numpy as np
+
 from jax import jit, make_jaxpr
 from jax.core import Jaxpr, JaxprEqn, ClosedJaxpr, Var
 from qrisp.jisp import check_for_tracing_mode, flatten_collected_environments, eval_jaxpr, AbstractQuantumCircuit, TracingQuantumSession
+
+control_var_count = np.zeros(1)
+
 
 def control_eqn(eqn, ctrl_qubit_var):
     """
@@ -46,8 +51,7 @@ def control_eqn(eqn, ctrl_qubit_var):
                         outvars = eqn.outvars,
                         params = eqn.params,
                         source_info = eqn.source_info,
-                        effects = eqn.effects,
-                        ctx = eqn.ctx)
+                        effects = eqn.effects,)
 
 def control_jispr(jispr):
     """
@@ -69,7 +73,8 @@ def control_jispr(jispr):
     from qrisp.circuit import Operation
     from qrisp.jisp import Jispr, AbstractQubit
     
-    ctrl_qubit_var = Var(suffix = "", aval = AbstractQubit())
+    ctrl_qubit_var = Var(suffix = "", aval = AbstractQubit(), count = control_var_count[0])
+    control_var_count[0] += 1
     
     new_eqns = []
     for eqn in jispr.eqns:
@@ -98,7 +103,8 @@ def multi_control_jispr(jispr, num_ctrl = 1, ctrl_state = -1):
     
     from qrisp.jisp import Jispr, AbstractQubit, make_jispr
     
-    ctrl_vars = [Var(suffix = "", aval = AbstractQubit()) for _ in range(num_ctrl)]
+    ctrl_vars = [Var(suffix = "", aval = AbstractQubit(), count = control_var_count[0] + _) for _ in range(num_ctrl)]
+    control_var_count[0] += num_ctrl
     ctrl_avals = [x.aval for x in ctrl_vars]
     
     temp_jaxpr = make_jispr(exec_multi_controlled_jispr(jispr, num_ctrl))(*(ctrl_avals + [var.aval for var in jispr.invars[1:] + jispr.constvars]))
