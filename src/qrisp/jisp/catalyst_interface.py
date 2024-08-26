@@ -72,15 +72,15 @@ def jispr_to_catalyst_function(jispr):
 def jispr_to_catalyst_qjit(jispr, function_name = "jispr_function"):
     
     def inner_function(*args):
+        
         catalyst_function = jispr_to_catalyst_function(jispr)
-        catalyst_jaxpr = make_jaxpr(catalyst_function)(*args)
-        mlir_module, mlir_ctx = catalyst.jax_extras.jaxpr_to_mlir(function_name, catalyst_jaxpr)
-        catalyst.utils.gen_mlir.inject_functions(mlir_module, mlir_ctx)
+        catalyst_function.__name__ = function_name
         jit_object = catalyst.QJIT(catalyst_function, catalyst.CompileOptions())
-        jit_object.compiling_from_textual_ir = False
-        jit_object.mlir_module = mlir_module
-        compiled_fn = jit_object.compile()[0]
-        return compiled_fn
+        jit_object.jaxpr = make_jaxpr(catalyst_function)(*args)
+        jit_object.workspace = jit_object._get_workspace()
+        jit_object.mlir_module, jit_object.mlir = jit_object.generate_ir()
+        jit_object.compiled_function, jit_object.qir = jit_object.compile()
+        return jit_object
     
     return inner_function
     
@@ -92,7 +92,7 @@ def qjit(function):
     def jitted_function(*args):
         jispr = make_jispr(function)(*args)
         qjit_obj = jispr_to_catalyst_qjit(jispr, function_name = function.__name__)(*args)
-        return qjit_obj(*args)
+        return qjit_object.compiled_function(*args)
     
     return jitted_function
 
