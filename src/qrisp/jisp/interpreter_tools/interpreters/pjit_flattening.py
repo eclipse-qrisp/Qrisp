@@ -41,7 +41,11 @@ def flatten_pjit(jaxpr):
     if isinstance(jaxpr, ClosedJaxpr):
         jaxpr = jaxpr.jaxpr
     
-    eqn_eval_dic = {"pjit" : evaluate_pjit_eqn}
+    def eqn_evaluator(eqn, context_dic):
+        if eqn.primitive.name == "pjit":
+            evaluate_pjit_eqn(eqn, context_dic)
+        else:
+            return True
     
-    return type(jaxpr)(reinterpret(jaxpr, eqn_eval_dic))
+    return type(jaxpr)(reinterpret(jaxpr, eqn_evaluator))
     

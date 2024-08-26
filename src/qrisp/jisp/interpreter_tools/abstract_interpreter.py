@@ -21,9 +21,30 @@ from jax import jit, make_jaxpr
 from qrisp.jisp import check_for_tracing_mode
 
 
+def exec_eqn(eqn, context_dic):
+    invalues = extract_invalues(eqn, context_dic)
+    
+    if eqn.primitive.name in ["while", "cond"]:
+        for val in invalues:
+            if isinstance(val, Tracer):
+                break
+        else:
+            from qrisp.jisp import evaluate_cond_eqn, evaluate_while_loop
+            
+            if eqn.primitive.name == "while":
+                evaluate_while_loop(eqn, context_dic)
+            else:
+                evaluate_cond_eqn(eqn, context_dic)
+            
+            return
+    
+    res = eqn.primitive.bind(*invalues, **eqn.params)
+    insert_outvalues(eqn, context_dic, res)
+
+
 def eval_jaxpr(jaxpr, 
                return_context_dic = False, 
-               eqn_eval_dic = {}):
+               eqn_evaluator = exec_eqn):
     """
     Evaluates a Jaxpr using the given context dic to replace variables
 
@@ -50,7 +71,7 @@ def eval_jaxpr(jaxpr,
         
         context_dic = {temp_var_list[i] : args[i] for i in range(len(args))}
         
-        eval_jaxpr_with_context_dic(jaxpr, context_dic, eqn_eval_dic)
+        eval_jaxpr_with_context_dic(jaxpr, context_dic, eqn_evaluator)
         
         if return_context_dic:
             outvals = [context_dic]
@@ -67,15 +88,16 @@ def eval_jaxpr(jaxpr,
     
     return jaxpr_evaluator
 
-def reinterpret(jaxpr, eqn_eval_dic = {}):
+def reinterpret(jaxpr, eqn_evaluator = exec_eqn):
     
     if isinstance(jaxpr, ClosedJaxpr):
         inter_jaxpr = jaxpr.jaxpr
     else:
         inter_jaxpr = jaxpr
         
+  
     res = make_jaxpr(eval_jaxpr(inter_jaxpr,
-                                eqn_eval_dic = eqn_eval_dic))(*[var.aval for var in jaxpr.invars + jaxpr.constvars]).jaxpr
+                                eqn_evaluator = eqn_evaluator))(*[var.aval for var in jaxpr.invars + jaxpr.constvars]).jaxpr
     
     if isinstance(jaxpr, ClosedJaxpr):
         res = ClosedJaxpr(res, jaxpr.consts)    
@@ -83,63 +105,16 @@ def reinterpret(jaxpr, eqn_eval_dic = {}):
     return res
 
 
-def eval_jaxpr_with_context_dic(jaxpr, context_dic, eqn_eval_dic = {}):
-    
-    from qrisp import QuantumCircuit
-    # for eqn in jaxpr.eqns:
-        # for outvar in eqn.outvars:
-            # context_dic[outvar] = eqn
+def eval_jaxpr_with_context_dic(jaxpr, context_dic, eqn_evaluator = exec_eqn):
     
     # Iterate through the equations
     for eqn in jaxpr.eqns:
         # Evaluate the primitive
-        if eqn.primitive.name in eqn_eval_dic.keys():
-            eqn_eval_dic[eqn.primitive.name](eqn, context_dic)
-        else:
+        default_eval = eqn_evaluator(eqn, context_dic)
+        
+        if default_eval:
             exec_eqn(eqn, context_dic)
         
-        # Mark any processed QuantumCircuit as "burned"
-        # In priniciple the syntax gives these QuantumCircuits a meaning
-        # However to avoid constant copying, we act in-place
-        # Tracing high-level code should never produce a Jaxpr such that
-        # this Exception is called
-        for i in range(len(eqn.invars)):
-            invar = eqn.invars[i]
-            
-            if isinstance(invar, Literal):
-                continue
-            
-            val = context_dic[invar]
-            
-            if isinstance(val, QuantumCircuit):
-                context_dic[invar] = "burned_qc"
-                continue
-            elif isinstance(val, str):
-                if val == "burned_qc":
-                    raise Exception("Tried to use a consumed QuantumCircuit")
-    
-
-def exec_eqn(eqn, context_dic):
-    invalues = extract_invalues(eqn, context_dic)
-    
-    if eqn.primitive.name in ["while", "cond"]:
-        for val in invalues:
-            if isinstance(val, Tracer):
-                break
-        else:
-            from qrisp.jisp import evaluate_cond_eqn, evaluate_while_loop
-            
-            if eqn.primitive.name == "while":
-                evaluate_while_loop(eqn, context_dic)
-            else:
-                evaluate_cond_eqn(eqn, context_dic)
-            
-            return
-    
-    res = eqn.primitive.bind(*invalues, **eqn.params)
-    insert_outvalues(eqn, context_dic, res)
-
-    
 def extract_invalues(eqn, context_dic):
     invalues = []
     for i in range(len(eqn.invars)):

@@ -84,9 +84,14 @@ class Jispr(Jaxpr):
     def extract_qc(self, *args):
         from qrisp import QuantumCircuit
         jispr = flatten_environments(self)
-        eqn_eval_dic = {"pjit" : pjit_to_gate}
         
-        res = eval_jaxpr(jispr, eqn_eval_dic = eqn_eval_dic)(*([QuantumCircuit()] + list(args)))
+        def eqn_evaluator(eqn, context_dic):
+            if eqn.primitive.name == "pjit":
+                pjit_to_gate(eqn, context_dic)
+            else:
+                return True
+        
+        res = eval_jaxpr(jispr, eqn_evaluator = eqn_evaluator)(*([QuantumCircuit()] + list(args)))
         
         return res
         
@@ -100,9 +105,14 @@ class Jispr(Jaxpr):
         args = [BufferedQuantumState()] + list(args)
         
         jispr = flatten_environments(self)
-        eqn_eval_dic = {"pjit" : pjit_to_gate}
         
-        res = eval_jaxpr(jispr, eqn_eval_dic = eqn_eval_dic)(*args)
+        def eqn_evaluator(eqn, context_dic):
+            if eqn.primitive.name == "pjit":
+                pjit_to_gate(eqn, context_dic)
+            else:
+                return True
+        
+        res = eval_jaxpr(jispr, eqn_evaluator = eqn_evaluator)(*args)
         
         if len(self.outvars) == 2:
             return res[1]

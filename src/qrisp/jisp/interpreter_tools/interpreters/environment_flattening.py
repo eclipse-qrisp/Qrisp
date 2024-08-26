@@ -68,14 +68,19 @@ def flatten_collected_environments(jispr):
     
     # It is now much easier to apply higher order transformations with this kind
     # of data structure.
-    eqn_eval_dic = {"q_env" : flatten_environment_eqn,
-                    "pjit" : flatten_environments_in_pjit_eqn}
+    def eqn_evaluator(eqn, context_dic):
+        if eqn.primitive.name == "q_env":
+            flatten_environment_eqn(eqn, context_dic)
+        elif eqn.primitive.name == "pjit":
+            flatten_environments_in_pjit_eqn(eqn, context_dic)
+        else:
+            return True
     
     # The flatten_environment_eqn function below executes the collected QuantumEnvironments
     # according to their semantics
     from qrisp.jisp import Jispr
     # To perform the flattening, we evaluate with the usual tools
-    return Jispr(reinterpret(jispr, eqn_eval_dic))
+    return Jispr(reinterpret(jispr, eqn_evaluator))
     
     
 
@@ -127,8 +132,15 @@ def flatten_environment_eqn(env_eqn, context_dic):
         # the invars of the equation. See the corresponding line in collect_environments.
         new_context_dic[transformed_jaxpr.constvars[i]] = invalues.pop(0)
     
+    
+    def eqn_evaluator(eqn, context_dic):
+        if eqn.primitive.name == "q_env":
+            flatten_environment_eqn(eqn, context_dic)
+        else:
+            return True
+    
     # Execute the transformed jaxpr for flattening
-    eval_jaxpr_with_context_dic(transformed_jaxpr, new_context_dic, eqn_eval_dic = {"q_env" : flatten_environment_eqn})
+    eval_jaxpr_with_context_dic(transformed_jaxpr, new_context_dic, eqn_evaluator = eqn_evaluator)
     
     # Insert the outvalues into the context dic
     for i in range(len(env_eqn.outvars)):
