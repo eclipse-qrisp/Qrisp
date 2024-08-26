@@ -46,8 +46,7 @@ def invert_eqn(eqn):
                         outvars = eqn.outvars,
                         params = eqn.params,
                         source_info = eqn.source_info,
-                        effects = eqn.effects,
-                        ctx = eqn.ctx)
+                        effects = eqn.effects)
         
         
 
@@ -70,7 +69,7 @@ def invert_jispr(jispr):
     """
     
     # Flatten all environments in the jaxpr
-    jaxpr = flatten_collected_environments(jispr)
+    jispr = flatten_collected_environments(jispr)
     
     # We separate the equations into classes where one executes Operations and
     # the one that doesn't execute Operations
@@ -86,11 +85,14 @@ def invert_jispr(jispr):
         if isinstance(eqn.primitive, Operation) or eqn.primitive.name == "pjit":
             # Insert the inverted equation at the front
             op_eqs.insert(0, invert_eqn(eqn))
+        elif eqn.primitive.name == "measure":
+            raise Exception("Tried to invert a Jispr containing a measurement")
         else:
             non_op_eqs.append(eqn)
 
     # Finally, we need to make sure the Order of QuantumCircuit I/O is also reversed.        
     n = len(op_eqs)
+    
     for i in range(n//2):
         
         op_eqs[i].invars[0], op_eqs[n-i-1].invars[0] = op_eqs[n-i-1].invars[0], op_eqs[i].invars[0]
@@ -98,8 +100,8 @@ def invert_jispr(jispr):
     
     from qrisp.jisp import Jispr
     
-    return Jispr(constvars = jaxpr.constvars, 
-                 invars = jaxpr.invars, 
-                 outvars = jaxpr.outvars, 
+    return Jispr(constvars = jispr.constvars, 
+                 invars = jispr.invars, 
+                 outvars = op_eqs[-1].outvars[:1] + jispr.outvars[1:], 
                  eqns = non_op_eqs + op_eqs)
         
