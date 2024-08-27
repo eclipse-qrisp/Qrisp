@@ -176,16 +176,37 @@ def process_measurement(invars, outvars, context_dic):
         
 def exec_multi_measurement(catalyst_register, start, stop):
     
-    from catalyst.jax_primitives import qmeasure_p, qextract_p, qinsert_p
+    from catalyst.jax_primitives import qmeasure_p, qextract_p, qinsert_p, while_p
     from jax.lax import fori_loop
+    from catalyst import while_loop
     
-    def loop_body(i, val):
-        acc = val[1]
-        reg = val[0]
+    def loop_body(i, acc, reg, start, stop):
         qb = qextract_p.bind(reg, i)
         res_bl, res_qb = qmeasure_p.bind(qb)
         reg = qinsert_p.bind(reg, i, res_qb)
-        acc = acc + (2<<i)*res_bl
-        return (reg, acc)
+        acc = acc + (2<<(i-start))*res_bl
+        i += 1
+        return i, acc, reg, start, stop
     
+    def cond_body(i, acc, reg, start, stop):
+        return i >= stop
+    
+    loop_jaxpr = make_jaxpr(loop_body)(0, 0, catalyst_register.aval, 0, 0)
+    cond_jaxpr = make_jaxpr(cond_body)(0, 0, catalyst_register.aval, 0, 0)
+
+    i, acc, reg, start, stop = while_p.bind(*(start, 0, catalyst_register, start, stop),
+                                     cond_jaxpr = cond_jaxpr, 
+                                     body_jaxpr = loop_jaxpr,
+                                     cond_nconsts = 0,
+                                     body_nconsts = 0,
+                                     nimplicit = 0,
+                                     preserve_dimensions = True,
+                                     ) 
+    
+    return reg, acc
+    # i, acc, reg, stop = while_loop(cond_body)(loop_body)(start, 0, catalyst_register, stop)
     return fori_loop(start, stop, loop_body, (catalyst_register, 0))
+
+
+def exec_while(eqn, context_dic):
+    print(eqn)

@@ -325,7 +325,8 @@ class QuantumFloat(QuantumVariable):
         return self.decoder(i)
     
     def encoder(self, i):
-        res = signed_int_iso_2(i/(2.**self.exponent), self.size)
+        from jax.numpy import float32
+        res = signed_int_iso_2(i/(float32(2)**self.exponent), self.size)
         # if self.signed:
         #     res = signed_int_iso(i/2**self.exponent, self.size-1)
         # else:

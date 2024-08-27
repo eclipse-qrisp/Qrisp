@@ -92,7 +92,7 @@ def qjit(function):
     def jitted_function(*args):
         jispr = make_jispr(function)(*args)
         qjit_obj = jispr_to_catalyst_qjit(jispr, function_name = function.__name__)(*args)
-        return qjit_object.compiled_function(*args)
+        return qjit_obj.compiled_function(*args)
     
     return jitted_function
 
