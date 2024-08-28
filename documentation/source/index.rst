@@ -347,27 +347,28 @@ Qrisp code can be significantly shorter and also more readable than the equivale
          :align: center
    * - ::
          
-         from qiskit import (QuantumCircuit, QuantumRegister, 
-         ClassicalRegister, Aer, execute)
-         from qiskit.circuit.library import RGQFTMultiplier
-         n = 6
-         a = QuantumRegister(n)
-         b = QuantumRegister(n)
-         res = QuantumRegister(2*n)
-         cl_res = ClassicalRegister(2*n)
-         qc = QuantumCircuit(a, b, res, cl_res)
-         for i in range(len(a)):
-             if 3 & 1<<i: qc.x(a[i]) 
-         for i in range(len(b)):
-             if 4 & 1<<i: qc.x(b[i]) 
-         qc.append(RGQFTMultiplier(n, 2*n), 
-         list(a) + list(b) + list(res))
-         qc.measure(res, cl_res)
-         backend = Aer.get_backend('qasm_simulator')
-         counts_dic = execute(qc, backend).result().get_counts()
-         print({int(k, 2) : v for k, v in counts_dic.items()})
-         #Yields: {12: 1024}
-         
+		from qiskit import (QuantumCircuit, QuantumRegister,
+		ClassicalRegister, transpile)
+		from qiskit_aer import Aer
+		from qiskit.circuit.library import RGQFTMultiplier
+		n = 6
+		a = QuantumRegister(n)
+		b = QuantumRegister(n)
+		res = QuantumRegister(2*n)
+		cl_res = ClassicalRegister(2*n)
+		qc = QuantumCircuit(a, b, res, cl_res)
+		for i in range(len(a)):
+			if 3 & 1<<i: qc.x(a[i])
+		for i in range(len(b)):
+			if 4 & 1<<i: qc.x(b[i])
+		qc.append(RGQFTMultiplier(n, 2*n),
+		list(a) + list(b) + list(res))
+		qc.measure(res, cl_res)
+		backend = Aer.get_backend('qasm_simulator')
+		qc = transpile(qc, backend)
+		counts_dic = backend.run(qc).result().get_counts()
+		print({int(k, 2) : v for k, v in counts_dic.items()})
+		#Yields: {12: 1024}
          
      - ::
    
