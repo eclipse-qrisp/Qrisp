@@ -24,6 +24,48 @@ from qrisp.jisp.jisp_expression import invert_jispr, multi_control_jispr, collec
 from qrisp.jisp import AbstractQuantumCircuit, eval_jaxpr, flatten_pjit, pjit_to_gate, flatten_environments
 
 class Jispr(Jaxpr):
+    """
+    This class is a subtype of jax.core.Jaxpr and serves as an intermediate representation for
+    (hybrid) Qrisp quantum algorithms. Qrisp scripts can be turned into Jispr objects by
+    calling the ```make_jispr``` function, which has similar semantics as 
+    `jax.make_jaxpr <https://jax.readthedocs.io/en/latest/_autosummary/jax.make_jaxpr.html>`_.
+    
+    ::
+    
+        from qrisp import *
+        from qrisp.jisp import make_jispr
+        
+        def test_fun(i):
+            
+            qv = QuantumFloat(i, -1)
+            x(qv[0])
+            cx(qv[0], qv[i-1])
+            meas_res = measure(qv)
+            return meas_res
+            
+        
+        jispr = make_jispr(test_fun)(4)
+        print(jispr)
+    
+    This will give you the following output:
+
+    .. code-block::
+    
+        { lambda ; a:QuantumCircuit b:i32[]. let
+            c:QuantumCircuit d:QubitArray = create_qubits a b
+            e:Qubit = get_qubit d 0
+            f:QuantumCircuit = x c e
+            g:Qubit = get_qubit d 0
+            h:i32[] = sub b 1
+            i:Qubit = get_qubit d h
+            j:QuantumCircuit = cx f g i
+            k:QuantumCircuit l:i32[] = measure j d
+            m:f32[] = convert_element_type[new_dtype=float32 weak_type=True] l
+            n:f32[] = mul m 0.5
+          in (k, n) }
+
+    
+    """
     
     __slots__ = "permeability", "isqfree", "hashvalue"
     
@@ -76,9 +118,101 @@ class Jispr(Jaxpr):
         return self.hashvalue == hash(other)
     
     def inverse(self):
+        """
+        Returns the inverse Jispr (if applicable). For Jispr that contain realtime
+        computations or measurements, the inverse does not exist.
+
+        Returns
+        -------
+        Jispr
+            The daggered Jispr.
+            
+        Examples
+        --------
+        
+        We create a simple script and inspect the daggered version:
+        
+        ::
+            
+            from qrisp import *
+            from qrisp.jisp import make_jispr
+            
+            def example_function(i):
+                
+                qv = QuantumVariable(i)
+                cx(qv[0], qv[1])
+                t(qv[1])
+                return qv
+            
+            jispr = make_jispr(example_function)(2)
+            
+            print(jispr.inverse())
+            # Yields
+            # { lambda ; a:QuantumCircuit b:i32[]. let
+            #     c:QuantumCircuit d:QubitArray = create_qubits a b
+            #     e:Qubit = get_qubit d 0
+            #     f:Qubit = get_qubit d 1
+            #     g:QuantumCircuit = t_dg c f
+            #     h:QuantumCircuit = cx g e f
+            #   in (h, d) }
+        """
         return invert_jispr(self)
     
     def control(self, num_ctrl, ctrl_state = -1):
+        """
+        Returns the controlled version of the Jispr. The control qubits are added
+        to the signature of the Jispr as the arguments after the QuantumCircuit.
+
+        Parameters
+        ----------
+        num_ctrl : int
+            The amount of controls to be added.
+        ctrl_state : int of str, optional
+            The control state on which to activate. The default is -1.
+
+        Returns
+        -------
+        Jispr
+            The controlled Jispr.
+            
+        Examples
+        --------
+        
+        We create a simple script and inspect the controlled version:
+            
+        ::
+            
+            from qrisp import *
+            from qrisp.jisp import make_jispr
+            
+            def example_function(i):
+                
+                qv = QuantumVariable(i)
+                cx(qv[0], qv[1])
+                t(qv[1])
+                return qv
+            
+            jispr = make_jispr(example_function)(2)
+            
+            print(jispr.control(2))
+            # Yields
+            # { lambda ; a:QuantumCircuit b:Qubit c:Qubit d:i32[]. let
+            #     e:QuantumCircuit f:QubitArray = create_qubits a 1
+            #     g:Qubit = get_qubit f 0
+            #     h:QuantumCircuit = ccx e b c g
+            #     i:QuantumCircuit j:QubitArray = create_qubits h d
+            #     k:Qubit = get_qubit j 0
+            #     l:Qubit = get_qubit j 1
+            #     m:QuantumCircuit = ccx i g k l
+            #     n:QuantumCircuit = ct m g l
+            #     o:QuantumCircuit = ccx n b c g
+            #   in (o, j) }
+        
+        We see that the control qubits are part of the function signature 
+        (``a`` and ``b``)            
+
+        """
+        
         return multi_control_jispr(self, num_ctrl, ctrl_state)
     
     def extract_qc(self, *args):

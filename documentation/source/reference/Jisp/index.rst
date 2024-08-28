@@ -120,3 +120,14 @@ Jisprs can be simulated using the built-in real-time simulator. You achieve this
 4.5
 >>> print(jispr(8))
 64.5
+
+How is this different from the regular Qrisp features? The essential point is that because Jispr objects are embedded into the Jaxpr IR, they allow more advanced compilation tools to process the algorithm. In our case it is possible to convert Jispr objects to the `Catalyst <https://docs.pennylane.ai/projects/catalyst/en/stable/index.html>`__ representation, which targets `established classical compilation infrastructure <https://mlir.llvm.org/>`_ to lower the (hybrid) algorithm into `QIR <https://www.qir-alliance.org/>`_.
+If you are interested in how the QIR representation looks like, try calling
+
+>>> jispr.to_qir(8)
+
+.. toctree::
+   :maxdepth: 2
+   :hidden:
+   
+   Jispr
