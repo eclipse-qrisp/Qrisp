@@ -9,4 +9,4 @@ networkx
 tdqm
 dill
 flask
-jax
+jax==0.4.23
