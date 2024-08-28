@@ -42,12 +42,11 @@ def invert_eqn(eqn):
         return eqn
     else:
         return JaxprEqn(primitive = eqn.primitive.inverse(),
-                        invars = eqn.invars,
-                        outvars = eqn.outvars,
+                        invars = list(eqn.invars),
+                        outvars = list(eqn.outvars),
                         params = eqn.params,
                         source_info = eqn.source_info,
-                        effects = eqn.effects,
-                        ctx = eqn.ctx)
+                        effects = eqn.effects,)
         
         
 
@@ -84,22 +83,20 @@ def inv_transform(jaxpr):
     from qrisp.circuit import Operation
     for eqn in jaxpr.eqns:
         if isinstance(eqn.primitive, Operation) or (eqn.primitive.name == "pjit" and isinstance(eqn.outvars[0].aval, AbstractQuantumCircuit)):
-
             # Insert the inverted equation at the front
             op_eqs.insert(0, invert_eqn(eqn))
+        elif eqn.primitive.name == "measure":
+            raise Exception("Tried to invert a Jispr containing a measurement")
         else:
             non_op_eqs.append(eqn)
 
     # Finally, we need to make sure the Order of QuantumCircuit I/O is also reversed.        
     n = len(op_eqs)
     for i in range(n//2):
-        
         op_eqs[i].invars[0], op_eqs[n-i-1].invars[0] = op_eqs[n-i-1].invars[0], op_eqs[i].invars[0]
         op_eqs[i].outvars[0], op_eqs[n-i-1].outvars[0] = op_eqs[n-i-1].outvars[0], op_eqs[i].outvars[0]
-    
     
     return Jaxpr(constvars = jaxpr.constvars, 
                  invars = jaxpr.invars, 
                  outvars = jaxpr.outvars, 
                  eqns = non_op_eqs + op_eqs)
-        

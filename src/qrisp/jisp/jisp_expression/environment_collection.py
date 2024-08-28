@@ -63,8 +63,7 @@ def collect_environments(jaxpr):
                                     invars = list(eqn.invars), # Note that the constvars of the jaxpr are appended to the invars of the equation
                                     outvars = list(eqn.outvars),
                                     effects = eqn.effects,
-                                    source_info = eqn.source_info,
-                                    ctx = eqn.ctx)
+                                    source_info = eqn.source_info,)
         
         # If an exit primitive is found, start the collecting mechanism.
         if eqn.primitive.name == "q_env" and "exit" in eqn.params.values():

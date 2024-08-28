@@ -86,7 +86,7 @@ def eval_jaxpr(jaxpr,
             outvals = []
             
         for i in range(len(jaxpr.outvars)):
-            outvals.append(assert_value(jaxpr.outvars[i], context_dic))
+            outvals.append(context_dic[jaxpr.outvars[i]])
         
         if len(outvals) == 1:
             return outvals[0]
@@ -126,14 +126,14 @@ def extract_invalues(eqn, context_dic):
     invalues = []
     for i in range(len(eqn.invars)):
         invar = eqn.invars[i]
-        invalues.append(assert_value(invar, context_dic))
+        invalues.append(context_dic[invar])
     return invalues
 
 def extract_constvalues(eqn, context_dic):
     constvalues = []
     for i in range(len(eqn.constvars)):
         constvar = eqn.constvars[i]
-        constvalues.append(assert_value(constvar, context_dic))
+        constvalues.append(context_dic[constvar])
         
     return constvalues
 
@@ -144,10 +144,3 @@ def insert_outvalues(eqn, context_dic, outvalues):
             context_dic[eqn.outvars[i]] = outvalues[i]
     else:
         context_dic[eqn.outvars[0]] = outvalues
-        
-def assert_value(var, context_dic):
-    
-    if isinstance(var, Literal):
-        return var.val
-    else:
-        return context_dic[var]
