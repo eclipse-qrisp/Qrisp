@@ -31,7 +31,7 @@ We encourage you to explore these algorithms, delve into their documentation, an
    :maxdepth: 2
    :hidden:
    
-   QAOA/index
+   qaoa/index
    QIRO
    Shor
    Grover
