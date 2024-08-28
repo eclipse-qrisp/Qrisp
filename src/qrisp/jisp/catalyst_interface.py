@@ -55,7 +55,7 @@ def jispr_to_catalyst_function(jispr):
         #Initiate the backend
         qdevice_p.bind(
         rtd_lib=backend_info.lpath,
-        rtd_name=backend_info.device_name,
+        rtd_name=backend_info.c_interface_name,
         rtd_kwargs=str(backend_info.kwargs),
         )
         
