@@ -72,3 +72,20 @@ def test_basic_primitives():
                  'h',
                  'measure',
                  'delete_qubits'])
+
+    def test_function(a):
+        qv = QuantumVariable(2)
+        
+        rz(np.pi, qv[0])
+        p(a, qv[0])
+        res_bl = measure(qv[0])
+        qv.delete()
+        return res_bl
+
+    compare_jaxpr(make_jispr(test_function)(2.), 
+                ['create_qubits',
+                 'get_qubit',
+                 'rz',
+                 'p',
+                 'measure',
+                 'delete_qubits'])
