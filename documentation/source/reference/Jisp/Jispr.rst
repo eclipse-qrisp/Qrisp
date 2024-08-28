@@ -9,17 +9,27 @@ Jispr
 Methods
 =======
 
+Manipulation
+^^^^^^^^^^^^
+
 .. autosummary::
    :toctree: generated/
    
-  
    Jispr.inverse
    Jispr.control
+   
+   
+Evaluation
+^^^^^^^^^^
+
+.. autosummary::
+   :toctree: generated/
+   
    Jispr.to_qc
    Jispr.to_qir
    Jispr.to_mlir
    Jispr.to_catalyst_jaxpr
-   
+
 
 Advanced details
 ================

@@ -33,7 +33,7 @@ def jisp_function_test(func):
         
         jispr = make_jispr(func)(*args)
         
-        qc, qv_qubits = jispr.extract_qc(*args)
+        qc, qv_qubits = jispr.to_qc(*args)
         
         clbit_list = []
         for qb in qv_qubits:

@@ -32,7 +32,7 @@ def test_qc_converter():
     for i in range(3, 7):
         
         jispr = make_jispr(test_function)(i)
-        qc = jispr.extract_qc(i)
+        qc = jispr.to_qc(i)
         
         comparison_qc = QuantumCircuit(i)
         comparison_qc.cx(0, 1)
@@ -55,7 +55,7 @@ def test_qc_converter():
         
     
     jispr = make_jispr(test_function)(5)
-    qc = jispr.extract_qc(5)
+    qc = jispr.to_qc(5)
     
     assert len(qc.data) == 3 + len(qc.qubits)
     print(qc)
@@ -75,7 +75,7 @@ def test_qc_converter():
     jispr = make_jispr(test_function)(5)
     flattened_jispr = flatten_pjit(jispr)
     
-    qc = flattened_jispr.extract_qc(5)
+    qc = flattened_jispr.to_qc(5)
     
     assert qc.compare_unitary(comparison_qc)
     
