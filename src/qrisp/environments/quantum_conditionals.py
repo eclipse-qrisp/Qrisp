@@ -28,7 +28,7 @@ from qrisp.misc import (
     redirect_qfunction,
     unlock,
 )
-
+from qrisp.circuit import fast_append
 
 def quantum_condition(function):
     def q_env_generator(*args, **kwargs):
@@ -307,7 +307,13 @@ class ConditionEnvironment(QuantumEnvironment):
 
     def __init__(self, cond_eval_function, args, kwargs={}):
         # The function which evaluates the condition - should return a QuantumBool
-        self.cond_eval_function = cond_eval_function
+        
+        def save_cond_eval(*args, **kwargs):
+            with fast_append(0):
+                res = cond_eval_function(*args, **kwargs)
+            return res
+        
+        self.cond_eval_function = save_cond_eval
 
         # Save the arguments on which the function should be evaluated
         self.args = args
