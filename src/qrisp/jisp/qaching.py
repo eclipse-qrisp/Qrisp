@@ -84,7 +84,7 @@ def qache(func):
         
     Even though ``inner_function`` has been called 4 times, we only see a delay of 2 seconds.
     This is because the function has been called with two different quantum types, implying it
-    has been traced twice and recalled from the cache twice. We take a look at the jaxpr.
+    has been traced twice and recalled from the cache twice. We take a look at the :ref:`jispr`.
     
     >>> print(jispr)
     let inner_function = { lambda ; a:QuantumCircuit b:QubitArray. let
@@ -119,7 +119,7 @@ def qache(func):
         bh:bool[] = and bg be
       in (bd, bh) }
 
-    As expected we see three different function definitions:
+    As expected, we see three different function definitions:
     
     * The first one describes ``inner_function`` called with a :ref:`QuantumVariable`. For this kind of signature only the ``QubitArray`` is required.
     * The second one describes ``inner_function`` called with :ref:`QuantumFloat`. Additionally to the ``QubitArray``, the ``.exponent`` and ``.signed`` attribute are also passed to the function.
