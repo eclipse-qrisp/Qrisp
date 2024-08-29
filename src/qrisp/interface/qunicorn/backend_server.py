@@ -134,9 +134,9 @@ class BackendServer:
             
             response["programs"] = data["programs"]
             
+            
             #Create response object
             response_object = make_response(jsonify(response), 201) 
-            
             return response_object
         
         #This function receives the deployment id of a job and starts the execution
@@ -216,9 +216,9 @@ class BackendServer:
             thread = job["run_thread"]
             
             if not thread.is_alive():
-                state = "finished"
+                state = "FINISHED"
             else:
-                state = "running"
+                state = "RUNNING"
             
             #Find out wether the job suceeded
             if job["exception"] is not None:
@@ -266,14 +266,14 @@ class BackendServer:
               "results": [{
                 "id": 0,
                 "circuit": job["quantumCircuits"][i],
-                "results": job["counts"][i],
+                "data": job["counts"][i],
                 "resultType": "COUNTS",
-                "metaData": {}
+                "metadata": {"format" : "bin"},
               } for i in range(len(job["counts"]))],
               "parameters": ""
             }
     
-            response_object = make_response(jsonify(response), 201)
+            response_object = make_response(jsonify(response), 200)
             
             return response_object
 

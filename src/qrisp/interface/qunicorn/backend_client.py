@@ -62,14 +62,16 @@ class BackendClient:
     """
 
     def __init__(
-            self, requestManager: RequestManager, provider: str, device: str, token="",
+            self, requestManager: RequestManager, provider: str, device: str, token="", batched = False
     ):
         self.provider = provider
         self.device = device
         self.token = token
         self.request_manager = requestManager
+        self.batched = batched
+        self.circuit_batch = []
+        self.results_retrieved = False
 
-    # Executes
     def run(self, qc, shots):
         
         qiskit_qc = monolithical_clreg(qc)
@@ -78,20 +80,40 @@ class BackendClient:
         except:
             from qiskit.qasm2 import dumps
             qasm_str = dumps(qiskit_qc)
+        
+        batch_index = len(self.circuit_batch)
+        self.circuit_batch.append((qasm_str, shots))
+        
+        
+        if self.batched:
+            while True:
+                if self.results_retrieved:
+                    break
+                time.sleep(0.1)
+        else:
+            self.dispatch()
+            
+        res = self.circuit_batch[batch_index]
+        self.circuit_batch[batch_index] = None
+        return res
 
+    def dispatch(self):
+
+        shots = self.circuit_batch[0][1]
+        
         deployment_data = {
             "programs": [
                 {
-                    "quantumCircuit": qasm_str,
+                    "quantumCircuit": batch_data[0],
                     "assemblerLanguage": "QASM2",
                     "pythonFilePath": "",
                     "pythonFileMetadata": "",
                 }
-            ],
+            for batch_data in self.circuit_batch],
             "name": "",
         }
         deployment_response = self.request_manager.post(
-            f"/deployments/",
+            "/deployments",
             json=deployment_data, verify=False
         )
 
@@ -118,7 +140,7 @@ class BackendClient:
         }
 
         job_post_response = self.request_manager.post(
-            f"/jobs/", json=job_data, verify=False
+            f"/jobs", json=job_data, verify=False
         )
         if job_post_response.status_code == 422:
             raise Exception(
@@ -133,7 +155,7 @@ class BackendClient:
 
         while True:
             job_get_response = self.request_manager.get(
-                f"/jobs/{job_id}/",
+                f"/jobs/{job_id}",
                 json=job_data, verify=False
             )
 
@@ -148,7 +170,11 @@ class BackendClient:
 
             time.sleep(0.1)
 
-        for job_result in job_get_response.json()["results"]:
+    
+        for i in range(len(job_get_response.json()["results"])):
+            
+            job_result = job_get_response.json()["results"][i]
+            
             if job_result["resultType"] == "COUNTS":
                 counts = job_result["data"]
                 metadata = job_result["metadata"]
@@ -164,10 +190,29 @@ class BackendClient:
                     ): v
                     for k, v in counts.items()
                 }
+                
+                self.circuit_batch[i] = counts_binary
+            
+            else:
 
-                return counts_binary
-
-        raise ValueError("No COUNTS result type in job response")
+                raise ValueError("No COUNTS result type in job response")
+        
+        if self.batched:
+            
+            
+            self.results_retrieved = True
+            
+            while True:
+                time.sleep(0.1)
+                for i in range(len(self.circuit_batch)):
+                    if self.circuit_batch[i] is not None:
+                        break
+                else:
+                    self.circuit_batch = []
+                    self.results_retrieved = False
+                    break
+            
+        
 
     @staticmethod
     def _ensure_binary(
