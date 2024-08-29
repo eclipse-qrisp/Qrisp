@@ -79,50 +79,51 @@ def qache(func):
         
         # Measure the time required for tracing
         t0 = time.time()
-        jaxpr = make_jaxpr(outer_function)().jaxpr
+        jispr = make_jispr(outer_function)()
         print(time.time() - t0) # 2.0225703716278076
         
     Even though ``inner_function`` has been called 4 times, we only see a delay of 2 seconds.
     This is because the function has been called with two different quantum types, implying it
     has been traced twice and recalled from the cache twice. We take a look at the jaxpr.
     
-    >>> print(jaxpr)
+    >>> print(jispr)
     let inner_function = { lambda ; a:QuantumCircuit b:QubitArray. let
         c:Qubit = get_qubit b 0
         d:QuantumCircuit = h a c
-        e:Qubit = get_qubit b 0
-        f:Qubit = get_qubit b 1
-        g:QuantumCircuit = cx d e f
-        h:Qubit = get_qubit b 0
-        i:QuantumCircuit j:bool[] = measure g h
-      in (i, j) } in
-    let inner_function1 = { lambda ; k:QuantumCircuit l:QubitArray m:i32[] n:bool[]. let
-        o:Qubit = get_qubit l 0
-        p:QuantumCircuit = h k o
-        q:Qubit = get_qubit l 0
-        r:Qubit = get_qubit l 1
-        s:QuantumCircuit = cx p q r
-        t:Qubit = get_qubit l 0
-        u:QuantumCircuit v:bool[] = measure s t
-      in (u, v) } in
-    { lambda ; . let
-        w:QuantumCircuit = qdef 
-        x:QuantumCircuit y:QubitArray = create_qubits w 2
-        z:QuantumCircuit ba:QubitArray = create_qubits x 2
+        e:Qubit = get_qubit b 1
+        f:QuantumCircuit = cx d c e
+        g:QuantumCircuit h:bool[] = measure f c
+      in (g, h) } in
+    let inner_function1 = { lambda ; i:QuantumCircuit j:QubitArray k:i32[] l:bool[]. let
+        m:Qubit = get_qubit j 0
+        n:QuantumCircuit = h i m
+        o:Qubit = get_qubit j 1
+        p:QuantumCircuit = cx n m o
+        q:QuantumCircuit r:bool[] = measure p m
+      in (q, r) } in
+    { lambda ; s:QuantumCircuit. let
+        t:QuantumCircuit u:QubitArray = create_qubits s 2
+        v:QuantumCircuit w:QubitArray = create_qubits t 2
+        x:QuantumCircuit y:bool[] = pjit[name=inner_function jaxpr=inner_function] v
+          u
+        z:QuantumCircuit ba:bool[] = pjit[name=inner_function jaxpr=inner_function1] x
+          w 0 False
         bb:QuantumCircuit bc:bool[] = pjit[name=inner_function jaxpr=inner_function] z
-          y
+          u
         bd:QuantumCircuit be:bool[] = pjit[
           name=inner_function
           jaxpr=inner_function1
-        ] bb ba 0 False
-        bf:QuantumCircuit bg:bool[] = pjit[name=inner_function jaxpr=inner_function] bd
-          y
-        _:QuantumCircuit bh:bool[] = pjit[name=inner_function jaxpr=inner_function1] bf
-          ba 0 False
-        bi:bool[] = and bc be
-        bj:bool[] = and bi bg
-        bk:bool[] = and bj bh
-      in (bk,) }
+        ] bb w 0 False
+        bf:bool[] = and y ba
+        bg:bool[] = and bf bc
+        bh:bool[] = and bg be
+      in (bd, bh) }
+
+    As expected we see three different function definitions:
+    
+    * The first one describes ``inner_function`` called with a :ref:`QuantumVariable`. For this kind of signature only the ``QubitArray`` is required.
+    * The second one describes ``inner_function`` called with :ref:`QuantumFloat`. Additionally to the ``QubitArray``, the ``.exponent`` and ``.signed`` attribute are also passed to the function.
+    * The third function definition is ``outer_function``, which calls the previously defined functions.
 
     """
     

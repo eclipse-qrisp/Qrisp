@@ -131,3 +131,4 @@ If you are interested in how the QIR representation looks like, try calling
    :hidden:
    
    Jispr
+   qache
