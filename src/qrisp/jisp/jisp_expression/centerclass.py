@@ -21,7 +21,7 @@ from jax import make_jaxpr
 from jax.core import Jaxpr, ClosedJaxpr, Literal
 
 from qrisp.jisp.jisp_expression import invert_jispr, multi_control_jispr, collect_environments
-from qrisp.jisp import AbstractQuantumCircuit, eval_jaxpr, flatten_pjit, pjit_to_gate, flatten_environments
+from qrisp.jisp import AbstractQuantumCircuit, eval_jaxpr, pjit_to_gate, flatten_environments
 
 class Jispr(Jaxpr):
     """
@@ -31,7 +31,7 @@ class Jispr(Jaxpr):
     can be represented by the same object. The actual unfolding to a circuit-level
     description is outsourced to 
     `established, classical compilation infrastructure <https://mlir.llvm.org/>`_,
-    implying state-of-the-art compilation speed.
+    implying state-of-the-art compilation speed can be reached.
     
     As a subtype of ``jax.core.Jaxpr``, Jisprs are embedded into the well matured 
     `Jax ecosystem <https://github.com/n2cholas/awesome-jax>`_,
@@ -313,7 +313,72 @@ class Jispr(Jaxpr):
         
         return res
         
+    def flatten_environments(self):
+        """
+        Flattens all environments by applying the corresponding compilation 
+        routines such that no more ``q_env`` primitives are left.
+
+        Returns
+        -------
+        Jispr
+            The Jispr with flattened environments.
+            
+        Examples
+        --------
         
+        We create a Jispr containing an :ref:`InversionEnvironment` and flatten:
+            
+        ::
+
+        	def test_function(i):
+        		qv = QuantumVariable(i)
+        		
+        		with invert():
+        			t(qv[0])
+        			cx(qv[0], qv[1])
+        		
+        		return qv
+        
+        	jispr = make_jispr(test_function)(2)
+        	print(jispr)
+        
+        ::
+        	
+        	{ lambda ; a:QuantumCircuit b:i32[]. let
+        		c:QuantumCircuit d:QubitArray = create_qubits a b
+        		e:QuantumCircuit = q_env[
+        		jispr={ lambda ; f:QuantumCircuit d:QubitArray. let
+                  g:Qubit = get_qubit d 0
+                  h:QuantumCircuit = t f g
+                  i:Qubit = get_qubit d 1
+                  j:QuantumCircuit = cx h g i
+                in (j,) }
+        		type=InversionEnvironment
+        		] c d
+        	  in (e, d) }
+        
+        You can see how the body of the :ref:`InversionEnvironment` is __collected__
+        into another Jispr. This reflects the fact that at their core, 
+        :ref:`QuantumEnvironment <QuantumEnvironment>` describe `higher-order 
+        quantum functions <https://en.wikipedia.org/wiki/Higher-order_function>`_
+        (ie. functions that operate on functions). In order to apply the 
+        transformations induced by the QuantumEnvironment, we can call 
+        ``Jispr.flatten_environments``:
+        
+        >>> print(jispr.flatten_environments)
+        { lambda ; a:QuantumCircuit b:i32[]. let
+            c:QuantumCircuit d:QubitArray = create_qubits a b
+            e:Qubit = get_qubit d 0
+            f:Qubit = get_qubit d 1
+            g:QuantumCircuit = cx c e f
+            h:QuantumCircuit = t_dg g e
+          in (h, d) }
+        
+        We see that as expected, the order of the ``cx`` and the ``t`` gate has been switched and the ``t`` gate has been turned into a ``t_dg``.
+
+        """
+        return flatten_environments(self)
+    
     def __call__(self, *args):
         
         if len(self.outvars) == 1:
@@ -322,7 +387,7 @@ class Jispr(Jaxpr):
         from qrisp.simulator import BufferedQuantumState
         args = [BufferedQuantumState()] + list(args)
         
-        jispr = flatten_environments(self)
+        flattened_jispr = self.flatten_environments()
         
         def eqn_evaluator(eqn, context_dic):
             if eqn.primitive.name == "pjit":
@@ -330,7 +395,7 @@ class Jispr(Jaxpr):
             else:
                 return True
         
-        res = eval_jaxpr(jispr, eqn_evaluator = eqn_evaluator)(*args)
+        res = eval_jaxpr(flattened_jispr, eqn_evaluator = eqn_evaluator)(*args)
         
         if len(self.outvars) == 2:
             return res[1]
