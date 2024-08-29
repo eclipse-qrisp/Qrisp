@@ -98,6 +98,8 @@ class BackendClient:
         return res
 
     def dispatch(self):
+        if len(self.circuit_batch) == 0:
+            return
 
         shots = self.circuit_batch[0][1]
         
