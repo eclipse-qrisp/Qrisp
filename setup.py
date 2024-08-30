@@ -25,7 +25,8 @@ REQUIREMENTS = ["qiskit>=0.44.0",
                 "networkx",
                 "tdqm",
                 "dill",
-                "flask"]
+                "flask",
+                "waitress",]
 
 
 with open("README.md", "r", encoding="utf-8") as fh:
