@@ -243,12 +243,12 @@ def exec_multi_measurement(catalyst_register, start, stop):
         qb = qextract_p.bind(reg, i)
         res_bl, res_qb = qmeasure_p.bind(qb)
         reg = qinsert_p.bind(reg, i, res_qb)
-        acc = acc + (2<<(i-start))*res_bl
+        acc = acc + (1<<(i-start))*res_bl
         i += 1
         return i, acc, reg, start, stop
     
     def cond_body(i, acc, reg, start, stop):
-        return i >= stop
+        return i < stop
     
     # Turn them into jaxpr
     loop_jaxpr = make_jaxpr(loop_body)(0, 0, catalyst_register.aval, 0, 0)

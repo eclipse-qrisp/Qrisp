@@ -22,7 +22,6 @@ import pennylane as qml
 import catalyst
 from catalyst.jax_primitives import qalloc_p, qdevice_p, AbstractQreg
 
-
 from qrisp.jisp import AbstractQubitArray, AbstractQubit, AbstractQuantumCircuit
 from qrisp.jisp.interpreter_tools.interpreters.catalyst_interpreter import catalyst_eqn_evaluator
 from qrisp.jisp import eval_jaxpr
