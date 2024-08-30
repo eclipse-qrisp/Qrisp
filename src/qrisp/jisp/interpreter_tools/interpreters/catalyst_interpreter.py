@@ -94,7 +94,6 @@ def catalyst_eqn_evaluator(eqn, context_dic):
         elif isinstance(eqn.primitive, Operation):
             process_op(eqn.primitive, invars, outvars, context_dic)
         else:
-            print(type(eqn.primitive))
             raise Exception(f"Don't know how to process QuantumPrimitive {eqn.primitive}")
     else:
         return True

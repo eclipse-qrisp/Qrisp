@@ -421,7 +421,7 @@ class Jispr(Jaxpr):
         return res
         
     
-    def qjit(self, *args, function_name = None):
+    def qjit(self, *args, function_name = "jispr_function"):
         """
         Leverages the Catalyst pipeline to compile a QIR representation of 
         this function and executes that function using the Catalyst QIR runtime.
@@ -727,7 +727,7 @@ class Jispr(Jaxpr):
 
         """
         from qrisp.jisp.catalyst_interface import jispr_to_qir
-        return jispr_to_qir(self, args)
+        return jispr_to_qir(self.flatten_environments(), args)
     
     def to_mlir(self, *args):
         """
@@ -821,7 +821,7 @@ class Jispr(Jaxpr):
             
         """
         from qrisp.jisp.catalyst_interface import jispr_to_mlir
-        return jispr_to_mlir(self, args)
+        return jispr_to_mlir(self.flatten_environments(), args)
     
     def to_catalyst_jaxpr(self):
         """
@@ -902,7 +902,7 @@ class Jispr(Jaxpr):
         
         """
         from qrisp.jisp.catalyst_interface import jispr_to_catalyst_jaxpr
-        return jispr_to_catalyst_jaxpr(self)
+        return jispr_to_catalyst_jaxpr(self.flatten_environments())
     
     
     
