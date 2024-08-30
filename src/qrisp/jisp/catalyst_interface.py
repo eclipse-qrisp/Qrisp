@@ -28,7 +28,44 @@ from qrisp.jisp.interpreter_tools.interpreters.catalyst_interpreter import catal
 from qrisp.jisp import eval_jaxpr
 
 def jispr_to_catalyst_jaxpr(jispr):
+    """
+    Converts a Jispr into a Catalyst Jaxpr.
     
+    Since the Jisp modelling aproach of quantum computation differs a bit from
+    the Catalyst Jaxpr model, we have to translate between the models.
+    
+    The AbstractQreg datastructure in Catalyst is treated as a stack of qubits,
+    that can each be adressed by an integer. We therefore make the following 
+    conceptual replacements.
+    
+    
+    AbstractQubit -> A simple integer denoting the position of the Qubit in the stack.
+    
+    AbstractQubitArray -> A tuple of two integers. The first integer indicates
+                        the "starting position" of the Qubits of the QubitArray
+                        in the stack, and the second integer denotes the length
+                        of the QubitArray.
+    
+    AbstractQuantumCircuit -> A tuple of a AbstractQreg and an integer i. The integer
+                            denotes the current "stack size", ie. if a new 
+                            QubitArray of size l is allocated it will be an 
+                            interval of qubits starting at position i and the 
+                            new tuple representing the new AbstractQuantumCircuit
+                            will have i_new = i + l
+    
+    Parameters
+    ----------
+    jispr : qrisp.jisp.Jispr
+        The input jispr.
+
+    Returns
+    -------
+    jax.core.Jaxpr
+        The output Jaxpr using catalyst primitives.
+
+    """
+    
+    # Translate the input args according to the above rules.
     args = []
     for invar in jispr.invars:
         if isinstance(invar.aval, AbstractQuantumCircuit):
@@ -39,8 +76,10 @@ def jispr_to_catalyst_jaxpr(jispr):
             args.append(0)
         else:
             args.append(invar.aval)
-        
+    
+    # Call the Catalyst interpreter
     return make_jaxpr(eval_jaxpr(jispr, eqn_evaluator = catalyst_eqn_evaluator))(*args)
+    
 
 
 def jispr_to_catalyst_function(jispr):
