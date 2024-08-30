@@ -312,7 +312,11 @@ class QuantumFloat(QuantumVariable):
             res = signed_int_iso_inv(i, self.size - 1) * 2.0**self.exponent
         else:
             from jax.numpy import float32
-            res = i * float32(2)**self.exponent
+            from jax.core import Tracer
+            if isinstance(i, Tracer):
+                res = i * float32(2)**self.exponent
+            else:
+                res = i * 2**self.exponent
 
         if self.exponent >= 0:
             if isinstance(res, (int, float)):
