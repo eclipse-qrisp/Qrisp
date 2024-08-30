@@ -436,8 +436,10 @@ class Jispr(Jaxpr):
             The values returned by the compiled, executed function.
 
         """
+        flattened_jispr = self.flatten_environments()
+        
         from qrisp.jisp.catalyst_interface import jispr_to_catalyst_qjit
-        qjit_obj = jispr_to_catalyst_qjit(self, function_name = function_name)(*args)
+        qjit_obj = jispr_to_catalyst_qjit(flattened_jispr, function_name = function_name)(*args)
         return qjit_obj.compiled_function(*args)
     
     @classmethod
@@ -998,8 +1000,9 @@ def qjit(function):
         @qjit
         def test_fun(i):
             qv = QuantumFloat(i, -2)
-            h(qv[0])
-            cx(qv[0], qv[qv.size-1])
+            with invert():
+                cx(qv[0], qv[qv.size-1])
+                h(qv[0])
             meas_res = measure(qv)
             return meas_res + 3
             
@@ -1007,11 +1010,11 @@ def qjit(function):
     We execute the function a couple of times to demonstrate the randomness
     
     >>> test_fun(4)
-    [array(5.25)]
+    [array(5.25, dtype=float32)]
     >>> test_fun(5)
-    [array(3.)]
+    [array(3., dtype=float32)]
     >>> test_fun(5)
-    [array(7.25)]
+    [array(7.25, dtype=float32)]
 
     """
     

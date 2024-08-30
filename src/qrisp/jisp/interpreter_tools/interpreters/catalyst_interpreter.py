@@ -41,6 +41,8 @@ op_name_translation_dic = {"cx" : "CNOT",
                        "rz" : "RZ",
                        "s" : "S",
                        "t" : "T",
+                       "t_dg" : "T_dg",
+                       "s_dg" : "S_dg",
                        "p" : "Phasegate"}
 
 

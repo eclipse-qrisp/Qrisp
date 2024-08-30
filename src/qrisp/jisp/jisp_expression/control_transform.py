@@ -91,8 +91,8 @@ def control_jispr(jispr):
     
     return Jispr(permeability = permeability,
                  isqfree = jispr.isqfree,
-                 constvars = [ctrl_qubit_var] + jispr.constvars, 
-                 invars = jispr.invars, 
+                 constvars = jispr.constvars, 
+                 invars = jispr.invars[:1] + [ctrl_qubit_var] + jispr.invars[1:], 
                  outvars = jispr.outvars, 
                  eqns = new_eqns)
         
