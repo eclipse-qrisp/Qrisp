@@ -85,6 +85,8 @@ def catalyst_eqn_evaluator(eqn, context_dic):
             process_get_qubit(invars, outvars, context_dic)
         elif eqn.primitive.name == "measure":
             process_measurement(invars, outvars, context_dic)
+        elif eqn.primitive.name == "get_size":
+            process_get_size(invars, outvars, context_dic)
         elif eqn.primitive.name == "delete_qubits":
             pass
         elif isinstance(eqn.primitive, Operation):
@@ -94,7 +96,7 @@ def catalyst_eqn_evaluator(eqn, context_dic):
             raise Exception(f"Don't know how to process QuantumPrimitive {eqn.primitive}")
     else:
         return True
-            
+    
 
 
 def process_create_qubits(invars, outvars, context_dic):
@@ -121,6 +123,11 @@ def process_get_qubit(invars, outvars, context_dic):
     qubit_array_starting_index = context_dic[invars[0]][0]
     qubit_index = context_dic[invars[1]]
     context_dic[outvars[0]] = qubit_array_starting_index + qubit_index
+    
+def process_get_size(invars, outvars, context_dic):
+    # The size is simply the second entry of the QubitArray representation
+    context_dic[outvars[0]] = context_dic[invars[0]][1]
+    
     
 def process_op(op, invars, outvars, context_dic):
     

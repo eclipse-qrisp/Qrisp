@@ -26,10 +26,12 @@ Evaluation
 .. autosummary::
    :toctree: generated/
    
+   Jispr.qjit
    Jispr.to_qc
    Jispr.to_qir
    Jispr.to_mlir
    Jispr.to_catalyst_jaxpr
+   
 
 
 Advanced details

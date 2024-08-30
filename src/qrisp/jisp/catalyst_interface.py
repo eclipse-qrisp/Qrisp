@@ -133,20 +133,6 @@ def jispr_to_catalyst_qjit(jispr, function_name = "jispr_function"):
     return inner_function
     
 
-def qjit(function):
-    # This decorator takes a Qrisp function, compiles it using Catalyst and runs it
-    # on the Catalyst runtime.
-    
-    from qrisp.jisp import make_jispr
-    
-    def jitted_function(*args):
-        jispr = make_jispr(function)(*args)
-        qjit_obj = jispr_to_catalyst_qjit(jispr, function_name = function.__name__)(*args)
-        return qjit_obj.compiled_function(*args)
-    
-    return jitted_function
-
-
 def jispr_to_qir(jispr, args):
     # This function returns the QIR code for a given Jispr
     qjit_obj = jispr_to_catalyst_qjit(jispr)(*args)

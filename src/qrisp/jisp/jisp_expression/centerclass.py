@@ -420,7 +420,26 @@ class Jispr(Jaxpr):
         qs.abs_qc = new_abs_qc
         return res
         
-        
+    
+    def qjit(self, *args, function_name = None):
+        """
+        Leverages the Catalyst pipeline to compile a QIR representation of 
+        this function and executes that function using the Catalyst QIR runtime.
+
+        Parameters
+        ----------
+        *args : iterable
+            The arguments to call the function with.
+
+        Returns
+        -------
+            The values returned by the compiled, executed function.
+
+        """
+        from qrisp.jisp.catalyst_interface import jispr_to_catalyst_qjit
+        qjit_obj = jispr_to_catalyst_qjit(self, function_name = function_name)(*args)
+        return qjit_obj.compiled_function(*args)
+    
     @classmethod
     @lru_cache(maxsize = int(1E5))
     def from_cache(cls, jaxpr):
@@ -949,9 +968,55 @@ def recursive_convert(jaxpr):
     
     return Jispr.from_cache(jaxpr)
 
-    
+
+def qjit(function):
+    """
+    Decorator to leverage the Jisp + Catalyst infrastructure to compile the given
+    function to QIR and run it on the Catalyst QIR runtime.
+
+    Parameters
+    ----------
+    function : callable
+        A function performing Qrisp code.
+
+    Returns
+    -------
+    callable
+        A function executing the compiled code.
         
+    Examples
+    --------
+    
+    We write a simple function using the QuantumFloat quantum type and execute
+    via ``qjit``:
         
-            
+    ::
+        
+        from qrisp import *
+        from qrisp.jisp import qjit
+
+        @qjit
+        def test_fun(i):
+            qv = QuantumFloat(i, -2)
+            h(qv[0])
+            cx(qv[0], qv[qv.size-1])
+            meas_res = measure(qv)
+            return meas_res + 3
             
     
+    We execute the function a couple of times to demonstrate the randomness
+    
+    >>> test_fun(4)
+    [array(5.25)]
+    >>> test_fun(5)
+    [array(3.)]
+    >>> test_fun(5)
+    [array(7.25)]
+
+    """
+    
+    def jitted_function(*args):
+        jispr = make_jispr(function)(*args)
+        return jispr.qjit(*args, function_name = function.__name__)
+    
+    return jitted_function

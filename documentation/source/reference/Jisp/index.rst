@@ -130,5 +130,6 @@ If you are interested in how the QIR representation looks like, try calling
    :maxdepth: 2
    :hidden:
    
+   QJIT
    Jispr
    qache
