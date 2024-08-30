@@ -122,7 +122,7 @@ def qompiler(
             if isinstance(op, (LogicSynthGate, GidneyLogicalAND, JonesToffoli, QuasiRZZ)):
                 return False
             
-            if "QFT" == op.name[:3]:
+            if "QFT" == op.name[:3] or "equal" in op.name or "less_than" in op.name:
                 return False
             
             return True
