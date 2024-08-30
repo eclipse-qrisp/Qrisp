@@ -84,7 +84,11 @@ def jispr_to_catalyst_jaxpr(jispr):
 
 def jispr_to_catalyst_function(jispr):
     
-    # Initiate Catalyst backend
+    # This function takes a Jispr and returns a function that performs a sequence
+    # of .bind calls of Catalyst primitives, such that the function (when compiled)
+    # by Catalyst reproduces the semantics of Jispr
+    
+    # Initiate Catalyst backend info
     device = qml.device("lightning.qubit", wires=0)        
     program_features = catalyst.utils.toml.ProgramFeatures(shots_present=False)
     device_capabilities = catalyst.device.get_device_capabilities(device, program_features)
@@ -98,20 +102,26 @@ def jispr_to_catalyst_function(jispr):
         rtd_kwargs=str(backend_info.kwargs),
         )
         
+        # Create the AbstractQreg
         qreg = qalloc_p.bind(20)
         
+        # Insert the Qreg into the list of arguments (such that it is used by the
+        # Catalyst interpreter.
         args = list(args)
         args.insert(0, (qreg, 0))
         
+        # Call the catalyst interpreter. The first return value will be the AbstractQreg
+        # tuple, which is why we exclude it from the return values
         return eval_jaxpr(jispr, eqn_evaluator = catalyst_eqn_evaluator)(*args)[1:]
     
     return catalyst_function
 
 
 def jispr_to_catalyst_qjit(jispr, function_name = "jispr_function"):
+    # This function takes a Jispr and turns it into a Catalyst QJIT object.
     
     def inner_function(*args):
-        
+        # Perform the code specified by the Catalyst developers
         catalyst_function = jispr_to_catalyst_function(jispr)
         catalyst_function.__name__ = function_name
         jit_object = catalyst.QJIT(catalyst_function, catalyst.CompileOptions())
@@ -125,6 +135,8 @@ def jispr_to_catalyst_qjit(jispr, function_name = "jispr_function"):
     
 
 def qjit(function):
+    # This decorator takes a Qrisp function, compiles it using Catalyst and runs it
+    # on the Catalyst runtime.
     
     from qrisp.jisp import make_jispr
     
@@ -137,9 +149,11 @@ def qjit(function):
 
 
 def jispr_to_qir(jispr, args):
+    # This function returns the QIR code for a given Jispr
     qjit_obj = jispr_to_catalyst_qjit(jispr)(*args)
     return qjit_obj.qir
     
 def jispr_to_mlir(jispr, args):
+    # This function returns the MLIR code for a given Jispr
     qjit_obj = jispr_to_catalyst_qjit(jispr)(*args)
     return qjit_obj.mlir
