@@ -1066,10 +1066,10 @@ class QuantumVariable:
             return self.reg[key]
         else:
             id_tuple = (id(self.reg), id(key))
-            if not id_tuple in self.qubit_cache:
+            if not id_tuple in self.qs.qubit_cache:
                 from qrisp.jisp import get_qubit
-                self.qubit_cache[id_tuple] = get_qubit(self.reg, key)
-            return self.qubit_cache[id_tuple]
+                self.qs.qubit_cache[id_tuple] = get_qubit(self.reg, key)
+            return self.qs.qubit_cache[id_tuple]
     def __str__(self):
         return str(self.get_measurement())
     

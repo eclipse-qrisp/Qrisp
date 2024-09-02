@@ -29,6 +29,7 @@ class TracingQuantumSession:
         self.abs_qc = abs_qc
         self.qv_list = []
         self.deleted_qv_list = []
+        self.qubit_cache = {}
         TracingQuantumSession.tr_qs_container = [self]
         
     def append(self, operation, qubits = [], clbits = []):

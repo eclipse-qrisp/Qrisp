@@ -383,6 +383,8 @@ class QuantumEnvironment(QuantumPrimitive):
         
         abs_qs = TracingQuantumSession.get_instance()
         if abs_qs is not None:
+            self.temp_qubit_cache = abs_qs.qubit_cache
+            abs_qs.qubit_cache = {}
             abs_qs.abs_qc = self.bind(abs_qs.abs_qc, *self.env_args, stage = "enter", type = str(type(self)).split(".")[-1][:-2])
             return
             
@@ -432,6 +434,7 @@ class QuantumEnvironment(QuantumPrimitive):
         
         abs_qs = TracingQuantumSession.get_instance()
         if abs_qs is not None:
+            abs_qs.qubit_cache = self.temp_qubit_cache
             abs_qs.abs_qc = self.bind(abs_qs.abs_qc, stage = "exit", type = str(type(self)).split(".")[-1][:-2])
             return
         

@@ -49,6 +49,7 @@ def test_basic_primitives():
     compare_jaxpr(make_jispr(test_function)(), 
                 ['create_qubits',
                  'q_env',
+                 'get_qubit',
                  'measure'])    
 
     def test_function():
