@@ -68,13 +68,13 @@ def flatten_collected_environments(jispr):
     
     # It is now much easier to apply higher order transformations with this kind
     # of data structure.
-    def eqn_evaluator(eqn, context_dic):
-        if eqn.primitive.name == "q_env":
-            flatten_environment_eqn(eqn, context_dic)
-        elif eqn.primitive.name == "pjit":
-            flatten_environments_in_pjit_eqn(eqn, context_dic)
+    def eqn_evaluator(primitive, *args, **kwargs):
+        if primitive.name == "q_env":
+            return primitive.jcompile(*args, **kwargs)
+        elif primitive.name == "pjit":
+            return flatten_environments_in_pjit(primitive, *args, **kwargs)
         else:
-            return True
+            return primitive.bind(*args, **kwargs)
     
     # The flatten_environment_eqn function below executes the collected QuantumEnvironments
     # according to their semantics
@@ -158,7 +158,7 @@ def flatten_environment_eqn(env_eqn, context_dic):
         context_dic[env_eqn.outvars[i]] = new_context_dic[transformed_jaxpr.outvars[i]]
     
     
-def flatten_environments_in_pjit_eqn(eqn, context_dic):
+def flatten_environments_in_pjit(primitive, *args, **kwargs):
     """
     Flattens environments in a pjit primitive
 
@@ -175,9 +175,10 @@ def flatten_environments_in_pjit_eqn(eqn, context_dic):
 
     """
     
+    new_params = dict(**kwargs)
     from qrisp.jisp import Jispr
-    if isinstance(eqn.params["jaxpr"].jaxpr, Jispr):
-        eqn.params["jaxpr"] = ClosedJaxpr(flatten_collected_environments(eqn.params["jaxpr"].jaxpr),
-                                          eqn.params["jaxpr"].consts)
+    if isinstance(kwargs["jaxpr"].jaxpr, Jispr):
+        flattened_jispr = flatten_collected_environments(kwargs["jaxpr"].jaxpr)
+        new_params["jaxpr"] = ClosedJaxpr(flattened_jispr, kwargs["jaxpr"].consts)
     
-    exec_eqn(eqn, context_dic)
+    return primitive.bind(*args, **new_params)

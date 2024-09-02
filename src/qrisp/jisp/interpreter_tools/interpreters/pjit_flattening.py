@@ -20,20 +20,16 @@ from jax.core import JaxprEqn, Literal, ClosedJaxpr
 from jax import jit, make_jaxpr
 from qrisp.jisp.interpreter_tools import eval_jaxpr, extract_invalues, insert_outvalues, reinterpret
 
-def evaluate_pjit_eqn(pjit_eqn, context_dic):
+def evaluate_pjit_eqn(pjit_primitive, *args, **kwargs):
     
-    definition_jaxpr = pjit_eqn.params["jaxpr"].jaxpr
+    definition_jaxpr = kwargs["jaxpr"].jaxpr
     
-    # Extract the invalues from the context dic
-    invalues = extract_invalues(pjit_eqn, context_dic)
-        
-    res = jit(eval_jaxpr(definition_jaxpr), inline = True)(*invalues)
+    res = jit(eval_jaxpr(definition_jaxpr), inline = True)(*args)
     
     if len(definition_jaxpr.outvars) == 1:
         res = [res]
 
-    # Insert the values into the context_dic
-    insert_outvalues(pjit_eqn, context_dic, res)
+    return res
                 
 # Flattens/Inlines a pjit calls in a jaxpr
 def flatten_pjit(jaxpr):
@@ -41,11 +37,11 @@ def flatten_pjit(jaxpr):
     if isinstance(jaxpr, ClosedJaxpr):
         jaxpr = jaxpr.jaxpr
     
-    def eqn_evaluator(eqn, context_dic):
-        if eqn.primitive.name == "pjit":
-            evaluate_pjit_eqn(eqn, context_dic)
+    def eqn_evaluator(primitive, *args, **kwargs):
+        if primitive.name == "pjit":
+            return evaluate_pjit_eqn(primitive, *args, **kwargs)
         else:
-            return True
+            return primitive.bind(*args, **kwargs)
     
     return type(jaxpr)(reinterpret(jaxpr, eqn_evaluator))
     

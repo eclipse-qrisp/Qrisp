@@ -18,7 +18,7 @@
 
 from jax.core import JaxprEqn, Literal, ClosedJaxpr, Tracer, Literal
 from jax import jit, make_jaxpr
-from qrisp.jisp import check_for_tracing_mode
+from qrisp.jisp import check_for_tracing_mode, QuantumPrimitive
 
 class ContextDict(dict):
     
@@ -48,10 +48,13 @@ def exec_eqn(eqn, context_dic):
     res = eqn.primitive.bind(*invalues, **eqn.params)
     insert_outvalues(eqn, context_dic, res)
 
+def default_bind(primitive, *args, **kwargs):
+    return primitive.bind(*args, **kwargs)
+
 
 def eval_jaxpr(jaxpr, 
                return_context_dic = False, 
-               eqn_evaluator = exec_eqn):
+               eqn_evaluator = default_bind):
     """
     Evaluates a Jaxpr using the given context dic to replace variables
 
@@ -116,7 +119,32 @@ def eval_jaxpr_with_context_dic(jaxpr, context_dic, eqn_evaluator = exec_eqn):
     
     # Iterate through the equations
     for eqn in jaxpr.eqns:
+        
+        
         # Evaluate the primitive
+        invalues = extract_invalues(eqn, context_dic)
+        if eqn.primitive.name in ["while", "cond"]:
+            for val in invalues:
+                if isinstance(val, Tracer):
+                    break
+            else:
+                from qrisp.jisp import evaluate_cond_eqn, evaluate_while_loop
+                
+                if eqn.primitive.name == "while":
+                    
+                    outvalues = evaluate_while_loop(eqn.primitive, *invalues, **eqn.params)
+                else:
+                    outvalues = evaluate_cond_eqn(eqn.primitive, *invalues, **eqn.params)
+                
+                if not isinstance(outvalues, (list, tuple)):
+                    outvalues = (outvalues,)
+                insert_outvalues(eqn, context_dic, outvalues)
+                continue
+            
+        outvalues = eqn_evaluator(eqn.primitive, *invalues, **eqn.params)
+        insert_outvalues(eqn, context_dic, outvalues)
+        
+        continue
         default_eval = eqn_evaluator(eqn, context_dic)
         if default_eval:
             exec_eqn(eqn, context_dic)

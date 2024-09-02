@@ -378,8 +378,9 @@ class ControlEnvironment(QuantumEnvironment):
                 self.sub_condition_envs + [self]
             )
             
-    def jcompile(self, body_jispr, *args):
+    def jcompile(self, *args, **kwargs):
         
+        body_jispr = kwargs["jispr"]
         num_ctrl = len(args) - len(body_jispr.invars)
         flattened_jispr = body_jispr.flatten_environments()
         controlled_jispr = flattened_jispr.control(num_ctrl)

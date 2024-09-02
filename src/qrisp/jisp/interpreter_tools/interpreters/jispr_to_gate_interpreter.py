@@ -19,7 +19,7 @@
 from qrisp.jisp.primitives import QuantumPrimitive
 from qrisp.jisp.interpreter_tools import eval_jaxpr, extract_invalues, insert_outvalues
 
-def pjit_to_gate(pjit_eqn, context_dic):
+def pjit_to_gate(pjit_primitive, *args, **kwargs):
     """
     Wraps the content of a pjit primitive into a gate and appends the gate.
 
@@ -36,28 +36,25 @@ def pjit_to_gate(pjit_eqn, context_dic):
     """
     
     # Set alias for the function definition
-    definition_jaxpr = pjit_eqn.params["jaxpr"].jaxpr
+    definition_jaxpr = kwargs["jaxpr"].jaxpr
     
-    # Extract the invalues from the context dic
-    invalues = extract_invalues(pjit_eqn, context_dic)
-        
     from qrisp.circuit import QuantumCircuit
     # Create new context dic and fill with invalues
     
     # Exchange the QuantumCircuit to an empty one to "track" the function
-    if isinstance(invalues[0], QuantumCircuit):
-        old_qc = invalues[0]
+    if isinstance(args[0], QuantumCircuit):
+        old_qc = args[0]
         new_qc = old_qc.clearcopy()
-        invalues = list(invalues)
-        invalues[0] = new_qc
+        args = list(args)
+        args[0] = new_qc
 
     # Evaluate the definition
-    res = eval_jaxpr(definition_jaxpr)(*invalues)
+    res = eval_jaxpr(definition_jaxpr)(*args)
     
     if len(definition_jaxpr.outvars) == 1:
         res = [res]
     
-    if isinstance(invalues[0], QuantumCircuit):
+    if isinstance(args[0], QuantumCircuit):
         
         # Add new qubits/clbits to the circuit        
         for qb in set(new_qc.qubits) - set(old_qc.qubits):
@@ -81,11 +78,11 @@ def pjit_to_gate(pjit_eqn, context_dic):
             new_qc.clbits.remove(cb)
         
         # Append the wrapped old circuit to the new circuit
-        old_qc.append(new_qc.to_op(name = pjit_eqn.params["name"]), new_qc.qubits, new_qc.clbits)
+        old_qc.append(new_qc.to_op(name = kwargs["name"]), new_qc.qubits, new_qc.clbits)
         
         res = list(res)
         res[0] = old_qc
+    
+    return res
       
-    # Insert the result into the context dic
-    insert_outvalues(pjit_eqn, context_dic, res)
 

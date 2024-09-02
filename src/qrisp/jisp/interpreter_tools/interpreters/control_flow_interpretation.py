@@ -20,38 +20,30 @@ from jax.core import JaxprEqn, Literal, ClosedJaxpr
 from jax import jit, make_jaxpr
 from qrisp.jisp.interpreter_tools import eval_jaxpr, extract_invalues, insert_outvalues
 
-def evaluate_cond_eqn(cond_eqn, context_dic):
-    
-    # Extract the invalues from the context dic
-    invalues = extract_invalues(cond_eqn, context_dic)
+def evaluate_cond_eqn(primitive, *invalues, **params):
     
     if bool(invalues[0]):
-        res = eval_jaxpr(cond_eqn.params["branches"][1])(*invalues[1:])
+        res = eval_jaxpr(params["branches"][1])(*invalues[1:])
     else:
-        res = eval_jaxpr(cond_eqn.params["branches"][0])(*invalues[1:])
+        res = eval_jaxpr(params["branches"][0])(*invalues[1:])
     
-    if not isinstance(res, tuple):
-        res = (res,)
-        
-    insert_outvalues(cond_eqn, context_dic, res)
+    return res
     
     
-def evaluate_while_loop(while_loop_eqn, context_dic):
+def evaluate_while_loop(primitive, *args, **params):
     
-    num_const_cond_args = while_loop_eqn.params["body_nconsts"]
-    num_const_body_args = while_loop_eqn.params["body_nconsts"]
+    num_const_cond_args = params["body_nconsts"]
+    num_const_body_args = params["body_nconsts"]
+    invalues = list(args)
     
     def break_condition(invalues):
         non_const_values = invalues[num_const_cond_args:]
-        return eval_jaxpr(while_loop_eqn.params["cond_jaxpr"])(*non_const_values)
-    
-    # Extract the invalues from the context dic
-    invalues = extract_invalues(while_loop_eqn, context_dic)
+        return eval_jaxpr(params["cond_jaxpr"])(*non_const_values)
     
     while break_condition(invalues):
-        outvalues = eval_jaxpr(while_loop_eqn.params["body_jaxpr"])(*invalues)
+        outvalues = eval_jaxpr(params["body_jaxpr"])(*invalues)
         
         # Update the non-const invalues
         invalues[num_const_body_args:] = outvalues
     
-    insert_outvalues(while_loop_eqn, context_dic, outvalues)
+    return outvalues

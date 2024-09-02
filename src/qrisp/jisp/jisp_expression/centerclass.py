@@ -303,17 +303,22 @@ class Jispr(Jaxpr):
         from qrisp import QuantumCircuit
         jispr = flatten_environments(self)
         
-        def eqn_evaluator(eqn, context_dic):
-            if eqn.primitive.name == "pjit":
-                pjit_to_gate(eqn, context_dic)
+        def eqn_evaluator(primitive, *args, **kwargs):
+            if primitive.name == "pjit":
+                return pjit_to_gate(primitive, *args, **kwargs)
             else:
-                return True
+                return primitive.bind(*args, **kwargs)
         
         res = eval_jaxpr(jispr, eqn_evaluator = eqn_evaluator)(*([QuantumCircuit()] + list(args)))
         
         return res
     
-    def eval(self, *args, eqn_evaluator = lambda x, y : True):
+    def eval(self, *args, eqn_evaluator = None):
+        if eqn_evaluator is None:
+            
+            def eqn_evaluator(primitive, *args, **kwargs):
+                return primitive.bind(*args, **kwargs)
+        
         return eval_jaxpr(self, eqn_evaluator = eqn_evaluator)(*args)
         
     def flatten_environments(self):
@@ -392,11 +397,11 @@ class Jispr(Jaxpr):
         
         flattened_jispr = self.flatten_environments()
         
-        def eqn_evaluator(eqn, context_dic):
-            if eqn.primitive.name == "pjit":
-                pjit_to_gate(eqn, context_dic)
+        def eqn_evaluator(primitive, *args, **kwargs):
+            if primitive.name == "pjit":
+                return pjit_to_gate(primitive, *args, **kwargs)
             else:
-                return True
+                return primitive.bind(*args, **kwargs)
         
         res = eval_jaxpr(flattened_jispr, eqn_evaluator = eqn_evaluator)(*args)
         
