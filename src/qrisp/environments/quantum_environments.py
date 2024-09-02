@@ -517,3 +517,17 @@ class QuantumEnvironment(QuantumPrimitive):
             else:
                 # Append instruction
                 self.env_qs.append(instruction)
+                
+    def jcompile(self, body_jispr, *args):
+        from qrisp.jisp import eval_jaxpr, extract_invalues, flatten_environment_eqn
+        
+        def eqn_evaluator(eqn, context_dic):
+            
+            if isinstance(eqn.primitive, QuantumEnvironment):
+                flatten_environment_eqn(eqn, context_dic)
+            else:
+                return True
+        
+        return eval_jaxpr(body_jispr, eqn_evaluator = eqn_evaluator)(*args)
+                
+                

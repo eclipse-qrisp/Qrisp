@@ -101,6 +101,20 @@ def flatten_environment_eqn(env_eqn, context_dic):
 
     """
     
+    # Extract the invalues
+    invalues = extract_invalues(env_eqn, context_dic)
+    
+    res = env_eqn.primitive.jcompile(env_eqn.params["jispr"], *invalues)
+    # Insert the outvalues into the context dic
+    
+    if not isinstance(res, tuple):
+        res = (res,)
+    
+    for i in range(len(env_eqn.outvars)):
+        context_dic[env_eqn.outvars[i]] = res[i]
+    
+    return
+    
     # Set an alias for the function body
     body_jispr = env_eqn.params["jispr"]
     
@@ -115,9 +129,6 @@ def flatten_environment_eqn(env_eqn, context_dic):
         transformed_jaxpr = body_jispr.control(num_ctrl)
     else:
         transformed_jaxpr = body_jispr
-        
-    # Extract the invalues
-    invalues = extract_invalues(env_eqn, context_dic)
     
     # Create a new context_dic
     new_context_dic = ContextDict()

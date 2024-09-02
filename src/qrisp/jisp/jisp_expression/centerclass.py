@@ -312,6 +312,9 @@ class Jispr(Jaxpr):
         res = eval_jaxpr(jispr, eqn_evaluator = eqn_evaluator)(*([QuantumCircuit()] + list(args)))
         
         return res
+    
+    def eval(self, *args, eqn_evaluator = lambda x, y : True):
+        return eval_jaxpr(self, eqn_evaluator = eqn_evaluator)(*args)
         
     def flatten_environments(self):
         """

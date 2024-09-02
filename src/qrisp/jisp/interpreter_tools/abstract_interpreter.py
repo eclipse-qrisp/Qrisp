@@ -118,7 +118,6 @@ def eval_jaxpr_with_context_dic(jaxpr, context_dic, eqn_evaluator = exec_eqn):
     for eqn in jaxpr.eqns:
         # Evaluate the primitive
         default_eval = eqn_evaluator(eqn, context_dic)
-        
         if default_eval:
             exec_eqn(eqn, context_dic)
         

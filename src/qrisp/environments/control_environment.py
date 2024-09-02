@@ -377,7 +377,14 @@ class ControlEnvironment(QuantumEnvironment):
             self.parent_cond_env.sub_condition_envs.extend(
                 self.sub_condition_envs + [self]
             )
-
+            
+    def jcompile(self, body_jispr, *args):
+        
+        num_ctrl = len(args) - len(body_jispr.invars)
+        flattened_jispr = body_jispr.flatten_environments()
+        controlled_jispr = flattened_jispr.control(num_ctrl)
+        return controlled_jispr.eval(*args)
+        
 
 # This function turns instructions where the definition contains CustomControlOperations
 # into CustomControlOperations. For this it checks that all Instructions that are acting
