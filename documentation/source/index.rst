@@ -398,7 +398,7 @@ Who is behind Qrisp
     <div class="code-example-text">
     
 
-Qrisp is an open-source project developed at `Fraunhofer FOKUS <https://www.fokus.fraunhofer.de/en/>`_, an industrial research facility based in Berlin. It is publicly funded by the German ministry of econmic affairs with the aim to enable commercial use of quantum computation. To achieve this, we aim to open this field of research to a broad audience of developers. Furthermore we are proud to announce that Qrisp will become a part of the `Eclipse foundation <https://www.eclipse.org/>`_!
+Qrisp is an open-source project developed at `Fraunhofer FOKUS <https://www.fokus.fraunhofer.de/en/>`_, an industrial research facility based in Berlin. It is publicly funded by the `German ministry of economic affairs <https://www.digitale-technologien.de/DT/Navigation/DE/ProgrammeProjekte/AktuelleTechnologieprogramme/Quanten_Computing/Projekte/Qompiler/qompiler.html>`_ and the European Union with the aim to enable commercial use of quantum computation. To achieve this, we aim to open this field of research to a broad audience of developers. Furthermore we are proud to announce that Qrisp will become a part of the `Eclipse foundation <https://www.eclipse.org/>`_!
 
 .. raw:: html
 
