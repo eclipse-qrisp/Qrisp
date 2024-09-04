@@ -79,6 +79,12 @@
             max-width: 76%;
         }
     }
+    
+    /* Center logos at the bottom of the page */
+    .sd-row {
+        justify-content: center;
+    }
+    
     </style>
 
     <div id="hero">
@@ -404,6 +410,7 @@ Qrisp is an open-source project developed at `Fraunhofer FOKUS <https://www.foku
 
     </div>
 
+
 .. grid:: 1 1 5 5
 
     .. grid-item-card::
@@ -442,6 +449,9 @@ Qrisp is an open-source project developed at `Fraunhofer FOKUS <https://www.foku
             :width: 150
             :class: no-scaled-link
 
+
+.. grid:: 1 1 5 5
+
     .. grid-item-card::
         :class-card: sd-border-0
         :shadow: none
@@ -450,7 +460,16 @@ Qrisp is an open-source project developed at `Fraunhofer FOKUS <https://www.foku
             :align: center
             :width: 150
             :class: no-scaled-link
-            
+
+    .. grid-item-card::
+        :class-card: sd-border-0
+        :shadow: none
+    
+        .. image:: ./_static/eu.png
+            :align: center
+            :width: 150
+            :class: no-scaled-link
+
 
 .. toctree::
    :hidden:
