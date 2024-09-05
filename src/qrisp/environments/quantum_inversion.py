@@ -348,8 +348,8 @@ class InversionEnvironment(QuantumEnvironment):
         # Reinstate the resulting circuit in the quantum session circuit
         self.env_qs.data = original_circuit.data
         
-    def jcompile(self, *args, **kwargs):
-        inverted_jispr = kwargs["jispr"].inverse()
+    def jcompile(self, body_jispr, *args):
+        inverted_jispr = body_jispr.inverse()
         return inverted_jispr.eval(*args)
 
 

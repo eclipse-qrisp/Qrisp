@@ -58,6 +58,7 @@ def test_qc_converter():
     qc = jispr.to_qc(5)
     
     assert len(qc.data) == 3 + len(qc.qubits)
+    print(qc)
     comparison_qc = QuantumCircuit(5)
     
     comparison_qc.cx(0, 1)

@@ -46,7 +46,7 @@ op_name_translation_dic = {"cx" : "CNOT",
                        "p" : "Phasegate"}
 
 
-def catalyst_eqn_evaluator(primitive, *args, **kwargs):
+def catalyst_eqn_evaluator(eqn, context_dic):
     """
     This function serves as the central interface to interpret Jisp equations 
     into Catalyst primitives.
@@ -76,61 +76,64 @@ def catalyst_eqn_evaluator(primitive, *args, **kwargs):
     # If the equations primitive is a Qrisp primitive, we process it according
     # to one of the implementations below. Otherwise we return True to indicate
     # default interpretation.
-    if isinstance(primitive, QuantumPrimitive):
+    if isinstance(eqn.primitive, QuantumPrimitive):
         
-        if primitive.name == "create_qubits":
-            return process_create_qubits(args[0], args[1])
-        elif primitive.name == "get_qubit":
-            return process_get_qubit(args[0], args[1])
-        elif primitive.name == "measure":
-            return process_measurement(args[0], args[1])
-        elif primitive.name == "get_size":
-            return process_get_size(args[0])
-        elif primitive.name == "delete_qubits":
+        invars = eqn.invars
+        outvars = eqn.outvars
+        
+        if eqn.primitive.name == "create_qubits":
+            process_create_qubits(invars, outvars, context_dic)
+        elif eqn.primitive.name == "get_qubit":
+            process_get_qubit(invars, outvars, context_dic)
+        elif eqn.primitive.name == "measure":
+            process_measurement(invars, outvars, context_dic)
+        elif eqn.primitive.name == "get_size":
+            process_get_size(invars, outvars, context_dic)
+        elif eqn.primitive.name == "delete_qubits":
             pass
-        elif isinstance(primitive, Operation):
-            return process_op(primitive, *args)
+        elif isinstance(eqn.primitive, Operation):
+            process_op(eqn.primitive, invars, outvars, context_dic)
         else:
             raise Exception(f"Don't know how to process QuantumPrimitive {eqn.primitive}")
     else:
-        return primitive.bind(*args, **kwargs)
+        return True
     
 
 
-def process_create_qubits(aqc, amount):
+def process_create_qubits(invars, outvars, context_dic):
     
     # The first invar of the create_qubits primitive is an AbstractQuantumCircuit
     # which is represented by an AbstractQreg and an integer
-    qreg, stack_size = aqc
+    qreg, stack_size = context_dic[invars[0]]
     
     # We create the new QubitArray representation by putting the appropriate tuple
     # in the context_dic
-    qb_array = (stack_size, amount)
+    context_dic[outvars[1]] = (stack_size, context_dic[invars[1]])
     
     # Furthermore we create the updated AbstractQuantumCircuit representation.
     # The new stack size is the old stask size + the size of the QubitArray
-    aqc = (qreg, stack_size + amount)
-    
-    return aqc, qb_array
+    context_dic[outvars[0]] = (qreg, stack_size + context_dic[invars[1]])
     
 
-def process_get_qubit(qb_array, qubit_index):
+def process_get_qubit(invars, outvars, context_dic):
     # The get_qubit primitive needs to retrieve the integer that indexes the 
     # AbstractQubit in the stack.
     # For that we add the Qubit index (in the QubitArray) to the QubitArray 
     # starting index.
-    qubit_array_starting_index = qb_array[0]
-    return qubit_array_starting_index + qubit_index
     
-def process_get_size(qb_array):
+    qubit_array_starting_index = context_dic[invars[0]][0]
+    qubit_index = context_dic[invars[1]]
+    context_dic[outvars[0]] = qubit_array_starting_index + qubit_index
+    
+def process_get_size(invars, outvars, context_dic):
     # The size is simply the second entry of the QubitArray representation
-    return qb_array[1]
+    context_dic[outvars[0]] = context_dic[invars[0]][1]
     
     
-def process_op(op, *args):
+def process_op(op, invars, outvars, context_dic):
     
     # Alias the AbstractQreg
-    catalyst_register_tracer = args[0][0]
+    catalyst_register_tracer = context_dic[invars[0]][0]
     
     # We first collect all the Catalyst qubit tracers
     # that are required for the Operation
@@ -140,7 +143,8 @@ def process_op(op, *args):
     # qubits in the AbstractQreg
     qb_pos = []
     for i in range(op.num_qubits):
-        qb_pos.append(args[i+1+len(op.params)])
+        qb_vars.append(invars[i+1+len(op.params)])
+        qb_pos.append(context_dic[invars[i+1+len(op.params)]])
     
     num_qubits = len(qb_pos)
     
@@ -161,7 +165,7 @@ def process_op(op, *args):
                                              qb_pos[i],
                                              res_qbs[i])
         
-    return (catalyst_register_tracer, args[0][1])
+    context_dic[outvars[0]] = (catalyst_register_tracer, context_dic[invars[0]][1])
 
 def exec_qrisp_op(op, catalyst_qbs):
     # This function takes a Qrisp operation and a list of catalyst qubit tracers
@@ -190,22 +194,22 @@ def exec_qrisp_op(op, catalyst_qbs):
         return res_qbs
 
 
-def process_measurement(aqc, measurement_obj):
+def process_measurement(invars, outvars, context_dic):
     # This function treats measurement primitives
     
     # Retrieve the catalyst register tracer
-    catalyst_register_tracer = aqc[0]
+    catalyst_register_tracer = context_dic[invars[0]][0]
     
     # We differentiate between the cases that the measurement is performed on a 
     # singular Qubit (returns a bool) or a QubitArray (returns an integer)
     
     # This case treats the QubitArray situation
-    if isinstance(measurement_obj, tuple):
+    if isinstance(invars[1].aval, AbstractQubitArray):
         
         # Retrieve the start and the endpoint indices of the QubitArray
-        qubit_array = measurement_obj
-        start = qubit_array[0]
-        stop = start + qubit_array[1]
+        qubit_array_data = context_dic[invars[1]]
+        start = qubit_array_data[0]
+        stop = start + qubit_array_data[1]
         
         # The multi measurement logic is outsourced into a dedicated function
         catalyst_register_tracer, meas_res = exec_multi_measurement(catalyst_register_tracer, start, stop)
@@ -214,7 +218,7 @@ def process_measurement(aqc, measurement_obj):
     else:
         
         # Get the position of the Qubit
-        qb_pos = measurement_obj
+        qb_pos = context_dic[invars[1]]
         
         # Get the catalyst Qubit tracer
         catalyst_qb_tracer = qextract_p.bind(catalyst_register_tracer, 
@@ -229,8 +233,8 @@ def process_measurement(aqc, measurement_obj):
                                              res_qb)
     
     # Insert the result values into the context dict
-    new_aqc = (catalyst_register_tracer, aqc[1])
-    return new_aqc, meas_res
+    context_dic[outvars[0]] = (catalyst_register_tracer, context_dic[invars[0]][1])
+    context_dic[outvars[1]] = meas_res
         
         
 def exec_multi_measurement(catalyst_register, start, stop):
