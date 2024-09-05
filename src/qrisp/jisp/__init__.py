@@ -22,6 +22,7 @@ from qrisp.jisp.qaching import qache
 from qrisp.jisp.interpreter_tools import *
 from qrisp.jisp.jisp_expression import *
 from qrisp.jisp.testing_utils import *
+from qrisp.jisp.control_flow import *
 
 def compare_jaxpr(jaxpr, primitive_name_list):
     assert len(jaxpr.eqns) == len(primitive_name_list)

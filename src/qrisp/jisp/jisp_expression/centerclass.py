@@ -21,7 +21,8 @@ from jax import make_jaxpr
 from jax.core import Jaxpr, ClosedJaxpr, Literal
 
 from qrisp.jisp.jisp_expression import invert_jispr, multi_control_jispr, collect_environments
-from qrisp.jisp import AbstractQuantumCircuit, eval_jaxpr, pjit_to_gate, flatten_environments
+from qrisp.jisp import eval_jaxpr, pjit_to_gate, flatten_environments
+from qrisp.jisp.primitives import AbstractQuantumCircuit
 
 class Jispr(Jaxpr):
     """

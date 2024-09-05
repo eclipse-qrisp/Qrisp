@@ -16,15 +16,31 @@
 ********************************************************************************/
 """
 
-
-from qrisp.environments.quantum_environments import *
-from qrisp.environments.quantum_inversion import *
-from qrisp.environments.quantum_conditionals import *
-from qrisp.environments.control_environment import *
-from qrisp.environments.gate_wrap_environment import *
-from qrisp.environments.conjugation_environment import *
-from qrisp.environments.GMS_environment import *
-from qrisp.environments.iteration_environment import *
-from qrisp.environments.custom_control_environment import *
-from qrisp.environments.jiteration_environment import *
-
+class jrange:
+    
+    def __init__(self, stop):
+        
+        self.stop = stop
+        
+    def __iter__(self):
+        self.iteration = 0
+        return self
+    
+    def __next__(self):
+        
+        self.iteration += 1
+        if self.iteration == 1:
+            from qrisp.environments import JIterationEnvironment
+            self.iter_env = JIterationEnvironment()
+            self.iter_env.__enter__()
+            return self.stop
+        elif self.iteration == 2:
+            self.stop += 1
+            self.iter_env.__exit__(None, None, None)
+            self.iter_env.__enter__()
+            return self.stop
+        elif self.iteration == 3:
+            self.stop += 1
+            self.iter_env.__exit__(None, None, None)
+            raise StopIteration
+        

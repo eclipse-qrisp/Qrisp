@@ -18,9 +18,8 @@
 
 import numpy as np
 
-from jax import jit, make_jaxpr
-from jax.core import Jaxpr, JaxprEqn, ClosedJaxpr, Var
-from qrisp.jisp import check_for_tracing_mode, flatten_collected_environments, eval_jaxpr, AbstractQuantumCircuit, TracingQuantumSession
+from jax.core import JaxprEqn, ClosedJaxpr, Var
+from qrisp.jisp import eval_jaxpr, TracingQuantumSession
 
 control_var_count = np.zeros(1)
 

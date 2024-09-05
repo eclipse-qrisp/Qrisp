@@ -18,7 +18,7 @@
 
 import jax
 
-from qrisp.jisp import create_qubits, delete_qubits_p
+from qrisp.jisp.primitives import create_qubits, delete_qubits_p
 
 
 class TracingQuantumSession:
