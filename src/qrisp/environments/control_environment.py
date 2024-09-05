@@ -378,12 +378,18 @@ class ControlEnvironment(QuantumEnvironment):
                 self.sub_condition_envs + [self]
             )
             
-    def jcompile(self, body_jispr, *args):
+    def jcompile(self, eqn, context_dic):
+        
+        from qrisp.jisp import extract_invalues, insert_outvalues
+        args = extract_invalues(eqn, context_dic)
+        body_jispr = eqn.params["jispr"]
         
         num_ctrl = len(args) - len(body_jispr.invars)
         flattened_jispr = body_jispr.flatten_environments()
         controlled_jispr = flattened_jispr.control(num_ctrl)
-        return controlled_jispr.eval(*args)
+        
+        res = controlled_jispr.eval(*args)
+        insert_outvalues(eqn, context_dic, res)
         
 
 # This function turns instructions where the definition contains CustomControlOperations

@@ -101,6 +101,8 @@ def flatten_environment_eqn(env_eqn, context_dic):
 
     """
     
+    return env_eqn.primitive.jcompile(env_eqn, context_dic)
+    
     # Extract the invalues
     invalues = extract_invalues(env_eqn, context_dic)
     

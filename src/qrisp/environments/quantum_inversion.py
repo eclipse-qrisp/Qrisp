@@ -348,9 +348,15 @@ class InversionEnvironment(QuantumEnvironment):
         # Reinstate the resulting circuit in the quantum session circuit
         self.env_qs.data = original_circuit.data
         
-    def jcompile(self, body_jispr, *args):
+    def jcompile(self, eqn, context_dic):
+        from qrisp.jisp import extract_invalues, insert_outvalues
+        args = extract_invalues(eqn, context_dic)
+        body_jispr = eqn.params["jispr"]
+        
         inverted_jispr = body_jispr.inverse()
-        return inverted_jispr.eval(*args)
+        
+        res = inverted_jispr.eval(*args)
+        insert_outvalues(eqn, context_dic, res)
 
 
 # Shortcut to quickly initiate inversion environments
