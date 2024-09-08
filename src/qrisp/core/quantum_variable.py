@@ -1433,7 +1433,7 @@ def plot_histogram(outcome_labels, counts, filename=None):
         except KeyError:
             res_list.append(0)
 
-    plt.bar(outcome_labels, res_list, width = 0.8/len(outcome_labels))
+    plt.bar(outcome_labels, res_list, width = 0.8)
     plt.grid()
     plt.ylabel("Measurement probability")
     plt.xlabel("QuantumVariable value")

@@ -2332,6 +2332,11 @@ class QuantumCircuit:
         """
 
         self.append(ops.IDGate(), [qubits])
+        
+    def to_pdag(self, remove_artificials = False):
+        from qrisp.permeability import PermeabilityGraph
+        return PermeabilityGraph(self, remove_artificials = remove_artificials)
+        
 
 
 # Converts various inputs (eg. integers, qubits or quantum variables) to lists of qubit
