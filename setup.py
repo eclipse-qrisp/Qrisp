@@ -27,7 +27,8 @@ REQUIREMENTS = ["qiskit>=0.44.0",
                 "dill",
                 "flask",
                 "waitress",
-                "pyyaml"]
+                "pyyaml",
+                "requests"]
 
 
 with open("README.md", "r", encoding="utf-8") as fh:
