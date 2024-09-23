@@ -18,18 +18,20 @@
 
 from qrisp import *
 
+
 operations = ["nop", 
-                "h",
-                "x",
+                #"h",
+                #"x",
                 "swap",
-                "get",
+                #"get",
                 "add",
-                "double",
-                "mul",
-                "square",
+                #"double",
+                #"mul",
+                #"square",
                 "jmp",
-                "jz",
-                "jmp"]
+                #"jz",
+                #"jmp*"
+                ]
 
 class OperationQuantumVariable(QuantumVariable):
     
@@ -144,7 +146,16 @@ class QCMProgram:
                 continue
             
             q_args_0.append(int(instructions[i][1][1:]))
-            q_args_1.append((q_args_0[-1] - int(instructions[i][2][1:]))%n)
+            
+            if len(instructions[i]) > 2:
+                arg_1 = int(instructions[i][2][1:])
+                if q_args_0[-1] - arg_1 < 0:
+                    q_args_1.append((n + q_args_0[-1] - arg_1)%(n-1))
+                else:
+                    q_args_1.append((-q_args_0[-1] + arg_1)%(n-1))
+            else:
+                q_args_1.append(0)
+            
             
         # Initiate the QuantumArrays
         self.operations_array[:] = program_operations        
@@ -158,6 +169,7 @@ class QCMProgram:
         """
         Moves the content of the stage back into their original position
         """
+        
         cyclic_shift(self.r[1:], shift_amount = self.qargs_1_array[0])
         cyclic_shift(self.r, shift_amount = self.qargs_0_array[0])
     
@@ -182,6 +194,28 @@ class QCMProgram:
             cyclic_shift(self.qargs_0_array, shift_amount = self.rb)
             cyclic_shift(self.qargs_1_array, shift_amount = self.rb)
     
+    def exec_loaded_instruction(self):
+        """
+        Executes the loaded instruction on the loaded arguments
+
+        """
+        
+        for op in operations:
+            tmp = (op == self.instr_reg)
+            with control(tmp):
+                execute_operation(op, self.stage, self.rb)
+            tmp.uncompute()
+                
+    def proceed(self):
+        """
+        Performs the QCM instruction processing procedure
+        """
+        self.load_arguments()
+        self.exec_loaded_instruction()
+        self.unload_arguments()
+        self.move_tape()
+        
+        
 
 qcm_code = """
 add r1 r2
@@ -197,6 +231,7 @@ qcm_prog.load_arguments()
 print(qcm_prog.stage)
 # {OutcomeArray([1, 2]): 1.0}
 # This is expected because argument 0 is r1 = 1 and argument 1 is r2 = 2
+
 qcm_prog.unload_arguments()
 
 print(qcm_prog.stage)
@@ -213,8 +248,212 @@ print(qcm_prog.rb)
 
 # Move the tape and load the arguments
 qcm_prog.move_tape()
+
 qcm_prog.load_arguments()
 print(multi_measurement([qcm_prog.instr_reg, qcm_prog.stage]))
 # {('swap', OutcomeArray([1, 0])): 0.5, ('add', OutcomeArray([1, 2])): 0.5}
 # This is a superposition of the instruction from the first and the second line!
 
+#%%
+
+# Instructions are implemented here
+
+def U(op, ra):
+    
+    if op == "h":
+        h(ra)
+    elif op == "x":
+        x(ra)
+    else:
+        raise Exception(f"Don't know operation {op}")
+        
+from qrisp import swap
+
+def get_bit(ra, rb, rc):
+    demux(rc, ra, rb)
+
+def add(ra, rb):
+    if ra is rb:
+        cyclic_shift(ra)
+    else:
+        ra += rb
+
+def multiply(ra, rb, verify_uncomputation = False):
+    
+    res_type = QuantumFloat(ra.size + rb.size)
+    
+    comp_q_dic = QuantumDictionary(return_type = res_type)
+    
+    if ra is rb:
+        
+        for a in [ra.decoder(i) for i in range(2**ra.size)]:
+                comp_q_dic[a] = a**2
+                
+        rres = comp_q_dic[ra]
+        
+    else:
+        
+        for a in [ra.decoder(i) for i in range(2**ra.size)]:
+            for b in [rb.decoder(i) for i in range(2**rb.size)]:
+                comp_q_dic[a, b] = a*b
+                
+        rres = comp_q_dic[ra, rb]
+        
+        
+        
+        
+    def uncomputation_wrapper(rres, rb):
+        
+        uncomp_q_dic = QuantumDictionary(return_type = ra)
+        
+        for b in [rb.decoder(i) for i in range(2**rb.size)]:
+            for res in [rres.decoder(i) for i in range(2**rres.size)]:
+                
+                uncomp_q_dic[res, b] = 0
+                
+                if b == 0:
+                    continue
+                
+                if res%b == 0:
+                    if res//b < 2**ra.size:
+                        
+                        if ra is rb:
+                            uncomp_q_dic[res] = res//b
+                        else:
+                            uncomp_q_dic[res, b] = res//b
+        
+        if ra is rb:
+            return uncomp_q_dic[rres]
+        else:
+            return uncomp_q_dic[rres, rb]
+            
+    with invert():
+        redirect_qfunction(uncomputation_wrapper)(rres, rb, target = ra)
+
+    ra.extend(rb.size)
+    
+    swap(ra, rres)
+    
+    rres.delete(verify = verify_uncomputation)
+
+"""    
+# Test multiplication
+ra = QuantumFloat(3)
+rb = QuantumFloat(3)
+
+ra[:] = 3
+rb[:] = 2
+multiply(ra, rb, verify_uncomputation = True)
+print(multi_measurement([ra, rb]))
+
+# Test squaring
+ra = QuantumFloat(3)
+
+ra[:] = 3
+multiply(ra, ra, verify_uncomputation = True)
+print(multi_measurement([ra, rb]))
+"""
+    
+def jump(br, p):
+    br += p
+
+def conditional_jump(br, ra, p):
+    tmp = ra == 0
+    with control(tmp):
+        jump(br, p)
+    tmp.uncompute()    
+        
+def indirect_jump(br, ra):
+    br += ra
+    
+
+def execute_operation(operation, args, br):
+    
+    if operation == "nop":
+        return
+    elif operation == "h":
+        h(args[0])
+    elif operation == "x":
+        x(args[0])
+    elif operation == "swap":
+        swap(args[0], args[1])
+    elif operation == "get":
+        get_bit(args[0], args[1], args[2])
+    elif operation == "add":
+        add(args[0], args[1])
+    elif operation == "double":
+        add(args[0], args[0])
+    elif operation == "mul":
+        multiply(args[0], args[1])
+    elif operation == "jmp":
+        jump(br, args[0])
+    elif operation == "jz":
+        conditional_jump(br, args[0], args[1])
+    elif operation == "jmp*":
+        indirect_jump(br, args[0])
+    else:
+        raise Exception(f"Don't know operation {operation}")
+
+
+
+#%%
+
+# Test QCM execution
+
+qcm_code = """
+add r1 r2
+swap r2 r1
+add r1 r2
+"""
+
+# Initializes the above program with r0 = 0, r1 = 1, r2 = 2
+qcm_prog = QCMProgram(qcm_code, init_state = [0,1,2])
+print(qcm_prog.r)
+# {OutcomeArray([0, 1, 2]): 1.0}
+
+# Start the execution
+
+qcm_prog.proceed()
+print(qcm_prog.r)
+# {OutcomeArray([0, 3, 2]): 1.0}
+
+qcm_prog.proceed()
+print(qcm_prog.r)
+# {OutcomeArray([0, 2, 3]): 1.0}
+
+qcm_prog.proceed()
+print(qcm_prog.r)
+# {OutcomeArray([0, 5, 3]): 1.0}
+
+
+#%%
+qcm_code = """
+jmp r0
+swap r2 r1
+add r1 r2
+"""
+
+# Initializes the above program with r0 = |0>+|2>, r1 = 1, r2 = 2
+qcm_prog = QCMProgram(qcm_code, init_state = [0,1,2])
+r0 = qcm_prog.r[0]
+h(r0[1])
+print(qcm_prog.r)
+# {OutcomeArray([0, 1, 2]): 0.5, OutcomeArray([2, 1, 2]): 0.5}
+
+# Start the execution
+qcm_prog.proceed()
+print(multi_measurement([qcm_prog.rb, qcm_prog.instr_reg]))
+# {(1, 'swap'): 0.5, (3, 'jmp'): 0.5}
+
+qcm_prog.proceed()
+print(multi_measurement([qcm_prog.rb, qcm_prog.instr_reg]))
+# {(1, 'add'): 0.5, (5, 'add'): 0.5}
+
+qcm_prog.proceed()
+print(multi_measurement([qcm_prog.rb, qcm_prog.instr_reg, qcm_prog.r]))
+# {(1, 'jmp', OutcomeArray([0, 3, 1])): 0.5, (5, 'swap', OutcomeArray([2, 3, 2])): 0.5}
+# The jump doesn't increase rb because r0 = 0
+
+qcm_prog.proceed()
+print(multi_measurement([qcm_prog.rb, qcm_prog.instr_reg]))
+# {(1, 'swap'): 0.5, (5, 'jmp'): 0.5}
