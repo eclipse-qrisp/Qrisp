@@ -21,7 +21,7 @@ import numpy as np
 
 from qrisp import QuantumVariable, QFT, cp, h, p, x
 from qrisp.environments import GMSEnvironment
-from qrisp.arithmetic import QuantumFloat
+from qrisp.alg_primitives.arithmetic import QuantumFloat
 
 qv1 = QuantumVariable(1)
 qv2 = QuantumVariable(1)

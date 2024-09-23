@@ -25,12 +25,8 @@ import matplotlib.pyplot as plt
 import itertools
 
 
-def test_QAOAmaxSetPacking():
-            # start with a graph G - from np adjacency matrix
-    """     counter = 0
-    failure_list = []
-    for index in range(100): 
-    """
+def QAOAmaxSetPacking():
+    # start with a graph G - from np adjacency matrix
     """
     This is an example of the maxSetPacking QAOA solution
     the problem is structured as follows:

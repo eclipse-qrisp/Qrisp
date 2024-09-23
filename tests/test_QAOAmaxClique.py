@@ -18,7 +18,6 @@
 
 
 from qrisp.qaoa import QAOAProblem
-from qrisp.qaoa.problems.create_rdm_graph import create_rdm_graph
 from qrisp.qaoa.problems.maxCliqueInfrastr import maxCliqueCostfct,maxCliqueCostOp,init_state
 from qrisp.qaoa.mixers import RX_mixer
 from qrisp import QuantumVariable
@@ -29,7 +28,7 @@ import  numpy as np
 
 def test_QAOAmaxClique():
 
-    giraf = create_rdm_graph(9,0.7)
+    giraf = nx.erdos_renyi_graph(9,0.7)
     #draw graph
     #nx.draw(giraf,with_labels = True)
     #plt.show() 
@@ -98,11 +97,11 @@ def test_QAOAmaxClique():
         #create random graph with either all nodes connected, or no nodes connected
         integ2 = np.random.randint(0,1)
         
-        secondGraph = create_rdm_graph(integ,integ2)
+        secondGraph = nx.erdos_renyi_graph(integ,integ2)
         secondQarg = QuantumVariable(secondGraph.number_of_nodes())
         secondInstance = QAOAProblem(cost_operator= maxCliqueCostOp(secondGraph), mixer= RX_mixer, cl_cost_function=maxCliqueCostfct(secondGraph)) 
         secondInstance.set_init_function(init_function=init_state)
-        theNiceQAOA2 = secondInstance.run(qarg=secondQarg, depth= 5)
+        theNiceQAOA2 = secondInstance.run(qarg=secondQarg, depth= 3, max_iter = 50, mes_kwargs = {"shots" : 100000})
         maxOne = sorted(theNiceQAOA2, key=theNiceQAOA2.get, reverse=True)[:1]
         #if no nodes connected, maxClique sol should just be the first node, i.e. "1000" (more or less zeros)
         if integ2 == 0:
@@ -116,7 +115,5 @@ def test_QAOAmaxClique():
         
         if  testStr == maxOne:
             truth_list.append(1)
-    
+            
     assert sum(truth_list)/10 > 0.5
-
- 

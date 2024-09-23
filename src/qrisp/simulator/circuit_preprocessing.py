@@ -25,7 +25,7 @@ import numpy as np
 from numba import njit
 
 from qrisp.circuit import Instruction, QuantumCircuit, transpile, Reset, ClControlledOperation, CXGate, Operation, Measurement
-from qrisp.uncomputation.type_checker import is_permeable
+from qrisp.permeability.type_checker import is_permeable
 
 memory_bandwidth_penalty = 2
 
@@ -368,19 +368,28 @@ def optimal_grouping_recursion_parameter(qubit_amount):
 disentangler = Operation("disentangle", num_qubits=1)
 disentangler.definition = QuantumCircuit(1)
 disentangler.permeability = {0: False}
+disentangler.warning = False
+
+def Disentangler(warning = False):
+    disentangler = Operation("disentangle", num_qubits=1)
+    disentangler.definition = QuantumCircuit(1)
+    disentangler.permeability = {0: False}
+    disentangler.warning = warning
+    return disentangler
+    
 
 
 def insert_disentangling(qc):
     # This function checks for permeability on a given qubit
-    from qrisp.uncomputation import is_permeable
+    from qrisp.permeability import is_permeable
 
 
     # After all the operations have been performed on a qubit,
     # it can be reset without changing the statistics
     for i in range(len(qc.qubits)):
         qc.reset(qc.qubits[i])
-        pass
-        # qc.append(disentangler, [qc.qubits[i]])
+        # pass
+        # qc.append(Disentangler(), [qc.qubits[i]])
 
     # return qc
 
@@ -487,7 +496,7 @@ def count_measurements_and_treat_alloc(qc, insert_reset=True):
         elif instr.op.name == "qb_dealloc":
             qc.data.pop(i)
             if insert_reset:
-                qc.data.insert(i, Instruction(Reset(), qubits = instr.qubits))
+                qc.data.insert(i, Instruction(Disentangler(True), qubits = instr.qubits))
             else:
                 continue
 
@@ -761,9 +770,14 @@ def insert_multiverse_measurements(qc):
                         break
                 if meas_clbit in data[j].clbits and not isinstance(data[j], ClControlledOperation):
                         break
+                
+                # This treats the case that two measurements with the same outcome are performed
+                # in this case we break the loop to make the first measurement appear as a
+                # separate qubit.
+                if data[j].op.name == "measure" and data[j].qubits[0] == meas_qubit:
+                    break
             else:
                 new_data.append(Instruction(disentangler, [meas_qubit]))
-                # new_measurements.append(instr)
                 new_measurements.append((instr.qubits[0], instr.clbits[0]))
                 continue
             
@@ -778,13 +792,11 @@ def insert_multiverse_measurements(qc):
             
             mes_instr = instr.copy()
             mes_instr.qubits = [qb]
-            # new_measurements.append((qb, instr.clbits[0]))
-            # new_measurements.append(mes_instr)
             
         elif instr.op.name == "reset":
             
             meas_qubit = instr.qubits[0]
-            new_data.append(Instruction(disentangler, [meas_qubit]))
+            new_data.append(Instruction(Disentangler(warning = False), [meas_qubit]))
             
             for j in range(len(data)):
                 if meas_qubit in data[j].qubits:
@@ -796,7 +808,7 @@ def insert_multiverse_measurements(qc):
             qb = qc.add_qubit()
             new_data.append(Instruction(CXGate(), instr.qubits + [qb]))
             new_data.append(Instruction(CXGate(), [qb] + instr.qubits))
-            new_data.append(Instruction(disentangler, [qb]))
+            new_data.append(Instruction(Disentangler(), [qb]))
         
         elif isinstance(instr.op, ClControlledOperation):
             
@@ -849,12 +861,8 @@ def circuit_preprocessor(qc):
         return qc.copy()
 
     # TO-DO find reliable classifiaction when automatic disentangling works best
-    if len(qc.qubits) < 26:
-        qc = group_qc(qc)
-    elif len(qc.qubits) < 34:
-        qc = group_qc(qc)
+    if len(qc.qubits) > 45:
         qc = insert_disentangling(qc)
-    else:
-        qc = insert_disentangling(qc)
-        qc = group_qc(qc)
+    qc = group_qc(qc)
+    
     return reorder_circuit(qc, ["measure", "reset", "disentangle"])

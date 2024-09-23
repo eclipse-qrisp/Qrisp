@@ -21,7 +21,7 @@ The following problem instances, gathered in the table below with their correspo
    * - :ref:`QUBO (NEW since 0.4!) <QUBOQAOA>`
      - X mixer
      -    ✅ 
-   * - :ref:`MaxIndependentSet <QAOAMaxIndependentSet>`
+   * - :ref:`MaxIndependentSet <maxindependentsetQAOA>`
      - Controlled X mixer
      -    ✅
    * - :ref:`MaxClique <maxcliqueQAOA>`
@@ -61,6 +61,7 @@ The MaxCut problem is defined as follows:
 
 First we import the necessary functions and packages, create a graph ``G`` we will be cutting, define a quantum argument ``qarg`` we'll be acting on, as well as specify the depth of our algorithm.
 ::
+
   from qrisp.qaoa import QAOAProblem, maxcut_obj,create_maxcut_cl_cost_function,create_maxcut_cost_operator, RX_mixer
   from qrisp import QuantumArray, QuantumVariable
   import networkx as nx
@@ -77,6 +78,7 @@ QAOA instanciation
 ^^^^^^^^^^^^^^^^^^
 Next we follow the recipe to run the algorithm with ``QAOAProblem``, feeding it the ``cost_operator``, a ``mixer`` and a ``cl_cost_function``.
 ::
+
   import time
   maxcut_instance = QAOAProblem(create_maxcut_cost_operator(G), RX_mixer, create_maxcut_cl_cost_function(G))
   
@@ -88,6 +90,7 @@ Result analysis
 ^^^^^^^^^^^^^^^
 After running our QAOA on the MaxCut problem instance we can now obtain the QAOA solution and draw the graph with optimally colored nodes.
 ::
+
   best_cut, best_solution = min([(maxcut_obj(x,G),x) for x in res.keys()], key=itemgetter(0))
   print(f"Best string: {best_solution} with cut: {-best_cut}")
 
@@ -114,8 +117,8 @@ We will not stick to mathematical assignment of variable names.
 
 Imports:
 ::
+
   from qrisp.qaoa import QAOAProblem
-  from qrisp.qaoa import create_rdm_graph
   from qrisp.qaoa import maxIndepSetCostOp, maxIndepSetclCostfct,  init_state
   from qrisp.qaoa import RX_mixer
   from qrisp import QuantumVariable
@@ -124,11 +127,12 @@ Imports:
 
 Problem Definition
 ^^^^^^^^^^^^^^^^^^
-We begin by specifiying the graph considered for the problem, using the ``create_rdm_graph``-function. 
+We begin by specifiying the graph considered for the problem, using the ``erdos_renyi_graph``-function . 
 
 Additionally, we define the ``QuantumVariable`` to operate on.
 ::
-  giraf = create_rdm_graph(9,0.2, seed = 127)
+
+  giraf = nx.erdos_renyi_graph(9,0.2, seed = 127)
   nx.draw(giraf,with_labels = True) #draw graph
   plt.show() 
   qarg = QuantumVariable(giraf.number_of_nodes())
@@ -145,8 +149,9 @@ $$H_C = 3 \\sum _{(i,j) \\in E(G)} Z_i Z_j - Z_i - Z_j + \\sum _{i \\in V(G)} Z_
 
 where $V(G)$ is is the set of vertices of the input graph $G$, $E(G)$ is the set of edges of $G$, and $Z_i$ is the Pauli-$Z$ operator applied to the $i$-th vertex.
  
-The mixer operator is a basic :ref:`X mixer <RXmixer>` applied to all qubits.
+The mixer operator is a basic :meth:`X mixer <qrisp.qaoa.RX_mixer>` applied to all qubits.
 ::
+
   QAOAinstance = QAOAProblem(cost_operator = maxIndepSetCostOp(giraf), mixer = RX_mixer, cl_cost_function = maxIndepSetclCostfct(giraf))
   QAOAinstance.set_init_function(init_function = init_state)
   theNiceQAOA = QAOAinstance.run(qarg = qarg, depth = 5)
@@ -181,6 +186,7 @@ Define the classical cost_function for analysis of singular result ``QuantumStat
 
 Print the 5 most likely solutions and the associated energy/cost value 
 ::
+
   print("5 most likely Solutions") 
   maxfive = sorted(theNiceQAOA, key=theNiceQAOA.get, reverse=True)[:5]
   for name, age in theNiceQAOA.items():  
@@ -190,6 +196,7 @@ Print the 5 most likely solutions and the associated energy/cost value
 
 Print the solution as given by ``networkx`` 
 ::  
+
   print("NX solution")
   print(nx.max_weight_clique(giraf, weight = None))
 
@@ -211,6 +218,7 @@ The Max-$\kappa$-Colorable Subgraph problem is defined as follows:
 
 Similarly to the example of MaxCut above, we import the necessary functions and packages, create a graph ``G`` we will be cutting, define the colors we want to use, define a quantum argument ``qarg`` we'll be acting on (we provide options for one-hot and binary encoding schemes), as well as specify the depth of our algorithm.
 ::
+
   from qrisp.qaoa import QAOAProblem, mkcs_obj, apply_phase_if_eq, create_coloring_operator, create_coloring_cl_cost_function, QuantumColor, XY_mixer, apply_XY_mixer, RX_mixer
   from qrisp import QuantumArray
   import random
@@ -232,6 +240,7 @@ QAOA instanciation
 ^^^^^^^^^^^^^^^^^^
 Next we follow the recipe to run the algorithm with ``QAOAProblem``, feeding it the ``cost_operator``, a ``mixer`` and a ``cl_cost_function``. In case one prefers to use the binary encoding, adjust the `#` in the code block below.
 ::
+
   coloring_instance = QAOAProblem(create_coloring_operator(G), apply_XY_mixer, create_coloring_cl_cost_function(G))
   # coloring_instance = QAOAProblem(create_coloring_operator(G), RX_mixer, create_coloring_cl_cost_function(G)) # use RX mixer if you use binary encoding
 
@@ -244,6 +253,7 @@ Result analysis
 ^^^^^^^^^^^^^^^
 After running our QAOA on the M$\kappa$CS problem instance we can now obtain the QAOA solution and draw the graph with optimally colored nodes.
 ::
+
   best_coloring, best_solution = min([(mkcs_obj(quantumcolor_array,G),quantumcolor_array) for quantumcolor_array in res.keys()], key=itemgetter(0))
   print(f"Best string: {best_solution} with coloring: {-best_coloring}")
 

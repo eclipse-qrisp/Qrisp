@@ -22,6 +22,7 @@ from qrisp.environments.quantum_environments import QuantumEnvironment
 from qrisp.environments.gate_wrap_environment import GateWrapEnvironment
 from qrisp.circuit import Operation, QuantumCircuit, Instruction
 from qrisp.environments.iteration_environment import IterationEnvironment
+from qrisp.core import merge
 
 def custom_control(func):
     """
@@ -138,7 +139,11 @@ def custom_control(func):
         from qrisp.core import recursive_qs_search
         from qrisp import merge, ControlEnvironment, ConditionEnvironment, QuantumEnvironment, InversionEnvironment, ConjugationEnvironment
         
-        qs_list = recursive_qs_search([args, kwargs])
+        qs_list = recursive_qs_search(args)
+           
+        if "ctrl" in kwargs:
+            if kwargs["ctrl"] is not None:
+                qs_list.append(kwargs["ctrl"].qs())
         
         merge(qs_list)
         
@@ -150,6 +155,8 @@ def custom_control(func):
         # Search for a Control/Condition Environment and get the control qubit
         control_qb = None
         for env in qs.env_stack[::-1]:
+            if type(env) == QuantumEnvironment:
+                continue
             if isinstance(env, (ControlEnvironment, ConditionEnvironment)):
                 control_qb = env.condition_truth_value
                 break
@@ -167,7 +174,7 @@ def custom_control(func):
 
         # Check whether the function supports the ctrl_method kwarg and adjust
         # the kwargs accordingly
-        if "ctrl_method" in list(inspect.getargspec(func))[0] and isinstance(env, ControlEnvironment):
+        if "ctrl_method" in list(inspect.getfullargspec(func))[0] and isinstance(env, ControlEnvironment):
             kwargs.update({"ctrl_method" : env.ctrl_method})
         
         
@@ -195,6 +202,11 @@ class CustomControlEnvironment(QuantumEnvironment):
         
         self.control_qb = control_qb
         self.manual_allocation_management = True
+    
+    def __enter__(self):
+        
+        QuantumEnvironment.__enter__(self)
+        merge([self.env_qs, self.control_qb.qs()])
     
     def compile(self):
         

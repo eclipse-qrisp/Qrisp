@@ -18,7 +18,6 @@
 
 
 from qrisp.qaoa import QAOAProblem
-from qrisp.qaoa.problems.create_rdm_graph import create_rdm_graph
 from qrisp.qaoa.problems.maxIndepSetInfrastr import maxIndepSetCostOp, maxIndepSetclCostfct,  init_state
 from qrisp.qaoa.mixers import RX_mixer
 from qrisp import QuantumVariable
@@ -31,7 +30,7 @@ import numpy as np
 def test_QAOAmaxIndepSet():
     # start with a graph G - from np adjacency matrix
 
-    giraf = create_rdm_graph(9,0.2)
+    giraf = nx.erdos_renyi_graph(9,0.2)
     #print(nx.maximum_independent_set(giraf))
     nx_sol = nx.maximal_independent_set(giraf)
     print(nx_sol)
@@ -102,7 +101,7 @@ def test_QAOAmaxIndepSet():
     integ = np.random.randint(1,7)
     integ2 = np.random.randint(0,1)
     integ2 = 0
-    giraf1 = create_rdm_graph(integ,integ2)
+    giraf1 = nx.erdos_renyi_graph(integ,integ2)
     qarg2 = QuantumVariable(giraf1.number_of_nodes())
     QAOAinstance2 = QAOAProblem(cost_operator= RX_mixer, mixer= maxIndepSetCostOp(giraf1), cl_cost_function=maxIndepSetclCostfct(giraf1)) 
     QAOAinstance2.set_init_function(init_function=init_state)
@@ -118,4 +117,3 @@ def test_QAOAmaxIndepSet():
     #print(testStr)
     #print(maxOne)
     assert testStr == maxOne
-

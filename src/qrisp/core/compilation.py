@@ -16,13 +16,11 @@
 ********************************************************************************/
 """
 
-
 import numpy as np
-import networkx as nx
-from numba import njit, prange
 
-from qrisp.circuit import QuantumCircuit, Qubit, PTControlledOperation, ControlledOperation, transpile, QubitAlloc, Instruction, fast_append
-from qrisp.misc import get_depth_dic, retarget_instructions, parallelize_qc
+from qrisp.circuit import QuantumCircuit, Qubit, PTControlledOperation, ControlledOperation, transpile, Instruction, fast_append
+from qrisp.misc import get_depth_dic, retarget_instructions
+from qrisp.permeability import optimize_allocations, parallelize_qc, lightcone_reduction
 
 # The purpose of this function is to dynamically (de)allocate qubits when they are
 # needed or not needed anymore. The qompiler function knows when a qubit is ready to
@@ -65,7 +63,7 @@ def qompiler(
         if not disable_uncomputation:
             local_qvs = qs.get_local_qvs()
 
-            from qrisp.uncomputation.unqomp import uncompute_qc
+            from qrisp.permeability.unqomp import uncompute_qc
 
             for qv in local_qvs:
                 try:
@@ -73,56 +71,84 @@ def qompiler(
                 except:
                     print(f"Warning: Automatic uncomputation for {qv.name} failed")
         
-        from qrisp.logic_synthesis import LogicSynthGate
-
-        def reordering_transpile_predicate(op):
-            if (
-                isinstance(op, PTControlledOperation)
-                and op.base_operation.name in ["x"]
-            ) or isinstance(op, LogicSynthGate) or isinstance(op, GidneyLogicalAND) or isinstance(op, JonesToffoli):
-                return False
-            return True
-
-        from qrisp.logic_synthesis import LogicSynthGate
-        from qrisp.mcx_algs import GidneyLogicalAND, JonesToffoli
-
         
-        def qft_transpile_predicate(op):
-            return not "QFT" == op.name[:3] and reordering_transpile_predicate(op)
+        # We now process the circuit in 3 important steps:
+        #
+        #   1. We use measurement reduction, i.e. we remove all gates that are not
+        #   directly relevant to perform the intended measurement
+        #
+        #   2. We parallelize the circuit using the parallelization algorithm
+        #
+        #   3. We run reorder the circuit another time such that (de)allocations
+        #   are executed in an advantageous order. The topological ordering algorithm
+        #   behind the allocation is "stable" in the sense that it preserves the 
+        #   previously induced order by the parallelization algorithm.
         
-        def parallellization_transpile_predicate(op):
+        # To achieve these steps we view the circuit from different levels of abstraction
+        # This is achieved by dissolving composite gates until a certain condition is met.
+        # Such conditions can be specified using the transpile_predicate keyword.
+        # The two relevant levels of abstractions are:
+        #
+        #   1. The permeability level: Composite gates are dissolved if they have incomplete
+        #   permeability information. In turn this implies that the resulting circuit contains
+        #   only gates with complete permeability information (such as adders, general arithmetic
+        #   or multi controlled X-gates). The resulting DAG can therefore use high-level
+        #   features for reordering.
+        
+        def permeability_transpile_predicate(op):
             for v in op.permeability.values():
                 if v is None:
-                    return qft_transpile_predicate(op)
+                    return True
             return False
         
-        qc = transpile(qc, transpile_predicate = parallellization_transpile_predicate)
+        #   2. Allocation level: This level of abstraction leaves only a selected set of low
+        #   level gates alive. This comes with the advantage that the allocation algorithm
+        #   can also look into reordering the inner structure of high-level functions to also
+        #   get a good allocation strategy for this type of functions.
         
-        qc = parallelize_qc(qc, depth_indicator = gate_speed)
+        from qrisp.alg_primitives.logic_synthesis import LogicSynthGate
+        from qrisp.alg_primitives.mcx_algs import GidneyLogicalAND, JonesToffoli
+        from qrisp.alg_primitives.arithmetic import QuasiRZZ
         
-        if cancel_qfts:
-            # The first step is to cancel adjacent QFT gates, which are inverse to each
-            # other. This can happen alot because of the heavy use of Fourier arithmetic
-
-
-            qc = transpile(qc, transpile_predicate=qft_transpile_predicate)
-
-            qc = qft_cancellation(qc)
+        def allocation_level_transpile_predicate(op):
             
-        if intended_measurements:
+            if isinstance(op, PTControlledOperation):
+                
+                if op.base_operation.name == "x":
+                    return False
+                if op.base_operation.name == "p" and op.num_qubits == 2:
+                    return False
+            
+            if isinstance(op, (LogicSynthGate, GidneyLogicalAND, JonesToffoli, QuasiRZZ)):
+                return False
+            
+            if "QFT" == op.name[:3] or "equal" in op.name or "less_than" in op.name:
+                return False
+            
+            return True
+        
+        # Transpile to the first level
+        
+        qc = transpile(qc, transpile_predicate = permeability_transpile_predicate)
+        if intended_measurements and len(qc.clbits) == 0:
             # This function reorders the circuit such that the intended measurements can
             # be executed as early as possible additionally, any instructions that are
             # not needed for the intended measurements are removed
             try:
-                qc = measurement_reduction(qc, intended_measurements)
+                qc = lightcone_reduction(qc, intended_measurements)
                 # pass
             except Exception as e:
                 if "Unitary of operation " not in str(e):
                     raise e
-
-
-        # We now reorder the transpiled QuantumCircuit. Reordering is performed based on
-        # the DAG representation of Unqomp. The advantage of this representation is that
+        
+        # Reorder circuit for parallelization. 
+        # For more details check the implementation of this function
+        
+        qc = parallelize_qc(qc, depth_indicator = gate_speed)
+        
+        # We now reorder the transpiled circuit to achieve a good (de)allocation order. 
+        # Reordering is performed based on the DAG representation of Unqomp. 
+        # The advantage of this representation is that
         # it abstracts away non-trivial commutation relations between permeable gates.
         # The actual ordering is performed by performing a topological sort on this dag.
         # Contrary to unqomp, we don't use a modified version of Kahns algorithm here
@@ -138,18 +164,30 @@ def qompiler(
         # previous order which might have been intentionally picked to optimize depth.
         # In summary: Transpiling more aggressively leads to less qubits but more depth.
 
-        # Only letting mcx and logic synthesis survive has shown to be a good compromise
-
         transpiled_qc = transpile(
-            qc, transpile_predicate=reordering_transpile_predicate
+            qc, transpile_predicate=allocation_level_transpile_predicate
         )
-        reordered_qc = reorder_qc(transpiled_qc)
+        
+        
+        reordered_qc = optimize_allocations(transpiled_qc)
+        
 
+        if cancel_qfts:
+            # Cancel adjacent QFT gates, which are inverse to each
+            # other. This can happen alot because of the heavy use of Fourier arithmetic
+            reordered_qc = qft_cancellation(reordered_qc)
+            
+        
         # Transpile logic synthesis
+        def logic_synth_transpile_predicate(op):
+            return (isinstance(op, LogicSynthGate)
+                    or ("equal" in op.name)
+                    or ("less_than" in op.name)
+                    or (op.name == "cp" and op.num_qubits == 2)
+                    or allocation_level_transpile_predicate(op))
+        
         reordered_qc = transpile(
-            reordered_qc,
-            transpile_predicate=reordering_transpile_predicate,
-        )
+            reordered_qc, transpile_predicate = logic_synth_transpile_predicate)
         
         # We combine adjacent single qubit gates
         if not qs.abstract_params and False:
@@ -191,7 +229,6 @@ def qompiler(
             mcm_clbits = []
 
         depth_dic = {b: 0 for b in qc.qubits + qc.clbits}
-        
         
         # We now iterate through the data of the preprocessed QuantumCircuit
         for i in range(len(reordered_qc.data)):
@@ -411,7 +448,7 @@ def gen_hybrid_mcx_data(controls, target, ctrl_state, clean_ancillae, dirty_anci
     # This function generates the data for the hybrid mcx implementation
 
     from qrisp.core import QuantumVariable
-    from qrisp.mcx_algs import hybrid_mcx
+    from qrisp.alg_primitives.mcx_algs import hybrid_mcx
     # Specify QuantumVariables to call mcx function
     control_qv = QuantumVariable(len(controls), name="control")
     target_qv = QuantumVariable(1, name="target")
@@ -474,179 +511,6 @@ def gen_hybrid_mcx_data(controls, target, ctrl_state, clean_ancillae, dirty_anci
     return data
 
 
-def reorder_qc(qc):
-    from qrisp.uncomputation import dag_from_qc
-
-    G = dag_from_qc(qc, remove_init_nodes=True)
-    qc_new = qc.clearcopy()
-
-    dealloc_identifier = lambda x: x.op.name == "qb_dealloc"
-    alloc_identifer = lambda x: x.op.name == "qb_alloc"
-
-    # mcx_identifier = lambda x : isinstance(x.op, PTControlledOperation) and x.op.base_operation.name == "x"
-    # nmcx_identifier = lambda x : not mcx_identifier(x)
-    # sub_sort = lambda G : topological_sort(G, prefer = mcx_identifier, delay = nmcx_identifier)
-    # for n in topological_sort(G, prefer = dealloc_identifier, delay = alloc_identifer, sub_sort = sub_sort):
-
-    for n in topological_sort(G, prefer=dealloc_identifier, delay=alloc_identifer):
-        qc_new.append(n.instr)
-
-    #The above algorithm does not move allocation gates to their latest possible
-    #position (only compared to other deallocation gates)    
-    #We therefore manually move the allocation gates to the position right
-    #before the first actual instruction on that qubit.
-    new_data = []
-    delayed_qubit_alloc_dic = {}
-    
-    for i in range(len(qc_new.data)):
-        instr = qc_new.data[i]
-        
-        if instr.op.name == "qb_alloc":
-            delayed_qubit_alloc_dic[instr.qubits[0]] = instr
-        else:
-            # We sort the qubits in order to prevent non-deterministic compilation behavior
-            alloc_qubits = list(set(delayed_qubit_alloc_dic.keys()).intersection(instr.qubits))
-            alloc_qubits.sort(key = lambda x : hash(x))
-            for qb in alloc_qubits:
-                new_data.append(delayed_qubit_alloc_dic[qb])
-                del delayed_qubit_alloc_dic[qb]
-            
-            new_data.append(instr)
-    
-    for instr in delayed_qubit_alloc_dic.values():
-        new_data.append(instr)
-    
-    qc_new.data = new_data
-
-    return qc_new
-
-
-# This function performs a topological sort of the graph G where we try to execute any
-# deallocation gates as early as possible while still adhering to the topological order.
-# We try to perform a depth-first search as described here:
-# https://en.wikipedia.org/wiki/Topological_sorting
-# According to the Wikipedia page, we are allowed to pick any node as a "starting point"
-# of the DF-search, which allows us to modify the algorithm such that it optimizes the
-# (de)allocation order. The general idea is to pick the deallocation nodes as
-# starting points, where we order them, such that those deallocation nodes that
-# "require" the least allocation nodes are executed first. "Require" here means that
-# there is a causal relationship between the allocation and deallocation nodes,
-# i.e. there is a path from the allocation node to the deallocation node.
-
-
-# We can thus determine the amount of allocation nodes required for a deallocation node
-# n by counting, the amount of allocation nodes in the "ancestors" subgraph of n.
-def topological_sort(G, prefer=None, delay=None, sub_sort=nx.topological_sort):
-    """
-    Function to perform a topological sort on an Unqomp DAG which allows preferring/
-    delaying specific types of nodes
-
-    Parameters
-    ----------
-    G : nx.DiGraph
-        The Unqomp DAG.
-    prefer : function, optional
-        Function which returns True, when presented with an Instruction, that should be
-        preferred. The default is the function that returns False on all Operations
-    delay : function, optional
-        Function which returns True, when presented with an Instruction, that should be
-        delayed. The default is the function that returns False on all Operations
-    sub_sort : function, optional
-        A function which performs a topological sort, which can sorting preferences of
-        secondary importance. The default is nx.topological_sort.
-
-    Returns
-    -------
-    lin : list[UnqompNode]
-        The linearized list of UnqompNodes. The init nodes are not included.
-
-    """
-
-    if prefer is None:
-        prefer = lambda x: False
-
-    if delay is None:
-        delay = lambda x: False
-
-    G = G.copy()
-    # Collect the prefered nodes
-    prefered_nodes = []
-
-    for n in G.nodes():
-        if prefer(n.instr):
-            prefered_nodes.append(n)
-
-        n.processed = False
-
-    # For large scales, finding the ancestors is a bottleneck. We therefore use a
-    # jitted version
-    if len(G) * len(prefered_nodes) > 10000:
-        anc_lists = ancestors(G, prefered_nodes)
-    else:
-        anc_lists = []
-        for i in range(len(prefered_nodes)):
-            anc_lists.append(list(nx.ancestors(G, prefered_nodes[i])))
-
-    node_ancs = {
-        prefered_nodes[i]: anc_lists[i] for i in range(len(prefered_nodes))
-    }
-    
-    # We sort the nodes in order to prevent non-deterministic compilation behavior
-    prefered_nodes.sort(key=lambda x: len(node_ancs[x]) + 1/hash(x.instr))
-    
-    # Determine the required delay nodes for each prefered nodes
-    required_delay_nodes = {n: [] for n in prefered_nodes}
-
-    for n in prefered_nodes:
-        for k in node_ancs[n]:
-            if delay(k.instr):
-                required_delay_nodes[n].append(k)
-
-    required_delay_nodes = {n: set(required_delay_nodes[n]) for n in prefered_nodes}
-
-    
-    # Generate linearization
-    lin = []
-
-    while prefered_nodes:
-        # Sort nodes accordingly
-        prefered_nodes.sort(key=lambda x: len(required_delay_nodes[x]))
-
-        node = prefered_nodes.pop(0)
-        ancs = []
-
-        for n in node_ancs[node] + [node]:
-            if n.processed:
-                continue
-            else:
-                n.processed = True
-                ancs.append(n)
-
-        sub_graph = G.subgraph(ancs)
-
-        lin += list(sub_sort(sub_graph))
-
-        continue
-
-        for n in prefered_nodes:
-            required_delay_nodes[n] = (
-                required_delay_nodes[n] - required_delay_nodes[node]
-            )
-
-    # Linearize the remainder
-    remainder = []
-    for n in G.nodes():
-        if n.processed:
-            continue
-        else:
-            n.processed = True
-            remainder.append(n)
-
-    # lin += list(sub_sort(G))
-    lin += list(sub_sort(G.subgraph(remainder)))
-
-    return lin
-
 
 # Function to combine any sequences of single qubit gates into a single U3
 def combine_single_qubit_gates(qc):
@@ -691,112 +555,6 @@ def combine_single_qubit_gates(qc):
 
     return qc_new
 
-
-# This function reorders the circuit such that the intended measurements can be executed
-# as early as possible. Additionally, any instructions that are not needed for the
-# intended measurements are removed
-
-# Intended measurements has to be a list of qubits
-
-# The strategy is similar to the one presented in reorder_circuit:
-# We bring the circuit in the dag representation and perform a topological sort with
-# the intended measurement as prefered instructions
-
-
-# After that we investigate the circuit for instructions that can be removed
-def measurement_reduction(qc, intended_measurements):
-    qc = qc.copy()
-
-    # Insert intended measurements into the circuit
-    for qb in intended_measurements:
-        qc.measure(qb)
-
-    # Generate dag representation
-    from qrisp.uncomputation import dag_from_qc
-
-    G = dag_from_qc(qc, remove_init_nodes=True)
-
-    # Create result qc
-    qc_new = qc.clearcopy()
-
-    # Define prefered instructions
-    measure_identifier = (
-        lambda x: x.op.name == "measure" and x.qubits[0] in intended_measurements
-    )
-    
-
-    # Perform topological sort
-    for n in topological_sort(G, prefer=measure_identifier):
-        qc_new.append(n.instr)
-
-    # Check which instructions come after the final measurement
-    for i in range(len(qc_new.data))[::-1]:
-        if measure_identifier(qc_new.data[i]):
-            break
-
-    redundant_qc = qc_new.clearcopy()
-
-    redundant_qc.data = qc_new.data[i + 1 :]
-
-    G = dag_from_qc(redundant_qc, remove_init_nodes=True)
-
-    # #Now we need to make sure we don't remove deallocation gates from the data
-    # #because this would inflate the qubit count of the compiled circuit
-
-    # #The strategy here is that if we find a deallocation gate
-    # #we remove any instruction involving the deallocated qubit from the list
-    # #redundant instructions.
-
-    for node in G.nodes():
-        if node.instr.op.name == "qb_dealloc":
-            ancs = nx.ancestors(G, node)
-            
-            redundant_qc.data.remove(node.instr)
-            # print(f"removed {node.instr}")
-            for pred in ancs:
-                try:
-                    redundant_qc.data.remove(pred.instr)
-                except ValueError:
-                    pass
-            
-
-    redundant_instructions = redundant_qc.data
-
-    # We now remove the redundant instructions and the inserted
-    # measurements from the circuit data
-    i = 0
-    while i < len(qc_new.data):
-        if measure_identifier(qc_new.data[i]):
-            qc_new.data.pop(i)
-            continue
-        if qc_new.data[i] in redundant_instructions:
-            qc_new.data.pop(i)
-            continue
-        i += 1
-
-    return qc_new
-
-
-def allocation_graph(qc):
-    from qrisp.uncomputation.unqomp import dag_from_qc
-
-    dag = dag_from_qc(qc, remove_init_nodes=True)
-
-    res = nx.DiGraph()
-
-    dealloc_nodes = []
-    for n in dag.nodes():
-        if n.instr.op.name in ["qb_alloc", "qb_dealloc"]:
-            res.add_node(n)
-        if n.instr.op.name == "qb_dealloc":
-            dealloc_nodes.append(n)
-
-    for n in dealloc_nodes:
-        for anc in nx.ancestors(n, dag):
-            if anc.instr.op.name == "qb_alloc":
-                res.add_edge(anc, n)
-
-    return n
 
 
 def update_depth_dic(instruction, depth_dic, depth_indicator = None):
@@ -847,62 +605,6 @@ def update_depth_dic(instruction, depth_dic, depth_indicator = None):
         for b in qargs + cargs:
             depth_dic[b] = max_level
 
-
-@njit(cache=True)
-def ancestors_jitted(start_index, indptr, indices, node_amount):
-    to_do_array = np.zeros(node_amount, dtype=np.byte)
-    to_do_array[start_index] = 1
-    done_array = np.zeros(node_amount, dtype=np.byte)
-
-    stack = 1
-    while stack:
-        node = np.argmax(to_do_array)
-        to_do_array[node] = 0
-
-        for i in range(indptr[node], indptr[node + 1]):
-            new_node = indices[i]
-            if done_array[new_node] == 0:
-                to_do_array[new_node] = 1
-                stack += 1
-
-        done_array[node] = 1
-        stack -= 1
-
-    return np.nonzero(done_array)[0]
-
-
-@njit(parallel=True, cache=True)
-def ancestors_jitted_wrapper(start_indices, indptr, indices, node_amount):
-    res = [np.zeros(1, dtype=np.int64)] * len(start_indices)
-    for i in prange(len(start_indices)):
-        start_index = start_indices[i]
-        res[i] = ancestors_jitted(start_index, indptr, indices, node_amount)
-
-    return res
-
-
-def ancestors(dag, start_nodes):
-    node_list = list(dag.nodes())
-
-    sprs_mat = nx.to_scipy_sparse_array(dag, format="csc")
-
-    start_indices = []
-    for i in range(len(dag)):
-        if node_list[i] in start_nodes:
-            start_indices.append(i)
-
-    res_list_indices = ancestors_jitted_wrapper(
-        np.array(start_indices).astype(np.int32),
-        sprs_mat.indptr,
-        sprs_mat.indices.astype(np.int32),
-        len(dag),
-    )
-
-    node_list = [
-        [node_list[j] for j in anc_indices] for anc_indices in res_list_indices
-    ]
-
-    return node_list
 
 # REWORK required: Instead of detecting a QFT by the gate name, a much more robust
 # approach is to create a Operation subtype, that describes QFT gates and do type-

@@ -17,7 +17,7 @@
 """
 
 
-from qrisp import QuantumModulus, h, multi_measurement, cx, qcla
+from qrisp import QuantumModulus, h, multi_measurement, cx, qcla, gidney_adder, QuantumBool, control
 import numpy as np
 
 def test_modular_arithmetic():
@@ -213,3 +213,24 @@ def test_modular_arithmetic():
                 continue
             assert (k[0]*i)%N == k[1]
 
+    for i in range(1, N):
+        a = QuantumModulus(N, inpl_adder = gidney_adder)
+        h(a)
+        b = a.duplicate()
+        cx(a, b)
+        qbl = QuantumBool()
+        h(qbl)
+        
+        with control(qbl):
+            a *= i
+        
+    
+        mes_res = multi_measurement([b,a, qbl])
+    
+        for k in mes_res.keys():
+            if k[1] is np.nan or k[0] is np.nan:
+                continue
+            if k[2]:
+                assert (k[0]*i)%N == k[1]
+            else:
+                assert k[0] == k[1]

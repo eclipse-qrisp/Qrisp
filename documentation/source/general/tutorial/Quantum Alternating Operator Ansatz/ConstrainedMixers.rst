@@ -46,7 +46,7 @@ An interesting approach to overcome these problems is the introduction of constr
 
 One of the first example was the `XY mixer <https://dl.acm.org/doi/pdf/10.1145/3149526.3149530>`_, that you might already be familiar with from :ref:`MkCSQAOA`. This mixer could be seen as some kind of "continuous swap" operation. That is: In any given multi qubit state, it preserves the number of ones. This is especcially usefull in the context of one-hot encoded :ref:`QuantumVariables<QuantumVariable>` because this encoding relies on the fact that each state only contains a single one.
 
-A more flexible framework has been presented in `this paper <https://arxiv.org/abs/2203.06095>`_. The approach here is to classically construct a matrix $H$, which preserves the required subspace and subsequently use Trotterization to simulate evolution under $H$ on the quantum computer. While this approach in principle allows arbitrary constraints, it also has a few disadvantages:
+A more flexible framework has been presented in `this paper <https://arxiv.org/abs/2203.06095>`__. The approach here is to classically construct a matrix $H$, which preserves the required subspace and subsequently use Trotterization to simulate evolution under $H$ on the quantum computer. While this approach in principle allows arbitrary constraints, it also has a few disadvantages:
 
 * Trotterization is computationally extremely expensive compared to established mixers.
 * Due to finite Trotterization precision, there can be leakage into the forbidden subspace.

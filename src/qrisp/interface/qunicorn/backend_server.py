@@ -53,7 +53,7 @@ def get_ip():
 
 class BackendServer:
     """
-    This class allows convenient setup of a server respecting the `Qunicorn<https://qunicorn-core.readthedocs.io/en/latest/index.html>`_ interface.
+    This class allows convenient setup of a server respecting the `Qunicorn <https://qunicorn-core.readthedocs.io/en/latest/index.html>`_ interface.
 
     Parameters
     ----------
@@ -280,7 +280,7 @@ class BackendServer:
     def start(self):
         
         from waitress import serve
-
+        
         #Set up the thread to run the server    
         def wrapper():
             serve(self.app, host=self.ip_address, port=self.port)
@@ -290,3 +290,14 @@ class BackendServer:
 
         # Start the thread
         thr.start()
+        
+        import requests
+        # Hold programm until the server answers
+        while True:
+            try:
+                response = requests.get("http://" + self.ip_address + ":" + str(self.port) + "/jobs/0/")
+            except:
+                continue
+            break
+            
+            

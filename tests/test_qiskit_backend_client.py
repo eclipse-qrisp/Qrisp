@@ -55,18 +55,28 @@ def test_qiskit_backend_client():
 
     qc.add_clbit()
     qc.measure(1, 0)    
-    print(qc)
+    # TO-DO prevent this test from crashing regardless of functionality
+    # Create QuantumSession
+    qc = QuantumCircuit()
 
-    ###################
+    qc.add_qubit()
+    qc.add_qubit()
+    qc.add_clbit()
 
-    # Create VirtualBackend
-    def sample_run_func(qc, shots, token):
-        print("Executing Circuit")
+    qc.h(0)
+
+    qc.rz(np.pi / 2, 0)
+
+    qc.x(0)
+    qc.cx(0, 1)
+    qc.measure(1, 0)
+
+
+    def sample_run_func(qc, shots, token = ""):
         return {"0": shots}
 
     test_virtual_backend = VirtualBackend(sample_run_func)
 
-    print(test_virtual_backend.run(qc, 100))
     assert str(test_virtual_backend.run(qc, 100)) == "{'0': 100}"
     assert test_virtual_backend.run(qc, 100)["0"] == 100
 

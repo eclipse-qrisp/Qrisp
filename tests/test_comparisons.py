@@ -17,7 +17,7 @@
 """
 
 
-from qrisp import h, QuantumFloat, multi_measurement, QuantumModulus
+from qrisp import h, QuantumFloat, multi_measurement, QuantumModulus, gphase
 import numpy as np
 
 
@@ -105,6 +105,33 @@ def test_quantum_modulus_comparison():
     
     for comp in ["eq", "neq", "lt", "gt", "leq", "geq"]:
         comparison_helper(a, b, comp)
+        
+    
+    # Test comparisons as ConditionalEnvironments
+    
+    qf1 = QuantumFloat(2)
+    qf2 = QuantumFloat(2)
+
+    h(qf1)
+    h(qf2)
+
+    with qf1==qf2:
+        gphase(np.pi,qf1[0])
+
+    qf1.qs.statevector()
+    
+    qf1 = QuantumFloat(2)
+    qf2 = QuantumFloat(2)
+
+    h(qf1)
+    h(qf2)
+
+    with qf1<qf2:
+        gphase(np.pi,qf1[0])
+
+    qf1.qs.statevector()
+
+    
 
 def comparison_helper(qf_0, qf_1, comp):
     qf_0 = qf_0.duplicate()

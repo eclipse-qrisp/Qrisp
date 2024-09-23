@@ -858,7 +858,7 @@ class QuantumVariable:
         self,
         plot=False,
         backend=None,
-        shots=10000,
+        shots=100000,
         compile=True,
         compilation_kwargs={},
         subs_dic={},
@@ -1256,7 +1256,7 @@ class QuantumVariable:
             raise Exception("Tried to uncompute deleted QuantumVariable")
 
         if do_it:
-            from qrisp.uncomputation import uncompute
+            from qrisp.permeability import uncompute
 
             uncompute(self.qs, self.qs.uncomp_stack + [self], recompute)
             self.qs.uncomp_stack = []
@@ -1433,7 +1433,7 @@ def plot_histogram(outcome_labels, counts, filename=None):
         except KeyError:
             res_list.append(0)
 
-    plt.bar(outcome_labels, res_list, width = 0.8/len(outcome_labels))
+    plt.bar(outcome_labels, res_list, width = 0.8)
     plt.grid()
     plt.ylabel("Measurement probability")
     plt.xlabel("QuantumVariable value")

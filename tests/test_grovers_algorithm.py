@@ -21,7 +21,7 @@ import numpy as np
 
 from qrisp.misc import multi_measurement
 from qrisp.core import QuantumSession
-from qrisp.arithmetic import QuantumFloat, sbp_mult
+from qrisp.alg_primitives.arithmetic import QuantumFloat, sbp_mult
 from qrisp.grover import tag_state, grovers_alg
 from qrisp.environments import invert
 from itertools import product
@@ -110,8 +110,7 @@ def test_grovers_algorithm():
         (isinstance(item, float) and item < 1) for item in mes_res.values()
     )
 
-    assert list(mes_res.keys())[0] == (0.5, -0.5)
-    assert list(mes_res.keys())[1] == (-0.5, 0.5)
+    assert set(list(mes_res.keys())[:2]) == {(0.5, -0.5), (-0.5, 0.5)}
 
     # check if the first tuple in the tuple contains expected values. Style example of the whole tuple: ((0, 1), 0.9592)
     assert all(

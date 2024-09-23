@@ -19,7 +19,7 @@
 # Created by ann81984 at 27.04.2022
 import pytest
 
-from qrisp.logic_synthesis import TruthTable, gray_logic_synth
+from qrisp.alg_primitives.logic_synthesis import TruthTable, gray_logic_synth
 from qrisp.misc import int_encoder
 from qrisp.core import QuantumVariable, QuantumSession
 

@@ -55,6 +55,6 @@ def test_QAE_integration():
 
     prec = 3 # precision
     res = QAE(input_list, state_function, oracle_function, precision=prec)
-    assert res.get_measurement() == {0.125: 0.3133, 0.875: 0.3133, 0.25: 0.1256, 0.75: 0.1256, 0.0: 0.051, 0.375: 0.0263, 0.625: 0.0263, 0.5: 0.0186}
+    assert res.get_measurement() == {0.125: 0.31334, 0.875: 0.31334, 0.25: 0.12557, 0.75: 0.12557, 0.0: 0.05096, 0.375: 0.02632, 0.625: 0.02632, 0.5: 0.01858}
 
 

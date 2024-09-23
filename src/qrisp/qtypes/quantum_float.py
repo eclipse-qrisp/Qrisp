@@ -20,7 +20,7 @@
 import numpy as np
 import sympy as sp
 
-# from qrisp.arithmetic import (
+# from qrisp.alg_primitives.arithmetic import (
 #     eq,
 #     geq,
 #     gt,
@@ -386,7 +386,7 @@ class QuantumFloat(QuantumVariable):
     @gate_wrap(permeability="args", is_qfree=True)
     def __mul__(self, other):
         
-        from qrisp.arithmetic import q_mult, polynomial_encoder
+        from qrisp.alg_primitives.arithmetic import q_mult, polynomial_encoder
         
         if isinstance(other, QuantumFloat):
             return q_mult(self, other)
@@ -423,7 +423,7 @@ class QuantumFloat(QuantumVariable):
     @gate_wrap(permeability="args", is_qfree=True)
     def __add__(self, other):
         
-        from qrisp.arithmetic import sbp_add
+        from qrisp.alg_primitives.arithmetic import sbp_add
         
         if isinstance(other, QuantumFloat):
             return sbp_add(self, other)
@@ -438,7 +438,7 @@ class QuantumFloat(QuantumVariable):
 
     @gate_wrap(permeability="args", is_qfree=True)
     def __sub__(self, other):
-        from qrisp.arithmetic import sbp_sub
+        from qrisp.alg_primitives.arithmetic import sbp_sub
 
         if isinstance(other, QuantumFloat):
             return sbp_sub(self, other)
@@ -457,7 +457,7 @@ class QuantumFloat(QuantumVariable):
     @gate_wrap(permeability="args", is_qfree=True)
     def __rsub__(self, other):
         from qrisp import x
-        from qrisp.arithmetic import sbp_sub
+        from qrisp.alg_primitives.arithmetic import sbp_sub
 
         if isinstance(other, QuantumFloat):
             return sbp_sub(other, self)
@@ -475,7 +475,7 @@ class QuantumFloat(QuantumVariable):
 
     @gate_wrap(permeability="args", is_qfree=True)
     def __truediv__(self, other):
-        from qrisp.arithmetic import q_div
+        from qrisp.alg_primitives.arithmetic import q_div
 
         return q_div(self, other)
 
@@ -488,7 +488,7 @@ class QuantumFloat(QuantumVariable):
             raise Exception(
                 "Tried to perform floor division on non-integer QuantumFloats"
             )
-        from qrisp.arithmetic import q_div
+        from qrisp.alg_primitives.arithmetic import q_div
 
         return q_div(self, other, prec=0)
 
@@ -497,14 +497,14 @@ class QuantumFloat(QuantumVariable):
         if power != -1:
             raise Exception("Currently the only supported power is -1")
 
-        from qrisp.arithmetic import qf_inversion
+        from qrisp.alg_primitives.arithmetic import qf_inversion
 
         return qf_inversion(self)
 
     @gate_wrap(permeability=[1], is_qfree=True)
     def __iadd__(self, other):
         
-        from qrisp.arithmetic import polynomial_encoder
+        from qrisp.alg_primitives.arithmetic import polynomial_encoder
         
         if isinstance(other, QuantumFloat):
             input_qf_list = [other]
@@ -536,7 +536,7 @@ class QuantumFloat(QuantumVariable):
     @gate_wrap(permeability=[1], is_qfree=True)
     def __isub__(self, other):
         
-        from qrisp.arithmetic import polynomial_encoder
+        from qrisp.alg_primitives.arithmetic import polynomial_encoder
         
         if isinstance(other, QuantumFloat):
             input_qf_list = [other]
@@ -568,7 +568,7 @@ class QuantumFloat(QuantumVariable):
     @gate_wrap(permeability=[], is_qfree=True)
     def __imul__(self, other):
         
-        from qrisp.arithmetic import inpl_mult
+        from qrisp.alg_primitives.arithmetic import inpl_mult
         
         inpl_mult(self, other)
 
@@ -584,7 +584,7 @@ class QuantumFloat(QuantumVariable):
 
     def __lt__(self, other):
         
-        from qrisp.arithmetic import lt
+        from qrisp.alg_primitives.arithmetic import lt
         
         if not isinstance(other, (QuantumFloat, int, float)):
             raise Exception(f"Comparison with type {type(other)} not implemented")
@@ -593,7 +593,7 @@ class QuantumFloat(QuantumVariable):
 
     def __gt__(self, other):
         
-        from qrisp.arithmetic import gt
+        from qrisp.alg_primitives.arithmetic import gt
         
         if not isinstance(other, (QuantumFloat, int, float)):
             raise Exception(f"Comparison with type {type(other)} not implemented")
@@ -602,7 +602,7 @@ class QuantumFloat(QuantumVariable):
 
     def __le__(self, other):
         
-        from qrisp.arithmetic import leq
+        from qrisp.alg_primitives.arithmetic import leq
         
         if not isinstance(other, (QuantumFloat, int, float)):
             raise Exception(f"Comparison with type {type(other)} not implemented")
@@ -611,7 +611,7 @@ class QuantumFloat(QuantumVariable):
 
     def __ge__(self, other):
         
-        from qrisp.arithmetic import geq        
+        from qrisp.alg_primitives.arithmetic import geq        
         
         if not isinstance(other, (QuantumFloat, int, float)):
             raise Exception(f"Comparison with type {type(other)} not implemented")
@@ -620,7 +620,7 @@ class QuantumFloat(QuantumVariable):
 
     def __eq__(self, other):
         
-        from qrisp.arithmetic import eq
+        from qrisp.alg_primitives.arithmetic import eq
         
         if not isinstance(other, (QuantumFloat, int, float)):
             raise Exception(f"Comparison with type {type(other)} not implemented")
@@ -629,7 +629,7 @@ class QuantumFloat(QuantumVariable):
 
     def __ne__(self, other):
         
-        from qrisp.arithmetic import neq
+        from qrisp.alg_primitives.arithmetic import neq
         
         if not isinstance(other, (QuantumFloat, int, float)):
             raise Exception(f"Comparison with type {type(other)} not implemented")
@@ -798,7 +798,7 @@ class QuantumFloat(QuantumVariable):
         )
 
     def incr(self, x=None):
-        from qrisp.arithmetic.adders.incrementation import increment
+        from qrisp.alg_primitives.arithmetic.adders.incrementation import increment
 
         if x is None:
             x = 2**self.exponent
@@ -981,7 +981,7 @@ class QuantumFloat(QuantumVariable):
 
         """
         
-        from qrisp.arithmetic import quantum_bit_shift
+        from qrisp.alg_primitives.arithmetic import quantum_bit_shift
         
         quantum_bit_shift(self, shift_amount)
         
@@ -996,7 +996,7 @@ class QuantumFloat(QuantumVariable):
 
 def create_output_qf(operands, op):
     if isinstance(op, sp.core.expr.Expr):
-        from qrisp.arithmetic.poly_tools import expr_to_list
+        from qrisp.alg_primitives.arithmetic.poly_tools import expr_to_list
 
         expr_list = expr_to_list(op)
 

@@ -16,3 +16,4 @@ Methods
    QAOAProblem.train_function
    QAOAProblem.compile_circuit
    QAOAProblem.benchmark
+   QAOAProblem.set_init_function

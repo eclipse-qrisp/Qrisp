@@ -460,10 +460,10 @@ class QuantumSession(QuantumCircuit):
         if operation.name == "qb_alloc":
             qubits[0].allocated = True
         
-        
         if self.xla_mode >= 3:
             
             self.data.append(Instruction(operation, qubits, clbits))
+            
             if operation.name == "qb_dealloc":
                 qubits[0].allocated = False
             return
@@ -486,7 +486,6 @@ class QuantumSession(QuantumCircuit):
                     check_alloc(item)
             else:
                 if not input.allocated:
-                    # pass
                     raise Exception(
                         f"Tried to perform operation {operation.name} on "
                         f"unallocated qubit {input}"
@@ -797,7 +796,7 @@ class QuantumSession(QuantumCircuit):
         the ``gate_speed`` keyword argument exists. This argument should be a 
         function of :ref:`Operation` objects, that returns a float indicating
         the gate speed. For an example of such a function, check out
-        :ref:`qrisp.t_depth_indicator`. For further details, check the examples.
+        :meth:`T-depth <qrisp.t_depth_indicator>`. For further details, check the examples.
         
 
         The .compile method is called by default, when executing the

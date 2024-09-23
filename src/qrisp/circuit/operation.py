@@ -124,11 +124,14 @@ class Operation:
 
         # Find abstract parameters (ie. sympy expressions and log them)
         for par in params:
-            if isinstance(par, (float, int, np.floating, np.int32)):
-                pass
+            if isinstance(par, np.number):
+                par = par.item()
             elif isinstance(par, Expr):
-                self.abstract_params = self.abstract_params.union(par.free_symbols)
-            else:
+                if len(par.free_symbols):
+                    self.abstract_params = self.abstract_params.union(par.free_symbols)
+                else:
+                    par = float(par)
+            elif not isinstance(par, (float, int, complex)):
                 raise Exception(
                     f"Tried to create operation with parameters of type {type(par)}"
                 )
@@ -368,7 +371,7 @@ class Operation:
         return hash(hash(self.name) + hash(tuple(self.params)))
 
     def is_permeable(self, indices):
-        from qrisp.uncomputation import is_permeable
+        from qrisp.permeability import is_permeable
 
         return is_permeable(self, indices)
 
@@ -438,7 +441,7 @@ class Operation:
 # for more information
 class U3Gate(Operation):
     def __init__(self, theta, phi, lam, name="u3", global_phase=0):
-        self.global_phase = global_phase
+        
         # Initialize Operation instance
         super().__init__(
             name=name,
@@ -449,7 +452,11 @@ class U3Gate(Operation):
         )
         
         if isinstance(global_phase, Expr):
-            self.abstract_params = self.abstract_params.union(global_phase.free_symbols)
+            if len(global_phase.free_symbols):
+                self.abstract_params = self.abstract_params.union(global_phase.free_symbols)
+            else:
+                global_phase = float(global_phase)
+        self.global_phase = global_phase
 
         # Set parameters
         self.theta = self.params[0]
@@ -691,7 +698,7 @@ class PTControlledOperation(Operation):
             self.phase_tolerant = False
 
         elif self.base_operation.name == "swap":
-            from qrisp.core import fredkin_qc
+            from qrisp.circuit import fredkin_qc
 
             definition_circ = fredkin_qc(num_ctrl_qubits, ctrl_state, method)
 
@@ -813,6 +820,8 @@ class PTControlledOperation(Operation):
         if not isinstance(self.definition, type(None)):
             res.definition = self.definition.bind_parameters(subs_dic)
         res.base_operation = self.base_operation.bind_parameters(subs_dic)
+        res.params = res.base_operation.params
+        res.abstract_params = set(self.base_operation.params) - set(subs_dic.keys())
 
         return res
 

@@ -24,8 +24,6 @@ import numpy as np
 from qrisp.circuit import transpile
 from qrisp.core import QuantumVariable, qompiler
 from qrisp.misc import bin_rep
-# from qrisp.environments.temp_var_environment import temp_qv
-from qrisp.environments import conjugate
 
 class QuantumArray(np.ndarray):
     """
@@ -431,7 +429,7 @@ class QuantumArray(np.ndarray):
     def get_measurement(
         self,
         backend=None,
-        shots=10000,
+        shots=100000,
         compile=True,
         compilation_kwargs={},
         subs_dic={},
@@ -638,12 +636,12 @@ class QuantumArray(np.ndarray):
 
         if isinstance(self.qtype, QuantumFloat):
             if isinstance(other, QuantumArray):
-                from qrisp.arithmetic import q_matmul
+                from qrisp.alg_primitives.arithmetic import q_matmul
 
                 return q_matmul(self, other)
 
             elif isinstance(other, np.ndarray):
-                from qrisp.arithmetic import semi_classic_matmul
+                from qrisp.alg_primitives.arithmetic import semi_classic_matmul
 
                 return semi_classic_matmul(self, other)
 
@@ -656,12 +654,13 @@ class QuantumArray(np.ndarray):
             return (self.transpose() @ other.transpose()).transpose()
 
     def __getitem__(self, index):
+        from qrisp.environments import conjugate
         if isinstance(index, QuantumVariable):
-            return manipulate_array(self, index)
+            return conjugate(manipulate_array)(self, index)
 
         if isinstance(index, tuple):
             if isinstance(index[0], QuantumVariable):
-                return manipulate_array(self, index)
+                return conjugate(manipulate_array)(self, index)
 
         return np.ndarray.__getitem__(self, index)
 
@@ -911,7 +910,6 @@ class QuantumArray(np.ndarray):
         return list(self.get_measurement(**kwargs))[0]
 
 
-@conjugate
 def manipulate_array(q_array, index):
     from qrisp import QuantumFloat, demux, invert
 

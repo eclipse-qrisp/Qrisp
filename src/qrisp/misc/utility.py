@@ -32,6 +32,7 @@ def bin_rep(n, bits):
             str(n) + " can't be represented as a " + str(bits) + " bit number"
         )
 
+    return bin(n)[2:].zfill(bits)
     zero_string = "".join(["0" for k in range(bits)])
     return (zero_string + bin(n)[2:])[-bits:]
 
@@ -70,11 +71,11 @@ def cnot_count(qc):
     qc = qc.transpile()
 
     gate_count_dic = qc.count_ops()
-
-    try:
-        return gate_count_dic["cx"]
-    except KeyError:
-        return 0
+    cnot_count = 0
+    for gate_name in ["cx", "cy", "cz"]:
+        cnot_count += gate_count_dic.get(gate_name, 0)
+    
+    return cnot_count
 
 
 def is_inv(x, bit):
@@ -405,7 +406,7 @@ def gate_wrap_inner(
 
         if is_qfree is not None:
             if verify and is_qfree:
-                from qrisp.uncomputation import is_qfree as is_qfree_function
+                from qrisp.permeability import is_qfree as is_qfree_function
 
                 if not is_qfree_function(gwe.instruction.op):
                     raise Exception(
@@ -589,7 +590,7 @@ def gate_wrap_inner(
                 #         permeability_dict[i] = False
 
                 if verify:
-                    from qrisp.uncomputation import is_permeable
+                    from qrisp.permeability import is_permeable
 
                     permeable_qubit_indices = []
 
@@ -639,7 +640,7 @@ def find_qs(args):
 
 
 # Function to measure multiple quantum variables at once to assess their entanglement
-def multi_measurement(qv_list, shots=10000, backend=None):
+def multi_measurement(qv_list, shots=100000, backend=None):
     """
     This functions facilitates the measurement of multiple QuantumVariables at the same
     time. This can be used if the entanglement structure between several
@@ -711,6 +712,7 @@ def multi_measurement(qv_list, shots=10000, backend=None):
     # compiled_qc = qv_list[0].qs.copy()
     # Add classical registers for the measurement results to be stored in
     cl_reg_list = []
+    
 
     for var in qv_list[::-1]:
         cl_reg = []
@@ -811,7 +813,7 @@ def app_phase_function(qv_list, phase_function, t=1, **kwargs):
         phases.append(phase_function(*labels, **kwargs) * t)
 
     # Synthesize phase
-    from qrisp.logic_synthesis import gray_phase_synth_qb_list
+    from qrisp import gray_phase_synth_qb_list
 
     gray_phase_synth_qb_list(
         qv_list[0].qs, sum([qv.reg[::-1] for qv in qv_list], []), phases
@@ -938,7 +940,7 @@ def as_hamiltonian(hamiltonian):
     return hamiltonian_application
 
 
-def perm_lock(qubits, message=""):
+def perm_lock(qubits):
     """
     Locks a list of qubits such that only permeable gates can be executed on these
     qubits. This means that an error will be raised if the user attempts to perform any
@@ -950,7 +952,6 @@ def perm_lock(qubits, message=""):
     basis state of this qubit but still allow controling on this qubit or applying
     phase gates.
 
-    Using the keywoard message it is possible to extend the displayed error message.
 
     The effect of this function can be reversed using perm_unlock.
 
@@ -958,8 +959,6 @@ def perm_lock(qubits, message=""):
     ----------
     qubits : list[Qubit] or QuantumVariable
         The qubits to phase-tolerantly lock.
-    message : str, optional
-        The message why these qubits are locked.
 
     Examples
     --------
@@ -991,7 +990,6 @@ def perm_lock(qubits, message=""):
 
             continue
         qb.perm_lock = True
-        qb.perm_lock_message = message
 
 
 def perm_unlock(qubits):
@@ -1010,9 +1008,9 @@ def perm_unlock(qubits):
 
     >>> from qrisp import QuantumChar, perm_lock, perm_unlock
     >>> q_ch = QuantumChar()
-    >>> perm_lock(q_ch, message = "Qubits are perm-locked due to testing purposes")
+    >>> perm_lock(q_ch)
     >>> q_ch[:] = "g"
-    Exception: Qubits are perm-locked due to testing purposes
+    Exception: Tried to perform non-permeable operations on perm_locked qubits
 
     >>> perm_unlock(q_ch)
     >>> q_ch[:] = "g"
@@ -1028,15 +1026,12 @@ def perm_unlock(qubits):
                 perm_unlock(item)
             continue
         qb.perm_lock = False
-        if hasattr(qb, "perm_lock_message"):
-            del qb.perm_lock_message
 
 
-def lock(qubits, message=""):
+def lock(qubits):
     """
     Locks a list of qubits, implying an error will be raised if the user tries to
     perform any operation involving these qubits.
-    Using the keywoard message it is possible to extend the displayed error message.
 
     This can be reversed by calling unlock.
 
@@ -1044,8 +1039,6 @@ def lock(qubits, message=""):
     ----------
     qubits : list[Qubit] or QuantumVariable
         The list of Qubits to lock.
-    message : str, optional
-        The message why these qubits are locked.
 
     Examples
     --------
@@ -1054,10 +1047,9 @@ def lock(qubits, message=""):
 
     >>> from qrisp import QuantumChar, lock
     >>> q_ch = QuantumChar()
-    >>> lock(q_ch, message = "Qubits are locked due to testing purposes")
+    >>> lock(q_ch)
     >>> q_ch[:] = "g"
-    Exception: Qubits are locked due to testing purposes
-
+    Exception: Tried to operation on locked qubits
     """
     from qrisp.circuit.quantum_circuit import convert_to_qb_list
 
@@ -1068,7 +1060,6 @@ def lock(qubits, message=""):
             continue
 
         qb.lock = True
-        qb.lock_message = message
 
 
 def unlock(qubits):
@@ -1107,8 +1098,6 @@ def unlock(qubits):
                 unlock(item)
             continue
         qb.lock = False
-        if hasattr(qb, "lock_message"):
-            del qb.lock_message
 
 
 def benchmark_function(function):
@@ -1274,7 +1263,7 @@ def check_if_fresh(qubits, qs, ignore_q_envs = True):
     return True
 
 
-def get_measurement_from_qc(qc, qubits, backend, shots=10000):
+def get_measurement_from_qc(qc, qubits, backend, shots=100000):
     # Add classical registers for the measurement results to be stored in
     cl = []
     for i in range(len(qubits)):
@@ -1302,6 +1291,7 @@ def get_measurement_from_qc(qc, qubits, backend, shots=10000):
             new_counts_dic[new_key] = counts[key]
 
     counts = new_counts_dic
+    
     # Plot result (if needed)
 
     # Normalize counts
@@ -1410,9 +1400,11 @@ def redirect_qfunction(function_to_redirect):
 
 
     """
-    from qrisp import QuantumEnvironment, QuantumVariable
+    from qrisp import QuantumEnvironment, QuantumVariable, merge, QuantumArray
     import weakref
     def redirected_qfunction(*args, target=None, **kwargs):
+        
+        merge([arg for arg in list(args) + [target] if isinstance(arg, (QuantumVariable, QuantumArray))])
         env = QuantumEnvironment()
         env.manual_allocation_management = True
         qs = target.qs
@@ -1550,7 +1542,7 @@ def get_sympy_state(qs, decimals):
                 if angles[ind] == 1:
                     phase = 1
                 else:
-                    phase = nsimplify(angles[ind], tolerance=10 ** -5)
+                    phase = nsimplify(float(angles[ind]), tolerance=10 ** -5)
     
                 if count_ops(phase) > 5:
                     phase = angles[ind]
@@ -1650,10 +1642,10 @@ def trigify_amp(amplitude, nnz):
     )
 
     cos_expr = nsimplify(
-        np.arccos(np.abs(amplitude)) / np.pi, tolerance=10 ** -5
+        float(np.arccos(np.abs(amplitude)) / np.pi), tolerance=10 ** -5
     )
     sin_expr = nsimplify(
-        np.arcsin(np.abs(amplitude)) / np.pi, tolerance=10 ** -5
+        float(np.arcsin(np.abs(amplitude)) / np.pi), tolerance=10 ** -5
     )
 
     # if count_ops(sin_expr) > count_ops(cos_expr):
@@ -1680,7 +1672,7 @@ def trigify_amp(amplitude, nnz):
     # if count_ops(temp) > 4:
     if len(latex(temp)) > 20:
         temp = (
-            nsimplify(np.abs(amplitude) * nnz**0.5, tolerance=10 ** -5)
+            nsimplify(float(np.abs(amplitude) * nnz**0.5), tolerance=10 ** -5)
             / nnz**0.5
         )
         if len(latex(temp)) > 20:
@@ -1902,7 +1894,7 @@ def cnot_depth_indicator(op):
     
     In NISQ-era devices, CNOT gates are the restricting bottleneck for quantum 
     circuit execution. This function can be used as a gate-speed specifier for
-    the :meth:`compile <qrisp.QuantumSession.compile>`_ method.
+    the :meth:`compile <qrisp.QuantumSession.compile>` method.
     
     Parameters
     ----------
@@ -1922,7 +1914,7 @@ def cnot_depth_indicator(op):
         return cnot_depth_indicator(op.base_op)
     elif op.definition is not None:
         return op.definition.cnot_depth()
-    if op.num_qubits == 1:
+    if op.num_qubits == 1 or op.name == "barrier":
         return 0
     elif op.name in ["cx", "cx", "cz"]:
         return 1

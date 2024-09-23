@@ -26,10 +26,11 @@ We start the tutorial by coding the :red:`Q`:orange:`u`:yellow:`a`:green:`n`:blu
 In order to create your customized QuantumVariable, one first needs to import the :ref:`QuantumVariable <QuantumVariable>` class. As mentioned before, using the :ref:`QuantumArray <QuantumArray>` class leads to some shortcuts so let's import it as well. Before defining the class and functions within the class let's think about how one can describe or encode colors using strings of bits:
 
 - One approach is to represent colors as an array where only one element is 1 and the rest are 0. For instance, if there are four colors, :red:`red`, :green:`green`, :blue:`blue`, and :yellow:`yellow`, they can be represented this way as :red:`[1, 0, 0, 0]`, :green:`[0, 1, 0, 0]`, :blue:`[0, 0, 1, 0]`, and :yellow:`[0, 0, 0, 1]`. This is called the **one-hot encoding**. 
-- Another approach is to represent colors with a unique binary number. In the case of the same four colors, they can be represented, for example, as :red:`[0, 0]`, :green:`[0, 1]`, :blue:`[1, 0]`, and :yellow:`[1, 1]` respectively. This encoding scheme is called **binary encoding**. 
+- Another approach is to represent colors with a unique binary number. In the case of the same four colors, they can be represented, for example, as :red:`[0, 0]`, :green:`[0, 1]`, :blue:`[1, 0]`, and :yellow:`[1, 1]`, respectively. This encoding scheme is called **binary encoding**. 
 
-In the code block below, we can define the initialization function ``__init__`` as well as find a way to tell our quantum algorithm which color is encoded with our array. In other words, we need to define a decoder function that will decode the color for a given index ``i``. In our case we use the one-hot encoding scheme as default. 
+In the code block below, we can define the initialization function ``__init__`` as well as find a way to tell our quantum algorithm which color is encoded with our array. In other words, we need to define a decoder function that will decode the color for a given index ``i``. In our case, we use the one-hot encoding scheme as default. 
 ::
+
     from qrisp import QuantumArray, QuantumVariable
     import numpy as np
 
@@ -65,6 +66,7 @@ Having already implemented this custom QuantumVariable, you can also simply impo
 
 Run the code box below and see how that works with our custom QuantumVariable.
 ::
+
     from qrisp.qaoa import QuantumColor
 
     color_list = ["red", "orange", "yellow", "green", "blue", "violet"]
@@ -79,13 +81,14 @@ M$\\kappa$CS meets QAOAProblem
 
 Let's revisit the recipe from the previous tutorial; to implement QAOA with :ref:`QAOAProblem <QAOAProblem>` one needs to *drumroll please...*
 
-I. define **CLASSICAL COST FUNCTION** of the problem, 
+I. define the **CLASSICAL COST FUNCTION** of the problem, 
 II. define the **INITIAL STATE** if it is not the superposition, which in the case of graph coloring indeed is not,  
 III. define **COST OPERATOR aka PHASE SEPARATOR** (or use the ones specified in `From QAOA to QAOA <https://arxiv.org/abs/1709.03489>`_), and 
 IV. select **MIXER** from the :ref:`assortment we provide and list here <MIXers>`.
 
 Time to prepare the ingrediends starting with defining a graph and the available colors we'd like to color the graph with.
 ::
+
     import networkx as nx
 
     G = nx.Graph()
@@ -95,10 +98,11 @@ Time to prepare the ingrediends starting with defining a graph and the available
 
     color_list = ["red", "blue", "yellow", "green"]
 
-Before defining the classical cost function ``cl_cost_function(counts)`` for M$\kappa$CS we need to think about the objective (``mkcs_obj``). Since we're trying to color a graph in a way to prevent neighboring nodes being the same color, we will reward the instances where they are in fact not the same color. To increase the contrast between optimal and less optimal solutions we shall used multiplicaton for the aforementioned reward instead of simple addition. This little trick can already improve the results significantly instead of using the standard approach.
+Before defining the classical cost function ``cl_cost_function(meas_res)`` for M$\kappa$CS we need to think about the objective (``mkcs_obj``). Since we're trying to color a graph in a way to prevent neighboring nodes being the same color, we will reward the instances where they are in fact not the same color. To increase the contrast between optimal and less optimal solutions we shall use multiplicaton for the aforementioned reward instead of simple addition. This little trick can already improve the results significantly instead of using the standard approach.
 
-After iterating over all edges of graph ``G``, the objective function ``mkcs_obj`` returns an integer valu of the free energy objective function. The remaining of the definition 
+After iterating over all edges of graph ``G``, the objective function ``mkcs_obj`` returns an integer value of the free energy objective function. The remaining of the definition 
 ::
+
     def mkcs_obj(color_array, G):
    
         cost = 1
@@ -112,14 +116,13 @@ After iterating over all edges of graph ``G``, the objective function ``mkcs_obj
 
         return -cost
     
-is similar to the one for MaxCut in the sense that calculates the relative energy in respect to the amount of counts for each sample. After setting the ``energy`` and ``total_counts`` to 0 we calculate the minimal result from ``mkcs_obj``. Iteration over all items to calculate the objective function for current measurement is the same as in the MaxCut implementation, as is returning the energy calculated using the ``mkcs_obj`` objective funcion. Note that we don't need to normalize, since the measurement results are probabilities rather than counts.
+is similar to the one for MaxCut in the sense that calculates the relative energy in respect to the probability for each sample. Iteration over all items to calculate the objective function for current measurement is the same as in the MaxCut implementation, as is returning the energy calculated using the ``mkcs_obj`` objective funcion. Note that we don't need to normalize, since the measurement results are probabilities rather than counts.
 ::
+
     def cl_cost_function(meas_res):
     
         energy = 0
 
-        min_res = min([mkcs_obj(res, G) for res in meas_res.keys()])
-    
         for meas, prob in list(meas_res.items())[::-1]:
     
             obj_for_meas = mkcs_obj(meas, G)
@@ -130,8 +133,9 @@ is similar to the one for MaxCut in the sense that calculates the relative energ
 
 As spoiled before, the superposition state is not the ideal initial state in this particular case. In principle a superposition state is viable, however, it needs to respect the one-hot encoding constraint. Instead we simply pick a random initial coloring of all the nodes and trust the QAOA to do the rest.
 
-To do this one first needs to import randomness and define the quantum argument ``qarg``, which is in this case a :ref:`QuantumArray <QuantumArray>` of QuantumColors. After setting the initial set to a random coloring we then define a function that sets all elements in ``qarg`` to the initial state.
+To do this one first needs to import randomness and define the quantum argument ``qarg``, which is in this case a :ref:`QuantumArray <QuantumArray>` of QuantumColors. After setting the initial set to a random coloring, we then define a function that sets all elements in ``qarg`` to the initial state.
 ::
+
     import random
     
     qarg = QuantumArray(qtype = QuantumColor(color_list), 
@@ -145,6 +149,7 @@ To do this one first needs to import randomness and define the quantum argument 
 
 Following along with the recipe in hand is taking care of the coloring operator. For simplicity and code readability reasons we first define ``apply_phase_if_eq``, which indeed applies a phase if the colors of two arguments are matching. Having defined this, constructing the coloring operator is as easy as going through the list of all edges in our graph.
 ::
+
     from qrisp import cp, cx, mcp
     def apply_phase_if_eq(qcolor_0, qcolor_1, gamma):
     
@@ -174,10 +179,11 @@ Following along with the recipe in hand is taking care of the coloring operator.
         return coloring_operator 
 
 
-Here we can see the advantage of the one hot encoding: It might require more qubits but the comparison of two colors only requires one :meth:`cp <qrisp.cp>` gate per color. The binary encoding requires significantly less qubits but also an :meth:`mcp <qrisp.mcp>` gate, which is more costly, especially on near-term hardware.
+We can see the advantage of the one-hot encoding: It might require more qubits but the comparison of two colors only requires one :meth:`cp <qrisp.cp>` gate per color. The binary encoding requires significantly less qubits but also an :meth:`mcp <qrisp.mcp>` gate, which is more costly, especially on near-term hardware.
 
 To season everything we need to decide on which :ref:`mixer <MIXers>` to choose to allow the transitions between different colorings. As proposed in `QAOAnsatz <https://arxiv.org/abs/1709.03489>`_  we will use the XY mixer aka the parity ring mixer. As for the binary encoding the X mixer we used in MaxCut works fine as well.
 ::
+
     from qrisp.qaoa import XY_mixer, RX_mixer
 
     def apply_XY_mixer(quantumcolor_array, beta):
@@ -198,6 +204,7 @@ Let's speedrun through the steps we already got familiar with in the previous tu
 
 And most importantly: whisper the magic word: *QRISPIFYYY*
 ::
+
     from qrisp.qaoa import QAOAProblem
     from operator import itemgetter
     import matplotlib.pyplot as plt
@@ -228,7 +235,7 @@ And most importantly: whisper the magic word: *QRISPIFYYY*
 One can now benchmark the approach using the :meth:`benchmark <qrisp.qaoa.QAOAProblem.benchmark>` method following the same procedure as :ref:`explained in the previous tutorial <QuantumVariable>`, and conquer a complex problem instance like the Max-$\kappa$-Coloring Subgraph using Qrisp and the plethora of useful functionalities and customizabilities it brings.
 
 Summary and motivation
----------------------
+----------------------
 
 To sum up:
 - you created a colorful custom :ref:`quantum type <QuantumTypes>` known as QuantumColor; 
@@ -237,6 +244,7 @@ To sum up:
 
 It's pedagogical to, similarly to what we have done in the previous MaxCut tutorial, provide a condensed code block of the full M$\kappa$CS QAOA implementation using our predefined functions and show how elegantly one can tackle this complex problem.
 ::
+
     from qrisp.qaoa import QuantumArray, QuantumColor, QAOAProblem, mkcs_obj, create_coloring_operator, create_coloring_cl_cost_function, apply_XY_mixer
     import random
     import networkx as nx
@@ -259,7 +267,6 @@ It's pedagogical to, similarly to what we have done in the previous MaxCut tutor
 
     best_coloring, best_solution = min([(mkcs_obj(quantumcolor_array,G),quantumcolor_array) for quantumcolor_array in res_onehot.keys()], key=itemgetter(0))
     best_coloring_onehot, res_str_onehot = min([(mkcs_obj(quantumcolor_array,G),quantumcolor_array) for quantumcolor_array in list(res_onehot.keys())[:5]], key=itemgetter(0))
-    best_coloring_onehot, best_solution_onehot = (mkcs_obj(res_str_onehot,G),res_str_onehot)
 
     nx.draw(G, node_color=res_str_onehot, with_labels=True)
     plt.show()
