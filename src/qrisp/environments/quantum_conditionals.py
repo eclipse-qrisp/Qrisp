@@ -629,14 +629,14 @@ def q_eq(input_0, input_1, invert = False):
                 cx(input_0[i], input_1[i])
         
         with conjugate(multi_cx)(input_0, input_1):
-            mcx(input_1, res, method="balauca", ctrl_state=0)
+            mcx(input_1, res, ctrl_state=0)
         
 
 
     else:
         label_int = input_0.encoder(input_1)
 
-        mcx(input_0, res, ctrl_state=label_int, method = "balauca")
+        mcx(input_0, res, ctrl_state=label_int)
     
     if invert:
         res.flip()
