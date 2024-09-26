@@ -18,11 +18,18 @@
 
 import numpy as np
 
-from jax.core import JaxprEqn, ClosedJaxpr, Var
+from jax.core import JaxprEqn, ClosedJaxpr, Var, Jaxpr
 from qrisp.jisp import eval_jaxpr, TracingQuantumSession
 
 control_var_count = np.zeros(1)
 
+def copy_jaxpr(jaxpr):
+    return Jaxpr(constvars = list(jaxpr.constvars),
+                      invars = list(jaxpr.invars),
+                      outvars = list(jaxpr.outvars),
+                      eqns = list(jaxpr.eqns),
+                      effects = jaxpr.effects)
+    
 
 def control_eqn(eqn, ctrl_qubit_var):
     """
@@ -40,10 +47,55 @@ def control_eqn(eqn, ctrl_qubit_var):
         The equation with inverted operation.
 
     """
+    from qrisp.jisp import Jispr
     if eqn.primitive.name == "pjit":
-        eqn.params["jaxpr"] = ClosedJaxpr(control_jispr(eqn.params["jaxpr"].jaxpr, ctrl_qubit_var),
+        
+        new_params = dict(eqn.params)
+        
+        new_params["jaxpr"] = ClosedJaxpr(control_jispr(eqn.params["jaxpr"].jaxpr),
                                           eqn.params["jaxpr"].consts)
+        
+        return JaxprEqn(primitive = eqn.primitive,
+                        invars = [eqn.invars[0], ctrl_qubit_var] + eqn.invars[1:],
+                        outvars = eqn.outvars,
+                        params = new_params,
+                        source_info = eqn.source_info,
+                        effects = eqn.effects,)
         return eqn
+    elif eqn.primitive.name == "while":
+        
+        new_params = dict(eqn.params)
+        
+        try:
+            new_params["body_jaxpr"] = ClosedJaxpr(control_jispr(Jispr(eqn.params["body_jaxpr"].jaxpr)),
+                                              eqn.params["body_jaxpr"].consts)
+            
+            new_params["body_jaxpr"].jaxpr.outvars.insert(1, new_params["body_jaxpr"].jaxpr.invars[1])
+        except:
+            
+            new_jaxpr = copy_jaxpr(new_params["body_jaxpr"].jaxpr)
+            new_jaxpr.invars.insert(1, ctrl_qubit_var)
+            new_params["body_jaxpr"] = ClosedJaxpr(new_jaxpr,
+                                                   eqn.params["body_jaxpr"].consts)
+        
+        try:
+            new_params["cond_jaxpr"] = ClosedJaxpr(control_jispr(Jispr(eqn.params["cond_jaxpr"].jaxpr)),
+                                              eqn.params["cond_jaxpr"].consts)
+        except:
+            new_jaxpr = copy_jaxpr(new_params["cond_jaxpr"].jaxpr)
+            new_jaxpr.invars.insert(1, ctrl_qubit_var)
+            new_params["cond_jaxpr"] = ClosedJaxpr(new_jaxpr,
+                                                   eqn.params["cond_jaxpr"].consts)
+            
+        
+        temp = JaxprEqn(primitive = eqn.primitive,
+                        invars = [eqn.invars[0], ctrl_qubit_var] + eqn.invars[1:],
+                        outvars = eqn.outvars,
+                        params = new_params,
+                        source_info = eqn.source_info,
+                        effects = eqn.effects,)
+        
+        return temp
     else:
         return JaxprEqn(primitive = eqn.primitive.control(),
                         invars = [eqn.invars[0], ctrl_qubit_var] + eqn.invars[1:],
@@ -77,13 +129,12 @@ def control_jispr(jispr):
     
     new_eqns = []
     for eqn in jispr.eqns:
-        if isinstance(eqn.primitive, Operation) or eqn.primitive.name == "pjit":
+        if isinstance(eqn.primitive, Operation) or eqn.primitive.name in ["pjit", "while"]:
             new_eqns.append(control_eqn(eqn, ctrl_qubit_var))
         elif eqn.primitive.name == "measure":
             raise Exception("Tried to applied quantum control to a measurement")
         else:
             new_eqns.append(eqn)
-    
     
     permeability = dict(jispr.permeability)
     permeability[ctrl_qubit_var] = True

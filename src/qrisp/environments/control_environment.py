@@ -387,7 +387,6 @@ class ControlEnvironment(QuantumEnvironment):
         num_ctrl = len(args) - len(body_jispr.invars)
         flattened_jispr = body_jispr.flatten_environments()
         controlled_jispr = flattened_jispr.control(num_ctrl)
-        
         res = controlled_jispr.eval(*args)
         insert_outvalues(eqn, context_dic, res)
         

@@ -16,7 +16,7 @@
 ********************************************************************************/
 """
 
-class jrange:
+class JRangeIterator:
     
     def __init__(self, stop):
         
@@ -43,4 +43,10 @@ class jrange:
             self.stop += 1
             self.iter_env.__exit__(None, None, None)
             raise StopIteration
-        
+
+def jrange(stop):
+    if isinstance(stop, int):
+        return range(stop)
+    else:
+        return JRangeIterator(stop)
+    

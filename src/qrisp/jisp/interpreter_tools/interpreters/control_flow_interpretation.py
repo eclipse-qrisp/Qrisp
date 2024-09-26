@@ -47,6 +47,7 @@ def evaluate_while_loop(while_loop_eqn, context_dic):
     
     # Extract the invalues from the context dic
     invalues = extract_invalues(while_loop_eqn, context_dic)
+    outvalues = invalues[num_const_body_args:]
     
     while break_condition(invalues):
         outvalues = eval_jaxpr(while_loop_eqn.params["body_jaxpr"])(*invalues)
