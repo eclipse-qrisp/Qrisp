@@ -243,6 +243,36 @@ class Hamiltonian(ABC):
         """
         pass
 
+    @abstractmethod
+    def trotterization(self):
+        r"""
+        Returns a function for performing Hamiltonian simulation, i.e., approximately implementing the unitary operator $e^{itH}$ via Trotterization.
+
+        Returns
+        -------
+        U : function 
+            A Python function that implements the first order Suzuki-Trotter formula.
+            Given a Hamiltonian $H=H_1+\dotsb +H_m$ the unitary evolution $e^{itH}$ is 
+            approximated by 
+            
+            .. math::
+
+                e^{itH}\approx U_1(t,N)=\left(e^{iH_1t/N}\dotsb e^{iH_mt/N}\right)^N
+
+            This function recieves the following arguments:
+
+            * qarg : QuantumVariable or QuantumArray
+                The quantum argument.
+            * t : float, optional
+                The evolution time $t$. The default is 1.
+            * steps : int, optional
+                The number of Trotter steps $N$. The default is 1.
+            * iter : int, optional 
+                The number of iterations the unitary $U_1(t,N)$ is applied. The default is 1.
+        
+        """
+        pass
+
     #
     # Evaluate expected value
     #
@@ -386,13 +416,20 @@ class Hamiltonian(ABC):
         from qrisp.misc import get_measurement_from_qc
 
         # Get measurement settings
-        if _mes_settings is None:
-            meas_circs, meas_ops, meas_coeffs, constant_term = self.get_measurement_settings(qarg, method=method)
-        else:
-            meas_circs, meas_ops, meas_coeffs, constant_term = _mes_settings
+        #if _mes_settings is None:
+            #meas_circs, meas_ops, meas_coeffs, constant_term = self.get_measurement_settings(qarg, method=method)
+        #else:
+        #    meas_circs, meas_ops, meas_coeffs, constant_term = _mes_settings
+
+        pauli_measurement = self.commuting_qw_measurement()
+        meas_circs = pauli_measurement.get_measurement_circuits(qarg)
+        meas_ops = pauli_measurement.operators_int
+        meas_coeffs = pauli_measurement.coefficients
+
         N = len(meas_circs)
 
-        expectation = constant_term
+        #expectation = constant_term
+        expectation = 0
 
         for k in range(N):
 

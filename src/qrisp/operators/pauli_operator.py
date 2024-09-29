@@ -15,121 +15,18 @@
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************/
 """
+from qrisp.operators import Hamiltonian
+from qrisp.operators.helper_functions import *
+from qrisp.operators.pauli_term import PauliTerm
+from qrisp.operators.pauli_measurement import PauliMeasurement
 
-#from qrisp import *
-from qrisp import QuantumVariable, QuantumArray, rx, ry, h
-from qrisp.operators.hamiltonian import Hamiltonian
-from qrisp.operators.spin import X_,Y_,Z_
-import numpy as np
 import sympy as sp
-from sympy import init_printing
 
+from sympy import init_printing
 # Initialize automatic LaTeX rendering
 init_printing()
 
 threshold = 1e-9
-
-#
-# Helper functions
-#
-
-def set_bit(n,k):
-    return n | (1 << k)   
-
-def mul_helper(P1,P2):
-    pauli_table = {("X","X"):("I",1),("X","Y"):("Z",1j),("X","Z"):("Y",-1j),
-            ("Y","X"):("Z",-1j),("Y","Y"):("I",1),("Y","Z"):("X",1j),
-            ("Z","X"):("Y",1j),("Z","Y"):("X",-1j),("Z","Z"):("I",1)}
-    
-    if P1=="I":
-        return (P2,1)
-    if P2=="I":
-        return (P1,1)
-    return pauli_table[(P1,P2)]
-
-def mul_paulis(pauli1,pauli2):
-    result_list = []
-    result_coeff = 1
-    a = dict(pauli1)
-    b = dict(pauli2)
-    keys = set()
-    keys.update(set(a.keys()))
-    keys.update(set(b.keys()))
-    for key in sorted(keys):
-        pauli, coeff = mul_helper(a.get(key,"I"),b.get(key,"I"))
-        if pauli!="I":
-            result_list.append((key,pauli))
-        result_coeff *= coeff
-    return tuple(result_list), result_coeff
-
-#
-# Commutativity checks
-#
-
-def commute_qw(a,b):
-    """
-    Checks if two Pauli products commute qubit-wise.
- 
-    Parameters
-    ----------
-    a : dict
-        A dictionary encoding a Pauli product.
-    b : dict
-        A dictionary encoding a Pauli product.
-
-    Returns
-    -------
-
-    """
-    keys = set()
-    keys.update(set(a.keys()))
-    keys.update(set(b.keys()))
-
-    for key in keys:
-        if a.get(key,"I")!="I" and b.get(key,"I")!="I" and a.get(key,"I")!=b.get(key,"I"):
-            return False
-    return True
-
-def commute(a,b):
-    """
-    Checks if two Pauli products commute.
-
-    Parameters
-    ----------
-    a : dict
-        A dictionary encoding a Pauli product.
-    b : dict
-        A dictionary encoding a Pauli product.
-
-    """
-
-    keys = set()
-    keys.update(set(a.keys()))
-    keys.update(set(b.keys()))
-
-    # Count non-commuting Pauli operators
-    commute = True
-
-    for key in keys:
-        if a.get(key,"I")!="I" and b.get(key,"I")!="I" and a.get(key,"I")!=b.get(key,"I"):
-            commute = not commute
-    return commute
-
-#
-# Trotterization
-#
-
-def change_of_basis(qarg, pauli_dict):
-    for index, axis in pauli_dict.items():
-        if axis=="X":
-            ry(-np.pi/2,qarg[index])
-        if axis=="Y":
-            rx(np.pi/2,qarg[index])
-
-def parity(qarg, indices):
-    n = len(indices)
-    for i in range(n-1):
-        cx(qarg[indices[i]],qarg[indices[i+1]])
 
 #
 # PauliOperator
@@ -165,14 +62,16 @@ class PauliOperator(Hamiltonian):
 
     """
 
-    def __init__(self, arg=None):
+    def __init__(self, terms_dict={}):
+        self.terms_dict = terms_dict
+        pass
 
-        if arg is None:
-            self.pauli_dict = {():0}
-        elif isinstance(arg, dict):
-            self.pauli_dict = arg
-        else:
-            raise TypeError("Cannot initialize from "+str(type(arg)))
+    def len(self):
+        return len(self.terms_dict)
+    
+    #
+    # Printing
+    #
 
     def _repr_latex_(self):
         # Convert the sympy expression to LaTeX and return it
@@ -184,9 +83,37 @@ class PauliOperator(Hamiltonian):
         expr = self.to_expr()
         return str(expr)
     
+    def to_expr(self):
+        """
+        Returns a SymPy expression representing the operator.
+
+        Returns
+        -------
+        expr : sympy.expr
+            A SymPy expression representing the operator.
+
+        """
+        
+        expr = 0  
+        for pauli,coeff in self.terms_dict.items():
+            expr += coeff*pauli.to_expr()
+        return expr
+
     #
     # Arithmetic
     #
+
+    def __pow__(self, e):
+        if self.len()==1:
+            if isinstance(e, int) and e>=0:
+                if e%2==0:
+                    return PauliOperator({PauliTerm():1})
+                else:
+                    return self
+            else:
+                raise TypeError("Unsupported operand type(s) for ** or pow(): "+str(type(self))+" and "+str(type(e)))
+        else:
+            raise TypeError("Unsupported operand type(s) for ** or pow(): "+str(type(self))+" and "+str(type(e)))
 
     def __add__(self,other):
         """
@@ -205,25 +132,25 @@ class PauliOperator(Hamiltonian):
         """
 
         if isinstance(other,(int,float,complex)):
-            other = PauliOperator({():other})
+            other = PauliOperator({PauliTerm():other})
         if not isinstance(other,PauliOperator):
             raise TypeError("Cannot add PauliOperator and "+str(type(other)))
 
-        res_pauli_dict = {}
+        res_terms_dict = {}
 
-        for pauli,coeff in self.pauli_dict.items():
-            res_pauli_dict[pauli] = res_pauli_dict.get(pauli,0)+coeff
-            if abs(res_pauli_dict[pauli])<threshold:
-                del res_pauli_dict[pauli]
+        for pauli,coeff in self.terms_dict.items():
+            res_terms_dict[pauli] = res_terms_dict.get(pauli,0)+coeff
+            if abs(res_terms_dict[pauli])<threshold:
+                del res_terms_dict[pauli]
     
-        for pauli,coeff in other.pauli_dict.items():
-            res_pauli_dict[pauli] = res_pauli_dict.get(pauli,0)+coeff
-            if abs(res_pauli_dict[pauli])<threshold:
-                del res_pauli_dict[pauli]
+        for pauli,coeff in other.terms_dict.items():
+            res_terms_dict[pauli] = res_terms_dict.get(pauli,0)+coeff
+            if abs(res_terms_dict[pauli])<threshold:
+                del res_terms_dict[pauli]
         
-        result = PauliOperator(res_pauli_dict)
+        result = PauliOperator(res_terms_dict)
         return result
-
+    
     def __sub__(self,other):
         """
         Returns the difference of the operator self and other.
@@ -241,25 +168,25 @@ class PauliOperator(Hamiltonian):
         """
 
         if isinstance(other,(int,float,complex)):
-            other = PauliOperator({():other})
+            other = PauliOperator({PauliTerm():other})
         if not isinstance(other,PauliOperator):
             raise TypeError("Cannot substract PauliOperator and "+str(type(other)))
 
-        res_pauli_dict = {}
+        res_terms_dict = {}
 
-        for pauli,coeff in self.pauli_dict.items():
-            res_pauli_dict[pauli] = res_pauli_dict.get(pauli,0)+coeff
-            if abs(res_pauli_dict[pauli])<threshold:
-                del res_pauli_dict[pauli]
+        for pauli,coeff in self.terms_dict.items():
+            res_terms_dict[pauli] = res_terms_dict.get(pauli,0)+coeff
+            if abs(res_terms_dict[pauli])<threshold:
+                del res_terms_dict[pauli]
     
-        for pauli,coeff in other.pauli_dict.items():
-            res_pauli_dict[pauli] = res_pauli_dict.get(pauli,0)-coeff
-            if abs(res_pauli_dict[pauli])<threshold:
-                del res_pauli_dict[pauli]
+        for pauli,coeff in other.terms_dict.items():
+            res_terms_dict[pauli] = res_terms_dict.get(pauli,0)-coeff
+            if abs(res_terms_dict[pauli])<threshold:
+                del res_terms_dict[pauli]
         
-        result = PauliOperator(res_pauli_dict)
+        result = PauliOperator(res_terms_dict)
         return result
-    
+
     def __mul__(self,other):
         """
         Returns the product of the operator self and other.
@@ -277,25 +204,25 @@ class PauliOperator(Hamiltonian):
         """
 
         if isinstance(other,(int,float,complex)):
-            other = PauliOperator({():other})
+            other = PauliOperator({PauliTerm():other})
         if not isinstance(other,PauliOperator):
             raise TypeError("Cannot multipliy PauliOperator and "+str(type(other)))
 
-        res_pauli_dict = {}
+        res_terms_dict = {}
 
-        for pauli1, coeff1 in self.pauli_dict.items():
-            for pauli2, coeff2 in other.pauli_dict.items():
-                curr_tuple, curr_coeff = mul_paulis(pauli1,pauli2)
-                res_pauli_dict[curr_tuple] = res_pauli_dict.get(curr_tuple,0) + curr_coeff*coeff1*coeff2
+        for pauli1, coeff1 in self.terms_dict.items():
+            for pauli2, coeff2 in other.terms_dict.items():
+                curr_pauli, curr_coeff = pauli1*pauli2
+                res_terms_dict[curr_pauli] = res_terms_dict.get(curr_pauli,0) + curr_coeff*coeff1*coeff2
 
-        result = PauliOperator(res_pauli_dict)
+        result = PauliOperator(res_terms_dict)
         return result
 
     __radd__ = __add__
     __rmul__ = __mul__
 
     #
-    # Inplace operations
+    # Inplace arithmetic
     #
 
     def __iadd__(self,other):
@@ -310,16 +237,16 @@ class PauliOperator(Hamiltonian):
         """
 
         if isinstance(other,(int,float,complex)):
-            self.pauli_dict[()] = self.pauli_dict.get((),0)+other
+            self.terms_dict[PauliTerm()] = self.terms_dict.get(PauliTerm(),0)+other
             return self
         if not isinstance(other,PauliOperator):
             raise TypeError("Cannot add PauliOperator and "+str(type(other)))
 
-        for pauli,coeff in other.pauli_dict.items():
-            self.pauli_dict[pauli] = self.pauli_dict.get(pauli,0)+coeff
-            if abs(self.pauli_dict[pauli])<threshold:
-                del self.pauli_dict[pauli]       
-        return self           
+        for pauli,coeff in other.terms_dict.items():
+            self.terms_dict[pauli] = self.terms_dict.get(pauli,0)+coeff
+            if abs(self.terms_dict[pauli])<threshold:
+                del self.terms_dict[pauli]       
+        return self         
 
     def __isub__(self,other):
         """
@@ -333,15 +260,15 @@ class PauliOperator(Hamiltonian):
         """
 
         if isinstance(other,(int,float,complex)):
-            self.pauli_dict[()] = self.pauli_dict.get((),0)-other
+            self.terms_dict[PauliTerm()] = self.terms_dict.get(PauliTerm(),0)-other
             return self
         if not isinstance(other,PauliOperator):
             raise TypeError("Cannot add PauliOperator and "+str(type(other)))
 
-        for pauli,coeff in other.pauli_dict.items():
-            self.pauli_dict[pauli] = self.pauli_dict.get(pauli,0)-coeff
-            if abs(self.pauli_dict[pauli])<threshold:
-                del self.pauli_dict[pauli]  
+        for pauli,coeff in other.terms_dict.items():
+            self.terms_dict[pauli] = self.terms_dict.get(pauli,0)-coeff
+            if abs(self.terms_dict[pauli])<threshold:
+                del self.terms_dict[pauli]  
         return self
     
     def __imul__(self,other):
@@ -356,23 +283,23 @@ class PauliOperator(Hamiltonian):
         """
 
         if isinstance(other,(int,float,complex)):
-            other = PauliOperator({():other})
+            other = PauliOperator({PauliTerm():other})
         if not isinstance(other,PauliOperator):
             raise TypeError("Cannot multipliy PauliOperator and "+str(type(other)))
 
-        res_pauli_dict = {}
+        res_terms_dict = {}
 
-        for pauli1, coeff1 in self.pauli_dict.items():
-            for pauli2, coeff2 in other.pauli_dict.items():
-                curr_tuple, curr_coeff = mul_paulis(pauli1,pauli2)
-                res_pauli_dict[curr_tuple] = res_pauli_dict.get(curr_tuple,0) + curr_coeff*coeff1*coeff2
+        for pauli1, coeff1 in self.terms_dict.items():
+            for pauli2, coeff2 in other.terms_dict.items():
+                curr_pauli, curr_coeff = pauli1*pauli2
+                res_terms_dict[curr_pauli] = res_terms_dict.get(curr_pauli,0) + curr_coeff*coeff1*coeff2
 
-        self.pauli_dict = res_pauli_dict
-    
+        self.terms_dict = res_terms_dict    
+
     #
     # Miscellaneous
     #
-    
+
     def apply_threshold(self,threshold):
         """
         Removes all Pauli terms with coefficient absolute value below the specified threshold.
@@ -385,180 +312,11 @@ class PauliOperator(Hamiltonian):
         """
 
         delete_list = []
-        for pauli,coeff in self.pauli_dict.items():
+        for pauli,coeff in self.terms_dict.items():
             if abs(coeff)<threshold:
                 delete_list.append(pauli)
         for pauli in delete_list:
-            del self.pauli_dict[pauli]
-
-    #
-    # Measurement settings
-    #
-
-    def get_measurement_settings(self, qarg, method=None):
-        """
-        Returns the measurement settings to evaluate the operator. 
-
-        Parameters
-        ----------
-        qarg : QuantumVariable or QuantumArray
-            The argument the spin operator is evaluated on.
-        method : string, optional
-            The method for evaluating the expected value of the Hamiltonian.
-            Available is ``QWC``: Pauli terms are grouped based on qubit-wise commutativity.
-            The default is ``None``: The expected value of each Pauli term is computed independently.
-
-        Returns
-        -------
-        measurement_circuits : list[QuantumCircuit]
-            The change of basis circuits.
-        measurement_ops : list[list[int]]
-            The Pauli products (after change of basis) to be measured represented as an integer.
-        measurement_coeffs : list[list[float]]
-            The coefficents of the Pauli products to be measured.
-        constant_term : float
-            The constant term.
-
-        """
-
-        if method=='QWC':
-            return self.get_measurment_settings_qwc(qarg)
-
-        # no grouping (default):
-
-        from qrisp import QuantumVariable, QuantumArray, QuantumCircuit
-
-        if isinstance(qarg, QuantumArray):
-            num_qubits = sum(qv.size for qv in list(qarg.flatten()))
-        else:
-            num_qubits = qarg.size
-        
-        measurement_circuits = []
-        measurement_coeffs = []
-        measurement_ops = []
-        constant_term = float(self.pauli_dict.get((),0).real)
-
-        for pauli,coeff in self.pauli_dict.items():
-            if pauli!=():
-                qc = QuantumCircuit(num_qubits)
-                meas_op = 0
-                for item in pauli:
-                    if item[0] >= num_qubits:
-                        raise Exception("Insufficient number of qubits")
-                    if item[1]=="X":
-                        qc.ry(-np.pi/2,item[0])
-                    if item[1]=="Y":
-                        qc.rx(np.pi/2,item[0])
-                
-                    meas_op = set_bit(meas_op, item[0])
-
-                measurement_circuits.append(qc)
-                measurement_ops.append([meas_op])
-                measurement_coeffs.append([float(coeff.real)])
-
-        return measurement_circuits, measurement_ops, measurement_coeffs, constant_term    
-    
-    # Measurement settings for 'QWC' method
-    def get_measurment_settings_qwc(self, qarg):
-
-        from qrisp import QuantumVariable, QuantumArray, QuantumCircuit
-
-        if isinstance(qarg, QuantumArray):
-            num_qubits = sum(qv.size for qv in list(qarg.flatten()))
-        else:
-            num_qubits = qarg.size
-        
-        pauli_dicts, measurement_ops, index_ops, measurement_coeffs, constant_term = self.qubit_wise_commutativity()
-        measurement_circuits = []
-
-        # construct change of basis circuits
-        for pauli in pauli_dicts:
-            qc = QuantumCircuit(num_qubits)
-            for item in pauli.items():
-                if item[0] >= num_qubits:
-                    raise Exception("Insufficient number of qubits")
-                if item[1]=="X":
-                    qc.ry(-np.pi/2,item[0])
-                if item[1]=="Y":
-                    qc.rx(np.pi/2,item[0])  
-            measurement_circuits.append(qc)    
-
-        return measurement_circuits, measurement_ops, measurement_coeffs, constant_term
-    
-    # partitions the operator in qubit-wise commuting groups
-    def qubit_wise_commutativity(self):
-
-        pauli_dicts = [] # list of Pauli products represented as dictionaries (change of basis)
-        measurement_ops = [] # operators as integer
-        index_ops = [] # operators as list of indices
-        measurement_coeffs = []
-        constant_term = float(self.pauli_dict.get((),0).real)
-
-        for pauli,coeff in self.pauli_dict.items():
-            if pauli!=():
-                meas_op = 0
-                curr_indices = []
-                for item in pauli:
-                    meas_op = set_bit(meas_op, item[0])
-                    curr_indices.append(item[0])
-
-                # number of distict meaurement settings
-                settings = len(pauli_dicts)
-                commute_bool = False
-                curr_dict = dict(pauli)
-
-                if settings > 0:   
-                    for k in range(settings):
-                        # check if Pauli terms commute qubit-wise 
-                        commute_bool = commute_qw(pauli_dicts[k],curr_dict)
-                        if commute_bool:
-                            pauli_dicts[k].update(curr_dict)
-                            measurement_ops[k].append(meas_op)
-                            measurement_coeffs[k].append(float(coeff.real))
-                            index_ops[k].append(curr_indices)
-                            break
-                if settings==0 or not commute_bool: 
-                    pauli_dicts.append(curr_dict)
-                    measurement_ops.append([meas_op])
-                    measurement_coeffs.append([float(coeff.real)]) 
-                    index_ops.append([curr_indices])
-
-        return pauli_dicts, measurement_ops, index_ops, measurement_coeffs, constant_term
-
-    #
-    # Tools
-    #
-
-    def to_expr(self):
-        """
-        Returns a SymPy expression representing the operator.
-
-        Returns
-        -------
-        expr : sympy.expr
-            A SymPy expression representing the operator.
-
-        """
-        
-        expr = 0
-
-        def to_spin(P, index):
-            if P=="I":
-                return 1
-            if P=="X":
-                return X_(index)
-            if P=="Y":
-                return Y_(index)
-            else:
-                return Z_(index)
-        
-        for pauli,coeff in self.pauli_dict.items():
-            curr_expr = coeff
-            for item in pauli:
-                curr_expr *= to_spin(item[1],item[0])
-            expr += curr_expr
-
-        return expr
+            del self.terms_dict[pauli]
 
     def to_sparse_matrix(self):
         """
@@ -595,8 +353,8 @@ class PauliOperator(Hamiltonian):
         coeffs = []
 
         keys = set()
-        for pauli,coeff in self.pauli_dict.items():
-            curr_dict = dict(pauli)
+        for pauli,coeff in self.terms_dict.items():
+            curr_dict = pauli.pauli_dict
             keys.update(set(curr_dict.keys()))
             pauli_dicts.append(curr_dict)    
             coeffs.append(coeff)
@@ -633,96 +391,158 @@ class PauliOperator(Hamiltonian):
         E = eigenvalues[0]
 
         return E
+    
+    #
+    # Partitions 
+    #
 
+    # Commutativity: Partitions the PauliOperator into PauliOperators with pairwise commuting PauliTerms
+    def commuting_groups(self):
+
+        groups = [] # Groups of commuting PauliTerms 
+
+        for pauli,coeff in self.terms_dict.items():
+
+            commute_bool = False
+            if len(groups) > 0:
+                for group in groups:
+                    for pauli_,coeff_ in group.terms_dict.items():
+                        commute_bool = pauli_.commute(pauli)
+                        if not commute_bool:
+                            break
+                    if commute_bool:
+                        group.terms_dict[pauli]=coeff
+                        break
+            if len(groups)==0 or not commute_bool: 
+                groups.append(PauliOperator({pauli:coeff}))
+
+        return groups
+
+    # Qubit-wise commutativity: Partitions the PauliOperator into PauliOperators with pairwise qubit-wise commuting PauliTerms
+    def commuting_qw_groups(self, show_bases=False):
+
+        groups = [] # Groups of qubit-wise commuting PauliTerms
+        bases = [] # Bases as PauliTerms
+
+        for pauli,coeff in self.terms_dict.items():
+
+            commute_bool = False
+            if len(groups)>0:
+                n = len(groups)
+                for i in range(n):
+                    commute_bool = bases[i].commute_qw(pauli)
+                    if commute_bool:
+                        bases[i].update(pauli.pauli_dict)
+                        groups[i].terms_dict[pauli]=coeff
+                        break
+            if len(groups)==0 or not commute_bool:
+                groups.append(PauliOperator({pauli:coeff}))
+                bases.append(pauli.copy())
+
+        if show_bases:
+            return groups, bases
+        else:
+            return groups
+    
+    #
+    # Measurement settings
+    #
+
+    def commuting_measurement(self):
+        return 0
+    
+    def commuting_qw_measurement(self):
+
+        groups, bases = self.commuting_qw_groups(show_bases=True)
+        operators_ind = []
+        operators_int = []
+        coefficients = []
+
+        for group in groups:
+            curr_ind = []
+            curr_int = []
+            curr_coeff = []
+            for pauli,coeff in group.terms_dict.items():
+                ind = list(pauli.pauli_dict.keys())
+                curr_ind.append(ind)
+                curr_int.append(get_integer_from_indices(ind))
+                curr_coeff.append(coeff)
+            operators_ind.append(curr_ind)
+            operators_int.append(curr_int)
+            coefficients.append(curr_coeff)
+
+        return PauliMeasurement(bases,operators_ind,operators_int,coefficients)
+    
     #
     # Trotterization
     #
 
     def trotterization(self):
         r"""
-        Returns a function for appling the operator $e^{itH}$ via trotterization.
+        Returns a function for performing Hamiltonian simulation, i.e., approximately implementing the unitary operator $e^{itH}$ via Trotterization.
 
         Returns
         -------
-        trotterize : function 
+        U : function 
             A Python function that implements the first order Suzuki-Trotter formula.
+            Given a Hamiltonian $H=H_1+\dotsb +H_m$ the unitary evolution $e^{itH}$ is 
+            approximated by 
+            
+            .. math::
+
+                e^{itH}\approx U_1(t,N)=\left(e^{iH_1t/N}\dotsb e^{iH_mt/N}\right)^N
+
             This function recieves the following arguments:
 
             * qarg : QuantumVariable or QuantumArray
                 The quantum argument.
             * t : float, optional
-                The evolution time. The default is 1.
+                The evolution time $t$. The default is 1.
             * steps : int, optional
-                The number of Trotter steps. The default is 1.
+                The number of Trotter steps $N$. The default is 1.
+            * iter : int, optional 
+                The number of iterations the unitary $U_1(t,N)$ is applied. The default is 1.
         
         """
 
-        bases, ops, indices, coeffs, constant = self.qubit_wise_commutativity()
+        from qrisp import conjugate, rx, ry, rz, cx, h, IterationEnvironment, gphase
+
+        #bases, ops, indices, coeffs, constant = self.qubit_wise_commutativity()
+
+        pauli_measurement = self.commuting_qw_measurement()
+        bases = pauli_measurement.bases
+        indices = pauli_measurement.operators_ind
+        ops = pauli_measurement.operators_int
+        coeffs = pauli_measurement.coefficients
 
         def trotter_step(qarg, t, steps):
+
+            #if constant != 0:
+            #    gphase(t/steps*constant,qarg[0])
+
             N = len(bases)
             for k in range(N):
-                basis = bases[k]
+                basis = bases[k].pauli_dict
                 with conjugate(change_of_basis)(qarg, basis):
                     M = len(ops[k])
                     for l in range(M):
                         with conjugate(parity)(qarg, indices[k][l]):
-                            rz(t/steps,qarg[indices[k][l][-1]])
-        
-        def trotterize(qarg, t=1, steps=1):
+                            rz(-2*coeffs[k][l]*t/steps,qarg[indices[k][l][-1]])
 
-            for n in range(steps):
-                trotter_step(qarg, t, steps)
+        def U(qarg, t=1, steps=1, iter=1):
+            with IterationEnvironment(qarg.qs, iter):
+                for i in range(steps):
+                    trotter_step(qarg, t, steps)
 
-        return trotterize
-
-#
-# Define X,Y,Z operators
-#
-
-class X(PauliOperator):
-
-    def __init__(self, index):
-        super().__init__({((index,'X'),):1})
-
-    def __pow__(self, e):
-        if isinstance(e, int) and e>=0:
-            if e%2==0:
-                return PauliOperator({():1})
-            else:
-                return self
-        else:
-            raise TypeError("Unsupported operand type(s) for ** or pow(): "+str(type(self))+" and "+str(type(e)))
-
-class Y(PauliOperator):
-
-    def __init__(self, index):
-        super().__init__({((index,'Y'),):1})
-
-    def __pow__(self, e):
-        if isinstance(e, int) and e>=0:
-            if e%2==0:
-                return PauliOperator({():1})
-            else:
-                return self
-        else:
-            raise TypeError("Unsupported operand type(s) for ** or pow(): "+str(type(self))+" and "+str(type(e)))
-
-class Z(PauliOperator):
-
-    def __init__(self, index):
-        super().__init__({((index,'Z'),):1})
-
-    def __pow__(self, e):
-        if isinstance(e, int) and e>=0:
-            if e%2==0:
-                return PauliOperator({():1})
-            else:
-                return self
-        else:
-            raise TypeError("Unsupported operand type(s) for ** or pow(): "+str(type(self))+" and "+str(type(e)))
-
-
-
+        return U
     
 
+
+def X(arg):
+    return PauliOperator({PauliTerm({arg:"X"}):1})
+
+def Y(arg):
+    return PauliOperator({PauliTerm({arg:"Y"}):1})
+
+def Z(arg):
+    return PauliOperator({PauliTerm({arg:"Z"}):1})

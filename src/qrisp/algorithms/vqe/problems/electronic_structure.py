@@ -19,7 +19,7 @@
 import numpy as np
 
 from qrisp import h, x, cx, ry, control, conjugate
-from qrisp.operators import PauliOperator
+from qrisp.operators import PauliOperator, PauliTerm
 from functools import cache
 
 #
@@ -192,12 +192,22 @@ def electronic_data(mol):
 # Jordan-Wigner annihilation operaror 
 @cache
 def a_jw(j):
-    return PauliOperator({tuple([(i,"Z") for i in range(j)]+[(j,"X")]):0.5,tuple([(i,"Z") for i in range(j)]+[(j,"Y")]):0.5j})
+    #return PauliOperator({tuple([(i,"Z") for i in range(j)]+[(j,"X")]):0.5,tuple([(i,"Z") for i in range(j)]+[(j,"Y")]):0.5j})
+    d1={i:'Z' for i in range(j)}
+    d1[j]='X'
+    d2={i:'Z' for i in range(j)}
+    d2[j]='Y'
+    return PauliOperator({PauliTerm(d1):0.5,PauliTerm(d2):0.5j})
 
 # Jordan-Wigner creation operator 
 @cache
 def c_jw(j):
-    return PauliOperator({tuple([(i,"Z") for i in range(j)]+[(j,"X")]):0.5,tuple([(i,"Z") for i in range(j)]+[(j,"Y")]):-0.5j})
+    #return PauliOperator({tuple([(i,"Z") for i in range(j)]+[(j,"X")]):0.5,tuple([(i,"Z") for i in range(j)]+[(j,"Y")]):-0.5j})
+    d1={i:'Z' for i in range(j)}
+    d1[j]='X'
+    d2={i:'Z' for i in range(j)}
+    d2[j]='Y'
+    return PauliOperator({PauliTerm(d1):0.5,PauliTerm(d2):-0.5j})
 
 # Parity annihilation operator
 @cache
@@ -389,7 +399,8 @@ def create_electronic_hamiltonian(arg, active_orb=None, active_elec=None, mappin
         E += (one_int[j][j]+F[j][j])/2
 
     # Hamiltonian
-    H = PauliOperator({():E})
+    #H = PauliOperator({():E})
+    H=E
     for i in range(K):
         for j in range(K):
             if F[I+i][I+j]!=0:
