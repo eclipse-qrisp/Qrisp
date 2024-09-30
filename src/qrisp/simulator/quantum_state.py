@@ -83,11 +83,11 @@ class QuantumState:
         if len(entangled_factor.qubits) < 25 or entangled_factor.tensor_array.data.dtype == xp.dtype("O"):
             return
         
-        p_list, tf_list, outcome_index_list = entangled_factor.multi_measure(qubits, False)
+        p_list, tf_list, outcome_index_list = entangled_factor.multi_measure(qubits[::-1], False)
         
         disentangling_qubits = []
         
-        for i in range(len(qubits)):
+        for i in range(len(qubits))[::-1]:
             for j in outcome_index_list:
                 if j & (1<<i) == 0:
                     break

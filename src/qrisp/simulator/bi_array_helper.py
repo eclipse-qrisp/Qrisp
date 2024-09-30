@@ -22,7 +22,7 @@
 # of SparseBiArray manipulation
 
 import numpy as np
-from numba import int64, int32, njit, prange, vectorize
+from numba import uint64, uint32, int64, int32, njit, prange, vectorize
 from qrisp.simulator.numerics_config import float_tresh, cutoff_ratio
 from scipy.sparse import coo_array
 
@@ -119,20 +119,20 @@ def get_coordinates(indices, shape):
         
 
 
-@vectorize([int64(int64, int64)])
+@vectorize([uint64(int64, int64)])
 def get_coordinates_0_64(index, bit_shape_1):
     return index >> bit_shape_1
 
 
-@vectorize([int64(int64, int64)])
+@vectorize([uint64(int64, int64)])
 def get_coordinates_1_64(index, bit_shape_0):
     return index & ((1 << bit_shape_0) - 1)
 
-@vectorize([int32(int64, int64)])
+@vectorize([uint32(int64, int64)])
 def get_coordinates_0_32(index, bit_shape_1):
     return index >> bit_shape_1
 
-@vectorize([int32(int64, int64)])
+@vectorize([uint32(int64, int64)])
 def get_coordinates_1_32(index, bit_shape_0):
     return index & ((1 << bit_shape_0) - 1)
 
