@@ -280,6 +280,7 @@ class Hamiltonian(ABC):
     def get_measurement(
         self,
         qarg,
+        precision=0.01,
         method='QWC',
         backend=None,
         shots=100000,
@@ -288,7 +289,7 @@ class Hamiltonian(ABC):
         subs_dic={},
         circuit_preprocessor=None,
         precompiled_qc = None,
-        _mes_settings = None
+        _measurement = None
     ):
         r"""
         This method returns the expected value of a Hamiltonian for the state of a quantum argument.
@@ -301,11 +302,15 @@ class Hamiltonian(ABC):
             The method for evaluating the expected value of the Hamiltonian.
             Available is ``QWC``: Pauli terms are grouped based on qubit-wise commutativity.
             The default is ``QWC``.
+        precision: float, optional
+            The precision with which the expectation of the Hamiltonian is to be evaluated.
+            The default is 0.01.
         backend : BackendClient, optional
             The backend on which to evaluate the quantum circuit. The default can be
             specified in the file default_backend.py.
         shots : integer, optional
-            The amount of shots to evaluate the circuit. The default is 100000.
+            The maximum amount of shots to evaluate the expectation of the Hamiltonian. 
+            The default is 100000.
         compile : bool, optional
             Boolean indicating if the .compile method of the underlying QuantumSession
             should be called before. The default is True.
@@ -424,10 +429,22 @@ class Hamiltonian(ABC):
 
         from qrisp.misc import get_measurement_from_qc
 
-        pauli_measurement = self.commuting_qw_measurement()
-        meas_circs, meas_qubits = pauli_measurement.get_measurement_circuits()
+        if _measurement is None:
+            pauli_measurement = self.commuting_qw_measurement()
+        else:
+            pauli_measurement = _measurement
+
+        meas_circs = pauli_measurement.circuits
+        meas_qubits = pauli_measurement.qubits
         meas_ops = pauli_measurement.operators_int
         meas_coeffs = pauli_measurement.coefficients
+        meas_shots = pauli_measurement.shots
+
+        meas_shots = [round(x/precision**2) for x in meas_shots]
+        tot_shots = sum(x for x in meas_shots)
+        if tot_shots>shots:
+            meas_shots = [round(x*shots/tot_shots) for x in meas_shots]
+            print("Warning: The total number of shots required " + str(tot_shots) +" for the target precision exceeds the allowed maxium.")
 
         N = len(meas_circs)
 
@@ -438,7 +455,7 @@ class Hamiltonian(ABC):
             curr = qc.copy()
             curr.append(meas_circs[k].to_gate(), meas_qubits[k])
 
-            res = get_measurement_from_qc(curr, meas_qubits[k], backend, shots)
+            res = get_measurement_from_qc(curr, meas_qubits[k], backend, meas_shots[k])
             
             # Groupings
             M = len(meas_ops[k])
