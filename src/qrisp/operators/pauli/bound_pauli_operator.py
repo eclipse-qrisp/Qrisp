@@ -16,9 +16,9 @@
 ********************************************************************************/
 """
 from qrisp.operators import Hamiltonian
-from qrisp.operators.helper_functions import *
-from qrisp.operators.pauli_term import PauliTerm
-from qrisp.operators.pauli_measurement import PauliMeasurement
+from qrisp.operators.pauli.helper_functions import *
+from qrisp.operators.pauli.bound_pauli_term import BoundPauliTerm
+from qrisp.operators.pauli.pauli_measurement import PauliMeasurement
 
 import sympy as sp
 
@@ -29,10 +29,10 @@ init_printing()
 threshold = 1e-9
 
 #
-# PauliOperator
+# BoundPauliOperator
 #
 
-class PauliOperator(Hamiltonian):
+class BoundPauliOperator(Hamiltonian):
     r"""
     This class provides an efficient implementation of Pauli operators, i.e.,
     operators of the form
@@ -56,7 +56,7 @@ class PauliOperator(Hamiltonian):
 
     ::
         
-        from qrisp.operators import PauliOperator, X,Y,Z
+        from qrisp.operators import BoundPauliOperator, X,Y,Z
 
         P1 = 1+2*X(0)+3*X(0)*Y(1)
 
@@ -107,7 +107,7 @@ class PauliOperator(Hamiltonian):
         if self.len()==1:
             if isinstance(e, int) and e>=0:
                 if e%2==0:
-                    return PauliOperator({PauliTerm():1})
+                    return BoundPauliOperator({BoundPauliTerm():1})
                 else:
                     return self
             else:
@@ -121,20 +121,20 @@ class PauliOperator(Hamiltonian):
 
         Parameters
         ----------
-        other : int, float, complex or PauliOperator
-            A scalar or a PauliOperator to add to the operator self.
+        other : int, float, complex or BoundPauliOperator
+            A scalar or a BoundPauliOperator to add to the operator self.
 
         Returns
         -------
-        result : PauliOperator
+        result : BoundPauliOperator
             The sum of the operator self and other.
 
         """
 
         if isinstance(other,(int,float,complex)):
-            other = PauliOperator({PauliTerm():other})
-        if not isinstance(other,PauliOperator):
-            raise TypeError("Cannot add PauliOperator and "+str(type(other)))
+            other = BoundPauliOperator({BoundPauliTerm():other})
+        if not isinstance(other,BoundPauliOperator):
+            raise TypeError("Cannot add BoundPauliOperator and "+str(type(other)))
 
         res_terms_dict = {}
 
@@ -148,7 +148,7 @@ class PauliOperator(Hamiltonian):
             if abs(res_terms_dict[pauli])<threshold:
                 del res_terms_dict[pauli]
         
-        result = PauliOperator(res_terms_dict)
+        result = BoundPauliOperator(res_terms_dict)
         return result
     
     def __sub__(self,other):
@@ -157,20 +157,20 @@ class PauliOperator(Hamiltonian):
 
         Parameters
         ----------
-        other : int, float, complex or PauliOperator
-            A scalar or a PauliOperator to substract from the operator self.
+        other : int, float, complex or BoundPauliOperator
+            A scalar or a BoundPauliOperator to substract from the operator self.
 
         Returns
         -------
-        result : PauliOperator
+        result : BoundPauliOperator
             The difference of the operator self and other.
 
         """
 
         if isinstance(other,(int,float,complex)):
-            other = PauliOperator({PauliTerm():other})
-        if not isinstance(other,PauliOperator):
-            raise TypeError("Cannot substract PauliOperator and "+str(type(other)))
+            other = BoundPauliOperator({BoundPauliTerm():other})
+        if not isinstance(other,BoundPauliOperator):
+            raise TypeError("Cannot substract BoundPauliOperator and "+str(type(other)))
 
         res_terms_dict = {}
 
@@ -184,7 +184,7 @@ class PauliOperator(Hamiltonian):
             if abs(res_terms_dict[pauli])<threshold:
                 del res_terms_dict[pauli]
         
-        result = PauliOperator(res_terms_dict)
+        result = BoundPauliOperator(res_terms_dict)
         return result
 
     def __mul__(self,other):
@@ -193,20 +193,20 @@ class PauliOperator(Hamiltonian):
 
         Parameters
         ----------
-        other : int, float, complex or PauliOperator
-            A scalar or a PauliOperator to multiply with the operator self.
+        other : int, float, complex or BoundPauliOperator
+            A scalar or a BoundPauliOperator to multiply with the operator self.
 
         Returns
         -------
-        result : PauliOperator
+        result : BoundPauliOperator
             The product of the operator self and other.
 
         """
 
         if isinstance(other,(int,float,complex)):
-            other = PauliOperator({PauliTerm():other})
-        if not isinstance(other,PauliOperator):
-            raise TypeError("Cannot multipliy PauliOperator and "+str(type(other)))
+            other = BoundPauliOperator({BoundPauliTerm():other})
+        if not isinstance(other,BoundPauliOperator):
+            raise TypeError("Cannot multipliy BoundPauliOperator and "+str(type(other)))
 
         res_terms_dict = {}
 
@@ -215,7 +215,7 @@ class PauliOperator(Hamiltonian):
                 curr_pauli, curr_coeff = pauli1*pauli2
                 res_terms_dict[curr_pauli] = res_terms_dict.get(curr_pauli,0) + curr_coeff*coeff1*coeff2
 
-        result = PauliOperator(res_terms_dict)
+        result = BoundPauliOperator(res_terms_dict)
         return result
 
     __radd__ = __add__
@@ -231,16 +231,16 @@ class PauliOperator(Hamiltonian):
 
         Parameters
         ----------
-        other : int, float, complex or PauliOperator
-            A scalar or a PauliOperator to add to the operator self.
+        other : int, float, complex or BoundPauliOperator
+            A scalar or a BoundPauliOperator to add to the operator self.
 
         """
 
         if isinstance(other,(int,float,complex)):
-            self.terms_dict[PauliTerm()] = self.terms_dict.get(PauliTerm(),0)+other
+            self.terms_dict[BoundPauliTerm()] = self.terms_dict.get(BoundPauliTerm(),0)+other
             return self
-        if not isinstance(other,PauliOperator):
-            raise TypeError("Cannot add PauliOperator and "+str(type(other)))
+        if not isinstance(other,BoundPauliOperator):
+            raise TypeError("Cannot add BoundPauliOperator and "+str(type(other)))
 
         for pauli,coeff in other.terms_dict.items():
             self.terms_dict[pauli] = self.terms_dict.get(pauli,0)+coeff
@@ -254,16 +254,16 @@ class PauliOperator(Hamiltonian):
 
         Parameters
         ----------
-        other : int, float, complex or PauliOperator
-            A scalar or a PauliOperator to substract from the operator self.
+        other : int, float, complex or BoundPauliOperator
+            A scalar or a BoundPauliOperator to substract from the operator self.
 
         """
 
         if isinstance(other,(int,float,complex)):
-            self.terms_dict[PauliTerm()] = self.terms_dict.get(PauliTerm(),0)-other
+            self.terms_dict[BoundPauliTerm()] = self.terms_dict.get(BoundPauliTerm(),0)-other
             return self
-        if not isinstance(other,PauliOperator):
-            raise TypeError("Cannot add PauliOperator and "+str(type(other)))
+        if not isinstance(other,BoundPauliOperator):
+            raise TypeError("Cannot add BoundPauliOperator and "+str(type(other)))
 
         for pauli,coeff in other.terms_dict.items():
             self.terms_dict[pauli] = self.terms_dict.get(pauli,0)-coeff
@@ -277,15 +277,15 @@ class PauliOperator(Hamiltonian):
 
         Parameters
         ----------
-        other : int, float, complex or PauliOperator
-            A scalar or a PauliOperator to multiply with the operator self.
+        other : int, float, complex or BoundPauliOperator
+            A scalar or a BoundPauliOperator to multiply with the operator self.
 
         """
 
         if isinstance(other,(int,float,complex)):
-            other = PauliOperator({PauliTerm():other})
-        if not isinstance(other,PauliOperator):
-            raise TypeError("Cannot multipliy PauliOperator and "+str(type(other)))
+            other = BoundPauliOperator({BoundPauliTerm():other})
+        if not isinstance(other,BoundPauliOperator):
+            raise TypeError("Cannot multipliy BoundPauliOperator and "+str(type(other)))
 
         res_terms_dict = {}
 
@@ -396,10 +396,10 @@ class PauliOperator(Hamiltonian):
     # Partitions 
     #
 
-    # Commutativity: Partitions the PauliOperator into PauliOperators with pairwise commuting PauliTerms
+    # Commutativity: Partitions the BoundPauliOperator into BoundPauliOperators with pairwise commuting BoundPauliTerms
     def commuting_groups(self):
 
-        groups = [] # Groups of commuting PauliTerms 
+        groups = [] # Groups of commuting BoundPauliTerms 
 
         for pauli,coeff in self.terms_dict.items():
 
@@ -414,15 +414,15 @@ class PauliOperator(Hamiltonian):
                         group.terms_dict[pauli]=coeff
                         break
             if len(groups)==0 or not commute_bool: 
-                groups.append(PauliOperator({pauli:coeff}))
+                groups.append(BoundPauliOperator({pauli:coeff}))
 
         return groups
 
-    # Qubit-wise commutativity: Partitions the PauliOperator into PauliOperators with pairwise qubit-wise commuting PauliTerms
+    # Qubit-wise commutativity: Partitions the BoundPauliOperator into BoundPauliOperators with pairwise qubit-wise commuting BoundPauliTerms
     def commuting_qw_groups(self, show_bases=False):
 
-        groups = [] # Groups of qubit-wise commuting PauliTerms
-        bases = [] # Bases as PauliTerms
+        groups = [] # Groups of qubit-wise commuting BoundPauliTerms
+        bases = [] # Bases as BoundPauliTerms
 
         for pauli,coeff in self.terms_dict.items():
 
@@ -436,7 +436,7 @@ class PauliOperator(Hamiltonian):
                         groups[i].terms_dict[pauli]=coeff
                         break
             if len(groups)==0 or not commute_bool:
-                groups.append(PauliOperator({pauli:coeff}))
+                groups.append(BoundPauliOperator({pauli:coeff}))
                 bases.append(pauli.copy())
 
         if show_bases:
@@ -458,15 +458,28 @@ class PauliOperator(Hamiltonian):
         operators_int = []
         coefficients = []
 
-        for group in groups:
+        # List of dictionaries with qubits in basis as keys and their position in an ordered list as values
+        positions = []
+        for basis in bases:
+            ordered_keys = list(basis.pauli_dict.keys())
+            position_dict = {key: index for index, key in enumerate(ordered_keys)}
+            positions.append(position_dict)
+
+            #basis_ = sorted(basis.pauli_dict.items())
+
+        n = len(groups)
+        for i in range(n):
             curr_ind = []
             curr_int = []
             curr_coeff = []
-            for pauli,coeff in group.terms_dict.items():
+
+            for pauli,coeff in groups[i].terms_dict.items():
                 ind = list(pauli.pauli_dict.keys())
+
                 curr_ind.append(ind)
-                curr_int.append(get_integer_from_indices(ind))
-                curr_coeff.append(coeff)
+                curr_int.append(get_integer_from_indices(ind,positions[i]))
+                curr_coeff.append(float(coeff.real))
+
             operators_ind.append(curr_ind)
             operators_int.append(curr_int)
             coefficients.append(curr_coeff)
@@ -537,12 +550,3 @@ class PauliOperator(Hamiltonian):
         return U
     
 
-
-def X(arg):
-    return PauliOperator({PauliTerm({arg:"X"}):1})
-
-def Y(arg):
-    return PauliOperator({PauliTerm({arg:"Y"}):1})
-
-def Z(arg):
-    return PauliOperator({PauliTerm({arg:"Z"}):1})

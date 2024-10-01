@@ -27,9 +27,33 @@ class PauliMeasurement:
         self.operators_int = operators_int
         self.coefficients = coefficients
 
-
     # Measurement settings for 'QWC' method
-    def get_measurement_circuits(self, qarg):
+    def get_measurement_circuits(self):
+
+        measurement_circuits = []
+        measurement_qubits = []
+
+        # construct change of basis circuits
+        for basis in self.bases:
+
+            basis_ = sorted(basis.pauli_dict.items())
+            qubits_ = sorted(basis.pauli_dict.keys())
+
+            n = len(basis_)
+            qc = QuantumCircuit(n)
+            for i in range(n):
+                if basis_[i][1]=="X":
+                    qc.ry(-np.pi/2,i)
+                if basis_[i][1]=="Y":
+                    qc.rx(np.pi/2,i)  
+
+            measurement_circuits.append(qc)    
+            measurement_qubits.append(qubits_)    
+
+        return measurement_circuits, measurement_qubits
+    
+    """
+    def get_measurement_circuits_old(self, qarg):
 
         if isinstance(qarg, QuantumArray):
             num_qubits = sum(qv.size for qv in list(qarg.flatten()))
@@ -52,3 +76,4 @@ class PauliMeasurement:
             measurement_circuits.append(qc)    
 
         return measurement_circuits
+    """

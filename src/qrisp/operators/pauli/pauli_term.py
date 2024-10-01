@@ -16,7 +16,7 @@
 ********************************************************************************/
 """
 
-from qrisp.operators.spin import X_,Y_,Z_
+from qrisp.operators.pauli.spin import X_,Y_,Z_
 
 #
 # Helper functions
@@ -42,10 +42,9 @@ class PauliTerm:
     
     """
 
-    def __init__(self, pauli_dict={}, bound=False):
+    def __init__(self, pauli_dict={}):
         self.pauli_dict = pauli_dict
         self.hash_value = hash(tuple(pauli_dict.items()))
-        self.bound = False
 
     def update(self, update_dict):
         self.pauli_dict.update(update_dict)
@@ -64,12 +63,12 @@ class PauliTerm:
 
     def to_expr(self):
         """
-        Returns a SymPy expression representing the Pauli term.
+        Returns a SymPy expression representing the PauliTerm.
 
         Returns
         -------
         expr : sympy.expr
-            A SymPy expression representing the Pauli term.
+            A SymPy expression representing the PauliTerm.
 
         """
 
@@ -84,8 +83,8 @@ class PauliTerm:
                 return Z_(index)
         
         expr = 1
-        for item in self.pauli_dict.items():
-            expr *= to_spin(item[1],item[0])
+        for index,P in self.pauli_dict.items():
+            expr *= to_spin(P,str(index))
 
         return expr
 

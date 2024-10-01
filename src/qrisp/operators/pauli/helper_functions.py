@@ -16,8 +16,11 @@
 ********************************************************************************/
 """
 
-def get_integer_from_indices(indices):
-    return sum(1 << i for i in indices)
+def get_integer_from_indices(indices,positions=None):
+    if positions is not None:
+        return sum(1 << positions[i] for i in indices)
+    else:
+        return sum(1 << i for i in indices)
 
 #
 # Trotterization

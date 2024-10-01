@@ -280,7 +280,7 @@ class Hamiltonian(ABC):
     def get_measurement(
         self,
         qarg,
-        method=None,
+        method='QWC',
         backend=None,
         shots=100000,
         compile=True,
@@ -295,12 +295,12 @@ class Hamiltonian(ABC):
 
         Parameters
         ----------
-        qarg : QuantumVariable or QuantumArray
-            The quantum argunet to evaluate the Hamiltonian on.
+        qarg : QuantumVariable, QuantumArray or list[QuantumVariable]
+            The quantum argument to evaluate the Hamiltonian on.
         method : string, optional
             The method for evaluating the expected value of the Hamiltonian.
             Available is ``QWC``: Pauli terms are grouped based on qubit-wise commutativity.
-            The default is None: The expected value of each Pauli term is computed independently.
+            The default is ``QWC``.
         backend : BackendClient, optional
             The backend on which to evaluate the quantum circuit. The default can be
             specified in the file default_backend.py.
@@ -364,10 +364,12 @@ class Hamiltonian(ABC):
 
         """
 
+        from qrisp import QuantumSession, merge
+
         if isinstance(qarg,QuantumVariable):
             if qarg.is_deleted():
                 raise Exception("Tried to get measurement from deleted QuantumVariable")
-            qubits = qarg.reg
+            qs = qarg.qs
             
         elif isinstance(qarg,QuantumArray):
             for qv in qarg.flatten():
@@ -375,18 +377,25 @@ class Hamiltonian(ABC):
                     raise Exception(
                         "Tried to measure QuantumArray containing deleted QuantumVariables"
                     )
-            qubits = sum([qv.reg for qv in qarg.flatten()], [])
-
+            qs = qarg.qs
+        elif isinstance(qarg,list):
+            qs = QuantumSession()
+            for qv in qarg:
+                if qv.is_deleted():
+                    raise Exception(
+                        "Tried to measure QuantumArray containing deleted QuantumVariables"
+                    ) 
+                merge(qs,qv.qs)
 
         if backend is None:
-            if qarg.qs.backend is None:
+            if qs.backend is None:
                 from qrisp.default_backend import def_backend
 
                 backend = def_backend
             else:
                 backend = qarg.qs.backend
 
-        if len(qarg.qs.env_stack) != 0:
+        if len(qs.env_stack) != 0:
             raise Exception("Tried to get measurement within open environment")
 
 
@@ -394,10 +403,10 @@ class Hamiltonian(ABC):
         if precompiled_qc is None:        
             if compile:
                 qc = qompiler(
-                    qarg.qs, **compilation_kwargs
+                    qs, **compilation_kwargs
                 )
             else:
-                qc = qarg.qs.copy()
+                qc = qs.copy()
         else:
             qc = precompiled_qc.copy()
 
@@ -415,29 +424,23 @@ class Hamiltonian(ABC):
 
         from qrisp.misc import get_measurement_from_qc
 
-        # Get measurement settings
-        #if _mes_settings is None:
-            #meas_circs, meas_ops, meas_coeffs, constant_term = self.get_measurement_settings(qarg, method=method)
-        #else:
-        #    meas_circs, meas_ops, meas_coeffs, constant_term = _mes_settings
-
         pauli_measurement = self.commuting_qw_measurement()
-        meas_circs = pauli_measurement.get_measurement_circuits(qarg)
+        meas_circs, meas_qubits = pauli_measurement.get_measurement_circuits()
         meas_ops = pauli_measurement.operators_int
         meas_coeffs = pauli_measurement.coefficients
 
         N = len(meas_circs)
 
-        #expectation = constant_term
         expectation = 0
 
         for k in range(N):
 
             curr = qc.copy()
-            curr.append(meas_circs[k].to_gate(), qubits)
-            res = get_measurement_from_qc(curr, qubits, backend, shots)
+            curr.append(meas_circs[k].to_gate(), meas_qubits[k])
+
+            res = get_measurement_from_qc(curr, meas_qubits[k], backend, shots)
             
-            # Allow groupings
+            # Groupings
             M = len(meas_ops[k])
             for l in range(M):
                 for outcome,probability in res.items():
