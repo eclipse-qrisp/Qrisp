@@ -566,30 +566,11 @@ def find_unique_markers(arr):
             
     return np.array(unique_marker, dtype = np.int64)
     
-
 @njit(cache = True)
-def find_agreements(block_a, block_b):
-
-    a_pointer = 0
-    b_pointer = 0
-    
-    a_agreements = []
-    b_agreements = []
-    
-    while a_pointer < len(block_a) and b_pointer < len(block_b):
-        
-        if block_a[a_pointer] < block_b[b_pointer]:
-            a_pointer += 1
-        elif block_a[a_pointer] > block_b[b_pointer]:
-            b_pointer += 1
-        else:
-            a_agreements.append(a_pointer)
-            b_agreements.append(b_pointer)
-            
-            a_pointer += 1
-            b_pointer += 1
-            
-    return np.array(a_agreements, dtype = np.int32), np.array(b_agreements, dtype = np.int32)
+def find_agreements(a, b):
+    A = np.broadcast_to(b, (a.shape[0], b.shape[0]))
+    B = np.broadcast_to(a, (b.shape[0], a.shape[0]))
+    return np.nonzero(A==B.transpose())
 
 
 def coo_sparse_matrix_mult(A, B):
