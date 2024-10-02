@@ -66,12 +66,12 @@ def collect_environments(jaxpr):
                                     source_info = eqn.source_info,)
         
         # If an exit primitive is found, start the collecting mechanism.
-        if eqn.primitive.name == "q_env" and "exit" in eqn.params.values():
+        if eqn.primitive.name == "jisp.q_env" and "exit" in eqn.params.values():
             
             # Find the position of the enter primitive.            
             for i in range(len(new_eqn_list))[::-1]:
                 enter_eq = new_eqn_list[i]
-                if enter_eq.primitive.name == "q_env" and "enter" in enter_eq.params.values():
+                if enter_eq.primitive.name == "jisp.q_env" and "enter" in enter_eq.params.values():
                     break
             else:
                 raise

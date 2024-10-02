@@ -19,7 +19,7 @@
 from jax import jit
 from jax.core import Jaxpr, JaxprEqn, ClosedJaxpr
 from qrisp.jisp import check_for_tracing_mode, flatten_collected_environments
-from qrisp.jisp.primitives import AbstractQuantumCircuit
+from qrisp.jisp.primitives import AbstractQuantumCircuit, OperationPrimitive
 
 def invert_eqn(eqn):
     """
@@ -73,6 +73,7 @@ def invert_jispr(jispr):
         A jaxpr returning the inverse QuantumCircuit.
 
     """
+    
     # Flatten all environments in the jaxpr
     jispr = flatten_collected_environments(jispr)
     # We separate the equations into classes where one executes Operations and
@@ -86,10 +87,10 @@ def invert_jispr(jispr):
     
     from qrisp.circuit import Operation
     for eqn in jispr.eqns:
-        if isinstance(eqn.primitive, Operation) or (eqn.primitive.name == "pjit" and isinstance(eqn.outvars[0].aval, AbstractQuantumCircuit)):
+        if isinstance(eqn.primitive, OperationPrimitive) or (eqn.primitive.name == "pjit" and isinstance(eqn.outvars[0].aval, AbstractQuantumCircuit)):
             # Insert the inverted equation at the front
             op_eqs.insert(0, invert_eqn(eqn))
-        elif eqn.primitive.name == "measure":
+        elif eqn.primitive.name == "jisp.measure":
             raise Exception("Tried to invert a Jispr containing a measurement")
         else:
             non_op_eqs.append(eqn)

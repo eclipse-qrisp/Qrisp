@@ -349,6 +349,7 @@ class InversionEnvironment(QuantumEnvironment):
         self.env_qs.data = original_circuit.data
         
     def jcompile(self, eqn, context_dic):
+        
         from qrisp.jisp import extract_invalues, insert_outvalues
         args = extract_invalues(eqn, context_dic)
         body_jispr = eqn.params["jispr"]

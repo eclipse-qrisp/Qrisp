@@ -19,16 +19,26 @@
 
 import copy
 
-import jax
 import numpy as np
 from sympy.core.expr import Expr
 from sympy import lambdify
+from jax.core import Tracer
 
-from qrisp.jisp.primitives import QuantumPrimitive, AbstractQuantumCircuit
+
+def adaptive_substitution(expr, subs_dic, precision=10):
+    if isinstance(expr, Expr):
+        return float(expr.evalf(precision, subs_dic))
+    elif isinstance(expr, (float, int)):
+        # TO-DO
+        return float(expr)
+    else:
+        # TO-DO
+        return expr
+
 
 # Class that describes an operation which can be performed on a quantum computer
 # Example would be an X gate or a measurement
-class Operation(QuantumPrimitive):
+class Operation:
     """
     This class describes operations like quantum gates, measurements or classical logic
     gates. Operation objects do not carry information about which Qubit/Clbits they are
@@ -99,33 +109,6 @@ class Operation(QuantumPrimitive):
 
         # List of parameters (also available behind the interface)
         self.params = []
-        
-        QuantumPrimitive.__init__(self, name)
-        
-        @self.def_abstract_eval
-        def abstract_eval(qc, *args):
-            """Abstract evaluation of the primitive.
-            
-            This function does not need to be JAX traceable. It will be invoked with
-            abstractions of the actual arguments. 
-            """
-            if not isinstance(qc, AbstractQuantumCircuit):
-                raise Exception(f"Tried to execute Operation.bind with the first argument of tpye {type(qc)} instead of AbstractQuantumCircuit")
-            
-            return AbstractQuantumCircuit()
-        
-        @self.def_impl
-        def append_impl(qc, *args):
-            """Concrete evaluation of the primitive.
-            
-            This function does not need to be JAX traceable. It will be invoked with
-            actual instances. 
-            """
-            temp = self.copy()
-            temp.params = [float(x) for x in list(args[:len(self.params)])]
-            qc.append(temp, args[len(self.params):])
-            return qc
-        
 
         # If a definition circuit is given, this means we are supposed to create a
         # non-elementary operation
@@ -149,7 +132,7 @@ class Operation(QuantumPrimitive):
                     self.abstract_params = self.abstract_params.union(par.free_symbols)
                 else:
                     par = float(par)
-            elif not isinstance(par, (float, int, complex, jax.core.Tracer)):
+            elif not isinstance(par, (float, int, complex, Tracer)):
                 raise Exception(
                     f"Tried to create operation with parameters of type {type(par)}"
                 )
@@ -458,7 +441,7 @@ class Operation(QuantumPrimitive):
 # See https://qiskit.org/documentation/stubs/qiskit.circuit.library.U3Gate.html
 # for more information
 class U3Gate(Operation):
-    def __init__(self, theta, phi, lam, name="u3", global_phase = 0):
+    def __init__(self, theta, phi, lam, name="u3", global_phase=0):
         
         # Initialize Operation instance
         super().__init__(
@@ -466,93 +449,38 @@ class U3Gate(Operation):
             num_qubits=1,
             num_clbits=0,
             definition=None,
-            params=[theta, phi, lam, global_phase],
+            params=[theta, phi, lam],
         )
         
-        if name in ["rx", "ry"]:
-            self.permeability[0] = False
-            self.is_qfree = False
-            self.params = [self.params[0]]
-        elif self.name == "rz":
-            self.permeability[0] = True
-            self.is_qfree = True
-            self.params = [self.params[1]]
-        elif self.name == "p":
-            self.permeability[0] = True
-            self.is_qfree = True
-            self.params = [self.params[2]]
+        if isinstance(global_phase, Expr):
+            if len(global_phase.free_symbols):
+                self.abstract_params = self.abstract_params.union(global_phase.free_symbols)
+            else:
+                global_phase = float(global_phase)
+        self.global_phase = global_phase
+
+        # Set parameters
+        self.theta = self.params[0]
+        self.phi = self.params[1]
+        self.lam = self.params[2]
+
+        if self.name in ["rx", "ry", "rz", "p"]:
+
+            if self.name in ["rz", "p"]:
+                self.permeability[0] = True
+                self.is_qfree = True
+                self.params = [self.phi]
+            else:
+                self.permeability[0] = False
+                self.is_qfree = False
+                self.params = [self.theta]
+
         elif self.name in ["h"]:
+            self.params = []
+
             self.permeability[0] = False
             self.is_qfree = False
-            self.params = []
-        elif self.name == "gphase":
-            self.permeability[0] = True
-            self.is_qfree = True
-            self.params = [self.params[3]]
-        
-    @property
-    def theta(self):
-        if self.name in ["rz", "p", "gphase", "s", "s_dg", "t", "t_dg", "z"]:
-            return 0
-        elif self.name in ["rx", "ry"]:
-            return self.params[0]
-        elif self.name == "sx":
-            return np.pi/2
-        elif self.name == "sx_dg":
-            return np.pi/4
-        elif self.name == "h":
-            return np.pi/2
-        elif self.name == ["x", "y"]:
-            return np.pi
-        else:
-            return self.params[0]
-    
-    @property
-    def phi(self):
-        if self.name in ["rz"]:
-            return self.params[0]
-        elif self.name in ["ry", "h", "p", "s", "s_dg", "t", "t_dg", "gphase", "x", "z"]:
-            return 0
-        elif self.name in ["rx", "sx", "sx_dg"]:
-            return -np.pi/2
-        elif self.name == "z":
-            return np.pi
-        elif self.name == "y":
-            return np.pi/2
-        else:
-            return self.params[1]
-    
-    @property
-    def lam(self):
-        if self.name == "p":
-            return self.params[0]
-        elif self.name in ["ry", "rz", "gphase", "sx", "sx_dg"]:
-            return 0
-        elif self.name in ["rx", "sx", "y", "s"]:
-            return np.pi/2
-        elif self.name in ["h", "x", "z"]:
-            return np.pi
-        elif self.name == "s_dg":
-            return -np.pi/2
-        elif self.name == "t":
-            return np.pi/4
-        elif self.name == "t_dg":
-            return -np.pi/4
-        else:
-            return self.params[2]
-    
-    @property
-    def global_phase(self):
-        if self.name == "rz":
-            return -self.params[0]/2
-        elif self.name == "gphase":
-            return self.params[0]
-        elif self.name in ["rx", "ry", "p", "h"]:
-            return 0
-        else:
-            return 0
-        
-        
+
     # Specify inversion method
     def inverse(self):
         # The inverse of a product of matrices if the reverted product of the inverses,
@@ -571,7 +499,8 @@ class U3Gate(Operation):
             -self.lam,
             -self.phi,
             name=new_name,
-            global_phase = -self.global_phase)
+            global_phase=-self.global_phase,
+        )
 
         if self.name == "u3":
             res.name = "u3"
@@ -603,6 +532,7 @@ class U3Gate(Operation):
             from qrisp.simulator.unitary_management import u3matrix
 
             # Generate unitary
+
             self.unitary = u3matrix(self.theta, self.phi, self.lam, self.global_phase, use_sympy = bool(len(self.abstract_params)))
 
             return self.get_unitary(decimals)
@@ -625,6 +555,14 @@ class U3Gate(Operation):
         
         return U3Gate(new_params[0], new_params[1], new_params[2], self.name, new_params[3])
         
+        # return U3Gate(
+        #     adaptive_substitution(self.theta, subs_dic),
+        #     adaptive_substitution(self.phi, subs_dic),
+        #     adaptive_substitution(self.lam, subs_dic),
+        #     self.name,
+        #     adaptive_substitution(self.global_phase, subs_dic),
+        # )
+
 
 
 
@@ -801,14 +739,13 @@ class PTControlledOperation(Operation):
                 definition_circ = method(self, num_ctrl_qubits, self.ctrl_state)
             else:
                 from qrisp.circuit.controlled_operations import multi_controlled_u3_circ
-                from qrisp.circuit import fast_append
-                with fast_append(3):
-                    definition_circ = multi_controlled_u3_circ(
-                        base_operation,
-                        num_ctrl_qubits,
-                        ctrl_state=self.ctrl_state,
-                        method=method,
-                    )
+
+                definition_circ = multi_controlled_u3_circ(
+                    base_operation,
+                    num_ctrl_qubits,
+                    ctrl_state=self.ctrl_state,
+                    method=method,
+                )
 
         # If the base operation has a definition, we can simply apply the phase tolerant
         # control algorithm to every gate contained in this defintion.

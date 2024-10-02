@@ -18,7 +18,11 @@
 
 import jax
 
-from qrisp.jisp.primitives import create_qubits, delete_qubits_p
+from qrisp.jisp.primitives import create_qubits, delete_qubits_p, OperationPrimitive
+
+from sympy import symbols
+
+greek_letters = symbols('alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu nu xi omicron pi rho sigma tau upsilon phi chi psi omega')
 
 
 class TracingQuantumSession:
@@ -36,12 +40,16 @@ class TracingQuantumSession:
     
         if len(clbits):
             raise Exception("Tried to append Operation with non-zero classical bits in JAX mode.")
-            
-        if self.abs_qc is None:
-            raise
-            # self.abs_qc = qdef_p.bind()
-            
-        self.abs_qc = operation.bind(self.abs_qc, *(operation.params + [b for b in qubits]))
+        
+        temp_op = operation.copy()
+        
+        temp_op.params = list(temp_op.params)
+        for i in range(len(temp_op.params)):
+            temp_op.params[i] = greek_letters[i]
+        
+        op_primitive = OperationPrimitive(temp_op)
+        
+        self.abs_qc = op_primitive.bind(self.abs_qc, *(operation.params + [b for b in qubits]))
         
     def register_qv(self, qv, size):
         if qv.name in [temp_qv.name for temp_qv in self.qv_list + self.deleted_qv_list]:

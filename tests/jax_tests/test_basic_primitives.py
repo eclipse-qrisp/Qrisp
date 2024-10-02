@@ -29,12 +29,12 @@ def test_basic_primitives():
         return res_bl
 
     compare_jaxpr(make_jispr(test_function)(), 
-            ['create_qubits',
-             'get_qubit',
-             'h',
-             'get_qubit',
-             'cx',
-             'measure'])
+            ['jisp.create_qubits',
+             'jisp.get_qubit',
+             'jisp.h',
+             'jisp.get_qubit',
+             'jisp.cx',
+             'jisp.measure'])
     
     def test_function():
         qv = QuantumVariable(2)
@@ -47,10 +47,10 @@ def test_basic_primitives():
         return res_bl
     
     compare_jaxpr(make_jispr(test_function)(), 
-                ['create_qubits',
-                 'q_env',
-                 'get_qubit',
-                 'measure'])    
+                ['jisp.create_qubits',
+                 'jisp.q_env',
+                 'jisp.get_qubit',
+                 'jisp.measure'])    
 
     def test_function():
         qv = QuantumVariable(2)
@@ -64,15 +64,15 @@ def test_basic_primitives():
         return res_bl
 
     compare_jaxpr(make_jispr(test_function)(), 
-                ['create_qubits',
-                 'get_qubit',
-                 'h',
-                 'get_qubit',
-                 'cx',
-                 'cx',
-                 'h',
-                 'measure',
-                 'delete_qubits'])
+                ['jisp.create_qubits',
+                 'jisp.get_qubit',
+                 'jisp.h',
+                 'jisp.get_qubit',
+                 'jisp.cx',
+                 'jisp.cx',
+                 'jisp.h',
+                 'jisp.measure',
+                 'jisp.delete_qubits'])
 
     def test_function(a):
         qv = QuantumVariable(2)
@@ -83,10 +83,11 @@ def test_basic_primitives():
         qv.delete()
         return res_bl
 
+    print(make_jispr(test_function)(2.))
     compare_jaxpr(make_jispr(test_function)(2.), 
-                ['create_qubits',
-                 'get_qubit',
-                 'rz',
-                 'p',
-                 'measure',
-                 'delete_qubits'])
+                ['jisp.create_qubits',
+                 'jisp.get_qubit',
+                 'jisp.rz(alpha)',
+                 'jisp.p(alpha)',
+                 'jisp.measure',
+                 'jisp.delete_qubits'])

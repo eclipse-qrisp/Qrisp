@@ -20,5 +20,7 @@ from jax.core import Primitive
 
 # Wrapper to identify Qrisp primitives
 class QuantumPrimitive(Primitive):
-    pass
+    def __init__(self, name):
+        Primitive.__init__(self, "jisp." + name)
+        self.qrisp_name = name
 

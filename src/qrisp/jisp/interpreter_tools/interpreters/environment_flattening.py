@@ -69,7 +69,7 @@ def flatten_collected_environments(jispr):
     # It is now much easier to apply higher order transformations with this kind
     # of data structure.
     def eqn_evaluator(eqn, context_dic):
-        if eqn.primitive.name == "q_env":
+        if eqn.primitive.name == "jisp.q_env":
             flatten_environment_eqn(eqn, context_dic)
         elif eqn.primitive.name == "pjit":
             flatten_environments_in_pjit_eqn(eqn, context_dic)
@@ -130,6 +130,7 @@ def flatten_environment_eqn(env_eqn, context_dic):
         num_ctrl = len(env_eqn.invars) - len(env_eqn.params["jispr"].invars)
         transformed_jaxpr = body_jispr.control(num_ctrl)
     else:
+        
         transformed_jaxpr = body_jispr
     
     # Create a new context_dic
@@ -147,7 +148,7 @@ def flatten_environment_eqn(env_eqn, context_dic):
     
     
     def eqn_evaluator(eqn, context_dic):
-        if eqn.primitive.name == "q_env":
+        if eqn.primitive.name == "jisp.q_env":
             flatten_environment_eqn(eqn, context_dic)
         else:
             return True
