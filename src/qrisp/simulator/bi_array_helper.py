@@ -610,7 +610,7 @@ def sparse_matrix_mult(A, B):
         log_sparsity_a = -np.log2(B.nnz/(B.shape[0]*B.shape[1]))
         log_sparsity_b = -np.log2(A.nnz/(A.shape[0]*A.shape[1]))
     
-    if get_prediction(log_shape_0_a, log_shape_1_b, log_sparsity_a, log_sparsity_b) and False:
+    if get_prediction(log_shape_0_a, log_shape_1_b, log_sparsity_a, log_sparsity_b):
         return (A @ B).tocoo()
     else:
         return  coo_sparse_matrix_mult(A, B)
