@@ -464,20 +464,24 @@ class U3Gate(Operation):
         self.phi = self.params[1]
         self.lam = self.params[2]
 
-        if self.name in ["rx", "ry", "rz", "p"]:
-
-            if self.name in ["rz", "p"]:
-                self.permeability[0] = True
-                self.is_qfree = True
-                self.params = [self.lam]
-            else:
-                self.permeability[0] = False
-                self.is_qfree = False
-                self.params = [self.theta]
-
-        elif self.name in ["h"]:
+        if self.name == "p":
+            self.permeability[0] = True
+            self.is_qfree = True
+            self.params = [self.lam]
+        elif self.name == "rz":
+            self.permeability[0] = True
+            self.is_qfree = True
+            self.params = [self.phi]
+        elif self.name in ["rx", "ry"]:
+            self.permeability[0] = False
+            self.is_qfree = False
+            self.params = [self.theta]
+        elif self.name == "gphase":
+            self.params = [self.global_phase]
+            self.permeability[0] = True
+            self.is_qfree = True
+        elif self.name == "h":
             self.params = []
-
             self.permeability[0] = False
             self.is_qfree = False
 
