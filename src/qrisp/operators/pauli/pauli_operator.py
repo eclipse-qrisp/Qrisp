@@ -424,7 +424,10 @@ class PauliOperator(Hamiltonian):
         groups = [] # Groups of qubit-wise commuting PauliTerms
         bases = [] # Bases as PauliTerms
 
-        for pauli,coeff in self.terms_dict.items():
+        # Sorted insertion heuristic https://quantum-journal.org/papers/q-2021-01-20-385/pdf/
+        sorted_terms = sorted(self.terms_dict.items(), key=lambda item: abs(item[1]), reverse=True)
+
+        for pauli,coeff in sorted_terms:
 
             commute_bool = False
             if len(groups)>0:
@@ -448,42 +451,9 @@ class PauliOperator(Hamiltonian):
     # Measurement settings
     #
 
-    def commuting_measurement(self):
-        return 0
-    
-    def commuting_qw_measurement(self):
+    def pauli_measurement(self):
+        return PauliMeasurement(self)
 
-        groups, bases = self.commuting_qw_groups(show_bases=True)
-        operators_ind = []
-        operators_int = []
-        coefficients = []
-
-        # List of dictionaries with qubits in basis as keys and their position in an ordered list as values
-        positions = []
-        for basis in bases:
-            ordered_keys = list(basis.pauli_dict.keys())
-            position_dict = {key: index for index, key in enumerate(ordered_keys)}
-            positions.append(position_dict)
-
-        n = len(groups)
-        for i in range(n):
-            curr_ind = []
-            curr_int = []
-            curr_coeff = []
-
-            for pauli,coeff in groups[i].terms_dict.items():
-                ind = list(pauli.pauli_dict.keys())
-
-                curr_ind.append(ind)
-                curr_int.append(get_integer_from_indices(ind,positions[i]))
-                curr_coeff.append(float(coeff.real))
-
-            operators_ind.append(curr_ind)
-            operators_int.append(curr_int)
-            coefficients.append(curr_coeff)
-
-        return PauliMeasurement(bases,operators_ind,operators_int,coefficients)
-    
     #
     # Trotterization
     #
@@ -518,9 +488,7 @@ class PauliOperator(Hamiltonian):
 
         from qrisp import conjugate, rx, ry, rz, cx, h, IterationEnvironment, gphase
 
-        #bases, ops, indices, coeffs, constant = self.qubit_wise_commutativity()
-
-        pauli_measurement = self.commuting_qw_measurement()
+        pauli_measurement = self.pauli_measurement()
         bases = pauli_measurement.bases
         indices = pauli_measurement.operators_ind
         ops = pauli_measurement.operators_int

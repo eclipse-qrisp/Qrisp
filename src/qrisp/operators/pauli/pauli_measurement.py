@@ -16,44 +16,95 @@
 ********************************************************************************/
 """
 
+from qrisp.operators.pauli.helper_functions import *
 from qrisp import QuantumVariable, QuantumArray, QuantumCircuit
 import numpy as np
 
 class PauliMeasurement:
+    """
+    
+    
+    """
 
-    def __init__(self, bases, operators_ind, operators_int, coefficients):
+    def __init__(self, operator):
         """
+
         Parameters
         ----------
-            bases : list[PauliTerm]
-                The basis of each group as PauliTerm.
-            operators_ind : list[list[list[int]]]
-                The PauliTerms in each group as list of integers. 
-                The integers correspond to the positions of "Z" in the PauliTerm (after change of basis).
-            operators_int : list[list[int]]
-                The PauliTerms in each group as integers. 
-                A "1" at position j in binary representation corresponds to a "Z" at position j in the PauliTerm (after change of basis).
-            coefficients : list[list[float]]
-                The coeffcients of the PauliTerms in each group.
+        operator: PauliOperator or BoundPauliOperator
+        
+        Attributes
+        ----------
+        bases : list[PauliTerm]
+            The basis of each group as PauliTerm.
+        operators_ind : list[list[list[int]]]
+            The PauliTerms in each group as list of integers. 
+            The integers correspond to the positions of "Z" in the PauliTerm (after change of basis).
+        operators_int : list[list[int]]
+            The PauliTerms in each group as integers. 
+            A "1" at position j in binary representation corresponds to a "Z" at position j in the PauliTerm (after change of basis).
+        coefficients : list[list[float]]
+            The coeffcients of the PauliTerms in each group.
+        circuits : list[QuantumCircuit]
+            The change of basis circuits for each group.
+        qubits : list[list[int or Qubit]]
+            The qubits to be measured.
+        variances : list[float]
+            The variances for the groups.
+        shots : list[float]
+            The optimal distribution of shots among the groups.
 
         """
-        self.bases = bases
-        self.operators_ind = operators_ind
-        self.operators_int = operators_int
-        self.coefficients = coefficients
-
+        self.bases, self.operators_ind, self.operators_int, self.coefficients = self.commuting_qw_measurement(operator)
         self.variances, self.shots = self.measurement_shots()
         self.circuits, self.qubits = self.measurement_circuits()
 
+    def commuting_qw_measurement(self, operator):
+        """
+        
+        """
+
+        groups, bases = operator.commuting_qw_groups(show_bases=True)
+        operators_ind = []
+        operators_int = []
+        coefficients = []
+
+        # List of dictionaries with qubits in basis as keys and their position in an ordered list as values
+        positions = []
+        for basis in bases:
+            ordered_keys = sorted(basis.pauli_dict.keys())
+            position_dict = {key: index for index, key in enumerate(ordered_keys)}
+            positions.append(position_dict)
+
+        n = len(groups)
+        for i in range(n):
+            curr_ind = []
+            curr_int = []
+            curr_coeff = []
+
+            for pauli,coeff in groups[i].terms_dict.items():
+                ind = list(pauli.pauli_dict.keys())
+
+                curr_ind.append(ind)
+                curr_int.append(get_integer_from_indices(ind,positions[i]))
+                curr_coeff.append(float(coeff.real))
+
+            operators_ind.append(curr_ind)
+            operators_int.append(curr_int)
+            coefficients.append(curr_coeff)
+        return bases, operators_ind, operators_int, coefficients
+        
 
     def measurement_shots(self):
         """
         Calculates the optimal distribution and number of shots following https://quantum-journal.org/papers/q-2021-01-20-385/pdf/.
         
         """
+        n = len(self.coefficients)
         variances = []
-        for coeffs in self.coefficients:
-            var = sum(x**2 for x in coeffs)
+        for i in range(n):
+            m = len(self.coefficients[i])
+            var = sum(self.coefficients[i][j]**2 for j in range(m) if self.operators_int[i][j]>0) # Exclude constant term
             variances.append(var)
         N = sum(np.sqrt(x) for x in variances)
         shots = [np.sqrt(x)*N for x in variances]
@@ -87,28 +138,4 @@ class PauliMeasurement:
 
         return circuits, qubits
     
-    """
-    def get_measurement_circuits_old(self, qarg):
 
-        if isinstance(qarg, QuantumArray):
-            num_qubits = sum(qv.size for qv in list(qarg.flatten()))
-        else:
-            num_qubits = qarg.size
-        
-        #pauli_dicts, measurement_ops, index_ops, measurement_coeffs, constant_term = self.qubit_wise_commutativity()
-        measurement_circuits = []
-
-        # construct change of basis circuits
-        for basis in self.bases:
-            qc = QuantumCircuit(num_qubits)
-            for item in basis.pauli_dict.items():
-                if item[0] >= num_qubits:
-                    raise Exception("Insufficient number of qubits")
-                if item[1]=="X":
-                    qc.ry(-np.pi/2,item[0])
-                if item[1]=="Y":
-                    qc.rx(np.pi/2,item[0])  
-            measurement_circuits.append(qc)    
-
-        return measurement_circuits
-    """

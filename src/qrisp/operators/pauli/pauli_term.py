@@ -44,10 +44,11 @@ class PauliTerm:
 
     def __init__(self, pauli_dict={}):
         self.pauli_dict = pauli_dict
-        self.hash_value = hash(tuple(pauli_dict.items()))
+        self.hash_value = hash(tuple(sorted(pauli_dict.items())))
 
     def update(self, update_dict):
         self.pauli_dict.update(update_dict)
+        self.hash_value = hash(tuple(sorted(self.pauli_dict.items())))
 
     def __hash__(self):
         return self.hash_value
@@ -57,9 +58,15 @@ class PauliTerm:
     
     def copy(self):
         return PauliTerm(self.pauli_dict.copy())
+    
     #
     # Printing
     #
+
+    def __str__(self):
+        # Convert the sympy expression to a string and return it
+        expr = self.to_expr()
+        return str(expr)
 
     def to_expr(self):
         """

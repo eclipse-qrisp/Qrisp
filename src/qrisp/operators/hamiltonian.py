@@ -430,7 +430,7 @@ class Hamiltonian(ABC):
         from qrisp.misc import get_measurement_from_qc
 
         if _measurement is None:
-            pauli_measurement = self.commuting_qw_measurement()
+            pauli_measurement = self.pauli_measurement()
         else:
             pauli_measurement = _measurement
 
