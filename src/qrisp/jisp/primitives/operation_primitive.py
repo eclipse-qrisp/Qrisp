@@ -68,6 +68,9 @@ class OperationPrimitive(QuantumPrimitive):
     
     def inverse(self):
         return OperationPrimitive(self.op.inverse())
+    
+    def control(self, num_ctrl = 1, ctrl_state = -1):
+        return OperationPrimitive(self.op.control(num_ctrl, ctrl_state = -1))
         
 
 

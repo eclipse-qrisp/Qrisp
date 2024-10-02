@@ -19,7 +19,7 @@
 import numpy as np
 
 from jax.core import JaxprEqn, ClosedJaxpr, Var, Jaxpr
-from qrisp.jisp import eval_jaxpr, TracingQuantumSession
+from qrisp.jisp import eval_jaxpr, TracingQuantumSession, OperationPrimitive
 
 control_var_count = np.zeros(1)
 
@@ -121,7 +121,6 @@ def control_jispr(jispr):
 
     """
     
-    from qrisp.circuit import Operation
     from qrisp.jisp import Jispr, AbstractQubit
     
     ctrl_qubit_var = Var(suffix = "", aval = AbstractQubit(), count = control_var_count[0])
@@ -129,7 +128,7 @@ def control_jispr(jispr):
     
     new_eqns = []
     for eqn in jispr.eqns:
-        if isinstance(eqn.primitive, Operation) or eqn.primitive.name in ["pjit", "while"]:
+        if isinstance(eqn.primitive, OperationPrimitive) or eqn.primitive.name in ["pjit", "while"]:
             new_eqns.append(control_eqn(eqn, ctrl_qubit_var))
         elif eqn.primitive.name == "measure":
             raise Exception("Tried to applied quantum control to a measurement")
