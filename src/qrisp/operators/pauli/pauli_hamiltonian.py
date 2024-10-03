@@ -15,8 +15,9 @@
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************/
 """
-from qrisp.operators import Hamiltonian
-from qrisp.operators.fermionic.fermionic_term import FermionicTerm
+from qrisp.operators.hamiltonian import Hamiltonian
+from qrisp.operators.pauli.helper_functions import *
+from qrisp.operators.pauli.pauli_term import PauliTerm
 from qrisp.operators.pauli.pauli_measurement import PauliMeasurement
 
 import sympy as sp
@@ -28,13 +29,13 @@ init_printing()
 threshold = 1e-9
 
 #
-# FermionicOperator
+# PauliHamiltonian
 #
 
-class FermionicOperator(Hamiltonian):
+class PauliHamiltonian(Hamiltonian):
     r"""
-    This class provides an efficient implementation of Pauli operators, i.e.,
-    operators of the form
+    This class provides an efficient implementation of Pauli Hamiltonians, i.e.,
+    Hamiltonians of the form
 
     .. math::
         
@@ -45,19 +46,22 @@ class FermionicOperator(Hamiltonian):
 
     Parameters
     ----------
-    arg : dict, optional
-        A dictionary representing a Pauli operator.
+    terms_dict : dict, optional
+        A dictionary representing a PauliHamiltonian.
 
     Examples
     --------
 
-    A Pauli operator can be specified conveniently in terms of ``X``, ``Y``, ``Z`` operators:
+    A PauliHamiltonian can be specified conveniently in terms of ``X``, ``Y``, ``Z`` operators:
 
     ::
         
-        from qrisp.operators import FermionicOperator, X,Y,Z
+        from qrisp.operators.pauli import X,Y,Z
 
-        P1 = 1+2*X(0)+3*X(0)*Y(1)
+        H = 1+2*X(0)+3*X(0)*Y(1)
+        H
+
+    Yields $1+2X_0+3X_0Y_1$.
 
     """
 
@@ -106,7 +110,7 @@ class FermionicOperator(Hamiltonian):
         if self.len()==1:
             if isinstance(e, int) and e>=0:
                 if e%2==0:
-                    return FermionicOperator({FermionicTerm():1})
+                    return PauliHamiltonian({PauliTerm():1})
                 else:
                     return self
             else:
@@ -120,20 +124,20 @@ class FermionicOperator(Hamiltonian):
 
         Parameters
         ----------
-        other : int, float, complex or FermionicOperator
-            A scalar or a FermionicOperator to add to the operator self.
+        other : int, float, complex or PauliHamiltonian
+            A scalar or a PauliHamiltonian to add to the operator self.
 
         Returns
         -------
-        result : FermionicOperator
+        result : PauliHamiltonian
             The sum of the operator self and other.
 
         """
 
         if isinstance(other,(int,float,complex)):
-            other = FermionicOperator({FermionicTerm():other})
-        if not isinstance(other,FermionicOperator):
-            raise TypeError("Cannot add FermionicOperator and "+str(type(other)))
+            other = PauliHamiltonian({PauliTerm():other})
+        if not isinstance(other,PauliHamiltonian):
+            raise TypeError("Cannot add PauliHamiltonian and "+str(type(other)))
 
         res_terms_dict = {}
 
@@ -147,7 +151,7 @@ class FermionicOperator(Hamiltonian):
             if abs(res_terms_dict[pauli])<threshold:
                 del res_terms_dict[pauli]
         
-        result = FermionicOperator(res_terms_dict)
+        result = PauliHamiltonian(res_terms_dict)
         return result
     
     def __sub__(self,other):
@@ -156,20 +160,20 @@ class FermionicOperator(Hamiltonian):
 
         Parameters
         ----------
-        other : int, float, complex or FermionicOperator
-            A scalar or a FermionicOperator to substract from the operator self.
+        other : int, float, complex or PauliHamiltonian
+            A scalar or a PauliHamiltonian to substract from the operator self.
 
         Returns
         -------
-        result : FermionicOperator
+        result : PauliHamiltonian
             The difference of the operator self and other.
 
         """
 
         if isinstance(other,(int,float,complex)):
-            other = FermionicOperator({FermionicTerm():other})
-        if not isinstance(other,FermionicOperator):
-            raise TypeError("Cannot substract FermionicOperator and "+str(type(other)))
+            other = PauliHamiltonian({PauliTerm():other})
+        if not isinstance(other,PauliHamiltonian):
+            raise TypeError("Cannot substract PauliHamiltonian and "+str(type(other)))
 
         res_terms_dict = {}
 
@@ -183,7 +187,7 @@ class FermionicOperator(Hamiltonian):
             if abs(res_terms_dict[pauli])<threshold:
                 del res_terms_dict[pauli]
         
-        result = FermionicOperator(res_terms_dict)
+        result = PauliHamiltonian(res_terms_dict)
         return result
 
     def __mul__(self,other):
@@ -192,20 +196,20 @@ class FermionicOperator(Hamiltonian):
 
         Parameters
         ----------
-        other : int, float, complex or FermionicOperator
-            A scalar or a FermionicOperator to multiply with the operator self.
+        other : int, float, complex or PauliHamiltonian
+            A scalar or a PauliHamiltonian to multiply with the operator self.
 
         Returns
         -------
-        result : FermionicOperator
+        result : PauliHamiltonian
             The product of the operator self and other.
 
         """
 
         if isinstance(other,(int,float,complex)):
-            other = FermionicOperator({FermionicTerm():other})
-        if not isinstance(other,FermionicOperator):
-            raise TypeError("Cannot multipliy FermionicOperator and "+str(type(other)))
+            other = PauliHamiltonian({PauliTerm():other})
+        if not isinstance(other,PauliHamiltonian):
+            raise TypeError("Cannot multipliy PauliHamiltonian and "+str(type(other)))
 
         res_terms_dict = {}
 
@@ -214,7 +218,7 @@ class FermionicOperator(Hamiltonian):
                 curr_pauli, curr_coeff = pauli1*pauli2
                 res_terms_dict[curr_pauli] = res_terms_dict.get(curr_pauli,0) + curr_coeff*coeff1*coeff2
 
-        result = FermionicOperator(res_terms_dict)
+        result = PauliHamiltonian(res_terms_dict)
         return result
 
     __radd__ = __add__
@@ -230,16 +234,16 @@ class FermionicOperator(Hamiltonian):
 
         Parameters
         ----------
-        other : int, float, complex or FermionicOperator
-            A scalar or a FermionicOperator to add to the operator self.
+        other : int, float, complex or PauliHamiltonian
+            A scalar or a PauliHamiltonian to add to the operator self.
 
         """
 
         if isinstance(other,(int,float,complex)):
-            self.terms_dict[FermionicTerm()] = self.terms_dict.get(FermionicTerm(),0)+other
+            self.terms_dict[PauliTerm()] = self.terms_dict.get(PauliTerm(),0)+other
             return self
-        if not isinstance(other,FermionicOperator):
-            raise TypeError("Cannot add FermionicOperator and "+str(type(other)))
+        if not isinstance(other,PauliHamiltonian):
+            raise TypeError("Cannot add PauliHamiltonian and "+str(type(other)))
 
         for pauli,coeff in other.terms_dict.items():
             self.terms_dict[pauli] = self.terms_dict.get(pauli,0)+coeff
@@ -253,16 +257,16 @@ class FermionicOperator(Hamiltonian):
 
         Parameters
         ----------
-        other : int, float, complex or FermionicOperator
-            A scalar or a FermionicOperator to substract from the operator self.
+        other : int, float, complex or PauliHamiltonian
+            A scalar or a PauliHamiltonian to substract from the operator self.
 
         """
 
         if isinstance(other,(int,float,complex)):
-            self.terms_dict[FermionicTerm()] = self.terms_dict.get(FermionicTerm(),0)-other
+            self.terms_dict[PauliTerm()] = self.terms_dict.get(PauliTerm(),0)-other
             return self
-        if not isinstance(other,FermionicOperator):
-            raise TypeError("Cannot add FermionicOperator and "+str(type(other)))
+        if not isinstance(other,PauliHamiltonian):
+            raise TypeError("Cannot add PauliHamiltonian and "+str(type(other)))
 
         for pauli,coeff in other.terms_dict.items():
             self.terms_dict[pauli] = self.terms_dict.get(pauli,0)-coeff
@@ -276,15 +280,15 @@ class FermionicOperator(Hamiltonian):
 
         Parameters
         ----------
-        other : int, float, complex or FermionicOperator
-            A scalar or a FermionicOperator to multiply with the operator self.
+        other : int, float, complex or PauliHamiltonian
+            A scalar or a PauliHamiltonian to multiply with the operator self.
 
         """
 
         if isinstance(other,(int,float,complex)):
-            other = FermionicOperator({FermionicTerm():other})
-        if not isinstance(other,FermionicOperator):
-            raise TypeError("Cannot multipliy FermionicOperator and "+str(type(other)))
+            other = PauliHamiltonian({PauliTerm():other})
+        if not isinstance(other,PauliHamiltonian):
+            raise TypeError("Cannot multipliy PauliHamiltonian and "+str(type(other)))
 
         res_terms_dict = {}
 
@@ -395,12 +399,30 @@ class FermionicOperator(Hamiltonian):
     # Partitions 
     #
 
-    # Commutativity: Partitions the FermionicOperator into FermionicOperators with pairwise commuting FermionicTerms
+    # Commutativity: Partitions the PauliHamiltonian into PauliHamiltonians with pairwise commuting PauliTerms
     def commuting_groups(self):
+        r"""
+        Partitions the PauliHamiltonian into PauliHamiltonians with pairwise commuting terms. That is,
 
-        groups = [] # Groups of commuting FermionicTerms 
+        .. math::
 
-        for pauli,coeff in self.terms_dict.items():
+            H = \sum_{i=1}^mH_i
+
+        where the terms in each $H_i$ are mutually commuting.
+
+        Returns
+        -------
+        groups : list[PauliHamiltonian]
+            The partition of the Hamiltonian.
+        
+        """
+
+        groups = [] # Groups of commuting PauliTerms 
+
+        # Sorted insertion heuristic https://quantum-journal.org/papers/q-2021-01-20-385/pdf/
+        sorted_terms = sorted(self.terms_dict.items(), key=lambda item: abs(item[1]), reverse=True)
+
+        for pauli,coeff in sorted_terms:
 
             commute_bool = False
             if len(groups) > 0:
@@ -413,15 +435,30 @@ class FermionicOperator(Hamiltonian):
                         group.terms_dict[pauli]=coeff
                         break
             if len(groups)==0 or not commute_bool: 
-                groups.append(FermionicOperator({pauli:coeff}))
+                groups.append(PauliHamiltonian({pauli:coeff}))
 
         return groups
 
-    # Qubit-wise commutativity: Partitions the FermionicOperator into FermionicOperators with pairwise qubit-wise commuting FermionicTerms
+    # Qubit-wise commutativity: Partitions the PauliHamiltonian into PauliHamiltonians with pairwise qubit-wise commuting PauliTerms
     def commuting_qw_groups(self, show_bases=False):
+        r"""
+        Partitions the PauliHamiltonian into PauliHamiltonians with pairwise qubit-wise commuting terms. That is,
 
-        groups = [] # Groups of qubit-wise commuting FermionicTerms
-        bases = [] # Bases as FermionicTerms
+        .. math::
+
+            H = \sum_{i=1}^mH_i
+
+        where the terms in each $H_i$ are mutually qubit-wise commuting.
+
+        Returns
+        -------
+        groups : list[PauliHamiltonian]
+            The partition of the Hamiltonian.
+        
+        """
+
+        groups = [] # Groups of qubit-wise commuting PauliTerms
+        bases = [] # Bases as PauliTerms
 
         # Sorted insertion heuristic https://quantum-journal.org/papers/q-2021-01-20-385/pdf/
         sorted_terms = sorted(self.terms_dict.items(), key=lambda item: abs(item[1]), reverse=True)
@@ -438,7 +475,7 @@ class FermionicOperator(Hamiltonian):
                         groups[i].terms_dict[pauli]=coeff
                         break
             if len(groups)==0 or not commute_bool:
-                groups.append(FermionicOperator({pauli:coeff}))
+                groups.append(PauliHamiltonian({pauli:coeff}))
                 bases.append(pauli.copy())
 
         if show_bases:
@@ -474,7 +511,7 @@ class FermionicOperator(Hamiltonian):
 
             This function recieves the following arguments:
 
-            * qarg : QuantumVariable or QuantumArray
+            * qarg : QuantumVariable 
                 The quantum argument.
             * t : float, optional
                 The evolution time $t$. The default is 1.
@@ -489,24 +526,25 @@ class FermionicOperator(Hamiltonian):
 
         pauli_measurement = self.pauli_measurement()
         bases = pauli_measurement.bases
-        indices = pauli_measurement.operators_ind
-        ops = pauli_measurement.operators_int
-        coeffs = pauli_measurement.coefficients
+        indices = pauli_measurement.operators_ind # Indices of Z's in PauliTerms (after change of basis)
+        operators_int = pauli_measurement.operators_int
+        coefficients = pauli_measurement.coefficients
 
         def trotter_step(qarg, t, steps):
-
-            # TODO
-            #if constant != 0:
-            #    gphase(t/steps*constant,qarg[0])
 
             N = len(bases)
             for k in range(N):
                 basis = bases[k].pauli_dict
+
                 with conjugate(change_of_basis)(qarg, basis):
-                    M = len(ops[k])
+                    M = len(indices[k])
+
                     for l in range(M):
-                        with conjugate(parity)(qarg, indices[k][l]):
-                            rz(-2*coeffs[k][l]*t/steps,qarg[indices[k][l][-1]])
+                        if operators_int[k][l]>0: # Not identity
+                            with conjugate(parity)(qarg, indices[k][l]):
+                                rz(-2*coefficients[k][l]*t/steps,qarg[indices[k][l][-1]])
+                        else: # Identity
+                            gphase(coefficients[k][l]*t/steps,qarg[0])
 
         def U(qarg, t=1, steps=1, iter=1):
             with IterationEnvironment(qarg.qs, iter):

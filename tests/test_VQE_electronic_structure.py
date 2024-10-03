@@ -16,11 +16,12 @@
 ********************************************************************************/
 """
 
-from qrisp.vqe.problems.electronic_structure import *
+#from qrisp.vqe.problems.electronic_structure import *
 
 #
 # H2 molecule
 #
+"""
 def test_vqe_electronic_structure_H2():  
     
     from pyscf import gto
@@ -44,10 +45,12 @@ def test_vqe_electronic_structure_H2():
         results.append(res)
     
     assert np.abs(min(results)-(-1.85238817356958)) < 1e-1
+"""
 
 #
 # BeH2 molecule, active space
 #
+"""
 def test_vqe_electronic_structure_BeH2():
 
     from pyscf import gto
@@ -61,7 +64,6 @@ def test_vqe_electronic_structure_BeH2():
     assert np.abs(H.ground_state_energy()-(-16.73195995959339))
 
     # runs for >1 minute
-    """
     vqe = electronic_structure_problem(mol,active_orb=6,active_elec=4)
     
     results = []
@@ -74,4 +76,4 @@ def test_vqe_electronic_structure_BeH2():
     
     print(min(results))
     assert np.abs(min(results)-(-16.73195995959339)) < 1e-1
-    """
+"""

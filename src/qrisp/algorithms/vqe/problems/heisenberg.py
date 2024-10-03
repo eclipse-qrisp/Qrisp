@@ -16,7 +16,7 @@
 ********************************************************************************/
 """
 
-from qrisp.operators import X,Y,Z
+from qrisp.operators.pauli import X,Y,Z
 from qrisp.core import x, h, cx, cp, gphase, rz
 from qrisp.environments import conjugate
 import networkx as nx
@@ -325,7 +325,7 @@ def heisenberg_problem(G, J, B, ansatz_type="per hamiltonian"):
 
         vqe = heisenberg_problem(G,1,1)
         vqe.set_callback()
-        energy = vqe.run(QuantumVariable(G.number_of_nodes()),depth=2,max_iter=50,mes_kwargs={'method':'QWC'})
+        energy = vqe.run(QuantumVariable(G.number_of_nodes()),depth=2,max_iter=50)
         print(energy)
         # Yields -8.061600000000002
     

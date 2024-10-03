@@ -27,8 +27,6 @@ This submodule of Qrisp provides a collection of commonly used buildings blocks 
      - low-level manipulations of quantum arguments like :ref:`QuantumVariable <QuantumVariable>` or :ref:`QuantumArray <QuantumArray>`
    * - :ref:`Prefix arithmetic <prefix_arithmetic>`
      - Several arithmetic functions that allow better control over precision and output types than the infix version.
-   * - :ref:`Hamiltonians <Hamiltonian>`
-     - Describe, optimize and simulate quantum hamiltonians.
 
 
 We encourage you to explore these algorithms, delve into their documentation, and experiment with their implementations.
@@ -51,5 +49,3 @@ We encourage you to explore these algorithms, delve into their documentation, an
    demux
    cyclic_shift
    iterable_permutation
-   Hamiltonian
-   

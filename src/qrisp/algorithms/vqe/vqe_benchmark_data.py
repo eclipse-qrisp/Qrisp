@@ -26,7 +26,7 @@ class VQEBenchmark:
     Attributes
     ----------
     layer_depth : list[int]
-        The amount of QAOA layers for each run.
+        The amount of VQE layers for each run.
     circuit_depth : list[int]
         The depth of the compiled circuit of each run.
     qubit_amount : list[int]
@@ -41,7 +41,7 @@ class VQEBenchmark:
         The amount of time passed (in seconds) of each run.
     optimal_energy : float
         The exact ground state energy of the problem Hamiltonian.
-    hamiltonian : Hamiltonian
+    hamiltonian : :ref:`Hamiltonian`
         The problem Hamiltonian.
     
     """
@@ -117,8 +117,7 @@ class VQEBenchmark:
                                 shot_range = [5000,10000],
                                 iter_range = [25,50],
                                 optimal_energy = H.ground_state_energy(),
-                                repetitions = 2,
-                                mes_kwargs = {'method':'QWC'}
+                                repetitions = 2
                                 )
         
         We now evaluate the cost using the default metrics.
@@ -193,7 +192,7 @@ class VQEBenchmark:
     
     def visualize(self, cost_metric = "oqv", gain_metric = "approx_ratio"):
         """
-        Plots the results of :meth:`.evaluate <qrisp.qaoa.QAOABenchmark.evaluate>`.
+        Plots the results of :meth:`.evaluate <qrisp.vqe.VQEBenchmark.evaluate>`.
 
         Parameters
         ----------
@@ -223,8 +222,7 @@ class VQEBenchmark:
                                 shot_range = [5000,10000],
                                 iter_range = [25,50],
                                 optimal_energy = H.ground_state_energy(),
-                                repetitions = 2,
-                                mes_kwargs = {'method':'QWC'}
+                                repetitions = 2
                                 )
             
         To visualize the results, we call the corresponding method.
@@ -263,7 +261,7 @@ class VQEBenchmark:
         """
         Ranks the runs of the benchmark according to a given metric.
         
-        The default metric is approximation ratio. Similar to :meth:`.evaluate <qrisp.qaoa.QAOABenchmark.evaluate>`,
+        The default metric is approximation ratio. Similar to :meth:`.evaluate <qrisp.vqe.VQEBenchmark.evaluate>`,
         the metric can be user specified.
 
         Parameters
@@ -297,8 +295,7 @@ class VQEBenchmark:
                                 shot_range = [5000,10000],
                                 iter_range = [25,50],
                                 optimal_energy = H.ground_state_energy(),
-                                repetitions = 2,
-                                mes_kwargs = {'method':'QWC'}
+                                repetitions = 2
                                 )
             
         To rank the results, we call the according method:
@@ -439,8 +436,7 @@ class VQEBenchmark:
                                 shot_range = [5000,10000],
                                 iter_range = [25,50],
                                 optimal_energy = H.ground_state_energy(),
-                                repetitions = 2,
-                                mes_kwargs = {'method':'QWC'}
+                                repetitions = 2
                                 )
             
         To save the results, we call the according method.

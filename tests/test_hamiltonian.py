@@ -16,10 +16,10 @@
 ********************************************************************************/
 """
 
-def test_hamiltonian():
+def test_pauli_hamiltonian():
 
     from qrisp import QuantumVariable, QuantumArray, h
-    from qrisp.operators import X,Y,Z
+    from qrisp.operators.pauli import X,Y,Z
             
     qv = QuantumVariable(2)
     h(qv)
@@ -33,3 +33,46 @@ def test_hamiltonian():
     H = Z(0)*Z(1) + X(2)*X(3)
     res = H.get_measurement(q_array)
     assert res == 1.0
+
+def test_bound_pauli_hamiltonian():
+
+    from qrisp import QuantumVariable, QuantumArray, h, x
+    from qrisp.operators.pauli import X,Y,Z
+
+    qv1 = QuantumVariable(2)
+    qv2 = QuantumVariable(2)
+
+    h(qv1[0])
+    x(qv2[0])
+
+    H = X(qv1[0])*Z(qv2[0])
+    res = H.get_measurement([qv1,qv2])
+    assert res == -1.0
+
+def test_trotterization():
+
+    from qrisp import QuantumVariable, x, QPE
+    from qrisp.operators.pauli.pauli import X,Y,Z
+    import numpy as np
+
+    # Hydrogen https://arxiv.org/abs/1704.05018
+    G = 0.011280*Z(0)*Z(1) + 0.397936*Z(0) + 0.397936*Z(1) + 0.180931*X(0)*X(1)
+    E0 = G.ground_state_energy()
+    assert np.abs(E0-(-0.804899065613056)) < 1e-2
+
+    U = G.trotterization()
+
+    qv = QuantumVariable(2)
+    x(qv) 
+    E1 = G.get_measurement(qv)
+    assert np.abs(E1-(-0.78)) < 1e-2
+
+    # Find minimum Eigenvalue with Hamiltonian simulation + QPE
+    qv = QuantumVariable(2)
+    x(qv) # Initial state close to exact solution
+    res = QPE(qv,U,precision=10,kwargs={"steps":3},iter_spec=True)
+    meas = res.get_measurement()
+    sorted_meas = dict(sorted(meas.items(), key=lambda item: item[1], reverse=True))
+    phi = list(sorted_meas.items())[0][0]
+    E2 = 2*np.pi*(phi-1)
+    assert np.abs(E0-E2) < 1e-2

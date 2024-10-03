@@ -26,4 +26,3 @@ Methods
    Hamiltonian.__str__
    Hamiltonian.ground_state_energy
    Hamiltonian.get_measurement
-   Hamiltonian.trotterization

@@ -62,7 +62,7 @@ class Hamiltonian(ABC):
     r"""
     Central structure to facilitate treatment of quantum Hamiltonians.
 
-    Hamiltonians of the form
+    For example, Hamiltonians of the form
 
     .. math::
         
@@ -79,7 +79,7 @@ class Hamiltonian(ABC):
 
     ::
     
-        from qrisp.operators import X,Y,Z           
+        from qrisp.operators.pauli import X,Y,Z           
         H = X(0)*X(1)+Y(0)*Y(1)+Z(0)*Z(1)+0.5*Z(0)+0.5*Z(1)
         H
 
@@ -288,8 +288,8 @@ class Hamiltonian(ABC):
         compilation_kwargs={},
         subs_dic={},
         circuit_preprocessor=None,
-        precompiled_qc = None,
-        _measurement = None
+        precompiled_qc=None,
+        _measurement=None
     ):
         r"""
         This method returns the expected value of a Hamiltonian for the state of a quantum argument.
@@ -443,8 +443,8 @@ class Hamiltonian(ABC):
         meas_shots = [round(x/precision**2) for x in meas_shots]
         tot_shots = sum(x for x in meas_shots)
         if tot_shots>shots:
-            meas_shots = [round(x*shots/tot_shots) for x in meas_shots]
-            print("Warning: The total number of shots required " + str(tot_shots) +" for the target precision exceeds the allowed maxium.")
+            #meas_shots = [round(x*shots/tot_shots) for x in meas_shots]
+            raise Warning("Warning: The total amount of shots required: " + str(tot_shots) +" for the target precision: " + str(precision) + " exceeds the allowed maxium amount of shots. Decrease the precision or increase the maxium amount of shots.")
 
         N = len(meas_circs)
 

@@ -31,7 +31,7 @@ class PauliMeasurement:
 
         Parameters
         ----------
-        operator: PauliOperator or BoundPauliOperator 
+        operator: PauliHamiltonian or BoundPauliHamiltonian 
         
         Attributes
         ----------
@@ -129,9 +129,9 @@ class PauliMeasurement:
             qc = QuantumCircuit(n)
             for i in range(n):
                 if basis_[i][1]=="X":
-                    qc.ry(-np.pi/2,i)
+                    qc.h(i)
                 if basis_[i][1]=="Y":
-                    qc.rx(np.pi/2,i)  
+                    qc.sx(i)
 
             circuits.append(qc)    
             qubits.append(qubits_)    

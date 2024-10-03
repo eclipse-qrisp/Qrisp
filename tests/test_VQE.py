@@ -21,7 +21,7 @@ from qrisp.vqe.vqe_problem import *
 
 def test_vqe():
     
-    from qrisp.operators import X,Y,Z
+    from qrisp.operators.pauli import X,Y,Z
 
     c = [-0.81054, 0.16614, 0.16892, 0.17218, -0.22573, 0.12091, 0.166145, 0.04523]
     H = c[0] \
@@ -44,15 +44,13 @@ def test_vqe():
 
     vqe = VQEProblem(hamiltonian = H,
                     ansatz_function = ansatz,
-                    num_params=4,
-                    callback=True)
+                    num_params=4)
     
     results = []
     for i in range(5):
         res = vqe.run(qarg=QuantumVariable(4),
                 depth=1,
-                max_iter= 50,
-                mes_kwargs={'method':'QWC'})
+                max_iter= 50)
         results.append(res)
     
     assert np.abs(min(results)-(-1.8657159209215166)) < 1e-1

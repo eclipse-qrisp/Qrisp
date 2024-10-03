@@ -15,8 +15,6 @@ This algorithms submodule of Qrisp provides a collection of commonly used quantu
      - solving combinatorial optimization problems, with quantum informed update rules
    * - :ref:`VQE <VQE>`
      - finding the ground state energy of a Hamiltonian
-   * - :ref:`Hamiltonian Simulation <HamiltonianSimulation>`
-     - time evolution of a quantum state under the action of a Hamiltonian
    * - :ref:`Shor's Algorithm <Shor>`
      - efficiently factoring large numbers
    * - :ref:`Grover's Algorithm <grovers_alg>`
@@ -38,7 +36,6 @@ We encourage you to explore these algorithms, delve into their documentation, an
    QAOA/index
    QIRO
    VQE
-   HamiltonianSimulation
    Shor
    Grover
    QuantumBacktrackingTree

@@ -32,8 +32,8 @@ class VQEProblem:
     
     Parameters
     ----------
-    hamiltonian : Hamiltonian
-        The quantum :ref:`Hamiltonian`.
+    hamiltonian : :ref:`Hamiltonian`
+        The problem Hamiltonian.
     ansatz_function : function
         A function receiving a :ref:`QuantumVariable` or :ref:`QuantumArray` and a parameter list. This function implements the unitary 
         corresponding to one layer of the ansatz.
@@ -53,7 +53,7 @@ class VQEProblem:
     ::
 
         from qrisp import *
-        from qrisp.operators import X,Y,Z
+        from qrisp.operators.pauli import X,Y,Z
 
         # Problem Hamiltonian
         c = [-0.81054, 0.16614, 0.16892, 0.17218, -0.22573, 0.12091, 0.166145, 0.04523]
@@ -138,7 +138,7 @@ class VQEProblem:
 
         Parameters
         ----------
-        qarg : QuantumVariable or QuantumArray
+        qarg : :ref:`QuantumVariable` or :ref:`QuantumArray`
             The argument to which the VQE circuit is applied.
         depth : int
             The amount of VQE layers.
@@ -172,19 +172,19 @@ class VQEProblem:
         
         return compiled_qc, theta
 
-    def optimization_routine(self, qarg, depth, mes_kwargs, mes_settings, max_iter, init_type="random", init_point=None, optimizer="COBYLA"): 
+    def optimization_routine(self, qarg, depth, mes_kwargs, measurement, max_iter, init_type="random", init_point=None, optimizer="COBYLA"): 
         """
         Wrapper subroutine for the optimization method used in QAOA. The initial values are set and the optimization via ``COBYLA`` is conducted here.
 
         Parameters
         ----------
-        qarg : QuantumVariable or QuantumArray
+        qarg : :ref:`QuantumVariable` or :ref:`QuantumArray`
             The argument the cost function is called on.
         depth : int
             The amont of VQE layers.
         mes_kwargs : dict
             The keyword arguments for the measurement function.
-        mes_settings : list
+        measurement : PauliMeasurement
             The measurement setttings for the measurement function.
         max_iter : int
             The maximum number of iterations for the optimization method.
@@ -204,7 +204,7 @@ class VQEProblem:
         """
 
         # Define optimization wrapper function to be minimized using VQE
-        def optimization_wrapper(theta, qc, symbols, qarg, mes_kwargs, mes_settings):
+        def optimization_wrapper(theta, qc, symbols, qarg, mes_kwargs, measurement):
             """
             Wrapper function for the optimization method used in VQE.
 
@@ -218,11 +218,11 @@ class VQEProblem:
                 The compiled quantum circuit.
             symbols : list
                 The list of symbols used in the quantum circuit.
-            qarg_dupl : QuantumVariable
+            qarg_dupl : :ref:`QuantumVariable`
                 The duplicated quantum variable to which the quantum circuit is applied.
             mes_kwargs : dict
                 The keyword arguments for the measurement function.
-            mes_settings : list
+            measurement : PauliMeasurement
                 The measurement setttings for the measurement function.
 
             Returns
@@ -233,7 +233,7 @@ class VQEProblem:
 
             subs_dic = {symbols[i] : theta[i] for i in range(len(symbols))}
 
-            expectation = self.hamiltonian.get_measurement(qarg, subs_dic = subs_dic, precompiled_qc = qc, _mes_settings=mes_settings, **mes_kwargs)
+            expectation = self.hamiltonian.get_measurement(qarg, subs_dic = subs_dic, precompiled_qc = qc, _measurement=measurement, **mes_kwargs)
 
             if self.callback:
                 self.optimization_costs.append(expectation)
@@ -257,7 +257,7 @@ class VQEProblem:
                                 init_point, 
                                 method=optimizer,
                                 options={'maxiter':max_iter}, 
-                                args = (compiled_qc, symbols, qarg, mes_kwargs, mes_settings))
+                                args = (compiled_qc, symbols, qarg, mes_kwargs, measurement))
             
         return res_sample['x']
 
@@ -268,13 +268,13 @@ class VQEProblem:
         
         Parameters
         ----------
-        qarg : QuantumVariable or QuantumArray
+        qarg : :ref:`QuantumVariable` or :ref:`QuantumArray`
             The argument to which the VQE circuit is applied.
         depth : int
             The amount of VQE layers.
         mes_kwargs : dict, optional
             The keyword arguments for the measurement function. Default is an empty dictionary.
-            By default, the target ``precision``is set to 0.01, and the maximum amount of ``shots``is 100000.
+            By default, the target ``precision`` is set to 0.01, and the maximum amount of ``shots`` is 100000.
         max_iter : int, optional
             The maximum number of iterations for the optimization method. Default is 50.
         init_type : string, optional
@@ -289,7 +289,7 @@ class VQEProblem:
         Returns
         -------
         energy : float
-            The expected value of the Hamiltonian after applying the optimal VQE circuit to the quantum variable.
+            The expected value of the Hamiltonian after applying the optimal VQE circuit to the quantum argument.
         """
 
         # Delete callback
@@ -302,9 +302,9 @@ class VQEProblem:
             mes_kwargs["precision"] = 0.01
 
         # Measurement settings
-        mes_settings = self.hamiltonian.pauli_measurement()
+        measurement = self.hamiltonian.pauli_measurement()
         
-        optimal_theta = self.optimization_routine(qarg, depth, mes_kwargs, mes_settings, max_iter, init_type, init_point, optimizer)
+        optimal_theta = self.optimization_routine(qarg, depth, mes_kwargs, measurement, max_iter, init_type, init_point, optimizer)
         
         # Prepare the initial state for particular problem instance, the default is the \ket{0} state
         if self.init_function is not None:
@@ -314,24 +314,24 @@ class VQEProblem:
         for i in range(depth):                          
             self.ansatz_function(qarg,[optimal_theta[self.num_params*i+j] for j in range(self.num_params)])
 
-        opt_res = self.hamiltonian.get_measurement(qarg,_mes_settings=mes_settings,**mes_kwargs)
+        opt_res = self.hamiltonian.get_measurement(qarg,_measurement=measurement,**mes_kwargs)
         
         return opt_res
     
     def train_function(self, qarg, depth, mes_kwargs = {}, max_iter = 50, init_type = "random", init_point=None, optimizer="COBYLA"):
         """
-        This function allows for training of a circuit with a given instance of a ``VQEProblem``. It will then return a function that can be applied to a ``QuantumVariable``,
+        This function allows for training of a circuit with a given instance of a ``VQEProblem``. It will then return a function that can be applied to a :ref:`QuantumVariable`,
         such that it prepares the ground state of the problem Hamiltonian. The function therefore applies a circuit for the problem instance with optimized parameters.
 
         Parameters
         ----------
-        qarg : QuantumVariable
+        qarg : :ref:`QuantumVariable` 
             The argument to which the VQE circuit is applied.
         depth : int
             The amount of VQE layers.
         mes_kwargs : dict, optional
             The keyword arguments for the measurement function. Default is an empty dictionary.
-            By default, the target ``precision``is set to 0.01, and the maximum amount of ``shots``is 100000.
+            By default, the target ``precision`` is set to 0.01, and the maximum amount of ``shots`` is 100000.
         max_iter : int, optional
             The maximum number of iterations for the optimization method. Default is 50.
         init_type : string, optional
@@ -346,8 +346,8 @@ class VQEProblem:
         Returns
         -------
         circuit_generator : function
-            A function that can be applied to a ``QuantumVariable``, with optimized parameters for the problem instance. 
-            The ``QuantumVariable`` then represents the ground state of the problem Hamiltonian.
+            A function that can be applied to a :ref:`QuantumVariable`, with optimized parameters for the problem instance. 
+            The :ref:`QuantumVariable` then represents the ground state of the problem Hamiltonian.
 
         """
 
@@ -357,9 +357,9 @@ class VQEProblem:
             mes_kwargs["precision"] = 0.01
 
         # Measurement settings
-        mes_settings = self.hamiltonian.pauli_measurement()
+        measurement = self.hamiltonian.pauli_measurement()
 
-        optimal_theta = self.optimization_routine(qarg, depth, mes_kwargs, mes_settings, max_iter, init_type, init_point, optimizer)
+        optimal_theta = self.optimization_routine(qarg, depth, mes_kwargs, measurement, max_iter, init_type, init_point, optimizer)
         
         def circuit_generator(qarg_gen):
             # Prepare the initial state for particular problem instance, the default is the \ket{0} state
@@ -377,7 +377,7 @@ class VQEProblem:
 
         Parameters
         ----------
-        qarg : QuantumVariable or QuantumArray
+        qarg : :ref:`QuantumVariable` or :ref:`QuantumArray`
             The quantum argument the benchmark is executed on. Compare to the :meth:`.run <qrisp.vqe.VQEProblem.run>` method.
         depth_range : list[int]
             A list of integers indicating, which depth parameters should be explored. Depth means the amount of VQE layers.
@@ -421,8 +421,7 @@ class VQEProblem:
                                 shot_range = [5000,10000],
                                 iter_range = [25,50],
                                 optimal_energy = H.ground_state_energy(),
-                                repetitions = 2,
-                                mes_kwargs = {'method':'QWC'}
+                                repetitions = 2
                                 )
         
         We can investigate the data by calling ``visualize``:

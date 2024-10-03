@@ -26,30 +26,30 @@ def get_integer_from_indices(indices,positions=None):
 # Trotterization
 #
 
-from qrisp import conjugate, rx, ry, rz, cx, h, IterationEnvironment, gphase
+from qrisp import conjugate, rx, ry, rz, cx, h, sx, IterationEnvironment, gphase
 import numpy as np
 
 def change_of_basis(qarg, pauli_dict):
     for index, axis in pauli_dict.items():
         if axis=="X":
-            ry(-np.pi/2,qarg[index])
+            h(qarg[index])
         if axis=="Y":
-            rx(np.pi/2,qarg[index])
+            sx(qarg[index])
 
 def parity(qarg, indices):
     n = len(indices)
     for i in range(n-1):
         cx(qarg[indices[i]],qarg[indices[i+1]])
 
+def change_of_basis_bound(pauli_dict):
 
-def change_of_basis_bound(qarg, pauli_dict):
-
-    #qubits = 
-    #TODO
-
-
-    for index, axis in pauli_dict.items():
+    for qubit, axis in pauli_dict.items():
         if axis=="X":
-            ry(-np.pi/2,qarg[index])
+            h(qubit)
         if axis=="Y":
-            rx(np.pi/2,qarg[index])
+            sx(qubit)
+
+def parity_bound(qubits):
+    n = len(qubits)
+    for i in range(n-1):
+        cx(qubits[i],qubits[i+1])

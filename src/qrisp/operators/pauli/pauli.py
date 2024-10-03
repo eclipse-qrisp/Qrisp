@@ -17,32 +17,32 @@
 """
 
 from qrisp.circuit.qubit import Qubit
-from qrisp.operators.pauli.pauli_operator import PauliOperator
-from qrisp.operators.pauli.bound_pauli_operator import BoundPauliOperator
+from qrisp.operators.pauli.pauli_hamiltonian import PauliHamiltonian
+from qrisp.operators.pauli.bound_pauli_hamiltonian import BoundPauliHamiltonian
 from qrisp.operators.pauli.pauli_term import PauliTerm
 from qrisp.operators.pauli.bound_pauli_term import BoundPauliTerm
 
 def X(arg):
     if isinstance(arg,int):
-        return PauliOperator({PauliTerm({arg:"X"}):1})
+        return PauliHamiltonian({PauliTerm({arg:"X"}):1})
     elif isinstance(arg, Qubit):
-        return BoundPauliOperator({BoundPauliTerm({arg:"X"}):1})
+        return BoundPauliHamiltonian({BoundPauliTerm({arg:"X"}):1})
     else:
         raise Exception("Cannot initialize operator from type "+str(type(arg)))
 
 def Y(arg):
     if isinstance(arg,int):
-        return PauliOperator({PauliTerm({arg:"Y"}):1})
+        return PauliHamiltonian({PauliTerm({arg:"Y"}):1})
     elif isinstance(arg, Qubit):
-        return BoundPauliOperator({BoundPauliTerm({arg:"Y"}):1})
+        return BoundPauliHamiltonian({BoundPauliTerm({arg:"Y"}):1})
     else:
         raise Exception("Cannot initialize operator from type "+str(type(arg)))
 
 def Z(arg):
     if isinstance(arg,int):
-        return PauliOperator({PauliTerm({arg:"Z"}):1})
+        return PauliHamiltonian({PauliTerm({arg:"Z"}):1})
     elif isinstance(arg, Qubit):
-        return BoundPauliOperator({BoundPauliTerm({arg:"Z"}):1})
+        return BoundPauliHamiltonian({BoundPauliTerm({arg:"Z"}):1})
     else:
         raise Exception("Cannot initialize operator from type "+str(type(arg)))
     
