@@ -40,3 +40,16 @@ def parity(qarg, indices):
     n = len(indices)
     for i in range(n-1):
         cx(qarg[indices[i]],qarg[indices[i+1]])
+
+
+def change_of_basis_bound(qarg, pauli_dict):
+
+    #qubits = 
+    #TODO
+
+
+    for index, axis in pauli_dict.items():
+        if axis=="X":
+            ry(-np.pi/2,qarg[index])
+        if axis=="Y":
+            rx(np.pi/2,qarg[index])

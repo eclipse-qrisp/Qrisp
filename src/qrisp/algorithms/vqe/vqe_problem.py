@@ -274,7 +274,7 @@ class VQEProblem:
             The amount of VQE layers.
         mes_kwargs : dict, optional
             The keyword arguments for the measurement function. Default is an empty dictionary.
-            By default, 5000 shots are executed per measurement setting.
+            By default, the target ``precision``is set to 0.01, and the maximum amount of ``shots``is 100000.
         max_iter : int, optional
             The maximum number of iterations for the optimization method. Default is 50.
         init_type : string, optional
@@ -284,7 +284,7 @@ class VQEProblem:
             Specifies the initial optimization parameters. 
         optimizer : str, optional
             Specifies the `optimization routine <https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html>`_. 
-            Available are ``COBYLA``, ``COBYQA``, ``Nelder-Mead``. The Default is ``COBYLA``. 
+            Available are, e.g., ``COBYLA``, ``COBYQA``, ``Nelder-Mead``. The Default is ``COBYLA``. 
 
         Returns
         -------
@@ -297,11 +297,12 @@ class VQEProblem:
         self.optimization_costs = []
 
         if not "shots" in mes_kwargs:
-            mes_kwargs["shots"] = 5000
+            mes_kwargs["shots"] = 100000
+        if not "precision" in mes_kwargs:
+            mes_kwargs["precision"] = 0.01
 
         # Measurement settings
-        meas_circs, meas_ops, meas_coeffs, constant_term = self.hamiltonian.get_measurement_settings(qarg, method=mes_kwargs.get("method",None)) 
-        mes_settings = [meas_circs, meas_ops, meas_coeffs, constant_term]
+        mes_settings = self.hamiltonian.pauli_measurement()
         
         optimal_theta = self.optimization_routine(qarg, depth, mes_kwargs, mes_settings, max_iter, init_type, init_point, optimizer)
         
@@ -330,7 +331,7 @@ class VQEProblem:
             The amount of VQE layers.
         mes_kwargs : dict, optional
             The keyword arguments for the measurement function. Default is an empty dictionary.
-            By default, 5000 shots are executed per measurement setting.
+            By default, the target ``precision``is set to 0.01, and the maximum amount of ``shots``is 100000.
         max_iter : int, optional
             The maximum number of iterations for the optimization method. Default is 50.
         init_type : string, optional
@@ -340,7 +341,7 @@ class VQEProblem:
             Specifies the initial optimization parameters. 
         optimizer : str, optional
             Specifies the `optimization routine <https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html>`_. 
-            Available are ``COBYLA``, ``COBYQA``, ``Nelder-Mead``. The Default is "COBYLA". 
+            Available are, e.g., ``COBYLA``, ``COBYQA``, ``Nelder-Mead``. The Default is "COBYLA". 
 
         Returns
         -------
@@ -351,11 +352,12 @@ class VQEProblem:
         """
 
         if not "shots" in mes_kwargs:
-            mes_kwargs["shots"] = 5000
+            mes_kwargs["shots"] = 100000
+        if not "precision" in mes_kwargs:
+            mes_kwargs["precision"] = 0.01
 
         # Measurement settings
-        meas_circs, meas_ops, meas_coeffs, constant_term = self.hamiltonian.get_measurement_settings(qarg, method=mes_kwargs.get("method",None)) 
-        mes_settings = [meas_circs, meas_ops, meas_coeffs, constant_term]
+        mes_settings = self.hamiltonian.pauli_measurement()
 
         optimal_theta = self.optimization_routine(qarg, depth, mes_kwargs, mes_settings, max_iter, init_type, init_point, optimizer)
         

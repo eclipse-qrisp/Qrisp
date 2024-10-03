@@ -31,7 +31,7 @@ class PauliMeasurement:
 
         Parameters
         ----------
-        operator: PauliOperator or BoundPauliOperator
+        operator: PauliOperator or BoundPauliOperator 
         
         Attributes
         ----------

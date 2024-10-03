@@ -496,6 +496,7 @@ class PauliOperator(Hamiltonian):
 
         def trotter_step(qarg, t, steps):
 
+            # TODO
             #if constant != 0:
             #    gphase(t/steps*constant,qarg[0])
 
