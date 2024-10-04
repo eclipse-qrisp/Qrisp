@@ -16,13 +16,13 @@
 ********************************************************************************/
 """
 
-from qrisp import *
+from qrisp import QuantumVariable, cx, ry
 from qrisp.vqe.vqe_problem import *
+from qrisp.operators.pauli import X,Y,Z
+import numpy as np
 
 def test_vqe():
     
-    from qrisp.operators.pauli import X,Y,Z
-
     c = [-0.81054, 0.16614, 0.16892, 0.17218, -0.22573, 0.12091, 0.166145, 0.04523]
     H = c[0] \
         + c[1]*Z(0)*Z(2) \

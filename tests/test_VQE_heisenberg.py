@@ -16,11 +16,12 @@
 ********************************************************************************/
 """
 
+from qrisp import QuantumVariable
 from qrisp.vqe.problems.heisenberg import *
+import numpy as np
+import networkx as nx
 
 def test_vqe_heisenberg():
-    
-    import networkx as nx
 
     # Create a graph
     G = nx.Graph()
@@ -32,8 +33,7 @@ def test_vqe_heisenberg():
     for i in range(5):
         res = vqe.run(QuantumVariable(G.number_of_nodes()),
                 depth=2,
-                max_iter=50,
-                mes_kwargs={'method':'QWC'})
+                max_iter=50)
         results.append(res)
     
     assert np.abs(min(results)-(-8.0)) < 1e-1
