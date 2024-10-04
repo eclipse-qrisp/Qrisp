@@ -283,7 +283,7 @@ class Hamiltonian(ABC):
         precision=0.01,
         method='QWC',
         backend=None,
-        shots=100000,
+        shots=1000000,
         compile=True,
         compilation_kwargs={},
         subs_dic={},
@@ -310,7 +310,7 @@ class Hamiltonian(ABC):
             specified in the file default_backend.py.
         shots : integer, optional
             The maximum amount of shots to evaluate the expectation of the Hamiltonian. 
-            The default is 100000.
+            The default is 1000000.
         compile : bool, optional
             Boolean indicating if the .compile method of the underlying QuantumSession
             should be called before. The default is True.

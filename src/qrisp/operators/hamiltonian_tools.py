@@ -24,7 +24,7 @@ def multi_hamiltonian_measurement(
         qarg,
         precision=0.01,
         backend=None,
-        shots=100000,
+        shots=1000000,
         compile=True,
         compilation_kwargs={},
         subs_dic={},

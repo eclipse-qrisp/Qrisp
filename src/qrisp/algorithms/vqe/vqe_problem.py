@@ -297,7 +297,7 @@ class VQEProblem:
         self.optimization_costs = []
 
         if not "shots" in mes_kwargs:
-            mes_kwargs["shots"] = 100000
+            mes_kwargs["shots"] = 1000000
         if not "precision" in mes_kwargs:
             mes_kwargs["precision"] = 0.01
 
@@ -352,7 +352,7 @@ class VQEProblem:
         """
 
         if not "shots" in mes_kwargs:
-            mes_kwargs["shots"] = 100000
+            mes_kwargs["shots"] = 1000000
         if not "precision" in mes_kwargs:
             mes_kwargs["precision"] = 0.01
 
