@@ -510,7 +510,7 @@ class BoundPauliHamiltonian(Hamiltonian):
 
                 e^{itH}\approx U_1(t,N)=\left(e^{iH_1t/N}\dotsb e^{iH_mt/N}\right)^N
 
-            This function recieves the following arguments:
+            This function receives the following arguments:
 
             * qarg : QuantumVariable or list[QuantumVariable]
                 The quantum argument.

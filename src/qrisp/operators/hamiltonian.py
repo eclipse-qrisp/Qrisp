@@ -243,36 +243,6 @@ class Hamiltonian(ABC):
         """
         pass
 
-    @abstractmethod
-    def trotterization(self):
-        r"""
-        Returns a function for performing Hamiltonian simulation, i.e., approximately implementing the unitary operator $e^{itH}$ via Trotterization.
-
-        Returns
-        -------
-        U : function 
-            A Python function that implements the first order Suzuki-Trotter formula.
-            Given a Hamiltonian $H=H_1+\dotsb +H_m$ the unitary evolution $e^{itH}$ is 
-            approximated by 
-            
-            .. math::
-
-                e^{itH}\approx U_1(t,N)=\left(e^{iH_1t/N}\dotsb e^{iH_mt/N}\right)^N
-
-            This function recieves the following arguments:
-
-            * qarg : QuantumVariable or QuantumArray
-                The quantum argument.
-            * t : float, optional
-                The evolution time $t$. The default is 1.
-            * steps : int, optional
-                The number of Trotter steps $N$. The default is 1.
-            * iter : int, optional 
-                The number of iterations the unitary $U_1(t,N)$ is applied. The default is 1.
-        
-        """
-        pass
-
     #
     # Evaluate expected value
     #
@@ -304,7 +274,7 @@ class Hamiltonian(ABC):
             The default is ``QWC``.
         precision: float, optional
             The precision with which the expectation of the Hamiltonian is to be evaluated.
-            The default is 0.01.
+            The default is $\epsilon=0.01$. The number of shots scales as $\mathcal O(\epsilon^{-2})$. 
         backend : BackendClient, optional
             The backend on which to evaluate the quantum circuit. The default can be
             specified in the file default_backend.py.
