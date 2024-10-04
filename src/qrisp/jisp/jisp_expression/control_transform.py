@@ -121,6 +121,7 @@ def control_jispr(jispr):
 
     """
     
+    from qrisp.circuit import Operation
     from qrisp.jisp import Jispr, AbstractQubit
     
     ctrl_qubit_var = Var(suffix = "", aval = AbstractQubit(), count = control_var_count[0])

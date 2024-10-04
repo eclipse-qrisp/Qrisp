@@ -48,7 +48,7 @@ class OperationPrimitive(QuantumPrimitive):
             abstractions of the actual arguments. 
             """
             if not isinstance(qc, AbstractQuantumCircuit):
-                raise Exception(f"Tried to execute Operation.bind with the first argument of tpye {type(qc)} instead of AbstractQuantumCircuit")
+                raise Exception(f"Tried to execute OperationPrimitive.bind with the first argument of tpye {type(qc)} instead of AbstractQuantumCircuit")
             
             return AbstractQuantumCircuit()
         

@@ -329,7 +329,7 @@ class QuantumEnvironment(QuantumPrimitive):
     
     deepest_environment = [None]
     
-    def __init__(self):
+    def __init__(self, env_args = []):
         
         QuantumPrimitive.__init__(self, name = "q_env")
         
@@ -344,7 +344,7 @@ class QuantumEnvironment(QuantumPrimitive):
             
             return AbstractQuantumCircuit()
         
-        self.env_args = []
+        self.env_args = env_args
 
     # The methods to start the dumping process for this environment
     # The dumping basically consists of copying the original data into a temporary

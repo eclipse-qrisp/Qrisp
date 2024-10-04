@@ -16,8 +16,8 @@
 ********************************************************************************/
 """
 
-from jax.core import JaxprEqn, Literal, ClosedJaxpr, Tracer, Literal
-from jax import jit, make_jaxpr
+from jax.core import Literal, ClosedJaxpr, Literal
+from jax import make_jaxpr
 from qrisp.jisp import check_for_tracing_mode
 
 class ContextDict(dict):
@@ -30,21 +30,6 @@ class ContextDict(dict):
 
 def exec_eqn(eqn, context_dic):
     invalues = extract_invalues(eqn, context_dic)
-    
-    if eqn.primitive.name in ["while", "cond"]:
-        for val in invalues:
-            if isinstance(val, Tracer):
-                break
-        else:
-            from qrisp.jisp import evaluate_cond_eqn, evaluate_while_loop
-            
-            if eqn.primitive.name == "while":
-                evaluate_while_loop(eqn, context_dic)
-            else:
-                evaluate_cond_eqn(eqn, context_dic)
-            
-            return
-        
     res = eqn.primitive.bind(*invalues, **eqn.params)
     insert_outvalues(eqn, context_dic, res)
 
@@ -118,7 +103,20 @@ def eval_jaxpr_with_context_dic(jaxpr, context_dic, eqn_evaluator = exec_eqn):
     for eqn in jaxpr.eqns:
         # Evaluate the primitive
         default_eval = eqn_evaluator(eqn, context_dic)
+        
         if default_eval:
+            if eqn.primitive.name in ["while", "cond"] and not check_for_tracing_mode():
+                
+                from qrisp.jisp import evaluate_cond_eqn, evaluate_while_loop
+                
+                if eqn.primitive.name == "while":
+                    evaluate_while_loop(eqn, context_dic, eqn_evaluator)
+                else:
+                    evaluate_cond_eqn(eqn, context_dic, eqn_evaluator)
+                
+                continue
+            
+            
             exec_eqn(eqn, context_dic)
         
 def extract_invalues(eqn, context_dic):

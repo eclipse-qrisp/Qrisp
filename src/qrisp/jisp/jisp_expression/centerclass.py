@@ -391,11 +391,16 @@ class Jispr(Jaxpr):
         from qrisp.simulator import BufferedQuantumState
         args = [BufferedQuantumState()] + list(args)
         
+        from qrisp.jisp import extract_invalues, insert_outvalues, eval_jaxpr
         flattened_jispr = self.flatten_environments()
         
         def eqn_evaluator(eqn, context_dic):
             if eqn.primitive.name == "pjit":
-                pjit_to_gate(eqn, context_dic)
+                invalues = extract_invalues(eqn, context_dic)
+                outvalues = eval_jaxpr(eqn.params["jaxpr"], eqn_evaluator = eqn_evaluator)(*invalues)
+                if not isinstance(outvalues, (list, tuple)):
+                    outvalues = [outvalues]
+                insert_outvalues(eqn, context_dic, outvalues)
             else:
                 return True
         

@@ -27,6 +27,9 @@ class ClControlEnvironment(QuantumEnvironment):
     
     def __init__(self, ctrl_bls, ctrl_state=-1, ctrl_method=None, invert = False):
         
+        if not isinstance(ctrl_bls, list):
+            ctrl_bls = [ctrl_bls]
+        
         self.ctrl_bls = ctrl_bls
         
         QuantumEnvironment.__init__(self)
@@ -46,8 +49,8 @@ class ClControlEnvironment(QuantumEnvironment):
             raise Exception("Found ClControlEnvironment with carry value")
         
         if len(ctrl_vars) > 1:
-            cond_bl = True
-            for i in range(len(ctrl_vars)):
+            cond_bl = ctrl_vars[0]
+            for i in range(1, len(ctrl_vars)):
                 cond_bl = cond_bl & ctrl_vars[i]
         else:
             cond_bl = ctrl_vars[0]

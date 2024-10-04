@@ -426,7 +426,6 @@ def advance_quantum_state(qc, quantum_state):
 
         # Treat allocation gates (ie. remove them)
         count_measurements_and_treat_alloc(qc, insert_reset=True)
-
         qc = group_qc(qc)
 
         import random
@@ -461,6 +460,9 @@ def advance_quantum_state(qc, quantum_state):
             # non-zero amplitude, this still yields an improvement because computing two
             # decoherent states is more easily parallelized than the combined coherent
             # state.
+            if instr.op.name == "disentangle":
+                # iqs.reset(qubit_indices[0], True)
+                quantum_state.disentangle(qubit_indices[0], warning = instr.op.warning)
 
             # If the operation is unitary, we apply this unitary on to the required qubit
             # indices

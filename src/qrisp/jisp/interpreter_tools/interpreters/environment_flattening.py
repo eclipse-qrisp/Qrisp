@@ -73,6 +73,10 @@ def flatten_collected_environments(jispr):
             flatten_environment_eqn(eqn, context_dic)
         elif eqn.primitive.name == "pjit":
             flatten_environments_in_pjit_eqn(eqn, context_dic)
+        elif eqn.primitive.name == "while":
+            flatten_environments_in_while_eqn(eqn, context_dic)
+        elif eqn.primitive.name == "cond":
+            flatten_environments_in_cond_eqn(eqn, context_dic)
         else:
             return True
     
@@ -80,7 +84,11 @@ def flatten_collected_environments(jispr):
     # according to their semantics
     from qrisp.jisp import Jispr
     # To perform the flattening, we evaluate with the usual tools
-    return Jispr(reinterpret(jispr, eqn_evaluator))
+    reinterpreted_jaxpr = reinterpret(jispr, eqn_evaluator)
+    try:
+        return Jispr(reinterpreted_jaxpr)
+    except:
+        return reinterpreted_jaxpr
     
     
 
@@ -178,9 +186,66 @@ def flatten_environments_in_pjit_eqn(eqn, context_dic):
 
     """
     
-    from qrisp.jisp import Jispr
-    if isinstance(eqn.params["jaxpr"].jaxpr, Jispr):
-        eqn.params["jaxpr"] = ClosedJaxpr(flatten_collected_environments(eqn.params["jaxpr"].jaxpr),
-                                          eqn.params["jaxpr"].consts)
+    eqn = copy_jaxpr_eqn(eqn)
+    
+    eqn.params["jaxpr"] = ClosedJaxpr(flatten_collected_environments(eqn.params["jaxpr"].jaxpr),
+                                      eqn.params["jaxpr"].consts)
     
     exec_eqn(eqn, context_dic)
+    
+def flatten_environments_in_while_eqn(eqn, context_dic):
+    """
+    Flattens environments in a pjit primitive
+
+    Parameters
+    ----------
+    eqn : jax.core.JaxprEqn
+        A pjit equation, with collected environments.
+    context_dic : dict
+        The context dictionary.
+
+    Returns
+    -------
+    None.
+
+    """
+    
+    eqn = copy_jaxpr_eqn(eqn)
+    eqn.params["body_jaxpr"] = ClosedJaxpr(flatten_collected_environments(eqn.params["body_jaxpr"].jaxpr),
+                                      eqn.params["body_jaxpr"].consts)
+    
+    
+    exec_eqn(eqn, context_dic)
+
+def flatten_environments_in_cond_eqn(eqn, context_dic):
+    """
+    Flattens environments in a pjit primitive
+
+    Parameters
+    ----------
+    eqn : jax.core.JaxprEqn
+        A pjit equation, with collected environments.
+    context_dic : dict
+        The context dictionary.
+
+    Returns
+    -------
+    None.
+
+    """
+    
+    eqn = copy_jaxpr_eqn(eqn)
+    eqn.params["branches"] = (eqn.params["branches"][0], ClosedJaxpr(flatten_collected_environments(eqn.params["branches"][1].jaxpr),
+                                      eqn.params["branches"][1].consts))
+    
+    exec_eqn(eqn, context_dic)
+
+    
+def copy_jaxpr_eqn(eqn):
+    return JaxprEqn(primitive = eqn.primitive,
+                    invars = list(eqn.invars),
+                    outvars = list(eqn.outvars),
+                    params = dict(eqn.params),
+                    source_info = eqn.source_info,
+                    effects = eqn.effects,)
+    

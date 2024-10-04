@@ -16,10 +16,11 @@
 ********************************************************************************/
 """
 
+from jax.core import ShapedArray
 
 from qrisp.circuit import Qubit, QuantumCircuit, XGate
 from qrisp.core.session_merging_tools import merge, merge_sessions, multi_session_merge
-from qrisp.environments import QuantumEnvironment
+from qrisp.environments import QuantumEnvironment, ClControlEnvironment
 from qrisp.misc import perm_lock, perm_unlock, bin_rep
 from qrisp.jisp import check_for_tracing_mode
 from qrisp.core import mcx, p, rz, x
@@ -70,10 +71,9 @@ class ControlEnvironment(QuantumEnvironment):
         
         if check_for_tracing_mode():
             
-            QuantumEnvironment.__init__(self)
+            QuantumEnvironment.__init__(self, list(ctrl_qubits))
             if not isinstance(ctrl_qubits, list):
                 ctrl_qubits = [ctrl_qubits]
-            self.env_args = list(ctrl_qubits)
             
         else:
         
@@ -450,5 +450,19 @@ def convert_to_custom_control(instruction, control_qubit, invert_control = False
     
     return res
                 
-    
-control = ControlEnvironment    
+
+def control(*args):
+    args = list(args)
+    if not isinstance(args[0], list):
+        args[0] = [args[0]]
+    from qrisp import Qubit, QuantumBool
+    from qrisp.jisp import AbstractQubit
+        
+    if all(isinstance(obj, (Qubit, QuantumBool)) for obj in args[0]):
+        return ControlEnvironment(*args)
+    elif all(isinstance(obj, AbstractQubit) for obj in [x.aval for x in args[0]]):
+        return ControlEnvironment(*args)
+    elif all(isinstance(obj, ShapedArray) for obj in [x.aval for x in args[0]]):
+        return ClControlEnvironment(*args)
+    else:
+        raise Exception(f"Don't know how to control from input type {args[0]}")

@@ -168,7 +168,7 @@ def iteration_env_evaluator(eqn, context_dic):
     def body_fun(val):
         
         # We evaluate the body (without the loop cancelation treshold).
-        res = iter_1_jispr.eval(*val[:-1])
+        res = iter_1_jispr.flatten_environments().eval(*val[:-1])
         
         # Convert the result into a tuple if it isn't one already
         if not isinstance(res, tuple):
