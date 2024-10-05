@@ -74,7 +74,7 @@ class QAOAProblem:
 
     """
     
-    def __init__(self, cost_operator, mixer, cl_cost_function, init_function = None, init_type='random'):
+    def __init__(self, cost_operator, mixer, cl_cost_function, init_function = None, init_type='random', callback=False):
         self.cost_operator = cost_operator
         self.mixer = mixer
         self.cl_cost_function = cl_cost_function
@@ -86,6 +86,19 @@ class QAOAProblem:
         self.fourier_depth = None
         # should be set in the 
         self.init_params = None
+
+        # parameters for callback
+        self.callback = callback
+        self.optimization_params = []
+        self.optimization_costs = []
+
+    def set_callback(self):
+        """
+        Sets ``callback=True`` for saving intermediate results.
+
+        """
+
+        self.callback = True
 
     def set_init_function(self, init_function):
         """
@@ -338,6 +351,9 @@ class QAOAProblem:
             res_dic = qarg.get_measurement(subs_dic = subs_dic, precompiled_qc = qc, **mes_kwargs)
             
             cl_cost = self.cl_cost_function(res_dic)
+
+            if self.callback:
+                self.optimization_costs.append(cl_cost)
             
             if self.cl_post_processor is not None:
                 return self.cl_post_processor(cl_cost)
@@ -464,6 +480,10 @@ class QAOAProblem:
         """
 
         self.init_type = init_type
+
+        # Delete callback
+        self.optimization_params = []
+        self.optimization_costs = []
 
         #alternative to everything below:
         #bound_qc = self.train_circuit(qarg, depth)
@@ -694,11 +714,21 @@ class QAOAProblem:
 
     def visualize_cost(self):
         """
-        TODO
-
-        Returns
-        -------
-        None.
+        Visualizes the cost during the optimization process.
 
         """
-        pass
+
+        import matplotlib.pyplot as plt
+
+        if not self.callback:
+            raise Exception("Visualization can only be performed for a QAOA instance with callback=True")
+        
+        x = list(range(len(self.optimization_costs)))
+        y = self.optimization_costs
+        plt.scatter(x, y, color='#20306f',marker="o", linestyle='solid', linewidth=1, label='QAOA cost')
+        plt.xlabel("Iterations", fontsize=15, color="#444444")
+        plt.ylabel("Cost", fontsize=15, color="#444444")
+        plt.grid()
+        plt.legend(fontsize=12, labelcolor="#444444")
+
+        plt.show()
