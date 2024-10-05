@@ -120,6 +120,27 @@ class QAOAProblem:
         beta = (1 - (t / t_max)) * dt
         return  np.concatenate((gamma,beta)) 
 
+    def computeParams_dt(self,p,dt):
+        """
+        Compute the angle parameters gamma and beta based on the given inputs. Used for the TQA warm starting the initial state for QAOA.
+
+        Parameters
+        ----------
+        p : int
+            The number of partitions for the time interval.
+        t_max : float
+            The maximum time value.
+
+        Returns
+        -------
+        np.array
+            A concatenated numpy array of gamma and beta values.
+        """
+        t = (np.arange(1, p + 1) - 0.5)/p
+        gamma = t * dt
+        beta = (1 - t) * dt
+        return  np.concatenate((gamma,beta)) 
+    
     def set_fourier_depth(self, fourier_depth, init_params = None):
         """
         Set the FOURIER heuristic for a QAOA problem.
@@ -392,16 +413,19 @@ class QAOAProblem:
             np.array
                 A concatenated numpy array of optimal gamma and beta values.
             """
-            time = np.linspace(0.1, 10, steps)
+            #time = np.linspace(0.1, 10, steps)
+            dt = np.linspace(0.1, 2, 20)
+            print(dt)
             energy = []
-            for t_max in time:      
-                x=self.computeParams(p,t_max)
+            for dt_ in dt:      
+                x=self.computeParams_dt(p,dt_)
                 qcut=optimization_wrapper(x,qc,symbols,qarg_dupl,mes_kwargs)
                 energy.append(qcut)
             
             idx = np.argmin(energy)
-            t_max = time[idx]
-            return self.computeParams(p,t_max)
+            dt_max = dt[idx]
+            print(dt_max)
+            return self.computeParams_dt(p,dt_max)
 
         if self.init_type=='random':
             # Set initial random values for optimization parameters
