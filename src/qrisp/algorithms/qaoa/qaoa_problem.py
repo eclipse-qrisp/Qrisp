@@ -415,7 +415,6 @@ class QAOAProblem:
             """
             #time = np.linspace(0.1, 10, steps)
             dt = np.linspace(0.1, 2, 20)
-            print(dt)
             energy = []
             for dt_ in dt:      
                 x=self.computeParams_dt(p,dt_)
@@ -424,7 +423,6 @@ class QAOAProblem:
             
             idx = np.argmin(energy)
             dt_max = dt[idx]
-            print(dt_max)
             return self.computeParams_dt(p,dt_max)
 
         if self.init_type=='random':
