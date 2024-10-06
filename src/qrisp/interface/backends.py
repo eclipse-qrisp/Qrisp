@@ -91,16 +91,19 @@ class VirtualBackend(BackendClient):
     def __init__(self, run_func, port=None):
 
         from qrisp.interface import BackendServer
-
-        # Create BackendServer
-        self.backend_server = BackendServer(
-            run_func, "localhost", port=port
-        )
-        # Run the server (runs in the background)
-        self.backend_server.start()
-        # Connect client
-
-        super().__init__(api_endpoint="localhost", port=port)
+        self.port = port
+        if port is None:
+            self.run_func = run_func
+        else:
+            # Create BackendServer
+            self.backend_server = BackendServer(
+                run_func, "localhost", port=port
+            )
+            # Run the server (runs in the background)
+            self.backend_server.start()
+            # Connect client
+    
+            super().__init__(api_endpoint="localhost", port=port)
 
     def run(self, qc, shots, token=""):
         """
@@ -119,7 +122,10 @@ class VirtualBackend(BackendClient):
             A dictionary containing the measurement results.
 
         """
-        return super().run(qc, shots)
+        if self.port is None:
+            return self.run_func(qc.qasm(), shots, token)
+        else:
+            return super().run(qc, shots)
 
 
 class VirtualQiskitBackend(VirtualBackend):

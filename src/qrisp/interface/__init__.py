@@ -21,3 +21,4 @@ from qrisp.interface.qunicorn import *
 from qrisp.interface.backends import *
 from qrisp.interface.circuit_converter import *
 from qrisp.interface.docker_backends import *
+from qrisp.interface.iqm_backend import *
