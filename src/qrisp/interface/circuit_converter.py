@@ -16,6 +16,7 @@
 ********************************************************************************/
 """
 
+import numpy as np
 
 from qrisp.misc import bin_rep
 from qrisp.circuit.standard_operations import op_list
@@ -240,6 +241,8 @@ def convert_to_qiskit(qc, transpile=False):
 
 
         if op.name in ["qb_alloc", "qb_dealloc"]:
+            # if op.name == "qb_alloc":
+                # continue
             continue
             temp = QuantumCircuit(1)
             qiskit_ins = temp.to_gate()
@@ -303,6 +306,7 @@ def create_qiskit_instruction(op, params=[]):
     import qiskit.circuit.library.standard_gates as qsk_gates
     from qiskit.circuit import Measure, Reset, Barrier
     from qrisp.circuit import ControlledOperation, ClControlledOperation
+    from qiskit import QiskitError
     
     if op.name == "cx":
         if hasattr(op, "ctrl_state"):
@@ -400,9 +404,9 @@ def create_qiskit_instruction(op, params=[]):
         qiskit_ins = Reset()
     elif op.definition:
         qiskit_definition = convert_to_qiskit(op.definition)
-        if len(op.definition.clbits):
+        try:
             qiskit_ins = qiskit_definition.to_instruction()
-        else:
+        except QiskitError:
             qiskit_ins = qiskit_definition.to_gate()
         qiskit_ins.name = op.name
     else:
@@ -450,8 +454,6 @@ def convert_from_qiskit(qiskit_qc):
     qb_dic = {qiskit_qc.qubits[i]: qc.qubits[i] for i in range(qiskit_qc.num_qubits)}
     cb_dic = {qiskit_qc.clbits[i]: qc.clbits[i] for i in range(qiskit_qc.num_clbits)}
 
-    symbol_param_dic = {}
-    
     from sympy import sympify
     
     for i in range(len(qiskit_qc.data)):
@@ -461,8 +463,13 @@ def convert_from_qiskit(qiskit_qc):
         
         qrisp_params = []
 
-        for p in params:
-            if isinstance(p, ParameterExpression):
+        while len(params):
+            p = params.pop(0)
+            if isinstance(p, np.ndarray):
+                params = list(p.flatten()) + params
+            elif isinstance(p, np.number):
+                qrisp_params.append(p.item())
+            elif isinstance(p, ParameterExpression):
                 
                 lambd_expr = sympify(ParameterExpression.sympify(p))
                 
@@ -470,7 +477,10 @@ def convert_from_qiskit(qiskit_qc):
                 
             elif isinstance(p, (float,int)):
                 qrisp_params.append(float(p))
+            elif isinstance(p, complex):
+                qrisp_params.append(p)
             else:
+                print(p)
                 raise Exception(f"Could not convert parameter type {type(p)}")
 
         params = qrisp_params

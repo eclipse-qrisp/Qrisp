@@ -54,8 +54,8 @@ def multi_controlled_circuit(
 
 # This function takes an U3Gate object and turns it into it's controlled version
 def multi_controlled_u3_circ(u3_gate, control_amount, ctrl_state, method=None):
-    from qrisp.mcx_algs import multi_cx
-    from qrisp.logic_synthesis import gray_phase_synth_qb_list
+    from qrisp.alg_primitives.mcx_algs import multi_cx
+    from qrisp.alg_primitives.logic_synthesis import gray_phase_synth_qb_list
 
     qc = QuantumCircuit(control_amount + 1)
     target_qubit = qc.qubits[-1]
@@ -209,7 +209,7 @@ def multi_controlled_u3_circ(u3_gate, control_amount, ctrl_state, method=None):
 
 
 def multi_controlled_gray_circ(gray_gate, control_amount, ctrl_state):
-    from qrisp.logic_synthesis.gray_synthesis import gray_synth_gate
+    from qrisp.alg_primitives.logic_synthesis.gray_synthesis import gray_synth_gate
 
     target_phases_old = gray_gate.target_phases
 
@@ -226,3 +226,15 @@ def multi_controlled_gray_circ(gray_gate, control_amount, ctrl_state):
     new_gray_gate = gray_synth_gate(target_phases_new)
     print(new_gray_gate.definition)
     return new_gray_gate.definition, target_phases_new
+
+
+def fredkin_qc(num_ctrl_qubits=1, ctrl_state=-1, method="gray"):
+    from qrisp import QuantumCircuit, XGate
+    mcx_gate = XGate().control().control(ctrl_state=ctrl_state, method=method)
+
+    qc = QuantumCircuit(num_ctrl_qubits + 2)
+    qc.cx(qc.qubits[-1], qc.qubits[-2])
+    qc.append(mcx_gate, qc.qubits)
+    qc.cx(qc.qubits[-1], qc.qubits[-2])
+
+    return qc

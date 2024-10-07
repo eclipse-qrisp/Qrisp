@@ -57,5 +57,3 @@ def test_QIRO():
                         temp = False
                         break
             assert temp
-
-test_QIRO()

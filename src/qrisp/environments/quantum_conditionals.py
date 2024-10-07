@@ -16,8 +16,8 @@
 ********************************************************************************/
 """
 
-from qrisp.core.library import mcx, p, rz, x, z
 from qrisp.core.quantum_variable import QuantumVariable
+from qrisp.core.gate_application_functions import p, rz, x, z
 from qrisp.core.session_merging_tools import merge
 from qrisp.environments.quantum_environments import QuantumEnvironment
 from qrisp.environments.quantum_inversion import invert
@@ -28,7 +28,7 @@ from qrisp.misc import (
     redirect_qfunction,
     unlock,
 )
-
+from qrisp.circuit import fast_append
 
 def quantum_condition(function):
     def q_env_generator(*args, **kwargs):
@@ -307,7 +307,13 @@ class ConditionEnvironment(QuantumEnvironment):
 
     def __init__(self, cond_eval_function, args, kwargs={}):
         # The function which evaluates the condition - should return a QuantumBool
-        self.cond_eval_function = cond_eval_function
+        
+        def save_cond_eval(*args, **kwargs):
+            with fast_append(0):
+                res = cond_eval_function(*args, **kwargs)
+            return res
+        
+        self.cond_eval_function = save_cond_eval
 
         # Save the arguments on which the function should be evaluated
         self.args = args
@@ -606,7 +612,7 @@ def adaptive_condition(cond_eval_function):
 
 @adaptive_condition
 def q_eq(input_0, input_1, invert = False):
-    from qrisp import cx, conjugate, QuantumBool
+    from qrisp import mcx, cx, conjugate, QuantumBool
 
     res = QuantumBool(name="eq_cond*", qs = input_0[0].qs())
 
@@ -623,14 +629,14 @@ def q_eq(input_0, input_1, invert = False):
                 cx(input_0[i], input_1[i])
         
         with conjugate(multi_cx)(input_0, input_1):
-            mcx(input_1, res, method="balauca", ctrl_state=0)
+            mcx(input_1, res, ctrl_state=0)
         
 
 
     else:
         label_int = input_0.encoder(input_1)
 
-        mcx(input_0, res, ctrl_state=label_int, method = "balauca")
+        mcx(input_0, res, ctrl_state=label_int)
     
     if invert:
         res.flip()

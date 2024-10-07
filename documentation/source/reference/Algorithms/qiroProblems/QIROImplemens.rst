@@ -4,7 +4,7 @@
 .. currentmodule:: qrisp.qiro
 
 Implementations
-=======================================
+===============
 
 .. toctree::
      :hidden:
@@ -15,7 +15,7 @@ Implementations
      QIROImplementations/QIROMaxSetPack
 
 
-Here you can the QIRO implementations for specific problems, namely:
+Here you can see the QIRO implementations for specific problem instances, namely:
 
 
 * :ref:`MaxIndependentSet <maxIndependentSetQIRO>`, 

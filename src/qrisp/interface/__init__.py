@@ -20,5 +20,4 @@
 from qrisp.interface.qunicorn import *
 from qrisp.interface.backends import *
 from qrisp.interface.circuit_converter import *
-from qrisp.interface.thrift_interface import PortableQubit, PortableQuantumCircuit, PortableClbit, PortableOperation, PortableInstruction
 from qrisp.interface.docker_backends import *

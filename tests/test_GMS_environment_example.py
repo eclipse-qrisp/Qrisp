@@ -41,7 +41,7 @@ def test_GMS_environment_example():
     h(qv1)
 
     ###################
-    from qrisp.arithmetic import QuantumFloat
+    from qrisp.alg_primitives.arithmetic import QuantumFloat
 
     qf = QuantumFloat(3)
 

@@ -22,7 +22,7 @@
 # of SparseBiArray manipulation
 
 import numpy as np
-from numba import int64, int32, njit, prange, vectorize
+from numba import uint64, uint32, int64, int32, njit, prange, vectorize
 from qrisp.simulator.numerics_config import float_tresh, cutoff_ratio
 from scipy.sparse import coo_array
 
@@ -119,20 +119,20 @@ def get_coordinates(indices, shape):
         
 
 
-@vectorize([int64(int64, int64)])
+@vectorize([uint64(int64, int64)])
 def get_coordinates_0_64(index, bit_shape_1):
     return index >> bit_shape_1
 
 
-@vectorize([int64(int64, int64)])
+@vectorize([uint64(int64, int64)])
 def get_coordinates_1_64(index, bit_shape_0):
     return index & ((1 << bit_shape_0) - 1)
 
-@vectorize([int32(int64, int64)])
+@vectorize([uint32(int64, int64)])
 def get_coordinates_0_32(index, bit_shape_1):
     return index >> bit_shape_1
 
-@vectorize([int32(int64, int64)])
+@vectorize([uint32(int64, int64)])
 def get_coordinates_1_32(index, bit_shape_0):
     return index & ((1 << bit_shape_0) - 1)
 
@@ -417,16 +417,121 @@ def sort_indices_jitted(row, col, data, shape_1):
     
     return new_row, new_col, new_data
 
-@njit(parallel = True, cache = True)
-def coo_sparse_matrix_mult_jitted(A_row, A_col, A_data, B_row, B_col, B_data, A_shape, B_shape):
+
+def coo_sparse_matrix_mult_inner(A_row, A_col, A_data, B_row, B_col, B_data, A_shape, B_shape):
+    """
+    This function describes a novel sparse matrix multiplication algorithm operating
+    on the COO format. The scipy and MKL implementation of sparse matrix multiplication
+    operate on the CSR/CSC format, which requires a conversion step, that can
+    be costly for very sparse matrices.
+    
+    Given are the inputs A, B in sparse format and we want to extract A*B in sparse format
+    
+    The steps in the algorithm presented here are the following
+    
+    1. For both inputs, sort the data according to the indices, prioritizing columns
+    for A and rows for B
+    
+    For instance if we have a sparse matrix with
+    
+    col = [1,2,1,3]
+    row = [4,3,3,1]
+    data = [0.1, 0.2, 0.3, 0.4]
+    
+    The sorting with columns prioritized is
+    
+    col = [1, 1, 2, 3]
+    row = [3, 4, 3, 1]
+    data = [0.3, 0.1, 0.2, 0.4]
+    
+    2. Find the indices, where the indices of the prioritized array increases.
+    We call this the "unique marker". For instance in the example above,
+    the first unique marker is at index 2, because at this index, the col array
+    changes from 1 to 2 and the next one is at index 3 because the col array changes
+    from 2 to 3.
+    
+    Each of these interval now represent one column of the matrix. For instance 
+    the first column is represented by 
+    
+    col = [1,1]
+    row = [3,4]
+    data = [0.3, 0.1]
+    
+    3. We now identified the columns for A and the rows for B.
+    Matrix multiplication is essentially the scalar product of the columns
+    of A with the rows of B.
+    
+    To compute the dot product of a given column with a given row, we need to find
+    the index agreements. This is because only on these indices, there can be
+    a non-zero contribution. 
+    
+    For example assume that we have
+    
+    Column A:
+        
+    col_a = [1,1]
+    row_a = [3,4]
+    data_a = [0.3, 0.1]
+
+    Row B:
+        
+    col_b = [1,4]
+    row_b = [3,3]
+    data_b = [0.7, 0.8]
+    
+    This computes the scalar product of column 1 of A with row 3 of B (therefore
+    the result will be the (1,3) entry of A*B).
+    
+    To compute the dot product we see that there is only a non-zero contribution
+    for index 4:
+        
+      A[1,0]*B[0,3] +A[1,1]*B[1,3] +A[1,2]*B[2,3] +A[1,3]*B[3,3] +A[1,4]*B[4,3]
+    = 0*0           +0*0.7         +0*0           +0.3*0         + 0.8*0.1
+    
+    If we label the array of agreeing indices as agreements_a and agreements_b,
+    the entry (A*B)[1,3] is therefore determined as
+    
+    dot(data_a[agreements_a], data_b[agreements_b])
+    
+    4. After having done this for all unique markers, we end up with a K times L
+    array R, where K is the amount of unique markers in A and L is the amount of unique
+    markers in B.
+    
+    To retrieve the COO representation of R, we first filter all non-zero indices.
+    For this we can apply some floating point error tolerance mechanism.
+    
+    This will give as the index arrays I, J where R is non-zero.
+    The rows array of the COO representation of A*B is now given as unique_marker_A[I].
+    The colums array of the COO representation of A*B is now given as unique_marker_B[j].
+    The data is R[I,J]
+
+    """
     
     A_row, A_col, A_data = sort_indices_jitted(A_row, A_col, A_data, A_shape[1])
     B_col, B_row, B_data = sort_indices_jitted(B_col, B_row, B_data, B_shape[0])
     
     unique_marker_a = find_unique_markers(A_row)
     unique_marker_b = find_unique_markers(B_col)
+
+    R = coo_mult_kernel(A_col, A_data, B_row, B_data, unique_marker_a, unique_marker_b)
     
-    res = np.zeros((len(unique_marker_a), len(unique_marker_b)), dtype = A_data.dtype)
+    abs_R = np.abs(R)
+    max_abs = np.max(R.ravel())
+    
+    I, J = np.nonzero(abs_R > (cutoff_ratio * max_abs))
+    
+    res_row = A_row[unique_marker_a[I]]
+    res_col = B_col[unique_marker_b[J]]
+    
+    R_flat = R.ravel()
+    res_data = R_flat[J + R.shape[1]*I]
+
+    return res_row, res_col, res_data
+
+@njit(parallel = True, cache = True)                
+def coo_mult_kernel(A_col, A_data, B_row, B_data, unique_marker_a, unique_marker_b):
+        
+    res = np.zeros((len(unique_marker_a)-1, len(unique_marker_b)-1), dtype = A_data.dtype)
     
     for i in prange(len(unique_marker_a)-1):
         comparison_block_a = A_col[unique_marker_a[i]:unique_marker_a[i+1]]        
@@ -442,27 +547,10 @@ def coo_sparse_matrix_mult_jitted(A_row, A_col, A_data, B_row, B_col, B_data, A_
             
             agreeing_ind_a, agreeing_ind_b = find_agreements(comparison_block_a, comparison_block_b)
             
-            res[i, j] += np.dot(A_data[unique_marker_a[i] + agreeing_ind_a], B_data[unique_marker_b[j] + agreeing_ind_b])
-    
-    new_row = []
-    new_col = []
-    new_data = []
-    
-    abs_res = np.abs(res)
-    max_abs = np.max(abs_res.ravel())
-    
-    
-    for i in range(res.shape[0]):
-        for j in range(res.shape[1]):
-            if abs_res[i,j] > cutoff_ratio * max_abs:
-            # if res[i,j] != 0:
-                new_row.append(A_row[unique_marker_a[i]])
-                new_col.append(B_col[unique_marker_b[j]])
-                new_data.append(res[i,j])
-                
-    return np.array(new_row, dtype = np.int64), np.array(new_col, dtype = np.int64), np.array(new_data, dtype = A_data.dtype)
-                
-            
+            res[i, j] = np.dot(A_data[unique_marker_a[i] + agreeing_ind_a], B_data[unique_marker_b[j] + agreeing_ind_b])
+
+    return res
+
 @njit(cache = True)
 def find_unique_markers(arr):
     
@@ -476,41 +564,22 @@ def find_unique_markers(arr):
             
     unique_marker.append(len(arr))
             
-    return unique_marker
+    return np.array(unique_marker, dtype = np.int64)
     
-
 @njit(cache = True)
-def find_agreements(block_a, block_b):
-
-    a_pointer = 0
-    b_pointer = 0
-    
-    a_agreements = []
-    b_agreements = []
-    
-    while a_pointer < len(block_a) and b_pointer < len(block_b):
-        
-        if block_a[a_pointer] < block_b[b_pointer]:
-            a_pointer += 1
-        elif block_a[a_pointer] > block_b[b_pointer]:
-            b_pointer += 1
-        else:
-            a_agreements.append(a_pointer)
-            b_agreements.append(b_pointer)
-            
-            a_pointer += 1
-            b_pointer += 1
-            
-    return np.array(a_agreements, dtype = np.int32), np.array(b_agreements, dtype = np.int32)
+def find_agreements(a, b):
+    A = np.broadcast_to(b, (a.shape[0], b.shape[0]))
+    B = np.broadcast_to(a, (b.shape[0], a.shape[0]))
+    return np.nonzero(A==B.transpose())
 
 
 def coo_sparse_matrix_mult(A, B):
     if A.shape[0] < B.shape[1]:
-        new_row, new_col, new_data = coo_sparse_matrix_mult_jitted(A.row, A.col, A.data, B.row, B.col, B.data, A.shape, B.shape)
+        new_row, new_col, new_data = coo_sparse_matrix_mult_inner(A.row, A.col, A.data, B.row, B.col, B.data, A.shape, B.shape)
         
     else:
         
-        new_col, new_row, new_data = coo_sparse_matrix_mult_jitted(B.col, B.row, B.data, A.col, A.row, A.data, B.shape[::-1], A.shape[::-1])
+        new_col, new_row, new_data = coo_sparse_matrix_mult_inner(B.col, B.row, B.data, A.col, A.row, A.data, B.shape[::-1], A.shape[::-1])
         
     if len(new_data) == 0:
         return coo_array(([], ([], [])), shape = (A.shape[0], B.shape[1]))

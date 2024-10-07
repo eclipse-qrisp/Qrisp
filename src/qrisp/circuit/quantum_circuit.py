@@ -19,10 +19,9 @@
 
 import numpy as np
 import sympy
-from numba import njit
 
 import qrisp.circuit.standard_operations as ops
-from qrisp.circuit import Clbit, Instruction, Operation, Qubit, ClControlledOperation
+from qrisp.circuit import Clbit, Instruction, Operation, Qubit
 
 # Class to describe quantum circuits
 # The naming of the attributes is rather similar to the qiskit equivalent
@@ -432,6 +431,7 @@ class QuantumCircuit:
                        └───┘┌─┴─┐
             qb_3: ──────────┤ Z ├
                             └───┘
+                            
         >>> translation_dic = {extension_qc.qubits[i] : qc_to_extend.qubits[-1-i]
         >>> for i in range(4)}
         >>> qc_to_extend.extend(extension_qc, translation_dic)
@@ -589,6 +589,7 @@ class QuantumCircuit:
                   └───┘┌─┴─┐
             qb_1: ─────┤ X ├
                        └───┘
+                       
         >>> qc_1.cx(0,1)
         >>> qc_1.z(0)
         >>> print(qc_1)
@@ -864,6 +865,7 @@ class QuantumCircuit:
                   ┌─┴─┐
             qb_2: ┤ X ├
                   └───┘
+                  
         >>> print(qc.transpile(basis_gates = ["cx", "rz", "sx"]))
         
         ::
@@ -883,6 +885,7 @@ class QuantumCircuit:
             «      ┌─────────┐┌────┐┌─────────┐
             «qb_3: ┤ Rz(π/4) ├┤ √X ├┤ Rz(π/2) ├
             «      └─────────┘└────┘└─────────┘
+            
 
         """
         from qrisp.circuit import transpile
@@ -1211,7 +1214,7 @@ class QuantumCircuit:
         
         In NISQ-era devices, CNOT gates are the restricting bottleneck for quantum 
         circuit execution. This function can be used as a gate-speed specifier for
-        the :meth:`compile <qrisp.QuantumSession.compile>`_ method.
+        the :meth:`compile <qrisp.QuantumSession.compile>` method.
 
 
         Returns
@@ -1509,7 +1512,7 @@ class QuantumCircuit:
         critical_qubits = [qb for qb in qubits if qb.perm_lock]
 
         if critical_qubits:
-            from qrisp.uncomputation import is_permeable
+            from qrisp.permeability import is_permeable
 
             critical_qubit_indices = [qubits.index(qb) for qb in critical_qubits]
             if not is_permeable(operation, critical_qubit_indices):
@@ -1523,7 +1526,7 @@ class QuantumCircuit:
 
         self.data.append(Instruction(operation, qubits, clbits))
 
-    def run(self, shots=10000, backend=None):
+    def run(self, shots=100000, backend=None):
         """
         Runs a QuantumCircuit on a given backend.
 
@@ -2329,6 +2332,11 @@ class QuantumCircuit:
         """
 
         self.append(ops.IDGate(), [qubits])
+        
+    def to_pdag(self, remove_artificials = False):
+        from qrisp.permeability import PermeabilityGraph
+        return PermeabilityGraph(self, remove_artificials = remove_artificials)
+        
 
 
 # Converts various inputs (eg. integers, qubits or quantum variables) to lists of qubit

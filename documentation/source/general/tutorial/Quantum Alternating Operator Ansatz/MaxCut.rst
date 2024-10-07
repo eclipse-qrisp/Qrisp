@@ -16,6 +16,7 @@ Your very first QAOA layer
 
 Let's start slowly with deepening the understanding of QAOA at its core - one layer of the algorithm and see how it looks like. We start with importing necessary quantum gates, as well as `networkx`, which is a package for creating and manipulating graphs. In this block of code you also define the angle parameters $\gamma$ and $\beta$:
 ::
+
     from qrisp import QuantumVariable, h, barrier, rz, rx, cx
     import networkx as nx
     from sympy import Symbol
@@ -30,6 +31,7 @@ Feel free to play around with this block of code changing the graph through the 
 Next thing on our list is defining the MaxCut cost operator and the mixer. Taking a peek in the appendices section of Hadfield's paper, we see, the MaxCut phase separator we have to implement is defined as
 $$U_P=e^{-i\\gamma_pH_P}=\e^{-i\\gamma_p\\sum_{ij\\in E}(-Z_iZ_j)}.$$ Instead of using the `ZZ` gate, we will perform the same operation using only elementary gates. 
 ::
+
     gamma = Symbol('γ')
 
     def apply_cost_operator(qv, gamma):
@@ -44,6 +46,7 @@ The first line starts a loop over all edges in the graph ``G``. Each edge is a p
 
 As suggested in the table of our QAOA theoretical overview, we are using the ``rx`` gate as the mixer.
 ::
+
     beta = Symbol('β')
 
     def apply_mixer(qv, beta):
@@ -54,6 +57,7 @@ As suggested in the table of our QAOA theoretical overview, we are using the ``r
 
 With these two functions at our disposal we can now implement our first QAOA layer and `print(qv.qs)` it.
 ::
+
     qv_1 = QuantumVariable(N)
     h(qv_1)
     apply_cost_operator(qv_1, gamma)
@@ -75,6 +79,7 @@ Putting focuss on the problem at hand (MaxCut if you're just scrolling through a
 
 As the name suggests, we are looking for a cut going through as much edges as possible. It's therefore crucial to count the amount of cuts we cut through (I'll cut it out now) by checking if the nodes ``i`` and ``j`` belong to different groups. If they are, the edge $(i,j)$ is cut and added to the total.
 ::
+
     def maxcut_obj(x):                              
         cut = 0
         for i, j in G.edges():
@@ -84,6 +89,7 @@ As the name suggests, we are looking for a cut going through as much edges as po
 
 This optimization objective is important for the last building blocks described in the theoretical overview we haven't mentioned yet - the cost function. The cost function is important for keeping track of the energy of the system:
 ::
+
     def maxcut_cost_funct(meas_res):
         energy = 0
         for meas, p in meas_res.items():
@@ -97,6 +103,7 @@ For each such solution the cost is calculated using the ``maxcut_obj`` returning
 
 This is now nearly all the building blocks we need in order to run QAOA and start optimizing. Well, after we add more layers to our algorithm, that is.
 :: 
+
     p = 3
 
     def apply_p_layers(qv, beta, gamma):
@@ -127,6 +134,7 @@ We first reset the initial state and randomize it in a list where the first $p$ 
 
 Then, once we have our optimal parameters, we apply QAOA one more time to get our final set of solutions (``counts``), before finding the best solution by looking for the one with the lowest energy. Finally, we visualize our solution by coloring the nodes of our graph according to which group they belong to in the best solution.
 ::
+
     import numpy as np
     from scipy.optimize import minimize
     from operator import itemgetter
@@ -159,12 +167,14 @@ Taking the essential building blocks from `QAOAnsatz <https://arxiv.org/abs/1709
 
 We start with renaming our quantum argument `qv` to a more general `qarg` because more often than not we'll combine QuantumVariables into a QuantumArray to make implementations of other problem instances more efficient.
 ::
+
     qarg = QuantumVariable(len(G))
 
     depth = 3
 
 BEHOLD, THE POWER OF QRISP!
 ::
+
     from qrisp.qaoa import QAOAProblem, RX_mixer
     
     maxcut_instance = QAOAProblem(apply_cost_operator, RX_mixer, maxcut_cost_funct)
@@ -173,6 +183,7 @@ BEHOLD, THE POWER OF QRISP!
 
 And that's pretty much it, really. Apart from visualizing the results again.
 ::
+
     best_cut, best_solution = min([(maxcut_obj(x),x) for x in res.keys()], key=itemgetter(0))
     print(f"Best string: {best_solution} with cut: {-best_cut}")
 
@@ -186,6 +197,7 @@ And that's pretty much it, really. Apart from visualizing the results again.
 After thorough comparison certainly made after running both approaches for different graph topologies you are in position to be the judge regarding which approach is qrispier. 
 
 .. _benchmark_maxcut:
+
 Benchmarking the performance
 ----------------------------
 Lucky for you, the tutorial is not over since there is one more important functionality we would like to show you - the :meth:`benchmark <qrisp.qaoa.QAOAProblem.benchmark>` method of our QAOA module. This method allows you to observe the performance of your simulation: 
@@ -197,6 +209,7 @@ Lucky for you, the tutorial is not over since there is one more important functi
 
 Let's show how easy benchmarking QAOA is using Qrisp:
 ::
+
     print('RND')
 
     benchmark_data = maxcut_instance.benchmark(qarg = QuantumVariable(len(G)),
@@ -219,6 +232,7 @@ In the above example we obtain the list of results for the approximation ratio f
 
 It is important to note that in order to do the benchmark, one has to already know the optimal solution in order to calculate the optimal energy, and through that, the approximation ratio. This is an example of the output for the benchmark above:
 :: 
+
     RND
     Rank  approx_ratio Overall QV   p    QC depth   QB count  Shots   Iterations         
     ============================================================================
@@ -249,6 +263,7 @@ As expected, on average the runs with higher depths yield better approximation r
 
 The ``print('RND')`` was used because since the 0.4 update we have also included the `TQA warm-start initialization <https://arxiv.org/abs/2101.05742>`_, which can be used within the :meth:`benchmark <qrisp.qaoa.QAOAProblem.benchmark>` method by setting ``init_type='tqa'``. Let's try benchmarking this approach as well:
 ::
+
     print('TQA')
     maxcut_instance = maxcut_problem(G)
 
@@ -270,6 +285,7 @@ The ``print('RND')`` was used because since the 0.4 update we have also included
 
 Again, since QAOA is probabilistic, every run returns different results. You can find our try below:
 ::
+
     TQA
     Rank  approx_ratio Overall QV   p    QC depth   QB count  Shots   Iterations         
     ============================================================================
@@ -310,6 +326,7 @@ IV. select **MIXER** from the :ref:`assortment we provide and list here <MIXers>
 
 Let's condense all of the above, and implement QAOA for MaxCut one last time in one block of code
 ::
+
     from qrisp.qaoa import QuantumArray, QuantumVariable, QAOAProblem, maxcut_obj,create_maxcut_cl_cost_function,create_maxcut_cost_operator, RX_mixer
     import networkx as nx
     from operator import itemgetter
