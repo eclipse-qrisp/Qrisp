@@ -9,7 +9,7 @@ QAOA MaxClique
 Problem description
 -------------------
 
-Given a Graph  :math:`G = (V,E)` find a maximal clique, i.e., a subset of vertices :math:`V' \subset V` such that all pairs of vertices are connected by an edge in $G$.
+Given a Graph  :math:`G = (V,E)` find a maximal clique, i.e., a subset of vertices :math:`V' \subset V` such that all pairs of vertices are adjacent in the graph $G$.
 
 
 Cost operator
@@ -24,8 +24,8 @@ Classical cost function
 .. autofunction:: maxCliqueCostfct
 
 
-Full Example implementation:
-----------------------------
+Example implementation:
+-----------------------
 ::
 
     # imports
@@ -37,7 +37,7 @@ Full Example implementation:
     import matplotlib.pyplot as plt
 
     # create graph
-    G = nx.erdos_renyi_graph(9,0.7, seed =  133)
+    G = nx.erdos_renyi_graph(9, 0.7, seed =  133)
     qarg = QuantumVariable(G.number_of_nodes())
 
     # run the instance
