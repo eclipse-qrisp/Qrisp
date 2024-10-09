@@ -133,3 +133,4 @@ If you are interested in how the QIR representation looks like, try calling
    QJIT
    Jispr
    qache
+   hb_control_flow
