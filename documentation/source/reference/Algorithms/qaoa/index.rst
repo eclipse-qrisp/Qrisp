@@ -10,7 +10,8 @@ Quantum Approximate Optimization Algorithm
    
    QAOAProblem
    QAOABenchmark
-   QAOAImplemens
+   QAOAImplementations
+   QAOAMixers
 
 This modules facilitates the execution of The `Quantum Approximate Optimization Algorithm (QAOA) <https://arxiv.org/abs/1411.4028>`_  and related techniques called the `Quantum Alternating Operator Ansatz <https://arxiv.org/abs/1709.03489>`_. 
 
@@ -48,7 +49,6 @@ Qrisp comes with a variety of predefined mixers to tackle various types of probl
 
 
 .. autosummary::
-   :toctree: generated/
    
    RX_mixer
    RZ_mixer

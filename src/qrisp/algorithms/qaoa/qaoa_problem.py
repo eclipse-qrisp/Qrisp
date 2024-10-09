@@ -457,7 +457,7 @@ class QAOAProblem:
         
         Parameters
         ----------
-        qarg : :ref:`QuantumVariable` of :ref:`QuantumArray`
+        qarg : :ref:`QuantumVariable` or :ref:`QuantumArray`
             The quantum argument to which the QAOA circuit is applied.
         depth : int
             The depth of the QAOA circuit.

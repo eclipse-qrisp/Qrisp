@@ -1,10 +1,9 @@
-
-.. _QAOAImplemens:
+.. _QAOAImplementations:
 
 .. currentmodule:: qrisp.qaoa
 
-Other Implementations
-=====================
+Implementations
+===============
 
 .. toctree::
      :hidden:
@@ -21,11 +20,11 @@ Other Implementations
 Here you can the QAOA implementations which are not explicitly named in our tutorial, namely:
 
 
-* :ref:`MaxIndependentSet <maxindependentsetQAOA>`, 
-* :ref:`MaxClique <maxcliqueQAOA>`, 
-* :ref:`MaxSat <maxsatQAOA>`, 
-* :ref:`MaxSetPacking <maxSetPackQAOA>`,
-* :ref:`MinSetCover <minsetcoverQAOA>`,
+* :ref:`MaxClique <maxcliqueQAOA>`
+* :ref:`MaxIndependentSet <maxindependentsetQAOA>`
+* :ref:`MaxSat <maxsatQAOA>`
+* :ref:`MaxSetPacking <maxSetPackQAOA>`
+* :ref:`MinSetCover <minsetcoverQAOA>`
 
 
 

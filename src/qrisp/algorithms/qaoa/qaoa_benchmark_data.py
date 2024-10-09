@@ -69,7 +69,7 @@ class QAOABenchmark:
         
         .. math::
             
-            \text{OQV} = \text{circuit\_depth} \times \text{qubits} \times \text{shots} \times \text{iterations}
+            \text{OQV} = \text{circuit_depth} \times \text{qubits} \times \text{shots} \times \text{iterations}
         
         **Gain metric**
         

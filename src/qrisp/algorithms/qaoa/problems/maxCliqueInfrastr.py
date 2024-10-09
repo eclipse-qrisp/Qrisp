@@ -21,38 +21,31 @@ import itertools
 import networkx as nx
 
 
-
-
-def maxCliqueCostOp(G):
-    
-    """
-    |  Based on PennyLane unconstrained mixer implementation.
-    |  Initial state in :math:`(|0>+|1>)^{\otimes n}` . 
-    |  For explanation see the PennyLane implementation.
+def maxCliqueCostOp(G):  
+    r"""
 
     Parameters
     ----------
     G : nx.Graph
-        Graph of the problem instance
+        The graph for the problem instance.
 
     Returns
     -------
-    QuantumCircuit: qrisp.QuantumCircuit
-        the Operator applied to the circuit-QuantumVariable
+    function
+        A Python function receiving a ``QuantumVariable`` and real parameter $\gamma$. 
+        This function performs the application of the cost operator associated to the graph $G$.
 
     """
     G_compl = nx.complement(G)
-    def partialcostMixer(qv, gamma):
+    def partialCostMixer(qv, gamma):
         for pair in list(G_compl.edges()):
             #cx(qv[pair[0]], qv[pair[1]])
             rzz(3*gamma, qv[pair[0]], qv[pair[1]])
             rz(-gamma, qv[pair[0]])
             rz(-gamma, qv[pair[1]])
         rz(gamma, qv)
-        #return qv
 
-    return partialcostMixer
-
+    return partialCostMixer
 
 
 def maxCliqueCostfct(G):
@@ -61,44 +54,34 @@ def maxCliqueCostfct(G):
     Parameters
     ----------
     G : nx.Graph
-        Graph of the problem instance
+        The Graph for the problem instance.
 
     Returns
     -------
-    Costfunction : function
-        the classical function for the problem instance, which takes a dictionary of measurement results as input
+    cl_cost_function : function
+        The classical function for the problem instance, which takes a dictionary of measurement results as input.
 
     """
 
-    def aClcostFct(res_dic):
+    def cl_cost_function(res_dic):
         tot_energy = 0.001
-        tot_counts = 0
-        for state in res_dic.keys():
-            # we assume solution is right
+        for state, prob in res_dic.items():
             temp = True
             energy = 0 
-            intlist = [s for s in range(len(list(state))) if list(state)[s] == "1"]
+            indices = [index for index, value in enumerate(state) if value == '1']
             # get all combinations of vertices in graph that are marked as |1> by the solution 
-            combinations = list(itertools.combinations(intlist, 2))
-            # if any combination is found in the list of G.edges(), the solution is wrong, and energy == 0
+            combinations = list(itertools.combinations(indices, 2))
+            # if any combination is not found in the list of G.edges(), the solution is invalid, and energy == 0
             for combination in combinations:
                 if combination not in G.edges():
                     temp = False
                     break
-            # else we just add the number of marked as |1> nodes
+            # else we subtract the number of vertices marked as |1>
             if temp: 
-                energy = -len(intlist)
-            tot_energy += energy * res_dic[state]
-            tot_counts += res_dic[state]
+                energy = -len(indices)
+                tot_energy += energy*prob
 
-        #print(tot_energy/tot_counts)
+        return tot_energy
 
-        return tot_energy/tot_counts
+    return cl_cost_function 
 
-    return aClcostFct
-
-
-
-def init_state(qv):
-    h(qv)
-    return qv
