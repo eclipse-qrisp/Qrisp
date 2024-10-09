@@ -29,7 +29,8 @@ class ClControlEnvironment(QuantumEnvironment):
     
     The ``ClControlEnvironment`` enables execution of quantum code conditioned on
     classical values. The environment works with similar semantics as the 
-    :ref:`ControlEnvironment`.
+    :ref:`ControlEnvironment`, implying this environment can also be entered
+    using the ``control`` keyword.
     
     .. warning::
         
