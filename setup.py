@@ -49,6 +49,9 @@ setuptools.setup(
     package_dir={"": "src"},
     install_requires = REQUIREMENTS,
     setup_requires = REQUIREMENTS,
+    extras_require={
+        'iqm': ['qiskit-iqm']
+    },
     packages=setuptools.find_packages(where="src"),
     python_requires=">=3.8",
 )
