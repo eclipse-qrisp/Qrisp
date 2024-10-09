@@ -19,7 +19,7 @@
 from jax.lax import cond
 
 from qrisp.environments import QuantumEnvironment
-from qrisp.jisp import extract_invalues, insert_outvalues
+from qrisp.jasp import extract_invalues, insert_outvalues
 
 
 
@@ -46,7 +46,7 @@ class ClControlEnvironment(QuantumEnvironment):
     ::
         
         from qrisp import *
-        from qrisp.jisp import make_jispr
+        from qrisp.jasp import make_jaspr
         def test_f(i):
             
             a = QuantumFloat(3)
@@ -58,21 +58,21 @@ class ClControlEnvironment(QuantumEnvironment):
             
             return measure(a)
 
-        jispr = make_jispr(test_f)(1)
+        jaspr = make_jaspr(test_f)(1)
     
-    This jispr receives an integer and encodes that integer into the :ref:`QuantumFloat`
+    This jaspr receives an integer and encodes that integer into the :ref:`QuantumFloat`
     `a`. Subsequently `a` is measured and an X gate is applied onto the 0-th
     qubit of `a` if the measurement value is 4.
     
-    We can now evaluate the jispr on several inputs
+    We can now evaluate the jaspr on several inputs
     
-    >>> jispr(1)
+    >>> jaspr(1)
     1
-    >>> jispr(2)
+    >>> jaspr(2)
     2
-    >>> jispr(3)
+    >>> jaspr(3)
     3
-    >>> jispr(4)
+    >>> jaspr(4)
     5
     
     We see that in the case where 4 was encoded, the X gate was indeed executed.
@@ -93,7 +93,7 @@ class ClControlEnvironment(QuantumEnvironment):
             
             return measure(c)
 
-        jispr = make_jispr(test_f)(1)
+        jaspr = make_jaspr(test_f)(1)
     
     This script creates a ``QuantumFloat`` `c` within the classical control
     environment and subsequently uses `c` outside of the environment (in the
@@ -105,7 +105,7 @@ class ClControlEnvironment(QuantumEnvironment):
     ::
         
         from qrisp import *
-        from qrisp.jisp import make_jispr
+        from qrisp.jasp import make_jaspr
         def test_f(i):
             
             a = QuantumFloat(3)
@@ -127,7 +127,7 @@ class ClControlEnvironment(QuantumEnvironment):
             
             return measure(a)
         
-        jispr = make_jispr(test_f)(1)
+        jaspr = make_jaspr(test_f)(1)
     
     
     This script allocates another :ref:`QuantumFloat` `c` within the ClControlEnvironment
@@ -136,9 +136,9 @@ class ClControlEnvironment(QuantumEnvironment):
     the zeroth qubit of `a` is flipped (similar to the above examples) and
     furthermore `c` is brought back to the $\ket{0}$ state.
     
-    >>> jispr(4)
+    >>> jaspr(4)
     5
-    >>> jispr(4)
+    >>> jaspr(4)
     4
     
     
@@ -164,9 +164,9 @@ class ClControlEnvironment(QuantumEnvironment):
         ctrl_vars = args[1:len(self.ctrl_bls)+1]
         env_vars = [args[0]] + args[len(self.ctrl_bls)+1:]
         
-        body_jispr = eqn.params["jispr"]
+        body_jaspr = eqn.params["jaspr"]
         
-        if len(body_jispr.outvars) > 1:
+        if len(body_jaspr.outvars) > 1:
             raise Exception("Found ClControlEnvironment with carry value")
         
         if len(ctrl_vars) > 1:
@@ -179,7 +179,7 @@ class ClControlEnvironment(QuantumEnvironment):
         def false_fun(*args):
             return args[0]
         
-        flattened_body_jispr = body_jispr.flatten_environments()
-        res_abs_qc = cond(cond_bl, flattened_body_jispr.eval, false_fun, *env_vars)
+        flattened_body_jaspr = body_jaspr.flatten_environments()
+        res_abs_qc = cond(cond_bl, flattened_body_jaspr.eval, false_fun, *env_vars)
         
         insert_outvalues(eqn, context_dic, res_abs_qc)

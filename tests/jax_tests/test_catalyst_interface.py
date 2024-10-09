@@ -17,7 +17,7 @@
 """
 
 from qrisp import *
-from qrisp.jisp import *
+from qrisp.jasp import *
 
 def test_catalyst_interface():
     
@@ -34,12 +34,12 @@ def test_catalyst_interface():
         meas_res = measure(qv)
         return meas_res + 3
     
-    jispr = make_jispr(test_fun)(2)
+    jaspr = make_jaspr(test_fun)(2)
     
-    jispr.to_qir(2)
-    jispr.to_mlir(2)
-    jispr.to_catalyst_jaxpr()
+    jaspr.to_qir(2)
+    jaspr.to_mlir(2)
+    jaspr.to_catalyst_jaxpr()
     
-    assert jispr.qjit(4)[0] == 5.25
+    assert jaspr.qjit(4)[0] == 5.25
     
     

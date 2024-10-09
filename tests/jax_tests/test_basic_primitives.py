@@ -28,13 +28,13 @@ def test_basic_primitives():
         res_bl = measure(qv[0])
         return res_bl
 
-    compare_jaxpr(make_jispr(test_function)(), 
-            ['jisp.create_qubits',
-             'jisp.get_qubit',
-             'jisp.h',
-             'jisp.get_qubit',
-             'jisp.cx',
-             'jisp.measure'])
+    compare_jaxpr(make_jaspr(test_function)(), 
+            ['jasp.create_qubits',
+             'jasp.get_qubit',
+             'jasp.h',
+             'jasp.get_qubit',
+             'jasp.cx',
+             'jasp.measure'])
     
     def test_function():
         qv = QuantumVariable(2)
@@ -46,11 +46,11 @@ def test_basic_primitives():
         res_bl = measure(qv[0])
         return res_bl
     
-    compare_jaxpr(make_jispr(test_function)(), 
-                ['jisp.create_qubits',
-                 'jisp.q_env',
-                 'jisp.get_qubit',
-                 'jisp.measure'])    
+    compare_jaxpr(make_jaspr(test_function)(), 
+                ['jasp.create_qubits',
+                 'jasp.q_env',
+                 'jasp.get_qubit',
+                 'jasp.measure'])    
 
     def test_function():
         qv = QuantumVariable(2)
@@ -63,16 +63,16 @@ def test_basic_primitives():
         qv.delete()
         return res_bl
 
-    compare_jaxpr(make_jispr(test_function)(), 
-                ['jisp.create_qubits',
-                 'jisp.get_qubit',
-                 'jisp.h',
-                 'jisp.get_qubit',
-                 'jisp.cx',
-                 'jisp.cx',
-                 'jisp.h',
-                 'jisp.measure',
-                 'jisp.delete_qubits'])
+    compare_jaxpr(make_jaspr(test_function)(), 
+                ['jasp.create_qubits',
+                 'jasp.get_qubit',
+                 'jasp.h',
+                 'jasp.get_qubit',
+                 'jasp.cx',
+                 'jasp.cx',
+                 'jasp.h',
+                 'jasp.measure',
+                 'jasp.delete_qubits'])
 
     def test_function(a):
         qv = QuantumVariable(2)
@@ -83,11 +83,11 @@ def test_basic_primitives():
         qv.delete()
         return res_bl
 
-    print(make_jispr(test_function)(2.))
-    compare_jaxpr(make_jispr(test_function)(2.), 
-                ['jisp.create_qubits',
-                 'jisp.get_qubit',
-                 'jisp.rz(alpha)',
-                 'jisp.p(alpha)',
-                 'jisp.measure',
-                 'jisp.delete_qubits'])
+    print(make_jaspr(test_function)(2.))
+    compare_jaxpr(make_jaspr(test_function)(2.), 
+                ['jasp.create_qubits',
+                 'jasp.get_qubit',
+                 'jasp.rz(alpha)',
+                 'jasp.p(alpha)',
+                 'jasp.measure',
+                 'jasp.delete_qubits'])

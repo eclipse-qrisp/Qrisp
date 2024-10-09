@@ -16,28 +16,5 @@
 ********************************************************************************/
 """
 
-from qrisp import *
-
-def test_control_flow_interpretation():
-    
-    @qache
-    def inner_function(qf, i):
-        qf[:] = i
-
-    def test_f(i):
-        a = QuantumFloat(5, -1)
-        with invert():
-            with QuantumEnvironment():
-                with invert():
-                    inner_function(a, i)
-        b = measure(a)
-        b += 4
-        return b
-    
-    jasp_program = make_jaspr(test_f)(0.5)
-    
-    for i in range(5):
-        
-        res = jasp_program(i + 0.5)
-        
-        assert res == i + 4.5
+from qrisp.jasp.interpreter_tools.abstract_interpreter import *
+from qrisp.jasp.interpreter_tools.interpreters import *

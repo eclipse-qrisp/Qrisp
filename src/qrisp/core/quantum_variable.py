@@ -233,12 +233,12 @@ class QuantumVariable:
 
         # Store quantum session
         from qrisp.core import QuantumSession
-        from qrisp.jisp import check_for_tracing_mode, TracingQuantumSession
+        from qrisp.jasp import check_for_tracing_mode, TracingQuantumSession
 
         if check_for_tracing_mode():
             self.qs = TracingQuantumSession.get_instance()
             if self.qs is None:
-                raise Exception("Tried to trace Qrisp code using make_jaxpr (use make_jispr instead)")
+                raise Exception("Tried to trace Qrisp code using make_jaxpr (use make_jaspr instead)")
             
             self.qubit_cache = {}
         else:
@@ -682,7 +682,7 @@ class QuantumVariable:
         """
 
         from qrisp.misc import check_if_fresh, int_encoder
-        from qrisp.jisp import TracingQuantumSession
+        from qrisp.jasp import TracingQuantumSession
         
         if not isinstance(self.qs, TracingQuantumSession):
             if not permit_dirtyness:
@@ -1067,7 +1067,7 @@ class QuantumVariable:
         else:
             id_tuple = (id(self.reg), id(key))
             if not id_tuple in self.qs.qubit_cache:
-                from qrisp.jisp import get_qubit
+                from qrisp.jasp import get_qubit
                 self.qs.qubit_cache[id_tuple] = get_qubit(self.reg, key)
             return self.qs.qubit_cache[id_tuple]
     def __str__(self):
@@ -1095,7 +1095,7 @@ class QuantumVariable:
         if isinstance(self.reg, list):
             return len(self.reg)
         else:
-            from qrisp.jisp import get_size
+            from qrisp.jasp import get_size
             return get_size(self.reg)
         
 
@@ -1475,7 +1475,7 @@ def plot_histogram(outcome_labels, counts, filename=None):
 
 
 from jax import tree_util
-from qrisp.jisp.tracing_quantum_session import TracingQuantumSession
+from qrisp.jasp.tracing_quantum_session import TracingQuantumSession
 from builtins import id
 
 def flatten_qv(qv):

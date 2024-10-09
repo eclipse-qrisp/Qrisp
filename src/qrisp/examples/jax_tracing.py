@@ -16,7 +16,7 @@
 ********************************************************************************/
 """
 
-from qrisp.jisp import qfunc_def
+from qrisp.jasp import qfunc_def
 from qrisp import *
 
 def test_function_1(i):
@@ -69,7 +69,7 @@ def compile_inv_environments(closed_jaxpr):
 
 #%%
 from qrisp import *
-from qrisp.jisp import qfunc_def, evaluate_eqn
+from qrisp.jasp import qfunc_def, evaluate_eqn
 def test_function_1(i):
     
     @qfunc_def

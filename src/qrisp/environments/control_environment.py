@@ -22,7 +22,7 @@ from qrisp.circuit import Qubit, QuantumCircuit, XGate
 from qrisp.core.session_merging_tools import merge, merge_sessions, multi_session_merge
 from qrisp.environments import QuantumEnvironment, ClControlEnvironment
 from qrisp.misc import perm_lock, perm_unlock, bin_rep
-from qrisp.jisp import check_for_tracing_mode
+from qrisp.jasp import check_for_tracing_mode
 from qrisp.core import mcx, p, rz, x
 
 class ControlEnvironment(QuantumEnvironment):
@@ -380,14 +380,14 @@ class ControlEnvironment(QuantumEnvironment):
             
     def jcompile(self, eqn, context_dic):
         
-        from qrisp.jisp import extract_invalues, insert_outvalues
+        from qrisp.jasp import extract_invalues, insert_outvalues
         args = extract_invalues(eqn, context_dic)
-        body_jispr = eqn.params["jispr"]
+        body_jaspr = eqn.params["jaspr"]
         
-        num_ctrl = len(args) - len(body_jispr.invars)
-        flattened_jispr = body_jispr.flatten_environments()
-        controlled_jispr = flattened_jispr.control(num_ctrl)
-        res = controlled_jispr.eval(*args)
+        num_ctrl = len(args) - len(body_jaspr.invars)
+        flattened_jaspr = body_jaspr.flatten_environments()
+        controlled_jaspr = flattened_jaspr.control(num_ctrl)
+        res = controlled_jaspr.eval(*args)
         insert_outvalues(eqn, context_dic, res)
         
 
@@ -456,7 +456,7 @@ def control(*args, **kwargs):
     if not isinstance(args[0], list):
         args[0] = [args[0]]
     from qrisp import Qubit, QuantumBool
-    from qrisp.jisp import AbstractQubit
+    from qrisp.jasp import AbstractQubit
         
     if all(isinstance(obj, (Qubit, QuantumBool)) for obj in args[0]):
         return ControlEnvironment(*args, **kwargs)

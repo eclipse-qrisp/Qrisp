@@ -16,28 +16,18 @@
 ********************************************************************************/
 """
 
-from qrisp import *
+from qrisp.jasp.primitives import*
+from qrisp.jasp.tracing_quantum_session import *
+from qrisp.jasp.qaching import qache
+from qrisp.jasp.interpreter_tools import *
+from qrisp.jasp.jasp_expression import *
+from qrisp.jasp.testing_utils import *
+from qrisp.jasp.control_flow import *
 
-def test_control_flow_interpretation():
+def compare_jaxpr(jaxpr, primitive_name_list):
+    assert len(jaxpr.eqns) == len(primitive_name_list)
+    for i in range(len(primitive_name_list)):
+        assert jaxpr.eqns[i].primitive.name == primitive_name_list[i]
     
-    @qache
-    def inner_function(qf, i):
-        qf[:] = i
 
-    def test_f(i):
-        a = QuantumFloat(5, -1)
-        with invert():
-            with QuantumEnvironment():
-                with invert():
-                    inner_function(a, i)
-        b = measure(a)
-        b += 4
-        return b
-    
-    jasp_program = make_jaspr(test_f)(0.5)
-    
-    for i in range(5):
-        
-        res = jasp_program(i + 0.5)
-        
-        assert res == i + 4.5
+

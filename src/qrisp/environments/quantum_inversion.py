@@ -350,13 +350,13 @@ class InversionEnvironment(QuantumEnvironment):
         
     def jcompile(self, eqn, context_dic):
         
-        from qrisp.jisp import extract_invalues, insert_outvalues
+        from qrisp.jasp import extract_invalues, insert_outvalues
         args = extract_invalues(eqn, context_dic)
-        body_jispr = eqn.params["jispr"]
+        body_jaspr = eqn.params["jaspr"]
         
-        inverted_jispr = body_jispr.inverse()
+        inverted_jaspr = body_jaspr.inverse()
         
-        res = inverted_jispr.eval(*args)
+        res = inverted_jaspr.eval(*args)
         insert_outvalues(eqn, context_dic, res)
 
 

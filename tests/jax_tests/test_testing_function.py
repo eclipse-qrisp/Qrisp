@@ -17,7 +17,7 @@
 """
 
 from qrisp import *
-from qrisp.jisp import *
+from qrisp.jasp import *
 
 def test_testing_function():
     
@@ -35,7 +35,7 @@ def test_testing_function():
         temp_2 = inner_function(qv)
         return qv
     
-    testing_function = jisp_function_test(outer_function)
+    testing_function = jasp_function_test(outer_function)
     
     assert testing_function(5)
     assert testing_function(6)

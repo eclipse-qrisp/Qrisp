@@ -44,9 +44,9 @@ from qrisp.environments import QuantumEnvironment
 #         cx(base_qb, qv[i+1])
 #     return measure(qv)
 
-# jispr = make_jispr(test_function)(100)
+# jaspr = make_jaspr(test_function)(100)
 
-# print(jispr)
+# print(jaspr)
 
 # It gives us 
 
@@ -57,7 +57,7 @@ from qrisp.environments import QuantumEnvironment
 #     g:i32[] = get_size d
 #     h:i32[] = sub g 1
 #     i:QuantumCircuit j:i32[] = q_env[
-#       jispr={ lambda ; k:QuantumCircuit e:Qubit h:i32[] d:QubitArray. let
+#       jaspr={ lambda ; k:QuantumCircuit e:Qubit h:i32[] d:QubitArray. let
 #           l:i32[] = add h 1
 #           m:Qubit = get_qubit d l
 #           n:QuantumCircuit = cx k e m
@@ -66,7 +66,7 @@ from qrisp.environments import QuantumEnvironment
 #       type=JIterationEnvironment
 #     ] f e h d
 #     o:QuantumCircuit = q_env[
-#       jispr={ lambda ; p:QuantumCircuit e:Qubit j:i32[] d:QubitArray. let
+#       jaspr={ lambda ; p:QuantumCircuit e:Qubit j:i32[] d:QubitArray. let
 #           q:i32[] = add j 1
 #           r:Qubit = get_qubit d q
 #           s:QuantumCircuit = cx p e r
@@ -96,37 +96,37 @@ def iteration_env_evaluator(eqn, context_dic):
 
     # We can now retrieve the equations for both iterations.
     
-    # Set the aliases for the equations and the jisprs
+    # Set the aliases for the equations and the jasprs
     iteration_1_eqn = eqn.primitive.iteration_1_eqn
     iteration_2_eqn = eqn
-    iter_1_jispr = iteration_1_eqn.params["jispr"]
-    iter_2_jispr = iteration_2_eqn.params["jispr"]
+    iter_1_jaspr = iteration_1_eqn.params["jaspr"]
+    iter_2_jaspr = iteration_2_eqn.params["jaspr"]
     
-    if len(iter_2_jispr.outvars) > 1:
+    if len(iter_2_jaspr.outvars) > 1:
         raise Exception("Found jrange with external carry value")
     
     
     # Move the loop index to the last argument
     
-    # The loop index is increased in the last equation of the jispr.
+    # The loop index is increased in the last equation of the jaspr.
     # We can therefore identify the variable by finding the fist argument
     # of the incrementation equation.
-    increment_eq = iter_1_jispr.eqns[0]
-    arg_pos = iter_1_jispr.invars.index(increment_eq.invars[0])
+    increment_eq = iter_1_jaspr.eqns[0]
+    arg_pos = iter_1_jaspr.invars.index(increment_eq.invars[0])
     
-    # Move the index to the last position in both the jispr and the equation
-    iter_1_jispr.invars.append(iter_1_jispr.invars.pop(arg_pos))
+    # Move the index to the last position in both the jaspr and the equation
+    iter_1_jaspr.invars.append(iter_1_jaspr.invars.pop(arg_pos))
     iteration_1_eqn.invars.append(iteration_1_eqn.invars.pop(arg_pos))
     
-    # The way the environment jispr is collected allows for permuted arguments,
+    # The way the environment jaspr is collected allows for permuted arguments,
     # ie. the first argument of the first iteration could be the the last argument
     # of the second iteration. We outsource this task to this function.
-    permutation = find_signature_permutation(iter_1_jispr, iter_2_jispr)
+    permutation = find_signature_permutation(iter_1_jaspr, iter_2_jaspr)
     
-    # Find the permuted variables and update the list for the jispr
-    permuted_invars = [iter_2_jispr.invars[i] for i in permutation]
-    iter_2_jispr.invars.clear()
-    iter_2_jispr.invars.extend(permuted_invars)
+    # Find the permuted variables and update the list for the jaspr
+    permuted_invars = [iter_2_jaspr.invars[i] for i in permutation]
+    iter_2_jaspr.invars.clear()
+    iter_2_jaspr.invars.extend(permuted_invars)
     
     # Find the permuted variables and update the list for the equation
     permuted_invars = [iteration_2_eqn.invars[i] for i in permutation]
@@ -165,13 +165,13 @@ def iteration_env_evaluator(eqn, context_dic):
     
     # We can now construct the body function of the loop
     # The body function will receive the tuple val which has the signature
-    # of the body_jisprs of the iteration environments PLUS the loop cancelation
+    # of the body_jasprs of the iteration environments PLUS the loop cancelation
     # threshold at the last position.
     
     def body_fun(val):
         
         # We evaluate the body (without the loop cancelation treshold).
-        res = iter_1_jispr.flatten_environments().eval(*val[:-1])
+        res = iter_1_jaspr.flatten_environments().eval(*val[:-1])
         
         # Convert the result into a tuple if it isn't one already
         if not isinstance(res, tuple):

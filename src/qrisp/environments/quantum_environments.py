@@ -56,7 +56,7 @@
 from qrisp.circuit import QubitAlloc, QubitDealloc, fast_append
 from qrisp.core.quantum_session import QuantumSession
 
-from qrisp.jisp import QuantumPrimitive, AbstractQuantumCircuit, TracingQuantumSession
+from qrisp.jasp import QuantumPrimitive, AbstractQuantumCircuit, TracingQuantumSession
 
 class QuantumEnvironment(QuantumPrimitive):
     """
@@ -519,7 +519,7 @@ class QuantumEnvironment(QuantumPrimitive):
                 self.env_qs.append(instruction)
                 
     def jcompile(self, eqn, context_dic):
-        from qrisp.jisp import eval_jaxpr, extract_invalues, flatten_environment_eqn, insert_outvalues
+        from qrisp.jasp import eval_jaxpr, extract_invalues, flatten_environment_eqn, insert_outvalues
         
         def eqn_evaluator(eqn, context_dic):
             
@@ -529,9 +529,9 @@ class QuantumEnvironment(QuantumPrimitive):
                 return True
         
         args = extract_invalues(eqn, context_dic)
-        body_jispr = eqn.params["jispr"]
+        body_jaspr = eqn.params["jaspr"]
         
-        res = eval_jaxpr(body_jispr, eqn_evaluator = eqn_evaluator)(*args)
+        res = eval_jaxpr(body_jaspr, eqn_evaluator = eqn_evaluator)(*args)
         insert_outvalues(eqn, context_dic, res)
                 
                 

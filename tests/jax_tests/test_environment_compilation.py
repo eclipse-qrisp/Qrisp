@@ -17,7 +17,7 @@
 """
 
 from qrisp import *
-from qrisp.jisp import *
+from qrisp.jasp import *
 
 def test_environment_compilation():
     
@@ -29,9 +29,9 @@ def test_environment_compilation():
                 h(qv[0])
         return qv
 
-    jispr = make_jispr(outer_function)(2)
+    jaspr = make_jaspr(outer_function)(2)
     
-    jisp_function_test(outer_function)
+    jasp_function_test(outer_function)
     
     @qache
     def inner_function(qv):
@@ -51,7 +51,7 @@ def test_environment_compilation():
         temp_2 = inner_function(qv)
         return qv
     
-    testing_function = jisp_function_test(outer_function)
+    testing_function = jasp_function_test(outer_function)
     
     assert testing_function(5)
     assert testing_function(6)

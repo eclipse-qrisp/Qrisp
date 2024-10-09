@@ -31,4 +31,4 @@ from qrisp.algorithms import *
 for i in ['shor','qaoa','qiro','grover','quantum_backtracking','quantum_counting']:
   sys.modules['qrisp.'+i] = sys.modules['qrisp.algorithms.'+i]
 from qrisp.default_backend import *
-from qrisp.jisp import *
+from qrisp.jasp import *
