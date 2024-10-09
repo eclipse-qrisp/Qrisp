@@ -4,10 +4,10 @@
     
     This module is still under heavy development and the interface can therefore change at any time!
 
-jasp
+Jasp
 ====
 
-jasp is a submodule of Qrisp that allows you to scale up your Qrisp code to to practically relevant problem sizes. The fundamental problem that many Python based quantum frameworks face is that the Python interpreter is slow compared to what is possible with compiled languages. As an example:
+Jasp is a submodule of Qrisp that allows you to scale up your Qrisp code to to practically relevant problem sizes. The fundamental problem that many Python based quantum frameworks face is that the Python interpreter is slow compared to what is possible with compiled languages. As an example:
 
 ::
 
@@ -37,14 +37,14 @@ Within Qiskit, real-time computations are in principle achievable by preparing a
 
 A more promising approach is the `QIR specification <https://www.qir-alliance.org/>`_ which integrates quantum related data-types into the widely used `LLVM IR <https://en.wikipedia.org/wiki/LLVM>`_. Compiling QIR not only has the advantage of incorporating a wide ecosystem of classically established code but also leveraging highly optimized compilation libraries.
 
-With jasp, we therefore aim to tackle both problems - compilation speed and lack of real-time computations - by targeting the established LLVM toolchain.
+With Jasp, we therefore aim to tackle both problems - compilation speed and lack of real-time computations - by targeting the established LLVM toolchain.
 
-Ideally we want you to keep all your Qrisp code the same and simply enable the jasp feature. So if you simply want to speed up your code, you can stop reading here. Otherwise get ready for more background knowledge (yay)!
+Ideally we want you to keep all your Qrisp code the same and simply enable the Jasp feature. So if you simply want to speed up your code, you can stop reading here. Otherwise get ready for more background knowledge (yay)!
 
 What is Jax?
 ^^^^^^^^^^^^
 
-To understand how to fully leverage the jasp module, you need a basic understanding of `Jax <https://jax.readthedocs.io/en/latest/notebooks/Common_Gotchas_in_JAX.html>`_. Jax is a framework developed by Google, which aims to address a similar set of problems as described above but in the context of machine learning. Essentially Jax makes Python code for ML applications run faster, by leveraging a mechanism called tracing. Tracing means that instead of executing a Python function with actual values, Jax sends so called Tracers through the function, which keep a "record" of what would have happened to the values. This record is a mini functional programming language called `Jaxpr <https://jax.readthedocs.io/en/latest/_tutorials/jaxpr.html>`_. Creating a Jaxprs can be achieved by calling the ``make_jaxpr`` function.
+To understand how to fully leverage the Jasp module, you need a basic understanding of `Jax <https://jax.readthedocs.io/en/latest/notebooks/Common_Gotchas_in_JAX.html>`_. Jax is a framework developed by Google, which aims to address a similar set of problems as described above but in the context of machine learning. Essentially Jax makes Python code for ML applications run faster, by leveraging a mechanism called tracing. Tracing means that instead of executing a Python function with actual values, Jax sends so called Tracers through the function, which keep a "record" of what would have happened to the values. This record is a mini functional programming language called `Jaxpr <https://jax.readthedocs.io/en/latest/_tutorials/jaxpr.html>`_. Creating a Jaxprs can be achieved by calling the ``make_jaxpr`` function.
 
 ::
 
@@ -71,10 +71,10 @@ This gives the output
 
 Jax not only allows us to represent (classical) computations in a more simplified and easier-to-process form but also provides a `matured ecosystem <https://www.educative.io/courses/intro-jax-deep-learning/awesome-jax-libraries>`_ of libraries. On top of that, Jax exposes the means to `create new primitives <https://jax.readthedocs.io/en/latest/notebooks/How_JAX_primitives_work.html>`_, which allows quantum developers to use the Jax infrastructure for their purposes.
 
-What is jasp?
+What is Jasp?
 ^^^^^^^^^^^^^
 
-jasp is a module that provides Jax primitives for Qrisp syntax and therefore makes Qrisp Jax-traceable. How does this work in practice? The central class here is the ``jaspr``, which is a subtype of the Jaxpr. Similarly to Jaxprs, jasprs can be create using the ``make_jaspr`` function.
+Jasp is a module that provides Jax primitives for Qrisp syntax and therefore makes Qrisp Jax-traceable. How does this work in practice? The central class here is the ``Jaspr``, which is a subtype of the Jaxpr. Similarly to Jaxprs, Jasprs can be create using the ``make_jaspr`` function.
 
 ::
     
@@ -131,6 +131,6 @@ If you are interested in how the QIR representation looks like, try calling
    :hidden:
    
    QJIT
-   jaspr
+   Jaspr
    qache
    hb_control_flow

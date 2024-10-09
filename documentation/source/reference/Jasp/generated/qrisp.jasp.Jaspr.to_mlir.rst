@@ -1,6 +1,6 @@
-﻿qrisp.jasp.jaspr.to\_mlir
+﻿qrisp.jasp.Jaspr.to\_mlir
 =========================
 
 .. currentmodule:: qrisp.jasp
 
-.. automethod:: jaspr.to_mlir
+.. automethod:: Jaspr.to_mlir

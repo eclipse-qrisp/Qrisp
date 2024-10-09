@@ -1,6 +1,6 @@
-﻿qrisp.jasp.jaspr.inverse
+﻿qrisp.jasp.Jaspr.control
 ========================
 
 .. currentmodule:: qrisp.jasp
 
-.. automethod:: jaspr.inverse
+.. automethod:: Jaspr.control

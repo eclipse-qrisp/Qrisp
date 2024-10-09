@@ -1,6 +1,6 @@
-﻿qrisp.jasp.jaspr.to\_qir
+﻿qrisp.jasp.Jaspr.to\_qir
 ========================
 
 .. currentmodule:: qrisp.jasp
 
-.. automethod:: jaspr.to_qir
+.. automethod:: Jaspr.to_qir

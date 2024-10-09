@@ -1,10 +1,10 @@
 .. _jaspr:
 
-jaspr
+Jaspr
 =====
 
 .. currentmodule:: qrisp.jasp
-.. autoclass:: jaspr
+.. autoclass:: Jaspr
 
 Methods
 =======
@@ -15,9 +15,9 @@ Manipulation
 .. autosummary::
    :toctree: generated/
    
-   jaspr.inverse
-   jaspr.control
-   jaspr.flatten_environments
+   Jaspr.inverse
+   Jaspr.control
+   Jaspr.flatten_environments
    
    
 Evaluation
@@ -26,18 +26,18 @@ Evaluation
 .. autosummary::
    :toctree: generated/
    
-   jaspr.qjit
-   jaspr.to_qc
-   jaspr.to_qir
-   jaspr.to_mlir
-   jaspr.to_catalyst_jaxpr
+   Jaspr.qjit
+   Jaspr.to_qc
+   Jaspr.to_qir
+   Jaspr.to_mlir
+   Jaspr.to_catalyst_jaxpr
    
 
 
 Advanced details
 ================
 
-This section elaborates how jaspr objects are embedded into the Jax infrastructure. If you just want to accelerate your code you can (probably) skip this. It is recommended to first get a solid understanding of `Jax primitives <https://jax.readthedocs.io/en/latest/notebooks/How_JAX_primitives_work.html>`_ and how to create a Jaxpr out of them.
+This section elaborates how Jaspr objects are embedded into the Jax infrastructure. If you just want to accelerate your code you can (probably) skip this. It is recommended to first get a solid understanding of `Jax primitives <https://jax.readthedocs.io/en/latest/notebooks/How_JAX_primitives_work.html>`_ and how to create a Jaxpr out of them.
 
 jasp is designed to model dynamic quantum computations with a minimal set of primitives.
 
@@ -87,7 +87,7 @@ To instruct a quantum computation, the :ref:`Operation` class is elevated to a J
         h:QuantumCircuit i:bool[] = measure g f
     in (h, d, i) }
 
-The line starting with ``g:`` describes how an :ref:`Operation` can be plugged into a jaspr: The first argument is always a ``QuantumCircuit``, and the following arguments are ``Qubit`` objects. With this kind of structure, jasp is very close to how quantum computations are modelled mathematically: As a unitary that is applied to a tensor on certain indices. Indeed you can view the defined object as precisely that (if it helps you programming/understanding): ``QuantumCircuit`` objects represent tensors, ``Qubit`` object represent integer indices and ``QubitArray`` object represent arrays of indices.
+The line starting with ``g:`` describes how an :ref:`Operation` can be plugged into a Jaspr: The first argument is always a ``QuantumCircuit``, and the following arguments are ``Qubit`` objects. With this kind of structure, jasp is very close to how quantum computations are modelled mathematically: As a unitary that is applied to a tensor on certain indices. Indeed you can view the defined object as precisely that (if it helps you programming/understanding): ``QuantumCircuit`` objects represent tensors, ``Qubit`` object represent integer indices and ``QubitArray`` object represent arrays of indices.
 
 The ``measure`` primitive takes a special role here: Compared to the other quantum operations, it not only returns a new ``QuantumCircuit`` but also a boolean value (the measurement outcome). It is also possible to call the ``measure`` on a ``QubitArray``:
 
@@ -147,7 +147,7 @@ QuantumEnvironments
         ] c d
       in (e, d) }
 
-You can see how the body of the :ref:`InversionEnvironment` is _collected_ into another jaspr. This reflects the fact that at their core, :ref:`QuantumEnvironments <QuantumEnvironment>` describe `higher-order quantum functions <https://en.wikipedia.org/wiki/Higher-order_function>`_ (ie. functions that operate on functions). In order to apply the transformations induced by the QuantumEnvironment, we can call ``jaspr.flatten_environments``:
+You can see how the body of the :ref:`InversionEnvironment` is _collected_ into another Jaspr. This reflects the fact that at their core, :ref:`QuantumEnvironments <QuantumEnvironment>` describe `higher-order quantum functions <https://en.wikipedia.org/wiki/Higher-order_function>`_ (ie. functions that operate on functions). In order to apply the transformations induced by the QuantumEnvironment, we can call ``Jaspr.flatten_environments``:
 
 >>> print(jaspr.flatten_environments)
 { lambda ; a:QuantumCircuit b:i32[]. let

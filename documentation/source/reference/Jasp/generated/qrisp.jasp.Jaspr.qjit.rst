@@ -1,6 +1,6 @@
-﻿qrisp.jasp.jaspr.qjit
+﻿qrisp.jasp.Jaspr.qjit
 =====================
 
 .. currentmodule:: qrisp.jasp
 
-.. automethod:: jaspr.qjit
+.. automethod:: Jaspr.qjit
