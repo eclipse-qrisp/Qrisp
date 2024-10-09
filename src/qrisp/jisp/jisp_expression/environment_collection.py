@@ -84,7 +84,7 @@ def collect_environments(jaxpr):
             invars.remove(enter_eq.outvars[0])
             
             # Same for the outvars
-            outvars = find_outvars(environment_body_eqn_list, eqn_list)
+            outvars = find_outvars(environment_body_eqn_list, eqn_list, jaxpr.outvars)
             
             # Create the Jaxpr
             environment_body_jispr = Jispr(constvars = [],
@@ -153,7 +153,7 @@ def find_invars(eqn_list):
     
     return list(set(invars))
 
-def find_outvars(body_eqn_list, script_remainder_eqn_list):
+def find_outvars(body_eqn_list, script_remainder_eqn_list, return_vars):
     """
     This function takes the equations of a function and some "follow-up" 
     instructions and infers which variables need to be returned by the function.
@@ -186,5 +186,5 @@ def find_outvars(body_eqn_list, script_remainder_eqn_list):
     required_remainder_vars = find_invars(script_remainder_eqn_list)
     
     # The result is the intersection between both sets of variables
-    return list(set(outvars).intersection(required_remainder_vars))
+    return list(set(outvars).intersection(required_remainder_vars + return_vars))
                 

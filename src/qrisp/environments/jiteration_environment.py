@@ -102,13 +102,16 @@ def iteration_env_evaluator(eqn, context_dic):
     iter_1_jispr = iteration_1_eqn.params["jispr"]
     iter_2_jispr = iteration_2_eqn.params["jispr"]
     
+    if len(iter_2_jispr.outvars) > 1:
+        raise Exception("Found jrange with external carry value")
+    
     
     # Move the loop index to the last argument
     
     # The loop index is increased in the last equation of the jispr.
     # We can therefore identify the variable by finding the fist argument
     # of the incrementation equation.
-    increment_eq = iter_1_jispr.eqns[-1]
+    increment_eq = iter_1_jispr.eqns[0]
     arg_pos = iter_1_jispr.invars.index(increment_eq.invars[0])
     
     # Move the index to the last position in both the jispr and the equation
@@ -199,14 +202,19 @@ def iteration_env_evaluator(eqn, context_dic):
     # Note that the treshold is given as the last argument
     init_val = [context_dic[x] for x in iteration_1_eqn.invars]
     
-    # We insert the looping index (starts at 0)
-    init_val.insert(-1, 0)
+    # We insert the looping index (starts at -1)
+    init_val.insert(-1, -1)
     
     # And evaluate the loop primitive.
     res = while_loop(cond_fun, body_fun, init_val = tuple(init_val))
     
     # Finally, we insert the result values that receive and update 
     # into the context dic
+    
+    context_dic[iteration_2_eqn.outvars[0]] = res[0]
+    return
+    # print(iteration_2_eqn)
+    # print(update_rules)
     for i in range(len(update_rules)-1):
         if update_rules[i] is not None:
             iteration_2_eqn.outvars[update_rules[i]]

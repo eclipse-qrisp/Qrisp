@@ -451,7 +451,7 @@ def convert_to_custom_control(instruction, control_qubit, invert_control = False
     return res
                 
 
-def control(*args):
+def control(*args, **kwargs):
     args = list(args)
     if not isinstance(args[0], list):
         args[0] = [args[0]]
@@ -459,10 +459,10 @@ def control(*args):
     from qrisp.jisp import AbstractQubit
         
     if all(isinstance(obj, (Qubit, QuantumBool)) for obj in args[0]):
-        return ControlEnvironment(*args)
+        return ControlEnvironment(*args, **kwargs)
     elif all(isinstance(obj, AbstractQubit) for obj in [x.aval for x in args[0]]):
-        return ControlEnvironment(*args)
+        return ControlEnvironment(*args, **kwargs)
     elif all(isinstance(obj, ShapedArray) for obj in [x.aval for x in args[0]]):
-        return ClControlEnvironment(*args)
+        return ClControlEnvironment(*args, **kwargs)
     else:
         raise Exception(f"Don't know how to control from input type {args[0]}")
