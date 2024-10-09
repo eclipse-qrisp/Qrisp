@@ -17,9 +17,63 @@
 """
 
 def IQMBackend(api_token, device_instance):
+    """
+    This function instantiates an IQMBackend based on VirtualBackend 
+    using Qiskit and Qiskit-on-IQM.
+
+
+    Parameters
+    ----------
+    api_token : str
+        An API token retrieved from the IQM Resonance website.
+    device_instance : str
+        The device instance of the IQM backend such as "garnet". 
+        For an up-to-date list, see the IQM Resonance website.
+
+    Examples
+    --------
+
+    We evaluate a QuantumFloat multiplication on the 20-qubit IQM Garnet.
+
+    >>> from qrisp.interface import IQMBackend
+    >>> qrisp_garnet = IQMBackend(api_token = "YOUR_IQM_RESONANCE_TOKEN", device_instance = "garnet")
+    >>> from qrisp import QuantumFloat
+    >>> a = QuantumFloat(2)
+    >>> a[:] = 2
+    >>> b = a*a
+    >>> b.get_measurement(backend = qrisp_garnet, shots=1000)
+    {4: 0.548,
+     5: 0.082,
+     0: 0.063,
+     6: 0.042,
+     8: 0.031,
+     2: 0.029,
+     12: 0.014,
+     10: 0.03,
+     1: 0.027,
+     7: 0.025,
+     15: 0.023,
+     9: 0.021,
+     14: 0.021,
+     13: 0.018,
+     11: 0.014,
+     3: 0.012}
+
+    """
+
+    if not isinstance(api_token, str):
+        raise TypeError("api_token must be a string. You can create an API token on the IQM Resonance website.")
     
-    from iqm.qiskit_iqm import IQMProvider, transpile_to_IQM
+    if not isinstance(device_instance, str):
+        raise TypeError("Please provide a device_instance as a string. You can retrieve a list of available devices id on the IQM Resonance website.")
+
+    try:
+        from iqm.qiskit_iqm import IQMProvider, transpile_to_IQM
+    except ImportError:
+        raise ImportError("Please install qiskit-iqm to use the IQMBackend. You can do this by running `pip install qrisp[iqm]`.")
+    
     import qiskit
+    
     def run_func_iqm(qasm_str, shots, token = ""):
         
         server_url = "https://cocos.resonance.meetiqm.com/" + device_instance
