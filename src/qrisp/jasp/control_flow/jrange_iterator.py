@@ -21,7 +21,7 @@ class JRangeIterator:
     
     def __init__(self, stop):
         
-        self.stop = jnp.asarray(stop, dtype = "int32")
+        self.stop = stop
         
     def __iter__(self):
         self.iteration = 0

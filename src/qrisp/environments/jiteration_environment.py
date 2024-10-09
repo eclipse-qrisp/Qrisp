@@ -18,6 +18,7 @@
 
 from jax.lax import while_loop
 from jax.core import Literal
+import jax.numpy as jnp
 
 from qrisp.environments import QuantumEnvironment
 
@@ -99,8 +100,8 @@ def iteration_env_evaluator(eqn, context_dic):
     # Set the aliases for the equations and the jasprs
     iteration_1_eqn = eqn.primitive.iteration_1_eqn
     iteration_2_eqn = eqn
-    iter_1_jaspr = iteration_1_eqn.params["jaspr"]
-    iter_2_jaspr = iteration_2_eqn.params["jaspr"]
+    iter_1_jaspr = iteration_1_eqn.params["jaspr"].flatten_environments()
+    iter_2_jaspr = iteration_2_eqn.params["jaspr"].flatten_environments()
     
     if len(iter_2_jaspr.outvars) > 1:
         raise Exception("Found jrange with external carry value")
@@ -117,21 +118,19 @@ def iteration_env_evaluator(eqn, context_dic):
     # Move the index to the last position in both the jaspr and the equation
     iter_1_jaspr.invars.append(iter_1_jaspr.invars.pop(arg_pos))
     iteration_1_eqn.invars.append(iteration_1_eqn.invars.pop(arg_pos))
+
+    increment_eq = iter_2_jaspr.eqns[0]
+    arg_pos = iter_2_jaspr.invars.index(increment_eq.invars[0])
+    
+    # Move the index to the last position in both the jaspr and the equation
+    iter_2_jaspr.invars.append(iter_2_jaspr.invars.pop(arg_pos))
+    iteration_2_eqn.invars.append(iteration_2_eqn.invars.pop(arg_pos))
     
     # The way the environment jaspr is collected allows for permuted arguments,
     # ie. the first argument of the first iteration could be the the last argument
     # of the second iteration. We outsource this task to this function.
-    permutation = find_signature_permutation(iter_1_jaspr, iter_2_jaspr)
+    verify_semantic_equivalence(iter_1_jaspr, iter_2_jaspr)
     
-    # Find the permuted variables and update the list for the jaspr
-    permuted_invars = [iter_2_jaspr.invars[i] for i in permutation]
-    iter_2_jaspr.invars.clear()
-    iter_2_jaspr.invars.extend(permuted_invars)
-    
-    # Find the permuted variables and update the list for the equation
-    permuted_invars = [iteration_2_eqn.invars[i] for i in permutation]
-    iteration_2_eqn.invars.clear()
-    iteration_2_eqn.invars.extend(permuted_invars)
     
     # Now, we figure out which of the return values need to be updated after 
     # each iteration. The update needs to happen if the input values of 
@@ -171,7 +170,7 @@ def iteration_env_evaluator(eqn, context_dic):
     def body_fun(val):
         
         # We evaluate the body (without the loop cancelation treshold).
-        res = iter_1_jaspr.flatten_environments().eval(*val[:-1])
+        res = iter_1_jaspr.eval(*val[:-1])
         
         # Convert the result into a tuple if it isn't one already
         if not isinstance(res, tuple):
@@ -224,35 +223,46 @@ def iteration_env_evaluator(eqn, context_dic):
 # This function takes two jaxpr objects that perform the same jax semantics
 # but have their input signature somehow permuted.
 # The function returns the permutation of the arguments
-def find_signature_permutation(jaxpr_0, jaxpr_1):
+def verify_semantic_equivalence(jaxpr_0, jaxpr_1):
     
     # This dictionary will contain the translation between the variables
     translation_dic = {}
     
     # Iterate through the equations
-    for i in range(len(jaxpr_0.eqns)):
-        eqn_0 = jaxpr_0.eqns[i]
-        eqn_1 = jaxpr_1.eqns[i]
+    
+    eqn_list_0 = list(jaxpr_0.eqns)
+    eqn_list_1 = list(jaxpr_1.eqns)
+    
+    while eqn_list_0:
+        
+        eqn_0 = eqn_list_0.pop(0)
+        eqn_1 = eqn_list_1.pop(0)
         
         # If the equations don't perform the same primitive, the iterations have
         # differing semantics
+        
         if eqn_0.primitive.name != eqn_1.primitive.name:
+            if eqn_0.primitive.name == "convert_element_type" and eqn_0.invars[0] in jaxpr_0.invars:
+                eqn_list_1.insert(0, eqn_1)
+                continue
             raise Exception("Jax semantics changed during jrange iteration")
+
+        invars_0 = list(eqn_0.invars)
+        invars_1 = list(eqn_1.invars)
         
         # Check the in-variables of both equations
-        for j in range(len(eqn_0.invars)):
-            var = eqn_0.invars[j]
-            if isinstance(var, Literal):
-                if not isinstance(eqn_1.invars[j], Literal) or eqn_1.invars[j].val != var.val:
+        for j in range(len(invars_1)):
+            var_0 = invars_0[j]
+            var_1 = invars_1[j]
+            
+            if isinstance(var_0, Literal):
+                if not isinstance(var_1, Literal) or var_0.val != var_1.val:
                     raise Exception("Jax semantics changed during jrange iteration")
-            elif var in translation_dic:
-                if translation_dic[var] != eqn_1.invars[j]:
+            elif var_0 in translation_dic:
+                if translation_dic[var_0] != var_1:
                     raise Exception("Jax semantics changed during jrange iteration")
             else:
-                translation_dic[var] = eqn_1.invars[j]
-    
-    # Compute the permutation of the invars
-    return [jaxpr_1.invars.index(translation_dic[var]) for var in jaxpr_0.invars]
+                translation_dic[var_0] = var_1
 
 # Create the environment class, which performs the above logic for environment flattening.
 class JIterationEnvironment(QuantumEnvironment):

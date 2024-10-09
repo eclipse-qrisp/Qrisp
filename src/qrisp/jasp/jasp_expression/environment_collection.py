@@ -151,7 +151,7 @@ def find_invars(eqn_list):
         for var in eqn.outvars:
             defined_vars[var] = None
     
-    return list(set(invars))
+    return list(dict.fromkeys(invars))
 
 def find_outvars(body_eqn_list, script_remainder_eqn_list, return_vars):
     """

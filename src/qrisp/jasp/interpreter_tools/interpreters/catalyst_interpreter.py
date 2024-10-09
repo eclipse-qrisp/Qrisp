@@ -19,11 +19,10 @@
 from jax import make_jaxpr
 from jax.lax import fori_loop
 
-from catalyst.jax_primitives import AbstractQreg, qinst_p, qmeasure_p, qextract_p, qinsert_p, while_p
+from catalyst.jax_primitives import AbstractQreg, qinst_p, qmeasure_p, qextract_p, qinsert_p, while_p, cond_p
 
-from qrisp.circuit import Operation
-from qrisp.jasp import (QuantumPrimitive, AbstractQuantumCircuit, AbstractQubitArray, 
-AbstractQubit, eval_jaxpr, jaspr, extract_invalues, insert_outvalues)
+from qrisp.jasp import (QuantumPrimitive, OperationPrimitive, AbstractQuantumCircuit, AbstractQubitArray, 
+AbstractQubit, eval_jaxpr, Jaspr, extract_invalues, insert_outvalues)
 
 
 # Name translator from Qrisp gate naming to Catalyst gate naming
@@ -82,23 +81,25 @@ def catalyst_eqn_evaluator(eqn, context_dic):
         invars = eqn.invars
         outvars = eqn.outvars
         
-        if eqn.primitive.name == "create_qubits":
+        if eqn.primitive.name == "jasp.create_qubits":
             process_create_qubits(invars, outvars, context_dic)
-        elif eqn.primitive.name == "get_qubit":
+        elif eqn.primitive.name == "jasp.get_qubit":
             process_get_qubit(invars, outvars, context_dic)
-        elif eqn.primitive.name == "measure":
+        elif eqn.primitive.name == "jasp.measure":
             process_measurement(invars, outvars, context_dic)
-        elif eqn.primitive.name == "get_size":
+        elif eqn.primitive.name == "jasp.get_size":
             process_get_size(invars, outvars, context_dic)
-        elif eqn.primitive.name == "delete_qubits":
+        elif eqn.primitive.name == "jasp.delete_qubits":
             pass
-        elif isinstance(eqn.primitive, Operation):
+        elif isinstance(eqn.primitive, OperationPrimitive):
             process_op(eqn.primitive, invars, outvars, context_dic)
         else:
             raise Exception(f"Don't know how to process QuantumPrimitive {eqn.primitive}")
     else:
         if eqn.primitive.name == "while":
             return process_while(eqn, context_dic)
+        if eqn.primitive.name == "cond":
+            return process_cond(eqn, context_dic)
         else:
             return True
     
@@ -132,7 +133,7 @@ def process_get_size(invars, outvars, context_dic):
     context_dic[outvars[0]] = context_dic[invars[0]][1]
     
     
-def process_op(op, invars, outvars, context_dic):
+def process_op(op_prim, invars, outvars, context_dic):
     
     # Alias the AbstractQreg
     catalyst_register_tracer = context_dic[invars[0]][0]
@@ -141,6 +142,7 @@ def process_op(op, invars, outvars, context_dic):
     # that are required for the Operation
     qb_vars = []
     
+    op = op_prim.op
     # For that we find all the integers (ie. positions) of the participating
     # qubits in the AbstractQreg
     qb_pos = []
@@ -310,6 +312,7 @@ def process_while(eqn, context_dic):
                                 nimplicit = 0,
                                 preserve_dimensions = True,)
         
+        
         outvalues = list(outvalues)
         unflattened_outvalues = []
         
@@ -328,3 +331,31 @@ def process_while(eqn, context_dic):
         
     else:
         return True
+
+def process_cond(eqn, context_dic):
+    
+    false_jaxpr = eqn.params["branches"][0]
+    true_jaxpr = eqn.params["branches"][1]
+    
+    from qrisp.jasp.catalyst_interface import jaspr_to_catalyst_jaxpr
+    
+    if isinstance(false_jaxpr.jaxpr.invars[0].aval, AbstractQuantumCircuit):
+        false_jaxpr = jaspr_to_catalyst_jaxpr(false_jaxpr.jaxpr)
+    if isinstance(true_jaxpr.jaxpr.invars[0].aval, AbstractQuantumCircuit):
+        true_jaxpr = jaspr_to_catalyst_jaxpr(true_jaxpr.jaxpr)
+
+    invalues = extract_invalues(eqn, context_dic)
+    
+    unflattening_signature = []
+    flattened_invalues = []
+    for value in invalues:
+        if isinstance(value, tuple):
+            unflattening_signature.append(len(value))
+            flattened_invalues.extend(value)
+        else:
+            unflattening_signature.append(None)
+            flattened_invalues.append(value)
+
+    outvalues = cond_p.bind(*flattened_invalues, branch_jaxprs = (false_jaxpr, true_jaxpr), nimplicit_outputs = 0)
+    
+    context_dic[eqn.outvars[0]] = tuple(outvalues)

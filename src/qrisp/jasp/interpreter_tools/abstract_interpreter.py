@@ -116,7 +116,6 @@ def eval_jaxpr_with_context_dic(jaxpr, context_dic, eqn_evaluator = exec_eqn):
                 
                 continue
             
-            
             exec_eqn(eqn, context_dic)
         
 def extract_invalues(eqn, context_dic):
