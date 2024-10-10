@@ -16,9 +16,10 @@
 ********************************************************************************/
 """
 
+
 def IQMBackend(api_token, device_instance):
     """
-    This function instantiates an IQMBackend based on VirtualBackend 
+    This function instantiates an IQMBackend based on VirtualBackend
     using Qiskit and Qiskit-on-IQM.
 
 
@@ -27,7 +28,7 @@ def IQMBackend(api_token, device_instance):
     api_token : str
         An API token retrieved from the IQM Resonance website.
     device_instance : str
-        The device instance of the IQM backend such as "garnet". 
+        The device instance of the IQM backend such as "garnet".
         For an up-to-date list, see the IQM Resonance website.
 
     Examples
@@ -62,35 +63,44 @@ def IQMBackend(api_token, device_instance):
     """
 
     if not isinstance(api_token, str):
-        raise TypeError("api_token must be a string. You can create an API token on the IQM Resonance website.")
-    
+        raise TypeError(
+            "api_token must be a string. You can create an API token on the IQM Resonance website."
+        )
+
     if not isinstance(device_instance, str):
-        raise TypeError("Please provide a device_instance as a string. You can retrieve a list of available devices id on the IQM Resonance website.")
+        raise TypeError(
+            "Please provide a device_instance as a string. You can retrieve a list of available devices id on the IQM Resonance website."
+        )
 
     try:
         from iqm.qiskit_iqm import IQMProvider, transpile_to_IQM
     except ImportError:
-        raise ImportError("Please install qiskit-iqm to use the IQMBackend. You can do this by running `pip install qrisp[iqm]`.")
-    
+        raise ImportError(
+            "Please install qiskit-iqm to use the IQMBackend. You can do this by running `pip install qrisp[iqm]`."
+        )
+
     import qiskit
-    
-    def run_func_iqm(qasm_str, shots, token = ""):
-        
+
+    def run_func_iqm(qasm_str, shots=None, token=""):
+        if shots is None:
+            shots = 1000
         server_url = "https://cocos.resonance.meetiqm.com/" + device_instance
-        
-        backend = IQMProvider(server_url, token = api_token).get_backend()
+
+        backend = IQMProvider(server_url, token=api_token).get_backend()
         qc = qiskit.QuantumCircuit.from_qasm_str(qasm_str)
         qc_transpiled = transpile_to_IQM(qc, backend)
-        
+
         job = backend.run(qc_transpiled, shots=shots)
         import re
+
         counts = job.result().get_counts()
         new_counts = {}
         for key in counts.keys():
             counts_string = re.sub(r"\W", "", key)
             new_counts[counts_string] = counts[key]
-            
+
         return new_counts
-    
+
     from qrisp.interface import VirtualBackend
+
     return VirtualBackend(run_func_iqm)

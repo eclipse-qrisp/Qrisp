@@ -44,7 +44,9 @@ print(qc)
 # %%
 # Create VirtualBackend
 
-def sample_run_func(qc, shots, token):
+def sample_run_func(qc, shots=None, token=""):
+    if shots is None:
+        shots = 1000
     print("Executing Circuit")
     return {"0": shots}
 

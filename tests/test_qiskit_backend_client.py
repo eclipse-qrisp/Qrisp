@@ -72,7 +72,9 @@ def test_qiskit_backend_client():
     qc.measure(1, 0)
 
 
-    def sample_run_func(qc, shots, token = ""):
+    def sample_run_func(qc, shots = None, token = ""):
+        if shots is None:
+            shots = 10000
         return {"0": shots}
 
     test_virtual_backend = VirtualBackend(sample_run_func)
