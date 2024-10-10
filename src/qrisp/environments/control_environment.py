@@ -453,10 +453,14 @@ def convert_to_custom_control(instruction, control_qubit, invert_control = False
 
 def control(*args, **kwargs):
     args = list(args)
-    from qrisp import Qubit, QuantumBool
+    from qrisp import Qubit, QuantumBool, QuantumVariable
     from qrisp.jasp import AbstractQubit
-    if not isinstance(args[0], (list, QuantumBool)):
+    
+    if isinstance(args[0], QuantumVariable):
+        args[0] = list(args[0])
+    if not isinstance(args[0], list):
         args[0] = [args[0]]
+    
     if all(isinstance(obj, (Qubit, QuantumBool)) for obj in args[0]):
         return ControlEnvironment(*args, **kwargs)
     elif all(isinstance(obj, AbstractQubit) for obj in [x.aval for x in args[0]]):
