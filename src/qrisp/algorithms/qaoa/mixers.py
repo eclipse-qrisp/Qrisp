@@ -267,7 +267,10 @@ def controlled_RX_mixer_gen(predicate):
 
         def predicate(qv,i):
             qbl = QuantumBool()
-            mcx([qv[j] for j in neighbors_dict[i]],qbl,ctrl_state='0'*len(neighbors_dict[i]))
+            if len(neighbors_dict[i])==0:
+                x(qbl)
+            else:
+                mcx([qv[j] for j in neighbors_dict[i]],qbl,ctrl_state='0'*len(neighbors_dict[i]))
             return qbl
 
         qv = QuantumVariable(3)
