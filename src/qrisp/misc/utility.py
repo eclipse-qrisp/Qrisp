@@ -765,7 +765,8 @@ def multi_measurement(qv_list, shots=None, backend=None):
         # Create array
         array_state = tuple(counts_values)
         try:
-            new_counts[array_state] = counts[list(counts.keys())[i]] / shots
+            no_of_shots_executed = sum(counts.values())
+            new_counts[array_state] = counts[list(counts.keys())[i]] / no_of_shots_executed
         except TypeError:
             raise Exception(
                 "Tried to create measurement outcome dic for QuantumVariable "
