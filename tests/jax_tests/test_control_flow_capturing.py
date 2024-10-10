@@ -138,6 +138,51 @@ def test_cl_control_env():
     for i in range(8):
         assert jaspr(i) == i + int(i==4)
     
+    ###########
+    
+    # Test invert feature
+    
+    @qache
+    def int_encoder(qv, av, encoding_int):
+        for i in jrange(qv.size):
+            with control(~(0 != (encoding_int & (1<<i))), invert = True):
+                x(qv[i])
+
+    def test_f(a, b):
+        
+        qv = QuantumFloat(a)
+        av = QuantumFloat(a)
+        
+        int_encoder(qv, av, b+1)
+        
+        return measure(qv)
+
+
+    jaspr = make_jaspr(test_f)(1,1)
+    assert jaspr(3, 2) == 3
+    assert jaspr(3, 3) == 4
+    assert jaspr(3, 5) == 6
+    
+    ######
+    # Test ctrl_state feature
+    
+    def test_f():
+        
+        qv_a = QuantumFloat(1)
+        qv_b = QuantumFloat(1)
+        qv_c = QuantumFloat(1)
+        
+        qv_a[:] = 2
+        a = measure(qv_a)
+        b = measure(qv_b)
+        
+        with control([a == 2, b == 1, b == 0], ctrl_state = "101"):
+            x(qv_c[0])
+            
+        return measure(qv_c)
+
+    jaspr = make_jaspr(test_f)()
+    assert jaspr() == 1
     
     ###########
     

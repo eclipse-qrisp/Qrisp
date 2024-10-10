@@ -154,8 +154,16 @@ class ClControlEnvironment(QuantumEnvironment):
         self.ctrl_bls = ctrl_bls
         
         QuantumEnvironment.__init__(self)
+
+        self.ctrl_state = ctrl_state
+        if isinstance(self.ctrl_state, str):
+            if ctrl_state == len(ctrl_bls)*"1":
+                self.ctrl_state = -1
+            else:
+                self.ctrl_state = int(self.ctrl_state, 2)
         
         self.env_args = ctrl_bls
+        self.invert = invert
     
     def jcompile(self, eqn, context_dic):
         
@@ -169,17 +177,35 @@ class ClControlEnvironment(QuantumEnvironment):
         if len(body_jaspr.outvars) > 1:
             raise Exception("Found ClControlEnvironment with carry value")
         
+        
         if len(ctrl_vars) > 1:
-            cond_bl = ctrl_vars[0]
+            tmp = ctrl_vars[0]
+            cond_bl = tmp            
+            if self.ctrl_state != -1 and ((self.ctrl_state & 1) != 0):
+                cond_bl = ~ tmp
+            
             for i in range(1, len(ctrl_vars)):
-                cond_bl = cond_bl & ctrl_vars[i]
+                tmp = cond_bl & ctrl_vars[i]
+                cond_bl = tmp
+                if self.ctrl_state != -1 and ((self.ctrl_state & 1<<i) != 0):
+                    cond_bl = ~ tmp
+                    
+                    
         else:
             cond_bl = ctrl_vars[0]
         
-        def false_fun(*args):
+        def identity_fun(*args):
             return args[0]
         
         flattened_body_jaspr = body_jaspr.flatten_environments()
-        res_abs_qc = cond(cond_bl, flattened_body_jaspr.eval, false_fun, *env_vars)
+        
+        if not self.invert:
+            true_fun = flattened_body_jaspr.eval
+            false_fun = identity_fun
+        else:
+            false_fun = flattened_body_jaspr.eval
+            true_fun = identity_fun
+            
+        res_abs_qc = cond(cond_bl, true_fun, false_fun, *env_vars)
         
         insert_outvalues(eqn, context_dic, res_abs_qc)
