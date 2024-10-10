@@ -34,14 +34,20 @@ class JRangeIterator:
             from qrisp.environments import JIterationEnvironment
             self.iter_env = JIterationEnvironment()
             self.iter_env.__enter__()
-            self.stop += 1
             return self.stop
         elif self.iteration == 2:
+            self.stop += 1
             self.iter_env.__exit__(None, None, None)
             self.iter_env.__enter__()
-            self.stop += 1
+            
+            # We add the += 0 here such that a new tracer is produced and
+            # send through the code of the second iteration.
+            # This is important to catch the error that should arise when
+            # the user wants to use the loop index as a carry value.
+            self.stop += 0
             return self.stop
         elif self.iteration == 3:
+            self.stop += 1
             self.iter_env.__exit__(None, None, None)
             raise StopIteration
 

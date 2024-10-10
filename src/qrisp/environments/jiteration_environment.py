@@ -112,13 +112,15 @@ def iteration_env_evaluator(eqn, context_dic):
     # The loop index is increased in the last equation of the jaspr.
     # We can therefore identify the variable by finding the fist argument
     # of the incrementation equation.
-    increment_eq = iter_1_jaspr.eqns[0]
+    increment_eq = iter_1_jaspr.eqns[-1]
     arg_pos = iter_1_jaspr.invars.index(increment_eq.invars[0])
     
     # Move the index to the last position in both the jaspr and the equation
     iter_1_jaspr.invars.append(iter_1_jaspr.invars.pop(arg_pos))
     iteration_1_eqn.invars.append(iteration_1_eqn.invars.pop(arg_pos))
 
+    # In the second iteration there is a +=0 term as the first equation
+    # (see jrange.py for more details)
     increment_eq = iter_2_jaspr.eqns[0]
     arg_pos = iter_2_jaspr.invars.index(increment_eq.invars[0])
     
@@ -202,7 +204,7 @@ def iteration_env_evaluator(eqn, context_dic):
     init_val = [context_dic[x] for x in iteration_1_eqn.invars]
     
     # We insert the looping index (starts at -1)
-    init_val.insert(-1, -1)
+    init_val.insert(-1, 0)
     
     # And evaluate the loop primitive.
     res = while_loop(cond_fun, body_fun, init_val = tuple(init_val))
@@ -231,7 +233,10 @@ def verify_semantic_equivalence(jaxpr_0, jaxpr_1):
     # Iterate through the equations
     
     eqn_list_0 = list(jaxpr_0.eqns)
-    eqn_list_1 = list(jaxpr_1.eqns)
+    
+    # Filter out the += 0 in the second iteration (see jrange.py for more details
+    # about this)
+    eqn_list_1 = list(jaxpr_1.eqns)[1:]
     
     while eqn_list_0:
         
