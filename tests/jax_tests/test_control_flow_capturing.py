@@ -18,7 +18,7 @@
 
 from qrisp import *
 
-def test_control_flow_capturing():
+def test_jrange():
     
     def test_f(k):
         
@@ -34,27 +34,7 @@ def test_control_flow_capturing():
     
     for i in range(1, 10):
         assert jaspr(i) in [0, 2**i-1]
-
-
-    ############
-    
-    def test_f(i):
-
-        a = QuantumFloat(3)
-        a[:] = i
-        b = measure(a)
-    
-        with control(b == 4):
-            x(a[0])
-    
-        return measure(a)
-
-    jaspr = make_jaspr(test_f)(1)
-    
-    for i in range(8):
-        assert jaspr(i) == i + int(i==4)
-    
-    	
+        
     ################
     @qache
     def int_encoder(qv, encoding_int):
@@ -75,3 +55,139 @@ def test_control_flow_capturing():
     assert jaspr(3, 2) == 3
     assert jaspr(3, 3) == 4
     assert jaspr(3, 5) == 6
+    
+    #################
+    
+    # Test error messages
+    
+    @qache
+    def int_encoder(qv, encoding_int):
+    
+        flag = True
+        for i in jrange(qv.size):
+            if flag:
+                with control(encoding_int & (1<<i)):
+                    x(qv[i])
+            else:
+                x(qv[0])
+            flag = False
+    
+    def test_f(a, b):
+    
+        qv = QuantumFloat(a)
+    
+        int_encoder(qv, b+1)
+    
+        return measure(qv)
+    
+    jaspr = make_jaspr(test_f)(1,1)
+    
+    try:
+        jaspr(4,5)
+        exception_raised = False
+    except:
+        exception_raised = True
+        
+    assert exception_raised
+    
+    ###############
+    
+    @qache
+    def int_encoder(qv, encoding_int):
+    
+        for i in jrange(qv.size):
+            with control(encoding_int & (1<<i)):
+                x(qv[i])
+        return i
+    
+    def test_f(a, b):
+    
+        qv = QuantumFloat(a)
+    
+        int_encoder(qv, b+1)
+    
+        return measure(qv)
+    
+    jaspr = make_jaspr(test_f)(1,1)
+    
+    try:
+        jaspr(4,5)
+        exception_raised = False
+    except:
+        exception_raised = True
+        
+    assert exception_raised
+    
+
+
+def test_cl_control_env():
+    
+    def test_f(i):
+
+        a = QuantumFloat(3)
+        a[:] = i
+        b = measure(a)
+    
+        with control(b == 4):
+            x(a[0])
+    
+        return measure(a)
+
+    jaspr = make_jaspr(test_f)(1)
+    
+    for i in range(8):
+        assert jaspr(i) == i + int(i==4)
+    
+    
+    ###########
+    
+    def test_f(i):
+
+        a = QuantumFloat(3)
+        a[:] = i
+        b = measure(a)
+    
+        with control(b == 4):
+            c = QuantumFloat(2)
+    
+        return measure(c)
+
+    jaspr = make_jaspr(test_f)(1)
+    
+    try:
+        jaspr(4)
+        exception_raised = False
+    except:
+        exception_raised = True
+        
+    assert exception_raised
+    
+    ################
+    
+    
+    def test_f(i):
+    
+        a = QuantumFloat(3)
+        a[:] = i
+        b = measure(a)
+    
+        with control(b == 4):
+            c = QuantumFloat(2)
+            h(c[0])
+            d = measure(c)
+    
+            # If c is measured to 1
+            # flip a and uncompute c
+            with control(d == 1):
+                x(a[0])
+                x(c[0])
+    
+            c.delete()
+    
+        return measure(a)
+    
+    jaspr = make_jaspr(test_f)(1)
+    
+    for i in range(10): assert jaspr(4) in [4,5]
+    
+    
