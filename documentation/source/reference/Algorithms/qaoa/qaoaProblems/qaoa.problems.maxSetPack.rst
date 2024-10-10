@@ -11,8 +11,8 @@ QAOA MaxSetPacking
 Problem description
 -------------------
 
-Given a universe :math:`[n]` and :math:`m` subsets :math:`S = (S_j)^m_{j=1}` , :math:`S_j \subset [n]` find the maximum
-cardinality subcollection :math:`S' \subset S` of pairwise disjoint subsets.
+Given a universe :math:`[n]` and :math:`m` subsets :math:`\mathcal S = (S_j)^m_{j=1}` , :math:`S_j \subset [n]`, find the maximum
+cardinality subcollection :math:`\mathcal S' \subset \mathcal S` of pairwise disjoint subsets.
 
 
 Cost operator

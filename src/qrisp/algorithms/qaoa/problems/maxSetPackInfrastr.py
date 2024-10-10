@@ -16,21 +16,19 @@
 ********************************************************************************/
 """
 
-from qrisp import QuantumVariable,  mcx, rz, x, rx 
+from qrisp import QuantumVariable, mcx, rz, x, rx, auto_uncompute
 
 from qrisp import control
 from collections.abc import Iterable
-# this is pretty much maxIndependent set, but with a twist
-# instead of swapping out singular qubits, you swap out whole predefined sets. 
-# this means you apply the mixers to all elements in the sets
+# This is pretty much maxIndependent set, but with a twist
+# instead of swapping out singular qubits, we swap out whole predefined sets. 
+# This means we apply the mixers to all elements in the sets.
 
 # we have a graph of 9 vertices
 
 #######################
 ## reformulate using @auto_uncompute !!!
 ## https://www.qrisp.eu/reference/Core/Uncomputation.html
-
-
 
 
 def maxSetPackCostOp(problem):
@@ -92,12 +90,12 @@ def maxSetPackCostOp(problem):
             if not isinstance(item, int):
                 raise Exception("Wrong structure of problem - each literal has to an int!")
 
-    # get neigbhourhood relations from helper function
+    # get neigbhorhood relations from helper function
     nbh_rel = get_neighbourhood_relations(problem)
 
-
+    @auto_uncompute
     def theCostOpEmbedded(qv, gamma):
-        #check all sets
+        # check all sets
         for set_index in range(len(sets)):
             # get set elements and create an ancilla for every set element
             nodes = sets[set_index]
@@ -112,16 +110,13 @@ def maxSetPackCostOp(problem):
                 nbh_sets_list = [ item for item in nbh_rel[nodes[ancilla_index]] if item != set_index]
                 # perform mcx on ancilla, control given by the relevant set
                 mcx([qv[nbh_sets_index] for nbh_sets_index in nbh_sets_list], ancillas[ancilla_index], ctrl_state= "0" * len(nbh_sets_list))
-            # perform mcrx gate on the qubit describing the considered set
+            # perform mcx gate on the qubit describing the considered set
             with control(ancillas):
                 rx(gamma, qv[set_index])  
 
-            ancillas.uncompute()
+            #ancillas.uncompute()
 
     return theCostOpEmbedded
-
-
-
 
 
 def get_neighbourhood_relations(problem):
@@ -152,57 +147,52 @@ def get_neighbourhood_relations(problem):
     return n_dict
 
 
-
 def maxSetPackclCostfct(problem):
-
     """
     create the classical cost function for the problem instance
 
     Parameters
     ----------
-    problem : List 
+    problem : list
         The problem definition, as described above
 
     Returns
     -------
-    Costfunction : function
-        the classical function for the problem instance, which takes a dictionary of measurement results as input
+    cl_cost_function : function
+        The classical function for the problem instance, which takes a dictionary of measurement results as input.
+
     """
 
     universe = list(range(problem[0]))
     sets = problem[1]
 
-    def setupaClCostfct(res_dic):
-        energy = 0
-        total_counts = 0
-        for state in list(res_dic.keys()):
-            # assume solution is correct
+    def cl_cost_function(res_dic):
+        tot_energy = 0
+        for state, prob in res_dic.items():
             list_universe = [True]*len(universe)
             temp = True
-            obj = 0
-            #get all sets marked by the solution
-            intlist = [s for s in range(len(list(state))) if list(state)[s] == "1"]
-            sol_sets = [sets[index] for index in intlist]
+            energy = 0
+            # get all sets marked by the solution
+            indices = [index for index, value in enumerate(state) if value == '1']
+            sol_sets = [sets[index] for index in indices]
             
-            for seto in sol_sets:
-                for val in seto:
+            for set in sol_sets:
+                for val in set:
                     if list_universe[val]:
-                        # if the value appears in the sets set this value to false
+                        # if the value appears in the sets, set this value to False
                         list_universe[val] = False
                     else: 
-                        # is the value is False this element appeared in another solution set
-                        # the sets then intersect and the solution is wrong
+                        # if the value is False, this element appeared in another solution set
+                        # the sets then intersect and the solution is invalid
                         temp = False 
                         break
             if temp:
-                obj -= len(intlist)
-            energy += obj * res_dic[state]
-            total_counts += res_dic[state]
-        #print(energy/total_counts)
+                energy = -len(indices)
+                tot_energy += energy*prob
 
-        return energy/total_counts
+        return tot_energy
     
-    return setupaClCostfct
+    return cl_cost_function
 
 
 def init_state(qv):

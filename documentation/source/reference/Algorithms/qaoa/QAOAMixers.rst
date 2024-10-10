@@ -15,3 +15,4 @@ Qrisp comes with a variety of predefined mixers to tackle various types of probl
    XY_mixer
    grover_mixer
    constrained_mixer_gen
+   controlled_RX_mixer_gen
