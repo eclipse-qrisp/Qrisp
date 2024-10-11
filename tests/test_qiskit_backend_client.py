@@ -20,10 +20,7 @@
 import numpy as np
 
 from qrisp import QuantumCircuit
-from qrisp.interface.backends import VirtualBackend
-from qrisp.interface.backends import QiskitBackend
-
-
+from qrisp.interface import VirtualBackend, QiskitBackend
 
 def test_qiskit_backend_client():
     

@@ -16,6 +16,9 @@
 ********************************************************************************/
 """
 
+import qiskit
+
+from qrisp.interface import VirtualBackend
 
 def IQMBackend(api_token, device_instance):
     """
@@ -79,7 +82,6 @@ def IQMBackend(api_token, device_instance):
             "Please install qiskit-iqm to use the IQMBackend. You can do this by running `pip install qrisp[iqm]`."
         )
 
-    import qiskit
 
     def run_func_iqm(qasm_str, shots=None, token=""):
         if shots is None:
@@ -100,7 +102,5 @@ def IQMBackend(api_token, device_instance):
             new_counts[counts_string] = counts[key]
 
         return new_counts
-
-    from qrisp.interface import VirtualBackend
 
     return VirtualBackend(run_func_iqm)

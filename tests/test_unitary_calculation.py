@@ -23,7 +23,7 @@ from qrisp.core import QuantumSession
 from qrisp.alg_primitives.arithmetic import QuantumFloat
 from numpy.linalg import norm
 
-from qrisp.interface import convert_circuit
+from qrisp.interface import convert_to_qiskit
 
 
 def test_unitary_calculation():
@@ -48,7 +48,7 @@ def test_unitary_calculation():
 
     ###################
     qc.qubits = qc.qubits[::-1]
-    qiskit_qc = convert_circuit(qc, target_api="qiskit")
+    qiskit_qc = convert_to_qiskit(qc)
     
 
     start = time.time()

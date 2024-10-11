@@ -16,6 +16,7 @@
 ********************************************************************************/
 """
 
-
-from qrisp.interface.backends import *
-from qrisp.interface.circuit_converter import *
+from qrisp.interface.converter.qiskit_converter import *
+from qrisp.interface.converter.pytket_converter import *
+from qrisp.interface.converter.pennylane_converter import *
+from qrisp.interface.converter.qulacs_converter import *

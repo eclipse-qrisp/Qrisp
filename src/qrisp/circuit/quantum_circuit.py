@@ -529,12 +529,12 @@ class QuantumCircuit:
 
         from qiskit.visualization.circuit_visualization import circuit_drawer
 
-        from qrisp.interface.circuit_converter import convert_circuit
+        from qrisp.interface import convert_to_qiskit
 
         try:
             res_str = str(
                 circuit_drawer(
-                    convert_circuit(self, target_api="qiskit", transpile=False),
+                    convert_to_qiskit(self, transpile=False),
                     output="text",
                     cregbundle=False,
                 )
@@ -1037,9 +1037,9 @@ class QuantumCircuit:
             A string containing the latex code.
 
         """
-        from qrisp.interface import convert_circuit
+        from qrisp.interface import convert_to_qiskit
 
-        qiskit_qc = convert_circuit(self, "qiskit", transpile=False)
+        qiskit_qc = convert_to_qiskit(self, "qiskit", transpile=False)
 
         from qiskit.visualization import circuit_drawer
 
@@ -1779,9 +1779,9 @@ class QuantumCircuit:
             The converted circuit.
 
         """
-        from qrisp.interface.circuit_converter import convert_circuit
+        from qrisp.interface import convert_to_qiskit
 
-        return convert_circuit(self, target_api="qiskit", transpile=False)
+        return convert_to_qiskit(self, transpile=False)
     
     def to_pennylane(self):
         """
@@ -1794,7 +1794,7 @@ class QuantumCircuit:
 
         """
         
-        from qrisp.interface.converter.convert_to_qml import qml_converter
+        from qrisp.interface import qml_converter
         
         return qml_converter(self)
     
@@ -1808,7 +1808,7 @@ class QuantumCircuit:
             A function representing a pennylane QuantumCircuit.
 
         """
-        from qrisp.interface.converter.convert_to_pytket import pytket_converter
+        from qrisp.interface import pytket_converter
         
         return pytket_converter(self)
 
