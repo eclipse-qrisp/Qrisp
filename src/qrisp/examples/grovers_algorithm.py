@@ -21,7 +21,7 @@ import time
 from qrisp import QuantumFloat, auto_uncompute
 from qrisp.grover import grovers_alg, tag_state
 from qrisp.misc import multi_measurement
-from qrisp.interface import VirtualQiskitBackend
+from qrisp.interface import QiskitBackend
 
 
 # Create two quantum variables
@@ -86,7 +86,7 @@ print(qc.num_qubits())
 # %%
 # Perform measurement
 
-qasm_simulator = VirtualQiskitBackend()
+qasm_simulator = QiskitBackend()
 
 start_time = time.time()
 print(multi_measurement(qf_list))

@@ -17,7 +17,7 @@
 """
 
 
-from qrisp.interface import VirtualBackend, VirtualQiskitBackend
+from qrisp.interface import VirtualBackend, QiskitBackend
 from qrisp.simulator.simulator import run
 from qrisp import QuantumCircuit
 

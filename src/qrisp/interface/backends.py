@@ -128,7 +128,7 @@ class VirtualBackend(BackendClient):
             return super().run(qc, shots)
 
 
-class VirtualQiskitBackend(VirtualBackend):
+class QiskitBackend(VirtualBackend):
     """
     This class instantiates a VirtualBackend using a Qiskit backend.
     This allows easy access to Qiskit backends through the qrisp interface.
@@ -148,9 +148,9 @@ class VirtualQiskitBackend(VirtualBackend):
     We evaluate a QuantumFloat multiplication on the QASM-simulator.
 
     >>> from qrisp import QuantumFloat
-    >>> from qrisp.interface import VirtualQiskitBackend
+    >>> from qrisp.interface import QiskitBackend
     >>> from qiskit import Aer
-    >>> example_backend = VirtualQiskitBackend(backend = Aer.get_backend('qasm_simulator'))
+    >>> example_backend = QiskitBackend(backend = Aer.get_backend('qasm_simulator'))
     >>> qf = QuantumFloat(4)
     >>> qf[:] = 3
     >>> res = qf*qf
@@ -160,7 +160,7 @@ class VirtualQiskitBackend(VirtualBackend):
 
     """
 
-    def __init__(self, backend=None, port=9011):
+    def __init__(self, backend=None, port=None):
         if backend is None:
 
             try:
@@ -213,6 +213,10 @@ class VirtualQiskitBackend(VirtualBackend):
 
         super().__init__(run, port=port)
 
+def VirtualQiskitBackend(*args, **kwargs):
+    import warnings
+    warnings.warn("VirtualQiskitBackend will be deprecated in a future release of Qrisp. Use QiskitBackend instead.")
+    return QiskitBackend(*args, **kwargs)
 
 class QiskitRuntimeBackend(VirtualBackend):
     """

@@ -21,7 +21,7 @@ import numpy as np
 
 from qrisp import QuantumCircuit
 from qrisp.interface.backends import VirtualBackend
-from qrisp.interface.backends import VirtualQiskitBackend
+from qrisp.interface.backends import QiskitBackend
 
 
 
@@ -85,7 +85,7 @@ def test_qiskit_backend_client():
     ###################
 
     # Create Qiskit Backend
-    test_qiskit_backend = VirtualQiskitBackend()
+    test_qiskit_backend = QiskitBackend()
 
     qc = QuantumCircuit(4, 1)
     qc.x(0)

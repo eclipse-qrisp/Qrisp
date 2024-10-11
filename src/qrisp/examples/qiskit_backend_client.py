@@ -20,7 +20,7 @@
 import numpy as np
 from qrisp import QuantumCircuit, QuantumVariable
 from qiskit import Aer
-from qrisp.interface import VirtualQiskitBackend
+from qrisp.interface import QiskitBackend
 from qrisp.interface.backends import VirtualBackend
 
 # Create some QuantumCricuit
@@ -64,7 +64,7 @@ qv.qs.add_clbit()
 qv.qs.append(qc.to_op(), qv.reg, qv.qs.clbits)
 
 qiskit_backend = Aer.get_backend("qasm_simulator")
-vrtl_qasm_sim = VirtualQiskitBackend(qiskit_backend)
+vrtl_qasm_sim = QiskitBackend(qiskit_backend)
 
 results = qv.get_measurement(backend=vrtl_qasm_sim)
 
