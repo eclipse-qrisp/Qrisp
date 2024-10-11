@@ -188,7 +188,7 @@ class QuantumBool(QuantumVariable):
 
     def __enter__(self):
         from qrisp.environments import control
-        self.env = control(self)
+        self.env = control(self[0])
         self.env.__enter__()
 
     def __exit__(self, a, b, c):
@@ -199,7 +199,7 @@ class QuantumBool(QuantumVariable):
         # after exiting. We therefore uncompute
 
         self.env.__exit__(a, b, c)
-        if ref_count == 5:
+        if ref_count == 4:
             self.uncompute()
             
     def __bool__(self):
