@@ -4,88 +4,51 @@ QAOA MaxSetPacking
 ==================
 
 
-
-.. currentmodule:: qrisp.qaoa.problems.maxSetPackInfrastr
-
-
 Problem description
 -------------------
 
 Given a universe :math:`[n]` and :math:`m` subsets :math:`\mathcal S = (S_j)^m_{j=1}` , :math:`S_j \subset [n]`, find the maximum
 cardinality subcollection :math:`\mathcal S' \subset \mathcal S` of pairwise disjoint subsets.
+Following the work of `Hadfield et al. <https://arxiv.org/abs/1709.03489>`_, the MaxSetPacking problem is solved by solving the MaxIndepSet problem on the constraint graph $G=(V,E)$
+where vertices correspond to subsets in $\mathcal S$ and edges correspond to pairs of intersecting subsets.
 
 
-Cost operator
--------------
-
-.. autofunction:: maxSetPackCostOp
-
-
-Classical cost function
+Example implementation:
 -----------------------
-
-.. autofunction:: maxSetPackclCostfct
-
-
-Helper function
----------------
-
-.. autofunction:: get_neighbourhood_relations
-
-
-Full example implementation:
-----------------------------
 
 ::
     
-    from qrisp.qaoa import QAOAProblem
-    from qrisp.qaoa.mixers import RZ_mixer
-    from qrisp.qaoa.problems.maxSetPackInfrastr import maxSetPackclCostfct,maxSetPackCostOp, get_neighbourhood_relations, init_state
     from qrisp import QuantumVariable
+    from qrisp.qaoa import QAOAProblem, RZ_mixer
+    from qrisp.qaoa.problems.maxIndepSet import create_max_indep_set_cl_cost_function, create_max_indep_set_mixer, max_indep_set_init_function
+    import networkx as nx
+    import matplotlib.pyplot as plt
 
-    # sets are given as list of lists
-    sets = [[0,7,1],[6,5],[2,3],[5,4],[8,7,0],[1]]
-    # full universe is given as a tuple
-    sol = (0,1,2,3,4,5,6,7,8)
+    sets = [{0,7,1},{6,5},{2,3},{5,4},{8,7,0},{1}]
 
-    # the realtions between the sets, i.e. with vertice is in which other sets
-    print(get_neighbourhood_relations(sets, len_universe=len(sol)))
+    def non_empty_intersection(sets):
+        return [(i, j) for (i, s1), (j, s2) in combinations(enumerate(sets), 2) if s1.intersection(s2)]
 
-    # assign the operators
-    cost_fun = maxSetPackclCostfct(sets=sets,universe=sol)
-    mixerOp = RZ_mixer()
-    costOp = maxSetPackCostOp(sets=sets, universe=sol)
+    # create constraint graph
+    G = nx.Graph()
+    G.add_nodes_from(range(len(sets)))
+    G.add_edges_from(non_empty_intersection(sets))
+    qarg = QuantumVariable(G.number_of_nodes())
 
-    #initialize the qarg
-    qarg = QuantumVariable(len(sets))
+    qaoa_max_indep_set = QAOAProblem(cost_operator=RZ_mixer,
+                                    mixer=create_max_indep_set_mixer(G),
+                                    cl_cost_function=create_max_indep_set_cl_cost_function(G),
+                                    init_function=max_indep_set_init_function)
+    results = qaoa_max_indep_set.run(qarg=qarg, depth=5)
 
-    # run the qaoa
-    QAOAinstance = QAOAProblem(cost_operator=costOp ,mixer= mixerOp, cl_cost_function=cost_fun)
-    QAOAinstance.set_init_function(init_function=init_state)
-    InitTest = QAOAinstance.run(qarg=qarg, depth=5)
+That's it! In the following, we print the 5 most likely solutions together with their cost values.
 
-    # assign the cost_func
-    def testCostFun(state, universe):
-        list_universe = [True]*len(universe)
-        temp = True
-        obj = 0
-        intlist = [s for s in range(len(list(state))) if list(state)[s] == "1"]
-        sol_sets = [sets[index] for index in intlist]
-        for seto in sol_sets:
-            for val in seto:
-                if list_universe[val]:
-                    list_universe[val] = False
-                else: 
-                    temp = False 
-                    break
-        if temp:
-            obj -= len(intlist)
-        return obj
+::
 
-    # print the most likely solutions
-    print("5 most likely Solutions") 
-    maxfive = sorted(InitTest, key=InitTest.get, reverse=True)[:5]
-    for res, val in InitTest.items():  
-        if res in maxfive:
-            print((res, val))
-            print(testCostFun(res, universe=sol))  
+    cl_cost = create_max_indep_set_cl_cost_function(G)
+
+    print("5 most likely solutions")
+    max_five = sorted(results.items(), key=lambda item: item[1], reverse=True)[:5]
+    for res, prob in max_five:
+        print([index for index, value in enumerate(res) if value == '1'], prob)
+        print(cl_cost({res : 1}))

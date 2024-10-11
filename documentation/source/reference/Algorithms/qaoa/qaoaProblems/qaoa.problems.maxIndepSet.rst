@@ -1,7 +1,7 @@
-.. _maxindependentsetQAOA:
+.. _maxIndepSetQAOA:
 
-QAOA MaxIndependentSet
-======================
+QAOA MaxIndepSet
+================
 
 
 .. currentmodule:: qrisp.qaoa.problems.maxIndepSet
@@ -12,6 +12,7 @@ Problem description
 
 Given a Graph  :math:`G = (V,E)` find a maximal independent set, i.e., a subset of vertices :math:`V' \subset V` such that all pairs of vertices are mutually non-adjacent in the graph $G$.
 The QAOA implementation is based on the work of `Hadfield et al. <https://arxiv.org/abs/1709.03489>`_
+
 
 Mixer
 -----
@@ -51,6 +52,10 @@ Example implementation:
                                     init_function=max_indep_set_init_function)
     results = qaoa_max_indep_set.run(qarg=qarg, depth=5)
 
+That's it! In the following, we print the 5 most likely solutions together with their cost values.
+
+::
+
     cl_cost = create_max_indep_set_cl_cost_function(G)
 
     print("5 most likely solutions")
@@ -59,6 +64,16 @@ Example implementation:
         print([index for index, value in enumerate(res) if value == '1'], prob)
         print(cl_cost({res : 1}))
 
+Finally, we visualize the most likely solution.
+
+::
+
     most_likely = [index for index, value in enumerate(max_five[0][0]) if value == '1']
-    nx.draw(G, with_labels = True, node_color=['#FFCCCB' if node in most_likely else '#ADD8E6' for node in G.nodes()])
+    nx.draw(G, with_labels = True, 
+            node_color=['#FFCCCB' if node in most_likely else '#ADD8E6' for node in G.nodes()],
+            edge_color='#D3D3D3')
     plt.show()
+
+.. image:: ./maxIndepSet.png
+  :scale: 100%
+  :align: center

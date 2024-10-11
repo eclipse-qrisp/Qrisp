@@ -1,61 +1,60 @@
-.. _maxcliqueQAOA:
+.. _maxCliqueQAOA:
 
 QAOA MaxClique
 ==============
-
-.. currentmodule:: qrisp.qaoa.problems.maxCliqueInfrastr
 
 
 Problem description
 -------------------
 
 Given a Graph  :math:`G = (V,E)` find a maximal clique, i.e., a subset of vertices :math:`V' \subset V` such that all pairs of vertices are adjacent in the graph $G$.
-
-
-Cost operator
--------------
-
-.. autofunction:: maxCliqueCostOp
-
-
-Classical cost function
------------------------
-
-.. autofunction:: maxCliqueCostfct
+Following the work of `Hadfield et al. <https://arxiv.org/abs/1709.03489>`_, the MaxClique problem is solved by solving the MaxIndepSet problem on the complement graph.
 
 
 Example implementation:
 -----------------------
+
 ::
 
-    # imports
-    from qrisp.qaoa import QAOAProblem
-    from qrisp.qaoa.problems.maxCliqueInfrastr import maxCliqueCostfct, maxCliqueCostOp 
-    from qrisp.qaoa.mixers import RX_mixer
     from qrisp import QuantumVariable
+    from qrisp.qaoa import QAOAProblem, RZ_mixer
+    from qrisp.qaoa.problems.maxIndepSet import create_max_indep_set_cl_cost_function, create_max_indep_set_mixer, max_indep_set_init_function
     import networkx as nx
     import matplotlib.pyplot as plt
 
-    # create graph
     G = nx.erdos_renyi_graph(9, 0.7, seed =  133)
+    G_complement = nx.complement(G)
+
     qarg = QuantumVariable(G.number_of_nodes())
 
-    # run the instance
-    QAOAinstance = QAOAProblem(cost_operator= maxCliqueCostOp(G), mixer= RX_mixer, cl_cost_function=maxCliqueCostfct(G))
-    theNiceQAOA = QAOAinstance.run(qarg=qarg, depth=5)
+    qaoa_max_indep_set = QAOAProblem(cost_operator=RZ_mixer, 
+                                    mixer=create_max_indep_set_mixer(G_complement), 
+                                    cl_cost_function=create_max_indep_set_cl_cost_function(G_complement), 
+                                    init_function=max_indep_set_init_function)
+    results = qaoa_max_indep_set.run(qarg=qarg, depth=5)
 
-    clCostfct = maxCliqueCostfct(G)
+That's it! In the following, we print the 5 most likely solutions together with their cost values.
 
-    # print the most likely solutions
+::
+
+    cl_cost = create_max_indep_set_cl_cost_function(G_complement)
+
     print("5 most likely solutions")
-    maxfive = sorted(theNiceQAOA.items(), key=lambda item: item[1], reverse=True)[:5]
-    for res, val in maxfive:
-    print([index for index, value in enumerate(res) if value == '1'], val)
-    print(clCostfct({res : 1}))
+    max_five = sorted(results.items(), key=lambda item: item[1], reverse=True)[:5]
+    for res, prob in max_five:
+        print([index for index, value in enumerate(res) if value == '1'], prob)
+        print(cl_cost({res : 1}))
 
-    print("NX solution")
-    print(nx.max_weight_clique(G, weight = None))
+Finally, we visualize the most likely solution.
 
-    # draw graph
-    nx.draw(G,with_labels = True)
+::
+
+    most_likely = [index for index, value in enumerate(max_five[0][0]) if value == '1']
+    nx.draw(G, with_labels = True, 
+            node_color=['#FFCCCB' if node in most_likely else '#ADD8E6' for node in G.nodes()],
+            edge_color=['#FFCCCB' if edge[0] in most_likely and edge[1] in most_likely else '#D3D3D3' for edge in G.edges()])
     plt.show()
+
+.. image:: ./maxClique.png
+  :scale: 100%
+  :align: center
