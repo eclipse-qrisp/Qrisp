@@ -168,7 +168,7 @@ def test_cl_control_env():
     
     def test_f():
         
-        qv_a = QuantumFloat(1)
+        qv_a = QuantumFloat(2)
         qv_b = QuantumFloat(1)
         qv_c = QuantumFloat(1)
         
