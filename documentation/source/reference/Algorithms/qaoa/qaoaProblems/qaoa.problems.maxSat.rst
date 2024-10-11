@@ -4,83 +4,84 @@ QAOA MaxSat
 ===========
 
 
-.. currentmodule:: qrisp.qaoa.problems.maxSatInfrastr
+.. currentmodule:: qrisp.qaoa.problems.maxSat
+
 
 Problem description
 -------------------
 
-Given :math:`m` disjunctive clauses over :math:`n` Boolean variables :math:`x` , where each clause
+Given :math:`m` disjunctive clauses over :math:`n` Boolean variables :math:`x`, where each clause
 contains at most :math:`l \geq 2` literals, find a variable assignment that maximizes the number of
 satisfied clauses. 
+
+For example, for $l=3$ and $n=5$ Boolean variables $x_1,\dotsc,x_5$ consider the clauses
+
+$$(x_1\\lor x_2\\lor x_3), (\\bar x_1\\lor x_2\\lor x_4), (\\bar x_2\\lor x_3\\lor \\bar x_5), (\\bar x_3\\lor x_4\\lor x_5)$$
+
+where $\bar x_i$ denotes the negation of $x_i$. What is sought now is an assignment of the variables with 0 (False) or 1 (True)
+that maximizes the number of satisfied clauses.
+In this case, the assignment $x=x_1x_2x_3x_4x_5=01111$ satisfies all clauses.
+
+Given $n$ variables $x_1,\dotsc,x_n$ we represent each clause as a list of integers such that the absolute values correspond to the indices of the variables and a minus sign corresponds to negation of the variable.
+For example, the above clauses correspond to 
+
+$$[1,2,3],\\quad [-1,2,4],\\quad [-2,3,-5],\\quad [-3,4,5]$$
+
+The cost function for the maximum satisfyability problem is given by
+
+$$C(x)=\\sum_{\\alpha=1}^mC_{\\alpha}(x)$$
+
+where for each clause $C_{\alpha}(x)=1$ if the corresponding clause is satisfied and $C_{\alpha}(x)=0$ otherwise. Here, 
+
+$$C_{\\alpha}(x)=1-\\prod_{j>0}(1-x_j)\\prod_{j<0}x_{-j}$$
+
 
 Cost operator
 -------------
 
-.. autofunction:: maxSatCostOp
+.. autofunction:: create_maxsat_cost_operator
 
 
 Classical cost function
 -----------------------
 
-.. autofunction:: maxSatclCostfct
+.. autofunction:: create_maxsat_cl_cost_function
 
 
-Helper function
----------------
+Helper functions
+----------------
 
-.. autofunction:: clausesdecoder
+.. autofunction:: create_maxsat_cost_polynomials
 
 
-Full example implementation:
-----------------------------
+Example implementation:
+-----------------------
 
 ::
 
-   from qrisp.qaoa import QAOAProblem
-   from qrisp.qaoa.problems.maxSatInfrastr import maxSatclCostfct, maxSatCostOp, clausesdecoder, init_state
-   from qrisp.qaoa.mixers import RX_mixer
    from qrisp import QuantumVariable
+   from qrisp.qaoa import QAOAProblem, RX_mixer
+   from qrisp.qaoa.problems.maxSat import create_maxsat_cl_cost_function, create_maxsat_cost_operator, create_maxsat_cost_polynomials
 
+   clauses = [[1,2,-3],[1,4,-6],[4,5,6],[1,3,-4],[2,4,5],[1,3,5],[-2,-3,6]]
 
-   clauses11 = [[1,2,-3],[1,4,-6], [4,5,6],[1,3,-4],[2,4,5],[1,3,5],[-2,-3,6]]
+   qarg = QuantumVariable(6)
+   cost_polynomials, symbols = create_maxsat_cost_polynomials(clauses ,6)
 
-   #Clauses are decoded, s.t. the Cost-Optimizer can read them
-   #numVars is the amount of considered variables, i.e. highest number (= Number of Qubits in Circuit aswell)
-   decodedClauses = clausesdecoder( clauses = clauses11, numVars = 6)
-   #print(decodedClauses)
+   qaoa_max_indep_set = QAOAProblem(cost_operator=create_maxsat_cost_operator(cost_polynomials, symbols),
+                                   mixer=RX_mixer,
+                                   cl_cost_function=create_maxsat_cl_cost_function(cost_polynomials, symbols))
+   results = qaoa_max_indep_set.run(qarg=qarg, depth=5)
 
-   qarg = QuantumVariable(len(clauses11))
+That's it! In the following, we print the 5 most likely solutions together with their cost values.
 
-   #CostOperator-Generator has to be called with the clauses
-   #CostFct-Generator has to be called with decodedClauses
-   QAOAinstance = QAOAProblem(cost_operator=maxSatCostOp(clauses11), mixer=RX_mixer, cl_cost_function=maxSatclCostfct(decodedClauses))
-   QAOAinstance.set_init_function(init_function=init_state)
-   theNiceQAOA = QAOAinstance.run(qarg=qarg, depth=5)
+::
+   
+   cl_cost = create_maxsat_cl_cost_function(cost_polynomials, symbols)
 
-    #print the ideal solutions
-    print("5 most likely Solutions") 
-    maxfive = sorted(theNiceQAOA, key=theNiceQAOA.get, reverse=True)[:5]
-    for res, val in theNiceQAOA.items(): 
-        if res in maxfive:
-            print((res, val))
-            print(clCostfct({res : 1}))
-            
+   print("5 most likely solutions")
+   max_five = sorted(results.items(), key=lambda item: item[1], reverse=True)[:5]
+   for res, prob in max_five:
+      print(res, prob)
+      print(cl_cost({res : 1}))
 
-   print("Final energy value and associated solution values")
-   costfct = maxSatclCostfct(decodedClauses)
-   print(costfct(theNiceQAOA))
-   #Final Result-dictionary
-   resDict = dict()
-   for index in decodedClauses:
-      for index2 in index:
-         if index2 in resDict.keys():
-               resDict[index2] +=1
-         else:
-               resDict[index2] =1
-   print(resDict)
-
-
-
-.. |br| raw:: html
-
-   <br />
