@@ -23,7 +23,9 @@ import itertools
 
 def create_max_clique_mixer(G):
     r"""
-    Generates the mixer for an instance of the maximum clique problem for a given graph $G$.
+    Generates the ``controlled_RX_mixer`` for an instance of the maximum clique problem for a given graph $G$ following `Hadfield et al. <https://arxiv.org/abs/1709.03489>`_
+
+    The belonging ``predicate`` function indicates if a set can be swapped into the solution.
 
     Parameters
     ----------

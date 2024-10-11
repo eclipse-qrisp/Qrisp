@@ -3,85 +3,64 @@
 QAOA MinSetCover
 ================
 
-.. currentmodule:: qrisp.qaoa.problems.minSetCoverInfrastr
+.. currentmodule:: qrisp.qaoa.problems.minSetCover
+
 
 Problem description
 -------------------
 
-Given a universe :math:`[n]` and :math:`m` subsets :math:`S = (S_j)^m_{j=1}` , :math:`S_j \subset [n]` find the maximum
-cardinality subcollection :math:`S' \subset S` of the :math:`S_j` such that their union recovers :math:`[n]` .
+Given a universe :math:`[n]` and :math:`m` subsets :math:`\mathcal S = (S_j)^m_{j=1}` , :math:`S_j \subset [n]` find the minimum
+cardinality subcollection :math:`\mathcal S' \subset \mathcal S` of the :math:`S_j` such that their union recovers :math:`[n]`.
+The QAOA implementation is based on the work of `Hadfield et al. <https://arxiv.org/abs/1709.03489>`_
 
 
-Cost operator
--------------
+Mixer
+-----
 
-.. autofunction:: minSetCoverCostOp
+.. autofunction:: create_min_set_cover_mixer
 
 
 Classical cost function
 -----------------------
 
-.. autofunction:: minSetCoverclCostfct
+.. autofunction:: create_min_set_cover_cl_cost_function
 
 
-Helper function
----------------
+Initial state function
+----------------------
 
-.. autofunction:: get_neighbourhood_relations
+.. autofunction:: min_set_cover_init_function
 
 
-Full example implementation:
-----------------------------
+Example implementation:
+-----------------------
 
 ::
    
-   from qrisp.qaoa import QAOAProblem
-   from qrisp.qaoa.mixers import RZ_mixer
-   from qrisp.qaoa.problems.minSetCoverInfrastr import minSetCoverclCostfct,minSetCoverCostOp, init_state
-
    from qrisp import QuantumVariable
+   from qrisp.qaoa import QAOAProblem, RZ_mixer
+   from qrisp.qaoa.problems.minSetCover import create_min_set_cover_mixer, create_min_set_cover_cl_cost_function, min_set_cover_init_function
+   import networkx as nx
+   import matplotlib.pyplot as plt
 
-   # sets are given as list of lists
-   sets = [[0,1,2,3],[1,5,6,4],[0,2,6,3,4,5],[3,4,0,1],[1,2,3,0],[1]]
-   # full universe is given as a tuple
-   sol = (0,1,2,3,4,5,6)
-
-   # assign operators
-   cost_fun = minSetCoverclCostfct(sets=sets,universe = sol)
-   mixerOp = RZ_mixer()
-   costOp = minSetCoverCostOp(sets=sets, universe=sol)
-
-   #initialize variable
+   sets = [{0,1,2,3},{1,5,6,4},{0,2,6,3,4,5},{3,4,0,1},{1,2,3,0},{1}]
+   universe = set.union(*sets)
    qarg = QuantumVariable(len(sets))
 
-   #+run qaoa
-   QAOAinstance = QAOAProblem(cost_operator=costOp ,mixer= mixerOp, cl_cost_function=cost_fun)
-   QAOAinstance.set_init_function(init_function=init_state)
-   InitTest = QAOAinstance.run(qarg=qarg, depth=5)
+   qaoa_min_set_cover = QAOAProblem(cost_operator=RZ_mixer, 
+                                    mixer= create_min_set_cover_mixer(sets, universe), 
+                                    cl_cost_function=create_min_set_cover_cl_cost_function(sets, universe),
+                                    init_function=min_set_cover_init_function)
+   results = qaoa_min_set_cover.run(qarg=qarg, depth=5)
 
-   # create example cost_func
-   def testCostFun(state,universe):
-      obj = 0
-      intlist = [s for s in range(len(list(state))) if list(state)[s] == "1"]
-      sol_sets = [sets[index] for index in intlist]
-      res = ()
-      for seto in sol_sets:
-         res = tuple(set(res+ seto)) 
-      if res == universe:
-         obj -= len(intlist)
+That’s it! In the following, we print the 5 most likely solutions together with their cost values.
 
-      return obj
+::
 
+   cl_cost = create_min_set_cover_cl_cost_function(sets, universe)
 
-   # print the most likely solutions
-   print("5 most likely Solutions") 
-   maxfive = sorted(InitTest, key=InitTest.get, reverse=True)[:5]
-   for res, val in InitTest.items():  
-      if res in maxfive:
-         print((res, val))
-         print(testCostFun(res, universe=sol))  
-    
-
-.. |br| raw:: html
-
-   <br />
+   print("5 most likely solutions")
+   max_five = sorted(results.items(), key=lambda item: item[1], reverse=True)[:5]
+   for res, prob in max_five:
+      print([sets[index] for index, value in enumerate(res) if value == '1'], prob)
+      print(cl_cost({res : 1}))

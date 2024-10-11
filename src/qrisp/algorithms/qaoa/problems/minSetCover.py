@@ -16,53 +16,59 @@
 ********************************************************************************/
 """
 
-from qrisp import QuantumBool, x, mcx
+from qrisp import QuantumVariable, QuantumBool, x, mcx
 from qrisp.qaoa import controlled_RX_mixer_gen
 import itertools
 
 
-def create_max_indep_set_mixer(G):
+def create_min_set_cover_mixer(sets, universe):
     r"""
-    Generates the ``controlled_RX_mixer`` for an instance of the maximal independet set problem for a given graph $G$ following `Hadfield et al. <https://arxiv.org/abs/1709.03489>`_
+    Generates the ``controlled_RX_mixer`` for an instance of the minimum set cover problem following `Hadfield et al. <https://arxiv.org/abs/1709.03489>`_
 
-    The belonging ``predicate`` function indicates if a set can be swapped into the solution.
+    The belonging ``predicate`` function indicates if a set can be swapped out of the solution.
 
     Parameters
     ----------
-    G : nx.Graph
-        The graph for the problem instance.
+    sets : list[set]
+        A list of sets.
+    universe : set
+        The union of all sets.
 
     Returns
     -------
     function
         A Python function receiving a ``QuantumVariable`` and real parameter $\beta$. 
-        This function performs the application of the mixer associated to the graph $G$.
+        This function performs the application of the mixer associated to the problem instance.
 
     """
 
-    neighbors_dict = {node: list(G.adj[node]) for node in G.nodes()}
+    membership_dict = {element: [i for i, subset in enumerate(sets) if element in subset] for element in universe}
 
     def predicate(qv,i):
+        anc = QuantumVariable(len(sets[i]))
+        x(anc)
+        for anc_index, element in enumerate(sets[i]):    
+            other_sets = [item for item in membership_dict[element] if item != i]
+            mcx([qv[set_index] for set_index in other_sets],anc[anc_index],ctrl_state="0"*len(other_sets))
         qbl = QuantumBool()
-        if len(neighbors_dict[i])==0:
-            x(qbl)
-        else:
-            mcx([qv[j] for j in neighbors_dict[i]],qbl,ctrl_state='0'*len(neighbors_dict[i]))
+        mcx(anc,qbl)
         return qbl
-
+    
     controlled_RX_mixer=controlled_RX_mixer_gen(predicate)
 
     return controlled_RX_mixer
 
 
-def create_max_indep_set_cl_cost_function(G):
+def create_min_set_cover_cl_cost_function(sets, universe):
     """
-    Generates the classical cost function for an instance of the maximal independet set problem for a given graph $G$.
+    Generates the classical cost function for an instance of the minimum set cover problem.
 
     Parameters
     ----------
-    G : nx.Graph
-        The Graph for the problem instance.
+    sets : list[set]
+        A list of sets.
+    universe : set
+        The union of all sets.
 
     Returns
     -------
@@ -74,22 +80,19 @@ def create_max_indep_set_cl_cost_function(G):
     def cl_cost_function(res_dic):
         energy = 0
         for state, prob in res_dic.items():
-            temp = True
             indices = [index for index, value in enumerate(state) if value == '1']
-            combinations = list(itertools.combinations(indices, 2))
-            for combination in combinations:
-                if combination in G.edges():
-                    temp = False
-                    break
-            if temp: 
-                energy += -len(indices)*prob
+            solution_sets = [sets[index] for index in indices]
+            if set.union(*solution_sets)==universe:
+                energy += len(indices)*prob
+            else:
+                energy += len(sets)
 
         return energy
 
     return cl_cost_function 
 
 
-def max_indep_set_init_function(qv):
+def min_set_cover_init_function(qv):
     """
     
     Parameters
@@ -98,4 +101,5 @@ def max_indep_set_init_function(qv):
         The quantum argument.
     
     """
-    pass
+    x(qv)
+
