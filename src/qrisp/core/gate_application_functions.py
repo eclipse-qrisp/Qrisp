@@ -1029,7 +1029,7 @@ def u3(theta, phi, lam, qubits):
     return qubits
 
 
-def measure(qubits, clbits=None):
+def measure(qubits):
     """
     Performs a measurement of the specified Qubit.
 
@@ -1046,23 +1046,10 @@ def measure(qubits, clbits=None):
     qs = find_qs(qubits)
     
     if not isinstance(qs, TracingQuantumSession):
-        if clbits is None:
-            clbits = []
-            if hasattr(qubits, "__len__"):
-                for qb in qubits:
-                    try:
-                        clbits.append(qs.add_clbit())
-                    except AttributeError:
-                        clbits.append(qs.add_clbit())
-    
-            else:
-                clbits = qs.add_clbit()
-        append_operation(std_ops.Measurement(), [qubits], [clbits])
-        
-        return clbits
+        raise Exception("measure function is available only in Jasp mode")
     else:
         from qrisp.jasp import Measurement_p, AbstractQubit
-        from qrisp import Qubit, QuantumVariable
+        from qrisp import QuantumVariable
         
         if isinstance(qubits, QuantumVariable):
             abs_qc, res = Measurement_p.bind(qs.abs_qc, qubits.reg)
