@@ -28,7 +28,7 @@ import qiskit.circuit.library.standard_gates as qsk_gates
 from qiskit.circuit import Parameter, QuantumCircuit, ParameterExpression
 #from qrisp.circuit.quantum_circuit import rxx, ryy, rzz
 from sympy import Symbol, simplify, symbols
-from qrisp.interface import circuit_converter, convert_from_qiskit
+from qrisp.interface import convert_to_qiskit, convert_from_qiskit
 
 def test_abstract_params_printing():
     qiskit_qc = QuantumCircuit(5)
@@ -54,7 +54,7 @@ def test_abstract_params_printing():
     p(params[3], qv[3])
     #print(str(qv.qs))
     #print(qv.qs)
-    qisk = circuit_converter.convert_to_qiskit(qv.qs)
+    qisk = convert_to_qiskit(qv.qs)
     #print(qisk)
     
     #assert str(qisk) == str(qiskit_qc)

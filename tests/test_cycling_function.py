@@ -50,4 +50,4 @@ def test_cycling_function():
 
     shift_amount[:] = {0: 1, -4 : 1, 1: 1}
     cyclic_shift(qa, shift_amount)
-    assert qa.get_measurement() == {OutcomeArray([7, 0, 1, 2, 3, 4, 5, 6]): 0.33333, OutcomeArray([4, 5, 6, 7, 0, 1, 2, 3]): 0.33333, OutcomeArray([0, 1, 2, 3, 4, 5, 6, 7]): 0.33333}
+    assert qa.get_measurement() == {OutcomeArray([7, 0, 1, 2, 3, 4, 5, 6]): 0.3333333333333333, OutcomeArray([4, 5, 6, 7, 0, 1, 2, 3]): 0.3333333333333333, OutcomeArray([0, 1, 2, 3, 4, 5, 6, 7]): 0.3333333333333333}

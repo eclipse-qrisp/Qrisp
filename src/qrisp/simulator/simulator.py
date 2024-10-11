@@ -23,30 +23,17 @@ import numpy as np
 from tqdm import tqdm
 
 from qrisp.circuit import (
-    ControlledOperation,
-    Instruction,
-    Operation,
     QuantumCircuit,
     fast_append,
-    transpile,
-    ClControlledOperation
 )
-from qrisp.interface.circuit_converter import convert_circuit
 from qrisp.simulator.circuit_preprocessing import (
     circuit_preprocessor,
     count_measurements_and_treat_alloc,
     group_qc,
-    extract_measurements,
     insert_multiverse_measurements
 )
+
 from qrisp.simulator.quantum_state import QuantumState
-
-# This dictionary contains the qrisp operations as values and their names as keys.
-# This is advantageous because during the simulation, we don't want to synthesize them
-# every time they are required
-# from qrisp.circuit import op_list
-# op_dict = {op().name : op for op in op_list}
-
 
 # This functions determines the quantum state after executing a quantum circuit
 # and afterwards extracts the probability of measuring certain bit strings
@@ -74,8 +61,6 @@ def run(qc, shots, token="", iqs=None, insert_reset=True):
     # tolerant regarding inputs.
     with fast_append(2):
 
-        # We convert the circuit which is given with portable objects to a qrisp circuit
-        # qc = convert_circuit(qc, "qrisp", transpile=True)
         qc = qc.transpile()
 
         # Count the amount of measurements (we can stop the simulation after all
@@ -245,9 +230,6 @@ def statevector_sim(qc):
     with fast_append():
         # We convert the circuit which is given with portable objects to a qrisp circuit
 
-        if not isinstance(qc, QuantumCircuit):
-            qc = convert_circuit(qc, "qrisp", transpile=True)
-
         qc = qc.copy()
 
         # TO-DO fix qubit ordering
@@ -317,7 +299,6 @@ def single_shot_sim(qc, quantum_state=None):
     # tolerant regarding inputs.
     with fast_append():
         # We convert the circuit which is given with portable objects to a qrisp circuit
-        qc = convert_circuit(qc, "qrisp", transpile=True)
 
         # Treat allocation gates (ie. remove them)
         count_measurements_and_treat_alloc(qc, insert_reset=True)

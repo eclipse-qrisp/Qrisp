@@ -20,7 +20,7 @@ from numpy.linalg import norm
 import time
 from qiskit import Aer, execute
 from qrisp import QuantumFloat, transpile
-from qrisp.interface import convert_circuit
+from qrisp.interface import convert_to_qiskit
 
 n = 2
 
@@ -40,7 +40,7 @@ print("Qrisp calculation time = %s" % (end - start))
 # %%
 qc.qubits = qc.qubits[::-1]
 
-qiskit_qc = convert_circuit(qc, target_api="qiskit")
+qiskit_qc = convert_to_qiskit(qc)
 
 
 backend = Aer.get_backend("unitary_simulator")

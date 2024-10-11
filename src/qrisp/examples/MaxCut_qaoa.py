@@ -149,10 +149,10 @@ def initial_state_maxcut(qarg):
 # Creates an unitary MaxCut cost operator
 cost_operator = create_maxcut_cost_operator(G)
 
-# from qrisp.interface import VirtualQiskitBackend,QiskitRuntimeBackend
+# from qrisp.interface import QiskitBackend,QiskitRuntimeBackend
 from qrisp.default_backend import def_backend
 
-#qasm_sim = VirtualQiskitBackend()
+#qasm_sim = QiskitBackend()
 # qasm_sim = QiskitRuntimeBackend()
 qrisp_sim = def_backend
 

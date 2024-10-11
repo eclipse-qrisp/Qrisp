@@ -25,6 +25,7 @@ from qrisp.circuit import transpile
 from qrisp.core import QuantumVariable, qompiler
 from qrisp.misc import bin_rep
 
+
 class QuantumArray(np.ndarray):
     """
     This class allows the convenient management of multiple QuantumVariables of one
@@ -231,10 +232,10 @@ class QuantumArray(np.ndarray):
         indices = list(product(*[list(range(i)) for i in shape]))
 
         for i in indices:
-            
-            temp_dup = qtype.duplicate(name = obj.name + "*", qs=qs)
+
+            temp_dup = qtype.duplicate(name=obj.name + "*", qs=qs)
             np.ndarray.__setitem__(obj, i, temp_dup)
-            
+
         obj.qs = qs
 
         return obj
@@ -429,12 +430,12 @@ class QuantumArray(np.ndarray):
     def get_measurement(
         self,
         backend=None,
-        shots=100000,
+        shots=None,
         compile=True,
         compilation_kwargs={},
         subs_dic={},
         circuit_preprocessor=None,
-        precompiled_qc = None
+        precompiled_qc=None,
     ):
         """
         Method for acquiring measurement results for the given array. The semantics are
@@ -448,7 +449,7 @@ class QuantumArray(np.ndarray):
             The backend on which to evaluate the quantum circuit. The default can be
             specified in the file default_backend.py.
         shots : integer, optional
-            The amount of shots to evaluate the circuit. The default is 10000.
+            The amount of shots to evaluate the circuit. The default is given by the backend used.
         compile : bool, optional
             Boolean indicating if the .compile method of the underlying QuantumSession
             should be called before. The default is True.
@@ -510,31 +511,29 @@ class QuantumArray(np.ndarray):
         # Copy circuit in over to prevent modification
         # from qrisp.quantum_network import QuantumNetworkClient
 
-        if precompiled_qc is None:        
+        if precompiled_qc is None:
             if compile:
                 qc = qompiler(
-                    self.qs, intended_measurements = qubits, **compilation_kwargs
+                    self.qs, intended_measurements=qubits, **compilation_kwargs
                 )
             else:
                 qc = self.qs.copy()
-                
+
             # Transpile circuit
             qc = transpile(qc)
         else:
             qc = precompiled_qc.copy()
 
-
         # Bind parameters
         if subs_dic:
             qc = qc.bind_parameters(subs_dic)
             from qrisp.core.compilation import combine_single_qubit_gates
+
             qc = combine_single_qubit_gates(qc)
 
         # Execute user specified circuit_preprocessor
         if circuit_preprocessor is not None:
             qc = circuit_preprocessor(qc)
-
-        
 
         from qrisp.misc import get_measurement_from_qc
 
@@ -623,7 +622,8 @@ class QuantumArray(np.ndarray):
             deleted qubits are in the $\ket{0}$ state. The default is False.
 
         """
-        for qv in self.flatten(): qv.delete(verify = verify)
+        for qv in self.flatten():
+            qv.delete(verify=verify)
 
     def __repr__(self):
         return str(self.get_measurement())
@@ -655,6 +655,7 @@ class QuantumArray(np.ndarray):
 
     def __getitem__(self, index):
         from qrisp.environments import conjugate
+
         if isinstance(index, QuantumVariable):
             return conjugate(manipulate_array)(self, index)
 
@@ -939,9 +940,9 @@ class OutcomeArray(np.ndarray):
     def __new__(subtype, ndarray):
         if isinstance(ndarray, list):
             ndarray = np.array(ndarray)
-            
+
             if ndarray.dtype == np.int64:
-                ndarray = np.array(ndarray, dtype = np.int32)
+                ndarray = np.array(ndarray, dtype=np.int32)
 
         obj = super().__new__(subtype, ndarray.shape, dtype=ndarray.dtype)
         indices = product(*[list(range(i)) for i in ndarray.shape])

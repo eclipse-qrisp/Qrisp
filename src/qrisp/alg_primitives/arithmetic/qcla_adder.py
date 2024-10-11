@@ -552,7 +552,7 @@ c = calc_carry(a, b, radix_base, radix_exponent)
 # gidney_adder(a, b)
 
 print(c)
-from qrisp.interface import VirtualQiskitBackend
+from qrisp.interface import QiskitBackend
 # print(multi_measurement([a,d,b]))
 # print(b.get_measurement(compilation_kwargs = {"compile_mcm" : True}))
 # print(b)
