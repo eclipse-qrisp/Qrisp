@@ -11,6 +11,7 @@ Backend Interface
    VirtualQiskitBackend
    QiskitRuntimeBackend
    DockerSimulators
+   IQMBackend
    
 The backend interface contains a minimal set of features that apply to every gate-based quantum computer.
 The main motivation in designing the interface, is to provide a convenient setup for both clients and providers of physical quantum
@@ -83,3 +84,20 @@ This class is a wrapper for the VirtualBackend to quickly integrate Qiskit backe
    vrtl_qasm_sim = VirtualQiskitBackend(qiskit_backend)
 
 Naturally, this also works for non-simulator Qiskit backends.
+
+
+:ref:`IQMBackend`
+---------------------
+
+The IQMBackend class allows to run Qrisp programs on IQM quantum computers available via 
+`IQM Resonance <https://resonance.meetiqm.com/>`. 
+For an up-to-date list of device instance names check the IQM Resonance Dashboard. 
+Devices available via IQM Resonance currently support up to 20 000 shots. 
+
+.. code-block:: python
+
+   from qrisp.interface import IQMBackend
+   qrisp_garnet = IQMBackend(
+      api_token = "YOUR_IQM_RESONANCE_TOKEN", 
+      device_instance = "garnet" # check the website for an up-to-date list of devices
+   )

@@ -48,13 +48,14 @@ class VirtualBackend(BackendClient):
 
 
     We set up a VirtualBackend, which prints the received QuantumCircuit and returns the
-    results of the QASM simulator. ::
+    results of the QASM simulator. It is required that the run_func specifies a default
+    value for the `shots` parameter. ::
 
 
-        def run_func(qasm_str, shots, token = ""):
-            
+        def run_func(qasm_str, shots = 1000, token = ""):
+
             from qiskit import QuantumCircuit
-            
+
             qiskit_qc = QuantumCircuit.from_qasm_str(qasm_str)
 
             print(qiskit_qc)
@@ -91,21 +92,20 @@ class VirtualBackend(BackendClient):
     def __init__(self, run_func, port=None):
 
         from qrisp.interface import BackendServer
+
         self.port = port
         if port is None:
             self.run_func = run_func
         else:
             # Create BackendServer
-            self.backend_server = BackendServer(
-                run_func, "localhost", port=port
-            )
+            self.backend_server = BackendServer(run_func, "localhost", port=port)
             # Run the server (runs in the background)
             self.backend_server.start()
             # Connect client
-    
+
             super().__init__(api_endpoint="localhost", port=port)
 
-    def run(self, qc, shots, token=""):
+    def run(self, qc, shots=None, token=""):
         """
         Executes the function run_func specified at object creation.
 
@@ -113,7 +113,7 @@ class VirtualBackend(BackendClient):
         ----------
         qc : QuantumCircuit
             The QuantumCircuit to run.
-        shots : int
+        shots : int, optional
             The amount of shots to perform.
 
         Returns
@@ -162,30 +162,36 @@ class VirtualQiskitBackend(VirtualBackend):
 
     def __init__(self, backend=None, port=9011):
         if backend is None:
-            
+
             try:
                 from qiskit import Aer
+
                 backend = Aer.get_backend("qasm_simulator")
             except ImportError:
                 from qiskit.providers.basic_provider import BasicProvider
-                backend = BasicProvider().get_backend('basic_simulator')
+
+                backend = BasicProvider().get_backend("basic_simulator")
 
         # Create the run method
-        def run(qasm_str, shots, token = ""):
+        def run(qasm_str, shots=None, token=""):
+            if shots is None:
+                shots = 100000
             # Convert to qiskit
             from qiskit import QuantumCircuit
 
             qiskit_qc = QuantumCircuit.from_qasm_str(qasm_str)
 
-            
-            #Make circuit with one monolithic register
+            # Make circuit with one monolithic register
             new_qiskit_qc = QuantumCircuit(len(qiskit_qc.qubits), len(qiskit_qc.clbits))
             for instr in qiskit_qc:
-                new_qiskit_qc.append(instr.operation, 
-                                     [qiskit_qc.qubits.index(qb) for qb in instr.qubits],
-                                     [qiskit_qc.clbits.index(cb) for cb in instr.clbits])
+                new_qiskit_qc.append(
+                    instr.operation,
+                    [qiskit_qc.qubits.index(qb) for qb in instr.qubits],
+                    [qiskit_qc.clbits.index(cb) for cb in instr.clbits],
+                )
 
             from qiskit import transpile
+
             qiskit_qc = transpile(new_qiskit_qc, backend=backend)
             # Run Circuit on the Qiskit backend
             qiskit_result = backend.run(qiskit_qc, shots=shots).result().get_counts()
@@ -219,7 +225,7 @@ class QiskitRuntimeBackend(VirtualBackend):
     ----------
     backend : str, optional
         A string associated to the name of a Qiskit Runtime Backend.
-        The default one is the "ibmq_qasm_simulator", but it also 
+        The default one is the "ibmq_qasm_simulator", but it also
         possible to provide other ones like "simulator_statevector"
         or real backends from the Qiskit Runtime.
     port : int, optional
@@ -228,7 +234,7 @@ class QiskitRuntimeBackend(VirtualBackend):
         The token is necessary to create correctly the Qiskit Runtime
         service and be able to run algorithms on their backends.
 
-    Example
+    Examples
     --------
 
     >>> from qrisp import QuantumFloat
@@ -244,8 +250,8 @@ class QiskitRuntimeBackend(VirtualBackend):
 
     """
 
-    def __init__(self, backend=None, port=8079, token=''):
-        from qiskit_ibm_runtime import QiskitRuntimeService,Sampler,Session,Estimator
+    def __init__(self, backend=None, port=8079, token=""):
+        from qiskit_ibm_runtime import QiskitRuntimeService, Sampler, Session, Estimator
 
         service = QiskitRuntimeService(channel="ibm_quantum", token=token)
         if backend is None:
@@ -253,23 +259,32 @@ class QiskitRuntimeBackend(VirtualBackend):
         else:
             backend = service.get_backend(backend)
 
-            
-        session = Session(service,backend)
+        session = Session(service, backend)
         sampler = Sampler(session=session)
 
         # Create the run method
-        def run(qasm_str, shots, token = ""):
+        def run(qasm_str, shots=None, token=""):
+            if shots is None:
+                shots = 100000
             # Convert to qiskit
             from qiskit import QuantumCircuit
+
             qiskit_qc = QuantumCircuit.from_qasm_str(qasm_str)
 
             from qiskit import transpile
 
             qiskit_qc = transpile(qiskit_qc, backend=backend)
             # Run Circuit with the Sampler Primitive
-            qiskit_result = sampler.run(qiskit_qc, shots=shots).result().quasi_dists[0].binary_probabilities()
-            qiskit_result.update((key, round(value * shots)) for key, value in qiskit_result.items())
-            
+            qiskit_result = (
+                sampler.run(qiskit_qc, shots=shots)
+                .result()
+                .quasi_dists[0]
+                .binary_probabilities()
+            )
+            qiskit_result.update(
+                (key, round(value * shots)) for key, value in qiskit_result.items()
+            )
+
             # Remove the spaces in the qiskit result keys
             result_dic = {}
             import re
@@ -277,12 +292,12 @@ class QiskitRuntimeBackend(VirtualBackend):
             for key in qiskit_result.keys():
                 counts_string = re.sub(r"\W", "", key)
                 result_dic[counts_string] = qiskit_result[key]
-            
+
             return result_dic
 
         super().__init__(run, port=port)
 
-    def close_session(self): 
+    def close_session(self):
         """
         Method to call in order to close the session started by the init method.
         """

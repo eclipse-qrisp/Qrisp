@@ -1526,7 +1526,7 @@ class QuantumCircuit:
 
         self.data.append(Instruction(operation, qubits, clbits))
 
-    def run(self, shots=100000, backend=None):
+    def run(self, shots=None, backend=None):
         """
         Runs a QuantumCircuit on a given backend.
 

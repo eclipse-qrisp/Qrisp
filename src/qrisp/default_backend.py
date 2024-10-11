@@ -18,25 +18,15 @@
 
 
 from qrisp.interface import VirtualBackend, VirtualQiskitBackend
-# from qrisp.interface.qunicorn import BackendClient
-# def_backend = VirtualQiskitBackend()
 from qrisp.simulator.simulator import run
 from qrisp import QuantumCircuit
-#
 
-def run_wrapper(qasm_str, shots, token = ""):
-    qc = QuantumCircuit.from_qasm_str(qasm_str)
-    return run(qc, shots)
-
-# def_backend = VirtualBackend(run_wrapper, port=8080)
 
 class DefaultBackend:
-    
-    def run(self, qc, shots, token = ""):
-        
+    def run(self, qc, shots=None, token=""):
+        if shots is None:
+            shots = 100000
         return run(qc, shots, token)
 
 
 def_backend = DefaultBackend()
-# def_backend = BackendClient()
-# raise
