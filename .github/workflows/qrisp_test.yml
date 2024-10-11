@@ -24,7 +24,7 @@ jobs:
           pip install -e ./
           pip install pennylane
           pip install qiskit-aer
-          pip install iqm
+          pip install qiskit-iqm
       - name: Test with pytest
         run: |
           pytest
