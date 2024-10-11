@@ -153,59 +153,65 @@ class ClControlEnvironment(QuantumEnvironment):
         
         self.ctrl_bls = ctrl_bls
         
-        QuantumEnvironment.__init__(self)
+        QuantumEnvironment.__init__(self, env_args = ctrl_bls)
 
+        # Process the ctrl_state
         self.ctrl_state = ctrl_state
+        
+        # If the ctrl state is a string, convert into an integer        
         if isinstance(self.ctrl_state, str):
             if ctrl_state == len(ctrl_bls)*"1":
                 self.ctrl_state = -1
             else:
                 self.ctrl_state = int(self.ctrl_state, 2)
         
-        self.env_args = ctrl_bls
         self.invert = invert
     
     def jcompile(self, eqn, context_dic):
         
         args = extract_invalues(eqn, context_dic)
         
+        # This list stores the the variables representing the control variables
         ctrl_vars = args[1:len(self.ctrl_bls)+1]
+        
+        # This list stores the variables used in the environment body
         env_vars = [args[0]] + args[len(self.ctrl_bls)+1:]
         
-        body_jaspr = eqn.params["jaspr"]
+        # Flatten the environments in the body
+        body_jaspr = eqn.params["jaspr"].flatten_environments()
         
         if len(body_jaspr.outvars) > 1:
             raise Exception("Found ClControlEnvironment with carry value")
         
+        # Compute the control bool
+        tmp = ctrl_vars[0]
+        cond_bl = tmp
         
+        # Process the control state requirement
+        if self.ctrl_state != -1 and ((self.ctrl_state & 1) == 0):
+            cond_bl = ~ tmp
+        
+        # If there is more than one control variable, loop through
         if len(ctrl_vars) > 1:
-            tmp = ctrl_vars[0]
-            cond_bl = tmp            
-            if self.ctrl_state != -1 and ((self.ctrl_state & 1) != 0):
-                cond_bl = ~ tmp
-            
+
             for i in range(1, len(ctrl_vars)):
-                tmp = cond_bl & ctrl_vars[i]
-                cond_bl = tmp
-                if self.ctrl_state != -1 and ((self.ctrl_state & 1<<i) != 0):
-                    cond_bl = ~ tmp
-                    
-                    
-        else:
-            cond_bl = ctrl_vars[0]
+                tmp = ctrl_vars[i]
+                if self.ctrl_state != -1 and ((self.ctrl_state & 1<<i) == 0):
+                    tmp = ~ tmp
+                
+                cond_bl = cond_bl & tmp
+            
+        if self.invert:
+            cond_bl = ~cond_bl
         
         def identity_fun(*args):
             return args[0]
         
         flattened_body_jaspr = body_jaspr.flatten_environments()
         
-        if not self.invert:
-            true_fun = flattened_body_jaspr.eval
-            false_fun = identity_fun
-        else:
-            false_fun = flattened_body_jaspr.eval
-            true_fun = identity_fun
-            
+        true_fun = flattened_body_jaspr.eval
+        false_fun = identity_fun
+        
         res_abs_qc = cond(cond_bl, true_fun, false_fun, *env_vars)
         
         insert_outvalues(eqn, context_dic, res_abs_qc)
