@@ -48,7 +48,7 @@ def test_unitary_calculation():
 
     ###################
     qc.qubits = qc.qubits[::-1]
-    qiskit_qc = convert_to_qiskit(qc)
+    qiskit_qc = convert_to_qiskit(qc, transpile = True)
     
 
     start = time.time()
