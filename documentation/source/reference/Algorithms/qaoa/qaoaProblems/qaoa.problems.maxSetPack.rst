@@ -22,7 +22,7 @@ Example implementation
     from qrisp.qaoa import QAOAProblem, RZ_mixer
     from qrisp.qaoa.problems.maxIndepSet import create_max_indep_set_cl_cost_function, create_max_indep_set_mixer, max_indep_set_init_function
     import networkx as nx
-    import matplotlib.pyplot as plt
+    from itertools import combinations
 
     sets = [{0,7,1},{6,5},{2,3},{5,4},{8,7,0},{1}]
 

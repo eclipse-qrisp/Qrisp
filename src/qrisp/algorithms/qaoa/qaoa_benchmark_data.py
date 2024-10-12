@@ -566,7 +566,11 @@ def approximation_ratio(counts, optimal_solution, cost_function):
     approximation ratio measure, commonly used to evaluate the MaxCut Problem
 
     """
-    return cost_function(counts)/cost_function({optimal_solution: 1})
+    optimal_cost = cost_function({optimal_solution: 1})
+    if optimal_cost < 0:
+        return cost_function(counts)/optimal_cost
+    else:
+        return optimal_cost/cost_function(counts)
 
 def ilog(n, base):
     """

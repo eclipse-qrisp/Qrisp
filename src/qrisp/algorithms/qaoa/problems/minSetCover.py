@@ -82,7 +82,7 @@ def create_min_set_cover_cl_cost_function(sets, universe):
         for state, prob in res_dic.items():
             indices = [index for index, value in enumerate(state) if value == '1']
             solution_sets = [sets[index] for index in indices]
-            if set.union(*solution_sets)==universe:
+            if len(solution_sets)>0 and set.union(*solution_sets)==universe:
                 energy += len(indices)*prob
             else:
                 energy += len(sets)

@@ -41,7 +41,6 @@ Example implementation
    from qrisp.qaoa import QAOAProblem, RZ_mixer
    from qrisp.qaoa.problems.minSetCover import create_min_set_cover_mixer, create_min_set_cover_cl_cost_function, min_set_cover_init_function
    import networkx as nx
-   import matplotlib.pyplot as plt
 
    sets = [{0,1,2,3},{1,5,6,4},{0,2,6,3,4,5},{3,4,0,1},{1,2,3,0},{1}]
    universe = set.union(*sets)
