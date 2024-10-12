@@ -8,7 +8,9 @@ Implementations
 .. toctree::
      :hidden:
     
-     
+
+     qaoaProblems/qaoa.problems.maxCut
+     qaoaProblems/qaoa.problems.maxKColorableSubgraph
      qaoaProblems/qaoa.problems.maxClique
      qaoaProblems/qaoa.problems.maxIndepSet
      qaoaProblems/qaoa.problems.maxSetPack
@@ -17,14 +19,16 @@ Implementations
      qaoaProblems/qaoa.problems.eThrLinTwo
 
 
-Here you can find QAOA implementations which are not explicitly named in the tutorial, namely:
+Here, you can additionally find QAOA implementations which are not explicitly discussed in the tutorial, namely:
 
 
+* :ref:`MaxCut <maxCutQAOAdoc>`
+* :ref:`Max-$\\kappa$-Colorable Subgraph <maxKColorableSubgraphQAOA>`
 * :ref:`MaxClique <maxCliqueQAOA>`
 * :ref:`MaxIndepSet <maxIndepSetQAOA>`
 * :ref:`MaxSetPacking <maxSetPackQAOA>`
-* :ref:`MinSetCover <minsetcoverQAOA>`
-* :ref:`MaxSat <maxsatQAOA>`
+* :ref:`MinSetCover <minSetCoverQAOA>`
+* :ref:`MaxSat <maxSatQAOA>`
 * :ref:`E3Lin2 <eThrLinTwoQAOA>`
 
 

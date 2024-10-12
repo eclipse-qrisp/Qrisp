@@ -67,7 +67,7 @@ The following problem instances have already been successfully implemented using
    * - PROBLEM INSTANCE
      - MIXER TYPE
      - IMPLEMENTED IN QRISP
-   * - :ref:`MaxCut <QAOAMaxCut>`
+   * - :ref:`MaxCut <maxCutQAOA>`
      - X mixer
      -    ✅
    * - :ref:`Max-$\\ell$-SAT <maxsatQAOA>`
@@ -76,16 +76,16 @@ The following problem instances have already been successfully implemented using
    * - :ref:`QUBO (NEW since 0.4!) <QUBOQAOA>`
      - X mixer
      -    ✅ 
-   * - :ref:`MaxIndependentSet <QAOAMaxIndependentSet>`
+   * - :ref:`MaxIndependentSet <maxIndepSetQAOA>`
      - Controlled X mixer
      -    ✅
-   * - :ref:`MaxClique <maxcliqueQAOA>`
+   * - :ref:`MaxClique <maxCliqueQAOA>`
      - Controlled X mixer
      -    ✅
    * - :ref:`MaxSetPacking <maxSetPackQAOA>`
      - Controlled X mixer
      -    ✅
-   * - :ref:`MinSetCover <minsetcoverQAOA>`
+   * - :ref:`MinSetCover <minSetCoverQAOA>`
      - Controlled X mixer
      -    ✅
    * - :ref:`Max-$\\kappa$-Colorable Subgraph <QAOAMkCS>`

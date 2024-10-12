@@ -1,4 +1,4 @@
-.. _maxsatQAOA:
+.. _maxSatQAOA:
 
 QAOA MaxSat
 ===========
@@ -87,6 +87,5 @@ That's it! In the following, we print the 5 most likely solutions together with 
    print("5 most likely solutions")
    max_five = sorted(results.items(), key=lambda item: item[1], reverse=True)[:5]
    for res, prob in max_five:
-      print(res, prob)
-      print(cl_cost({res : 1}))
+      print(res, prob, cl_cost({res : 1}))
 

@@ -20,11 +20,9 @@ Example implementation
     from qrisp.qaoa import QAOAProblem, RZ_mixer
     from qrisp.qaoa.problems.maxIndepSet import create_max_indep_set_cl_cost_function, create_max_indep_set_mixer, max_indep_set_init_function
     import networkx as nx
-    import matplotlib.pyplot as plt
 
     G = nx.erdos_renyi_graph(9, 0.7, seed =  133)
     G_complement = nx.complement(G)
-
     qarg = QuantumVariable(G.number_of_nodes())
 
     qaoa_max_indep_set = QAOAProblem(cost_operator=RZ_mixer, 
@@ -42,8 +40,7 @@ That's it! In the following, we print the 5 most likely solutions together with 
     print("5 most likely solutions")
     max_five = sorted(results.items(), key=lambda item: item[1], reverse=True)[:5]
     for res, prob in max_five:
-        print([index for index, value in enumerate(res) if value == '1'], prob)
-        print(cl_cost({res : 1}))
+        print([index for index, value in enumerate(res) if value == '1'], prob, cl_cost({res : 1}))
 
 Finally, we visualize the most likely solution.
 
@@ -53,7 +50,6 @@ Finally, we visualize the most likely solution.
     nx.draw(G, with_labels = True, 
             node_color=['#FFCCCB' if node in most_likely else '#ADD8E6' for node in G.nodes()],
             edge_color=['#FFCCCB' if edge[0] in most_likely and edge[1] in most_likely else '#D3D3D3' for edge in G.edges()])
-    plt.show()
 
 .. image:: ./maxClique.png
   :scale: 100%

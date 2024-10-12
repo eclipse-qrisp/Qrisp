@@ -1,4 +1,4 @@
-.. _minsetcoverQAOA:
+.. _minSetCoverQAOA:
 
 QAOA MinSetCover
 ================
@@ -62,5 +62,4 @@ That’s it! In the following, we print the 5 most likely solutions together wit
    print("5 most likely solutions")
    max_five = sorted(results.items(), key=lambda item: item[1], reverse=True)[:5]
    for res, prob in max_five:
-      print([sets[index] for index, value in enumerate(res) if value == '1'], prob)
-      print(cl_cost({res : 1}))
+      print([sets[index] for index, value in enumerate(res) if value == '1'], prob, cl_cost({res : 1}))

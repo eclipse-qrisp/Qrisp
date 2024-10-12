@@ -162,7 +162,7 @@ def apply_phase_if_eq(qcolor_0, qcolor_1, gamma):
         The color of the first argument
     qcolor_1 : QuantumColor
         The color of the second argument
-    gamma : integer
+    gamma : float
         The value of the gamma angle parameter used in QAOA
 
     Returns
@@ -187,20 +187,21 @@ def apply_phase_if_eq(qcolor_0, qcolor_1, gamma):
         cx(qcolor_0, qcolor_1)
 
 def create_coloring_operator(G):
-    """
-    Creates coloring operator and appliesa phase if two neighboring nodes
-    on the graph are not equal in color.
+    r"""
+    Generates the cost operator for an instance of the coloring problem for a given graph $G$.
+
+    The coloring operator and applies a phase if two neighboring nodes in the graph have the same color.
 
     Parameters
     ----------
     G : nx.Graph
-        Graph to color.
+        The graph to color.
 
     Returns
     -------
-    coloring_operator : function
-        The coloring operator with correctly applied or not applied phase 
-        based on if the color of two arguments in question are matching
+    cost_operator : function
+        A function receiving a :ref:`QuantumVariable` and a real parameter $\gamma$.
+        This function performs the application of the cost operator.
 
     """
     def coloring_operator(quantumcolor_array, gamma):
@@ -212,63 +213,50 @@ def create_coloring_operator(G):
 
 def mkcs_obj(quantumcolor_array, G):
         # Set value of color integer to 1
-    color = 1
+    energy = 1
 
         # Iterate over all edges in graph G
     for pair in list(G.edges()):
 
             # If colors of nodes in current pair are not same, multiply color by reward factor 4
         if quantumcolor_array[pair[0]] != quantumcolor_array[pair[1]]:
-            color *= 4
+            energy *= 4
 
         # Return negative color as objective function value. The negative value is used since we want to minimize the objective function       
-    return -color
+    return -energy
 
 def create_coloring_cl_cost_function(G):
     """
-    Creates the coloring classical cost function for graph G we are coloring.
+    Creates the classical cost function for an instance of the coloring problem for a given graph $G$.
 
     Parameters
     ----------
     G : nx.Graph
-        Graph to color.
+        The graph to color.
 
     Returns
     -------
     cl_cost_function : function
-        Classical cost function, which in the end returns the ratio between 
-        the energy calculated using the mkcs_obj objective funcion and the 
-        amount of counts used in the experiment.
+        The classical function for the problem instance, which takes a dictionary of measurement results as input.
 
     """
-    def cl_cost_function(counts):
+    def cl_cost_function(res_dic):
 
         def mkcs_obj(quantumcolor_array, G):
-            color = 1
+            energy = 1
             for pair in list(G.edges()):
                 if quantumcolor_array[pair[0]] != quantumcolor_array[pair[1]]:
-                    color *= 4
-            return -color
+                    energy *= 4
+            return -energy
     
         energy = 0
-        total_counts = 0
-        
-        min_res = min([mkcs_obj(res, G) for res in counts.keys()])
-        
-        for meas, meas_count in list(counts.items())[::-1]:
-            
-            obj_for_meas = mkcs_obj(meas, G)
-            
-#            if obj_for_meas == min_res:
-#                print(meas, obj_for_meas, "<=========== Optimal result")
-#            else:
-#                print(meas, obj_for_meas)
-            
-            energy += obj_for_meas * meas_count
-            total_counts += meas_count
-#        print("Total cost: ", energy/total_counts)
-        return energy / total_counts
+        for quantumcolor_array, prob in res_dic.items():
+            energy += mkcs_obj(quantumcolor_array,G)*prob
+
+        return energy
+    
     return cl_cost_function
+
 
 def graph_coloring_problem(G):
     """
@@ -278,7 +266,7 @@ def graph_coloring_problem(G):
     Parameters
     ----------
     G : nx.Graph
-        Graph to color.
+        The graph to color.
 
     Returns
     -------
@@ -286,6 +274,6 @@ def graph_coloring_problem(G):
         QAOA problem instance for graph coloring with which the QAOA algorithm is ran for.
 
     """    
-    from qrisp.qaoa import QAOAProblem, XY_mixer
+    from qrisp.qaoa import QAOAProblem, apply_XY_mixer
 
-    return QAOAProblem(create_coloring_operator(G), XY_mixer, create_coloring_cl_cost_function(G))
+    return QAOAProblem(create_coloring_operator(G), apply_XY_mixer, create_coloring_cl_cost_function(G))
