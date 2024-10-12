@@ -17,158 +17,16 @@
 """
 
 import numpy as np
+from sympy import lambdify, Expr
 
 from qrisp.misc import bin_rep
 from qrisp.circuit.standard_operations import op_list
-
-
-def convert_circuit(qc, target_api="thrift", transpile=True):
-    if transpile or target_api == "open_api":
-        from qrisp.circuit import transpile
-
-        qc = transpile(qc)
-
-    if target_api == "thrift":
-        from qrisp.interface.thrift_interface.interface_types import (
-            PortableClbit,
-            PortableInstruction,
-            PortableOperation,
-            PortableQuantumCircuit,
-            PortableQubit,
-        )
-    elif target_api == "open_api":
-        from qrisp.interface.openapi_interface.interface_types import (
-            PortableClbit,
-            PortableInstruction,
-            PortableOperation,
-            PortableQuantumCircuit,
-            PortableQubit,
-        )
-    elif target_api == "qrisp":
-        return convert_to_qrisp(qc)
-    elif target_api == "qiskit":
-        return convert_to_qiskit(qc, transpile)
-
-    circuit_qubits = [PortableQubit(identifier=qb.identifier) for qb in qc.qubits]
-    circuit_clbits = [PortableClbit(identifier=cb.identifier) for cb in qc.clbits]
-
-    res_qc = PortableQuantumCircuit(
-        qubits=circuit_qubits, clbits=circuit_clbits, data=[]
-    )
-
-    for i in range(len(qc.data)):
-        instr = qc.data[i]
-        if instr.op.name in ["qb_alloc", "qb_dealloc"]:
-            # continue
-            pass
-
-        params = []
-        for j in range(len(instr.op.params)):
-            value = float(instr.op.params[j])
-            params.append(value)
-
-        if instr.op.definition is not None:
-            definition = convert_circuit(
-                instr.op.definition, target_api, transpile=False
-            )
-            op = PortableOperation(
-                name=instr.op.name,
-                num_qubits=instr.op.num_qubits,
-                num_clbits=instr.op.num_clbits,
-                params=params,
-                definition=definition,
-            )
-        else:
-            op = PortableOperation(
-                name=instr.op.name,
-                num_qubits=instr.op.num_qubits,
-                num_clbits=instr.op.num_clbits,
-                params=params,
-            )
-
-        qubits = [PortableQubit(identifier=qb.identifier) for qb in instr.qubits]
-        clbits = [PortableClbit(identifier=cb.identifier) for cb in instr.clbits]
-
-        res_qc.data.append(PortableInstruction(op=op, qubits=qubits, clbits=clbits))
-
-    return res_qc
-
-
-def convert_to_qrisp(qc):
-    from qrisp.circuit import (
-        Clbit,
-        Instruction,
-        Operation,
-        QuantumCircuit,
-        Qubit,
-        fast_append,
-        op_list,
-        PauliGate
-    )
-
-    op_dict = {op().name: op for op in op_list}
-
-    res_qc = QuantumCircuit()
-
-    # This dic gives the qiskit qubits/clbits when presented with their identifier
-    bit_dic = {}
-
-    # Add Qubits
-    for i in range(len(qc.qubits)):
-        res_qc.add_qubit(Qubit(qc.qubits[i].identifier))
-        bit_dic[qc.qubits[i].identifier] = res_qc.qubits[-1]
-
-    # Add Clbits
-    for i in range(len(qc.clbits)):
-        res_qc.add_clbit(Clbit(qc.clbits[i].identifier))
-        bit_dic[qc.clbits[i].identifier] = res_qc.clbits[-1]
-
-    with fast_append():
-        for i in range(len(qc.data)):
-            instr = qc.data[i]
-            # Prepare qubits
-            qubit_list = [bit_dic[qubit.identifier] for qubit in instr.qubits]
-            clbit_list = [bit_dic[clbit.identifier] for clbit in instr.clbits]
-
-            if not instr.op.definition is None:
-                op = convert_to_qrisp(instr.op.definition).to_op()
-            elif instr.op.name in op_dict.keys():
-                op_func = op_dict[instr.op.name]
-                if instr.op.name in ["x", "y", "z", "s", "t", "h", "s_dg", "t_dg", "sx", "sx_dg", "id"]:
-                    op = op_func()
-                elif instr.op.name in ["rx", "ry", "rz", "p", "u1", "gphase"]:
-                    op = op_func(sum(instr.op.params))
-                else:
-                    op = op_func(*instr.op.params)
-            elif instr.op.name[5:] in op_dict.keys():
-                if instr.op.name[:5] == "c_if_":
-                    op = op_dict[instr.op.name[5:]](*instr.op.params).c_if()
-            elif instr.op.name[-3:] == "_dg" and instr.op.name[:-3] in op_dict.keys():
-                op_func = op_dict[instr.op.name[:-3]]
-                if instr.op.name in ["x", "y", "z", "s", "t", "h", "s_dg", "t_dg", "sx", "sx_dg", "id"]:
-                    op = op_func()
-                elif instr.op.name in ["rx", "ry", "rz", "p", "u1"]:
-                    op = op_func(sum(instr.op.params))
-                else:
-                    op = op_func(*instr.op.params)
-                    
-                op = op.inverse()
-                
-            else:
-                raise Exception(
-                    "Don't know how to convert operation "
-                    + str(instr.op.name)
-                    + " to qrisp"
-                )
-
-            res_qc.data.append(Instruction(op, qubit_list, clbit_list))
-
-    return res_qc
-
+from qrisp.circuit import ControlledOperation, ClControlledOperation
 
 # Function to convert qrisp quantum circuits to Qiskit quantum circuits
 def convert_to_qiskit(qc, transpile=False):
     from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
+    from qiskit.circuit import Parameter
 
     if transpile:
         from qrisp.circuit.transpiler import transpile
@@ -194,15 +52,6 @@ def convert_to_qiskit(qc, transpile=False):
 
         bit_dic[qc.clbits[i].identifier] = qiskit_qc.clbits[-1]
 
-    # Add Instructions
-    import qiskit.circuit.library.standard_gates as qsk_gates
-    from qiskit.circuit import Barrier, ControlledGate, Gate, Instruction, Parameter
-    from qiskit.circuit.measure import Measure
-
-    from qrisp.circuit import ControlledOperation, ClControlledOperation
-    from sympy import Symbol, lambdify, Expr
-    
-    
     symbol_param_dic = {}
     
     for i in range(len(qc.data)):
@@ -231,9 +80,6 @@ def convert_to_qiskit(qc, transpile=False):
                 qiskit_params.append(p)
         
         params = qiskit_params
-
-        
-        
 
         # Prepare qiskit qubits
         qubit_list = [bit_dic[qubit.identifier] for qubit in qc.data[i].qubits]
@@ -301,11 +147,10 @@ def convert_to_qiskit(qc, transpile=False):
     # Return result
     return qiskit_qc
 
-
 def create_qiskit_instruction(op, params=[]):
     import qiskit.circuit.library.standard_gates as qsk_gates
     from qiskit.circuit import Measure, Reset, Barrier
-    from qrisp.circuit import ControlledOperation, ClControlledOperation
+    from qrisp.circuit import ControlledOperation
     from qiskit import QiskitError
     
     if op.name == "cx":
@@ -420,12 +265,9 @@ op_dic["u"] = op_dic["u3"]
 
 
 def convert_from_qiskit(qiskit_qc):
-    from qiskit import transpile
-    from qiskit.circuit import ControlledGate, ParameterExpression, Parameter
+    from qiskit.circuit import ControlledGate, ParameterExpression
 
-    from qrisp import Clbit, ControlledOperation, QuantumCircuit, Qubit, op_list, Barrier
-    from sympy import Symbol, lambdify, Expr
-    
+    from qrisp import Clbit, ControlledOperation, QuantumCircuit, Barrier, Qubit
 
     qc = QuantumCircuit()
 

@@ -20,7 +20,7 @@
 import numpy as np
 from qrisp import QuantumCircuit, QuantumVariable
 from qiskit import Aer
-from qrisp.interface import VirtualQiskitBackend
+from qrisp.interface import QiskitBackend
 from qrisp.interface.backends import VirtualBackend
 
 # Create some QuantumCricuit
@@ -44,7 +44,9 @@ print(qc)
 # %%
 # Create VirtualBackend
 
-def sample_run_func(qc, shots, token):
+def sample_run_func(qc, shots=None, token=""):
+    if shots is None:
+        shots = 1000
     print("Executing Circuit")
     return {"0": shots}
 
@@ -62,7 +64,7 @@ qv.qs.add_clbit()
 qv.qs.append(qc.to_op(), qv.reg, qv.qs.clbits)
 
 qiskit_backend = Aer.get_backend("qasm_simulator")
-vrtl_qasm_sim = VirtualQiskitBackend(qiskit_backend)
+vrtl_qasm_sim = QiskitBackend(qiskit_backend)
 
 results = qv.get_measurement(backend=vrtl_qasm_sim)
 

@@ -101,13 +101,13 @@ class QuantumSession(QuantumCircuit):
 
     QuantumSessions can be given a default backend on which to evaluate circuits:
 
-    >>> from qrisp.interface import VirtualQiskitBackend
+    >>> from qrisp.interface import QiskitBackend
     >>> qiskit_backend = instantiate_qiskit_backend()
-    >>> qs = QuantumSession(backend = VirtualQiskitBackend(qiskit_backend))
+    >>> qs = QuantumSession(backend = QiskitBackend(qiskit_backend))
 
     In this piece of code, we assume that the function ``instantiate_qiskit_backend``
     creates a Qiskit backend instance (which could either be the QASM Simulator or a
-    real backend). We then hand this to the :ref:`VirtualQiskitBackend` constructor to
+    real backend). We then hand this to the :ref:`QiskitBackend` constructor to
     turn it into a Qrisp backend. Now, any measurements of variables that are registered
     in this session will be evaluated on that backend.
 
@@ -144,8 +144,8 @@ class QuantumSession(QuantumCircuit):
 
         >>> from qiskit import Aer
         >>> qasm_sim = Aer.get_backend("qasm_simulator")
-        >>> from qrisp.interface import VirtualQiskitBackend
-        >>> vrtl_qasm_sim = VirtualQiskitBackend(qasm_sim)
+        >>> from qrisp.interface import QiskitBackend
+        >>> vrtl_qasm_sim = QiskitBackend(qasm_sim)
         >>> from qrisp import QuantumSession, QuantumFloat
         >>> qs = QuantumSession(vrtl_qasm_sim)
         >>> qf = QuantumFloat(4, qs = qs)

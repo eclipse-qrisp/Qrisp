@@ -17,9 +17,8 @@
 """
 
 import pennylane as qml 
-from qrisp.interface.converter.convert_to_qml import qml_converter
+from qrisp.interface import qml_converter
 
-#from qrisp.circuit.standard_operations import op_list
 from qrisp.circuit.standard_operations import     XGate,YGate, ZGate,    CXGate,  CYGate,    CZGate,MCXGate,PGate,  CPGate,u3Gate,  HGate,RXGate,   RYGate,   RZGate,   MCRXGate,SGate , TGate, RXXGate,RZZGate,  SXGate,   SXDGGate,  Barrier, Measurement,  Reset,  QubitAlloc, QubitDealloc,GPhaseGate,  SwapGate,U1Gate,  IDGate
 import numpy as np
 from qrisp import QuantumVariable

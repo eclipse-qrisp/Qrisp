@@ -77,9 +77,9 @@ class QuantumVariable:
     >>> from qrisp import cx
     >>> cx(example_qv, example_qv_2)
     >>> print(example_qv.qs)
-    
+
     ::
-    
+
         QuantumCircuit:
         --------------
         example_qv.0: ──■────────────
@@ -115,9 +115,9 @@ class QuantumVariable:
             s += temp
 
     >>> print(s.qs)
-    
+
     ::
-    
+
         QuantumCircuit:
         --------------
                        ┌───────────┐┌───────────┐┌───────────┐┌───────────┐
@@ -330,54 +330,53 @@ class QuantumVariable:
         # Specify the traced attributes (None for base type QuantumVariable)
         self.traced_attributes = []
         
-    
     def __or__(self, other):
         from qrisp import mcx, x, cx
-        
+
         if len(self) > len(other):
             or_res = self.duplicate()
         else:
             or_res = other.duplicate()
-        
+
         for i in range(min(len(self), len(other))):
-            mcx([self[i], other[i]], or_res[i], ctrl_state = 0)
+            mcx([self[i], other[i]], or_res[i], ctrl_state=0)
             x(or_res[i])
-        
+
         for i in range(min(len(self), len(other)), len(self)):
             cx(self[i], or_res[i])
-            
+
         for i in range(min(len(self), len(other)), len(other)):
             cx(other[i], or_res[i])
-        
+
         return or_res
-        
+
     def __and__(self, other):
         from qrisp import mcx
-        
+
         if len(self) > len(other):
             and_res = self.duplicate()
         else:
             and_res = other.duplicate()
-        
+
         for i in range(min(len(self), len(other))):
             mcx([self[i], other[i]], and_res[i])
-        
+
         return and_res
-    
+
     def __xor__(self, other):
         from qrisp import cx
-        
+
         if len(self) > len(other):
             and_res = self.duplicate()
         else:
             and_res = other.duplicate()
-        
+
         for i in range(min(len(self), len(other))):
             cx(self[i], and_res[i])
             cx(other[i], and_res[i])
-        
+
         return and_res
-        
+
     def delete(self, verify=False, recompute=False):
         r"""
         This method is for deleting a QuantumVariable and thus freeing up and resetting
@@ -510,17 +509,15 @@ class QuantumVariable:
         # Register duplicate variable in session manager
 
         if name is not None:
-            
+
             if name[-1] == "*":
                 self.user_given_name = False
                 name = name[:-1]
             else:
                 duplicate.user_given_name = True
-            
+
             duplicate.name = name
             new_qs.register_qv(duplicate, self.size)
-            
-            
 
         else:
             duplicate.user_given_name = False
@@ -642,7 +639,7 @@ class QuantumVariable:
 
         raise Exception("Value " + str(value) + " not supported by encoder.")
 
-    def encode(self, value, permit_dirtyness = False):
+    def encode(self, value, permit_dirtyness=False):
         """
         The encode method allows to quickly bring a QuantumVariable in a desired
         computational basis state.
@@ -809,7 +806,13 @@ class QuantumVariable:
         insertion_qubits = self.qs.request_qubits(amount)
 
         for i in range(amount):
-            insertion_qubits[i].identifier =  self.name + "_ext_" + str(self.qs.qubit_index_counter[0]) + "." + str(self.size)
+            insertion_qubits[i].identifier = (
+                self.name
+                + "_ext_"
+                + str(self.qs.qubit_index_counter[0])
+                + "."
+                + str(self.size)
+            )
             self.reg.insert(position + i, insertion_qubits[i])
 
     def reduce(self, qubits, verify=False):
@@ -861,7 +864,9 @@ class QuantumVariable:
         for i in range(len(qubits)):
             for j in range(self.size):
                 if self.reg[j] == qubits[i]:
-                    self.reg[j].identifier = "reduced_" + str(self.qs.qubit_index_counter[0])
+                    self.reg[j].identifier = "reduced_" + str(
+                        self.qs.qubit_index_counter[0]
+                    )
                     self.qs.qubit_index_counter += 1
                     self.reg.pop(j)
                     break
@@ -873,13 +878,13 @@ class QuantumVariable:
         self,
         plot=False,
         backend=None,
-        shots=100000,
+        shots=None,
         compile=True,
         compilation_kwargs={},
         subs_dic={},
         circuit_preprocessor=None,
         filename=None,
-        precompiled_qc = None
+        precompiled_qc=None,
     ):
         r"""
         Method for quick access to the measurement results of the state of the variable.
@@ -895,7 +900,7 @@ class QuantumVariable:
             The backend on which to evaluate the quantum circuit. The default can be
             specified in the file default_backend.py.
         shots : integer, optional
-            The amount of shots to evaluate the circuit. The default is 10000.
+            The amount of shots to evaluate the circuit. The default is given by the backend it runs on.
         compile : bool, optional
             Boolean indicating if the .compile method of the underlying QuantumSession
             should be called before. The default is True.
@@ -957,7 +962,7 @@ class QuantumVariable:
         if self.size == 0:
             return {"": 1.0}
 
-        if precompiled_qc is None:        
+        if precompiled_qc is None:
             if compile:
                 qc = qompiler(
                     self.qs, intended_measurements=self.reg, **compilation_kwargs
@@ -971,6 +976,7 @@ class QuantumVariable:
         if subs_dic:
             qc = qc.bind_parameters(subs_dic)
             from qrisp.core.compilation import combine_single_qubit_gates
+
             qc = combine_single_qubit_gates(qc)
 
         # Copy circuit in over to prevent modification
@@ -1021,7 +1027,7 @@ class QuantumVariable:
             outcome_labels = []
             for i in range(2**self.size):
                 temp = self.decoder(i)
-                
+
                 try:
                     hash(temp)
                 except TypeError:
@@ -1072,12 +1078,12 @@ class QuantumVariable:
             return self.qs.qubit_cache[id_tuple]
     def __str__(self):
         return str(self.get_measurement())
-    
+
     def __repr__(self):
         return "<" + str(type(self)).split(".")[-1][:-2] + " '" + self.name + "'>"
         return str(type(self)).split(".")[-1][:-2] + "(name = " + self.name + ")"
         return str(self)
-    
+
     def __del__(self):
         i = 0
         while i < len(self.live_qvs):
@@ -1085,7 +1091,6 @@ class QuantumVariable:
                 self.live_qvs.pop(i)
                 continue
             i += 1
-        
 
     def __len__(self):
         return self.size
@@ -1105,11 +1110,11 @@ class QuantumVariable:
         from qrisp.environments import q_eq
 
         return q_eq(self, other)
-    
+
     def __ne__(self, other):
         from qrisp.environments import q_eq
 
-        return q_eq(self, other, invert = True)
+        return q_eq(self, other, invert=True)
 
     def __hash__(self):
         return self.creation_time
@@ -1236,9 +1241,9 @@ class QuantumVariable:
         >>> cx(b[0], b[1])
         >>> p(0.5, b[1])
         >>> print(a.qs)
-        
+
         ::
-        
+
             QuantumCircuit:
             --------------
                       ┌───┐
@@ -1259,9 +1264,9 @@ class QuantumVariable:
 
         >>> b.uncompute()
         >>> print(b.qs)
-        
+
         ::
-        
+
             QuantumCircuit:
             --------------
                  ┌────────┐                              ┌────────┐┌───┐
@@ -1463,7 +1468,7 @@ def plot_histogram(outcome_labels, counts, filename=None):
         except KeyError:
             res_list.append(0)
 
-    plt.bar(outcome_labels, res_list, width = 0.8/len(outcome_labels))
+    plt.bar(outcome_labels, res_list, width=0.8)
     plt.grid()
     plt.ylabel("Measurement probability")
     plt.xlabel("QuantumVariable value")

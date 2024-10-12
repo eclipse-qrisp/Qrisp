@@ -74,7 +74,7 @@ class TensorFactor:
         # the most out of the sparse matrix representation
         import numpy as np
 
-        if matrix.size >= 2**6:
+        if matrix.size >= 2**6 and matrix.dtype != np.dtype("O"):
                 matrix = matrix * (np.abs(matrix) > float_tresh)
 
         # Convert matrix to BiArray

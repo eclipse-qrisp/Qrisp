@@ -18,17 +18,17 @@
 
 import setuptools
 
-REQUIREMENTS = ["connexion>=2.12.0",
-                "qiskit>=0.44.0",
-                "thrift>=0.15.0",
+REQUIREMENTS = ["qiskit>=0.44.0",
                 "matplotlib>=3.5.1",
-                "waitress>=2.1.1",
                 "scipy>=1.10.0",
                 "numba",
                 "networkx",
                 "tdqm",
                 "dill",
-                "flask"]
+                "flask",
+                "waitress",
+                "pyyaml",
+                "requests"]
 
 
 with open("README.md", "r", encoding="utf-8") as fh:
@@ -49,6 +49,9 @@ setuptools.setup(
     package_dir={"": "src"},
     install_requires = REQUIREMENTS,
     setup_requires = REQUIREMENTS,
+    extras_require={
+        'iqm': ['qiskit-iqm']
+    },
     packages=setuptools.find_packages(where="src"),
     python_requires=">=3.8",
 )
