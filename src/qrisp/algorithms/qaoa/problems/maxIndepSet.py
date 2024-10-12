@@ -90,7 +90,8 @@ def create_max_indep_set_cl_cost_function(G):
 
 
 def max_indep_set_init_function(qv):
-    """
+    r"""
+    Prepares the initial state $\ket{0}^{\otimes n}$.
     
     Parameters
     ----------

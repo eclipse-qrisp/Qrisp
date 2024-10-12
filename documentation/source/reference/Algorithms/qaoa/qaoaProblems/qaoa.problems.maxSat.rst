@@ -48,36 +48,41 @@ Classical cost function
 .. autofunction:: create_maxsat_cl_cost_function
 
 
+Initial state function
+----------------------
+
+.. autofunction:: maxsat_init_function
+
+
 Helper functions
 ----------------
 
 .. autofunction:: create_maxsat_cost_polynomials
 
 
-Example implementation:
------------------------
+Example implementation
+----------------------
 
 ::
 
    from qrisp import QuantumVariable
    from qrisp.qaoa import QAOAProblem, RX_mixer
-   from qrisp.qaoa.problems.maxSat import create_maxsat_cl_cost_function, create_maxsat_cost_operator, create_maxsat_cost_polynomials
+   from qrisp.qaoa.problems.maxSat import create_maxsat_cl_cost_function, create_maxsat_cost_operator, maxsat_init_function
 
    clauses = [[1,2,-3],[1,4,-6],[4,5,6],[1,3,-4],[2,4,5],[1,3,5],[-2,-3,6]]
-
    qarg = QuantumVariable(6)
-   cost_polynomials, symbols = create_maxsat_cost_polynomials(clauses ,6)
 
-   qaoa_max_indep_set = QAOAProblem(cost_operator=create_maxsat_cost_operator(cost_polynomials, symbols),
-                                   mixer=RX_mixer,
-                                   cl_cost_function=create_maxsat_cl_cost_function(cost_polynomials, symbols))
+   qaoa_max_indep_set = QAOAProblem(cost_operator=create_maxsat_cost_operator(clauses),
+                                    mixer=RX_mixer,
+                                    cl_cost_function=create_maxsat_cl_cost_function(clauses),
+                                    init_function=maxsat_init_function)
    results = qaoa_max_indep_set.run(qarg=qarg, depth=5)
 
 That's it! In the following, we print the 5 most likely solutions together with their cost values.
 
 ::
    
-   cl_cost = create_maxsat_cl_cost_function(cost_polynomials, symbols)
+   cl_cost = create_maxsat_cl_cost_function(clauses)
 
    print("5 most likely solutions")
    max_five = sorted(results.items(), key=lambda item: item[1], reverse=True)[:5]

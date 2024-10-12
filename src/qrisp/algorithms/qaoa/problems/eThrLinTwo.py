@@ -16,21 +16,29 @@
 ********************************************************************************/
 """
 
-from qrisp import QuantumBool, x, mcx
-from qrisp.qaoa import controlled_RX_mixer_gen
+from qrisp import h, cx, rz, conjugate
 import itertools
 
 
-def create_max_clique_mixer(G):
-    r"""
-    Generates the ``controlled_RX_mixer`` for an instance of the maximum clique problem for a given graph $G$ following `Hadfield et al. <https://arxiv.org/abs/1709.03489>`_
+def parity(qarg, indices):
+    n = len(indices)
+    for i in range(n-1):
+        cx(qarg[indices[i]],qarg[indices[i+1]])
 
-    The belonging ``predicate`` function indicates if a set can be swapped into the solution.
+
+def create_e3lin2_cost_operator(clauses):
+    r"""
+    Generates the cost operator for an instance of the E3Lin2 problem following `Hadfield et al. <https://arxiv.org/abs/1709.03489>`_
+    The cost operator is given by $e^{-i\gamma H}$ where
+
+    .. math::
+
+        H=\sum_{j=1}^m H_j,\qquad H_j=(-1)^{b_j}Z_{a_{1,j}}Z_{a_{2,j}}Z_{a_{3,j}}
 
     Parameters
     ----------
-    G : nx.Graph
-        The graph for the problem instance.
+    clasues : list[list[int]]
+        The clasues defining the problem.
 
     Returns
     -------
@@ -40,29 +48,22 @@ def create_max_clique_mixer(G):
 
     """
 
-    neighbors_dict = {node: list(G.adj[node]) for node in G.nodes()}
+    def cost_operator(qv, gamma):
+        for clause in clauses:
+            with conjugate(parity)(qv, clause[:3]):
+                rz((-1)**clause[3]*gamma,qv[clause[2]])
 
-    def predicate(qv,i):
-        qbl = QuantumBool()
-        if len(neighbors_dict[i])==0:
-            x(qbl)
-        else:
-            mcx([qv[j] for j in neighbors_dict[i]],qbl,ctrl_state='0'*len(neighbors_dict[i]))
-        return qbl
-
-    controlled_RX_mixer=controlled_RX_mixer_gen(predicate)
-
-    return controlled_RX_mixer
+    return cost_operator
 
 
-def create_max_clique_cl_cost_function(G):
+def create_e3lin2_cl_cost_function(clauses):
     """
-    Generates the classical cost function for an instance of the maximum clique problem for a given graph $G$.
+    Generates the cost operator for an instance of the E3Lin2 problem.
 
     Parameters
     ----------
-    G : nx.Graph
-        The Graph for the problem instance.
+    clasues : list[list[int]]
+        The clasues defining the problem.
 
     Returns
     -------
@@ -74,23 +75,18 @@ def create_max_clique_cl_cost_function(G):
     def cl_cost_function(res_dic):
         energy = 0
         for state, prob in res_dic.items():
-            temp = True
-            indices = [index for index, value in enumerate(state) if value == '1']
-            combinations = list(itertools.combinations(indices, 2))
-            for combination in combinations:
-                if combination not in G.edges():
-                    temp = False
-                    break
-            if temp: 
-                energy += -len(indices)*prob
-
+               for clause in clauses:
+                   if sum(int(state[clause[k]]) for k in range(3)) % 2 == clause[3]:
+                       energy -= prob
+        
         return energy
 
     return cl_cost_function 
 
 
-def max_clique_init_function(qv):
-    """
+def e3lin2_init_function(qv):
+    r"""
+    Prepares the initial state $\ket{+}^{\otimes n}$.
     
     Parameters
     ----------
@@ -98,4 +94,5 @@ def max_clique_init_function(qv):
         The quantum argument.
     
     """
-    pass
+    h(qv)
+

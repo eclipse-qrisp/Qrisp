@@ -13,8 +13,8 @@ Following the work of `Hadfield et al. <https://arxiv.org/abs/1709.03489>`_, the
 where vertices correspond to subsets in $\mathcal S$ and edges correspond to pairs of intersecting subsets.
 
 
-Example implementation:
------------------------
+Example implementation
+----------------------
 
 ::
     

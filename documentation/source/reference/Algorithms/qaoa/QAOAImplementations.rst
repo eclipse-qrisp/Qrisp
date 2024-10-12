@@ -14,10 +14,10 @@ Implementations
      qaoaProblems/qaoa.problems.maxSetPack
      qaoaProblems/qaoa.problems.minSetCover
      qaoaProblems/qaoa.problems.maxSat
-     qaoaProblems/qaoa.problems.eThrTwoLin
+     qaoaProblems/qaoa.problems.eThrLinTwo
 
 
-Here you can the QAOA implementations which are not explicitly named in our tutorial, namely:
+Here you can find QAOA implementations which are not explicitly named in the tutorial, namely:
 
 
 * :ref:`MaxClique <maxCliqueQAOA>`
@@ -25,6 +25,7 @@ Here you can the QAOA implementations which are not explicitly named in our tuto
 * :ref:`MaxSetPacking <maxSetPackQAOA>`
 * :ref:`MinSetCover <minsetcoverQAOA>`
 * :ref:`MaxSat <maxsatQAOA>`
+* :ref:`E3Lin2 <eThrLinTwoQAOA>`
 
 
 

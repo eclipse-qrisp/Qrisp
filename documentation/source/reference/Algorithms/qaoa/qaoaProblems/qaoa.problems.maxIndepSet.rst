@@ -32,8 +32,8 @@ Initial state function
 .. autofunction:: max_indep_set_init_function
 
 
-Example implementation:
------------------------
+Example implementation
+----------------------
 
 ::
 

@@ -32,8 +32,8 @@ Initial state function
 .. autofunction:: min_set_cover_init_function
 
 
-Example implementation:
------------------------
+Example implementation
+----------------------
 
 ::
    

@@ -11,8 +11,8 @@ Given a Graph  :math:`G = (V,E)` find a maximal clique, i.e., a subset of vertic
 Following the work of `Hadfield et al. <https://arxiv.org/abs/1709.03489>`_, the MaxClique problem is solved by solving the MaxIndepSet problem on the complement graph.
 
 
-Example implementation:
------------------------
+Example implementation
+----------------------
 
 ::
 

@@ -93,7 +93,8 @@ def create_min_set_cover_cl_cost_function(sets, universe):
 
 
 def min_set_cover_init_function(qv):
-    """
+    r"""
+    Prepares the initial state $\ket{1}^{\otimes n}$.
     
     Parameters
     ----------

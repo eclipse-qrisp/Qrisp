@@ -16,11 +16,12 @@
 ********************************************************************************/
 """
 
-from qrisp import app_sb_phase_polynomial
+from qrisp import h, app_sb_phase_polynomial
 import sympy as sp
+import math
 
 
-def create_maxsat_cost_polynomials(clauses, num_vars):
+def create_maxsat_cost_polynomials(clauses):
     """
     Generates a list of polynomials representing the cost function for each clause, and a list of symbols.
     
@@ -28,8 +29,6 @@ def create_maxsat_cost_polynomials(clauses, num_vars):
     ----------
     clauses : list[list[int]]
         The clauses of the maximum satisfiability problem.
-    num_vars : int
-        The number of variables.
 
     Returns
     -------
@@ -40,7 +39,8 @@ def create_maxsat_cost_polynomials(clauses, num_vars):
 
     """
 
-    symbols = [sp.Symbol(f"x{i}") for i in range(1,num_vars+1)]
+    all_indices = list(set(abs(index) for clause in clauses for index in clause))
+    symbols = [sp.Symbol(f"x{i}") for i in range(1,len(all_indices)+1)]
     cost_polynomials = []
     for clause in clauses:
         C = 1 - sp.prod((1-symbols[index-1]) if index>0 else symbols[-index-1] for index in clause)
@@ -49,16 +49,14 @@ def create_maxsat_cost_polynomials(clauses, num_vars):
     return cost_polynomials, symbols
 
 
-def create_maxsat_cl_cost_function(cost_polynomials, symbols):
+def create_maxsat_cl_cost_function(clauses):
     """
     Generates the classical cost function for an instance of the maximum satisfiability problem.
 
     Parameters
     ----------
-    cost_polynomials : list[sympy.Expr]
-        A list of the cost functions for each clause as SymPy polynomials.
-    symbols : list[sympy.Symbol]
-        A list of SymPy symbols.
+    clauses : list[list[int]]
+        The clauses of the maximum satisfiability problem.
 
     Returns
     -------
@@ -70,15 +68,15 @@ def create_maxsat_cl_cost_function(cost_polynomials, symbols):
     def cl_cost_function(res_dic):
         energy = 0
         for state, prob in res_dic.items():
-            for P in cost_polynomials:
-                energy += -P.subs({symbols[k]:int(state[k]) for k in range(len(symbols))})*prob
+            for clause in clauses:
+                energy += -(1-math.prod((1-int(state[index-1])) if index>0 else int(state[-index-1]) for index in clause))*prob
 
         return energy
 
     return cl_cost_function 
 
 
-def create_maxsat_cost_operator(cost_polynomials, symbols):
+def create_maxsat_cost_operator(clauses):
     r"""
     Generates the cost operator for an instance of the maximum satisfiability problem.
     For a given cost function 
@@ -87,14 +85,12 @@ def create_maxsat_cost_operator(cost_polynomials, symbols):
 
         C(x) = \sum_{\alpha=1}^m C_{\alpha}(x)
 
-    the cost operator is given by $e^{-i\beta C}$ where $C=\sum_x C(x)\ket{x}\bra{x}$.
+    the cost operator is given by $e^{-i\gamma C}$ where $C=\sum_x C(x)\ket{x}\bra{x}$.
 
     Parameters
     ----------
-    cost_polynomials : list[sympy.Expr]
-        A list of the cost functions for each clause as SymPy polynomials.
-    symbols : list[sympy.Symbol]
-        A list of SymPy symbols.
+    clauses : list[list[int]]
+        The clauses of the maximum satisfiability problem.
 
     Returns
     -------
@@ -103,6 +99,8 @@ def create_maxsat_cost_operator(cost_polynomials, symbols):
         This function performs the application of the cost operator.
 
     """
+   
+    cost_polynomials, symbols = create_maxsat_cost_polynomials(clauses)
 
     def cost_operator(qv, beta):
         for P in cost_polynomials:
@@ -111,3 +109,14 @@ def create_maxsat_cost_operator(cost_polynomials, symbols):
     return cost_operator
 
 
+def maxsat_init_function(qv):
+    r"""
+    Prepares the initial state $\ket{+}^{\otimes n}$.
+    
+    Parameters
+    ----------
+    qv : :ref:`QuantumVariable`
+        The quantum argument.
+    
+    """
+    h(qv)
