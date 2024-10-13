@@ -18,6 +18,7 @@
 
 from jax import make_jaxpr
 from jax.lax import fori_loop
+import jax.numpy as jnp
 
 from catalyst.jax_primitives import AbstractQreg, qinst_p, qmeasure_p, qextract_p, qinsert_p, while_p, cond_p
 
@@ -98,7 +99,7 @@ def catalyst_eqn_evaluator(eqn, context_dic):
     else:
         if eqn.primitive.name == "while":
             return process_while(eqn, context_dic)
-        if eqn.primitive.name == "cond":
+        elif eqn.primitive.name == "cond":
             return process_cond(eqn, context_dic)
         else:
             return True
@@ -255,19 +256,20 @@ def exec_multi_measurement(catalyst_register, start, stop):
         qb = qextract_p.bind(reg, i)
         res_bl, res_qb = qmeasure_p.bind(qb)
         reg = qinsert_p.bind(reg, i, res_qb)
-        acc = acc + (1<<(i-start))*res_bl
-        i += 1
+        acc = acc + (jnp.asarray(1, dtype = "int32")<<(i-start))*res_bl
+        i += jnp.asarray(1, dtype = "int32")
         return i, acc, reg, start, stop
     
     def cond_body(i, acc, reg, start, stop):
         return i < stop
     
     # Turn them into jaxpr
-    loop_jaxpr = make_jaxpr(loop_body)(0, 0, catalyst_register.aval, 0, 0)
-    cond_jaxpr = make_jaxpr(cond_body)(0, 0, catalyst_register.aval, 0, 0)
+    zero = jnp.asarray(0, dtype = "int32")
+    loop_jaxpr = make_jaxpr(loop_body)(zero, zero, catalyst_register.aval, zero, zero)
+    cond_jaxpr = make_jaxpr(cond_body)(zero, zero, catalyst_register.aval, zero, zero)
 
     # Bind the while loop primitive
-    i, acc, reg, start, stop = while_p.bind(*(start, 0, catalyst_register, start, stop),
+    i, acc, reg, start, stop = while_p.bind(*(start, zero, catalyst_register, start, stop),
                                      cond_jaxpr = cond_jaxpr, 
                                      body_jaxpr = loop_jaxpr,
                                      cond_nconsts = 0,
@@ -280,57 +282,55 @@ def exec_multi_measurement(catalyst_register, start, stop):
 
 
 def process_while(eqn, context_dic):
-    if isinstance(eqn.invars[0].aval, AbstractQuantumCircuit):
-        
-        body_jaxpr = eqn.params["body_jaxpr"]
-        cond_jaxpr = eqn.params["cond_jaxpr"]
-        
-        from qrisp.jasp.catalyst_interface import jaspr_to_catalyst_jaxpr
-        
-        if isinstance(body_jaxpr.jaxpr.invars[0].aval, AbstractQuantumCircuit):
-            body_jaxpr = jaspr_to_catalyst_jaxpr(body_jaxpr.jaxpr)
-        if isinstance(cond_jaxpr.jaxpr.invars[0].aval, AbstractQuantumCircuit):
-            cond_jaxpr = jaspr_to_catalyst_jaxpr(cond_jaxpr.jaxpr)
-        
-        invalues = extract_invalues(eqn, context_dic)
-        
-        unflattening_signature = []
-        flattened_invalues = []
-        for value in invalues:
-            if isinstance(value, tuple):
-                unflattening_signature.append(len(value))
-                flattened_invalues.extend(value)
-            else:
-                unflattening_signature.append(None)
-                flattened_invalues.append(value)
-        
-        outvalues = while_p.bind(*flattened_invalues,
-                                cond_jaxpr = cond_jaxpr, 
-                                body_jaxpr = body_jaxpr,
-                                cond_nconsts = 0,
-                                body_nconsts = 0,
-                                nimplicit = 0,
-                                preserve_dimensions = True,)
-        
-        
-        outvalues = list(outvalues)
-        unflattened_outvalues = []
-        
-        while unflattening_signature:
-            unflattening = unflattening_signature.pop(0)
-            if unflattening is None:
-                unflattened_outvalues.append(outvalues.pop(0))
-            else:
-                temp = []
-                for i in range(unflattening):
-                    temp.append(outvalues.pop(0))
-                unflattened_outvalues.append(tuple(temp))
-                    
-        
-        insert_outvalues(eqn, context_dic, unflattened_outvalues)
-        
+    
+    for invar in eqn.invars:
+        if isinstance(invar.aval, AbstractQuantumCircuit):
+            break
     else:
         return True
+    
+    body_jaxpr = eqn.params["body_jaxpr"]
+    cond_jaxpr = eqn.params["cond_jaxpr"]
+    
+    from qrisp.jasp.catalyst_interface import jaspr_to_catalyst_jaxpr
+    
+    if isinstance(body_jaxpr.jaxpr.invars[0].aval, AbstractQuantumCircuit):
+        body_jaxpr = jaspr_to_catalyst_jaxpr(body_jaxpr.jaxpr)
+    if isinstance(cond_jaxpr.jaxpr.invars[0].aval, AbstractQuantumCircuit):
+        cond_jaxpr = jaspr_to_catalyst_jaxpr(cond_jaxpr.jaxpr)
+    
+    invalues = extract_invalues(eqn, context_dic)
+    
+    unflattening_signature = []
+    flattened_invalues = []
+    for value in invalues:
+        if isinstance(value, tuple):
+            unflattening_signature.append(len(value))
+            flattened_invalues.extend(value)
+        else:
+            unflattening_signature.append(None)
+            flattened_invalues.append(value)
+    
+    outvalues = while_p.bind(*flattened_invalues,
+                            cond_jaxpr = cond_jaxpr, 
+                            body_jaxpr = body_jaxpr,
+                            cond_nconsts = 0,
+                            body_nconsts = 0,
+                            nimplicit = 0,
+                            preserve_dimensions = True,)
+    
+    outvalues = list(outvalues)
+    unflattened_outvalues = []
+    for outvar in eqn.outvars:
+        if isinstance(outvar.aval, AbstractQuantumCircuit):
+            unflattened_outvalues.append((outvalues.pop(0), outvalues.pop(0)))
+        elif isinstance(outvar.aval, AbstractQubitArray):
+            unflattened_outvalues.append((outvalues.pop(0), outvalues.pop(0)))
+        else:
+            unflattened_outvalues.append(outvalues.pop(0))
+            
+    
+    insert_outvalues(eqn, context_dic, unflattened_outvalues)
 
 def process_cond(eqn, context_dic):
     
@@ -346,14 +346,11 @@ def process_cond(eqn, context_dic):
 
     invalues = extract_invalues(eqn, context_dic)
     
-    unflattening_signature = []
     flattened_invalues = []
     for value in invalues:
         if isinstance(value, tuple):
-            unflattening_signature.append(len(value))
             flattened_invalues.extend(value)
         else:
-            unflattening_signature.append(None)
             flattened_invalues.append(value)
 
     outvalues = cond_p.bind(*flattened_invalues, branch_jaxprs = (false_jaxpr, true_jaxpr), nimplicit_outputs = 0)

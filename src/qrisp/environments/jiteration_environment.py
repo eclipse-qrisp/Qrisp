@@ -203,8 +203,8 @@ def iteration_env_evaluator(eqn, context_dic):
     # Note that the treshold is given as the last argument
     init_val = [context_dic[x] for x in iteration_1_eqn.invars]
     
-    # We insert the looping index (starts at -1)
-    init_val.insert(-1, 0)
+    # We insert the looping index (starts at 0)
+    init_val.insert(-1, jnp.asarray(0, dtype = "int32"))
     
     # And evaluate the loop primitive.
     res = while_loop(cond_fun, body_fun, init_val = tuple(init_val))

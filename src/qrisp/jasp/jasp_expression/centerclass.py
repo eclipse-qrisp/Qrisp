@@ -19,6 +19,7 @@ from functools import lru_cache
 
 from jax import make_jaxpr
 from jax.core import Jaxpr, ClosedJaxpr, Literal
+import jax.numpy as jnp
 
 from qrisp.jasp.jasp_expression import invert_jaspr, multi_control_jaspr, collect_environments
 from qrisp.jasp import eval_jaxpr, pjit_to_gate, flatten_environments
@@ -448,7 +449,7 @@ class Jaspr(Jaxpr):
         flattened_jaspr = self.flatten_environments()
         
         from qrisp.jasp.catalyst_interface import jaspr_to_catalyst_qjit
-        qjit_obj = jaspr_to_catalyst_qjit(flattened_jaspr, function_name = function_name)(*args)
+        qjit_obj = jaspr_to_catalyst_qjit(flattened_jaspr, function_name = function_name)
         return qjit_obj.compiled_function(*args)
     
     @classmethod
@@ -456,7 +457,7 @@ class Jaspr(Jaxpr):
     def from_cache(cls, jaxpr):
         return Jaspr(jaxpr = jaxpr)
     
-    def to_qir(self, *args):
+    def to_qir(self):
         """
         Compiles the Jaspr to QIR using the `Catalyst framework <https://docs.pennylane.ai/projects/catalyst/en/stable/index.html>`__.
 
@@ -736,9 +737,9 @@ class Jaspr(Jaxpr):
 
         """
         from qrisp.jasp.catalyst_interface import jaspr_to_qir
-        return jaspr_to_qir(self.flatten_environments(), args)
+        return jaspr_to_qir(self.flatten_environments())
     
-    def to_mlir(self, *args):
+    def to_mlir(self):
         """
         Compiles the Jaspr to MLIR using the `Catalyst dialect <https://docs.pennylane.ai/projects/catalyst/en/stable/index.html>`__.
 
@@ -830,7 +831,7 @@ class Jaspr(Jaxpr):
             
         """
         from qrisp.jasp.catalyst_interface import jaspr_to_mlir
-        return jaspr_to_mlir(self.flatten_environments(), args)
+        return jaspr_to_mlir(self.flatten_environments())
     
     def to_catalyst_jaxpr(self):
         """
@@ -932,6 +933,12 @@ def make_jaspr(fun):
             
             return res_qc, res
         
+        args = list(args)
+        
+        for i in range(len(args)):
+            if isinstance(args[i], int):
+                args[i] = jnp.asarray(args[i], dtype = "int32")
+                
         jaxpr = make_jaxpr(ammended_function)(AbstractQuantumCircuit(), *args, **kwargs).jaxpr
         
         return recursive_convert(jaxpr)

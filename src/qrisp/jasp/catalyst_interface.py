@@ -17,6 +17,7 @@
 """
 
 from jax import make_jaxpr
+import jax.numpy as jnp
 
 import pennylane as qml
 import catalyst
@@ -68,11 +69,11 @@ def jaspr_to_catalyst_jaxpr(jaspr):
     args = []
     for invar in jaspr.invars:
         if isinstance(invar.aval, AbstractQuantumCircuit):
-            args.append((AbstractQreg(), 0))
+            args.append((AbstractQreg(), jnp.asarray(0, dtype = "int32")))
         elif isinstance(invar.aval, AbstractQubitArray):
-            args.append((0,0))
+            args.append((jnp.asarray(0, dtype = "int32"), jnp.asarray(0, dtype = "int32")))
         elif isinstance(invar.aval, AbstractQubit):
-            args.append(0)
+            args.append(jnp.asarray(0, dtype = "int32"))
         else:
             args.append(invar.aval)
     
@@ -107,7 +108,7 @@ def jaspr_to_catalyst_function(jaspr):
         # Insert the Qreg into the list of arguments (such that it is used by the
         # Catalyst interpreter.
         args = list(args)
-        args.insert(0, (qreg, 0))
+        args.insert(0, (qreg, jnp.asarray(0, dtype = "int32")))
         
         # Call the catalyst interpreter. The first return value will be the AbstractQreg
         # tuple, which is why we exclude it from the return values
@@ -119,26 +120,22 @@ def jaspr_to_catalyst_function(jaspr):
 def jaspr_to_catalyst_qjit(jaspr, function_name = "jaspr_function"):
     # This function takes a jaspr and turns it into a Catalyst QJIT object.
     
-    def inner_function(*args):
-        # Perform the code specified by the Catalyst developers
-        catalyst_function = jaspr_to_catalyst_function(jaspr)
-        catalyst_function.__name__ = function_name
-        jit_object = catalyst.QJIT(catalyst_function, catalyst.CompileOptions())
-        jit_object.jaxpr = make_jaxpr(catalyst_function)(*args)
-        jit_object.workspace = jit_object._get_workspace()
-        jit_object.mlir_module, jit_object.mlir = jit_object.generate_ir()
-        jit_object.compiled_function, jit_object.qir = jit_object.compile()
-        return jit_object
-    
-    return inner_function
-    
+    # Perform the code specified by the Catalyst developers
+    catalyst_function = jaspr_to_catalyst_function(jaspr)
+    catalyst_function.__name__ = function_name
+    jit_object = catalyst.QJIT(catalyst_function, catalyst.CompileOptions())
+    jit_object.jaxpr = make_jaxpr(catalyst_function)(*[invar.aval for invar in jaspr.invars[1:]])
+    jit_object.workspace = jit_object._get_workspace()
+    jit_object.mlir_module, jit_object.mlir = jit_object.generate_ir()
+    jit_object.compiled_function, jit_object.qir = jit_object.compile()
+    return jit_object
 
-def jaspr_to_qir(jaspr, args):
+def jaspr_to_qir(jaspr):
     # This function returns the QIR code for a given jaspr
-    qjit_obj = jaspr_to_catalyst_qjit(jaspr)(*args)
+    qjit_obj = jaspr_to_catalyst_qjit(jaspr)
     return qjit_obj.qir
     
-def jaspr_to_mlir(jaspr, args):
+def jaspr_to_mlir(jaspr):
     # This function returns the MLIR code for a given jaspr
-    qjit_obj = jaspr_to_catalyst_qjit(jaspr)(*args)
+    qjit_obj = jaspr_to_catalyst_qjit(jaspr)
     return qjit_obj.mlir

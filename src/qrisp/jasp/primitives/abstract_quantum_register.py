@@ -56,7 +56,7 @@ def get_size_abstract_eval(qb_array):
     Result:
       a ShapedArray for the result of the primitive.
     """
-    return ShapedArray((), int)
+    return ShapedArray((), dtype = "int32")
 
 
 @get_qubit_p.def_impl

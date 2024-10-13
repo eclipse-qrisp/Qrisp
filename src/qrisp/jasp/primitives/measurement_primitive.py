@@ -38,7 +38,7 @@ def measure_abstract_eval(qc, meas_object):
     if isinstance(meas_object, AbstractQubit):
         return AbstractQuantumCircuit(), ShapedArray((), bool)
     elif isinstance(meas_object, AbstractQubitArray):
-        return AbstractQuantumCircuit(), ShapedArray((), int)
+        return AbstractQuantumCircuit(), ShapedArray((), dtype = "int32")
     else:
         raise Exception(f"Tried to call measurement primitive with type {type(meas_object)}")
 
