@@ -32,6 +32,12 @@ Initial state function
 .. autofunction:: max_indep_set_init_function
 
 
+MaxIndepSet problem
+-------------------
+
+.. autofunction:: max_indep_set_problem
+
+
 Example implementation
 ----------------------
 

@@ -237,7 +237,7 @@ def create_coloring_cl_cost_function(G):
     Returns
     -------
     cl_cost_function : function
-        The classical function for the problem instance, which takes a dictionary of measurement results as input.
+        The classical cost function for the problem instance, which takes a dictionary of measurement results as input.
 
     """
     def cl_cost_function(res_dic):
@@ -260,8 +260,8 @@ def create_coloring_cl_cost_function(G):
 
 def graph_coloring_problem(G):
     """
-    Creates a QAOA problem instance taking the phase separator, appropriate mixer, and
-    appropriate classical cost function into account.
+    Creates a QAOA problem instance with appropriate phase separator, mixer, and
+    classical cost function.
 
     Parameters
     ----------
@@ -271,7 +271,7 @@ def graph_coloring_problem(G):
     Returns
     -------
     QAOAProblem : function
-        QAOA problem instance for graph coloring with which the QAOA algorithm is ran for.
+        A QAOA problem instance for graph coloring for a given graph ``G``.
 
     """    
     from qrisp.qaoa import QAOAProblem, apply_XY_mixer

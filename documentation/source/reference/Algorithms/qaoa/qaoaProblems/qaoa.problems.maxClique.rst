@@ -4,11 +4,20 @@ QAOA MaxClique
 ==============
 
 
+.. currentmodule:: qrisp.qaoa.problems.maxClique
+
+
 Problem description
 -------------------
 
 Given a Graph  :math:`G = (V,E)` find a maximum clique, i.e., a subset of vertices :math:`V' \subset V` such that all pairs of vertices are adjacent in the graph $G$.
 Following the work of `Hadfield et al. <https://arxiv.org/abs/1709.03489>`_, the MaxClique problem is solved by solving the MaxIndepSet problem on the complement graph.
+
+
+MaxClique problem
+-----------------
+
+.. autofunction:: max_clique_problem
 
 
 Example implementation
@@ -25,11 +34,11 @@ Example implementation
     G_complement = nx.complement(G)
     qarg = QuantumVariable(G.number_of_nodes())
 
-    qaoa_max_indep_set = QAOAProblem(cost_operator=RZ_mixer, 
+    qaoa_max_clique = QAOAProblem(cost_operator=RZ_mixer, 
                                     mixer=create_max_indep_set_mixer(G_complement), 
                                     cl_cost_function=create_max_indep_set_cl_cost_function(G_complement), 
                                     init_function=max_indep_set_init_function)
-    results = qaoa_max_indep_set.run(qarg=qarg, depth=5)
+    results = qaoa_max_clique.run(qarg=qarg, depth=5)
 
 That's it! In the following, we print the 5 most likely solutions together with their cost values.
 

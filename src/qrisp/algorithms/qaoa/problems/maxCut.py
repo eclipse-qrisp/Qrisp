@@ -59,7 +59,7 @@ def create_maxcut_cl_cost_function(G):
     Returns
     -------
     cl_cost_function : function
-        The classical function for the problem instance, which takes a dictionary of measurement results as input.
+        The classical cost function for the problem instance, which takes a dictionary of measurement results as input.
 
     """    
     def cl_cost_function(counts):
@@ -89,7 +89,7 @@ def create_maxcut_cl_cost_function(G):
 
 def create_maxcut_cost_operator(G):
     r"""
-    Generates the cost operator for an instance of the maximum cut problem for a given graph $G$.
+    Creates the cost operator for an instance of the maximum cut problem for a given graph $G$.
 
     Parameters
     ----------
@@ -120,18 +120,18 @@ def create_maxcut_cost_operator(G):
 
 def maxcut_problem(G):
     """
-    Creates a QAOA problem instance taking the phase separator, appropriate mixer, and
-    appropriate classical cost function into account.
+    Creates a QAOA problem instance with appropriate phase separator, mixer, and
+    classical cost function.
 
     Parameters
     ----------
     G : nx.Graph
-        Graph to color.
+        The graph for the problem instance.
 
     Returns
     -------
-    QAOAProblem : function
-        QAOA problem instance for maxcut with which the QAOA algorithm is ran for.
+    :ref:`QAOAProblem`
+        A QAOA problem instance for MaxCut for a given graph ``G``.
 
     """        
     from qrisp.qaoa import QAOAProblem, RX_mixer

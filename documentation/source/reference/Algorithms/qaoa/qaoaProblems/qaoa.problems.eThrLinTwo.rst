@@ -18,7 +18,7 @@ where :math:`a_{1,j},\;a_{2,j},\;a_{3,j}\in [n]` and :math:`b_j\in\{0,1\}`, find
 
 Here, the equations are represented by a list of clauses, for example ``[0,1,3,1]`` corresponds to $[a_{1,j},a_{2,j},a_{3,j},b_j]$, that is, the equation
 
-$$x_0+x_1+x_3 = 1 \\text{ mod } 2$$
+$$x_0+x_1+x_3 = 1 \\mod 2$$
 
 
 Cost operator
@@ -37,6 +37,12 @@ Inital state function
 ---------------------
 
 .. autofunction:: e3lin2_init_function
+
+
+E3Lin2 problem
+--------------
+
+.. autofunction:: e3lin2_problem
 
 
 Example implementation

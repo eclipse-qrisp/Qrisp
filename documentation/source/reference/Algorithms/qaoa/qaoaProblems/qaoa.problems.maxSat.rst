@@ -60,6 +60,12 @@ Helper functions
 .. autofunction:: create_maxsat_cost_polynomials
 
 
+MaxSat problem
+--------------
+
+.. autofunction:: maxsat_problem
+
+
 Example implementation
 ----------------------
 

@@ -42,10 +42,10 @@ Our implementation of solving QUBO problems using QAOA works for both the upper 
         ]
     )
 
-    solve_QUBO(Q, depth = 1, backend = def_backend, n_solutions=10)
+    solve_QUBO(Q, depth = 1, print_res=True)
 
 That's it! You can try running this block of code on the website using the Thebe interactivity integration, or run it on your own Qrispy environment. 
-We see that we obtain the 10 best solutions with corresponding bitsring of the binary variables. 
+We see that we obtain the 5 best solutions with the corresponding bitsring of the binary variables. 
 You can test the statements above, and convert the symmetrized matrix into the upper triangular one, and run ``solve_QUBO`` again.
 
 We see, that we only needed to provide the matrix $Q$, specify the depth of the QAOA circuit that is running in the background, and the backend you want to run the algorithm on. Clean and qrispy!
@@ -82,6 +82,9 @@ Let's translate this into a function:
     def create_QUBO_cost_operator(Q):
 
         def QUBO_cost_operator(qv, gamma):
+
+            # Rescaling for enhancing the performance of the QAOA
+            gamma = gamma/np.linalg.norm(Q)
 
             gphase(-gamma/4*(np.sum(Q)+np.trace(Q)),qv[0])
             for i in range(len(Q)):
@@ -131,7 +134,7 @@ That's it for the necessary ingredients you learned about in the :ref:`QAOA theo
 - define the quantum argument ``qarg`` as a :ref:`QuantumArray <QuantumArray>` of :ref:`QuantumVariables <QuantumVariable>`,
 - create the QUBO instance using ``QUBO_problem`` we defined above,
 - run the algorithm using the :meth:`run <qrisp.qaoa.QAOAProblem.run>` method, and last but not least,
-- examine the QAOA solutions with the highest probabilities for classical post processing: compute the cost functions, sort the solutions by their cost in ascending order, and print the solutions with their costs.
+- examine the QAOA solutions and perform for classical post processing: compute the cost functions, sort the solutions by their cost in ascending order, and print the solutions with their costs.
 
 These are exactly the pieces in the mosaic of code that ``solve_QUBO`` consists of and performs: 
 ::
@@ -158,15 +161,12 @@ These are exactly the pieces in the mosaic of code that ``solve_QUBO`` consists 
     depth = 1
     res = QUBO_instance.run(qarg, depth, mes_kwargs={"backend" : def_backend}, max_iter = 50)
 
-    n_solutions = 10
-    res = dict(list(res.items())[:n_solutions])
-
     costs_and_solutions = [(QUBO_obj(bitstring, Q), bitstring) for bitstring in res.keys()]
 
     sorted_costs_and_solutions = sorted(costs_and_solutions, key=itemgetter(0))#
 
-    for i in range(n_solutions):
-        print(f"Solution {i+1}: {sorted_costs_and_solutions[i][1]} with cost: {sorted_costs_and_solutions[i][0]}")
+    for i in range(5):
+        print(f"Solution {i+1}: {sorted_costs_and_solutions[i][1]} with cost: {sorted_costs_and_solutions[i][0]} and probability: {res[sorted_costs_and_solutions[i][1]]}")
 
 
 Now you are prepared to solve all QUBOs you derive and want to solve. On the other hand, if you would just like to play around instead, try out some QUBOs from this `list of QUBO formulations <https://blog.xa0.de/post/List-of-QUBO-formulations>`_.

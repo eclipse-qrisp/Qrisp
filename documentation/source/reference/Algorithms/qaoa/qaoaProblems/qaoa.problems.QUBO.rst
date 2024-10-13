@@ -1,15 +1,15 @@
-.. _maxCutQAOAdoc:
+.. _QUBOQAOAdoc:
 
-QAOA MaxCut
-===========
+QAOA QUBO
+=========
 
-The MaxCut problem and its QAOA implementation is discussed in plenty of detail in the :ref:`MaxCut tutorial <MaxCutQAOA>`.
+The QUBO problem and its QAOA implementation is discussed in plenty of detail in the :ref:`QUBO tutorial <QUBOQAOA>`.
 All the necessary ingredients and required steps to run QAOA are elaborated on in an easy to grasp manner.
 
-Here, we provide a condensed implementation of QAOA for MaxCut using all of the predefined functions.
+Here, we provide a condensed implementation of QAOA for QUBO using all of the predefined functions.
 
 
-.. currentmodule:: qrisp.qaoa.problems.maxCut
+.. currentmodule:: qrisp.qaoa.problems.QUBO
 
 
 Problem description
@@ -18,22 +18,28 @@ Problem description
 Given a Graph  :math:`G = (V,E)` find a maximum cut, i.e., a bipartition $S$, $V\setminus S$ of the set of vertices $V$ such that the number of edges between $S$ and $V\setminus S$ is maximal.
 
 
+Solve QUBO
+----------
+
+.. autofunction:: solve_QUBO
+
+
 Cost operator
 -------------
 
-.. autofunction:: create_maxcut_cost_operator
+.. autofunction:: create_QUBO_cost_operator
 
 
 Classical cost function
 -----------------------
 
-.. autofunction:: create_maxcut_cl_cost_function
+.. autofunction:: create_QUBO_cl_cost_function
 
 
-MaxCut problem
---------------
+QUBO problem
+------------
 
-.. autofunction:: maxcut_problem
+.. autofunction:: QUBO_problem
 
 
 Example implementation

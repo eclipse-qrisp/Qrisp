@@ -30,6 +30,12 @@ Classical cost function
 .. autofunction:: create_coloring_cl_cost_function
 
 
+Coloring problem
+----------------
+
+.. autofunction:: graph_coloring_problem
+
+
 Example implementation
 ----------------------
 

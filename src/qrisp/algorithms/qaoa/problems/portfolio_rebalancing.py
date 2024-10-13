@@ -75,12 +75,12 @@ def portfolio_cl_cost_function(problem):
 
     Parameters
     ----------
-    problem : List
+    problem : list
         A list containing a the relevant data for the problem instance.
 
     Returns
     -------
-    cl_cost_function: function
+    cl_cost_function : function
         A callable function to calculate the cost value of the problem solution.
 
     """

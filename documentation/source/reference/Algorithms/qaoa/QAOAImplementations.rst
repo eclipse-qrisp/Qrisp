@@ -11,6 +11,7 @@ Implementations
 
      qaoaProblems/qaoa.problems.maxCut
      qaoaProblems/qaoa.problems.maxKColorableSubgraph
+     qaoaProblems/qaoa.problems.QUBO
      qaoaProblems/qaoa.problems.maxClique
      qaoaProblems/qaoa.problems.maxIndepSet
      qaoaProblems/qaoa.problems.maxSetPack
@@ -19,11 +20,12 @@ Implementations
      qaoaProblems/qaoa.problems.eThrLinTwo
 
 
-Here, you can additionally find QAOA implementations which are not explicitly discussed in the tutorial, namely:
+Here, you can additionally find QAOA implementations which are not explicitly discussed in the tutorial.
 
 
 * :ref:`MaxCut <maxCutQAOAdoc>`
 * :ref:`Max-$\\kappa$-Colorable Subgraph <maxKColorableSubgraphQAOA>`
+* :ref:`QUBO <QUBOQAOAdoc>`
 * :ref:`MaxClique <maxCliqueQAOA>`
 * :ref:`MaxIndepSet <maxIndepSetQAOA>`
 * :ref:`MaxSetPacking <maxSetPackQAOA>`

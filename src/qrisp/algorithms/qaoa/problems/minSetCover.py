@@ -23,7 +23,7 @@ import itertools
 
 def create_min_set_cover_mixer(sets, universe):
     r"""
-    Generates the ``controlled_RX_mixer`` for an instance of the minimum set cover problem following `Hadfield et al. <https://arxiv.org/abs/1709.03489>`_
+    Creates the ``controlled_RX_mixer`` for an instance of the minimum set cover problem following `Hadfield et al. <https://arxiv.org/abs/1709.03489>`_
 
     The belonging ``predicate`` function indicates if a set can be swapped out of the solution.
 
@@ -61,7 +61,7 @@ def create_min_set_cover_mixer(sets, universe):
 
 def create_min_set_cover_cl_cost_function(sets, universe):
     """
-    Generates the classical cost function for an instance of the minimum set cover problem.
+    Creates the classical cost function for an instance of the minimum set cover problem.
 
     Parameters
     ----------
@@ -73,7 +73,7 @@ def create_min_set_cover_cl_cost_function(sets, universe):
     Returns
     -------
     cl_cost_function : function
-        The classical function for the problem instance, which takes a dictionary of measurement results as input.
+        The classical cost function for the problem instance, which takes a dictionary of measurement results as input.
 
     """
 
@@ -103,4 +103,30 @@ def min_set_cover_init_function(qv):
     
     """
     x(qv)
+
+
+def min_set_cover_problem(sets, universe):
+    """
+    Creates a QAOA problem instance with appropriate phase separator, mixer, and
+    classical cost function.
+
+    Parameters
+    ----------
+    sets : list[set]
+        A list of sets.
+    universe : set
+        The union of all sets.
+
+    Returns
+    -------
+    :ref:`QAOAProblem`
+        A QAOA problem instance for MinSetCover for given ``sets`` and ``universe``.
+
+    """        
+    from qrisp.qaoa import QAOAProblem, RZ_mixer
+    
+    return QAOAProblem(cost_operator=RZ_mixer,
+                        mixer= create_min_set_cover_mixer(sets, universe),
+                        cl_cost_function=create_min_set_cover_cl_cost_function(sets, universe),
+                        init_function=min_set_cover_init_function)
 

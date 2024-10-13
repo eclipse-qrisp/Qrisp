@@ -23,7 +23,7 @@ import itertools
 
 def create_max_indep_set_mixer(G):
     r"""
-    Generates the ``controlled_RX_mixer`` for an instance of the maximal independet set problem for a given graph $G$ following `Hadfield et al. <https://arxiv.org/abs/1709.03489>`_
+    Creates the ``controlled_RX_mixer`` for an instance of the maximal independet set problem for a given graph $G$ following `Hadfield et al. <https://arxiv.org/abs/1709.03489>`_
 
     The belonging ``predicate`` function indicates if a set can be swapped into the solution.
 
@@ -57,7 +57,7 @@ def create_max_indep_set_mixer(G):
 
 def create_max_indep_set_cl_cost_function(G):
     """
-    Generates the classical cost function for an instance of the maximal independet set problem for a given graph $G$.
+    Creates the classical cost function for an instance of the maximal independet set problem for a given graph $G$.
 
     Parameters
     ----------
@@ -67,7 +67,7 @@ def create_max_indep_set_cl_cost_function(G):
     Returns
     -------
     cl_cost_function : function
-        The classical function for the problem instance, which takes a dictionary of measurement results as input.
+        The classical cost function for the problem instance, which takes a dictionary of measurement results as input.
 
     """
 
@@ -100,3 +100,28 @@ def max_indep_set_init_function(qv):
     
     """
     pass
+
+
+def max_indep_set_problem(G):
+    """
+    Creates a QAOA problem instance with appropriate phase separator, mixer, and
+    classical cost function.
+
+    Parameters
+    ----------
+    G : nx.Graph
+        The graph for the problem instance.
+
+    Returns
+    -------
+    :ref:`QAOAProblem`
+        A QAOA problem instance for MaxIndepSet for a given graph ``G``.
+
+    """        
+    from qrisp.qaoa import QAOAProblem, RZ_mixer
+
+    return QAOAProblem(cost_operator=RZ_mixer,
+                        mixer=create_max_indep_set_mixer(G),
+                        cl_cost_function=create_max_indep_set_cl_cost_function(G),
+                        init_function=max_indep_set_init_function)
+    

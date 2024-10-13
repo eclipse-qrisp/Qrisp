@@ -28,7 +28,7 @@ def parity(qarg, indices):
 
 def create_e3lin2_cost_operator(clauses):
     r"""
-    Generates the cost operator for an instance of the E3Lin2 problem following `Hadfield et al. <https://arxiv.org/abs/1709.03489>`_
+    Creates the cost operator for an instance of the E3Lin2 problem following `Hadfield et al. <https://arxiv.org/abs/1709.03489>`_
     The cost operator is given by $e^{-i\gamma H}$ where
 
     .. math::
@@ -58,7 +58,7 @@ def create_e3lin2_cost_operator(clauses):
 
 def create_e3lin2_cl_cost_function(clauses):
     """
-    Generates the cost operator for an instance of the E3Lin2 problem.
+    Creates the cost operator for an instance of the E3Lin2 problem.
 
     Parameters
     ----------
@@ -95,4 +95,28 @@ def e3lin2_init_function(qv):
     
     """
     h(qv)
+
+
+def e3lin2_problem(clauses):
+    """
+    Creates a QAOA problem instance with appropriate phase separator, mixer, and
+    classical cost function.
+
+    Parameters
+    ----------
+    clauses : list[list[int]]
+        The clauses of the E3Lin2 problem instance.
+
+    Returns
+    -------
+    :ref:`QAOAProblem`
+        A QAOA problem instance for E3Lin2 for given ``clauses``.
+
+    """        
+    from qrisp.qaoa import QAOAProblem, RX_mixer
+
+    return QAOAProblem(cost_operator=create_e3lin2_cost_operator(clauses),
+                        mixer=RX_mixer,
+                        cl_cost_function=create_e3lin2_cl_cost_function(clauses),
+                        init_function=e3lin2_init_function)
 
