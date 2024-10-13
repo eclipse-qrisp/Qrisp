@@ -17,60 +17,40 @@
 """
 
 
-from qrisp.qaoa import QAOAProblem
-from qrisp.qaoa.problems.maxSatInfrastr import maxSatclCostfct, maxSatCostOp, init_state, clausesdecoder
-from qrisp.qaoa.mixers import RX_mixer
 from qrisp import QuantumVariable
-import networkx as nx
-import matplotlib.pyplot as plt
+from qrisp.qaoa import QAOAProblem, RX_mixer, approximation_ratio
+from qrisp.qaoa.problems.maxSat import create_maxsat_cl_cost_function, create_maxsat_cost_operator, maxsat_init_function
+import itertools
 
 
 def test_QAOAmaxSat():
 
-    #draw graph
-    #nx.draw(giraf,with_labels = True)
-    #plt.show() 
+    clauses = [[1,2,-3],[1,4,-6],[4,5,6],[1,3,-4],[2,4,5],[1,3,5],[-2,-3,6]]
+    num_variables = 6
+    qarg = QuantumVariable(num_variables)
 
-    problem = [6, [[1,2,-3],[1,4,-6], [4,5,6],[1,3,-4],[2,4,5],[1,3,5],[-2,-3,6]]]
-    clauses11 = problem[1]
+    qaoa_max_indep_set = QAOAProblem(cost_operator=create_maxsat_cost_operator(clauses),
+                                    mixer=RX_mixer,
+                                    cl_cost_function=create_maxsat_cl_cost_function(clauses),
+                                    init_function=maxsat_init_function)
+    results = qaoa_max_indep_set.run(qarg=qarg, depth=5)
 
-    #Clauses are decoded, s.t. the Cost-Optimizer can read them
-    #numVars is the amount of considered variables, i.e. highest number (= Number of Qubits in Circuit aswell)
-    decodedClauses = clausesdecoder( problem)
-    #print(decodedClauses)
+    cl_cost = create_maxsat_cl_cost_function(clauses)
 
-    qarg = QuantumVariable(6)
-
-    #CostOperator-Generator has to be called with the clauses
-    #CostFct-Generator has to be called with decodedClauses
-    QAOAinstance = QAOAProblem(cost_operator=maxSatCostOp(problem), mixer=RX_mixer, cl_cost_function=maxSatclCostfct(problem))
-    QAOAinstance.set_init_function(init_function=init_state)
-    theNiceQAOA = QAOAinstance.run(qarg=qarg, depth=5)
-
-
-    import itertools
-    def testCostFun(state):
-        obj = 0
-        #literally just do a minus 1 op if state is equiv to a given condition
-        for index in range(len(decodedClauses)):
-            if state in decodedClauses[index]:
-                obj -= 1 
-
-        return obj
-
+    # find optimal solution by brute force    
+    temp_binStrings = list(itertools.product([1,0], repeat=num_variables))
+    binStrings = ["".join(map(str, item)) for item in temp_binStrings]
     
-    #print 5 best sols 
-    # assert that sol is in decoded clauses 
-    maxfive = sorted(theNiceQAOA, key=theNiceQAOA.get, reverse=True)[:5]
-    # assert that sol is in decoded clauses 
-    for name in theNiceQAOA.keys():  # for name, age in dictionary.iteritems():  (for Python 2.x)
-        if name in maxfive:
-            print(name)
-            print(testCostFun(name))
-        if testCostFun(name) < 0:
-            temp = False
-            for index in range(len(decodedClauses)):
-                if name in decodedClauses[index]:
-                    temp  = True
-            assert temp
+    min = 0
+    min_index = 0
+    for index in range(len(binStrings)):
+        val = cl_cost({binStrings[index] : 1})
+        if val < min:
+            min = val
+            min_index = index
+
+    optimal_sol = binStrings[min_index]
+    
+    # approximation ratio test
+    assert approximation_ratio(results, optimal_sol, cl_cost)>=0.5
 

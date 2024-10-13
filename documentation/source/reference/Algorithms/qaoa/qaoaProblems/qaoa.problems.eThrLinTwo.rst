@@ -49,8 +49,8 @@ Example implementation
    from qrisp.qaoa.problems.eThrLinTwo import create_e3lin2_cl_cost_function, create_e3lin2_cost_operator, e3lin2_init_function
 
    clauses = [[0,1,2,1],[1,2,3,0],[0,1,4,0],[0,2,4,1],[2,4,5,1],[1,3,5,1],[2,3,4,0]]
-
-   qarg = QuantumVariable(6)
+   num_variables = 6
+   qarg = QuantumVariable(num_variables)
 
    qaoa_e3lin2 = QAOAProblem(cost_operator=create_e3lin2_cost_operator(clauses),
                               mixer=RX_mixer,
