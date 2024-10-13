@@ -463,8 +463,7 @@ class Jaspr(Jaxpr):
 
         Parameters
         ----------
-        *args : tuple
-            The arguments to call the Jaspr with.
+        None
 
         Returns
         -------
@@ -491,7 +490,7 @@ class Jaspr(Jaxpr):
                 return meas_res
             
             jaspr = make_jaspr(example_function)(2)
-            print(jaspr.to_qir(4))
+            print(jaspr.to_qir())
             
         Yields:
         
@@ -745,8 +744,7 @@ class Jaspr(Jaxpr):
 
         Parameters
         ----------
-        *args : tuple
-            The arguments to call the Jaspr with.
+        None
 
         Returns
         -------
@@ -773,7 +771,7 @@ class Jaspr(Jaxpr):
                 return meas_res
             
             jaspr = make_jaspr(example_function)(2)
-            print(jaspr.to_mlir(4))
+            print(jaspr.to_mlir())
             
         ::
             
