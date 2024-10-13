@@ -15,7 +15,7 @@ Here, we provide a condensed implementation of QAOA for QUBO using all of the pr
 Problem description
 -------------------
 
-Given a Graph  :math:`G = (V,E)` find a maximum cut, i.e., a bipartition $S$, $V\setminus S$ of the set of vertices $V$ such that the number of edges between $S$ and $V\setminus S$ is maximal.
+Given an $n\times n$ QUBO matrix $Q$ and a vector $x=(x_1,\dotsc,x_n)^T$ of binary variables $x_i\in\{0,1\}$, find an assignment of the variables $x_i$ that minimizes the cost function $C(x)=x^TQx$.
 
 
 Solve QUBO
@@ -47,40 +47,35 @@ Example implementation
 
 ::
 
-    from qrisp import QuantumVariable
-    from qrisp.qaoa import QAOAProblem, RX_mixer, create_maxcut_cl_cost_function, create_maxcut_cost_operator
-    import networkx as nx
+    from qrisp import QuantumVariable, QuantumArray
+    from qrisp.qaoa import QUBO_problem, QUBO_obj
+    from operator import itemgetter
+    import numpy as np
 
-    G = nx.erdos_renyi_graph(6, 0.7, seed =  133)
-    qarg = QuantumVariable(G.number_of_nodes())
+    Q = np.array(
+        [
+            [-17,  20,  20,  20,   0,  40],
+            [  0, -18,  20,  20,  20,  40],
+            [  0,   0, -29,  20,  40,  40],
+            [  0,   0,   0, -19,  20,  20],
+            [  0,   0,   0,   0, -17,  20],
+            [  0,   0,   0,   0,   0, -28],
+        ]
+    )
 
-    qaoa_maxcut = QAOAProblem(cost_operator=create_maxcut_cost_operator(G),
-                            mixer=RX_mixer, 
-                            cl_cost_function=create_maxcut_cl_cost_function(G))
-    results = qaoa_maxcut.run(qarg=qarg, depth=5, max_iter=50)
+    qarg = QuantumArray(qtype=QuantumVariable(1), shape=len(Q))
 
-That's it! In the following, we print the 5 most likely solutions together with their cost values.
+    QUBO_instance = QUBO_problem(Q)
+    res = QUBO_instance.run(qarg=qarg, depth=1, max_iter=50)
+
+That's it! In the following, we print the 5 best solutions together with their cost values.
 
 ::
    
-    cl_cost = create_maxcut_cl_cost_function(G)
+    costs_and_solutions = [(QUBO_obj(bitstring, Q), bitstring) for bitstring in res.keys()]
+    sorted_costs_and_solutions = sorted(costs_and_solutions, key=itemgetter(0))
 
-    print("5 most likely solutions")
-    max_five = sorted(results.items(), key=lambda item: item[1], reverse=True)[:5]
-    for res, prob in max_five:
-        print(res, prob, cl_cost({res : 1}))
+    for i in range(5):
+        print(f"Solution {i+1}: {sorted_costs_and_solutions[i][1]} with cost: {sorted_costs_and_solutions[i][0]} and probability: {res[sorted_costs_and_solutions[i][1]]}")
 
-Finally, we visualize the most likely solution.
-
-::
-
-    most_likely = max_five[0][0]
-    nx.draw(G, with_labels = True,
-            node_color=['#FFCCCB' if most_likely[node]=='0' else '#ADD8E6' for node in G.nodes()],
-            edge_color='#D3D3D3',
-            pos = nx.bipartite_layout(G, [node for node in G.nodes() if most_likely[node]=='0']))
-
-.. image:: ./maxCut.png
-  :scale: 100%
-  :align: center
 

@@ -120,11 +120,18 @@ def QUBO_problem(Q):
 def solve_QUBO(Q, depth, shots=5000, max_iter = 50, backend = None, print_res = False):
     """
     Solves a Quadratic Unconstrained Binary Optimization (QUBO) problem using the Quantum Approximate Optimization Algorithm (QAOA). 
-    The function imports the default backend from the 'qrisp.default_backend' module. 
-    It defines a quantum argument as a QuantumArray of len(Q) QuantumVariables with size 1. 
-    It then runs the QAOA with the given quantum arguments, ``depth``, measurement keyword arguments, and a maximum of 50 iterations for optimization. 
-    The functions then considers the first ``n_solutions`` solutions of the QAOA optimization, and as a classical post processing, 
-    calculates the cost for each such solution, sorts the solutions by their cost in ascending order, and prints the solutions with their corresponding costs.
+
+    This function creates the QAOA problem for a given QUBO. 
+    It defines a quantum argument as a :ref:`QuantumArray` of ``len(Q)`` :ref:`QuantumVariables <QuantumVariable>` with size 1. 
+    It then runs the QAOA with the given quantum argument, ``depth`` (number of layers), maximum ``iterations`` of the classical optimizer, and ``shots`` and ``backend`` as measurement keyword arguments. 
+    The method performs classical post-processing on the solutions of the QAOA optimization: 
+    it calculates the cost for each such solution, sorts the solutions by their cost in ascending order, and returns the optimal solution.
+
+    .. warning::
+     
+        For small QUBO instance the number of ``shots`` typically exceeds the number of possible solutions.
+        In this case, even QAOA with ``depth=0``, i.e., sampling from a uniform superposition, may yield the optimal solution as the classical post-processing amounts to brute force search!
+        Performance of :meth:`solve_QUBO <qrisp.qaoa.problems.QUBO.solve_QUBO>` for small instance may not be indicative of performance for large instances. 
 
     Parameters
     ----------
@@ -135,7 +142,7 @@ def solve_QUBO(Q, depth, shots=5000, max_iter = 50, backend = None, print_res = 
     shots : int
         The number of shots. The default is 5000.
     max_iter : int, optional
-        The maximal amount of iterations of the COBYLA optimizer in the QAOA algorithm.
+        The maximal amount of iterations of the ``COBYLA`` optimizer in the QAOA algorithm.
         The default is 50.
     backend : :ref:`BackendClient`, optional
         The backend to be used for the quantum simulation. 
@@ -145,7 +152,7 @@ def solve_QUBO(Q, depth, shots=5000, max_iter = 50, backend = None, print_res = 
 
     Returns
     -------
-    optimal_solution: tuple
+    optimal_solution : tuple
         A tuple where the first element is the cost value and the second element is the optimal bitstring. 
         If ``print_res`` is set to ``True``, the function prints the 5 best solutions with their respective costs.
 

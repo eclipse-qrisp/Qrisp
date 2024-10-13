@@ -25,7 +25,7 @@ Of course it's easy to go from the conventional QUBO $Q_{\text{up}\Delta}$ formu
     Q_up_triang = 2 * np.triu(Q_sym) - np.diag(np.diag(Q_sym))
 
 
-Our implementation of solving QUBO problems using QAOA works for both the upper triangular, as well as symmetrized matrix conventions. As promised, we can now immediately solve the QUBO by calling the ``solve_QUBO`` function:
+Our implementation of solving QUBO problems using QAOA works for both the upper triangular, as well as symmetrized matrix conventions. As promised, we can now immediately solve the QUBO by calling the :meth:`solve_QUBO <qrisp.qaoa.problems.QUBO.solve_QUBO>` method:
 ::
 
     from qrisp.qaoa import *
@@ -42,11 +42,11 @@ Our implementation of solving QUBO problems using QAOA works for both the upper 
         ]
     )
 
-    solve_QUBO(Q, depth = 1, print_res=True)
+    solve_QUBO(Q, depth = 1, shots=5000, print_res=True)
 
 That's it! You can try running this block of code on the website using the Thebe interactivity integration, or run it on your own Qrispy environment. 
 We see that we obtain the 5 best solutions with the corresponding bitsring of the binary variables. 
-You can test the statements above, and convert the symmetrized matrix into the upper triangular one, and run ``solve_QUBO`` again.
+You can test the statements above, and convert the symmetrized matrix into the upper triangular one, and run :meth:`solve_QUBO <qrisp.qaoa.problems.QUBO.solve_QUBO>` again.
 
 We see, that we only needed to provide the matrix $Q$, specify the depth of the QAOA circuit that is running in the background, and the backend you want to run the algorithm on. Clean and qrispy!
 
@@ -136,7 +136,15 @@ That's it for the necessary ingredients you learned about in the :ref:`QAOA theo
 - run the algorithm using the :meth:`run <qrisp.qaoa.QAOAProblem.run>` method, and last but not least,
 - examine the QAOA solutions and perform for classical post processing: compute the cost functions, sort the solutions by their cost in ascending order, and print the solutions with their costs.
 
-These are exactly the pieces in the mosaic of code that ``solve_QUBO`` consists of and performs: 
+
+.. warning::
+
+    For small QUBO instance the number of ``shots`` typically exceeds the number of possible solutions.
+    In this case, even QAOA with ``depth=0``, i.e., sampling from a uniform superposition, may yield the optimal solution as the classical post-processing amounts to brute force search!
+    Performance of :meth:`solve_QUBO <qrisp.qaoa.problems.QUBO.solve_QUBO>` for small instance may not be indicative of performance for large instances. 
+
+
+These are exactly the pieces in the mosaic of code that :meth:`solve_QUBO <qrisp.qaoa.problems.QUBO.solve_QUBO>` consists of and performs: 
 ::
     
     from qrisp.default_backend import def_backend
@@ -154,16 +162,16 @@ These are exactly the pieces in the mosaic of code that ``solve_QUBO`` consists 
         ]
     )
 
-    qarg = QuantumArray(qtype = QuantumVariable(1), shape = len(Q))
+    qarg = QuantumArray(qtype=QuantumVariable(1), shape=len(Q))
 
     QUBO_instance = QUBO_problem(Q)
 
     depth = 1
-    res = QUBO_instance.run(qarg, depth, mes_kwargs={"backend" : def_backend}, max_iter = 50)
+    res = QUBO_instance.run(qarg, depth, mes_kwargs={"backend" : def_backend}, max_iter=50)
 
     costs_and_solutions = [(QUBO_obj(bitstring, Q), bitstring) for bitstring in res.keys()]
 
-    sorted_costs_and_solutions = sorted(costs_and_solutions, key=itemgetter(0))#
+    sorted_costs_and_solutions = sorted(costs_and_solutions, key=itemgetter(0))
 
     for i in range(5):
         print(f"Solution {i+1}: {sorted_costs_and_solutions[i][1]} with cost: {sorted_costs_and_solutions[i][0]} and probability: {res[sorted_costs_and_solutions[i][1]]}")
