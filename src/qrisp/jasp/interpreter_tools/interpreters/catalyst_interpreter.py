@@ -346,6 +346,8 @@ def process_cond(eqn, context_dic):
 
     invalues = extract_invalues(eqn, context_dic)
     
+    invalues[0] = jnp.asarray(invalues[0], bool)
+    
     flattened_invalues = []
     for value in invalues:
         if isinstance(value, tuple):
@@ -353,6 +355,6 @@ def process_cond(eqn, context_dic):
         else:
             flattened_invalues.append(value)
 
-    outvalues = cond_p.bind(*flattened_invalues, branch_jaxprs = (false_jaxpr, true_jaxpr), nimplicit_outputs = 0)
+    outvalues = cond_p.bind(*flattened_invalues, branch_jaxprs = (true_jaxpr, false_jaxpr), nimplicit_outputs = 0)
     
     context_dic[eqn.outvars[0]] = tuple(outvalues)

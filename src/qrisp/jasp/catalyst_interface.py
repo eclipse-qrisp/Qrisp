@@ -15,6 +15,7 @@
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************/
 """
+from functools import lru_cache
 
 from jax import make_jaxpr
 import jax.numpy as jnp
@@ -116,10 +117,9 @@ def jaspr_to_catalyst_function(jaspr):
     
     return catalyst_function
 
-
+@lru_cache(int(1E5))
 def jaspr_to_catalyst_qjit(jaspr, function_name = "jaspr_function"):
     # This function takes a jaspr and turns it into a Catalyst QJIT object.
-    
     # Perform the code specified by the Catalyst developers
     catalyst_function = jaspr_to_catalyst_function(jaspr)
     catalyst_function.__name__ = function_name
