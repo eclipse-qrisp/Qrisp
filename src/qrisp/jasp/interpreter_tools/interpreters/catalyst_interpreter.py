@@ -311,6 +311,13 @@ def process_while(eqn, context_dic):
             unflattening_signature.append(None)
             flattened_invalues.append(value)
     
+    # Make sure integers are properly converted to i32 
+    # (under some circumstances jax seems to convert python ints
+    # to i64, which raises a typing error)
+    for i in range(len(flattened_invalues)):
+        if isinstance(flattened_invalues[i], int):
+            flattened_invalues[i] = jnp.asarray(flattened_invalues[i], dtype = "int32")
+    
     outvalues = while_p.bind(*flattened_invalues,
                             cond_jaxpr = cond_jaxpr, 
                             body_jaxpr = body_jaxpr,
@@ -345,8 +352,14 @@ def process_cond(eqn, context_dic):
         true_jaxpr = jaspr_to_catalyst_jaxpr(true_jaxpr.jaxpr)
 
     invalues = extract_invalues(eqn, context_dic)
-    
+
+    # Contrary to the jax cond primitive, the catalyst cond primitive
+    # wants a bool    
     invalues[0] = jnp.asarray(invalues[0], bool)
+    # Make sure integers are properly converted to i32 
+    # (under some circumstances jax seems to convert python ints
+    # to i64, which raises a typing error)
+
     
     flattened_invalues = []
     for value in invalues:
@@ -354,6 +367,11 @@ def process_cond(eqn, context_dic):
             flattened_invalues.extend(value)
         else:
             flattened_invalues.append(value)
+
+    for i in range(len(flattened_invalues)):
+        if isinstance(flattened_invalues[i], int):
+            flattened_invalues[i] = jnp.asarray(flattened_invalues[i], dtype = "int32")
+    
 
     outvalues = cond_p.bind(*flattened_invalues, branch_jaxprs = (true_jaxpr, false_jaxpr), nimplicit_outputs = 0)
     

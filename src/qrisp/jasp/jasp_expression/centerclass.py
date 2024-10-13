@@ -1034,8 +1034,18 @@ def qjit(function):
 
     """
     
+    
     def jitted_function(*args):
-        jaspr = make_jaspr(function)(*args)
-        return jaspr.qjit(*args, function_name = function.__name__)
+        
+        if not hasattr(function, "jaspr_dict"):
+            function.jaspr_dict = {}
+        
+        args = list(args)
+        
+        signature = tuple([type(arg) for arg in args])
+        if not signature in function.jaspr_dict:
+            function.jaspr_dict[signature] = make_jaspr(function)(*args)
+        
+        return function.jaspr_dict[signature].qjit(*args, function_name = function.__name__)
     
     return jitted_function

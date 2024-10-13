@@ -18,6 +18,7 @@
 
 from qrisp import *
 from qrisp.jasp import *
+import time
 
 def test_catalyst_interface():
     
@@ -36,10 +37,34 @@ def test_catalyst_interface():
     
     jaspr = make_jaspr(test_fun)(2)
     
-    jaspr.to_qir(2)
-    jaspr.to_mlir(2)
+    jaspr.to_qir()
+    jaspr.to_mlir()
     jaspr.to_catalyst_jaxpr()
     
     assert jaspr.qjit(4)[0] == 5.25
+    
+    
+    def int_encoder(qv, encoding_int):
+        for i in jrange(qv.size):
+            with control(encoding_int & (1<<i)):
+                x(qv[i])
+
+    @qjit
+    def test_f(a):
+        time.sleep(1)        
+        qv = QuantumFloat(4)
+        int_encoder(qv, a)
+        return measure(qv)
+
+    t0 = time.time()
+
+    # Test classical control flow    
+    assert test_f(4)[0] == 4
+    assert test_f(5)[0] == 5
+    assert test_f(6)[0] == 6
+    assert test_f(7)[0] == 7
+
+    # Test QJIT caching
+    assert time.time() - t0 < 2
     
     
