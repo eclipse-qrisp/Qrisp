@@ -47,7 +47,7 @@ def control_eqn(eqn, ctrl_qubit_var):
         The equation with inverted operation.
 
     """
-    from qrisp.jasp import jaspr
+    from qrisp.jasp import Jaspr
     if eqn.primitive.name == "pjit":
         
         new_params = dict(eqn.params)
@@ -67,7 +67,7 @@ def control_eqn(eqn, ctrl_qubit_var):
         new_params = dict(eqn.params)
         
         try:
-            new_params["body_jaxpr"] = ClosedJaxpr(control_jaspr(jaspr(eqn.params["body_jaxpr"].jaxpr)),
+            new_params["body_jaxpr"] = ClosedJaxpr(control_jaspr(Jaspr(eqn.params["body_jaxpr"].jaxpr)),
                                               eqn.params["body_jaxpr"].consts)
             
             new_params["body_jaxpr"].jaxpr.outvars.insert(1, new_params["body_jaxpr"].jaxpr.invars[1])
@@ -79,7 +79,7 @@ def control_eqn(eqn, ctrl_qubit_var):
                                                    eqn.params["body_jaxpr"].consts)
         
         try:
-            new_params["cond_jaxpr"] = ClosedJaxpr(control_jaspr(jaspr(eqn.params["cond_jaxpr"].jaxpr)),
+            new_params["cond_jaxpr"] = ClosedJaxpr(control_jaspr(Jaspr(eqn.params["cond_jaxpr"].jaxpr)),
                                               eqn.params["cond_jaxpr"].consts)
         except:
             new_jaxpr = copy_jaxpr(new_params["cond_jaxpr"].jaxpr)
@@ -122,7 +122,7 @@ def control_jaspr(jaspr):
     """
     
     from qrisp.circuit import Operation
-    from qrisp.jasp import jaspr, AbstractQubit
+    from qrisp.jasp import Jaspr, AbstractQubit
     
     ctrl_qubit_var = Var(suffix = "", aval = AbstractQubit(), count = control_var_count[0])
     control_var_count[0] += 1
@@ -139,7 +139,7 @@ def control_jaspr(jaspr):
     permeability = dict(jaspr.permeability)
     permeability[ctrl_qubit_var] = True
     
-    return jaspr(permeability = permeability,
+    return Jaspr(permeability = permeability,
                  isqfree = jaspr.isqfree,
                  constvars = jaspr.constvars, 
                  invars = jaspr.invars[:1] + [ctrl_qubit_var] + jaspr.invars[1:], 
@@ -151,7 +151,7 @@ def multi_control_jaspr(jaspr, num_ctrl = 1, ctrl_state = -1):
     if num_ctrl == 1:
         return control_jaspr(jaspr)
     
-    from qrisp.jasp import jaspr, AbstractQubit, make_jaspr
+    from qrisp.jasp import Jaspr, AbstractQubit, make_jaspr
     
     ctrl_vars = [Var(suffix = "", aval = AbstractQubit(), count = control_var_count[0] + _) for _ in range(num_ctrl)]
     control_var_count[0] += num_ctrl
@@ -162,7 +162,7 @@ def multi_control_jaspr(jaspr, num_ctrl = 1, ctrl_state = -1):
     invars = temp_jaxpr.invars[num_ctrl:-len(jaspr.constvars)]
     constvars = temp_jaxpr.invars[:num_ctrl] + temp_jaxpr.invars[-len(jaspr.constvars):]
     
-    res = jaspr(temp_jaxpr)
+    res = Jaspr(temp_jaxpr)
     
     return res
     

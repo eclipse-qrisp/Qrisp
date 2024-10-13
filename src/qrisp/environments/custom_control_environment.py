@@ -202,6 +202,7 @@ class CustomControlEnvironment(QuantumEnvironment):
         
         self.control_qb = control_qb
         self.manual_allocation_management = True
+        QuantumEnvironment.__init__(self, env_args = [])
     
     def __enter__(self):
         

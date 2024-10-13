@@ -34,6 +34,7 @@ class TracingQuantumSession:
         self.qv_list = []
         self.deleted_qv_list = []
         self.qubit_cache = {}
+        self.env_stack = []
         TracingQuantumSession.tr_qs_container = [self]
         
     def append(self, operation, qubits = [], clbits = []):
