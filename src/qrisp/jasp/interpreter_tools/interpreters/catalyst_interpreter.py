@@ -42,9 +42,7 @@ op_name_translation_dic = {"cx" : "CNOT",
                        "rz" : "RZ",
                        "s" : "S",
                        "t" : "T",
-                       "t_dg" : "T_dg",
-                       "s_dg" : "S_dg",
-                       "p" : "Phasegate"}
+                       "p" : "RZ"}
 
 
 def catalyst_eqn_evaluator(eqn, context_dic):
@@ -91,7 +89,8 @@ def catalyst_eqn_evaluator(eqn, context_dic):
         elif eqn.primitive.name == "jasp.get_size":
             process_get_size(invars, outvars, context_dic)
         elif eqn.primitive.name == "jasp.delete_qubits":
-            pass
+            # Not available in Catalyst
+            context_dic[outvars[0]] = context_dic[invars[0]]
         elif isinstance(eqn.primitive, OperationPrimitive):
             process_op(eqn.primitive, invars, outvars, context_dic)
         else:
@@ -193,9 +192,19 @@ def exec_qrisp_op(op, catalyst_qbs):
     # Otherwise we simply call the bind method
     else:
         
+        if op.name[-3:] == "_dg":
+            op_name = op.name[:-3]
+            invert = True
+        else:
+            invert = False
+            op_name = op.name
+        
+        catalyst_name = op_name_translation_dic[op_name]
+        
         res_qbs = qinst_p.bind(*catalyst_qbs, 
-                               op = op_name_translation_dic[op.name], 
-                               qubits_len = op.num_qubits)
+                               op = catalyst_name, 
+                               qubits_len = op.num_qubits,
+                               adjoint = invert)
         return res_qbs
 
 

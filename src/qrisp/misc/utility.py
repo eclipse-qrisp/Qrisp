@@ -39,8 +39,8 @@ def bin_rep(n, bits):
 
 def int_encoder(qv, encoding_number):
     
-    from qrisp import x
-    from qrisp.jasp import TracingQuantumSession
+    from qrisp import x, control
+    from qrisp.jasp import TracingQuantumSession, jrange
     
     tr_qs = TracingQuantumSession.get_instance()
     if tr_qs is None:
@@ -53,22 +53,26 @@ def int_encoder(qv, encoding_number):
     
     else:
         
-        def true_fun(qc, cond, qb):
-            tr_qs.abs_qc = qc
-            x(qb)
-            return tr_qs.abs_qc
+        for i in jrange(qv.size):
+            with control(encoding_number & (1<<i)):
+                x(qv[i])
         
-        def false_fun(qc, cond, qb):
-            return qc
+        # def true_fun(qc, cond, qb):
+        #     tr_qs.abs_qc = qc
+        #     x(qb)
+        #     return tr_qs.abs_qc
         
-        def loop_fun(i, qc):
-            cond_bool = (1<<i) & encoding_number
-            qb = qv[i]
-            qc = cond(cond_bool, true_fun, false_fun, qc, cond_bool, qb)
+        # def false_fun(qc, cond, qb):
+        #     return qc
+        
+        # def loop_fun(i, qc):
+        #     cond_bool = (1<<i) & encoding_number
+        #     qb = qv[i]
+        #     qc = cond(cond_bool, true_fun, false_fun, qc, cond_bool, qb)
             
-            return qc
-        qc = fori_loop(0, qv.size, loop_fun, (tr_qs.abs_qc))
-        tr_qs.abs_qc = qc
+        #     return qc
+        # qc = fori_loop(0, qv.size, loop_fun, (tr_qs.abs_qc))
+        # tr_qs.abs_qc = qc
         
 
 # Calculates the binary expression of a given integer and returns it as an array of
