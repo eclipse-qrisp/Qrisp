@@ -16,9 +16,8 @@
 ********************************************************************************/
 """
 
-from jax import jit
-from jax.core import Jaxpr, JaxprEqn, ClosedJaxpr
-from qrisp.jasp import check_for_tracing_mode, flatten_collected_environments
+from jax.core import JaxprEqn, ClosedJaxpr
+
 from qrisp.jasp.primitives import AbstractQuantumCircuit, OperationPrimitive
 
 def invert_eqn(eqn):
@@ -59,23 +58,22 @@ def invert_eqn(eqn):
 
 def invert_jaspr(jaspr):
     """
-    Takes a jaxpr returning a quantum circuit and returns a jaxpr, which returns
-    the inverse quantum circuit
+    Takes a Jaspr and returns a Jaspr, which performs the inverted quantum operation
 
     Parameters
     ----------
-    jaxpr : jax.core.Jaxpr
-        A jaxpr returning a QuantumCircuit.
+    jaspr : qrisp.jasp.Jaspr
+        The Jaspr to be inverted.
 
     Returns
     -------
-    inverted_jaxpr : jaxpr.core.Jaxpr
-        A jaxpr returning the inverse QuantumCircuit.
+    inverted_jaspr : qrisp.jasp.Jaspr
+        The inverted/daggered Jaspr.
 
     """
     
-    # Flatten all environments in the jaxpr
-    jaspr = flatten_collected_environments(jaspr)
+    # Flatten all environments in the jaspr
+    jaspr = jaspr.flatten_environments()
     # We separate the equations into classes where one executes Operations and
     # the one that doesn't execute Operations
     op_eqs = []
@@ -85,7 +83,6 @@ def invert_jaspr(jaspr):
     # we achieve our goal by pulling all the non-Operation equations to the front
     # and the Operation equations to the back.
     
-    from qrisp.circuit import Operation
     for eqn in jaspr.eqns:
         if isinstance(eqn.primitive, OperationPrimitive) or (eqn.primitive.name == "pjit" and isinstance(eqn.outvars[0].aval, AbstractQuantumCircuit)):
             # Insert the inverted equation at the front
