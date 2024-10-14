@@ -12,7 +12,7 @@ Problem description
 
 Given a universe :math:`[n]` and :math:`m` subsets :math:`\mathcal S = (S_j)^m_{j=1}` , :math:`S_j \subset [n]`, find the maximum
 cardinality subcollection :math:`\mathcal S' \subset \mathcal S` of pairwise disjoint subsets.
-Following the work of `Hadfield et al. <https://arxiv.org/abs/1709.03489>`_, the MaxSetPacking problem is solved by solving the MaxIndepSet problem on the constraint graph $G=(V,E)$
+Following the work of `Hadfield et al. <https://arxiv.org/abs/1709.03489>`_, the MaxSetPacking problem is solved by solving the :ref:`MaxIndepSet <maxIndepSetQAOA>` problem on the constraint graph $G=(V,E)$
 where vertices correspond to subsets in $\mathcal S$ and edges correspond to pairs of intersecting subsets.
 
 

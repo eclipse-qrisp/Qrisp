@@ -1,8 +1,8 @@
 .. _eThrLinTwoQAOA:
 
 
-QAOA eThrLinTwo
-===============
+QAOA E3Lin2
+===========
 
 
 .. currentmodule:: qrisp.qaoa.problems.eThrLinTwo

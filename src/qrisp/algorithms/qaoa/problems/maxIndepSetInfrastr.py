@@ -47,7 +47,7 @@ def maxIndepSetCostOp(G):
     return partialcostMixer
 
 
-def maxIndepSetCostfct(G):
+def maxIndepSetclCostfct(G):
     """
 
     Parameters

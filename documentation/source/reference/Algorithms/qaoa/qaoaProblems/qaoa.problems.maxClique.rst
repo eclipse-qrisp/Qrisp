@@ -11,7 +11,13 @@ Problem description
 -------------------
 
 Given a Graph  :math:`G = (V,E)` find a maximum clique, i.e., a subset of vertices :math:`V' \subset V` such that all pairs of vertices are adjacent in the graph $G$.
-Following the work of `Hadfield et al. <https://arxiv.org/abs/1709.03489>`_, the MaxClique problem is solved by solving the MaxIndepSet problem on the complement graph.
+Following the work of `Hadfield et al. <https://arxiv.org/abs/1709.03489>`_, the MaxClique problem is solved by solving the :ref:`MaxIndepSet <maxIndepSetQAOA>` problem on the complement graph.
+
+
+Classical cost function
+-----------------------
+
+.. autofunction:: create_max_clique_cl_cost_function
 
 
 MaxClique problem

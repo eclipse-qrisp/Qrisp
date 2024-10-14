@@ -15,8 +15,7 @@ Here, we provide a condensed implementation of QAOA for M$\kappa$CS using all of
 Problem description
 -------------------
 
-Given a Graph  :math:`G = (V,E)` find a maximum cut, i.e., a bipartition $S$, $V\setminus S$ of the set of vertices $V$ such that the number of edges between $S$ and $V\setminus S$ is maximal.
-
+Given a Graph  :math:`G = (V,E)` find and $\kappa$ colors, maximize the size (number of edges) of a properly colored subgraph.
 
 Cost operator
 -------------

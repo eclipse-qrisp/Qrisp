@@ -68,7 +68,7 @@ def create_e3lin2_cl_cost_function(clauses):
     Returns
     -------
     cl_cost_function : function
-        The classical function for the problem instance, which takes a dictionary of measurement results as input.
+        The classical cost function for the problem instance, which takes a dictionary of measurement results as input.
 
     """
 

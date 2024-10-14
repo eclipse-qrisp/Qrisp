@@ -19,6 +19,41 @@
 
 from qrisp.qaoa.problems.maxIndepSet import create_max_indep_set_cl_cost_function, create_max_indep_set_mixer, max_indep_set_init_function
 import networkx as nx
+import itertools
+
+
+def create_max_clique_cl_cost_function(G):
+    """
+    Creates the classical cost function for an instance of the maximum clique problem for a given graph $G$.
+
+    Parameters
+    ----------
+    G : nx.Graph
+        The Graph for the problem instance.
+
+    Returns
+    -------
+    cl_cost_function : function
+        The classical cost function for the problem instance, which takes a dictionary of measurement results as input.
+
+    """
+
+    def cl_cost_function(res_dic):
+        energy = 0
+        for state, prob in res_dic.items():
+            temp = True
+            indices = [index for index, value in enumerate(state) if value == '1']
+            combinations = list(itertools.combinations(indices, 2))
+            for combination in combinations:
+                if combination not in G.edges():
+                    temp = False
+                    break
+            if temp: 
+                energy += -len(indices)*prob
+
+        return energy
+
+    return cl_cost_function 
 
 
 def max_clique_problem(G):
