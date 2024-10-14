@@ -926,7 +926,12 @@ def make_jaspr(fun):
             qs = TracingQuantumSession.get_instance()
             qs.start_tracing(abs_qc)
             
-            res = fun(*args, **kwargs)
+            try:
+                res = fun(*args, **kwargs)
+            except Exception as e:
+                qs.conclude_tracing()
+                raise e
+                
             res_qc = qs.conclude_tracing()
             
             return res_qc, res
