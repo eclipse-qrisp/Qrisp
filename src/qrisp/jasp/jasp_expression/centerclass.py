@@ -934,6 +934,9 @@ def make_jaspr(fun):
         
         args = list(args)
         
+        # During tracing, the .reg attribute of the QuantumVariable is updated
+        # in-place. To recover the original.reg attribute after tracing, 
+        # we flatten each QuantumVariable (ie. turn it into a tuple)
         flattened_qvs = []
         for i in range(len(args)):
             if isinstance(args[i], int):
