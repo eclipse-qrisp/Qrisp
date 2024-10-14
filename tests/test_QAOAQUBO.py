@@ -16,8 +16,8 @@
 ********************************************************************************/
 """
 
-from qrisp.algorithms.qaoa import *
-import networkx as nx
+from qrisp import QuantumVariable, QuantumArray
+from qrisp.qaoa import QUBO_problem, QUBO_obj
 from operator import itemgetter
 
 def test_QUBO():

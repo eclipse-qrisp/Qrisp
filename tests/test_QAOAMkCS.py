@@ -17,7 +17,7 @@
 """
 
 from qrisp import QuantumArray
-from qrisp.algorithms.qaoa import QAOAProblem, QuantumColor, XY_mixer, apply_XY_mixer, RX_mixer, create_coloring_operator, create_coloring_cl_cost_function
+from qrisp.qaoa import QAOAProblem, QuantumColor, XY_mixer, apply_XY_mixer, RX_mixer, create_coloring_operator, create_coloring_cl_cost_function
 import random
 import networkx as nx
 from operator import itemgetter

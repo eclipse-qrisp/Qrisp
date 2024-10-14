@@ -51,7 +51,7 @@ Example implementation
 ::
 
    from qrisp import QuantumVariable
-   from qrisp.algorithms.qaoa import QAOAProblem, RX_mixer, create_e3lin2_cl_cost_function, create_e3lin2_cost_operator, e3lin2_init_function
+   from qrisp.qaoa import QAOAProblem, RX_mixer, create_e3lin2_cl_cost_function, create_e3lin2_cost_operator, e3lin2_init_function
 
    clauses = [[0,1,2,1],[1,2,3,0],[0,1,4,0],[0,2,4,1],[2,4,5,1],[1,3,5,1],[2,3,4,0]]
    num_variables = 6

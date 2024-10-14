@@ -44,7 +44,7 @@ Example implementation
 ::
    
    from qrisp import QuantumVariable
-   from qrisp.algorithms.qaoa import QAOAProblem, RZ_mixer, create_min_set_cover_mixer, create_min_set_cover_cl_cost_function, min_set_cover_init_function
+   from qrisp.qaoa import QAOAProblem, RZ_mixer, create_min_set_cover_mixer, create_min_set_cover_cl_cost_function, min_set_cover_init_function
 
    sets = [{0,1,2,3},{1,5,6,4},{0,2,6,3,4,5},{3,4,0,1},{1,2,3,0},{1}]
    universe = set.union(*sets)

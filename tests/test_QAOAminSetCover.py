@@ -18,7 +18,7 @@
 
 
 from qrisp import QuantumVariable
-from qrisp.algorithms.qaoa import QAOAProblem, RZ_mixer, approximation_ratio, create_min_set_cover_mixer, create_min_set_cover_cl_cost_function, min_set_cover_init_function
+from qrisp.qaoa import QAOAProblem, RZ_mixer, approximation_ratio, create_min_set_cover_mixer, create_min_set_cover_cl_cost_function, min_set_cover_init_function
 import itertools
 
 
