@@ -186,9 +186,10 @@ def qache(func):
         # Excecute the function
         abs_qc_new, res = ammended_function(abs_qs.abs_qc, *args, **kwargs)
         
-        # eqn = jax._src.core.thread_local_state.trace_state.trace_stack.dynamic.jaxpr_stack[0].eqns[-1]
+        eqn = jax._src.core.thread_local_state.trace_state.trace_stack.dynamic.jaxpr_stack[0].eqns[-1]
         # eqn.params["jaxpr"] = "="
-        #eqn.params["jaxpr"] = jax.core.ClosedJaxpr(jaspr.from_cache(eqn.params["jaxpr"].jaxpr), eqn.params["jaxpr"].consts)
+        from qrisp.jasp import Jaspr
+        eqn.params["jaxpr"] = jax.core.ClosedJaxpr(Jaspr.from_cache(eqn.params["jaxpr"].jaxpr), eqn.params["jaxpr"].consts)
         # print(type(eqn.params["jaxpr"].jaxpr))
         
         abs_qs.abs_qc = abs_qc_new

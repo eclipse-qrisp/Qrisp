@@ -52,9 +52,15 @@ def control_eqn(eqn, ctrl_qubit_var):
         
         new_params = dict(eqn.params)
         
-        new_params["jaxpr"] = ClosedJaxpr(control_jaspr(eqn.params["jaxpr"].jaxpr),
-                                          eqn.params["jaxpr"].consts)
-        
+        if "controlled_jaspr" in new_params:
+            new_params["jaxpr"] = ClosedJaxpr(new_params["controlled_jaspr"],
+                                              eqn.params["jaxpr"].consts)
+            new_params["name"] = "cusc_" + new_params["name"]
+            del new_params["controlled_jaspr"]
+        else:
+            new_params["jaxpr"] = ClosedJaxpr(control_jaspr(eqn.params["jaxpr"].jaxpr),
+                                              eqn.params["jaxpr"].consts)
+            
         return JaxprEqn(primitive = eqn.primitive,
                         invars = [eqn.invars[0], ctrl_qubit_var] + eqn.invars[1:],
                         outvars = eqn.outvars,
@@ -200,7 +206,7 @@ def exec_multi_controlled_jaspr(jaspr, num_ctrls):
             
             qs.append(mcx_operation, ctrls + [ctrl_qb])
                         
-            res = controlled_jaspr.inline(*(invalues + [ctrl_qb]))
+            res = controlled_jaspr.inline(*([ctrl_qb] + invalues))
             
             qs.append(mcx_operation, ctrls + [ctrl_qb])
             

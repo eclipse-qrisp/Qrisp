@@ -35,7 +35,7 @@ class TracingQuantumSession:
         self.deleted_qv_list = []
         self.qubit_cache = {}
         self.env_stack = []
-        TracingQuantumSession.tr_qs_container = [self]
+        TracingQuantumSession.tr_qs_container.insert(0, self)
         
     def append(self, operation, qubits = [], clbits = []):
     
@@ -92,7 +92,7 @@ class TracingQuantumSession:
     
     @classmethod
     def release(cls):
-        cls.tr_qs_container = [None]
+        cls.tr_qs_container.pop(0)
     
     @classmethod
     def get_instance(cls):
