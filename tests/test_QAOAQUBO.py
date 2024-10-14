@@ -19,6 +19,7 @@
 from qrisp import QuantumVariable, QuantumArray
 from qrisp.qaoa import QUBO_problem, QUBO_obj
 from operator import itemgetter
+import numpy as np
 
 def test_QUBO():
     from qrisp.default_backend import def_backend
