@@ -38,6 +38,37 @@ def collect_environments(jaxpr):
 
     """
     
+    # We "collect" the QuantumEnvironments.
+    # Collect means that the enter/exit statements are transformed into jaspr
+    # which are subsequently called. Example:
+        
+    # from qrisp import *
+    # from qrisp.jasp import *
+    # import jax
+
+    # def outer_function(x):
+    #     qv = QuantumVariable(x)
+    #     with QuantumEnvironment():
+    #         cx(qv[0], qv[1])
+    #         h(qv[0])
+    #     return qv
+
+    # jaxpr = make_jaxpr(outer_function)(2).jaxpr
+    
+    # This piece of code results in the following jaxpr
+    
+    # { lambda ; a:i32[]. let
+    #     b:QuantumCircuit = qdef 
+    #     c:QuantumCircuit d:QubitArray = create_qubits b a
+    #     e:QuantumCircuit = q_env[stage=enter type=quantumenvironment] c
+    #     f:Qubit = get_qubit d 0
+    #     g:Qubit = get_qubit d 1
+    #     h:QuantumCircuit = cx e f g
+    #     i:Qubit = get_qubit d 0
+    #     j:QuantumCircuit = h h i
+    #     _:QuantumCircuit = q_env[stage=exit type=quantumenvironment] j
+    #   in (d,) }
+    
     # We iterate through the list of equations, appending the equations to
     # the new list containing the processed equations.
 

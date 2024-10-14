@@ -939,50 +939,9 @@ def make_jaspr(fun):
                 
         jaxpr = make_jaxpr(ammended_function)(AbstractQuantumCircuit(), *args, **kwargs).jaxpr
         
-        return recursive_convert(jaxpr)
+        return Jaspr.from_cache(collect_environments(jaxpr))
     
     return jaspr_creator
-
-def recursive_convert(jaxpr):
-    
-    for eqn in jaxpr.eqns:
-        if eqn.primitive.name == "pjit" and isinstance(eqn.outvars[0].aval, AbstractQuantumCircuit):
-            eqn.params["jaxpr"] = ClosedJaxpr(recursive_convert(eqn.params["jaxpr"].jaxpr), eqn.params["jaxpr"].consts)
-    
-    # We "collect" the QuantumEnvironments.
-    # Collect means that the enter/exit statements are transformed into jaspr
-    # which are subsequently called. Example:
-        
-    # from qrisp import *
-    # from qrisp.jasp import *
-    # import jax
-
-    # def outer_function(x):
-    #     qv = QuantumVariable(x)
-    #     with QuantumEnvironment():
-    #         cx(qv[0], qv[1])
-    #         h(qv[0])
-    #     return qv
-
-    # jaxpr = make_jaxpr(outer_function)(2).jaxpr
-    
-    # This piece of code results in the following jaxpr
-    
-    # { lambda ; a:i32[]. let
-    #     b:QuantumCircuit = qdef 
-    #     c:QuantumCircuit d:QubitArray = create_qubits b a
-    #     e:QuantumCircuit = q_env[stage=enter type=quantumenvironment] c
-    #     f:Qubit = get_qubit d 0
-    #     g:Qubit = get_qubit d 1
-    #     h:QuantumCircuit = cx e f g
-    #     i:Qubit = get_qubit d 0
-    #     j:QuantumCircuit = h h i
-    #     _:QuantumCircuit = q_env[stage=exit type=quantumenvironment] j
-    #   in (d,) }
-    
-    jaxpr = collect_environments(jaxpr)
-    
-    return Jaspr.from_cache(jaxpr)
 
 
 def qjit(function):
