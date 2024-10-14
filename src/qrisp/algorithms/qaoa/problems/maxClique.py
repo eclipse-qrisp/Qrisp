@@ -39,7 +39,7 @@ def create_max_clique_cl_cost_function(G):
     """
 
     def cl_cost_function(res_dic):
-        energy = 0
+        cost = 0
         for state, prob in res_dic.items():
             temp = True
             indices = [index for index, value in enumerate(state) if value == '1']
@@ -49,9 +49,9 @@ def create_max_clique_cl_cost_function(G):
                     temp = False
                     break
             if temp: 
-                energy += -len(indices)*prob
+                cost += -len(indices)*prob
 
-        return energy
+        return cost
 
     return cl_cost_function 
 

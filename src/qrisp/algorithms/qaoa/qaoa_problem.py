@@ -66,11 +66,16 @@ class QAOAProblem:
     Parameters
     ----------
     cost_operator : function
-        A function receiving a :ref:`QuantumVariable` or :ref:`QuantumArray` and parameter $\gamma$. This function should perform the application of the cost operator.
+        A function receiving a :ref:`QuantumVariable` or :ref:`QuantumArray` and parameter $\gamma$. This function performs the application of the cost operator.
     mixer : function
-        A function receiving a :ref:`QuantumVariable` or :ref:`QuantumArray` and parameter $\beta$. This function should perform the application mixing operator.
+        A function receiving a :ref:`QuantumVariable` or :ref:`QuantumArray` and parameter $\beta$. This function performs the application mixing operator.
     cl_cost_function : function
-        The classical cost function for the specific QAOA problem instance.
+        The classical cost function for the specific QAOA problem instance, which takes a dictionary of measurement results as input.
+    init_function : function, optional
+        A function receiving a :ref:`QuantumVariable` or :ref:`QuantumArray` for preparing the inital state.
+        By default, the uniform superposition state $\ket{+}^n$ is prepared.
+    callback : Booelan, optional
+        If ``True``, intermediate results are stored. The default is ``False``.
 
     """
     
@@ -81,7 +86,7 @@ class QAOAProblem:
         
         self.init_function = init_function
         self.cl_post_processor = None
-        self.init_type = init_type
+        self.init_type = 'random'
         # Fourier heuristic parameterization
         self.fourier_depth = None
         # should be set in the 
@@ -468,7 +473,7 @@ class QAOAProblem:
         init_type : string, optional
             Specifies the way the initial optimization parameters are chosen. Available are ``random`` and ``TQA``. The default is ``random``: 
             The parameters are initialized uniformly at random in the interval $[0,\pi/2]$.
-            For `TQA``, the parameters are chosen based on the `Trotterized Quantum Annealing <https://quantum-journal.org/papers/q-2021-07-01-491/>`_ protocol.
+            For ``TQA``, the parameters are chosen based on the `Trotterized Quantum Annealing <https://quantum-journal.org/papers/q-2021-07-01-491/>`_ protocol.
         optimizer : str, optional
             Specifies the `optimization routine <https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html>`_. 
             Available are, e.g., ``COBYLA``, ``COBYQA``, ``Nelder-Mead``. The Default is ``COBYLA``.
@@ -531,7 +536,7 @@ class QAOAProblem:
         init_type : string, optional
             Specifies the way the initial optimization parameters are chosen. Available are ``random`` and ``TQA``. The default is ``random``: 
             The parameters are initialized uniformly at random in the interval $[0,\pi/2]$.
-            For `TQA``, the parameters are chosen based on the `Trotterized Quantum Annealing <https://quantum-journal.org/papers/q-2021-07-01-491/>`_ protocol.
+            For ``TQA``, the parameters are chosen based on the `Trotterized Quantum Annealing <https://quantum-journal.org/papers/q-2021-07-01-491/>`_ protocol.
         optimizer : str, optional
             Specifies the `optimization routine <https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html>`_. 
             Available are, e.g., ``COBYLA``, ``COBYQA``, ``Nelder-Mead``. The Default is ``COBYLA``.
@@ -621,7 +626,7 @@ class QAOAProblem:
         init_type : string, optional
             Specifies the way the initial optimization parameters are chosen. Available are ``random`` and ``TQA``. The default is ``random``: 
             The parameters are initialized uniformly at random in the interval $[0,\pi/2]$.
-            For `TQA``, the parameters are chosen based on the `Trotterized Quantum Annealing <https://quantum-journal.org/papers/q-2021-07-01-491/>`_ protocol.
+            For ``TQA``, the parameters are chosen based on the `Trotterized Quantum Annealing <https://quantum-journal.org/papers/q-2021-07-01-491/>`_ protocol.
 
         Returns
         -------
@@ -714,7 +719,7 @@ class QAOAProblem:
 
     def visualize_cost(self):
         """
-        Visualizes the cost during the optimization process.
+        Visualizes the cost during the optimization process. Can only be used if ``callback=True``.
 
         """
 
@@ -728,7 +733,8 @@ class QAOAProblem:
         plt.scatter(x, y, color='#20306f',marker="o", linestyle='solid', linewidth=1, label='QAOA cost')
         plt.xlabel("Iterations", fontsize=15, color="#444444")
         plt.ylabel("Cost", fontsize=15, color="#444444")
-        plt.grid()
+        plt.tick_params(axis='both', labelsize=12)
         plt.legend(fontsize=12, labelcolor="#444444")
+        plt.grid()
 
         plt.show()

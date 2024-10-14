@@ -253,8 +253,8 @@ def controlled_RX_mixer_gen(predicate):
     Examples
     --------
 
-    We define the predicate function for the MaxIndependentSet problem. It returns ``True`` for the index (node) $i$ if 
-    all neighbors $j$ of the node $i$ ind the graph $G$ are not selected, and ``False`` otherwise.
+    We define the predicate function for the :ref:`MaxIndepSet <maxIndepSetQAOA>` problem. It returns ``True`` for the index (node) $i$ if 
+    all neighbors $j$ of the node $i$ in the graph $G$ are not selected, and ``False`` otherwise.
 
     ::
 

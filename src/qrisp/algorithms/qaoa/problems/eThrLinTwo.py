@@ -73,13 +73,13 @@ def create_e3lin2_cl_cost_function(clauses):
     """
 
     def cl_cost_function(res_dic):
-        energy = 0
+        cost = 0
         for state, prob in res_dic.items():
                for clause in clauses:
                    if sum(int(state[clause[k]]) for k in range(3)) % 2 == clause[3]:
-                       energy -= prob
+                       cost -= prob
         
-        return energy
+        return cost
 
     return cl_cost_function 
 

@@ -213,17 +213,17 @@ def create_coloring_operator(G):
 
 def mkcs_obj(quantumcolor_array, G):
         # Set value of color integer to 1
-    energy = 1
+    cost = 1
 
         # Iterate over all edges in graph G
     for pair in list(G.edges()):
 
             # If colors of nodes in current pair are not same, multiply color by reward factor 4
         if quantumcolor_array[pair[0]] != quantumcolor_array[pair[1]]:
-            energy *= 4
+            cost *= 4
 
         # Return negative color as objective function value. The negative value is used since we want to minimize the objective function       
-    return -energy
+    return -cost
 
 def create_coloring_cl_cost_function(G):
     """
@@ -243,17 +243,17 @@ def create_coloring_cl_cost_function(G):
     def cl_cost_function(res_dic):
 
         def mkcs_obj(quantumcolor_array, G):
-            energy = 1
+            cost = 1
             for pair in list(G.edges()):
                 if quantumcolor_array[pair[0]] != quantumcolor_array[pair[1]]:
-                    energy *= 4
-            return -energy
+                    cost *= 4
+            return -cost
     
-        energy = 0
+        cost = 0
         for quantumcolor_array, prob in res_dic.items():
-            energy += mkcs_obj(quantumcolor_array,G)*prob
+            cost += mkcs_obj(quantumcolor_array,G)*prob
 
-        return energy
+        return cost
     
     return cl_cost_function
 

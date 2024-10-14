@@ -34,7 +34,7 @@ The :meth:`.run <qrisp.qaoa.QAOAProblem.run>` method prepares the initial state,
 
 For benchmarking, we provide the :meth:`.benchmark <qrisp.qaoa.QAOAProblem.benchmark>` method, which allows you to collect performance data about your implementation.
 
-Additionally, a circuit can be pretrained with the method :meth:`.train_function <qrisp.qaoa.QAOAProblem.train_function>` . This allows preparing a new QuantumVariable with already optimized parameters, such that no new optimization is conducted. The results will therefore be the same. 
+Additionally, a circuit can be pretrained with the method :meth:`.train_function <qrisp.qaoa.QAOAProblem.train_function>` . This allows preparing a new :ref:`QuantumVariable` with already optimized parameters, such that no new optimization is conducted. The results will therefore be the same. 
    
 :ref:`QAOABenchmark`
 --------------------
@@ -55,7 +55,7 @@ Qrisp comes with a variety of predefined mixers to tackle various types of probl
    XY_mixer
    grover_mixer
    constrained_mixer_gen
-  
+   controlled_RX_mixer_gen
 
    
 The following problem instances have already been successfully implemented using the Qrisp framework:

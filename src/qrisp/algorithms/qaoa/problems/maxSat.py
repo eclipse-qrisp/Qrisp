@@ -66,12 +66,12 @@ def create_maxsat_cl_cost_function(clauses):
     """
 
     def cl_cost_function(res_dic):
-        energy = 0
+        cost = 0
         for state, prob in res_dic.items():
             for clause in clauses:
-                energy += -(1-math.prod((1-int(state[index-1])) if index>0 else int(state[-index-1]) for index in clause))*prob
+                cost += -(1-math.prod((1-int(state[index-1])) if index>0 else int(state[-index-1]) for index in clause))*prob
 
-        return energy
+        return cost
 
     return cl_cost_function 
 
