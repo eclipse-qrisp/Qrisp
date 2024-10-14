@@ -18,7 +18,7 @@
 
 
 from qrisp import QuantumVariable
-from qrisp.qaoa import QAOAProblem, RX_mixer, approximation_ratio, create_maxsat_cl_cost_function, create_maxsat_cost_operator, maxsat_init_function
+from qrisp.qaoa import QAOAProblem, RX_mixer, approximation_ratio, create_maxsat_cl_cost_function, create_maxsat_cost_operator
 import itertools
 
 
@@ -30,8 +30,7 @@ def test_QAOAmaxSat():
 
     qaoa_max_indep_set = QAOAProblem(cost_operator=create_maxsat_cost_operator(clauses),
                                     mixer=RX_mixer,
-                                    cl_cost_function=create_maxsat_cl_cost_function(clauses),
-                                    init_function=maxsat_init_function)
+                                    cl_cost_function=create_maxsat_cl_cost_function(clauses))
     results = qaoa_max_indep_set.run(qarg=qarg, depth=5)
 
     cl_cost = create_maxsat_cl_cost_function(clauses)

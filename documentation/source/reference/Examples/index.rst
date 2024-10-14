@@ -50,5 +50,4 @@ In this section, we provide a glimpse into the diverse range of applications tha
    QuantumModDivision
    QuantumTeleportation
    EfficientTSP
-   QAOA
    Shor

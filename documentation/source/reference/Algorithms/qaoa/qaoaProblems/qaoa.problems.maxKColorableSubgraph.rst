@@ -1,4 +1,4 @@
-.. _maxKColorableSubgraphQAOA:
+.. _MkCSQAOAdoc:
 
 QAOA M$\\kappa$CS
 =================

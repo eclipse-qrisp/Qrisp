@@ -18,11 +18,11 @@
 
 
 from qrisp import QuantumVariable
-from qrisp.qaoa import QAOAProblem, RX_mixer, approximation_ratio, create_e3lin2_cl_cost_function, create_e3lin2_cost_operator, e3lin2_init_function
+from qrisp.qaoa import QAOAProblem, RX_mixer, approximation_ratio, create_e3lin2_cl_cost_function, create_e3lin2_cost_operator
 import itertools
 
 
-def test_eTwoThrLinQAOA():
+def test_eThrLinTwoQAOA():
 
     clauses = [[0,1,2,1],[1,2,3,0],[0,1,4,0],[0,2,4,1],[2,4,5,1],[1,3,5,1],[2,3,4,0]]
     num_variables = 6
@@ -30,8 +30,7 @@ def test_eTwoThrLinQAOA():
 
     qaoa_e3lin2 = QAOAProblem(cost_operator=create_e3lin2_cost_operator(clauses),
                                     mixer=RX_mixer,
-                                    cl_cost_function=create_e3lin2_cl_cost_function(clauses),
-                                    init_function=e3lin2_init_function)
+                                    cl_cost_function=create_e3lin2_cl_cost_function(clauses))
     results = qaoa_e3lin2.run(qarg=qarg, depth=5)
 
     cl_cost = create_e3lin2_cl_cost_function(clauses)

@@ -1,4 +1,4 @@
-.. _maxSetPackQAOA:
+.. _maxSetPackingQAOA:
 
 QAOA MaxSetPacking
 ==================

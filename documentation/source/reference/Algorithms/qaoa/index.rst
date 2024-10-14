@@ -76,7 +76,7 @@ The following problem instances have already been successfully implemented using
    * - :ref:`E3Lin2 <eThrLinTwoQAOA>`
      - X mixer
      -    ✅
-   * - :ref:`QUBO <QUBOQAOA>`
+   * - :ref:`QUBO <QUBOQAOAdoc>`
      - X mixer
      -    ✅ 
    * - :ref:`MaxIndependentSet <maxIndepSetQAOA>`
@@ -85,13 +85,13 @@ The following problem instances have already been successfully implemented using
    * - :ref:`MaxClique <maxCliqueQAOA>`
      - Controlled X mixer
      -    ✅
-   * - :ref:`MaxSetPacking <maxSetPackQAOA>`
+   * - :ref:`MaxSetPacking <maxSetPackingQAOA>`
      - Controlled X mixer
      -    ✅
    * - :ref:`MinSetCover <minSetCoverQAOA>`
      - Controlled X mixer
      -    ✅
-   * - :ref:`Max-$\\kappa$-Colorable Subgraph <maxKColorableSubgraphQAOA>`
+   * - :ref:`Max-$\\kappa$-Colorable Subgraph <MkCSQAOAdoc>`
      - XY mixer
      -    ✅ 
      
