@@ -16,161 +16,48 @@
 ********************************************************************************/
 """
 
-from qrisp.qaoa import QAOAProblem
-from qrisp.qaoa.problems.maxSetPackInfrastr import maxSetPackclCostfct,maxSetPackCostOp,get_neighbourhood_relations, init_state
-from qrisp.qaoa.mixers import RZ_mixer
+
 from qrisp import QuantumVariable
-from qrisp.qaoa import approximation_ratio
-import matplotlib.pyplot as plt
+from qrisp.qaoa import QAOAProblem, RZ_mixer, approximation_ratio, create_max_indep_set_cl_cost_function, create_max_indep_set_mixer, max_indep_set_init_function
+import networkx as nx
 import itertools
 
 
 def QAOAmaxSetPacking():
-    # start with a graph G - from np adjacency matrix
-    """
-    This is an example of the maxSetPacking QAOA solution
-    the problem is structured as follows:
-    > Given a universe [n] and m subsets S (S_j in S, S_j is subset of [n]), find the maximum cardinality subcollection S' (S' is subset of S) of pairwise dijoint sets.
 
-    We will not stick to mathematical assignment of variable names. 
+    sets = [{0,7,1},{6,5},{2,3},{5,4},{8,7,0},{1}]
 
-    """
+    def non_empty_intersection(sets):
+        return [(i, j) for (i, s1), (j, s2) in itertools.combinations(enumerate(sets), 2) if s1.intersection(s2)]
 
-    # sets are given as list of tuples
-    examplesets = [(0,1,7),(5,6),(2,3),(4,5),(7,8)]
-    # full universe is given as a tuple
-    sol = (0,1,2,3,4,5,6,7,8)
+    # create constraint graph
+    G = nx.Graph()
+    G.add_nodes_from(range(len(sets)))
+    G.add_edges_from(non_empty_intersection(sets))
+    qarg = QuantumVariable(G.number_of_nodes())
 
-    # the realtions between the sets, i.e. with vertice is in which other sets
-    #print(get_neighbourhood_relations(examplesets, len_universe=len(sol)))
+    qaoa_max_indep_set = QAOAProblem(cost_operator=RZ_mixer,
+                                    mixer=create_max_indep_set_mixer(G),
+                                    cl_cost_function=create_max_indep_set_cl_cost_function(G),
+                                    init_function=max_indep_set_init_function)
+    results = qaoa_max_indep_set.run(qarg=qarg, depth=5)
 
-    # assign the operators
-    cost_fun = maxSetPackclCostfct(sets=examplesets,universe=sol)
-    mixerOp = RZ_mixer
-    costOp = maxSetPackCostOp(sets=examplesets, universe=sol)
+    cl_cost = create_max_indep_set_cl_cost_function(G)
 
-    #initialize the qarg
-    qarg = QuantumVariable(len(examplesets))
-
-    # run the qaoa
-    QAOAinstanceSecond = QAOAProblem(cost_operator=costOp ,mixer= mixerOp, cl_cost_function=cost_fun)
-    QAOAinstanceSecond.set_init_function(init_function=init_state)
-    InitTest = QAOAinstanceSecond.run(qarg=qarg, depth=5)
-
-
-    # assign the cost_func for later usage
-    def testCostFun(state, universe):
-        list_universe = [True]*len(universe)
-        temp = True
-        obj = 0
-        intlist = [s for s in range(len(list(state))) if list(state)[s] == "1"]
-        sol_sets = [examplesets[index] for index in intlist]
-        for seto in sol_sets:
-            for val in seto:
-                if list_universe[val]:
-                    list_universe[val] = False
-                else: 
-                    temp = False 
-                    break
-        if temp:
-            obj -= len(intlist)
-        return obj
-
-
-
-
-    # test if cost_func functions for all items . 
-    for state in InitTest.keys():
-        list_universe = [True]*len(sol)
-        temp = True
-        if testCostFun(state=state, universe = sol) < 0:
-            intlist = [s for s in range(len(list(state))) if list(state)[s] == "1"]
-            sol_sets = [examplesets[index] for index in intlist]
-            for seto in sol_sets:
-                for val in seto:
-                    if list_universe[val]:
-                        list_universe[val] = False
-                    else: 
-                        temp = False 
-                        break
-        assert temp
-
+    # find optimal solution by brute force    
+    temp_binStrings = list(itertools.product([1,0], repeat=len(sets)))
+    binStrings = ["".join(map(str, item)) for item in temp_binStrings]
     
-
-    #print the ideal solutions
-    #print("5 most likely Solutions") 
-    maxfive = sorted(InitTest, key=InitTest.get, reverse=True)[:5]
-    """ for name in InitTest.keys():  # for name, age in dictionary.iteritems():  (for Python 2.x)
-        if name in maxfive:
-            print(name)
-            print(testCostFun(name, universe=sol))  
-    """
-    #find ideal solution by brute force    
-    temp_binStrings = list(itertools.product([1,0], repeat=len(examplesets)))
-    binStrings = ["".join(map(str, item))  for item in temp_binStrings]
-    
-    mini = 0
+    min = 0
+    min_index = 0
     for index in range(len(binStrings)):
-        val = testCostFun(binStrings[index], universe=sol)
-        if val < mini:
-            mini = val
+        val = cl_cost({binStrings[index] : 1})
+        if val < min:
+            min = val
             min_index = index
 
     optimal_sol = binStrings[min_index]
-    #print("optimal solution")
-    #print(optimal_sol)
-
-
-    # write approximation ratio test
-    metric_dict ={}
-    metric_dict["counts"] = InitTest
-    metric_dict["cost_func"] = maxSetPackclCostfct(sets=examplesets,universe=sol)
-    metric_dict["optimal_sol"] = optimal_sol
     
-    #print(approximation_ratio(metric_dict))
-    """ if not approximation_ratio(metric_dict)>= 0.3:
-        failure_list.append(approximation_ratio(metric_dict))
-        counter +=1 """
-    #assert approximation_ratio(metric_dict)>= 0.3
+    # approximation ratio test
+    assert approximation_ratio(results, optimal_sol, cl_cost)>=0.5
 
-
-
-    import numpy as np
-
-    randInt = np.random.randint(4,9)
-    randInt2 = np.random.randint(0,1)
-    secondSol = tuple(range(randInt))
-
-    if randInt2 == 0:
-        secondSets = [secondSol,secondSol[0:randInt-3],secondSol[randInt-3:randInt-1],secondSol[randInt-1:]] 
-    else:
-        #print(list(range(randInt)))
-        #examplesets = [tuple(index) for index in list(range(randInt))]
-        secondSets = [secondSol[0:randInt-3],secondSol[randInt-3:randInt-1],secondSol[randInt-1:]] 
-
-
-
-    # assign the operators
-    cost_fun = maxSetPackclCostfct(sets=secondSets,universe=secondSol)
-    mixerOp = RZ_mixer
-    costOp = maxSetPackCostOp(sets=secondSets, universe=secondSol)
-
-    #initialize the qarg
-    qarg2 = QuantumVariable(len(secondSets))
-
-    # run the qaoa
-    QAOAinstanceSecond = QAOAProblem(cost_operator=costOp ,mixer= mixerOp, cl_cost_function=cost_fun)
-    QAOAinstanceSecond.set_init_function(init_function=init_state)
-    InitTest2 = QAOAinstanceSecond.run(qarg=qarg2, depth=5)
-
-    maxOne =  sorted(InitTest2, key=InitTest2.get, reverse=True)[:1]
-    if randInt2 == 0:
-        
-        #print(maxOne)
-        assert maxOne == ["0111"]
-
-    else:
-        #print(maxOne)
-        assert maxOne == ["1"* 3 ]
-    #print(counter)
-    #print(failure_list)
