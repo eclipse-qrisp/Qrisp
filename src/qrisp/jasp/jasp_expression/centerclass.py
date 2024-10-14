@@ -918,6 +918,7 @@ class Jaspr(Jaxpr):
 
 def make_jaspr(fun):
     from qrisp.jasp import AbstractQuantumCircuit, TracingQuantumSession
+    from qrisp.core.quantum_variable import QuantumVariable, flatten_qv, unflatten_qv
     def jaspr_creator(*args, **kwargs):
         
         def ammended_function(abs_qc, *args, **kwargs):
@@ -933,11 +934,18 @@ def make_jaspr(fun):
         
         args = list(args)
         
+        flattened_qvs = []
         for i in range(len(args)):
             if isinstance(args[i], int):
                 args[i] = jnp.asarray(args[i], dtype = "int32")
+            if isinstance(args[i], QuantumVariable):
+                flattened_qvs.append(flatten_qv(args[i]))
                 
         jaxpr = make_jaxpr(ammended_function)(AbstractQuantumCircuit(), *args, **kwargs).jaxpr
+        
+        # Update the QuantumVariable objects to their former tracers (happens in-place)
+        for tup in flattened_qvs:
+            unflatten_qv(*tup[::-1])
         
         return Jaspr.from_cache(collect_environments(jaxpr))
     

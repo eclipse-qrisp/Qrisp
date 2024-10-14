@@ -206,6 +206,7 @@ def custom_control(func):
             # Qache the function
             res = qache(func)(*args, **kwargs)
             
+            
             # Trace the controlled version
             new_kwargs = dict(kwargs)
             ctrl_aval = AbstractQubit()
