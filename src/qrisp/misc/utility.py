@@ -632,10 +632,10 @@ def gate_wrap_inner(
 
 def find_qs(args):
     
-    from qrisp.jasp import TracingQuantumSession
-    abs_qs = TracingQuantumSession.get_instance()
-    if abs_qs is not None:
-        return abs_qs
+    from qrisp.jasp import TracingQuantumSession, check_for_tracing_mode
+    
+    if check_for_tracing_mode():
+        return TracingQuantumSession.get_instance()
     
     if hasattr(args, "qs"):
         return args.qs()

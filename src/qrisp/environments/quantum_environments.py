@@ -381,8 +381,9 @@ class QuantumEnvironment(QuantumPrimitive):
     # Method to enter the environment
     def __enter__(self):
         
-        abs_qs = TracingQuantumSession.get_instance()
-        if abs_qs is not None:
+        from qrisp.jasp import check_for_tracing_mode
+        if check_for_tracing_mode():
+            abs_qs = TracingQuantumSession.get_instance()
             self.temp_qubit_cache = abs_qs.qubit_cache
             abs_qs.qubit_cache = {}
             abs_qs.abs_qc = self.bind(abs_qs.abs_qc, *self.env_args, stage = "enter", type = str(type(self)).split(".")[-1][:-2])
@@ -431,9 +432,9 @@ class QuantumEnvironment(QuantumPrimitive):
     # Method to exit the environment
     def __exit__(self, exception_type, exception_value, traceback):
         
-        
-        abs_qs = TracingQuantumSession.get_instance()
-        if abs_qs is not None:
+        from qrisp.jasp import check_for_tracing_mode
+        if check_for_tracing_mode():
+            abs_qs = TracingQuantumSession.get_instance()
             abs_qs.qubit_cache = self.temp_qubit_cache
             abs_qs.abs_qc = self.bind(abs_qs.abs_qc, stage = "exit", type = str(type(self)).split(".")[-1][:-2])
             return
