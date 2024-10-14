@@ -191,7 +191,7 @@ def solve_QUBO(Q, depth, shots=5000, max_iter = 50, backend = None, print_res = 
         backend = backend
 
     # Run QAOA with given quantum arguments, depth, measurement keyword arguments and maximum iterations for optimization
-    res = QUBO_instance.run(qarg, depth, mes_kwargs={"backend" : backend, "shots" : shots}, max_iter = max_iter, init_type='TQA') # runs the simulation
+    res = QUBO_instance.run(qarg, depth, mes_kwargs={"backend" : backend, "shots" : shots}, max_iter = max_iter, init_type='tqa') # runs the simulation
 
     # Calculate the cost for each solution
     costs_and_solutions = [(QUBO_obj(bitstring, Q), bitstring) for bitstring in res.keys()]

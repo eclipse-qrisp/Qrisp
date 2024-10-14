@@ -53,7 +53,8 @@ Example implementation
                             cl_cost_function=create_maxcut_cl_cost_function(G))
     results = qaoa_maxcut.run(qarg=qarg, depth=5, max_iter=50)
 
-That's it! In the following, we print the 5 most likely solutions together with their cost values.
+That's it! Feel free to experiment with the ``init_type='tqa'`` option in the :meth:`.run <qrisp.qaoa.QAOAProblem.run>` method for improved performance.
+In the following, we print the 5 most likely solutions together with their cost values.
 
 ::
    

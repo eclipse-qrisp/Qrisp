@@ -22,7 +22,7 @@ import numpy as np
 from scipy.optimize import minimize
 from sympy import Symbol
 
-from qrisp import h, QuantumArray, parallelize_qc
+from qrisp import QuantumArray, h, x, parallelize_qc
 from qrisp.algorithms.qaoa.qaoa_benchmark_data import QAOABenchmark
 
 
@@ -79,7 +79,7 @@ class QAOAProblem:
 
     """
     
-    def __init__(self, cost_operator, mixer, cl_cost_function, init_function = None, init_type='random', callback=False):
+    def __init__(self, cost_operator, mixer, cl_cost_function, init_function = None, callback=False):
         self.cost_operator = cost_operator
         self.mixer = mixer
         self.cl_cost_function = cl_cost_function
@@ -272,9 +272,12 @@ class QAOAProblem:
         beta = [Symbol("beta_" + str(i)) for i in range(depth)]
         
 
-        # Prepare the initial state for particular problem instance (MaxCut: superposition, GraphColoring: any node coloring)
+        # Prepare initial state - if no init_function is specified, prepare uniform superposition
         if self.init_function is not None:
             self.init_function(qarg)
+        elif self.init_type=='tqa': # Prepare the ground state (eigenvalue -1) of the X mixer
+            x(qarg)
+            h(qarg)
         else:
             h(qarg)
             
@@ -471,9 +474,10 @@ class QAOAProblem:
         max_iter : int, optional
             The maximum number of iterations for the optimization method. Default is 50.
         init_type : string, optional
-            Specifies the way the initial optimization parameters are chosen. Available are ``random`` and ``TQA``. The default is ``random``: 
+            Specifies the way the initial optimization parameters are chosen. Available are ``random`` and ``tqa``. The default is ``random``: 
             The parameters are initialized uniformly at random in the interval $[0,\pi/2]$.
-            For ``TQA``, the parameters are chosen based on the `Trotterized Quantum Annealing <https://quantum-journal.org/papers/q-2021-07-01-491/>`_ protocol.
+            For ``tqa``, the parameters are chosen based on the `Trotterized Quantum Annealing <https://quantum-journal.org/papers/q-2021-07-01-491/>`_ protocol.
+            If ``tqa`` is chosen, and no ``init_function`` for the :ref:`QAOAProblem` is specified, the $\ket{-}^n$ state is prepared (the ground state for the X mixer).
         optimizer : str, optional
             Specifies the `optimization routine <https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html>`_. 
             Available are, e.g., ``COBYLA``, ``COBYQA``, ``Nelder-Mead``. The Default is ``COBYLA``.
@@ -504,9 +508,12 @@ class QAOAProblem:
             from qrisp.qaoa.parameters.fourier_params import fourier_params_helper
             optimal_theta = fourier_params_helper(optimal_theta, self.fourier_depth , depth) 
         
-        # Prepare initial state - in case this is not called, prepare superposition state
+        # Prepare initial state - if no init_function is specified, prepare uniform superposition
         if self.init_function is not None:
             self.init_function(qarg)
+        elif self.init_type=='tqa': # Prepare the ground state (eigenvalue -1) of the X mixer
+            x(qarg)
+            h(qarg)
         else:
             h(qarg)
 
@@ -534,13 +541,14 @@ class QAOAProblem:
         max_iter : int, optional
             The maximum number of iterations for the optimization method. Default is 50.
         init_type : string, optional
-            Specifies the way the initial optimization parameters are chosen. Available are ``random`` and ``TQA``. The default is ``random``: 
+            Specifies the way the initial optimization parameters are chosen. Available are ``random`` and ``tqa``. The default is ``random``: 
             The parameters are initialized uniformly at random in the interval $[0,\pi/2]$.
-            For ``TQA``, the parameters are chosen based on the `Trotterized Quantum Annealing <https://quantum-journal.org/papers/q-2021-07-01-491/>`_ protocol.
+            For ``tqa``, the parameters are chosen based on the `Trotterized Quantum Annealing <https://quantum-journal.org/papers/q-2021-07-01-491/>`_ protocol.
+            If ``tqa`` is chosen, and no ``init_function`` for the :ref:`QAOAProblem` is specified, the $\ket{-}^n$ state is prepared (the ground state for the X mixer).
         optimizer : str, optional
             Specifies the `optimization routine <https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html>`_. 
             Available are, e.g., ``COBYLA``, ``COBYQA``, ``Nelder-Mead``. The Default is ``COBYLA``.
-
+        
         Returns
         -------
         circuit_generator : function
@@ -592,10 +600,15 @@ class QAOAProblem:
         res_sample = self.optimization_routine(qarg, depth, mes_kwargs, max_iter, optimizer)
         
         def circuit_generator(qarg_gen):
+            # Prepare initial state - if no init_function is specified, prepare uniform superposition
             if self.init_function is not None:
                 self.init_function(qarg_gen)
+            elif self.init_type=='tqa': # Prepare the ground state (eigenvalue -1) of the X mixer
+                x(qarg_gen)
+                h(qarg_gen)
             else:
                 h(qarg_gen)
+
             for i in range(depth): 
                 
                 self.cost_operator(qarg_gen, res_sample[i])
@@ -603,7 +616,7 @@ class QAOAProblem:
             
         return circuit_generator
     
-    def benchmark(self, qarg, depth_range, shot_range, iter_range, optimal_solution, repetitions = 1, mes_kwargs = {}, init_type = "random"):
+    def benchmark(self, qarg, depth_range, shot_range, iter_range, optimal_solution, repetitions = 1, mes_kwargs = {}, init_type = "random", optimizer="COBYLA"):
         """
         This method enables convenient data collection regarding performance of the implementation.
 
@@ -624,9 +637,13 @@ class QAOAProblem:
         mes_kwargs : dict, optional
             The keyword arguments, that are used for the ``qarg.get_measurement``. The default is {}.
         init_type : string, optional
-            Specifies the way the initial optimization parameters are chosen. Available are ``random`` and ``TQA``. The default is ``random``: 
+            Specifies the way the initial optimization parameters are chosen. Available are ``random`` and ``tqa``. The default is ``random``: 
             The parameters are initialized uniformly at random in the interval $[0,\pi/2]$.
-            For ``TQA``, the parameters are chosen based on the `Trotterized Quantum Annealing <https://quantum-journal.org/papers/q-2021-07-01-491/>`_ protocol.
+            For ``tqa``, the parameters are chosen based on the `Trotterized Quantum Annealing <https://quantum-journal.org/papers/q-2021-07-01-491/>`_ protocol.
+            If ``tqa`` is chosen, and no ``init_function`` for the :ref:`QAOAProblem` is specified, the $\ket{-}^n$ state is prepared (the ground state for the X mixer).
+        optimizer : str, optional
+            Specifies the `optimization routine <https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html>`_. 
+            Available are, e.g., ``COBYLA``, ``COBYQA``, ``Nelder-Mead``. The Default is ``COBYLA``.
 
         Returns
         -------
@@ -698,9 +715,9 @@ class QAOAProblem:
                         temp_mes_kwargs = dict(mes_kwargs)
                         temp_mes_kwargs["shots"] = s
                         if init_type=='random':
-                            counts = self.run(qarg=qarg_dupl, depth = p, max_iter = it, mes_kwargs = temp_mes_kwargs, init_type='random')
+                            counts = self.run(qarg=qarg_dupl, depth = p, max_iter = it, mes_kwargs = temp_mes_kwargs, init_type='random', optimizer=optimizer)
                         elif init_type=='tqa':
-                            counts = self.run(qarg=qarg_dupl, depth = p, max_iter = it, mes_kwargs = temp_mes_kwargs, init_type='tqa')
+                            counts = self.run(qarg=qarg_dupl, depth = p, max_iter = it, mes_kwargs = temp_mes_kwargs, init_type='tqa', optimizer=optimizer)
                         final_time = time.time() - start_time
                         
                         compiled_qc = qarg_dupl.qs.compile(intended_measurements=mes_qubits)
