@@ -468,7 +468,7 @@ class QAOAProblem:
         qarg : :ref:`QuantumVariable` or :ref:`QuantumArray`
             The quantum argument to which the QAOA circuit is applied.
         depth : int
-            The depth of the QAOA circuit.
+            The amount of QAOA layers.
         mes_kwargs : dict, optional
             The keyword arguments for the measurement function. Default is an empty dictionary.
         max_iter : int, optional
@@ -526,16 +526,22 @@ class QAOAProblem:
         return opt_res
     
     def train_function(self, qarg, depth, mes_kwargs = {}, max_iter = 50, init_type = "random", optimizer="COBYLA"):
-        """
-        This function allows for training of a circuit with a given instance of a ``QAOAProblem``. It will then return a function that can be applied to a ``QuantumVariable``,
-        s.t. that it is a solution to the problem instance. The function therefore acts as a circuit for the problem instance with optimized parameters.
+        r"""
+        This function allows for training of a circuit with a given ``QAOAProblem`` instance. It returns a function that can be applied to a ``QuantumVariable``,
+        such that it represents a solution to the problem instance. When applied to a ``QuantumVariable``, the function therefore prepares the state
+         
+        .. math::
+         
+            \ket{\psi_p}=U_M(B,\beta_p)U_P(C,\gamma_p)\dotsb U_M(B,\beta_1)U_P(C,\gamma_1)\ket{\psi_0}
+
+        with optimized parameters $\gamma, \beta$.
 
         Parameters
         ----------
         qarg : :ref:`QuantumVariable`
             The quantum argument to which the QAOA circuit is applied.
         depth : int
-            The depth of the QAOA circuit.
+            The amount of QAOA layers.
         mes_kwargs : dict, optional
             The keyword arguments for the measurement function. Default is an empty dictionary.
         max_iter : int, optional
@@ -552,45 +558,44 @@ class QAOAProblem:
         Returns
         -------
         circuit_generator : function
-            A function that can be applied to a ``QuantumVariable`` , with optimized parameters for the problem instance. The ``QuantumVariable`` then represent a solution of the problem.
+            A function that can be applied to a ``QuantumVariable`` , with optimized parameters for the problem instance. The ``QuantumVariable`` then represents a solution of the problem.
 
         Examples
         --------
 
-        We create a MaxClique instance and train the :ref:`QAOAProblem` instance
+        We create a :ref:`MaxIndepSet <maxIndepSetQAOA>` instance and train a ciruit with the :ref:`QAOAProblem` instance.
         
         ::
             
-            from qrisp.qaoa import QAOAProblem
-            from qrisp.qaoa.problems.maxCliqueInfrastr import maxCliqueCostfct,maxCliqueCostOp,init_state
-            from qrisp.qaoa.mixers import RX_mixer
             from qrisp import QuantumVariable
+            from qrisp.qaoa import QAOAProblem, RZ_mixer, create_max_indep_set_cl_cost_function, create_max_indep_set_mixer, max_indep_set_init_function
             import networkx as nx
+            import matplotlib.pyplot as plt
             
-	        # create QAOAinstance
-            G = nx.erdos_renyi_graph(9,0.7, seed =  133)
-	        QAOAinstance = QAOAProblem(maxCliqueCostOp(G), RX_mixer, maxCliqueCostfct(G))
-	        QAOAinstance.set_init_function(init_function=init_state)
+            G = nx.erdos_renyi_graph(9, 0.5, seed =  133)
 
-            # create a blueprint-qv to train the problem instance on and train it
+            qaoa_instance = QAOAProblem(cost_operator=RZ_mixer,
+                                            mixer=create_max_indep_set_mixer(G),
+                                            cl_cost_function=create_max_indep_set_cl_cost_function(G),
+                                            init_function=max_indep_set_init_function)
+
+            # create a blueprint-qv to train the circuit with the problem instance 
             qarg_new = QuantumVariable(G.number_of_nodes())
-            training_func = QAOAinstance.train_circuit( qarg=qarg_new, depth=5 )
+            training_func = qaoa_instance.train_function(qarg=qarg_new, depth=5)
 
             # apply the trained function to a new qv 
             qarg_trained = QuantumVariable(G.number_of_nodes())
             training_func(qarg_trained)
 
-            # get the results in a nice format
+            # get the measurement results 
             opt_res = qarg_trained.get_measurement()
-            aClCostFct = maxCliqueCostfct(G)
 
-            print("5 most likely Solutions") 
-            maxfive = sorted(opt_res, key=opt_res.get, reverse=True)[:5]
-            for res, val in opt_res.items():  
-                if res in maxfive:
+            cl_cost = create_max_indep_set_cl_cost_function(G)
 
-                    print((res, val))
-                    print(aClCostFct({res : 1})) 
+            print("5 most likely solutions")
+            max_five = sorted(opt_res.items(), key=lambda item: item[1], reverse=True)[:5]
+            for res, prob in max_five:
+                print([index for index, value in enumerate(res) if value == '1'], prob, cl_cost({res : 1}))
 
         """
 

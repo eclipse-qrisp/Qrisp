@@ -83,19 +83,6 @@ def create_e3lin2_cl_cost_function(clauses):
     return cl_cost_function 
 
 
-def e3lin2_init_function(qv):
-    r"""
-    Prepares the initial state $\ket{+}^{\otimes n}$.
-    
-    Parameters
-    ----------
-    qv : :ref:`QuantumVariable`
-        The quantum argument.
-    
-    """
-    h(qv)
-
-
 def e3lin2_problem(clauses):
     """
     Creates a QAOA problem instance with appropriate phase separator, mixer, and

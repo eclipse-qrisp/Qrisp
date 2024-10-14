@@ -109,19 +109,6 @@ def create_maxsat_cost_operator(clauses):
     return cost_operator
 
 
-def maxsat_init_function(qv):
-    r"""
-    Prepares the initial state $\ket{+}^{\otimes n}$.
-    
-    Parameters
-    ----------
-    qv : :ref:`QuantumVariable`
-        The quantum argument.
-    
-    """
-    h(qv)
-
-
 def maxsat_problem(clauses):
     """
     Creates a QAOA problem instance with appropriate phase separator, mixer, and

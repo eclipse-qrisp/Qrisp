@@ -48,12 +48,6 @@ Classical cost function
 .. autofunction:: create_maxsat_cl_cost_function
 
 
-Initial state function
-----------------------
-
-.. autofunction:: maxsat_init_function
-
-
 Helper functions
 ----------------
 
@@ -80,11 +74,11 @@ Example implementation
 
    qaoa_max_indep_set = QAOAProblem(cost_operator=create_maxsat_cost_operator(clauses),
                                     mixer=RX_mixer,
-                                    cl_cost_function=create_maxsat_cl_cost_function(clauses),
-                                    init_function=maxsat_init_function)
+                                    cl_cost_function=create_maxsat_cl_cost_function(clauses))
    results = qaoa_max_indep_set.run(qarg=qarg, depth=5)
 
-That's it! In the following, we print the 5 most likely solutions together with their cost values.
+That's it! Feel free to experiment with the ``init_type='tqa'`` option in the :meth:`.run <qrisp.qaoa.QAOAProblem.run>` method for improved performance.
+In the following, we print the 5 most likely solutions together with their cost values.
 
 ::
    
