@@ -17,7 +17,7 @@
 """
 
 from qrisp import QuantumBool, x, mcx
-from qrisp.qaoa import controlled_RX_mixer_gen
+from qrisp.algorithms.qaoa.mixers import controlled_RX_mixer_gen
 import itertools
 
 

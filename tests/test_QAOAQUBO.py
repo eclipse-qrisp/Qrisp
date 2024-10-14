@@ -16,7 +16,7 @@
 ********************************************************************************/
 """
 
-from qrisp.qaoa import *
+from qrisp.algorithms.qaoa import *
 import networkx as nx
 from operator import itemgetter
 

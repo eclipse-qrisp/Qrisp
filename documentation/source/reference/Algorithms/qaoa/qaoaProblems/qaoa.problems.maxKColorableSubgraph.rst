@@ -41,7 +41,7 @@ Example implementation
 ::
 
     from qrisp import QuantumArray
-    from qrisp.qaoa import QAOAProblem, RX_mixer, apply_XY_mixer, QuantumColor, create_coloring_cl_cost_function, create_coloring_operator
+    from qrisp.algorithms.qaoa import QAOAProblem, RX_mixer, apply_XY_mixer, QuantumColor, create_coloring_cl_cost_function, create_coloring_operator
     import networkx as nx
     import random
     from operator import itemgetter

@@ -16,9 +16,7 @@
 ********************************************************************************/
 """
 
-from qrisp.qaoa import QAOAProblem
-from qrisp.qaoa.problems.maxCut import create_maxcut_cl_cost_function,create_maxcut_cost_operator
-from qrisp.qaoa import RX_mixer
+from qrisp.algorithms.qaoa import QAOAProblem, RX_mixer, create_maxcut_cl_cost_function,create_maxcut_cost_operator
 from qrisp import QuantumArray, QuantumVariable
 import networkx as nx
 from operator import itemgetter

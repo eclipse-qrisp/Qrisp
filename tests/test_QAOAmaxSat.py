@@ -18,8 +18,7 @@
 
 
 from qrisp import QuantumVariable
-from qrisp.qaoa import QAOAProblem, RX_mixer, approximation_ratio
-from qrisp.qaoa.problems.maxSat import create_maxsat_cl_cost_function, create_maxsat_cost_operator, maxsat_init_function
+from qrisp.algorithms.qaoa import QAOAProblem, RX_mixer, approximation_ratio, create_maxsat_cl_cost_function, create_maxsat_cost_operator, maxsat_init_function
 import itertools
 
 

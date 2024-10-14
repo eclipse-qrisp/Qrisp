@@ -72,8 +72,7 @@ Example implementation
 ::
 
    from qrisp import QuantumVariable
-   from qrisp.qaoa import QAOAProblem, RX_mixer
-   from qrisp.qaoa.problems.maxSat import create_maxsat_cl_cost_function, create_maxsat_cost_operator, maxsat_init_function
+   from qrisp.algorithms.qaoa import QAOAProblem, RX_mixer, create_maxsat_cl_cost_function, create_maxsat_cost_operator, maxsat_init_function
 
    clauses = [[1,2,-3],[1,4,-6],[4,5,6],[1,3,-4],[2,4,5],[1,3,5],[-2,-3,6]]
    num_variables = 6

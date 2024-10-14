@@ -18,10 +18,8 @@
 
 
 from qrisp import QuantumVariable
-from qrisp.qaoa import QAOAProblem, RZ_mixer, approximation_ratio
-from qrisp.qaoa.problems.maxIndepSet import create_max_indep_set_cl_cost_function, create_max_indep_set_mixer, max_indep_set_init_function
+from qrisp.algorithms.qaoa import QAOAProblem, RZ_mixer, approximation_ratio, create_max_indep_set_cl_cost_function, create_max_indep_set_mixer, max_indep_set_init_function
 import networkx as nx
-import numpy as np
 import itertools
 
 

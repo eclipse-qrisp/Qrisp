@@ -18,6 +18,7 @@ Implementations
      qaoaProblems/qaoa.problems.minSetCover
      qaoaProblems/qaoa.problems.maxKColorableSubgraph
 
+
 Our voyage into :ref:`MaxCut <MaxCutQAOA>` and :ref:`Max-$\\kappa$-Colorable Subgraph <MkCSQAOA>` problems is detailed in the :ref:`tutorial <tutorial>` section. 
 The QAOA module is built with a focus on modularity, ensuring it can adapt to various problem instances while maintaining independence from the choice of decoding. 
 This design approach makes it straightforwad to formulate and solve other problem instances taking the steps as we did in the tutorial. 

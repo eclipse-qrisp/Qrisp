@@ -17,7 +17,7 @@
 """
 
 
-from qrisp.qaoa.problems.maxIndepSet import create_max_indep_set_cl_cost_function, create_max_indep_set_mixer, max_indep_set_init_function
+from qrisp.algorithms.qaoa.problems.maxIndepSet import create_max_indep_set_cl_cost_function, create_max_indep_set_mixer, max_indep_set_init_function
 import networkx as nx
 from itertools import combinations
 

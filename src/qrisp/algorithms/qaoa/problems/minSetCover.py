@@ -17,8 +17,7 @@
 """
 
 from qrisp import QuantumVariable, QuantumBool, x, mcx
-from qrisp.qaoa import controlled_RX_mixer_gen
-import itertools
+from qrisp.algorithms.qaoa.mixers import controlled_RX_mixer_gen
 
 
 def create_min_set_cover_mixer(sets, universe):

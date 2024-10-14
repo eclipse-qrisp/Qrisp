@@ -17,7 +17,6 @@
 """
 
 from qrisp import h, cx, rz, conjugate
-import itertools
 
 
 def parity(qarg, indices):

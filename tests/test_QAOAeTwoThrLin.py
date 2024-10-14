@@ -18,8 +18,7 @@
 
 
 from qrisp import QuantumVariable
-from qrisp.qaoa import QAOAProblem, RX_mixer, approximation_ratio
-from qrisp.qaoa.problems.eThrLinTwo import create_e3lin2_cl_cost_function, create_e3lin2_cost_operator, e3lin2_init_function
+from qrisp.algorithms.qaoa import QAOAProblem, RX_mixer, approximation_ratio, create_e3lin2_cl_cost_function, create_e3lin2_cost_operator, e3lin2_init_function
 import itertools
 
 
