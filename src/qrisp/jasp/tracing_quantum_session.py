@@ -27,15 +27,33 @@ greek_letters = symbols('alpha beta gamma delta epsilon zeta eta theta iota kapp
 
 class TracingQuantumSession:
     tr_qs_container = [None]
+    abs_qc_stack = []
+    qubit_cache_stack = []
     
-    def __init__(self, abs_qc):
+    def __init__(self):
         
-        self.abs_qc = abs_qc
+        self.abs_qc = None
         self.qv_list = []
         self.deleted_qv_list = []
-        self.qubit_cache = {}
-        self.env_stack = []
+        self.qubit_cache = None
         TracingQuantumSession.tr_qs_container.insert(0, self)
+    
+    def start_tracing(self, abs_qc):
+        self.abs_qc_stack.append(self.abs_qc)
+        self.qubit_cache_stack.append(self.qubit_cache)
+        
+        self.abs_qc = abs_qc
+        self.qubit_cache = {}
+    
+    def conclude_tracing(self):
+        temp = self.abs_qc
+        self.abs_qc = self.abs_qc_stack.pop(-1)
+        self.qubit_cache = self.qubit_cache_stack.pop(-1)
+        if self.abs_qc is None:
+            self.qv_list = []
+            self.deleted_qv_list = []
+        return temp
+        
         
     def append(self, operation, qubits = [], clbits = []):
     
@@ -98,7 +116,7 @@ class TracingQuantumSession:
     def get_instance(cls):
         return cls.tr_qs_container[0]
         
-        
+tracing_qs_singleton = TracingQuantumSession()        
 
 def check_for_tracing_mode():
     return hasattr(jax._src.core.thread_local_state.trace_state.trace_stack.dynamic, "jaxpr_stack")

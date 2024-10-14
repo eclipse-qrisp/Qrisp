@@ -386,7 +386,6 @@ class QuantumEnvironment(QuantumPrimitive):
             self.temp_qubit_cache = abs_qs.qubit_cache
             abs_qs.qubit_cache = {}
             abs_qs.abs_qc = self.bind(abs_qs.abs_qc, *self.env_args, stage = "enter", type = str(type(self)).split(".")[-1][:-2])
-            abs_qs.env_stack.append(self)
             return
             
         # The QuantumSessions operating inside this environment will be merged
@@ -437,7 +436,6 @@ class QuantumEnvironment(QuantumPrimitive):
         if abs_qs is not None:
             abs_qs.qubit_cache = self.temp_qubit_cache
             abs_qs.abs_qc = self.bind(abs_qs.abs_qc, stage = "exit", type = str(type(self)).split(".")[-1][:-2])
-            abs_qs.env_stack.remove(self)
             return
         
         self.deepest_environment[0] = self.parent

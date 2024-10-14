@@ -923,12 +923,11 @@ def make_jaspr(fun):
         
         def ammended_function(abs_qc, *args, **kwargs):
             
-            qs = TracingQuantumSession(abs_qc)
+            qs = TracingQuantumSession.get_instance()
+            qs.start_tracing(abs_qc)
             
             res = fun(*args, **kwargs)
-            res_qc = qs.abs_qc
-            
-            TracingQuantumSession.release()
+            res_qc = qs.conclude_tracing()
             
             return res_qc, res
         

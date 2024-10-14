@@ -51,10 +51,13 @@ def test_jasp_gidney_adder():
             cz(a,b)
     
     
-    @qache
-    def jisp_gidney_adder(a, b):
+    @custom_control
+    def jasp_gidney_adder(a, b, ctrl = None):
         
         gidney_anc = QuantumVariable(a.size-1, name = "gidney_anc*")
+        
+        if ctrl is not None:
+            ctrl_anc = QuantumBool(name = "gidney_anc_2*")
         
         i = 0
         gidney_mcx(a[i], b[i], gidney_anc[i])
@@ -74,14 +77,26 @@ def test_jasp_gidney_adder():
             
             cx(gidney_anc[i-1], gidney_anc[i])
             gidney_mcx_inv(a[i], b[i], gidney_anc[i])
-            cx(gidney_anc[i-1], a[i])
-            cx(a[i], b[i])
+            
+            if ctrl is not None:
+                
+                gidney_mcx(ctrl, a[i], ctrl_anc[0])
+                cx(ctrl_anc[0], b[i])
+                gidney_mcx(ctrl, a[i], ctrl_anc[0])
+                
+                cx(gidney_anc[i-1], a[i])
+                cx(gidney_anc[i-1], b[i])
+            else:
+                cx(gidney_anc[i-1], a[i])
+                cx(a[i], b[i])
         
         gidney_mcx_inv(a[0], b[0], gidney_anc[0])
         cx(a[0], b[0])
         
         gidney_anc.delete()
         
+        if ctrl is not None:
+            ctrl_anc.delete()        
     
     def call_gidney_adder(i):
         
@@ -90,9 +105,9 @@ def test_jasp_gidney_adder():
         b = QuantumFloat(i)
         b[:] = 5
         
-        jisp_gidney_adder(a, b)
-        jisp_gidney_adder(a, b)
-        jisp_gidney_adder(a, b)
+        jasp_gidney_adder(a, b)
+        jasp_gidney_adder(a, b)
+        jasp_gidney_adder(a, b)
     
         return measure(b)
     
@@ -106,11 +121,32 @@ def test_jasp_gidney_adder():
     
     from builtins import id
     assert id(gidney_mcx_jaspr_1) == id(gidney_mcx_jaspr_2)
+
+    def call_controlled_gidney_adder(i):
+        
+        a = QuantumFloat(i)
+        a[:] = 2
+        b = QuantumFloat(i)
+        b[:] = 5
+        
+        
+        ctrl_qbl = QuantumBool()
+        x(ctrl_qbl[0])
+        
+        with control(ctrl_qbl[0]):
+            jasp_gidney_adder(a, b)
+            jasp_gidney_adder(a, b)
+        jasp_gidney_adder(a, b)
     
+        return measure(b)
+
+    jaspr = make_jaspr(call_controlled_gidney_adder)(3)
+    
+    assert jaspr(4) == 11
     try:
         import catalyst
     except ModuleNotFoundError:
         return
-    
     assert qjit(call_gidney_adder)(4)[0] == 11
+    
     
