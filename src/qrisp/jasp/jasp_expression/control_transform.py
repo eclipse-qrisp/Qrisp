@@ -58,7 +58,7 @@ def control_eqn(eqn, ctrl_qubit_var):
         # We therefore use this version instead of generating the generic one.
         if "controlled_jaspr" in new_params:
             
-            new_params["jaxpr"] = ClosedJaxpr(new_params["controlled_jaspr"],
+            new_params["jaxpr"] = ClosedJaxpr(new_params["controlled_jaspr"].flatten_environments(),
                                               eqn.params["jaxpr"].consts)
             new_params["name"] = "cusc_" + new_params["name"]
             del new_params["controlled_jaspr"]

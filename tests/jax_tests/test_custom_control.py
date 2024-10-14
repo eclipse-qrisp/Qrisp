@@ -27,7 +27,9 @@ def test_custom_control():
         cx(qv[0], qv[1])
         
         if ctrl is not None:
-            mcx([ctrl, qv[1]], qv[0])
+            with control(ctrl):
+                cx(qv[1], qv[0])
+
         else:
             cx(qv[1], qv[0])
         
