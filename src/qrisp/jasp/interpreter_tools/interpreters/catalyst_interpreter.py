@@ -99,7 +99,9 @@ def catalyst_eqn_evaluator(eqn, context_dic):
         if eqn.primitive.name == "while":
             return process_while(eqn, context_dic)
         elif eqn.primitive.name == "cond":
-            return process_cond(eqn, context_dic)
+            return process_cond(eqn, context_dic)#
+        elif eqn.primitive.name == "pjit":
+            process_pjit(eqn, context_dic)
         else:
             return True
     
@@ -385,3 +387,12 @@ def process_cond(eqn, context_dic):
     outvalues = cond_p.bind(*flattened_invalues, branch_jaxprs = (true_jaxpr, false_jaxpr), nimplicit_outputs = 0)
     
     context_dic[eqn.outvars[0]] = tuple(outvalues)
+
+def process_pjit(eqn, context_dic):
+    
+    invalues = extract_invalues(eqn, context_dic)
+    outvalues = eval_jaxpr(eqn.params["jaxpr"], eqn_evaluator = catalyst_eqn_evaluator)(*invalues)
+    if len(eqn.params["jaxpr"].jaxpr.outvars) == 1:
+        outvalues = [outvalues]
+    insert_outvalues(eqn, context_dic, outvalues)
+    
