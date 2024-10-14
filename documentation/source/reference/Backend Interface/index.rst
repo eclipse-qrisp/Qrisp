@@ -90,7 +90,7 @@ Naturally, this also works for non-simulator Qiskit backends.
 ---------------------
 
 The IQMBackend class allows to run Qrisp programs on IQM quantum computers available via 
-`IQM Resonance <https://resonance.meetiqm.com/>`. 
+`IQM Resonance <https://resonance.meetiqm.com/>`_. 
 For an up-to-date list of device instance names check the IQM Resonance Dashboard. 
 Devices available via IQM Resonance currently support up to 20 000 shots. 
 
