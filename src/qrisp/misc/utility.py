@@ -40,10 +40,9 @@ def bin_rep(n, bits):
 def int_encoder(qv, encoding_number):
     
     from qrisp import x, control
-    from qrisp.jasp import TracingQuantumSession, jrange
+    from qrisp.jasp import TracingQuantumSession, jrange, check_for_tracing_mode
     
-    tr_qs = TracingQuantumSession.get_instance()
-    if tr_qs is None:
+    if not check_for_tracing_mode():
         if encoding_number > 2 ** len(qv) - 1:
             raise Exception("Not enough qubits to encode integer " + str(encoding_number))
     
