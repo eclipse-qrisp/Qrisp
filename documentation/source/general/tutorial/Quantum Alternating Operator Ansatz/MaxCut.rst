@@ -66,7 +66,7 @@ With these two functions at our disposal we can now implement our first QAOA lay
 
 Applying hadamard gates on ``qv`` prepares the initial state for our system - the superposition state $|s\rangle$ .
 
-If you have executed all the preceding cells correctly, you should have been able to print and examine the circuit of the initial QAOA layer. You may notice a pattern in the phase separator section of the circuit, which links two qubits corresponding to a specific pair of nodes in `G` that are connected by an edge (commencing flashback: `G.add_edges_from([[0,3],[0,4],[1,3],[1,4],[2,3],[2,4]])`). The use of barriers between such pairs facilitates a more intuitive understanding of the phase separator unitary's inner workings.
+If you have executed all the preceding cells correctly, you should have been able to print and examine the circuit of the initial QAOA layer. You may notice a pattern in the phase separator section of the circuit, which links two qubits corresponding to a specific pair of nodes in ``G`` that are connected by an edge (commencing flashback: `G.add_edges_from([[0,3],[0,4],[1,3],[1,4],[2,3],[2,4]])`). The use of barriers between such pairs facilitates a more intuitive understanding of the phase separator unitary's inner workings.
 
 We’ve used the parameters $\gamma$ and $\beta$ symbolically, without assigning specific numerical values to them. In the next section we will build on top of the first layer, assign values to the angle parameters and iteratively optimize their value with each additional layer (SPOILER ALERT). 
 
@@ -163,9 +163,9 @@ QAOAProblem. Enough said.
 
 🎶 Enough chit chat, you ain't got all day - let's get to it: QAOAProblem, lead the way! 🎶
 
-Taking the essential building blocks from `QAOAnsatz <https://arxiv.org/abs/1709.03489>`_ into account, we built the :ref:`QAOAProblem class <QAOA>` with modularity in mind. We gathered and improved the functions shown in the example above and created a powerfull architecture with which it's easy to implement various problem instances of varying complexity.In this tutorial we focus on using QAOAProblem, with extensive documentation being available :ref:`here <QAOA>`.
+Taking the essential building blocks from `QAOAnsatz <https://arxiv.org/abs/1709.03489>`_ into account, we built the :ref:`QAOAProblem class <QAOA>` with modularity in mind. We gathered and improved the functions shown in the example above and created a powerfull architecture with which it's easy to implement various problem instances of varying complexity. In this tutorial we focus on using QAOAProblem, with extensive documentation being available :ref:`here <QAOA>`.
 
-We start with renaming our quantum argument `qv` to a more general `qarg` because more often than not we'll combine QuantumVariables into a QuantumArray to make implementations of other problem instances more efficient.
+We start with renaming our quantum argument `qv` to a more general `qarg` because more often than not we'll combine :ref:`QuantumVariables <QuantumVariable>` into a :ref:`QuantumArray` to make implementations of other problem instances more efficient.
 ::
 
     qarg = QuantumVariable(len(G))

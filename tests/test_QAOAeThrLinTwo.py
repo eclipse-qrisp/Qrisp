@@ -18,29 +18,28 @@
 
 
 from qrisp import QuantumVariable
-from qrisp.qaoa import QAOAProblem, RZ_mixer, approximation_ratio, create_min_set_cover_mixer, create_min_set_cover_cl_cost_function, min_set_cover_init_function
+from qrisp.qaoa import QAOAProblem, RX_mixer, approximation_ratio, create_e3lin2_cl_cost_function, create_e3lin2_cost_operator
 import itertools
 
 
-def test_QAOAminSetCover():
+def test_eThrLinTwoQAOA():
 
-    sets = [{0,1,2,3},{1,5,6,4},{0,2,6,3,4,5},{3,4,0,1},{1,2,3,0},{1}]
-    universe = set.union(*sets)
-    qarg = QuantumVariable(len(sets))
+    clauses = [[0,1,2,1],[1,2,3,0],[0,1,4,0],[0,2,4,1],[2,4,5,1],[1,3,5,1],[2,3,4,0]]
+    num_variables = 6
+    qarg = QuantumVariable(num_variables)
 
-    qaoa_min_set_cover = QAOAProblem(cost_operator=RZ_mixer, 
-                                    mixer= create_min_set_cover_mixer(sets, universe), 
-                                    cl_cost_function=create_min_set_cover_cl_cost_function(sets, universe),
-                                    init_function=min_set_cover_init_function)
-    results = qaoa_min_set_cover.run(qarg=qarg, depth=5)
+    qaoa_e3lin2 = QAOAProblem(cost_operator=create_e3lin2_cost_operator(clauses),
+                                    mixer=RX_mixer,
+                                    cl_cost_function=create_e3lin2_cl_cost_function(clauses))
+    results = qaoa_e3lin2.run(qarg=qarg, depth=5)
 
-    cl_cost = create_min_set_cover_cl_cost_function(sets, universe)
+    cl_cost = create_e3lin2_cl_cost_function(clauses)
 
     # find optimal solution by brute force    
-    temp_binStrings = list(itertools.product([1,0], repeat=len(sets)))
-    binStrings = ["".join(map(str, item))  for item in temp_binStrings]
+    temp_binStrings = list(itertools.product([1,0], repeat=num_variables))
+    binStrings = ["".join(map(str, item)) for item in temp_binStrings]
     
-    min = len(sets)
+    min = 0
     min_index = 0
     for index in range(len(binStrings)):
         val = cl_cost({binStrings[index] : 1})
@@ -49,7 +48,6 @@ def test_QAOAminSetCover():
             min_index = index
 
     optimal_sol = binStrings[min_index]
-
+    
     # approximation ratio test
     assert approximation_ratio(results, optimal_sol, cl_cost)>=0.5
-    

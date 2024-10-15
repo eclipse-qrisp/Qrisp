@@ -10,7 +10,8 @@ Quantum Approximate Optimization Algorithm
    
    QAOAProblem
    QAOABenchmark
-   QAOAImplemens
+   QAOAImplementations
+   QAOAMixers
 
 This modules facilitates the execution of The `Quantum Approximate Optimization Algorithm (QAOA) <https://arxiv.org/abs/1411.4028>`_  and related techniques called the `Quantum Alternating Operator Ansatz <https://arxiv.org/abs/1709.03489>`_. 
 
@@ -33,7 +34,7 @@ The :meth:`.run <qrisp.qaoa.QAOAProblem.run>` method prepares the initial state,
 
 For benchmarking, we provide the :meth:`.benchmark <qrisp.qaoa.QAOAProblem.benchmark>` method, which allows you to collect performance data about your implementation.
 
-Additionally, a circuit can be pretrained with the method :meth:`.train_function <qrisp.qaoa.QAOAProblem.train_function>` . This allows preparing a new QuantumVariable with already optimized parameters, such that no new optimization is conducted. The results will therefore be the same. 
+Additionally, a circuit can be pretrained with the method :meth:`.train_function <qrisp.qaoa.QAOAProblem.train_function>` . This allows preparing a new :ref:`QuantumVariable` with already optimized parameters, such that no new optimization is conducted. The results will therefore be the same. 
    
 :ref:`QAOABenchmark`
 --------------------
@@ -48,14 +49,13 @@ Qrisp comes with a variety of predefined mixers to tackle various types of probl
 
 
 .. autosummary::
-   :toctree: generated/
    
    RX_mixer
    RZ_mixer
    XY_mixer
    grover_mixer
    constrained_mixer_gen
-  
+   controlled_RX_mixer_gen
 
    
 The following problem instances have already been successfully implemented using the Qrisp framework:
@@ -67,28 +67,31 @@ The following problem instances have already been successfully implemented using
    * - PROBLEM INSTANCE
      - MIXER TYPE
      - IMPLEMENTED IN QRISP
-   * - :ref:`MaxCut <QAOAMaxCut>`
+   * - :ref:`MaxCut <maxCutQAOAdoc>`
      - X mixer
      -    ✅
    * - :ref:`Max-$\\ell$-SAT <maxsatQAOA>`
      - X mixer
      -    ✅
-   * - :ref:`QUBO (NEW since 0.4!) <QUBOQAOA>`
+   * - :ref:`E3Lin2 <eThrLinTwoQAOA>`
+     - X mixer
+     -    ✅
+   * - :ref:`QUBO <QUBOQAOAdoc>`
      - X mixer
      -    ✅ 
-   * - :ref:`MaxIndependentSet <QAOAMaxIndependentSet>`
+   * - :ref:`MaxIndependentSet <maxIndepSetQAOA>`
      - Controlled X mixer
      -    ✅
-   * - :ref:`MaxClique <maxcliqueQAOA>`
+   * - :ref:`MaxClique <maxCliqueQAOA>`
      - Controlled X mixer
      -    ✅
-   * - :ref:`MaxSetPacking <maxSetPackQAOA>`
+   * - :ref:`MaxSetPacking <maxSetPackingQAOA>`
      - Controlled X mixer
      -    ✅
-   * - :ref:`MinSetCover <minsetcoverQAOA>`
+   * - :ref:`MinSetCover <minSetCoverQAOA>`
      - Controlled X mixer
      -    ✅
-   * - :ref:`Max-$\\kappa$-Colorable Subgraph <QAOAMkCS>`
+   * - :ref:`Max-$\\kappa$-Colorable Subgraph <MkCSQAOAdoc>`
      - XY mixer
      -    ✅ 
      
