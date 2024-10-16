@@ -192,38 +192,38 @@ def electronic_data(mol):
 # Jordan-Wigner annihilation operaror 
 @cache
 def a_jw(j):
-    #return PauliOperator({tuple([(i,"Z") for i in range(j)]+[(j,"X")]):0.5,tuple([(i,"Z") for i in range(j)]+[(j,"Y")]):0.5j})
+    #return PauliHamiltonian({tuple([(i,"Z") for i in range(j)]+[(j,"X")]):0.5,tuple([(i,"Z") for i in range(j)]+[(j,"Y")]):0.5j})
     d1={i:'Z' for i in range(j)}
     d1[j]='X'
     d2={i:'Z' for i in range(j)}
     d2[j]='Y'
-    return PauliOperator({PauliTerm(d1):0.5,PauliTerm(d2):0.5j})
+    return PauliHamiltonian({PauliTerm(d1):0.5,PauliTerm(d2):0.5j})
 
 # Jordan-Wigner creation operator 
 @cache
 def c_jw(j):
-    #return PauliOperator({tuple([(i,"Z") for i in range(j)]+[(j,"X")]):0.5,tuple([(i,"Z") for i in range(j)]+[(j,"Y")]):-0.5j})
+    #return PauliHamiltonian({tuple([(i,"Z") for i in range(j)]+[(j,"X")]):0.5,tuple([(i,"Z") for i in range(j)]+[(j,"Y")]):-0.5j})
     d1={i:'Z' for i in range(j)}
     d1[j]='X'
     d2={i:'Z' for i in range(j)}
     d2[j]='Y'
-    return PauliOperator({PauliTerm(d1):0.5,PauliTerm(d2):-0.5j})
+    return PauliHamiltonian({PauliTerm(d1):0.5,PauliTerm(d2):-0.5j})
 
 # Parity annihilation operator
 @cache
 def a_par(j,M):
     if j>0:
-        return PauliOperator({tuple([(j-1,"Z"),(j,"X")]+[(i,"X") for i in range(j+1,M)]):0.5,tuple([(j,"Y")]+[(i,"X") for i in range(j+1,M)]):0.5j})
+        return PauliHamiltonian({tuple([(j-1,"Z"),(j,"X")]+[(i,"X") for i in range(j+1,M)]):0.5,tuple([(j,"Y")]+[(i,"X") for i in range(j+1,M)]):0.5j})
     else:
-        return PauliOperator({tuple([(j,"X")]+[(i,"X") for i in range(j+1,M)]):0.5,tuple([(j,"Y")]+[(i,"X") for i in range(j+1,M)]):0.5j})
+        return PauliHamiltonian({tuple([(j,"X")]+[(i,"X") for i in range(j+1,M)]):0.5,tuple([(j,"Y")]+[(i,"X") for i in range(j+1,M)]):0.5j})
 
 # Parity creation operator
 @cache
 def c_par(j,M):
     if j>0:
-        return PauliOperator({tuple([(j-1,"Z"),(j,"X")]+[(i,"X") for i in range(j+1,M)]):0.5,tuple([(j,"Y")]+[(i,"X") for i in range(j+1,M)]):-0.5j},0)
+        return PauliHamiltonian({tuple([(j-1,"Z"),(j,"X")]+[(i,"X") for i in range(j+1,M)]):0.5,tuple([(j,"Y")]+[(i,"X") for i in range(j+1,M)]):-0.5j},0)
     else:
-        return PauliOperator({tuple([(j,"X")]+[(i,"X") for i in range(j+1,M)]):0.5,tuple([(j,"Y")]+[(i,"X") for i in range(j+1,M)]):-0.5j},0)
+        return PauliHamiltonian({tuple([(j,"X")]+[(i,"X") for i in range(j+1,M)]):0.5,tuple([(j,"Y")]+[(i,"X") for i in range(j+1,M)]):-0.5j},0)
 
 @cache
 def ann(i,M,mapping_type):
@@ -241,8 +241,8 @@ def ann(i,M,mapping_type):
 
     Returns
     -------
-    PauliOperator
-        The qubit PauliOperator for the annihilation operator $a_i$.
+    PauliHamiltonian
+        The qubit PauliHamiltonian for the annihilation operator $a_i$.
 
     """
 
@@ -267,8 +267,8 @@ def cre(i,M,mapping_type):
 
     Returns
     -------
-    PauliOperator
-        The qubit PauliOperator for the annihilation operator $a_i$.
+    PauliHamiltonian
+        The qubit PauliHamiltonian for the annihilation operator $a_i$.
 
     """
 
@@ -399,7 +399,7 @@ def create_electronic_hamiltonian(arg, active_orb=None, active_elec=None, mappin
         E += (one_int[j][j]+F[j][j])/2
 
     # Hamiltonian
-    #H = PauliOperator({():E})
+    #H = PauliHamiltonian({():E})
     H=E
     for i in range(K):
         for j in range(K):
