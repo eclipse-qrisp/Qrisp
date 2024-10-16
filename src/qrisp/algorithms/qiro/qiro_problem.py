@@ -23,7 +23,7 @@ import copy
 
 class QIROProblem(QAOAProblem):
     r"""
-    Structure to run QIRO algorithms. The idea is based on the paper by J. Finzgar et al. (https://arxiv.org/pdf/2308.13607.pdf).
+    Structure to run QIRO algorithms. The idea is based on the paper by `J. Finzgar et al. <https://journals.aps.org/prxquantum/abstract/10.1103/PRXQuantum.5.020327>`_.
 
     This class encapsulates the replacement routine, cost operator, mixer operator, classical cost function 
     and initial state preparation function for a specific QIRO problem instance. 
@@ -34,7 +34,6 @@ class QIROProblem(QAOAProblem):
         
         from qrisp import QuantumVariable
         from qrisp.qiro import QIROProblem, create_maxClique_replacement_routine, create_maxClique_cost_operator_reduced, qiro_RXMixer, qiro_init_function
-        from qrisp.qiro.qiro_problem import QIROProblem
         from qrisp.qaoa import max_clique_problem, create_max_clique_cl_cost_function
         import matplotlib.pyplot as plt
         import networkx as nx

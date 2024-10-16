@@ -17,8 +17,8 @@
 """
 
 
-from qrisp.algorithms.qiro.qiroproblems.qiroMaxCliqueInfrastr import * 
-from qrisp.algorithms.qiro.qiroproblems.qiroMaxIndepSetInfrastr import *   
+from qrisp.algorithms.qiro.qiroproblems.qiroMaxClique import * 
+from qrisp.algorithms.qiro.qiroproblems.qiroMaxIndepSet import *   
 from qrisp.algorithms.qiro.qiroproblems.qiroMaxSatInfrastr import *   
 from qrisp.algorithms.qiro.qiroproblems.qiroMaxSetPackInfrastr import *   
 
