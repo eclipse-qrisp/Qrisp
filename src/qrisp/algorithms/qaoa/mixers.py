@@ -67,11 +67,15 @@ def XY_mixer(qv, beta):
     """
     N = qv.size
     
-    for i in range(1, N-2, 2):
-        xxyy(4*beta, 0, qv[N-2-i], qv[N-1-i])
+    for i in range(0, N//2):
+        q1 = qv[2*i]
+        q2 = qv[2*i+1]
+        xxyy(4*beta, 0, q1, q2)
     
-    for i in range(0, N-1, 2):
-        xxyy(4*beta, 0, qv[N-2-i], qv[N-1-i])
+    for i in range(0, (N-2+N%2)//2):
+        q1 = qv[2*i+1]
+        q2 = qv[2*i+2]
+        xxyy(4*beta, 0, q1, q2)
         
     xxyy(4*beta, 0, qv[N-1], qv[0])
 
