@@ -183,8 +183,13 @@ def qache(func):
         # Get the AbstractQuantumCircuit for tracing
         abs_qs = TracingQuantumSession.get_instance()
         
+        temp_qubit_cache = abs_qs.qubit_cache
+        abs_qs.qubit_cache = {}
+        
         # Excecute the function
         abs_qc_new, res = ammended_function(abs_qs.abs_qc, *args, **kwargs)
+        
+        abs_qs.qubit_cache = temp_qubit_cache
         
         eqn = jax._src.core.thread_local_state.trace_state.trace_stack.dynamic.jaxpr_stack[0].eqns[-1]
         # eqn.params["jaxpr"] = "="
