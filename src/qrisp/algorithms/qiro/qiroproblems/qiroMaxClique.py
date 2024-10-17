@@ -23,7 +23,7 @@ import networkx as nx
 from qrisp.algorithms.qiro.qiroproblems.qiro_utils import * 
 
 
-def create_maxClique_replacement_routine(res, graph, solutions, exclusions):
+def create_max_clique_replacement_routine(res, graph, solutions, exclusions):
     """
     Creates a replacement routine for the problem structure, i.e., defines the replacement rules. 
     See the `original paper <https://journals.aps.org/prxquantum/abstract/10.1103/PRXQuantum.5.020327>`_ for a description of the update rules.
@@ -102,7 +102,7 @@ def create_maxClique_replacement_routine(res, graph, solutions, exclusions):
     return new_graph, solutions, sign, exclusions
 
 
-def create_maxClique_cost_operator_reduced(graph, solutions=[]):
+def create_max_clique_cost_operator_reduced(graph, solutions=[]):
     r"""
     Creates the ``cost_operator`` for the problem instance.
     This operator is adjusted to consider qubits that were found to be a part of the problem solution.
@@ -132,19 +132,3 @@ def create_maxClique_cost_operator_reduced(graph, solutions=[]):
 
     return cost_operator
 
-
-
-
-
-
-
-
-
-"""
-BM: 18 nodes, seed 99
-0.5933101570400762
-normal
-0.08909071112167886
-
-
-"""

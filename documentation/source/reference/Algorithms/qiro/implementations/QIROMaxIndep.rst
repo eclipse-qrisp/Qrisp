@@ -26,13 +26,13 @@ Based on the **maximum absolute entry** of the correlation matrix M and its sign
 * If :math:`\text{M}_{ij} < 0, (i, j) ∈ E` was selected, we remove all vertices that share an edge with both vertices :math:`i` and :math:`j`. Since one of the vertices :math:`i` and :math:`j` will be part of the final solution (but not both), any vertex that is connected to both :math:`i` and :math:`j` is guaranteed to violate the problem constraints, and can be removed from the graph. In this case, it may be possible that no vertex is found to be a canditate for being removed. We will then simply choose the second biggest absolute value of **M** for the replacement routine.
 
 
-.. autofunction:: create_maxIndep_replacement_routine
+.. autofunction:: create_max_indep_replacement_routine
 
 
 QIRO Cost operator 
 ------------------
 
-.. autofunction:: create_maxIndep_cost_operator_reduced
+.. autofunction:: create_max_indep_cost_operator_reduced
 
 
 Example implementation
@@ -40,7 +40,7 @@ Example implementation
 ::
 
     from qrisp import QuantumVariable
-    from qrisp.qiro import QIROProblem, create_maxIndep_replacement_routine, create_maxIndep_cost_operator_reduced, qiro_RXMixer, qiro_init_function
+    from qrisp.qiro import QIROProblem, create_max_indep_replacement_routine, create_max_indep_cost_operator_reduced, qiro_RXMixer, qiro_init_function
     from qrisp.qaoa import create_max_indep_set_cl_cost_function
     import matplotlib.pyplot as plt
     import networkx as nx
@@ -51,8 +51,8 @@ Example implementation
     qarg = QuantumVariable(G.number_of_nodes())
 
     qiro_instance = QIROProblem(G,
-                                replacement_routine=create_maxIndep_replacement_routine,
-                                cost_operator=create_maxIndep_cost_operator_reduced,
+                                replacement_routine=create_max_indep_replacement_routine,
+                                cost_operator=create_max_indep_cost_operator_reduced,
                                 mixer=qiro_RXMixer,
                                 cl_cost_function=create_max_indep_set_cl_cost_function,
                                 init_function=qiro_init_function

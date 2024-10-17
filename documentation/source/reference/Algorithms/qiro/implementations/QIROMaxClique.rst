@@ -27,13 +27,13 @@ Based on the **maximum absolute entry** of the correlation matrix M and its sign
 * If :math:`\text{M}_{ij} < 0, (i, j) ∈ E` was selected, we remove all vertices that **do not** share an edge with either vertex :math:`i` or :math:`j`. Since one of the vertices :math:`i` and :math:`j` will be part of the final solution (but not both), any vertex that is **not** connected to either :math:`i` or :math:`j` (or both) is guaranteed to violate the problem constraints, and can be removed from the graph. 
 
 
-.. autofunction:: create_maxClique_replacement_routine
+.. autofunction:: create_max_clique_replacement_routine
 
 
 QIRO Cost operator 
 ------------------
 
-.. autofunction:: create_maxClique_cost_operator_reduced
+.. autofunction:: create_max_clique_cost_operator_reduced
 
 
 Example implementation
@@ -42,7 +42,7 @@ Example implementation
 ::   
 
     from qrisp import QuantumVariable
-    from qrisp.qiro import QIROProblem, create_maxClique_replacement_routine, create_maxClique_cost_operator_reduced, qiro_RXMixer, qiro_init_function
+    from qrisp.qiro import QIROProblem, create_max_clique_replacement_routine, create_max_clique_cost_operator_reduced, qiro_RXMixer, qiro_init_function
     from qrisp.qaoa import max_clique_problem, create_max_clique_cl_cost_function
     import matplotlib.pyplot as plt
     import networkx as nx
@@ -54,8 +54,8 @@ Example implementation
 
     # QIRO
     qiro_instance = QIROProblem(problem=G,
-                                replacement_routine= reate_maxClique_replacement_routine,
-                                cost_operator=create_maxClique_cost_operator_reduced,
+                                replacement_routine= reate_max_clique_replacement_routine,
+                                cost_operator=create_max_clique_cost_operator_reduced,
                                 mixer=qiro_RXMixer,
                                 cl_cost_function=create_max_clique_cl_cost_function,
                                 init_function=qiro_init_function
@@ -65,7 +65,7 @@ Example implementation
     # The final graph that has been adjusted
     final_graph = qiro_instance.problem
 
-That’s it! In the following, we print the 5 most likely solutions together with their cost values, and compare to the NetworkX solution
+That’s it! In the following, we print the 5 most likely solutions together with their cost values, and compare to the NetworkX solution.
 
 ::
 

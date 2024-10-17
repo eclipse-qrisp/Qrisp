@@ -34,7 +34,7 @@ class QIROProblem(QAOAProblem):
     ::
         
         from qrisp import QuantumVariable
-        from qrisp.qiro import QIROProblem, create_maxClique_replacement_routine, create_maxClique_cost_operator_reduced, qiro_RXMixer, qiro_init_function
+        from qrisp.qiro import QIROProblem, create_max_clique_replacement_routine, create_max_clique_cost_operator_reduced, qiro_RXMixer, qiro_init_function
         from qrisp.qaoa import max_clique_problem, create_max_clique_cl_cost_function
         import matplotlib.pyplot as plt
         import networkx as nx
@@ -53,8 +53,8 @@ class QIROProblem(QAOAProblem):
 
         # QIRO
         qiro_instance = QIROProblem(problem = Gtwo,  
-                                    replacement_routine = create_maxClique_replacement_routine, 
-                                    cost_operator = create_maxClique_cost_operator_reduced,
+                                    replacement_routine = create_max_clique_replacement_routine, 
+                                    cost_operator = create_max_clique_cost_operator_reduced,
                                     mixer = qiro_RXMixer,
                                     cl_cost_function = create_max_clique_cl_cost_function,
                                     init_function = qiro_init_function
@@ -87,8 +87,11 @@ class QIROProblem(QAOAProblem):
         plt.title('final QIRO graph')
 
         plt.figure(2)
-        nx.draw(G, with_labels = True, node_color='#ADD8E6', edge_color='#D3D3D3')
-        plt.title('Original graph')
+        most_likely = [index for index, value in enumerate(max_five_qiro[0]) if value == '1']
+        nx.draw(G, with_labels=True,
+                node_color=['#FFCCCB' if node in most_likely else '#ADD8E6' for node in G.nodes()],
+                edge_color=['#FFCCCB' if edge[0] in most_likely and edge[1] in most_likely else '#D3D3D3' for edge in G.edges()])
+        plt.title('Original graph with most likely QIRO solution')
         plt.show()  
         
 

@@ -22,7 +22,7 @@ import copy
 from qrisp.algorithms.qiro.qiroproblems.qiro_utils import * 
 
 
-def create_maxIndep_replacement_routine(res, graph, solutions=[], exclusions=[]):
+def create_max_indep_replacement_routine(res, graph, solutions=[], exclusions=[]):
     """
     Creates a replacement routine for the problem structure, i.e., defines the replacement rules. 
     See the `original paper <https://journals.aps.org/prxquantum/abstract/10.1103/PRXQuantum.5.020327>`_ for a description of the update rules.
@@ -93,7 +93,7 @@ def create_maxIndep_replacement_routine(res, graph, solutions=[], exclusions=[])
     return new_graph, solutions, sign, exclusions
 
 
-def create_maxIndep_cost_operator_reduced(graph, solutions=[]):
+def create_max_indep_cost_operator_reduced(graph, solutions=[]):
     r"""
     Creates the ``cost_operator`` for the problem instance.
     This operator is adjusted to consider qubits that were found to be a part of the problem solution.

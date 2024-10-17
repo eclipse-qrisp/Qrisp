@@ -51,13 +51,13 @@ Based on the **maximum absolute entry** of the correlation matrix M and its sign
 
 
 
-.. autofunction:: create_maxSat_replacement_routine
+.. autofunction:: create_maxsat_replacement_routine
 
 
 QIRO Cost operator 
 ------------------
 
-.. autofunction:: create_maxSat_cost_operator_reduced
+.. autofunction:: create_maxsat_cost_operator_reduced
 
 
 Example implementation
@@ -67,7 +67,7 @@ Example implementation
 
     from qrisp import QuantumVariable
     from qrisp.qaoa import create_maxsat_cl_cost_function
-    from qrisp.qiro import QIROProblem, qiro_init_function, qiro_RXMixer, create_maxSat_replacement_routine, create_maxSat_cost_operator_reduced
+    from qrisp.qiro import QIROProblem, qiro_init_function, qiro_RXMixer, create_maxsat_replacement_routine, create_maxsat_cost_operator_reduced
 
     clauses = [[1,2,-3],[1,4,-6],[4,5,6],[1,3,-4],[2,4,5],[1,3,5],[-2,-3,6],[1,7,8],[3,-7,-8],[3,4,8],[4,5,8],[1,2,7]]
     num_vars = 8
@@ -75,8 +75,8 @@ Example implementation
     qarg = QuantumVariable(num_vars)
 
     qiro_instance = QIROProblem(problem = problem,
-                                replacement_routine = create_maxSat_replacement_routine,
-                                cost_operator = create_maxSat_cost_operator_reduced,
+                                replacement_routine = create_maxsat_replacement_routine,
+                                cost_operator = create_maxsat_cost_operator_reduced,
                                 mixer = qiro_RXMixer,
                                 cl_cost_function = create_maxsat_cl_cost_function,
                                 init_function = qiro_init_function

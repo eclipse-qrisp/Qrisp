@@ -18,7 +18,7 @@
 
 from qrisp import QuantumVariable
 from qrisp.qaoa import create_maxsat_cl_cost_function, approximation_ratio
-from qrisp.qiro import QIROProblem, qiro_init_function, qiro_RXMixer, create_maxSat_replacement_routine, create_maxSat_cost_operator_reduced
+from qrisp.qiro import QIROProblem, qiro_init_function, qiro_RXMixer, create_maxsat_replacement_routine, create_maxsat_cost_operator_reduced
 import itertools
 
 def test_qiro_maxsat():
@@ -31,8 +31,8 @@ def test_qiro_maxsat():
     cl_cost = create_maxsat_cl_cost_function(problem)    
 
     qiro_instance = QIROProblem(problem = problem,
-                                replacement_routine = create_maxSat_replacement_routine,
-                                cost_operator = create_maxSat_cost_operator_reduced,
+                                replacement_routine = create_maxsat_replacement_routine,
+                                cost_operator = create_maxsat_cost_operator_reduced,
                                 mixer = qiro_RXMixer,
                                 cl_cost_function = create_maxsat_cl_cost_function,
                                 init_function = qiro_init_function
