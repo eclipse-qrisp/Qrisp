@@ -1,6 +1,6 @@
 """
 \********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+* Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -51,35 +51,41 @@ def create_maxIndep_replacement_routine(res, graph, solutions=[], exclusions=[])
         
     """
 
-    # For multi qubit correlations
+    # for multi qubit correlations
     orig_edges = [list(item) for item in graph.edges()]
 
-    # FOR SINGLE QUBIT CORRELATIONS
+    # for single qubit correlations
     orig_nodes = list(graph.nodes())
     
     max_item = []
     max_item, sign = find_max(orig_nodes, orig_edges , res, solutions)
+
+    # create a copy of the graph
     newgraph = copy.deepcopy(graph)
 
-    # we just directly remove vertices from the graph 
+    # we remove nodes from the graph, as suggested by the replacement rules
+    # if the item is an int, it is a single node, else it is an edge
     if isinstance(max_item, int):
         if sign > 0:
+            # remove all adjacent nodes
             to_remove = graph.adj[max_item]
             newgraph.remove_nodes_from(to_remove)
             solutions.append(max_item)
             exclusions += to_remove
 
         elif sign < 0:
+            # remove the node
             newgraph.remove_node(max_item)
             exclusions.append(max_item)
 
     else:
         if sign > 0:
+            # remove both nodes
             newgraph.remove_nodes_from(max_item)
             exclusions += list(max_item)
 
         elif sign < 0:
-            #remove 
+            # remove all nodes connected to both nodes 
             intersect = list(set( list(graph.adj[max_item[0]].keys()) ) & set( list(graph.adj[max_item[0]].keys()) ))
             newgraph.remove_nodes_from(intersect)
             exclusions += intersect 

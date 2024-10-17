@@ -1,6 +1,6 @@
 """
 \********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+* Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -23,7 +23,8 @@ import copy
 
 class QIROProblem(QAOAProblem):
     r"""
-    Structure to run QIRO algorithms. The idea is based on the paper by `J. Finzgar et al. <https://journals.aps.org/prxquantum/abstract/10.1103/PRXQuantum.5.020327>`_.
+    Central structure to run QIRO algorithms. A subcalss of the :ref:`QAOAProblem` class.
+    The idea is based on the paper by `J. Finzgar et al. <https://journals.aps.org/prxquantum/abstract/10.1103/PRXQuantum.5.020327>`_.
 
     This class encapsulates the replacement routine, cost operator, mixer operator, classical cost function 
     and initial state preparation function for a specific QIRO problem instance. 

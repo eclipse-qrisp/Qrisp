@@ -1,20 +1,32 @@
+"""
+\********************************************************************************
+* Copyright (c) 2024 the Qrisp authors
+*
+* This program and the accompanying materials are made available under the
+* terms of the Eclipse Public License 2.0 which is available at
+* http://www.eclipse.org/legal/epl-2.0.
+*
+* This Source Code may also be made available under the following Secondary
+* Licenses when the conditions for such availability set forth in the Eclipse
+* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+* with the GNU Classpath Exception which is
+* available at https://www.gnu.org/software/classpath/license.html.
+*
+* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+********************************************************************************/
+"""
 
-from qrisp import rz, rzz,rx, mcx, x, QuantumVariable, control
-import numpy as np
-import copy
-from qrisp.algorithms.qiro.qiroproblems.qiro_utils import * 
-from qrisp.algorithms.qaoa.problems.maxSetPackInfrastr import get_neighbourhood_relations
+from itertools import combinations
 import networkx as nx
 
-
-def trafo_maxPackToMIS(problem):
+def transform_max_set_pack_to_mis(problem):
     """
-    Function to transform a Maximum Set Packing problem into a Maximum independent set problem.
+   Transforms a Maximum Set Packing problem instance into a Maximum Independent Set problem instance.
 
     Parameters
     ----------
-    problem : List
-        The problem definition in analogy to the QAOA maxSetPacking problem
+    problem : list[set]
+        A list of sets specifying the problem.
 
     Returns
     -------
@@ -23,18 +35,13 @@ def trafo_maxPackToMIS(problem):
 
 
     """
-    # the MIS solution to G is equivalent to the solution of the maxSetPackingProblem
+    def non_empty_intersection(problem):
+        return [(i, j) for (i, s1), (j, s2) in combinations(enumerate(problem), 2) if s1.intersection(s2)]
+
+    # create constraint graph
     G = nx.Graph()
-    G.add_nodes_from(list(range(len(problem[1]))))
-    n_dict = get_neighbourhood_relations(problem)
-    
-    for val in n_dict.values():
-        
-        if len(val)<2:
-            continue
-        for index1 in range(len(val)-1):
-            for index2 in range(index1+1, len(val)):
-                G.add_edge(val[index1],val[index2])
+    G.add_nodes_from(range(len(problem)))
+    G.add_edges_from(non_empty_intersection(problem))
 
     return G 
 

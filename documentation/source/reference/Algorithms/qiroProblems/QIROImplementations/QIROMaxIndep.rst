@@ -16,7 +16,7 @@ Given a Graph  :math:`G = (V,E)` maximize the size of an independent set, i.e. a
 Replacement routine
 -------------------
 
-Based on the **maximum absolute entry** of the correlation matrix $M$ and its sign, one of the following replacements is employed:
+Based on the **maximum absolute entry** of the correlation matrix M and its sign, one of the following replacements is employed:
 
 * If :math:`\text{M}_{ii} \geq 0` is the maximum absolute value, then the :math:`i`-th vertex is set to be in the independent set (IS). In turn, all vertices that share an edge with this vertex can be removed from the graph, since including them in the solution would violate the problem constraints.
 
@@ -51,20 +51,20 @@ Example implementation
     G = nx.erdos_renyi_graph(num_nodes, 0.4, seed = 107)
     qarg = QuantumVariable(G.number_of_nodes())
 
-    cl_cost = create_max_indep_set_cl_cost_function(G)
-
-    # QIRO
     qiro_instance = QIROProblem(G,
                                 replacement_routine=create_maxIndep_replacement_routine,
-                                cost_operator= create_maxIndep_cost_operator_reduced,
-                                mixer= qiro_RXMixer,
-                                cl_cost_function= create_max_indep_set_cl_cost_function,
-                                init_function= qiro_init_function
+                                cost_operator=create_maxIndep_cost_operator_reduced,
+                                mixer=qiro_RXMixer,
+                                cl_cost_function=create_max_indep_set_cl_cost_function,
+                                init_function=qiro_init_function
                                 )
     res_qiro = qiro_instance.run_qiro(qarg=qarg, depth=3, n_recursions=2)
 
-    # The final graph that has been adjusted
-    final_graph = qiro_instance.problem
+That’s it! In the following, we print the 5 most likely solutions together with their cost values, and compare to the NetworkX solution.
+
+::
+    
+    cl_cost = create_max_indep_set_cl_cost_function(G)
 
     print("5 most likely QIRO solutions")
     max_five_qiro = sorted(res_qiro, key=res_qiro.get, reverse=True)[:5]
@@ -75,14 +75,21 @@ Example implementation
     print("Networkx solution")
     print(nx.approximation.maximum_independent_set(G))
 
+Finally, we visualize the final QIRO graph and the most likely solution.
+
+::
+
+    # The final graph that has been adjusted
+    final_graph = qiro_instance.problem
+    
     # Draw the final graph and the original graph for comparison
     plt.figure(1)
-    nx.draw(final_graph, with_labels = True, node_color='#ADD8E6', edge_color='#D3D3D3')
+    nx.draw(final_graph, with_labels=True, node_color='#ADD8E6', edge_color='#D3D3D3')
     plt.title('Final QIRO graph')
 
     plt.figure(2)
     most_likely = [index for index, value in enumerate(max_five_qiro[0]) if value == '1']
-    nx.draw(G, with_labels = True, 
+    nx.draw(G, with_labels=True, 
             node_color=['#FFCCCB' if node in most_likely else '#ADD8E6' for node in G.nodes()],
             edge_color='#D3D3D3')
     plt.title('Original graph with most likely QIRO solution')
