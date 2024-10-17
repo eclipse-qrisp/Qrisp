@@ -16,7 +16,6 @@
 ********************************************************************************/
 """
 
-
 from qrisp import QuantumVariable
 from qrisp.qaoa import QAOAProblem, RX_mixer, approximation_ratio, create_maxsat_cl_cost_function, create_maxsat_cost_operator
 import itertools

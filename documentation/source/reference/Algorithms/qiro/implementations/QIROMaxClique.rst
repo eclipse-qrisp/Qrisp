@@ -72,7 +72,7 @@ That’s it! In the following, we print the 5 most likely solutions together wit
     cl_cost = create_max_clique_cl_cost_function(G)
     
     print("5 most likely QIRO solutions")
-    ax_five_qiro = sorted(res_qiro, key=res_qiro.get, reverse=True)[:5]
+    max_five_qiro = sorted(res_qiro, key=res_qiro.get, reverse=True)[:5]
     for res in max_five_qiro:
         print([index for index, value in enumerate(res) if value == '1'])
         print(cl_cost({res : 1}))
