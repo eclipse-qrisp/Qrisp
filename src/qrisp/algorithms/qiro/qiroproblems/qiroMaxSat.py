@@ -20,44 +20,42 @@
 
 from qrisp import rz, x, cx
 import numpy as np
+import math
 import copy
 from qrisp.algorithms.qiro.qiroproblems.qiro_utils import * 
 
-def create_maxSat_replacement_routine( res, oldproblem, solutions, exclusions):
-    
+
+def create_maxSat_replacement_routine(res, problem, solutions, exclusions):
     """
-    Creates a replacement routine for the problem structure, i.e. defines the replacement rules. 
-    See the original paper for description of the update rules
+    Creates a replacement routine for the problem structure, i.e., defines the replacement rules. 
+    See the `original paper <https://journals.aps.org/prxquantum/abstract/10.1103/PRXQuantum.5.020327>`_ for a description of the update rules.
 
     Parameters
     ----------
     res : dict
-        Result dictionary of initial QAOA optimization procedure.
-    oldproblem : List
-        The clauses defining the problem instance.
-    solutions : List
-        Qubits which have been found to be positive correlated, i.e. part of the problem solution.
-    exclusions : List
-        Qubits which have been found to be negative correlated, i.e. not part of the problem solution, or contradict solution qubits in accordance to the update rules.  
+        Result dictionary of QAOA optimization procedure.
+    problem : tuple(int, list[list[int]])
+        The number of variables and a list of clauses for the MaxSat instance.
+    solutions : list
+        Qubits which were found to be positively correlated, i.e., part of the problem solution.
+    exclusions : list
+        Qubits which were found to be negatively correlated, i.e., not part of the problem solution, or contradict solution qubits in accordance with the update rules.  
 
     Returns
     -------
     new_problem: list
         Updated clauses of the problem instance.
-    solutions : List
+    solutions : list
         Updated set of solutions to the problem.
-    sign : Int
+    sign : int
         The sign of the correlation.
-    exclusions : List
+    exclusions : list
         Updated set of exclusions to the problem.
 
-
-
-    
     """
     
-    numVars = oldproblem[0]
-    clauses = copy.deepcopy(oldproblem[1])
+    numVars = problem[0]
+    clauses = copy.deepcopy(problem[1])
 
     # FOR SINGLE QUBIT CORRELATIONS
     # make -1 here for consistency in the find max
@@ -125,34 +123,20 @@ def create_maxSat_replacement_routine( res, oldproblem, solutions, exclusions):
 def create_maxSat_cost_operator_reduced(problem, solutions=[]):
 
     """
-    |  Implementation for MaxSat Cost-Operator, in accordance to the original QAOA-paper.
-    |  Adjusted for QIRO to also respect found solutions to the problem
+    Creates the ``cost_operator`` for the problem instance.
+    This operator is adjusted to consider qubits that were found to be a part of the problem solution.
     
     Parameters
     ----------
-    clauses : List(Lists)
-        Clauses to be considered for MaxSat. Should be given as a list of lists and 1-indexed instead 0-indexed, see example
-    solutions : List
+    problem : tuple(int, list[list[int]])
+        The number of variables and a list of clauses for the MaxSat instance.
+    solutions : list
         Variables that were found to be a part of the solution.
+
     Returns
     -------
     cost_operator : function
-        the Operator applied to the circuit-QuantumVariable
-
-    Examples
-    --------
-
-    >>> clauses11 = (6, [[1,2,-3], [1,4,-6], [4,5,6], [1,3,-4], [2,4,5], [1,3,5], [-2,-3,6]])
-    
-    |  Explanation: 
-    |  First entry of tuple is the number of variables, second is the clauses
-    |  Clause [1, 2, -4] is fulfilled by the QuantumStates "1100", "1110" 
-
-
-    * if the sign is positive : the index has of the QuantumVariable to be "1", if negative sign the index has to be "0".
-    * indices not mentioned can be "0" or "1" (the third integer in this case).
-    * start with 1 in your clauses! because ``int 0`` has no sign and this is problematic. 
-    * we want to keep the mathematical formulation, so no handing over strings!
+        A function receiving a :ref:`QuantumVariable` and a real parameter $\gamma$. This function performs the application of the cost operator.
 
     """
     

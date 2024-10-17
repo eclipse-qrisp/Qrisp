@@ -31,7 +31,7 @@ def create_maxClique_replacement_routine(res, graph, solutions, exclusions):
     Parameters
     ----------
     res : dict
-        Result dictionary of initial QAOA optimization procedure.
+        Result dictionary of QAOA optimization procedure.
     graph : nx.Graph
         The graph defining the problem instance.
     solutions : list
@@ -41,7 +41,7 @@ def create_maxClique_replacement_routine(res, graph, solutions, exclusions):
 
     Returns
     -------
-    newgraph : nx.Graph
+    new_graph : nx.Graph
         Updated graph for the problem instance.
     solutions : list
         Updated set of solutions to the problem.
@@ -58,7 +58,7 @@ def create_maxClique_replacement_routine(res, graph, solutions, exclusions):
     #get the max_edge and eval the sum and sign
     max_item, sign = find_max(orig_nodes, orig_edges , res, solutions)
 
-    newgraph = copy.deepcopy(graph)
+    new_graph = copy.deepcopy(graph)
 
     # we just directly remove vertices from the graph 
     if isinstance(max_item, int):
@@ -66,13 +66,13 @@ def create_maxClique_replacement_routine(res, graph, solutions, exclusions):
             border = list(graph.adj[max_item].keys())
             border.append(max_item)
             to_remove = [int(item) for item in graph.nodes() if item not in border]
-            newgraph.remove_nodes_from( [item for item in graph.nodes() if item not in border])
+            new_graph.remove_nodes_from( [item for item in graph.nodes() if item not in border])
             solutions.append(max_item)
             exclusions += to_remove
 
         elif sign < 0:
             #remove item
-            newgraph.remove_node(max_item)
+            new_graph.remove_node(max_item)
             exclusions.append(max_item)
 
     else:
@@ -83,7 +83,7 @@ def create_maxClique_replacement_routine(res, graph, solutions, exclusions):
             intersect.append(max_item[0])
             intersect.append(max_item[1])
             to_remove = [int(item) for item in graph.nodes() if item not in intersect]
-            newgraph.remove_nodes_from([item for item in graph.nodes() if item not in intersect])
+            new_graph.remove_nodes_from([item for item in graph.nodes() if item not in intersect])
             solutions.append(max_item[0])
             solutions.append(max_item[1])
             exclusions += to_remove
@@ -96,10 +96,10 @@ def create_maxClique_replacement_routine(res, graph, solutions, exclusions):
             union.append(max_item[1])
             to_remove = [int(item) for item in graph.nodes() if item not in union]
             #to_delete = [item for item in graph.nodes() if item not in union]
-            newgraph.remove_nodes_from([item for item in graph.nodes() if item not in union])
+            new_graph.remove_nodes_from([item for item in graph.nodes() if item not in union])
             exclusions += to_remove
 
-    return newgraph, solutions, sign, exclusions
+    return new_graph, solutions, sign, exclusions
 
 
 def create_maxClique_cost_operator_reduced(graph, solutions=[]):

@@ -24,7 +24,7 @@ import itertools
 
 def create_max_clique_cl_cost_function(G):
     """
-    Creates the classical cost function for an instance of the maximum clique problem for a given graph $G$.
+    Creates the classical cost function for an instance of the maximum clique problem for a given graph ``G``.
 
     Parameters
     ----------

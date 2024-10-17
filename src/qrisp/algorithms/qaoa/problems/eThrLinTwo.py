@@ -16,7 +16,7 @@
 ********************************************************************************/
 """
 
-from qrisp import h, cx, rz, conjugate
+from qrisp import cx, rz, conjugate
 
 
 def parity(qarg, indices):
@@ -36,7 +36,7 @@ def create_e3lin2_cost_operator(clauses):
 
     Parameters
     ----------
-    clasues : list[list[int]]
+    clauses : list[list[int]]
         The clasues defining the problem.
 
     Returns
@@ -61,7 +61,7 @@ def create_e3lin2_cl_cost_function(clauses):
 
     Parameters
     ----------
-    clasues : list[list[int]]
+    clauses : list[list[int]]
         The clasues defining the problem.
 
     Returns
@@ -103,6 +103,5 @@ def e3lin2_problem(clauses):
 
     return QAOAProblem(cost_operator=create_e3lin2_cost_operator(clauses),
                         mixer=RX_mixer,
-                        cl_cost_function=create_e3lin2_cl_cost_function(clauses),
-                        init_function=e3lin2_init_function)
+                        cl_cost_function=create_e3lin2_cl_cost_function(clauses))
 

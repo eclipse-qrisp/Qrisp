@@ -49,7 +49,7 @@ def maxcut_energy(outcome_array, count_array, edge_list):
 
 def create_maxcut_cl_cost_function(G):
     """
-    Creates the classical cost function for an instance of the maximum cut problem for a given graph $G$.
+    Creates the classical cost function for an instance of the maximum cut problem for a given graph ``G``.
 
     Parameters
     ----------
@@ -89,7 +89,7 @@ def create_maxcut_cl_cost_function(G):
 
 def create_maxcut_cost_operator(G):
     r"""
-    Creates the cost operator for an instance of the maximum cut problem for a given graph $G$.
+    Creates the cost operator for an instance of the maximum cut problem for a given graph ``G``.
 
     Parameters
     ----------

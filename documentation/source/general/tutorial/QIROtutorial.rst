@@ -124,46 +124,46 @@ All in all, the function remains straight forward. We employ a ``find_max`` subr
 
     def create_maxIndep_replacement_routine( res, Graph, solutions= [], exclusions= []):
 
-        # for multi qubit correlations
-        orig_edges = [list(item) for item in graph.edges()]
+    # for multi qubit correlations
+    orig_edges = [list(item) for item in graph.edges()]
 
-        # for single qubit correlations
-        orig_nodes = list(graph.nodes())
+    # for single qubit correlations
+    orig_nodes = list(graph.nodes())
     
-        max_item = []
-        max_item, sign = find_max(orig_nodes, orig_edges , res, solutions)
+    max_item = []
+    max_item, sign = find_max(orig_nodes, orig_edges , res, solutions)
 
-        # create a copy of the graph
-        newgraph = copy.deepcopy(graph)
+    # create a copy of the graph
+    new_graph = copy.deepcopy(graph)
 
-        # we remove nodes from the graph, as suggested by the replacement rules
-        # if the item is an int, it is a single node, else it is an edge
-        if isinstance(max_item, int):
-            if sign > 0:
-                # remove all adjacent nodes
-                to_remove = graph.adj[max_item]
-                newgraph.remove_nodes_from(to_remove)
-                solutions.append(max_item)
-                exclusions += to_remove
+    # we remove nodes from the graph, as suggested by the replacement rules
+    # if the item is an int, it is a single node, else it is an edge
+    if isinstance(max_item, int):
+        if sign > 0:
+            # remove all adjacent nodes
+            to_remove = graph.adj[max_item]
+            new_graph.remove_nodes_from(to_remove)
+            solutions.append(max_item)
+            exclusions += to_remove
 
-            elif sign < 0:
-                # remove the node
-                newgraph.remove_node(max_item)
-                exclusions.append(max_item)
+        elif sign < 0:
+            # remove the node
+            new_graph.remove_node(max_item)
+            exclusions.append(max_item)
 
-        else:
-            if sign > 0:
-                # remove both nodes
-                newgraph.remove_nodes_from(max_item)
-                exclusions += list(max_item)
+    else:
+        if sign > 0:
+            # remove both nodes
+            new_graph.remove_nodes_from(max_item)
+            exclusions += list(max_item)
 
-            elif sign < 0:
-                # remove all nodes connected to both nodes 
-                intersect = list(set( list(graph.adj[max_item[0]].keys()) ) & set( list(graph.adj[max_item[0]].keys()) ))
-                newgraph.remove_nodes_from(intersect)
-                exclusions += intersect 
+        elif sign < 0:
+            # remove all nodes connected to both nodes 
+            intersect = list(set( list(graph.adj[max_item[0]].keys()) ) & set( list(graph.adj[max_item[0]].keys()) ))
+            new_graph.remove_nodes_from(intersect)
+            exclusions += intersect 
 
-        return newgraph, solutions, sign, exclusions
+    return new_graph, solutions, sign, exclusions
 
 As you might have noticed in the code above, we add the nodes that are included into (respective excluded from) the solution to a list ``solutions`` (``exclusions``). 
 This allows us to directly :ref:`recycle the QAOA code <maxIndepSetQAOA>` for the  ``cost_operator``, ``mixer`` and ``init_function`` of the original QAOA implementation with minor adjustments.
@@ -217,7 +217,7 @@ With this, we can directly throw everything that is relevant at the :ref:`QIROPr
                                 init_function=qiro_init_function
                                 )
 
-We think of arguments for the ``run_qiro`` function, run the algorithm, et violà! 
+We think of arguments for the :meth:`.run_qiro <qrisp.qiro.QIROProblem.run_qiro>` method, run the algorithm, et violà! 
 
 :: 
 
@@ -251,39 +251,21 @@ We can further compare our results to the `NetworkX MIS algorithm <https://netwo
 
 Chances are, you will see a result in the QIRO implementation, that is better than the classical algorithm provided by Networkx!
 
-We can also compare these results with the standard QAOA implementation.
-
-::
-
-    from qrisp.qaoa.qaoa_problem import QAOAProblem
-    from qrisp.qaoa.problems.maxIndepSetInfrastr import maxIndepSetCostOp
-    from qrisp.qaoa.mixers import RX_mixer
-
-    Gtwo = nx.erdos_renyi_graph(num_nodes, 0.4, seed=107)
-    qarg2 = QuantumVariable(Gtwo.number_of_nodes())
-    maxindep_instance = QAOAProblem(maxIndepSetCostOp(G), RX_mixer, maxIndepSetclCostfct(G))
-    res_qaoa = maxindep_instance.run( qarg = qarg2, depth = 3)
-
-    print("QAOA 5 best results")
-    maxfive = sorted(res_qaoa, key=res_qaoa.get, reverse=True)[:5]
-    for key, val in res_qaoa.items(): 
-        if key in maxfive:
-            print(key)
-            print(costFunc({key:1}))
-
-As expected, the improvements are drastic, but you will have to find that out for yourself!
-
-As a final caveat, we can look at the graph we are left with after all reduction steps
+As a final caveat, we can look at the graph we are left with after all reduction steps.
 
 ::
 
     final_graph = qiro_instance.problem
+    plt.figure(1)
+    nx.draw(final_graph, with_labels=True, node_color='#ADD8E6', edge_color='#D3D3D3')
+    plt.title('Final QIRO graph')
+    plt.show()
 
 Congratulations, you have reached the end of the tutorial and are now capable of solving the MIS problem in Qrisp!
 Should your appetite not be satisfied, we advise you to check out our other QIRO implementations:
 
-* :ref:`MaxClique <maxCliqueQIRO>`, 
-* :ref:`MaxSat <maxSatQIRO>` and 
+* :ref:`MaxClique <maxCliqueQIRO>` 
+* :ref:`MaxSat <maxSatQIRO>`
 * :ref:`MaxSetPacking <maxSetPackingQIRO>`
 
 and of course all the other material in the tutorial section!

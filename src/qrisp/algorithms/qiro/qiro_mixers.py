@@ -47,7 +47,7 @@ def qiro_RXMixer(solutions = [],exclusions = []):
 
 def qiro_init_function(solutions = [], exclusions = []):
     """
-    State initiation function for QIRO algorithm. Works analogously to the normal initiation function, but respects solutions and exclusions that have been found in the QIRO reduction steps.
+    State initialization function for QIRO algorithm. Works analogously to the normal initialization function, but respects solutions and exclusions that have been found in the QIRO reduction steps.
 
     Parameters
     ----------

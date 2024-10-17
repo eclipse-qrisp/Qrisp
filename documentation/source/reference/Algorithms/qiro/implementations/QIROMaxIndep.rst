@@ -6,7 +6,6 @@ QIRO MaxIndepSet
 .. currentmodule:: qrisp.qiro.qiroproblems.qiroMaxIndepSet
 
 
-
 Problem description
 -------------------
 

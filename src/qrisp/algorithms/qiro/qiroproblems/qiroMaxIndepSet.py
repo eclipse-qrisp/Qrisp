@@ -30,7 +30,7 @@ def create_maxIndep_replacement_routine(res, graph, solutions=[], exclusions=[])
     Parameters
     ----------
     res : dict
-        Result dictionary of initial QAOA optimization procedure.
+        Result dictionary of QAOA optimization procedure.
     graph : nx.Graph
         The graph defining the problem instance.
     solutions : list
@@ -40,7 +40,7 @@ def create_maxIndep_replacement_routine(res, graph, solutions=[], exclusions=[])
 
     Returns
     -------
-    newgraph : nx.Graph
+    new_graph : nx.Graph
         Updated graph for the problem instance.
     solutions : list
         Updated set of solutions to the problem.
@@ -61,7 +61,7 @@ def create_maxIndep_replacement_routine(res, graph, solutions=[], exclusions=[])
     max_item, sign = find_max(orig_nodes, orig_edges , res, solutions)
 
     # create a copy of the graph
-    newgraph = copy.deepcopy(graph)
+    new_graph = copy.deepcopy(graph)
 
     # we remove nodes from the graph, as suggested by the replacement rules
     # if the item is an int, it is a single node, else it is an edge
@@ -69,28 +69,28 @@ def create_maxIndep_replacement_routine(res, graph, solutions=[], exclusions=[])
         if sign > 0:
             # remove all adjacent nodes
             to_remove = graph.adj[max_item]
-            newgraph.remove_nodes_from(to_remove)
+            new_graph.remove_nodes_from(to_remove)
             solutions.append(max_item)
             exclusions += to_remove
 
         elif sign < 0:
             # remove the node
-            newgraph.remove_node(max_item)
+            new_graph.remove_node(max_item)
             exclusions.append(max_item)
 
     else:
         if sign > 0:
             # remove both nodes
-            newgraph.remove_nodes_from(max_item)
+            new_graph.remove_nodes_from(max_item)
             exclusions += list(max_item)
 
         elif sign < 0:
             # remove all nodes connected to both nodes 
             intersect = list(set( list(graph.adj[max_item[0]].keys()) ) & set( list(graph.adj[max_item[0]].keys()) ))
-            newgraph.remove_nodes_from(intersect)
+            new_graph.remove_nodes_from(intersect)
             exclusions += intersect 
 
-    return newgraph, solutions, sign, exclusions
+    return new_graph, solutions, sign, exclusions
 
 
 def create_maxIndep_cost_operator_reduced(graph, solutions=[]):
