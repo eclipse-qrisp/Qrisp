@@ -2,11 +2,12 @@
 
 .. currentmodule:: qrisp.qiro
 
+
 QIROProblem
 ===========
 
-.. currentmodule:: qrisp.qiro
 .. autoclass:: QIROProblem
+
 
 Methods
 =======

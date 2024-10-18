@@ -16,19 +16,19 @@
 ********************************************************************************/
 """
 
-from qrisp import h, app_sb_phase_polynomial
+from qrisp import app_sb_phase_polynomial
 import sympy as sp
 import math
 
 
-def create_maxsat_cost_polynomials(clauses):
+def create_maxsat_cost_polynomials(problem):
     """
     Creates a list of polynomials representing the cost function for each clause, and a list of symbols.
     
     Parameters
     ----------
-    clauses : list[list[int]]
-        The clauses of the maximum satisfiability problem instance.
+    problem : tuple(int, list[list[int]])
+        The number of variables, and the clauses of the maximum satisfiability problem instance.
 
     Returns
     -------
@@ -39,8 +39,8 @@ def create_maxsat_cost_polynomials(clauses):
 
     """
 
-    all_indices = list(set(abs(index) for clause in clauses for index in clause))
-    symbols = [sp.Symbol(f"x{i}") for i in range(1,len(all_indices)+1)]
+    clauses = problem[1]
+    symbols = [sp.Symbol(f"x{i}") for i in range(1,problem[0]+1)]
     cost_polynomials = []
     for clause in clauses:
         C = 1 - sp.prod((1-symbols[index-1]) if index>0 else symbols[-index-1] for index in clause)
@@ -49,14 +49,14 @@ def create_maxsat_cost_polynomials(clauses):
     return cost_polynomials, symbols
 
 
-def create_maxsat_cl_cost_function(clauses):
+def create_maxsat_cl_cost_function(problem):
     """
     Creates the classical cost function for an instance of the maximum satisfiability problem.
 
     Parameters
     ----------
-    clauses : list[list[int]]
-        The clauses of the maximum satisfiability problem instance.
+    problem : tuple(int, list[list[int]])
+        The number of variables, and the clauses of the maximum satisfiability problem instance.
 
     Returns
     -------
@@ -65,6 +65,7 @@ def create_maxsat_cl_cost_function(clauses):
 
     """
 
+    clauses = problem[1]
     def cl_cost_function(res_dic):
         cost = 0
         for state, prob in res_dic.items():
@@ -76,7 +77,7 @@ def create_maxsat_cl_cost_function(clauses):
     return cl_cost_function 
 
 
-def create_maxsat_cost_operator(clauses):
+def create_maxsat_cost_operator(problem):
     r"""
     Creates the cost operator for an instance of the maximum satisfiability problem.
     For a given cost function 
@@ -89,45 +90,44 @@ def create_maxsat_cost_operator(clauses):
 
     Parameters
     ----------
-    clauses : list[list[int]]
-        The clauses of the maximum satisfiability problem instance.
+    problem : tuple(int, list[list[int]])
+        The number of variables, and the clauses of the maximum satisfiability problem instance.
 
     Returns
     -------
     cost_operator : function
-        A function receiving a :ref:`QuantumVariable` and a real parameter $\beta$.
+        A function receiving a :ref:`QuantumVariable` and a real parameter $\gamma$.
         This function performs the application of the cost operator.
 
     """
    
-    cost_polynomials, symbols = create_maxsat_cost_polynomials(clauses)
+    cost_polynomials, symbols = create_maxsat_cost_polynomials(problem)
 
-    def cost_operator(qv, beta):
+    def cost_operator(qv, gamma):
         for P in cost_polynomials:
-            app_sb_phase_polynomial([qv], -P, symbols, t=beta)
+            app_sb_phase_polynomial([qv], -P, symbols, t=gamma)
 
     return cost_operator
 
 
-def maxsat_problem(clauses):
+def maxsat_problem(problem):
     """
     Creates a QAOA problem instance with appropriate phase separator, mixer, and
     classical cost function.
 
     Parameters
     ----------
-    clauses : list[list[int]]
-        The clauses of the maximum satisfiability problem instance.
+    problem : tuple(int, list[list[int]])
+        The number of variables, and the clauses of the maximum satisfiability problem instance.
 
     Returns
     -------
     :ref:`QAOAProblem`
-        A QAOA problem instance for MaxSat for given ``clauses``.
+        A QAOA problem instance for MaxSat for given a ``problem``.
 
     """        
     from qrisp.qaoa import QAOAProblem, RX_mixer
 
-    return QAOAProblem(cost_operator=create_maxsat_cost_operator(clauses),
+    return QAOAProblem(cost_operator=create_maxsat_cost_operator(problem),
                         mixer=RX_mixer,
-                        cl_cost_function=create_maxsat_cl_cost_function(clauses),
-                        init_function=maxsat_init_function)
+                        cl_cost_function=create_maxsat_cl_cost_function(problem))

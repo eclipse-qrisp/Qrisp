@@ -10,7 +10,7 @@ QAOA MaxSat
 Problem description
 -------------------
 
-Given :math:`m` disjunctive clauses over :math:`n` Boolean variables :math:`x`, where each clause
+Given :math:`m` disjunctive clauses over :math:`n` Boolean variables :math:`x_1,\dotsc,x_n`, where each clause
 contains at most :math:`l \geq 2` literals, find a variable assignment that maximizes the number of
 satisfied clauses. 
 
@@ -66,15 +66,16 @@ Example implementation
 ::
 
    from qrisp import QuantumVariable
-   from qrisp.qaoa import QAOAProblem, RX_mixer, create_maxsat_cl_cost_function, create_maxsat_cost_operator, maxsat_init_function
+   from qrisp.qaoa import QAOAProblem, RX_mixer, create_maxsat_cl_cost_function, create_maxsat_cost_operator
 
    clauses = [[1,2,-3],[1,4,-6],[4,5,6],[1,3,-4],[2,4,5],[1,3,5],[-2,-3,6]]
-   num_variables = 6
-   qarg = QuantumVariable(num_variables)
+   num_vars = 6
+   problem = (num_vars, clauses)
+   qarg = QuantumVariable(num_vars)
 
-   qaoa_max_indep_set = QAOAProblem(cost_operator=create_maxsat_cost_operator(clauses),
+   qaoa_max_indep_set = QAOAProblem(cost_operator=create_maxsat_cost_operator(problem),
                                     mixer=RX_mixer,
-                                    cl_cost_function=create_maxsat_cl_cost_function(clauses))
+                                    cl_cost_function=create_maxsat_cl_cost_function(problem))
    results = qaoa_max_indep_set.run(qarg=qarg, depth=5)
 
 That's it! Feel free to experiment with the ``init_type='tqa'`` option in the :meth:`.run <qrisp.qaoa.QAOAProblem.run>` method for improved performance.
@@ -82,7 +83,7 @@ In the following, we print the 5 most likely solutions together with their cost 
 
 ::
    
-   cl_cost = create_maxsat_cl_cost_function(clauses)
+   cl_cost = create_maxsat_cl_cost_function(problem)
 
    print("5 most likely solutions")
    max_five = sorted(results.items(), key=lambda item: item[1], reverse=True)[:5]

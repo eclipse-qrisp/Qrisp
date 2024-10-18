@@ -1,6 +1,6 @@
 """
 \********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+* Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -47,7 +47,7 @@ def qiro_RXMixer(solutions = [],exclusions = []):
 
 def qiro_init_function(solutions = [], exclusions = []):
     """
-    State initiation function for QIRO algorithm. Works analogously to the normal initiation function, but respects solutions and exclusions that have been found in the QIRO reduction steps.
+    State initialization function for QIRO algorithm. Works analogously to the normal initialization function, but respects solutions and exclusions that have been found in the QIRO reduction steps.
 
     Parameters
     ----------

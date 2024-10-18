@@ -23,4 +23,3 @@ from qrisp.algorithms.qaoa.mixers import *
 from qrisp.algorithms.qaoa.problems import *
 from qrisp.algorithms.qiro.qiroproblems import *
 from qrisp.algorithms.qiro.qiro_mixers import * 
-from qrisp.algorithms.qiro.qiro_problem import * 

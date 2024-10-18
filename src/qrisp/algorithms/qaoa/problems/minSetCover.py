@@ -36,7 +36,7 @@ def create_min_set_cover_mixer(sets, universe):
     Returns
     -------
     function
-        A Python function receiving a ``QuantumVariable`` and real parameter $\beta$. 
+        A Python function receiving a :ref:`QuantumVariable` and real parameter $\beta$. 
         This function performs the application of the mixer associated to the problem instance.
 
     """

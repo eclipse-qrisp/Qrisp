@@ -31,8 +31,8 @@ We encourage you to explore these algorithms, delve into their documentation, an
    :maxdepth: 2
    :hidden:
    
-   qaoa/index
-   QIRO
+   qaoa/QAOA
+   qiro/QIRO
    Shor
    Grover
    QuantumBacktrackingTree

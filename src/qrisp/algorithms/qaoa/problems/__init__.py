@@ -28,12 +28,3 @@ from qrisp.algorithms.qaoa.problems.maxClique import *
 from qrisp.algorithms.qaoa.problems.maxSetPacking import *
 from qrisp.algorithms.qaoa.problems.minSetCover import * 
 
-#
-# DEPRECATED
-#
-from qrisp.algorithms.qaoa.problems.minSetCoverInfrastr import * 
-from qrisp.algorithms.qaoa.problems.maxSatInfrastr import * 
-from qrisp.algorithms.qaoa.problems.eThrTwoLinInfrastr import *
-from qrisp.algorithms.qaoa.problems.maxCliqueInfrastr import *
-from qrisp.algorithms.qaoa.problems.maxIndepSetInfrastr import *
-from qrisp.algorithms.qaoa.problems.maxSetPackInfrastr import *

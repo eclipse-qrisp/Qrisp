@@ -8,15 +8,15 @@ Implementations
 .. toctree::
      :hidden:
     
-     qaoaProblems/qaoa.problems.maxCut
-     qaoaProblems/qaoa.problems.maxSat
-     qaoaProblems/qaoa.problems.eThrLinTwo
-     qaoaProblems/qaoa.problems.QUBO
-     qaoaProblems/qaoa.problems.maxIndepSet
-     qaoaProblems/qaoa.problems.maxClique
-     qaoaProblems/qaoa.problems.maxSetPack
-     qaoaProblems/qaoa.problems.minSetCover
-     qaoaProblems/qaoa.problems.maxKColorableSubgraph
+     implementations/maxCut
+     implementations/maxSat
+     implementations/eThrLinTwo
+     implementations/QUBO
+     implementations/maxIndepSet
+     implementations/maxClique
+     implementations/maxSetPack
+     implementations/minSetCover
+     implementations/maxKColorableSubgraph
 
 
 Our voyage into :ref:`MaxCut <MaxCutQAOA>` and :ref:`Max-$\\kappa$-Colorable Subgraph <MkCSQAOA>` problems is detailed in the :ref:`tutorial <tutorial>` section. 

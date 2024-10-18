@@ -15,7 +15,7 @@ Here, we provide a condensed implementation of QAOA for M$\kappa$CS using all of
 Problem description
 -------------------
 
-Given a Graph  :math:`G = (V,E)` find and $\kappa$ colors, maximize the size (number of edges) of a properly colored subgraph.
+Given a Graph  :math:`G = (V,E)` and $\kappa$ colors, maximize the size (number of edges) of a properly colored subgraph.
 
 Cost operator
 -------------

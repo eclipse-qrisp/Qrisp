@@ -188,7 +188,7 @@ def apply_phase_if_eq(qcolor_0, qcolor_1, gamma):
 
 def create_coloring_operator(G):
     r"""
-    Generates the cost operator for an instance of the coloring problem for a given graph $G$.
+    Generates the cost operator for an instance of the coloring problem for a given graph ``G``.
 
     The coloring operator and applies a phase if two neighboring nodes in the graph have the same color.
 
@@ -227,7 +227,7 @@ def mkcs_obj(quantumcolor_array, G):
 
 def create_coloring_cl_cost_function(G):
     """
-    Creates the classical cost function for an instance of the coloring problem for a given graph $G$.
+    Creates the classical cost function for an instance of the coloring problem for a given graph ``G``.
 
     Parameters
     ----------
