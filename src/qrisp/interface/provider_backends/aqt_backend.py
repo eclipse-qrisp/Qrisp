@@ -104,7 +104,9 @@ class AQTBackend(VirtualBackend):
             for item in list(quasi_dist.keys()):
 
                 # transform to binary, fill to given length, and then reverse 
-                new_key = bin(item)[2:].zfill(len_qc)[::-1] 
+                #new_key = bin(item)[2:].zfill(len_qc)[::-1] 
+                new_key2 = bin(item)[2:].zfill(len_qc) 
+                new_key = new_key2
                 result_dic.setdefault(new_key, quasi_dist[item])
 
             return result_dic
