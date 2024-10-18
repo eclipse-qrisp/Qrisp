@@ -42,7 +42,7 @@ class AQTBackend(VirtualBackend):
     Examples
     --------
 
-    We evaluate a QuantumFloat multiplication on the QASM-simulator.
+    We evaluate a QuantumFloat multiplication on the noiseless offline-simulator.
 
     >>> from qrisp import QuantumFloat
     >>> from qrisp.interface import AQTBackend
@@ -100,11 +100,11 @@ class AQTBackend(VirtualBackend):
             # Format to fit the qrisp result format
             result_dic = {}
 
-            len = len(new_qiskit_qc.qubits) # number of qubits
+            len_qc = len(new_qiskit_qc.qubits) # number of qubits
             for item in list(quasi_dist.keys()):
 
                 # transform to binary, fill to given length, and then reverse 
-                new_key = bin(item)[2:].zfill(len)[::-1] 
+                new_key = bin(item)[2:].zfill(len_qc)[::-1] 
                 result_dic.setdefault(new_key, quasi_dist[item])
 
             return result_dic
