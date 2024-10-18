@@ -48,7 +48,7 @@ class AQTBackend(VirtualBackend):
     >>> from qrisp.interface import AQTBackend
     >>> from qiskit_aqt_provider import AQTProvider
     >>> provider = AQTProvider("ACCESS_TOKEN")
-    >>> example_backend = AQTBackend(backend = provider.get_backend("offline_simulator_no_noise")
+    >>> example_backend = AQTBackend(backend = provider.get_backend("offline_simulator_no_noise"))
     >>> qf = QuantumFloat(4)
     >>> qf[:] = 3
     >>> res = qf*qf
