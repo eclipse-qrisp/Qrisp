@@ -336,6 +336,34 @@ class PauliHamiltonian(Hamiltonian):
         self.terms_dict = res_terms_dict    
 
     #
+    # Substitution
+    #
+
+    def subs(self, subs_dict):
+        """
+        
+        Parameters
+        ----------
+        subs_dict : dict
+            A dictionary with indices (int) as keys and numbers (int, float, complex) as values.
+
+        Returns
+        -------
+        result : PauliHamiltonian
+            The resulting PauliHamiltonian.
+        
+        """
+
+        res_terms_dict = {}
+
+        for pauli, coeff in self.terms_dict.items():
+            curr_pauli, curr_coeff = pauli.subs(subs_dict)
+            res_terms_dict[curr_pauli] = res_terms_dict.get(curr_pauli,0) + curr_coeff*coeff
+
+        result = PauliHamiltonian(res_terms_dict)
+        return result
+
+    #
     # Miscellaneous
     #
 

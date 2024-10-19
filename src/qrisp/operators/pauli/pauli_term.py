@@ -124,6 +124,32 @@ class PauliTerm:
                 result_coeff *= coeff
         return PauliTerm(result_pauli_dict), result_coeff
     
+    def subs(self, subs_dict):
+        """
+        
+        Parameters
+        ----------
+        subs_dict : dict
+            A dictionary with indices (int) as keys and numbers (int, float, complex) as values.
+
+        Returns
+        -------
+        PauliTerm
+            The resulting PauliTerm.
+        result_coeff : int, float, complex
+            The resulting coefficient.
+        
+        """
+        result_pauli_dict=self.pauli_dict.copy()
+        result_coeff = 1
+
+        for key, value in subs_dict.items():
+            if key in result_pauli_dict:
+                del result_pauli_dict[key]
+                result_coeff *= value
+
+        return PauliTerm(result_pauli_dict), result_coeff
+    
     #
     # Commutativity checks
     #
