@@ -18,20 +18,10 @@
 
 from qrisp.operators.pauli.spin import X_,Y_,Z_
 
-#
-# Helper functions
-#
-
-def mul_helper(P1,P2):
-    pauli_table = {("X","X"):("I",1),("X","Y"):("Z",1j),("X","Z"):("Y",-1j),
-            ("Y","X"):("Z",-1j),("Y","Y"):("I",1),("Y","Z"):("X",1j),
-            ("Z","X"):("Y",1j),("Z","Y"):("X",-1j),("Z","Z"):("I",1)}
-    
-    if P1=="I":
-        return (P2,1)
-    if P2=="I":
-        return (P1,1)
-    return pauli_table[(P1,P2)]
+PAULI_TABLE = {("I","I"):("I",1),("I","X"):("X",1),("I","Y"):("Y",1),("I","Z"):("Z",1),
+            ("X","I"):("X",1),("X","X"):("I",1),("X","Y"):("Z",1j),("X","Z"):("Y",-1j),
+            ("Y","I"):("Y",1),("Y","X"):("Z",-1j),("Y","Y"):("I",1),("Y","Z"):("X",1j),
+            ("Z","I"):("Z",1),("Z","X"):("Y",1j),("Z","Y"):("X",-1j),("Z","Z"):("I",1)}
 
 #
 # BoundPauliTerm
@@ -108,11 +98,9 @@ class BoundPauliTerm:
         a = self.pauli_dict
         b = other.pauli_dict
 
-        keys = set()
-        keys.update(set(a.keys()))
-        keys.update(set(b.keys()))
-        for key in sorted(keys):
-            pauli, coeff = mul_helper(a.get(key,"I"),b.get(key,"I"))
+        keys = set(a.keys()) | set(b.keys())
+        for key in keys:
+            pauli, coeff = PAULI_TABLE[a.get(key,"I"),b.get(key,"I")]
             if pauli!="I":
                 result_pauli_dict[key]=pauli
                 result_coeff *= coeff
