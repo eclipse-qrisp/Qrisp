@@ -419,7 +419,6 @@ def create_electronic_hamiltonian(arg, active_orb=None, active_elec=None, mappin
         E += (one_int[j][j]+F[j][j])/2
 
     # Hamiltonian
-    #H = PauliHamiltonian({():E})
     H=E
     for i in range(K):
         for j in range(K):
@@ -431,7 +430,7 @@ def create_electronic_hamiltonian(arg, active_orb=None, active_elec=None, mappin
             for k in range(K):
                 for l in range(K):
                     if two_int[I+i][I+j][I+k][I+l]!=0 and i!=j and k!=l:
-                        H += 0.5*two_int[I+i][I+j][I+k][I+l]*cre2(i,j,K,mapping_type)*ann2(k,l,K,mapping_type)
+                        H += (0.5*two_int[I+i][I+j][I+k][I+l])*cre2(i,j,K,mapping_type)*ann2(k,l,K,mapping_type)
 
     # apply threshold
     H.apply_threshold(threshold) 

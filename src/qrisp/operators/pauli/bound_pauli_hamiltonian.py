@@ -323,7 +323,11 @@ class BoundPauliHamiltonian(Hamiltonian):
         """
 
         if isinstance(other,(int,float,complex)):
-            other = BoundPauliHamiltonian({BoundPauliTerm():other})
+            #other = BoundPauliHamiltonian({BoundPauliTerm():other})
+            for term in self.terms_dict:
+                self.terms_dict[term] *= other
+            return self
+
         if not isinstance(other,BoundPauliHamiltonian):
             raise TypeError("Cannot multipliy BoundPauliHamiltonian and "+str(type(other)))
 
@@ -334,7 +338,8 @@ class BoundPauliHamiltonian(Hamiltonian):
                 curr_pauli, curr_coeff = pauli1*pauli2
                 res_terms_dict[curr_pauli] = res_terms_dict.get(curr_pauli,0) + curr_coeff*coeff1*coeff2
 
-        self.terms_dict = res_terms_dict    
+        self.terms_dict = res_terms_dict  
+        return self  
 
     #
     # Substitution

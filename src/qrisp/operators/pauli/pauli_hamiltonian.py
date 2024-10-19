@@ -322,7 +322,11 @@ class PauliHamiltonian(Hamiltonian):
         """
 
         if isinstance(other,(int,float,complex)):
-            other = PauliHamiltonian({PauliTerm():other})
+            #other = PauliHamiltonian({PauliTerm():other})
+            for term in self.terms_dict:
+                self.terms_dict[term] *= other
+            return self
+
         if not isinstance(other,PauliHamiltonian):
             raise TypeError("Cannot multipliy PauliHamiltonian and "+str(type(other)))
 
@@ -334,6 +338,7 @@ class PauliHamiltonian(Hamiltonian):
                 res_terms_dict[curr_pauli] = res_terms_dict.get(curr_pauli,0) + curr_coeff*coeff1*coeff2
 
         self.terms_dict = res_terms_dict    
+        return self
 
     #
     # Substitution
