@@ -213,17 +213,37 @@ def c_jw(j):
 @cache
 def a_par(j,M):
     if j>0:
-        return PauliHamiltonian({tuple([(j-1,"Z"),(j,"X")]+[(i,"X") for i in range(j+1,M)]):0.5,tuple([(j,"Y")]+[(i,"X") for i in range(j+1,M)]):0.5j})
+        d1={i:'X' for i in range(j,M)}
+        d1[j-1]='Z'
+        d2={i:'X' for i in range(j+1,M)}
+        d2[j]='Y'
+        return PauliHamiltonian({PauliTerm(d1):0.5,PauliTerm(d2):0.5j})
+        #return PauliHamiltonian({tuple([(j-1,"Z"),(j,"X")]+[(i,"X") for i in range(j+1,M)]):0.5,tuple([(j,"Y")]+[(i,"X") for i in range(j+1,M)]):0.5j})
     else:
-        return PauliHamiltonian({tuple([(j,"X")]+[(i,"X") for i in range(j+1,M)]):0.5,tuple([(j,"Y")]+[(i,"X") for i in range(j+1,M)]):0.5j})
+        d1={i:'X' for i in range(j,M)}
+        #d1[j-1]='Z'
+        d2={i:'X' for i in range(j+1,M)}
+        d2[j]='Y'
+        return PauliHamiltonian({PauliTerm(d1):0.5,PauliTerm(d2):0.5j})
+        #return PauliHamiltonian({tuple([(j,"X")]+[(i,"X") for i in range(j+1,M)]):0.5,tuple([(j,"Y")]+[(i,"X") for i in range(j+1,M)]):0.5j})
 
 # Parity creation operator
 @cache
 def c_par(j,M):
     if j>0:
-        return PauliHamiltonian({tuple([(j-1,"Z"),(j,"X")]+[(i,"X") for i in range(j+1,M)]):0.5,tuple([(j,"Y")]+[(i,"X") for i in range(j+1,M)]):-0.5j},0)
+        d1={i:'X' for i in range(j,M)}
+        d1[j-1]='Z'
+        d2={i:'X' for i in range(j+1,M)}
+        d2[j]='Y'
+        return PauliHamiltonian({PauliTerm(d1):0.5,PauliTerm(d2):-0.5j})
+        #return PauliHamiltonian({tuple([(j-1,"Z"),(j,"X")]+[(i,"X") for i in range(j+1,M)]):0.5,tuple([(j,"Y")]+[(i,"X") for i in range(j+1,M)]):-0.5j},0)
     else:
-        return PauliHamiltonian({tuple([(j,"X")]+[(i,"X") for i in range(j+1,M)]):0.5,tuple([(j,"Y")]+[(i,"X") for i in range(j+1,M)]):-0.5j},0)
+        d1={i:'X' for i in range(j,M)}
+        #d1[j-1]='Z'
+        d2={i:'X' for i in range(j+1,M)}
+        d2[j]='Y'
+        return PauliHamiltonian({PauliTerm(d1):0.5,PauliTerm(d2):-0.5j})
+        #return PauliHamiltonian({tuple([(j,"X")]+[(i,"X") for i in range(j+1,M)]):0.5,tuple([(j,"Y")]+[(i,"X") for i in range(j+1,M)]):-0.5j},0)
 
 @cache
 def ann(i,M,mapping_type):

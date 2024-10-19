@@ -191,6 +191,42 @@ class BoundPauliHamiltonian(Hamiltonian):
         result = BoundPauliHamiltonian(res_terms_dict)
         return result
 
+    def __sub__(self,other):
+        """
+        Returns the difference of the operator other and self.
+
+        Parameters
+        ----------
+        other : int, float, complex or BoundPauliHamiltonian
+            A scalar or a BoundPauliHamiltonian to substract the operator self from.
+
+        Returns
+        -------
+        result : BoundPauliHamiltonian
+            The difference of the operator other and self.
+
+        """
+
+        if isinstance(other,(int,float,complex)):
+            other = BoundPauliHamiltonian({BoundPauliTerm():other})
+        if not isinstance(other,BoundPauliHamiltonian):
+            raise TypeError("Cannot substract BoundPauliHamiltonian and "+str(type(other)))
+
+        res_terms_dict = {}
+
+        for pauli,coeff in self.terms_dict.items():
+            res_terms_dict[pauli] = res_terms_dict.get(pauli,0)-coeff
+            if abs(res_terms_dict[pauli])<threshold:
+                del res_terms_dict[pauli]
+    
+        for pauli,coeff in other.terms_dict.items():
+            res_terms_dict[pauli] = res_terms_dict.get(pauli,0)+coeff
+            if abs(res_terms_dict[pauli])<threshold:
+                del res_terms_dict[pauli]
+        
+        result = BoundPauliHamiltonian(res_terms_dict)
+        return result
+    
     def __mul__(self,other):
         """
         Returns the product of the operator self and other.

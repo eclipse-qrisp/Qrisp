@@ -129,6 +129,24 @@ class Hamiltonian(ABC):
         pass
 
     @abstractmethod
+    def __rsub__(self, other):
+        """
+        Returns the difference of the operator other and self.
+
+        Parameters
+        ----------
+        other : int, float, complex or Hamiltonian
+            A scalar or a Hamiltonian to substract the operator self from.
+
+        Returns
+        -------
+        result : Hamiltonian
+            The difference of the operator other and self.
+
+        """
+        pass
+
+    @abstractmethod
     def __mul__(self, other):
         """
         Returns the product of the operator self and other.

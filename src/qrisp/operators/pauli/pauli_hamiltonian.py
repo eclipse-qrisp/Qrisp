@@ -189,6 +189,42 @@ class PauliHamiltonian(Hamiltonian):
         
         result = PauliHamiltonian(res_terms_dict)
         return result
+    
+    def __rsub__(self,other):
+        """
+        Returns the difference of the operator other and self.
+
+        Parameters
+        ----------
+        other : int, float, complex or PauliHamiltonian
+            A scalar or a PauliHamiltonian to substract the operator self from.
+
+        Returns
+        -------
+        result : PauliHamiltonian
+            The difference of the operator other and self.
+
+        """
+
+        if isinstance(other,(int,float,complex)):
+            other = PauliHamiltonian({PauliTerm():other})
+        if not isinstance(other,PauliHamiltonian):
+            raise TypeError("Cannot substract PauliHamiltonian and "+str(type(other)))
+
+        res_terms_dict = {}
+
+        for pauli,coeff in self.terms_dict.items():
+            res_terms_dict[pauli] = res_terms_dict.get(pauli,0)-coeff
+            if abs(res_terms_dict[pauli])<threshold:
+                del res_terms_dict[pauli]
+    
+        for pauli,coeff in other.terms_dict.items():
+            res_terms_dict[pauli] = res_terms_dict.get(pauli,0)+coeff
+            if abs(res_terms_dict[pauli])<threshold:
+                del res_terms_dict[pauli]
+        
+        result = PauliHamiltonian(res_terms_dict)
+        return result
 
     def __mul__(self,other):
         """
