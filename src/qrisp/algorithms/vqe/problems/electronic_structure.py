@@ -21,6 +21,8 @@ import numpy as np
 from qrisp import h, x, cx, ry, control, conjugate
 from qrisp.operators.pauli import PauliHamiltonian, PauliTerm
 from functools import cache
+import itertools
+import math
 
 #
 # helper functions
@@ -502,24 +504,50 @@ def create_QCCSD_ansatz(M,N):
     
     """
 
-    num_params = N*(M-N) + N*(N-1)*(M-N)*(M-N-1)//4
+    spin_down_occupied = [i for i in range(N) if i%2==0]
+    spin_down_virtual = [i for i in range(N,M) if i%2==0]
+    spin_up_occupied = [i for i in range(N) if i%2==1]
+    spin_up_virtual = [i for i in range(N,M) if i%2==1]
+
+    num_singles = len(spin_down_occupied)*len(spin_down_virtual) + len(spin_up_occupied)*len(spin_up_virtual)
+
+    num_doubles = len(spin_down_occupied)*len(spin_up_occupied)*len(spin_down_virtual)*len(spin_up_virtual) \
+                    +math.comb(len(spin_down_occupied),2)*math.comb(len(spin_down_virtual),2) \
+                    +math.comb(len(spin_up_occupied),2)*math.comb(len(spin_up_virtual),2)
+    
+    num_params = num_singles + num_doubles
 
     def ansatz(qv, theta):
 
         num_params = 0
         # Single excitations
-        for i in range(N):
-            for j in range(N,M):
-                pswap(theta[num_params],qv[i],qv[j])
-                num_params += 1
+        for i in spin_down_occupied:
+            for j in spin_down_virtual:
+                    pswap(theta[num_params],qv[i],qv[j])
+                    num_params += 1
         
-        # Double excitations
-        for i in range(N-1):
-            for j in range(i+1,N):
-                for k in range(N,M-1):
-                    for l in range(k+1,M):
+        for i in spin_up_occupied:
+            for j in spin_up_virtual:
+                    pswap(theta[num_params],qv[i],qv[j])
+                    num_params += 1
+        
+        # Double excitation
+        for i in spin_down_occupied:
+            for j in spin_up_occupied:
+                for k in spin_down_virtual:
+                    for l in spin_up_virtual:
                         pswap2(theta[num_params],qv[i],qv[j],qv[k],qv[l])
                         num_params += 1
+
+        for i,j in itertools.combinations(spin_down_occupied,2):
+            for k,l in itertools.combinations(spin_down_virtual,2):
+                pswap2(theta[num_params],qv[i],qv[j],qv[k],qv[l])
+                num_params += 1
+
+        for i,j in itertools.combinations(spin_up_occupied,2):
+            for k,l in itertools.combinations(spin_up_virtual,2):
+                pswap2(theta[num_params],qv[i],qv[j],qv[k],qv[l])
+                num_params += 1
 
     return ansatz, num_params
 

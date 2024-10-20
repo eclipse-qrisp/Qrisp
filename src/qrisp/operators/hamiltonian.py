@@ -233,7 +233,7 @@ class Hamiltonian(ABC):
     # Evaluate expected value
     #
 
-    def get_measurement_old(
+    def get_measurement(
         self,
         qarg,
         precision=0.01,
@@ -425,7 +425,7 @@ class Hamiltonian(ABC):
 # NUMBA
 #
         
-    def get_measurement(
+    def get_measurement_new(
         self,
         qarg,
         precision=0.01,
@@ -620,7 +620,6 @@ class Hamiltonian(ABC):
         # Evaluate the observable
         expectation = 0
             
-
         for k in range(N):
 
             result = evaluate_observables_parallel(observables_parts[k], outcomes_parts[k], probabilities[k])
