@@ -24,3 +24,4 @@ from qrisp.alg_primitives.mcx_algs import *
 from qrisp.alg_primitives.arithmetic import *
 from qrisp.alg_primitives.iterable_processing import *
 from qrisp.alg_primitives.dicke_state_prep import *
+from qrisp.alg_primitives.switch_case import *
