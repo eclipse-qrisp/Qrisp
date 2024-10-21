@@ -41,6 +41,8 @@ def find_max(single_cor, double_cor, res, solutions):
     """
     
     max = 0
+    max_item = None
+    sign = None
 
     for item2 in double_cor:
         if abs(item2[0]) == abs(item2[1]):
