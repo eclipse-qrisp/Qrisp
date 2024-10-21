@@ -19,6 +19,8 @@
 # just write a replacement_routine and throw out not relevant sets
 
 from qrisp import rz, x, cx
+from qrisp import app_sb_phase_polynomial
+
 import numpy as np
 import math
 import copy
@@ -72,50 +74,78 @@ def create_maxsat_replacement_routine(res, problem, solutions=[], exclusions=[])
     if max_item == None:
         return problem, solutions, 0 ,exclusions
 
-    # we just directly remove clauses from clauses
+    # we just directly remove clauses from the problem, or literals from the clause. 
     if isinstance(max_item, int):
         
         max_item += 1
 
-        if sign > 0:
-            for item in clauses: 
-                # if negation in item --> remove it
-                if -1 * max_item in item:
-                    clauses.remove(item)
-            solutions.append(max_item)
-            exclusions.append(max_item)
+        for sgl_clause in clauses:
+            if sign > 0:
+                #clause evaluates to TRUE, can empty the clause 
+                if max_item in sgl_clause:
+                    sgl_clause.clear()
+                #clause evaluates to FALSE, can remove the literal
+                # if its last literal remaining in the clause, we just remove the clause
+                elif -1*max_item in sgl_clause: 
+                    if len(sgl_clause) == 1:
+                        clauses.remove(sgl_clause)
+                    else:
+                        val = -1* max_item
+                        sgl_clause.remove(val)
+                solutions.append(max_item)
+                exclusions.append(max_item)
 
-        elif sign < 0:
-            for item in clauses:
-                # if number in item --> remove it
-                if max_item in item:
-                    clauses.remove(item)
-            exclusions.append(max_item)
+            #same as above
+            elif sign < 0:
+                if -1* max_item in sgl_clause:
+                    sgl_clause.clear()
+                elif max_item in sgl_clause: 
+                    if len(sgl_clause) == 1:
+                        clauses.remove(sgl_clause)
+                    else:
+                        val =  max_item
+                        sgl_clause.remove(val)
+                exclusions.append(max_item)
+            """ if sign > 0:
+                for item in clauses: 
+                    # if number in item --> remove it --> clause is fulfilled
+                    if  max_item in item:
+                        item.clear()
+                solutions.append(max_item)
+                exclusions.append(max_item)
+
+            elif sign < 0:
+                for item in clauses:
+                    # if number in item --> remove the number 
+                    if -1* max_item in item:
+                        val = -1* max_item
+                        item.remove(val)
+                exclusions.append(max_item) """
 
     else:
         max_item[0] += 1 
         max_item[1] += 1 
         if sign > 0:
-            for item in clauses:
+            for sgl_clause in clauses:
                 # replace with pos. correlated number if its in an item
-                if max_item[1] in item:
-                    temp = item.index[max_item[1]]
-                    item[temp] = max_item[0]
-                if -1* max_item[1] in item:
-                    temp = item.index[-1* max_item[1]]
-                    item[temp] = -1* max_item[0]
+                if max_item[1] in sgl_clause:
+                    temp = sgl_clause.index[max_item[1]]
+                    sgl_clause[temp] = max_item[0]
+                if -1* max_item[1] in sgl_clause:
+                    temp = sgl_clause.index[-1* max_item[1]]
+                    sgl_clause[temp] = -1* max_item[0]
                 exclusions.append(max_item[1])
                     
 
         elif sign < 0:
-            for item in clauses:
+            for sgl_clause in clauses:
                 # replace with neg. correlated number if its in an item
-                if max_item[1] in item:
-                    temp = item.index[max_item[1]]
-                    item[temp] = -1 * max_item[0]
-                if -1* max_item[1] in item:
-                    temp = item.index[ -1  * max_item[1]]
-                    item[temp] = max_item[0]
+                if max_item[1] in sgl_clause:
+                    temp = sgl_clause.index[max_item[1]]
+                    sgl_clause[temp] = -1 * max_item[0]
+                if -1* max_item[1] in sgl_clause:
+                    temp = sgl_clause.index[ -1  * max_item[1]]
+                    sgl_clause[temp] = max_item[0]
                 exclusions.append(max_item[1])
 
     # create sign list somewhere?
@@ -142,55 +172,18 @@ def create_maxsat_cost_operator_reduced(problem, solutions=[]):
 
     """
     
-    clauses = problem[1]
-    satlen = len(clauses[0])
-
-    def maxSatcostEmbed(qv , gamma):
-        import itertools
-        #clauses = clauses
-        
-        qc = qv
-
-        for numClause in range(len(clauses)):
-            #go through clauses
-            clause = clauses[numClause]
-        
-            for lenofCombination in range(1,satlen+1):
-                # get all combinations to assign rz, rzz, rzzz, rzzzzzz....
-                combinations = list(itertools.combinations(clause, lenofCombination))
-                #print(combinations)
-                
-                #len == 1: just rz
-                if lenofCombination == 1:
-                    for index in range(len(combinations)):
-                        if  abs( combinations[index][0])-1 not in solutions:
-                            # sign for rz mixer
-                            signu = - np.sign(combinations[index][0])
-                            # always have the "-1" at the end since clauses are not initiated with 0, see above
-                            #print(abs( combinations[index][0] - 1 ))
-                            rz(signu *  gamma/8, qc[ abs( combinations[index][0]) -1 ] )
-
-                else:
-                    #for all combinations of this length 
-                    for index in range(len(combinations)):
-                        signu = 1
-
-                        # up to final value in combination perform cx gates --> set up the rzz, rzzz, rzzzz ... gates
-                        for index2 in range(lenofCombination-1):
-                            # (also remember the sign)
-                            signu *= - np.sign(combinations[index][index2])
-                            cx(qc[abs( combinations[index][index2] ) -1], qc[abs( combinations[index][index2+1] ) -1])
-
-                        signu *= np.sign(combinations[index][lenofCombination-1])
-                        # finalize rzz, rzzz, rzzzz ... gates
-                        rz(signu*gamma/8, qc[abs( combinations[index][lenofCombination-1] ) -1])
-                        
-                        # and cnot gates back 
-                        for index2 in reversed(range(lenofCombination-1)):
-                            cx(  qc[abs(combinations[index][index2] ) -1], qc[abs(combinations[index][index2+1] ) -1 ]) 
-
-        return qc
+    from qrisp.algorithms.qaoa import create_maxsat_cost_polynomials
     
-    return maxSatcostEmbed
+    
+    cost_polynomials, symbols = create_maxsat_cost_polynomials(problem)
+
+    def cost_operator(qv, gamma):
+        for P in cost_polynomials:
+            if not isinstance(P, int):
+                app_sb_phase_polynomial([qv], -P, symbols, t=gamma)
+
+    return cost_operator
+
+    
 
 
