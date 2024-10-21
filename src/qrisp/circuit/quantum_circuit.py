@@ -2362,7 +2362,7 @@ def convert_to_qb_list(input, circuit=None, top_level=True):
             )
         
         if input >= len(circuit.qubits):
-            raise Exception(f"Tried to adress qubit with in dex {input} in a circuit with {len(circuit.qubits)} qubits")
+            raise Exception(f"Tried to adress qubit with index {input} in a circuit with {len(circuit.qubits)} qubits")
 
         result = convert_to_qb_list(circuit.qubits[input], top_level=top_level)
 
