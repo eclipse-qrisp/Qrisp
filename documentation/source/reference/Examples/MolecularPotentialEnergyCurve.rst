@@ -1,15 +1,18 @@
-.. _MolecularPotentialEnergyCurve:
+.. _MolecularPotentialEnergyCurveExample:
 
-Molecular potential Energy Curves
+Molecular Potential Energy Curves
 =================================
 
 .. currentmodule:: qrisp.vqe
 
-Exampe H_2
-==========
+Example Hydrogen
+================
 
-We import the necessary packages including the `PySCF <https://pyscf.org>`_ quantum chemistry library, and implement a function ``problem_data``
-that utilizes PySCF to compute the electronic data (one- and two-electron integrals, number of orbitals, number of electroins, nuclear repulsion energy, Hartree-Fock energy)
+We caluclate the Potetial Energy Curve for the Hydrogen molecule for varying interatomic distance of the atoms.
+
+
+We implement a function ``problem_data`` that sets up a molecule and 
+utilizes the `PySCF <https://pyscf.org>`_ quantum chemistry library to compute the :meth:`electronic data <qrisp.vqe.problems.electronic_structure.electronic_structure_problem>` (one- and two-electron integrals, number of orbitals, number of electroins, nuclear repulsion energy, Hartree-Fock energy)
 for a given molecular geometry. In this example, we vary the **atomic distance** between the two Hydrogen atoms.
 
 ::
@@ -18,9 +21,9 @@ for a given molecular geometry. In this example, we vary the **atomic distance**
     from qrisp.vqe.problems.electronic_structure import *
     from qrisp import QuantumVariable
 
-    def problem_data(x):
+    def problem_data(r):
         mol = gto.M(
-            atom = f'''H 0 0 0; H  0 0 {x}''',
+            atom = f'''H 0 0 0; H  0 0 {r}''',
             basis = 'sto-3g')
         return electronic_data(mol)
 
@@ -58,6 +61,7 @@ Finally, we visualize the results.
     plt.xlabel("Atomic distance", fontsize=15, color="#444444")
     plt.ylabel("Energy", fontsize=15, color="#444444")
     plt.legend(fontsize=12, labelcolor="#444444")
+    plt.tick_params(axis='both', labelsize=12)
     plt.grid()
     plt.show()
 
@@ -66,3 +70,15 @@ Finally, we visualize the results.
    :alt: Hydrogen Potential Energy Curve
    :scale: 80%
    :align: center
+
+
+Example Beryllium hydride
+=========================
+
+We caluclate the Potetial Energy Curve for the Beryllium hydride molecule for varying interatomic distance of the atoms.
+
+
+
+
+
+

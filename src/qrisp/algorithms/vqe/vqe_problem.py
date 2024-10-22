@@ -505,7 +505,8 @@ class VQEProblem:
         plt.scatter(x, y, color='#20306f',marker="o", linestyle='solid', linewidth=1, label='VQE energy')
         plt.xlabel("Iterations", fontsize=15, color="#444444")
         plt.ylabel("Energy", fontsize=15, color="#444444")
-        plt.grid()
         plt.legend(fontsize=12, labelcolor="#444444")
+        plt.tick_params(axis='both', labelsize=12)
+        plt.grid()
 
         plt.show()
