@@ -191,7 +191,7 @@ class BoundPauliHamiltonian(Hamiltonian):
         result = BoundPauliHamiltonian(res_terms_dict)
         return result
 
-    def __sub__(self,other):
+    def __rsub__(self,other):
         """
         Returns the difference of the operator other and self.
 
