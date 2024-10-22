@@ -16,23 +16,28 @@
 ********************************************************************************/
 """
 
-# -*- coding: utf-8 -*-
+from qrisp.circuit.qubit import Qubit
+from qrisp.operators.fermionic.fermionic_hamiltonian import FermionicHamiltonian
+from qrisp.operators.fermionic.fermionic_term import FermionicTerm
 
-#import qrisp.operators.pauli as pauli
-#import qrisp.operators.fermionic as fermionic
-#from qrisp.operators.hamiltonian import *
-#from qrisp.operators.hamiltonian_tools import *
+def a(arg):
+    if isinstance(arg,int):
+        return FermionicHamiltonian({FermionicTerm([(arg,False)]):1})
+    else:
+        raise Exception("Cannot initialize operator from type "+str(type(arg)))
 
-from qrisp.operators.hamiltonian import *
-from qrisp.operators.hamiltonian_tools import *
+def c(arg):
+    if isinstance(arg,int):
+        return FermionicHamiltonian({FermionicTerm([(arg,True)]):1})
+    else:
+        raise Exception("Cannot initialize operator from type "+str(type(arg)))
 
-import qrisp.operators.pauli as pauli
 
-import qrisp.operators.fermionic as fermionic
+    
 
-#from qrisp.operators.pauli.pauli_operator import *
-#from qrisp.operators.pauli.bound_pauli_operator import *
-#from qrisp.operators.pauli.pauli_measurement import *
-#from qrisp.operators.pauli.pauli import *
+
+
+
+
 
 

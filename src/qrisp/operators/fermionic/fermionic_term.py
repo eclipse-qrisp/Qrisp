@@ -16,22 +16,7 @@
 ********************************************************************************/
 """
 
-from qrisp.operators.pauli.spin import X_,Y_,Z_
-
-#
-# Helper functions
-#
-
-def mul_helper(P1,P2):
-    pauli_table = {("X","X"):("I",1),("X","Y"):("Z",1j),("X","Z"):("Y",-1j),
-            ("Y","X"):("Z",-1j),("Y","Y"):("I",1),("Y","Z"):("X",1j),
-            ("Z","X"):("Y",1j),("Z","Y"):("X",-1j),("Z","Z"):("I",1)}
-    
-    if P1=="I":
-        return (P2,1)
-    if P2=="I":
-        return (P1,1)
-    return pauli_table[(P1,P2)]
+from qrisp.operators.fermionic.visualization import a_,c_
 
 #
 # FermionicTerm
@@ -42,13 +27,13 @@ class FermionicTerm:
     
     """
 
-    def __init__(self, pauli_dict={}):
-        self.pauli_dict = pauli_dict
-        self.hash_value = hash(tuple(sorted(pauli_dict.items())))
+    def __init__(self, ladder_list=[]):
+        self.ladder_list = ladder_list
+        self.hash_value = hash(tuple(self.ladder_list))
 
-    def update(self, update_dict):
-        self.pauli_dict.update(update_dict)
-        self.hash_value = hash(tuple(sorted(self.pauli_dict.items())))
+    #def update(self, update_dict):
+    #    self.pauli_dict.update(update_dict)
+    #    self.hash_value = hash(tuple(sorted(self.pauli_dict.items())))
 
     def __hash__(self):
         return self.hash_value
@@ -57,7 +42,7 @@ class FermionicTerm:
         return self.hash_value == other.hash_value
     
     def copy(self):
-        return FermionicTerm(self.pauli_dict.copy())
+        return FermionicTerm(self.ladder_list.copy())
     
     #
     # Printing
@@ -79,19 +64,15 @@ class FermionicTerm:
 
         """
 
-        def to_spin(P, index):
-            if P=="I":
-                return 1
-            if P=="X":
-                return X_(index)
-            if P=="Y":
-                return Y_(index)
+        def to_ladder(value, index):
+            if value:
+                return c_(index)
             else:
-                return Z_(index)
+                return a_(index)
         
         expr = 1
-        for index,P in self.pauli_dict.items():
-            expr *= to_spin(P,str(index))
+        for index,value in self.ladder_list:
+            expr *= to_ladder(value,str(index))
 
         return expr
 
@@ -99,69 +80,27 @@ class FermionicTerm:
     # Arithmetic
     #
 
-    def __pow__(self, e):
-        if isinstance(e, int) and e>=0:
-            if e%2==0:
-                return FermionicTerm({():1})
-            else:
-                return self
-        else:
-            raise TypeError("Unsupported operand type(s) for ** or pow(): "+str(type(self))+" and "+str(type(e)))
-
     def __mul__(self, other):
-        result_pauli_dict={}
-        result_coeff = 1
-        a = self.pauli_dict
-        b = other.pauli_dict
-
-        keys = set()
-        keys.update(set(a.keys()))
-        keys.update(set(b.keys()))
-        for key in sorted(keys):
-            pauli, coeff = mul_helper(a.get(key,"I"),b.get(key,"I"))
-            if pauli!="I":
-                result_pauli_dict[key]=pauli
-                result_coeff *= coeff
-        return FermionicTerm(result_pauli_dict), result_coeff
+        result_ladder_list = self.ladder_list + other.ladder_list
+        return FermionicTerm(result_ladder_list)
     
-    #
-    # Commutativity checks
-    #
-
-    def commute(self, other):
+    def order(self):
         """
-        Checks if two FermionicTerms commute.
+        Not that important, since relevant Hamiltonians (e.g., electronic structure) consist of ordered terms.
+        What is needed for trotterization?
 
-        """
-        a = self.pauli_dict
-        b = other.pauli_dict
+        Fermionic commutation relations:
 
-        keys = set()
-        keys.update(set(a.keys()))
-        keys.update(set(b.keys()))
+        {a_i,a_j^dagger} = a_i*a_j^dagger + a_j^dagger*a_i = delta_{ij}
+        {a_i^dagger,a_j^dagger} = {a_i,a_j} = 0
 
-        # Count non-commuting Pauli operators
-        commute = True
 
-        for key in keys:
-            if a.get(key,"I")!="I" and b.get(key,"I")!="I" and a.get(key,"I")!=b.get(key,"I"):
-                commute = not commute
-        return commute
+        Order ladder terms such that 
+            1) Raising operators preceed lowering operators
+            2) Operators are ordered in descending order of fermionic modes
 
-    def commute_qw(self, other):
-        """
-        Checks if two FermionicTerms commute qubit-wise.
+        Example: a_5^dagger a_2^dagger a_3 a_1
 
         """
-        a = self.pauli_dict
-        b = other.pauli_dict
-
-        keys = set()
-        keys.update(set(a.keys()))
-        keys.update(set(b.keys()))
-
-        for key in keys:
-            if a.get(key,"I")!="I" and b.get(key,"I")!="I" and a.get(key,"I")!=b.get(key,"I"):
-                return False
-        return True
-  
+        pass
+    

@@ -17,7 +17,6 @@
 """
 from qrisp.operators import Hamiltonian
 from qrisp.operators.fermionic.fermionic_term import FermionicTerm
-from qrisp.operators.pauli.pauli_measurement import PauliMeasurement
 
 import sympy as sp
 
@@ -33,31 +32,35 @@ threshold = 1e-9
 
 class FermionicHamiltonian(Hamiltonian):
     r"""
-    This class provides an efficient implementation of Pauli operators, i.e.,
+    This class provides an efficient implementation of ladder_term operators, i.e.,
     operators of the form
 
     .. math::
         
-        H=\sum\limits_{j}\alpha_jP_j 
+        H=\sum\limits_{j}\alpha_jA_j 
             
-    where $P_j=\prod_i\sigma_i^j$ is a Pauli product, 
-    and $\sigma_i^j\in\{I,X,Y,Z\}$ is the Pauli operator acting on qubit $i$.
+    where each term $A_j$ is a product of fermionic raising $a_i^{\dagger}$ and lowering $a_i$ operators acting on the $i$ th fermionic mode.
 
-    Parameters
-    ----------
-    arg : dict, optional
-        A dictionary representing a Pauli operator.
+    The ladder operators satisfy the commutation relations
+
+    .. math::
+
+        \{a_i,a_j^{\dagger}\} &= a_ia_j^{\dagger}+a_j^{\dagger}a_i = \delta_{ij}\\
+        \{a_i^{\dagger},a_j^{\dagger}\} &= \{a_i,a_j\} = 0
 
     Examples
     --------
 
-    A Pauli operator can be specified conveniently in terms of ``X``, ``Y``, ``Z`` operators:
+    A ladder term operator can be specified conveniently in terms of ``a`` (lowering, i.e., annihilation), ``c`` (raising, i.e., creation) operators:
 
     ::
         
-        from qrisp.operators import FermionicHamiltonian, X,Y,Z
+        from qrisp.operators.fermionic import a, c
 
-        P1 = 1+2*X(0)+3*X(0)*Y(1)
+        H = a(2)*c(1)+a(3)*c(2)
+        H
+
+    Yields $a_2c_1+a_3c_2$.
 
     """
 
@@ -94,25 +97,25 @@ class FermionicHamiltonian(Hamiltonian):
         """
         
         expr = 0  
-        for pauli,coeff in self.terms_dict.items():
-            expr += coeff*pauli.to_expr()
+        for ladder_term,coeff in self.terms_dict.items():
+            expr += coeff*ladder_term.to_expr()
         return expr
 
     #
     # Arithmetic
     #
 
-    def __pow__(self, e):
-        if self.len()==1:
-            if isinstance(e, int) and e>=0:
-                if e%2==0:
-                    return FermionicHamiltonian({FermionicTerm():1})
-                else:
-                    return self
-            else:
-                raise TypeError("Unsupported operand type(s) for ** or pow(): "+str(type(self))+" and "+str(type(e)))
-        else:
-            raise TypeError("Unsupported operand type(s) for ** or pow(): "+str(type(self))+" and "+str(type(e)))
+    #def __pow__(self, e):
+    #    if self.len()==1:
+    #        if isinstance(e, int) and e>=0:
+    #            if e%2==0:
+    #                return FermionicHamiltonian({FermionicTerm():1})
+    #            else:
+    #                return self
+    #        else:
+    #            raise TypeError("Unsupported operand type(s) for ** or pow(): "+str(type(self))+" and "+str(type(e)))
+    #    else:
+    #        raise TypeError("Unsupported operand type(s) for ** or pow(): "+str(type(self))+" and "+str(type(e)))
 
     def __add__(self,other):
         """
@@ -137,15 +140,15 @@ class FermionicHamiltonian(Hamiltonian):
 
         res_terms_dict = {}
 
-        for pauli,coeff in self.terms_dict.items():
-            res_terms_dict[pauli] = res_terms_dict.get(pauli,0)+coeff
-            if abs(res_terms_dict[pauli])<threshold:
-                del res_terms_dict[pauli]
+        for ladder_term,coeff in self.terms_dict.items():
+            res_terms_dict[ladder_term] = res_terms_dict.get(ladder_term,0)+coeff
+            if abs(res_terms_dict[ladder_term])<threshold:
+                del res_terms_dict[ladder_term]
     
-        for pauli,coeff in other.terms_dict.items():
-            res_terms_dict[pauli] = res_terms_dict.get(pauli,0)+coeff
-            if abs(res_terms_dict[pauli])<threshold:
-                del res_terms_dict[pauli]
+        for ladder_term,coeff in other.terms_dict.items():
+            res_terms_dict[ladder_term] = res_terms_dict.get(ladder_term,0)+coeff
+            if abs(res_terms_dict[ladder_term])<threshold:
+                del res_terms_dict[ladder_term]
         
         result = FermionicHamiltonian(res_terms_dict)
         return result
@@ -173,15 +176,51 @@ class FermionicHamiltonian(Hamiltonian):
 
         res_terms_dict = {}
 
-        for pauli,coeff in self.terms_dict.items():
-            res_terms_dict[pauli] = res_terms_dict.get(pauli,0)+coeff
-            if abs(res_terms_dict[pauli])<threshold:
-                del res_terms_dict[pauli]
+        for ladder_term,coeff in self.terms_dict.items():
+            res_terms_dict[ladder_term] = res_terms_dict.get(ladder_term,0)+coeff
+            if abs(res_terms_dict[ladder_term])<threshold:
+                del res_terms_dict[ladder_term]
     
-        for pauli,coeff in other.terms_dict.items():
-            res_terms_dict[pauli] = res_terms_dict.get(pauli,0)-coeff
-            if abs(res_terms_dict[pauli])<threshold:
-                del res_terms_dict[pauli]
+        for ladder_term,coeff in other.terms_dict.items():
+            res_terms_dict[ladder_term] = res_terms_dict.get(ladder_term,0)-coeff
+            if abs(res_terms_dict[ladder_term])<threshold:
+                del res_terms_dict[ladder_term]
+        
+        result = FermionicHamiltonian(res_terms_dict)
+        return result
+    
+    def __rsub__(self,other):
+        """
+        Returns the difference of the operator other and self.
+
+        Parameters
+        ----------
+        other : int, float, complex or FermionicHamiltonian
+            A scalar or a FermionicHamiltonian to substract from the operator self from.
+
+        Returns
+        -------
+        result : FermionicHamiltonian
+            The difference of the operator other and self.
+
+        """
+
+        if isinstance(other,(int,float,complex)):
+            other = FermionicHamiltonian({FermionicTerm():other})
+        if not isinstance(other,FermionicHamiltonian):
+            raise TypeError("Cannot substract FermionicHamiltonian and "+str(type(other)))
+
+        res_terms_dict = {}
+
+        for ladder_term,coeff in self.terms_dict.items():
+            res_terms_dict[ladder_term] = res_terms_dict.get(ladder_term,0)-coeff
+            if abs(res_terms_dict[ladder_term])<threshold:
+                del res_terms_dict[ladder_term]
+    
+        for ladder_term,coeff in other.terms_dict.items():
+            res_terms_dict[ladder_term] = res_terms_dict.get(ladder_term,0)+coeff
+            if abs(res_terms_dict[ladder_term])<threshold:
+                del res_terms_dict[ladder_term]
         
         result = FermionicHamiltonian(res_terms_dict)
         return result
@@ -209,10 +248,10 @@ class FermionicHamiltonian(Hamiltonian):
 
         res_terms_dict = {}
 
-        for pauli1, coeff1 in self.terms_dict.items():
-            for pauli2, coeff2 in other.terms_dict.items():
-                curr_pauli, curr_coeff = pauli1*pauli2
-                res_terms_dict[curr_pauli] = res_terms_dict.get(curr_pauli,0) + curr_coeff*coeff1*coeff2
+        for ladder_term1, coeff1 in self.terms_dict.items():
+            for ladder_term2, coeff2 in other.terms_dict.items():
+                curr_ladder_term = ladder_term1*ladder_term2
+                res_terms_dict[curr_ladder_term] = res_terms_dict.get(curr_ladder_term,0) + coeff1*coeff2
 
         result = FermionicHamiltonian(res_terms_dict)
         return result
@@ -241,10 +280,10 @@ class FermionicHamiltonian(Hamiltonian):
         if not isinstance(other,FermionicHamiltonian):
             raise TypeError("Cannot add FermionicHamiltonian and "+str(type(other)))
 
-        for pauli,coeff in other.terms_dict.items():
-            self.terms_dict[pauli] = self.terms_dict.get(pauli,0)+coeff
-            if abs(self.terms_dict[pauli])<threshold:
-                del self.terms_dict[pauli]       
+        for ladder_term,coeff in other.terms_dict.items():
+            self.terms_dict[ladder_term] = self.terms_dict.get(ladder_term,0)+coeff
+            if abs(self.terms_dict[ladder_term])<threshold:
+                del self.terms_dict[ladder_term]       
         return self         
 
     def __isub__(self,other):
@@ -264,10 +303,10 @@ class FermionicHamiltonian(Hamiltonian):
         if not isinstance(other,FermionicHamiltonian):
             raise TypeError("Cannot add FermionicHamiltonian and "+str(type(other)))
 
-        for pauli,coeff in other.terms_dict.items():
-            self.terms_dict[pauli] = self.terms_dict.get(pauli,0)-coeff
-            if abs(self.terms_dict[pauli])<threshold:
-                del self.terms_dict[pauli]  
+        for ladder_term,coeff in other.terms_dict.items():
+            self.terms_dict[ladder_term] = self.terms_dict.get(ladder_term,0)-coeff
+            if abs(self.terms_dict[ladder_term])<threshold:
+                del self.terms_dict[ladder_term]  
         return self
     
     def __imul__(self,other):
@@ -288,10 +327,10 @@ class FermionicHamiltonian(Hamiltonian):
 
         res_terms_dict = {}
 
-        for pauli1, coeff1 in self.terms_dict.items():
-            for pauli2, coeff2 in other.terms_dict.items():
-                curr_pauli, curr_coeff = pauli1*pauli2
-                res_terms_dict[curr_pauli] = res_terms_dict.get(curr_pauli,0) + curr_coeff*coeff1*coeff2
+        for ladder_term1, coeff1 in self.terms_dict.items():
+            for ladder_term2, coeff2 in other.terms_dict.items():
+                curr_ladder_term = ladder_term1*ladder_term2
+                res_terms_dict[curr_ladder_term] = res_terms_dict.get(curr_ladder_term,0) + coeff1*coeff2
 
         self.terms_dict = res_terms_dict    
 
@@ -301,23 +340,23 @@ class FermionicHamiltonian(Hamiltonian):
 
     def apply_threshold(self,threshold):
         """
-        Removes all Pauli terms with coefficient absolute value below the specified threshold.
+        Removes all ladder_term terms with coefficient absolute value below the specified threshold.
 
         Parameters
         ----------
         threshold : float
-            The threshold for the coefficients of the Pauli terms.
+            The threshold for the coefficients of the ladder_term terms.
 
         """
 
         delete_list = []
-        for pauli,coeff in self.terms_dict.items():
+        for ladder_term,coeff in self.terms_dict.items():
             if abs(coeff)<threshold:
-                delete_list.append(pauli)
-        for pauli in delete_list:
-            del self.terms_dict[pauli]
+                delete_list.append(ladder_term)
+        for ladder_term in delete_list:
+            del self.terms_dict[ladder_term]
 
-    def to_sparse_matrix(self):
+    #def to_sparse_matrix(self):
         """
         Returns a matrix representing the operator.
     
@@ -327,49 +366,7 @@ class FermionicHamiltonian(Hamiltonian):
             A sparse matrix representing the operator.
 
         """
-
-        import scipy.sparse as sp
-        from scipy.sparse import kron as TP, csr_matrix
-
-        I = csr_matrix([[1,0],[0,1]])
-
-        def get_matrix(P):
-            if P=="I":
-                return csr_matrix([[1,0],[0,1]])
-            if P=="X":
-                return csr_matrix([[0,1],[1,0]])
-            if P=="Y":
-                return csr_matrix([[0,-1j],[1j,0]])
-            else:
-                return csr_matrix([[1,0],[0,-1]])
-
-        def recursive_TP(keys,pauli_dict):
-            if len(keys)==1:
-                return get_matrix(pauli_dict.get(keys[0],"I"))
-            return TP(get_matrix(pauli_dict.get(keys.pop(0),"I")),recursive_TP(keys,pauli_dict))
-
-        pauli_dicts = []
-        coeffs = []
-
-        keys = set()
-        for pauli,coeff in self.terms_dict.items():
-            curr_dict = pauli.pauli_dict
-            keys.update(set(curr_dict.keys()))
-            pauli_dicts.append(curr_dict)    
-            coeffs.append(coeff)
-
-        keys = set()
-        for item in pauli_dicts:
-            keys.update(set(item.keys()))
-        keys = sorted(keys)
-        dim = len(keys)
-
-        m = len(coeffs)
-        M = sp.csr_matrix((2**dim, 2**dim))
-        for k in range(m):
-            M += complex(coeffs[k])*recursive_TP(keys.copy(),pauli_dicts[k])
-
-        return M
+        
 
     def ground_state_energy(self):
         """
@@ -381,77 +378,11 @@ class FermionicHamiltonian(Hamiltonian):
             The ground state energy. 
 
         """
-
-        from scipy.sparse.linalg import eigsh
-
-        M = self.to_sparse_matrix()
-        # Compute the smallest eigenvalue
-        eigenvalues, _ = eigsh(M, k=1, which='SA')  # 'SA' stands for smallest algebraic
-        E = eigenvalues[0]
-
-        return E
+        pass
     
     #
     # Partitions 
     #
-
-    # Commutativity: Partitions the FermionicHamiltonian into FermionicHamiltonians with pairwise commuting FermionicTerms
-    def commuting_groups(self):
-
-        groups = [] # Groups of commuting FermionicTerms 
-
-        for pauli,coeff in self.terms_dict.items():
-
-            commute_bool = False
-            if len(groups) > 0:
-                for group in groups:
-                    for pauli_,coeff_ in group.terms_dict.items():
-                        commute_bool = pauli_.commute(pauli)
-                        if not commute_bool:
-                            break
-                    if commute_bool:
-                        group.terms_dict[pauli]=coeff
-                        break
-            if len(groups)==0 or not commute_bool: 
-                groups.append(FermionicHamiltonian({pauli:coeff}))
-
-        return groups
-
-    # Qubit-wise commutativity: Partitions the FermionicHamiltonian into FermionicHamiltonians with pairwise qubit-wise commuting FermionicTerms
-    def commuting_qw_groups(self, show_bases=False):
-
-        groups = [] # Groups of qubit-wise commuting FermionicTerms
-        bases = [] # Bases as FermionicTerms
-
-        # Sorted insertion heuristic https://quantum-journal.org/papers/q-2021-01-20-385/pdf/
-        sorted_terms = sorted(self.terms_dict.items(), key=lambda item: abs(item[1]), reverse=True)
-
-        for pauli,coeff in sorted_terms:
-
-            commute_bool = False
-            if len(groups)>0:
-                n = len(groups)
-                for i in range(n):
-                    commute_bool = bases[i].commute_qw(pauli)
-                    if commute_bool:
-                        bases[i].update(pauli.pauli_dict)
-                        groups[i].terms_dict[pauli]=coeff
-                        break
-            if len(groups)==0 or not commute_bool:
-                groups.append(FermionicHamiltonian({pauli:coeff}))
-                bases.append(pauli.copy())
-
-        if show_bases:
-            return groups, bases
-        else:
-            return groups
-    
-    #
-    # Measurement settings
-    #
-
-    def pauli_measurement(self):
-        return PauliMeasurement(self)
 
     #
     # Trotterization
@@ -484,33 +415,4 @@ class FermionicHamiltonian(Hamiltonian):
                 The number of iterations the unitary $U_1(t,N)$ is applied. The default is 1.
         
         """
-
-        from qrisp import conjugate, rx, ry, rz, cx, h, IterationEnvironment, gphase
-
-        pauli_measurement = self.pauli_measurement()
-        bases = pauli_measurement.bases
-        indices = pauli_measurement.operators_ind
-        ops = pauli_measurement.operators_int
-        coeffs = pauli_measurement.coefficients
-
-        def trotter_step(qarg, t, steps):
-
-            # TODO
-            #if constant != 0:
-            #    gphase(t/steps*constant,qarg[0])
-
-            N = len(bases)
-            for k in range(N):
-                basis = bases[k].pauli_dict
-                with conjugate(change_of_basis)(qarg, basis):
-                    M = len(ops[k])
-                    for l in range(M):
-                        with conjugate(parity)(qarg, indices[k][l]):
-                            rz(-2*coeffs[k][l]*t/steps,qarg[indices[k][l][-1]])
-
-        def U(qarg, t=1, steps=1, iter=1):
-            with IterationEnvironment(qarg.qs, iter):
-                for i in range(steps):
-                    trotter_step(qarg, t, steps)
-
-        return U
+        pass

@@ -22,6 +22,8 @@ Each type of Hamiltonian comes with comprehensive documentation and brief exampl
      - describe Hamiltonians in terms of Pauli operators
    * - :ref:`BoundPauliHamiltonian <BoundPauliHamiltonian>`
      - describe Hamiltonians in terms of Pauli operators, bound to specific QuantumVariables
+   * - :ref:`FermionicHamiltonian <FermionicHamiltonian>`
+     - describe Hamiltonians in terms of fermionic ladder operators
 
 We encourage you to explore these Hamiltonians, delve into their documentation, and experiment with their implementations.
 
@@ -33,3 +35,4 @@ We encourage you to explore these Hamiltonians, delve into their documentation, 
    Hamiltonian
    PauliHamiltonian
    BoundPauliHamiltonian
+   FermionicHamiltonian

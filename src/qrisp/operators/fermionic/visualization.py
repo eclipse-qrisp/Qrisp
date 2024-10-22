@@ -16,23 +16,43 @@
 ********************************************************************************/
 """
 
-# -*- coding: utf-8 -*-
+#
+# ONLY USED FOR LATEX PRINTING
+#
 
-#import qrisp.operators.pauli as pauli
-#import qrisp.operators.fermionic as fermionic
-#from qrisp.operators.hamiltonian import *
-#from qrisp.operators.hamiltonian_tools import *
+import sympy as sp
+from sympy import Symbol, I
+import numpy as np
 
-from qrisp.operators.hamiltonian import *
-from qrisp.operators.hamiltonian_tools import *
+#
+# Pauli symbols (only used for visualization, i.e., LateX printing with SymPy)
+#  
 
-import qrisp.operators.pauli as pauli
+class a_(Symbol):
 
-import qrisp.operators.fermionic as fermionic
+    __slots__ = ("ladder","index")
 
-#from qrisp.operators.pauli.pauli_operator import *
-#from qrisp.operators.pauli.bound_pauli_operator import *
-#from qrisp.operators.pauli.pauli_measurement import *
-#from qrisp.operators.pauli.pauli import *
+    def __new__(cls, index):
+        obj = Symbol.__new__(cls, "%s%s" %("a",index), commutative=False, hermitian=True)
+        obj.index = index
+        return obj
+        
+
+class c_(Symbol):
+
+    __slots__ = ("ladder","index")
+
+    def __new__(cls, index):
+        obj = Symbol.__new__(cls, "%s%s" %("c",index), commutative=False, hermitian=True)
+        obj.index = index
+        return obj
+    
+       
+
+
+
+
+
+
 
 

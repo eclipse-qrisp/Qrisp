@@ -18,21 +18,5 @@
 
 # -*- coding: utf-8 -*-
 
-#import qrisp.operators.pauli as pauli
-#import qrisp.operators.fermionic as fermionic
-#from qrisp.operators.hamiltonian import *
-#from qrisp.operators.hamiltonian_tools import *
-
-from qrisp.operators.hamiltonian import *
-from qrisp.operators.hamiltonian_tools import *
-
-import qrisp.operators.pauli as pauli
-
-import qrisp.operators.fermionic as fermionic
-
-#from qrisp.operators.pauli.pauli_operator import *
-#from qrisp.operators.pauli.bound_pauli_operator import *
-#from qrisp.operators.pauli.pauli_measurement import *
-#from qrisp.operators.pauli.pauli import *
-
-
+from qrisp.operators.fermionic.fermionic_hamiltonian import *
+from qrisp.operators.fermionic.fermionic import *
