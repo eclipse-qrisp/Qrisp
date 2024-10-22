@@ -55,7 +55,10 @@ def collect_environments(jaxpr):
         if eqn.primitive.name == "pjit":
             
             new_params = dict(eqn.params)
-            new_params["jaxpr"] = ClosedJaxpr(collect_environments(eqn.params["jaxpr"].jaxpr),
+            
+            collected_jaspr = collect_environments(eqn.params["jaxpr"].jaxpr)
+            
+            new_params["jaxpr"] = ClosedJaxpr(collected_jaspr,
                                               eqn.params["jaxpr"].consts)
             
             eqn = JaxprEqn(params = new_params,
@@ -64,6 +67,8 @@ def collect_environments(jaxpr):
                                     outvars = list(eqn.outvars),
                                     effects = eqn.effects,
                                     source_info = eqn.source_info,)
+            
+            
         
         # If an exit primitive is found, start the collecting mechanism.
         if eqn.primitive.name == "jasp.q_env" and "exit" in eqn.params.values():
@@ -110,12 +115,15 @@ def collect_environments(jaxpr):
         # Append the equation
         new_eqn_list.append(eqn)
     
+    if isinstance(jaxpr, Jaspr):
+        return jaxpr.update_eqns(new_eqn_list)
+    else:
     # Return the transformed equation
-    return type(jaxpr)(constvars = jaxpr.constvars, 
-                 invars = jaxpr.invars,
-                 outvars = jaxpr.outvars,
-                 eqns = new_eqn_list)
-    
+        return type(jaxpr)(constvars = jaxpr.constvars, 
+                     invars = jaxpr.invars,
+                     outvars = jaxpr.outvars,
+                     eqns = new_eqn_list)
+        
     
 
 def find_invars(eqn_list):

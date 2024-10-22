@@ -108,9 +108,9 @@ class Jaspr(Jaxpr):
     5.5
     """
     
-    __slots__ = "permeability", "isqfree", "hashvalue"
+    __slots__ = "permeability", "isqfree", "hashvalue", "ctrl_jaspr"
     
-    def __init__(self, *args, permeability = None, isqfree = None, **kwargs):
+    def __init__(self, *args, permeability = None, isqfree = None, ctrl_jaspr = None, **kwargs):
         
         if len(args) == 1:
             kwargs["jaxpr"] = args[0]
@@ -142,6 +142,7 @@ class Jaspr(Jaxpr):
             self.permeability[var] = permeability.get(var, None)
         
         self.isqfree = isqfree
+        self.ctrl_jaspr = ctrl_jaspr
             
         if not isinstance(self.invars[0].aval, AbstractQuantumCircuit):
             raise Exception(f"Tried to create a Jaspr from data that doesn't have a QuantumCircuit as first argument (got {type(self.invars[0].aval)} instead)")
@@ -253,6 +254,8 @@ class Jaspr(Jaxpr):
         (``a`` and ``b``)            
 
         """
+        if self.ctrl_jaspr is not None and num_ctrl == 1 and ctrl_state == -1:
+            return self.ctrl_jaspr
         
         return multi_control_jaspr(self, num_ctrl, ctrl_state)
     
@@ -382,7 +385,10 @@ class Jaspr(Jaxpr):
         We see that as expected, the order of the ``cx`` and the ``t`` gate has been switched and the ``t`` gate has been turned into a ``t_dg``.
 
         """
-        return flatten_environments(self)
+        res = flatten_environments(self)
+        if self.ctrl_jaspr is not None:
+            res.ctrl_jaspr = self.ctrl_jaspr.flatten_environments()
+        return res
     
     def __call__(self, *args):
         
@@ -456,6 +462,13 @@ class Jaspr(Jaxpr):
     @lru_cache(maxsize = int(1E5))
     def from_cache(cls, jaxpr):
         return Jaspr(jaxpr = jaxpr)
+    
+    def update_eqns(self, eqns):
+        return Jaspr(constvars = list(self.constvars), 
+                     invars = list(self.invars),
+                     outvars = list(self.outvars),
+                     eqns = list(eqns),
+                     ctrl_jaspr = self.ctrl_jaspr)
     
     def to_qir(self):
         """

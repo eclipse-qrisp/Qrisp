@@ -52,18 +52,8 @@ def control_eqn(eqn, ctrl_qubit_var):
         
         new_params = dict(eqn.params)
         
-        # If the params attribute has the controlled_jaspr entry, this means
-        # that the equation originates from a custom_control call.
-        # In this case the controlled version sits in precisely that attribute
-        # We therefore use this version instead of generating the generic one.
-        if "controlled_jaspr" in new_params:
-            
-            new_params["jaxpr"] = ClosedJaxpr(new_params["controlled_jaspr"].flatten_environments(),
-                                              eqn.params["jaxpr"].consts)
-            new_params["name"] = "cusc_" + new_params["name"]
-            del new_params["controlled_jaspr"]
-        else:
-            new_params["jaxpr"] = ClosedJaxpr(control_jaspr(eqn.params["jaxpr"].jaxpr),
+        if isinstance(eqn.params["jaxpr"].jaxpr, Jaspr):
+            new_params["jaxpr"] = ClosedJaxpr(new_params["jaxpr"].jaxpr.control(1),
                                               eqn.params["jaxpr"].consts)
             
         return JaxprEqn(primitive = eqn.primitive,

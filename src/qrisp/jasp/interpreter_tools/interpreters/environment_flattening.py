@@ -94,9 +94,14 @@ def flatten_environments_in_pjit_eqn(eqn, context_dic):
     
     eqn = copy_jaxpr_eqn(eqn)
     
-    eqn.params["jaxpr"] = ClosedJaxpr(flatten_environments(eqn.params["jaxpr"].jaxpr),
-                                      eqn.params["jaxpr"].consts)
+    jaxpr = eqn.params["jaxpr"].jaxpr
     
+    from qrisp.jasp import Jaspr
+    if isinstance(jaxpr, Jaspr):
+        jaxpr = jaxpr.flatten_environments()
+    
+    eqn.params["jaxpr"] = ClosedJaxpr(jaxpr,
+                                      eqn.params["jaxpr"].consts)
     exec_eqn(eqn, context_dic)
     
 def flatten_environments_in_while_eqn(eqn, context_dic):

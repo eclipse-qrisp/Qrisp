@@ -224,8 +224,10 @@ def custom_control(func):
             
             # Retrieve the equation
             jit_eqn = jax._src.core.thread_local_state.trace_state.trace_stack.dynamic.jaxpr_stack[0].eqns[-1]
-            # Update the .params attribute
-            jit_eqn.params["controlled_jaspr"] = controlled_jaspr    
+            
+            # Store controlled version
+            jit_eqn.params["jaxpr"].jaxpr.ctrl_jaspr = controlled_jaspr
+            
         
         return res
         
