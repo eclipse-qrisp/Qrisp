@@ -69,6 +69,14 @@ class ControlEnvironment(QuantumEnvironment):
 
     def __init__(self, ctrl_qubits, ctrl_state=-1, ctrl_method=None, invert = False):
         
+        if isinstance(ctrl_state, int):
+            if ctrl_state < 0:
+                ctrl_state += 2**len(ctrl_qubits)
+                
+            self.ctrl_state = bin_rep(ctrl_state, len(ctrl_qubits))[::-1]
+        else:
+            self.ctrl_state = str(ctrl_state)
+        
         if check_for_tracing_mode():
             
             QuantumEnvironment.__init__(self, list(ctrl_qubits))
@@ -88,14 +96,6 @@ class ControlEnvironment(QuantumEnvironment):
             if isinstance(ctrl_qubits, Qubit):
                 ctrl_qubits = [ctrl_qubits]
                 
-            if isinstance(ctrl_state, int):
-                if ctrl_state < 0:
-                    ctrl_state += 2**len(ctrl_qubits)
-                    
-                self.ctrl_state = bin_rep(ctrl_state, len(ctrl_qubits))[::-1]
-            else:
-                self.ctrl_state = str(ctrl_state)
-            
                 
             self.ctrl_qubits = ctrl_qubits
             self.invert = invert
@@ -386,7 +386,7 @@ class ControlEnvironment(QuantumEnvironment):
         
         num_ctrl = len(args) - len(body_jaspr.invars)
         flattened_jaspr = body_jaspr.flatten_environments()
-        controlled_jaspr = flattened_jaspr.control(num_ctrl)
+        controlled_jaspr = flattened_jaspr.control(num_ctrl, ctrl_state = self.ctrl_state)
         
         import jax
         res = jax.jit(controlled_jaspr.eval)(*args)

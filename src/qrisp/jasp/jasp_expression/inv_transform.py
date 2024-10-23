@@ -78,6 +78,7 @@ def invert_jaspr(jaspr):
     # the one that doesn't execute Operations
     op_eqs = []
     non_op_eqs = []
+    deletions = []
     
     # Since the Operation equations require as inputs only qubit object and a QuantumCircuit
     # we achieve our goal by pulling all the non-Operation equations to the front
@@ -89,6 +90,8 @@ def invert_jaspr(jaspr):
             op_eqs.insert(0, invert_eqn(eqn))
         elif eqn.primitive.name == "jasp.measure":
             raise Exception("Tried to invert a jaspr containing a measurement")
+        elif eqn.primitive.name == "jasp.delete_qubits":
+            deletions.append(eqn)
         else:
             non_op_eqs.append(eqn)
 
@@ -107,5 +110,5 @@ def invert_jaspr(jaspr):
     return Jaspr(constvars = jaspr.constvars, 
                  invars = jaspr.invars, 
                  outvars = op_eqs[-1].outvars[:1] + jaspr.outvars[1:], 
-                 eqns = non_op_eqs + op_eqs)
+                 eqns = non_op_eqs + op_eqs + deletions)
         
