@@ -34,13 +34,23 @@ QIRO Cost operator
 
 .. autofunction:: create_max_indep_cost_operator_reduced
 
+QIRO with Constrained mixer
+---------------------------
+
+.. autofunction:: create_max_indep_controlled_mixer_reduced
+
+.. autofunction:: qiro_max_indep_set_init_function
+
 
 Example implementation
 ----------------------
+
+The implementation below is for the standard unconstrained cost operator implementation. An implementation with a controlled mixer ansatz is shown in the tutorial section.
+
 ::
 
     from qrisp import QuantumVariable
-    from qrisp.qiro import QIROProblem, create_max_indep_replacement_routine, create_max_indep_cost_operator_reduced, qiro_RXMixer, qiro_init_function
+    from qrisp.qiro import QIROProblem, create_max_indep_replacement_routine, create_max_indep_cost_operator_reduced, qiro_rx_mixer, qiro_init_function
     from qrisp.qaoa import create_max_indep_set_cl_cost_function
     import matplotlib.pyplot as plt
     import networkx as nx
@@ -53,7 +63,7 @@ Example implementation
     qiro_instance = QIROProblem(G,
                                 replacement_routine=create_max_indep_replacement_routine,
                                 cost_operator=create_max_indep_cost_operator_reduced,
-                                mixer=qiro_RXMixer,
+                                mixer=qiro_rx_mixer,
                                 cl_cost_function=create_max_indep_set_cl_cost_function,
                                 init_function=qiro_init_function
                                 )
