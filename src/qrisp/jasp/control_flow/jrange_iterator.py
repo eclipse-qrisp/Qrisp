@@ -110,7 +110,11 @@ def jrange(*args):
     """
     .. _jrange:
     
-    Performs a loop with a dynamic bound.
+    Performs a loop with a dynamic bound. Similar to the Python native ``range``,
+    this iterator can receive multiple arguments. If it receives just one, this
+    value is interpreted as the stop value and the start value is assumed to be 0.
+    Two arguments represent start and stop value, whereas three represent start,
+    stop and step.
     
     .. warning::
         
@@ -127,8 +131,12 @@ def jrange(*args):
 
     Parameters
     ----------
+    start : int
+        The loop index to start at.
     stop : int
         The loop index to stop at.
+    step : int
+        The value to increase the loop index by after each iteration.
 
     Examples
     --------
