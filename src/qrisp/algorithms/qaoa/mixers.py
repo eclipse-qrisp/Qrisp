@@ -343,7 +343,7 @@ def portfolio_mixer():
         mixer_op(qv, np.pi/8)
 
     """
-    from qrisp.misc.dicke_state import dicke_state
+    from qrisp.alg_primitives import dicke_state
 
     def inv_prepare_dicke(qv, k):
         with invert():

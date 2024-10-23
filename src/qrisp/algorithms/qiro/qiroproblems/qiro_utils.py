@@ -69,5 +69,5 @@ def find_max(single_cor, double_cor, res, solutions):
         if abs(summe) > abs(max):
             max, max_item = summe, node
             sign = np.sign(summe)
-    
+
     return max_item, sign

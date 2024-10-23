@@ -25,7 +25,7 @@ maxclique_instance = QAOAProblem(create_max_indep_set_mixer(G), RX_mixer, create
 qiro_instance = QIROProblem(problem = Gtwo,  
                             replacement_routine = create_max_clique_replacement_routine, 
                             cost_operator = create_max_clique_cost_operator_reduced,
-                            mixer = qiro_RXMixer,
+                            mixer = qiro_rx_mixer,
                             cl_cost_function = create_max_clique_cl_cost_function,
                             init_function = qiro_init_function
                             )

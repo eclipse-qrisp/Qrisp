@@ -27,7 +27,7 @@ import copy
 from qrisp.algorithms.qiro.qiroproblems.qiro_utils import * 
 
 
-def create_maxsat_replacement_routine(res, problem, solutions=[], exclusions=[]):
+def create_maxsat_replacement_routine(res, problem_updated):
     """
     Creates a replacement routine for the problem structure, i.e., defines the replacement rules. 
     See the `original paper <https://journals.aps.org/prxquantum/abstract/10.1103/PRXQuantum.5.020327>`_ for a description of the update rules.
@@ -36,12 +36,9 @@ def create_maxsat_replacement_routine(res, problem, solutions=[], exclusions=[])
     ----------
     res : dict
         Result dictionary of QAOA optimization procedure.
-    problem : tuple(int, list[list[int]])
-        The number of variables and a list of clauses for the MaxSat instance.
-    solutions : list
-        Qubits which were found to be positively correlated, i.e., part of the problem solution.
-    exclusions : list
-        Qubits which were found to be negatively correlated, i.e., not part of the problem solution, or contradict solution qubits in accordance with the update rules.  
+    problem_updated : List
+        Updates that happened during the QIRO routine. Consits of the updated problem, a list of Qubits which were found to be positively correlated, i.e. part of the problem solution, 
+        and a list Qubits which were found to be negatively correlated, i.e. they contradict solution qubits in accordance with the update rules.  
 
     Returns
     -------
@@ -55,6 +52,10 @@ def create_maxsat_replacement_routine(res, problem, solutions=[], exclusions=[])
         Updated set of exclusions to the problem.
 
     """
+
+    problem = problem_updated[0]
+    solutions = problem_updated[1]
+    exclusions =  problem_updated[2]
     
     numVars = problem[0]
     clauses = copy.deepcopy(problem[1])
@@ -152,7 +153,7 @@ def create_maxsat_replacement_routine(res, problem, solutions=[], exclusions=[])
     return [numVars, clauses], solutions, sign, exclusions
 
 
-def create_maxsat_cost_operator_reduced(problem, solutions=[]):
+def create_maxsat_cost_operator_reduced(problem_updated):
 
     """
     Creates the ``cost_operator`` for the problem instance.
@@ -160,10 +161,9 @@ def create_maxsat_cost_operator_reduced(problem, solutions=[]):
     
     Parameters
     ----------
-    problem : tuple(int, list[list[int]])
-        The number of variables and a list of clauses for the MaxSat instance.
-    solutions : list
-        Variables that were found to be a part of the solution.
+    problem_updated : List
+        Updates that happened during the QIRO routine. Consits of the updated problem, a list of Qubits which were found to be positively correlated, i.e. part of the problem solution, 
+        and a list Qubits which were found to be negatively correlated, i.e. they contradict solution qubits in accordance with the update rules.  
 
     Returns
     -------
@@ -173,7 +173,8 @@ def create_maxsat_cost_operator_reduced(problem, solutions=[]):
     """
     
     from qrisp.algorithms.qaoa import create_maxsat_cost_polynomials
-    
+
+    problem = problem_updated[0]
     
     cost_polynomials, symbols = create_maxsat_cost_polynomials(problem)
 

@@ -20,7 +20,7 @@ mes_kwargs = {
 qiro_instance = QIROProblem(problem = problem,  
                             replacement_routine = create_maxsat_replacement_routine, 
                             cost_operator = create_maxsat_cost_operator_reduced,
-                            mixer = qiro_RXMixer,
+                            mixer = qiro_rx_mixer,
                             cl_cost_function = create_maxsat_cl_cost_function,
                             init_function = qiro_init_function
                             )

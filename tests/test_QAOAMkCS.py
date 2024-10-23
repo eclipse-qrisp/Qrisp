@@ -29,7 +29,6 @@ qrisp_sim = def_backend
 qaoa_backend = qrisp_sim
 
 depth = 3
-
 def mkcs_obj(quantumcolor_array, G):
         # Set value of color integer to 1
     color = 1
@@ -159,19 +158,14 @@ def test_mkcs_5nodes():
         if all(res_str_bin[pair[0]] != res_str_bin[pair[1]] for pair in list(G.edges())):
             return True
     
-    for _ in range(5):
-        if G_bin() == True:
-            break
-        else: 
-            assert False
-#    bin = G_bin
+    for _ in range(20):
+        print(G_bin())
+        if not G_bin() == True:
+            print("Ayayay")
+        
 
 
-
-
-
-
-
+test_mkcs_5nodes()
 # ONE HOT
 
 

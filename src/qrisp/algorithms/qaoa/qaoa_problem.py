@@ -522,7 +522,6 @@ class QAOAProblem:
             self.cost_operator(qarg, optimal_theta[i])
             self.mixer(qarg, optimal_theta[i+depth])
         opt_res = qarg.get_measurement(**mes_kwargs)
-        
         return opt_res
     
     def train_function(self, qarg, depth, mes_kwargs = {}, max_iter = 50, init_type = "random", optimizer="COBYLA"):
