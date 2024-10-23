@@ -19,6 +19,8 @@
 import numpy as np
 
 from jax.core import JaxprEqn, ClosedJaxpr, Var, Jaxpr
+
+from qrisp.jasp.jasp_expression.centerclass import Jaspr
 from qrisp.jasp import eval_jaxpr, TracingQuantumSession, OperationPrimitive
 
 control_var_count = np.zeros(1)
@@ -147,42 +149,42 @@ def control_jaspr(jaspr):
                  outvars = jaspr.outvars, 
                  eqns = new_eqns)
         
-def multi_control_jaspr(jaspr, num_ctrl = 1, ctrl_state = -1):
+def multi_control_jaspr(jaspr, num_ctrl, ctrl_state):
     
-    if num_ctrl == 1:
-        return control_jaspr(jaspr)
-    
-    from qrisp.jasp import Jaspr, AbstractQubit, make_jaspr
+    from qrisp.jasp import AbstractQubit, make_jaspr
     
     ctrl_vars = [Var(suffix = "", aval = AbstractQubit(), count = control_var_count[0] + _) for _ in range(num_ctrl)]
     control_var_count[0] += num_ctrl
     ctrl_avals = [x.aval for x in ctrl_vars]
     
-    temp_jaxpr = make_jaspr(exec_multi_controlled_jaspr(jaspr, num_ctrl))(*(ctrl_avals + [var.aval for var in jaspr.invars[1:] + jaspr.constvars]))
-    
-    invars = temp_jaxpr.invars[num_ctrl:-len(jaspr.constvars)]
-    constvars = temp_jaxpr.invars[:num_ctrl] + temp_jaxpr.invars[-len(jaspr.constvars):]
-    
-    res = Jaspr(temp_jaxpr)
-    
-    return res
+    return make_jaspr(exec_multi_controlled_jaspr(jaspr, num_ctrl, ctrl_state))(*(ctrl_avals + [var.aval for var in jaspr.invars[1:] + jaspr.constvars]))
     
     
-def exec_multi_controlled_jaspr(jaspr, num_ctrls):
+def exec_multi_controlled_jaspr(jaspr, num_ctrls, ctrl_state):
     
     def multi_controlled_jaspr_executor(*args):
         
+        qs = TracingQuantumSession.get_instance()
+        ctrls = list(args)[:num_ctrls]
+        invalues = list(args)[num_ctrls:]
+        controlled_jaspr = control_jaspr(jaspr)
+        
+        from qrisp.circuit import XGate
+        
         if num_ctrls == 1:
-            controlled_jaspr = control_jaspr(jaspr)
-            return eval_jaxpr(controlled_jaspr)(args[0], *args)
+            
+            if ctrl_state == "0":
+                qs.append(XGate(), ctrls[0])
+            temp = controlled_jaspr.inline(*args)
+            if ctrl_state == "0":
+                qs.append(XGate(), ctrls[0])
+            return temp
             
         else:
-            from qrisp.circuit import XGate
+            
             from qrisp import QuantumBool
             
             
-
-            qs = TracingQuantumSession.get_instance()
             # args = list(args)
             # qs.abs_qc = args.pop(0)
             
@@ -190,13 +192,10 @@ def exec_multi_controlled_jaspr(jaspr, num_ctrls):
             # for i in range(len(jaspr.invars)-1):
                 # invalues.append(args.pop(0))
             # constvalues = args
-            ctrls = list(args)[:num_ctrls]
-            invalues = list(args)[num_ctrls:]
+
+            mcx_operation = XGate().control(num_ctrls, ctrl_state = ctrl_state)
             
-            controlled_jaspr = control_jaspr(jaspr)
-            mcx_operation = XGate().control(num_ctrls)
-            
-            ctrl_qbl = QuantumBool()
+            ctrl_qbl = QuantumBool(name = "ctrl_qbl*")
             ctrl_qb = ctrl_qbl[0]
             
             qs.append(mcx_operation, ctrls + [ctrl_qb])
@@ -208,4 +207,38 @@ def exec_multi_controlled_jaspr(jaspr, num_ctrls):
             return res
             
     return multi_controlled_jaspr_executor
+
+
+class ControlledJaspr(Jaspr):
+    
+    __slots__ = ("base_jaspr", "ctrl_state")
+    
+    def __init__(self, base_jaspr, ctrl_state):
+        
+        self.base_jaspr = base_jaspr
+        self.ctrl_state = str(ctrl_state)
+         
+        if ctrl_state == "1" and base_jaspr.ctrl_jaspr is not None:
+            controlled_jaspr = base_jaspr.ctrl_jaspr
+        else:
+            controlled_jaspr = multi_control_jaspr(base_jaspr, len(ctrl_state), ctrl_state)
+        
+        Jaspr.__init__(self, controlled_jaspr)
+        
+    def control(self, num_ctrl, ctrl_state = -1):
+        
+        if isinstance(ctrl_state, int):
+            if ctrl_state < 0:
+                ctrl_state += 2**num_ctrl
+                
+            ctrl_state = bin(ctrl_state)[2:].zfill(num_ctrl)
+        else:
+            ctrl_state = str(ctrl_state)
+        
+        return ControlledJaspr(self.base_jaspr, ctrl_state + self.ctrl_state)
+    
+    def inverse(self):
+        return ControlledJaspr(self.base_jaspr.inverse(), self.ctrl_state)
+        
+        
         

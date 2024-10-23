@@ -197,9 +197,6 @@ def create_qiskit_instruction(op, params=[]):
     
     elif op.name == "measure":
         qiskit_ins = Measure()
-
-    elif op.name == "swap":
-        qiskit_ins = qsk_gates.SwapGate()
     elif op.name == "barrier":
         qiskit_ins = Barrier(op.num_qubits)
     elif op.name == "cp":

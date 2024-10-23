@@ -52,7 +52,13 @@ def pjit_to_gate(pjit_eqn, context_dic):
         invalues[0] = new_qc
 
     # Evaluate the definition
-    res = eval_jaxpr(definition_jaxpr)(*invalues)
+    def eqn_evaluator(eqn, context_dic):
+        if eqn.primitive.name == "pjit":
+            pjit_to_gate(eqn, context_dic)
+        else:
+            return True
+    
+    res = eval_jaxpr(definition_jaxpr, eqn_evaluator = eqn_evaluator)(*invalues)
     
     if len(definition_jaxpr.outvars) == 1:
         res = [res]
@@ -82,7 +88,6 @@ def pjit_to_gate(pjit_eqn, context_dic):
         
         # Append the wrapped old circuit to the new circuit
         old_qc.append(new_qc.to_op(name = pjit_eqn.params["name"]), new_qc.qubits, new_qc.clbits)
-        
         res = list(res)
         res[0] = old_qc
       

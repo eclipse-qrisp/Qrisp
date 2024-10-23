@@ -18,10 +18,10 @@
 from functools import lru_cache
 
 from jax import make_jaxpr
-from jax.core import Jaxpr, ClosedJaxpr, Literal
+from jax.core import Jaxpr, Literal
 import jax.numpy as jnp
 
-from qrisp.jasp.jasp_expression import invert_jaspr, multi_control_jaspr, collect_environments
+from qrisp.jasp.jasp_expression import invert_jaspr, collect_environments
 from qrisp.jasp import eval_jaxpr, pjit_to_gate, flatten_environments
 from qrisp.jasp.primitives import AbstractQuantumCircuit
 
@@ -257,7 +257,17 @@ class Jaspr(Jaxpr):
         if self.ctrl_jaspr is not None and num_ctrl == 1 and ctrl_state == -1:
             return self.ctrl_jaspr
         
-        return multi_control_jaspr(self, num_ctrl, ctrl_state)
+        from qrisp.jasp import ControlledJaspr
+        
+        if isinstance(ctrl_state, int):
+            if ctrl_state < 0:
+                ctrl_state += 2**num_ctrl
+                
+            ctrl_state = bin(ctrl_state)[2:].zfill(num_ctrl)
+        else:
+            ctrl_state = str(ctrl_state)
+        
+        return ControlledJaspr(self, ctrl_state)
     
     def to_qc(self, *args):
         """

@@ -387,7 +387,17 @@ class ControlEnvironment(QuantumEnvironment):
         num_ctrl = len(args) - len(body_jaspr.invars)
         flattened_jaspr = body_jaspr.flatten_environments()
         controlled_jaspr = flattened_jaspr.control(num_ctrl)
-        res = controlled_jaspr.eval(*args)
+        
+        import jax
+        res = jax.jit(controlled_jaspr.eval)(*args)
+        
+        # Retrieve the equation
+        jit_eqn = jax._src.core.thread_local_state.trace_state.trace_stack.dynamic.jaxpr_stack[0].eqns[-1]
+        jit_eqn.params["jaxpr"] = jax.core.ClosedJaxpr(controlled_jaspr, jit_eqn.params["jaxpr"].consts)
+        jit_eqn.params["name"] = "ctrl_env"
+        
+        # res = pjit_p.bind(*args, jaxpr = controlled_jaspr, name = "ctrl_env", inline = False)
+        
         insert_outvalues(eqn, context_dic, res)
         
 
