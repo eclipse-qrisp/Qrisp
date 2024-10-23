@@ -19,24 +19,74 @@
 import jax.numpy as jnp
 class JRangeIterator:
     
-    def __init__(self, stop):
+    def __init__(self, *args):
         
-        self.stop = jnp.asarray(stop, dtype = "int32")
+        # Differentiate between the 3 possible cases of input signature
+        
+        
+        if len(args) == 1:
+            # In the case of one input argument, this argument is the stop value
+            self.start = None
+            self.stop = jnp.asarray(args[0], dtype = "int32")
+            self.step = jnp.asarray(1, dtype = "int32")
+        elif len(args) == 2:
+            
+            # In the case of two arguments, the first one is the start value
+            # and the second one is the stop value.
+            
+            # To keep the environment flattening simple, we apply a trick such that we
+            # only have to keep the flatten the case where the start value is 0
+            
+            # For that, we set the stop value to stop minus start.
+            # This way we can start the counter always at 0.
+            
+            # We make up for this by increment the iterator results by start
+            # to keep the semantics
+            self.start = jnp.asarray(args[0], dtype = "int32")
+            self.stop = jnp.asarray(args[1] - args[0], dtype = "int32")
+            self.step = jnp.asarray(1, dtype = "int32")
+        elif len(args) == 3:
+            # Three arguments denote the case of a non-trivial step
+            self.start = jnp.asarray(args[0], dtype = "int32")
+            self.stop = jnp.asarray(args[1] - args[0], dtype = "int32")
+            self.step = jnp.asarray(args[2], dtype = "int32")
+            
         
     def __iter__(self):
         self.iteration = 0
         return self
     
     def __next__(self):
+        # The idea is now to trace two iterations to capture what values get
+        # updated after each iteration.
+        # We capture the loop semantics using the JIterationEnvironment.
+        # The actual jax loop primitive is then compiled in
+        # JIterationEnvironment.jcompile
         
         self.iteration += 1
         if self.iteration == 1:
             from qrisp.environments import JIterationEnvironment
             self.iter_env = JIterationEnvironment()
+            # Enter the environment
             self.iter_env.__enter__()
-            return self.stop
+            
+            # To avoid creating a new tracer, we use the stop value tracer as
+            # a loop index. Note that this is just to capture the loop iteration
+            # instructions. The actual compilation to a while primitive happens
+            # in JIterationEnvironment.jcompile.
+            if self.start is None:
+                return self.stop
+            else:
+                # If we have a non-trivial start value, we increment the counter
+                # because in the jcompile method we assume that the counter starts
+                # at 0.
+                return self.stop + self.start
+            
         elif self.iteration == 2:
-            self.stop += 1
+            # Perform the incrementation
+            self.stop += self.step
+            
+            # Exit the old environment and enter the new one.
             self.iter_env.__exit__(None, None, None)
             self.iter_env.__enter__()
             
@@ -45,13 +95,18 @@ class JRangeIterator:
             # This is important to catch the error that should arise when
             # the user wants to use the loop index as a carry value.
             self.stop += 0
-            return self.stop
+            
+            if self.start is None:
+                return self.stop
+            else:
+                return self.stop + self.start
+            
         elif self.iteration == 3:
-            self.stop += 1
+            self.stop += self.step
             self.iter_env.__exit__(None, None, None)
             raise StopIteration
 
-def jrange(stop):
+def jrange(*args):
     """
     .. _jrange:
     
@@ -174,8 +229,8 @@ def jrange(stop):
     Exception: Jax semantics changed during jrange iteration
 
     """
-    if isinstance(stop, int):
-        return range(stop)
+    if all(isinstance(arg, int) for arg in args):
+        return range(*args)
     else:
-        return JRangeIterator(stop)
+        return JRangeIterator(*args)
     

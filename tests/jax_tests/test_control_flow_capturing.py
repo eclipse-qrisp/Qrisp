@@ -118,6 +118,37 @@ def test_jrange():
         
     assert exception_raised
     
+    ######
+    # Test multiple argument jrange
+    
+    def test_function(i):
+        
+        qv = QuantumFloat(i)
+        x(qv[0])
+        
+        base_qb = qv[0]
+        for i in jrange(1, qv.size-1, 2):
+            cx(base_qb, qv[i+1])
+            
+        return measure(qv)
+    jaspr = make_jaspr(test_function)(100)
+
+    assert jaspr(5) == 21
+    
+    def test_function(i):
+        
+        qv = QuantumFloat(i)
+        x(qv[0])
+        
+        base_qb = qv[0]
+        for i in jrange(1, qv.size-1):
+            cx(base_qb, qv[i+1])
+            
+        return measure(qv)
+    jaspr = make_jaspr(test_function)(100)
+
+    assert jaspr(5) == 29
+    
 
 
 def test_cl_control_env():
@@ -234,5 +265,4 @@ def test_cl_control_env():
     jaspr = make_jaspr(test_f)(1)
     
     for i in range(10): assert jaspr(4) in [4,5]
-    
     
