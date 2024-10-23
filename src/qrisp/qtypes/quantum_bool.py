@@ -16,8 +16,9 @@
 ********************************************************************************/
 """
 
-
 import sys
+
+import jax.numpy as jnp
 
 from qrisp.core.quantum_variable import QuantumVariable
 
@@ -204,3 +205,6 @@ class QuantumBool(QuantumVariable):
             
     def __bool__(self):
         raise Exception("Tried to convert QuantumBool to classical bool (probable due using the and + or keywords - try using & + | instead)")
+        
+    def jdecoder(self, i):
+        return jnp.asarray(i, dtype = "bool")

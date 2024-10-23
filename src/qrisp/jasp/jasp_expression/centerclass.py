@@ -157,7 +157,7 @@ class Jaspr(Jaxpr):
     def __eq__(self, other):
         if not isinstance(other, Jaxpr):
             return False
-        return self.hashvalue == hash(other)
+        return self.hashvalue == hash(other) and len(self.eqns) == len(other.eqns)
     
     def inverse(self):
         """
@@ -316,15 +316,18 @@ class Jaspr(Jaxpr):
 
         """
         from qrisp import QuantumCircuit
-        jaspr = flatten_environments(self)
+        jaspr = self.flatten_environments()
         
         def eqn_evaluator(eqn, context_dic):
             if eqn.primitive.name == "pjit":
                 pjit_to_gate(eqn, context_dic)
             else:
                 return True
-        
-        res = eval_jaxpr(jaspr, eqn_evaluator = eqn_evaluator)(*([QuantumCircuit()] + list(args)))
+        try:
+            res = eval_jaxpr(jaspr, eqn_evaluator = eqn_evaluator)(*([QuantumCircuit()] + list(args)))
+        except:
+            import pdb
+            pdb.set_trace()
         
         return res
     
