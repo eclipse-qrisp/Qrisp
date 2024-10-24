@@ -267,7 +267,7 @@ Constrained mixer implementation
 --------------------------------
 
 Before we end this tutorial we want to show you what the constrained mixer implementation looks like for the MIS QIRO algorithm. In analogy to our :ref:` general QAOA implementation for the MIS problem  <maxIndepSetQAOA>` 
-we use the :ref:`qiro_rz_mixer` as the mixer and the :ref:`constrained mixer <create_max_indep_controlled_mixer_reduced>` as the cost operator. In principle, these functions do the exact same thing as the general implementations,
+we use the :ref:`qiro_rz_mixer <QIRO>` as the mixer and the :ref:`create_max_indep_controlled_mixer_reduced <maxIndependentSetQIRO>` as the cost operator. In principle, these functions do the exact same thing as the general implementations,
 but they respect the solutions and exclusions chosen via the update routine.  We suggest to try this instance with larger graph sizes (more than 20 nodes). 
 
 ::
