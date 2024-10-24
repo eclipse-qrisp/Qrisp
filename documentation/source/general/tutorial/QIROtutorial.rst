@@ -111,7 +111,9 @@ To run the instance and solve the optimization problem we use the :meth:`.run <q
 Maximum independent set example
 ===============================
 
-We now investigate a code example for the maximum independent set problem.
+We now investigate a code example for the maximum independent set problem. The in-depth explanation will focus on the unconnected cost operator implementation displayed. 
+In constrast, our :ref:` general QAOA implementation for the MIS problem  <maxIndepSetQAOA>` is based on a constrained mixer approach. This can also be used for the QIRO implementation, 
+which we show at the end of this tutorial!
 
 Preliminaries
 -------------
@@ -166,7 +168,7 @@ All in all, the function remains straight forward. We employ a ``find_max`` subr
     return new_graph, solutions, sign, exclusions
 
 As you might have noticed in the code above, we add the nodes that are included into (respective excluded from) the solution to a list ``solutions`` (``exclusions``). 
-This allows us to directly :ref:`recycle the QAOA code <maxIndepSetQAOA>` for the  ``cost_operator``, ``mixer`` and ``init_function`` of the original QAOA implementation with minor adjustments.
+This allows us to directly use the same ideas for the  ``cost_operator``, ``mixer`` and ``init_function`` of the original unconstrained QAOA theory with minor adjustments.
 
 Since we have to consider nodes that are already asigned to be in the solution set, or exluded from the algorithm, we do not want to apply these functions to said nodes. 
 We therefore include some simple lines of code into the functions, for example in the ``qiro_RXMixer``:
@@ -249,7 +251,6 @@ We can further compare our results to the `NetworkX MIS algorithm <https://netwo
     print("Networkx solution")
     print(nx.approximation.maximum_independent_set(G))
 
-Chances are, you will see a result in the QIRO implementation, that is better than the classical algorithm provided by Networkx!
 
 As a final caveat, we can look at the graph we are left with after all reduction steps.
 
@@ -260,6 +261,29 @@ As a final caveat, we can look at the graph we are left with after all reduction
     nx.draw(final_graph, with_labels=True, node_color='#ADD8E6', edge_color='#D3D3D3')
     plt.title('Final QIRO graph')
     plt.show()
+
+
+Constrained mixer implementation
+--------------------------------
+
+Before we end this tutorial we want to show you what the constrained mixer implementation looks like for the MIS QIRO algorithm. In analogy to our :ref:` general QAOA implementation for the MIS problem  <maxIndepSetQAOA>` 
+we use the :ref:`qiro_rz_mixer` as the mixer and the :ref:`constrained mixer <create_max_indep_controlled_mixer_reduced>` as the cost operator. In principle, these functions do the exact same thing as the general implementations,
+but they respect the solutions and exclusions chosen via the update routine.  We suggest to try this instance with larger graph sizes (more than 20 nodes). 
+
+::
+
+    # assign the correct update functions for constrained qiro 
+    qiro_instance = QIROProblem(G, 
+                                create_max_indep_replacement_routine,
+                                qiro_rz_mixer,
+                                create_max_indep_controlled_mixer_reduced,
+                                create_max_indep_set_cl_cost_function,
+                                qiro_max_indep_set_init_function,
+                                )
+
+    # We run the qiro instance and get the results!
+    res_qiro = qiro_instance.run_qiro(qarg=qarg, depth = 3, n_recursions = 1)
+
 
 Congratulations, you have reached the end of the tutorial and are now capable of solving the MIS problem in Qrisp!
 Should your appetite not be satisfied, we advise you to check out our other QIRO implementations:
