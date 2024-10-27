@@ -98,7 +98,12 @@ class FermionicHamiltonian(Hamiltonian):
         
         expr = 0  
         for ladder_term,coeff in self.terms_dict.items():
-            expr += coeff*ladder_term.to_expr()
+            term = ladder_term.to_expr()
+            term_dg =  + ladder_term.dagger().to_expr()
+            if coeff != 2:
+                term *= coeff/2
+                term_dg *= coeff/2
+            expr += term + term_dg
         return expr
 
     #

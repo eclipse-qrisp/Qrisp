@@ -29,7 +29,19 @@ class FermionicTerm:
 
     def __init__(self, ladder_list=[]):
         self.ladder_list = ladder_list
-        self.hash_value = hash(tuple(self.ladder_list))
+        
+        # Compute the hash value such that 
+        # terms receive the same hash as their hermitean conjugate
+        # this way the FermionicHamiltonian does not have
+        # to track both the term and it's dagger
+        index_list = [index for index, is_creator in ladder_list]
+        is_creator_temp_hash = 0
+        for i in range(len(ladder_list)):
+            is_creator_temp_hash += ladder_list[i][1]*2**i
+            
+        is_creator_hash = (2**len(ladder_list) - 1 - is_creator_temp_hash)*is_creator_temp_hash
+        
+        self.hash_value = hash(tuple(index_list + [is_creator_hash]))
 
     #def update(self, update_dict):
     #    self.pauli_dict.update(update_dict)
