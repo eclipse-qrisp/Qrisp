@@ -413,7 +413,7 @@ class FermionicHamiltonian(Hamiltonian):
     # Trotterization
     #
 
-    def trotterization(self):
+    def trotterization(self, qarg, t = 1, steps = 1, iter = 1):
         r"""
         Returns a function for performing Hamiltonian simulation, i.e., approximately implementing the unitary operator $e^{itH}$ via Trotterization.
 
@@ -440,4 +440,8 @@ class FermionicHamiltonian(Hamiltonian):
                 The number of iterations the unitary $U_1(t,N)$ is applied. The default is 1.
         
         """
-        pass
+        
+        for i in range(iter):
+            for j in range(steps):
+                for ferm_term, value in self.terms_dict.items():
+                    ferm_term.simulate(value*t/steps/2, qarg)

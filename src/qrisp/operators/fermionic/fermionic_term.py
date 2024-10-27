@@ -128,7 +128,7 @@ class FermionicTerm:
     
     def simulate(self, coeff, qv):
         
-        from qrisp import h, cx, rz, conjugate, control, QuantumBool, mcx
+        from qrisp import h, cx, rz, conjugate, control, QuantumBool, mcx, gphase
         
         def ghz_state(qb_list):
             for qb in qb_list[:-1]:
@@ -136,17 +136,45 @@ class FermionicTerm:
             h(qb_list[-1])
         
         participating_indices = [index for index, is_creator in self.ladder_list]
-        participating_qubits = [qv[index] for index in participating_indices]
-        ctrl_state = "".join([str(int(not is_creator)) for index, is_creator in self.ladder_list])
+        # participating_qubits = [qv[index] for index in participating_indices]
+        
+        ctrl_state = ""
+        participating_qubits = []
         
         phase_flipping_qubits = []
+        ctrl_state_flipping_qubits = []
         
         while participating_indices:
-            start = participating_indices.pop(0) + 1
+            start = participating_indices.pop(0)
             stop = participating_indices.pop(0)
-            for i in range(start, stop):
+            if start == stop:
+                ctrl_state_flipping_qubits.append(qv[start])
+                continue
+            for i in range(start+1, stop):
                 phase_flipping_qubits.append(qv[i])
+            
+            participating_qubits.append(qv[start])
+            
+            is_creator = self.ladder_list[start]
+            ctrl_state += str(str(int(not is_creator)))
+            participating_qubits.append(qv[stop])
+            
+            is_creator = self.ladder_list[stop]
+            ctrl_state += str(str(int(not is_creator)))
+            
+        
+        if len(participating_qubits) == 0:
+            gphase(coeff, phase_flipping_qubits[0])
+            return
+        
+        def flip_participating_qubits(ctrl_state_flipping_qubits, participating_qubits):
+            for i in range(len(ctrl_state_flipping_qubits)):
+                for j in range(len(participating_qubits)):
+                    cx(ctrl_state_flipping_qubits[i], participating_qubits[j])
+                    
                 
+                
+        
         def flip_anchor_qubit(phase_flipping_qubits, anchor_qb):
             for qb in phase_flipping_qubits:
                 cx(phase_flipping_qubits, anchor_qb)
@@ -156,13 +184,14 @@ class FermionicTerm:
         hs_ancilla = QuantumBool()
         with conjugate(ghz_state)(participating_qubits):
             with conjugate(flip_anchor_qubit)(phase_flipping_qubits, anchor_qubit):
-                with conjugate(mcx)(participating_qubits[:-1], hs_ancilla, ctrl_state = ctrl_state[:-1], method = "gray_pt"):
-                    with control(hs_ancilla):
-                        if ctrl_state[0] == "0":
-                            rz(coeff, anchor_qubit)
-                        else:
-                            rz(-coeff, anchor_qubit)
-                
+                with conjugate(flip_participating_qubits)(ctrl_state_flipping_qubits, participating_qubits):
+                    with conjugate(mcx)(participating_qubits[:-1], hs_ancilla, ctrl_state = ctrl_state[:-1], method = "gray_pt"):
+                        with control(hs_ancilla):
+                            if ctrl_state[0] == "0":
+                                rz(coeff, anchor_qubit)
+                            else:
+                                rz(-coeff, anchor_qubit)
+                    
         hs_ancilla.delete()
                     
 
