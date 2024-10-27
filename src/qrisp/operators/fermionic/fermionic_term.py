@@ -44,6 +44,8 @@ class FermionicTerm:
     def copy(self):
         return FermionicTerm(self.ladder_list.copy())
     
+    def dagger(self):
+        return FermionicTerm([(index, not is_creator) for index, is_creator in self.ladder_list])
     #
     # Printing
     #
