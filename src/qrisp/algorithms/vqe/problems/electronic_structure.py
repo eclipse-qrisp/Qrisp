@@ -20,6 +20,7 @@ import numpy as np
 
 from qrisp import h, x, cx, ry, control, conjugate
 from qrisp.operators.pauli import PauliHamiltonian, PauliTerm
+from qrisp.operators.fermionic import *
 from functools import cache
 import itertools
 import math
@@ -438,6 +439,70 @@ def create_electronic_hamiltonian(arg, active_orb=None, active_elec=None, mappin
 
     # apply threshold
     H.apply_threshold(threshold) 
+    return H
+
+def create_electronic_hamiltonian_fermionic(arg, active_orb=None, active_elec=None, mapping_type='jordan_wigner', threshold=1e-4):
+    """
+
+    """
+    import pyscf
+    if isinstance(arg,pyscf.gto.Mole):
+        data = electronic_data(arg)
+    elif isinstance(arg,dict):
+        data = arg
+        if not verify_symmetries(data['two_int']):
+            raise Warning("Failed to verify symmetries for two-electron integrals")
+    else:
+        raise TypeError("Cannot create electronic Hamiltonian from type "+str(type(arg)))
+
+    one_int = data['one_int']
+    two_int = data['two_int']
+    M = data['num_orb']
+    N = data['num_elec']
+    K = active_orb
+    L = active_elec
+
+    if K is None or L is None:
+        K = M
+        L = N
+
+    if L>N or K>M or K<L or K+N-L>M:
+        raise Exception("Invalid number of active electrons or orbitals")
+
+    # number of inactive electrons 
+    I = N-L
+
+    # inactive Fock operator
+    F = one_int.copy()
+    for p in range(M):
+        for q in range(M):
+            for i in range(I):
+                #F[p][q] += (two_int[i][p][i][q]-two_int[i][q][p][i])
+                F[p][q] += (two_int[i][p][q][i]-two_int[i][q][i][p])
+
+    # inactive energy
+    E = 0
+    for j in range(I):
+        E += (one_int[j][j]+F[j][j])/2
+
+    # Hamiltonian
+    H=E
+    for i in range(K):
+        for j in range(K):
+            if F[I+i][I+j]!=0:
+                H += F[I+i][I+j]*c(i)*a(j) # cre(i,K,mapping_type)*ann(j,K,mapping_type)
+    
+    for i in range(K):
+        for j in range(K): 
+            for k in range(K):
+                for l in range(K):
+                    if two_int[I+i][I+j][I+k][I+l]!=0 and i!=j and k!=l:
+                        #h = #cre2(i,j,K,mapping_type)*ann2(k,l,K,mapping_type)
+                        #h *= (0.5*two_int[I+i][I+j][I+k][I+l])
+                        H += (0.5*two_int[I+i][I+j][I+k][I+l])*c(i)*c(j)*a(k)*a(l)
+
+    # apply threshold
+    #H.apply_threshold(threshold) 
     return H
 
 #

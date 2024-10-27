@@ -28,6 +28,7 @@ class FermionicTerm:
     """
 
     def __init__(self, ladder_list=[]):
+        
         self.ladder_list = ladder_list
         
         # Compute the hash value such that 
