@@ -28,7 +28,7 @@ class FermionicTerm:
     """
 
     def __init__(self, ladder_list=[]):
-        self.ladder_list = ladder_list
+        self.ladder_list = ladder_list # a list of tuples (index:int, ladder: Boolean)
         self.hash_value = hash(tuple(self.ladder_list))
 
     #def update(self, update_dict):

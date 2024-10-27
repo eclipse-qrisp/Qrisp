@@ -17,6 +17,9 @@
 """
 from qrisp.operators import Hamiltonian
 from qrisp.operators.fermionic.fermionic_term import FermionicTerm
+from qrisp.operators.fermionic.transformations import *
+#from qrisp.operators.pauli.pauli_term import PauliTerm
+#from qrisp.operators.pauli.pauli_hamiltonian import PauliHamiltonian
 
 import sympy as sp
 
@@ -379,6 +382,23 @@ class FermionicHamiltonian(Hamiltonian):
 
         """
         pass
+
+    #
+    # Transformations
+    #
+
+    def to_pauli_hamiltonian(self, mapping='jordan_wigner'):
+
+        H = 0
+        for term,coeff in self.terms_dict.items():
+            h = coeff
+            for ladder in term.ladder_list:
+                h *= jordan_wigner(ladder)
+            H += h
+
+        jordan_wigner.cache_clear()
+
+        return H
     
     #
     # Partitions 
