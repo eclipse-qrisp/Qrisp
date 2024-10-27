@@ -22,12 +22,18 @@ from qrisp.operators.fermionic.visualization import a_,c_
 # FermionicTerm
 #
 
+import numpy as np
+
 class FermionicTerm:
     r"""
     
     """
 
     def __init__(self, ladder_list=[]):
+        
+        # Sort ladder operators (ladder operator semantics are order in-dependent)
+        participating_indices = [index for index, is_creator in ladder_list]
+        ladder_list = [ladder_list[i] for i in np.argsort(participating_indices)]
         
         self.ladder_list = ladder_list
         
@@ -118,4 +124,52 @@ class FermionicTerm:
 
         """
         pass
+    
+    
+    def simulate(self, coeff, qv):
+        
+        from qrisp import h, cx, rz, conjugate, control, QuantumBool, mcx
+        
+        def ghz_state(qb_list):
+            for qb in qb_list[:-1]:
+                cx(qb_list[-1], qb)
+            h(qb_list[-1])
+        
+        participating_indices = [index for index, is_creator in self.ladder_list]
+        participating_qubits = [qv[index] for index in participating_indices]
+        ctrl_state = "".join([str(int(not is_creator)) for index, is_creator in self.ladder_list])
+        
+        phase_flipping_qubits = []
+        
+        while participating_indices:
+            start = participating_indices.pop(0) + 1
+            stop = participating_indices.pop(0)
+            for i in range(start, stop):
+                phase_flipping_qubits.append(qv[i])
+                
+        def flip_anchor_qubit(phase_flipping_qubits, anchor_qb):
+            for qb in phase_flipping_qubits:
+                cx(phase_flipping_qubits, anchor_qb)
+        
+        anchor_qubit = participating_qubits[-1]
+        
+        hs_ancilla = QuantumBool()
+        with conjugate(ghz_state)(participating_qubits):
+            with conjugate(flip_anchor_qubit)(phase_flipping_qubits, anchor_qubit):
+                with conjugate(mcx)(participating_qubits[:-1], hs_ancilla, ctrl_state = ctrl_state[:-1], method = "gray_pt"):
+                    with control(hs_ancilla):
+                        if ctrl_state[0] == "0":
+                            rz(coeff, anchor_qubit)
+                        else:
+                            rz(-coeff, anchor_qubit)
+                
+        hs_ancilla.delete()
+                    
+
+                
+            
+            
+            
+        
+        
     
