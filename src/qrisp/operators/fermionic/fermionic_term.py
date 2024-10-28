@@ -139,6 +139,31 @@ class FermionicTerm:
         
         active_indices = [index for index, is_creator in ladder_list]
         
+        # Some hamiltonians contain terms of the for a(1)*c(1), ie.
+        # two ladder operators, which operate on the same qubit.
+        # We filter them out and discuss their precise treatment below
+        
+        active_indices = []
+        active_index_is_creator = []
+        
+        double_indices = []
+        double_index_is_creator = []
+        i = 1
+        
+        for i in range(len(ladder_list)):
+            
+            ladder_op = ladder_list[i]
+            ladder_index = ladder_op[0]
+            is_creator = ladder_op[1]
+            
+            if i > 0 and ladder_index == ladder_list[i-1][0]:
+                double_indices.append(active_indices.pop(-1))
+                double_index_is_creator.append(ladder_list[i-1][1])
+                continue
+            
+            active_indices.append(ladder_index)
+            active_index_is_creator.append(is_creator)
+        
         
         # In the Jordan-Wigner transform annihilation/creation operators are
         # represented as operators of the form
@@ -184,16 +209,16 @@ class FermionicTerm:
         
         
 
-        # We now implement an operator like
+        # We now start implementing performing the quantum operations
+                
+        # There are three challenges-
         
-        # 5*AZZC11A
+        # 1. Implement the "double_indices" i.e. creation/annihilation
+        # operators where two act on the same qubit.
+        # 2. Implement the other creation annihilation operators.
+        # 3. Implement the Z operators.
         
-        # To this end we split the procedure in two steps:
-        
-        # 1. Implement the creation annihilation operators.
-        # 2. Implement the Z operators.
-        
-        # For step 1 we recreate the circuit in https://arxiv.org/abs/2310.12256
+        # For step 2 we recreate the circuit in https://arxiv.org/abs/2310.12256
         
         # The circuit on page 4 looks like this
         
@@ -229,11 +254,11 @@ class FermionicTerm:
             
         # Determine ctrl state and the qubits the creation/annihilation
         # operators act on
-        ctrl_state = ""
+        operator_ctrl_state = ""
         operator_qubits = []
-        for i in active_indices:
-            ctrl_state += str(str(int(ladder_list[i][1])))
-            operator_qubits.append(qv[i])
+        for i in range(len(active_indices)):
+            operator_ctrl_state += str(int(not active_index_is_creator[i]))
+            operator_qubits.append(qv[active_indices[i]])
             
         # The qubit that receives the RZ gate will be called anchor qubit.
         anchor_index = active_indices[-1]
@@ -243,7 +268,36 @@ class FermionicTerm:
         hs_ancilla = QuantumBool()
                 
         with conjugate(inv_ghz_state)(operator_qubits):
-            with conjugate(mcx)(operator_qubits[:-1], hs_ancilla, ctrl_state = ctrl_state[:-1], method = "gray_pt"):
+            
+            # To realize the behavior of the "double_indices" i.e. the qubits
+            # that receive two creation annihilation operators, not that such a
+            # term produces a hamiltonian of the form
+            
+            # H = c(0)*a(0)*a(1)*a(2) + h.c.
+            #   = |1><1| (H_red + h.c.)
+            
+            # where H_red = a(1)*a(2)
+            
+            # Simulating this H is therefore the controlled version of H_red:
+                
+            # exp(itH) = |0><0| ID + |1><1| exp(itH_red)
+            
+            # We can therefore add the "double_indices" to this conjugation.
+            
+            double_index_ctrl_state = ""
+            double_index_qubits = []
+            for i in range(len(double_index_is_creator)):
+                if double_index_is_creator[i]:
+                    double_index_ctrl_state += "1"
+                else:
+                    double_index_ctrl_state += "0"
+            
+                double_index_qubits.append(qv[double_indices[i]])
+            
+            with conjugate(mcx)(operator_qubits[:-1] + double_index_qubits, 
+                                hs_ancilla, 
+                                ctrl_state = operator_ctrl_state[:-1] + double_index_ctrl_state, 
+                                method = "auto"):
                 
                 # Before we execute the RZ, we need to deal with the Z terms (next to the anihilation/
                 # creation) operators.
@@ -271,7 +325,7 @@ class FermionicTerm:
                 
                     # Perform the controlled RZ
                     with control(hs_ancilla):
-                        if ctrl_state[0] == "0":
+                        if operator_ctrl_state[-1] == "0":
                             rz(coeff, qv[anchor_index])
                         else:
                             rz(-coeff,qv[anchor_index])
