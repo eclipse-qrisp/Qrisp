@@ -257,7 +257,7 @@ class FermionicTerm:
         operator_ctrl_state = ""
         operator_qubits = []
         for i in range(len(active_indices)):
-            operator_ctrl_state += str(int(not active_index_is_creator[i]))
+            operator_ctrl_state += str(int(active_index_is_creator[i]))
             operator_qubits.append(qv[active_indices[i]])
             
         # The qubit that receives the RZ gate will be called anchor qubit.
