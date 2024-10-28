@@ -25,8 +25,8 @@ from qrisp.interface import VirtualBackend, QiskitBackend
 def test_qiskit_backend_client():
     
     try:
-        from qiskit import Aer
-        backend = Aer.get_backend("qasm_simulator")
+        from qiskit_aer import AerSimulator
+        backend = AerSimulator()
     except ImportError:
         from qiskit.providers.basic_provider import BasicProvider
         backend = BasicProvider().get_backend('basic_simulator')
