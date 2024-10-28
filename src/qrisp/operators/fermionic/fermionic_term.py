@@ -129,7 +129,7 @@ class FermionicTerm:
     
     def simulate(self, coeff, qv):
         
-        from qrisp import h, cx, rz, conjugate, control, QuantumBool, mcx, gphase
+        from qrisp import h, cx, rz, conjugate, control, QuantumBool, mcx, x
         
         sorted_term, flip_sign = self.sort()
         
@@ -248,8 +248,12 @@ class FermionicTerm:
         # preparation and a multi controlled RZ gate.
 
         def inv_ghz_state(qb_list):
+            if operator_ctrl_state[-1] == "1":
+                x(qb_list[-1])
             for qb in qb_list[:-1]:
                 cx(qb_list[-1], qb)
+            if operator_ctrl_state[-1] == "1":
+                x(qb_list[-1])
             h(qb_list[-1])
             
         # Determine ctrl state and the qubits the creation/annihilation
@@ -297,7 +301,7 @@ class FermionicTerm:
             with conjugate(mcx)(operator_qubits[:-1] + double_index_qubits, 
                                 hs_ancilla, 
                                 ctrl_state = operator_ctrl_state[:-1] + double_index_ctrl_state, 
-                                method = "auto"):
+                                method = "gray"):
                 
                 # Before we execute the RZ, we need to deal with the Z terms (next to the anihilation/
                 # creation) operators.
@@ -325,11 +329,8 @@ class FermionicTerm:
                 
                     # Perform the controlled RZ
                     with control(hs_ancilla):
-                        if operator_ctrl_state[-1] == "0":
                             rz(coeff, qv[anchor_index])
-                        else:
-                            rz(-coeff,qv[anchor_index])
-        
+
         # Delete ancilla
         hs_ancilla.delete()
         
