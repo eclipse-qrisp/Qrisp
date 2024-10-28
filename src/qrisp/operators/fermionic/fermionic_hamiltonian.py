@@ -68,19 +68,56 @@ class FermionicHamiltonian(Hamiltonian):
     """
 
     def __init__(self, terms_dict={}, avoid_flips = True):
+        
+        # This function performs some non trivial logic.
+        
+        # The problem here is that each fermionic term can
+        # be reshaped into several different forms and still express
+        # the same operator. 
+        # For instance, the operator can be arbitrarily reordered
+        # if the permutation sign is take care of and no creators/annihilators
+        # with the same index are swapped.
+        # Furthermore the Hamiltonian must be Hermitian, so each
+        # term must be equivalent to is Hermitian conjugate.
+        
+        # This function implements a storage system, that combines
+        # the coefficients of differing terms representing the same operator
+        # into a single term.
+        
+        # This dictionary will contain the new terms, where redundancies
+        # are taken care of.
         new_terms_dict = {}
+        
         for term, coeff in terms_dict.items():
+            
+            # We only store the sorted version of each term.
+            # Sorting here means permuting the creators/annihilators
+            # while considering the sign of the permutation applied by the sort.
+            # The sort is performed in a stable manner, so terms like a(0)*c(0)
+            # don't get permuted (this would be a non-trivial anti-commutator).
             sorted_term, flip_sign = term.sort()
             if sorted_term not in new_terms_dict:
+                # If the sorted term is not in the terms dict, the sorted version
+                # of the daggering might be.
                 daggered_sorted_term, daggered_flip_sign = term.dagger().sort()
                 if daggered_sorted_term in new_terms_dict:
                     sorted_term = daggered_sorted_term
                     flip_sign = daggered_flip_sign
+                    
+                # If neither the daggered nor the non-daggered term are available
+                # in some situations, we can choose which one we want to store.
+                # To improve readability, we store the term which has no minus-sign.
+                # Note that this is only valid in certain situations.
+                # When multiplying terms, this type of transformations causes
+                # problems. Because of this the avoid_flips keyword is set to 
+                # False within __mul__
                 elif flip_sign < 0 and avoid_flips:
                     sorted_term = daggered_sorted_term
                     flip_sign = daggered_flip_sign
             
+            # Compute the new coefficient.
             new_terms_dict[sorted_term] = flip_sign*coeff + new_terms_dict.get(sorted_term, 0)
+        
         self.terms_dict = new_terms_dict
 
     def len(self):
