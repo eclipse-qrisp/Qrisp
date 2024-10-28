@@ -68,8 +68,17 @@ class FermionicHamiltonian(Hamiltonian):
     """
 
     def __init__(self, terms_dict={}):
-        self.terms_dict = terms_dict
-        pass
+        new_terms_dict = {}
+        for term, coeff in terms_dict.items():
+            sorted_term, flip_sign = term.sort()
+            if sorted_term not in new_terms_dict:
+                daggered_sorted_term, daggered_flip_sign = term.dagger().sort()
+                if daggered_sorted_term in new_terms_dict:
+                    sorted_term = daggered_sorted_term
+                    flip_sign = daggered_flip_sign
+            
+            new_terms_dict[sorted_term] = flip_sign*coeff + new_terms_dict.get(sorted_term, 0)
+        self.terms_dict = new_terms_dict
 
     def len(self):
         return len(self.terms_dict)
@@ -103,9 +112,12 @@ class FermionicHamiltonian(Hamiltonian):
         for ladder_term,coeff in self.terms_dict.items():
             term = ladder_term.to_expr()
             term_dg =  + ladder_term.dagger().to_expr()
-            if coeff != 2:
+            if coeff not in [2, -2]:
                 term *= coeff/2
                 term_dg *= coeff/2
+            elif coeff == -2:
+                expr += -term - term_dg
+                continue
             expr += term + term_dg
         return expr
 

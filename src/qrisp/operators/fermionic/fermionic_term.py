@@ -31,10 +31,6 @@ class FermionicTerm:
 
     def __init__(self, ladder_list=[]):
         
-        # Sort ladder operators (ladder operator semantics are order in-dependent)
-        participating_indices = [index for index, is_creator in ladder_list]
-        ladder_list = [ladder_list[i] for i in np.argsort(participating_indices)]
-        
         self.ladder_list = ladder_list
         
         # Compute the hash value such that 
@@ -45,9 +41,11 @@ class FermionicTerm:
         is_creator_temp_hash = 0
         for i in range(len(ladder_list)):
             is_creator_temp_hash += ladder_list[i][1]*2**i
-            
-        is_creator_hash = (2**len(ladder_list) - 1 - is_creator_temp_hash)*is_creator_temp_hash
+        is_creator_temp_hash_dg = 0
+        # for i in range(len(ladder_list)):
+        #     is_creator_temp_hash_dg += (not ladder_list[::-1][i][1])*2**i
         
+        is_creator_hash = is_creator_temp_hash + is_creator_temp_hash_dg
         self.hash_value = hash(tuple(index_list + [is_creator_hash]))
 
     #def update(self, update_dict):
@@ -64,7 +62,7 @@ class FermionicTerm:
         return FermionicTerm(self.ladder_list.copy())
     
     def dagger(self):
-        return FermionicTerm([(index, not is_creator) for index, is_creator in self.ladder_list])
+        return FermionicTerm([(index, not is_creator) for index, is_creator in self.ladder_list[::-1]])
     #
     # Printing
     #
@@ -193,6 +191,16 @@ class FermionicTerm:
                                 rz(-coeff, anchor_qubit)
                     
         hs_ancilla.delete()
+        
+    def sort(self):
+        # Sort ladder operators (ladder operator semantics are order in-dependent)
+        sorting_list = [index for index, is_creator in self.ladder_list]
+        perm = np.argsort(sorting_list, kind = "stable")
+        ladder_list = [self.ladder_list[i] for i in perm]
+        from sympy.combinatorics import Permutation
+        return FermionicTerm(ladder_list), Permutation(perm).signature()
+
+        
                     
 
                 
