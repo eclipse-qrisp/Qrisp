@@ -23,6 +23,30 @@ from qrisp import *
 
 def test_fermionic_term():
     from qrisp.operators.fermionic import a, c
+    
+    H_0 = a(0)*c(1)
+    H_1 = c(1)*a(0)
 
+    assert (H_0 == H_1) == False
+    
+    H_0 = a(0)*c(1)
+    H_1 = -c(1)*a(0)
+
+    assert (H_0 == H_1) == True
+    
+    H_0 = a(0)*c(1)
+    H_1 = -1*c(1)*a(0)
+
+    assert (H_0 == H_1) == True
+    
+    H_0 = a(0)*c(1)*a(2)
+    H_1 = c(2)*a(1)*c(0)
+
+    assert (H_0 == H_1) == True
+    
     H = 3*a(0)*c(1) + c(0)*a(1)
-    assert str(H) == "2.0*a0*c1 + 2.0*c0*a1"
+    assert str(H) == "a0*c1 + a1*c0"
+    
+    H = a(0)*a(1) + a(1)*a(0)
+    assert str(H) == "0"
+    

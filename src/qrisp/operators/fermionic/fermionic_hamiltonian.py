@@ -124,7 +124,29 @@ class FermionicHamiltonian(Hamiltonian):
     #
     # Arithmetic
     #
-
+    
+    def __eq__(self, other):
+        
+        if len(self.terms_dict) != len(other.terms_dict):
+            return False
+        
+        for term, coeff in self.terms_dict.items():
+            if not term in other.terms_dict:
+                daggered_sorted_term, flip_sign = term.dagger().sort()
+                if daggered_sorted_term not in other.terms_dict:
+                    return False
+                elif self.terms_dict[term] != flip_sign*other.terms_dict[daggered_sorted_term]:
+                    return False
+                continue
+                    
+            if self.terms_dict[term] != other.terms_dict[term]:
+                return False
+        
+        return True
+    
+    def __neg__(self):
+        return -1*self
+            
     #def __pow__(self, e):
     #    if self.len()==1:
     #        if isinstance(e, int) and e>=0:
