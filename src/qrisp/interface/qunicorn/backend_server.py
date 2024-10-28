@@ -74,7 +74,7 @@ class BackendServer:
     --------
 
     We create a server listening on the localhost IP address using a run function which
-    prints the token and queries the QASM-simulator. ::
+    prints the token and queries the Aer-simulator. ::
 
         def run_func(qasm_str, shots):
             
@@ -83,8 +83,8 @@ class BackendServer:
             
             qiskit_qc = QuantumCircuit.from_qasm_str(qasm_str)
 
-            from qiskit import Aer
-            qiskit_backend = Aer.get_backend('qasm_simulator')
+            from qiskit_aer import AerSimulator
+            qiskit_backend = AerSimulator()
 
             #Run Circuit on the Qiskit backend
             return qiskit_backend.run(qiskit_qc, shots = shots).result().get_counts()
