@@ -67,13 +67,16 @@ class FermionicHamiltonian(Hamiltonian):
 
     """
 
-    def __init__(self, terms_dict={}):
+    def __init__(self, terms_dict={}, avoid_flips = True):
         new_terms_dict = {}
         for term, coeff in terms_dict.items():
             sorted_term, flip_sign = term.sort()
             if sorted_term not in new_terms_dict:
                 daggered_sorted_term, daggered_flip_sign = term.dagger().sort()
                 if daggered_sorted_term in new_terms_dict:
+                    sorted_term = daggered_sorted_term
+                    flip_sign = daggered_flip_sign
+                elif flip_sign < 0 and avoid_flips:
                     sorted_term = daggered_sorted_term
                     flip_sign = daggered_flip_sign
             
@@ -295,7 +298,7 @@ class FermionicHamiltonian(Hamiltonian):
                 curr_ladder_term = ladder_term1*ladder_term2
                 res_terms_dict[curr_ladder_term] = res_terms_dict.get(curr_ladder_term,0) + coeff1*coeff2
 
-        result = FermionicHamiltonian(res_terms_dict)
+        result = FermionicHamiltonian(res_terms_dict, avoid_flips = False)
         return result
 
     __radd__ = __add__
