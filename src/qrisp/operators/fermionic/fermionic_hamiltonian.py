@@ -518,4 +518,4 @@ class FermionicHamiltonian(Hamiltonian):
         for i in range(iter):
             for j in range(steps):
                 for ferm_term, value in self.terms_dict.items():
-                    ferm_term.simulate(value*t/steps/2, qarg)
+                    ferm_term.simulate(value*t/steps, qarg)

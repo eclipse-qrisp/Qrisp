@@ -93,7 +93,7 @@ class FermionicTerm:
                 return a_(index)
         
         expr = 1
-        for index,value in self.ladder_list:
+        for index,value in self.ladder_list[::-1]:
             expr *= to_ladder(value,str(index))
 
         return expr
@@ -103,7 +103,7 @@ class FermionicTerm:
     #
 
     def __mul__(self, other):
-        result_ladder_list = self.ladder_list + other.ladder_list
+        result_ladder_list = other.ladder_list + self.ladder_list
         return FermionicTerm(result_ladder_list)
     
     def order(self):
@@ -131,68 +131,152 @@ class FermionicTerm:
         
         from qrisp import h, cx, rz, conjugate, control, QuantumBool, mcx, gphase
         
-        def ghz_state(qb_list):
+        sorted_term, flip_sign = self.sort()
+        
+        coeff *= flip_sign
+        
+        ladder_list = sorted_term.ladder_list
+        
+        active_indices = [index for index, is_creator in ladder_list]
+        
+        
+        # In the Jordan-Wigner transform annihilation/creation operators are
+        # represented as operators of the form
+        
+        # ZZZZA111
+        
+        # or
+        
+        # ZZC11111
+        
+        # Where Z is the Z Operator, A/C are creation/annihilation operators and
+        # 1 is the identity.
+        
+        # We now are given a list of these types of operators.
+        # The first step is now to identify on which qubits there are actually
+        # Z operators acting and where they cancel out.
+        
+        # We do this by creating an array that operates under boolean arithmetic        
+        Z_qubits = np.zeros(qv.size)
+        
+        
+        for i in active_indices:
+            # This array contains the Z Operators, which need to be executed.
+            Z_incr = np.zeros(qv.size)
+            Z_incr[:i] = 1
+            
+            # Update the overall tracker of Z gates
+            Z_qubits = (Z_qubits + Z_incr)%2
+        
+        # We can assume the ladder_list is sorted, so every Z operator
+        # that acts on an A or C is acting from the left.
+        # We have and Z*C = -C and Z*A = A 
+        # because of C = |1><0| and A = |0><1|
+        
+        # Therefore we flip the sign of the coefficient for every creator
+        # that has an overall Z acting on it.
+        
+        for i in active_indices:
+            if Z_qubits[i] == 1:
+                if ladder_list[i][1]:
+                    coeff *= -1
+                    Z_qubits[i] = 0
+        
+        
+
+        # We now implement an operator like
+        
+        # 5*AZZC11A
+        
+        # To this end we split the procedure in two steps:
+        
+        # 1. Implement the creation annihilation operators.
+        # 2. Implement the Z operators.
+        
+        # For step 1 we recreate the circuit in https://arxiv.org/abs/2310.12256
+        
+        # The circuit on page 4 looks like this
+        
+        #               ┌───┐                                                          »
+        #         qv.0: ┤ X ├─────────────────■────────────────────────────────■───────»
+        #               └─┬─┘┌───┐            │                                │       »
+        #         qv.1: ──┼──┤ X ├────────────■────────────────────────────────■───────»
+        #                 │  └─┬─┘┌───┐       │                                │       »
+        #         qv.2: ──┼────┼──┤ X ├───────o────■──────────────────────■────o───────»
+        #                 │    │  └─┬─┘┌───┐  │  ┌─┴─┐┌────────────────┐┌─┴─┐  │  ┌───┐»
+        #         qv.3: ──■────■────■──┤ H ├──┼──┤ X ├┤ Rz(-0.5*theta) ├┤ X ├──┼──┤ H ├»
+        #                              └───┘┌─┴─┐└───┘└───────┬────────┘└───┘┌─┴─┐└───┘»
+        # hs_ancilla.0: ────────────────────┤ X ├─────────────■──────────────┤ X ├─────»
+        #                                   └───┘                            └───┘     »
+        # «                        ┌───┐
+        # «        qv.0: ──────────┤ X ├
+        # «                   ┌───┐└─┬─┘
+        # «        qv.1: ─────┤ X ├──┼──
+        # «              ┌───┐└─┬─┘  │  
+        # «        qv.2: ┤ X ├──┼────┼──
+        # «              └─┬─┘  │    │  
+        # «        qv.3: ──■────■────■──
+        # «                             
+        # «hs_ancilla.0: ───────────────
+        
+        # In it's essence this circuit is a conjugation with an inverse GHZ state
+        # preparation and a multi controlled RZ gate.
+
+        def inv_ghz_state(qb_list):
             for qb in qb_list[:-1]:
                 cx(qb_list[-1], qb)
             h(qb_list[-1])
-        
-        participating_indices = [index for index, is_creator in self.ladder_list]
-        # participating_qubits = [qv[index] for index in participating_indices]
-        
+            
+        # Determine ctrl state and the qubits the creation/annihilation
+        # operators act on
         ctrl_state = ""
-        participating_qubits = []
-        
-        phase_flipping_qubits = []
-        ctrl_state_flipping_qubits = []
-        
-        while participating_indices:
-            start = participating_indices.pop(0)
-            stop = participating_indices.pop(0)
-            if start == stop:
-                ctrl_state_flipping_qubits.append(qv[start])
-                continue
-            for i in range(start+1, stop):
-                phase_flipping_qubits.append(qv[i])
+        operator_qubits = []
+        for i in active_indices:
+            ctrl_state += str(str(int(ladder_list[i][1])))
+            operator_qubits.append(qv[i])
             
-            participating_qubits.append(qv[start])
-            
-            is_creator = self.ladder_list[start]
-            ctrl_state += str(str(int(not is_creator)))
-            participating_qubits.append(qv[stop])
-            
-            is_creator = self.ladder_list[stop]
-            ctrl_state += str(str(int(not is_creator)))
-            
+        # The qubit that receives the RZ gate will be called anchor qubit.
+        anchor_index = active_indices[-1]
         
-        if len(participating_qubits) == 0:
-            gphase(coeff, phase_flipping_qubits[0])
-            return
-        
-        def flip_participating_qubits(ctrl_state_flipping_qubits, participating_qubits):
-            for i in range(len(ctrl_state_flipping_qubits)):
-                for j in range(len(participating_qubits)):
-                    cx(ctrl_state_flipping_qubits[i], participating_qubits[j])
-                    
-                
-                
-        
-        def flip_anchor_qubit(phase_flipping_qubits, anchor_qb):
-            for qb in phase_flipping_qubits:
-                cx(phase_flipping_qubits, anchor_qb)
-        
-        anchor_qubit = participating_qubits[-1]
-        
+        # We furthermore allocate an ancillae to perform an efficient
+        # multi controlled rz.
         hs_ancilla = QuantumBool()
-        with conjugate(ghz_state)(participating_qubits):
-            with conjugate(flip_anchor_qubit)(phase_flipping_qubits, anchor_qubit):
-                with conjugate(flip_participating_qubits)(ctrl_state_flipping_qubits, participating_qubits):
-                    with conjugate(mcx)(participating_qubits[:-1], hs_ancilla, ctrl_state = ctrl_state[:-1], method = "gray_pt"):
-                        with control(hs_ancilla):
-                            if ctrl_state[0] == "0":
-                                rz(coeff, anchor_qubit)
-                            else:
-                                rz(-coeff, anchor_qubit)
-                    
+                
+        with conjugate(inv_ghz_state)(operator_qubits):
+            with conjugate(mcx)(operator_qubits[:-1], hs_ancilla, ctrl_state = ctrl_state[:-1], method = "gray_pt"):
+                
+                # Before we execute the RZ, we need to deal with the Z terms (next to the anihilation/
+                # creation) operators.
+                
+                # The qubits that only receive a Z operator will now be called "passive qubits"
+                
+                # By inspection we see that the Z operators are equivalent to the
+                # term (-1)**(q_1 (+) q_2)
+                # It therefore suffices to compute the parity value of all the passive
+                # qubits and flip the sign of the coefficient based on the parity.
+
+                # To this end we perform several CX gate on-to the anchor qubit.
+                # Since the anchor qubit will receive an RZ gate, each bitflip will
+                # induce a sign flip of the phase.
+
+                # We achieve this by executing a conjugation with the following function
+                def flip_anchor_qubit(qv, anchor_index, Z_qubits):
+                    for i in range(qv.size):
+                        # Z_qubits will contain a 1 if a flip should be executed.
+                        if Z_qubits[i]:
+                            cx(qv[i], qv[anchor_index])
+                
+                # Perform the conjugation
+                with conjugate(flip_anchor_qubit)(qv, anchor_index, Z_qubits):
+                
+                    # Perform the controlled RZ
+                    with control(hs_ancilla):
+                        if ctrl_state[0] == "0":
+                            rz(coeff, qv[anchor_index])
+                        else:
+                            rz(-coeff,qv[anchor_index])
+        
+        # Delete ancilla
         hs_ancilla.delete()
         
     def sort(self):
