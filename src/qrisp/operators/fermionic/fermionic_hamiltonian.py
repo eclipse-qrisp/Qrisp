@@ -472,6 +472,21 @@ class FermionicHamiltonian(Hamiltonian):
     #
 
     def to_pauli_hamiltonian(self, mapping='jordan_wigner'):
+        """
+        Transforms the fermionic Hamiltonian to a :ref:`PauliHamiltonian`.
+
+        Parameters
+        ----------
+        mapping : str, optional
+            The mapping to transform the Hamiltonian. Available is ``jordan_wigner``.
+            The default is ``jordan_wigner``.
+
+        Returns
+        -------
+        H : :ref:`PauliHamiltonian``
+            The resulting Pauli Hamiltonian.
+        
+        """
 
         H = 0
         for term,coeff in self.terms_dict.items():
