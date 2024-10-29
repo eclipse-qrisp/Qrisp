@@ -68,7 +68,7 @@ def delta(i,j):
 def omega(x):
     return x%2
 
-def spacial_to_spin(int_one,int_two):
+def spacial_to_spin(one_int,two_int):
     r"""
     Transforms one- and two-electron integrals w.r.t. $M$ spacial orbitals $\psi_0,\dotsc,\psi_{M-1}$ to 
     one- and two-electron integrals w.r.t. $2M$ spin orbitals $\chi_{2i}=\psi_{i}\alpha$, 
@@ -90,37 +90,50 @@ def spacial_to_spin(int_one,int_two):
 
     Parameters
     ----------
-    int_one : numpy.ndarray
+    one_int : numpy.ndarray
         The one-electron integrals w.r.t. spacial orbitals.
-    int_two : numpy.ndarray
+    two_int : numpy.ndarray
         The two-electron integrals w.r.t. spacial orbitals.
 
     Returns
     -------
-    int_one_spin : numpy.ndarray
+    one_int_spin : numpy.ndarray
         The one-electron integrals w.r.t. spin orbitals.
-    int_two_spin : numpy.ndarray
+    two_int_spin : numpy.ndarray
         The two-electron integrals w.r.t. spin orbitals.
 
     """
 
-    n_spin_orbs = 2*int_one.shape[0]
+    num_spacial_orbs = one_int.shape[0]
+    num_spin_orbs = 2*num_spacial_orbs
 
     # Initialize the spin-orbital one-electron integral tensor
-    int_one_spin = np.zeros((n_spin_orbs, n_spin_orbs))
-    for i in range(n_spin_orbs):
-        for j in range(n_spin_orbs):
-            int_one_spin[i][j] = delta(omega(i),omega(j))*int_one[i//2][j//2]
+    one_int_spin = np.zeros((num_spin_orbs, num_spin_orbs))
+
+    for i in range(num_spacial_orbs):
+        for j in range(num_spacial_orbs):
+
+            one_int_spin[2*i][2*j] = one_int[i][j]
+            
+            one_int_spin[2*i+1][2*j+1] = one_int[i][j]
 
     # Initialize the spin-orbital two-electron integral tensor
-    int_two_spin = np.zeros((n_spin_orbs, n_spin_orbs, n_spin_orbs, n_spin_orbs))
-    for i in range(n_spin_orbs):
-        for j in range(n_spin_orbs):
-            for k in range(n_spin_orbs):
-                for l in range (n_spin_orbs):
-                    int_two_spin[i][j][k][l] = delta(omega(i),omega(j))*delta(omega(k),omega(l))*int_two[i//2][j//2][k//2][l//2]
+    two_int_spin = np.zeros((num_spin_orbs, num_spin_orbs, num_spin_orbs, num_spin_orbs))
 
-    return int_one_spin, int_two_spin
+    for i in range(num_spacial_orbs):
+        for j in range(num_spacial_orbs):  
+            for k in range(num_spacial_orbs):
+                for l in range (num_spacial_orbs):
+
+                    two_int_spin[2*i][2*j+1][2*k+1][2*l] = two_int[i][j][k][l]
+
+                    two_int_spin[2*i+1][2*j][2*k][2*l+1] = two_int[i][j][k][l]
+
+                    two_int_spin[2*i][2*j][2*k][2*l] = two_int[i][j][k][l]
+
+                    two_int_spin[2*i+1][2*j+1][2*k+1][2*l+1] = two_int[i][j][k][l]
+    
+    return one_int_spin, two_int_spin
 
 def electronic_data(mol):
     """
@@ -152,6 +165,7 @@ def electronic_data(mol):
             The Hartree-Fock ground state energy.
 
     """
+
     from pyscf import scf, ao2mo
 
     data = {}
@@ -174,13 +188,15 @@ def electronic_data(mol):
     two_int = ao2mo.kernel(mol,mf.mo_coeff)
     # Full tensor with chemist's notation
     two_int = apply_threshold(ao2mo.restore(1,two_int,mol.nao_nr()),threshold)
+    # Full tensor with physicist's notation
+    two_int = np.transpose(two_int,(0,2,3,1))
+
     # Convert spacial orbital to spin orbitals
     one_int, two_int  = spacial_to_spin(one_int,two_int)
 
     data['mol'] = mol
     data['one_int'] = one_int
-    #data['two_int'] = np.transpose(two_int,(0,2,1,3))
-    data['two_int'] = np.transpose(two_int,(0,2,3,1))
+    data['two_int'] = two_int
     data['num_orb'] = 2*mf.mo_coeff.shape[0]  # Number of spin orbitals
     data['num_elec'] = mol.nelectron
     data['energy_nuc'] = mol.energy_nuc()
