@@ -519,6 +519,7 @@ def create_electronic_hamiltonian_fermionic(arg, active_orb=None, active_elec=No
 
     # apply threshold
     #H.apply_threshold(threshold) 
+    H.reduce()
     return H
 
 #

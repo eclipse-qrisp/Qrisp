@@ -69,6 +69,10 @@ class FermionicHamiltonian(Hamiltonian):
 
     def __init__(self, terms_dict={}, avoid_flips = True):
         
+        self.terms_dict = terms_dict
+
+    def reduce(self):
+        
         # This function performs some non trivial logic.
         
         # The problem here is that each fermionic term can
@@ -88,7 +92,7 @@ class FermionicHamiltonian(Hamiltonian):
         # are taken care of.
         new_terms_dict = {}
         
-        for term, coeff in terms_dict.items():
+        for term, coeff in self.terms_dict.items():
             
             # We only store the sorted version of each term.
             # Sorting here means permuting the creators/annihilators
@@ -111,13 +115,13 @@ class FermionicHamiltonian(Hamiltonian):
                 # When multiplying terms, this type of transformations causes
                 # problems. Because of this the avoid_flips keyword is set to 
                 # False within __mul__
-                elif flip_sign < 0 and avoid_flips:
-                    sorted_term = daggered_sorted_term
-                    flip_sign = daggered_flip_sign
+                # elif flip_sign < 0 and avoid_flips:
+                #     sorted_term = daggered_sorted_term
+                #     flip_sign = daggered_flip_sign
             
             # Compute the new coefficient.
             new_terms_dict[sorted_term] = flip_sign*coeff + new_terms_dict.get(sorted_term, 0)
-        
+            
         self.terms_dict = new_terms_dict
 
     def len(self):
@@ -516,6 +520,7 @@ class FermionicHamiltonian(Hamiltonian):
         
         """
         
+        self.reduce()
         for i in range(iter):
             for j in range(steps):
                 for ferm_term, value in self.terms_dict.items():
