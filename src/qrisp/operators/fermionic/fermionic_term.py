@@ -339,13 +339,19 @@ class FermionicTerm:
         sorting_list = [index for index, is_creator in self.ladder_list]
         perm = np.argsort(sorting_list, kind = "stable")
         ladder_list = [self.ladder_list[i] for i in perm]
-        from sympy.combinatorics import Permutation
-        return FermionicTerm(ladder_list), Permutation(perm).signature()
-
         
-                    
+        return FermionicTerm(ladder_list), permutation_signature(perm)
 
-                
+def permutation_signature(perm):
+    
+    k = 0
+    for i in range(len(perm)):
+        for j in range(i):
+            k += int(perm[i] < perm[j])
+            
+    return (-1)**(k%2)
+            
+
             
             
             

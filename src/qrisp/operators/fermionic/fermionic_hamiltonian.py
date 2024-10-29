@@ -365,7 +365,8 @@ class FermionicHamiltonian(Hamiltonian):
         for ladder_term,coeff in other.terms_dict.items():
             self.terms_dict[ladder_term] = self.terms_dict.get(ladder_term,0)+coeff
             if abs(self.terms_dict[ladder_term])<threshold:
-                del self.terms_dict[ladder_term]       
+                del self.terms_dict[ladder_term]
+        self.terms_dict = FermionicHamiltonian(self.terms_dict).terms_dict
         return self         
 
     def __isub__(self,other):
