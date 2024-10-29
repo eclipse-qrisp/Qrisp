@@ -471,7 +471,7 @@ class FermionicHamiltonian(Hamiltonian):
     # Transformations
     #
 
-    def to_pauli_hamiltonian(self, mapping='jordan_wigner'):
+    def to_pauli_hamiltonian(self, mapping_type='jordan_wigner', num_qubits=None):
         """
         Transforms the fermionic Hamiltonian to a :ref:`PauliHamiltonian`.
 
@@ -480,6 +480,8 @@ class FermionicHamiltonian(Hamiltonian):
         mapping : str, optional
             The mapping to transform the Hamiltonian. Available is ``jordan_wigner``.
             The default is ``jordan_wigner``.
+        num_qubits : int, optional
+            The number of qubits. This information is necessary for, e.g., parity transform.
 
         Returns
         -------

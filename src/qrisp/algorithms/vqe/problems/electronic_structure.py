@@ -204,139 +204,7 @@ def electronic_data(mol):
 
     return data
 
-#
-# Fermion to qubit mappings
-#
-
-# Jordan-Wigner annihilation operaror 
-@cache
-def a_jw(j):
-    #return PauliHamiltonian({tuple([(i,"Z") for i in range(j)]+[(j,"X")]):0.5,tuple([(i,"Z") for i in range(j)]+[(j,"Y")]):0.5j})
-    d1={i:'Z' for i in range(j)}
-    d1[j]='X'
-    d2={i:'Z' for i in range(j)}
-    d2[j]='Y'
-    return PauliHamiltonian({PauliTerm(d1):0.5,PauliTerm(d2):0.5j})
-
-# Jordan-Wigner creation operator 
-@cache
-def c_jw(j):
-    #return PauliHamiltonian({tuple([(i,"Z") for i in range(j)]+[(j,"X")]):0.5,tuple([(i,"Z") for i in range(j)]+[(j,"Y")]):-0.5j})
-    d1={i:'Z' for i in range(j)}
-    d1[j]='X'
-    d2={i:'Z' for i in range(j)}
-    d2[j]='Y'
-    return PauliHamiltonian({PauliTerm(d1):0.5,PauliTerm(d2):-0.5j})
-
-# Parity annihilation operator
-@cache
-def a_par(j,M):
-    if j>0:
-        d1={i:'X' for i in range(j,M)}
-        d1[j-1]='Z'
-        d2={i:'X' for i in range(j+1,M)}
-        d2[j]='Y'
-        return PauliHamiltonian({PauliTerm(d1):0.5,PauliTerm(d2):0.5j})
-        #return PauliHamiltonian({tuple([(j-1,"Z"),(j,"X")]+[(i,"X") for i in range(j+1,M)]):0.5,tuple([(j,"Y")]+[(i,"X") for i in range(j+1,M)]):0.5j})
-    else:
-        d1={i:'X' for i in range(j,M)}
-        #d1[j-1]='Z'
-        d2={i:'X' for i in range(j+1,M)}
-        d2[j]='Y'
-        return PauliHamiltonian({PauliTerm(d1):0.5,PauliTerm(d2):0.5j})
-        #return PauliHamiltonian({tuple([(j,"X")]+[(i,"X") for i in range(j+1,M)]):0.5,tuple([(j,"Y")]+[(i,"X") for i in range(j+1,M)]):0.5j})
-
-# Parity creation operator
-@cache
-def c_par(j,M):
-    if j>0:
-        d1={i:'X' for i in range(j,M)}
-        d1[j-1]='Z'
-        d2={i:'X' for i in range(j+1,M)}
-        d2[j]='Y'
-        return PauliHamiltonian({PauliTerm(d1):0.5,PauliTerm(d2):-0.5j})
-        #return PauliHamiltonian({tuple([(j-1,"Z"),(j,"X")]+[(i,"X") for i in range(j+1,M)]):0.5,tuple([(j,"Y")]+[(i,"X") for i in range(j+1,M)]):-0.5j},0)
-    else:
-        d1={i:'X' for i in range(j,M)}
-        #d1[j-1]='Z'
-        d2={i:'X' for i in range(j+1,M)}
-        d2[j]='Y'
-        return PauliHamiltonian({PauliTerm(d1):0.5,PauliTerm(d2):-0.5j})
-        #return PauliHamiltonian({tuple([(j,"X")]+[(i,"X") for i in range(j+1,M)]):0.5,tuple([(j,"Y")]+[(i,"X") for i in range(j+1,M)]):-0.5j},0)
-
-@cache
-def ann(i,M,mapping_type):
-    """
-    Returns the qubit operator for the fermionic annihilation operator $a_i$.
-
-    Parameters
-    ----------
-    i : int
-        The index of the annihilation operator $a_i$.
-    M: int
-        The number of fermions.
-    mapping_type : str
-        The mapping type. Available are ``jordan_wigner``, ``parity``.
-
-    Returns
-    -------
-    PauliHamiltonian
-        The qubit PauliHamiltonian for the annihilation operator $a_i$.
-
-    """
-
-    if mapping_type=='jordan_wigner':
-        return a_jw(i)
-    if mapping_type=='parity':
-        return a_par(i,M)
-
-@cache
-def cre(i,M,mapping_type):
-    """
-    Returns the qubit operator for the fermionic creation operator $a_i^{\dagger}$.
-
-    Parameters
-    ----------
-    i : int
-        The index of the annihilation operator $a_i^{\dagger}$.
-    M: int
-        The number of fermions.
-    mapping_type : str
-        The mapping type. Available are ``jordan_wigner``, ``parity``.
-
-    Returns
-    -------
-    PauliHamiltonian
-        The qubit PauliHamiltonian for the annihilation operator $a_i$.
-
-    """
-
-    if mapping_type=='jordan_wigner':
-        return c_jw(i)
-    if mapping_type=='parity':
-        return c_par(i,M)
-
-@cache
-def cre2(i,j,M,mapping_type):
-
-    if mapping_type=='jordan_wigner':
-        return c_jw(i)*c_jw(j)
-    if mapping_type=='parity':
-        return c_par(i,M)*c_par(j,M)
-
-@cache
-def ann2(i,j,M,mapping_type):
-
-    if mapping_type=='jordan_wigner':
-        return a_jw(i)*a_jw(j)
-    if mapping_type=='parity':
-        return a_par(i,M)*a_par(j,M)
-
-#
-# Hamiltonian
-#
-
-def create_electronic_hamiltonian(arg, active_orb=None, active_elec=None, mapping_type='jordan_wigner', threshold=1e-4):
+def create_electronic_hamiltonian(arg, active_orb=None, active_elec=None):
     """
     Creates the qubit Hamiltonian for an electronic structure problem. 
     If an Active Space (AS) is specified, the Hamiltonian is calculated following this `paper <https://arxiv.org/abs/2009.01872>`_.
@@ -360,19 +228,16 @@ def create_electronic_hamiltonian(arg, active_orb=None, active_elec=None, mappin
         The number of active spin orbitals.
     active_elec : int, optional
         The number of active electrons.
-    mapping_type : string, optinal
-        The mapping from the fermionic Hamiltonian to the qubit Hamiltonian. Available are ``jordan_wigner``, ``parity``.
-        The default is ``jordan_wigner``.
-    threshold : float, optional
-        The threshold for the absolute value of the coefficients of Pauli products in the quantum Hamiltonian. The default is 1e-4.
 
     Returns
     -------
-    H : Hamiltonian
-        The quantum :ref:`Hamiltonian`.
+    H : :ref:`FermionicHamiltonian`
+        The fermionic Hamiltonian.
     
     Examples
     --------
+
+    We calucalte the fermionic Hamiltonian for the Hydrogen molecule, and transform it to a Pauli Hamiltonian via Jordan-Wigner transform.
 
     ::
 
@@ -384,7 +249,7 @@ def create_electronic_hamiltonian(arg, active_orb=None, active_elec=None, mappin
             basis = 'sto-3g')
 
         H = create_electronic_hamiltonian(mol)
-        H   
+        H.to_pauli_hamiltonian()   
 
     Yields:
 
@@ -397,71 +262,9 @@ def create_electronic_hamiltonian(arg, active_orb=None, active_elec=None, mappin
         &+0.165927850337703 Z_1Z_2 + 0.120625234833904 Z_1Z_3 - 0.223431536908133 Z_2 + 0.174412876122615Z Z_2Z_3 - 0.223431536908133 Z_3
 
     """
+
     import pyscf
-    if isinstance(arg,pyscf.gto.Mole):
-        data = electronic_data(arg)
-    elif isinstance(arg,dict):
-        data = arg
-        if not verify_symmetries(data['two_int']):
-            raise Warning("Failed to verify symmetries for two-electron integrals")
-    else:
-        raise TypeError("Cannot create electronic Hamiltonian from type "+str(type(arg)))
 
-    one_int = data['one_int']
-    two_int = data['two_int']
-    M = data['num_orb']
-    N = data['num_elec']
-    K = active_orb
-    L = active_elec
-
-    if K is None or L is None:
-        K = M
-        L = N
-
-    if L>N or K>M or K<L or K+N-L>M:
-        raise Exception("Invalid number of active electrons or orbitals")
-
-    # number of inactive electrons 
-    I = N-L
-
-    # inactive Fock operator
-    F = one_int.copy()
-    for p in range(M):
-        for q in range(M):
-            for i in range(I):
-                #F[p][q] += (two_int[i][p][i][q]-two_int[i][q][p][i])
-                F[p][q] += (two_int[i][p][q][i]-two_int[i][q][i][p])
-
-    # inactive energy
-    E = 0
-    for j in range(I):
-        E += (one_int[j][j]+F[j][j])/2
-
-    # Hamiltonian
-    H=E
-    for i in range(K):
-        for j in range(K):
-            if F[I+i][I+j]!=0:
-                H += F[I+i][I+j]*cre(i,K,mapping_type)*ann(j,K,mapping_type)
-    
-    for i in range(K):
-        for j in range(K): 
-            for k in range(K):
-                for l in range(K):
-                    if two_int[I+i][I+j][I+k][I+l]!=0 and i!=j and k!=l:
-                        h = cre2(i,j,K,mapping_type)*ann2(k,l,K,mapping_type)
-                        h *= (0.5*two_int[I+i][I+j][I+k][I+l])
-                        H += h
-
-    # apply threshold
-    H.apply_threshold(threshold) 
-    return H
-
-def create_electronic_hamiltonian_fermionic(arg, active_orb=None, active_elec=None, mapping_type='jordan_wigner', threshold=1e-4):
-    """
-
-    """
-    import pyscf
     if isinstance(arg,pyscf.gto.Mole):
         data = electronic_data(arg)
     elif isinstance(arg,dict):
@@ -515,8 +318,6 @@ def create_electronic_hamiltonian_fermionic(arg, active_orb=None, active_elec=No
                     if two_int[I+i][I+j][I+k][I+l]!=0 and i!=j and k!=l:
                         H += (0.5*two_int[I+i][I+j][I+k][I+l])*c(i)*c(j)*a(k)*a(l)
 
-    # apply threshold
-    #H.apply_threshold(threshold) 
     H.reduce()
     return H
 
@@ -771,4 +572,8 @@ def electronic_structure_problem(arg, active_orb=None, active_elec=None, mapping
 
     ansatz, num_params = create_QCCSD_ansatz(K,L)
 
-    return VQEProblem(create_electronic_hamiltonian(data,K,L,mapping_type=mapping_type,threshold=threshold), ansatz, num_params, init_function=create_hartree_fock_init_function(K,L,mapping_type))
+    fermionic_hamiltonian = create_electronic_hamiltonian(data,K,L)
+    hamiltonian = fermionic_hamiltonian.to_pauli_hamiltonian(mapping_type=mapping_type,num_qubits=K)
+    hamiltonian.apply_threshold(threshold)
+
+    return VQEProblem(hamiltonian, ansatz, num_params, init_function=create_hartree_fock_init_function(K,L,mapping_type))
