@@ -57,6 +57,9 @@ class PauliTerm:
         # Convert the sympy expression to a string and return it
         expr = self.to_expr()
         return str(expr)
+    
+    def __repr__(self):
+        return str(self)
 
     def to_expr(self):
         """
