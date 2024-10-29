@@ -506,15 +506,13 @@ def create_electronic_hamiltonian_fermionic(arg, active_orb=None, active_elec=No
     for i in range(K):
         for j in range(K):
             if F[I+i][I+j]!=0:
-                H += F[I+i][I+j]*c(i)*a(j) # cre(i,K,mapping_type)*ann(j,K,mapping_type)
+                H += F[I+i][I+j]*c(i)*a(j)
     
     for i in range(K):
         for j in range(K): 
             for k in range(K):
                 for l in range(K):
                     if two_int[I+i][I+j][I+k][I+l]!=0 and i!=j and k!=l:
-                        #h = #cre2(i,j,K,mapping_type)*ann2(k,l,K,mapping_type)
-                        #h *= (0.5*two_int[I+i][I+j][I+k][I+l])
                         H += (0.5*two_int[I+i][I+j][I+k][I+l])*c(i)*c(j)*a(k)*a(l)
 
     # apply threshold

@@ -475,8 +475,14 @@ class FermionicHamiltonian(Hamiltonian):
 
         H = 0
         for term,coeff in self.terms_dict.items():
-            h = coeff
+
+            h = coeff/2
             for ladder in term.ladder_list[::-1]:
+                h *= jordan_wigner(ladder)
+            H += h
+
+            h = coeff/2
+            for ladder in term.dagger().ladder_list[::-1]:
                 h *= jordan_wigner(ladder)
             H += h
 
