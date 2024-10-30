@@ -16,10 +16,6 @@
 ********************************************************************************/
 """
 
-from qrisp.operators.hamiltonian import Hamiltonian
-from qrisp.operators.pauli.pauli_measurement import PauliMeasurement
-
-
 def multi_hamiltonian_measurement(
         hamiltonians, 
         qarg,
@@ -29,7 +25,6 @@ def multi_hamiltonian_measurement(
         compile=True,
         compilation_kwargs={},
         subs_dic={},
-        circuit_preprocessor=None,
         precompiled_qc=None,
         _measurements=None
     ):
@@ -62,9 +57,8 @@ def multi_hamiltonian_measurement(
         A dictionary of Sympy symbols and floats to specify parameters in the case
         of a circuit with unspecified, :ref:`abstract parameters<QuantumCircuit>`.
         The default is {}.
-    circuit_preprocessor : Python function, optional
-        A function which recieves a QuantumCircuit and returns one, which is applied
-        after compilation and parameter substitution. The default is None.
+    precompiled_qc : QuantumCircuit, optional
+            A precompiled quantum circuit.
 
     Returns
     -------
@@ -83,7 +77,6 @@ def multi_hamiltonian_measurement(
                                 compile=compile,
                                 compilation_kwargs=compilation_kwargs,
                                 subs_dic=subs_dic,
-                                circuit_preprocessor=circuit_preprocessor,
                                 precompiled_qc=precompiled_qc,
                                 _measurement=None if _measurements==None else _measurements[i]
                                 ))

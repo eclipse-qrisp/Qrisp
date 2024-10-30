@@ -508,9 +508,64 @@ class FermionicHamiltonian(Hamiltonian):
         return H
     
     #
-    # Partitions 
+    # Measurement
     #
 
+    def get_measurement(
+        self,
+        qarg,
+        precision=0.01,
+        backend=None,
+        shots=1000000,
+        compile=True,
+        compilation_kwargs={},
+        subs_dic={},
+        precompiled_qc=None,
+        _measurement=None # measurement settings
+    ):
+        r"""
+        This method returns the expected value of a Hamiltonian for the state of a quantum argument.
+
+        Parameters
+        ----------
+        qarg : QuantumVariable, QuantumArray or list[QuantumVariable]
+            The quantum argument to evaluate the Hamiltonian on.
+        precision: float, optional
+            The precision with which the expectation of the Hamiltonian is to be evaluated.
+            The default is 0.01. The number of shots scales quadratically with the inverse precision.
+        backend : BackendClient, optional
+            The backend on which to evaluate the quantum circuit. The default can be
+            specified in the file default_backend.py.
+        shots : integer, optional
+            The maximum amount of shots to evaluate the expectation of the Hamiltonian. 
+            The default is 1000000.
+        compile : bool, optional
+            Boolean indicating if the .compile method of the underlying QuantumSession
+            should be called before. The default is True.
+        compilation_kwargs  : dict, optional
+            Keyword arguments for the compile method. For more details check
+            :meth:`QuantumSession.compile <qrisp.QuantumSession.compile>`. The default
+            is ``{}``.
+        subs_dic : dict, optional
+            A dictionary of Sympy symbols and floats to specify parameters in the case
+            of a circuit with unspecified, :ref:`abstract parameters<QuantumCircuit>`.
+            The default is {}.
+        precompiled_qc : QuantumCircuit, optional
+            A precompiled quantum circuit.
+
+        Raises
+        ------
+        Exception
+            If the containing QuantumSession is in a quantum environment, it is not
+            possible to execute measurements.
+
+        Returns
+        -------
+        float
+            The expected value of the Hamiltonian.
+        """
+        pass
+        
     #
     # Trotterization
     #

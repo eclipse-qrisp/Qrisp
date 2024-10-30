@@ -19,6 +19,7 @@ from qrisp.operators.hamiltonian import Hamiltonian
 from qrisp.operators.pauli.helper_functions import *
 from qrisp.operators.pauli.bound_pauli_term import BoundPauliTerm
 from qrisp.operators.pauli.pauli_measurement import PauliMeasurement
+from qrisp.operators.pauli.measurement import get_measurement
 
 import sympy as sp
 
@@ -560,6 +561,104 @@ class BoundPauliHamiltonian(Hamiltonian):
     def pauli_measurement(self):
         return PauliMeasurement(self)
 
+    def get_measurement(
+        self,
+        qarg,
+        precision=0.01,
+        backend=None,
+        shots=1000000,
+        compile=True,
+        compilation_kwargs={},
+        subs_dic={},
+        precompiled_qc=None,
+        _measurement=None # measurement settings
+    ):
+        r"""
+        This method returns the expected value of a Hamiltonian for the state of a quantum argument.
+
+        Parameters
+        ----------
+        qarg : QuantumVariable, QuantumArray or list[QuantumVariable]
+            The quantum argument to evaluate the Hamiltonian on.
+        precision: float, optional
+            The precision with which the expectation of the Hamiltonian is to be evaluated.
+            The default is 0.01. The number of shots scales quadratically with the inverse precision.
+        backend : BackendClient, optional
+            The backend on which to evaluate the quantum circuit. The default can be
+            specified in the file default_backend.py.
+        shots : integer, optional
+            The maximum amount of shots to evaluate the expectation of the Hamiltonian. 
+            The default is 1000000.
+        compile : bool, optional
+            Boolean indicating if the .compile method of the underlying QuantumSession
+            should be called before. The default is True.
+        compilation_kwargs  : dict, optional
+            Keyword arguments for the compile method. For more details check
+            :meth:`QuantumSession.compile <qrisp.QuantumSession.compile>`. The default
+            is ``{}``.
+        subs_dic : dict, optional
+            A dictionary of Sympy symbols and floats to specify parameters in the case
+            of a circuit with unspecified, :ref:`abstract parameters<QuantumCircuit>`.
+            The default is {}.
+        circuit_preprocessor : Python function, optional
+            A function which recieves a QuantumCircuit and returns one, which is applied
+            after compilation and parameter substitution. The default is None.
+        precompiled_qc : QuantumCircuit, optional
+            A precompiled quantum circuit.
+            
+        Raises
+        ------
+        Exception
+            If the containing QuantumSession is in a quantum environment, it is not
+            possible to execute measurements.
+
+        Returns
+        -------
+        float
+            The expected value of the Hamiltonian.
+
+        Examples
+        --------
+
+        We define a Hamiltonian, and measure its expected value for the state of a :ref:`QuantumVariable`.
+
+        ::
+
+            from qrisp import QuantumVariable, h
+            from qrisp.operators.pauli import X,Y,Z
+            qv = QuantumVariable(2)
+            h(qv)
+            H = Z(0)*Z(1)
+            res = H.get_measurement(qv)
+            print(res)
+            #Yields 0.0
+
+        We define a Hamiltonian, and measure its expected value for the state of a :ref:`QuantumArray`.
+
+        ::
+
+            from qrisp import QuantumVariable, QuantumArray, h
+            from qrisp.operators.pauli import X,Y,Z
+            qtype = QuantumVariable(2)
+            q_array = QuantumArray(qtype, shape=(2))
+            h(q_array)
+            H = Z(0)*Z(1) + X(2)*X(3)
+            res = H.get_measurement(q_array)
+            print(res)
+            #Yields 1.0
+
+        """
+        return get_measurement(self, 
+                                qarg, 
+                                precision=precision, 
+                                backend=backend, 
+                                shots=shots, 
+                                compile=compile, 
+                                compilation_kwargs=compilation_kwargs, 
+                                subs_dic=subs_dic,
+                                precompiled_qc=precompiled_qc, 
+                                _measurement=_measurement)
+    
     #
     # Trotterization
     #
