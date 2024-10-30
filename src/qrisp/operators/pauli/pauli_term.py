@@ -16,7 +16,7 @@
 ********************************************************************************/
 """
 
-from qrisp import gphase, rz, cx, conjugate
+from qrisp import gphase, rz, cx, conjugate, lifted
 from qrisp.operators.pauli.visualization import X_,Y_,Z_
 
 PAULI_TABLE = {("I","I"):("I",1),("I","X"):("X",1),("I","Y"):("Y",1),("I","Z"):("Z",1),
@@ -58,6 +58,8 @@ class PauliTerm:
     #
     
     # Assume that the operator is diagonal after change of basis
+    # Implements exp(i*coeff*\prod_j Z_j) where the product goes over all indices j in self.pauli_dict
+    @lifted
     def simulate(self, coeff, qarg):
 
         def parity(qarg, indices):
