@@ -39,7 +39,9 @@ In this section, we provide a glimpse into the diverse range of applications tha
      - Calculating molecular potential energy curves with :ref:`VQE`.
    * - :ref:`GroundStateEnergyQPE` 
      - Calculating ground state energies with quantum phase estimation.                    
-      
+   * - :ref:`IsingModel` 
+     - Hamiltonian simulation of a transverse field Ising model. 
+
       
 .. toctree::
    :hidden:
@@ -60,3 +62,4 @@ In this section, we provide a glimpse into the diverse range of applications tha
    Shor
    MolecularPotentialEnergyCurve
    GroundStateEnergyQPE
+   IsingModel
