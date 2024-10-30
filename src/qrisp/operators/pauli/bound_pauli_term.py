@@ -16,7 +16,7 @@
 ********************************************************************************/
 """
 
-from qrisp.operators.pauli.spin import X_,Y_,Z_
+from qrisp.operators.pauli.visualization import X_,Y_,Z_
 
 PAULI_TABLE = {("I","I"):("I",1),("I","X"):("X",1),("I","Y"):("Y",1),("I","Z"):("Z",1),
             ("X","I"):("X",1),("X","X"):("I",1),("X","Y"):("Z",1j),("X","Z"):("Y",-1j),
