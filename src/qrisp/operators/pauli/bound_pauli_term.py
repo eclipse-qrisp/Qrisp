@@ -16,6 +16,7 @@
 ********************************************************************************/
 """
 
+from qrisp import gphase, rz, cx, conjugate
 from qrisp.operators.pauli.visualization import X_,Y_,Z_
 
 PAULI_TABLE = {("I","I"):("I",1),("I","X"):("X",1),("I","Y"):("Y",1),("I","Z"):("Z",1),
@@ -48,6 +49,29 @@ class BoundPauliTerm:
     
     def copy(self):
         return BoundPauliTerm(self.pauli_dict.copy())
+    
+    def is_identity(self):
+        return len(self.pauli_dict)==0
+    
+    #
+    # Simulation
+    #
+    
+    # Assume that the operator is diagonal after change of basis
+    def simulate(self, coeff, qubit):
+
+        def parity(qubits):
+            n = len(qubits)
+            for i in range(n-1):
+                cx(qubits[i],qubits[i+1])
+
+        if not self.is_identity():
+            qubits = list(self.pauli_dict.keys())
+            with conjugate(parity)(qubits):
+                rz(-2*coeff,qubits[-1])
+        else:
+            gphase(coeff,qubit)
+
     #
     # Printing
     #

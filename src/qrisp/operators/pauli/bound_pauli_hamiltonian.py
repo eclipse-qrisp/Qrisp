@@ -16,10 +16,10 @@
 ********************************************************************************/
 """
 from qrisp.operators.hamiltonian import Hamiltonian
-from qrisp.operators.pauli.helper_functions import *
 from qrisp.operators.pauli.bound_pauli_term import BoundPauliTerm
 from qrisp.operators.pauli.pauli_measurement import PauliMeasurement
 from qrisp.operators.pauli.measurement import get_measurement
+from qrisp import h, sx, IterationEnvironment, conjugate
 
 import sympy as sp
 
@@ -680,7 +680,7 @@ class BoundPauliHamiltonian(Hamiltonian):
 
             This function receives the following arguments:
 
-            * qarg : QuantumVariable or list[QuantumVariable]
+            * qarg : QuantumVariable 
                 The quantum argument.
             * t : float, optional
                 The evolution time $t$. The default is 1.
@@ -691,48 +691,31 @@ class BoundPauliHamiltonian(Hamiltonian):
         
         """
 
-        from qrisp import conjugate, rx, ry, rz, cx, h, IterationEnvironment, gphase, QuantumSession, merge
+        def change_of_basis(pauli_dict):
+            for qubit, axis in pauli_dict.items():
+                if axis=="X":
+                    h(qubit)
+                if axis=="Y":
+                    sx(qubit)
 
-        pauli_measurement = self.pauli_measurement()
-        bases = pauli_measurement.bases
-        indices = pauli_measurement.operators_ind # Indices (Qubits) of Z's in PauliTerms (after change of basis)
-        operators_int = pauli_measurement.operators_int
-        coeffs = pauli_measurement.coefficients
+        groups, bases = self.commuting_qw_groups(show_bases=True)
 
         def trotter_step(qarg, t, steps):
 
+            # qubit to apply gphase for identity term
             if isinstance(qarg,list):
                 qubit = qarg[0][0]
             else:
                 qubit = qarg[0]
 
-            N = len(bases)
-            for k in range(N):
-                basis = bases[k].pauli_dict
-
-                with conjugate(change_of_basis_bound)(basis):
-                    M = len(indices[k])
-
-                    for l in range(M):
-                        if(operators_int[k][l]>0): # Not identity
-                            with conjugate(parity_bound)(indices[k][l]):
-                                rz(-2*coeffs[k][l]*t/steps,indices[k][l][-1])
-                        else: # Identity
-                            gphase(coeffs[k][l]*t/steps,qubit)
+            for index,basis in enumerate(bases):
+                with conjugate(change_of_basis)(basis.pauli_dict):
+                    for term,coeff in groups[index].terms_dict.items():
+                        term.simulate(coeff*t/steps, qubit)
 
         def U(qarg, t=1, steps=1, iter=1):
-
-            if isinstance(qarg,list):
-                qs = QuantumSession()
-                for qv in qarg:
-                    merge(qs,qv.qs)
-            else:
-                qs = qarg.qs
-
-            with IterationEnvironment(qs, iter):
+            with IterationEnvironment(qarg.qs, iter):
                 for i in range(steps):
                     trotter_step(qarg, t, steps)
 
         return U
-    
-

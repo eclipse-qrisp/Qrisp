@@ -16,10 +16,10 @@
 ********************************************************************************/
 """
 from qrisp.operators.hamiltonian import Hamiltonian
-from qrisp.operators.pauli.helper_functions import *
 from qrisp.operators.pauli.pauli_term import PauliTerm
 from qrisp.operators.pauli.pauli_measurement import PauliMeasurement
 from qrisp.operators.pauli.measurement import get_measurement
+from qrisp import h, sx, IterationEnvironment, conjugate
 
 import sympy as sp
 
@@ -687,29 +687,20 @@ class PauliHamiltonian(Hamiltonian):
         
         """
 
-        from qrisp import conjugate, rx, ry, rz, cx, h, IterationEnvironment, gphase
+        def change_of_basis(qarg, pauli_dict):
+            for index, axis in pauli_dict.items():
+                if axis=="X":
+                    h(qarg[index])
+                if axis=="Y":
+                    sx(qarg[index])
 
-        pauli_measurement = self.pauli_measurement()
-        bases = pauli_measurement.bases
-        indices = pauli_measurement.operators_ind # Indices of Z's in PauliTerms (after change of basis)
-        operators_int = pauli_measurement.operators_int
-        coefficients = pauli_measurement.coefficients
+        groups, bases = self.commuting_qw_groups(show_bases=True)
 
         def trotter_step(qarg, t, steps):
-
-            N = len(bases)
-            for k in range(N):
-                basis = bases[k].pauli_dict
-
-                with conjugate(change_of_basis)(qarg, basis):
-                    M = len(indices[k])
-
-                    for l in range(M):
-                        if operators_int[k][l]>0: # Not identity
-                            with conjugate(parity)(qarg, indices[k][l]):
-                                rz(-2*coefficients[k][l]*t/steps,qarg[indices[k][l][-1]])
-                        else: # Identity
-                            gphase(coefficients[k][l]*t/steps,qarg[0])
+            for index,basis in enumerate(bases):
+                with conjugate(change_of_basis)(qarg, basis.pauli_dict):
+                    for term,coeff in groups[index].terms_dict.items():
+                        term.simulate(coeff*t/steps, qarg)
 
         def U(qarg, t=1, steps=1, iter=1):
             with IterationEnvironment(qarg.qs, iter):
