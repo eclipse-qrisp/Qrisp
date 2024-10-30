@@ -19,7 +19,7 @@ from qrisp.operators.hamiltonian import Hamiltonian
 from qrisp.operators.pauli.bound_pauli_term import BoundPauliTerm
 from qrisp.operators.pauli.pauli_measurement import PauliMeasurement
 from qrisp.operators.pauli.measurement import get_measurement
-from qrisp import h, sx, IterationEnvironment, conjugate
+from qrisp import h, sx, IterationEnvironment, conjugate, merge
 
 import sympy as sp
 
@@ -714,8 +714,8 @@ class BoundPauliHamiltonian(Hamiltonian):
                         term.simulate(coeff*t/steps, qubit)
 
         def U(qarg, t=1, steps=1, iter=1):
-            with IterationEnvironment(qarg.qs, iter):
-                for i in range(steps):
-                    trotter_step(qarg, t, steps)
+            merge([qarg])
+            with IterationEnvironment(qarg.qs, iter*steps):
+                trotter_step(qarg, t, steps)
 
         return U
