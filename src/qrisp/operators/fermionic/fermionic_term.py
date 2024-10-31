@@ -38,14 +38,10 @@ class FermionicTerm:
         # this way the FermionicHamiltonian does not have
         # to track both the term and it's dagger
         index_list = [index for index, is_creator in ladder_list]
-        is_creator_temp_hash = 0
+        is_creator_hash = 0
         for i in range(len(ladder_list)):
-            is_creator_temp_hash += ladder_list[i][1]*2**i
-        is_creator_temp_hash_dg = 0
-        # for i in range(len(ladder_list)):
-        #     is_creator_temp_hash_dg += (not ladder_list[::-1][i][1])*2**i
+            is_creator_hash += ladder_list[i][1]*2**i
         
-        is_creator_hash = is_creator_temp_hash + is_creator_temp_hash_dg
         self.hash_value = hash(tuple(index_list + [is_creator_hash]))
 
     #def update(self, update_dict):
