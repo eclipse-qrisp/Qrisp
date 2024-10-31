@@ -128,7 +128,7 @@ class QIROProblem(QAOAProblem):
         self.qiro_cost_operator = cost_operator
         self.qiro_mixer = mixer
 
-        self.problem = problem
+        self.problem = copy.deepcopy(problem)
         self.replacement_routine = replacement_routine
         
         self.init_function = init_function()
@@ -172,9 +172,7 @@ class QIROProblem(QAOAProblem):
         for index in range(n_recursions):
             
             new_problem, solutions , sign, exclusions = self.replacement_routine(res, [self.problem, solutions, exclusions])
-            print("sols+excl")
-            print(solutions)
-            print(exclusions)
+
             corr_vals.append(sign)    
             self.problem = new_problem
     

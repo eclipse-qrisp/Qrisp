@@ -60,7 +60,6 @@ def create_max_indep_replacement_routine(res, problem_updated):
     # for single qubit correlations
     orig_nodes = list(graph.nodes())
     
-    
     max_item, sign = find_max(orig_nodes, orig_edges , res, solutions)
     if max_item == None:
         return graph, solutions, 0 ,exclusions
@@ -71,14 +70,15 @@ def create_max_indep_replacement_routine(res, problem_updated):
     # we remove nodes from the graph, as suggested by the replacement rules
     # if the item is an int, it is a single node, else it is an edge
     if isinstance(max_item, int):
-        if sign > 0:
+        # if sign <0 then its mostly appeared as a "1" in the results--> part of solution set
+        if sign < 0:
             # remove all adjacent nodes
             to_remove = list(graph.adj[max_item])
             new_graph.remove_nodes_from(to_remove)
             solutions.append(max_item)
             exclusions += to_remove
-
-        elif sign < 0:
+        # if sign >0 then its mostly appeared as a "0" in the results
+        elif sign > 0:
             # remove the node
             new_graph.remove_node(max_item)
             exclusions.append(max_item)
@@ -130,6 +130,7 @@ def create_max_indep_cost_operator_reduced(problem_updated):
                 rz(gamma, qv[i])
 
     return cost_operator
+
 
 
 def create_max_indep_controlled_mixer_reduced(problem_updated):

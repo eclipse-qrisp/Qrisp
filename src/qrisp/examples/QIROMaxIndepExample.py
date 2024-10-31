@@ -5,15 +5,10 @@ import networkx as nx
 
 
 # First we define a graph via the number of nodes and the QuantumVariable arguments
-num_nodes = 13
-G = nx.erdos_renyi_graph(num_nodes, 0.4, seed =  107)
+num_nodes = 18
+G = nx.erdos_renyi_graph(num_nodes, 0.3, seed =  177)
 qarg = QuantumVariable(G.number_of_nodes())
 
-# set simulator shots
-mes_kwargs = {
-    #below should be 5k
-    "shots" : 5000
-    }
 
 # assign the correct new update functions for qiro from above imports
 qiro_instance = QIROProblem(G,
@@ -25,7 +20,7 @@ qiro_instance = QIROProblem(G,
                             )
 
 # We run the qiro instance and get the results!
-res_qiro = qiro_instance.run_qiro(qarg=qarg, depth = 3, n_recursions = 2, mes_kwargs = mes_kwargs)
+res_qiro = qiro_instance.run_qiro(qarg=qarg, depth = 3, n_recursions = 2)
 # and also the final graph, that has been adjusted
 final_Graph = qiro_instance.problem
 

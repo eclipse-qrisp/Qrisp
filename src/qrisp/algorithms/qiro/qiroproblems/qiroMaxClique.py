@@ -65,15 +65,15 @@ def create_max_clique_replacement_routine(res, problem_updated):
 
     # we just directly remove vertices from the graph 
     if isinstance(max_item, int):
-        if sign > 0:
+        if sign < 0:
             border = list(graph.adj[max_item].keys())
             border.append(max_item)
             to_remove = [int(item) for item in graph.nodes() if item not in border]
-            new_graph.remove_nodes_from( [item for item in graph.nodes() if item not in border])
+            new_graph.remove_nodes_from( to_remove)
             solutions.append(max_item)
             exclusions += to_remove
 
-        elif sign < 0:
+        elif sign > 0:
             #remove item
             new_graph.remove_node(max_item)
             exclusions.append(max_item)
@@ -99,7 +99,7 @@ def create_max_clique_replacement_routine(res, problem_updated):
             union.append(max_item[1])
             to_remove = [int(item) for item in graph.nodes() if item not in union]
             #to_delete = [item for item in graph.nodes() if item not in union]
-            new_graph.remove_nodes_from([item for item in graph.nodes() if item not in union])
+            new_graph.remove_nodes_from(to_remove)
             exclusions += to_remove
 
     return new_graph, solutions, sign, exclusions

@@ -26,6 +26,8 @@ import math
 import copy
 from qrisp.algorithms.qiro.qiroproblems.qiro_utils import * 
 
+from itertools import combinations
+
 
 def create_maxsat_replacement_routine(res, problem_updated):
     """
@@ -63,15 +65,9 @@ def create_maxsat_replacement_routine(res, problem_updated):
     # FOR SINGLE QUBIT CORRELATIONS
     # make -1 here for consistency in the find max
     orig_nodes = [i - 1 for i in list(range(1,numVars + 1)) if not i in exclusions]
-    combinations = []
+    combinations_list = combinations(enumerate(orig_nodes), 2)
 
-    # add check for solution nodes      
-    for index1 in range(len(orig_nodes)-1):
-        for index2 in range(index1, len(orig_nodes)):
-            combinations.append((orig_nodes[index1],orig_nodes[index2]))
-    
-
-    max_item, sign = find_max(orig_nodes, combinations, res, solutions)
+    max_item, sign = find_max(orig_nodes, combinations_list, res, solutions)
     if max_item == None:
         return problem, solutions, 0 ,exclusions
 
@@ -81,7 +77,7 @@ def create_maxsat_replacement_routine(res, problem_updated):
         max_item += 1
 
         for sgl_clause in clauses:
-            if sign > 0:
+            if sign < 0:
                 #clause evaluates to TRUE, can empty the clause 
                 if max_item in sgl_clause:
                     sgl_clause.clear()
@@ -97,7 +93,7 @@ def create_maxsat_replacement_routine(res, problem_updated):
                 exclusions.append(max_item)
 
             #same as above
-            elif sign < 0:
+            elif sign > 0:
                 if -1* max_item in sgl_clause:
                     sgl_clause.clear()
                 elif max_item in sgl_clause: 
@@ -107,21 +103,7 @@ def create_maxsat_replacement_routine(res, problem_updated):
                         val =  max_item
                         sgl_clause.remove(val)
                 exclusions.append(max_item)
-            """ if sign > 0:
-                for item in clauses: 
-                    # if number in item --> remove it --> clause is fulfilled
-                    if  max_item in item:
-                        item.clear()
-                solutions.append(max_item)
-                exclusions.append(max_item)
 
-            elif sign < 0:
-                for item in clauses:
-                    # if number in item --> remove the number 
-                    if -1* max_item in item:
-                        val = -1* max_item
-                        item.remove(val)
-                exclusions.append(max_item) """
 
     else:
         max_item[0] += 1 
@@ -137,7 +119,6 @@ def create_maxsat_replacement_routine(res, problem_updated):
                     sgl_clause[temp] = -1* max_item[0]
                 exclusions.append(max_item[1])
                     
-
         elif sign < 0:
             for sgl_clause in clauses:
                 # replace with neg. correlated number if its in an item
