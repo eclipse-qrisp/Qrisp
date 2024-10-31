@@ -45,3 +45,4 @@ def jordan_wigner(ladder):
         return c_jw(ladder[0])
     else:
         return a_jw(ladder[0])
+    

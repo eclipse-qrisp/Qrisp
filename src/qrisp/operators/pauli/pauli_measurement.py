@@ -16,9 +16,16 @@
 ********************************************************************************/
 """
 
-from qrisp.operators.pauli.helper_functions import *
 from qrisp import QuantumVariable, QuantumArray, QuantumCircuit
 import numpy as np
+
+
+def get_integer_from_indices(indices,positions=None):
+    if positions is not None:
+        return sum(1 << positions[i] for i in indices)
+    else:
+        return sum(1 << i for i in indices)
+
 
 class PauliMeasurement:
     """

@@ -16,7 +16,8 @@
 ********************************************************************************/
 """
 
-from qrisp.operators.pauli.spin import X_,Y_,Z_
+from qrisp import gphase, rz, cx, conjugate, lifted
+from qrisp.operators.pauli.visualization import X_,Y_,Z_
 
 PAULI_TABLE = {("I","I"):("I",1),("I","X"):("X",1),("I","Y"):("Y",1),("I","Z"):("Z",1),
             ("X","I"):("X",1),("X","X"):("I",1),("X","Y"):("Z",1j),("X","Z"):("Y",-1j),
@@ -48,9 +49,42 @@ class BoundPauliTerm:
     
     def copy(self):
         return BoundPauliTerm(self.pauli_dict.copy())
+    
+    def is_identity(self):
+        return len(self.pauli_dict)==0
+    
+    #
+    # Simulation
+    #
+    
+    # Assume that the operator is diagonal after change of basis
+    # Implements exp(i*coeff*\prod_j Z_j) where the product goes over all qubits j in self.pauli_dict
+    @lifted
+    def simulate(self, coeff, qubit):
+
+        def parity(qubits):
+            n = len(qubits)
+            for i in range(n-1):
+                cx(qubits[i],qubits[i+1])
+
+        if not self.is_identity():
+            qubits = list(self.pauli_dict.keys())
+            with conjugate(parity)(qubits):
+                rz(-2*coeff,qubits[-1])
+        else:
+            gphase(coeff,qubit)
+
     #
     # Printing
     #
+
+    def __str__(self):
+        # Convert the sympy expression to a string and return it
+        expr = self.to_expr()
+        return str(expr)
+    
+    def __repr__(self):
+        return str(self)
 
     def to_expr(self):
         """

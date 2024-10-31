@@ -16,22 +16,22 @@
 ********************************************************************************/
 """
 
-#from qrisp.vqe.problems.electronic_structure import *
+from qrisp.vqe.problems.electronic_structure import *
+from pyscf import gto
+from qrisp import QuantumVariable
+import numpy as np
 
 #
 # H2 molecule
 #
-"""
+
 def test_vqe_electronic_structure_H2():  
-    
-    from pyscf import gto
-    from qrisp import QuantumVariable
 
     mol = gto.M(
         atom = '''H 0 0 0; H 0 0 0.74''',
         basis = 'sto-3g')
     
-    H = create_electronic_hamiltonian(mol)
+    H = create_electronic_hamiltonian(mol).to_pauli_hamiltonian()
     assert np.abs(H.ground_state_energy()-(-1.85238817356958))
 
     vqe = electronic_structure_problem(mol)
@@ -40,12 +40,10 @@ def test_vqe_electronic_structure_H2():
     for i in range(5):
         res = vqe.run(QuantumVariable(4),
                 depth=1,
-                max_iter=50,
-                mes_kwargs={'method':'QWC'})
+                max_iter=50)
         results.append(res)
     
     assert np.abs(min(results)-(-1.85238817356958)) < 1e-1
-"""
 
 #
 # BeH2 molecule, active space
@@ -53,14 +51,11 @@ def test_vqe_electronic_structure_H2():
 """
 def test_vqe_electronic_structure_BeH2():
 
-    from pyscf import gto
-    from qrisp import QuantumVariable
-
     mol = gto.M(
         atom = f'''Be 0 0 0; H 0 0 3.0; H 0 0 -3.0''',
         basis = 'sto-3g')
     
-    H = create_electronic_hamiltonian(mol,active_orb=6,active_elec=4)
+    H = create_electronic_hamiltonian(mol,active_orb=6,active_elec=4).to_pauli_hamiltonian()
     assert np.abs(H.ground_state_energy()-(-16.73195995959339))
 
     # runs for >1 minute
@@ -70,8 +65,7 @@ def test_vqe_electronic_structure_BeH2():
     for i in range(5):
         res = vqe.run(QuantumVariable(6),
                 depth=1,
-                max_iter=50,
-                mes_kwargs={'method':'QWC'})
+                max_iter=50)
         results.append(res)
     
     print(min(results))

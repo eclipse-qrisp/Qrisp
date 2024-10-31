@@ -35,9 +35,13 @@ In this section, we provide a glimpse into the diverse range of applications tha
      - Provides implementations for solving optimization problems using the Quantum Approximate Optimization Algorithm. For a detailed tutorial on how to use QAOA, please refer to the :ref:`in depth QAOA tutorial <QAOA101>`.
    * - :ref:`ShorExample` 
      - Showcases the cryptographic implications of implementating Shor's algorithm and provides insight in how to easily use a custom adder.
-   * - :ref:`MolecularPotentialEnergyCurveExample` 
-     - Molecular Potetial Energy Curve
-                    
+   * - :ref:`MolecularPotentialEnergyCurve` 
+     - Calculating molecular potential energy curves with :ref:`VQE`.
+   * - :ref:`GroundStateEnergyQPE` 
+     - Calculating ground state energies with quantum phase estimation.                    
+   * - :ref:`IsingModel` 
+     - Hamiltonian simulation of a transverse field Ising model. 
+
       
 .. toctree::
    :hidden:
@@ -57,3 +61,5 @@ In this section, we provide a glimpse into the diverse range of applications tha
    QAOA
    Shor
    MolecularPotentialEnergyCurve
+   GroundStateEnergyQPE
+   IsingModel
