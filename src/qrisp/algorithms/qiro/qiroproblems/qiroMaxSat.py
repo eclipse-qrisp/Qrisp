@@ -65,7 +65,7 @@ def create_maxsat_replacement_routine(res, problem_updated):
     # FOR SINGLE QUBIT CORRELATIONS
     # make -1 here for consistency in the find max
     orig_nodes = [i - 1 for i in list(range(1,numVars + 1)) if not i in exclusions]
-    combinations_list = combinations(enumerate(orig_nodes), 2)
+    combinations_list = list(combinations(orig_nodes, 2))
 
     max_item, sign = find_max(orig_nodes, combinations_list, res, solutions)
     if max_item == None:
@@ -106,16 +106,16 @@ def create_maxsat_replacement_routine(res, problem_updated):
 
 
     else:
-        max_item[0] += 1 
-        max_item[1] += 1 
+        max_item = [max_item[0] +1 , max_item[1] + 1 ]
+
         if sign > 0:
             for sgl_clause in clauses:
                 # replace with pos. correlated number if its in an item
                 if max_item[1] in sgl_clause:
-                    temp = sgl_clause.index[max_item[1]]
+                    temp = sgl_clause.index(max_item[1])
                     sgl_clause[temp] = max_item[0]
                 if -1* max_item[1] in sgl_clause:
-                    temp = sgl_clause.index[-1* max_item[1]]
+                    temp = sgl_clause.index(-1* max_item[1])
                     sgl_clause[temp] = -1* max_item[0]
                 exclusions.append(max_item[1])
                     
@@ -123,10 +123,10 @@ def create_maxsat_replacement_routine(res, problem_updated):
             for sgl_clause in clauses:
                 # replace with neg. correlated number if its in an item
                 if max_item[1] in sgl_clause:
-                    temp = sgl_clause.index[max_item[1]]
+                    temp = sgl_clause.index(max_item[1])
                     sgl_clause[temp] = -1 * max_item[0]
                 if -1* max_item[1] in sgl_clause:
-                    temp = sgl_clause.index[ -1  * max_item[1]]
+                    temp = sgl_clause.index(-1  * max_item[1])
                     sgl_clause[temp] = max_item[0]
                 exclusions.append(max_item[1])
 
