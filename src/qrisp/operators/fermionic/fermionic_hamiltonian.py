@@ -524,6 +524,8 @@ class FermionicHamiltonian(Hamiltonian):
         for i in range(iter):
             for j in range(steps):
                 for ferm_term, value in self.terms_dict.items():
+                    if len(ferm_term.ladder_list):
+                        continue
                     ferm_term.simulate(value*t/steps, qarg)
                     
     
