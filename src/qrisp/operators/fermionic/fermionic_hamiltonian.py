@@ -18,6 +18,7 @@
 from qrisp.operators import Hamiltonian
 from qrisp.operators.fermionic.fermionic_term import FermionicTerm
 from qrisp.operators.fermionic.transformations import *
+from qrisp.operators.fermionic.graph_coloring import *
 #from qrisp.operators.pauli.pauli_term import PauliTerm
 #from qrisp.operators.pauli.pauli_hamiltonian import PauliHamiltonian
 
@@ -599,11 +600,100 @@ class FermionicHamiltonian(Hamiltonian):
         """
         
         self.reduce()
+        from qrisp import conjugate
         for i in range(iter):
             for j in range(steps):
-                for ferm_term, value in self.terms_dict.items():
-                    if len(ferm_term.ladder_list):
-                        continue
-                    ferm_term.simulate(value*t/steps, qarg)
+                
+                term_layers = layerize(self)
+                
+                for layer in term_layers.keys():
                     
+                    terms = term_layers[layer]
+                    
+                    permutation = []
+                    
+                    for term in terms:
+                        for ladder in term.ladder_list:
+                            if ladder[0] not in permutation:
+                                permutation.append(ladder[0])
+                    
+                    for k in range(len(qarg)):
+                        if k not in permutation:
+                            permutation.append(k)
+                    
+                    with conjugate(apply_fermionic_swap)(qarg, permutation):
+                        
+                        for ferm_term in terms:
+                            value = self.terms_dict[ferm_term]
+                            if len(ferm_term.ladder_list) == 0:
+                                continue
+                            ferm_term.fermionic_swap(permutation).simulate(value*t/steps, qarg)
+                    
+def apply_fermionic_swap(qv, permutation):
+    from qrisp import cz
+    qb_list = list(qv)
+    swaps = get_swaps_for_permutation(permutation)
     
+    for swap in swaps:
+        cz(qb_list[swap[0]], qb_list[swap[1]])
+        qb_list[swap[0]], qb_list[swap[1]] = qb_list[swap[1]], qb_list[swap[0]]
+        
+def layerize(H):
+    
+    terms_list = list(H.terms_dict)
+    
+    G = nx.Graph()
+    
+    term_ints = []
+    for i in range(len(terms_list)):
+        temp = 0
+        for operator in terms_list[i].ladder_list:
+            temp |= (1<<operator[0])
+        term_ints.append(temp)
+        G.add_node(i)
+    
+    for i in range(len(terms_list)):
+        for j in range(i+1, len(terms_list)):
+            if term_ints[i] & term_ints[j] != 0:
+                G.add_edge(i, j)
+    
+    coloring = find_coloring(G)
+    
+    layer_dict = {i : [] for i in range(int(np.max(coloring))+1)}
+    
+    for i in range(len(terms_list)):
+        layer_dict[coloring[i]].append(terms_list[i])
+        
+    return layer_dict
+
+from numba import njit
+
+# @njit
+def get_swaps_for_permutation(permutation):
+    n = len(permutation)
+    permutation = np.array(permutation)
+    position = {num: i for i, num in enumerate(permutation)}
+    visited = np.zeros(n, dtype = np.int64)
+    swaps = []
+
+    for i in range(n):
+        if visited[i] or position[i] == i:
+            continue
+        
+        cycle_start = i
+        j = i
+        cycle = []
+        
+        while not visited[j]:
+            visited[j] = True
+            cycle.append(j)
+            j = position[j]
+        
+        for k in range(len(cycle) - 1):
+            swaps.append([cycle[k], cycle[-1]])
+            # Update the position dictionary to reflect the swap
+            position[permutation[cycle[k]]] = cycle[-1]
+            position[permutation[cycle[-1]]] = cycle[k]
+            permutation[cycle[k]], permutation[cycle[-1]] = permutation[cycle[-1]], permutation[cycle[k]]
+
+    return np.array(swaps)

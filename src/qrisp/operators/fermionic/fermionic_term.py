@@ -125,7 +125,7 @@ class FermionicTerm:
     
     def simulate(self, coeff, qv):
         
-        from qrisp import h, cx, rz, conjugate, control, QuantumBool, mcx, x
+        from qrisp import h, cx, rz, conjugate, control, QuantumBool, mcx, x, p, QuantumEnvironment, gphase
         
         sorted_term, flip_sign = self.sort()
         
@@ -159,6 +159,18 @@ class FermionicTerm:
             
             active_indices.append(ladder_index)
             active_index_is_creator.append(is_creator)
+        
+        if len(active_indices) == 0 and len(double_indices) == 0:
+            gphase(coeff)
+            return
+        elif len(active_indices) == 0:
+            for i in range(len(double_indices)):
+                if double_index_is_creator[i]:
+                    x(qv[double_indices[i]])
+                p(coeff, qv[double_indices[i]])
+                if double_index_is_creator[i]:
+                    x(qv[double_indices[i]])
+            return
         
         
         # In the Jordan-Wigner transform annihilation/creation operators are
@@ -197,11 +209,11 @@ class FermionicTerm:
         # Therefore we flip the sign of the coefficient for every creator
         # that has an overall Z acting on it.
         
-        for i in active_indices:
-            if Z_qubits[i] == 1:
+        for i in range(len(ladder_list)):
+            if Z_qubits[ladder_list[i][0]] == 1:
                 if ladder_list[i][1]:
                     coeff *= -1
-                    Z_qubits[i] = 0
+                Z_qubits[ladder_list[i][0]] = 0
         
         
 
@@ -263,9 +275,6 @@ class FermionicTerm:
         # The qubit that receives the RZ gate will be called anchor qubit.
         anchor_index = active_indices[-1]
         
-        # We furthermore allocate an ancillae to perform an efficient
-        # multi controlled rz.
-        hs_ancilla = QuantumBool()
                 
         with conjugate(inv_ghz_state)(operator_qubits):
             
@@ -293,11 +302,24 @@ class FermionicTerm:
                     double_index_ctrl_state += "0"
             
                 double_index_qubits.append(qv[double_indices[i]])
+                
+            if len(active_indices) == 2:
+                hs_ancilla = qv[active_indices[0]]
+                if operator_ctrl_state[0] == "0":
+                    env = conjugate(x)(hs_ancilla)
+                else:
+                    env = QuantumEnvironment()
+            else:
+                # We furthermore allocate an ancillae to perform an efficient
+                # multi controlled rz.
+                hs_ancilla = QuantumBool()
+                
+                env = conjugate(mcx)(operator_qubits[:-1] + double_index_qubits, 
+                                    hs_ancilla, 
+                                    ctrl_state = operator_ctrl_state[:-1] + double_index_ctrl_state, 
+                                    method = "gray_pt")
             
-            with conjugate(mcx)(operator_qubits[:-1] + double_index_qubits, 
-                                hs_ancilla, 
-                                ctrl_state = operator_ctrl_state[:-1] + double_index_ctrl_state, 
-                                method = "gray"):
+            with env:
                 
                 # Before we execute the RZ, we need to deal with the Z terms (next to the anihilation/
                 # creation) operators.
@@ -326,9 +348,10 @@ class FermionicTerm:
                     # Perform the controlled RZ
                     with control(hs_ancilla):
                             rz(coeff, qv[anchor_index])
-
-        # Delete ancilla
-        hs_ancilla.delete()
+        
+        if len(active_indices) != 2:
+            # Delete ancilla
+            hs_ancilla.delete()
         
     def sort(self):
         # Sort ladder operators (ladder operator semantics are order in-dependent)
@@ -337,6 +360,14 @@ class FermionicTerm:
         ladder_list = [self.ladder_list[i] for i in perm]
         
         return FermionicTerm(ladder_list), permutation_signature(perm)
+    
+    def fermionic_swap(self, permutation):
+        
+        new_ladder_list = [(permutation[i], is_creator) for i, is_creator in self.ladder_list]
+        
+        return FermionicTerm(new_ladder_list)
+        
+        
 
 def permutation_signature(perm):
     
