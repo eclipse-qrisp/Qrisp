@@ -391,7 +391,7 @@ class PauliHamiltonian(Hamiltonian):
         for pauli in delete_list:
             del self.terms_dict[pauli]
 
-    def to_sparse_matrix(self):
+    def to_sparse_matrix(self, factor_amount = None):
         """
         Returns a matrix representing the operator.
     
@@ -433,17 +433,31 @@ class PauliHamiltonian(Hamiltonian):
         pauli_dicts = []
         coeffs = []
 
-        keys = set()
+        participating_indices = set()
         for pauli,coeff in self.terms_dict.items():
             curr_dict = pauli.pauli_dict
-            keys.update(set(curr_dict.keys()))
             pauli_dicts.append(curr_dict)    
             coeffs.append(coeff)
+            participating_indices = participating_indices.union(pauli.non_trivial_indices())
 
-        keys = set()
-        for item in pauli_dicts:
-            keys.update(set(item.keys()))
-        keys = sorted(keys)
+
+
+
+        if factor_amount is None:
+            if len(participating_indices):
+                factor_amount = max(participating_indices) + 1
+            else:
+                res = 1
+                for coeff in coeffs:
+                    res *= coeff
+                M = sp.csr_matrix((1,1))
+                M[0,0] = res
+                return M
+        elif factor_amount < max(participating_indices):
+            raise Exception("Tried to compute Hermitian matrix with factor_amount variable lower than the largest factor index")
+
+        keys = list(range(factor_amount))
+        
         dim = len(keys)
 
         m = len(coeffs)
@@ -451,8 +465,10 @@ class PauliHamiltonian(Hamiltonian):
         for k in range(m):
             M += complex(coeffs[k])*recursive_TP(keys.copy(),pauli_dicts[k])
 
-        return (M + M.transpose())/2
-
+        res = ((M + M.transpose())/2)
+        res.sum_duplicates()
+        return res
+    
     def ground_state_energy(self):
         """
         Calculates the ground state energy (i.e., the minimum eigenvalue) of the operator classically.

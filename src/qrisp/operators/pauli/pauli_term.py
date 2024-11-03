@@ -67,7 +67,7 @@ class PauliTerm:
     
     # Assume that the operator is diagonal after change of basis
     # Implements exp(i*coeff*\prod_j Z_j) where the product goes over all indices j in self.pauli_dict
-    @lifted
+    # @lifted
     def simulate(self, coeff, qarg):
 
         def parity(qarg, indices):
@@ -95,7 +95,7 @@ class PauliTerm:
         
         pauli_dict = self.pauli_dict
         for i in pauli_dict.keys():
-            if pauli_dict[i] == "Z":
+            if pauli_dict[i] in ["X", "Y", "Z"]:
                 Z_indices.append(i)
             elif pauli_dict[i] == "A":
                 ladder_indices.append(i)
@@ -110,6 +110,10 @@ class PauliTerm:
                 projector_indices.append(i)
                 projector_state.append(True)
         
+        
+        if len(Z_indices + ladder_indices + projector_indices) == 0:
+            gphase(coeff, qv[0])
+            return
         
         # Some hamiltonians contain terms of the for a(1)*c(1), ie.
         # two ladder operators, which operate on the same qubit.
@@ -168,7 +172,7 @@ class PauliTerm:
         ladder_ctrl_state = ""
         ladder_qubits = []
         for i in range(len(ladder_indices)):
-            ladder_ctrl_state += str(int(is_creator_list[i]))
+            ladder_ctrl_state += str(int(not is_creator_list[i]))
             ladder_qubits.append(qv[ladder_indices[i]])
             
         # The qubit that receives the RZ gate will be called anchor qubit.
@@ -205,8 +209,11 @@ class PauliTerm:
                     projector_ctrl_state += "0"
             
                 projector_qubits.append(qv[projector_indices[i]])
-            
-            if len(ladder_indices) <= 1:
+
+            if len(ladder_indices) == 0:
+                env = QuantumEnvironment()
+                coeff *= 2
+            elif len(ladder_indices) == 1:
                 env = QuantumEnvironment()
             elif len(ladder_indices) == 2:
                 hs_ancilla = qv[ladder_indices[0]]
@@ -222,7 +229,7 @@ class PauliTerm:
                 env = conjugate(mcx)(ladder_qubits[:-1] + projector_qubits, 
                                     hs_ancilla, 
                                     ctrl_state = ladder_ctrl_state[:-1] + projector_ctrl_state, 
-                                    method = "gray_pt")
+                                    method = "gray")
             
             with env:
                 
@@ -242,10 +249,9 @@ class PauliTerm:
 
                 # We achieve this by executing a conjugation with the following function
                 def flip_anchor_qubit(qv, anchor_index, Z_indices):
-                    for i in range(len(Z_indices)):
+                    for i in Z_indices:
                         if i != anchor_index:
                             cx(qv[i], qv[anchor_index])
-                
                 # Perform the conjugation
                 with conjugate(flip_anchor_qubit)(qv, anchor_index, Z_indices):
                     
@@ -274,6 +280,12 @@ class PauliTerm:
     
     def __repr__(self):
         return str(self)
+    
+    def non_trivial_indices(self):
+        res = set()
+        for index, P in self.pauli_dict.items():
+            res.add(index)
+        return res
 
     def to_expr(self):
         """
