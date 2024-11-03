@@ -17,6 +17,7 @@
 """
 
 from qrisp.operators.fermionic.visualization import a_,c_
+from qrisp.operators.pauli import A,C,Z
 
 #
 # FermionicTerm
@@ -366,6 +367,23 @@ class FermionicTerm:
         new_ladder_list = [(permutation[i], is_creator) for i, is_creator in self.ladder_list]
         
         return FermionicTerm(new_ladder_list)
+    
+    def to_JW(self):
+        res = 1
+        for i in range(len(self.ladder_list)):
+            temp = 1
+            for j in range(self.ladder_list[i][0]):
+                temp = Z(j)*temp
+            
+            if self.ladder_list[i][1]:
+                temp = temp*C(self.ladder_list[i][0])
+            else:
+                temp = temp*A(self.ladder_list[i][0])
+        
+            res = temp*res
+            
+        return res
+            
         
         
 

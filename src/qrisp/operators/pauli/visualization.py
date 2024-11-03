@@ -31,7 +31,7 @@ class X_(Symbol):
     __slots__ = ("axis","index")
 
     def __new__(cls, index):
-        obj = Symbol.__new__(cls, "%s%s" %("X",index), commutative=False, hermitian=True)
+        obj = Symbol.__new__(cls, "%s_%s" %("X",index), commutative=False, hermitian=True)
         obj.index = index
         return obj
 
@@ -40,7 +40,7 @@ class Y_(Symbol):
     __slots__ = ("axis","index")
 
     def __new__(cls, index):
-        obj = Symbol.__new__(cls, "%s%s" %("Y",index), commutative=False, hermitian=True)
+        obj = Symbol.__new__(cls, "%s_%s" %("Y",index), commutative=False, hermitian=True)
         obj.index = index
         return obj
        
@@ -49,7 +49,7 @@ class Z_(Symbol):
     __slots__ = ("axis","index")
 
     def __new__(cls, index):
-        obj = Symbol.__new__(cls, "%s%s" %("Z",index), commutative=False, hermitian=True)
+        obj = Symbol.__new__(cls, "%s_%s" %("Z",index), commutative=False, hermitian=True)
         obj.index = index
         return obj
     

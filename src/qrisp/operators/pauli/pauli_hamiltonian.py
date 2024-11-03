@@ -414,8 +414,16 @@ class PauliHamiltonian(Hamiltonian):
                 return csr_matrix([[0,1],[1,0]])
             if P=="Y":
                 return csr_matrix([[0,-1j],[1j,0]])
-            else:
+            if P == "Z":
                 return csr_matrix([[1,0],[0,-1]])
+            if P == "A":
+                return csr_matrix([[0,0],[1,0]])
+            if P == "C":
+                return csr_matrix([[0,1],[0,0]])
+            if P == "P0":
+                return csr_matrix([[1,0],[0,0]])
+            if P == "P1":
+                return csr_matrix([[0,0],[0,1]])
 
         def recursive_TP(keys,pauli_dict):
             if len(keys)==1:
@@ -443,7 +451,7 @@ class PauliHamiltonian(Hamiltonian):
         for k in range(m):
             M += complex(coeffs[k])*recursive_TP(keys.copy(),pauli_dicts[k])
 
-        return M
+        return (M + M.transpose())/2
 
     def ground_state_energy(self):
         """

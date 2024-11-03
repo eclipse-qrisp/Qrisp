@@ -45,15 +45,11 @@ def Z(arg):
         return BoundPauliHamiltonian({BoundPauliTerm({arg:"Z"}):1})
     else:
         raise Exception("Cannot initialize operator from type "+str(type(arg)))
+    
 
-def A(arg):
-    return PauliHamiltonian({PauliTerm({arg : "A"}): 1})
 
-def C(arg):
-    return PauliHamiltonian({PauliTerm({arg : "C"}): 1})
 
-def P0(arg):
-    return PauliHamiltonian({PauliTerm({arg : "P0"}): 1})
 
-def P1(arg):
-    return PauliHamiltonian({PauliTerm({arg : "P1"}): 1})
+
+
+

@@ -571,7 +571,7 @@ class FermionicHamiltonian(Hamiltonian):
     # Trotterization
     #
 
-    def trotterization(self, qarg, t = 1, steps = 1, iter = 1):
+    def trotterization(self, t = 1, steps = 1, iter = 1):
         r"""
         Returns a function for performing Hamiltonian simulation, i.e., approximately implementing the unitary operator $e^{itH}$ via Trotterization.
 
@@ -600,34 +600,42 @@ class FermionicHamiltonian(Hamiltonian):
         """
         
         self.reduce()
-        from qrisp import conjugate
-        for i in range(iter):
-            for j in range(steps):
-                
-                term_layers = layerize(self)
-                
-                for layer in term_layers.keys():
+       
+        
+        def U(qarg):
+            from qrisp import conjugate
+            for i in range(iter):
+                for j in range(steps):
                     
-                    terms = term_layers[layer]
+                    term_layers = layerize(self)
                     
-                    permutation = []
-                    
-                    for term in terms:
-                        for ladder in term.ladder_list:
-                            if ladder[0] not in permutation:
-                                permutation.append(ladder[0])
-                    
-                    for k in range(len(qarg)):
-                        if k not in permutation:
-                            permutation.append(k)
-                    
-                    with conjugate(apply_fermionic_swap)(qarg, permutation):
+                    for layer in term_layers.keys():
                         
-                        for ferm_term in terms:
-                            value = self.terms_dict[ferm_term]
-                            if len(ferm_term.ladder_list) == 0:
-                                continue
-                            ferm_term.fermionic_swap(permutation).simulate(value*t/steps, qarg)
+                        terms = term_layers[layer]
+                        
+                        permutation = []
+                        
+                        for term in terms:
+                            for ladder in term.ladder_list:
+                                if ladder[0] not in permutation:
+                                    permutation.append(ladder[0])
+                        
+                        for k in range(len(qarg)):
+                            if k not in permutation:
+                                permutation.append(k)
+                        
+                        with conjugate(apply_fermionic_swap)(qarg, permutation):
+                            
+                            for ferm_term in terms:
+                                value = self.terms_dict[ferm_term]
+                                pauli_hamiltonian = ferm_term.fermionic_swap(permutation).to_JW()
+                                pauli_term = list(pauli_hamiltonian.terms_dict.keys())[0]
+                                
+                                pauli_term.simulate(value*t/steps*pauli_hamiltonian.terms_dict[pauli_term], qarg)
+                                
+                                # ferm_term.fermionic_swap(permutation).to_JW().simulate(value*t/steps, qarg)
+                                
+        return U
                     
 def apply_fermionic_swap(qv, permutation):
     from qrisp import cz

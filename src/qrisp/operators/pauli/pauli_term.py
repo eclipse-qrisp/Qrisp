@@ -19,10 +19,18 @@
 from qrisp import gphase, rz, cx, conjugate, lifted
 from qrisp.operators.pauli.visualization import X_,Y_,Z_
 
+from sympy import Symbol
+
 PAULI_TABLE = {("I","I"):("I",1),("I","X"):("X",1),("I","Y"):("Y",1),("I","Z"):("Z",1),
             ("X","I"):("X",1),("X","X"):("I",1),("X","Y"):("Z",1j),("X","Z"):("Y",-1j),
             ("Y","I"):("Y",1),("Y","X"):("Z",-1j),("Y","Y"):("I",1),("Y","Z"):("X",1j),
-            ("Z","I"):("Z",1),("Z","X"):("Y",1j),("Z","Y"):("X",-1j),("Z","Z"):("I",1)}
+            ("Z","I"):("Z",1),("Z","X"):("Y",1j),("Z","Y"):("X",-1j),("Z","Z"):("I",1),
+            ("A", "I"):("A", 1), ("C", "I"):("C", 1), ("I","A"): ("A", 1), ("I","C"): ("C", 1),
+            ("A", "Z") : ("A", -1), ("Z", "A") : ("A", 1), 
+            ("C", "Z") : ("C", 1), ("Z", "C") : ("C", -1), 
+            ("P0", "Z") : ("P0", 1), ("P1", "Z") : ("P1", -1),
+            ("Z", "P0") : ("P0", 1), ("Z", "P1") : ("P1", -1),
+            }
 
 #
 # PauliTerm
@@ -73,7 +81,188 @@ class PauliTerm:
                 rz(-2*coeff,qarg[indices[-1]])
         else:
             gphase(coeff,qarg[0])
-    
+
+    # @lifted
+    def simulate(self, coeff, qv):
+
+        from qrisp import h, cx, rz, conjugate, control, QuantumBool, mcx, x, p, QuantumEnvironment, gphase
+        
+        Z_indices = []
+        ladder_indices = []
+        is_creator_list = []
+        projector_indices = []
+        projector_state = []
+        
+        pauli_dict = self.pauli_dict
+        for i in pauli_dict.keys():
+            if pauli_dict[i] == "Z":
+                Z_indices.append(i)
+            elif pauli_dict[i] == "A":
+                ladder_indices.append(i)
+                is_creator_list.append(False)
+            elif pauli_dict[i] == "C":
+                ladder_indices.append(i)
+                is_creator_list.append(True)
+            elif pauli_dict[i] == "P0":
+                projector_indices.append(i)
+                projector_state.append(False)
+            elif pauli_dict[i] == "P1":
+                projector_indices.append(i)
+                projector_state.append(True)
+        
+        
+        # Some hamiltonians contain terms of the for a(1)*c(1), ie.
+        # two ladder operators, which operate on the same qubit.
+        # We filter them out and discuss their precise treatment below
+        
+
+        # We now start implementing performing the quantum operations
+                
+        # There are three challenges-
+        
+        # 1. Implement the "double_indices" i.e. creation/annihilation
+        # operators where two act on the same qubit.
+        # 2. Implement the other creation annihilation operators.
+        # 3. Implement the Z operators.
+        
+        # For step 2 we recreate the circuit in https://arxiv.org/abs/2310.12256
+        
+        # The circuit on page 4 looks like this
+        
+        #               ┌───┐                                                          »
+        #         qv.0: ┤ X ├─────────────────■────────────────────────────────■───────»
+        #               └─┬─┘┌───┐            │                                │       »
+        #         qv.1: ──┼──┤ X ├────────────■────────────────────────────────■───────»
+        #                 │  └─┬─┘┌───┐       │                                │       »
+        #         qv.2: ──┼────┼──┤ X ├───────o────■──────────────────────■────o───────»
+        #                 │    │  └─┬─┘┌───┐  │  ┌─┴─┐┌────────────────┐┌─┴─┐  │  ┌───┐»
+        #         qv.3: ──■────■────■──┤ H ├──┼──┤ X ├┤ Rz(-0.5*theta) ├┤ X ├──┼──┤ H ├»
+        #                              └───┘┌─┴─┐└───┘└───────┬────────┘└───┘┌─┴─┐└───┘»
+        # hs_ancilla.0: ────────────────────┤ X ├─────────────■──────────────┤ X ├─────»
+        #                                   └───┘                            └───┘     »
+        # «                        ┌───┐
+        # «        qv.0: ──────────┤ X ├
+        # «                   ┌───┐└─┬─┘
+        # «        qv.1: ─────┤ X ├──┼──
+        # «              ┌───┐└─┬─┘  │  
+        # «        qv.2: ┤ X ├──┼────┼──
+        # «              └─┬─┘  │    │  
+        # «        qv.3: ──■────■────■──
+        # «                             
+        # «hs_ancilla.0: ───────────────
+        
+        # In it's essence this circuit is a conjugation with an inverse GHZ state
+        # preparation and a multi controlled RZ gate.
+
+        def inv_ghz_state(qb_list):
+            if ladder_ctrl_state[-1] == "1":
+                x(qb_list[-1])
+            for qb in qb_list[:-1]:
+                cx(qb_list[-1], qb)
+            if ladder_ctrl_state[-1] == "1":
+                x(qb_list[-1])
+            h(qb_list[-1])
+            
+        # Determine ctrl state and the qubits the creation/annihilation
+        # operators act on
+        ladder_ctrl_state = ""
+        ladder_qubits = []
+        for i in range(len(ladder_indices)):
+            ladder_ctrl_state += str(int(is_creator_list[i]))
+            ladder_qubits.append(qv[ladder_indices[i]])
+            
+        # The qubit that receives the RZ gate will be called anchor qubit.
+        anchor_index = (Z_indices + ladder_indices)[-1]
+        
+        if len(ladder_qubits) == 0:
+            env = QuantumEnvironment()
+        else:
+            env = conjugate(inv_ghz_state)(ladder_qubits)
+                
+        with env:
+            
+            # To realize the behavior of the "double_indices" i.e. the qubits
+            # that receive two creation annihilation operators, not that such a
+            # term produces a hamiltonian of the form
+            
+            # H = c(0)*a(0)*a(1)*a(2) + h.c.
+            #   = |1><1| (H_red + h.c.)
+            
+            # where H_red = a(1)*a(2)
+            
+            # Simulating this H is therefore the controlled version of H_red:
+                
+            # exp(itH) = |0><0| ID + |1><1| exp(itH_red)
+            
+            # We can therefore add the "double_indices" to this conjugation.
+            
+            projector_ctrl_state = ""
+            projector_qubits = []
+            for i in range(len(projector_indices)):
+                if projector_state[i]:
+                    projector_ctrl_state += "1"
+                else:
+                    projector_ctrl_state += "0"
+            
+                projector_qubits.append(qv[projector_indices[i]])
+            
+            if len(ladder_indices) <= 1:
+                env = QuantumEnvironment()
+            elif len(ladder_indices) == 2:
+                hs_ancilla = qv[ladder_indices[0]]
+                if ladder_ctrl_state[0] == "0":
+                    env = conjugate(x)(hs_ancilla)
+                else:
+                    env = QuantumEnvironment()
+            else:
+                # We furthermore allocate an ancillae to perform an efficient
+                # multi controlled rz.
+                hs_ancilla = QuantumBool()
+                
+                env = conjugate(mcx)(ladder_qubits[:-1] + projector_qubits, 
+                                    hs_ancilla, 
+                                    ctrl_state = ladder_ctrl_state[:-1] + projector_ctrl_state, 
+                                    method = "gray_pt")
+            
+            with env:
+                
+                # Before we execute the RZ, we need to deal with the Z terms (next to the anihilation/
+                # creation) operators.
+                
+                # The qubits that only receive a Z operator will now be called "passive qubits"
+                
+                # By inspection we see that the Z operators are equivalent to the
+                # term (-1)**(q_1 (+) q_2)
+                # It therefore suffices to compute the parity value of all the passive
+                # qubits and flip the sign of the coefficient based on the parity.
+
+                # To this end we perform several CX gate on-to the anchor qubit.
+                # Since the anchor qubit will receive an RZ gate, each bitflip will
+                # induce a sign flip of the phase.
+
+                # We achieve this by executing a conjugation with the following function
+                def flip_anchor_qubit(qv, anchor_index, Z_indices):
+                    for i in range(len(Z_indices)):
+                        if i != anchor_index:
+                            cx(qv[i], qv[anchor_index])
+                
+                # Perform the conjugation
+                with conjugate(flip_anchor_qubit)(qv, anchor_index, Z_indices):
+                    
+                    
+                    if len(ladder_indices) > 1:
+                        env = control(hs_ancilla)
+                    else:
+                        env = QuantumEnvironment()
+                        
+                    # Perform the controlled RZ
+                    with env:
+                            rz(-coeff, qv[anchor_index])
+        
+        if len(ladder_indices) > 2:
+            # Delete ancilla
+            hs_ancilla.delete()
+
     #
     # Printing
     #
@@ -104,8 +293,16 @@ class PauliTerm:
                 return X_(index)
             if P=="Y":
                 return Y_(index)
-            else:
+            if P=="Z":
                 return Z_(index)
+            if P=="A":
+                return Symbol("A_" + str(index))
+            if P=="C":
+                return Symbol("C_" + str(index))
+            if P=="P0":
+                return Symbol("P0_")
+            if P=="P1":
+                return Symbol("P1_")
         
         expr = 1
         for index,P in self.pauli_dict.items():
