@@ -17,7 +17,7 @@
 """
 
 from qrisp import QuantumVariable, x, QPE
-from qrisp.operators.pauli import X, Z, A, C, P0, P1
+from qrisp.operators.pauli import X, Y, Z, A, C, P0, P1
 import numpy as np
 
 def test_pauli_hamiltonian_simulation():
@@ -103,4 +103,31 @@ def test_pauli_hamiltonian_simulation():
     verify_trotterization(H)
 
     H = 0.1809312*X(0)*X(1)*A(2)
+    verify_trotterization(H)
+    
+    H = 0.1809312*X(0)*X(1)*A(2)*Y(3)
+    verify_trotterization(H)
+    
+    H = Z(0)*Z(1)*P0(2)
+    verify_trotterization(H)
+
+    H = Z(0)*Z(1)*A(2)*P1(1)
+    verify_trotterization(H)
+
+    H = Z(0)*Z(1)*A(2)*C(3)*P0(4)*P1(3)
+    verify_trotterization(H)
+
+    H = A(2)*P0(1)
+    verify_trotterization(H)
+
+    H = A(2)*C(1)*P0(0)*P1(2)
+    verify_trotterization(H)
+    
+    H = 0.1809312*X(0)*X(1)*P1(3)
+    verify_trotterization(H)
+
+    H = 0.1809312*X(0)*X(1)*A(2)*P1(0)
+    verify_trotterization(H)
+    
+    H = 0.1809312*X(0)*X(1)*A(2)*Y(3)*P1(5)
     verify_trotterization(H)

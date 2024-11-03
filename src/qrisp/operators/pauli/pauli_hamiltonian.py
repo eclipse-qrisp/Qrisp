@@ -19,13 +19,9 @@ from qrisp.operators.hamiltonian import Hamiltonian
 from qrisp.operators.pauli.pauli_term import PauliTerm
 from qrisp.operators.pauli.pauli_measurement import PauliMeasurement
 from qrisp.operators.pauli.measurement import get_measurement
-from qrisp import h, sx, IterationEnvironment, conjugate, merge
+from qrisp import h, s, x, IterationEnvironment, conjugate, merge
 
 import sympy as sp
-
-from sympy import init_printing
-# Initialize automatic LaTeX rendering
-init_printing()
 
 threshold = 1e-9
 
@@ -405,8 +401,6 @@ class PauliHamiltonian(Hamiltonian):
         import scipy.sparse as sp
         from scipy.sparse import kron as TP, csr_matrix
 
-        I = csr_matrix([[1,0],[0,1]])
-
         def get_matrix(P):
             if P=="I":
                 return csr_matrix([[1,0],[0,1]])
@@ -440,9 +434,6 @@ class PauliHamiltonian(Hamiltonian):
             coeffs.append(coeff)
             participating_indices = participating_indices.union(pauli.non_trivial_indices())
 
-
-
-
         if factor_amount is None:
             if len(participating_indices):
                 factor_amount = max(participating_indices) + 1
@@ -465,7 +456,7 @@ class PauliHamiltonian(Hamiltonian):
         for k in range(m):
             M += complex(coeffs[k])*recursive_TP(keys.copy(),pauli_dicts[k])
 
-        res = ((M + M.transpose())/2)
+        res = ((M + M.transpose().conjugate())/2)
         res.sum_duplicates()
         return res
     
@@ -716,7 +707,10 @@ class PauliHamiltonian(Hamiltonian):
                 if axis=="X":
                     h(qarg[index])
                 if axis=="Y":
-                    sx(qarg[index])
+                    s(qarg[index])
+                    h(qarg[index])
+                    x(qarg[index])
+                    
 
         groups, bases = self.commuting_qw_groups(show_bases=True)
 

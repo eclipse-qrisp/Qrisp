@@ -193,21 +193,22 @@ class PauliTerm:
             
             projector_ctrl_state = ""
             projector_qubits = []
-            for i in range(len(projector_indices)):
-                if projector_state[i]:
-                    projector_ctrl_state += "1"
-                else:
-                    projector_ctrl_state += "0"
             
+            
+            for i in range(len(projector_indices)):
+                projector_ctrl_state += str(int(projector_state[i]))
                 projector_qubits.append(qv[projector_indices[i]])
-
-            if len(ladder_indices) == 0:
+            
+            
+            control_qubit_available = False
+            
+            if len(ladder_indices + projector_qubits) == 0:
                 env = QuantumEnvironment()
-                coeff *= 2
-            elif len(ladder_indices) == 1:
+            elif len(ladder_indices) == 1 and len(projector_indices) == 0:
                 env = QuantumEnvironment()
-            elif len(ladder_indices) == 2:
+            elif len(ladder_indices) == 2 and len(projector_indices) == 0:
                 hs_ancilla = qv[ladder_indices[0]]
+                control_qubit_available = True
                 if ladder_ctrl_state[0] == "0":
                     env = conjugate(x)(hs_ancilla)
                 else:
@@ -216,6 +217,7 @@ class PauliTerm:
                 # We furthermore allocate an ancillae to perform an efficient
                 # multi controlled rz.
                 hs_ancilla = QuantumBool()
+                control_qubit_available = True
                 
                 env = conjugate(mcx)(ladder_qubits[:-1] + projector_qubits, 
                                     hs_ancilla, 
@@ -246,15 +248,17 @@ class PauliTerm:
                 # Perform the conjugation
                 with conjugate(flip_anchor_qubit)(qv, anchor_index, Z_indices):
                     
-                    
-                    if len(ladder_indices) > 1:
+                    if control_qubit_available:
                         env = control(hs_ancilla)
                     else:
                         env = QuantumEnvironment()
-                        
+                    
+                    if len(ladder_indices) == 0:
+                        coeff *= 2
                     # Perform the controlled RZ
                     with env:
                             rz(-coeff, qv[anchor_index])
+                        
         
         if len(ladder_indices) > 2:
             # Delete ancilla
