@@ -76,7 +76,7 @@ class PauliTerm:
     # @lifted
     def simulate(self, coeff, qv):
 
-        from qrisp import h, cx, rz, conjugate, control, QuantumBool, mcx, x, p, QuantumEnvironment, gphase
+        from qrisp import h, cx, rz, mcp, conjugate, control, QuantumBool, mcx, x, p, QuantumEnvironment, gphase
         
         Z_indices = []
         ladder_indices = []
@@ -105,7 +105,23 @@ class PauliTerm:
         if len(Z_indices + ladder_indices + projector_indices) == 0:
             gphase(coeff, qv[0])
             return
-        
+        elif len(Z_indices + ladder_indices) == 0:
+            
+            flip_qubits = [qv[projector_indices[i]] for i in range(len(projector_indices)) if not projector_state[i]]
+            
+            if len(flip_qubits) == 0:
+                env = QuantumEnvironment()
+            else:
+                env = conjugate(x)(flip_qubits)
+            
+            with env:
+                
+                if len(projector_indices) == 1:
+                    p(coeff, qv[projector_indices[0]])
+                else:
+                    mcp(coeff, [qv[i] for i in projector_indices])
+                
+            return
         # Some hamiltonians contain terms of the for a(1)*c(1), ie.
         # two ladder operators, which operate on the same qubit.
         # We filter them out and discuss their precise treatment below
@@ -257,8 +273,7 @@ class PauliTerm:
                         coeff *= 2
                     # Perform the controlled RZ
                     with env:
-                            rz(-coeff, qv[anchor_index])
-                        
+                        rz(-coeff, qv[anchor_index])
         
         if len(ladder_indices) > 2:
             # Delete ancilla

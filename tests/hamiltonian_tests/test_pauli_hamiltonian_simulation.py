@@ -83,51 +83,18 @@ def test_pauli_hamiltonian_simulation():
             print(np.round(U_matrix, 2))
             print(qc)
             assert False
-
-    H = Z(0)*Z(1)
-    verify_trotterization(H)
-
-    H = Z(0)*Z(1)*A(2)
-    verify_trotterization(H)
-
-    H = Z(0)*Z(1)*A(2)*C(3)
-    verify_trotterization(H)
-
-    H = A(2)
-    verify_trotterization(H)
-
-    H = A(2)*C(1)
-    verify_trotterization(H)
     
-    H = 0.1809312*X(0)*X(1)
-    verify_trotterization(H)
+    operator_list = [lambda x : 1, X, Y, Z, A, C, P0, P1]
 
-    H = 0.1809312*X(0)*X(1)*A(2)
-    verify_trotterization(H)
-    
-    H = 0.1809312*X(0)*X(1)*A(2)*Y(3)
-    verify_trotterization(H)
-    
-    H = Z(0)*Z(1)*P0(2)
-    verify_trotterization(H)
-
-    H = Z(0)*Z(1)*A(2)*P1(1)
-    verify_trotterization(H)
-
-    H = Z(0)*Z(1)*A(2)*C(3)*P0(4)*P1(3)
-    verify_trotterization(H)
-
-    H = A(2)*P0(1)
-    verify_trotterization(H)
-
-    H = A(2)*C(1)*P0(0)*P1(2)
-    verify_trotterization(H)
-    
-    H = 0.1809312*X(0)*X(1)*P1(3)
-    verify_trotterization(H)
-
-    H = 0.1809312*X(0)*X(1)*A(2)*P1(0)
-    verify_trotterization(H)
-    
-    H = 0.1809312*X(0)*X(1)*A(2)*Y(3)*P1(5)
-    verify_trotterization(H)
+    counter = 0
+    operator_list = [lambda x : 1, X, Y, Z, A, C, P0, P1]
+    for O0 in operator_list: 
+        for O1 in operator_list:
+            for O2 in operator_list:
+                for O3 in operator_list:
+                    H = O0(0)*O1(1)*O2(2)*O3(3)
+                    if H is 1:
+                        continue
+                    print(H)
+                    verify_trotterization(H)
+                    counter += 1
