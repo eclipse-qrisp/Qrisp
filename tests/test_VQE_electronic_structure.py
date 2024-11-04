@@ -17,7 +17,6 @@
 """
 
 from qrisp.vqe.problems.electronic_structure import *
-from pyscf import gto
 from qrisp import QuantumVariable
 import numpy as np
 
@@ -26,6 +25,11 @@ import numpy as np
 #
 
 def test_vqe_electronic_structure_H2():  
+    
+    try:
+        from pyscf import gto
+    except:
+        return
 
     mol = gto.M(
         atom = '''H 0 0 0; H 0 0 0.74''',

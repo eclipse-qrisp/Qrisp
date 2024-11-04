@@ -24,10 +24,6 @@ from qrisp.operators.fermionic.graph_coloring import *
 
 import sympy as sp
 
-from sympy import init_printing
-# Initialize automatic LaTeX rendering
-init_printing()
-
 threshold = 1e-9
 
 #
@@ -171,6 +167,8 @@ class FermionicHamiltonian(Hamiltonian):
     #
     
     def __eq__(self, other):
+        self.reduce()
+        other.reduce()
         
         if len(self.terms_dict) != len(other.terms_dict):
             return False

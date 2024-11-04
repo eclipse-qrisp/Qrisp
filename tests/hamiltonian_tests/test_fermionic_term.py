@@ -45,8 +45,10 @@ def test_fermionic_term():
     assert (H_0 == H_1) == True
     
     H = 3*a(0)*c(1) + c(0)*a(1)
+    H.reduce()
     assert str(H) == "-c0*a1 - c1*a0"
     
     H = a(0)*a(1) + a(1)*a(0)
+    H.reduce()
     assert str(H) == "0"
     

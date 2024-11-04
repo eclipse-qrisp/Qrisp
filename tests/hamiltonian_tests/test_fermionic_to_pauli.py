@@ -19,9 +19,13 @@
 from qrisp.operators.fermionic import a, c
 from qrisp.operators.pauli import X,Y,Z
 from qrisp.vqe.problems.electronic_structure import *
-from pyscf import gto
 
 def test_fermionic_to_pauli():
+
+    try:
+        from pyscf import gto
+    except:
+        return    
 
     # Check if transformation works for both, reduced and non-reduced FermionicHamiltonians
 
@@ -44,6 +48,11 @@ def test_fermionic_to_pauli():
 
 
 def test_hamiltonian_H2():
+    
+    try:
+        from pyscf import gto
+    except:
+        return
 
     K = -0.812170607248714 -0.0453026155037992*X(0)*X(1)*Y(2)*Y(3) +0.0453026155037992*X(0)*Y(1)*Y(2)*X(3) +0.0453026155037992*Y(0)*X(1)*X(2)*Y(3) -0.0453026155037992*Y(0)*Y(1)*X(2)*X(3) \
         +0.171412826447769*Z(0) +0.168688981703612*Z(0)*Z(1) +0.120625234833904*Z(0)*Z(2) +0.165927850337703*Z(0)*Z(3) +0.171412826447769*Z(1) \
