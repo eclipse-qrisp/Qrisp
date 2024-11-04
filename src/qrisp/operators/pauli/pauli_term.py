@@ -322,9 +322,9 @@ class PauliTerm:
             if P=="C":
                 return Symbol("C_" + str(index))
             if P=="P0":
-                return Symbol("P0_")
+                return Symbol("P0_" + str(index))
             if P=="P1":
-                return Symbol("P1_")
+                return Symbol("P1_" + str(index))
         
         expr = 1
         for index,P in self.pauli_dict.items():
