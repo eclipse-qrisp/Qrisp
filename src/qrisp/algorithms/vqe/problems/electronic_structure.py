@@ -19,7 +19,7 @@
 import numpy as np
 
 from qrisp import h, x, cx, ry, control, conjugate
-from qrisp.operators.pauli import PauliHamiltonian, PauliTerm
+from qrisp.operators.pauli import QubitHamiltonian, PauliTerm
 from qrisp.operators.fermionic import *
 from functools import cache
 import itertools

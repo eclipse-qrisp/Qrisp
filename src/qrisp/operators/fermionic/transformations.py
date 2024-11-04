@@ -17,7 +17,7 @@
 """
 
 from qrisp.operators.pauli.pauli_term import PauliTerm
-from qrisp.operators.pauli.pauli_hamiltonian import PauliHamiltonian
+from qrisp.operators.pauli.pauli_hamiltonian import QubitHamiltonian
 
 from functools import cache
 
@@ -28,7 +28,7 @@ def a_jw(j):
     d1[j]='X'
     d2={i:'Z' for i in range(j)}
     d2[j]='Y'
-    return PauliHamiltonian({PauliTerm(d1):0.5,PauliTerm(d2):0.5j})
+    return QubitHamiltonian({PauliTerm(d1):0.5,PauliTerm(d2):0.5j})
 
 # Jordan-Wigner creation operator 
 #@cache
@@ -37,7 +37,7 @@ def c_jw(j):
     d1[j]='X'
     d2={i:'Z' for i in range(j)}
     d2[j]='Y'
-    return PauliHamiltonian({PauliTerm(d1):0.5,PauliTerm(d2):-0.5j})
+    return QubitHamiltonian({PauliTerm(d1):0.5,PauliTerm(d2):-0.5j})
     
 @cache
 def jordan_wigner(ladder):

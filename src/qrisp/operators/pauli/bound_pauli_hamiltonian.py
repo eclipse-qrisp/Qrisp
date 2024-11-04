@@ -30,10 +30,10 @@ init_printing()
 threshold = 1e-9
 
 #
-# BoundPauliHamiltonian
+# BoundQubitHamiltonian
 #
 
-class BoundPauliHamiltonian(Hamiltonian):
+class BoundQubitHamiltonian(Hamiltonian):
     r"""
     This class provides an efficient implementation of Pauli Hamiltonians acting on QuantumVariables, i.e.,
     Hamiltonians of the form
@@ -48,17 +48,17 @@ class BoundPauliHamiltonian(Hamiltonian):
     Parameters
     ----------
     terms_dict : dict, optional
-        A dictionary representing a BoundPauliHamiltonian.
+        A dictionary representing a BoundQubitHamiltonian.
 
     Examples
     --------
 
-    A BoundPauliHamiltonian can be specified conveniently in terms of ``X``, ``Y``, ``Z`` operators:
+    A BoundQubitHamiltonian can be specified conveniently in terms of ``X``, ``Y``, ``Z`` operators:
 
     ::
 
         from qrisp import QuantumVariable
-        from qrisp.operators import BoundPauliHamiltonian, X,Y,Z
+        from qrisp.operators import BoundQubitHamiltonian, X,Y,Z
         
         qv = QuantumVariable(2)
         H = 1+2*X(qv[0])+3*X(qv[0])*Y(qv[1])
@@ -112,7 +112,7 @@ class BoundPauliHamiltonian(Hamiltonian):
         if self.len()==1:
             if isinstance(e, int) and e>=0:
                 if e%2==0:
-                    return BoundPauliHamiltonian({BoundPauliTerm():1})
+                    return BoundQubitHamiltonian({BoundPauliTerm():1})
                 else:
                     return self
             else:
@@ -126,20 +126,20 @@ class BoundPauliHamiltonian(Hamiltonian):
 
         Parameters
         ----------
-        other : int, float, complex or BoundPauliHamiltonian
-            A scalar or a BoundPauliHamiltonian to add to the operator self.
+        other : int, float, complex or BoundQubitHamiltonian
+            A scalar or a BoundQubitHamiltonian to add to the operator self.
 
         Returns
         -------
-        result : BoundPauliHamiltonian
+        result : BoundQubitHamiltonian
             The sum of the operator self and other.
 
         """
 
         if isinstance(other,(int,float,complex)):
-            other = BoundPauliHamiltonian({BoundPauliTerm():other})
-        if not isinstance(other,BoundPauliHamiltonian):
-            raise TypeError("Cannot add BoundPauliHamiltonian and "+str(type(other)))
+            other = BoundQubitHamiltonian({BoundPauliTerm():other})
+        if not isinstance(other,BoundQubitHamiltonian):
+            raise TypeError("Cannot add BoundQubitHamiltonian and "+str(type(other)))
 
         res_terms_dict = {}
 
@@ -153,7 +153,7 @@ class BoundPauliHamiltonian(Hamiltonian):
             if abs(res_terms_dict[pauli])<threshold:
                 del res_terms_dict[pauli]
         
-        result = BoundPauliHamiltonian(res_terms_dict)
+        result = BoundQubitHamiltonian(res_terms_dict)
         return result
     
     def __sub__(self,other):
@@ -162,20 +162,20 @@ class BoundPauliHamiltonian(Hamiltonian):
 
         Parameters
         ----------
-        other : int, float, complex or BoundPauliHamiltonian
-            A scalar or a BoundPauliHamiltonian to substract from the operator self.
+        other : int, float, complex or BoundQubitHamiltonian
+            A scalar or a BoundQubitHamiltonian to substract from the operator self.
 
         Returns
         -------
-        result : BoundPauliHamiltonian
+        result : BoundQubitHamiltonian
             The difference of the operator self and other.
 
         """
 
         if isinstance(other,(int,float,complex)):
-            other = BoundPauliHamiltonian({BoundPauliTerm():other})
-        if not isinstance(other,BoundPauliHamiltonian):
-            raise TypeError("Cannot substract BoundPauliHamiltonian and "+str(type(other)))
+            other = BoundQubitHamiltonian({BoundPauliTerm():other})
+        if not isinstance(other,BoundQubitHamiltonian):
+            raise TypeError("Cannot substract BoundQubitHamiltonian and "+str(type(other)))
 
         res_terms_dict = {}
 
@@ -189,7 +189,7 @@ class BoundPauliHamiltonian(Hamiltonian):
             if abs(res_terms_dict[pauli])<threshold:
                 del res_terms_dict[pauli]
         
-        result = BoundPauliHamiltonian(res_terms_dict)
+        result = BoundQubitHamiltonian(res_terms_dict)
         return result
 
     def __rsub__(self,other):
@@ -198,20 +198,20 @@ class BoundPauliHamiltonian(Hamiltonian):
 
         Parameters
         ----------
-        other : int, float, complex or BoundPauliHamiltonian
-            A scalar or a BoundPauliHamiltonian to substract the operator self from.
+        other : int, float, complex or BoundQubitHamiltonian
+            A scalar or a BoundQubitHamiltonian to substract the operator self from.
 
         Returns
         -------
-        result : BoundPauliHamiltonian
+        result : BoundQubitHamiltonian
             The difference of the operator other and self.
 
         """
 
         if isinstance(other,(int,float,complex)):
-            other = BoundPauliHamiltonian({BoundPauliTerm():other})
-        if not isinstance(other,BoundPauliHamiltonian):
-            raise TypeError("Cannot substract BoundPauliHamiltonian and "+str(type(other)))
+            other = BoundQubitHamiltonian({BoundPauliTerm():other})
+        if not isinstance(other,BoundQubitHamiltonian):
+            raise TypeError("Cannot substract BoundQubitHamiltonian and "+str(type(other)))
 
         res_terms_dict = {}
 
@@ -225,7 +225,7 @@ class BoundPauliHamiltonian(Hamiltonian):
             if abs(res_terms_dict[pauli])<threshold:
                 del res_terms_dict[pauli]
         
-        result = BoundPauliHamiltonian(res_terms_dict)
+        result = BoundQubitHamiltonian(res_terms_dict)
         return result
     
     def __mul__(self,other):
@@ -234,20 +234,20 @@ class BoundPauliHamiltonian(Hamiltonian):
 
         Parameters
         ----------
-        other : int, float, complex or BoundPauliHamiltonian
-            A scalar or a BoundPauliHamiltonian to multiply with the operator self.
+        other : int, float, complex or BoundQubitHamiltonian
+            A scalar or a BoundQubitHamiltonian to multiply with the operator self.
 
         Returns
         -------
-        result : BoundPauliHamiltonian
+        result : BoundQubitHamiltonian
             The product of the operator self and other.
 
         """
 
         if isinstance(other,(int,float,complex)):
-            other = BoundPauliHamiltonian({BoundPauliTerm():other})
-        if not isinstance(other,BoundPauliHamiltonian):
-            raise TypeError("Cannot multipliy BoundPauliHamiltonian and "+str(type(other)))
+            other = BoundQubitHamiltonian({BoundPauliTerm():other})
+        if not isinstance(other,BoundQubitHamiltonian):
+            raise TypeError("Cannot multipliy BoundQubitHamiltonian and "+str(type(other)))
 
         res_terms_dict = {}
 
@@ -256,7 +256,7 @@ class BoundPauliHamiltonian(Hamiltonian):
                 curr_pauli, curr_coeff = pauli1*pauli2
                 res_terms_dict[curr_pauli] = res_terms_dict.get(curr_pauli,0) + curr_coeff*coeff1*coeff2
 
-        result = BoundPauliHamiltonian(res_terms_dict)
+        result = BoundQubitHamiltonian(res_terms_dict)
         return result
 
     __radd__ = __add__
@@ -272,16 +272,16 @@ class BoundPauliHamiltonian(Hamiltonian):
 
         Parameters
         ----------
-        other : int, float, complex or BoundPauliHamiltonian
-            A scalar or a BoundPauliHamiltonian to add to the operator self.
+        other : int, float, complex or BoundQubitHamiltonian
+            A scalar or a BoundQubitHamiltonian to add to the operator self.
 
         """
 
         if isinstance(other,(int,float,complex)):
             self.terms_dict[BoundPauliTerm()] = self.terms_dict.get(BoundPauliTerm(),0)+other
             return self
-        if not isinstance(other,BoundPauliHamiltonian):
-            raise TypeError("Cannot add BoundPauliHamiltonian and "+str(type(other)))
+        if not isinstance(other,BoundQubitHamiltonian):
+            raise TypeError("Cannot add BoundQubitHamiltonian and "+str(type(other)))
 
         for pauli,coeff in other.terms_dict.items():
             self.terms_dict[pauli] = self.terms_dict.get(pauli,0)+coeff
@@ -295,16 +295,16 @@ class BoundPauliHamiltonian(Hamiltonian):
 
         Parameters
         ----------
-        other : int, float, complex or BoundPauliHamiltonian
-            A scalar or a BoundPauliHamiltonian to substract from the operator self.
+        other : int, float, complex or BoundQubitHamiltonian
+            A scalar or a BoundQubitHamiltonian to substract from the operator self.
 
         """
 
         if isinstance(other,(int,float,complex)):
             self.terms_dict[BoundPauliTerm()] = self.terms_dict.get(BoundPauliTerm(),0)-other
             return self
-        if not isinstance(other,BoundPauliHamiltonian):
-            raise TypeError("Cannot add BoundPauliHamiltonian and "+str(type(other)))
+        if not isinstance(other,BoundQubitHamiltonian):
+            raise TypeError("Cannot add BoundQubitHamiltonian and "+str(type(other)))
 
         for pauli,coeff in other.terms_dict.items():
             self.terms_dict[pauli] = self.terms_dict.get(pauli,0)-coeff
@@ -318,19 +318,19 @@ class BoundPauliHamiltonian(Hamiltonian):
 
         Parameters
         ----------
-        other : int, float, complex or BoundPauliHamiltonian
-            A scalar or a BoundPauliHamiltonian to multiply with the operator self.
+        other : int, float, complex or BoundQubitHamiltonian
+            A scalar or a BoundQubitHamiltonian to multiply with the operator self.
 
         """
 
         if isinstance(other,(int,float,complex)):
-            #other = BoundPauliHamiltonian({BoundPauliTerm():other})
+            #other = BoundQubitHamiltonian({BoundPauliTerm():other})
             for term in self.terms_dict:
                 self.terms_dict[term] *= other
             return self
 
-        if not isinstance(other,BoundPauliHamiltonian):
-            raise TypeError("Cannot multipliy BoundPauliHamiltonian and "+str(type(other)))
+        if not isinstance(other,BoundQubitHamiltonian):
+            raise TypeError("Cannot multipliy BoundQubitHamiltonian and "+str(type(other)))
 
         res_terms_dict = {}
 
@@ -356,8 +356,8 @@ class BoundPauliHamiltonian(Hamiltonian):
 
         Returns
         -------
-        result : BoundPauliHamiltonian
-            The resulting BoundPauliHamiltonian.
+        result : BoundQubitHamiltonian
+            The resulting BoundQubitHamiltonian.
         
         """
 
@@ -367,7 +367,7 @@ class BoundPauliHamiltonian(Hamiltonian):
             curr_pauli, curr_coeff = pauli.subs(subs_dict)
             res_terms_dict[curr_pauli] = res_terms_dict.get(curr_pauli,0) + curr_coeff*coeff
 
-        result = BoundPauliHamiltonian(res_terms_dict)
+        result = BoundQubitHamiltonian(res_terms_dict)
         return result
     
     #
@@ -470,10 +470,10 @@ class BoundPauliHamiltonian(Hamiltonian):
     # Partitions 
     #
 
-    # Commutativity: Partitions the BoundPauliHamiltonian into BoundPauliHamiltonians with pairwise commuting BoundPauliTerms
+    # Commutativity: Partitions the BoundQubitHamiltonian into BoundQubitHamiltonians with pairwise commuting BoundPauliTerms
     def commuting_groups(self):
         r"""
-        Partitions the PauliHamiltonian into PauliHamiltonians with pairwise commuting terms. That is,
+        Partitions the QubitHamiltonian into QubitHamiltonians with pairwise commuting terms. That is,
 
         .. math::
 
@@ -483,7 +483,7 @@ class BoundPauliHamiltonian(Hamiltonian):
 
         Returns
         -------
-        groups : list[PauliHamiltonian]
+        groups : list[QubitHamiltonian]
             The partition of the Hamiltonian.
         
         """
@@ -506,14 +506,14 @@ class BoundPauliHamiltonian(Hamiltonian):
                         group.terms_dict[pauli]=coeff
                         break
             if len(groups)==0 or not commute_bool: 
-                groups.append(BoundPauliHamiltonian({pauli:coeff}))
+                groups.append(BoundQubitHamiltonian({pauli:coeff}))
 
         return groups
 
-    # Qubit-wise commutativity: Partitions the BoundPauliHamiltonian into BoundPauliHamiltonians with pairwise qubit-wise commuting BoundPauliTerms
+    # Qubit-wise commutativity: Partitions the BoundQubitHamiltonian into BoundQubitHamiltonians with pairwise qubit-wise commuting BoundPauliTerms
     def commuting_qw_groups(self, show_bases=False):
         r"""
-        Partitions the BoundPauliHamiltonian into BoundPauliHamiltonians with pairwise qubit-wise commuting terms. That is,
+        Partitions the BoundQubitHamiltonian into BoundQubitHamiltonians with pairwise qubit-wise commuting terms. That is,
 
         .. math::
 
@@ -523,7 +523,7 @@ class BoundPauliHamiltonian(Hamiltonian):
 
         Returns
         -------
-        groups : list[BoundPauliHamiltonian]
+        groups : list[BoundQubitHamiltonian]
             The partition of the Hamiltonian.
         
         """
@@ -546,7 +546,7 @@ class BoundPauliHamiltonian(Hamiltonian):
                         groups[i].terms_dict[pauli]=coeff
                         break
             if len(groups)==0 or not commute_bool:
-                groups.append(BoundPauliHamiltonian({pauli:coeff}))
+                groups.append(BoundQubitHamiltonian({pauli:coeff}))
                 bases.append(pauli.copy())
 
         if show_bases:
