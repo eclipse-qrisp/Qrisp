@@ -74,14 +74,45 @@ class QubitTerm:
             gphase(coeff,qarg[0])
 
     # @lifted
-    def simulate(self, coeff, qv):
+    def simulate(self, coeff, qv, do_change_of_basis = True):
 
-        from qrisp import h, cx, rz, mcp, conjugate, control, QuantumBool, mcx, x, p, QuantumEnvironment, gphase
+        from qrisp import h, cx, rz, mcp, conjugate, control, QuantumBool, mcx, x, p, s, QuantumEnvironment, gphase
         
+        # If required, do change of basis.
+        
+        
+        if do_change_of_basis:
+            
+            def change_of_basis(qv, terms_dict):
+                for index, factor in terms_dict.items():
+                    if factor=="X":
+                        h(qv[index])
+                    if factor=="Y":
+                        s(qv[index])
+                        h(qv[index])
+                        x(qv[index])
+                        
+            with conjugate(change_of_basis)(qv, self.pauli_dict):
+                self.simulate(coeff, qv, do_change_of_basis=False)
+            return
+        
+        # We group the term into 3 types of components:
+        
+        # 1. Pauli-indices, i.e. indices where a Pauli-Z is supposed to be applied.
+        # 2. Ladder indices, i.e. A or C Operators
+        # 3. Projector indices, i.e. P0 or P1
+        
+        # Contains the indices of Pauli Z
         Z_indices = []
+        
+        # Contains the indices of the ladder Operators
         ladder_indices = []
+        # Contains the booleans, which specify whether A or C
         is_creator_list = []
+        
+        # Contains the indices of the projection Operators
         projector_indices = []
+        # Contains the booleans, which specify whether P0 or P1
         projector_state = []
         
         pauli_dict = self.pauli_dict
@@ -101,12 +132,16 @@ class QubitTerm:
                 projector_indices.append(i)
                 projector_state.append(True)
         
-        
+        # If no non-trivial indices are found, we perform a global phase
+        # and are done.
         if len(Z_indices + ladder_indices + projector_indices) == 0:
             gphase(coeff, qv[0])
             return
+        
+        # If there are only projectors, the circuit is a mcp gate
         elif len(Z_indices + ladder_indices) == 0:
             
+            # Flip the relevant qubits to ensure the right states are projected.
             flip_qubits = [qv[projector_indices[i]] for i in range(len(projector_indices)) if not projector_state[i]]
             
             if len(flip_qubits) == 0:
@@ -114,55 +149,38 @@ class QubitTerm:
             else:
                 env = conjugate(x)(flip_qubits)
             
+            # Perform the mcp            
             with env:
-                
                 if len(projector_indices) == 1:
                     p(coeff, qv[projector_indices[0]])
                 else:
                     mcp(coeff, [qv[i] for i in projector_indices])
                 
             return
-        # Some hamiltonians contain terms of the for a(1)*c(1), ie.
-        # two ladder operators, which operate on the same qubit.
-        # We filter them out and discuss their precise treatment below
         
-
-        # We now start implementing performing the quantum operations
-                
-        # There are three challenges-
+        # For your reference, here is the circuit that that implements
+        # exp(i*phi*H)
+        # For 
+        # H = A(0)*C(1)*C(2)*Z(3)*X(4)
         
-        # 1. Implement the "double_indices" i.e. creation/annihilation
-        # operators where two act on the same qubit.
-        # 2. Implement the other creation annihilation operators.
-        # 3. Implement the Z operators.
+        #           ┌───┐                                                                  ┌───┐
+        #     qv.0: ┤ X ├────────────■───────────────────────────────────■─────────────────┤ X ├
+        #           └─┬─┘┌───┐       │                                   │            ┌───┐└─┬─┘
+        #     qv.1: ──┼──┤ X ├───────o───────────────────────────────────o────────────┤ X ├──┼──
+        #             │  └─┬─┘┌───┐  │  ┌───┐┌───┐┌──────────────┐┌───┐  │  ┌───┐┌───┐└─┬─┘  │
+        #     qv.2: ──■────■──┤ H ├──┼──┤ X ├┤ X ├┤ Rz(-1.0*phi) ├┤ X ├──┼──┤ X ├┤ H ├──■────■──
+        #                     └───┘  │  └─┬─┘└─┬─┘└──────┬───────┘└─┬─┘  │  └─┬─┘└───┘
+        #     qv.3: ─────────────────┼────■────┼─────────┼──────────┼────┼────■─────────────────
+        #           ┌───┐            │         │         │          │    │  ┌───┐
+        #     qv.4: ┤ H ├────────────┼─────────■─────────┼──────────■────┼──┤ H ├───────────────
+        #           └───┘          ┌─┴─┐                 │             ┌─┴─┐└───┘
+        # hs_anc.0: ───────────────┤ X ├─────────────────■─────────────┤ X ├────────────────────
+        #                          └───┘                               └───┘
         
-        # For step 2 we recreate the circuit in https://arxiv.org/abs/2310.12256
         
-        # The circuit on page 4 looks like this
+        # To implement the ladder operators, we use the ideas from https://arxiv.org/abs/2310.12256
         
-        #               ┌───┐                                                          »
-        #         qv.0: ┤ X ├─────────────────■────────────────────────────────■───────»
-        #               └─┬─┘┌───┐            │                                │       »
-        #         qv.1: ──┼──┤ X ├────────────■────────────────────────────────■───────»
-        #                 │  └─┬─┘┌───┐       │                                │       »
-        #         qv.2: ──┼────┼──┤ X ├───────o────■──────────────────────■────o───────»
-        #                 │    │  └─┬─┘┌───┐  │  ┌─┴─┐┌────────────────┐┌─┴─┐  │  ┌───┐»
-        #         qv.3: ──■────■────■──┤ H ├──┼──┤ X ├┤ Rz(-0.5*theta) ├┤ X ├──┼──┤ H ├»
-        #                              └───┘┌─┴─┐└───┘└───────┬────────┘└───┘┌─┴─┐└───┘»
-        # hs_ancilla.0: ────────────────────┤ X ├─────────────■──────────────┤ X ├─────»
-        #                                   └───┘                            └───┘     »
-        # «                        ┌───┐
-        # «        qv.0: ──────────┤ X ├
-        # «                   ┌───┐└─┬─┘
-        # «        qv.1: ─────┤ X ├──┼──
-        # «              ┌───┐└─┬─┘  │  
-        # «        qv.2: ┤ X ├──┼────┼──
-        # «              └─┬─┘  │    │  
-        # «        qv.3: ──■────■────■──
-        # «                             
-        # «hs_ancilla.0: ───────────────
-        
-        # In it's essence this circuit is a conjugation with an inverse GHZ state
+        # In it's essence the circuits described there are a conjugation with an inverse GHZ state
         # preparation and a multi controlled RZ gate.
 
         def inv_ghz_state(qb_list):
@@ -173,43 +191,44 @@ class QubitTerm:
             if ladder_ctrl_state[-1] == "1":
                 x(qb_list[-1])
             h(qb_list[-1])
-            
-        # Determine ctrl state and the qubits the creation/annihilation
-        # operators act on
+        
+        # We determine the ctrl state and the qubits of the MCRZ 
         ladder_ctrl_state = ""
         ladder_qubits = []
         for i in range(len(ladder_indices)):
             ladder_ctrl_state += str(int(not is_creator_list[i]))
             ladder_qubits.append(qv[ladder_indices[i]])
-            
+        
         # The qubit that receives the RZ gate will be called anchor qubit.
         anchor_index = (Z_indices + ladder_indices)[-1]
         
-        if len(ladder_qubits) == 0:
-            env = QuantumEnvironment()
-        else:
+        if len(ladder_qubits):
+            # If there are ladder qubits, we conjugate with the above
+            # GHZ state preparation function
             env = conjugate(inv_ghz_state)(ladder_qubits)
+        else:
+            env = QuantumEnvironment()
+        
                 
         with env:
             
-            # To realize the behavior of the "double_indices" i.e. the qubits
-            # that receive two creation annihilation operators, not that such a
-            # term produces a hamiltonian of the form
+            # To realize the behavior of the projector indices, not that the
+            # Hamiltonian has the form 
             
-            # H = c(0)*a(0)*a(1)*a(2) + h.c.
-            #   = |1><1| (H_red + h.c.)
-            
-            # where H_red = a(1)*a(2)
+            # H = P1*H_red
+            #   = |1><1|*H_red
             
             # Simulating this H is therefore the controlled version of H_red:
                 
             # exp(itH) = |0><0| ID + |1><1| exp(itH_red)
             
-            # We can therefore add the "double_indices" to this conjugation.
+            # We can therefore add the projector indices to the computation of
+            # the control qubit. If the projector indices are in the wrong state,
+            # no phase will be performed, which is precisely what we want
             
+            # Determine the control qubits and the control state
             projector_ctrl_state = ""
             projector_qubits = []
-            
             
             for i in range(len(projector_indices)):
                 projector_ctrl_state += str(int(projector_state[i]))
@@ -218,37 +237,53 @@ class QubitTerm:
             
             control_qubit_available = False
             
+            # If the term has neither ladder operators nor projectors,
+            # we don't need a controlled RZ
             if len(ladder_indices + projector_qubits) == 0:
                 env = QuantumEnvironment()
             elif len(ladder_indices) == 1 and len(projector_indices) == 0:
+                # If there is only a single ladder index, we achieve the behavior
+                # with a single RZ and H gate
                 env = QuantumEnvironment()
             elif len(ladder_indices) == 2 and len(projector_indices) == 0:
+                # If there are two ladder indices, we don't need and mcx to compute
+                # the control value but instead we use a CRZ gate
+                
+                # hs_anc is the qubit where RZ gate is controlled on
                 hs_anc = qv[ladder_indices[0]]
+                
+                
                 control_qubit_available = True
+                
                 if ladder_ctrl_state[0] == "0":
+                    # Flip the control if required by the ladder state
                     env = conjugate(x)(hs_anc)
                 else:
                     env = QuantumEnvironment()
+                    
             else:
-                # We furthermore allocate an ancillae to perform an efficient
-                # multi controlled rz.
+                # In any other case, we allocate an additional quantum bool,
+                # perform a mcx to compute the control value.
+                # To achieve the multi-controlled RZ behavior, we control the RZ
+                # on that quantum bool.
+
                 hs_anc = QuantumBool()
                 control_qubit_available = True
                 
+                # Compute the control value
                 env = conjugate(mcx)(ladder_qubits[:-1] + projector_qubits, 
-                                    hs_anc, 
-                                    ctrl_state = ladder_ctrl_state[:-1] + projector_ctrl_state, 
-                                    method = "gray")
+                                     hs_anc, 
+                                     ctrl_state = ladder_ctrl_state[:-1] + projector_ctrl_state, 
+                                     method = "gray")
             
+            
+            # Perform the conjugation
             with env:
                 
-                # Before we execute the RZ, we need to deal with the Z terms (next to the anihilation/
-                # creation) operators.
+                # Before we execute the RZ, we need to deal with the Z indices.
                 
-                # The qubits that only receive a Z operator will now be called "passive qubits"
-                
-                # By inspection we see that the Z operators are equivalent to the
-                # term (-1)**(q_1 (+) q_2)
+                # By inspection we see that acting on qubit 1 & 2 with Z operators,
+                # is equivalent to the term (-1)**(q_1 (+) q_2)
                 # It therefore suffices to compute the parity value of all the passive
                 # qubits and flip the sign of the coefficient based on the parity.
 
@@ -261,9 +296,12 @@ class QubitTerm:
                     for i in Z_indices:
                         if i != anchor_index:
                             cx(qv[i], qv[anchor_index])
+                
                 # Perform the conjugation
                 with conjugate(flip_anchor_qubit)(qv, anchor_index, Z_indices):
                     
+                    
+                    # Set up the control environment
                     if control_qubit_available:
                         env = control(hs_anc)
                     else:
@@ -271,6 +309,7 @@ class QubitTerm:
                     
                     if len(ladder_indices) == 0:
                         coeff *= 2
+                    
                     # Perform the controlled RZ
                     with env:
                         rz(-coeff, qv[anchor_index])
@@ -278,7 +317,7 @@ class QubitTerm:
         if len(ladder_indices) > 2:
             # Delete ancilla
             hs_anc.delete()
-
+                
     #
     # Printing
     #
