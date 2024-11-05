@@ -1,6 +1,6 @@
-﻿qrisp.operators.pauli.BoundQubitHamiltonian.get\_measurement
+﻿qrisp.operators.qubit.BoundQubitHamiltonian.get\_measurement
 ============================================================
 
-.. currentmodule:: qrisp.operators.pauli
+.. currentmodule:: qrisp.operators.qubit
 
 .. automethod:: BoundQubitHamiltonian.get_measurement

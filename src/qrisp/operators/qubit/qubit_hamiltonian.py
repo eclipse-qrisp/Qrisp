@@ -31,16 +31,47 @@ threshold = 1e-9
 
 class QubitHamiltonian(Hamiltonian):
     r"""
-    This class provides an efficient implementation of Pauli Hamiltonians, i.e.,
-    Hamiltonians of the form
-
+    This class provides an efficient implementation of Qubit Hamiltonians, i.e.
+    Hamiltonians, that operate on a qubit space :math:`(\mathbb{C}^2)^{\otimes n}`.
+    Supported are operators of the following form:
+    
     .. math::
         
-        H=\sum\limits_{j}\alpha_jP_j 
-            
-    where $P_j=\prod_i\sigma_i^j$ is a Pauli product, 
-    and $\sigma_i^j\in\{I,X,Y,Z\}$ is the Pauli operator acting on qubit $i$.
-
+        H=\sum\limits_{j}\alpha_j O_j 
+        
+    where :math:`O_j=\prod_i o_i^j` is a product of the following operators:
+    
+    .. list-table::
+       :header-rows: 1
+       :widths: 20 40 40
+    
+       * - Operator
+         - Ket-Bra Realization
+         - Description
+       * - X
+         - :math:`\ket{0}\bra{1} + \ket{1}\bra{0}`
+         - Pauli-X operator (bit flip)
+       * - Y
+         - :math:`-i\ket{0}\bra{1} + i\ket{1}\bra{0}`
+         - Pauli-Y operator (bit flip with phase)
+       * - Z
+         - :math:`\ket{0}\bra{0} - \ket{1}\bra{1}`
+         - Pauli-Z operator (phase flip)
+       * - A
+         - :math:`\ket{0}\bra{1}`
+         - Annihilation operator (removes :math:`\ket{1}` state)
+       * - C
+         - :math:`\ket{1}\bra{0}`
+         - Creation operator (adds :math:`\ket{1}` state)
+       * - P0
+         - :math:`\ket{0}\bra{0}`
+         - Projector onto the :math:`\ket{0}` state
+       * - P1
+         - :math:`\ket{1}\bra{1}`
+         - Projector onto the :math:`\ket{1}` state
+    
+    Arbitrary combinations of these operators can be efficiently simulated.
+    
     Parameters
     ----------
     terms_dict : dict, optional
@@ -53,13 +84,44 @@ class QubitHamiltonian(Hamiltonian):
 
     ::
         
-        from qrisp.operators.qubit import X,Y,Z
+        from qrisp.operators.qubit import X,Y,Z,A,C,P0,P1
 
-        H = 1+2*X(0)+3*X(0)*Y(1)
+        H = 1+2*X(0)+3*X(0)*Y(1)*A(2)+C(4)*P1(0)
         H
 
-    Yields $1+2X_0+3X_0Y_1$.
+    Yields $3*A_2*X_0*Y_1 + C_4*P1_0 + 1 + 2*X_0$.
+    
+    Investigate the simulation circuit by simulating for a symbolic amount of time:
 
+    ::        
+
+        from qrisp import QuantumVariable
+        from sympy import Symbol
+        
+        H = A(0)*C(1)*C(2)*Z(3)*X(4)
+        U = H.trotterization()
+
+        qv = QuantumVariable(5)
+        phi = Symbol("phi")
+
+        U(qv, t = phi)
+        print(qv.qs)
+    
+    ::
+        
+                  ┌───┐                                                                  ┌───┐
+            qv.0: ┤ X ├────────────■───────────────────────────────────■─────────────────┤ X ├
+                  └─┬─┘┌───┐       │                                   │            ┌───┐└─┬─┘
+            qv.1: ──┼──┤ X ├───────o───────────────────────────────────o────────────┤ X ├──┼──
+                    │  └─┬─┘┌───┐  │  ┌───┐┌───┐┌──────────────┐┌───┐  │  ┌───┐┌───┐└─┬─┘  │
+            qv.2: ──■────■──┤ H ├──┼──┤ X ├┤ X ├┤ Rz(-1.0*phi) ├┤ X ├──┼──┤ X ├┤ H ├──■────■──
+                            └───┘  │  └─┬─┘└─┬─┘└──────┬───────┘└─┬─┘  │  └─┬─┘└───┘
+            qv.3: ─────────────────┼────■────┼─────────┼──────────┼────┼────■─────────────────
+                  ┌───┐            │         │         │          │    │  ┌───┐
+            qv.4: ┤ H ├────────────┼─────────■─────────┼──────────■────┼──┤ H ├───────────────
+                  └───┘          ┌─┴─┐                 │             ┌─┴─┐└───┘
+        hs_anc.0: ───────────────┤ X ├─────────────────■─────────────┤ X ├────────────────────
+                                 └───┘                               └───┘
     """
 
     def __init__(self, terms_dict={}):

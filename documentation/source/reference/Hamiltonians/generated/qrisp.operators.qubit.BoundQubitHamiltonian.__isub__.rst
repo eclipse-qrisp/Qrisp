@@ -1,6 +1,6 @@
-﻿qrisp.operators.pauli.BoundQubitHamiltonian.\_\_isub\_\_
+﻿qrisp.operators.qubit.BoundQubitHamiltonian.\_\_isub\_\_
 ========================================================
 
-.. currentmodule:: qrisp.operators.pauli
+.. currentmodule:: qrisp.operators.qubit
 
 .. automethod:: BoundQubitHamiltonian.__isub__

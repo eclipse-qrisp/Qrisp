@@ -8,7 +8,7 @@ BoundQubitHamiltonian
     This module is still under heavy development and the interface can therefore change at any time!
 
 
-.. currentmodule:: qrisp.operators.pauli 
+.. currentmodule:: qrisp.operators.qubit
 .. autoclass:: BoundQubitHamiltonian
 
 Methods

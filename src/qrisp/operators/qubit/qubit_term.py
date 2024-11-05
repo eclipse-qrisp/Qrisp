@@ -223,20 +223,20 @@ class QubitTerm:
             elif len(ladder_indices) == 1 and len(projector_indices) == 0:
                 env = QuantumEnvironment()
             elif len(ladder_indices) == 2 and len(projector_indices) == 0:
-                hs_ancilla = qv[ladder_indices[0]]
+                hs_anc = qv[ladder_indices[0]]
                 control_qubit_available = True
                 if ladder_ctrl_state[0] == "0":
-                    env = conjugate(x)(hs_ancilla)
+                    env = conjugate(x)(hs_anc)
                 else:
                     env = QuantumEnvironment()
             else:
                 # We furthermore allocate an ancillae to perform an efficient
                 # multi controlled rz.
-                hs_ancilla = QuantumBool()
+                hs_anc = QuantumBool()
                 control_qubit_available = True
                 
                 env = conjugate(mcx)(ladder_qubits[:-1] + projector_qubits, 
-                                    hs_ancilla, 
+                                    hs_anc, 
                                     ctrl_state = ladder_ctrl_state[:-1] + projector_ctrl_state, 
                                     method = "gray")
             
@@ -265,7 +265,7 @@ class QubitTerm:
                 with conjugate(flip_anchor_qubit)(qv, anchor_index, Z_indices):
                     
                     if control_qubit_available:
-                        env = control(hs_ancilla)
+                        env = control(hs_anc)
                     else:
                         env = QuantumEnvironment()
                     
@@ -277,7 +277,7 @@ class QubitTerm:
         
         if len(ladder_indices) > 2:
             # Delete ancilla
-            hs_ancilla.delete()
+            hs_anc.delete()
 
     #
     # Printing

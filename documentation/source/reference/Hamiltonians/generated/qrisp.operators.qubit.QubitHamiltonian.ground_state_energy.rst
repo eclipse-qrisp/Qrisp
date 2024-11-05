@@ -1,6 +1,6 @@
-﻿qrisp.operators.pauli.QubitHamiltonian.ground\_state\_energy
+﻿qrisp.operators.qubit.QubitHamiltonian.ground\_state\_energy
 ============================================================
 
-.. currentmodule:: qrisp.operators.pauli
+.. currentmodule:: qrisp.operators.qubit
 
 .. automethod:: QubitHamiltonian.ground_state_energy

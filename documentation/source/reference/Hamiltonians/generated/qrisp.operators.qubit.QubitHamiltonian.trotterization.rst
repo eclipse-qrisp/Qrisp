@@ -1,6 +1,6 @@
-﻿qrisp.operators.pauli.QubitHamiltonian.trotterization
+﻿qrisp.operators.qubit.QubitHamiltonian.trotterization
 =====================================================
 
-.. currentmodule:: qrisp.operators.pauli
+.. currentmodule:: qrisp.operators.qubit
 
 .. automethod:: QubitHamiltonian.trotterization

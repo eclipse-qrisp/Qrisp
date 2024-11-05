@@ -1,6 +1,6 @@
-﻿qrisp.operators.pauli.BoundQubitHamiltonian.commuting\_qw\_groups
+﻿qrisp.operators.qubit.BoundQubitHamiltonian.commuting\_qw\_groups
 =================================================================
 
-.. currentmodule:: qrisp.operators.pauli
+.. currentmodule:: qrisp.operators.qubit
 
 .. automethod:: BoundQubitHamiltonian.commuting_qw_groups
