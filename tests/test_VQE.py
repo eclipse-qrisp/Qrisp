@@ -18,7 +18,7 @@
 
 from qrisp import QuantumVariable, cx, ry
 from qrisp.vqe.vqe_problem import *
-from qrisp.operators.pauli import X,Y,Z
+from qrisp.operators.qubit import X,Y,Z
 import numpy as np
 
 def test_vqe():

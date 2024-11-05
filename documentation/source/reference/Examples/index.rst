@@ -27,8 +27,6 @@ In this section, we provide a glimpse into the diverse range of applications tha
      - Exemplifies how to multiply quantum matrices using the :meth:`qrisp.dot` function.
    * - :ref:`QuantumModDivision`
      - Exhibits how the :meth:`qrisp.q_divmod` function can be utilize to perform division with remainder.
-   * - :ref:`QuantumTeleportation`
-     - An example on how to use Qrisps QuantumNetwork module to simulate a quantum teleportation.
    * - :ref:`EfficientTSP`
      - A more efficient version of the solution of the traveling salesman problem, that was presented in the :ref:`Tutorial`
    * - :ref:`QAOAExample` 
@@ -56,7 +54,6 @@ In this section, we provide a glimpse into the diverse range of applications tha
    Loops
    MatrixMultiplication
    QuantumModDivision
-   QuantumTeleportation
    EfficientTSP
    QAOA
    Shor

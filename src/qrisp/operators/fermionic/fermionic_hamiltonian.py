@@ -19,8 +19,8 @@ from qrisp.operators import Hamiltonian
 from qrisp.operators.fermionic.fermionic_term import FermionicTerm
 from qrisp.operators.fermionic.transformations import *
 from qrisp.operators.fermionic.graph_coloring import *
-#from qrisp.operators.pauli.pauli_term import PauliTerm
-#from qrisp.operators.pauli.pauli_hamiltonian import QubitHamiltonian
+#from qrisp.operators.qubit.pauli_term import QubitTerm
+#from qrisp.operators.qubit.pauli_hamiltonian import QubitHamiltonian
 
 import sympy as sp
 

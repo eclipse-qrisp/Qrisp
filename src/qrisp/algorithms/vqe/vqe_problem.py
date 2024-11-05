@@ -53,7 +53,7 @@ class VQEProblem:
     ::
 
         from qrisp import *
-        from qrisp.operators.pauli import X,Y,Z
+        from qrisp.operators.qubit import X,Y,Z
 
         # Problem Hamiltonian
         c = [-0.81054, 0.16614, 0.16892, 0.17218, -0.22573, 0.12091, 0.166145, 0.04523]

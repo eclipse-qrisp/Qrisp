@@ -19,7 +19,7 @@
 def test_pauli_hamiltonian():
 
     from qrisp import QuantumVariable, QuantumArray, h
-    from qrisp.operators.pauli import X,Y,Z
+    from qrisp.operators.qubit import X,Y,Z
     import numpy as np
             
     qv = QuantumVariable(2)
@@ -38,7 +38,7 @@ def test_pauli_hamiltonian():
 def test_bound_pauli_hamiltonian():
 
     from qrisp import QuantumVariable, QuantumArray, h, x
-    from qrisp.operators.pauli import X,Y,Z
+    from qrisp.operators.qubit import X,Y,Z
     import numpy as np
 
     qv1 = QuantumVariable(2)
@@ -54,7 +54,7 @@ def test_bound_pauli_hamiltonian():
 def test_trotterization():
 
     from qrisp import QuantumVariable, x, QPE
-    from qrisp.operators.pauli.pauli import X,Y,Z
+    from qrisp.operators.qubit.pauli import X,Y,Z
     import numpy as np
 
     # Hydrogen https://arxiv.org/abs/1704.05018

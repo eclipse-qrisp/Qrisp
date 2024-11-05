@@ -17,7 +17,7 @@
 """
 
 from qrisp.operators.fermionic.visualization import a_,c_
-from qrisp.operators.pauli import A,C,Z
+from qrisp.operators.qubit import A,C,Z
 
 #
 # FermionicTerm

@@ -26,13 +26,12 @@
 from qrisp.operators.hamiltonian import *
 from qrisp.operators.hamiltonian_tools import *
 
-import qrisp.operators.pauli as pauli
+from qrisp.operators.qubit import *
+from qrisp.operators.fermionic import *
 
-import qrisp.operators.fermionic as fermionic
-
-#from qrisp.operators.pauli.pauli_operator import *
-#from qrisp.operators.pauli.bound_pauli_operator import *
-#from qrisp.operators.pauli.pauli_measurement import *
-#from qrisp.operators.pauli.pauli import *
+#from qrisp.operators.qubit.pauli_operator import *
+#from qrisp.operators.qubit.bound_pauli_operator import *
+#from qrisp.operators.qubit.pauli_measurement import *
+#from qrisp.operators.qubit.pauli import *
 
 

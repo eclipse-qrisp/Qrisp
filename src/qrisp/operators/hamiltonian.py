@@ -44,7 +44,7 @@ class Hamiltonian(ABC):
 
     ::
     
-        from qrisp.operators.pauli import X,Y,Z           
+        from qrisp.operators.qubit import X,Y,Z           
         H = X(0)*X(1)+Y(0)*Y(1)+Z(0)*Z(1)+0.5*Z(0)+0.5*Z(1)
         H
 
@@ -289,7 +289,7 @@ class Hamiltonian(ABC):
         ::
 
             from qrisp import QuantumVariable, h
-            from qrisp.operators.pauli import X,Y,Z
+            from qrisp.operators.qubit import X,Y,Z
             qv = QuantumVariable(2)
             h(qv)
             H = Z(0)*Z(1)
@@ -302,7 +302,7 @@ class Hamiltonian(ABC):
         ::
 
             from qrisp import QuantumVariable, QuantumArray, h
-            from qrisp.operators.pauli import X,Y,Z
+            from qrisp.operators.qubit import X,Y,Z
             qtype = QuantumVariable(2)
             q_array = QuantumArray(qtype, shape=(2))
             h(q_array)

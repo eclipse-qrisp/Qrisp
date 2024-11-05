@@ -17,7 +17,7 @@
 """
 
 from qrisp.operators.fermionic import a, c
-from qrisp.operators.pauli import X,Y,Z
+from qrisp.operators.qubit import X,Y,Z
 from qrisp.vqe.problems.electronic_structure import *
 
 def test_fermionic_to_pauli():

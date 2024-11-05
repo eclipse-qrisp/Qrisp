@@ -16,7 +16,7 @@
 ********************************************************************************/
 """
 
-from qrisp.operators.pauli import X,Y,Z
+from qrisp.operators.qubit import X,Y,Z
 from qrisp.core import x, h, cx, cp, gphase, rz
 from qrisp.environments import conjugate
 import networkx as nx

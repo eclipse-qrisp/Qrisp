@@ -16,33 +16,9 @@
 ********************************************************************************/
 """
 
-from qrisp.operators.qubit.pauli_term import QubitTerm
-from qrisp.operators.qubit.pauli_hamiltonian import QubitHamiltonian
+# -*- coding: utf-8 -*-
 
-from functools import cache
-
-# Jordan-Wigner annihilation operaror 
-#@cache
-def a_jw(j):
-    d1={i:'Z' for i in range(j)}
-    d1[j]='X'
-    d2={i:'Z' for i in range(j)}
-    d2[j]='Y'
-    return QubitHamiltonian({QubitTerm(d1):0.5,QubitTerm(d2):0.5j})
-
-# Jordan-Wigner creation operator 
-#@cache
-def c_jw(j):
-    d1={i:'Z' for i in range(j)}
-    d1[j]='X'
-    d2={i:'Z' for i in range(j)}
-    d2[j]='Y'
-    return QubitHamiltonian({QubitTerm(d1):0.5,QubitTerm(d2):-0.5j})
-    
-@cache
-def jordan_wigner(ladder):
-    if ladder[1]:
-        return c_jw(ladder[0])
-    else:
-        return a_jw(ladder[0])
-    
+from qrisp.operators.qubit.pauli_hamiltonian import *
+from qrisp.operators.qubit.bound_pauli_hamiltonian import *
+from qrisp.operators.qubit.pauli_measurement import *
+from qrisp.operators.qubit.pauli import *

@@ -17,7 +17,7 @@
 """
 
 from qrisp import QuantumVariable, x, QPE
-from qrisp.operators.pauli import X, Y, Z, A, C, P0, P1
+from qrisp.operators.qubit import X, Y, Z, A, C, P0, P1
 import numpy as np
 
 def test_pauli_hamiltonian_simulation():
