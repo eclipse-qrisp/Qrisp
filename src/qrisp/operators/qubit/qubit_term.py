@@ -392,9 +392,9 @@ class QubitTerm:
 
         keys = set(a.keys()) | set(b.keys())
         for key in keys:
-            pauli, coeff = PAULI_TABLE[a.get(key,"I"),b.get(key,"I")]
-            if pauli!="I":
-                result_factor_dict[key]=pauli
+            factor, coeff = PAULI_TABLE[a.get(key,"I"),b.get(key,"I")]
+            if factor != "I":
+                result_factor_dict[key]=factor
                 result_coeff *= coeff
         return QubitTerm(result_factor_dict), result_coeff
     
@@ -440,7 +440,7 @@ class QubitTerm:
         keys.update(set(a.keys()))
         keys.update(set(b.keys()))
 
-        # Count non-commuting Pauli operators
+        # Count non-commuting operators
         commute = True
 
         for key in keys:

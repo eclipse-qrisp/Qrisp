@@ -89,8 +89,8 @@ class PauliMeasurement:
             curr_int = []
             curr_coeff = []
 
-            for pauli,coeff in groups[i].terms_dict.items():
-                ind = list(pauli.factor_dict.keys())
+            for factor,coeff in groups[i].terms_dict.items():
+                ind = list(factor.factor_dict.keys())
 
                 curr_ind.append(ind)
                 curr_int.append(get_integer_from_indices(ind,positions[i]))

@@ -15,6 +15,7 @@
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************/
 """
+from qrisp.operators.hamiltonian_tools import find_qw_commuting_groups
 from qrisp.operators.hamiltonian import Hamiltonian
 from qrisp.operators.qubit.qubit_term import QubitTerm
 from qrisp.operators.qubit.pauli_measurement import PauliMeasurement
@@ -598,8 +599,29 @@ class QubitHamiltonian(Hamiltonian):
         
         """
 
+        term_groups = find_qw_commuting_groups(self)
+        
         groups = [] # Groups of qubit-wise commuting QubitTerms
         bases = [] # Bases as termTerms
+        
+        for term_group in term_groups:
+            H = QubitHamiltonian({term : self.terms_dict[term] for term in term_group})
+            groups.append(H)
+            
+            if show_bases:
+                factor_dict = {}
+                
+                for term in term_group:
+                    for index, factor in term.factor_dict.items():
+                        if factor in ["X", "Y", "Z"]:
+                            factor_dict[index] = factor
+                
+                bases.append(QubitTerm(factor_dict))
+                
+        if show_bases:
+            return groups, bases
+        else:
+            return groups
 
         # Sorted insertion heuristic https://quantum-journal.org/papers/q-2021-01-20-385/pdf/
         sorted_terms = sorted(self.terms_dict.items(), key=lambda item: abs(item[1]), reverse=True)
