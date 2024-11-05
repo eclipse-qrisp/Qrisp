@@ -33,13 +33,13 @@ class BoundQubitTerm:
     
     """
 
-    def __init__(self, pauli_dict={}):
-        self.pauli_dict = pauli_dict
-        self.hash_value = hash(tuple(sorted(pauli_dict.items())))
+    def __init__(self, factor_dict={}):
+        self.factor_dict = factor_dict
+        self.hash_value = hash(tuple(sorted(factor_dict.items())))
 
     def update(self, update_dict):
-        self.pauli_dict.update(update_dict)
-        self.hash_value = hash(tuple(sorted(self.pauli_dict.items())))
+        self.factor_dict.update(update_dict)
+        self.hash_value = hash(tuple(sorted(self.factor_dict.items())))
 
     def __hash__(self):
         return self.hash_value
@@ -48,17 +48,17 @@ class BoundQubitTerm:
         return self.hash_value == other.hash_value
     
     def copy(self):
-        return BoundQubitTerm(self.pauli_dict.copy())
+        return BoundQubitTerm(self.factor_dict.copy())
     
     def is_identity(self):
-        return len(self.pauli_dict)==0
+        return len(self.factor_dict)==0
     
     #
     # Simulation
     #
     
     # Assume that the operator is diagonal after change of basis
-    # Implements exp(i*coeff*\prod_j Z_j) where the product goes over all qubits j in self.pauli_dict
+    # Implements exp(i*coeff*\prod_j Z_j) where the product goes over all qubits j in self.factor_dict
     @lifted
     def simulate(self, coeff, qubit):
 
@@ -68,7 +68,7 @@ class BoundQubitTerm:
                 cx(qubits[i],qubits[i+1])
 
         if not self.is_identity():
-            qubits = list(self.pauli_dict.keys())
+            qubits = list(self.factor_dict.keys())
             with conjugate(parity)(qubits):
                 rz(-2*coeff,qubits[-1])
         else:
@@ -108,7 +108,7 @@ class BoundQubitTerm:
                 return Z_(index)
         
         expr = 1
-        for index,P in self.pauli_dict.items():
+        for index,P in self.factor_dict.items():
             expr *= to_spin(P,"("+str(index)+")")
 
         return expr
@@ -127,18 +127,18 @@ class BoundQubitTerm:
             raise TypeError("Unsupported operand type(s) for ** or pow(): "+str(type(self))+" and "+str(type(e)))
 
     def __mul__(self, other):
-        result_pauli_dict={}
+        result_factor_dict={}
         result_coeff = 1
-        a = self.pauli_dict
-        b = other.pauli_dict
+        a = self.factor_dict
+        b = other.factor_dict
 
         keys = set(a.keys()) | set(b.keys())
         for key in keys:
             pauli, coeff = PAULI_TABLE[a.get(key,"I"),b.get(key,"I")]
             if pauli!="I":
-                result_pauli_dict[key]=pauli
+                result_factor_dict[key]=pauli
                 result_coeff *= coeff
-        return BoundQubitTerm(result_pauli_dict), result_coeff
+        return BoundQubitTerm(result_factor_dict), result_coeff
 
     def subs(self, subs_dict):
         """
@@ -156,15 +156,15 @@ class BoundQubitTerm:
             The resulting coefficient.
         
         """
-        result_pauli_dict=self.pauli_dict.copy()
+        result_factor_dict=self.factor_dict.copy()
         result_coeff = 1
 
         for key, value in subs_dict.items():
-            if key in result_pauli_dict:
-                del result_pauli_dict[key]
+            if key in result_factor_dict:
+                del result_factor_dict[key]
                 result_coeff *= value
 
-        return BoundQubitTerm(result_pauli_dict), result_coeff
+        return BoundQubitTerm(result_factor_dict), result_coeff
         
     #
     # Commutativity checks
@@ -175,8 +175,8 @@ class BoundQubitTerm:
         Checks if two BoundQubitTerms commute.
 
         """
-        a = self.pauli_dict
-        b = other.pauli_dict
+        a = self.factor_dict
+        b = other.factor_dict
 
         keys = set()
         keys.update(set(a.keys()))
@@ -195,8 +195,8 @@ class BoundQubitTerm:
         Checks if two BoundQubitTerms commute qubit-wise.
 
         """
-        a = self.pauli_dict
-        b = other.pauli_dict
+        a = self.factor_dict
+        b = other.factor_dict
 
         keys = set()
         keys.update(set(a.keys()))

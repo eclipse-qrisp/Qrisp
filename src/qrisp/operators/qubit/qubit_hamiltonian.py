@@ -485,7 +485,7 @@ class QubitHamiltonian(Hamiltonian):
 
         participating_indices = set()
         for term,coeff in self.terms_dict.items():
-            curr_dict = term.pauli_dict
+            curr_dict = term.factor_dict
             term_dicts.append(curr_dict)    
             coeffs.append(coeff)
             participating_indices = participating_indices.union(term.non_trivial_indices())
@@ -612,7 +612,7 @@ class QubitHamiltonian(Hamiltonian):
                 for i in range(n):
                     commute_bool = bases[i].commute_qw(term)
                     if commute_bool:
-                        bases[i].update(term.pauli_dict)
+                        bases[i].update(term.factor_dict)
                         groups[i].terms_dict[term]=coeff
                         break
             if len(groups)==0 or not commute_bool:
@@ -772,7 +772,7 @@ class QubitHamiltonian(Hamiltonian):
 
         def trotter_step(qarg, t, steps):
             for index,basis in enumerate(bases):
-                with conjugate(change_of_basis)(qarg, basis.pauli_dict):
+                with conjugate(change_of_basis)(qarg, basis.factor_dict):
                     for term,coeff in groups[index].terms_dict.items():
                         term.simulate(coeff*t/steps, qarg, do_change_of_basis = False)
 

@@ -79,7 +79,7 @@ class PauliMeasurement:
         # List of dictionaries with qubits in basis as keys and their position in an ordered list as values
         positions = []
         for basis in bases:
-            ordered_keys = sorted(basis.pauli_dict.keys())
+            ordered_keys = sorted(basis.factor_dict.keys())
             position_dict = {key: index for index, key in enumerate(ordered_keys)}
             positions.append(position_dict)
 
@@ -90,7 +90,7 @@ class PauliMeasurement:
             curr_coeff = []
 
             for pauli,coeff in groups[i].terms_dict.items():
-                ind = list(pauli.pauli_dict.keys())
+                ind = list(pauli.factor_dict.keys())
 
                 curr_ind.append(ind)
                 curr_int.append(get_integer_from_indices(ind,positions[i]))
@@ -129,8 +129,8 @@ class PauliMeasurement:
         # Construct change of basis circuits
         for basis in self.bases:
 
-            basis_ = sorted(basis.pauli_dict.items())
-            qubits_ = sorted(basis.pauli_dict.keys())
+            basis_ = sorted(basis.factor_dict.items())
+            qubits_ = sorted(basis.factor_dict.keys())
 
             n = len(basis_)
             qc = QuantumCircuit(n)

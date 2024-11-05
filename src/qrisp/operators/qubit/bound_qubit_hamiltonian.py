@@ -414,23 +414,23 @@ class BoundQubitHamiltonian(Hamiltonian):
             else:
                 return csr_matrix([[1,0],[0,-1]])
 
-        def recursive_TP(keys,pauli_dict):
+        def recursive_TP(keys,factor_dict):
             if len(keys)==1:
-                return get_matrix(pauli_dict.get(keys[0],"I"))
-            return TP(get_matrix(pauli_dict.get(keys.pop(0),"I")),recursive_TP(keys,pauli_dict))
+                return get_matrix(factor_dict.get(keys[0],"I"))
+            return TP(get_matrix(factor_dict.get(keys.pop(0),"I")),recursive_TP(keys,factor_dict))
 
-        pauli_dicts = []
+        factor_dicts = []
         coeffs = []
 
         keys = set()
         for pauli,coeff in self.terms_dict.items():
-            curr_dict = pauli.pauli_dict
+            curr_dict = pauli.factor_dict
             keys.update(set(curr_dict.keys()))
-            pauli_dicts.append(curr_dict)    
+            factor_dicts.append(curr_dict)    
             coeffs.append(coeff)
 
         keys = set()
-        for item in pauli_dicts:
+        for item in factor_dicts:
             keys.update(set(item.keys()))
         keys = sorted(keys)
         dim = len(keys)
@@ -438,7 +438,7 @@ class BoundQubitHamiltonian(Hamiltonian):
         m = len(coeffs)
         M = sp.csr_matrix((2**dim, 2**dim))
         for k in range(m):
-            M += complex(coeffs[k])*recursive_TP(keys.copy(),pauli_dicts[k])
+            M += complex(coeffs[k])*recursive_TP(keys.copy(),factor_dicts[k])
 
         return M
 
@@ -538,7 +538,7 @@ class BoundQubitHamiltonian(Hamiltonian):
                 for i in range(n):
                     commute_bool = bases[i].commute_qw(pauli)
                     if commute_bool:
-                        bases[i].update(pauli.pauli_dict)
+                        bases[i].update(pauli.factor_dict)
                         groups[i].terms_dict[pauli]=coeff
                         break
             if len(groups)==0 or not commute_bool:
@@ -687,8 +687,8 @@ class BoundQubitHamiltonian(Hamiltonian):
         
         """
 
-        def change_of_basis(pauli_dict):
-            for qubit, axis in pauli_dict.items():
+        def change_of_basis(factor_dict):
+            for qubit, axis in factor_dict.items():
                 if axis=="X":
                     h(qubit)
                 if axis=="Y":
@@ -705,7 +705,7 @@ class BoundQubitHamiltonian(Hamiltonian):
                 qubit = qarg[0]
 
             for index,basis in enumerate(bases):
-                with conjugate(change_of_basis)(basis.pauli_dict):
+                with conjugate(change_of_basis)(basis.factor_dict):
                     for term,coeff in groups[index].terms_dict.items():
                         term.simulate(coeff*t/steps, qubit)
 

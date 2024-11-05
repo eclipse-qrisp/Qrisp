@@ -32,13 +32,13 @@ class QubitTerm:
     
     """
 
-    def __init__(self, pauli_dict={}):
-        self.pauli_dict = pauli_dict
-        self.hash_value = hash(tuple(sorted(pauli_dict.items())))
+    def __init__(self, factor_dict={}):
+        self.factor_dict = factor_dict
+        self.hash_value = hash(tuple(sorted(factor_dict.items())))
 
     def update(self, update_dict):
-        self.pauli_dict.update(update_dict)
-        self.hash_value = hash(tuple(sorted(self.pauli_dict.items())))
+        self.factor_dict.update(update_dict)
+        self.hash_value = hash(tuple(sorted(self.factor_dict.items())))
 
     def __hash__(self):
         return self.hash_value
@@ -47,17 +47,17 @@ class QubitTerm:
         return self.hash_value == other.hash_value
     
     def copy(self):
-        return QubitTerm(self.pauli_dict.copy())
+        return QubitTerm(self.factor_dict.copy())
     
     def is_identity(self):
-        return len(self.pauli_dict)==0
+        return len(self.factor_dict)==0
     
     #
     # Simulation
     #
     
     # Assume that the operator is diagonal after change of basis
-    # Implements exp(i*coeff*\prod_j Z_j) where the product goes over all indices j in self.pauli_dict
+    # Implements exp(i*coeff*\prod_j Z_j) where the product goes over all indices j in self.factor_dict
     # @lifted
     def simulate(self, coeff, qarg):
 
@@ -67,7 +67,7 @@ class QubitTerm:
                 cx(qarg[indices[i]],qarg[indices[i+1]])
 
         if not self.is_identity():
-            indices = list(self.pauli_dict.keys())
+            indices = list(self.factor_dict.keys())
             with conjugate(parity)(qarg, indices):
                 rz(-2*coeff,qarg[indices[-1]])
         else:
@@ -92,7 +92,7 @@ class QubitTerm:
                         h(qv[index])
                         x(qv[index])
                         
-            with conjugate(change_of_basis)(qv, self.pauli_dict):
+            with conjugate(change_of_basis)(qv, self.factor_dict):
                 self.simulate(coeff, qv, do_change_of_basis=False)
             return
         
@@ -115,20 +115,20 @@ class QubitTerm:
         # Contains the booleans, which specify whether P0 or P1
         projector_state = []
         
-        pauli_dict = self.pauli_dict
-        for i in pauli_dict.keys():
-            if pauli_dict[i] in ["X", "Y", "Z"]:
+        factor_dict = self.factor_dict
+        for i in factor_dict.keys():
+            if factor_dict[i] in ["X", "Y", "Z"]:
                 Z_indices.append(i)
-            elif pauli_dict[i] == "A":
+            elif factor_dict[i] == "A":
                 ladder_indices.append(i)
                 is_creator_list.append(False)
-            elif pauli_dict[i] == "C":
+            elif factor_dict[i] == "C":
                 ladder_indices.append(i)
                 is_creator_list.append(True)
-            elif pauli_dict[i] == "P0":
+            elif factor_dict[i] == "P0":
                 projector_indices.append(i)
                 projector_state.append(False)
-            elif pauli_dict[i] == "P1":
+            elif factor_dict[i] == "P1":
                 projector_indices.append(i)
                 projector_state.append(True)
         
@@ -332,7 +332,7 @@ class QubitTerm:
     
     def non_trivial_indices(self):
         res = set()
-        for index, P in self.pauli_dict.items():
+        for index, P in self.factor_dict.items():
             res.add(index)
         return res
 
@@ -366,7 +366,7 @@ class QubitTerm:
                 return Symbol("P1_" + str(index))
         
         expr = 1
-        for index,P in self.pauli_dict.items():
+        for index,P in self.factor_dict.items():
             expr *= to_spin(P,str(index))
 
         return expr
@@ -385,18 +385,18 @@ class QubitTerm:
             raise TypeError("Unsupported operand type(s) for ** or pow(): "+str(type(self))+" and "+str(type(e)))
 
     def __mul__(self, other):
-        result_pauli_dict={}
+        result_factor_dict={}
         result_coeff = 1
-        a = self.pauli_dict
-        b = other.pauli_dict
+        a = self.factor_dict
+        b = other.factor_dict
 
         keys = set(a.keys()) | set(b.keys())
         for key in keys:
             pauli, coeff = PAULI_TABLE[a.get(key,"I"),b.get(key,"I")]
             if pauli!="I":
-                result_pauli_dict[key]=pauli
+                result_factor_dict[key]=pauli
                 result_coeff *= coeff
-        return QubitTerm(result_pauli_dict), result_coeff
+        return QubitTerm(result_factor_dict), result_coeff
     
     def subs(self, subs_dict):
         """
@@ -414,15 +414,15 @@ class QubitTerm:
             The resulting coefficient.
         
         """
-        result_pauli_dict=self.pauli_dict.copy()
+        result_factor_dict=self.factor_dict.copy()
         result_coeff = 1
 
         for key, value in subs_dict.items():
-            if key in result_pauli_dict:
-                del result_pauli_dict[key]
+            if key in result_factor_dict:
+                del result_factor_dict[key]
                 result_coeff *= value
 
-        return QubitTerm(result_pauli_dict), result_coeff
+        return QubitTerm(result_factor_dict), result_coeff
     
     #
     # Commutativity checks
@@ -433,8 +433,8 @@ class QubitTerm:
         Checks if two QubitTerms commute.
 
         """
-        a = self.pauli_dict
-        b = other.pauli_dict
+        a = self.factor_dict
+        b = other.factor_dict
 
         keys = set()
         keys.update(set(a.keys()))
@@ -453,8 +453,8 @@ class QubitTerm:
         Checks if two QubitTerms commute qubit-wise.
 
         """
-        a = self.pauli_dict
-        b = other.pauli_dict
+        a = self.factor_dict
+        b = other.factor_dict
 
         keys = set()
         keys.update(set(a.keys()))
