@@ -52,7 +52,7 @@ def test_qubit_hamiltonian_simulation():
         
         # Compute hermitean matrix
         H_matrix = H.to_sparse_matrix().todense()
-        
+        H_matrix = (H_matrix + H_matrix.transpose().conjugate())/2
         # Compute unitary matrix
         U_matrix = expm(1j*H_matrix)
         

@@ -425,6 +425,23 @@ class QubitHamiltonian(Hamiltonian):
     #
     # Miscellaneous
     #
+    
+    def commutator(self, other):
+        
+        res = 0
+        
+        for term_self, coeff_self in self.terms_dict.items():
+            for term_other, coeff_other in other.terms_dict.items():
+                res += coeff_self*coeff_other*term_self.commutator(term_other)
+                
+        min_coeff_self = min([abs(coeff) for coeff in self.terms_dict.values()])
+        min_coeff_other = min([abs(coeff) for coeff in other.terms_dict.values()])
+        
+        res.apply_threshold(min_coeff_self*min_coeff_other/2)
+        
+        return res
+        
+    
 
     def apply_threshold(self,threshold):
         """
@@ -501,7 +518,7 @@ class QubitHamiltonian(Hamiltonian):
                 M = sp.csr_matrix((1,1))
                 M[0,0] = res
                 return M
-        elif factor_amount < max(participating_indices):
+        elif participating_indices and factor_amount < max(participating_indices):
             raise Exception("Tried to compute Hermitian matrix with factor_amount variable lower than the largest factor index")
 
         keys = list(range(factor_amount))
@@ -512,10 +529,9 @@ class QubitHamiltonian(Hamiltonian):
         M = sp.csr_matrix((2**dim, 2**dim))
         for k in range(m):
             M += complex(coeffs[k])*recursive_TP(keys.copy(),term_dicts[k])
-
-        res = ((M + M.transpose().conjugate())/2)
-        res.sum_duplicates()
-        return res
+        # res = ((M + M.transpose().conjugate())/2)
+        # res.sum_duplicates()
+        return M
     
     def ground_state_energy(self):
         """

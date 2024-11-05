@@ -55,25 +55,6 @@ class QubitTerm:
     #
     # Simulation
     #
-    
-    # Assume that the operator is diagonal after change of basis
-    # Implements exp(i*coeff*\prod_j Z_j) where the product goes over all indices j in self.factor_dict
-    # @lifted
-    def simulate(self, coeff, qarg):
-
-        def parity(qarg, indices):
-            n = len(indices)
-            for i in range(n-1):
-                cx(qarg[indices[i]],qarg[indices[i+1]])
-
-        if not self.is_identity():
-            indices = list(self.factor_dict.keys())
-            with conjugate(parity)(qarg, indices):
-                rz(-2*coeff,qarg[indices[-1]])
-        else:
-            gphase(coeff,qarg[0])
-
-    # @lifted
     def simulate(self, coeff, qv, do_change_of_basis = True):
 
         from qrisp import h, cx, rz, mcp, conjugate, control, QuantumBool, mcx, x, p, s, QuantumEnvironment, gphase
@@ -393,6 +374,8 @@ class QubitTerm:
         keys = set(a.keys()) | set(b.keys())
         for key in keys:
             factor, coeff = PAULI_TABLE[a.get(key,"I"),b.get(key,"I")]
+            if coeff == 0:
+                return QubitTerm({}), 0
             if factor != "I":
                 result_factor_dict[key]=factor
                 result_coeff *= coeff
@@ -425,8 +408,18 @@ class QubitTerm:
         return QubitTerm(result_factor_dict), result_coeff
     
     #
-    # Commutativity checks
+    # Commutativity
     #
+    def commutator(self, other):
+        from qrisp.operators.qubit import QubitHamiltonian
+        
+        term_0, coeff_0 = self*other
+        term_1, coeff_1 = other*self
+        
+        temp =  QubitHamiltonian({term_0 : coeff_0}) - QubitHamiltonian({term_1 : coeff_1})
+        temp.apply_threshold(0.5)
+        
+        return temp
 
     def commute(self, other):
         """
@@ -461,7 +454,7 @@ class QubitTerm:
         keys.update(set(b.keys()))
 
         for key in keys:
-            if a.get(key,"I")!="I" and b.get(key,"I")!="I" and a.get(key,"I")!=b.get(key,"I"):
+            if not PAULI_TABLE[a.get(key,"I"), b.get(key,"I")] == PAULI_TABLE[b.get(key,"I"), a.get(key,"I")]:
                 return False
         return True
     
