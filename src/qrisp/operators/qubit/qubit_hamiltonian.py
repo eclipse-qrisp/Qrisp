@@ -774,7 +774,7 @@ class QubitHamiltonian(Hamiltonian):
             for index,basis in enumerate(bases):
                 with conjugate(change_of_basis)(qarg, basis.pauli_dict):
                     for term,coeff in groups[index].terms_dict.items():
-                        term.simulate(coeff*t/steps, qarg)
+                        term.simulate(coeff*t/steps, qarg, do_change_of_basis = False)
 
         def U(qarg, t=1, steps=1, iter=1):
             merge([qarg])
