@@ -17,10 +17,10 @@
 """
 
 from qrisp import QuantumVariable, x, QPE
-from qrisp.operators.qubit import X, Y, Z, A, C, P0, P1
+from qrisp.operators import X, Y, Z, A, C, P0, P1
 import numpy as np
 
-def test_pauli_hamiltonian_simulation():
+def test_qubit_hamiltonian_simulation():
 
     # Hydrogen (reduced 2 qubit Hamiltonian)
     H = -1.05237325 + 0.39793742*Z(0) -0.39793742*Z(1) -0.0112801*Z(0)*Z(1) + 0.1809312*X(0)*X(1)

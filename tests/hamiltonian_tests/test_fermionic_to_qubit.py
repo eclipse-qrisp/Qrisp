@@ -20,7 +20,7 @@ from qrisp.operators.fermionic import a, c
 from qrisp.operators.qubit import X,Y,Z
 from qrisp.vqe.problems.electronic_structure import *
 
-def test_fermionic_to_pauli():
+def test_fermionic_to_qubit():
 
     try:
         from pyscf import gto

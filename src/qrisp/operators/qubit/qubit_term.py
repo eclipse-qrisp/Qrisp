@@ -16,7 +16,7 @@
 ********************************************************************************/
 """
 
-from qrisp import gphase, rz, cx, conjugate, lifted
+from qrisp import gphase, rz, cx, conjugate
 from qrisp.operators.qubit.visualization import X_,Y_,Z_
 
 from sympy import Symbol

@@ -16,22 +16,22 @@
 ********************************************************************************/
 """
 from qrisp.operators.hamiltonian import Hamiltonian
-from qrisp.operators.qubit.pauli_term import QubitTerm
+from qrisp.operators.qubit.bound_qubit_term import BoundQubitTerm
 from qrisp.operators.qubit.pauli_measurement import PauliMeasurement
 from qrisp.operators.qubit.measurement import get_measurement
-from qrisp import h, s, x, IterationEnvironment, conjugate, merge
+from qrisp import h, sx, IterationEnvironment, conjugate, merge
 
 import sympy as sp
 
 threshold = 1e-9
 
 #
-# QubitHamiltonian
+# BoundQubitHamiltonian
 #
 
-class QubitHamiltonian(Hamiltonian):
+class BoundQubitHamiltonian(Hamiltonian):
     r"""
-    This class provides an efficient implementation of Pauli Hamiltonians, i.e.,
+    This class provides an efficient implementation of Pauli Hamiltonians acting on QuantumVariables, i.e.,
     Hamiltonians of the form
 
     .. math::
@@ -44,21 +44,22 @@ class QubitHamiltonian(Hamiltonian):
     Parameters
     ----------
     terms_dict : dict, optional
-        A dictionary representing a QubitHamiltonian.
+        A dictionary representing a BoundQubitHamiltonian.
 
     Examples
     --------
 
-    A QubitHamiltonian can be specified conveniently in terms of ``X``, ``Y``, ``Z`` operators:
+    A BoundQubitHamiltonian can be specified conveniently in terms of ``X``, ``Y``, ``Z`` operators:
 
     ::
+
+        from qrisp import QuantumVariable
+        from qrisp.operators import BoundQubitHamiltonian, X,Y,Z
         
-        from qrisp.operators.qubit import X,Y,Z
+        qv = QuantumVariable(2)
+        H = 1+2*X(qv[0])+3*X(qv[0])*Y(qv[1])
 
-        H = 1+2*X(0)+3*X(0)*Y(1)
-        H
-
-    Yields $1+2X_0+3X_0Y_1$.
+    Yields $1+2X(qv.0)+3X(qv.0)Y(qv.1)$.
 
     """
 
@@ -95,8 +96,8 @@ class QubitHamiltonian(Hamiltonian):
         """
         
         expr = 0  
-        for term, coeff in self.terms_dict.items():
-            expr += coeff*term.to_expr()
+        for pauli,coeff in self.terms_dict.items():
+            expr += coeff*pauli.to_expr()
         return expr
 
     #
@@ -104,10 +105,16 @@ class QubitHamiltonian(Hamiltonian):
     #
 
     def __pow__(self, e):
-        res = 1
-        for i in range(e):
-            res = res * self
-        return res    
+        if self.len()==1:
+            if isinstance(e, int) and e>=0:
+                if e%2==0:
+                    return BoundQubitHamiltonian({BoundQubitTerm():1})
+                else:
+                    return self
+            else:
+                raise TypeError("Unsupported operand type(s) for ** or pow(): "+str(type(self))+" and "+str(type(e)))
+        else:
+            raise TypeError("Unsupported operand type(s) for ** or pow(): "+str(type(self))+" and "+str(type(e)))
 
     def __add__(self,other):
         """
@@ -115,34 +122,34 @@ class QubitHamiltonian(Hamiltonian):
 
         Parameters
         ----------
-        other : int, float, complex or QubitHamiltonian
-            A scalar or a QubitHamiltonian to add to the operator self.
+        other : int, float, complex or BoundQubitHamiltonian
+            A scalar or a BoundQubitHamiltonian to add to the operator self.
 
         Returns
         -------
-        result : QubitHamiltonian
+        result : BoundQubitHamiltonian
             The sum of the operator self and other.
 
         """
 
         if isinstance(other,(int,float,complex)):
-            other = QubitHamiltonian({QubitTerm():other})
-        if not isinstance(other,QubitHamiltonian):
-            raise TypeError("Cannot add QubitHamiltonian and "+str(type(other)))
+            other = BoundQubitHamiltonian({BoundQubitTerm():other})
+        if not isinstance(other,BoundQubitHamiltonian):
+            raise TypeError("Cannot add BoundQubitHamiltonian and "+str(type(other)))
 
         res_terms_dict = {}
 
-        for term,coeff in self.terms_dict.items():
-            res_terms_dict[term] = res_terms_dict.get(term,0)+coeff
-            if abs(res_terms_dict[term])<threshold:
-                del res_terms_dict[term]
+        for pauli,coeff in self.terms_dict.items():
+            res_terms_dict[pauli] = res_terms_dict.get(pauli,0)+coeff
+            if abs(res_terms_dict[pauli])<threshold:
+                del res_terms_dict[pauli]
     
-        for term,coeff in other.terms_dict.items():
-            res_terms_dict[term] = res_terms_dict.get(term,0)+coeff
-            if abs(res_terms_dict[term])<threshold:
-                del res_terms_dict[term]
+        for pauli,coeff in other.terms_dict.items():
+            res_terms_dict[pauli] = res_terms_dict.get(pauli,0)+coeff
+            if abs(res_terms_dict[pauli])<threshold:
+                del res_terms_dict[pauli]
         
-        result = QubitHamiltonian(res_terms_dict)
+        result = BoundQubitHamiltonian(res_terms_dict)
         return result
     
     def __sub__(self,other):
@@ -151,101 +158,101 @@ class QubitHamiltonian(Hamiltonian):
 
         Parameters
         ----------
-        other : int, float, complex or QubitHamiltonian
-            A scalar or a QubitHamiltonian to substract from the operator self.
+        other : int, float, complex or BoundQubitHamiltonian
+            A scalar or a BoundQubitHamiltonian to substract from the operator self.
 
         Returns
         -------
-        result : QubitHamiltonian
+        result : BoundQubitHamiltonian
             The difference of the operator self and other.
 
         """
 
         if isinstance(other,(int,float,complex)):
-            other = QubitHamiltonian({QubitTerm():other})
-        if not isinstance(other,QubitHamiltonian):
-            raise TypeError("Cannot substract QubitHamiltonian and "+str(type(other)))
+            other = BoundQubitHamiltonian({BoundQubitTerm():other})
+        if not isinstance(other,BoundQubitHamiltonian):
+            raise TypeError("Cannot substract BoundQubitHamiltonian and "+str(type(other)))
 
         res_terms_dict = {}
 
-        for term, coeff in self.terms_dict.items():
-            res_terms_dict[term] = res_terms_dict.get(term,0)+coeff
-            if abs(res_terms_dict[term])<threshold:
-                del res_terms_dict[term]
+        for pauli,coeff in self.terms_dict.items():
+            res_terms_dict[pauli] = res_terms_dict.get(pauli,0)+coeff
+            if abs(res_terms_dict[pauli])<threshold:
+                del res_terms_dict[pauli]
     
-        for term,coeff in other.terms_dict.items():
-            res_terms_dict[term] = res_terms_dict.get(term,0)-coeff
-            if abs(res_terms_dict[term])<threshold:
-                del res_terms_dict[term]
+        for pauli,coeff in other.terms_dict.items():
+            res_terms_dict[pauli] = res_terms_dict.get(pauli,0)-coeff
+            if abs(res_terms_dict[pauli])<threshold:
+                del res_terms_dict[pauli]
         
-        result = QubitHamiltonian(res_terms_dict)
+        result = BoundQubitHamiltonian(res_terms_dict)
         return result
-    
+
     def __rsub__(self,other):
         """
         Returns the difference of the operator other and self.
 
         Parameters
         ----------
-        other : int, float, complex or QubitHamiltonian
-            A scalar or a QubitHamiltonian to substract the operator self from.
+        other : int, float, complex or BoundQubitHamiltonian
+            A scalar or a BoundQubitHamiltonian to substract the operator self from.
 
         Returns
         -------
-        result : QubitHamiltonian
+        result : BoundQubitHamiltonian
             The difference of the operator other and self.
 
         """
 
         if isinstance(other,(int,float,complex)):
-            other = QubitHamiltonian({QubitTerm():other})
-        if not isinstance(other,QubitHamiltonian):
-            raise TypeError("Cannot substract QubitHamiltonian and "+str(type(other)))
+            other = BoundQubitHamiltonian({BoundQubitTerm():other})
+        if not isinstance(other,BoundQubitHamiltonian):
+            raise TypeError("Cannot substract BoundQubitHamiltonian and "+str(type(other)))
 
         res_terms_dict = {}
 
-        for term,coeff in self.terms_dict.items():
-            res_terms_dict[term] = res_terms_dict.get(term,0)-coeff
-            if abs(res_terms_dict[term])<threshold:
-                del res_terms_dict[term]
+        for pauli,coeff in self.terms_dict.items():
+            res_terms_dict[pauli] = res_terms_dict.get(pauli,0)-coeff
+            if abs(res_terms_dict[pauli])<threshold:
+                del res_terms_dict[pauli]
     
-        for term,coeff in other.terms_dict.items():
-            res_terms_dict[term] = res_terms_dict.get(term,0)+coeff
-            if abs(res_terms_dict[term])<threshold:
-                del res_terms_dict[term]
+        for pauli,coeff in other.terms_dict.items():
+            res_terms_dict[pauli] = res_terms_dict.get(pauli,0)+coeff
+            if abs(res_terms_dict[pauli])<threshold:
+                del res_terms_dict[pauli]
         
-        result = QubitHamiltonian(res_terms_dict)
+        result = BoundQubitHamiltonian(res_terms_dict)
         return result
-
+    
     def __mul__(self,other):
         """
         Returns the product of the operator self and other.
 
         Parameters
         ----------
-        other : int, float, complex or QubitHamiltonian
-            A scalar or a QubitHamiltonian to multiply with the operator self.
+        other : int, float, complex or BoundQubitHamiltonian
+            A scalar or a BoundQubitHamiltonian to multiply with the operator self.
 
         Returns
         -------
-        result : QubitHamiltonian
+        result : BoundQubitHamiltonian
             The product of the operator self and other.
 
         """
 
         if isinstance(other,(int,float,complex)):
-            other = QubitHamiltonian({QubitTerm():other})
-        if not isinstance(other,QubitHamiltonian):
-            raise TypeError("Cannot multipliy QubitHamiltonian and "+str(type(other)))
+            other = BoundQubitHamiltonian({BoundQubitTerm():other})
+        if not isinstance(other,BoundQubitHamiltonian):
+            raise TypeError("Cannot multipliy BoundQubitHamiltonian and "+str(type(other)))
 
         res_terms_dict = {}
 
-        for term1, coeff1 in self.terms_dict.items():
-            for term2, coeff2 in other.terms_dict.items():
-                curr_term, curr_coeff = term1*term2
-                res_terms_dict[curr_term] = res_terms_dict.get(curr_term,0) + curr_coeff*coeff1*coeff2
+        for pauli1, coeff1 in self.terms_dict.items():
+            for pauli2, coeff2 in other.terms_dict.items():
+                curr_pauli, curr_coeff = pauli1*pauli2
+                res_terms_dict[curr_pauli] = res_terms_dict.get(curr_pauli,0) + curr_coeff*coeff1*coeff2
 
-        result = QubitHamiltonian(res_terms_dict)
+        result = BoundQubitHamiltonian(res_terms_dict)
         return result
 
     __radd__ = __add__
@@ -261,21 +268,21 @@ class QubitHamiltonian(Hamiltonian):
 
         Parameters
         ----------
-        other : int, float, complex or QubitHamiltonian
-            A scalar or a QubitHamiltonian to add to the operator self.
+        other : int, float, complex or BoundQubitHamiltonian
+            A scalar or a BoundQubitHamiltonian to add to the operator self.
 
         """
 
         if isinstance(other,(int,float,complex)):
-            self.terms_dict[QubitTerm()] = self.terms_dict.get(QubitTerm(),0)+other
+            self.terms_dict[BoundQubitTerm()] = self.terms_dict.get(BoundQubitTerm(),0)+other
             return self
-        if not isinstance(other,QubitHamiltonian):
-            raise TypeError("Cannot add QubitHamiltonian and "+str(type(other)))
+        if not isinstance(other,BoundQubitHamiltonian):
+            raise TypeError("Cannot add BoundQubitHamiltonian and "+str(type(other)))
 
-        for term,coeff in other.terms_dict.items():
-            self.terms_dict[term] = self.terms_dict.get(term,0)+coeff
-            if abs(self.terms_dict[term])<threshold:
-                del self.terms_dict[term]       
+        for pauli,coeff in other.terms_dict.items():
+            self.terms_dict[pauli] = self.terms_dict.get(pauli,0)+coeff
+            if abs(self.terms_dict[pauli])<threshold:
+                del self.terms_dict[pauli]       
         return self         
 
     def __isub__(self,other):
@@ -284,21 +291,21 @@ class QubitHamiltonian(Hamiltonian):
 
         Parameters
         ----------
-        other : int, float, complex or QubitHamiltonian
-            A scalar or a QubitHamiltonian to substract from the operator self.
+        other : int, float, complex or BoundQubitHamiltonian
+            A scalar or a BoundQubitHamiltonian to substract from the operator self.
 
         """
 
         if isinstance(other,(int,float,complex)):
-            self.terms_dict[termTerm()] = self.terms_dict.get(termTerm(),0)-other
+            self.terms_dict[BoundQubitTerm()] = self.terms_dict.get(BoundQubitTerm(),0)-other
             return self
-        if not isinstance(other,QubitHamiltonian):
-            raise TypeError("Cannot add QubitHamiltonian and "+str(type(other)))
+        if not isinstance(other,BoundQubitHamiltonian):
+            raise TypeError("Cannot add BoundQubitHamiltonian and "+str(type(other)))
 
-        for term,coeff in other.terms_dict.items():
-            self.terms_dict[term] = self.terms_dict.get(term,0)-coeff
-            if abs(self.terms_dict[term])<threshold:
-                del self.terms_dict[term]  
+        for pauli,coeff in other.terms_dict.items():
+            self.terms_dict[pauli] = self.terms_dict.get(pauli,0)-coeff
+            if abs(self.terms_dict[pauli])<threshold:
+                del self.terms_dict[pauli]  
         return self
     
     def __imul__(self,other):
@@ -307,29 +314,29 @@ class QubitHamiltonian(Hamiltonian):
 
         Parameters
         ----------
-        other : int, float, complex or QubitHamiltonian
-            A scalar or a QubitHamiltonian to multiply with the operator self.
+        other : int, float, complex or BoundQubitHamiltonian
+            A scalar or a BoundQubitHamiltonian to multiply with the operator self.
 
         """
 
         if isinstance(other,(int,float,complex)):
-            #other = QubitHamiltonian({QubitTerm():other})
+            #other = BoundQubitHamiltonian({BoundQubitTerm():other})
             for term in self.terms_dict:
                 self.terms_dict[term] *= other
             return self
 
-        if not isinstance(other,QubitHamiltonian):
-            raise TypeError("Cannot multipliy QubitHamiltonian and "+str(type(other)))
+        if not isinstance(other,BoundQubitHamiltonian):
+            raise TypeError("Cannot multipliy BoundQubitHamiltonian and "+str(type(other)))
 
         res_terms_dict = {}
 
-        for term1, coeff1 in self.terms_dict.items():
-            for term2, coeff2 in other.terms_dict.items():
-                curr_term, curr_coeff = term1*term2
-                res_terms_dict[curr_term] = res_terms_dict.get(curr_term,0) + curr_coeff*coeff1*coeff2
+        for pauli1, coeff1 in self.terms_dict.items():
+            for pauli2, coeff2 in other.terms_dict.items():
+                curr_pauli, curr_coeff = pauli1*pauli2
+                res_terms_dict[curr_pauli] = res_terms_dict.get(curr_pauli,0) + curr_coeff*coeff1*coeff2
 
-        self.terms_dict = res_terms_dict    
-        return self
+        self.terms_dict = res_terms_dict  
+        return self  
 
     #
     # Substitution
@@ -345,43 +352,43 @@ class QubitHamiltonian(Hamiltonian):
 
         Returns
         -------
-        result : QubitHamiltonian
-            The resulting QubitHamiltonian.
+        result : BoundQubitHamiltonian
+            The resulting BoundQubitHamiltonian.
         
         """
 
         res_terms_dict = {}
 
-        for term, coeff in self.terms_dict.items():
-            curr_term, curr_coeff = term.subs(subs_dict)
-            res_terms_dict[curr_term] = res_terms_dict.get(curr_term,0) + curr_coeff*coeff
+        for pauli, coeff in self.terms_dict.items():
+            curr_pauli, curr_coeff = pauli.subs(subs_dict)
+            res_terms_dict[curr_pauli] = res_terms_dict.get(curr_pauli,0) + curr_coeff*coeff
 
-        result = QubitHamiltonian(res_terms_dict)
+        result = BoundQubitHamiltonian(res_terms_dict)
         return result
-
+    
     #
     # Miscellaneous
     #
 
     def apply_threshold(self,threshold):
         """
-        Removes all terms with coefficient absolute value below the specified threshold.
+        Removes all Pauli terms with coefficient absolute value below the specified threshold.
 
         Parameters
         ----------
         threshold : float
-            The threshold for the coefficients of the terms.
+            The threshold for the coefficients of the Pauli terms.
 
         """
 
         delete_list = []
-        for term,coeff in self.terms_dict.items():
+        for pauli,coeff in self.terms_dict.items():
             if abs(coeff)<threshold:
-                delete_list.append(term)
-        for term in delete_list:
-            del self.terms_dict[term]
+                delete_list.append(pauli)
+        for pauli in delete_list:
+            del self.terms_dict[pauli]
 
-    def to_sparse_matrix(self, factor_amount = None):
+    def to_sparse_matrix(self):
         """
         Returns a matrix representing the operator.
     
@@ -395,6 +402,8 @@ class QubitHamiltonian(Hamiltonian):
         import scipy.sparse as sp
         from scipy.sparse import kron as TP, csr_matrix
 
+        I = csr_matrix([[1,0],[0,1]])
+
         def get_matrix(P):
             if P=="I":
                 return csr_matrix([[1,0],[0,1]])
@@ -402,58 +411,37 @@ class QubitHamiltonian(Hamiltonian):
                 return csr_matrix([[0,1],[1,0]])
             if P=="Y":
                 return csr_matrix([[0,-1j],[1j,0]])
-            if P == "Z":
+            else:
                 return csr_matrix([[1,0],[0,-1]])
-            if P == "A":
-                return csr_matrix([[0,0],[1,0]])
-            if P == "C":
-                return csr_matrix([[0,1],[0,0]])
-            if P == "P0":
-                return csr_matrix([[1,0],[0,0]])
-            if P == "P1":
-                return csr_matrix([[0,0],[0,1]])
 
-        def recursive_TP(keys,term_dict):
+        def recursive_TP(keys,pauli_dict):
             if len(keys)==1:
-                return get_matrix(term_dict.get(keys[0],"I"))
-            return TP(get_matrix(term_dict.get(keys.pop(0),"I")),recursive_TP(keys,term_dict))
+                return get_matrix(pauli_dict.get(keys[0],"I"))
+            return TP(get_matrix(pauli_dict.get(keys.pop(0),"I")),recursive_TP(keys,pauli_dict))
 
-        term_dicts = []
+        pauli_dicts = []
         coeffs = []
 
-        participating_indices = set()
-        for term,coeff in self.terms_dict.items():
-            curr_dict = term.pauli_dict
-            term_dicts.append(curr_dict)    
+        keys = set()
+        for pauli,coeff in self.terms_dict.items():
+            curr_dict = pauli.pauli_dict
+            keys.update(set(curr_dict.keys()))
+            pauli_dicts.append(curr_dict)    
             coeffs.append(coeff)
-            participating_indices = participating_indices.union(term.non_trivial_indices())
 
-        if factor_amount is None:
-            if len(participating_indices):
-                factor_amount = max(participating_indices) + 1
-            else:
-                res = 1
-                for coeff in coeffs:
-                    res *= coeff
-                M = sp.csr_matrix((1,1))
-                M[0,0] = res
-                return M
-        elif factor_amount < max(participating_indices):
-            raise Exception("Tried to compute Hermitian matrix with factor_amount variable lower than the largest factor index")
-
-        keys = list(range(factor_amount))
-        
+        keys = set()
+        for item in pauli_dicts:
+            keys.update(set(item.keys()))
+        keys = sorted(keys)
         dim = len(keys)
 
         m = len(coeffs)
         M = sp.csr_matrix((2**dim, 2**dim))
         for k in range(m):
-            M += complex(coeffs[k])*recursive_TP(keys.copy(),term_dicts[k])
+            M += complex(coeffs[k])*recursive_TP(keys.copy(),pauli_dicts[k])
 
-        res = ((M + M.transpose().conjugate())/2)
-        res.sum_duplicates()
-        return res
-    
+        return M
+
     def ground_state_energy(self):
         """
         Calculates the ground state energy (i.e., the minimum eigenvalue) of the operator classically.
@@ -478,7 +466,7 @@ class QubitHamiltonian(Hamiltonian):
     # Partitions 
     #
 
-    # Commutativity: Partitions the QubitHamiltonian into QubitHamiltonians with pairwise commuting QubitTerms
+    # Commutativity: Partitions the BoundQubitHamiltonian into BoundQubitHamiltonians with pairwise commuting BoundQubitTerms
     def commuting_groups(self):
         r"""
         Partitions the QubitHamiltonian into QubitHamiltonians with pairwise commuting terms. That is,
@@ -496,32 +484,32 @@ class QubitHamiltonian(Hamiltonian):
         
         """
 
-        groups = [] # Groups of commuting QubitTerms 
+        groups = [] # Groups of commuting BoundQubitTerms 
 
         # Sorted insertion heuristic https://quantum-journal.org/papers/q-2021-01-20-385/pdf/
         sorted_terms = sorted(self.terms_dict.items(), key=lambda item: abs(item[1]), reverse=True)
 
-        for term,coeff in sorted_terms:
+        for pauli,coeff in sorted_terms:
 
             commute_bool = False
             if len(groups) > 0:
                 for group in groups:
-                    for term_,coeff_ in group.terms_dict.items():
-                        commute_bool = term_.commute(term)
+                    for pauli_,coeff_ in group.terms_dict.items():
+                        commute_bool = pauli_.commute(pauli)
                         if not commute_bool:
                             break
                     if commute_bool:
-                        group.terms_dict[term]=coeff
+                        group.terms_dict[pauli]=coeff
                         break
             if len(groups)==0 or not commute_bool: 
-                groups.append(QubitHamiltonian({term:coeff}))
+                groups.append(BoundQubitHamiltonian({pauli:coeff}))
 
         return groups
 
-    # Qubit-wise commutativity: Partitions the QubitHamiltonian into QubitHamiltonians with pairwise qubit-wise commuting QubitTerms
+    # Qubit-wise commutativity: Partitions the BoundQubitHamiltonian into BoundQubitHamiltonians with pairwise qubit-wise commuting BoundQubitTerms
     def commuting_qw_groups(self, show_bases=False):
         r"""
-        Partitions the QubitHamiltonian into QubitHamiltonians with pairwise qubit-wise commuting terms. That is,
+        Partitions the BoundQubitHamiltonian into BoundQubitHamiltonians with pairwise qubit-wise commuting terms. That is,
 
         .. math::
 
@@ -531,31 +519,31 @@ class QubitHamiltonian(Hamiltonian):
 
         Returns
         -------
-        groups : list[QubitHamiltonian]
+        groups : list[BoundQubitHamiltonian]
             The partition of the Hamiltonian.
         
         """
 
-        groups = [] # Groups of qubit-wise commuting QubitTerms
-        bases = [] # Bases as termTerms
+        groups = [] # Groups of qubit-wise commuting BoundQubitTerms
+        bases = [] # Bases as BoundQubitTerms
 
         # Sorted insertion heuristic https://quantum-journal.org/papers/q-2021-01-20-385/pdf/
         sorted_terms = sorted(self.terms_dict.items(), key=lambda item: abs(item[1]), reverse=True)
 
-        for term,coeff in sorted_terms:
+        for pauli,coeff in sorted_terms:
 
             commute_bool = False
             if len(groups)>0:
                 n = len(groups)
                 for i in range(n):
-                    commute_bool = bases[i].commute_qw(term)
+                    commute_bool = bases[i].commute_qw(pauli)
                     if commute_bool:
-                        bases[i].update(term.pauli_dict)
-                        groups[i].terms_dict[term]=coeff
+                        bases[i].update(pauli.pauli_dict)
+                        groups[i].terms_dict[pauli]=coeff
                         break
             if len(groups)==0 or not commute_bool:
-                groups.append(QubitHamiltonian({term:coeff}))
-                bases.append(term.copy())
+                groups.append(BoundQubitHamiltonian({pauli:coeff}))
+                bases.append(pauli.copy())
 
         if show_bases:
             return groups, bases
@@ -563,12 +551,12 @@ class QubitHamiltonian(Hamiltonian):
             return groups
     
     #
-    # Measurement settings and measurement
+    # Measurement settings
     #
 
     def pauli_measurement(self):
         return PauliMeasurement(self)
-    
+
     def get_measurement(
         self,
         qarg,
@@ -608,9 +596,12 @@ class QubitHamiltonian(Hamiltonian):
             A dictionary of Sympy symbols and floats to specify parameters in the case
             of a circuit with unspecified, :ref:`abstract parameters<QuantumCircuit>`.
             The default is {}.
+        circuit_preprocessor : Python function, optional
+            A function which recieves a QuantumCircuit and returns one, which is applied
+            after compilation and parameter substitution. The default is None.
         precompiled_qc : QuantumCircuit, optional
             A precompiled quantum circuit.
-
+            
         Raises
         ------
         Exception
@@ -630,7 +621,7 @@ class QubitHamiltonian(Hamiltonian):
         ::
 
             from qrisp import QuantumVariable, h
-            from qrisp.operators.qubit import X,Y,Z
+            from qrisp.operators import X,Y,Z
             qv = QuantumVariable(2)
             h(qv)
             H = Z(0)*Z(1)
@@ -643,7 +634,7 @@ class QubitHamiltonian(Hamiltonian):
         ::
 
             from qrisp import QuantumVariable, QuantumArray, h
-            from qrisp.operators.qubit import X,Y,Z
+            from qrisp.operators import X,Y,Z
             qtype = QuantumVariable(2)
             q_array = QuantumArray(qtype, shape=(2))
             h(q_array)
@@ -663,7 +654,7 @@ class QubitHamiltonian(Hamiltonian):
                                 subs_dic=subs_dic,
                                 precompiled_qc=precompiled_qc, 
                                 _measurement=_measurement)
-
+    
     #
     # Trotterization
     #
@@ -696,23 +687,27 @@ class QubitHamiltonian(Hamiltonian):
         
         """
 
-        def change_of_basis(qarg, terms_dict):
-            for index, factor in terms_dict.items():
-                if factor=="X":
-                    h(qarg[index])
-                if factor=="Y":
-                    s(qarg[index])
-                    h(qarg[index])
-                    x(qarg[index])
-                    
+        def change_of_basis(pauli_dict):
+            for qubit, axis in pauli_dict.items():
+                if axis=="X":
+                    h(qubit)
+                if axis=="Y":
+                    sx(qubit)
 
         groups, bases = self.commuting_qw_groups(show_bases=True)
 
         def trotter_step(qarg, t, steps):
+
+            # qubit to apply gphase for identity term
+            if isinstance(qarg,list):
+                qubit = qarg[0][0]
+            else:
+                qubit = qarg[0]
+
             for index,basis in enumerate(bases):
-                with conjugate(change_of_basis)(qarg, basis.pauli_dict):
+                with conjugate(change_of_basis)(basis.pauli_dict):
                     for term,coeff in groups[index].terms_dict.items():
-                        term.simulate(coeff*t/steps, qarg)
+                        term.simulate(coeff*t/steps, qubit)
 
         def U(qarg, t=1, steps=1, iter=1):
             merge([qarg])

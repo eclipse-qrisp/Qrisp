@@ -16,8 +16,8 @@
 ********************************************************************************/
 """
 
-from qrisp.operators.qubit.pauli_term import QubitTerm
-from qrisp.operators.qubit.pauli_hamiltonian import QubitHamiltonian
+from qrisp.operators.qubit.qubit_term import QubitTerm
+from qrisp.operators.qubit.qubit_hamiltonian import QubitHamiltonian
 
 from functools import cache
 
