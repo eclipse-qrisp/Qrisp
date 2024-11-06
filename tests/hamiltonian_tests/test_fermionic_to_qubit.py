@@ -27,7 +27,7 @@ def test_fermionic_to_qubit():
     except:
         return    
 
-    # Check if transformation works for both, reduced and non-reduced FermionicHamiltonians
+    # Check if transformation works for both, reduced and non-reduced FermionicOperators
 
     H = c(0)*c(1)*a(3)*a(2) + c(2)*c(3)*a(1)*a(0)
 

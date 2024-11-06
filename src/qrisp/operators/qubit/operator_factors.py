@@ -17,8 +17,8 @@
 """
 
 from qrisp.circuit.qubit import Qubit
-from qrisp.operators.qubit.qubit_hamiltonian import QubitOperator
-from qrisp.operators.qubit.bound_qubit_hamiltonian import BoundQubitOperator
+from qrisp.operators.qubit.qubit_operator import QubitOperator
+from qrisp.operators.qubit.bound_qubit_operator import BoundQubitOperator
 from qrisp.operators.qubit.qubit_term import QubitTerm
 from qrisp.operators.qubit.bound_qubit_term import BoundQubitTerm
 

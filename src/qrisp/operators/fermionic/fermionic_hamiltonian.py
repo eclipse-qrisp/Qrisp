@@ -27,10 +27,10 @@ import sympy as sp
 threshold = 1e-9
 
 #
-# FermionicHamiltonian
+# FermionicOperator
 #
 
-class FermionicHamiltonian(Hamiltonian):
+class FermionicOperator(Hamiltonian):
     r"""
     This class provides an efficient implementation of ladder_term operators, i.e.,
     operators of the form
@@ -194,7 +194,7 @@ class FermionicHamiltonian(Hamiltonian):
     #    if self.len()==1:
     #        if isinstance(e, int) and e>=0:
     #            if e%2==0:
-    #                return FermionicHamiltonian({FermionicTerm():1})
+    #                return FermionicOperator({FermionicTerm():1})
     #            else:
     #                return self
     #        else:
@@ -208,20 +208,20 @@ class FermionicHamiltonian(Hamiltonian):
 
         Parameters
         ----------
-        other : int, float, complex or FermionicHamiltonian
-            A scalar or a FermionicHamiltonian to add to the operator self.
+        other : int, float, complex or FermionicOperator
+            A scalar or a FermionicOperator to add to the operator self.
 
         Returns
         -------
-        result : FermionicHamiltonian
+        result : FermionicOperator
             The sum of the operator self and other.
 
         """
 
         if isinstance(other,(int,float,complex)):
-            other = FermionicHamiltonian({FermionicTerm():other})
-        if not isinstance(other,FermionicHamiltonian):
-            raise TypeError("Cannot add FermionicHamiltonian and "+str(type(other)))
+            other = FermionicOperator({FermionicTerm():other})
+        if not isinstance(other,FermionicOperator):
+            raise TypeError("Cannot add FermionicOperator and "+str(type(other)))
 
         res_terms_dict = {}
 
@@ -235,7 +235,7 @@ class FermionicHamiltonian(Hamiltonian):
             if abs(res_terms_dict[ladder_term])<threshold:
                 del res_terms_dict[ladder_term]
         
-        result = FermionicHamiltonian(res_terms_dict)
+        result = FermionicOperator(res_terms_dict)
         return result
     
     def __sub__(self,other):
@@ -244,20 +244,20 @@ class FermionicHamiltonian(Hamiltonian):
 
         Parameters
         ----------
-        other : int, float, complex or FermionicHamiltonian
-            A scalar or a FermionicHamiltonian to substract from the operator self.
+        other : int, float, complex or FermionicOperator
+            A scalar or a FermionicOperator to substract from the operator self.
 
         Returns
         -------
-        result : FermionicHamiltonian
+        result : FermionicOperator
             The difference of the operator self and other.
 
         """
 
         if isinstance(other,(int,float,complex)):
-            other = FermionicHamiltonian({FermionicTerm():other})
-        if not isinstance(other,FermionicHamiltonian):
-            raise TypeError("Cannot substract FermionicHamiltonian and "+str(type(other)))
+            other = FermionicOperator({FermionicTerm():other})
+        if not isinstance(other,FermionicOperator):
+            raise TypeError("Cannot substract FermionicOperator and "+str(type(other)))
 
         res_terms_dict = {}
 
@@ -271,7 +271,7 @@ class FermionicHamiltonian(Hamiltonian):
             if abs(res_terms_dict[ladder_term])<threshold:
                 del res_terms_dict[ladder_term]
         
-        result = FermionicHamiltonian(res_terms_dict)
+        result = FermionicOperator(res_terms_dict)
         return result
     
     def __rsub__(self,other):
@@ -280,20 +280,20 @@ class FermionicHamiltonian(Hamiltonian):
 
         Parameters
         ----------
-        other : int, float, complex or FermionicHamiltonian
-            A scalar or a FermionicHamiltonian to substract from the operator self from.
+        other : int, float, complex or FermionicOperator
+            A scalar or a FermionicOperator to substract from the operator self from.
 
         Returns
         -------
-        result : FermionicHamiltonian
+        result : FermionicOperator
             The difference of the operator other and self.
 
         """
 
         if isinstance(other,(int,float,complex)):
-            other = FermionicHamiltonian({FermionicTerm():other})
-        if not isinstance(other,FermionicHamiltonian):
-            raise TypeError("Cannot substract FermionicHamiltonian and "+str(type(other)))
+            other = FermionicOperator({FermionicTerm():other})
+        if not isinstance(other,FermionicOperator):
+            raise TypeError("Cannot substract FermionicOperator and "+str(type(other)))
 
         res_terms_dict = {}
 
@@ -307,7 +307,7 @@ class FermionicHamiltonian(Hamiltonian):
             if abs(res_terms_dict[ladder_term])<threshold:
                 del res_terms_dict[ladder_term]
         
-        result = FermionicHamiltonian(res_terms_dict)
+        result = FermionicOperator(res_terms_dict)
         return result
 
     def __mul__(self,other):
@@ -316,20 +316,20 @@ class FermionicHamiltonian(Hamiltonian):
 
         Parameters
         ----------
-        other : int, float, complex or FermionicHamiltonian
-            A scalar or a FermionicHamiltonian to multiply with the operator self.
+        other : int, float, complex or FermionicOperator
+            A scalar or a FermionicOperator to multiply with the operator self.
 
         Returns
         -------
-        result : FermionicHamiltonian
+        result : FermionicOperator
             The product of the operator self and other.
 
         """
 
         if isinstance(other,(int,float,complex)):
-            other = FermionicHamiltonian({FermionicTerm():other})
-        if not isinstance(other,FermionicHamiltonian):
-            raise TypeError("Cannot multipliy FermionicHamiltonian and "+str(type(other)))
+            other = FermionicOperator({FermionicTerm():other})
+        if not isinstance(other,FermionicOperator):
+            raise TypeError("Cannot multipliy FermionicOperator and "+str(type(other)))
 
         res_terms_dict = {}
 
@@ -338,7 +338,7 @@ class FermionicHamiltonian(Hamiltonian):
                 curr_ladder_term = ladder_term1*ladder_term2
                 res_terms_dict[curr_ladder_term] = res_terms_dict.get(curr_ladder_term,0) + coeff1*coeff2
 
-        result = FermionicHamiltonian(res_terms_dict, avoid_flips = False)
+        result = FermionicOperator(res_terms_dict, avoid_flips = False)
         return result
 
     __radd__ = __add__
@@ -354,22 +354,22 @@ class FermionicHamiltonian(Hamiltonian):
 
         Parameters
         ----------
-        other : int, float, complex or FermionicHamiltonian
-            A scalar or a FermionicHamiltonian to add to the operator self.
+        other : int, float, complex or FermionicOperator
+            A scalar or a FermionicOperator to add to the operator self.
 
         """
 
         if isinstance(other,(int,float,complex)):
             self.terms_dict[FermionicTerm()] = self.terms_dict.get(FermionicTerm(),0)+other
             return self
-        if not isinstance(other,FermionicHamiltonian):
-            raise TypeError("Cannot add FermionicHamiltonian and "+str(type(other)))
+        if not isinstance(other,FermionicOperator):
+            raise TypeError("Cannot add FermionicOperator and "+str(type(other)))
 
         for ladder_term,coeff in other.terms_dict.items():
             self.terms_dict[ladder_term] = self.terms_dict.get(ladder_term,0)+coeff
             if abs(self.terms_dict[ladder_term])<threshold:
                 del self.terms_dict[ladder_term]
-        self.terms_dict = FermionicHamiltonian(self.terms_dict).terms_dict
+        self.terms_dict = FermionicOperator(self.terms_dict).terms_dict
         return self         
 
     def __isub__(self,other):
@@ -378,16 +378,16 @@ class FermionicHamiltonian(Hamiltonian):
 
         Parameters
         ----------
-        other : int, float, complex or FermionicHamiltonian
-            A scalar or a FermionicHamiltonian to substract from the operator self.
+        other : int, float, complex or FermionicOperator
+            A scalar or a FermionicOperator to substract from the operator self.
 
         """
 
         if isinstance(other,(int,float,complex)):
             self.terms_dict[FermionicTerm()] = self.terms_dict.get(FermionicTerm(),0)-other
             return self
-        if not isinstance(other,FermionicHamiltonian):
-            raise TypeError("Cannot add FermionicHamiltonian and "+str(type(other)))
+        if not isinstance(other,FermionicOperator):
+            raise TypeError("Cannot add FermionicOperator and "+str(type(other)))
 
         for ladder_term,coeff in other.terms_dict.items():
             self.terms_dict[ladder_term] = self.terms_dict.get(ladder_term,0)-coeff
@@ -401,15 +401,15 @@ class FermionicHamiltonian(Hamiltonian):
 
         Parameters
         ----------
-        other : int, float, complex or FermionicHamiltonian
-            A scalar or a FermionicHamiltonian to multiply with the operator self.
+        other : int, float, complex or FermionicOperator
+            A scalar or a FermionicOperator to multiply with the operator self.
 
         """
 
         if isinstance(other,(int,float,complex)):
-            other = FermionicHamiltonian({FermionicTerm():other})
-        if not isinstance(other,FermionicHamiltonian):
-            raise TypeError("Cannot multipliy FermionicHamiltonian and "+str(type(other)))
+            other = FermionicOperator({FermionicTerm():other})
+        if not isinstance(other,FermionicOperator):
+            raise TypeError("Cannot multipliy FermionicOperator and "+str(type(other)))
 
         res_terms_dict = {}
 

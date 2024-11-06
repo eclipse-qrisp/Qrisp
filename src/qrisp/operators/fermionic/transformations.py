@@ -17,7 +17,7 @@
 """
 
 from qrisp.operators.qubit.qubit_term import QubitTerm
-from qrisp.operators.qubit.qubit_hamiltonian import QubitOperator
+from qrisp.operators.qubit.qubit_operator import QubitOperator
 
 from functools import cache
 

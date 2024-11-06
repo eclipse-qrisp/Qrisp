@@ -36,7 +36,7 @@ class FermionicTerm:
         
         # Compute the hash value such that 
         # terms receive the same hash as their hermitean conjugate
-        # this way the FermionicHamiltonian does not have
+        # this way the FermionicOperator does not have
         # to track both the term and it's dagger
         index_list = [index for index, is_creator in ladder_list]
         is_creator_hash = 0

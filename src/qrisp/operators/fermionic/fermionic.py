@@ -17,18 +17,18 @@
 """
 
 from qrisp.circuit.qubit import Qubit
-from qrisp.operators.fermionic.fermionic_hamiltonian import FermionicHamiltonian
+from qrisp.operators.fermionic.fermionic_hamiltonian import FermionicOperator
 from qrisp.operators.fermionic.fermionic_term import FermionicTerm
 
 def a(arg):
     if isinstance(arg,int):
-        return FermionicHamiltonian({FermionicTerm([(arg,False)]):1})
+        return FermionicOperator({FermionicTerm([(arg,False)]):1})
     else:
         raise Exception("Cannot initialize operator from type "+str(type(arg)))
 
 def c(arg):
     if isinstance(arg,int):
-        return FermionicHamiltonian({FermionicTerm([(arg,True)]):1})
+        return FermionicOperator({FermionicTerm([(arg,True)]):1})
     else:
         raise Exception("Cannot initialize operator from type "+str(type(arg)))
 

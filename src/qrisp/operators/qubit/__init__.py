@@ -18,7 +18,7 @@
 
 # -*- coding: utf-8 -*-
 
-from qrisp.operators.qubit.qubit_hamiltonian import *
-from qrisp.operators.qubit.bound_qubit_hamiltonian import *
+from qrisp.operators.qubit.operator_factors import *
+from qrisp.operators.qubit.bound_qubit_operator import *
 from qrisp.operators.qubit.pauli_measurement import *
-from qrisp.operators.qubit.qubit_operators import *
+from qrisp.operators.qubit.operator_factors import *

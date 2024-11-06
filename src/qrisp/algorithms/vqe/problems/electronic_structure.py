@@ -231,7 +231,7 @@ def create_electronic_hamiltonian(arg, active_orb=None, active_elec=None):
 
     Returns
     -------
-    H : :ref:`FermionicHamiltonian`
+    H : :ref:`FermionicOperator`
         The fermionic Hamiltonian.
     
     Examples
