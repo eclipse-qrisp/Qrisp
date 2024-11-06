@@ -411,12 +411,12 @@ class QubitTerm:
     # Commutativity
     #
     def commutator(self, other):
-        from qrisp.operators.qubit import QubitHamiltonian
+        from qrisp.operators.qubit import QubitOperator
         
         term_0, coeff_0 = self*other
         term_1, coeff_1 = other*self
         
-        temp =  QubitHamiltonian({term_0 : coeff_0}) - QubitHamiltonian({term_1 : coeff_1})
+        temp =  QubitOperator({term_0 : coeff_0}) - QubitOperator({term_1 : coeff_1})
         temp.apply_threshold(0.5)
         
         return temp

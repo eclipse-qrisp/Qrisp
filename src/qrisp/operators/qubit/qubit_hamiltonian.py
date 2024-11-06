@@ -27,10 +27,10 @@ import sympy as sp
 threshold = 1e-9
 
 #
-# QubitHamiltonian
+# QubitOperator
 #
 
-class QubitHamiltonian(Hamiltonian):
+class QubitOperator(Hamiltonian):
     r"""
     This class provides an efficient implementation of Qubit Hamiltonians, i.e.
     Hamiltonians, that operate on a qubit space :math:`(\mathbb{C}^2)^{\otimes n}`.
@@ -76,12 +76,12 @@ class QubitHamiltonian(Hamiltonian):
     Parameters
     ----------
     terms_dict : dict, optional
-        A dictionary representing a QubitHamiltonian.
+        A dictionary representing a QubitOperator.
 
     Examples
     --------
 
-    A QubitHamiltonian can be specified conveniently in terms of ``X``, ``Y``, ``Z`` operators:
+    A QubitOperator can be specified conveniently in terms of ``X``, ``Y``, ``Z`` operators:
 
     ::
         
@@ -178,20 +178,20 @@ class QubitHamiltonian(Hamiltonian):
 
         Parameters
         ----------
-        other : int, float, complex or QubitHamiltonian
-            A scalar or a QubitHamiltonian to add to the operator self.
+        other : int, float, complex or QubitOperator
+            A scalar or a QubitOperator to add to the operator self.
 
         Returns
         -------
-        result : QubitHamiltonian
+        result : QubitOperator
             The sum of the operator self and other.
 
         """
 
         if isinstance(other,(int,float,complex)):
-            other = QubitHamiltonian({QubitTerm():other})
-        if not isinstance(other,QubitHamiltonian):
-            raise TypeError("Cannot add QubitHamiltonian and "+str(type(other)))
+            other = QubitOperator({QubitTerm():other})
+        if not isinstance(other,QubitOperator):
+            raise TypeError("Cannot add QubitOperator and "+str(type(other)))
 
         res_terms_dict = {}
 
@@ -205,7 +205,7 @@ class QubitHamiltonian(Hamiltonian):
             if abs(res_terms_dict[term])<threshold:
                 del res_terms_dict[term]
         
-        result = QubitHamiltonian(res_terms_dict)
+        result = QubitOperator(res_terms_dict)
         return result
     
     def __sub__(self,other):
@@ -214,20 +214,20 @@ class QubitHamiltonian(Hamiltonian):
 
         Parameters
         ----------
-        other : int, float, complex or QubitHamiltonian
-            A scalar or a QubitHamiltonian to substract from the operator self.
+        other : int, float, complex or QubitOperator
+            A scalar or a QubitOperator to substract from the operator self.
 
         Returns
         -------
-        result : QubitHamiltonian
+        result : QubitOperator
             The difference of the operator self and other.
 
         """
 
         if isinstance(other,(int,float,complex)):
-            other = QubitHamiltonian({QubitTerm():other})
-        if not isinstance(other,QubitHamiltonian):
-            raise TypeError("Cannot substract QubitHamiltonian and "+str(type(other)))
+            other = QubitOperator({QubitTerm():other})
+        if not isinstance(other,QubitOperator):
+            raise TypeError("Cannot substract QubitOperator and "+str(type(other)))
 
         res_terms_dict = {}
 
@@ -241,7 +241,7 @@ class QubitHamiltonian(Hamiltonian):
             if abs(res_terms_dict[term])<threshold:
                 del res_terms_dict[term]
         
-        result = QubitHamiltonian(res_terms_dict)
+        result = QubitOperator(res_terms_dict)
         return result
     
     def __rsub__(self,other):
@@ -250,20 +250,20 @@ class QubitHamiltonian(Hamiltonian):
 
         Parameters
         ----------
-        other : int, float, complex or QubitHamiltonian
-            A scalar or a QubitHamiltonian to substract the operator self from.
+        other : int, float, complex or QubitOperator
+            A scalar or a QubitOperator to substract the operator self from.
 
         Returns
         -------
-        result : QubitHamiltonian
+        result : QubitOperator
             The difference of the operator other and self.
 
         """
 
         if isinstance(other,(int,float,complex)):
-            other = QubitHamiltonian({QubitTerm():other})
-        if not isinstance(other,QubitHamiltonian):
-            raise TypeError("Cannot substract QubitHamiltonian and "+str(type(other)))
+            other = QubitOperator({QubitTerm():other})
+        if not isinstance(other,QubitOperator):
+            raise TypeError("Cannot substract QubitOperator and "+str(type(other)))
 
         res_terms_dict = {}
 
@@ -277,7 +277,7 @@ class QubitHamiltonian(Hamiltonian):
             if abs(res_terms_dict[term])<threshold:
                 del res_terms_dict[term]
         
-        result = QubitHamiltonian(res_terms_dict)
+        result = QubitOperator(res_terms_dict)
         return result
 
     def __mul__(self,other):
@@ -286,20 +286,20 @@ class QubitHamiltonian(Hamiltonian):
 
         Parameters
         ----------
-        other : int, float, complex or QubitHamiltonian
-            A scalar or a QubitHamiltonian to multiply with the operator self.
+        other : int, float, complex or QubitOperator
+            A scalar or a QubitOperator to multiply with the operator self.
 
         Returns
         -------
-        result : QubitHamiltonian
+        result : QubitOperator
             The product of the operator self and other.
 
         """
 
         if isinstance(other,(int,float,complex)):
-            other = QubitHamiltonian({QubitTerm():other})
-        if not isinstance(other,QubitHamiltonian):
-            raise TypeError("Cannot multipliy QubitHamiltonian and "+str(type(other)))
+            other = QubitOperator({QubitTerm():other})
+        if not isinstance(other,QubitOperator):
+            raise TypeError("Cannot multipliy QubitOperator and "+str(type(other)))
 
         res_terms_dict = {}
 
@@ -308,7 +308,7 @@ class QubitHamiltonian(Hamiltonian):
                 curr_term, curr_coeff = term1*term2
                 res_terms_dict[curr_term] = res_terms_dict.get(curr_term,0) + curr_coeff*coeff1*coeff2
 
-        result = QubitHamiltonian(res_terms_dict)
+        result = QubitOperator(res_terms_dict)
         return result
 
     __radd__ = __add__
@@ -324,16 +324,16 @@ class QubitHamiltonian(Hamiltonian):
 
         Parameters
         ----------
-        other : int, float, complex or QubitHamiltonian
-            A scalar or a QubitHamiltonian to add to the operator self.
+        other : int, float, complex or QubitOperator
+            A scalar or a QubitOperator to add to the operator self.
 
         """
 
         if isinstance(other,(int,float,complex)):
             self.terms_dict[QubitTerm()] = self.terms_dict.get(QubitTerm(),0)+other
             return self
-        if not isinstance(other,QubitHamiltonian):
-            raise TypeError("Cannot add QubitHamiltonian and "+str(type(other)))
+        if not isinstance(other,QubitOperator):
+            raise TypeError("Cannot add QubitOperator and "+str(type(other)))
 
         for term,coeff in other.terms_dict.items():
             self.terms_dict[term] = self.terms_dict.get(term,0)+coeff
@@ -347,16 +347,16 @@ class QubitHamiltonian(Hamiltonian):
 
         Parameters
         ----------
-        other : int, float, complex or QubitHamiltonian
-            A scalar or a QubitHamiltonian to substract from the operator self.
+        other : int, float, complex or QubitOperator
+            A scalar or a QubitOperator to substract from the operator self.
 
         """
 
         if isinstance(other,(int,float,complex)):
             self.terms_dict[termTerm()] = self.terms_dict.get(termTerm(),0)-other
             return self
-        if not isinstance(other,QubitHamiltonian):
-            raise TypeError("Cannot add QubitHamiltonian and "+str(type(other)))
+        if not isinstance(other,QubitOperator):
+            raise TypeError("Cannot add QubitOperator and "+str(type(other)))
 
         for term,coeff in other.terms_dict.items():
             self.terms_dict[term] = self.terms_dict.get(term,0)-coeff
@@ -370,19 +370,19 @@ class QubitHamiltonian(Hamiltonian):
 
         Parameters
         ----------
-        other : int, float, complex or QubitHamiltonian
-            A scalar or a QubitHamiltonian to multiply with the operator self.
+        other : int, float, complex or QubitOperator
+            A scalar or a QubitOperator to multiply with the operator self.
 
         """
 
         if isinstance(other,(int,float,complex)):
-            #other = QubitHamiltonian({QubitTerm():other})
+            #other = QubitOperator({QubitTerm():other})
             for term in self.terms_dict:
                 self.terms_dict[term] *= other
             return self
 
-        if not isinstance(other,QubitHamiltonian):
-            raise TypeError("Cannot multipliy QubitHamiltonian and "+str(type(other)))
+        if not isinstance(other,QubitOperator):
+            raise TypeError("Cannot multipliy QubitOperator and "+str(type(other)))
 
         res_terms_dict = {}
 
@@ -408,8 +408,8 @@ class QubitHamiltonian(Hamiltonian):
 
         Returns
         -------
-        result : QubitHamiltonian
-            The resulting QubitHamiltonian.
+        result : QubitOperator
+            The resulting QubitOperator.
         
         """
 
@@ -419,7 +419,7 @@ class QubitHamiltonian(Hamiltonian):
             curr_term, curr_coeff = term.subs(subs_dict)
             res_terms_dict[curr_term] = res_terms_dict.get(curr_term,0) + curr_coeff*coeff
 
-        result = QubitHamiltonian(res_terms_dict)
+        result = QubitOperator(res_terms_dict)
         return result
 
     #
@@ -557,10 +557,10 @@ class QubitHamiltonian(Hamiltonian):
     # Partitions 
     #
 
-    # Commutativity: Partitions the QubitHamiltonian into QubitHamiltonians with pairwise commuting QubitTerms
+    # Commutativity: Partitions the QubitOperator into QubitOperators with pairwise commuting QubitTerms
     def commuting_groups(self):
         r"""
-        Partitions the QubitHamiltonian into QubitHamiltonians with pairwise commuting terms. That is,
+        Partitions the QubitOperator into QubitOperators with pairwise commuting terms. That is,
 
         .. math::
 
@@ -570,7 +570,7 @@ class QubitHamiltonian(Hamiltonian):
 
         Returns
         -------
-        groups : list[QubitHamiltonian]
+        groups : list[QubitOperator]
             The partition of the Hamiltonian.
         
         """
@@ -593,14 +593,14 @@ class QubitHamiltonian(Hamiltonian):
                         group.terms_dict[term]=coeff
                         break
             if len(groups)==0 or not commute_bool: 
-                groups.append(QubitHamiltonian({term:coeff}))
+                groups.append(QubitOperator({term:coeff}))
 
         return groups
 
-    # Qubit-wise commutativity: Partitions the QubitHamiltonian into QubitHamiltonians with pairwise qubit-wise commuting QubitTerms
+    # Qubit-wise commutativity: Partitions the QubitOperator into QubitOperators with pairwise qubit-wise commuting QubitTerms
     def commuting_qw_groups(self, show_bases=False):
         r"""
-        Partitions the QubitHamiltonian into QubitHamiltonians with pairwise qubit-wise commuting terms. That is,
+        Partitions the QubitOperator into QubitOperators with pairwise qubit-wise commuting terms. That is,
 
         .. math::
 
@@ -610,7 +610,7 @@ class QubitHamiltonian(Hamiltonian):
 
         Returns
         -------
-        groups : list[QubitHamiltonian]
+        groups : list[QubitOperator]
             The partition of the Hamiltonian.
         
         """
@@ -621,7 +621,7 @@ class QubitHamiltonian(Hamiltonian):
         bases = [] # Bases as termTerms
         
         for term_group in term_groups:
-            H = QubitHamiltonian({term : self.terms_dict[term] for term in term_group})
+            H = QubitOperator({term : self.terms_dict[term] for term in term_group})
             groups.append(H)
             
             if show_bases:
@@ -654,7 +654,7 @@ class QubitHamiltonian(Hamiltonian):
                         groups[i].terms_dict[term]=coeff
                         break
             if len(groups)==0 or not commute_bool:
-                groups.append(QubitHamiltonian({term:coeff}))
+                groups.append(QubitOperator({term:coeff}))
                 bases.append(term.copy())
 
         if show_bases:

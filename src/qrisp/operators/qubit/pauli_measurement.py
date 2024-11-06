@@ -38,7 +38,7 @@ class PauliMeasurement:
 
         Parameters
         ----------
-        operator: QubitHamiltonian or BoundQubitHamiltonian 
+        operator: QubitOperator or BoundQubitOperator 
         
         Attributes
         ----------

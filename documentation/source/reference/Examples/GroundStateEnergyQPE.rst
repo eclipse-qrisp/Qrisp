@@ -24,7 +24,7 @@ ground state energy classically.
     E0 = H.ground_state_energy()
     # Yields: -1.85727502928823
 
-In the following, we utilize the ``trotterization`` method of the :ref:`QubitHamiltonian` to obtain a function **U** that applies **Hamiltonian Simulation**
+In the following, we utilize the ``trotterization`` method of the :ref:`QubitOperator` to obtain a function **U** that applies **Hamiltonian Simulation**
 via Trotterization. If we start in a state that is close to the ground state and apply :ref:`QPE`, we get an estimate of the ground state energy.
 
 ::

@@ -54,7 +54,7 @@ def test_bound_pauli_hamiltonian():
 def test_trotterization():
 
     from qrisp import QuantumVariable, x, QPE
-    from qrisp.operators.qubit.pauli import X,Y,Z
+    from qrisp.operators.qubit import X,Y,Z
     import numpy as np
 
     # Hydrogen https://arxiv.org/abs/1704.05018

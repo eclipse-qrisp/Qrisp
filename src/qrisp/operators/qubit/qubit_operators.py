@@ -17,43 +17,43 @@
 """
 
 from qrisp.circuit.qubit import Qubit
-from qrisp.operators.qubit.qubit_hamiltonian import QubitHamiltonian
-from qrisp.operators.qubit.bound_qubit_hamiltonian import BoundQubitHamiltonian
+from qrisp.operators.qubit.qubit_hamiltonian import QubitOperator
+from qrisp.operators.qubit.bound_qubit_hamiltonian import BoundQubitOperator
 from qrisp.operators.qubit.qubit_term import QubitTerm
 from qrisp.operators.qubit.bound_qubit_term import BoundQubitTerm
 
 def X(arg):
     if isinstance(arg,int):
-        return QubitHamiltonian({QubitTerm({arg:"X"}):1})
+        return QubitOperator({QubitTerm({arg:"X"}):1})
     elif isinstance(arg, Qubit):
-        return BoundQubitHamiltonian({BoundQubitTerm({arg:"X"}):1})
+        return BoundQubitOperator({BoundQubitTerm({arg:"X"}):1})
     else:
         raise Exception("Cannot initialize operator from type "+str(type(arg)))
 
 def Y(arg):
     if isinstance(arg,int):
-        return QubitHamiltonian({QubitTerm({arg:"Y"}):1})
+        return QubitOperator({QubitTerm({arg:"Y"}):1})
     elif isinstance(arg, Qubit):
-        return BoundQubitHamiltonian({BoundQubitTerm({arg:"Y"}):1})
+        return BoundQubitOperator({BoundQubitTerm({arg:"Y"}):1})
     else:
         raise Exception("Cannot initialize operator from type "+str(type(arg)))
 
 def Z(arg):
     if isinstance(arg,int):
-        return QubitHamiltonian({QubitTerm({arg:"Z"}):1})
+        return QubitOperator({QubitTerm({arg:"Z"}):1})
     elif isinstance(arg, Qubit):
-        return BoundQubitHamiltonian({BoundQubitTerm({arg:"Z"}):1})
+        return BoundQubitOperator({BoundQubitTerm({arg:"Z"}):1})
     else:
         raise Exception("Cannot initialize operator from type "+str(type(arg)))
 
 def A(arg):
-    return QubitHamiltonian({QubitTerm({arg : "A"}): 1})
+    return QubitOperator({QubitTerm({arg : "A"}): 1})
 
 def C(arg):
-    return QubitHamiltonian({QubitTerm({arg : "C"}): 1})
+    return QubitOperator({QubitTerm({arg : "C"}): 1})
 
 def P0(arg):
-    return QubitHamiltonian({QubitTerm({arg : "P0"}): 1})
+    return QubitOperator({QubitTerm({arg : "P0"}): 1})
 
 def P1(arg):
-    return QubitHamiltonian({QubitTerm({arg : "P1"}): 1})
+    return QubitOperator({QubitTerm({arg : "P1"}): 1})

@@ -20,7 +20,7 @@ from qrisp.operators.fermionic.fermionic_term import FermionicTerm
 from qrisp.operators.fermionic.transformations import *
 from qrisp.operators.fermionic.graph_coloring import *
 #from qrisp.operators.qubit.pauli_term import QubitTerm
-#from qrisp.operators.qubit.pauli_hamiltonian import QubitHamiltonian
+#from qrisp.operators.qubit.pauli_hamiltonian import QubitOperator
 
 import sympy as sp
 
@@ -472,7 +472,7 @@ class FermionicHamiltonian(Hamiltonian):
 
     def to_pauli_hamiltonian(self, mapping_type='jordan_wigner', num_qubits=None):
         """
-        Transforms the fermionic Hamiltonian to a :ref:`QubitHamiltonian`.
+        Transforms the fermionic Hamiltonian to a :ref:`QubitOperator`.
 
         Parameters
         ----------
@@ -484,7 +484,7 @@ class FermionicHamiltonian(Hamiltonian):
 
         Returns
         -------
-        H : :ref:`QubitHamiltonian``
+        H : :ref:`QubitOperator``
             The resulting Pauli Hamiltonian.
         
         """

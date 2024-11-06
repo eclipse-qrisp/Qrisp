@@ -16,7 +16,7 @@ Each type of Hamiltonian comes with comprehensive documentation and brief exampl
 
    * - Hamiltonian
      - USED FOR
-   * - :ref:`QubitHamiltonian <QubitHamiltonian>`
+   * - :ref:`QubitOperator <QubitOperator>`
      - describe Hamiltonians in terms of Qubit operators
    * - :ref:`FermionicHamiltonian <FermionicHamiltonian>`
      - describe Hamiltonians in terms of fermionic ladder operators
@@ -28,7 +28,7 @@ We encourage you to explore these Hamiltonians, delve into their documentation, 
 .. toctree::
    :hidden:
    
-   QubitHamiltonian
+   QubitOperator
    FermionicHamiltonian
 
 
