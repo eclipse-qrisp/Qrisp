@@ -23,3 +23,5 @@ Methods
    QubitOperator.commuting_qw_groups
    QubitOperator.trotterization
    QubitOperator.to_pauli
+   QubitOperator.adjoint
+   QubitOperator.hermitize

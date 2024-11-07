@@ -90,7 +90,7 @@ class QubitOperator(Hamiltonian):
         H = 1+2*X(0)+3*X(0)*Y(1)*A(2)+C(4)*P1(0)
         H
 
-    Yields $3*A_2*X_0*Y_1 + C_4*P1_0 + 1 + 2*X_0$.
+    Yields $1 + P^1_0*C_4 + 2*X_0 + 3*X_0*Y_1*A_2$.
     
     Investigate the simulation circuit by simulating for a symbolic amount of time:
 
@@ -353,7 +353,7 @@ class QubitOperator(Hamiltonian):
         """
 
         if isinstance(other,(int,float,complex)):
-            self.terms_dict[termTerm()] = self.terms_dict.get(termTerm(),0)-other
+            self.terms_dict[QubitTerm()] = self.terms_dict.get(QubitTerm(),0)-other
             return self
         if not isinstance(other,QubitOperator):
             raise TypeError("Cannot add QubitOperator and "+str(type(other)))
@@ -584,6 +584,47 @@ class QubitOperator(Hamiltonian):
         if isinstance(res, (float, int)):
             return QubitOperator({QubitTerm({}) : res})
         return res
+    
+    def adjoint(self):
+        """
+        Returns an the adjoint operator.
+
+        Returns
+        -------
+        QubitOperator
+            The adjoint operator.
+
+        Examples
+        --------
+        
+        We create a QubitOperator and inspect it' adjoint.
+        
+        >>> from qrisp.operators import A,C,Z
+        >>> H = A(0)*C(1)*Z(2)
+        >>> print(H.adjoint())
+        C_0*A_1*Z_2
+        """
+        res = 0
+        for term, coeff in self.terms_dict.items():
+            res += coeff*term.adjoint()
+        if isinstance(res, (float, int)):
+            return QubitOperator({QubitTerm({}) : res})
+        return res
+    
+    def hermitize(self):
+        """
+        Returns the hermitian part of self.
+        
+        $H = (O + O^\dagger)/2$
+
+        Returns
+        -------
+        QubitOperator
+            The hermitian part.
+
+        """
+        return 0.5*(self + self.adjoint())
+        
     
     def ground_state_energy(self):
         """
@@ -872,3 +913,4 @@ class QubitOperator(Hamiltonian):
                 trotter_step(qarg, t, steps)
 
         return U
+

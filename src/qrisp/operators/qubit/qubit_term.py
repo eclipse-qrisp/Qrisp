@@ -111,6 +111,28 @@ class QubitTerm:
         
         return res
     
+    def adjoint(self):
+        from qrisp.operators import X, Y, Z, A, C, P0, P1
+        res = 1
+        
+        for i, factor in self.factor_dict.items():
+            if factor == "X":
+                res *= X(i)
+            elif factor == "Y":
+                res *= Y(i)
+            elif factor == "Z":
+                res *= Z(i)
+            elif factor == "A":
+                res *= C(i)
+            elif factor == "C":
+                res *= A(i)
+            elif factor == "P0":
+                res *= P0(i)
+            elif factor == "P1":
+                res *= P1(i)
+            
+        return res
+    
     #
     # Simulation
     #
@@ -397,17 +419,19 @@ class QubitTerm:
             if P=="Z":
                 return Z_(index)
             if P=="A":
-                return Symbol("A_" + str(index))
+                return Symbol("A_" + str(index), commutative = False)
             if P=="C":
-                return Symbol("C_" + str(index))
+                return Symbol("C_" + str(index), commutative = False)
             if P=="P0":
-                return Symbol("P0_" + str(index))
+                return Symbol("P^0_" + str(index), commutative = False)
             if P=="P1":
-                return Symbol("P1_" + str(index))
+                return Symbol("P^1_" + str(index), commutative = False)
         
         expr = 1
-        for index,P in self.factor_dict.items():
-            expr *= to_spin(P,str(index))
+        index_list = sorted(list(self.factor_dict.keys()))
+        
+        for i in index_list:
+            expr = expr*to_spin(self.factor_dict[i],str(i))
 
         return expr
 
