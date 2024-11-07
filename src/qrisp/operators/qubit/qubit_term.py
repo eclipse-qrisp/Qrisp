@@ -86,6 +86,29 @@ class QubitTerm:
         
         return (z_int, and_int, ctrl_int)
     
+    def to_pauli(self):
+        
+        from qrisp.operators import X, Y, Z
+        res = 1
+        
+        for i, factor in self.factor_dict.items():
+            if factor == "X":
+                res *= X(i)
+            elif factor == "Y":
+                res *= Y(i)
+            elif factor == "Z":
+                res *= Z(i)
+            elif factor == "A":
+                res *= (X(i) - 1j*Y(i))*0.5
+            elif factor == "C":
+                res *= (X(i) + 1j*Y(i))*0.5
+            elif factor == "P0":
+                res *= (Z(i) + 1)*0.5
+            elif factor == "P1":
+                res *= (Z(i) - 1)*(-0.5)
+        
+        return res
+    
     #
     # Simulation
     #

@@ -537,6 +537,54 @@ class QubitOperator(Hamiltonian):
         # res.sum_duplicates()
         return M
     
+    def to_array(self, factor_amount = None):
+        """
+        Returns a numpy array describing the operator.
+
+        Parameters
+        ----------
+        factor_amount : int, optional
+            The amount of factors to represent this array. The array will have 
+            the dimension $2^n \times 2^n$, where n is the amount of factors. 
+            By default the minimal number is chosen.
+
+        Returns
+        -------
+        np.ndarray
+            The array describing the operator.
+
+        """
+        return self.to_sparse_matrix(factor_amount).todense()
+    
+    def to_pauli(self):
+        """
+        Returns an equivalent operator, which however only contains Pauli factors.
+
+        Returns
+        -------
+        QubitOperator
+            An operator that contains only Pauli-Factor.
+
+        Examples
+        --------
+        
+        We create a QubitOperator containing A and C terms and convert it to a
+        Pauli based representation.
+        
+        >>> from qrisp.operators import A,C,Z
+        >>> H = A(0)*C(1)*Z(2)
+        >>> print(H.to_pauli())
+        0.25*X_0*X_1*Z_2 + 0.25*I*X_0*Y_1*Z_2 - 0.25*I*Y_0*X_1*Z_2 + 0.25*Y_0*Y_1*Z_2
+            
+        """
+        
+        res = 0
+        for term, coeff in self.terms_dict.items():
+            res += coeff*term.to_pauli()
+        if isinstance(res, (float, int)):
+            return QubitOperator({QubitTerm({}) : res})
+        return res
+    
     def ground_state_energy(self):
         """
         Calculates the ground state energy (i.e., the minimum eigenvalue) of the operator classically.
