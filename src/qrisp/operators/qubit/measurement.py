@@ -158,6 +158,7 @@ def get_measurement(
         qubits = [qarg[i] for i in range(circuit.num_qubits())]
         curr.append(circuit.to_gate(), qubits)
         
+        # print(curr.transpile())
         res = get_measurement_from_qc(curr.transpile(), list(qarg), backend, meas_shots[index])
         results.append(res)
 
@@ -169,35 +170,6 @@ def get_measurement(
 # Evaluate expectation
 #
 
-def evaluate_observable(observable: int, x: int):
-    """
-    This method evaluates an observable that is a tensor product of Pauli-:math:`Z` operators
-    with respect to a measurement outcome. 
-        
-    A Pauli operator of the form :math:`\prod_{i\in I}Z_i`, for some finite set of indices :math:`I\subset \mathbb N`, 
-    is identified with an integer:
-    We identify the Pauli operator with the binary string that has ones at positions :math:`i\in I`
-    and zeros otherwise, and then convert this binary string to an integer.
-        
-    Parameters
-    ----------
-        
-    observable : int
-        The observable represented as integer.
-     x : int 
-        The measurement outcome represented as integer.
-        
-    Returns
-    -------
-    int
-        The value of the observable with respect to the measurement outcome.
-        
-    """
-        
-    if bin(observable & x).count('1') % 2 == 0:
-        return 1
-    else:
-        return -1  
     
 def evaluate_observable(observable: tuple, x: int):
     """
@@ -224,19 +196,31 @@ def evaluate_observable(observable: tuple, x: int):
         
     """
     
-    z_int, AND_bits, AND_ctrl_state = observable
+    z_int, AND_bits, AND_ctrl_state, contains_ladder = observable
     
     sign_flip = bin(z_int & x).count('1')
     
+    from qrisp import bin_rep
     temp = (x ^ AND_ctrl_state)
+    # if AND_bits != 0:
+    #     print(bin_rep(AND_ctrl_state, 3))
+    #     print(bin_rep(AND_bits, 3))
+    #     print(bin_rep(temp, 3))
+    #     print(bin_rep(z_int, 3))
+    #     print("=====")
+    if contains_ladder:
+        prefactor = 0.5
+    else:
+        prefactor = 1
     
     if AND_bits == 0:
-        return (-1)**sign_flip
+        return prefactor*(-1)**sign_flip
     
-    if temp & AND_bits == 0 or AND_bits == 0:
-        return (-1)**sign_flip/2
+    if temp & AND_bits == 0:
+        return prefactor*(-1)**sign_flip
     else:
         return 0
+    
     
     return (-1)**(sign_flip)
     

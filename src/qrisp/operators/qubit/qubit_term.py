@@ -63,13 +63,13 @@ class QubitTerm:
             
             if factor_dict[i] in ["X", "Y", "Z"]:
                 z_int |= bit
-                last_ladder_factor
                 continue
             elif factor_dict[i] == "A":
                 ctrl_int |= bit
-                last_ladder_factor
+                last_ladder_factor = bit
                 pass
             elif factor_dict[i] == "C":
+                last_ladder_factor = bit
                 pass
             elif factor_dict[i] == "P0":
                 pass
@@ -82,9 +82,11 @@ class QubitTerm:
             and_int |= bit
             
         if last_ladder_factor is not None:
+            pass
             and_int ^= last_ladder_factor
+            z_int ^= last_ladder_factor
         
-        return (z_int, and_int, ctrl_int)
+        return (z_int, and_int, ctrl_int, last_ladder_factor is not None)
     
     def to_pauli(self):
         

@@ -152,7 +152,7 @@ class PauliMeasurement:
                         qc.x(anchor_factor[0])
                         
                 for j in range(len(ladder_operators)-1):
-                    qc.cx(anchor_factor[0], j)
+                    qc.cx(anchor_factor[0], ladder_operators[j][0])
 
                 if len(ladder_operators):
                     if anchor_factor[1] == "A":
