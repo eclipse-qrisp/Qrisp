@@ -426,6 +426,10 @@ class QubitOperator(Hamiltonian):
     # Miscellaneous
     #
     
+    def find_minimal_qubit_amount(self):
+        indices = sum([list(term.factor_dict.keys()) for term in self.terms_dict.keys()], [])
+        return max(indices)+1
+    
     def commutator(self, other):
         
         res = 0

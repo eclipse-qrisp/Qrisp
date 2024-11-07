@@ -38,7 +38,7 @@ class PauliMeasurement:
 
         Parameters
         ----------
-        operator: QubitOperator or BoundQubitOperator 
+        operator: QubitHamiltonian or BoundQubitHamiltonian 
         
         Attributes
         ----------
@@ -64,7 +64,7 @@ class PauliMeasurement:
         """
         self.bases, self.operators_ind, self.operators_int, self.coefficients = self.commuting_qw_measurement(operator)
         self.variances, self.shots = self.measurement_shots()
-        self.circuits, self.qubits = self.measurement_circuits()
+        self.circuits = self.measurement_circuits()
 
     def commuting_qw_measurement(self, operator):
         """
@@ -72,6 +72,7 @@ class PauliMeasurement:
         """
 
         groups, bases = operator.commuting_qw_groups(show_bases=True)
+        self.groups = groups
         operators_ind = []
         operators_int = []
         coefficients = []
@@ -89,11 +90,11 @@ class PauliMeasurement:
             curr_int = []
             curr_coeff = []
 
-            for factor,coeff in groups[i].terms_dict.items():
-                ind = list(factor.factor_dict.keys())
+            for term,coeff in groups[i].terms_dict.items():
+                ind = list(term.factor_dict.keys())
 
                 curr_ind.append(ind)
-                curr_int.append(get_integer_from_indices(ind,positions[i]))
+                curr_int.append(term.serialize())
                 curr_coeff.append(float(coeff.real))
 
             operators_ind.append(curr_ind)
@@ -111,7 +112,8 @@ class PauliMeasurement:
         variances = []
         for i in range(n):
             m = len(self.coefficients[i])
-            var = sum(self.coefficients[i][j]**2 for j in range(m) if self.operators_int[i][j]>0) # Exclude constant term
+            
+            var = sum(self.coefficients[i][j]**2 for j in range(m) if (self.operators_int[i][j][0]+self.operators_int[i][j][1])>0) # Exclude constant term
             variances.append(var)
         N = sum(np.sqrt(x) for x in variances)
         shots = [np.sqrt(x)*N for x in variances]
@@ -124,25 +126,41 @@ class PauliMeasurement:
         """
 
         circuits = []
-        qubits = []
 
         # Construct change of basis circuits
-        for basis in self.bases:
-
-            basis_ = sorted(basis.factor_dict.items())
-            qubits_ = sorted(basis.factor_dict.keys())
-
-            n = len(basis_)
+        for i in range(len(self.bases)):
+            
+            group = self.groups[i]
+            n = group.find_minimal_qubit_amount()
             qc = QuantumCircuit(n)
-            for i in range(n):
-                if basis_[i][1]=="X":
-                    qc.h(i)
-                if basis_[i][1]=="Y":
-                    qc.sx(i)
+            
+            factor_dict = self.bases[i].factor_dict
+            for j in range(n):
+                if factor_dict.get(j, "I")=="X":
+                    qc.h(j)
+                if factor_dict.get(j, "I")=="Y":
+                    qc.sx(j)
+                    
+            for term in self.groups[i].terms_dict.keys():
+                
+                ladder_operators = [base for base in term.factor_dict.items() if base[1] in ["A", "C"]]
+                
+                if len(ladder_operators):
+                    anchor_factor = ladder_operators[-1]
+                
+                    if anchor_factor[1] == "A":
+                        qc.x(anchor_factor[0])
+                        
+                for j in range(len(ladder_operators)-1):
+                    qc.cx(anchor_factor[0], j)
+
+                if len(ladder_operators):
+                    if anchor_factor[1] == "A":
+                        qc.x(anchor_factor[0])
+                
+                    qc.h(anchor_factor[0])
 
             circuits.append(qc)    
-            qubits.append(qubits_)    
 
-        return circuits, qubits
+        return circuits
     
-

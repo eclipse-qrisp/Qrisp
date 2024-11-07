@@ -52,6 +52,40 @@ class QubitTerm:
     def is_identity(self):
         return len(self.factor_dict)==0
     
+    def serialize(self):
+        z_int = 0
+        and_int = 0
+        ctrl_int = 0
+        last_ladder_factor = None
+        factor_dict = self.factor_dict
+        for i in factor_dict.keys():
+            bit = (1<<i)
+            
+            if factor_dict[i] in ["X", "Y", "Z"]:
+                z_int |= bit
+                last_ladder_factor
+                continue
+            elif factor_dict[i] == "A":
+                ctrl_int |= bit
+                last_ladder_factor
+                pass
+            elif factor_dict[i] == "C":
+                pass
+            elif factor_dict[i] == "P0":
+                pass
+            elif factor_dict[i] == "P1":
+                ctrl_int |= bit
+                pass
+            else:
+                continue
+            
+            and_int |= bit
+            
+        if last_ladder_factor is not None:
+            and_int ^= last_ladder_factor
+        
+        return (z_int, and_int, ctrl_int)
+    
     #
     # Simulation
     #

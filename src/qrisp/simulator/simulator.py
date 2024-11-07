@@ -181,7 +181,6 @@ def run(qc, shots, token="", iqs=None, insert_reset=True):
         norm = np.sum(cl_prob)
         cl_prob = cl_prob/norm
         
-            
         res = {}
         #If shots >= 1000000, no samples will be drawn and the distribution will
         #be returned instead
@@ -200,7 +199,6 @@ def run(qc, shots, token="", iqs=None, insert_reset=True):
 
         #Generate samples
         else:
-            
             from numpy.random import choice
             # p_array = np.array(list(prob_dict.values()))
             

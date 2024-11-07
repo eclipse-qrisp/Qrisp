@@ -140,7 +140,6 @@ def get_measurement(
         pauli_measurement = _measurement
 
     meas_circs = pauli_measurement.circuits
-    meas_qubits = pauli_measurement.qubits
     meas_ops = pauli_measurement.operators_int
     meas_coeffs = pauli_measurement.coefficients
     meas_shots = pauli_measurement.shots
@@ -156,9 +155,10 @@ def get_measurement(
     for index,circuit in enumerate(meas_circs):
 
         curr = qc.copy()
-        curr.append(circuit.to_gate(), meas_qubits[index])
-
-        res = get_measurement_from_qc(curr, meas_qubits[index], backend, meas_shots[index])
+        qubits = [qarg[i] for i in range(circuit.num_qubits())]
+        curr.append(circuit.to_gate(), qubits)
+        
+        res = get_measurement_from_qc(curr.transpile(), list(qarg), backend, meas_shots[index])
         results.append(res)
 
     expectation = evaluate_expectation(results, meas_ops, meas_coeffs)
@@ -198,6 +198,47 @@ def evaluate_observable(observable: int, x: int):
         return 1
     else:
         return -1  
+    
+def evaluate_observable(observable: tuple, x: int):
+    """
+    This method evaluates an observable that is a tensor product of Pauli-:math:`Z` operators
+    with respect to a measurement outcome. 
+        
+    A Pauli operator of the form :math:`\prod_{i\in I}Z_i`, for some finite set of indices :math:`I\subset \mathbb N`, 
+    is identified with an integer:
+    We identify the Pauli operator with the binary string that has ones at positions :math:`i\in I`
+    and zeros otherwise, and then convert this binary string to an integer.
+        
+    Parameters
+    ----------
+        
+    observable : int
+        The observable represented as integer.
+     x : int 
+        The measurement outcome represented as integer.
+        
+    Returns
+    -------
+    int
+        The value of the observable with respect to the measurement outcome.
+        
+    """
+    
+    z_int, AND_bits, AND_ctrl_state = observable
+    
+    sign_flip = bin(z_int & x).count('1')
+    
+    temp = (x ^ AND_ctrl_state)
+    
+    if AND_bits == 0:
+        return (-1)**sign_flip
+    
+    if temp & AND_bits == 0 or AND_bits == 0:
+        return (-1)**sign_flip/2
+    else:
+        return 0
+    
+    return (-1)**(sign_flip)
     
 
 def evaluate_expectation(results, operators, coefficients):
