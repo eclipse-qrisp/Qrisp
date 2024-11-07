@@ -94,12 +94,12 @@ def get_measurement(
         qs = qarg.qs
     elif isinstance(qarg,list):
         qs = QuantumSession()
-        for qv in qarg:
-            if qv.is_deleted():
+        for arg in qarg:
+            if isinstance(arg, QuantumVariable) and qv.is_deleted():
                 raise Exception(
                     "Tried to measure QuantumArray containing deleted QuantumVariables"
                 ) 
-            merge(qs,qv.qs)
+            merge(qs,arg)
 
     if backend is None:
         if qs.backend is None:

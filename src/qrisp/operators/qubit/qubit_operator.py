@@ -639,7 +639,7 @@ class QubitOperator(Hamiltonian):
 
         from scipy.sparse.linalg import eigsh
 
-        M = self.to_sparse_matrix()
+        M = self.hermitize().to_sparse_matrix()
         # Compute the smallest eigenvalue
         eigenvalues, _ = eigsh(M, k=1, which='SA')  # 'SA' stands for smallest algebraic
         E = eigenvalues[0]

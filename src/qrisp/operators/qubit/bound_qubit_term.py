@@ -206,5 +206,3 @@ class BoundQubitTerm:
             if a.get(key,"I")!="I" and b.get(key,"I")!="I" and a.get(key,"I")!=b.get(key,"I"):
                 return False
         return True
-    
-
