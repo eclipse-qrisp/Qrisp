@@ -18,7 +18,7 @@
 
 import networkx as nx
 import numpy as np
-from numba import njit, prange
+from numba import njit
 
 def optimize_allocations(qc):
     from qrisp.permeability import PermeabilityGraph, TerminatorNode
@@ -226,42 +226,47 @@ def topological_sort(G, prefer=None, delay=None, sub_sort=nx.topological_sort):
 
 
 @njit(cache=True)
-def ancestors_jitted(start_index, indptr, indices, node_amount):
-    to_do_array = np.zeros(node_amount, dtype=np.byte)
-    to_do_array[start_index] = 1
-    done_array = np.zeros(node_amount, dtype=np.byte)
+def compute_all_ancestors(indptr, indices, node_amount):
+    # Initialize ancestor sets for all nodes
+    ancestors = np.zeros((node_amount, node_amount), dtype=np.bool_)
+    
+    # Topological sort
+    in_degree = np.zeros(node_amount, dtype=np.int64)
+    for i in range(node_amount):
+        for j in range(indptr[i], indptr[i+1]):
+            in_degree[indices[j]] += 1
+    
+    queue = [i for i in range(node_amount) if in_degree[i] == 0]
+    
+    while queue:
+        node = queue.pop(0)
+        ancestors[node, node] = True  # A node is its own ancestor
+        
+        for i in range(indptr[node], indptr[node+1]):
+            child = indices[i]
+            # Add current node and its ancestors to child's ancestors
+            ancestors[child, :] |= ancestors[node, :]
+            in_degree[child] -= 1
+            if in_degree[child] == 0:
+                queue.append(child)
+    
+    return ancestors
 
-    stack = 1
-    while stack:
-        node = np.argmax(to_do_array)
-        to_do_array[node] = 0
-
-        for i in range(indptr[node], indptr[node + 1]):
-            new_node = indices[i]
-            if done_array[new_node] == 0:
-                to_do_array[new_node] = 1
-                stack += 1
-
-        done_array[node] = 1
-        stack -= 1
-
-    return np.nonzero(done_array)[0]
-
-
-@njit(parallel=True, cache=True)
+@njit(cache=True)
 def ancestors_jitted_wrapper(start_indices, indptr, indices, node_amount):
+    all_ancestors = compute_all_ancestors(indptr, indices, node_amount)
+    
     res = [np.zeros(1, dtype=np.int64)] * len(start_indices)
-    for i in prange(len(start_indices)):
-        start_index = start_indices[i]
-        res[i] = ancestors_jitted(start_index, indptr, indices, node_amount)
-
+    for i, start_index in enumerate(start_indices):
+        res[i] = np.where(all_ancestors[start_index])[0]
+    
     return res
 
 
 def ancestors(dag, start_nodes):
     node_list = list(dag.nodes())
 
-    sprs_mat = nx.to_scipy_sparse_array(dag, format="csc")
+    sprs_mat = nx.to_scipy_sparse_array(dag, format="csr")
 
     start_indices = []
     for i in range(len(dag)):
@@ -274,9 +279,9 @@ def ancestors(dag, start_nodes):
         sprs_mat.indices.astype(np.int32),
         len(dag),
     )
-
-    node_list = [
+    
+    res_node_list = [
         [node_list[j] for j in anc_indices] for anc_indices in res_list_indices
     ]
-
-    return node_list
+    
+    return res_node_list
