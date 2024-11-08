@@ -17,7 +17,6 @@
 """
 from qrisp.operators.hamiltonian import Hamiltonian
 from qrisp.operators.qubit.bound_qubit_term import BoundQubitTerm
-from qrisp.operators.qubit.pauli_measurement import PauliMeasurement
 from qrisp.operators.qubit.measurement import get_measurement
 from qrisp import h, sx, IterationEnvironment, conjugate, merge
 

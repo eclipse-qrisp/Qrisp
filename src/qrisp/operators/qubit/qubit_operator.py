@@ -18,11 +18,11 @@
 from qrisp.operators.hamiltonian_tools import find_qw_commuting_groups
 from qrisp.operators.hamiltonian import Hamiltonian
 from qrisp.operators.qubit.qubit_term import QubitTerm
-from qrisp.operators.qubit.pauli_measurement import PauliMeasurement
 from qrisp.operators.qubit.measurement import get_measurement
 from qrisp import h, s, x, IterationEnvironment, conjugate, merge
 
 import sympy as sp
+import numpy as np
 
 threshold = 1e-9
 
@@ -604,12 +604,10 @@ class QubitOperator(Hamiltonian):
         >>> print(H.adjoint())
         C_0*A_1*Z_2
         """
-        res = 0
+        new_terms_dict = {}
         for term, coeff in self.terms_dict.items():
-            res += coeff*term.adjoint()
-        if isinstance(res, (float, int)):
-            return QubitOperator({QubitTerm({}) : res})
-        return res
+            new_terms_dict[term.adjoint()] = np.conjugate(coeff)
+        return QubitOperator(new_terms_dict)
     
     def hermitize(self):
         """
@@ -624,6 +622,23 @@ class QubitOperator(Hamiltonian):
 
         """
         return 0.5*(self + self.adjoint())
+        
+    def eliminate_ladder_conjugates(self):
+        new_terms_dict = {}
+        for term, coeff in self.terms_dict.items():
+            for factor in term.factor_dict.values():
+                if factor in ["A", "C"]:
+                    break
+            else:
+                new_terms_dict[term] = coeff
+                continue
+            
+            if term.adjoint() in new_terms_dict:
+                new_terms_dict[term.adjoint()] += coeff
+            else:
+                new_terms_dict[term] = coeff
+        
+        return QubitOperator(new_terms_dict)
         
     
     def ground_state_energy(self):
@@ -758,10 +773,65 @@ class QubitOperator(Hamiltonian):
     #
     # Measurement settings and measurement
     #
-
-    def pauli_measurement(self):
-        return PauliMeasurement(self)
     
+    def get_conjugation_circuit(self):
+        
+        from qrisp import QuantumCircuit
+        n = self.find_minimal_qubit_amount()
+        qc = QuantumCircuit(n)
+        
+        basis_dict = {}
+        for term, coeff in self.terms_dict.items():
+            
+            factor_dict = term.factor_dict
+            for j in range(n):
+                if j not in factor_dict:
+                    continue
+                
+                if j in basis_dict:
+                    assert basis_dict[j] == factor_dict[j]
+                    continue
+                
+                if factor_dict[j] not in ["X", "Y", "Z"]:
+                    continue
+                
+                basis_dict[j] = factor_dict[j]
+                
+                if factor_dict[j]=="X":
+                    qc.h(j)
+                if factor_dict[j]=="Y":
+                    qc.sx(j)
+                
+            ladder_operators = [base for base in term.factor_dict.items() if base[1] in ["A", "C"]]
+            
+            if len(ladder_operators):
+                anchor_factor = ladder_operators[-1]
+            
+                if anchor_factor[1] == "A":
+                    qc.x(anchor_factor[0])
+                    
+            for j in range(len(ladder_operators)-1):
+                qc.cx(anchor_factor[0], ladder_operators[j][0])
+
+            if len(ladder_operators):
+                if anchor_factor[1] == "A":
+                    qc.x(anchor_factor[0])
+            
+                qc.h(anchor_factor[0])
+        
+        return qc
+    
+    def get_operator_variance(self):
+        """
+        Calculates the optimal distribution and number of shots following https://quantum-journal.org/papers/q-2021-01-20-385/pdf/.
+        
+        """
+        var = 0
+        for term, coeff in self.terms_dict.items():
+            if len(term.factor_dict) != 0:
+                var += abs(coeff)**2
+        return var
+        
     def get_measurement(
         self,
         qarg,

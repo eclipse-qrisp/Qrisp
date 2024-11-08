@@ -34,7 +34,8 @@ class QubitTerm:
 
     def __init__(self, factor_dict={}):
         self.factor_dict = factor_dict
-        self.hash_value = hash(tuple(sorted(factor_dict.items())))
+        
+        self.hash_value = hash(tuple(sorted(factor_dict.items(), key = lambda x : x[0])))
 
     def update(self, update_dict):
         self.factor_dict.update(update_dict)
@@ -112,26 +113,16 @@ class QubitTerm:
         return res
     
     def adjoint(self):
-        from qrisp.operators import X, Y, Z, A, C, P0, P1
-        res = 1
-        
+        new_factor_dict = {}
         for i, factor in self.factor_dict.items():
-            if factor == "X":
-                res *= X(i)
-            elif factor == "Y":
-                res *= Y(i)
-            elif factor == "Z":
-                res *= Z(i)
+            if factor in ["X", "Y", "Z", "P0", "P1"]:
+                new_factor_dict[i] = factor
             elif factor == "A":
-                res *= C(i)
+                new_factor_dict[i] = "C"
             elif factor == "C":
-                res *= A(i)
-            elif factor == "P0":
-                res *= P0(i)
-            elif factor == "P1":
-                res *= P1(i)
+                new_factor_dict[i] = "A"
             
-        return res
+        return QubitTerm(new_factor_dict)
     
     #
     # Simulation

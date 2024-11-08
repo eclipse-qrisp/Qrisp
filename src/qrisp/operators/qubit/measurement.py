@@ -131,40 +131,53 @@ def get_measurement(
         qc = combine_single_qubit_gates(qc)
 
     qc = qc.transpile()
-
+    
+    hamiltonian = hamiltonian.hermitize()
+    hamiltonian = hamiltonian.eliminate_ladder_conjugates()
+    
     from qrisp.misc import get_measurement_from_qc
-
-    if _measurement is None:
-        pauli_measurement = hamiltonian.pauli_measurement()
-    else:
-        pauli_measurement = _measurement
-
-    meas_circs = pauli_measurement.circuits
-    meas_ops = pauli_measurement.operators_int
-    meas_coeffs = pauli_measurement.coefficients
-    meas_shots = pauli_measurement.shots
-
-    meas_shots = [round(x/precision**2) for x in meas_shots]
-    tot_shots = sum(x for x in meas_shots)
+    results = []
+    
+    groups = hamiltonian.commuting_qw_groups()
+        
+    # Collect standard deviation
+    stds = []
+    for group in groups:
+        stds.append(np.sqrt(group.to_pauli().hermitize().get_operator_variance()))
+        
+    N = sum(stds)
+    shots_list = [int(N*s/precision**2) for s in stds]
+    tot_shots = sum(x for x in shots_list)
+    
     if tot_shots>shots:
-        #meas_shots = [round(x*shots/tot_shots) for x in meas_shots]
         raise Warning("Warning: The total amount of shots required: " + str(tot_shots) +" for the target precision: " + str(precision) + " exceeds the allowed maxium amount of shots. Decrease the precision or increase the maxium amount of shots.")
 
-    results = []
-
-    for index,circuit in enumerate(meas_circs):
-
-        curr = qc.copy()
-        qubits = [qarg[i] for i in range(circuit.num_qubits())]
-        curr.append(circuit.to_gate(), qubits)
+    
+    meas_ops = []
+    meas_coeffs = []
+    
+    for group in groups:
         
-        # print(curr.transpile())
-        res = get_measurement_from_qc(curr.transpile(), list(qarg), backend, meas_shots[index])
+        conjugation_circuit = group.get_conjugation_circuit()
+        
+        curr = qc.copy()
+        qubits = [qarg[i] for i in range(conjugation_circuit.num_qubits())]
+        curr.append(conjugation_circuit.to_gate(), qubits)
+        
+        res = get_measurement_from_qc(curr.transpile(), list(qarg), backend, shots_list.pop(0))
         results.append(res)
-
-    expectation = evaluate_expectation(results, meas_ops, meas_coeffs)
-    #expectation = evaluate_expectation_numba(results, meas_ops, meas_coeffs, meas_qubits)
-    return expectation
+        
+        
+        temp_meas_ops = []
+        temp_coeff = []
+        for term, coeff in group.terms_dict.items():
+            temp_meas_ops.append(term.serialize())
+            temp_coeff.append(coeff)
+            
+        meas_coeffs.append(temp_coeff)
+        meas_ops.append(temp_meas_ops)
+    
+    return evaluate_expectation(results, meas_ops, meas_coeffs)
 
 #
 # Evaluate expectation
@@ -236,7 +249,7 @@ def evaluate_expectation(results, operators, coefficients):
     for index1,ops in enumerate(operators):
         for index2,op in enumerate(ops):
             for outcome,probability in results[index1].items():
-                expectation += probability*evaluate_observable(op,outcome)*coefficients[index1][index2]
+                expectation += probability*evaluate_observable(op,outcome)*np.real(coefficients[index1][index2])
     
     return expectation
 
