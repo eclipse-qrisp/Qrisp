@@ -154,7 +154,7 @@ def topological_sort(G, prefer=None, delay=None, sub_sort=nx.topological_sort):
 
     # For large scales, finding the ancestors is a bottleneck. We therefore use a
     # jitted version
-    if len(G) * len(prefered_nodes) > 10000:
+    if len(G) * len(prefered_nodes) > 1000:
         anc_lists = ancestors(G, prefered_nodes)
     else:
         anc_lists = []
@@ -268,10 +268,8 @@ def ancestors(dag, start_nodes):
 
     sprs_mat = nx.to_scipy_sparse_array(dag, format="csr")
 
-    start_indices = []
-    for i in range(len(dag)):
-        if node_list[i] in start_nodes:
-            start_indices.append(i)
+    node_inversion_dic = {node_list[i] : i for i in range(len(node_list))}
+    start_indices = [node_inversion_dic[node] for node in start_nodes]
 
     res_list_indices = ancestors_jitted_wrapper(
         np.array(start_indices).astype(np.int32),
