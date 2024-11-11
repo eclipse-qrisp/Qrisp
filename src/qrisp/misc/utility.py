@@ -1874,12 +1874,15 @@ def t_depth_indicator(op, epsilon):
         "s",
         "h",
         "s_dg",
+        "sx",
+        "sx_dg",
         "measure",
         "reset",
         "qb_alloc",
         "qb_dealloc",
         "barrier",
         "gphase",
+        
     ]:
         return 0
     elif op.name in ["rx", "ry", "rz", "p", "u1"]:
