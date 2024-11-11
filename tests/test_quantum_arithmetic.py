@@ -179,4 +179,17 @@ def test_quantum_arithmetic():
 
     for a, b, c in meas_res.keys():
         assert a*b == c
-        
+    
+    # Test in-place multiplication
+    from qrisp.alg_primitives.arithmetic import inpl_q_int_mult
+    n = 7
+    a = QuantumFloat(n)
+    h(a)
+    b = QuantumFloat(n)
+    b[:] = a
+    inpl_q_int_mult(a, 5, inpl_adder = gidney_adder)
+    
+    meas_res = multi_measurement([a,b])
+
+    for a, b in meas_res.keys():
+        assert (b*5)%(2**n) == a

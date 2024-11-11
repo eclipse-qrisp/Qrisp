@@ -17,7 +17,7 @@
 """
 
 
-from qrisp import cx, x
+from qrisp import cx, x, control
 from qrisp.alg_primitives.arithmetic.adders import fourier_adder
 from qrisp.qtypes.quantum_float import QuantumFloat
 
@@ -61,3 +61,11 @@ def q_int_mult(factor_1, factor_2, inpl_adder = fourier_adder, target_qf = None)
     s.reduce(s[0], verify = False)
 
     return s
+
+def inpl_q_int_mult(operand, cl_int, inpl_adder = fourier_adder):
+    if not cl_int%2:
+        raise Exception("In-place multiplication with even integers not supported")
+    
+    for i in range(operand.size-1):
+        with control(operand[operand.size-2-i]):
+            inpl_adder(cl_int//2, operand[operand.size-1-i:])

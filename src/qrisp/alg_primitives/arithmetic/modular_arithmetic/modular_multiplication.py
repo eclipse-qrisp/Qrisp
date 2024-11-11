@@ -403,3 +403,40 @@ def semi_cl_inpl_mult(a, X, ctrl = None, treat_invalid = False):
             reduced.delete(verify = True)
         
         return a
+    
+def montgomery_mod_mul(a, b, output_qg = None, inpl_adder = None):
+    
+    m = int(np.ceil(np.log2((a.modulus-1)**2)+1)) - a.size
+    
+    from qrisp import h, merge, QFT, q_int_mult
+    if a.modulus != b.modulus:
+        raise Exception("Tried to multiply two QuantumModulus with differing modulus")
+        
+    if output_qg is None:
+        t = QuantumFloat(a.size + m, signed = True)
+        h(t)
+        
+    else:
+        if output_qg.modulus != a.modulus:
+            raise Exception("Output QuantumModulus has incompatible modulus")
+        
+        merge(output_qg.qs, a.qs)
+        output_qg.extend(m, 0)
+        output_qg.add_sign()
+        output_qg.reg.insert(0, output_qg.reg.pop(-1))
+        
+        QFT(output_qg, exec_swap = False)
+        
+        t = output_qg
+    
+    t = q_int_mult(a, b, output_qf = t, inpl_adder = inpl_adder)
+    
+    from qrisp import QuantumModulus
+    t.__class__ = QuantumModulus
+    t.modulus = a.modulus
+    t.m = (a.m + b.m)
+    t.inpl_adder = a.inpl_adder
+    
+    t = montgomery_red(t, a, b, a.modulus, m)
+    
+    return t
