@@ -18,38 +18,46 @@
 
 
 from qrisp import cx, x
-from qrisp.alg_primitives.arithmetic import create_output_qf, inpl_add
+from qrisp.alg_primitives.arithmetic.adders import fourier_adder
+from qrisp.qtypes.quantum_float import QuantumFloat
 
-
-def ripple_mult(factor_1, factor_2):
+def q_int_mult(factor_1, factor_2, inpl_adder = fourier_adder, target_qf = None):
+    
+    if factor_1.size < factor_2.size:
+        factor_1, factor_2 = factor_2, factor_1
+    
+    
     if factor_1.signed or factor_2.signed:
         raise Exception("Signed ripple multiplication currently not supported")
 
-    s = create_output_qf([factor_1, factor_2], op="mul")
+    n = factor_1.size-1
+    if target_qf is None:
+        s = QuantumFloat(factor_1.size + factor_2.size + 1, 
+                         exponent = factor_1.exponent + factor_2.exponent)
+        for i in range(factor_2.size):
+            cx(factor_2[i], s[i+1+n])
 
-    n = factor_1.size - int(factor_1.signed)
-
-    factor_2.exp_shift(n)
-
-    s.init_from(factor_2)
-
-    factor_2.exp_shift(-n)
-
+    else:
+        target_qf.extend(1, 0)
+        s = target_qf
+        inpl_adder(factor_2, s[n+1:])
+        
     x(s)
+    inpl_adder(factor_2, s)
+    
+    cx(factor_1[0], s)
+    for i in range(factor_1.size):
+        
+        inpl_adder(factor_2, s[i:])
+        
+        if i != factor_1.size-1:
+            pass
+            cx(factor_1[i], factor_1[i+1])
+            cx(factor_1[i+1], s)
+            cx(factor_1[i], factor_1[i+1])
 
-    inpl_add(s, factor_2)
-
-    for i in range(n):
-        cx(factor_1[i], s)
-
-        inpl_add(s, factor_2)
-
-        cx(factor_1[i], s)
-        factor_2.exp_shift(1)
-
+    cx(factor_1[-1], s)
     x(s)
-
-    factor_2.exp_shift(-n)
-    s.exp_shift(-1)
+    s.reduce(s[0], verify = False)
 
     return s
