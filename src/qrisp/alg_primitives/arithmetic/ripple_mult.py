@@ -40,7 +40,7 @@ def q_int_mult(factor_1, factor_2, inpl_adder = fourier_adder, target_qf = None)
     else:
         target_qf.extend(1, 0)
         s = target_qf
-        inpl_adder(factor_2, s[n+1:])
+        inpl_adder(factor_2[:s.size-n-1], s[n+1:])
         
     x(s)
     inpl_adder(factor_2, s)

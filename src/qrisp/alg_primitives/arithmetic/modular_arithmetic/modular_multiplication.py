@@ -173,11 +173,20 @@ def montgomery_red(t, a, b, N, m, permeable_if_zero = False):
     # Perform Montgomery reduction
     t, u = QREDC(t, N, m)
     
-    # Perform the uncomputation as described in the paper
-    for k in range(len(a)):
-        with control(a[k]):
-            t.inpl_adder(-((2**k*b))*modinv(N, 2**(m+1)), u)
+    if isinstance(b, QuantumFloat):
+        from qrisp.alg_primitives.arithmetic import inpl_q_int_mult, q_int_mult
+        
+        inpl_q_int_mult(u, N%(2**(m+1)), inpl_adder  = t.inpl_adder)
+        
+        with invert():
+            q_int_mult(a, b, inpl_adder = t.inpl_adder, target_qf = u)
     
+    else:
+        # Perform the uncomputation as described in the paper
+        for k in range(len(a)):
+            with control(a[k]):
+                t.inpl_adder(-((2**k*b))*modinv(N, 2**(m+1)), u)
+        
     if permeable_if_zero:    
         # cx(t[0], u[-1])
         pass
@@ -404,7 +413,7 @@ def semi_cl_inpl_mult(a, X, ctrl = None, treat_invalid = False):
         
         return a
     
-def montgomery_mod_mul(a, b, output_qg = None, inpl_adder = None):
+def montgomery_mod_mul(a, b, output_qg = None):
     
     m = int(np.ceil(np.log2((a.modulus-1)**2)+1)) - a.size
     
@@ -414,8 +423,6 @@ def montgomery_mod_mul(a, b, output_qg = None, inpl_adder = None):
         
     if output_qg is None:
         t = QuantumFloat(a.size + m, signed = True)
-        h(t)
-        
     else:
         if output_qg.modulus != a.modulus:
             raise Exception("Output QuantumModulus has incompatible modulus")
@@ -425,11 +432,9 @@ def montgomery_mod_mul(a, b, output_qg = None, inpl_adder = None):
         output_qg.add_sign()
         output_qg.reg.insert(0, output_qg.reg.pop(-1))
         
-        QFT(output_qg, exec_swap = False)
-        
         t = output_qg
     
-    t = q_int_mult(a, b, output_qf = t, inpl_adder = inpl_adder)
+    t = q_int_mult(a, b, target_qf = t, inpl_adder = a.inpl_adder)
     
     from qrisp import QuantumModulus
     t.__class__ = QuantumModulus
