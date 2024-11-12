@@ -16,9 +16,19 @@
 ********************************************************************************/
 """
 
-# -*- coding: utf-8 -*-
+from qrisp.operators import X, Y, Z, A, C, P0, P1
+from numpy.linalg import norm
 
-from qrisp.operators.qubit.operator_factors import *
-from qrisp.operators.qubit.bound_qubit_operator import *
-#from qrisp.operators.qubit.pauli_measurement import *
-from qrisp.operators.qubit.operator_factors import *
+def test_to_pauli_converter():
+
+    operator_list = [lambda x : 1, X, Y, Z, A, C, P0, P1]
+
+    for O0 in operator_list: 
+        for O1 in operator_list:
+            for O2 in operator_list:
+                H = O0(0)*O1(1)*O2(2)
+                if isinstance(H, int):
+                    continue
+                
+                assert norm(H.to_array() - H.to_pauli().to_array()) < 1E-5
+

@@ -34,7 +34,8 @@ class QubitTerm:
 
     def __init__(self, factor_dict={}):
         self.factor_dict = factor_dict
-        self.hash_value = hash(tuple(sorted(factor_dict.items())))
+        
+        self.hash_value = hash(tuple(sorted(factor_dict.items(), key = lambda x : x[0])))
 
     def update(self, update_dict):
         self.factor_dict.update(update_dict)
@@ -51,6 +52,102 @@ class QubitTerm:
     
     def is_identity(self):
         return len(self.factor_dict)==0
+    
+    def serialize(self):
+        # This function serializes the QubitTerm in a way that facilitates the 
+        # measurement post-processing. To learn more details about the reasoning
+        # behind this Serialisation check QubitOperator.conjugation_circuit
+        
+        # The idea here is to serialize the operator via 3 integers.
+        # These integers specify how the energy of a measurement sample should
+        # be computed.
+        # They are processed in the function "evaluate_observable".
+            
+        # 1. The Z-int: The binary representation of this integer has a 1 at
+        # every digit, where there is a Pauli term in self.
+        
+        # 2. The and_int: The binary representation has a 1 at every digit, which
+        # should participate in an AND evaluation. If the evaluation of the AND
+        # does not return True, the energy of this measurement is 0.
+
+        # 3. The ctrl_int: Thi binary representation has a 1 at every digit,
+        # which should be flipped before evaluating the AND value.
+        
+        z_int = 0
+        and_int = 0
+        ctrl_int = 0
+        last_ladder_factor = None
+        factor_dict = self.factor_dict
+        for i in factor_dict.keys():
+            bit = (1<<i)
+            
+            # Go through the cases and update the appropriate integers
+            if factor_dict[i] in ["X", "Y", "Z"]:
+                z_int |= bit
+                continue
+            elif factor_dict[i] == "A":
+                ctrl_int |= bit
+                last_ladder_factor = bit
+                pass
+            elif factor_dict[i] == "C":
+                last_ladder_factor = bit
+                pass
+            elif factor_dict[i] == "P0":
+                pass
+            elif factor_dict[i] == "P1":
+                ctrl_int |= bit
+                pass
+            else:
+                continue
+            
+            and_int |= bit
+        
+        # The last ladder factor should not participate in the AND but should
+        # instead be treated like a Z Operator (see QubitOperator.get_conjugation_circuit
+        # to learn why).
+        if last_ladder_factor is not None:
+            and_int ^= last_ladder_factor
+            z_int ^= last_ladder_factor
+        
+        # Returns a tuple, which contains the relevant integers and a boolean
+        # indicating whether this term contains any ladder operators.
+        
+        return (z_int, and_int, ctrl_int, int(last_ladder_factor is not None))
+    
+    def to_pauli(self):
+        
+        from qrisp.operators import X, Y, Z
+        res = 1
+        
+        for i, factor in self.factor_dict.items():
+            if factor == "X":
+                res *= X(i)
+            elif factor == "Y":
+                res *= Y(i)
+            elif factor == "Z":
+                res *= Z(i)
+            elif factor == "A":
+                res *= (X(i) - 1j*Y(i))*0.5
+            elif factor == "C":
+                res *= (X(i) + 1j*Y(i))*0.5
+            elif factor == "P0":
+                res *= (Z(i) + 1)*0.5
+            elif factor == "P1":
+                res *= (Z(i) - 1)*(-0.5)
+        
+        return res
+    
+    def adjoint(self):
+        new_factor_dict = {}
+        for i, factor in self.factor_dict.items():
+            if factor in ["X", "Y", "Z", "P0", "P1"]:
+                new_factor_dict[i] = factor
+            elif factor == "A":
+                new_factor_dict[i] = "C"
+            elif factor == "C":
+                new_factor_dict[i] = "A"
+            
+        return QubitTerm(new_factor_dict)
     
     #
     # Simulation
@@ -338,17 +435,19 @@ class QubitTerm:
             if P=="Z":
                 return Z_(index)
             if P=="A":
-                return Symbol("A_" + str(index))
+                return Symbol("A_" + str(index), commutative = False)
             if P=="C":
-                return Symbol("C_" + str(index))
+                return Symbol("C_" + str(index), commutative = False)
             if P=="P0":
-                return Symbol("P0_" + str(index))
+                return Symbol("P^0_" + str(index), commutative = False)
             if P=="P1":
-                return Symbol("P1_" + str(index))
+                return Symbol("P^1_" + str(index), commutative = False)
         
         expr = 1
-        for index,P in self.factor_dict.items():
-            expr *= to_spin(P,str(index))
+        index_list = sorted(list(self.factor_dict.keys()))
+        
+        for i in index_list:
+            expr = expr*to_spin(self.factor_dict[i],str(i))
 
         return expr
 

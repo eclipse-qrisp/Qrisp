@@ -17,7 +17,6 @@
 """
 from qrisp.operators.hamiltonian import Hamiltonian
 from qrisp.operators.qubit.bound_qubit_term import BoundQubitTerm
-from qrisp.operators.qubit.pauli_measurement import PauliMeasurement
 from qrisp.operators.qubit.measurement import get_measurement
 from qrisp import h, sx, IterationEnvironment, conjugate, merge
 
@@ -644,20 +643,46 @@ class BoundQubitOperator(Hamiltonian):
             #Yields 1.0
 
         """
-        return get_measurement(self, 
-                                qarg, 
-                                precision=precision, 
-                                backend=backend, 
-                                shots=shots, 
-                                compile=compile, 
-                                compilation_kwargs=compilation_kwargs, 
-                                subs_dic=subs_dic,
-                                precompiled_qc=precompiled_qc, 
-                                _measurement=_measurement)
+        
+        unbound_operator, qarg = self.unbind()
+        
+        return unbound_operator.get_measurement(qarg,
+                                                precision=precision, 
+                                                backend=backend, 
+                                                shots=shots, 
+                                                compile=compile, 
+                                                compilation_kwargs=compilation_kwargs, 
+                                                subs_dic=subs_dic,
+                                                precompiled_qc=precompiled_qc, 
+                                                _measurement=_measurement)
+
+    def unbind(self):
+        from qrisp.operators import QubitTerm, QubitOperator
+        
+        participating_qubits = []
+        for term, coeff in self.terms_dict.items():
+            for qb in term.factor_dict.keys():
+                if qb not in participating_qubits:
+                    participating_qubits.append(qb)
+        
+        index_inv = {participating_qubits[i] : i for i in range(len(participating_qubits))}
+        
+        unbound_operator = 0
+        
+        for term, coeff in self.terms_dict.items():
+            new_term_factor_dict = {}
+            for qb, factor in term.factor_dict.items():
+                new_term_factor_dict[index_inv[qb]] = factor
+            
+            unbound_operator += QubitOperator({QubitTerm(new_term_factor_dict): coeff})
+        
+        return unbound_operator, participating_qubits
+        
     
     #
     # Trotterization
     #
+    
 
     def trotterization(self):
         r"""

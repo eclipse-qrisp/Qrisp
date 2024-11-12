@@ -172,7 +172,7 @@ class VQEProblem:
         
         return compiled_qc, theta
 
-    def optimization_routine(self, qarg, depth, mes_kwargs, measurement, max_iter, init_type="random", init_point=None, optimizer="COBYLA"): 
+    def optimization_routine(self, qarg, depth, mes_kwargs, max_iter, init_type="random", init_point=None, optimizer="COBYLA"): 
         """
         Wrapper subroutine for the optimization method used in QAOA. The initial values are set and the optimization via ``COBYLA`` is conducted here.
 
@@ -184,8 +184,6 @@ class VQEProblem:
             The amont of VQE layers.
         mes_kwargs : dict
             The keyword arguments for the measurement function.
-        measurement : PauliMeasurement
-            The measurement setttings for the measurement function.
         max_iter : int
             The maximum number of iterations for the optimization method.
         init_type : string, optional
@@ -204,7 +202,7 @@ class VQEProblem:
         """
 
         # Define optimization wrapper function to be minimized using VQE
-        def optimization_wrapper(theta, qc, symbols, qarg, mes_kwargs, measurement):
+        def optimization_wrapper(theta, qc, symbols, qarg, mes_kwargs):
             """
             Wrapper function for the optimization method used in VQE.
 
@@ -222,8 +220,6 @@ class VQEProblem:
                 The duplicated quantum variable to which the quantum circuit is applied.
             mes_kwargs : dict
                 The keyword arguments for the measurement function.
-            measurement : PauliMeasurement
-                The measurement setttings for the measurement function.
 
             Returns
             -------
@@ -233,7 +229,7 @@ class VQEProblem:
 
             subs_dic = {symbols[i] : theta[i] for i in range(len(symbols))}
 
-            expectation = self.hamiltonian.get_measurement(qarg, subs_dic = subs_dic, precompiled_qc = qc, _measurement=measurement, **mes_kwargs)
+            expectation = self.hamiltonian.get_measurement(qarg, subs_dic = subs_dic, precompiled_qc = qc, **mes_kwargs)
 
             if self.callback:
                 self.optimization_costs.append(expectation)
@@ -257,7 +253,7 @@ class VQEProblem:
                                 init_point, 
                                 method=optimizer,
                                 options={'maxiter':max_iter}, 
-                                args = (compiled_qc, symbols, qarg, mes_kwargs, measurement))
+                                args = (compiled_qc, symbols, qarg, mes_kwargs))
             
         return res_sample['x']
 
@@ -301,10 +297,8 @@ class VQEProblem:
         if not "precision" in mes_kwargs:
             mes_kwargs["precision"] = 0.01
 
-        # Measurement settings
-        measurement = self.hamiltonian.pauli_measurement()
         
-        optimal_theta = self.optimization_routine(qarg, depth, mes_kwargs, measurement, max_iter, init_type, init_point, optimizer)
+        optimal_theta = self.optimization_routine(qarg, depth, mes_kwargs, max_iter, init_type, init_point, optimizer)
         
         # Prepare the initial state for particular problem instance, the default is the \ket{0} state
         if self.init_function is not None:
@@ -314,7 +308,7 @@ class VQEProblem:
         for i in range(depth):                          
             self.ansatz_function(qarg,[optimal_theta[self.num_params*i+j] for j in range(self.num_params)])
 
-        opt_res = self.hamiltonian.get_measurement(qarg,_measurement=measurement,**mes_kwargs)
+        opt_res = self.hamiltonian.get_measurement(qarg,**mes_kwargs)
         
         return opt_res
     
@@ -356,10 +350,7 @@ class VQEProblem:
         if not "precision" in mes_kwargs:
             mes_kwargs["precision"] = 0.01
 
-        # Measurement settings
-        measurement = self.hamiltonian.pauli_measurement()
-
-        optimal_theta = self.optimization_routine(qarg, depth, mes_kwargs, measurement, max_iter, init_type, init_point, optimizer)
+        optimal_theta = self.optimization_routine(qarg, depth, mes_kwargs, max_iter, init_type, init_point, optimizer)
         
         def circuit_generator(qarg_gen):
             # Prepare the initial state for particular problem instance, the default is the \ket{0} state

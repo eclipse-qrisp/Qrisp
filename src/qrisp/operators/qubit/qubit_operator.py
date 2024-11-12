@@ -18,11 +18,11 @@
 from qrisp.operators.hamiltonian_tools import find_qw_commuting_groups
 from qrisp.operators.hamiltonian import Hamiltonian
 from qrisp.operators.qubit.qubit_term import QubitTerm
-from qrisp.operators.qubit.pauli_measurement import PauliMeasurement
 from qrisp.operators.qubit.measurement import get_measurement
 from qrisp import h, s, x, IterationEnvironment, conjugate, merge
 
 import sympy as sp
+import numpy as np
 
 threshold = 1e-9
 
@@ -90,7 +90,7 @@ class QubitOperator(Hamiltonian):
         H = 1+2*X(0)+3*X(0)*Y(1)*A(2)+C(4)*P1(0)
         H
 
-    Yields $3*A_2*X_0*Y_1 + C_4*P1_0 + 1 + 2*X_0$.
+    Yields $1 + P^1_0*C_4 + 2*X_0 + 3*X_0*Y_1*A_2$.
     
     Investigate the simulation circuit by simulating for a symbolic amount of time:
 
@@ -353,7 +353,7 @@ class QubitOperator(Hamiltonian):
         """
 
         if isinstance(other,(int,float,complex)):
-            self.terms_dict[termTerm()] = self.terms_dict.get(termTerm(),0)-other
+            self.terms_dict[QubitTerm()] = self.terms_dict.get(QubitTerm(),0)-other
             return self
         if not isinstance(other,QubitOperator):
             raise TypeError("Cannot add QubitOperator and "+str(type(other)))
@@ -425,6 +425,10 @@ class QubitOperator(Hamiltonian):
     #
     # Miscellaneous
     #
+    
+    def find_minimal_qubit_amount(self):
+        indices = sum([list(term.factor_dict.keys()) for term in self.terms_dict.keys()], [])
+        return max(indices)+1
     
     def commutator(self, other):
         
@@ -533,6 +537,110 @@ class QubitOperator(Hamiltonian):
         # res.sum_duplicates()
         return M
     
+    def to_array(self, factor_amount = None):
+        """
+        Returns a numpy array describing the operator.
+
+        Parameters
+        ----------
+        factor_amount : int, optional
+            The amount of factors to represent this array. The array will have 
+            the dimension $2^n \times 2^n$, where n is the amount of factors. 
+            By default the minimal number is chosen.
+
+        Returns
+        -------
+        np.ndarray
+            The array describing the operator.
+
+        """
+        return self.to_sparse_matrix(factor_amount).todense()
+    
+    def to_pauli(self):
+        """
+        Returns an equivalent operator, which however only contains Pauli factors.
+
+        Returns
+        -------
+        QubitOperator
+            An operator that contains only Pauli-Factor.
+
+        Examples
+        --------
+        
+        We create a QubitOperator containing A and C terms and convert it to a
+        Pauli based representation.
+        
+        >>> from qrisp.operators import A,C,Z
+        >>> H = A(0)*C(1)*Z(2)
+        >>> print(H.to_pauli())
+        0.25*X_0*X_1*Z_2 + 0.25*I*X_0*Y_1*Z_2 - 0.25*I*Y_0*X_1*Z_2 + 0.25*Y_0*Y_1*Z_2
+            
+        """
+        
+        res = 0
+        for term, coeff in self.terms_dict.items():
+            res += coeff*term.to_pauli()
+        if isinstance(res, (float, int)):
+            return QubitOperator({QubitTerm({}) : res})
+        return res
+    
+    def adjoint(self):
+        """
+        Returns an the adjoint operator.
+
+        Returns
+        -------
+        QubitOperator
+            The adjoint operator.
+
+        Examples
+        --------
+        
+        We create a QubitOperator and inspect it' adjoint.
+        
+        >>> from qrisp.operators import A,C,Z
+        >>> H = A(0)*C(1)*Z(2)
+        >>> print(H.adjoint())
+        C_0*A_1*Z_2
+        """
+        new_terms_dict = {}
+        for term, coeff in self.terms_dict.items():
+            new_terms_dict[term.adjoint()] = np.conjugate(coeff)
+        return QubitOperator(new_terms_dict)
+    
+    def hermitize(self):
+        """
+        Returns the hermitian part of self.
+        
+        $H = (O + O^\dagger)/2$
+
+        Returns
+        -------
+        QubitOperator
+            The hermitian part.
+
+        """
+        return 0.5*(self + self.adjoint())
+        
+    def eliminate_ladder_conjugates(self):
+        new_terms_dict = {}
+        for term, coeff in self.terms_dict.items():
+            for factor in term.factor_dict.values():
+                if factor in ["A", "C"]:
+                    break
+            else:
+                new_terms_dict[term] = coeff
+                continue
+            
+            if term.adjoint() in new_terms_dict:
+                new_terms_dict[term.adjoint()] += coeff
+            else:
+                new_terms_dict[term] = coeff
+        
+        return QubitOperator(new_terms_dict)
+        
+    
     def ground_state_energy(self):
         """
         Calculates the ground state energy (i.e., the minimum eigenvalue) of the operator classically.
@@ -546,7 +654,7 @@ class QubitOperator(Hamiltonian):
 
         from scipy.sparse.linalg import eigsh
 
-        M = self.to_sparse_matrix()
+        M = self.hermitize().to_sparse_matrix()
         # Compute the smallest eigenvalue
         eigenvalues, _ = eigsh(M, k=1, which='SA')  # 'SA' stands for smallest algebraic
         E = eigenvalues[0]
@@ -665,10 +773,152 @@ class QubitOperator(Hamiltonian):
     #
     # Measurement settings and measurement
     #
-
-    def pauli_measurement(self):
-        return PauliMeasurement(self)
     
+    def get_conjugation_circuit(self):
+        # This method returns a QuantumCircuit that should be applied
+        # before a measurement of self is peformed.
+        # The method assumes that all terms within this Operator commute qubit-
+        # wise. For instance, if an X operator is supposed to be measured,
+        # the conjugation circuit will contain an H gate at that point,
+        # because the X operator can be measured by measuring the Z Operator
+        # in the H-transformed basis.
+        
+        # For the ladder operators, the conjugation circuit not this straight-
+        # forward. To understand how we measure the ladder operators, consider
+        # the operator
+        
+        # H = (A(0)*A(1)*A(2) + h.c.)
+        #   = (|000><111| + |111><000|)
+        
+        # The considerations from Selingers Paper https://arxiv.org/abs/2310.12256
+        # motivate that H can be expressed as a conjugation of the following form.
+        
+        # H = U^dg (|110><110| - |111><111|)/2 U
+        
+        # This is because
+        
+        # exp(i*t*H) = U^dg MCRZ(i*t) U
+        #            = U^dg exp(i*t*(|110><110| - |111><111|)/2) U
+        
+        # We use this insight because the Operator 
+        # |111><111| - |110><110| = |11><11| (x) (|0><0| - |1><1|) 
+        # = |11><11| (x) Z
+        # can be measured via postprocessing.
+        
+        # The postprocessing to do is essentially measuring the last qubit as
+        # a regular Z operator and only add the result to the expectation value
+        # if the first two qubits are measured to be in the |1> state.
+        # If they are in any other state nothing should be added.
+        
+        # From this we can also conclude how the conjugation circuit needs to
+        # look like: Essentially like the conjugation circuit from the paper.
+        
+        # For our example above (when simulated) gives:
+            
+        #                ┌───┐                                                        ┌───┐
+        #   qv_0.0: ─────┤ X ├────────────■─────────────────────────■─────────────────┤ X ├─────
+        #                └─┬─┘┌───┐       │                         │            ┌───┐└─┬─┘
+        #   qv_0.1: ───────┼──┤ X ├───────■─────────────────────────■────────────┤ X ├──┼───────
+        #           ┌───┐  │  └─┬─┘┌───┐  │  ┌───┐┌──────────────┐  │  ┌───┐┌───┐└─┬─┘  │  ┌───┐
+        #   qv_0.2: ┤ X ├──■────■──┤ X ├──┼──┤ H ├┤ Rz(-1.0*phi) ├──┼──┤ H ├┤ X ├──■────■──┤ X ├
+        #           └───┘          └───┘┌─┴─┐└───┘└──────┬───────┘┌─┴─┐└───┘└───┘          └───┘
+        # hs_anc.0: ────────────────────┤ X ├────────────■────────┤ X ├─────────────────────────
+        #                               └───┘                     └───┘
+        
+        # Where the construction of the MCRZ gate is is encoded into the Toffolis
+        # and the controlled RZ-Gate.
+        
+        # The conjugation circuit therefore needs to look like this:
+                    
+        #             ┌───┐               
+        # qb_90: ─────┤ X ├───────────────
+        #             └─┬─┘┌───┐          
+        # qb_91: ───────┼──┤ X ├──────────
+        #        ┌───┐  │  └─┬─┘┌───┐┌───┐
+        # qb_92: ┤ X ├──■────■──┤ X ├┤ H ├
+        #        └───┘          └───┘└───┘
+                
+        # To learn more about how the post-processing is implemented check the
+        # comments of QubitTerm.serialize
+        
+        # ===============
+        
+        # Create a QuantumCircuit that contains the conjugation
+        from qrisp import QuantumCircuit
+        n = self.find_minimal_qubit_amount()
+        qc = QuantumCircuit(n)
+        
+        # We track which qubit is in which basis to raise an error if a
+        # violation with the requirement of qubit wise commutativity is detected.
+        basis_dict = {}
+        
+        # We iterate through the terms and apply the appropriate basis transformation
+        for term, coeff in self.terms_dict.items():
+            
+            factor_dict = term.factor_dict
+            for j in range(n):
+                
+                # If there is no entry in the factor dict, this corresponds to
+                # identity => no basis change required.
+                if j not in factor_dict:
+                    continue
+                
+                # If j is already in the basis dict, we assert that the bases agree
+                # (otherwise there is a violation of qubit-wise commutativity)
+                if j in basis_dict:
+                    assert basis_dict[j] == factor_dict[j]
+                    continue
+                
+                # We treat ladder operators in the next section
+                if factor_dict[j] not in ["X", "Y", "Z"]:
+                    continue
+                
+                # Update the basis dict
+                basis_dict[j] = factor_dict[j]
+                
+                # Append the appropriate basis-change gate
+                if factor_dict[j]=="X":
+                    qc.h(j)
+                if factor_dict[j]=="Y":
+                    qc.sx(j)
+            
+            # Next we treat the ladder operators
+            ladder_operators = [base for base in term.factor_dict.items() if base[1] in ["A", "C"]]
+            
+            if len(ladder_operators):
+                
+                # The anchor factor is the "last" ladder operator. 
+                # This is the qubit where the H gate will be executed.
+                anchor_factor = ladder_operators[-1]
+            
+                # Flip the anchor qubit if the ladder operator is an annihilator
+                if anchor_factor[1] == "A":
+                    qc.x(anchor_factor[0])
+                
+                # Perform the cnot gates
+                for j in range(len(ladder_operators)-1):
+                    qc.cx(anchor_factor[0], ladder_operators[j][0])
+
+                # Flip the anchor qubit back
+                if anchor_factor[1] == "A":
+                    qc.x(anchor_factor[0])
+            
+                # Execute the H-gate
+                qc.h(anchor_factor[0])
+        
+        return qc
+    
+    def get_operator_variance(self):
+        """
+        Calculates the optimal distribution and number of shots following https://quantum-journal.org/papers/q-2021-01-20-385/pdf/.
+        
+        """
+        var = 0
+        for term, coeff in self.terms_dict.items():
+            if len(term.factor_dict) != 0:
+                var += abs(coeff)**2
+        return var
+        
     def get_measurement(
         self,
         qarg,
@@ -820,3 +1070,4 @@ class QubitOperator(Hamiltonian):
                 trotter_step(qarg, t, steps)
 
         return U
+
