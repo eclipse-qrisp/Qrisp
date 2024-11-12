@@ -212,14 +212,8 @@ def evaluate_observable(observable: tuple, x: int):
     
     sign_flip = bin(z_int & x).count('1')
     
-    from qrisp import bin_rep
     temp = (x ^ AND_ctrl_state)
-    # if AND_bits != 0:
-    #     print(bin_rep(AND_ctrl_state, 3))
-    #     print(bin_rep(AND_bits, 3))
-    #     print(bin_rep(temp, 3))
-    #     print(bin_rep(z_int, 3))
-    #     print("=====")
+    
     if contains_ladder:
         prefactor = 0.5
     else:

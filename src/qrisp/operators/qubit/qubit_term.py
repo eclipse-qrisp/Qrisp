@@ -54,6 +54,25 @@ class QubitTerm:
         return len(self.factor_dict)==0
     
     def serialize(self):
+        # This function serializes the QubitTerm in a way that facilitates the 
+        # measurement post-processing. To learn more details about the reasoning
+        # behind this Serialisation check QubitOperator.conjugation_circuit
+        
+        # The idea here is to serialize the operator via 3 integers.
+        # These integers specify how the energy of a measurement sample should
+        # be computed.
+        # They are processed in the function "evaluate_observable".
+            
+        # 1. The Z-int: The binary representation of this integer has a 1 at
+        # every digit, where there is a Pauli term in self.
+        
+        # 2. The and_int: The binary representation has a 1 at every digit, which
+        # should participate in an AND evaluation. If the evaluation of the AND
+        # does not return True, the energy of this measurement is 0.
+
+        # 3. The ctrl_int: Thi binary representation has a 1 at every digit,
+        # which should be flipped before evaluating the AND value.
+        
         z_int = 0
         and_int = 0
         ctrl_int = 0
@@ -62,6 +81,7 @@ class QubitTerm:
         for i in factor_dict.keys():
             bit = (1<<i)
             
+            # Go through the cases and update the appropriate integers
             if factor_dict[i] in ["X", "Y", "Z"]:
                 z_int |= bit
                 continue
@@ -81,11 +101,16 @@ class QubitTerm:
                 continue
             
             and_int |= bit
-            
+        
+        # The last ladder factor should not participate in the AND but should
+        # instead be treated like a Z Operator (see QubitOperator.get_conjugation_circuit
+        # to learn why).
         if last_ladder_factor is not None:
-            pass
             and_int ^= last_ladder_factor
             z_int ^= last_ladder_factor
+        
+        # Returns a tuple, which contains the relevant integers and a boolean
+        # indicating whether this term contains any ladder operators.
         
         return (z_int, and_int, ctrl_int, last_ladder_factor is not None)
     
