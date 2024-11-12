@@ -129,100 +129,103 @@ def topological_sort(G, prefer=None, delay=None, sub_sort=nx.topological_sort):
         delay = lambda x: False
 
     G = G.copy()
-    # Collect the prefered nodes
-    prefered_nodes = []
-    prefered_node_indices = {}
+
     
     delay_nodes = []
-    delay_node_indices = {}
+    prefered_nodes = []
 
-    for n in G.nodes():
-        n.processed = False
+    node_list = list(G.nodes())
+    
+    for i in range(len(node_list)):
+        n = node_list[i]
         if n.instr is None:
             continue
+        elif prefer(n.instr):
+            prefered_nodes.append(i)
+        elif delay(n.instr):
+            delay_nodes.append(i)
+    
+    sprs_mat = nx.to_scipy_sparse_array(G, format="csr")
+    
+    res = toposort_helper(
+                    sprs_mat.indptr,
+                    sprs_mat.indices.astype(np.int32),
+                    len(G),
+                    np.array(delay_nodes, dtype = np.int32), 
+                    np.array(prefered_nodes, dtype = np.int32))
+    
+    return [node_list[i] for i in res]
         
-        if prefer(n.instr):
-            prefered_node_indices[n] = len(prefered_nodes)
-            prefered_nodes.append(n)
+
+
+@njit(cache = True)
+def toposort_helper(indptr, indices, node_amount, delay_nodes, prefered_nodes):
+    # This array returns a graph that reflects all ancestor relations
+    # i.e. ancestor_graph[42] is True at all ancestors of node 42
+    ancestor_graph = compute_all_ancestors(indptr, indices, node_amount)
+    
+    n = prefered_nodes.size
+    m = delay_nodes.size
+    
+    # This array will contain the ancestor relations between the
+    # prefered/delay nodes
+    dependency_matrix = np.zeros((n, m), dtype = np.int8)
+
+    # Fill with information from ancestor_graph    
+    for i in range(n):
+        for j in range(m):
+            if ancestor_graph[prefered_nodes[i], delay_nodes[j]]:
+                dependency_matrix[i, j] = 1
+    
+    # This array will contain the result
+    res = np.zeros(node_amount, dtype = np.int32)
+    
+    # This array array tracks which nodes have not yet been processed.
+    # It is initialized to all True because no nodes have been processed yet.
+    remaining_nodes = np.ones(node_amount, dtype = np.int8)
+    
+    # This integer will contain the amount of nodes that have been processed
+    node_counter = 0
+    
+    if m != 0:
+        for i in range(n):
+            # For each prefer nodes we compute how many delay nodes are required.
+            required_delay_nodes = np.sum(dependency_matrix, axis = 1)
             
-        if delay(n.instr):
-            delay_node_indices[n] = len(delay_nodes)
-            delay_nodes.append(n)
+            # We determine the prefer node that requires the least delay nodes
+            min_node_index = np.argmin(required_delay_nodes)
+            prefer_node = prefered_nodes[min_node_index]
             
+            # We determine the ancestor nodes of this node that have 
+            # not been processed yet
+            to_be_processed = ancestor_graph[prefer_node,:] & remaining_nodes
+            ancestor_indices = np.nonzero(to_be_processed)[0]
+            
+            # We insert the nodes in the result array.
+            # We can assume that order of the nodes induces by their numbering
+            # is already a topological ordering. Therefore inserting them in
+            # order is also a topological sub sort.
+            res[node_counter:node_counter+len(ancestor_indices)] = ancestor_indices
+            node_counter += len(ancestor_indices)
+            
+            # Mark the nodes as processed
+            remaining_nodes[ancestor_indices] = 0
+            
+            
+            # Update the depedency matrix: All delay nodes that have been processed
+            # don't need to be considered again for all following iterations,
+            # we therefore remove them from the other columns
+            dependency_matrix = np.clip(dependency_matrix - dependency_matrix[min_node_index, :], 0, 1)
+            
+            # Finaly we set all nodes in the processed column to 1 so this column
+            # is not processed again.
+            dependency_matrix[min_node_index, :] = 1
 
-        
-
-    # For large scales, finding the ancestors is a bottleneck. We therefore use a
-    # jitted version
-    if len(G) * len(prefered_nodes) > 1000:
-        anc_lists = ancestors(G, prefered_nodes)
-    else:
-        anc_lists = []
-        for i in range(len(prefered_nodes)):
-            anc_lists.append(list(nx.ancestors(G, prefered_nodes[i])))
-
-    node_ancs = {
-        prefered_nodes[i]: anc_lists[i] for i in range(len(prefered_nodes))
-    }
+    # Insert the remaining nodes
+    res[node_counter:] = np.nonzero(remaining_nodes)[0]
     
-    # We sort the nodes in order to prevent non-deterministic compilation behavior
-    # prefered_nodes.sort(key=lambda x: len(node_ancs[x]) + 1/hash(x.instr))
-    
-    # Determine the required delay nodes for each prefered nodes
-    
-    # For this we set up a matrix with boolean entriesthat indicates which 
-    # delay nodes are required to execute a prefered node.
-    dependency_matrix = np.zeros((len(prefered_nodes), len(delay_nodes)), dtype = np.int8)
-    
-    # Fill the matrix
-    for n in prefered_nodes:
-        n_index = prefered_node_indices[n]
-        for k in node_ancs[n]:
-            if k.instr:
-                if delay(k.instr):
-                    dependency_matrix[n_index, delay_node_indices[k]] = 1
-    
-    # Generate linearization
-    lin = []
-
-    while prefered_nodes:
-        
-        # Find the node with least requirements
-        required_delay_nodes = np.sum(dependency_matrix, axis = 1)
-        prefered_node_index_array = np.array(list(map(lambda n : prefered_node_indices[n], prefered_nodes)), dtype = np.int32)
-        min_node_index = np.argmin(required_delay_nodes[prefered_node_index_array])
-        
-        node = prefered_nodes.pop(min_node_index)
-        ancs = []
-
-        # Find the ancestors subgraph of nodes that have not been processed yet
-        for n in node_ancs[node] + [node]:
-            if n.processed:
-                continue
-            else:
-                n.processed = True
-                ancs.append(n)
-        sub_graph = G.subgraph(ancs)
-
-        # Generate the linearization
-        lin += list(sub_sort(sub_graph))
-
-        # Update the depedency matrix
-        dependency_matrix = np.clip(dependency_matrix - dependency_matrix[prefered_node_indices[n], :], 0, 1)
-
-    # Linearize the remainder
-    remainder = []
-    for n in G.nodes():
-        if n.processed:
-            continue
-        else:
-            n.processed = True
-            remainder.append(n)
-
-    # lin += list(sub_sort(G))
-    lin += list(sub_sort(G.subgraph(remainder)))
-
-    return lin
+    # return the result
+    return res
 
 
 @njit(cache=True)
@@ -251,35 +254,3 @@ def compute_all_ancestors(indptr, indices, node_amount):
                 queue.append(child)
     
     return ancestors
-
-@njit(cache=True)
-def ancestors_jitted_wrapper(start_indices, indptr, indices, node_amount):
-    all_ancestors = compute_all_ancestors(indptr, indices, node_amount)
-    
-    res = [np.zeros(1, dtype=np.int64)] * len(start_indices)
-    for i, start_index in enumerate(start_indices):
-        res[i] = np.where(all_ancestors[start_index])[0]
-    
-    return res
-
-
-def ancestors(dag, start_nodes):
-    node_list = list(dag.nodes())
-
-    sprs_mat = nx.to_scipy_sparse_array(dag, format="csr")
-
-    node_inversion_dic = {node_list[i] : i for i in range(len(node_list))}
-    start_indices = [node_inversion_dic[node] for node in start_nodes]
-
-    res_list_indices = ancestors_jitted_wrapper(
-        np.array(start_indices).astype(np.int32),
-        sprs_mat.indptr,
-        sprs_mat.indices.astype(np.int32),
-        len(dag),
-    )
-    
-    res_node_list = [
-        [node_list[j] for j in anc_indices] for anc_indices in res_list_indices
-    ]
-    
-    return res_node_list

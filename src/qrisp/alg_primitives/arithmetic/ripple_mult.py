@@ -48,7 +48,7 @@ def q_int_mult(factor_1, factor_2, inpl_adder = fourier_adder, target_qf = None)
     cx(factor_1[0], s)
     for i in range(factor_1.size):
         
-        inpl_adder(factor_2, s[i:])
+        inpl_adder(factor_2[:len(s)-i], s[i:])
         
         if i != factor_1.size-1:
             pass
