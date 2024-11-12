@@ -184,51 +184,38 @@ def get_measurement(
 
     
 def evaluate_observable(observable: tuple, x: int):
-    """
-    This method evaluates an observable that is a tensor product of Pauli-:math:`Z` operators
-    with respect to a measurement outcome. 
-        
-    A Pauli operator of the form :math:`\prod_{i\in I}Z_i`, for some finite set of indices :math:`I\subset \mathbb N`, 
-    is identified with an integer:
-    We identify the Pauli operator with the binary string that has ones at positions :math:`i\in I`
-    and zeros otherwise, and then convert this binary string to an integer.
-        
-    Parameters
-    ----------
-        
-    observable : int
-        The observable represented as integer.
-     x : int 
-        The measurement outcome represented as integer.
-        
-    Returns
-    -------
-    int
-        The value of the observable with respect to the measurement outcome.
-        
-    """
+    # This function evaluates how to compute the energy of a measurement sample x.
+    # Since we are also considering ladder operators, this energy can either be
+    # 0, -1 or 1. For more details check out the comments of QubitOperator.get_conjugation_circuit
     
+    # The observable is given as tuple, containing for integers and a boolean.
+    # To understand the meaning of these integers check QubitTerm.serialize.
+    
+    # Unwrap the tuple
     z_int, AND_bits, AND_ctrl_state, contains_ladder = observable
-    
+
+    # Compute whether the sign should be sign flipped based on the Z operators
     sign_flip = bin(z_int & x).count('1')
     
-    temp = (x ^ AND_ctrl_state)
-    
+    # If the obervable contains ladder operators we need to half the energy?    
     if contains_ladder:
         prefactor = 0.5
     else:
         prefactor = 1
     
+    # If there are no and bits, we return the result
     if AND_bits == 0:
         return prefactor*(-1)**sign_flip
+
+    # Otherwise we apply the AND_ctrl_state to flip the appropriate bits.
+    corrected_x = (x ^ AND_ctrl_state)
     
-    if temp & AND_bits == 0:
+    # If all bits are in the 0 state the AND is true.
+    if corrected_x & AND_bits == 0:
         return prefactor*(-1)**sign_flip
     else:
         return 0
     
-    
-    return (-1)**(sign_flip)
     
 
 def evaluate_expectation(results, operators, coefficients):
