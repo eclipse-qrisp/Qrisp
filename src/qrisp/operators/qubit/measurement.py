@@ -167,7 +167,6 @@ def get_measurement(
         res = get_measurement_from_qc(curr.transpile(), list(qarg), backend, shots_list.pop(0))
         results.append(res)
         
-        
         temp_meas_ops = []
         temp_coeff = []
         for term, coeff in group.terms_dict.items():
