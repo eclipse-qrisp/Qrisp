@@ -179,13 +179,13 @@ def get_measurement(
     
     samples = create_padded_array([list(res.keys()) for res in results]).astype(np.int64)
     probs = create_padded_array([list(res.values()) for res in results])
-    meas_ops = np.array(meas_ops, dtype = np.int64)
-    meas_coeffs = np.array(meas_coeffs)
+    meas_ops = create_padded_array(meas_ops, use_tuples = True).astype(np.int64)
+    meas_coeffs = create_padded_array(meas_coeffs)
     
     return evaluate_expectation_jitted(samples, probs, meas_ops, meas_coeffs)
 
 
-def create_padded_array(list_of_lists):
+def create_padded_array(list_of_lists, use_tuples = False):
     """
     Create a padded numpy array from a list of lists with varying lengths.
     
@@ -199,10 +199,17 @@ def create_padded_array(list_of_lists):
     max_length = max(len(lst) for lst in list_of_lists)
     
     # Create a padded list of lists
-    padded_lists = [
-        lst + [0] * (max_length - len(lst))
-        for lst in list_of_lists
-    ]
+    if not use_tuples:
+        padded_lists = [
+            lst + [0] * (max_length - len(lst))
+            for lst in list_of_lists
+        ]
+    else:
+        padded_lists = [
+            lst + [(0,0,0,0)] * (max_length - len(lst))
+            for lst in list_of_lists
+        ]
+        
     
     # Convert to numpy array
     return np.array(padded_lists)
