@@ -112,7 +112,7 @@ class QubitTerm:
         # Returns a tuple, which contains the relevant integers and a boolean
         # indicating whether this term contains any ladder operators.
         
-        return (z_int, and_int, ctrl_int, last_ladder_factor is not None)
+        return (z_int, and_int, ctrl_int, int(last_ladder_factor is not None))
     
     def to_pauli(self):
         
