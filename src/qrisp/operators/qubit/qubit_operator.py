@@ -793,12 +793,12 @@ class QubitOperator(Hamiltonian):
         # The considerations from Selingers Paper https://arxiv.org/abs/2310.12256
         # motivate that H can be expressed as a conjugation of the following form.
         
-        # H = U^dg (|110><110| - |111><111|) U
+        # H = U^dg (|110><110| - |111><111|)/2 U
         
         # This is because
         
         # exp(i*t*H) = U^dg MCRZ(i*t) U
-        #            = U^dg exp(i*t*(|110><110| - |111><111|)) U
+        #            = U^dg exp(i*t*(|110><110| - |111><111|)/2) U
         
         # We use this insight because the Operator 
         # |111><111| - |110><110| = |11><11| (x) (|0><0| - |1><1|) 

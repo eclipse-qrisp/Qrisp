@@ -197,7 +197,8 @@ def evaluate_observable(observable: tuple, x: int):
     # Compute whether the sign should be sign flipped based on the Z operators
     sign_flip = bin(z_int & x).count('1')
     
-    # If the obervable contains ladder operators we need to half the energy?    
+    # If there is a ladder operator in the term, we need to half the energy 
+    # because we want to measure (|110><110| - |111><111|)/2
     if contains_ladder:
         prefactor = 0.5
     else:
