@@ -722,29 +722,29 @@ class QubitOperator(Hamiltonian):
         
         """
 
-        term_groups = find_qw_commuting_groups(self)
+        # term_groups = find_qw_commuting_groups(self)
         
         groups = [] # Groups of qubit-wise commuting QubitTerms
         bases = [] # Bases as termTerms
         
-        for term_group in term_groups:
-            H = QubitOperator({term : self.terms_dict[term] for term in term_group})
-            groups.append(H)
+        # for term_group in term_groups:
+        #     H = QubitOperator({term : self.terms_dict[term] for term in term_group})
+        #     groups.append(H)
             
-            if show_bases:
-                factor_dict = {}
+        #     if show_bases:
+        #         factor_dict = {}
                 
-                for term in term_group:
-                    for index, factor in term.factor_dict.items():
-                        if factor in ["X", "Y", "Z"]:
-                            factor_dict[index] = factor
+        #         for term in term_group:
+        #             for index, factor in term.factor_dict.items():
+        #                 if factor in ["X", "Y", "Z"]:
+        #                     factor_dict[index] = factor
                 
-                bases.append(QubitTerm(factor_dict))
+        #         bases.append(QubitTerm(factor_dict))
                 
-        if show_bases:
-            return groups, bases
-        else:
-            return groups
+        # if show_bases:
+        #     return groups, bases
+        # else:
+        #     return groups
 
         # Sorted insertion heuristic https://quantum-journal.org/papers/q-2021-01-20-385/pdf/
         sorted_terms = sorted(self.terms_dict.items(), key=lambda item: abs(item[1]), reverse=True)
@@ -907,16 +907,54 @@ class QubitOperator(Hamiltonian):
         
         return qc, QubitOperator(self.terms_dict)
     
-    def get_operator_variance(self):
+    def get_operator_variance(self, n = 1):
         """
         Calculates the optimal distribution and number of shots following https://quantum-journal.org/papers/q-2021-01-20-385/pdf/.
         
+        Normally to compute the variance of an operator, the distribution has to be known.
+        Since the distribution is not known without querying the quantum device,
+        the authors estimate the variance as the expectation value of a distribution
+        of quantum states. This distribution is uniform across the unit sphere.
+        
+        For an arbitrary Pauli-Operator P != I they conclude
+        
+        E(Var(P)) = alpha_n = 1 - 1/(2^n + 1)
+        
+        Where n is the dimension of the comprising space
+        
+        Since the QubitOperator class also contains A, C and P operators, we have to
+        do more work.
+        
+        To understand how the variance can be estimated, recall that every
+        QubitOperator O can be transformed to a sum of Pauli strings
+        
+        Var(O) = Var(sum_i(c_i*P_i))
+               = sum_i(Var(c_i*P_i)) + 2*sum_[0<=i<j<=n](Cov(c_i*P_i,c_j*P_j))
+        
+        The last line can be found in https://arxiv.org/pdf/1907.13623 section 10.1.
+        Theorem 2 of that very same source states that for the above distribution
+        of states, we have E(Cov(P_i, P_j)) = 0 if P_i != P_j
+        
+        From that we conclude
+        
+        E(Var(O)) = sum_i(E(Var(c_i*P_i)))
+                  = sum_i(abs(c_i)**2*E(Var(P_i)))
+                  = alpha_n * sum_i(abs(c_i)**2)
+                  
+        It therefore suffices to compute the variance of the Pauli form of the
+        QubitOperator.
+        
+        
         """
         var = 0
-        for term, coeff in self.terms_dict.items():
+        pauli_form = self.to_pauli()
+        # print(pauli_form)
+        
+        for term, coeff in pauli_form.terms_dict.items():
             if len(term.factor_dict) != 0:
                 var += abs(coeff)**2
-        return var
+        alpha_n = 1 - 1/(2**n + 1)
+        return var*alpha_n
         
     def get_measurement(
         self,

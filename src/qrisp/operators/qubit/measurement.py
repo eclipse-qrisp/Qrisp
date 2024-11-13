@@ -146,21 +146,17 @@ class QubitOperatorMeasurement:
     
     def __init__(self, qubit_op):
         
+        n = qubit_op.find_minimal_qubit_amount()
         hamiltonian = qubit_op.hermitize()
         hamiltonian = hamiltonian.eliminate_ladder_conjugates()
         
         self.groups = hamiltonian.commuting_qw_groups()
+        # print(len(self.groups))
         
         self.n = len(self.groups)
         
-        # Collect standard deviation
-        self.stds = []
-        for group in self.groups:
-            self.stds.append(np.sqrt(group.to_pauli().hermitize().get_operator_variance()))
-            
-        N = sum(self.stds)
-        self.shots_list = [N*s for s in self.stds]
         
+        self.stds = []
         self.conjugation_circuits = []
         self.measurement_operators = []
         
@@ -171,6 +167,11 @@ class QubitOperatorMeasurement:
             self.conjugation_circuits.append(conj_circuit)
             self.measurement_operators.append(meas_op)
             
+            # Collect standard deviation
+            self.stds.append(np.sqrt(meas_op.get_operator_variance(n = n)))
+        
+        N = sum(self.stds)
+        self.shots_list = [N*s for s in self.stds]
     
     def get_measurement(self, qc, qubit_list, precision, backend):
         

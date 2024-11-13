@@ -184,7 +184,7 @@ def run(qc, shots, token="", iqs=None, insert_reset=True):
         res = {}
         #If shots >= 1000000, no samples will be drawn and the distribution will
         #be returned instead
-        if shots >= 100000:
+        if shots is None:
             
             for j in range(len(outcome_list)):
                 
@@ -217,6 +217,7 @@ def run(qc, shots, token="", iqs=None, insert_reset=True):
                 else:
                     res[outcome_str] = 1
         
+        print(shots, ",")
         return res
 
 
