@@ -267,7 +267,7 @@ def compute_all_ancestors_dense(indptr, indices, node_amount):
 @njit(cache=True)
 def compute_all_ancestors_sparse(indptr, indices, node_amount):
     # Initialize ancestor sets for all nodes using a list of sets
-    ancestors = [set() for _ in range(node_amount)]
+    ancestors = [set([i]) for i in np.arange(node_amount, dtype = np.int32)]
     
     # Topological sort
     in_degree = np.zeros(node_amount, dtype=np.int64)
@@ -279,7 +279,6 @@ def compute_all_ancestors_sparse(indptr, indices, node_amount):
     
     while queue:
         node = queue.pop(0)
-        ancestors[node].add(node)  # A node is its own ancestor
         
         for i in range(indptr[node], indptr[node+1]):
             child = indices[i]
@@ -297,7 +296,7 @@ def compute_all_ancestors_sparse(indptr, indices, node_amount):
 # node_amount = ...
 # ancestors_sparse = compute_all_ancestors_sparse(indptr, indices, node_amount)
 
-# @njit(cache = True)
+@njit(cache = True)
 def toposort_helper_sparse(indptr, indices, node_amount, delay_nodes, prefered_nodes):
     # This array returns a graph that reflects all ancestor relations
     # i.e. ancestor_graph[42] is True at all ancestors of node 42
