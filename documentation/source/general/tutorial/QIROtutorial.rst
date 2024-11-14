@@ -170,8 +170,8 @@ All in all, the function remains straight forward. We employ a ``find_max`` subr
 As you might have noticed in the code above, we add the nodes that are included into (respective excluded from) the solution to a list ``solutions`` (``exclusions``). 
 This allows us to directly use the same ideas for the  ``cost_operator``, ``mixer`` and ``init_function`` of the original unconstrained QAOA theory with minor adjustments.
 
-Since we have to consider nodes that are already asigned to be in the solution set, or exluded from the algorithm, we do not want to apply these functions to said nodes. 
-We therefore include some simple lines of code into the functions, for example in the ``qiro_RXMixer``:
+Since we have to consider nodes that are already asigned to be in the solution set, or exluded from the algorithm, we do not want to apply ``cost_operator`` or ``mixer`` to said nodes. 
+We therefore include some simple lines of code into the functions to take this into account, for example the ``if not``-statement in the ``qiro_RXMixer``:
 
 ::
 
@@ -183,6 +183,28 @@ We therefore include some simple lines of code into the functions, for example i
                 if not i in union:
                     rx(2 * beta, qv[i])
         return RX_mixer
+
+
+Similarly an ``if not``-statement is included in the cost operator, which is named ``create_max_indep_cost_operator_reduced`` due to it respecting the problem reduction:
+
+::
+
+    def create_max_indep_cost_operator_reduced(problem_updated):
+
+        problem = problem_updated[0]
+        solutions = problem_updated[1]
+        def cost_operator(qv, gamma):
+            for pair in list(problem.edges()):
+                #cx(qv[pair[0]], qv[pair[1]])
+                rzz(3*gamma, qv[pair[0]], qv[pair[1]])
+                rz(-gamma, qv[pair[0]])
+                rz(-gamma, qv[pair[1]])
+            for i in problem.nodes():
+                # DONT apply gates on nodes in the solution set
+                if not i in solutions:
+                    rz(gamma, qv[i])
+
+        return cost_operator
 
 With the preliminaries out of the way, let us jump right into the code example:
 
