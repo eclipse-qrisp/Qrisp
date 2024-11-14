@@ -28,19 +28,19 @@ class QiskitBackend(VirtualBackend):
     ----------
     backend : Qiskit backend object, optional
         A Qiskit backend object, which runs QuantumCircuits. The default is
-        Aer.get_backend('qasm_simulator').
+        ``AerSimulator()``.
     port : int, optional
         The port to listen. The default is 8079.
 
     Examples
     --------
 
-    We evaluate a QuantumFloat multiplication on the QASM-simulator.
+    We evaluate a :ref:`QuantumFloat` multiplication on the Aer simulator.
 
     >>> from qrisp import QuantumFloat
     >>> from qrisp.interface import QiskitBackend
-    >>> from qiskit import Aer
-    >>> example_backend = QiskitBackend(backend = Aer.get_backend('qasm_simulator'))
+    >>> from qiskit_aer import AerSimulator
+    >>> example_backend = QiskitBackend(backend = AerSimulator())
     >>> qf = QuantumFloat(4)
     >>> qf[:] = 3
     >>> res = qf*qf
@@ -54,9 +54,9 @@ class QiskitBackend(VirtualBackend):
         if backend is None:
 
             try:
-                from qiskit import Aer
+                from qiskit_aer import AerSimulator
 
-                backend = Aer.get_backend("qasm_simulator")
+                backend = AerSimulator()
             except ImportError:
                 from qiskit.providers.basic_provider import BasicProvider
 
