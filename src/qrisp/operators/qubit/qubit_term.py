@@ -33,7 +33,7 @@ class QubitTerm:
     """
 
     def __init__(self, factor_dict={}):
-        self.factor_dict = factor_dict
+        self.factor_dict = dict(factor_dict)
         
         self.hash_value = hash(tuple(sorted(factor_dict.items(), key = lambda x : x[0])))
 

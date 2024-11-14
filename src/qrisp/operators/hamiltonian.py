@@ -15,11 +15,6 @@
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************/
 """
-
-from sympy import init_printing
-# Initialize automatic LaTeX rendering
-init_printing()
-
     
 from abc import ABC, abstractmethod
 

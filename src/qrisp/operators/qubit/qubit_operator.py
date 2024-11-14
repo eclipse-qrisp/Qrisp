@@ -19,7 +19,7 @@ from qrisp.operators.hamiltonian_tools import group_up_terms
 from qrisp.operators.hamiltonian import Hamiltonian
 from qrisp.operators.qubit.qubit_term import QubitTerm
 from qrisp.operators.qubit.measurement import get_measurement
-from qrisp import h, s, x, IterationEnvironment, conjugate, merge
+from qrisp import cx, h, s, x, sx_dg, IterationEnvironment, conjugate, merge
 
 import sympy as sp
 import numpy as np
@@ -126,7 +126,7 @@ class QubitOperator(Hamiltonian):
     """
 
     def __init__(self, terms_dict={}):
-        self.terms_dict = terms_dict
+        self.terms_dict = dict(terms_dict)
 
     def len(self):
         return len(self.terms_dict)
@@ -790,6 +790,94 @@ class QubitOperator(Hamiltonian):
     # Measurement settings and measurement
     #
     
+    def change_of_basis(self, qarg):
+        
+        n = self.find_minimal_qubit_amount()
+        
+        new_terms_dict = {}
+        
+        # We track which qubit is in which basis to raise an error if a
+        # violation with the requirement of qubit wise commutativity is detected.
+        basis_dict = {}
+        ladder_conversion = {"A" : "P1", "C" : "P0"}
+        
+        # We iterate through the terms and apply the appropriate basis transformation
+        for term, coeff in self.terms_dict.items():
+            
+            new_factor_dict = {}
+            prefactor = 1
+            factor_dict = term.factor_dict
+            for j in range(n):
+                
+                # If there is no entry in the factor dict, this corresponds to
+                # identity => no basis change required.
+                if j not in factor_dict:
+                    continue
+                
+                # If j is already in the basis dict, we assert that the bases agree
+                # (otherwise there is a violation of qubit-wise commutativity)
+                if j in basis_dict:
+                    assert basis_dict[j] == factor_dict[j]
+                    continue
+                
+                # We treat ladder operators in the next section
+                if factor_dict[j] not in ["X", "Y", "Z"]:
+                    continue
+                
+                # Update the basis dict
+                basis_dict[j] = factor_dict[j]
+                
+                # Append the appropriate basis-change gate
+                if factor_dict[j]=="X":
+                    h(qarg[j])
+                    
+                if factor_dict[j]=="Y":
+                    sx_dg(qarg[j])
+            
+                new_factor_dict[j] = "Z"
+            
+            # Next we treat the ladder operators
+            ladder_operators = [base for base in term.factor_dict.items() if base[1] in ["A", "C"]]
+            
+            if len(ladder_operators):
+                
+                # The anchor factor is the "last" ladder operator. 
+                # This is the qubit where the H gate will be executed.
+                anchor_factor = ladder_operators[-1]
+                new_factor_dict[ladder_operators[-1][0]] = "Z"
+            
+                # Flip the anchor qubit if the ladder operator is an annihilator
+                if anchor_factor[1] == "A":
+                    # qc.x(anchor_factor[0])
+                    x(qarg[anchor_factor[0]])
+                
+                # Perform the cnot gates
+                for j in range(len(ladder_operators)-1):
+                    cx(qarg[anchor_factor[0]], qarg[ladder_operators[j][0]])
+                    new_factor_dict[ladder_operators[j][0]] = ladder_conversion[ladder_operators[j][1]]
+
+                # Flip the anchor qubit back
+                if anchor_factor[1] == "A":
+                    x(qarg[anchor_factor[0]])
+            
+                # Execute the H-gate
+                h(qarg[anchor_factor[0]])
+                
+                prefactor *= 0.5
+                
+            for k, v in term.factor_dict.items():
+                if v in ["P0", "P1"]:
+                    new_factor_dict[k] = v
+            
+            new_term = QubitTerm(new_factor_dict)
+            new_terms_dict[new_term] = prefactor*self.terms_dict[term]
+        
+        
+        res = QubitOperator(new_terms_dict)
+        return res 
+        
+        
+    
     def get_conjugation_circuit(self):
         # This method returns a QuantumCircuit that should be applied
         # before a measurement of self is peformed.
@@ -1117,8 +1205,8 @@ class QubitOperator(Hamiltonian):
                 qw_groups, bases = com_group.commuting_qw_groups(show_bases=True)
                 for index,basis in enumerate(bases):
                     qw_group = qw_groups[index]
-                    with conjugate(change_of_basis)(qarg, basis.factor_dict):
-                        intersect_groups = qw_group.group_up(lambda a, b: not a.intersect(b))
+                    with conjugate(qw_group.change_of_basis)(qarg) as diagonal_operator:
+                        intersect_groups = diagonal_operator.group_up(lambda a, b: not a.intersect(b))
                         for intersect_group in intersect_groups:
                             for term,coeff in intersect_group.terms_dict.items():
                                 term.simulate(coeff*t/steps, qarg, do_change_of_basis = False)
