@@ -23,7 +23,7 @@ import networkx as nx
 from qrisp.algorithms.qiro.qiroproblems.qiro_utils import * 
 
 
-def create_max_clique_replacement_routine(res, graph, solutions, exclusions):
+def create_max_clique_replacement_routine(res, graph, solutions=[], exclusions=[]):
     """
     Creates a replacement routine for the problem structure, i.e., defines the replacement rules. 
     See the `original paper <https://journals.aps.org/prxquantum/abstract/10.1103/PRXQuantum.5.020327>`_ for a description of the update rules.
@@ -56,7 +56,10 @@ def create_max_clique_replacement_routine(res, graph, solutions, exclusions):
     orig_nodes = list(graph.nodes())
 
     #get the max_edge and eval the sum and sign
+    
     max_item, sign = find_max(orig_nodes, orig_edges , res, solutions)
+    if max_item == None:
+        return graph, solutions, 0 ,exclusions
 
     new_graph = copy.deepcopy(graph)
 

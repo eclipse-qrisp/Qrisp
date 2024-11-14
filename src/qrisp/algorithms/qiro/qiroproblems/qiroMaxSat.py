@@ -25,7 +25,7 @@ import copy
 from qrisp.algorithms.qiro.qiroproblems.qiro_utils import * 
 
 
-def create_maxsat_replacement_routine(res, problem, solutions, exclusions):
+def create_maxsat_replacement_routine(res, problem, solutions=[], exclusions=[]):
     """
     Creates a replacement routine for the problem structure, i.e., defines the replacement rules. 
     See the `original paper <https://journals.aps.org/prxquantum/abstract/10.1103/PRXQuantum.5.020327>`_ for a description of the update rules.
@@ -69,6 +69,8 @@ def create_maxsat_replacement_routine(res, problem, solutions, exclusions):
     
 
     max_item, sign = find_max(orig_nodes, combinations, res, solutions)
+    if max_item == None:
+        return problem, solutions, 0 ,exclusions
 
     # we just directly remove clauses from clauses
     if isinstance(max_item, int):

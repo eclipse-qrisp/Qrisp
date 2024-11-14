@@ -1,6 +1,4 @@
-
-from qrisp.qaoa.problems.maxIndepSetInfrastr import maxIndepSetclCostfct, maxIndepSetCostOp
-from qrisp.qiro import QIROProblem, trafo_maxPackToMIS, qiro_init_function, qiro_RXMixer, create_maxIndep_replacement_routine, create_maxIndep_cost_operator_reduced
+from qrisp.algorithms.qiro import * 
 from qrisp import QuantumVariable
 import networkx as nx
 
@@ -27,7 +25,7 @@ for index in range(15):
 problem = [sol, sets]
 print(sets)
 
-G = trafo_maxPackToMIS(problem=problem)
+G = transform_max_set_pack_to_mis(problem=problem)
 qarg = QuantumVariable(G.number_of_nodes())
 
 # set simulator shots
@@ -37,12 +35,12 @@ mes_kwargs = {
     }
 
 # assign the correct new update functions for qiro from above imports
-qiro_instance = QIROProblem(G, 
-                            replacement_routine=create_maxIndep_replacement_routine, 
-                            cost_operator= create_maxIndep_cost_operator_reduced,
-                            mixer= qiro_RXMixer,
-                            cl_cost_function= maxIndepSetclCostfct,
-                            init_function= qiro_init_function
+qiro_instance = QIROProblem(G,
+                            replacement_routine=create_max_indep_replacement_routine,
+                            cost_operator=create_max_indep_cost_operator_reduced,
+                            mixer=qiro_RXMixer,
+                            cl_cost_function=create_max_indep_set_cl_cost_function,
+                            init_function=qiro_init_function
                             )
 
 # We run the qiro instance and get the results!
@@ -53,7 +51,7 @@ final_Graph = qiro_instance.problem
 # Lets see what the 5 best results are
 print("QIRO 5 best results")
 maxfive = sorted(res_qiro, key=res_qiro.get, reverse=True)[:5]
-costFunc = maxIndepSetclCostfct(G)
+costFunc = create_max_indep_set_cl_cost_function(G)
 for key, val in res_qiro.items():  
     if key in maxfive:
         

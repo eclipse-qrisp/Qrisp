@@ -57,8 +57,10 @@ def create_max_indep_replacement_routine(res, graph, solutions=[], exclusions=[]
     # for single qubit correlations
     orig_nodes = list(graph.nodes())
     
-    max_item = []
+    
     max_item, sign = find_max(orig_nodes, orig_edges , res, solutions)
+    if max_item == None:
+        return graph, solutions, 0 ,exclusions
 
     # create a copy of the graph
     new_graph = copy.deepcopy(graph)
@@ -125,56 +127,4 @@ def create_max_indep_cost_operator_reduced(graph, solutions=[]):
 
 
 
-""" def create_maxIndep_mixer_reduced(graph, solutions):
 
-    def RX_mixer(qv, beta):
-
-        from qrisp import rx
-        for i in graph.nodes():
-            if not i in solutions:
-                rx(2 * beta, qv[i])
-    return RX_mixer
-
-
-def init_function_reduced(graph, solutions):
-
-    def init_state(qv):
-        from qrisp import h
-        for i in graph.nodes():
-            if not i in solutions:
-                h(qv[i])
-        for i in solutions:
-            x(qv[i])
-    return init_state
-
-
-
-#TODO:
-def create_maxIndep_cl_cost_function_reduced(graph):
-
-        #btw alternative formulation: for edge: check if string[edge[0]] != string[edge[1]] 
-    def aClcostFct(res_dic):
-        tot_energy = 0.001
-        tot_counts = 0
-        for state in res_dic.keys():
-            # we assume solution is right
-            temp = True
-            energy = 0 
-            for edge in graph.edges():
-                if not state[edge[0]] != state[edge[1]]:
-                    temp = False 
-            
-            # else we just add the number of marked as |1> nodes
-            if temp: 
-                intlist = [s for s in range(len(list(state))) if list(state)[s] == "1"]
-                energy = -len(intlist)
-            
-            tot_energy += energy * res_dic[state]
-            tot_counts += res_dic[state]
-
-        #print(tot_energy/tot_counts)
-
-        return tot_energy/tot_counts
-
-    return aClcostFct 
-"""
