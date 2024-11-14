@@ -879,6 +879,7 @@ class QubitOperator(Hamiltonian):
         
         ladder_conversion = {"A" : "P1", "C" : "P0"}
         
+        anchor_index = []
         # We iterate through the terms and apply the appropriate basis transformation
         for term, coeff in self.terms_dict.items():
             
@@ -926,21 +927,21 @@ class QubitOperator(Hamiltonian):
                 # This is the qubit where the H gate will be executed.
                 anchor_factor = ladder_operators[-1]
                 new_factor_dict[ladder_operators[-1][0]] = "Z"
-            
-                # Flip the anchor qubit if the ladder operator is an annihilator
-                if anchor_factor[1] == "A":
-                    # qc.x(anchor_factor[0])
-                    x(qarg[anchor_factor[0]])
                 
                 # Perform the cnot gates
                 for j in range(len(ladder_operators)-1):
                     cx(qarg[anchor_factor[0]], qarg[ladder_operators[j][0]])
-                    new_factor_dict[ladder_operators[j][0]] = ladder_conversion[ladder_operators[j][1]]
+                    if anchor_factor[1] == "A":
+                        if ladder_operators[j][1] == "A":
+                            new_factor_dict[ladder_operators[j][0]] = "P0"
+                        else:
+                            new_factor_dict[ladder_operators[j][0]] = "P1"
+                    else:
+                        if ladder_operators[j][1] == "A":
+                            new_factor_dict[ladder_operators[j][0]] = "P1"
+                        else:
+                            new_factor_dict[ladder_operators[j][0]] = "P0"
 
-                # Flip the anchor qubit back
-                if anchor_factor[1] == "A":
-                    x(qarg[anchor_factor[0]])
-            
                 # Execute the H-gate
                 h(qarg[anchor_factor[0]])
                 
@@ -1266,15 +1267,6 @@ class QubitOperator(Hamiltonian):
                 The number of iterations the unitary $U_1(t,N)$ is applied. The default is 1.
         
         """
-
-        def change_of_basis(qarg, terms_dict):
-            for index, factor in terms_dict.items():
-                if factor=="X":
-                    h(qarg[index])
-                if factor=="Y":
-                    s(qarg[index])
-                    h(qarg[index])
-                    x(qarg[index])
 
         commuting_groups = self.group_up(lambda a, b: a.commute(b))
 
