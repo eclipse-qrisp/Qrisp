@@ -818,11 +818,34 @@ class QubitOperator(Hamiltonian):
         # In Bra-Ket form, this is |000><111| + |111><000|
         
         # The considerations from Selingers Paper https://arxiv.org/abs/2310.12256
-        # motivate that H can be expressed as a conjugation of the following form.
+        
+        # In this work, the above term is simulated by the following circuit
+        
+        #                ┌───┐                                                        ┌───┐
+        #   qv_0.0: ─────┤ X ├────────────■─────────────────────────■─────────────────┤ X ├─────
+        #                └─┬─┘┌───┐       │                         │            ┌───┐└─┬─┘
+        #   qv_0.1: ───────┼──┤ X ├───────■─────────────────────────■────────────┤ X ├──┼───────
+        #           ┌───┐  │  └─┬─┘┌───┐  │  ┌───┐┌──────────────┐  │  ┌───┐┌───┐└─┬─┘  │  ┌───┐
+        #   qv_0.2: ┤ X ├──■────■──┤ X ├──┼──┤ H ├┤ Rz(-1.0*phi) ├──┼──┤ H ├┤ X ├──■────■──┤ X ├
+        #           └───┘          └───┘┌─┴─┐└───┘└──────┬───────┘┌─┴─┐└───┘└───┘          └───┘
+        # hs_anc.0: ────────────────────┤ X ├────────────■────────┤ X ├─────────────────────────
+        #                               └───┘                     └───┘
+        
+        
+        # From this we conclude that H can be expressed as a conjugation of the following form.
         
         # H = U^dg (|110><110| - |111><111|)/2 U
         
-        # Where U is the inverse of a GHZ preparation.
+        # Where U is the following circuit:
+        
+        #             ┌───┐               
+        # qb_90: ─────┤ X ├───────────────
+        #             └─┬─┘┌───┐          
+        # qb_91: ───────┼──┤ X ├──────────
+        #        ┌───┐  │  └─┬─┘┌───┐┌───┐
+        # qb_92: ┤ X ├──■────■──┤ X ├┤ H ├
+        #        └───┘          └───┘└───┘
+                        
         
         # This is because
         
