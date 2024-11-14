@@ -879,6 +879,8 @@ class QubitOperator(Hamiltonian):
         
         ladder_conversion = {"A" : "P1", "C" : "P0"}
         
+        ladder_conjugation_performed = False
+        ladder_indices = []
         anchor_index = []
         # We iterate through the terms and apply the appropriate basis transformation
         for term, coeff in self.terms_dict.items():
@@ -930,7 +932,10 @@ class QubitOperator(Hamiltonian):
                 
                 # Perform the cnot gates
                 for j in range(len(ladder_operators)-1):
-                    cx(qarg[anchor_factor[0]], qarg[ladder_operators[j][0]])
+                    if not ladder_conjugation_performed:
+                        ladder_indices.append(ladder_operators[j][0])
+                        cx(qarg[anchor_factor[0]], qarg[ladder_operators[j][0]])
+                    
                     if anchor_factor[1] == "A":
                         if ladder_operators[j][1] == "A":
                             new_factor_dict[ladder_operators[j][0]] = "P0"
@@ -941,9 +946,16 @@ class QubitOperator(Hamiltonian):
                             new_factor_dict[ladder_operators[j][0]] = "P1"
                         else:
                             new_factor_dict[ladder_operators[j][0]] = "P0"
-
-                # Execute the H-gate
-                h(qarg[anchor_factor[0]])
+                
+                if not ladder_conjugation_performed:
+                    # Execute the H-gate
+                    ladder_indices.append(anchor_factor[0])
+                    h(qarg[anchor_factor[0]])
+                else:
+                    if set(ladder_indices) != set(ladder_factor[0] for ladder_factor in ladder_operators):
+                        raise Exception("Tried to perform change of basis on operator containing non-matching ladder indices")
+                
+                ladder_conjugation_performed = True
                 
                 prefactor *= 0.5
                 
@@ -1272,14 +1284,13 @@ class QubitOperator(Hamiltonian):
 
         def trotter_step(qarg, t, steps):
             for com_group in commuting_groups:
-                qw_groups, bases = com_group.commuting_qw_groups(show_bases=True)
-                for index,basis in enumerate(bases):
-                    qw_group = qw_groups[index]
+                qw_groups = self.group_up(lambda a, b: a.commute_qw(b) and a.ladders_agree(b))
+                for qw_group in qw_groups:
                     with conjugate(qw_group.change_of_basis)(qarg) as diagonal_operator:
                         intersect_groups = diagonal_operator.group_up(lambda a, b: not a.intersect(b))
                         for intersect_group in intersect_groups:
                             for term,coeff in intersect_group.terms_dict.items():
-                                term.simulate(coeff*t/steps, qarg, do_change_of_basis = False)
+                                term.simulate(coeff*t/steps, qarg)
 
         def U(qarg, t=1, steps=1, iter=1):
             merge([qarg])

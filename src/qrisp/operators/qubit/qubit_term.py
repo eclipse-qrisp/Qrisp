@@ -479,13 +479,24 @@ class QubitTerm:
         keys.update(set(a.keys()))
         keys.update(set(b.keys()))
 
-        # Count non-commuting operators
-        commute = True
-
+        sign_flip = 1
+        
         for key in keys:
-            if a.get(key,"I")!="I" and b.get(key,"I")!="I" and a.get(key,"I")!=b.get(key,"I"):
-                commute = not commute
-        return commute
+            factor_a = PAULI_TABLE[a.get(key, "I"), b.get(key, "I")]
+            factor_b = PAULI_TABLE[b.get(key, "I"), a.get(key, "I")]
+            
+            if factor_a[1] == 0 and factor_b[1] == 0:
+                return True
+            if factor_a[0] == factor_b[0]:
+                if factor_a[1] == factor_b[1]:
+                    continue
+                elif factor_a[1] == -factor_b[1]:
+                    sign_flip *= -1
+                    continue
+            else:
+                return len(self.commutator(other).terms_dict) == 0
+                
+        return sign_flip == 1
 
     def commute_qw(self, other):
         """
@@ -509,7 +520,23 @@ class QubitTerm:
         Checks if two QubitTerms operate on the same qubit.
 
         """
-        a = self.factor_dict
-        b = other.factor_dict
-
         return len(set(self.factor_dict.keys()).intersection(other.factor_dict.keys())) != 0
+    
+    def ladders_agree(self, other):
+        """
+        Checks if the ladder operators of two QubitTerms operate on the same set of qubits.
+
+        Parameters
+        ----------
+        other : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        """
+        ladder_indices_self = [factor[0] for factor in self.factor_dict.items() if factor[1] in ["A", "C"]]
+        ladder_indices_other = [factor[0] for factor in other.factor_dict.items() if factor[1] in ["A", "C"]]
+        return set(ladder_indices_self) == set(ladder_indices_other)
+        
