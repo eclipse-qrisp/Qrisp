@@ -15,7 +15,7 @@
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************/
 """
-from qrisp.operators.hamiltonian_tools import find_qw_commuting_groups
+from qrisp.operators.hamiltonian_tools import group_up_terms
 from qrisp.operators.hamiltonian import Hamiltonian
 from qrisp.operators.qubit.qubit_term import QubitTerm
 from qrisp.operators.qubit.measurement import get_measurement
@@ -144,6 +144,10 @@ class QubitOperator(Hamiltonian):
         # Convert the sympy expression to a string and return it
         expr = self.to_expr()
         return str(expr)
+
+    def __repr__(self):
+        # Convert the sympy expression to a string and return it
+        return str(self)
     
     def to_expr(self):
         """
@@ -427,6 +431,8 @@ class QubitOperator(Hamiltonian):
     
     def find_minimal_qubit_amount(self):
         indices = sum([list(term.factor_dict.keys()) for term in self.terms_dict.keys()], [])
+        if len(indices) == 0:
+            return 0
         return max(indices)+1
     
     def commutator(self, other):
@@ -703,9 +709,19 @@ class QubitOperator(Hamiltonian):
                 groups.append(QubitOperator({term:coeff}))
 
         return groups
+    
+    def group_up(self, group_denominator):
+        term_groups = group_up_terms(self, group_denominator)
+        groups = []
+        for term_group in term_groups:
+            H = QubitOperator({term : self.terms_dict[term] for term in term_group})
+            groups.append(H)
+            
+        return groups
+        
 
     # Qubit-wise commutativity: Partitions the QubitOperator into QubitOperators with pairwise qubit-wise commuting QubitTerms
-    def commuting_qw_groups(self, show_bases=False):
+    def commuting_qw_groups(self, show_bases=False, use_graph_coloring = True):
         r"""
         Partitions the QubitOperator into QubitOperators with pairwise qubit-wise commuting terms. That is,
 
@@ -722,29 +738,30 @@ class QubitOperator(Hamiltonian):
         
         """
 
-        # term_groups = find_qw_commuting_groups(self)
-        
         groups = [] # Groups of qubit-wise commuting QubitTerms
         bases = [] # Bases as termTerms
-        
-        # for term_group in term_groups:
-        #     H = QubitOperator({term : self.terms_dict[term] for term in term_group})
-        #     groups.append(H)
+
+        if use_graph_coloring:        
             
-        #     if show_bases:
-        #         factor_dict = {}
+            term_groups = group_up_terms(self, lambda a, b : a.commute_qw(b))
+            for term_group in term_groups:
+                H = QubitOperator({term : self.terms_dict[term] for term in term_group})
+                groups.append(H)
                 
-        #         for term in term_group:
-        #             for index, factor in term.factor_dict.items():
-        #                 if factor in ["X", "Y", "Z"]:
-        #                     factor_dict[index] = factor
-                
-        #         bases.append(QubitTerm(factor_dict))
-                
-        # if show_bases:
-        #     return groups, bases
-        # else:
-        #     return groups
+                if show_bases:
+                    factor_dict = {}
+                    
+                    for term in term_group:
+                        for index, factor in term.factor_dict.items():
+                            if factor in ["X", "Y", "Z"]:
+                                factor_dict[index] = factor
+                    
+                    bases.append(QubitTerm(factor_dict))
+                    
+            if show_bases:
+                return groups, bases
+            else:
+                return groups
 
         # Sorted insertion heuristic https://quantum-journal.org/papers/q-2021-01-20-385/pdf/
         sorted_terms = sorted(self.terms_dict.items(), key=lambda item: abs(item[1]), reverse=True)
@@ -1092,15 +1109,19 @@ class QubitOperator(Hamiltonian):
                     s(qarg[index])
                     h(qarg[index])
                     x(qarg[index])
-                    
 
-        groups, bases = self.commuting_qw_groups(show_bases=True)
+        commuting_groups = self.group_up(lambda a, b: a.commute(b))
 
         def trotter_step(qarg, t, steps):
-            for index,basis in enumerate(bases):
-                with conjugate(change_of_basis)(qarg, basis.factor_dict):
-                    for term,coeff in groups[index].terms_dict.items():
-                        term.simulate(coeff*t/steps, qarg, do_change_of_basis = False)
+            for com_group in commuting_groups:
+                qw_groups, bases = com_group.commuting_qw_groups(show_bases=True)
+                for index,basis in enumerate(bases):
+                    qw_group = qw_groups[index]
+                    with conjugate(change_of_basis)(qarg, basis.factor_dict):
+                        intersect_groups = qw_group.group_up(lambda a, b: not a.intersect(b))
+                        for intersect_group in intersect_groups:
+                            for term,coeff in intersect_group.terms_dict.items():
+                                term.simulate(coeff*t/steps, qarg, do_change_of_basis = False)
 
         def U(qarg, t=1, steps=1, iter=1):
             merge([qarg])

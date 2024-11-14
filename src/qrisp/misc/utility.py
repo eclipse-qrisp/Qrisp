@@ -640,7 +640,7 @@ def find_qs(args):
 
 
 # Function to measure multiple quantum variables at once to assess their entanglement
-def multi_measurement(qv_list, shots=100000, backend=None):
+def multi_measurement(qv_list, shots=None, backend=None):
     """
     This functions facilitates the measurement of multiple QuantumVariables at the same
     time. This can be used if the entanglement structure between several
@@ -736,6 +736,7 @@ def multi_measurement(qv_list, shots=100000, backend=None):
     # noise_model = noise_model, shots = shots).result().get_counts()
     counts = backend.run(compiled_qc, shots)
     counts = {k: counts[k] for k in sorted(counts)}
+    shots = sum(counts.values())
 
     # Convert the labeling bistrings of counts into list of labels
     new_counts = {}
@@ -1263,7 +1264,7 @@ def check_if_fresh(qubits, qs, ignore_q_envs = True):
     return True
 
 
-def get_measurement_from_qc(qc, qubits, backend, shots=100000):
+def get_measurement_from_qc(qc, qubits, backend, shots=None):
     # Add classical registers for the measurement results to be stored in
     cl = []
     for i in range(len(qubits)):
@@ -1278,6 +1279,7 @@ def get_measurement_from_qc(qc, qubits, backend, shots=100000):
     
     # Remove other measurements outcomes from counts dic
     new_counts_dic = {}
+    shots = 0
     for key in counts.keys():
         # Remove possible whitespaces
         new_key = key.replace(" ", "")
@@ -1289,6 +1291,8 @@ def get_measurement_from_qc(qc, qubits, backend, shots=100000):
             new_counts_dic[new_key] += counts[key]
         except KeyError:
             new_counts_dic[new_key] = counts[key]
+            
+        shots += counts[key]
 
     counts = new_counts_dic
     

@@ -234,8 +234,9 @@ class VQEProblem:
 
             expectation = self.hamiltonian.get_measurement(qarg, 
                                                            subs_dic = subs_dic, 
-                                                           measurement_data = measurement_data, 
+                                                            measurement_data = measurement_data, 
                                                            precompiled_qc = qc, **mes_kwargs)
+            
 
             if self.callback:
                 self.optimization_costs.append(expectation)

@@ -557,4 +557,12 @@ class QubitTerm:
                 return False
         return True
     
+    def intersect(self, other):
+        """
+        Checks if two QubitTerms operate on the same qubit.
 
+        """
+        a = self.factor_dict
+        b = other.factor_dict
+
+        return len(set(self.factor_dict.keys()).intersection(other.factor_dict.keys())) != 0

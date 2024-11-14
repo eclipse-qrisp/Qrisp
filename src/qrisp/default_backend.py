@@ -33,7 +33,6 @@ def run_wrapper(qasm_str, shots, token = ""):
 class DefaultBackend:
     
     def run(self, qc, shots, token = ""):
-        
         return run(qc, shots, token)
 
 

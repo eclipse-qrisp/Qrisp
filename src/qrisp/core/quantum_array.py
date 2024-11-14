@@ -429,7 +429,7 @@ class QuantumArray(np.ndarray):
     def get_measurement(
         self,
         backend=None,
-        shots=100000,
+        shots=None,
         compile=True,
         compilation_kwargs={},
         subs_dic={},

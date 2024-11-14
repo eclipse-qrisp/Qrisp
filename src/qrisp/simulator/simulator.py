@@ -18,25 +18,19 @@
 
 import threading
 import sys
-# -*- coding: utf-8 -*-
 import numpy as np
 from tqdm import tqdm
+from numba import njit
 
 from qrisp.circuit import (
-    ControlledOperation,
-    Instruction,
-    Operation,
     QuantumCircuit,
     fast_append,
-    transpile,
-    ClControlledOperation
 )
 from qrisp.interface.circuit_converter import convert_circuit
 from qrisp.simulator.circuit_preprocessing import (
     circuit_preprocessor,
     count_measurements_and_treat_alloc,
     group_qc,
-    extract_measurements,
     insert_multiverse_measurements
 )
 from qrisp.simulator.quantum_state import QuantumState
@@ -166,8 +160,6 @@ def run(qc, shots, token="", iqs=None, insert_reset=True):
         if len(mes_qubit_indices):
             outcome_list, cl_prob = iqs.multi_measure(mes_qubit_indices[::-1], return_res_states = False)
             mes_qubit_indices = []
-            mes_clbit_indices = []
-            
 
         progress_bar.close()
         print("\r" + 85*" ", end=LINE_CLEAR + "\r")
@@ -176,7 +168,6 @@ def run(qc, shots, token="", iqs=None, insert_reset=True):
         # The iqs object contains the outcome bitstrings in the attribute .outcome_list
         # and the probablities in .cl_prob. In order to ensure qiskit compatibility, we
         # reverse the bitstrings
-        prob_dict = {}
         
         norm = np.sum(cl_prob)
         cl_prob = cl_prob/norm
@@ -185,6 +176,7 @@ def run(qc, shots, token="", iqs=None, insert_reset=True):
         #If shots >= 1000000, no samples will be drawn and the distribution will
         #be returned instead
         if shots is None:
+            shots = 100000
             
             for j in range(len(outcome_list)):
                 
@@ -206,19 +198,27 @@ def run(qc, shots, token="", iqs=None, insert_reset=True):
             
             samples = choice(len(cl_prob), shots, p=cl_prob)
             
-            res = {}
+            temp = gen_res_dict(samples)
             
-            for s in samples:
-                
-                outcome_str = bin(outcome_list[s])[2:].zfill(len(mes_list))
-                
-                if outcome_str in res:
-                    res[outcome_str] += 1
-                else:
-                    res[outcome_str] = 1
+            for k, v in temp.items():
+                outcome_str = bin(outcome_list[k])[2:].zfill(len(mes_list))
+                res[outcome_str] = v
         
-        print(shots, ",")
         return res
+
+@njit
+def gen_res_dict(samples):
+    
+    hist = np.histogram(samples, np.arange(np.max(samples)+2))[0]
+    
+    temp = {}
+    
+    for i in range(len(hist)):
+        
+        if hist[i] != 0:
+            temp[i] = hist[i]
+            
+    return temp
 
 
 def statevector_sim(qc):

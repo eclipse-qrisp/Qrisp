@@ -32,7 +32,7 @@ We implement methods for creating the Ising Hamiltonian and the total magnetizat
 ::
 
     from qrisp import QuantumVariable
-    from qrisp.operators.pauli import X, Y, Z
+    from qrisp.operators import X, Y, Z
 
     def create_ising_hamiltonian(G, J, B):
         H = sum(-J*Z(i)*Z(j) for (i,j) in G.edges()) + sum(B*X(i) for i in G.nodes())

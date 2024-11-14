@@ -858,7 +858,7 @@ class QuantumVariable:
         self,
         plot=False,
         backend=None,
-        shots=100000,
+        shots=None,
         compile=True,
         compilation_kwargs={},
         subs_dic={},

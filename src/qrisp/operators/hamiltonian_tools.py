@@ -189,7 +189,7 @@ def find_coloring(G):
         return coloring_2
 
 
-def find_qw_commuting_groups(H):
+def group_up_terms(H, group_denominator):
     G = nx.Graph()
     
     for term_a in H.terms_dict.keys():
@@ -197,7 +197,7 @@ def find_qw_commuting_groups(H):
         for term_b in H.terms_dict.keys():
             if term_a is term_b:
                 continue
-            if not term_a.commute_qw(term_b):
+            if not group_denominator(term_a, term_b):
                 G.add_edge(term_a, term_b)
     
     coloring = find_coloring(G)

@@ -553,9 +553,6 @@ class BoundQubitOperator(Hamiltonian):
     # Measurement settings
     #
 
-    def pauli_measurement(self):
-        return PauliMeasurement(self)
-
     def get_measurement(
         self,
         qarg,
@@ -566,7 +563,7 @@ class BoundQubitOperator(Hamiltonian):
         compilation_kwargs={},
         subs_dic={},
         precompiled_qc=None,
-        _measurement=None # measurement settings
+        measurement_data=None # measurement settings
     ):
         r"""
         This method returns the expected value of a Hamiltonian for the state of a quantum argument.
@@ -654,7 +651,7 @@ class BoundQubitOperator(Hamiltonian):
                                                 compilation_kwargs=compilation_kwargs, 
                                                 subs_dic=subs_dic,
                                                 precompiled_qc=precompiled_qc, 
-                                                _measurement=_measurement)
+                                                measurement_data=measurement_data)
 
     def unbind(self):
         from qrisp.operators import QubitTerm, QubitOperator

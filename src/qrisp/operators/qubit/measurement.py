@@ -202,7 +202,6 @@ class QubitOperatorMeasurement:
             meas_coeffs.append(temp_coeff)
             meas_ops.append(temp_meas_ops)
             
-        
         samples = create_padded_array([list(res.keys()) for res in results]).astype(np.int64)
         probs = create_padded_array([list(res.values()) for res in results])
         meas_ops = create_padded_array(meas_ops, use_tuples = True).astype(np.int64)
