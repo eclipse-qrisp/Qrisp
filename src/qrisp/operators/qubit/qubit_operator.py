@@ -920,7 +920,7 @@ class QubitOperator(Hamiltonian):
         
         E(Var(P)) = alpha_n = 1 - 1/(2^n + 1)
         
-        Where n is the dimension of the comprising space
+        Where 2^n is the dimension of the comprising space
         
         Since the QubitOperator class also contains A, C and P operators, we have to
         do more work.
@@ -947,8 +947,7 @@ class QubitOperator(Hamiltonian):
         
         """
         var = 0
-        pauli_form = self.to_pauli()
-        # print(pauli_form)
+        pauli_form = self.hermitize().to_pauli()
         
         for term, coeff in pauli_form.terms_dict.items():
             if len(term.factor_dict) != 0:
