@@ -902,6 +902,7 @@ class QubitOperator(Hamiltonian):
                 # (otherwise there is a violation of qubit-wise commutativity)
                 if j in basis_dict:
                     assert basis_dict[j] == factor_dict[j]
+                    new_factor_dict[j] = "Z"
                     continue
                 
                 # We treat ladder operators in the next section
@@ -1284,7 +1285,7 @@ class QubitOperator(Hamiltonian):
 
         def trotter_step(qarg, t, steps):
             for com_group in commuting_groups:
-                qw_groups = self.group_up(lambda a, b: a.commute_qw(b) and a.ladders_agree(b))
+                qw_groups = com_group.group_up(lambda a, b: a.commute_qw(b) and a.ladders_agree(b))
                 for qw_group in qw_groups:
                     with conjugate(qw_group.change_of_basis)(qarg) as diagonal_operator:
                         intersect_groups = diagonal_operator.group_up(lambda a, b: not a.intersect(b))

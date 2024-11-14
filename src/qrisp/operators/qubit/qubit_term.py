@@ -170,7 +170,6 @@ class QubitTerm:
                     for diagonal_term, coeff in diagonal_op.terms_dict.items():
                         diagonal_term.simulate(coeff, qv)
                 return        
-                
         
         # We group the term into 2 types:
         

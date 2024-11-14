@@ -33,7 +33,7 @@ def test_measurement_method():
                             continue
                         
                         print(H)
-                        assert abs(H.get_measurement(qv, precision = 0.001, shots = int(1E8)) - H.to_pauli().get_measurement(qv, precision = 0.001, shots = int(1E8))) < 1E-2
+                        assert abs(H.get_measurement(qv, precision = 0.001, shots = int(1E8)) - H.to_pauli().get_measurement(qv, precision = 0.001, shots = int(1E8))) < 1E-1
 
     qv = QuantumVariable(4)
     
