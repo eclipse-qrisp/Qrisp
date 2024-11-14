@@ -791,22 +791,80 @@ class QubitOperator(Hamiltonian):
     #
     
     def change_of_basis(self, qarg):
+        """
+        Performs several operations on a quantum argument such that the hermitian
+        part of self is diagonal when conjugated with these operations.
+
+        Parameters
+        ----------
+        qarg : QuantumVariable or list[Qubit]
+            The quantum argument to apply the change of basis on.
+
+        Returns
+        -------
+        res : QubitOperator
+            A qubit operator that contains only diagonal entries (I, Z, P0, P1).
+
+        """
+        
+        # Assuming all terms of self commute qubit-wise,
+        # the basis change for Pauli factor is trivial:
+        # Z stays the same, for X we apply an h gate and for Y and s_dg.
+        
+        # For ladder operators, the situation is more intricate.
+        
+        # Take for instance the ladder operators A(0)*A(1)*A(2) + h.c.
+        
+        # In Bra-Ket form, this is |000><111| + |111><000|
+        
+        # The considerations from Selingers Paper https://arxiv.org/abs/2310.12256
+        # motivate that H can be expressed as a conjugation of the following form.
+        
+        # H = U^dg (|110><110| - |111><111|)/2 U
+        
+        # Where U is the inverse of a GHZ preparation.
+        
+        # This is because
+        
+        # exp(i*t*H) = U^dg MCRZ(i*t) U
+        #            = U^dg exp(i*t*(|110><110| - |111><111|)/2) U
+        
+        # The bra-ket term is already diagonal but how to express it via operators?
+        
+        # The answer is P1(0)*P1(1)*Z(2)
+        
+        # From this we conclude the underlying rule here. For ladder terms we can
+        # pick an arbitrary qubit that we call "anchor qubit" which is conjugated
+        # with an H gate.
+        
+        # After performing the conjugation with the CX gates to complete the inverse
+        # GHZ preparation, the ladder operator transforms into a chain of projectors
+        # whereas the anchor qubit becomes a Z gate.
         
         n = self.find_minimal_qubit_amount()
+        if len(qarg) < n:
+            raise Exception("Tried to change the basis of an Operator on a quantum argument with insufficient qubits.")
         
+        
+        # This dictionary will contain the new terms/coefficient comination for the
+        # diagonal operator
         new_terms_dict = {}
         
         # We track which qubit is in which basis to raise an error if a
         # violation with the requirement of qubit wise commutativity is detected.
         basis_dict = {}
+        
         ladder_conversion = {"A" : "P1", "C" : "P0"}
         
         # We iterate through the terms and apply the appropriate basis transformation
         for term, coeff in self.terms_dict.items():
             
-            new_factor_dict = {}
-            prefactor = 1
             factor_dict = term.factor_dict
+            # This dictionary will contain the factors of the new term
+            new_factor_dict = {}
+            
+            prefactor = 1
+            
             for j in range(n):
                 
                 # If there is no entry in the factor dict, this corresponds to
@@ -872,10 +930,7 @@ class QubitOperator(Hamiltonian):
             new_term = QubitTerm(new_factor_dict)
             new_terms_dict[new_term] = prefactor*self.terms_dict[term]
         
-        
-        res = QubitOperator(new_terms_dict)
-        return res 
-        
+        return QubitOperator(new_terms_dict) 
         
     
     def get_conjugation_circuit(self):
