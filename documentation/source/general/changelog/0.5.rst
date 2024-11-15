@@ -20,6 +20,9 @@ For this we provide the following classes:
 QIRO
 ----
 
+* updated the :ref:`Max Sat QIRO implementation <maxSatQIRO>` to function with :meth:`qrisp.app_sb_phase_polynomial` operator generator.
+* updated the :ref:`Max Independent Set QIRO implementation <maxIndependentSetQIRO>` to work with the controlled version of the :meth:`<qrisp.qaoa.problems.maxIndepSet.create_max_indep_set_mixer>` . Further adjusted all qiroproblem implementations to necessary structural changes.
+* updated the :ref:`QIRO tutorial <Qiro_tutorial>`, added constrained mixer implementation.
 
 Compiler upgrades
 -----------------
@@ -32,6 +35,7 @@ Algorithmic primitives
 
 * :ref:`A module <phase_polynomials>` for the efficient treatment of Phase polynomials has been implemented.
 * :ref:`Quantum switch-case <qswitch>` can be used to execute a `switch statement <https://en.wikipedia.org/wiki/Switch_statement>`_ in superposition
+* Implemented a :ref:`Dicke state preparation algorithm <DickeStates>`
 
 Minor features
 --------------
