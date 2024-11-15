@@ -1287,8 +1287,6 @@ def get_measurement_from_qc(qc, qubits, backend, shots=None):
         except KeyError:
             new_counts_dic[new_key] = counts[key]
             
-        shots += counts[key]
-
         no_of_shots_executed += counts[key]
 
     counts = new_counts_dic

@@ -579,7 +579,14 @@ class FermionicOperator(Hamiltonian):
         >>> from pyscf import gto
         >>> mol = gto.M(atom = '''H 0 0 0; H 0 0 0.74''', basis = 'sto-3g')
         >>> H = FermionicOperator.from_pyscf(mol)
-        >>> U = H.trotterization()
+        >>> print(H)
+        -0.181210462015197*a0*a1*c2*c3 + 0.181210462015197*a0*c1*c2*a3 
+        - 1.25330978664598*c0*a0 + 0.674755926814448*c0*a0*c1*a1 
+        + 0.482500939335616*c0*a0*c2*a2 + 0.663711401350814*c0*a0*c3*a3 
+        + 0.181210462015197*c0*a1*a2*c3 - 0.181210462015197*c0*c1*a2*a3
+        - 1.25330978664598*c1*a1 + 0.663711401350814*c1*a1*c2*a2 
+        + 0.482500939335616*c1*a1*c3*a3 - 0.475068848772178*c2*a2 
+        + 0.697651504490463*c2*a2*c3*a3 - 0.475068848772178*c3*a3
         
         Create a :ref:`QuantumVariable` and initialize two electrons in the upper
         orbitals. 
@@ -590,6 +597,7 @@ class FermionicOperator(Hamiltonian):
         
         Simulate for $t = 100$ `Angstrom seconds <https://en.wikipedia.org/wiki/Angstrom>`_.
         
+        >>> U = H.trotterization()
         >>> U(electron_state, t = 100, steps = 20)
         >>> print(electron_state)
         {'0011': 0.75331, '1100': 0.24669}
