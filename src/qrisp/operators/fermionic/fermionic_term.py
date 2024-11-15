@@ -45,10 +45,6 @@ class FermionicTerm:
         
         self.hash_value = hash(tuple(index_list + [is_creator_hash]))
 
-    #def update(self, update_dict):
-    #    self.factor_dict.update(update_dict)
-    #    self.hash_value = hash(tuple(sorted(self.factor_dict.items())))
-
     def __hash__(self):
         return self.hash_value
 
@@ -125,7 +121,7 @@ class FermionicTerm:
         
     def sort(self):
         # Sort ladder operators (ladder operator semantics are order in-dependent)
-        sorting_list = [index for index, is_creator in self.ladder_list]
+        sorting_list = [-index for index, is_creator in self.ladder_list]
         perm = np.argsort(sorting_list, kind = "stable")
         ladder_list = [self.ladder_list[i] for i in perm]
         

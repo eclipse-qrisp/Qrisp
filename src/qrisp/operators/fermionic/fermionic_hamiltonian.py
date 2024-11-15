@@ -20,8 +20,6 @@ import numpy as np
 
 from qrisp.operators import Hamiltonian
 from qrisp.operators.fermionic.fermionic_term import FermionicTerm
-from qrisp.operators.fermionic.transformations import *
-from qrisp.operators.fermionic.graph_coloring import *
 from qrisp.operators.hamiltonian_tools import group_up_terms
 from qrisp import merge, IterationEnvironment, conjugate
 from qrisp.operators.qubit import QubitOperator
@@ -68,11 +66,60 @@ class FermionicOperator(Hamiltonian):
 
     """
 
-    def __init__(self, terms_dict={}, avoid_flips = True):
+    def __init__(self, terms_dict={}):
         
-        self.terms_dict = terms_dict
+        self.terms_dict = dict(terms_dict)
 
     def reduce(self, assume_hermitian = False):
+        """
+        Applies the fermionic anticommutation laws to bring the operator into
+        a standard form. This can reduce the amount of terms because several
+        terms might be the permuted version of each other and therefore their
+        coefficients add up.
+        
+        This function can reduce the amount of terms even further if the user
+        can guarantee that the operator will be hermitized. In this case more
+        identifications can be made.
+
+        Parameters
+        ----------
+        assume_hermitian : bool, optional
+            If set to True the function will assume that the result will be 
+            hermitized. The default is False.
+
+        Returns
+        -------
+        FermionicOperator
+            The reduced FermionicOperator.
+
+        Examples
+        --------
+        
+        We create a FermionicOperator with redundant term definitions:
+            
+        ::
+            
+            from qrisp.operators import *
+            
+            O = a(0)*a(1) - a(1)*a(0)
+            print(O.reduce())
+            # Yields: 2*a0*a1
+
+        To demonstrate the ``assume_hermitian`` feature, we create a FermionicOperator
+        that has redundant terms, if hermitized.
+        
+            
+        >>> O = a(0)*a(1) + c(1)*c(0)
+        >>> reduced_O = O.reduce(assume_hermitian = True)
+        >>> print(reduced_O)
+        2*a0*a1
+        
+        Hermitizing gives the original operator.
+        
+        >>> print(reduced_O.hermitize())
+        1.0*a0*a1 + 1.0*c1*c0
+            
+        """
         
         # This function performs some non trivial logic.
         
@@ -108,18 +155,7 @@ class FermionicOperator(Hamiltonian):
                 if daggered_sorted_term in new_terms_dict:
                     sorted_term = daggered_sorted_term
                     flip_sign = daggered_flip_sign
-                    
-                # If neither the daggered nor the non-daggered term are available
-                # in some situations, we can choose which one we want to store.
-                # To improve readability, we store the term which has no minus-sign.
-                # Note that this is only valid in certain situations.
-                # When multiplying terms, this type of transformations causes
-                # problems. Because of this the avoid_flips keyword is set to 
-                # False within __mul__
-                # elif flip_sign < 0 and avoid_flips:
-                #     sorted_term = daggered_sorted_term
-                #     flip_sign = daggered_flip_sign
-            
+                                
             # Compute the new coefficient.
             new_terms_dict[sorted_term] = flip_sign*coeff + new_terms_dict.get(sorted_term, 0)
             
@@ -162,14 +198,57 @@ class FermionicOperator(Hamiltonian):
     # Arithmetic
     #
     
-    def adjoint(self):
+    def dagger(self):
+        r"""
+        Returns the daggered/adjoint version of self.
+
+        Returns
+        -------
+        FermionicOperator
+            The Operator $O^\dagger$.
+
+        Examples
+        --------
+        
+        We create a FermionicOperator and dagger it:
+            
+        ::
+            
+            from qrisp.operators import *
+            
+            O = a(0)*c(1)*a(2) + a(3)
+            print(O.dagger())
+            # Yields: c2*a1*c0 + c3
+        """
         terms_dict = {}
         for term, coeff in self.terms_dict.items():
             terms_dict[term.dagger()] = np.conj(coeff)
         return FermionicOperator(terms_dict)    
     
     def hermitize(self):
-        return 0.5*(self + self.adjoint())
+        r"""
+        Returns the hermitized version of self.
+
+        Returns
+        -------
+        FermionicOperator
+            The Operator $(O + O^\dagger)/2$.
+
+        Examples
+        --------
+        
+        We create a FermionicOperator and hermitize it:
+            
+        ::
+            
+            from qrisp.operators import *
+            
+            O = a(0)*c(1)*a(2) + a(3)
+            print(O.hermitize())
+            # Yields: 0.5*a0*c1*a2 + 0.5*a3 + 0.5*c2*a1*c0 + 0.5*c3
+            
+        """
+        return 0.5*(self + self.dagger())
     
     def __eq__(self, other):
         reduced_self = self.reduce()
@@ -343,7 +422,7 @@ class FermionicOperator(Hamiltonian):
                 curr_ladder_term = ladder_term1*ladder_term2
                 res_terms_dict[curr_ladder_term] = res_terms_dict.get(curr_ladder_term,0) + coeff1*coeff2
 
-        result = FermionicOperator(res_terms_dict, avoid_flips = False)
+        result = FermionicOperator(res_terms_dict)
         return result
 
     __radd__ = __add__
@@ -447,7 +526,7 @@ class FermionicOperator(Hamiltonian):
         for ladder_term in delete_list:
             del self.terms_dict[ladder_term]
 
-    #def to_sparse_matrix(self):
+    def to_sparse_matrix(self, embedding = "JW"):
         """
         Returns a matrix representing the operator.
     
@@ -455,9 +534,15 @@ class FermionicOperator(Hamiltonian):
         -------
         M : scipy.sparse.csr_matrix
             A sparse matrix representing the operator.
+        embedding : string, optional
+            How to embedd the fermionic terms into a QubitOperator. Currently 
+            only "JW" (Jordan-Wigner) is supported.
 
         """
-        
+        if embedding == "JW":
+            return self.to_JW().to_sparse_matrix()
+        else:
+            raise Exception(f"Don't know fermionic embedding {embedding}.")
 
     def ground_state_energy(self):
         """
@@ -469,47 +554,36 @@ class FermionicOperator(Hamiltonian):
             The ground state energy. 
 
         """
-        pass
+        return self.to_JW().ground_state_energy()
 
     #
     # Transformations
     #
 
-    def to_pauli_hamiltonian(self, mapping_type='jordan_wigner', num_qubits=None):
+    def to_qubit_hamiltonian(self, mapping_type='jordan_wigner'):
         """
-        Transforms the fermionic Hamiltonian to a :ref:`QubitOperator`.
+        Transforms the fermionic Operator to a :ref:`QubitOperator`.
 
         Parameters
         ----------
         mapping : str, optional
             The mapping to transform the Hamiltonian. Available is ``jordan_wigner``.
             The default is ``jordan_wigner``.
-        num_qubits : int, optional
-            The number of qubits. This information is necessary for, e.g., parity transform.
 
         Returns
         -------
-        H : :ref:`QubitOperator``
-            The resulting Pauli Hamiltonian.
+        O : :ref:`QubitOperator``
+            The resulting QubitOperator.
         
         """
-
-        H = 0
-        for term,coeff in self.terms_dict.items():
-
-            h = coeff/2
-            for ladder in term.ladder_list[::-1]:
-                h *= jordan_wigner(ladder)
-            H += h
-
-            h = coeff/2
-            for ladder in term.dagger().ladder_list[::-1]:
-                h *= jordan_wigner(ladder)
-            H += h
-
-        jordan_wigner.cache_clear()
-
-        return H
+        
+        if mapping_type=="jordan_wigner":
+            res = QubitOperator({})
+            for term, coeff in self.terms_dict.items():
+                res += coeff*term.to_JW()
+            return res
+        else:
+            raise Exception(f"Don't know fermionic mapping {mapping_type}.")
     
     def to_JW(self):
         res = QubitOperator({})
@@ -629,10 +703,12 @@ class FermionicOperator(Hamiltonian):
                     if k not in permutation:
                         permutation.append(k)
                 
+                permutation = permutation[::-1]
+                
                 with conjugate(apply_fermionic_swap)(qarg, permutation) as new_qarg:
                     
                     for ferm_term in terms:
-                        coeff = self.terms_dict[ferm_term]
+                        coeff = reduced_H.terms_dict[ferm_term]
                         pauli_hamiltonian = ferm_term.fermionic_swap(permutation).to_JW()
                         pauli_term = list(pauli_hamiltonian.terms_dict.keys())[0]
                         pauli_term.simulate(coeff*t/steps*pauli_hamiltonian.terms_dict[pauli_term], new_qarg)
