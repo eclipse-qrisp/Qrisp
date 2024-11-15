@@ -36,66 +36,8 @@ def test_QAOAminSetCover():
 
     cl_cost = create_min_set_cover_cl_cost_function(sets, universe)
 
-
-    """
-
-
-    # sets are given as list of lists
-    examplesets = [[0,1,2,3],[1,5,6,4],[0,2,6,3,4,5],[3,4,0,1],[1,2,3,0],[1]]
-    # full universe is given as a tuple
-    sol = (0,1,2,3,4,5,6)
- 
-
-    # assign operators
-    cost_fun = minSetCoverclCostfct(sets=examplesets,universe = sol)
-    mixerOp = RZ_mixer
-    costOp = minSetCoverCostOp(sets=examplesets, universe=sol)
-
-    #initialize variable
-    qarg = QuantumVariable(len(examplesets))
-
-    #+run qaoa
-    QAOAinstance = QAOAProblem(cost_operator=costOp ,mixer= mixerOp, cl_cost_function=cost_fun)
-    QAOAinstance.set_init_function(init_function=init_state)
-    InitTest = QAOAinstance.run(qarg=qarg, depth=5, mes_kwargs = {"shots" : 100000})
-
-    # create example cost_func
-    def testCostFun(state,universe):
-        obj = 0
-        #literally just do a minus 1 op if state is equiv to a given condition
-        intlist = [s for s in range(len(list(state))) if list(state)[s] == "1"]
-        sol_sets = [examplesets[index] for index in intlist]
-        res = ()
-        for seto in sol_sets:
-            res = tuple(set(res+ tuple(seto))) 
-        if res == universe:
-            obj += len(intlist)
-
-        return obj
-
-    # test if cost_func functions for all items . 
-    for state in InitTest.keys():
-        if testCostFun(state=state, universe = sol) > 0:
-            intlist = [s for s in range(len(list(state))) if list(state)[s] == "1"]
-            sol_sets = [examplesets[index] for index in intlist]
-            res = ()
-            for seto in sol_sets:
-                res = tuple(set(res+ tuple(seto))) 
-            assert sol == res
-
-    
-
-    #print the ideal solutions
-    #print("5 most likely Solutions") 
-    maxfive = sorted(InitTest, key=InitTest.get, reverse=True)[:5]
-    for name in InitTest.keys():  # for name, age in dictionary.iteritems():  (for Python 2.x)
-        if name in maxfive:
-            print(name)
-            print(testCostFun(name, universe=sol))  
-
-    #find ideal solution by brute force    
-    temp_binStrings = list(itertools.product([1,0], repeat=len(examplesets)))
-
+    # find optimal solution by brute force    
+    temp_binStrings = list(itertools.product([1,0], repeat=len(sets)))
     binStrings = ["".join(map(str, item))  for item in temp_binStrings]
     
     min = len(sets)
