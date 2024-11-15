@@ -21,9 +21,9 @@ Explore these features in the following examples: :ref:`computing the ground sta
 QIRO
 ----
 
-* updated the :ref:`Max Sat QIRO implementation <maxSatQIRO>` to function with :meth:`qrisp.app_sb_phase_polynomial` operator generator.
-* updated the :ref:`Max Independent Set QIRO implementation <maxIndependentSetQIRO>` to work with the controlled version of the :meth:`<qrisp.qaoa.problems.maxIndepSet.create_max_indep_set_mixer>` . Further adjusted all qiroproblem implementations to necessary structural changes.
-* updated the :ref:`QIRO tutorial <Qiro_tutorial>`, added constrained mixer implementation.
+We implemented the :ref:`QIRO algorithm <QIRO>` introduced by J. Finzgar et. al. in `Quantum-Informed Recursive Optimization Algorithms (2023) <https://arxiv.org/abs/2308.13607>`_.
+The algorithm is based on updating the problem instance based on correlations, that are in turn established with a QAOA protocol. For further info have a look at our :ref:`tutorial on QIRO!  <qiro_tutorial>`
+The central data structure of the QIRO module is the :ref:`QIROProblem` class.
 
 Compiler upgrades
 -----------------
@@ -34,7 +34,7 @@ Compiler upgrades
 Algorithmic primitives
 ----------------------
 
-* :ref:`A module <phase_polynomials>` for the efficient treatment of Phase polynomials has been implemented.
+* :ref:`A module <phase_polynomials>` for the efficient treatment of phase polynomials has been implemented.
 * :ref:`Quantum switch-case <qswitch>` can be used to execute a `switch statement <https://en.wikipedia.org/wiki/Switch_statement>`_ in superposition
 * Implemented a :ref:`Dicke state preparation algorithm <DickeStates>`
 
