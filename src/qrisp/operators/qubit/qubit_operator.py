@@ -19,7 +19,8 @@ from qrisp.operators.hamiltonian_tools import group_up_terms
 from qrisp.operators.hamiltonian import Hamiltonian
 from qrisp.operators.qubit.qubit_term import QubitTerm
 from qrisp.operators.qubit.measurement import get_measurement
-from qrisp import cx, h, s, x, sx_dg, IterationEnvironment, conjugate, merge
+from qrisp.operators.qubit.commutativity_tools import gaussian_elimination_mod2, inverse_mod2, construct_change_of_basis
+from qrisp import cx, cz, h, s, x, sx_dg, IterationEnvironment, conjugate, merge
 
 import sympy as sp
 import numpy as np
@@ -790,7 +791,7 @@ class QubitOperator(Hamiltonian):
     # Measurement settings and measurement
     #
     
-    def change_of_basis(self, qarg):
+    def change_of_basis(self, qarg, method="commuting_qw"):
         """
         Performs several operations on a quantum argument such that the hermitian
         part of self is diagonal when conjugated with these operations.
@@ -799,6 +800,10 @@ class QubitOperator(Hamiltonian):
         ----------
         qarg : QuantumVariable or list[Qubit]
             The quantum argument to apply the change of basis on.
+        method : str, optional
+            The method for calculating the change of basis. 
+            Available are ``commuting`` (all QubitTerms must mutually commute) and ``commuting_qw`` (all QubitTerms must mutually commute qubit-wise).
+            The default is ``commuting_qw``.
 
         Returns
         -------
@@ -876,46 +881,119 @@ class QubitOperator(Hamiltonian):
         # We track which qubit is in which basis to raise an error if a
         # violation with the requirement of qubit wise commutativity is detected.
         basis_dict = {}
+
+        new_factor_dicts = []
+        prefactors = []
         
         ladder_conversion = {"A" : "P1", "C" : "P0"}
+
+        if method=="commuting_qw":
         
-        # We iterate through the terms and apply the appropriate basis transformation
-        for term, coeff in self.terms_dict.items():
+            # We iterate through the terms and apply the appropriate basis transformation
+            for term, coeff in self.terms_dict.items():
             
-            factor_dict = term.factor_dict
-            # This dictionary will contain the factors of the new term
-            new_factor_dict = {}
+                factor_dict = term.factor_dict
+                # This dictionary will contain the factors of the new term
+                new_factor_dict = {}
             
-            prefactor = 1
+                prefactor = 1
             
-            for j in range(n):
+                for j in range(n):
                 
-                # If there is no entry in the factor dict, this corresponds to
-                # identity => no basis change required.
-                if j not in factor_dict:
-                    continue
+                    # If there is no entry in the factor dict, this corresponds to
+                    # identity => no basis change required.
+                    if j not in factor_dict:
+                        continue
                 
-                # If j is already in the basis dict, we assert that the bases agree
-                # (otherwise there is a violation of qubit-wise commutativity)
-                if j in basis_dict:
-                    assert basis_dict[j] == factor_dict[j]
-                    continue
+                    # If j is already in the basis dict, we assert that the bases agree
+                    # (otherwise there is a violation of qubit-wise commutativity)
+                    if j in basis_dict:
+                        assert basis_dict[j] == factor_dict[j]
+                        continue
                 
-                # We treat ladder operators in the next section
-                if factor_dict[j] not in ["X", "Y", "Z"]:
-                    continue
+                    # We treat ladder operators in the next section
+                    if factor_dict[j] not in ["X", "Y", "Z"]:
+                        continue
                 
-                # Update the basis dict
-                basis_dict[j] = factor_dict[j]
+                    # Update the basis dict
+                    basis_dict[j] = factor_dict[j]
                 
-                # Append the appropriate basis-change gate
-                if factor_dict[j]=="X":
-                    h(qarg[j])
+                    # Append the appropriate basis-change gate
+                    if factor_dict[j]=="X":
+                        h(qarg[j])
                     
-                if factor_dict[j]=="Y":
-                    sx_dg(qarg[j])
+                    if factor_dict[j]=="Y":
+                        sx_dg(qarg[j])
             
-                new_factor_dict[j] = "Z"
+                    new_factor_dict[j] = "Z"
+                
+                new_factor_dicts.append(new_factor_dict)
+                prefactors.append(prefactor)
+
+        if method=="commuting":
+
+            # Calculate S: Matrix where the colums correspond to the binary representation (Z/X) of the Pauli terms
+            x_vectors = []
+            z_vectors = []
+            coeffs = []
+            for term, coeff in self.terms_dict.items():
+                x_vector, z_vector = term.binary_representation(n)
+                x_vectors.append(x_vector)
+                z_vectors.append(z_vector)
+                coeffs.append(coeff)
+            x_matrix = np.stack(x_vectors, axis=1)
+            z_matrix = np.stack(z_vectors, axis=1)
+
+            S = np.vstack((z_matrix, x_matrix))
+            
+            # Construct and apply change of basis
+            A, R_inv, h_list, s_list, perm = construct_change_of_basis(S)
+
+            def inv_graph_state(qarg):
+                for i in range(n):
+                    for j in range(i):
+                        if A[i,j]==1:
+                            cz(qarg[perm[i]],qarg[perm[j]])
+            h(qarg[:n])
+
+            def change_of_basis(qarg):
+                for i in h_list:
+                    h(qarg[perm[i]])
+                for i in s_list:
+                    s(qarg[perm[i]])
+                inv_graph_state(qarg)
+
+            change_of_basis(qarg)
+
+            # Construct new QubitOperator
+            #
+            # Factor (-1) appears if S gate is applied to X, or Hadamard gate H is applied to Y:
+            # S^dagger X S = -Y
+            # S^dagger Y S = X
+            # S^dagger Z S = Z
+            # H X H = Z
+            # H Y H = -Y
+            # H Z H = X
+            # For the original Pauli terms this translates to: Factor (-1) appears if S gate is applied to Y, or Hadamard gate H is applied to Y. (No factor (-1) occurs if S*H is applied.)
+
+            s_vector = np.zeros(n, dtype=int)
+            s_vector[s_list] = 1
+            h_vector = np.zeros(n, dtype=int)
+            h_vector[h_list] = 1
+            sh_vector = s_vector + h_vector % 2 
+            sign_vector = sh_vector @ (x_matrix*z_matrix) % 2
+
+            for index,z_vector in enumerate(R_inv.T):
+                new_factor_dict = {perm[i]:"Z" for i in range(n) if z_vector[i]==1}
+                new_factor_dicts.append(new_factor_dict)
+                prefactor = (-1)**sign_vector[index]
+                prefactors.append(prefactor)
+
+        # Ladder operators 
+        for term, coeff in self.terms_dict.items():    
+
+            prefactor = prefactors.pop(0)    
+            new_factor_dict = new_factor_dicts.pop(0)
             
             # Next we treat the ladder operators
             ladder_operators = [base for base in term.factor_dict.items() if base[1] in ["A", "C"]]

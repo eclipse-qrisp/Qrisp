@@ -20,8 +20,16 @@ from qrisp import gphase, rz, cx, conjugate
 from qrisp.operators.qubit.visualization import X_,Y_,Z_
 
 from sympy import Symbol
+import numpy as np
 
-PAULI_TABLE = {("I","I"):("I",1),("I","X"):("X",1),("I","Y"):("Y",1),("I","Z"):("Z",1),("I","A"):("A",1),("I","C"):("C",1),("I","P0"):("P0",1),("I","P1"):("P1",1),("X","I"):("X",1),("X","X"):("I",1),("X","Y"):("Z",1j),("X","Z"):("Y",(-0-1j)),("X","A"):("P0",1),("X","C"):("P1",1),("X","P0"):("A",1),("X","P1"):("C",1),("Y","I"):("Y",1),("Y","X"):("Z",(-0-1j)),("Y","Y"):("I",1),("Y","Z"):("X",1j),("Y","A"):("P0",(-0-1j)),("Y","C"):("P1",1j),("Y","P0"):("A",1j),("Y","P1"):("C",(-0-1j)),("Z","I"):("Z",1),("Z","X"):("Y",1j),("Z","Y"):("X",(-0-1j)),("Z","Z"):("I",1),("Z","A"):("A",-1),("Z","C"):("C",1),("Z","P0"):("P0",1),("Z","P1"):("P1",-1),("A","I"):("A",1),("A","X"):("P1",1),("A","Y"):("P1",(-0-1j)),("A","Z"):("A",1),("A","A"):("I",0),("A","C"):("P1",1),("A","P0"):("A",1),("A","P1"):("I",0),("C","I"):("C",1),("C","X"):("P0",1),("C","Y"):("P0",1j),("C","Z"):("C",-1),("C","A"):("P0",1),("C","C"):("I",0),("C","P0"):("I",0),("C","P1"):("C",1),("P0","I"):("P0",1),("P0","X"):("C",1),("P0","Y"):("C",(-0-1j)),("P0","Z"):("P0",1),("P0","A"):("I",0),("P0","C"):("C",1),("P0","P0"):("P0",1),("P0","P1"):("I",0),("P1","I"):("P1",1),("P1","X"):("A",1),("P1","Y"):("A",1j),("P1","Z"):("P1",-1),("P1","A"):("A",1),("P1","C"):("I",0),("P1","P0"):("I",0),("P1","P1"):("P1",1)}
+PAULI_TABLE = {("I","I"):("I",1),("I","X"):("X",1),("I","Y"):("Y",1),("I","Z"):("Z",1),("I","A"):("A",1),("I","C"):("C",1),("I","P0"):("P0",1),("I","P1"):("P1",1),
+            ("X","I"):("X",1),("X","X"):("I",1),("X","Y"):("Z",1j),("X","Z"):("Y",(-0-1j)),("X","A"):("P0",1),("X","C"):("P1",1),("X","P0"):("A",1),("X","P1"):("C",1),
+            ("Y","I"):("Y",1),("Y","X"):("Z",(-0-1j)),("Y","Y"):("I",1),("Y","Z"):("X",1j),("Y","A"):("P0",(-0-1j)),("Y","C"):("P1",1j),("Y","P0"):("A",1j),("Y","P1"):("C",(-0-1j)),
+            ("Z","I"):("Z",1),("Z","X"):("Y",1j),("Z","Y"):("X",(-0-1j)),("Z","Z"):("I",1),("Z","A"):("A",-1),("Z","C"):("C",1),("Z","P0"):("P0",1),("Z","P1"):("P1",-1),
+            ("A","I"):("A",1),("A","X"):("P1",1),("A","Y"):("P1",(-0-1j)),("A","Z"):("A",1),("A","A"):("I",0),("A","C"):("P1",1),("A","P0"):("A",1),("A","P1"):("I",0),
+            ("C","I"):("C",1),("C","X"):("P0",1),("C","Y"):("P0",1j),("C","Z"):("C",-1),("C","A"):("P0",1),("C","C"):("I",0),("C","P0"):("I",0),("C","P1"):("C",1),
+            ("P0","I"):("P0",1),("P0","X"):("C",1),("P0","Y"):("C",(-0-1j)),("P0","Z"):("P0",1),("P0","A"):("I",0),("P0","C"):("C",1),("P0","P0"):("P0",1),("P0","P1"):("I",0),
+            ("P1","I"):("P1",1),("P1","X"):("A",1),("P1","Y"):("A",1j),("P1","Z"):("P1",-1),("P1","A"):("A",1),("P1","C"):("I",0),("P1","P0"):("I",0),("P1","P1"):("P1",1)}
 
 #
 # QubitTerm
@@ -52,6 +60,21 @@ class QubitTerm:
     
     def is_identity(self):
         return len(self.factor_dict)==0
+    
+    def binary_representation(self, n):
+        x_vector = np.zeros(n, dtype=int)
+        z_vector = np.zeros(n, dtype=int)
+        for index in range(n):
+            curr_factor = self.factor_dict.get(index,"I")
+            if curr_factor=="X":
+                x_vector[index] = 1
+            elif curr_factor=="Z":
+                z_vector[index] = 1
+            elif curr_factor=="Y":
+                x_vector[index] = 1
+                z_vector[index] = 1
+
+        return x_vector, z_vector
     
     def serialize(self):
         # This function serializes the QubitTerm in a way that facilitates the 
@@ -479,12 +502,17 @@ class QubitTerm:
         keys.update(set(a.keys()))
         keys.update(set(b.keys()))
 
-        # Count non-commuting operators
+        # Count non-commuting X, Y, Z operators
         commute = True
 
         for key in keys:
-            if a.get(key,"I")!="I" and b.get(key,"I")!="I" and a.get(key,"I")!=b.get(key,"I"):
+            #if a.get(key,"I")!="I" and b.get(key,"I")!="I" and a.get(key,"I")!=b.get(key,"I"):
+            #    commute = not commute
+            if not PAULI_TABLE[a.get(key,"I"), b.get(key,"I")] == PAULI_TABLE[b.get(key,"I"), a.get(key,"I")]:
                 commute = not commute
+                if (a.get(key,"I") not in ["X","Y","Z"]) or (b.get(key,"I") not in ["X","Y","Z"]):
+                    return False
+  
         return commute
 
     def commute_qw(self, other):
