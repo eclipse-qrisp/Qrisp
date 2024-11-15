@@ -25,6 +25,8 @@ This submodule of Qrisp provides a collection of commonly used buildings blocks 
      - algorithm for the preparation of Dicke states, i.e. states with a given Hamming weight. 
    * - Iterable :ref:`Demuxing <ItDemuxing>`, :ref:`Shifting <ItShifting>`, and :ref:`Permutation <ItPermutation>`
      - low-level manipulations of quantum arguments like :ref:`QuantumVariable <QuantumVariable>` or :ref:`QuantumArray <QuantumArray>`
+   * - :ref:`Quantum Switch Case <qswitch>`
+     - Executes a `switch statement <https://en.wikipedia.org/wiki/Switch_statement>`_. The condition can be a :ref:`QuantumVariable`.
    * - :ref:`Prefix arithmetic <prefix_arithmetic>`
      - Several arithmetic functions that allow better control over precision and output types than the infix version.
 
@@ -47,5 +49,6 @@ We encourage you to explore these algorithms, delve into their documentation, an
    Grover tools
    DickeStates
    demux
+   qswitch
    cyclic_shift
    iterable_permutation

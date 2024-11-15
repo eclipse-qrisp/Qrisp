@@ -27,18 +27,51 @@ def qswitch(operand, case, case_function_list, method = "sequential"):
     """
     Executes a switch - case statement distinguishing between a list of
     given in-place functions.
-    
+        
+
     Parameters
     ----------
     operand : QuantumVariable
-        The QuantumVariable to operate on.
+        The quantum argument on which to execute the case function.
     case : QuantumFloat
-        The QuantumFloat indicating which functions to execute.
+        A QuantumFloat specifying which case function should be executed.
     case_function_list : list[callable]
-        The list of functions which are executed depending on the case.
-        
+        A list of functions, performing some in-place operation on ``operand``.
+    method : str, optional
+        The compilation method. Available are ``parallel`` and ``sequential``. 
+        ``parallel`` is exponentially fast but requires more temporary qubits.
+        The default is "sequential".
+
+    Examples
+    --------
+    
+    We create some sample functions:
+
+    >>> from qrisp import *
+    >>> def f0(x): x += 1
+    >>> def f1(x): inpl_mult(x, 3, treat_overflow = False)
+    >>> def f2(x): pass
+    >>> def f3(x): h(x[1])
+    >>> case_function_list = [f0, f1, f2, f3]
+
+    Create operand and case variable
+    
+    >>> operand = QuantumFloat(4)
+    >>> operand[:] = 1
+    >>> case = QuantumFloat(2)
+    >>> h(case)
+
+    Execute switch_case function
+    
+    >>> qswitch(operand, case, case_function_list)
+    
+    Simulate
+    
+    >>> print(multi_measurement([case, operand]))
+    {(0, 2): 0.25, (1, 3): 0.25, (2, 1): 0.25, (3, 1): 0.125, (3, 3): 0.125}
 
     """
+    
     
     if method == "sequential":
     
