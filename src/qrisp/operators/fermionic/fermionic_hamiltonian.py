@@ -559,7 +559,7 @@ class FermionicOperator(Hamiltonian):
 
     def to_qubit_operator(self, mapping_type='jordan_wigner'):
         """
-        Transforms the fermionic Operator to a :ref:`QubitOperator`.
+        Transforms the FermionicOperator to a :ref:`QubitOperator`.
 
         Parameters
         ----------
@@ -649,6 +649,11 @@ class FermionicOperator(Hamiltonian):
     def trotterization(self, t = 1, steps = 1, iter = 1):
         r"""
         Returns a function for performing Hamiltonian simulation, i.e., approximately implementing the unitary operator $e^{itH}$ via Trotterization.
+        Note that this method will always simulate the **hermitized** operator, i.e.
+        
+        .. math::
+            
+            H = (O + O^\dagger)/2
 
         Returns
         -------
@@ -671,7 +676,39 @@ class FermionicOperator(Hamiltonian):
                 The number of Trotter steps $N$. The default is 1.
             * iter : int, optional 
                 The number of iterations the unitary $U_1(t,N)$ is applied. The default is 1.
+                
+        Examples
+        --------
         
+        We simulate a simple FermionicOperator.
+        
+        >>> from sympy import Symbol
+        >>> from qrisp.operators import a,c
+        >>> from qrisp import QuantumVariable
+        >>> O = a(0)*a(1) + a(2)
+        >>> U = O.trotterization()
+        >>> qv = QuantumVariable(3)
+        >>> t = Symbol("t")
+        >>> U(qv, t = t)
+        >>> print(qv.qs)
+        QuantumCircuit:
+        ---------------
+                    ┌───┐    ┌───┐          ┌────────────┐     ┌───┐┌───┐      
+        qv.0: ────■─┤ X ├────┤ X ├───────■──┤ Rz(-0.5*t) ├──■──┤ X ├┤ X ├─■────
+                  │ └─┬─┘    ├───┤     ┌─┴─┐├────────────┤┌─┴─┐├───┤└─┬─┘ │    
+        qv.1: ─■──┼───■──────┤ H ├─────┤ X ├┤ Rz(-0.5*t) ├┤ X ├┤ H ├──■───┼──■─
+               │  │ ┌───┐┌───┴───┴────┐├───┤└────────────┘└───┘└───┘      │  │ 
+        qv.2: ─■──■─┤ H ├┤ Rz(-1.0*t) ├┤ H ├──────────────────────────────■──■─
+                    └───┘└────────────┘└───┘                                   
+        Live QuantumVariables:
+        ----------------------
+        QuantumVariable qv
+        
+        Execute a simulation:
+            
+        >>> print(qv.get_measurement(subs_dic = {t : 0.5}))
+        {'000': 0.9242, '001': 0.06026, '110': 0.01459, '111': 0.00095}
+            
         """
         
         reduced_H = self.reduce(assume_hermitian=True)

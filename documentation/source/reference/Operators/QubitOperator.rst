@@ -19,6 +19,7 @@ Methods
    
    QubitOperator.adjoint
    QubitOperator.hermitize
+   QubitOperator.commutator
    QubitOperator.ground_state_energy
    QubitOperator.get_measurement
    QubitOperator.to_pauli

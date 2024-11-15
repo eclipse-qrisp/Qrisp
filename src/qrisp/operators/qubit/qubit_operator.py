@@ -32,15 +32,15 @@ threshold = 1e-9
 
 class QubitOperator(Hamiltonian):
     r"""
-    This class provides an efficient implementation of Qubit Hamiltonians, i.e.
-    Hamiltonians, that operate on a qubit space :math:`(\mathbb{C}^2)^{\otimes n}`.
+    This class provides an efficient implementation of QubitOperators, i.e.
+    Operators, that act on a qubit space :math:`(\mathbb{C}^2)^{\otimes n}`.
     Supported are operators of the following form:
     
     .. math::
         
-        H=\sum\limits_{j}\alpha_j O_j 
+        O=\sum\limits_{j}\alpha_j O_j 
         
-    where :math:`O_j=\prod_i o_i^j` is a product of the following operators:
+    where :math:`O_j=\bigotimes_i m_i^j` is a product of the following operators:
     
     .. list-table::
        :header-rows: 1
@@ -49,39 +49,59 @@ class QubitOperator(Hamiltonian):
        * - Operator
          - Ket-Bra Realization
          - Description
-       * - X
+       * - $X$
          - :math:`\ket{0}\bra{1} + \ket{1}\bra{0}`
          - Pauli-X operator (bit flip)
-       * - Y
+       * - $Y$
          - :math:`-i\ket{0}\bra{1} + i\ket{1}\bra{0}`
          - Pauli-Y operator (bit flip with phase)
-       * - Z
+       * - $Z$
          - :math:`\ket{0}\bra{0} - \ket{1}\bra{1}`
          - Pauli-Z operator (phase flip)
-       * - A
+       * - $A$
          - :math:`\ket{0}\bra{1}`
          - Annihilation operator (removes :math:`\ket{1}` state)
-       * - C
+       * - $C$
          - :math:`\ket{1}\bra{0}`
          - Creation operator (adds :math:`\ket{1}` state)
-       * - P0
+       * - $P_0$
          - :math:`\ket{0}\bra{0}`
          - Projector onto the :math:`\ket{0}` state
-       * - P1
+       * - $P_1$
          - :math:`\ket{1}\bra{1}`
          - Projector onto the :math:`\ket{1}` state
+       * - $I$
+         - :math:`\ket{1}\bra{1} + \ket{0}\bra{0}`
+         - Identity operator
     
-    Arbitrary combinations of these operators can be efficiently simulated.
+    If you already have some experience you might wonder why to include the
+    non-Pauli operators - after all they can be represented as a linear
+    combination of ``X``, ``Y`` and ``Z``. 
     
-    Parameters
-    ----------
-    terms_dict : dict, optional
-        A dictionary representing a QubitOperator.
+    .. math::
+        
+        \begin{align}
+        A_0 C_1 &= (X_0 - i Y_0)(X_1 + Y_1)/4 \\
+        & = (X_0X_1 + X_0Y_1 - Y_0X_1 + Y_0Y_1)/4
+        \end{align}
+    
+    Recently a much more efficient method of simulating ``A`` and ``C`` `has 
+    been proposed by Kornell and Selinger <https://arxiv.org/abs/2310.12256>`_,
+    which avoids decomposing these Operators into Paulis strings
+    but instead simulates 
+    
+    .. math::
+        H = A_0C_1 + h.c. 
+        
+    within a single step.
+    This idea is deeply integrated into the Operators module of Qrisp. For an
+    example circuit see below.
 
     Examples
     --------
-
-    A QubitOperator can be specified conveniently in terms of ``X``, ``Y``, ``Z`` operators:
+    
+    A QubitOperator can be specified conveniently in terms of arithmetic 
+    combinations of the mentioned operators:
 
     ::
         
@@ -90,39 +110,55 @@ class QubitOperator(Hamiltonian):
         H = 1+2*X(0)+3*X(0)*Y(1)*A(2)+C(4)*P1(0)
         H
 
-    Yields $1 + P^1_0*C_4 + 2*X_0 + 3*X_0*Y_1*A_2$.
-    
-    Investigate the simulation circuit by simulating for a symbolic amount of time:
+    Yields $1 + P^1_0C_4 + 2X_0 + 3X_0Y_1A_2$.
 
-    ::        
+    We create a QubitOperator and perform Hamiltonian simulation via :meth:`trotterization <QubitOperator.trotterization>`:
 
-        from qrisp import QuantumVariable
-        from sympy import Symbol
-        
-        H = A(0)*C(1)*C(2)*Z(3)*X(4)
-        U = H.trotterization()
-
-        qv = QuantumVariable(5)
-        phi = Symbol("phi")
-
-        U(qv, t = phi)
-        print(qv.qs)
-    
     ::
         
-                  ┌───┐                                                                  ┌───┐
-            qv.0: ┤ X ├────────────■───────────────────────────────────■─────────────────┤ X ├
-                  └─┬─┘┌───┐       │                                   │            ┌───┐└─┬─┘
-            qv.1: ──┼──┤ X ├───────o───────────────────────────────────o────────────┤ X ├──┼──
-                    │  └─┬─┘┌───┐  │  ┌───┐┌───┐┌──────────────┐┌───┐  │  ┌───┐┌───┐└─┬─┘  │
-            qv.2: ──■────■──┤ H ├──┼──┤ X ├┤ X ├┤ Rz(-1.0*phi) ├┤ X ├──┼──┤ X ├┤ H ├──■────■──
-                            └───┘  │  └─┬─┘└─┬─┘└──────┬───────┘└─┬─┘  │  └─┬─┘└───┘
-            qv.3: ─────────────────┼────■────┼─────────┼──────────┼────┼────■─────────────────
-                  ┌───┐            │         │         │          │    │  ┌───┐
-            qv.4: ┤ H ├────────────┼─────────■─────────┼──────────■────┼──┤ H ├───────────────
-                  └───┘          ┌─┴─┐                 │             ┌─┴─┐└───┘
-        hs_anc.0: ───────────────┤ X ├─────────────────■─────────────┤ X ├────────────────────
-                                 └───┘                               └───┘
+        from sympy import Symbol
+        from qrisp.operators import A,C,Z,Y
+        from qrisp import QuantumVariable
+        O = A(0)*C(1)*Z(2)*A(3) + Y(3)
+        U = O.trotterization()
+        qv = QuantumVariable(4)
+        t = Symbol("t")
+        U(qv, t = t)
+        
+    >>> print(qv.qs)
+    QuantumCircuit:
+    ---------------
+              ┌───┐                                                                »
+        qv.0: ┤ X ├────────────o──────────────────────────────────────o────────────»
+              └─┬─┘┌───┐       │                                      │       ┌───┐»
+        qv.1: ──┼──┤ X ├───────■──────────────────────────────────────■───────┤ X ├»
+                │  └─┬─┘       │                                      │       └─┬─┘»
+        qv.2: ──┼────┼─────────┼────■────────────────────────────■────┼─────────┼──»
+                │    │  ┌───┐  │  ┌─┴─┐┌───┐┌────────────┐┌───┐┌─┴─┐  │  ┌───┐  │  »
+        qv.3: ──■────■──┤ H ├──┼──┤ X ├┤ X ├┤ Rz(-0.5*t) ├┤ X ├┤ X ├──┼──┤ H ├──■──»
+                        └───┘┌─┴─┐└───┘└─┬─┘├────────────┤└─┬─┘└───┘┌─┴─┐└───┘     »
+    hs_anc.0: ───────────────┤ X ├───────■──┤ Rz(-0.5*t) ├──■───────┤ X ├──────────»
+                             └───┘          └────────────┘          └───┘          »
+    «          ┌───┐                            
+    «    qv.0: ┤ X ├────────────────────────────
+    «          └─┬─┘                            
+    «    qv.1: ──┼──────────────────────────────
+    «            │                              
+    «    qv.2: ──┼──────────────────────────────
+    «            │  ┌────┐┌────────────┐┌──────┐
+    «    qv.3: ──■──┤ √X ├┤ Rz(-2.0*t) ├┤ √Xdg ├
+    «               └────┘└────────────┘└──────┘
+    «hs_anc.0: ─────────────────────────────────
+    «                                           
+    Live QuantumVariables:
+    ----------------------
+    QuantumVariable qv
+    
+    Call the simulator:
+        
+    >>> print(qv.get_measurement(subs_dic = {t : 0.5}))
+    {'0000': 0.75818, '0001': 0.22628, '1100': 0.01197, '1101': 0.00357}
+
     """
 
     def __init__(self, terms_dict={}):
@@ -422,8 +458,7 @@ class QubitOperator(Hamiltonian):
             curr_term, curr_coeff = term.subs(subs_dict)
             res_terms_dict[curr_term] = res_terms_dict.get(curr_term,0) + curr_coeff*coeff
 
-        result = QubitOperator(res_terms_dict)
-        return result
+        return QubitOperator(res_terms_dict)
 
     #
     # Miscellaneous
@@ -436,6 +471,36 @@ class QubitOperator(Hamiltonian):
         return max(indices)+1
     
     def commutator(self, other):
+        """
+        Computes the commutator.
+        
+        .. math::
+            
+            [A,B] = AB - BA
+
+        Parameters
+        ----------
+        other : QubitOperator
+            The second argument of the commutator.
+
+        Returns
+        -------
+        commutator : QubitOperator
+            The commutator operator.
+            
+        Examples
+        --------
+        
+        We compute the commutator of a ladder operator with a Pauli string.
+        
+        >>> from qrisp.operators import A,C,X,Z
+        >>> O_0 = A(0)*C(1)*A(2)
+        >>> O_1 = Z(0)*X(1)*X(1)
+        >>> print(O_0.commutator(O_1))
+        2*A_0*C_1*A_2
+        
+
+        """
         
         res = 0
         
@@ -1257,6 +1322,12 @@ class QubitOperator(Hamiltonian):
     def trotterization(self):
         r"""
         Returns a function for performing Hamiltonian simulation, i.e., approximately implementing the unitary operator $e^{itH}$ via Trotterization.
+        Note that this method will always simulate the **hermitized** operator, i.e.
+        
+        .. math::
+            
+            H = (O + O^\dagger)/2
+
 
         Returns
         -------
@@ -1279,6 +1350,40 @@ class QubitOperator(Hamiltonian):
                 The number of Trotter steps $N$. The default is 1.
             * iter : int, optional 
                 The number of iterations the unitary $U_1(t,N)$ is applied. The default is 1.
+                
+        Examples
+        --------
+        
+        We simulate a simple QubitOperator.
+        
+        >>> from sympy import Symbol
+        >>> from qrisp.operators import A,C,Z,Y
+        >>> from qrisp import QuantumVariable
+        >>> O = A(0)*C(1)*Z(2) + Y(3)
+        >>> U = O.trotterization()
+        >>> qv = QuantumVariable(4)
+        >>> t = Symbol("t")
+        >>> U(qv, t = t)
+        >>> print(qv.qs)
+        QuantumCircuit:
+        ---------------
+              ┌───┐                            ┌────────────┐               ┌───┐
+        qv.0: ┤ X ├─────────────────────────■──┤ Rz(-0.5*t) ├──■────────────┤ X ├
+              └─┬─┘     ┌───┐      ┌───┐  ┌─┴─┐├────────────┤┌─┴─┐┌───┐┌───┐└─┬─┘
+        qv.1: ──■───────┤ H ├──────┤ X ├──┤ X ├┤ Rz(-0.5*t) ├┤ X ├┤ X ├┤ H ├──■──
+                        └───┘      └─┬─┘  └───┘└────────────┘└───┘└─┬─┘└───┘     
+        qv.2: ───────────────────────■──────────────────────────────■────────────
+              ┌────┐┌────────────┐┌──────┐                                       
+        qv.3: ┤ √X ├┤ Rz(-2.0*t) ├┤ √Xdg ├───────────────────────────────────────
+              └────┘└────────────┘└──────┘                                       
+        Live QuantumVariables:
+        ----------------------
+        QuantumVariable qv
+        
+        Execute a simulation:
+            
+        >>> print(qv.get_measurement(subs_dic = {t : 0.5}))
+        {'0000': 0.75818, '0001': 0.22628, '1100': 0.01197, '1101': 0.00357}
         
         """
         O = self.hermitize().eliminate_ladder_conjugates()
