@@ -18,9 +18,7 @@
 
 
 
-from qrisp.qaoa.qaoa_problem import QAOAProblem
-from qrisp.qaoa.problems.maxCut import create_maxcut_cl_cost_function, create_maxcut_cost_operator
-from qrisp.qaoa.mixers import RX_mixer
+from qrisp.algorithms.qaoa import *
 from qrisp import QuantumVariable
 import networkx as nx
 import matplotlib.pyplot as plt

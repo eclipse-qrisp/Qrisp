@@ -5,11 +5,10 @@ import networkx as nx
 from qrisp.algorithms.qiro import * 
 
 # First we define a graph via the number of nodes and the QuantumVariable arguments
-num_nodes = 15
-G = nx.erdos_renyi_graph(num_nodes,0.7, seed =  99)
-Gtwo = nx.erdos_renyi_graph(num_nodes,0.7, seed =  99)
-qarg = QuantumVariable(G.number_of_nodes())
-qarg2 = QuantumVariable(Gtwo.number_of_nodes())
+
+problem = [6 , [[1,2,-3],[1,4,-6], [4,5,6],[1,3,-4],[2,4,5],[1,3,5],[-2,-3,6]]]
+
+qarg = QuantumVariable(problem[0])
 
 # set simulator shots
 mes_kwargs = {
@@ -17,16 +16,12 @@ mes_kwargs = {
     "shots" : 5000
     }
 
-#assign cost_function and maxclique_instance, normal QAOA
-testCostFun = create_max_clique_cl_cost_function(Gtwo)
-maxclique_instance = QAOAProblem(create_max_indep_set_mixer(G), RX_mixer, create_max_clique_cl_cost_function(G))
-
 # assign the correct new update functions for qiro from above imports
-qiro_instance = QIROProblem(problem = Gtwo,  
-                            replacement_routine = create_max_clique_replacement_routine, 
-                            cost_operator = create_max_clique_cost_operator_reduced,
+qiro_instance = QIROProblem(problem = problem,  
+                            replacement_routine = create_maxsat_replacement_routine, 
+                            cost_operator = create_maxsat_cost_operator_reduced,
                             mixer = qiro_rx_mixer,
-                            cl_cost_function = create_max_clique_cl_cost_function,
+                            cl_cost_function = create_maxsat_cl_cost_function,
                             init_function = qiro_init_function
                             )
 
@@ -42,6 +37,7 @@ final_Graph = qiro_instance.problem
 #res_qaoa = maxclique_instance.run( qarg = qarg2, depth = 3)
 
 
+testCostFun = create_maxsat_cl_cost_function(problem=problem)
 print("QIRO 5 best results")
 maxfive = sorted(res_qiro, key=res_qiro.get, reverse=True)[:5]
 for key, val in res_qiro.items():  
@@ -50,14 +46,6 @@ for key, val in res_qiro.items():
         print(key)
         print(testCostFun({key:1}))
 
-# or compare it with the networkx result of the max_clique algorithm...
-print("Networkx solution")
-print(nx.approximation.max_clique(Gtwo))
+print("final clauses")
+print(final_Graph)
 
-# and finally, we draw the final graph and the original graphs to compare them!
-plt.figure(1)
-nx.draw(final_Graph, with_labels = True)
-
-plt.figure(2)
-nx.draw(G, with_labels = True)
-plt.show()  

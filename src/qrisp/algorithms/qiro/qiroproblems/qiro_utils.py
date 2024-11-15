@@ -39,7 +39,7 @@ def find_max(single_cor, double_cor, res, solutions):
         The item with maximal correlation and the sign of the correlation.
 
     """
-    
+
     max = 0
     max_item = None
     sign = None
@@ -51,13 +51,13 @@ def find_max(single_cor, double_cor, res, solutions):
 
         # calc correlation expectation
         for key, val in res.items():
-            summe += pow(val, 2) * pow(-1, int(key[int(abs(item2[0]))])) * pow(-1, int(key[int(abs(item2[1]))]))
+            summe += val * pow(-1, int(key[int(abs(item2[0]))])) * pow(-1, int(key[int(abs(item2[1]))]))
 
         #find max
         if abs(summe) > abs(max):
             max, max_item = summe, item2
             sign = np.sign(summe)
-
+        
     for node in single_cor:
         if node in solutions:
             continue
@@ -69,5 +69,5 @@ def find_max(single_cor, double_cor, res, solutions):
         if abs(summe) > abs(max):
             max, max_item = summe, node
             sign = np.sign(summe)
-    
+        
     return max_item, sign

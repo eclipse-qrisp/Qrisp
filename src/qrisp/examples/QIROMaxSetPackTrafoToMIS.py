@@ -38,7 +38,7 @@ mes_kwargs = {
 qiro_instance = QIROProblem(G,
                             replacement_routine=create_max_indep_replacement_routine,
                             cost_operator=create_max_indep_cost_operator_reduced,
-                            mixer=qiro_RXMixer,
+                            mixer=qiro_rx_mixer,
                             cl_cost_function=create_max_indep_set_cl_cost_function,
                             init_function=qiro_init_function
                             )
