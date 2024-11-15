@@ -132,4 +132,64 @@ def test_quantum_arithmetic():
     qf = QuantumFloat(4)
     h(qf)
     assert qf.get_ev() == 7.5
-            
+    
+    # Test q_int_mult function    
+    n = 5
+
+    a = QuantumFloat(n)
+    b = QuantumFloat(n)
+
+    h(a)
+    h(b)
+    
+    from qrisp import q_int_mult, gidney_adder
+    c = q_int_mult(a, b, inpl_adder = gidney_adder)
+
+    meas_res = multi_measurement([a,b,c])
+
+    for a, b, c in meas_res.keys():
+        assert a*b == c
+
+    a = QuantumFloat(n)
+    b = QuantumFloat(n)
+    s = QuantumFloat(2*n+1)
+    s[:] = 15
+    
+    h(a)
+    h(b)
+    
+    from qrisp import q_int_mult, gidney_adder
+    c = q_int_mult(a, b, inpl_adder = gidney_adder, target_qf = s)
+    
+    meas_res = multi_measurement([a,b,c])
+    
+    for a, b, c in meas_res.keys():
+        assert a*b + 15 == c
+    
+    a = QuantumFloat(n)
+    b = QuantumFloat(n + 4)
+
+    h(a)
+    h(b)
+    
+    from qrisp import q_int_mult, gidney_adder
+    c = q_int_mult(a, b, inpl_adder = gidney_adder)
+
+    meas_res = multi_measurement([a,b,c])
+
+    for a, b, c in meas_res.keys():
+        assert a*b == c
+    
+    # Test in-place multiplication
+    from qrisp.alg_primitives.arithmetic import inpl_q_int_mult
+    n = 7
+    a = QuantumFloat(n)
+    h(a)
+    b = QuantumFloat(n)
+    b[:] = a
+    inpl_q_int_mult(a, 5, inpl_adder = gidney_adder)
+    
+    meas_res = multi_measurement([a,b])
+
+    for a, b in meas_res.keys():
+        assert (b*5)%(2**n) == a
