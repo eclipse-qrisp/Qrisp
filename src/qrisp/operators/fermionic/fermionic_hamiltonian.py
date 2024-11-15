@@ -15,10 +15,16 @@
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************/
 """
+
+import numpy as np
+
 from qrisp.operators import Hamiltonian
 from qrisp.operators.fermionic.fermionic_term import FermionicTerm
 from qrisp.operators.fermionic.transformations import *
 from qrisp.operators.fermionic.graph_coloring import *
+from qrisp.operators.hamiltonian_tools import group_up_terms
+from qrisp import merge, IterationEnvironment
+from qrisp.operators.qubit import QubitOperator
 #from qrisp.operators.qubit.pauli_term import QubitTerm
 #from qrisp.operators.qubit.pauli_hamiltonian import QubitOperator
 
@@ -68,7 +74,7 @@ class FermionicOperator(Hamiltonian):
         
         self.terms_dict = terms_dict
 
-    def reduce(self):
+    def reduce(self, assume_hermitian = False):
         
         # This function performs some non trivial logic.
         
@@ -97,7 +103,7 @@ class FermionicOperator(Hamiltonian):
             # The sort is performed in a stable manner, so terms like a(0)*c(0)
             # don't get permuted (this would be a non-trivial anti-commutator).
             sorted_term, flip_sign = term.sort()
-            if sorted_term not in new_terms_dict:
+            if sorted_term not in new_terms_dict and assume_hermitian:
                 # If the sorted term is not in the terms dict, the sorted version
                 # of the daggering might be.
                 daggered_sorted_term, daggered_flip_sign = term.dagger().sort()
@@ -151,20 +157,21 @@ class FermionicOperator(Hamiltonian):
         
         expr = 0  
         for ladder_term,coeff in self.terms_dict.items():
-            term = ladder_term.to_expr()
-            term_dg =  + ladder_term.dagger().to_expr()
-            if coeff not in [2, -2]:
-                term *= coeff/2
-                term_dg *= coeff/2
-            elif coeff == -2:
-                expr += -term - term_dg
-                continue
-            expr += term + term_dg
+            expr += coeff*ladder_term.to_expr()
         return expr
 
     #
     # Arithmetic
     #
+    
+    def adjoint(self):
+        terms_dict = {}
+        for term, coeff in self.terms_dict.items():
+            terms_dict[term.dagger()] = np.conj(coeff)
+        return FermionicOperator(terms_dict)    
+    
+    def hermitize(self):
+        return 0.5*(self + self.adjoint())
     
     def __eq__(self, other):
         self.reduce()
@@ -506,6 +513,12 @@ class FermionicOperator(Hamiltonian):
 
         return H
     
+    def to_JW(self):
+        res = QubitOperator({})
+        for term, coeff in self.terms_dict.items():
+            res += coeff*term.to_JW()
+        return res
+    
     #
     # Measurement
     #
@@ -568,6 +581,7 @@ class FermionicOperator(Hamiltonian):
     #
     # Trotterization
     #
+    
 
     def trotterization(self, t = 1, steps = 1, iter = 1):
         r"""
@@ -597,85 +611,80 @@ class FermionicOperator(Hamiltonian):
         
         """
         
-        self.reduce()
-       
+        self.reduce(assume_hermitian=True)
         
-        def U(qarg):
-            from qrisp import conjugate
-            for i in range(iter):
-                for j in range(steps):
+        groups = self.group_up(denominator = lambda a,b : not a.intersect(b))
+        from qrisp import conjugate
+        
+        def trotter_step(qarg, t, steps):
+            
+            for group in groups:
+                
+                permutation = []
+                terms = group.terms_dict.keys()
+                for term in terms:
+                    for ladder in term.ladder_list:
+                        if ladder[0] not in permutation:
+                            permutation.append(ladder[0])
+                
+                for k in range(len(qarg)):
+                    if k not in permutation:
+                        permutation.append(k)
+                
+                with conjugate(apply_fermionic_swap)(qarg, permutation) as new_qarg:
                     
-                    term_layers = layerize(self)
-                    
-                    for layer in term_layers.keys():
-                        
-                        terms = term_layers[layer]
-                        
-                        permutation = []
-                        
-                        for term in terms:
-                            for ladder in term.ladder_list:
-                                if ladder[0] not in permutation:
-                                    permutation.append(ladder[0])
-                        
-                        for k in range(len(qarg)):
-                            if k not in permutation:
-                                permutation.append(k)
-                        
-                        with conjugate(apply_fermionic_swap)(qarg, permutation):
-                            
-                            for ferm_term in terms:
-                                value = self.terms_dict[ferm_term]
-                                pauli_hamiltonian = ferm_term.fermionic_swap(permutation).to_JW()
-                                pauli_term = list(pauli_hamiltonian.terms_dict.keys())[0]
-                                
-                                pauli_term.simulate(value*t/steps*pauli_hamiltonian.terms_dict[pauli_term], qarg)
-                                
-                                # ferm_term.fermionic_swap(permutation).to_JW().simulate(value*t/steps, qarg)
-                                
+                    for ferm_term in terms:
+                        coeff = self.terms_dict[ferm_term]
+                        pauli_hamiltonian = ferm_term.fermionic_swap(permutation).to_JW()
+                        pauli_term = list(pauli_hamiltonian.terms_dict.keys())[0]
+                        pauli_term.simulate(coeff*t/steps*pauli_hamiltonian.terms_dict[pauli_term], new_qarg)
+                
+
+        def U(qarg, t=1, steps=1, iter=1):
+            merge([qarg])
+            with IterationEnvironment(qarg.qs, iter*steps):
+                trotter_step(qarg, t, steps)
+
         return U
+    
+    def group_up(self, denominator):
+        
+        term_groups = group_up_terms(self, denominator)
+        groups = []
+        for term_group in term_groups:
+            O = FermionicOperator({term : self.terms_dict[term] for term in term_group})
+            groups.append(O)
+            
+        return groups
+    
                     
 def apply_fermionic_swap(qv, permutation):
     from qrisp import cz
     qb_list = list(qv)
     swaps = get_swaps_for_permutation(permutation)
-    
-    for swap in swaps:
+    for swap in swaps[::-1]:
         cz(qb_list[swap[0]], qb_list[swap[1]])
         qb_list[swap[0]], qb_list[swap[1]] = qb_list[swap[1]], qb_list[swap[0]]
         
-def layerize(H):
-    
-    terms_list = list(H.terms_dict)
-    
-    G = nx.Graph()
-    
-    term_ints = []
-    for i in range(len(terms_list)):
-        temp = 0
-        for operator in terms_list[i].ladder_list:
-            temp |= (1<<operator[0])
-        term_ints.append(temp)
-        G.add_node(i)
-    
-    for i in range(len(terms_list)):
-        for j in range(i+1, len(terms_list)):
-            if term_ints[i] & term_ints[j] != 0:
-                G.add_edge(i, j)
-    
-    coloring = find_coloring(G)
-    
-    layer_dict = {i : [] for i in range(int(np.max(coloring))+1)}
-    
-    for i in range(len(terms_list)):
-        layer_dict[coloring[i]].append(terms_list[i])
+    return qb_list
         
-    return layer_dict
-
 from numba import njit
 
 # @njit
 def get_swaps_for_permutation(permutation):
+    swaps = []
+    permutation = list(permutation)
+    for i in range(len(permutation)):
+        j = permutation.index(i)
+        while j != i:
+            permutation[j], permutation[j-1] = permutation[j-1], permutation[j]
+            # swaps.append((permutation[j], permutation[j-1]))
+            swaps.append((j, j-1))
+            j -= 1
+    print(permutation)
+    return swaps
+        
+    
     n = len(permutation)
     permutation = np.array(permutation)
     position = {num: i for i, num in enumerate(permutation)}

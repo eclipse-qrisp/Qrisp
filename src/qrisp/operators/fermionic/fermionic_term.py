@@ -122,7 +122,6 @@ class FermionicTerm:
 
         """
         pass
-    
         
     def sort(self):
         # Sort ladder operators (ladder operator semantics are order in-dependent)
@@ -134,9 +133,17 @@ class FermionicTerm:
     
     def fermionic_swap(self, permutation):
         
+        permutation = [permutation.index(i) for i in range(len(permutation))]
         new_ladder_list = [(permutation[i], is_creator) for i, is_creator in self.ladder_list]
         
         return FermionicTerm(new_ladder_list)
+    
+    def intersect(self, other):
+        """
+        Checks if two QubitTerms operate on the same qubit.
+
+        """
+        return len(set([ladder[0] for ladder in self.ladder_list]).intersection([ladder[0] for ladder in other.ladder_list])) != 0
     
     def to_JW(self):
         res = 1
@@ -151,7 +158,7 @@ class FermionicTerm:
                 temp = temp*A(self.ladder_list[i][0])
         
             res = temp*res
-            
+        
         return res
             
         

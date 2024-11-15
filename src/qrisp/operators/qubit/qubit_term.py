@@ -156,9 +156,7 @@ class QubitTerm:
 
         from qrisp import h, cx, rz, mcp, conjugate, control, QuantumBool, mcx, x, p, s, QuantumEnvironment, gphase
         from qrisp.operators import QubitOperator
-        
-        
-        
+        import numpy as np
         # If required, do change of basis. Change of basis here means, that
         # the quantum argument is conjugated with a function that makes the
         # Operator diagonal. Please refer to the comments in QubitOperator.change_of_basis
@@ -217,7 +215,7 @@ class QubitTerm:
                 if len(projector_indices) == 1:
                     p(coeff, qv[projector_indices[0]])
                 else:
-                    mcp(coeff, [qv[i] for i in projector_indices])
+                    mcp(coeff, [qv[i] for i in projector_indices], method = "balauca")
                 
             return
         
@@ -300,7 +298,7 @@ class QubitTerm:
             env = conjugate(mcx)(projector_qubits, 
                                  hs_anc, 
                                  ctrl_state = projector_ctrl_state, 
-                                 method = "gray")
+                                 method = "gray_pt")
         
         
         # Perform the conjugation
@@ -328,15 +326,14 @@ class QubitTerm:
             # Perform the conjugation
             with conjugate(flip_anchor_qubit)(qv, anchor_index = anchor_index, Z_indices = Z_indices[:-1]):
                 
-                # Set up the control environment
-                if control_qubit_available:
-                    env = control(hs_anc)
-                else:
-                    env = QuantumEnvironment()
-                
                 # Perform the controlled RZ
-                with env:
+                if control_qubit_available:
+                    with conjugate(cx)(hs_anc, qv[anchor_index]):
+                        rz(-coeff, qv[anchor_index])
+                        rz(-coeff, hs_anc)
+                else:
                     rz(-coeff*2, qv[anchor_index])
+                
     
         if len(projector_indices) >= 2:
             # Delete ancilla

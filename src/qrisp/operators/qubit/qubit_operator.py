@@ -901,7 +901,8 @@ class QubitOperator(Hamiltonian):
                 # If j is already in the basis dict, we assert that the bases agree
                 # (otherwise there is a violation of qubit-wise commutativity)
                 if j in basis_dict:
-                    assert basis_dict[j] == factor_dict[j]
+                    if basis_dict[j] != factor_dict[j]:
+                        assert basis_dict[j] in ["Z", "P0", "P1"]
                     new_factor_dict[j] = "Z"
                     continue
                 
@@ -1280,8 +1281,8 @@ class QubitOperator(Hamiltonian):
                 The number of iterations the unitary $U_1(t,N)$ is applied. The default is 1.
         
         """
-
-        commuting_groups = self.group_up(lambda a, b: a.commute(b))
+        O = self.hermitize().eliminate_ladder_conjugates()
+        commuting_groups = O.group_up(lambda a, b: a.commute(b))
 
         def trotter_step(qarg, t, steps):
             for com_group in commuting_groups:
