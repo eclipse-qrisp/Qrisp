@@ -17,11 +17,10 @@ Methods
 .. autosummary::
    :toctree: generated/
    
-   QubitOperator.ground_state_energy
-   QubitOperator.get_measurement
-   QubitOperator.commuting_groups
-   QubitOperator.commuting_qw_groups
-   QubitOperator.trotterization
-   QubitOperator.to_pauli
    QubitOperator.adjoint
    QubitOperator.hermitize
+   QubitOperator.ground_state_energy
+   QubitOperator.get_measurement
+   QubitOperator.to_pauli
+   QubitOperator.trotterization
+   

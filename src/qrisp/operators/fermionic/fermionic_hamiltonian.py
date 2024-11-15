@@ -526,7 +526,7 @@ class FermionicOperator(Hamiltonian):
         for ladder_term in delete_list:
             del self.terms_dict[ladder_term]
 
-    def to_sparse_matrix(self, embedding = "JW"):
+    def to_sparse_matrix(self, mapping_type = "jordan_wigner"):
         """
         Returns a matrix representing the operator.
     
@@ -534,15 +534,12 @@ class FermionicOperator(Hamiltonian):
         -------
         M : scipy.sparse.csr_matrix
             A sparse matrix representing the operator.
-        embedding : string, optional
+        mapping_type : string, optional
             How to embedd the fermionic terms into a QubitOperator. Currently 
-            only "JW" (Jordan-Wigner) is supported.
+            only ``jordan_wigner`` is supported.
 
         """
-        if embedding == "JW":
-            return self.to_JW().to_sparse_matrix()
-        else:
-            raise Exception(f"Don't know fermionic embedding {embedding}.")
+        return self.to_qubit_operator(mapping_type=mapping_type).to_sparse_matrix()
 
     def ground_state_energy(self):
         """
@@ -554,13 +551,13 @@ class FermionicOperator(Hamiltonian):
             The ground state energy. 
 
         """
-        return self.to_JW().ground_state_energy()
+        return self.to_qubit_operator().ground_state_energy()
 
     #
     # Transformations
     #
 
-    def to_qubit_hamiltonian(self, mapping_type='jordan_wigner'):
+    def to_qubit_operator(self, mapping_type='jordan_wigner'):
         """
         Transforms the fermionic Operator to a :ref:`QubitOperator`.
 
@@ -572,7 +569,7 @@ class FermionicOperator(Hamiltonian):
 
         Returns
         -------
-        O : :ref:`QubitOperator``
+        O : :ref:`QubitOperator`
             The resulting QubitOperator.
         
         """
@@ -580,16 +577,10 @@ class FermionicOperator(Hamiltonian):
         if mapping_type=="jordan_wigner":
             res = QubitOperator({})
             for term, coeff in self.terms_dict.items():
-                res += coeff*term.to_JW()
+                res += coeff*term.to_qubit_term(mapping_type="jordan_wigner")
             return res
         else:
             raise Exception(f"Don't know fermionic mapping {mapping_type}.")
-    
-    def to_JW(self):
-        res = QubitOperator({})
-        for term, coeff in self.terms_dict.items():
-            res += coeff*term.to_JW()
-        return res
     
     #
     # Measurement
@@ -709,7 +700,7 @@ class FermionicOperator(Hamiltonian):
                     
                     for ferm_term in terms:
                         coeff = reduced_H.terms_dict[ferm_term]
-                        pauli_hamiltonian = ferm_term.fermionic_swap(permutation).to_JW()
+                        pauli_hamiltonian = ferm_term.fermionic_swap(permutation).to_qubit_term()
                         pauli_term = list(pauli_hamiltonian.terms_dict.keys())[0]
                         pauli_term.simulate(coeff*t/steps*pauli_hamiltonian.terms_dict[pauli_term], new_qarg)
                 
@@ -742,8 +733,6 @@ def apply_fermionic_swap(qv, permutation):
         
     return qb_list
         
-from numba import njit
-
 def get_swaps_for_permutation(permutation):
     swaps = []
     permutation = list(permutation)
@@ -751,7 +740,6 @@ def get_swaps_for_permutation(permutation):
         j = permutation.index(i)
         while j != i:
             permutation[j], permutation[j-1] = permutation[j-1], permutation[j]
-            # swaps.append((permutation[j], permutation[j-1]))
             swaps.append((j, j-1))
             j -= 1
     return swaps

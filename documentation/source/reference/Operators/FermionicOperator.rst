@@ -17,11 +17,9 @@ Methods
 .. autosummary::
    :toctree: generated/
    
-   FermionicOperator.__add__
-   FermionicOperator.__sub__
-   FermionicOperator.__mul__
-   FermionicOperator.__iadd__
-   FermionicOperator.__isub__
-   FermionicOperator.__imul__
-   FermionicOperator.__str__
+   FermionicOperator.dagger
+   FermionicOperator.hermitize
+   FermionicOperator.ground_state_energy
+   FermionicOperator.get_measurement
+   FermionicOperator.to_qubit_operator
    FermionicOperator.trotterization

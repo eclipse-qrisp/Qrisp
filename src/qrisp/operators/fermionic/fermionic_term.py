@@ -141,25 +141,25 @@ class FermionicTerm:
         """
         return len(set([ladder[0] for ladder in self.ladder_list]).intersection([ladder[0] for ladder in other.ladder_list])) != 0
     
-    def to_JW(self):
-        res = 1
-        for i in range(len(self.ladder_list)):
-            temp = 1
-            for j in range(self.ladder_list[i][0]):
-                temp = Z(j)*temp
+    def to_qubit_term(self, mapping_type = "jordan_wigner"):
+        if mapping_type == "jordan_wigner":
+            res = 1
+            for i in range(len(self.ladder_list)):
+                temp = 1
+                for j in range(self.ladder_list[i][0]):
+                    temp = Z(j)*temp
+                
+                if self.ladder_list[i][1]:
+                    temp = temp*C(self.ladder_list[i][0])
+                else:
+                    temp = temp*A(self.ladder_list[i][0])
             
-            if self.ladder_list[i][1]:
-                temp = temp*C(self.ladder_list[i][0])
-            else:
-                temp = temp*A(self.ladder_list[i][0])
-        
-            res = temp*res
-        
-        return res
+                res = temp*res
             
-        
-        
-
+            return res
+        else:
+            raise Exception(f"Don't know fermionic mapping type {mapping_type}")
+            
 def permutation_signature(perm):
     
     k = 0

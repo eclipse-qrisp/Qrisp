@@ -122,7 +122,7 @@ def test_fermionic_hamiltonian_simulation():
                 qc = qv.qs.copy()            
                 
                 qv = QuantumVariable(4)
-                U = O.to_JW().trotterization()
+                U = O.to_qubit_operator().trotterization()
                 U(qv)
                 
                 assert qv.qs.compare_unitary(qc)
