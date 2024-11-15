@@ -60,10 +60,10 @@ class QubitOperator(Hamiltonian):
          - Pauli-Z operator (phase flip)
        * - $A$
          - :math:`\ket{0}\bra{1}`
-         - Annihilation operator (removes :math:`\ket{1}` state)
+         - Annihilation operator
        * - $C$
          - :math:`\ket{1}\bra{0}`
-         - Creation operator (adds :math:`\ket{1}` state)
+         - Creation operator
        * - $P_0$
          - :math:`\ket{0}\bra{0}`
          - Projector onto the :math:`\ket{0}` state
@@ -1231,11 +1231,18 @@ class QubitOperator(Hamiltonian):
         measurement_data=None # measurement settings
     ):
         r"""
-        This method returns the expected value of a Hamiltonian for the state of a quantum argument.
+        This method returns the expected value of a Hamiltonian for the state 
+        of a quantum argument. Note that this method measures the **hermitized**
+        version of the operator:
+            
+        .. math::
+            
+            H = (O + O^\dagger)/2
+
 
         Parameters
         ----------
-        qarg : QuantumVariable, QuantumArray or list[QuantumVariable]
+        qarg : QuantumVariable or list[Qubit]
             The quantum argument to evaluate the Hamiltonian on.
         precision: float, optional
             The precision with which the expectation of the Hamiltonian is to be evaluated.
@@ -1287,21 +1294,7 @@ class QubitOperator(Hamiltonian):
             H = Z(0)*Z(1)
             res = H.get_measurement(qv)
             print(res)
-            #Yields 0.0
-
-        We define a Hamiltonian, and measure its expected value for the state of a :ref:`QuantumArray`.
-
-        ::
-
-            from qrisp import QuantumVariable, QuantumArray, h
-            from qrisp.operators.qubit import X,Y,Z
-            qtype = QuantumVariable(2)
-            q_array = QuantumArray(qtype, shape=(2))
-            h(q_array)
-            H = Z(0)*Z(1) + X(2)*X(3)
-            res = H.get_measurement(q_array)
-            print(res)
-            #Yields 1.0
+            #Yields 0.0011251406425802912
 
         """
         return get_measurement(self, 

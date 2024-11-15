@@ -39,9 +39,9 @@ class FermionicOperator(Hamiltonian):
 
     .. math::
         
-        H=\sum\limits_{j}\alpha_jA_j 
+        O=\sum\limits_{j}\alpha_jO_j 
             
-    where each term $A_j$ is a product of fermionic raising $a_i^{\dagger}$ and lowering $a_i$ operators acting on the $i$ th fermionic mode.
+    where each term $O_j$ is a product of fermionic raising $a_i^{\dagger}$ and lowering $a_i$ operators acting on the $i$ th fermionic mode.
 
     The ladder operators satisfy the commutation relations
 
@@ -59,8 +59,8 @@ class FermionicOperator(Hamiltonian):
         
         from qrisp.operators.fermionic import a, c
 
-        H = a(2)*c(1)+a(3)*c(2)
-        H
+        O = a(2)*c(1)+a(3)*c(2)
+        O
 
     Yields $a_2c_1+a_3c_2$.
 
@@ -571,6 +571,17 @@ class FermionicOperator(Hamiltonian):
         -------
         O : :ref:`QubitOperator`
             The resulting QubitOperator.
+            
+        Examples
+        --------
+        
+        We map a singular fermionic ladder operator to a QubitOperator to see
+        the Jordan-Wigner embedding.
+            
+        >>> from qrisp.operators import a
+        >>> O = a(4)
+        >>> print(O.to_qubit_operator())
+        Z_0*Z_1*Z_2*Z_3*A_4
         
         """
         
@@ -589,44 +600,26 @@ class FermionicOperator(Hamiltonian):
     def get_measurement(
         self,
         qarg,
-        precision=0.01,
-        backend=None,
-        shots=1000000,
-        compile=True,
-        compilation_kwargs={},
-        subs_dic={},
-        precompiled_qc=None,
-        _measurement=None # measurement settings
+        mapping_type="jordan_wigner",
+        **measurement_kwargs
     ):
         r"""
-        This method returns the expected value of a Hamiltonian for the state of a quantum argument.
+        This method returns the expected value of a Hamiltonian for the state 
+        of a quantum argument. Note that this method measures the **hermitized**
+        version of the operator:
+            
+        .. math::
+            
+            H = (O + O^\dagger)/2
 
         Parameters
         ----------
-        qarg : QuantumVariable, QuantumArray or list[QuantumVariable]
+        qarg : QuantumVariable or list[Qubit]
             The quantum argument to evaluate the Hamiltonian on.
-        precision: float, optional
-            The precision with which the expectation of the Hamiltonian is to be evaluated.
-            The default is 0.01. The number of shots scales quadratically with the inverse precision.
-        backend : BackendClient, optional
-            The backend on which to evaluate the quantum circuit. The default can be
-            specified in the file default_backend.py.
-        shots : integer, optional
-            The maximum amount of shots to evaluate the expectation of the Hamiltonian. 
-            The default is 1000000.
-        compile : bool, optional
-            Boolean indicating if the .compile method of the underlying QuantumSession
-            should be called before. The default is True.
-        compilation_kwargs  : dict, optional
-            Keyword arguments for the compile method. For more details check
-            :meth:`QuantumSession.compile <qrisp.QuantumSession.compile>`. The default
-            is ``{}``.
-        subs_dic : dict, optional
-            A dictionary of Sympy symbols and floats to specify parameters in the case
-            of a circuit with unspecified, :ref:`abstract parameters<QuantumCircuit>`.
-            The default is {}.
-        precompiled_qc : QuantumCircuit, optional
-            A precompiled quantum circuit.
+        mapping_type : str
+            The strategy on how to map the FermionicOperator to a QubitOperator. Default is ``jordan_wigner``
+        measurement_kwargs : dict
+            The keyword arguments of :meth:`QubitOperator.get_measurement`.
 
         Raises
         ------
@@ -638,8 +631,22 @@ class FermionicOperator(Hamiltonian):
         -------
         float
             The expected value of the Hamiltonian.
+            
+        Examples
+        --------
+
+        We create a FermionicOperator and perform a measurement.
+        
+        >>> from qrisp.operators import *
+        >>> from qrisp import QuantumVariable
+        >>> qv = QuantumVariable(4)
+        >>> O = a(0)*a(1) + a(2)*c(1) + c(2)*a(3)
+        >>> print(O.get_measurement(qv))
+        -0.007968127490039834
+
         """
-        pass
+        qubit_operator = self.to_qubit_operator(mapping_type)
+        return qubit_operator.get_measurement(qarg, **measurement_kwargs)
         
     #
     # Trotterization
