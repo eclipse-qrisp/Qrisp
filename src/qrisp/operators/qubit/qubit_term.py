@@ -328,9 +328,10 @@ class QubitTerm:
                 
                 # Perform the controlled RZ
                 if control_qubit_available:
-                    with conjugate(cx)(hs_anc, qv[anchor_index]):
+                    # Use Selinger's circuit (page 5)
+                    with conjugate(cx)(qv[anchor_index], hs_anc):
                         rz(-coeff, qv[anchor_index])
-                        rz(-coeff, hs_anc)
+                        rz(coeff, hs_anc)
                 else:
                     rz(-coeff*2, qv[anchor_index])
                 

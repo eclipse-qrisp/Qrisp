@@ -24,31 +24,31 @@ from qrisp import *
 def test_fermionic_term():
     from qrisp.operators.fermionic import a, c
     
-    H_0 = a(0)*c(1)
-    H_1 = c(1)*a(0)
+    O_0 = a(0)*c(1)
+    O_1 = c(1)*a(0)
 
-    assert (H_0 == H_1) == False
+    assert (O_0 == O_1) == False
     
-    H_0 = a(0)*c(1)
-    H_1 = -c(1)*a(0)
+    O_0 = a(0)*c(1)
+    O_1 = -c(1)*a(0)
 
-    assert (H_0 == H_1) == True
+    assert (O_0.hermitize() == O_1.hermitize()) == True
     
-    H_0 = a(0)*c(1)
-    H_1 = -1*c(1)*a(0)
+    O_0 = a(0)*c(1)
+    O_1 = -1*c(1)*a(0)
 
-    assert (H_0 == H_1) == True
+    assert (O_0.hermitize() == O_1.hermitize()) == True
     
-    H_0 = a(0)*c(1)*a(2)
-    H_1 = c(2)*a(1)*c(0)
+    O_0 = a(0)*c(1)*a(2)
+    O_1 = c(2)*a(1)*c(0)
 
-    assert (H_0 == H_1) == True
+    assert (O_0 == O_1) == True
     
-    H = 3*a(0)*c(1) + c(0)*a(1)
-    H.reduce()
-    assert str(H) == "-c0*a1 - c1*a0"
+    O = 3*a(0)*c(1) + c(1)*a(0)
+    O = O.reduce()
+    assert str(O) == "2*a0*c1"
     
-    H = a(0)*a(1) + a(1)*a(0)
-    H.reduce()
-    assert str(H) == "0"
+    O = a(0)*a(1) - c(1)*c(0)
+    O = O.reduce(assume_hermitian=True)
+    assert str(O) == "0"
     

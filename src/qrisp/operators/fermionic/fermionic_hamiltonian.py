@@ -254,7 +254,7 @@ class FermionicOperator(Hamiltonian):
         reduced_self = self.reduce()
         reduced_other = other.reduce()
         
-        if len(reduced_self) != len(reduced_other.terms_dict):
+        if len(reduced_self.terms_dict) != len(reduced_other.terms_dict):
             return False
         
         for term, coeff in reduced_self.terms_dict.items():
