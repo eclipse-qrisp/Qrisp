@@ -23,19 +23,24 @@ QIRO
 Compiler upgrades
 -----------------
 
+* A significantly fast algorithm for memory management has been implemented. With this feature, managing circuits with thousands of qubits is no more a problem.
+* The compiler can now also leverage X-Permeability type commutativity relations. More info _`here <https://quantum-compilers.github.io/iwqc2024/papers/IWQC2024_paper_16.pdf>`_.
+
 Algorithmic primitives
 ----------------------
+
+* :ref:`A module <phase_polynomials>` for the efficient treatment of Phase polynomials has been implemented.
 
 Minor features
 --------------
 
-* Implemented ``&``, ``|``, and ``^`` operators for general :ref:`QuantumVariables <QuantumVariable>`.
-* Classical performance upgrade for Qrisp's internal logic synthesis function, facilitating faster execution of many algorithms.
-* CNOT and T-depth can now be inferred from :ref:`QuantumCircuits <QuantumCircuit>` via :meth:`cnot_depth <qrisp.QuantumCircuit.cnot_depth>` and :meth:`t_depth <qrisp.QuantumCircuit.t_depth>`
-* Implemented the :meth:`train_function <qrisp.qaoa.QAOAProblem.train_function>` method to reuse QAOA circuits in higher order algorithms.
-* Implemented the :meth:`compile_circuit <qrisp.qaoa.QAOAProblem.compile_circuit>` method to give direct access to the circuit executed by :meth:`run <qrisp.qaoa.QAOAProblem.run>`.
-* ``==`` and ``!=`` for :ref:`QuantumVariable` are now compiled using the :ref:`ConjugationEnvironment` enabling a more efficient :meth:`custom_control <qrisp.custom_control>`.
-* Wrote the :meth:`inpl_adder_test <qrisp.inpl_adder_test>` function to verify a user specified function is a valid adder.
+* It is now possible for backends to specify their own default shot count.
+* Deprecated the QuantumNetworks module.
+* :ref:`Operations <Operation>` can now receive complex numbers as parameters.
+* :ref:`QuantumModulus` will now use the user-specified adder for all arithmetic evaluations (previously only in-place multiplication).
+* A :ref:`tutorial <sudoku>` for utilizing the Quantum-Backtracking algorithm for solving Sudokus is now available.
+
+
 
 Bug-fixes
 ---------
