@@ -222,6 +222,8 @@ class TensorFactor:
         if len(outcome_index_list) == 1:
             temp = xp.zeros(2, dtype = self.tensor_array.data.dtype)
             if outcome_index_list[0] == 1:
+                if warning:
+                    print("WARNING: Faulty uncomputation found during simulation.")
                 temp[1] = 1
             else:
                 temp[0] = 1
