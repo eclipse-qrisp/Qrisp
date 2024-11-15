@@ -1,0 +1,49 @@
+.. _v0.5:
+
+Qrisp 0.5
+=========
+
+In this update many things revolve around one of the most original purposes of quantum computing: Simulating quantum mechanical systems.
+
+The Operators module
+--------------------
+
+This module allows you to describe operators that are not necessarily unitary or even hermitian. With these tools at hand you can effectively set up two of quantum's most important algorithms: :meth:`Hamiltonian simulation <qrisp.operators.QubitOperator.trotterization>` and :ref:`VQE`.
+
+For this we provide the following classes:
+
+* :ref:`QubitOperator` is a class that enables the representation and processing of arbitrary operators. Operators can be constructed based on a variety of tensor factors including the Pauli-matrices but also projector, creators and annihilators. For the latter Qrisp features a highly performant algorithm for Hamiltonian simulation proposed by `Kornell and Selinger <https://arxiv.org/abs/2310.12256>`_.
+* :ref:`FermionicOperator` provides you with the tools to describe and manipulate fermionic systems. This type of system is of particular importance for applications in chemistry because the many computations for molecular dynamics involve the simulation of electrons, which are fermions. FermionicOperators can be constructed effortlessly from `PySCF <https://pyscf.org/>`_ data. PySCF is one of the most popular quantum chemistry Python packages.
+* :ref:`VQEProblem` which allows you to quickly formulate and run the VQE algorithm using Hamiltonians expressed through the two operator classes.
+
+QIRO
+----
+
+
+Compiler upgrades
+-----------------
+
+Algorithmic primitives
+----------------------
+
+Minor features
+--------------
+
+* Implemented ``&``, ``|``, and ``^`` operators for general :ref:`QuantumVariables <QuantumVariable>`.
+* Classical performance upgrade for Qrisp's internal logic synthesis function, facilitating faster execution of many algorithms.
+* CNOT and T-depth can now be inferred from :ref:`QuantumCircuits <QuantumCircuit>` via :meth:`cnot_depth <qrisp.QuantumCircuit.cnot_depth>` and :meth:`t_depth <qrisp.QuantumCircuit.t_depth>`
+* Implemented the :meth:`train_function <qrisp.qaoa.QAOAProblem.train_function>` method to reuse QAOA circuits in higher order algorithms.
+* Implemented the :meth:`compile_circuit <qrisp.qaoa.QAOAProblem.compile_circuit>` method to give direct access to the circuit executed by :meth:`run <qrisp.qaoa.QAOAProblem.run>`.
+* ``==`` and ``!=`` for :ref:`QuantumVariable` are now compiled using the :ref:`ConjugationEnvironment` enabling a more efficient :meth:`custom_control <qrisp.custom_control>`.
+* Wrote the :meth:`inpl_adder_test <qrisp.inpl_adder_test>` function to verify a user specified function is a valid adder.
+
+Bug-fixes
+---------
+
+* Fixed a bug that caused false results in some simulations containing a Y-gate.
+* Fixed a bug that prevented proper QFT cancellation within the :meth:`compile <qrisp.QuantumSession.compile>` method in some cases.
+* Fixed a bug that prevented proper verification of correct automatic uncomputation in some cases.
+* Fixed a bug that caused false determination of the unitary of controlled gates with a non-trivial control state.
+* Fixed a bug that caused problems during circuit visualisation on some platforms.
+* Fixed a bug that caused the simulation progress bar to not vanish after the simulation concluded.
+* Fixed a bug that introduced an extra phase in the compilation of dirty-ancillae supported ``balauca`` MCX gates.

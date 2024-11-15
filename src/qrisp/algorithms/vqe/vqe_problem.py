@@ -25,6 +25,7 @@ from sympy import Symbol
 from qrisp import QuantumArray
 from qrisp.algorithms.vqe.vqe_benchmark_data import VQEBenchmark
 from qrisp.operators.qubit.measurement import QubitOperatorMeasurement
+from qrisp.operators.fermionic import FermionicOperator
 
 class VQEProblem:
     r"""
@@ -33,7 +34,7 @@ class VQEProblem:
     
     Parameters
     ----------
-    hamiltonian : :ref:`Hamiltonian`
+    hamiltonian : :ref:`QubitOperator` or :ref:`FermionicOperator`
         The problem Hamiltonian.
     ansatz_function : function
         A function receiving a :ref:`QuantumVariable` or :ref:`QuantumArray` and a parameter list. This function implements the unitary 
@@ -103,6 +104,9 @@ class VQEProblem:
     
     def __init__(self, hamiltonian, ansatz_function, num_params, init_function = None, callback=False):
         
+        if isinstance(hamiltonian, FermionicOperator):
+            hamiltonian = hamiltonian.to_qubit_operator()
+            
         self.hamiltonian = hamiltonian
         self.ansatz_function = ansatz_function
         self.num_params = num_params

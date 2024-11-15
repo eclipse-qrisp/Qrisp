@@ -91,8 +91,8 @@ def create_heisenberg_hamiltonian(G, J, B):
 
     Returns
     -------
-    H : Hamiltonian
-        The quantum :ref:`Hamiltonian`.
+    H : :ref:`QubitOperator`
+        The quantum Hamiltonian.
 
     """
 

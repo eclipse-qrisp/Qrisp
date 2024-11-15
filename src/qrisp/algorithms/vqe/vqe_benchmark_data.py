@@ -41,7 +41,7 @@ class VQEBenchmark:
         The amount of time passed (in seconds) of each run.
     optimal_energy : float
         The exact ground state energy of the problem Hamiltonian.
-    hamiltonian : :ref:`Hamiltonian`
+    hamiltonian : :ref:`QubitOperator`
         The problem Hamiltonian.
     
     """
