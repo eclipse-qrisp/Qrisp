@@ -249,7 +249,7 @@ def create_electronic_hamiltonian(arg, active_orb=None, active_elec=None):
             basis = 'sto-3g')
 
         H = create_electronic_hamiltonian(mol)
-        H.to_pauli_hamiltonian()   
+        H.to_qubit_operator()   
 
     Yields:
 
@@ -572,7 +572,7 @@ def electronic_structure_problem(arg, active_orb=None, active_elec=None, mapping
     ansatz, num_params = create_QCCSD_ansatz(K,L)
 
     fermionic_hamiltonian = create_electronic_hamiltonian(data,K,L)
-    hamiltonian = fermionic_hamiltonian.to_pauli_hamiltonian(mapping_type=mapping_type,num_qubits=K)
+    hamiltonian = fermionic_hamiltonian.to_qubit_operator(mapping_type=mapping_type)
     hamiltonian.apply_threshold(threshold)
 
     return VQEProblem(hamiltonian, ansatz, num_params, init_function=create_hartree_fock_init_function(K,L,mapping_type))

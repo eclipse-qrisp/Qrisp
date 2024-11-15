@@ -35,7 +35,7 @@ def test_vqe_electronic_structure_H2():
         atom = '''H 0 0 0; H 0 0 0.74''',
         basis = 'sto-3g')
     
-    H = create_electronic_hamiltonian(mol).to_pauli_hamiltonian()
+    H = create_electronic_hamiltonian(mol).to_qubit_operator()
     assert np.abs(H.ground_state_energy()-(-1.85238817356958))
 
     vqe = electronic_structure_problem(mol)
@@ -59,7 +59,7 @@ def test_vqe_electronic_structure_BeH2():
         atom = f'''Be 0 0 0; H 0 0 3.0; H 0 0 -3.0''',
         basis = 'sto-3g')
     
-    H = create_electronic_hamiltonian(mol,active_orb=6,active_elec=4).to_pauli_hamiltonian()
+    H = create_electronic_hamiltonian(mol,active_orb=6,active_elec=4).to_qubit_operator()
     assert np.abs(H.ground_state_energy()-(-16.73195995959339))
 
     # runs for >1 minute
