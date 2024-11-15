@@ -79,6 +79,12 @@
             max-width: 76%;
         }
     }
+    
+    /* Center logos at the bottom of the page */
+    .sd-row {
+        justify-content: center;
+    }
+    
     </style>
 
     <div id="hero">
@@ -347,27 +353,28 @@ Qrisp code can be significantly shorter and also more readable than the equivale
          :align: center
    * - ::
          
-         from qiskit import (QuantumCircuit, QuantumRegister, 
-         ClassicalRegister, Aer, execute)
-         from qiskit.circuit.library import RGQFTMultiplier
-         n = 6
-         a = QuantumRegister(n)
-         b = QuantumRegister(n)
-         res = QuantumRegister(2*n)
-         cl_res = ClassicalRegister(2*n)
-         qc = QuantumCircuit(a, b, res, cl_res)
-         for i in range(len(a)):
-             if 3 & 1<<i: qc.x(a[i]) 
-         for i in range(len(b)):
-             if 4 & 1<<i: qc.x(b[i]) 
-         qc.append(RGQFTMultiplier(n, 2*n), 
-         list(a) + list(b) + list(res))
-         qc.measure(res, cl_res)
-         backend = Aer.get_backend('qasm_simulator')
-         counts_dic = execute(qc, backend).result().get_counts()
-         print({int(k, 2) : v for k, v in counts_dic.items()})
-         #Yields: {12: 1024}
-         
+		from qiskit import (QuantumCircuit, QuantumRegister,
+		ClassicalRegister, transpile)
+		from qiskit_aer import Aer
+		from qiskit.circuit.library import RGQFTMultiplier
+		n = 6
+		a = QuantumRegister(n)
+		b = QuantumRegister(n)
+		res = QuantumRegister(2*n)
+		cl_res = ClassicalRegister(2*n)
+		qc = QuantumCircuit(a, b, res, cl_res)
+		for i in range(len(a)):
+			if 3 & 1<<i: qc.x(a[i])
+		for i in range(len(b)):
+			if 4 & 1<<i: qc.x(b[i])
+		qc.append(RGQFTMultiplier(n, 2*n),
+		list(a) + list(b) + list(res))
+		qc.measure(res, cl_res)
+		backend = Aer.get_backend('qasm_simulator')
+		qc = transpile(qc, backend)
+		counts_dic = backend.run(qc).result().get_counts()
+		print({int(k, 2) : v for k, v in counts_dic.items()})
+		#Yields: {12: 1024}
          
      - ::
    
@@ -397,11 +404,12 @@ Who is behind Qrisp
     <div class="code-example-text">
     
 
-Qrisp is an open-source project developed at `Fraunhofer FOKUS <https://www.fokus.fraunhofer.de/en/>`_, an industrial research facility based in Berlin. It is publicly funded by the German ministry of econmic affairs with the aim to enable commercial use of quantum computation. To achieve this, we aim to open this field of research to a broad audience of developers. Furthermore we are proud to announce that Qrisp will become a part of the `Eclipse foundation <https://www.eclipse.org/>`_!
+Qrisp is an Eclipse open-source project developed mainly at `Fraunhofer FOKUS <https://www.fokus.fraunhofer.de/en/>`_, an industrial research facility based in Berlin. It is publicly funded by the `German ministry of economic affairs <https://www.digitale-technologien.de/DT/Navigation/DE/ProgrammeProjekte/AktuelleTechnologieprogramme/Quanten_Computing/Projekte/Qompiler/qompiler.html>`_ and the European Union with the aim to enable commercial use of quantum computation. To achieve this, we aim to open this field of research to a broad audience of developers. Furthermore we are proud to announce that Qrisp will become a part of the `Eclipse foundation <https://www.eclipse.org/>`_!
 
 .. raw:: html
 
     </div>
+
 
 .. grid:: 1 1 5 5
 
@@ -441,6 +449,9 @@ Qrisp is an open-source project developed at `Fraunhofer FOKUS <https://www.foku
             :width: 150
             :class: no-scaled-link
 
+
+.. grid:: 1 1 5 5
+
     .. grid-item-card::
         :class-card: sd-border-0
         :shadow: none
@@ -449,7 +460,25 @@ Qrisp is an open-source project developed at `Fraunhofer FOKUS <https://www.foku
             :align: center
             :width: 150
             :class: no-scaled-link
-            
+
+    .. grid-item-card::
+        :class-card: sd-border-0
+        :shadow: none
+    
+        .. image:: ./_static/iqm_logo.jpg
+            :align: center
+            :width: 150
+            :class: no-scaled-link
+
+    .. grid-item-card::
+        :class-card: sd-border-0
+        :shadow: none
+    
+        .. image:: ./_static/eu.png
+            :align: center
+            :width: 150
+            :class: no-scaled-link
+
 
 .. toctree::
    :hidden:

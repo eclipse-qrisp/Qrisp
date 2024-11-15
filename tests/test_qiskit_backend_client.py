@@ -20,10 +20,7 @@
 import numpy as np
 
 from qrisp import QuantumCircuit
-from qrisp.interface.backends import VirtualBackend
-from qrisp.interface.backends import VirtualQiskitBackend
-
-
+from qrisp.interface import VirtualBackend, QiskitBackend
 
 def test_qiskit_backend_client():
     
@@ -72,7 +69,9 @@ def test_qiskit_backend_client():
     qc.measure(1, 0)
 
 
-    def sample_run_func(qc, shots, token = ""):
+    def sample_run_func(qc, shots = None, token = ""):
+        if shots is None:
+            shots = 10000
         return {"0": shots}
 
     test_virtual_backend = VirtualBackend(sample_run_func)
@@ -83,7 +82,7 @@ def test_qiskit_backend_client():
     ###################
 
     # Create Qiskit Backend
-    test_qiskit_backend = VirtualQiskitBackend()
+    test_qiskit_backend = QiskitBackend()
 
     qc = QuantumCircuit(4, 1)
     qc.x(0)

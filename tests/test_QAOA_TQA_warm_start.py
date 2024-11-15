@@ -33,7 +33,7 @@ def test_TQA_warmstart():
     count = 0
     repetitions=10
     for i in range (repetitions):
-        print(i)
+        
         benchmark_data1 = maxcut_instance.benchmark(qarg = QuantumVariable(len(G)),
                                 depth_range = [3],
                                 shot_range = [100000],
@@ -67,16 +67,18 @@ def test_TQA_warmstart():
             count += 1 
 
     # define the measured statistics of 1000 runs. p is the probability that the random start outperforms TQA warm start
-    p = 489/1000
+    #p = 489/1000
 
-    # calculate p_empirical
+    # calculate p_empirical (the probability that the random start outperforms TQA warm start)
     p_empirical = count / repetitions
 
+    assert p_empirical < 0.3
+
     # calculate the test statistic
-    z = (p_empirical - p) / math.sqrt((p * (1 - p)) / repetitions)
+    #z = (p_empirical - p) / math.sqrt((p * (1 - p)) / repetitions)
 
     # calculate the p-value
-    p_value = 2 * (1 - stats.norm.cdf(abs(z)))
+    #p_value = 2 * (1 - stats.norm.cdf(abs(z)))
 
     # check if the p-value is less than the significance level
-    assert p_value >= 0.01, "The test failed. The sample is unlikely to have come from the original probability p."
+    #assert p_value >= 0.01, "The test failed. The sample is unlikely to have come from the original probability p."

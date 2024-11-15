@@ -227,7 +227,7 @@ And most importantly: whisper the magic word: *QRISPIFYYY*
     print("QAOA solution: ", res_str)
     best_coloring, best_solution = (mkcs_obj(res_str,G),res_str)
 
-    nx.draw(G, node_color=res_str, with_labels=True)
+    nx.draw(G, with_labels=True, node_color=[res_str[node] for node in G.nodes()])
     plt.show()
 
 🎉 aaand time! Whew, a new personal best! 🎉
@@ -268,8 +268,9 @@ It's pedagogical to, similarly to what we have done in the previous MaxCut tutor
     best_coloring, best_solution = min([(mkcs_obj(quantumcolor_array,G),quantumcolor_array) for quantumcolor_array in res_onehot.keys()], key=itemgetter(0))
     best_coloring_onehot, res_str_onehot = min([(mkcs_obj(quantumcolor_array,G),quantumcolor_array) for quantumcolor_array in list(res_onehot.keys())[:5]], key=itemgetter(0))
 
-    nx.draw(G, node_color=res_str_onehot, with_labels=True)
+    nx.draw(G, with_labels=True, node_color=[res_str_onehot[node] for node in G.nodes()])
     plt.show()
+    
 
 After successfully coloring the graph, you now possess the sacred knowledge of understanding how to implement QAOA in Qrisp to solve complex optimization problems. 
 

@@ -74,7 +74,7 @@ def cnot_count(qc):
     cnot_count = 0
     for gate_name in ["cx", "cy", "cz"]:
         cnot_count += gate_count_dic.get(gate_name, 0)
-    
+
     return cnot_count
 
 
@@ -87,7 +87,7 @@ def is_inv(x, bit):
     return bool(int(x) % 2)
 
 
-def get_depth_dic(qc, transpile_qc=True, depth_indicator = lambda x : 1):
+def get_depth_dic(qc, transpile_qc=True, depth_indicator=lambda x: 1):
     if len(qc.qubits) == 0:
         return {}
 
@@ -126,9 +126,9 @@ def get_depth_dic(qc, transpile_qc=True, depth_indicator = lambda x : 1):
         levels = []
         reg_ints = []
         # If count then add one to stack heights
-        
+
         gate_depth = depth_indicator(instr.op)
-        
+
         for ind, reg in enumerate(qargs + cargs):
             # Add to the stacks of the qubits and
             # cbits used in the gate.
@@ -215,9 +215,9 @@ def gate_wrap(*args, permeability=None, is_qfree=None, name=None, verify=False):
         example_function(a, b)
 
     >>> print(a.qs)
-    
+
     ::
-    
+
         QuantumCircuit:
         --------------
              ┌───────────────────┐
@@ -237,11 +237,11 @@ def gate_wrap(*args, permeability=None, is_qfree=None, name=None, verify=False):
         ---------------------
         QuantumVariable a
         QuantumVariable b
-    
+
     >>> print(a.qs.transpile())
-    
+
     ::
-    
+
              ┌───┐                    ┌───┐
         b.0: ┤ X ├─────────────────■──┤ H ├──────────
              └─┬─┘┌───┐            │  └───┘┌───┐
@@ -278,9 +278,9 @@ def gate_wrap(*args, permeability=None, is_qfree=None, name=None, verify=False):
         res = example_function(qv_0, qv_1)
 
     >>> print(qv_0.qs)
-    
+
     ::
-    
+
         QuantumCircuit:
         --------------
                 ┌───────────────────┐
@@ -295,13 +295,13 @@ def gate_wrap(*args, permeability=None, is_qfree=None, name=None, verify=False):
         QuantumVariable qv_0
         QuantumVariable qv_1
         QuantumVariable res
-    
-    
+
+
     >>> qv_1.uncompute()
     >>> print(qv_0.qs)
-    
+
     ::
-    
+
         QuantumCircuit:
         --------------
                 ┌───────────────────┐
@@ -323,9 +323,9 @@ def gate_wrap(*args, permeability=None, is_qfree=None, name=None, verify=False):
     >>> qv_0.uncompute(do_it = False)
     >>> res.uncompute()
     >>> print(qv_0.qs)
-    
+
     ::
-    
+
         QuantumCircuit:
         --------------
                 ┌───────────────────┐┌──────────────────────┐
@@ -368,16 +368,13 @@ def gate_wrap_inner(
         from qrisp.environments import GateWrapEnvironment
         from qrisp import merge, QuantumVariable, QuantumArray
 
-
         try:
             qs = find_qs(args)
         except:
             qs_list = recursive_qs_search([args, kwargs])
             qs = qs_list[0]
-            
 
         initial_qubits = set(qs.qubits)
-
 
         if name is None:
             gwe = GateWrapEnvironment(name=function.__name__)
@@ -389,10 +386,10 @@ def gate_wrap_inner(
 
         if len(qs.env_stack):
             gwe.compile()
-            
+
         if gwe in qs.data:
             qs.data.remove(gwe)
-        
+
         if gwe.instruction is None:
             return result
 
@@ -417,22 +414,21 @@ def gate_wrap_inner(
             gwe.instruction.op.is_qfree = is_qfree
 
         if permeability is not None:
-            permeability_dict = {i : None for i in range(gwe.instruction.op.num_qubits)}
+            permeability_dict = {i: None for i in range(gwe.instruction.op.num_qubits)}
             permeable_qubits = []
             not_permeable_qubits = []
-            
 
             if isinstance(permeability, list):
-                
+
                 for i in range(len(args)):
-                    
+
                     if i in permeability:
                         extension_list = permeable_qubits
                     else:
                         extension_list = not_permeable_qubits
-                    
+
                     arg = args[i]
-                    
+
                     if isinstance(arg, QuantumVariable):
                         extension_list += arg.reg
                     elif isinstance(arg, (tuple, list)):
@@ -444,7 +440,6 @@ def gate_wrap_inner(
                     elif isinstance(arg, QuantumArray):
                         for qv in arg.flatten():
                             extension_list += qv.reg
-                        
 
                 if isinstance(result, QuantumVariable):
                     not_permeable_qubits += result.reg
@@ -457,11 +452,9 @@ def gate_wrap_inner(
                 elif isinstance(result, QuantumArray):
                     for qv in result.flatten():
                         not_permeable_qubits += qv.reg
-                    
-                    
-            
+
             elif isinstance(permeability, str):
-                
+
                 for arg in args:
                     if isinstance(arg, QuantumVariable):
                         permeable_qubits += arg.reg
@@ -481,7 +474,7 @@ def gate_wrap_inner(
                     extension_list = not_permeable_qubits
                 else:
                     raise Exception(f"Don't know permeability option {permeability}")
-                    
+
                 if isinstance(result, QuantumVariable):
                     extension_list += result.reg
                 elif isinstance(result, (tuple, list)):
@@ -495,14 +488,14 @@ def gate_wrap_inner(
                         extension_list += qv.reg
 
             for i in range(len(gwe.instruction.qubits)):
-                
+
                 qb = gwe.instruction.qubits[i]
                 if qb in permeable_qubits:
                     permeability_dict[i] = True
                 elif qb in not_permeable_qubits:
                     permeability_dict[i] = False
                 elif qb in ancillas:
-                    
+
                     # Even though ancilla qubits are permeable, we want to be able to
                     # use the gate_wrap decorator as an interface to perform
                     # recomputation. If we mark them as permeable, Unqomp won't  wrap
@@ -612,17 +605,18 @@ def gate_wrap_inner(
 
 
 def find_qs(args):
-    
+
     if hasattr(args, "qs"):
         return args.qs()
-    
+
     from qrisp import QuantumVariable, QuantumArray, Qubit
+
     for arg in args:
         if isinstance(arg, (QuantumVariable, QuantumArray)):
             return arg.qs
         if isinstance(arg, Qubit):
             return arg.qs()
-        
+
     else:
         for arg in args:
             if isinstance(arg, (list, tuple)):
@@ -635,7 +629,7 @@ def find_qs(args):
                     return find_qs(arg.items())
                 except:
                     pass
-    
+
     raise Exception("Couldn't find QuantumSession")
 
 
@@ -651,7 +645,7 @@ def multi_measurement(qv_list, shots=None, backend=None):
     qv_list : list[QuantumVariable]
         A list of QuantumVariables.
     shots : int, optional
-        The amount of shots to perform. The default is 10000.
+        The amount of shots to perform. The default is given by the backend used.
     backend : BackendClient, optional
         The backend to evaluate the compiled QuantumCircuit on. By default, the backend
         from default_backend.py will be used.
@@ -712,7 +706,6 @@ def multi_measurement(qv_list, shots=None, backend=None):
     # compiled_qc = qv_list[0].qs.copy()
     # Add classical registers for the measurement results to be stored in
     cl_reg_list = []
-    
 
     for var in qv_list[::-1]:
         cl_reg = []
@@ -773,7 +766,8 @@ def multi_measurement(qv_list, shots=None, backend=None):
         # Create array
         array_state = tuple(counts_values)
         try:
-            new_counts[array_state] = counts[list(counts.keys())[i]] / shots
+            no_of_shots_executed = sum(counts.values())
+            new_counts[array_state] = counts[list(counts.keys())[i]] / no_of_shots_executed
         except TypeError:
             raise Exception(
                 "Tried to create measurement outcome dic for QuantumVariable "
@@ -1208,8 +1202,7 @@ def get_statevector_function(qs, decimals=None):
                 raise Exception(
                     "Tried to invoke statevector debugger without specifying an "
                     "outcome label for each QuantumVariable registered in "
-                    "QuantumSession. Missing variables are: "
-                    + str(missing_variables)
+                    "QuantumSession. Missing variables are: " + str(missing_variables)
                 )
 
             bitstring = len(compiled_qc.qubits) * ["0"]
@@ -1233,21 +1226,21 @@ def get_statevector_function(qs, decimals=None):
         return statevector
 
 
-def check_if_fresh(qubits, qs, ignore_q_envs = True):
-    
+def check_if_fresh(qubits, qs, ignore_q_envs=True):
+
     from qrisp import QuantumEnvironment
-    
+
     if not ignore_q_envs:
         temp_data = list(qs.data)
         qs.data = []
-        
+
         for i in range(len(temp_data)):
             if isinstance(temp_data[i], QuantumEnvironment):
                 env = temp_data[i]
                 env.compile()
             else:
                 qs.append(temp_data[i])
-    
+
     for qb in qubits:
         reversed_data = qb.qs().data[::-1]
         for instr in reversed_data:
@@ -1276,15 +1269,17 @@ def get_measurement_from_qc(qc, qubits, backend, shots=None):
 
     # Execute circuit
     counts = backend.run(qc, shots)
-    
+
     # Remove other measurements outcomes from counts dic
     new_counts_dic = {}
-    shots = 0
+
+    no_of_shots_executed = 0
+
     for key in counts.keys():
         # Remove possible whitespaces
         new_key = key.replace(" ", "")
         # Remove other measurements
-        new_key = new_key[:len(cl)]
+        new_key = new_key[: len(cl)]
 
         new_key = int(new_key, base=2)
         try:
@@ -1294,13 +1289,15 @@ def get_measurement_from_qc(qc, qubits, backend, shots=None):
             
         shots += counts[key]
 
+        no_of_shots_executed += counts[key]
+
     counts = new_counts_dic
-    
+
     # Plot result (if needed)
 
     # Normalize counts
     for key in counts.keys():
-        counts[key] = counts[key] / abs(shots)
+        counts[key] = counts[key] / abs(no_of_shots_executed)
 
     return counts
 
@@ -1312,10 +1309,9 @@ def find_calling_line(level=0):
     )  # prints "a = fct1()"
 
 
-
 def retarget_instructions(data, source_qubits, target_qubits):
     from qrisp import QuantumEnvironment, recursive_qs_search, multi_session_merge
-    
+
     for i in range(len(data)):
         instr = data[i]
 
@@ -1327,6 +1323,7 @@ def retarget_instructions(data, source_qubits, target_qubits):
         for j in range(len(instr.qubits)):
             if instr.qubits[j] in source_qubits:
                 instr.qubits[j] = target_qubits[source_qubits.index(instr.qubits[j])]
+
 
 def redirect_qfunction(function_to_redirect):
     """
@@ -1384,9 +1381,9 @@ def redirect_qfunction(function_to_redirect):
 
 
     >>> print(a.qs)
-    
+
     ::
-    
+
         QuantumCircuit:
         --------------
         b.0: ──■──
@@ -1406,13 +1403,20 @@ def redirect_qfunction(function_to_redirect):
     """
     from qrisp import QuantumEnvironment, QuantumVariable, merge, QuantumArray
     import weakref
+
     def redirected_qfunction(*args, target=None, **kwargs):
-        
-        merge([arg for arg in list(args) + [target] if isinstance(arg, (QuantumVariable, QuantumArray))])
+
+        merge(
+            [
+                arg
+                for arg in list(args) + [target]
+                if isinstance(arg, (QuantumVariable, QuantumArray))
+            ]
+        )
         env = QuantumEnvironment()
         env.manual_allocation_management = True
         qs = target.qs
-        
+
         with env:
             res = function_to_redirect(*args, **kwargs)
 
@@ -1430,9 +1434,9 @@ def redirect_qfunction(function_to_redirect):
             i = 0
             res_is_new = False
             while i < len(env.env_qs.data):
-                
+
                 instr = env.env_qs.data[i]
-                
+
                 if isinstance(instr, QuantumEnvironment):
                     pass
                 elif instr.op.name == "qb_alloc" and instr.qubits[0] in list(res):
@@ -1488,7 +1492,7 @@ def get_sympy_state(qs, decimals):
     from qrisp.simulator import statevector_sim
 
     qv_list = list(qs.qv_list)
-    
+
     labels = []
     for qv in qv_list:
         labels.append([qv.decoder(i) for i in range(2**qv.size)])
@@ -1534,26 +1538,26 @@ def get_sympy_state(qs, decimals):
         amplitude = sv_array[ind]
 
         if not sv_array.dtype == np.dtype("O"):
-            
+
             if decimals is None:
-                
+
                 try:
                     abs_amp = trigify_amp(amplitude, nnz)
                 except TypeError:
                     abs_amp = amplitude
-                
+
                 # For some reason there is a sympy error, when the angle is equal to 1
                 if angles[ind] == 1:
                     phase = 1
                 else:
-                    phase = nsimplify(float(angles[ind]), tolerance=10 ** -5)
-    
+                    phase = nsimplify(float(angles[ind]), tolerance=10**-5)
+
                 if count_ops(phase) > 5:
                     phase = angles[ind]
-    
+
                 ket_expr = exp(I * phase * pi) * abs_amp * nnz**0.5
             else:
-                
+
                 ket_expr = sympy.N(amplitude, decimals)
 
         else:
@@ -1583,16 +1587,16 @@ def get_sympy_state(qs, decimals):
                     if np.angle(complex(a.evalf())) / np.pi == 1:
                         phase = -1
                     else:
-                        
+
                         phase = sp.exp(
                             sp.I
                             * nsimplify(
                                 np.angle(complex(a.evalf())) / np.pi,
-                                tolerance=10 ** -5,
+                                tolerance=10**-5,
                             )
                             * Symbol("pi")
                         )
-                        
+
                     expr = abs_amp * phase
 
                     amplitude = amplitude.subs(a, expr)
@@ -1613,7 +1617,7 @@ def get_sympy_state(qs, decimals):
             ket_expr *= OrthogonalKet((label))
 
         res += ket_expr
-    
+
     if decimals is None or sv_array.dtype == np.dtype("O"):
         res = cancel(nsimplify(1 / nnz**0.5) * res)
 
@@ -1646,10 +1650,10 @@ def trigify_amp(amplitude, nnz):
     )
 
     cos_expr = nsimplify(
-        float(np.arccos(np.abs(amplitude)) / np.pi), tolerance=10 ** -5
+        float(np.arccos(np.abs(amplitude)) / np.pi), tolerance=10**-5
     )
     sin_expr = nsimplify(
-        float(np.arcsin(np.abs(amplitude)) / np.pi), tolerance=10 ** -5
+        float(np.arcsin(np.abs(amplitude)) / np.pi), tolerance=10**-5
     )
 
     # if count_ops(sin_expr) > count_ops(cos_expr):
@@ -1669,14 +1673,13 @@ def trigify_amp(amplitude, nnz):
             temp = sin_expr
     else:
         temp = (
-            nsimplify(np.abs(amplitude) * nnz**0.5, tolerance=10 ** -5)
-            / nnz**0.5
+            nsimplify(np.abs(amplitude) * nnz**0.5, tolerance=10**-5) / nnz**0.5
         )
 
     # if count_ops(temp) > 4:
     if len(latex(temp)) > 20:
         temp = (
-            nsimplify(float(np.abs(amplitude) * nnz**0.5), tolerance=10 ** -5)
+            nsimplify(float(np.abs(amplitude) * nnz**0.5), tolerance=10**-5)
             / nnz**0.5
         )
         if len(latex(temp)) > 20:
@@ -1783,9 +1786,9 @@ def lifted(*args, verify=False):
         res = margolus(control)
 
     >>> print(res.qs)
-    
+
     ::
-    
+
         QuantumCircuit:
         --------------
                    ┌───────────┐
@@ -1802,9 +1805,9 @@ def lifted(*args, verify=False):
 
     >>> res.uncompute()
     >>> print(res.qs)
-    
+
     ::
-    
+
         QuantumCircuit:
         --------------
                    ┌───────────┐┌──────────────┐
@@ -1840,11 +1843,11 @@ def lifted(*args, verify=False):
 def t_depth_indicator(op, epsilon):
     r"""
     This function returns the T-depth of an :ref:`Operation` object.
-    
+
     According to `this paper <https://arxiv.org/abs/1403.2975>`_, the synthesis of an $RZ(\phi)$
-    up to precision $\epsilon$ requires $3\text{log}_2(\frac{1}{\epsilon})$ 
+    up to precision $\epsilon$ requires $3\text{log}_2(\frac{1}{\epsilon})$
     T-gates.
-    
+
     Parameters
     ----------
     op : :ref:`Operation`
@@ -1859,47 +1862,67 @@ def t_depth_indicator(op, epsilon):
         The estimated T-depth of the Operation.
 
     """
-    
+
     from qrisp import ClControlledOperation
-    
+
     if isinstance(op, ClControlledOperation):
         return t_depth_indicator(op.base_op, epsilon)
     elif op.definition is not None:
         return op.definition.t_depth(epsilon)
-    elif op.name in ["cx", "cx", "cz", "x", "y", "z", "s", "h", "s_dg", "measure", "reset", "qb_alloc", "qb_dealloc", "barrier", "gphase"]:
+    elif op.name in [
+        "cx",
+        "cx",
+        "cz",
+        "x",
+        "y",
+        "z",
+        "s",
+        "h",
+        "s_dg",
+        "sx",
+        "sx_dg",
+        "measure",
+        "reset",
+        "qb_alloc",
+        "qb_dealloc",
+        "barrier",
+        "gphase",
+        
+    ]:
         return 0
     elif op.name in ["rx", "ry", "rz", "p", "u1"]:
-        par = op.params[0]/(np.pi)%1
-        if par in [0, 1/2]:
+        par = op.params[0] / (np.pi) % 1
+        if par in [0, 1 / 2]:
             return 0
-        elif par in [1/4, 3/4]:
+        elif par in [1 / 4, 3 / 4]:
             return 1
         else:
-            return 3*np.log2(1/epsilon)
+            return 3 * np.log2(1 / epsilon)
     elif op.name in ["t", "t_dg"]:
         return 1
     elif op.name == "u3":
         res = 0
         for i in range(3):
-            par = op.params[0]/(np.pi)%1
-            if par in [0, 1/2]:
+            par = op.params[0] / (np.pi) % 1
+            if par in [0, 1 / 2]:
                 pass
-            elif par in [1/4, 3/4]:
+            elif par in [1 / 4, 3 / 4]:
                 res += 1
             else:
-                res += 3*np.log2(1/epsilon)
+                res += 3 * np.log2(1 / epsilon)
         return res
     else:
         raise Exception(f"Gate {op.name} not implemented")
 
+
 def cnot_depth_indicator(op):
     r"""
     This function returns the CNOT-depth of an :ref:`Operation` object.
-    
-    In NISQ-era devices, CNOT gates are the restricting bottleneck for quantum 
+
+    In NISQ-era devices, CNOT gates are the restricting bottleneck for quantum
     circuit execution. This function can be used as a gate-speed specifier for
     the :meth:`compile <qrisp.QuantumSession.compile>` method.
-    
+
     Parameters
     ----------
     op : :ref:`Operation`
@@ -1911,9 +1934,9 @@ def cnot_depth_indicator(op):
         The CNOT-depth of the Operation.
 
     """
-    
+
     from qrisp import ClControlledOperation
-    
+
     if isinstance(op, ClControlledOperation):
         return cnot_depth_indicator(op.base_op)
     elif op.definition is not None:
@@ -1924,11 +1947,12 @@ def cnot_depth_indicator(op):
         return 1
     else:
         raise Exception(f"Gate {op.name} not implemented")
-        
+
+
 def inpl_adder_test(inpl_adder):
     """
     This function runs tests on a desired inplace addition function.
-    An inplace addition function is a function mapping (a, b) to (a, a+b), 
+    An inplace addition function is a function mapping (a, b) to (a, a+b),
     where a is a :ref:`QuantumVariable`, list[:ref:`Qubit`] or an integer
     and b is either a :ref:`QuantumVariable` or a list[:ref:`Qubit`].
 
@@ -1940,152 +1964,166 @@ def inpl_adder_test(inpl_adder):
 
     Returns
     -------
-    Bool:  
+    Bool:
         True if all tests are passed, else False/ Exceptions.
-        
+
     Examples
     --------
-    
+
     We test the built-in Cuccaro adder:
-        
+
     ::
-        
+
         from qrisp import cuccaro_adder, inpl_adder_test
-        
+
         inpl_adder_test(cuccaro_adder)
         print("The cuccaro adder passed the tests without errors.")
-    
+
     And now a new user-defined qcla adder:
     ::
-        
+
         from qrisp import inpl_adder_test, qcla
-        
+
         qcla_2_0 = lambda x, y : qcla(x, y, radix_base = 2, radix_exponent = 0)
         inpl_adder_test(qcla_2_0)
         print("The qcla_2_0 adder passed the tests without errors.")
 
     """
     from qrisp import QuantumFloat, multi_measurement, h, control, QuantumBool
-    
+
     for i in range(1, 7):
-        
-        for j in range(1, i+1):
+
+        for j in range(1, i + 1):
             a = QuantumFloat(j)
             b = QuantumFloat(i)
             c = QuantumFloat(i)
-            
+
             h(a)
             h(b)
-            
+
             c[:] = b
-            
+
             inpl_adder(a, c)
-            
+
             statevector_arr = a.qs.compile().statevector_array()
             angles = np.angle(
                 statevector_arr[
                     np.abs(statevector_arr) > 1 / 2 ** ((a.size + b.size) / 2 + 1)
                 ]
             )
-    
+
             # Test correct phase behavior
-            assert np.sum(np.abs(angles)) < 0.1, f"Quantum-quantum adder produced a faulty phase shift on input sizes, {i},{j}."
-            
-            
-            
-            mes_res = multi_measurement([a,b,c])
-            
+            assert (
+                np.sum(np.abs(angles)) < 0.1
+            ), f"Quantum-quantum adder produced a faulty phase shift on input sizes, {i},{j}."
+
+            mes_res = multi_measurement([a, b, c])
+
             for a, b, c in mes_res.keys():
-                assert (a + b)%(2**i) == c, f"Quantum-quantum addition result was incorrect for input values {a} += {c} on input sizes, {i},{j}."
-                
-            
-        
+                assert (a + b) % (
+                    2**i
+                ) == c, f"Quantum-quantum addition result was incorrect for input values {a} += {c} on input sizes, {i},{j}."
+
         if i < 6:
             for j in range(1, 2**i):
                 a = QuantumFloat(i)
                 b = QuantumFloat(i)
-                
+
                 h(a)
-                
+
                 b[:] = a
-                
+
                 inpl_adder(j, a)
-                
+
                 statevector_arr = a.qs.compile().statevector_array()
                 angles = np.angle(
                     statevector_arr[
                         np.abs(statevector_arr) > 1 / 2 ** ((a.size) / 2 + 1)
                     ]
                 )
-                assert np.sum(np.abs(angles)) < 0.1, f"Classical-quantum adder produced a faulty phase shift on input size {i}."
-                
-                mes_res = multi_measurement([a,b])
-                
+                assert (
+                    np.sum(np.abs(angles)) < 0.1
+                ), f"Classical-quantum adder produced a faulty phase shift on input size {i}."
+
+                mes_res = multi_measurement([a, b])
+
                 for a, b in mes_res.keys():
-                    assert (b + j)%(2**i) == a, f"Classical-quantum addition result was incorrect for input values {a} += {c} on input size {i}."
-                    
+                    assert (b + j) % (
+                        2**i
+                    ) == a, f"Classical-quantum addition result was incorrect for input values {a} += {c} on input size {i}."
+
     for i in range(1, 7):
-        
-        for j in range(1, i+1):
+
+        for j in range(1, i + 1):
             a = QuantumFloat(j)
             b = QuantumFloat(i)
             c = QuantumFloat(i)
             qbl = QuantumBool()
-            
+
             h(qbl)
             h(a)
             h(b)
-            
+
             c[:] = b
-            
+
             with control(qbl):
                 inpl_adder(a, c)
-                
-                
+
             statevector_arr = a.qs.compile().statevector_array()
             angles = np.angle(
                 statevector_arr[
-                    np.abs(statevector_arr) > 1 / 2 ** ((a.size+ b.size) / 2 + 1)
+                    np.abs(statevector_arr) > 1 / 2 ** ((a.size + b.size) / 2 + 1)
                 ]
             )
-            assert np.sum(np.abs(angles)) < 0.1, f"Controlled quantum-quantum adder produced a faulty phase shift on input sizes, {i},{j}."
-            
-            mes_res = multi_measurement([a,b,c, qbl])
-            
+            assert (
+                np.sum(np.abs(angles)) < 0.1
+            ), f"Controlled quantum-quantum adder produced a faulty phase shift on input sizes, {i},{j}."
+
+            mes_res = multi_measurement([a, b, c, qbl])
+
             for a, b, c, qbl in mes_res.keys():
-                
+
                 if qbl:
-                    assert (a + b)%(2**i) == c, f"Controlled quantum-quantum addition result was incorrect for input values {a} += {c} on input sizes, {i},{j}."
+                    assert (a + b) % (
+                        2**i
+                    ) == c, f"Controlled quantum-quantum addition result was incorrect for input values {a} += {c} on input sizes, {i},{j}."
                 else:
-                    assert c == b, f"Controlled quantum-quantum addition behaviour was incorrect; an operation was performed without the control qubit in |1> state.Faulty input sizes: {i},{j}"
-        
+                    assert (
+                        c == b
+                    ), f"Controlled quantum-quantum addition behaviour was incorrect; an operation was performed without the control qubit in |1> state.Faulty input sizes: {i},{j}"
+
         if i < 6:
             for j in range(1, 2**i):
                 a = QuantumFloat(i)
                 b = QuantumFloat(i)
                 qbl = QuantumBool()
-                
+
                 h(qbl)
                 h(a)
-                
+
                 b[:] = a
-                
+
                 with control(qbl):
                     inpl_adder(j, a)
-                    
+
                 statevector_arr = a.qs.compile().statevector_array()
                 angles = np.angle(
                     statevector_arr[
                         np.abs(statevector_arr) > 1 / 2 ** ((a.size) / 2 + 1)
                     ]
-                )    
-                assert np.sum(np.abs(angles)) < 0.1, f"Controlled classical-quantum adder produced a faulty phase shift on input size {i}."
-                
-                
-                mes_res = multi_measurement([a,b, qbl])
-                
+                )
+                assert (
+                    np.sum(np.abs(angles)) < 0.1
+                ), f"Controlled classical-quantum adder produced a faulty phase shift on input size {i}."
+
+                mes_res = multi_measurement([a, b, qbl])
+
                 for a, b, qbl in mes_res.keys():
                     if qbl:
-                        assert (b + j)%(2**i) == a, f"Controlled classical-quantum addition result was incorrect for input values {b} += {j} on input size, {i}."
+                        assert (b + j) % (
+                            2**i
+                        ) == a, f"Controlled classical-quantum addition result was incorrect for input values {b} += {j} on input size, {i}."
                     else:
-                        assert b == a, f"Controlled classical-quantum addition behaviour was incorrect; an operation was performed without the control qubit in |1> state. Faulty input sizes: {i}"
+                        assert (
+                            b == a
+                        ), f"Controlled classical-quantum addition behaviour was incorrect; an operation was performed without the control qubit in |1> state. Faulty input sizes: {i}"

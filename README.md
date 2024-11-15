@@ -13,6 +13,11 @@ pip install qrisp
 ```
 Qrisp has been confirmed to work with Python version 3.8, 3.9 & 3.10.
 
+If you want to work with IQM quantum computers as a backend, you need to install additional dependencies using
+```bash
+pip install qrisp[iqm]
+```
+
 ## First Quantum Program with Qrisp
 The very first program you usually write, when learning a new programming language, is printing 'hello world'.
 We want to do the same, but in a quantum way.

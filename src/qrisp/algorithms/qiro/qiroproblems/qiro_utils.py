@@ -1,6 +1,6 @@
 """
 \********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+* Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -20,22 +20,22 @@ import numpy as np
 
 def find_max(single_cor, double_cor, res, solutions):
     """
-    General subroutine for finding the values with maximal correlation in the QIRO algorithm
+    Subroutine for finding the values with maximal correlation in the QIRO algorithm.
 
     Parameters
     ----------
-    single_cor : List
-        Single qubits correlations to check.
-    double_cor : List[Tuple]
-        Multi qubits correlations to check.
+    single_cor : list
+        Single qubit correlations to check.
+    double_cor : list[tuple]
+        Multi qubit correlations to check.
     res : dict
-        Result dictionary of initial QAOA optimization procedure
+        Result dictionary of QAOA optimization procedure.
     solutions : List
-        Qubits which have been found to be positive correlated, i.e. part of the problem solution  
+        Qubits which were found to be positivel correlated, i.e., part of the problem solution.  
 
     Returns
     -------
-    max_item , sign
+    max_item, sign
         The item with maximal correlation and the sign of the correlation.
 
     """

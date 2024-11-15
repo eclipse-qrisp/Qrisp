@@ -167,7 +167,7 @@ html_logo = "../../logo/qrisp_logo.png"
 add_module_names = False
 
 html_css_files = [
-    'css/custom03.css',
+    'css/custom04.css',
 ]
 
 source_suffix = ['.rst', '.md']

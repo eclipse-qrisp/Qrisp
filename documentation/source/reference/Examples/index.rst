@@ -29,10 +29,9 @@ In this section, we provide a glimpse into the diverse range of applications tha
      - Exhibits how the :meth:`qrisp.q_divmod` function can be utilize to perform division with remainder.
    * - :ref:`EfficientTSP`
      - A more efficient version of the solution of the traveling salesman problem, that was presented in the :ref:`Tutorial`
-   * - :ref:`QAOAExample` 
-     - Provides implementations for solving optimization problems using the Quantum Approximate Optimization Algorithm. For a detailed tutorial on how to use QAOA, please refer to the :ref:`in depth QAOA tutorial <QAOA101>`.
    * - :ref:`ShorExample` 
      - Showcases the cryptographic implications of implementating Shor's algorithm and provides insight in how to easily use a custom adder.
+<<<<<<< HEAD
    * - :ref:`MolecularPotentialEnergyCurve` 
      - Calculating molecular potential energy curves with :ref:`VQE`.
    * - :ref:`GroundStateEnergyQPE` 
@@ -41,6 +40,10 @@ In this section, we provide a glimpse into the diverse range of applications tha
      - Hamiltonian simulation of a transverse field Ising model. 
 
       
+=======
+        
+
+>>>>>>> main
 .. toctree::
    :hidden:
    :maxdepth: 2
@@ -55,7 +58,6 @@ In this section, we provide a glimpse into the diverse range of applications tha
    MatrixMultiplication
    QuantumModDivision
    EfficientTSP
-   QAOA
    Shor
    MolecularPotentialEnergyCurve
    GroundStateEnergyQPE

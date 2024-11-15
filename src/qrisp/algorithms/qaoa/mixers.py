@@ -20,7 +20,7 @@ import numpy as np
 from scipy.optimize import minimize
 from sympy import Symbol
 
-from qrisp import QuantumVariable, h, barrier, rz, rx , cx, QuantumArray, xxyy, p, invert, conjugate, mcp
+from qrisp import QuantumVariable, h, barrier, rz, rx , cx, QuantumArray, xxyy, p, invert, conjugate, mcp, auto_uncompute, control
 
 def RX_mixer(qv, beta):
     """
@@ -67,11 +67,15 @@ def XY_mixer(qv, beta):
     """
     N = qv.size
     
-    for i in range(1, N-2, 2):
-        xxyy(4*beta, 0, qv[N-2-i], qv[N-1-i])
+    for i in range(0, N//2):
+        q1 = qv[2*i]
+        q2 = qv[2*i+1]
+        xxyy(4*beta, 0, q1, q2)
     
-    for i in range(0, N-1, 2):
-        xxyy(4*beta, 0, qv[N-2-i], qv[N-1-i])
+    for i in range(0, (N-2+N%2)//2):
+        q1 = qv[2*i+1]
+        q2 = qv[2*i+2]
+        xxyy(4*beta, 0, q1, q2)
         
     xxyy(4*beta, 0, qv[N-1], qv[0])
 
@@ -232,6 +236,65 @@ def constrained_mixer_gen(constraint_oracle, winner_state_amount):
     
     return constrained_mixer
     
+
+def controlled_RX_mixer_gen(predicate):
+    r"""
+    Generate a controlled RX mixer for a given predicate function.
+
+    Parameters
+    ----------
+    predicate : function
+        A function receiving a ``QuantumVariable`` and an index $i$.
+        This function returns a ``QuantumBool`` indicating if the predicate is satisfied for ``qv[i]``,
+        that is, if the element ``qv[i]`` should be swapped in. 
+
+    Returns
+    -------
+    controlled_RX_mixer : function
+        A function receiving a ``QuantumVariable`` and a real parameter $\beta$.
+        This function performs the application of the mixing operator.
+
+    Examples
+    --------
+
+    We define the predicate function for the :ref:`MaxIndepSet <maxIndepSetQAOA>` problem. It returns ``True`` for the index (node) $i$ if 
+    all neighbors $j$ of the node $i$ in the graph $G$ are not selected, and ``False`` otherwise.
+
+    ::
+
+        from qrisp import QuantumVariable, QuantumBool, h, mcx, auto_uncompute, multi_measurement
+        import networkx as nx
+
+        G = nx.Graph()
+        G.add_edges_from([(0, 1), (1, 2), (2, 0)])  
+        neighbors_dict = {node: list(G.adj[node]) for node in G.nodes()}
+
+        def predicate(qv,i):
+            qbl = QuantumBool()
+            if len(neighbors_dict[i])==0:
+                x(qbl)
+            else:
+                mcx([qv[j] for j in neighbors_dict[i]],qbl,ctrl_state='0'*len(neighbors_dict[i]))
+            return qbl
+
+        qv = QuantumVariable(3)
+        h(qv)
+        qbl = predicate(qv,0)
+        multi_measurement([qv,qbl])
+        # Yields: {('000', True): 0.125,('100', True): 0.125,('010', False): 0.125,('110', False): 0.125,('001', False): 0.125,('101', False): 0.125,('011', False): 0.125,('111', False): 0.125}
+
+    The resulting ``controlled_RX_mixer`` then only swaps the node $i$ in if all neighbors $j$ in the graph $G$ are not selected.
+
+    """
+
+    @auto_uncompute
+    def controlled_RX_mixer(qv, beta):
+        m = qv.size
+        for i in range(m):
+            with control(predicate(qv,i)):
+                rx(beta,qv[i])
+
+    return controlled_RX_mixer
 
 
 """ from qrisp import as_hamiltonian

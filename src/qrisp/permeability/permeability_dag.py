@@ -219,6 +219,9 @@ class PermeabilityGraph(nx.DiGraph):
 
         """
         
+        if in_node == out_node:
+            return
+        
         if self.has_edge(in_node, out_node):
             nx.DiGraph.get_edge_data(self, in_node, out_node)["qubits"].extend(qubits)
         else:

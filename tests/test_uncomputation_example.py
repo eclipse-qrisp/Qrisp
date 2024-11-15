@@ -73,6 +73,7 @@ def test_uncomputation_example():
         print(qf)
     
     print(qf)
+
     assert qf.get_measurement() == {0.5: 0.9453289065781315, 
                                     0.0: 0.007810156203124062, 
                                     1.0: 0.007810156203124062, 
@@ -81,6 +82,7 @@ def test_uncomputation_example():
                                     2.5: 0.007810156203124062, 
                                     3.0: 0.007810156203124062, 
                                     3.5: 0.007810156203124062}
+
 
     # ---------
     print("Test 2 passed")

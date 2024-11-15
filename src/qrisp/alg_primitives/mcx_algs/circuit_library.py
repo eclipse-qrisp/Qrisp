@@ -18,7 +18,7 @@
 
 import numpy as np
 
-from qrisp import QuantumCircuit, RYGate, CZGate, XGate, Instruction
+from qrisp import QuantumCircuit, CZGate, XGate, Instruction
 
 def ctrl_state_wrap(qc, ctrl_state):
     res = qc.copy()
@@ -51,19 +51,20 @@ toffoli_qc.qubits[1], toffoli_qc.qubits[0] = toffoli_qc.qubits[0], toffoli_qc.qu
 # Margolus gate as described here https://arxiv.org/abs/quant-ph/0312225 and 
 # here https://www.iccs-meeting.org/archive/iccs2022/papers/133530169.pdf
 margolus_qc = QuantumCircuit(3)
-G = RYGate(np.pi / 4)
 
-margolus_qc.append(G, 2)
+margolus_qc.sx(2)
+margolus_qc.t(2)
 margolus_qc.cx(1, 2)
-margolus_qc.append(G, 2)
+margolus_qc.t(2)
 margolus_qc.cx(0, 2)
 
 reduced_margolus_qc = margolus_qc.copy()
+reduced_margolus_qc.sx_dg(2)
 
-margolus_qc.append(G.inverse(), 2)
+margolus_qc.t_dg(2)
 margolus_qc.cx(1, 2)
-margolus_qc.append(G.inverse(), 2)
-
+margolus_qc.t_dg(2)
+margolus_qc.sx_dg(2)
 
 # Ancilla supported multi controlled X gates from https://arxiv.org/pdf/1508.03273.pdf
 # and https://www.iccs-meeting.org/archive/iccs2022/papers/133530169.pdf
