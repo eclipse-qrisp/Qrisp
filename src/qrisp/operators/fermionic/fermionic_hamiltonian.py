@@ -23,10 +23,8 @@ from qrisp.operators.fermionic.fermionic_term import FermionicTerm
 from qrisp.operators.fermionic.transformations import *
 from qrisp.operators.fermionic.graph_coloring import *
 from qrisp.operators.hamiltonian_tools import group_up_terms
-from qrisp import merge, IterationEnvironment
+from qrisp import merge, IterationEnvironment, conjugate
 from qrisp.operators.qubit import QubitOperator
-#from qrisp.operators.qubit.pauli_term import QubitTerm
-#from qrisp.operators.qubit.pauli_hamiltonian import QubitOperator
 
 import sympy as sp
 
@@ -125,7 +123,7 @@ class FermionicOperator(Hamiltonian):
             # Compute the new coefficient.
             new_terms_dict[sorted_term] = flip_sign*coeff + new_terms_dict.get(sorted_term, 0)
             
-        self.terms_dict = new_terms_dict
+        return FermionicOperator(new_terms_dict)
 
     def len(self):
         return len(self.terms_dict)
@@ -174,22 +172,22 @@ class FermionicOperator(Hamiltonian):
         return 0.5*(self + self.adjoint())
     
     def __eq__(self, other):
-        self.reduce()
-        other.reduce()
+        reduced_self = self.reduce()
+        reduced_other = other.reduce()
         
-        if len(self.terms_dict) != len(other.terms_dict):
+        if len(reduced_self) != len(reduced_other.terms_dict):
             return False
         
-        for term, coeff in self.terms_dict.items():
+        for term, coeff in reduced_self.terms_dict.items():
             if not term in other.terms_dict:
                 daggered_sorted_term, flip_sign = term.dagger().sort()
-                if daggered_sorted_term not in other.terms_dict:
+                if daggered_sorted_term not in reduced_other.terms_dict:
                     return False
-                elif self.terms_dict[term] != flip_sign*other.terms_dict[daggered_sorted_term]:
+                elif reduced_self.terms_dict[term] != flip_sign*reduced_other.terms_dict[daggered_sorted_term]:
                     return False
                 continue
                     
-            if self.terms_dict[term] != other.terms_dict[term]:
+            if reduced_self.terms_dict[term] != reduced_other.terms_dict[term]:
                 return False
         
         return True
@@ -611,10 +609,10 @@ class FermionicOperator(Hamiltonian):
         
         """
         
-        self.reduce(assume_hermitian=True)
+        reduced_H = self.reduce(assume_hermitian=True)
         
-        groups = self.group_up(denominator = lambda a,b : not a.intersect(b))
-        from qrisp import conjugate
+        groups = reduced_H.group_up(denominator = lambda a,b : not a.intersect(b))
+        
         
         def trotter_step(qarg, t, steps):
             
