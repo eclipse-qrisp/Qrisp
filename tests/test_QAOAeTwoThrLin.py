@@ -54,7 +54,7 @@ def test_eTwoThrLinQAOA():
         # run the qaoa
         QAOAinstance = QAOAProblem(cost_operator=eThrTwocostOp(clauses=clauses), mixer=RX_mixer, cl_cost_function=cl_cost_function)
         QAOAinstance.set_init_function(init_function=init_state)
-        theNiceQAOA = QAOAinstance.run(qarg=qarg, depth=5)
+        theNiceQAOA = QAOAinstance.run(qarg=qarg, depth=5, mes_kwargs = {"shots" : 100000})
 
         import itertools
         def testCostFun(state):

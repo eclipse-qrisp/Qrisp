@@ -36,7 +36,7 @@ def test_TQA_warmstart():
         print(i)
         benchmark_data1 = maxcut_instance.benchmark(qarg = QuantumVariable(len(G)),
                                 depth_range = [3],
-                                shot_range = [10000],
+                                shot_range = [100000],
                                 iter_range = [100],
                                 optimal_solution = '00110110',
                                 repetitions = 1
@@ -50,7 +50,7 @@ def test_TQA_warmstart():
 
         benchmark_data2 = maxcut_instance.benchmark(qarg = QuantumVariable(len(G)),
                                 depth_range = [3],
-                                shot_range = [10000],
+                                shot_range = [100000],
                                 iter_range = [100],
                                 optimal_solution = '00110110',
                                 init_type = 'tqa',

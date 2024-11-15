@@ -33,7 +33,7 @@ def test_QUBO():
     )
     qarg = QuantumArray(qtype = QuantumVariable(1), shape = len(Q1))
     QUBO_instance = QUBO_problem(Q1)
-    res = QUBO_instance.run(qarg, depth=1, mes_kwargs={"backend" : def_backend}, max_iter = 50)
+    res = QUBO_instance.run(qarg, depth=1, mes_kwargs={"backend" : def_backend, "shots" : 100000}, max_iter = 50)
     best_cost1, res_str = min([(QUBO_obj(bitstring, Q1), bitstring) for bitstring in list(res.keys())], key=itemgetter(0))
 
     assert best_cost1 == -2.0
@@ -49,7 +49,7 @@ def test_QUBO():
     
     qarg = QuantumArray(qtype = QuantumVariable(1), shape = len(Q2))
     QUBO_instance = QUBO_problem(Q2)
-    res = QUBO_instance.run(qarg, depth=1, mes_kwargs={"backend" : def_backend}, max_iter = 50)
+    res = QUBO_instance.run(qarg, depth=1, mes_kwargs={"backend" : def_backend, "shots" : 100000}, max_iter = 50)
     best_cost2, res_str = max([(QUBO_obj(bitstring, Q2), bitstring) for bitstring in list(res.keys())], key=itemgetter(0))
 
     assert best_cost2 == 2
@@ -65,7 +65,7 @@ def test_QUBO():
 
     qarg = QuantumArray(qtype = QuantumVariable(1), shape = len(Q3))
     QUBO_instance = QUBO_problem(Q3)
-    res = QUBO_instance.run(qarg, depth=1, mes_kwargs={"backend" : def_backend}, max_iter = 50)
+    res = QUBO_instance.run(qarg, depth=1, mes_kwargs={"backend" : def_backend, "shots" : 100000}, max_iter = 50)
     best_cost3, res_str = max([(QUBO_obj(bitstring, Q2), bitstring) for bitstring in list(res.keys())], key=itemgetter(0))
 
     assert best_cost3 == best_cost2

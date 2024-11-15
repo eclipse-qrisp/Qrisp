@@ -61,7 +61,7 @@ def test_mkcs_G1e2c():
         init_state = [random.choice(color_list) for _ in range(len(G1e2c))]
 
         mkcs_1e2c.set_init_function(lambda x : x.encode(init_state))
-        res1e2c = mkcs_1e2c.run(qarg, depth, mes_kwargs={"backend" : qaoa_backend}, max_iter = 25)
+        res1e2c = mkcs_1e2c.run(qarg, depth, mes_kwargs={"backend" : qaoa_backend, "shots" : 100000}, max_iter = 25)
 
         best_coloring, best_solution = min([(mkcs_obj(quantumcolor_array,G1e2c),quantumcolor_array) for quantumcolor_array in res1e2c.keys()], key=itemgetter(0))
 
@@ -89,7 +89,7 @@ def test_mkcs_G1e2c():
         init_state = [random.choice(color_list) for _ in range(len(G1e2c))]
 
         mkcs_1e2c.set_init_function(lambda x : x.encode(init_state))
-        res1e2c = mkcs_1e2c.run(qarg, depth, mes_kwargs={"backend" : qaoa_backend}, max_iter = 25)
+        res1e2c = mkcs_1e2c.run(qarg, depth, mes_kwargs={"backend" : qaoa_backend, "shots" : 100000}, max_iter = 25)
 
         best_coloring, best_solution = min([(mkcs_obj(quantumcolor_array,G1e2c),quantumcolor_array) for quantumcolor_array in res1e2c.keys()], key=itemgetter(0))
 

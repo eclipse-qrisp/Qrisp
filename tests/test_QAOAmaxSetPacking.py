@@ -55,7 +55,7 @@ def QAOAmaxSetPacking():
     # run the qaoa
     QAOAinstanceSecond = QAOAProblem(cost_operator=costOp ,mixer= mixerOp, cl_cost_function=cost_fun)
     QAOAinstanceSecond.set_init_function(init_function=init_state)
-    InitTest = QAOAinstanceSecond.run(qarg=qarg, depth=5)
+    InitTest = QAOAinstanceSecond.run(qarg=qarg, depth=5, mes_kwargs = {"shots" : 100000})
 
 
     # assign the cost_func for later usage
@@ -161,7 +161,7 @@ def QAOAmaxSetPacking():
     # run the qaoa
     QAOAinstanceSecond = QAOAProblem(cost_operator=costOp ,mixer= mixerOp, cl_cost_function=cost_fun)
     QAOAinstanceSecond.set_init_function(init_function=init_state)
-    InitTest2 = QAOAinstanceSecond.run(qarg=qarg2, depth=5)
+    InitTest2 = QAOAinstanceSecond.run(qarg=qarg2, depth=5, mes_kwargs = {"shots" : 100000})
 
     maxOne =  sorted(InitTest2, key=InitTest2.get, reverse=True)[:1]
     if randInt2 == 0:

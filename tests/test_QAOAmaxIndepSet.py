@@ -45,7 +45,7 @@ def test_QAOAmaxIndepSet():
     #cost function gets graph as argument 
     QAOAinstance = QAOAProblem(cost_operator=RX_mixer, mixer=maxIndepSetCostOp(giraf), cl_cost_function=maxIndepSetclCostfct(giraf))
     QAOAinstance.set_init_function(init_function=init_state)
-    theNiceQAOA = QAOAinstance.run(qarg=qarg,depth=5)
+    theNiceQAOA = QAOAinstance.run(qarg=qarg,depth=5, mes_kwargs = {"shots" : 100000})
 
 
 
@@ -105,7 +105,7 @@ def test_QAOAmaxIndepSet():
     qarg2 = QuantumVariable(giraf1.number_of_nodes())
     QAOAinstance2 = QAOAProblem(cost_operator= RX_mixer, mixer= maxIndepSetCostOp(giraf1), cl_cost_function=maxIndepSetclCostfct(giraf1)) 
     QAOAinstance2.set_init_function(init_function=init_state)
-    theNiceQAOA2 = QAOAinstance2.run(qarg=qarg2, depth= 5)
+    theNiceQAOA2 = QAOAinstance2.run(qarg=qarg2, depth= 5, mes_kwargs = {"shots" : 100000})
     maxOne = sorted(theNiceQAOA2, key=theNiceQAOA2.get, reverse=True)[:1]
     if integ2 == 0:
         testStr = [str(1-integ2) * giraf1.number_of_nodes()]

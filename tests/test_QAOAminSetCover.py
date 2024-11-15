@@ -53,7 +53,7 @@ def test_QAOAminSetCover():
     #+run qaoa
     QAOAinstance = QAOAProblem(cost_operator=costOp ,mixer= mixerOp, cl_cost_function=cost_fun)
     QAOAinstance.set_init_function(init_function=init_state)
-    InitTest = QAOAinstance.run(qarg=qarg, depth=5)
+    InitTest = QAOAinstance.run(qarg=qarg, depth=5, mes_kwargs = {"shots" : 100000})
 
     # create example cost_func
     def testCostFun(state,universe):
@@ -139,7 +139,7 @@ def test_QAOAminSetCover():
     # run the qaoa
     QAOAinstance = QAOAProblem(cost_operator=costOp ,mixer= mixerOp, cl_cost_function=cost_fun)
     QAOAinstance.set_init_function(init_function=init_state)
-    InitTest = QAOAinstance.run(qarg=qarg2, depth=5)
+    InitTest = QAOAinstance.run(qarg=qarg2, depth=5, mes_kwargs = {"shots" : 100000})
 
     maxOne =  sorted(InitTest, key=InitTest.get, reverse=True)[:1]
     if randInteg2 == 0:

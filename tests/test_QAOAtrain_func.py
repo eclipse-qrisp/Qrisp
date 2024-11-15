@@ -40,7 +40,7 @@ def test_QAOAtrain_func():
     QAOAinstance = QAOAProblem(cost_operator= maxCliqueCostOp(giraf), mixer= RX_mixer, cl_cost_function=maxCliqueCostfct(giraf)) 
     QAOAinstance.set_init_function(init_function=init_state)
     qarg2 = QuantumVariable(giraf.number_of_nodes())
-    training_func = QAOAinstance.train_function( qarg=qarg2, depth=5 )
+    training_func = QAOAinstance.train_function( qarg=qarg2, depth=5, mes_kwargs = {"shots" : 100000} )
     qarg3 = QuantumVariable(giraf.number_of_nodes())
     training_func(qarg3)
     theNiceQAOA = qarg3.get_measurement()
