@@ -552,6 +552,53 @@ class FermionicOperator(Hamiltonian):
 
         """
         return self.to_qubit_operator().ground_state_energy()
+    
+    @classmethod
+    def from_pyscf(self, pyscf_molecular_data):
+        """
+        .. _pscf_loading:
+            
+        Loads the data of a `PySCF molecule <https://pyscf.org/user/gto.html>`_ 
+        into a FermionicOperator.
+
+        Parameters
+        ----------
+        pyscf_molecular_data : pyscf.gto.mole.Mole
+            The molecule to load.
+
+        Returns
+        -------
+        molecule_hamiltonian : FermionicOperator
+            The molecule as an operator.
+            
+        Examples
+        --------
+        
+        We load the Hydrogen molecule and perform a hamiltonian simulation:
+
+        >>> from pyscf import gto
+        >>> mol = gto.M(atom = '''H 0 0 0; H 0 0 0.74''', basis = 'sto-3g')
+        >>> H = FermionicOperator.from_pyscf(mol)
+        >>> U = H.trotterization()
+        
+        Create a :ref:`QuantumVariable` and initialize two electrons in the upper
+        orbitals. 
+
+        >>> from qrisp import QuantumVariable
+        >>> electron_state = QuantumVariable(4)
+        >>> electron_state[:] = "0011"
+        
+        Simulate for $t = 100$ `Angstrom seconds <https://en.wikipedia.org/wiki/Angstrom>`_.
+        
+        >>> U(electron_state, t = 100, steps = 20)
+        >>> print(electron_state)
+        {'0011': 0.75331, '1100': 0.24669}
+        
+        We see that the electrons decayed to one of the lower levels. How cool is that?!
+        
+        """
+        from qrisp.algorithms.vqe.problems.electronic_structure import create_electronic_hamiltonian
+        return create_electronic_hamiltonian(pyscf_molecular_data)
 
     #
     # Transformations

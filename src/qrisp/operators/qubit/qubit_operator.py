@@ -1314,6 +1314,8 @@ class QubitOperator(Hamiltonian):
 
     def trotterization(self):
         r"""
+        .. _ham_sim:
+        
         Returns a function for performing Hamiltonian simulation, i.e., approximately implementing the unitary operator $e^{itH}$ via Trotterization.
         Note that this method will always simulate the **hermitized** operator, i.e.
         
