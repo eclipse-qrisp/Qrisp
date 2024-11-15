@@ -670,7 +670,6 @@ def apply_fermionic_swap(qv, permutation):
         
 from numba import njit
 
-# @njit
 def get_swaps_for_permutation(permutation):
     swaps = []
     permutation = list(permutation)
@@ -681,34 +680,4 @@ def get_swaps_for_permutation(permutation):
             # swaps.append((permutation[j], permutation[j-1]))
             swaps.append((j, j-1))
             j -= 1
-    print(permutation)
     return swaps
-        
-    
-    n = len(permutation)
-    permutation = np.array(permutation)
-    position = {num: i for i, num in enumerate(permutation)}
-    visited = np.zeros(n, dtype = np.int64)
-    swaps = []
-
-    for i in range(n):
-        if visited[i] or position[i] == i:
-            continue
-        
-        cycle_start = i
-        j = i
-        cycle = []
-        
-        while not visited[j]:
-            visited[j] = True
-            cycle.append(j)
-            j = position[j]
-        
-        for k in range(len(cycle) - 1):
-            swaps.append([cycle[k], cycle[-1]])
-            # Update the position dictionary to reflect the swap
-            position[permutation[cycle[k]]] = cycle[-1]
-            position[permutation[cycle[-1]]] = cycle[k]
-            permutation[cycle[k]], permutation[cycle[-1]] = permutation[cycle[-1]], permutation[cycle[k]]
-
-    return np.array(swaps)

@@ -105,3 +105,25 @@ def test_fermionic_hamiltonian_simulation():
         if bs_0[0] == "0":
             assert bs_0 == bs_1
             
+    operators = [a, c, lambda x : 1]
+
+    for op1 in operators:
+        for op2 in operators:
+            for op3 in operators:
+                
+                O = op1(0)*op2(1)*op3(2)
+                
+                if O is 1:
+                    continue
+                
+                qv = QuantumVariable(4)
+                U = O.trotterization()
+                U(qv)
+                qc = qv.qs.copy()            
+                
+                qv = QuantumVariable(4)
+                U = O.to_JW().trotterization()
+                U(qv)
+                
+                assert qv.qs.compare_unitary(qc)
+            

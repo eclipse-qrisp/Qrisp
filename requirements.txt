@@ -9,4 +9,3 @@ networkx
 tdqm
 dill
 flask
-pyscf

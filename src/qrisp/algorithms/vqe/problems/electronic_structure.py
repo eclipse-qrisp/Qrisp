@@ -318,8 +318,7 @@ def create_electronic_hamiltonian(arg, active_orb=None, active_elec=None):
                     if two_int[I+i][I+j][I+k][I+l]!=0 and i!=j and k!=l:
                         H += (0.5*two_int[I+i][I+j][I+k][I+l])*c(i)*c(j)*a(k)*a(l)
 
-    H.reduce()
-    return H
+    return H.reduce()
 
 #
 # ansatz
