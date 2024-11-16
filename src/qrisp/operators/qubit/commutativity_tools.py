@@ -175,9 +175,7 @@ def construct_change_of_basis(S):
     S_reduced, independent_cols = gaussian_elimination_mod2(S, show_pivots=True)
     k = len(independent_cols)
 
-    #S0 = np.vstack((z_matrix[:,independent_cols], x_matrix[:,independent_cols]))
     S0 = S[:,independent_cols]
-
     R0_inv = S_reduced[:k, :]
 
     ####################
@@ -187,11 +185,13 @@ def construct_change_of_basis(S):
     # Find independent rows in X component of S0
     S0X_reduced, independent_rows = gaussian_elimination_mod2(S0[-n:, :], type='column', show_pivots=True)
 
-    # Construnct S1 by applying a Hadamard (i.e., a swap) to the rows of S0 not in independent_rows
-    h_list = [i for i in range(n) if i not in independent_rows]
     S1 = S0.copy()
-    for i in h_list:
-        S1[[i, n+i]] = S1[[n+i, i]]
+    h_list = []
+    # Construct S1 by applying a Hadamard (i.e., a swap) to the rows of S0 not in independent_rows
+    if len(independent_rows)<k:
+        h_list = [i for i in range(n) if i not in independent_rows]
+        for i in h_list:
+            S1[[i, n+i]] = S1[[n+i, i]]
 
     # Find independent rows in X component of S1
     S1X_reduced, independent_rows = gaussian_elimination_mod2(S1[-n:, :], type="column", show_pivots=True)
@@ -214,19 +214,26 @@ def construct_change_of_basis(S):
     S2 = S1 @ R1 % 2
 
     ####################
-    # Step 3: Calculate S3: Basis extension
+    # Step 3: Calculate S3: Basis extension if n>k
     ####################
 
-    C = S2[:k, :]
-    D = S2[k:n, :]
-    F = S2[-(n-k):, :]
+    if n>k:
 
-    S3 = np.block([[C, np.transpose(D)],
-                    [D, np.zeros((n-k,n-k), dtype=int)],
-                    [np.eye(k, dtype=int), np.zeros((k,n-k), dtype=int)],
-                    [F, np.eye(n-k, dtype=int)]])
-    R2_inv = np.block([[np.eye(k, dtype=int)],
-                       [np.zeros((n-k,k), dtype=int)]])   
+        C = S2[:k, :]
+        D = S2[k:n, :]
+        F = S2[-(n-k):, :]
+
+        S3 = np.block([[C, np.transpose(D)],
+                        [D, np.zeros((n-k,n-k), dtype=int)],
+                        [np.eye(k, dtype=int), np.zeros((k,n-k), dtype=int)],
+                        [F, np.eye(n-k, dtype=int)]])
+        R2_inv = np.block([[np.eye(k, dtype=int)],
+                            [np.zeros((n-k,k), dtype=int)]])   
+    
+    else:
+
+        S3 = S2
+        R2_inv = np.eye(n, dtype=int)
 
     ####################
     # Step 4: Calculate S4 
