@@ -873,14 +873,10 @@ class QubitOperator(Hamiltonian):
         if len(qarg) < n:
             raise Exception("Tried to change the basis of an Operator on a quantum argument with insufficient qubits.")
         
-        
+     
         # This dictionary will contain the new terms/coefficient comination for the
         # diagonal operator
         new_terms_dict = {}
-        
-        # We track which qubit is in which basis to raise an error if a
-        # violation with the requirement of qubit wise commutativity is detected.
-        basis_dict = {}
 
         new_factor_dicts = []
         prefactors = []
@@ -889,6 +885,10 @@ class QubitOperator(Hamiltonian):
 
         if method=="commuting_qw":
         
+            # We track which qubit is in which basis to raise an error if a
+            # violation with the requirement of qubit wise commutativity is detected.
+            basis_dict = {}
+
             # We iterate through the terms and apply the appropriate basis transformation
             for term, coeff in self.terms_dict.items():
             
@@ -950,7 +950,7 @@ class QubitOperator(Hamiltonian):
             m = len(qb_indices)
             
             if m==0:
-                new_factor_dicts = [{}]*self.len()
+                new_factor_dicts = [{} for _ in range(self.len())]
                 prefactors = [1]*self.len()
             else:
                 S = np.vstack((z_matrix[qb_indices], x_matrix[qb_indices]))
@@ -1048,7 +1048,7 @@ class QubitOperator(Hamiltonian):
             for k, v in term.factor_dict.items():
                 if v in ["P0", "P1"]:
                     new_factor_dict[k] = v
-            
+
             new_term = QubitTerm(new_factor_dict)
             new_terms_dict[new_term] = prefactor*self.terms_dict[term]
         
