@@ -74,7 +74,7 @@ class TensorFactor:
         # the most out of the sparse matrix representation
         import numpy as np
 
-        if matrix.size >= 2**6:
+        if matrix.size >= 2**6 and matrix.dtype != np.dtype("O"):
                 matrix = matrix * (np.abs(matrix) > float_tresh)
 
         # Convert matrix to BiArray
@@ -222,6 +222,8 @@ class TensorFactor:
         if len(outcome_index_list) == 1:
             temp = xp.zeros(2, dtype = self.tensor_array.data.dtype)
             if outcome_index_list[0] == 1:
+                if warning:
+                    print("WARNING: Faulty uncomputation found during simulation.")
                 temp[1] = 1
             else:
                 temp[0] = 1

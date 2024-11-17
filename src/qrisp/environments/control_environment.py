@@ -191,7 +191,7 @@ class ControlEnvironment(QuantumEnvironment):
                 
                 if isinstance(self.parent_cond_env, ControlEnvironment):
                     if len(self.parent_cond_env.ctrl_qubits) == 1:
-                        if self.parent_cond_env.ctrl_state == "0":
+                        if self.parent_cond_env.ctrl_state == "0" and not hasattr(self.parent_cond_env, "qbool"):
                             parent_ctrl_state = "0"
                 
                     if self.parent_cond_env.invert:

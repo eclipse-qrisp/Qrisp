@@ -20,7 +20,7 @@
 # import pytest
 import numpy
 
-from qrisp.interface import VirtualQiskitBackend
+from qrisp.interface import QiskitBackend
 from qrisp import (
     QuantumFloat,
     QuantumChar,

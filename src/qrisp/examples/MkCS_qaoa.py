@@ -294,7 +294,7 @@ def initial_state_mkcs(qarg):
     return qarg
 
 from qrisp.default_backend import def_backend
-from qrisp.interface import VirtualQiskitBackend
+from qrisp.interface import QiskitBackend
 # Set default backend for QAOA
 qrisp_sim = def_backend
 

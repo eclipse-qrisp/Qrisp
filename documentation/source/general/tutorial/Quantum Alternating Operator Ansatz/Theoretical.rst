@@ -11,7 +11,7 @@
 Theoretical Overview
 ====================
 
-In this tutoral we will take a peek into the inner workings of the Qrisp QAOA module. From learning the main concepts of the algorithm we'll take a deep dive into the QAOAProblem class, exploring its various components and how they come together to implement the algorithm. From defining quantum parameters to optimizing and measuring the final state, we’ll get to really see seen how this class functions under the hood.
+In this tutoral we will take a peek into the inner workings of the Qrisp QAOA module. From learning the main concepts of the algorithm we'll take a deep dive into the :ref:`QAOAProblem` class, exploring its various components and how they come together to implement the algorithm. From defining quantum parameters to optimizing and measuring the final state, we’ll really get to see how this class functions under the hood.
 
 QAOA in a nutshell
 ------------------
@@ -48,11 +48,12 @@ Exactly this concept is well illustrated in the paper `“From the Quantum Appro
 Similarly to the original QAOA, we have several key components when implementing the Quantum Alternating Operator Ansatz:
 
 - **COST FUNCTION:** the cost function is problem-specific and defines the optimization landscape. In the Quantum Alternating Operator Ansatz, cost functions can be represented by more general families of operators.
-- **INITIAL STATE:** initial state can be any state over all computational basis states. It is in most cases chosen to be superposition.
+- **INITIAL STATE:** initial state can be any state over all computational basis states. It is in most cases chosen to be a uniform superposition.
 - **PHASE SEPARATOR:** this applies a phase to each computational basis state based on its cost function value. In the Quantum Alternating Operator Ansatz, we can use a wider range of operators tailored to each problem instance.
 - **MIXER:** drives transitions between different states. In the Quantum Alternating Operator Ansatz, mixers can be chosen from a broader set of unitaries, which allows for more efficient implementation and potentially better exploration of the solution space.
 
 In their paper, Hadfield and his colleagues give us some really useful examples of how to formulate different problem instances using these building blocks. The appendix section, in particular, stands out as it provides detailed problem formulations, most of which are now implemented in Qrisp using the :ref:`QAOAProblem class <QAOAProblem>`. The following table provides a detailed overview of the problem instances already implemented within our framework, along with their :ref:`corresponding mixer type <MIXers>`:
+
 
 .. list-table::
    :widths: 45 45 10
@@ -60,30 +61,34 @@ In their paper, Hadfield and his colleagues give us some really useful examples 
 
    * - PROBLEM INSTANCE
      - MIXER TYPE
-     - 
-   * - :ref:`MaxCut <MaxCutQAOA>`
+     - IMPLEMENTED IN QRISP
+   * - :ref:`MaxCut <maxCutQAOA>`
      - X mixer
      -    ✅
-   * - Max-$\ell$-SAT
+   * - :ref:`Max-$\\ell$-SAT <maxsatQAOA>`
      - X mixer
      -    ✅
-   * - :ref:`QUBO (NEW since 0.4!) <QUBOQAOA>`
+   * - :ref:`E3Lin2 <eThrLinTwoQAOA>`
+     - X mixer
+     -    ✅
+   * - :ref:`QUBO <QUBOQAOA>`
      - X mixer
      -    ✅ 
-   * - MaxIndependentSet
+   * - :ref:`MaxIndependentSet <maxIndepSetQAOA>`
      - Controlled X mixer
      -    ✅
-   * - MaxClique
+   * - :ref:`MaxClique <maxCliqueQAOA>`
      - Controlled X mixer
      -    ✅
-   * - MaxSetPacking
+   * - :ref:`MaxSetPacking <maxSetPackingQAOA>`
      - Controlled X mixer
      -    ✅
-   * - MinSetCover
+   * - :ref:`MinSetCover <minSetCoverQAOA>`
      - Controlled X mixer
      -    ✅
    * - :ref:`Max-$\\kappa$-Colorable Subgraph <MkCSQAOA>`
      - XY mixer
      -    ✅ 
 
-Our QAOA journey doesn’t stop here. In the next tutorials we’re going to tackle two fascinating problems: :ref:`MaxCut <MaxCutQAOA>` and :ref:`Max-$\\kappa$-Colorable Subgraph <MkCSQAOA>`, showcasing multiple unique features of Qrisp, including the functionality of creating custom QuantumVariable types - get ready to add a splash of :red:`Q`:orange:`u`:yellow:`a`:green:`n`:blue:`t`:indigo:`u`:violet:`m`:red:`C`:orange:`o`:yellow:`l`:green:`o`:blue:`r` to your code.
+
+Our QAOA journey doesn’t stop here. In the next tutorials we’re going to tackle two fascinating problems: :ref:`MaxCut <MaxCutQAOA>` and :ref:`Max-$\\kappa$-Colorable Subgraph <MkCSQAOA>`, showcasing multiple unique features of Qrisp, including the functionality of creating custom :ref:`QuantumVariable` types - get ready to add a splash of :red:`Q`:orange:`u`:yellow:`a`:green:`n`:blue:`t`:indigo:`u`:violet:`m`:red:`C`:orange:`o`:yellow:`l`:green:`o`:blue:`r` to your code.

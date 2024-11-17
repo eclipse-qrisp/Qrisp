@@ -122,7 +122,7 @@ def qompiler(
             if isinstance(op, (LogicSynthGate, GidneyLogicalAND, JonesToffoli, QuasiRZZ)):
                 return False
             
-            if "QFT" == op.name[:3]:
+            if "QFT" == op.name[:3] or "equal" in op.name or "less_than" in op.name:
                 return False
             
             return True
@@ -180,7 +180,9 @@ def qompiler(
         
         # Transpile logic synthesis
         def logic_synth_transpile_predicate(op):
-            return (isinstance(op, LogicSynthGate) 
+            return (isinstance(op, LogicSynthGate)
+                    or ("equal" in op.name)
+                    or ("less_than" in op.name)
                     or (op.name == "cp" and op.num_qubits == 2)
                     or allocation_level_transpile_predicate(op))
         

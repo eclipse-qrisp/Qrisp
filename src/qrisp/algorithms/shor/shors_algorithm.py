@@ -19,7 +19,7 @@
 import numpy as np
 from sympy import continued_fraction_convergents, continued_fraction_iterator, Rational
 
-from qrisp.interface import VirtualQiskitBackend
+from qrisp.interface import QiskitBackend
 from qrisp.alg_primitives.arithmetic.modular_arithmetic import find_optimal_m, modinv
 from qrisp import QuantumModulus, QuantumFloat, h, control, QFT
 
