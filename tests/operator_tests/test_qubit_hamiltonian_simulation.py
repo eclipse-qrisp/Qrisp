@@ -27,28 +27,30 @@ def test_qubit_hamiltonian_simulation():
     E0 = H.ground_state_energy()
     assert abs(E0-(-1.857275029288228))<1e-2
 
-    U = H.trotterization()
+    for method in ['commuting_qw', 'commuting']:
 
-    # Find minimum eigenvalue of H with Hamiltonian simulation and QPE
+        U = H.trotterization(method=method)
 
-    # ansatz state
-    qv = QuantumVariable(2)
-    x(qv[0])
-    E1 = H.get_measurement(qv)
-    assert abs(E1-E0)<5e-2
+        # Find minimum eigenvalue of H with Hamiltonian simulation and QPE
 
-    qpe_res = QPE(qv,U,precision=10,kwargs={"steps":3},iter_spec=True)
+        # ansatz state
+        qv = QuantumVariable(2)
+        x(qv[0])
+        E1 = H.get_measurement(qv)
+        assert abs(E1-E0)<5e-2
 
-    results = qpe_res.get_measurement()    
-    sorted_results= dict(sorted(results.items(), key=lambda item: item[1], reverse=True))
+        qpe_res = QPE(qv,U,precision=10,kwargs={"steps":3},iter_spec=True)
+
+        results = qpe_res.get_measurement()    
+        sorted_results= dict(sorted(results.items(), key=lambda item: item[1], reverse=True))
     
-    phi = list(sorted_results.items())[0][0]
-    E_qpe = 2*np.pi*(phi-1) # Results are modulo 2*pi, therefore subtract 2*pi 
-    assert abs(E_qpe-E0)<5e-3
+        phi = list(sorted_results.items())[0][0]
+        E_qpe = 2*np.pi*(phi-1) # Results are modulo 2*pi, therefore subtract 2*pi 
+        assert abs(E_qpe-E0)<5e-3
     
     
     from scipy.linalg import expm, norm
-    def verify_trotterization(H):
+    def verify_trotterization(H,method):
         
         # Compute hermitean matrix
         H_matrix = H.to_sparse_matrix().todense()
@@ -58,7 +60,7 @@ def test_qubit_hamiltonian_simulation():
         
         # Perform trotterization
         qv = QuantumVariable(int(np.log2(H_matrix.shape[0])))
-        U = H.trotterization()
+        U = H.trotterization(method=method)
         U(qv)
         
         # We only want the unitary of the non-ancillae qubits
@@ -96,5 +98,7 @@ def test_qubit_hamiltonian_simulation():
                     if H is 1:
                         continue
                     print(H)
-                    verify_trotterization(H)
+                    verify_trotterization(H,'commuting_qw')
+                    verify_trotterization(H,'commuting')
                     counter += 1
+
