@@ -984,7 +984,8 @@ class QubitOperator(Hamiltonian):
                 # H X H = Z
                 # H Y H = -Y
                 # H Z H = X
-                # For the original Pauli terms this translates to: Factor (-1) appears if S gate is applied to Y, or Hadamard gate H is applied to Y. (No factor (-1) occurs if S*H is applied.)
+                # For the original Pauli terms this translates to: Factor (-1) appears if S gate is applied to Y, or Hadamard gate H is applied to Y
+                # No factor (-1) occurs if H S^{-1} P S H is applied (i.e., H and S) for any P in {X,Y,Z}
 
                 s_vector = np.zeros(m, dtype=int)
                 s_vector[s_list] = 1
@@ -998,16 +999,25 @@ class QubitOperator(Hamiltonian):
 
                 for index,z_vector in enumerate(R_inv.T):
 
-                    # Count the number of rows of the square submatrix A defined by z_vector (rows/columns), such that the number of 1's in each row is odd
-                    # This number is always even since A is a symmetric matrix with 0's on the diagonal
-                    n1 = sum((z_vector @ A)*z_vector % 2)
+                    # Determine the sign of the product of the selected graph state stabilizers:
+                    # 
+                    # Consider product of stabilizers S_{i_1}*S_{i_2}*...*S_{i_m} with (w.l.o.g.) i_1<i_2<...<i_m
+                    # For each i: Swap X_i with all Z_i's from stabilizers if index > i such that all Z_i's are on the left of X_i
+                    # Calculate the paritiy n1 of the sum of the numbers of 1's with position j>i for each row of the square submatrix A defined by z_vector
+                    # Yields a factor (-1)^n1
 
-                    # Calculate the paritiy of the sum of the numbers of 1's with position j>i for each row of the square submatrix A defined by z_vector (rows/columns)
-                    n2 = sum((z_vector @ A_low)*z_vector) % 2
+                    n1 = sum((z_vector @ A_low)*z_vector) % 2
+
+                    # For each i: Count the number of Z_i's: if even, no factor, if odd: factor i (ZX=iY)
+                    # Count the number n2 of rows of the square submatrix of A defined by z_vector, such that the number of 1's in each row is odd
+                    # This number is always even since A is a symmetric matrix with 0's on the diagonal
+                    # Yields a factor i^n2=(-1)^(n2/2)
+
+                    n2 = sum((z_vector @ A)*z_vector % 2)
 
                     new_factor_dict = {qb_indices[perm[i]]:"Z" for i in range(m) if z_vector[i]==1}
                     new_factor_dicts.append(new_factor_dict)
-                    prefactor = (-1)**sign_vector[index]*(-1)**(n1/2+n2)
+                    prefactor = (-1)**sign_vector[index]*(-1)**(n1+n2/2)
                     prefactors.append(prefactor)
 
         # Ladder operators 
