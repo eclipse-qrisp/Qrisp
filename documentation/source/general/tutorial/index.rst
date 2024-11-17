@@ -34,6 +34,7 @@ By the end of this tutorial, you'll have a solid foundation of our high-level fr
    QIROtutorial
    TSP
    Sudoku
+   H2
    Shor
    FT_compilation
    

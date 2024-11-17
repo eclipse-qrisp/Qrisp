@@ -184,7 +184,7 @@
             </a>
 
     
-        .. image:: ./_static/tsp.svg
+        .. image:: ./_static/hydrogen.png
 
 
 .. raw:: html

@@ -559,9 +559,9 @@ class QubitOperator(Hamiltonian):
             if P == "Z":
                 return csr_matrix([[1,0],[0,-1]])
             if P == "A":
-                return csr_matrix([[0,0],[1,0]])
-            if P == "C":
                 return csr_matrix([[0,1],[0,0]])
+            if P == "C":
+                return csr_matrix([[0,0],[1,0]])
             if P == "P0":
                 return csr_matrix([[1,0],[0,0]])
             if P == "P1":
@@ -1003,16 +1003,16 @@ class QubitOperator(Hamiltonian):
                         ladder_indices.append(ladder_operators[j][0])
                         cx(qarg[anchor_factor[0]], qarg[ladder_operators[j][0]])
                     
-                    if anchor_factor[1] == "A":
+                    if anchor_factor[1] == "C":
                         if ladder_operators[j][1] == "A":
-                            new_factor_dict[ladder_operators[j][0]] = "P0"
-                        else:
                             new_factor_dict[ladder_operators[j][0]] = "P1"
+                        else:
+                            new_factor_dict[ladder_operators[j][0]] = "P0"
                     else:
                         if ladder_operators[j][1] == "A":
-                            new_factor_dict[ladder_operators[j][0]] = "P1"
-                        else:
                             new_factor_dict[ladder_operators[j][0]] = "P0"
+                        else:
+                            new_factor_dict[ladder_operators[j][0]] = "P1"
                 
                 if not ladder_conjugation_performed:
                     # Execute the H-gate
@@ -1154,7 +1154,7 @@ class QubitOperator(Hamiltonian):
                 anchor_factor = ladder_operators[-1]
             
                 # Flip the anchor qubit if the ladder operator is an annihilator
-                if anchor_factor[1] == "A":
+                if anchor_factor[1] == "C":
                     qc.x(anchor_factor[0])
                 
                 # Perform the cnot gates
@@ -1162,7 +1162,7 @@ class QubitOperator(Hamiltonian):
                     qc.cx(anchor_factor[0], ladder_operators[j][0])
 
                 # Flip the anchor qubit back
-                if anchor_factor[1] == "A":
+                if anchor_factor[1] == "C":
                     qc.x(anchor_factor[0])
             
                 # Execute the H-gate

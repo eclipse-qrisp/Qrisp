@@ -306,18 +306,25 @@ def create_electronic_hamiltonian(arg, active_orb=None, active_elec=None):
 
     # Hamiltonian
     H=E
+    res_dict = {}
     for i in range(K):
         for j in range(K):
             if F[I+i][I+j]!=0:
-                H += F[I+i][I+j]*c(i)*a(j)
+                term = FermionicTerm([(j, False), (i, True)])
+                res_dict[term] = F[I+i][I+j]
+                #H += F[I+i][I+j]*c(i)*a(j)
+    
     
     for i in range(K):
         for j in range(K): 
             for k in range(K):
                 for l in range(K):
                     if two_int[I+i][I+j][I+k][I+l]!=0 and i!=j and k!=l:
-                        H += (0.5*two_int[I+i][I+j][I+k][I+l])*c(i)*c(j)*a(k)*a(l)
-
+                        term = FermionicTerm([(l, False), (k, False), (j, True), (i, True)])
+                        res_dict[term] = (0.5*two_int[I+i][I+j][I+k][I+l])
+                        # H += (0.5*two_int[I+i][I+j][I+k][I+l])*c(i)*c(j)*a(k)*a(l)
+    temp_H = FermionicOperator(res_dict)
+    H = E+ temp_H
     return H.reduce()
 
 #

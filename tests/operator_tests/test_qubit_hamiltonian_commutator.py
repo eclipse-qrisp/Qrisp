@@ -31,7 +31,7 @@ def test_qubit_hamiltonian_commutator():
         H1_matrix = H1.to_sparse_matrix(factor_amount = 3).todense()
         H2_matrix = H2.to_sparse_matrix(factor_amount = 3).todense()
         
-        assert norm(commutator_matrix - (H1_matrix @ H2_matrix - H2_matrix @ H1_matrix)) < 1E-5
+        assert norm(commutator_matrix - (np.dot(H1_matrix,H2_matrix) - np.dot(H2_matrix,H1_matrix))) < 1E-5
 
     operator_list = [lambda x : 1, X, Y, Z, A, C, P0, P1]
 

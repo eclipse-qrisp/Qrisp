@@ -13,11 +13,8 @@ This algorithms submodule of Qrisp provides a collection of commonly used quantu
      - solving combinatorial optimization problems
    * - :ref:`QIRO <QIRO>`
      - solving combinatorial optimization problems, with quantum informed update rules
-<<<<<<< HEAD
    * - :ref:`VQE <VQE>`
      - finding the ground state energy of a Hamiltonian
-=======
->>>>>>> main
    * - :ref:`Shor's Algorithm <Shor>`
      - efficiently factoring large numbers
    * - :ref:`Grover's Algorithm <grovers_alg>`
@@ -36,14 +33,10 @@ We encourage you to explore these algorithms, delve into their documentation, an
    :maxdepth: 2
    :hidden:
    
-<<<<<<< HEAD
-   QAOA/index
    QIRO
    VQE
-=======
    qaoa/QAOA
    qiro/QIRO
->>>>>>> main
    Shor
    Grover
    QuantumBacktrackingTree

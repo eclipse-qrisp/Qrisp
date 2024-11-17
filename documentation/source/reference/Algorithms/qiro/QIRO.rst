@@ -1,5 +1,4 @@
-﻿
-.. _QIRO:
+﻿.. _QIRO:
 
 .. currentmodule:: qrisp.qiro
 
