@@ -1352,6 +1352,13 @@ class QubitOperator(Hamiltonian):
         r"""
         Returns a function for performing Hamiltonian simulation, i.e., approximately implementing the unitary operator $e^{itH}$ via Trotterization.
 
+        Parameters
+        ----------
+        method : str, optional
+            The method for grouping the QubitTerms. 
+            Available are ``commuting`` (groups such that all QubitTerms mutually commute) and ``commuting_qw`` (groups such that all QubitTerms mutually commute qubit-wise).
+            The default is ``commuting_qw``.
+
         Returns
         -------
         U : function 
