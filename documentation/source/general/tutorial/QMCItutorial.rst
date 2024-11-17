@@ -6,7 +6,7 @@ Quantum Monte Carlo Integration with Iterative QAE
 This tutorial will provide you with an introduction of Quantum Monte Carlo Integration within Qrisp.
 
 For this purpose we will first give you a theoretical overview of what this technique is about and where it is used. 
-Then we will dive into the practical implemention within Qrisp. This also includes the usage of :ref:`Iterative Quantum Amplitude estimation <acciqae>` . 
+Then we will dive into the practical implemention within Qrisp. This also includes the usage of :ref:`Iterative Quantum Amplitude estimation <IQAE>` . 
 To finish of this tutorial, we investigate the full implementation of simple example by integrating :math:`x^2` over a uniform distribution in the interval :math:`\lbrack 0,1 \rbrack` .
 
 The relevant literature can be found in the following papers: `A general quantum algorithm for numerical integration <https://www.nature.com/articles/s41598-024-61010-9>`_ and `Option pricing using Quantum computers <https://arxiv.org/pdf/1905.02666>`_ for QMCI and `Accelerated Quantum Amplitude Estimation
@@ -32,7 +32,7 @@ Implementation in Qrisp
 
 The implementation in Qrisp requires the implementation of the function on a :ref:`QuantumFloat` . We will see how this can be done later in the example. 
 
-There is multiple ways to implement Monte Carlo integration in a quantum fashion. Within Qrisp, we use the approach of :ref:`quantum counting <quantum_counting>` . The idea is to discretize not only the :math:`x`-axis but the :math:`y`-axis aswell. We use two ``QuantumFloats``  for this. 
+There is multiple ways to implement Monte Carlo integration in a quantum fashion. Within Qrisp, we use the approach of :ref:`quantum counting <QCounting>` . The idea is to discretize not only the :math:`x`-axis but the :math:`y`-axis aswell. We use two ``QuantumFloats``  for this. 
 One ``QuantumFloat`` will hold the discretized values of the distribution, i.e. the relevant support on the :math:`x`-axis, while the other one will hold the discretized values of the :math:`y`-axis into which we will encode the the function values.
 We can then simply count, in quantum fashion, the number of points under the function curve, and divide it by the number of total points.
 
@@ -83,7 +83,7 @@ Mathematically speaking this means, given an error :math:`\epsilon` and a confid
 
 Below you can see the base function with implements this algorithm, including explanatory comments. It is a straight-forward translation from the theoretical ideas presented in the paper. For further explanations, have a look at the paper itself!
 
-The implementations of subroutines can found in the :ref:`accelerated IQAE <acciqae>` reference.
+The implementations of subroutines can found in the :ref:`accelerated IQAE <IQAE>` reference.
 
 ::
 

@@ -19,6 +19,7 @@
 from qrisp.alg_primitives.qft import *
 from qrisp.alg_primitives.qpe import *
 from qrisp.alg_primitives.qae import *
+from qrisp.alg_primitives.iterative_qae import *
 from qrisp.alg_primitives.logic_synthesis import *
 from qrisp.alg_primitives.mcx_algs import *
 from qrisp.alg_primitives.arithmetic import *

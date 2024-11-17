@@ -1,7 +1,7 @@
-.. _acciqae
+.. _IQAE:
 
-Accelerated Iterative Quantum Amplitude Estimation
-==================================================
+Iterative Quantum Amplitude Estimation
+======================================
 
 .. currentmodule:: qrisp
 

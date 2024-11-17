@@ -1,9 +1,27 @@
-from qrisp import  amplitude_amplification 
+"""
+\********************************************************************************
+* Copyright (c) 2024 the Qrisp authors
+*
+* This program and the accompanying materials are made available under the
+* terms of the Eclipse Public License 2.0 which is available at
+* http://www.eclipse.org/legal/epl-2.0.
+*
+* This Source Code may also be made available under the following Secondary
+* Licenses when the conditions for such availability set forth in the Eclipse
+* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+* with the GNU Classpath Exception which is
+* available at https://www.gnu.org/software/classpath/license.html.
+*
+* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+********************************************************************************/
+"""
+
+from qrisp.alg_primitives.qae import amplitude_amplification 
 import numpy as np
 
 
 def acc_IQAE(qargs,state_function, oracle_function, eps, alpha, kwargs_oracle = {}):
-    """
+    r"""
     Accelerated Quantum Amplitude Estimation (IQAE). This function performs QAE with a fraction of the quantum resources of the well known QAE algorithm.
     See `Accelerated Quantum Amplitude Estimation without QFT <https://arxiv.org/abs/2407.16795>`_
 
@@ -31,25 +49,6 @@ def acc_IQAE(qargs,state_function, oracle_function, eps, alpha, kwargs_oracle = 
     -------
     a_l, a_u : Float, Float
         Confidence bounds on the amplitude which is to be estimated.
-
-    Examples
-    --------
-
-        Returns
-    -------
-    
-    res : QuantumFloat
-        A QuantumFloat encoding the angle :math:`\theta` as a fraction of :math:`\pi`,
-        such that :math:`\tilde{a}=\sin^2(\theta)` is an estimate for :math:`a`. 
-
-        More precisely, we have :math:`\theta=\pi\frac{y}{M}` for :math:`y\in\{0,\dotsc,M-1\}` and :math:`M=2^{\text{precision}}`.
-        After measurement, the estimate :math:`\tilde{a}=\sin^2(\theta)` satisfies
-
-        .. math::
-
-            |a-\tilde{a}|\leq\frac{2\pi}{M}+\frac{\pi^2}{M^2}
-
-        with probability of at least :math:`8/\pi^2`.
 
     Examples
     --------
