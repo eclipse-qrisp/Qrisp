@@ -1257,6 +1257,7 @@ class QubitOperator(Hamiltonian):
         compilation_kwargs={},
         subs_dic={},
         precompiled_qc=None,
+        diagonalisation_method="commuting_qw",
         measurement_data=None # measurement settings
     ):
         r"""
@@ -1342,6 +1343,7 @@ class QubitOperator(Hamiltonian):
                                 compilation_kwargs=compilation_kwargs, 
                                 subs_dic=subs_dic,
                                 precompiled_qc=precompiled_qc, 
+                                diagonalisation_method=diagonalisation_method,
                                 measurement_data=measurement_data)
 
     #
