@@ -16,46 +16,69 @@
 ********************************************************************************/
 """
 
+import random
 from qrisp.operators import X, Y, Z, A, C, P0, P1
-from numpy.linalg import norm
 from qrisp import *
 
-def test_measurement_method():
+def test_measurement_method(sample_size=100, seed=42, exhaustive = False):
 
-    def testing_helper(qv):
-        operator_list = [lambda x : 1, X, Y, Z, A, C, P0, P1]
-        for O0 in operator_list: 
-            for O1 in operator_list:
-                for O2 in operator_list:
-                    for O3 in operator_list:
-                        H = O0(0)*O1(1)*O2(2)*O3(3)
-                        if isinstance(H, int):
+    def testing_helper(qv, operator_combinations):
+        for H in operator_combinations:
+            if isinstance(H, int):
+                continue
+            
+            print(H)
+            assert abs(H.get_measurement(qv, precision=0.005, shots=int(1E8)) - 
+                       H.to_pauli().get_measurement(qv, precision=0.0005, shots=int(1E8))) < 1E-1
+            assert abs(H.get_measurement(qv, precision=0.005, shots=int(1E8), 
+                       diagonalisation_method="commuting") - 
+                       H.to_pauli().get_measurement(qv, diagonalisation_method="commuting", 
+                       precision=0.005, shots=int(1E8))) < 1E-1
+
+    # Set the random seed for reproducibility
+    random.seed(seed)
+
+    # Define the full list of operators
+    operator_list = [lambda x: 1, X, Y, Z, A, C, P0, P1]
+
+    # Generate all possible combinations of operators
+    all_combinations = []
+    
+    if exhaustive:
+        for op1 in operator_list:
+            for op2 in operator_list:
+                for op3 in operator_list:
+                    for op4 in operator_list:
+                        
+                        H = op1(0)*op2(1)*op3(2)*op4(3)
+                        
+                        if H is 1:
                             continue
                         
-                        print(H)
-                        assert abs(H.get_measurement(qv, precision = 0.005, shots = int(1E8)) - H.to_pauli().get_measurement(qv, precision = 0.0005, shots = int(1E8))) < 1E-1
-                        assert abs(H.get_measurement(qv, precision = 0.005, shots = int(1E8), diagonalisation_method = "commuting") - H.to_pauli().get_measurement(qv, diagonalisation_method="commuting", precision = 0.005, shots = int(1E8))) < 1E-1
-
-
-    
-    
+                        all_combinations.append(H)
+    else:
+        for _ in range(sample_size):
+            combination = [random.choice(operator_list) for _ in range(4)]  # Choose 4 operators
+            H = combination[0](0) * combination[1](1) * combination[2](2) * combination[3](3)
+            all_combinations.append(H)
 
     qv = QuantumVariable(4)
-    
-    testing_helper(qv)
-    
+
+    # Perform tests with the randomly generated operator combinations
+    testing_helper(qv, all_combinations)
+
     h(qv[0])
-    
-    testing_helper(qv)
-    
+
+    testing_helper(qv, all_combinations)
+
     cx(qv[0], qv[1])
-    
-    testing_helper(qv)
-    
+
+    testing_helper(qv, all_combinations)
+
     cx(qv[0], qv[2])
-    
-    testing_helper(qv)
-    
+
+    testing_helper(qv, all_combinations)
+
     h(qv[0])
     
     
