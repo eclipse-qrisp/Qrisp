@@ -19,8 +19,12 @@
 import random
 from qrisp.operators import X, Y, Z, A, C, P0, P1
 from qrisp import *
+from qrisp.interface import VirtualBackend
+from qrisp.simulator import run
 
 def test_measurement_method(sample_size=100, seed=42, exhaustive = False):
+    
+    non_sampling_backend = VirtualBackend(lambda qasm_string, shots, token : run(QuantumCircuit.from_qasm_str(qasm_string), None, ""))    
 
     def testing_helper(qv, operator_combinations):
         for H in operator_combinations:
@@ -28,12 +32,12 @@ def test_measurement_method(sample_size=100, seed=42, exhaustive = False):
                 continue
             
             print(H)
-            assert abs(H.get_measurement(qv, precision=0.005, shots=int(1E8)) - 
-                       H.to_pauli().get_measurement(qv, precision=0.0005, shots=int(1E8))) < 1E-1
-            assert abs(H.get_measurement(qv, precision=0.005, shots=int(1E8), 
-                       diagonalisation_method="commuting") - 
+            assert abs(H.get_measurement(qv, precision=0.0005, shots=int(1E8), backend =non_sampling_backend) - 
+                       H.to_pauli().get_measurement(qv, precision=0.0005, shots=int(1E8), backend = non_sampling_backend)) < 1E-1
+            assert abs(H.get_measurement(qv, precision=0.0005, shots=int(1E8), 
+                       diagonalisation_method="commuting", backend = non_sampling_backend) - 
                        H.to_pauli().get_measurement(qv, diagonalisation_method="commuting", 
-                       precision=0.005, shots=int(1E8))) < 1E-1
+                       precision=0.0005, shots=int(1E8), backend = non_sampling_backend)) < 1E-1
 
     # Set the random seed for reproducibility
     random.seed(seed)
