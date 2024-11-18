@@ -10,18 +10,17 @@ The potential energy is defined as
 
 $$E_{\\text{pot}}(\\{R_A\\})=E_{\\text{elec}}(\\{R_A\\})+E_{\\text{nuc}}(\\{R_A\\})$$
 
-where $E_{\text{elec}}(\{R_A\})$ is the electronic energy and $E_{\text{nuc}}(\{R_A\})$ is the nuclear repulsion energy depending on the coordinates of the atoms $\{R_A\}$.
+where $E_{\text{elec}}(\{R_A\})$ is the electronic energy and $E_{\text{nuc}}(\{R_A\})$ is the nuclear repulsion energy depending on the coordinates of the nuclei $\{R_A\}$.
 
 
 Example Hydrogen
 ================
 
-We caluclate the potential energy curve for the Hydrogen molecule for varying interatomic distance of the atoms.
-
+We caluclate the potential energy curve for the Hydrogen molecule for varying interatomic distance.
 
 We implement a function ``problem_data`` that sets up a molecule and 
 utilizes the `PySCF <https://pyscf.org>`_ quantum chemistry library to compute the :meth:`electronic data <qrisp.vqe.problems.electronic_structure.electronic_structure_problem>` (one- and two-electron integrals, number of orbitals, number of electrons, nuclear repulsion energy, Hartree-Fock energy)
-for a given molecular geometry. In this example, we vary the **atomic distance** between the two Hydrogen atoms.
+for a given molecular geometry. In this example, we vary the **interatomic distance**, i.e., the distance between the two Hydrogen nuclei.
 
 ::
     
@@ -35,7 +34,7 @@ for a given molecular geometry. In this example, we vary the **atomic distance**
             basis = 'sto-3g')
         return electronic_data(mol)
 
-Next, we define an array of atomic ``distances``. For each distance ``r`` we compute the electronic ``data`` including the Hartree-Fock energy. 
+Next, we define an array of interatomic ``distances``. For each distance ``r`` we compute the electronic ``data`` including the Hartree-Fock energy. 
 Then we utilize the :meth:`electronic_structure_problem <qrisp.vqe.problems.electronic_structure.electronic_structure_problem>` method to create a :ref:`VQEProblem` for the given electronic ``data``. By default, the ``QCCSD`` ansatz is utilized. 
 
 VQE is a probabilistic algorithm and may not yield the optimal solution every time. 
@@ -66,8 +65,8 @@ Finally, we visualize the results.
     import matplotlib.pyplot as plt
     plt.scatter(distances, y_hf, color='#7d7d7d',marker="o", linestyle='solid',s=10, label='HF energy')
     plt.scatter(distances, y_qccsd, color='#6929C4',marker="o", linestyle='solid',s=10, label='VQE (QCCSD) energy')
-    plt.xlabel("Atomic distance", fontsize=15, color="#444444")
-    plt.ylabel("Energy", fontsize=15, color="#444444")
+    plt.xlabel("Interatomic distance (Angstrom)", fontsize=15, color="#444444")
+    plt.ylabel("Energy (Hartree)", fontsize=15, color="#444444")
     plt.legend(fontsize=12, labelcolor="#444444")
     plt.tick_params(axis='both', labelsize=12)
     plt.grid()
@@ -82,10 +81,10 @@ Finally, we visualize the results.
 Example Beryllium hydride
 =========================
 
-We caluclate the potential energy curve for the Beryllium hydride molecule for varying interatomic distance of the atoms.
+We caluclate the potential energy curve for the Beryllium hydride molecule for varying interatomic distance.
 
 As in the previous example, we set up a function that computes the :meth:`electronic data <qrisp.vqe.problems.electronic_structure.electronic_structure_problem>` for
-the Beryllium hydride molecule for varying **atomic distance** between the Beryllium and Hydrogen atoms.
+the Beryllium hydride molecule for varying **interatomic distance**, i.e., the distance between the Beryllium and Hydrogen nuclei.
 
 ::
 
@@ -148,8 +147,8 @@ Finally, we visualize the results.
     import matplotlib.pyplot as plt
     plt.scatter(distances[5:], y_hf[5:], color='#7d7d7d',marker="o", linestyle='solid',s=10, label='HF energy')
     plt.scatter(distances[5:], y_qccsd[5:], color='#6929C4',marker="o", linestyle='solid',s=10, label='VQE (QCCSD) energy')
-    plt.xlabel("Atomic distance", fontsize=15, color="#444444")
-    plt.ylabel("Energy", fontsize=15, color="#444444")
+    plt.xlabel("Interatomic distance (Angstrom)", fontsize=15, color="#444444")
+    plt.ylabel("Energy (Hartree)", fontsize=15, color="#444444")
     plt.legend(fontsize=12, labelcolor="#444444")
     plt.tick_params(axis='both', labelsize=12)
     plt.grid()
