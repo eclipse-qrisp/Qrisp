@@ -25,7 +25,7 @@ def test_pauli_hamiltonian():
     qv = QuantumVariable(2)
     h(qv)
     H = Z(0)*Z(1)
-    res = H.get_measurement(qv)
+    res = H.get_measurement(qv, precision = 0.001)
     assert np.abs(res-0.0) < 2e-2
 
     # What is the semantics here?

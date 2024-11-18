@@ -106,7 +106,7 @@ We further investigate the problem size:
     print(data['num_orb'])
     print(data['num_elec'])
 
-    H = create_electronic_hamiltonian(data).to_pauli_hamiltonian()
+    H = create_electronic_hamiltonian(data).to_qubit_operator()
     print(H.len())
 
 In the chosen sto-3g basis, there are 14 molecular orbitals (qubits) and 6 electrons. The problem Hamiltonian has 666 terms.

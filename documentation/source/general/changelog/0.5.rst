@@ -10,7 +10,7 @@ The Operators module
 
 This module allows you to describe operators that are not necessarily unitary or even hermitian. With these tools at hand you can effectively set up two of quantum's most important algorithms: :ref:`Hamiltonian simulation <ham_sim>` and the :ref:`VQE`.
 
-For this Qrisp provides the following classes:
+For this purpose, Qrisp provides the following classes:
 
 * :ref:`QubitOperator` is a class that enables the representation and processing of operators acting on a qubit space: $(\mathbb{C}^2)^{\otimes n}$. QubitOperators can be constructed based on a variety of tensor factors including the Pauli-matrices but also projector, creators and annihilators. For the latter Qrisp features a highly performant algorithm for Hamiltonian simulation proposed by `Kornell and Selinger <https://arxiv.org/abs/2310.12256>`_.
 * :ref:`FermionicOperator` provides you with the tools to describe and manipulate fermionic systems. This type of system is of particular importance for applications in chemistry because many computations for molecular dynamics involve the simulation of electrons, which are fermions. FermionicOperators can be :ref:`constructed effortlessly <pscf_loading>` from `PySCF <https://pyscf.org/>`_ data. PySCF is one of the most popular quantum chemistry Python packages.
