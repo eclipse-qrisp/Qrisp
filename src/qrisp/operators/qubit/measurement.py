@@ -155,7 +155,6 @@ class QubitOperatorMeasurement:
             self.groups = hamiltonian.commuting_qw_groups()
         else:
             self.groups = hamiltonian.group_up(lambda a, b: a.commute(b))
-        # print(len(self.groups))
         
         self.stds = []
         self.change_of_basis_gates = []

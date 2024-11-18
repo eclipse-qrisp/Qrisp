@@ -1323,7 +1323,6 @@ class QubitOperator(Hamiltonian):
         for term, coeff in pauli_form.terms_dict.items():
             if len(term.factor_dict) != 0:
                 var += abs(coeff)**2
-                print(coeff)
         alpha_n = 1 - 1/(2**n + 1)
         
         return var*alpha_n

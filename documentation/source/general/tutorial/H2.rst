@@ -1,21 +1,21 @@
 .. _H2:
 
-Simulating the dynamics of the Dihydrogen molecule
-==================================================
+Simulating the dynamics of the $H_2$ molecule
+===========================================
 
 Quantum computing offers a promising avenue for simulating complex molecular systems, potentially revolutionizing fields like drug discovery, materials science, and chemical engineering. At the heart of this capability lies Hamiltonian simulation, a powerful technique that allows us to model the quantum behavior of molecules with exponentially less resources compared to classical computers.
 In this tutorial, we'll explore how to simulate molecules using Hamiltonian simulation techniques implemented in Qrisp. Since version 0.5 Qrisp provides a user-friendly interface for simulating quantum many body systems, making it a suitable tool for tackling complex quantum chemistry problems.
 We'll cover the following key aspects:
 
-* :ref:`The fundamentals of Hamiltonian simulation and the second quantization <ham_sim_fundamentals>`.
-* :ref:`Loading molecular data into Qrisp <molecular_data_tut>`.
-* :ref:`Performing Hamiltonian simulation <ham_sim_tut>`.
+* :ref:`The fundamentals of Hamiltonian simulation and the second quantization <ham_sim_fundamentals>`
+* :ref:`Loading molecular data into Qrisp <molecular_data_tut>`
+* :ref:`Performing Hamiltonian simulation <ham_sim_tut>`
 
 By the end of this tutorial, you'll have a solid understanding of how to leverage Qrisp's capabilities to perform molecular simulations on quantum computers. 
 Let's dive in and discover how Qrisp can help us unlock the quantum secrets of molecules!
 
 .. _ham_sim_fundamentals:
-The fundamentals of hamiltonian simulation and the second quantization
+The fundamentals of Hamiltonian simulation and the second quantization
 ----------------------------------------------------------------------
 
 
@@ -57,12 +57,12 @@ For **Bosons** the ladder operators obey `commutator <https://en.wikipedia.org/w
 For **Fermions** the ladder operators obey anti-commutator laws:
 
 .. math::
-    {a_i, a^\dagger_j} = a_i a^\dagger_j + a_j a^\dagger_i = \delta_{ij}\\
+    \{a_i, a^\dagger_j\} = a_i a^\dagger_j + a_j a^\dagger_i = \delta_{ij}\\
     \{a^\dagger_i, a^\dagger_j\} = \{a_i, a_j\} = 0
 
 Note that the fermionic laws imply $a_i a_i = 0$. This means that an operator, which tries to insert two particles in the same state will immidiately become 0 and therefore not contribute. This is known as `Pauli exclusion principle <https://en.wikipedia.org/wiki/Pauli_exclusion_principle>`_.
 
-Within Qrisp it is currently only possible to model **fermions**, which is for many applications in chemistry the more important case. A modelling framework for bosons will follow in a future release of Qrisp. To start building a fermionic operator, you import the functions ``c`` and ``a`` for creators and annihilators.
+Within Qrisp it is currently only possible to model **fermions**, which is for many applications in chemistry the more important case. A modelling framework for bosons will follow in a future release. To start building a fermionic operator, we import the functions ``c`` and ``a`` for creators and annihilators.
 
 ::
     
@@ -92,9 +92,9 @@ The Jordan-Wigner embedding
 A natural question that comes up is how to represent the ladder operators and the corresponding states on the quantum computer. The most established way to do this is to use the `Jordan-Wigner embedding <https://en.wikipedia.org/wiki/Jordan%E2%80%93Wigner_transformation>`_ (even though there are several `interesting alternatives <https://arxiv.org/abs/2212.09731>`_). The Jordan-Wigner embedding identifies each ladder term with an operator that acts on a qubit space:
 
 .. math::
-    a_k = A_k \prod_{i = 0}^{k-1} Z_i
+    a_k = C_k \prod_{i = 0}^{k-1} Z_i
 
-Where $A_k = \ket{0}\bra{1}$ and $Z_i$ are the Pauli-Z Operators. Feel free to verify that this indeed satisfies the anti-commutator relations! We can apply the Jordan-Wigner embedding with the corresponding method:
+Where $C_k = \ket{1}\bra{0}$ and $Z_i$ are the Pauli-Z Operators. Feel free to verify that this indeed satisfies the anti-commutator relations! We can apply the Jordan-Wigner embedding with the corresponding method:
 
 ::
 
@@ -200,11 +200,17 @@ This snippets simulates the Dihydrogen molecule for $t = 100$ Angstrom seconds, 
     
 Finally we want to extract some physical quantity from our simulation. Our quantity of choice is the number operator:
 
+.. math::
+
+    N = \sum_{i = 0}^n a_i a^\dagger_i 
+
+In python code:
+
 ::
 
-    N = c(0)*a(0)+c(1)*a(1)+c(2)*a(2)+c(3)*a(3)
+    N = sum(c(i)*a(i) for i in range(4))
 
-For each electron, this operator leaves the $\ket{1}$ state invariant and maps the $\ket{0}$ state to a 0 contribution. Its eigenvalues therefore indicate the number of electrons in the system. To evaluate the expectation value $\bra{\phi} N \ket{\phi}$, we call the :meth:`.get_measurement <qrisp.operators.qubit.QubitOperator.get_measurement>` method.
+For each state $i$, this operator leaves the "electron at $i$" state invariant (i.e. a +1 contribution) and maps the "no electron at $i$" state to a 0 contribution. Its eigenvalues therefore indicate the number of electrons in the system. To evaluate the expectation value $\bra{\phi} N \ket{\phi}$, we call the :meth:`.get_measurement <qrisp.operators.qubit.QubitOperator.get_measurement>` method.
 
 ::
 
@@ -220,4 +226,32 @@ The value is not exact because of statistical noise - we can increase the precis
     print(N.get_measurement(electron_state, precision = 0.0001))
     # Yields: 1.4999799028124874
     
-This concludes our little tutorial on Hamiltonian simulation. We hope you could learn something and possibly feel motivated to explore more systems and techniques! Make sure to also check out the :ref:`VQEProblem` docs to learn how to compute the ground state for both types of operators!
+This concludes our little tutorial on Hamiltonian simulation. We hope you could learn something and possibly feel motivated to explore more systems and techniques! Make sure to also check out the :ref:`MolecularPotentialEnergyCurve` example to learn how to compute the ground state for both types of operators!
+
+For your reference, we give the full code below:
+
+::
+
+    # Loading molecular data
+    from qrisp.operators import a,c, FermionicOperator
+    from pyscf import gto
+    mol = gto.M(atom = '''H 0 0 0; H 0 0 0.74''', basis = 'sto-3g')
+    H_ferm = FermionicOperator.from_pyscf(mol)
+    
+    # Initializing the quantum state
+    from qrisp import QuantumVariable
+    electron_state = QuantumVariable(4)
+    electron_state[:] = {"1100": 2**-0.5, "0001": 2**-0.5}
+
+    # Performing the simulation
+    U = H_ferm.trotterization()
+    U(electron_state, t = 100, steps = 20)
+    
+    # Evaluating the number operator
+    N = sum(c(i)*a(i) for i in range(4))
+    expectation_value = N.get_measurement(electron_state, precision = 0.01)
+    print(expectation_value)
+    
+    
+    
+    
