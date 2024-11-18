@@ -124,8 +124,18 @@ class FermionicTerm:
         sorting_list = [-index for index, is_creator in self.ladder_list]
         perm = np.argsort(sorting_list, kind = "stable")
         ladder_list = [self.ladder_list[i] for i in perm]
+        flip_sign = permutation_signature(perm)
         
-        return FermionicTerm(ladder_list), permutation_signature(perm)
+        for i in range(len(ladder_list)-1):
+            if ladder_list[i][0] == ladder_list[i+1][0]:
+                if ladder_list[i][1] == ladder_list[i+1][1]:
+                    flip_sign = 0
+                    break
+                if i > 1 and ladder_list[i][0] == ladder_list[i-1][0]:
+                    flip_sign = 0
+                    break
+                    
+        return FermionicTerm(ladder_list), flip_sign
     
     def fermionic_swap(self, permutation):
         

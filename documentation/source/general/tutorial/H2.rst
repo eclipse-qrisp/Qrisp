@@ -39,12 +39,12 @@ What these particular $\ket{\psi_i}$ represent depends on the system. For instan
 
 This plot represents the real part of the amplitude of one of the basis vectors (the one with $n = 4, k = 3, l = 1$ to be precise).
 
-The **second quantization** now describes how systems including *multiple particles* are treated. For this the so called ladder-operators are introduced, that is for each basis state $\ket{\psi_i}$ there is an operator $a_i$, which creates a particle in state $\ket{\psi_i}$. A creative notation for this might be:
+The **second quantization** now describes how systems including *multiple particles* are treated. For this the so called ladder-operators are introduced, that is for each basis state $\ket{\psi_i}$ there is an operator $a_i^\dagger$, which creates a particle in state $\ket{\psi_i}$. A creative notation for this might be:
 
 .. math::
-    a_i \ket{\phi} = \ket{\phi \text{ + a particle in state i}}
+    a_i^\dagger \ket{\phi} = \ket{\phi \text{ + a particle in state i}}
 
-For this reason this operator is called "creator". Similarly there is also an "annihilator", which destroys the particle.
+For this reason this operator is called "creator". Similarly there is also the "annihilator" $a_i$, which destroys the particle.
 
 The ladder operators therefore determine the intrinsic interaction behavior of the particles. Observations from experiments show that there are two types of particles whose ladder operators follow different sets of laws.
 
@@ -60,7 +60,7 @@ For **Fermions** the ladder operators obey anti-commutator laws:
     \{a_i, a^\dagger_j\} = a_i a^\dagger_j + a_j a^\dagger_i = \delta_{ij}\\
     \{a^\dagger_i, a^\dagger_j\} = \{a_i, a_j\} = 0
 
-Note that the fermionic laws imply $a_i a_i = 0$. This means that an operator, which tries to insert two particles in the same state will immidiately become 0 and therefore not contribute. This is known as `Pauli exclusion principle <https://en.wikipedia.org/wiki/Pauli_exclusion_principle>`_.
+Note that the fermionic laws imply $a_i^\dagger a_i^\dagger = 0$. This means that an operator, which tries to insert two particles in the same state will immidiately become 0 and therefore not contribute. This is known as `Pauli exclusion principle <https://en.wikipedia.org/wiki/Pauli_exclusion_principle>`_.
 
 Within Qrisp it is currently only possible to model **fermions**, which is for many applications in chemistry the more important case. A modelling framework for bosons will follow in a future release. To start building a fermionic operator, we import the functions ``c`` and ``a`` for creators and annihilators.
 
@@ -92,9 +92,9 @@ The Jordan-Wigner embedding
 A natural question that comes up is how to represent the ladder operators and the corresponding states on the quantum computer. The most established way to do this is to use the `Jordan-Wigner embedding <https://en.wikipedia.org/wiki/Jordan%E2%80%93Wigner_transformation>`_ (even though there are several `interesting alternatives <https://arxiv.org/abs/2212.09731>`_). The Jordan-Wigner embedding identifies each ladder term with an operator that acts on a qubit space:
 
 .. math::
-    a_k = C_k \prod_{i = 0}^{k-1} Z_i
+    a_k = A_k \prod_{i = 0}^{k-1} Z_i
 
-Where $C_k = \ket{1}\bra{0}$ and $Z_i$ are the Pauli-Z Operators. Feel free to verify that this indeed satisfies the anti-commutator relations! We can apply the Jordan-Wigner embedding with the corresponding method:
+Where $A_k = \ket{0}\bra{1}$ and $Z_i$ are the Pauli-Z Operators. Feel free to verify that this indeed satisfies the anti-commutator relations! We can apply the Jordan-Wigner embedding with the corresponding method:
 
 ::
 
@@ -202,7 +202,7 @@ Finally we want to extract some physical quantity from our simulation. Our quant
 
 .. math::
 
-    N = \sum_{i = 0}^n a_i a^\dagger_i 
+    N = \sum_{i = 0}^n a^\dagger_i  a_i
 
 In python code:
 
