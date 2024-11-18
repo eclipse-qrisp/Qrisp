@@ -1,10 +1,10 @@
 .. _H2:
 
 Simulating the dynamics of the $H_2$ molecule
-===========================================
+=============================================
 
 Quantum computing offers a promising avenue for simulating complex molecular systems, potentially revolutionizing fields like drug discovery, materials science, and chemical engineering. At the heart of this capability lies Hamiltonian simulation, a powerful technique that allows us to model the quantum behavior of molecules with exponentially less resources compared to classical computers.
-In this tutorial, we'll explore how to simulate molecules using Hamiltonian simulation techniques implemented in Qrisp. Since version 0.5 Qrisp provides a user-friendly interface for simulating quantum many body systems, making it a suitable tool for tackling complex quantum chemistry problems.
+In this tutorial, we'll explore how to simulate molecules using Hamiltonian simulation techniques implemented in Qrisp. Since version 0.5, Qrisp provides a user-friendly interface for simulating quantum many body systems, making it a suitable tool for tackling complex quantum chemistry problems.
 We'll cover the following key aspects:
 
 * :ref:`The fundamentals of Hamiltonian simulation and the second quantization <ham_sim_fundamentals>`
@@ -15,23 +15,24 @@ By the end of this tutorial, you'll have a solid understanding of how to leverag
 Let's dive in and discover how Qrisp can help us unlock the quantum secrets of molecules!
 
 .. _ham_sim_fundamentals:
+
 The fundamentals of Hamiltonian simulation and the second quantization
 ----------------------------------------------------------------------
 
 
-To understand what "second quantization" means it might be helpful to start with the **first quantization**. The idea behind this is that physical systems containing only a single particale are described by a Hilbert space $\mathcal{H}$, which consits of a set of basis-vectors:
+To understand what "second quantization" means it might be helpful to start with the **first quantization**. The idea behind this is that physical systems containing only a single particale are described by a Hilbert space $\mathcal{H}$, which consits of a set of basis vectors:
 
 .. math::
-    \mathcal{H} = \text{span}(\ket{\psi_i} | i \in \mathcal{N})
+    \mathcal{H} = \text{span}(\ket{\psi_i} \mid i \in \mathcal{N})
 
 An arbitrary state $\ket{\phi}$ can therefore be represented by a linear combination of these basis vectors:
 
 .. math::
-    \ket{\phi} = \sum_{i = 0}^\infty a_i \ket{\psi_i}, a_i \in \mathbb{C}
+    \ket{\phi} = \sum_{i = 0}^\infty a_i \ket{\psi_i},\quad a_i \in \mathbb{C}
 
 
 
-What these particular $\ket{\psi_i}$ represent depends on the system. For instance for the hydrogen atom these basis vectors represent the `atomic orbitals <https://en.wikipedia.org/wiki/Atomic_orbital>`_. If you participated in a course for atomic physics before, you might have seen pictures like this:
+What these particular $\ket{\psi_i}$ represent depends on the system. For instance for the Hydrogen atom these basis vectors represent the `atomic orbitals <https://en.wikipedia.org/wiki/Atomic_orbital>`_. If you participated in a course for atomic physics before, you might have seen pictures like this:
 
 .. image:: ./hydrogen_with_axes.png
     :width: 400px
@@ -39,12 +40,12 @@ What these particular $\ket{\psi_i}$ represent depends on the system. For instan
 
 This plot represents the real part of the amplitude of one of the basis vectors (the one with $n = 4, k = 3, l = 1$ to be precise).
 
-The **second quantization** now describes how systems including *multiple particles* are treated. For this the so called ladder-operators are introduced, that is for each basis state $\ket{\psi_i}$ there is an operator $a_i^\dagger$, which creates a particle in state $\ket{\psi_i}$. A creative notation for this might be:
+The **second quantization** now describes how systems including *multiple particles* are treated. For this the so called ladder operators are introduced, that is, for each basis state $\ket{\psi_i}$ there is an operator $a_i^\dagger$, which creates a particle in state $\ket{\psi_i}$. A creative notation for this might be:
 
 .. math::
     a_i^\dagger \ket{\phi} = \ket{\phi \text{ + a particle in state i}}
 
-For this reason this operator is called "creator". Similarly there is also the "annihilator" $a_i$, which destroys the particle.
+For this reason, this operator is called the "creator". Similarly there is also the "annihilator" $a_i$, which destroys the particle.
 
 The ladder operators therefore determine the intrinsic interaction behavior of the particles. Observations from experiments show that there are two types of particles whose ladder operators follow different sets of laws.
 
@@ -89,7 +90,7 @@ To apply the Pauli exclusion principle but also other anti-commutation laws for 
 The Jordan-Wigner embedding
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-A natural question that comes up is how to represent the ladder operators and the corresponding states on the quantum computer. The most established way to do this is to use the `Jordan-Wigner embedding <https://en.wikipedia.org/wiki/Jordan%E2%80%93Wigner_transformation>`_ (even though there are several `interesting alternatives <https://arxiv.org/abs/2212.09731>`_). The Jordan-Wigner embedding identifies each ladder term with an operator that acts on a qubit space:
+A natural question that comes up is how to represent the ladder operators and the corresponding states on a quantum computer. The most established way to do this is to use the `Jordan-Wigner embedding <https://en.wikipedia.org/wiki/Jordan%E2%80%93Wigner_transformation>`_ (even though there are several `interesting alternatives <https://arxiv.org/abs/2212.09731>`_). The Jordan-Wigner embedding identifies each ladder term with an operator that acts on a qubit space:
 
 .. math::
     a_k = A_k \prod_{i = 0}^{k-1} Z_i
@@ -103,7 +104,7 @@ Where $A_k = \ket{0}\bra{1}$ and $Z_i$ are the Pauli-Z Operators. Feel free to v
     print(O_qubit)
     # Yields: Z_0*Z_1*Z_2*Z_3*A_4
 
-This gives us an instance of the :ref:`QubitOperator` class. What is the difference to a :ref:`FermionicOperator`? While FermionicOperators model the more abstract fermion space, qubit operators represent operators on the qubit space $(\mathbb{C}^2)^{\otimes n}$ and can be simulated and evaluated efficiently using a quantum computer. In particular, QubitOperators can represent tensor products of the following operators $X,Y,Z,A,C,P^0,P^1,I$. Make sure to read the :ref:`docstring <QubitOperator>` to learn about their definition!
+This gives us an instance of the :ref:`QubitOperator` class. What is the difference to a :ref:`FermionicOperator`? While FermionicOperators model the more abstract fermion space, qubit operators represent operators on the qubit space $(\mathbb{C}^2)^{\otimes n}$ and can be simulated and evaluated efficiently using a quantum computer. In particular, QubitOperators can represent tensor products of the following operators $X,Y,Z,A,C,P^0,P^1,I$. Make sure to read the :ref:`documentation <QubitOperator>` to learn about their definition!
 
 Dynamics
 ^^^^^^^^
@@ -129,6 +130,7 @@ The particular values of the coefficients (like $h_{01}$ and $h_{00}$) are deter
 
 
 .. _molecular_data_tut:
+
 Loading molecular data into Qrisp
 =================================
 
@@ -171,6 +173,7 @@ Or if preferred, the Jordan-Wigner embedding:
     + 0.697651504490463*P^0_2*P^0_3 - 0.475068848772178*P^0_3
    
 .. _ham_sim_tut:
+
 Performing Hamiltonian simulation
 =================================
 
@@ -198,7 +201,7 @@ This snippets simulates the Dihydrogen molecule for $t = 100$ Angstrom seconds, 
     &= \text{exp}(100iH)\ket{\phi, t =0}
     \end{align}
     
-Finally we want to extract some physical quantity from our simulation. Our quantity of choice is the number operator:
+Finally, we want to extract some physical quantity from our simulation. Our quantity of choice is the particle number operator:
 
 .. math::
 
@@ -226,7 +229,7 @@ The value is not exact because of statistical noise - we can increase the precis
     print(N.get_measurement(electron_state, precision = 0.0001))
     # Yields: 1.4999799028124874
     
-This concludes our little tutorial on Hamiltonian simulation. We hope you could learn something and possibly feel motivated to explore more systems and techniques! Make sure to also check out the :ref:`MolecularPotentialEnergyCurve` example to learn how to compute the ground state for both types of operators!
+This concludes our little tutorial on Hamiltonian simulation. We hope you could learn something and feel motivated to explore more systems and techniques! Make sure to also check out the :ref:`MolecularPotentialEnergyCurve` example to learn how to compute the ground state for both types of operators!
 
 For your reference, we give the full code below:
 

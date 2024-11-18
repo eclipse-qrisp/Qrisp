@@ -8,9 +8,9 @@ Variational Quantum Eigensolver
 .. toctree::
    :hidden:
    
-   vqe/VQEProblem
-   vqe/VQEBenchmark
-   vqe/VQEImplementations
+   VQEProblem
+   VQEBenchmark
+   VQEImplementations
 
 This modules implements the `Variational Quantum Eigensolver (VQE) <https://arxiv.org/pdf/2111.05176>`_. 
 

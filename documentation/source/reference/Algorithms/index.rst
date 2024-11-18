@@ -9,12 +9,12 @@ This algorithms submodule of Qrisp provides a collection of commonly used quantu
 
    * - ALGORITHM
      - USED FOR
+   * - :ref:`VQE <VQE>`
+     - finding the ground state energy of a Hamiltonian
    * - :ref:`QAOA <QAOA>`
      - solving combinatorial optimization problems
    * - :ref:`QIRO <QIRO>`
      - solving combinatorial optimization problems, with quantum informed update rules
-   * - :ref:`VQE <VQE>`
-     - finding the ground state energy of a Hamiltonian
    * - :ref:`Shor's Algorithm <Shor>`
      - efficiently factoring large numbers
    * - :ref:`Grover's Algorithm <grovers_alg>`
@@ -33,8 +33,7 @@ We encourage you to explore these algorithms, delve into their documentation, an
    :maxdepth: 2
    :hidden:
    
-   QIRO
-   VQE
+   vqe/VQE
    qaoa/QAOA
    qiro/QIRO
    Shor
