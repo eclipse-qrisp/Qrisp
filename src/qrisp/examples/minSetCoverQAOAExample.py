@@ -16,9 +16,7 @@
 ********************************************************************************/
 """
 
-from qrisp.qaoa import QAOAProblem
-from qrisp.qaoa.mixers import RZ_Mixer
-from qrisp.qaoa.problems.minSetCoverInfrastr import minSetCoverclCostfct,minSetCoverCostOp, init_state
+from qrisp.algorithms.qaoa import *
 
 from qrisp import QuantumVariable
 
@@ -35,20 +33,20 @@ We will not stick to mathematical assignment of variable names.
 # sets are given as list of lists
 sets = [[0,1,2,3],[1,5,6,4],[0,2,6,3,4,5],[3,4,0,1],[1,2,3,0],[1]]
 # full universe is given as a tuple
-sol = (0,1,2,3,4,5,6)
+universe = (0,1,2,3,4,5,6)
 
 
 # assign operators
-cost_fun = minSetCoverclCostfct(sets=sets,universe = sol)
-mixerOp = RZ_Mixer()
-costOp = minSetCoverCostOp(sets=sets, universe=sol)
+
 
 #initialize variable
 qarg = QuantumVariable(len(sets))
 
 #+run qaoa
-QAOAinstance = QAOAProblem(cost_operator=costOp ,mixer= mixerOp, cl_cost_function=cost_fun)
-QAOAinstance.set_init_function(init_function=init_state)
+QAOAinstance = QAOAProblem(cost_operator=RZ_mixer,
+                        mixer= create_min_set_cover_mixer(sets, universe),
+                        cl_cost_function=create_min_set_cover_cl_cost_function(sets, universe),
+                        init_function=min_set_cover_init_function)
 InitTest = QAOAinstance.run(qarg=qarg, depth=5)
 
 # create example cost_func
@@ -73,4 +71,4 @@ for name, age in InitTest.items():  # for name, age in dictionary.iteritems():  
     if name in maxfive:
 
         print((name, age))
-        print(testCostFun(name, sol))
+        print(testCostFun(name, universe))

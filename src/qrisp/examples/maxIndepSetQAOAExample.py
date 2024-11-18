@@ -16,9 +16,7 @@
 ********************************************************************************/
 """
 
-from qrisp.qaoa import QAOAProblem
-from qrisp.qaoa.problems.maxIndepSetInfrastr import maxIndepSetCostOp, maxIndepSetclCostfct,  init_state
-from qrisp.qaoa.mixers import RX_mixer
+from qrisp.algorithms.qaoa import *
 from qrisp import QuantumVariable
 import networkx as nx
 import matplotlib.pyplot as plt
@@ -38,7 +36,7 @@ qarg = QuantumVariable(giraf.number_of_nodes())
 #Instanciate QAOA
 #mixer gets Graph as argument
 #cost function gets graph as argument 
-QAOAinstance = QAOAProblem(cost_operator=maxIndepSetCostOp(giraf), mixer=RX_mixer, cl_cost_function=maxIndepSetclCostfct(giraf))
+QAOAinstance = QAOAProblem(cost_operator=create_max_indep_set_mixer(giraf), mixer=RZ_mixer, cl_cost_function=create_max_indep_set_cl_cost_function(giraf))
 QAOAinstance.set_init_function(init_function=init_state)
 theNiceQAOA = QAOAinstance.run(qarg=qarg,depth=5)
 

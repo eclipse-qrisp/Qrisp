@@ -35,7 +35,9 @@ Collection of mixers and auxiliary functions
 
 .. autosummary::
 
-   qiro_RXMixer
+   qiro_rx_mixer
+   qiro_rz_mixer
+   qiro_controlled_RX_mixer_gen
    qiro_init_function
    find_max
    

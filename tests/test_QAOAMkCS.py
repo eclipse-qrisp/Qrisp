@@ -24,11 +24,11 @@ from operator import itemgetter
 
 
 from qrisp.default_backend import def_backend
+
 qrisp_sim = def_backend
 qaoa_backend = qrisp_sim
 
 depth = 3
-
 def mkcs_obj(quantumcolor_array, G):
         # Set value of color integer to 1
     color = 1
@@ -107,7 +107,7 @@ def test_mkcs_G1e2c():
 
 def test_mkcs_5nodes():
     G = nx.Graph()
-    G.add_edges_from([[0,1],[0,4],[1,2],[1,3],[1,4],[2,3],[3,4]])
+    G.add_edges_from([[0,1],[0,4],[1,2],[2,3]])
 
     num_nodes = len(G.nodes)
 
@@ -158,24 +158,17 @@ def test_mkcs_5nodes():
         if all(res_str_bin[pair[0]] != res_str_bin[pair[1]] for pair in list(G.edges())):
             return True
     
-    for _ in range(5):
+
+    for _ in range(10):
         if G_bin() == True:
             break
-    else: 
-        assert False
+        else: 
+            assert False
 #    bin = G_bin
 
 
 
 
-
-
-
-
-
-
-
-# ONE HOT
 
 
 

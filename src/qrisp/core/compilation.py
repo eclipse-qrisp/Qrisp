@@ -17,6 +17,7 @@
 """
 
 import numpy as np
+import networkx as nx
 
 from qrisp.circuit import QuantumCircuit, Qubit, PTControlledOperation, ControlledOperation, transpile, Instruction, fast_append
 from qrisp.misc import get_depth_dic, retarget_instructions
@@ -130,6 +131,10 @@ def qompiler(
         # Transpile to the first level
         
         qc = transpile(qc, transpile_predicate = permeability_transpile_predicate)
+        qc = cancel_inverses(qc)
+        
+        
+        
         if intended_measurements and len(qc.clbits) == 0:
             # This function reorders the circuit such that the intended measurements can
             # be executed as early as possible additionally, any instructions that are
@@ -435,7 +440,7 @@ def qompiler(
                 sorted_qubit_list.append(qc.qubits[i])
 
         qc.qubits = sorted_qubit_list
-
+        qc = cancel_inverses(qc)
         reduced_qc = parallelize_qc(qc, depth_indicator = gate_speed)
 
     if reduced_qc.depth(depth_indicator = gate_speed) > qc.depth(depth_indicator = gate_speed):
@@ -732,3 +737,82 @@ def qft_cancellation(qc):
     # print(len(new_qc.data))
     # print("====")
     return new_qc
+
+
+
+
+def eval_instr_neutrality(instr_a, instr_b):
+    
+    if len(instr_a.qubits) != len(instr_b.qubits):
+        return False
+    
+    for i, qb in enumerate(instr_a.qubits):
+        if instr_b.qubits[i] != qb:
+            return False
+    
+    return eval_operatiom_neutrality(instr_a.op, instr_b.op)
+
+def eval_operatiom_neutrality(op_a, op_b):
+    
+    if op_a.definition is not None:
+        if isinstance(op_a, ControlledOperation) and isinstance(op_b, ControlledOperation):
+           if op_a.ctrl_state == op_b.ctrl_state:
+               return eval_operatiom_neutrality(op_a.base_operation, op_b.base_operation)
+           
+        return False
+
+    if op_a.inverse().name == op_b.name:
+        if len(op_a.params) == 0 and op_a.name[-5:] != "alloc":
+            return True
+        else:
+            return False
+        
+    return False
+
+def cancel_inverses(qc):
+    G = nx.DiGraph()
+    qubit_dic = {}
+    edge_dic = {}
+    for i in range(qc.num_qubits()):
+        qubit_dic[qc.qubits[i]] = -i - 1
+        G.add_node(-i-1)
+    
+    for i in range(len(qc.data)):
+        
+        G.add_node(i)
+        instr = qc.data[i]
+        
+        predecessors = set()
+        for qb in instr.qubits:
+            
+            predecessors.add(qubit_dic[qb])
+            
+            if not G.has_edge(qubit_dic[qb], i):
+                G.add_edge(qubit_dic[qb], i)
+                edge_dic[(qubit_dic[qb], i)] = []
+            
+            edge_dic[(qubit_dic[qb], i)].append(qb)
+            qubit_dic[qb] = i
+        
+        predecessors = list(predecessors)
+        
+        if len(predecessors) == 1:
+            pred = predecessors[0]
+            if eval_instr_neutrality(qc.data[pred], qc.data[i]):
+                G.remove_node(i)
+                for edge in G.in_edges(pred):
+                    for qb in edge_dic[edge]:
+                        qubit_dic[qb] = edge[0]
+                    del edge_dic[edge]
+                G.remove_node(pred)
+    
+    qc_new = qc.clearcopy()
+    
+    with fast_append(3):
+        for i in nx.topological_sort(G):
+            if i < 0:
+                continue
+            else:
+                qc_new.append(qc.data[i].op, qc.data[i].qubits, qc.data[i].clbits)
+            
+    return qc_new
