@@ -181,9 +181,9 @@ class QubitOperatorMeasurement:
         meas_ops = []
         meas_coeffs = []
         
-        for i in range(len(self.groups)):
+        for i in range(len(self.measurement_operators)):
             
-            group = self.groups[i]
+            group = self.measurement_operators[i]
             
             shots = int(self.shots_list[i]/precision**2)
             
