@@ -30,7 +30,7 @@ def test_pauli_hamiltonian():
 
     # What is the semantics here?
     # qtype = QuantumVariable(2)
-    # q_array = QuantumArray(qtype, shape=(2))test
+    # q_array = QuantumArray(qtype, shape=(2))
     # h(q_array)
     # H = Z(0)*Z(1) + X(2)*X(3)
     # res = H.get_measurement(q_array)
