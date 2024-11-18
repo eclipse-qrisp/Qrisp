@@ -119,10 +119,10 @@ def gaussian_elimination_mod2(matrix, type='row', reduced=False, show_pivots=Fal
 
         # Backward elimination (optional, for reduced row echelon form)
         if reduced:
-            for i in range(min(rows, columns) - 1, -1, -1):
-                for j in range(i - 1, -1, -1):
-                    if matrix[j, i] == 1:
-                        matrix[j] = (matrix[j] + matrix[i]) % 2
+            for row, col in enumerate(pivots):
+                for i in range(row):
+                    if matrix[i][col] == 1:
+                        matrix[i] = (matrix[row] + matrix[i]) % 2
 
 
     elif type=='column':
@@ -145,14 +145,14 @@ def gaussian_elimination_mod2(matrix, type='row', reduced=False, show_pivots=Fal
                         matrix[:,j] = (matrix[:,j] + matrix[:,column_index]) % 2
 
                 row_index+=1
-                column_index+=1     
+                column_index+=1    
 
-        # Backward elimination (optional, for column row echelon form)
+        # Backward elimination (optional, for reduced row echelon form)
         if reduced:
-            for i in range(min(rows, columns) - 1, -1, -1):
-                for j in range(i - 1, -1, -1):
-                    if matrix[j, i] == 1:
-                        matrix[:,j] = (matrix[:,j] + matrix[:,i]) % 2
+            for col, row in enumerate(pivots):
+                for i in range(col):
+                    if matrix[row][i] == 1:
+                        matrix[:,i] = (matrix[:,col] + matrix[:,i]) % 2 
 
     if show_pivots:
         return matrix, pivots 
