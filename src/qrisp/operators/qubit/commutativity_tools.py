@@ -62,7 +62,7 @@ def inverse_mod2(matrix):
     return result
 
 
-def gaussian_elimination_mod2(matrix, type='row', show_pivots=False):
+def gaussian_elimination_mod2(matrix, type='row', reduced=False, show_pivots=False):
     r"""
     Performs Gaussian elimination in the field $F_2$.
     
@@ -71,8 +71,11 @@ def gaussian_elimination_mod2(matrix, type='row', show_pivots=False):
     matrix : numpy.array
         A binary matrix.
     type : str, optional
-        Available aore ``row`` for row echelon form, and ``column`` for column echelon form. 
+        Available are ``row`` for row echelon form, and ``column`` for column echelon form. 
         The default is ``row``.
+    reduced : Boolean, optional
+        If ``True``, the reduced row (column) echelon form is calculated.
+        The default is ``False``.
     show_pivots : Boolean, optional
         If ``True``, the pivot columns (rows) are returned.
 
@@ -106,13 +109,21 @@ def gaussian_elimination_mod2(matrix, type='row', show_pivots=False):
                 # Swap the current row with the pivot row
                 matrix[[row_index, max_row]] = matrix[[max_row, row_index]]
         
-                # Eliminate all rows below the pivot
+                # Eliminate all rows after the pivot
                 for j in range(row_index + 1, rows):
                     if matrix[j, column_index] == 1:
                         matrix[j] = (matrix[j] + matrix[row_index]) % 2
 
                 row_index+=1
                 column_index+=1
+
+        # Backward elimination (optional, for reduced row echelon form)
+        if reduced:
+            for i in range(min(rows, columns) - 1, -1, -1):
+                for j in range(i - 1, -1, -1):
+                    if matrix[j, i] == 1:
+                        matrix[j] = (matrix[j] + matrix[i]) % 2
+
 
     elif type=='column':
         while row_index<rows and column_index<columns:
@@ -128,7 +139,7 @@ def gaussian_elimination_mod2(matrix, type='row', show_pivots=False):
                 # Swap the current column with the pivot column
                 matrix[:,[column_index, max_column]] = matrix[:,[max_column, column_index]]
         
-                # Eliminate all rows below the pivot
+                # Eliminate all columns after the pivot
                 for j in range(column_index + 1, columns):
                     if matrix[row_index, j] == 1:
                         matrix[:,j] = (matrix[:,j] + matrix[:,column_index]) % 2
@@ -136,8 +147,15 @@ def gaussian_elimination_mod2(matrix, type='row', show_pivots=False):
                 row_index+=1
                 column_index+=1     
 
+        # Backward elimination (optional, for column row echelon form)
+        if reduced:
+            for i in range(min(rows, columns) - 1, -1, -1):
+                for j in range(i - 1, -1, -1):
+                    if matrix[j, i] == 1:
+                        matrix[:,j] = (matrix[:,j] + matrix[:,i]) % 2
+
     if show_pivots:
-        return matrix, pivots #(pivot_rows,pivot_cols)
+        return matrix, pivots 
     else:
         return matrix
 
@@ -172,7 +190,7 @@ def construct_change_of_basis(S):
     # Step 0: Calculate S_0: Independent columns (i.e., Pauli terms) of S
     ####################
 
-    S_reduced, independent_cols = gaussian_elimination_mod2(S, show_pivots=True)
+    S_reduced, independent_cols = gaussian_elimination_mod2(S, reduced=True, show_pivots=True)
     k = len(independent_cols)
 
     S0 = S[:,independent_cols]
@@ -199,8 +217,9 @@ def construct_change_of_basis(S):
     # Construct permutation achieving that the first k rows in X component of S1 are independent
     perm = np.arange(0,n)
     for index1, index2 in enumerate(independent_rows):
+        curr = perm[index1]
         perm[index1] = index2
-        perm[index2] = index1
+        perm[index2] = curr
 
     # Apply permutation to rows of S1 for Z and X component
     S1 = np.vstack((S1[:n,:][perm],S1[-n:,:][perm]))
