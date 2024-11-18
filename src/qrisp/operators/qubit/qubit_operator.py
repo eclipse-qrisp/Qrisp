@@ -19,7 +19,8 @@ from qrisp.operators.hamiltonian_tools import group_up_terms
 from qrisp.operators.hamiltonian import Hamiltonian
 from qrisp.operators.qubit.qubit_term import QubitTerm
 from qrisp.operators.qubit.measurement import get_measurement
-from qrisp import cx, h, s, x, sx_dg, IterationEnvironment, conjugate, merge
+from qrisp.operators.qubit.commutativity_tools import gaussian_elimination_mod2, inverse_mod2, construct_change_of_basis
+from qrisp import cx, cz, h, s, x, sx_dg, IterationEnvironment, conjugate, merge
 
 import sympy as sp
 import numpy as np
@@ -855,7 +856,7 @@ class QubitOperator(Hamiltonian):
     # Measurement settings and measurement
     #
     
-    def change_of_basis(self, qarg):
+    def change_of_basis(self, qarg, method="commuting_qw"):
         """
         Performs several operations on a quantum argument such that the hermitian
         part of self is diagonal when conjugated with these operations.
@@ -864,6 +865,10 @@ class QubitOperator(Hamiltonian):
         ----------
         qarg : QuantumVariable or list[Qubit]
             The quantum argument to apply the change of basis on.
+        method : str, optional
+            The method for calculating the change of basis. 
+            Available are ``commuting`` (all QubitTerms must mutually commute) and ``commuting_qw`` (all QubitTerms must mutually commute qubit-wise).
+            The default is ``commuting_qw``.
 
         Returns
         -------
@@ -933,59 +938,163 @@ class QubitOperator(Hamiltonian):
         if len(qarg) < n:
             raise Exception("Tried to change the basis of an Operator on a quantum argument with insufficient qubits.")
         
-        
+     
         # This dictionary will contain the new terms/coefficient comination for the
         # diagonal operator
         new_terms_dict = {}
-        
-        # We track which qubit is in which basis to raise an error if a
-        # violation with the requirement of qubit wise commutativity is detected.
-        basis_dict = {}
-        
-        ladder_conversion = {"A" : "P1", "C" : "P0"}
+
+        new_factor_dicts = []
+        prefactors = []
         
         ladder_conjugation_performed = False
         ladder_indices = []
-        anchor_index = []
-        # We iterate through the terms and apply the appropriate basis transformation
-        for term, coeff in self.terms_dict.items():
+
+        if method=="commuting_qw":
+            # We track which qubit is in which basis to raise an error if a
+            # violation with the requirement of qubit wise commutativity is detected.
+            basis_dict = {}            
+    
+            # We iterate through the terms and apply the appropriate basis transformation
+            for term, coeff in self.terms_dict.items():
+
+                factor_dict = term.factor_dict
+                # This dictionary will contain the factors of the new term
+                new_factor_dict = {}
+                
+                new_factor_dicts.append(new_factor_dict)
             
-            factor_dict = term.factor_dict
-            # This dictionary will contain the factors of the new term
-            new_factor_dict = {}
+                prefactor = 1
+                prefactors.append(prefactor)
             
-            prefactor = 1
-            
-            for j in range(n):
+                for j in range(n):
                 
-                # If there is no entry in the factor dict, this corresponds to
-                # identity => no basis change required.
-                if j not in factor_dict:
-                    continue
+                    # If there is no entry in the factor dict, this corresponds to
+                    # identity => no basis change required.
+                    if j not in factor_dict:
+                        continue
                 
-                # If j is already in the basis dict, we assert that the bases agree
-                # (otherwise there is a violation of qubit-wise commutativity)
-                if j in basis_dict:
-                    if basis_dict[j] != factor_dict[j]:
-                        assert basis_dict[j] in ["Z", "P0", "P1"]
-                    new_factor_dict[j] = "Z"
-                    continue
-                
-                # We treat ladder operators in the next section
-                if factor_dict[j] not in ["X", "Y", "Z"]:
-                    continue
-                
-                # Update the basis dict
-                basis_dict[j] = factor_dict[j]
-                
-                # Append the appropriate basis-change gate
-                if factor_dict[j]=="X":
-                    h(qarg[j])
+                    # If j is already in the basis dict, we assert that the bases agree
+                    # (otherwise there is a violation of qubit-wise commutativity)
+                    if j in basis_dict:
+                        if basis_dict[j] != factor_dict[j]:
+                            assert basis_dict[j] in ["Z", "P0", "P1"]
+                        new_factor_dict[j] = "Z"
+                        continue
                     
-                if factor_dict[j]=="Y":
-                    sx_dg(qarg[j])
+                    # We treat ladder operators in the next section
+                    if factor_dict[j] not in ["X", "Y", "Z"]:
+                        continue
+                
+                    # Update the basis dict
+                    basis_dict[j] = factor_dict[j]
+                
+                    # Append the appropriate basis-change gate
+                    if factor_dict[j]=="X":
+                        h(qarg[j])
+                    
+                    if factor_dict[j]=="Y":
+                        sx_dg(qarg[j])
             
-                new_factor_dict[j] = "Z"
+                    new_factor_dict[j] = "Z"
+                    
+                    
+
+        if method=="commuting":
+
+            # Calculate S: Matrix where the colums correspond to the binary representation (Z/X) of the Pauli terms
+            x_vectors = []
+            z_vectors = []
+            for term, coeff in self.terms_dict.items():
+                x_vector, z_vector = term.binary_representation(n)
+                x_vectors.append(x_vector)
+                z_vectors.append(z_vector)
+            x_matrix = np.stack(x_vectors, axis=1)
+            z_matrix = np.stack(z_vectors, axis=1)
+
+            # Find qubits (rows) on which Pauli X,Y,Z operatos act
+            qb_indices = []
+            for k in range(n):
+                if not (np.all(x_matrix[k] == 0) and np.all(z_matrix[k] == 0)):
+                    qb_indices.append(k)
+            m = len(qb_indices)
+            
+            if m==0:
+                new_factor_dicts = [{} for _ in range(self.len())]
+                prefactors = [1]*self.len()
+            else:
+                S = np.vstack((z_matrix[qb_indices], x_matrix[qb_indices]))
+            
+                # Construct and apply change of basis
+                A, R_inv, h_list, s_list, perm = construct_change_of_basis(S)
+
+                def inv_graph_state(qarg):
+                    for i in range(m):
+                        for j in range(i):
+                            if A[i,j]==1:
+                                cz(qarg[qb_indices[perm[i]]],qarg[qb_indices[perm[j]]])
+                    for i in qb_indices:
+                        h(qarg[i])
+
+                def change_of_basis(qarg):
+                    for i in h_list:
+                        h(qarg[qb_indices[i]])
+                    for i in s_list:
+                        s(qarg[qb_indices[perm[i]]])
+                    inv_graph_state(qarg)
+
+                change_of_basis(qarg)
+
+                # Construct new QubitOperator
+                #
+                # Factor (-1) appears if S gate is applied to X, or Hadamard gate H is applied to Y:
+                # S^dagger X S = -Y
+                # S^dagger Y S = X
+                # S^dagger Z S = Z
+                # H X H = Z
+                # H Y H = -Y
+                # H Z H = X
+                # For the original Pauli terms this translates to: Factor (-1) appears if S gate is applied to Y, or Hadamard gate H is applied to Y
+                # No factor (-1) occurs if H S^{-1} P S H is applied (i.e., H and S) for any P in {X,Y,Z}
+
+                s_vector = np.zeros(m, dtype=int)
+                s_vector[s_list] = 1
+                h_vector = np.zeros(m, dtype=int)
+                h_vector[h_list] = 1
+                sh_vector = s_vector[perm] + h_vector % 2 
+                sign_vector = sh_vector @ (x_matrix[qb_indices]*z_matrix[qb_indices]) % 2
+
+                # Lower triangular part of A
+                A_low = np.tril(A)
+
+                for index,z_vector in enumerate(R_inv.T):
+
+                    # Determine the sign of the product of the selected graph state stabilizers:
+                    # 
+                    # Consider product of stabilizers S_{i_1}*S_{i_2}*...*S_{i_m} with (w.l.o.g.) i_1<i_2<...<i_m
+                    # For each i: Swap X_i with all Z_i's from stabilizers if index > i such that all Z_i's are on the left of X_i
+                    # Calculate the paritiy n1 of the sum of the numbers of 1's with position j>i for each row of the square submatrix A defined by z_vector
+                    # Yields a factor (-1)^n1
+
+                    n1 = sum((z_vector @ A_low)*z_vector) % 2
+
+                    # For each i: Count the number of Z_i's: if even, no factor, if odd: factor i (ZX=iY)
+                    # Count the number n2 of rows of the square submatrix of A defined by z_vector, such that the number of 1's in each row is odd
+                    # This number is always even since A is a symmetric matrix with 0's on the diagonal
+                    # Yields a factor i^n2=(-1)^(n2/2)
+
+                    n2 = sum((z_vector @ A)*z_vector % 2)
+
+                    new_factor_dict = {qb_indices[perm[i]]:"Z" for i in range(m) if z_vector[i]==1}
+                    new_factor_dicts.append(new_factor_dict)
+                    
+                    prefactor = (-1)**sign_vector[index]*(-1)**(n1+n2/2)
+                    prefactors.append(prefactor)
+
+        # Ladder operators 
+        for term, coeff in self.terms_dict.items():    
+
+            prefactor = prefactors.pop(0)    
+            new_factor_dict = new_factor_dicts.pop(0)
             
             # Next we treat the ladder operators
             ladder_operators = [base for base in term.factor_dict.items() if base[1] in ["A", "C"]]
@@ -1029,7 +1138,7 @@ class QubitOperator(Hamiltonian):
             for k, v in term.factor_dict.items():
                 if v in ["P0", "P1"]:
                     new_factor_dict[k] = v
-            
+
             new_term = QubitTerm(new_factor_dict)
             new_terms_dict[new_term] = prefactor*self.terms_dict[term]
         
@@ -1211,11 +1320,12 @@ class QubitOperator(Hamiltonian):
         """
         var = 0
         pauli_form = self.hermitize().to_pauli()
-        
         for term, coeff in pauli_form.terms_dict.items():
             if len(term.factor_dict) != 0:
                 var += abs(coeff)**2
+                print(coeff)
         alpha_n = 1 - 1/(2**n + 1)
+        
         return var*alpha_n
         
     def get_measurement(
@@ -1228,6 +1338,7 @@ class QubitOperator(Hamiltonian):
         compilation_kwargs={},
         subs_dic={},
         precompiled_qc=None,
+        diagonalisation_method="commuting_qw",
         measurement_data=None # measurement settings
     ):
         r"""
@@ -1306,13 +1417,14 @@ class QubitOperator(Hamiltonian):
                                 compilation_kwargs=compilation_kwargs, 
                                 subs_dic=subs_dic,
                                 precompiled_qc=precompiled_qc, 
+                                diagonalisation_method=diagonalisation_method,
                                 measurement_data=measurement_data)
 
     #
     # Trotterization
     #
 
-    def trotterization(self):
+    def trotterization(self, method='commuting_qw'):
         r"""
         .. _ham_sim:
         
@@ -1323,6 +1435,13 @@ class QubitOperator(Hamiltonian):
             
             H = (O + O^\dagger)/2
 
+
+        Parameters
+        ----------
+        method : str, optional
+            The method for grouping the QubitTerms. 
+            Available are ``commuting`` (groups such that all QubitTerms mutually commute) and ``commuting_qw`` (groups such that all QubitTerms mutually commute qubit-wise).
+            The default is ``commuting_qw``.
 
         Returns
         -------
@@ -1383,12 +1502,23 @@ class QubitOperator(Hamiltonian):
         """
         O = self.hermitize().eliminate_ladder_conjugates()
         commuting_groups = O.group_up(lambda a, b: a.commute(b))
-
-        def trotter_step(qarg, t, steps):
-            for com_group in commuting_groups:
-                qw_groups = com_group.group_up(lambda a, b: a.commute_qw(b) and a.ladders_agree(b))
-                for qw_group in qw_groups:
-                    with conjugate(qw_group.change_of_basis)(qarg) as diagonal_operator:
+        
+        if method=='commuting_qw':
+            def trotter_step(qarg, t, steps):
+                for com_group in commuting_groups:
+                    qw_groups, bases = com_group.commuting_qw_groups(show_bases=True)
+                    for index,basis in enumerate(bases):
+                        qw_group = qw_groups[index]
+                        with conjugate(qw_group.change_of_basis)(qarg) as diagonal_operator:
+                            intersect_groups = diagonal_operator.group_up(lambda a, b: not a.intersect(b))
+                            for intersect_group in intersect_groups:
+                                for term,coeff in intersect_group.terms_dict.items():
+                                    term.simulate(coeff*t/steps, qarg, do_change_of_basis = False)
+        
+        if method=='commuting':
+            def trotter_step(qarg, t, steps):
+                for com_group in commuting_groups:
+                    with conjugate(com_group.change_of_basis)(qarg,method="commuting") as diagonal_operator:
                         intersect_groups = diagonal_operator.group_up(lambda a, b: not a.intersect(b))
                         for intersect_group in intersect_groups:
                             for term,coeff in intersect_group.terms_dict.items():

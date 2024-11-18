@@ -35,6 +35,7 @@ def get_measurement(
     compilation_kwargs={},
     subs_dic={},
     precompiled_qc=None,
+    diagonalisation_method="ommuting_qw",
     measurement_data=None # measurement settings
     ):
     r"""
@@ -137,34 +138,35 @@ def get_measurement(
     qc = qc.transpile()
     
     if measurement_data is None:
-        measurement_data = QubitOperatorMeasurement(hamiltonian)
+        measurement_data = QubitOperatorMeasurement(hamiltonian, diagonalisation_method = diagonalisation_method)
     
     return measurement_data.get_measurement(qc, qarg, precision, backend)
     
 
 class QubitOperatorMeasurement:
     
-    def __init__(self, qubit_op):
+    def __init__(self, qubit_op, diagonalisation_method="commuting_qw"):
         
         n = qubit_op.find_minimal_qubit_amount()
         hamiltonian = qubit_op.hermitize()
         hamiltonian = hamiltonian.eliminate_ladder_conjugates()
         
-        self.groups = hamiltonian.commuting_qw_groups()
+        if diagonalisation_method=="commuting_qw":
+            self.groups = hamiltonian.commuting_qw_groups()
+        else:
+            self.groups = hamiltonian.group_up(lambda a, b: a.commute(b))
         # print(len(self.groups))
         
-        self.n = len(self.groups)
-        
-        
         self.stds = []
-        self.conjugation_circuits = []
+        self.change_of_basis_gates = []
         self.measurement_operators = []
         
         for group in self.groups:
             
-            conj_circuit, meas_op = group.get_conjugation_circuit()
+            qv = QuantumVariable(n)
             
-            self.conjugation_circuits.append(conj_circuit)
+            meas_op = group.change_of_basis(qv, diagonalisation_method)
+            self.change_of_basis_gates.append(qv.qs.to_gate())
             self.measurement_operators.append(meas_op)
             
             # Collect standard deviation
@@ -180,17 +182,18 @@ class QubitOperatorMeasurement:
         meas_ops = []
         meas_coeffs = []
         
-        for i in range(self.n):
+        for i in range(len(self.groups)):
             
             group = self.groups[i]
-            conjugation_circuit = self.conjugation_circuits[i]
+            
             shots = int(self.shots_list[i]/precision**2)
             
-            curr = qc.copy()
-            qubits = [qubit_list[i] for i in range(conjugation_circuit.num_qubits())]
-            curr.append(conjugation_circuit.to_gate(), qubits)
+            qubits = [qubit_list[j] for j in range(self.change_of_basis_gates[i].num_qubits)]
             
-            res = get_measurement_from_qc(curr.transpile(), list(qubit_list), backend, shots)
+            curr = qc.copy()
+            curr.append(self.change_of_basis_gates[i], qubits)
+            
+            res = get_measurement_from_qc(curr, list(qubit_list), backend, shots)
             results.append(res)
             
             temp_meas_ops = []
@@ -201,7 +204,7 @@ class QubitOperatorMeasurement:
                 
             meas_coeffs.append(temp_coeff)
             meas_ops.append(temp_meas_ops)
-            
+        
         samples = create_padded_array([list(res.keys()) for res in results]).astype(np.int64)
         probs = create_padded_array([list(res.values()) for res in results])
         meas_ops = create_padded_array(meas_ops, use_tuples = True).astype(np.int64)

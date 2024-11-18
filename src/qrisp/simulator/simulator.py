@@ -41,6 +41,9 @@ def run(qc, shots, token="", iqs=None, insert_reset=True):
     
     if len(qc.data) == 0:
         return {"": shots}
+    if shots == 0:
+        return {}
+    
     
     progress_bar = tqdm(
         desc=f"Simulating {len(qc.qubits)} qubits..",
