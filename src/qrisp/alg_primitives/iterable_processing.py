@@ -222,7 +222,6 @@ def q_swap_into(q_array, index, qv):
     demux(q_array[0], index, q_array, ctrl_method="gray_pt")
 
 
-
 def cyclic_shift(iterable, shift_amount = 1):
     r"""
     Performs a cyclic shift of the values of an iterable with logarithmic depth. 
@@ -351,6 +350,7 @@ def to_cycles(perm):
         cycles.append(cycle)
 
     return cycles
+
 
 def permute_iterable(iterable, perm):
     """
