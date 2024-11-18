@@ -190,7 +190,7 @@ This snippet initializes the state $\ket{\phi, t = 0}$, which is a superposition
     U = H_ferm.trotterization()
     U(electron_state, t = 100, steps = 20)
     
-This snippets simulates the Dihydrogen molecule for $t = 100$ Angstrom seconds, i.e. 
+This snippets simulates the Dihydrogen molecule for $t = 100$ `atomic units of time <https://physics.nist.gov/cgi-bin/cuu/Value?aut>`_, i.e. 
 
 .. math::
     \begin{align}
