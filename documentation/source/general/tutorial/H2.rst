@@ -58,7 +58,7 @@ For **Bosons** the ladder operators obey `commutator <https://en.wikipedia.org/w
 For **Fermions** the ladder operators obey anti-commutator laws:
 
 .. math::
-    \{a_i, a^\dagger_j\} = a_i a^\dagger_j + a_j a^\dagger_i = \delta_{ij}\\
+    \{a_i, a^\dagger_j\} = a_i a^\dagger_j + a_j^\dagger a_i = \delta_{ij}\\
     \{a^\dagger_i, a^\dagger_j\} = \{a_i, a_j\} = 0
 
 Note that the fermionic laws imply $a_i^\dagger a_i^\dagger = 0$. This means that an operator, which tries to insert two particles in the same state will immidiately become 0 and therefore not contribute. This is known as `Pauli exclusion principle <https://en.wikipedia.org/wiki/Pauli_exclusion_principle>`_.
