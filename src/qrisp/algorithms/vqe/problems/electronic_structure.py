@@ -438,11 +438,10 @@ def create_QCCSD_ansatz(M,N):
 
     return ansatz, num_params
 
-def create_hartree_fock_init_function(M, N, mapping_type='jordan_wigner'):
+def create_hartree_fock_init_function(M, N):
     """
     Creates the function that, when applied to a :ref:`QuantumVariable`, initializes the Hartee-Fock state:
-    If the mapping type is ``jordan_wigner``, the first ``N`` qubits are initialized in the $\ket{1}$ state.
-    If the mapping type is ``parity``, the first ``N`` qubits with even index are initialized in the $\ket{1}$ state.
+    Consistent with the Jordan-Wigner mapping, the first ``N`` qubits are initialized in the $\ket{1}$ state.
 
     Parameters
     ----------
@@ -450,9 +449,6 @@ def create_hartree_fock_init_function(M, N, mapping_type='jordan_wigner'):
         The number of (active) spin orbitals.
     N : int
         The number of (active) electrons.
-    mapping_type : string, optinal
-        The mapping from fermionic Hamiltonian to qubit Hamiltonian. Available are ``jordan_wigner``, ``parity``.
-        The default is ``jordan_wigner``.
 
     Returns
     -------
@@ -461,11 +457,11 @@ def create_hartree_fock_init_function(M, N, mapping_type='jordan_wigner'):
 
     """
 
-    if mapping_type=='jordan_wigner':
-        def init_function(qv):
-            for i in range(N):
-                x(qv[i])
+    def init_function(qv):
+        for i in range(N):
+            x(qv[i])
 
+    """
     if mapping_type=='parity':
         def init_function(qv):
             for i in range(N//2):
@@ -474,11 +470,12 @@ def create_hartree_fock_init_function(M, N, mapping_type='jordan_wigner'):
             if N%2==1:
                 for i in range(N-1,M):
                     x(qv[i])
+    """
 
     return init_function
 
 
-def electronic_structure_problem(arg, active_orb=None, active_elec=None, mapping_type='jordan_wigner', ansatz_type='QCCSD', threshold=1e-4):
+def electronic_structure_problem(arg, active_orb=None, active_elec=None, ansatz_type='QCCSD', threshold=1e-4):
     r"""
     Creates a VQE problem instance for an electronic structure problem defined by the 
     one-electron and two-electron integrals for the spin orbitals (in physicists' notation).
@@ -520,9 +517,6 @@ def electronic_structure_problem(arg, active_orb=None, active_elec=None, mapping
         The number of active spin orbitals.
     active_elec : int, optional
         The number of active electrons.
-    mapping_type : string, optinal
-        The mapping from fermionic Hamiltonian to qubit Hamiltonian. Available are ``jordan_wigner``, ``parity``.
-        The default is ``jordan_wigner``.
     ansatz_type : string, optional
         The ansatz type. Availabe is ``QCCSD``. The default is ``QCCSD``.
     threshold : float, optional
@@ -579,7 +573,7 @@ def electronic_structure_problem(arg, active_orb=None, active_elec=None, mapping
     ansatz, num_params = create_QCCSD_ansatz(K,L)
 
     fermionic_hamiltonian = create_electronic_hamiltonian(data,K,L)
-    hamiltonian = fermionic_hamiltonian.to_qubit_operator(mapping_type=mapping_type)
+    hamiltonian = fermionic_hamiltonian.to_qubit_operator(mapping_type='jordan_wigner')
     hamiltonian.apply_threshold(threshold)
 
-    return VQEProblem(hamiltonian, ansatz, num_params, init_function=create_hartree_fock_init_function(K,L,mapping_type))
+    return VQEProblem(hamiltonian, ansatz, num_params, init_function=create_hartree_fock_init_function(K,L))

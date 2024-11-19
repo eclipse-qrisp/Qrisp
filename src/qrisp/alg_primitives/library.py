@@ -16,11 +16,13 @@
 ********************************************************************************/
 """
 
-
 import numpy as np
 
 import qrisp.circuit.standard_operations as std_ops
 from qrisp.core import recursive_qs_search
+
+from qrisp.alg_primitives.qft import QFT, QFT_inner
+from qrisp.alg_primitives.qpe import QPE
 
 def append_operation(operation, qubits=[], clbits=[]):
     from qrisp import find_qs
@@ -1157,115 +1159,14 @@ def id(qubits):
     return qubits
 
 
-def QFT_inner(qv, exec_swap=True, qiskit_endian=True, inplace_mult=1, use_gms=False, inpl_adder = None):
-    from qrisp.misc import is_inv
+def fredkin_qc(num_ctrl_qubits=1, ctrl_state=-1, method="gray"):
+    from qrisp import QuantumCircuit, XGate
+    mcx_gate = XGate().control().control(ctrl_state=ctrl_state, method=method)
 
-    qv = list(qv)
-    n = len(qv)
+    qc = QuantumCircuit(num_ctrl_qubits + 2)
+    qc.cx(qc.qubits[-1], qc.qubits[-2])
+    qc.append(mcx_gate, qc.qubits)
+    qc.cx(qc.qubits[-1], qc.qubits[-2])
 
-    if qiskit_endian:
-        qv = qv[::-1]
+    return qc
 
-    if not use_gms:
-        from qrisp.environments.quantum_environments import QuantumEnvironment
-
-        env = QuantumEnvironment
-
-    else:
-        from qrisp.environments.GMS_environment import GMSEnvironment
-
-        env = GMSEnvironment
-
-    if not is_inv(inplace_mult, n):
-        raise Exception(
-            "Tried to perform non-invertible inplace multiplication"
-            "during Fourier-Transform"
-        )
-
-
-    if inpl_adder is None:
-        accumulated_phases = np.zeros(n)
-        for i in range(n):
-            if accumulated_phases[i] and not use_gms:
-                p(accumulated_phases[i], qv[i])
-                accumulated_phases[i] = 0
-            
-            h(qv[i])
-    
-            if i == n - 1:
-                break
-    
-            with env():
-                for k in range(n - i - 1):
-                    # cp(inplace_mult * 2 * np.pi / 2 ** (k + 2), qv[k + i + 1], qv[i])
-                    
-                    if use_gms:
-                        cp(inplace_mult * 2 * np.pi / 2 ** (k + 2), qv[i], qv[k + i + 1])
-                    else:
-                        phase = inplace_mult * 2 * np.pi / 2 ** (k + 2)
-                        
-                        # cx(qv[k + i + 1], qv[i])
-                        # p(-phase/2, qv[i])
-                        # cx(qv[k + i + 1], qv[i])
-                        
-                        
-                        cx(qv[i], qv[k + i + 1])
-                        p(-phase/2, qv[k + i + 1])
-                        cx(qv[i], qv[k + i + 1])
-                        
-                        
-                        accumulated_phases[i] += phase/2
-                        accumulated_phases[k + i + 1] += phase/2
-        
-        
-                    
-        for i in range(n):
-            if accumulated_phases[i] and not use_gms:
-                p(accumulated_phases[i], qv[i])
-                accumulated_phases[i] = 0
-                
-    else:
-        
-        from qrisp import QuantumFloat, conjugate
-        reservoir = QuantumFloat(n+1)
-        
-        def prepare_reservoir(reservoir):
-            n = len(reservoir)
-            h(reservoir)
-            for i in range(n):
-                p(np.pi*2**(i-n+1), reservoir[i])
-        
-        
-        with conjugate(prepare_reservoir)(reservoir):
-
-            for i in range(n):
-                
-                h(qv[i])
-        
-                if i == n - 1:
-                    break
-        
-                phase_qubits = []
-                for k in range(n - i - 1):
-                    cx(qv[i], qv[k + i + 1])
-                    phase_qubits.append(qv[k + i + 1])
-                
-                inpl_adder(phase_qubits[::-1], reservoir[-len(phase_qubits)-2:])
-                    
-                for k in range(n - i - 1):
-                    cx(qv[i], qv[k + i + 1])
-                
-                x(reservoir)
-                inpl_adder(phase_qubits[::-1], reservoir[-len(phase_qubits)-2:])
-                x(reservoir)
-            
-            s(qv)
-            inpl_adder(qv, reservoir[-n-1:])
-        
-        reservoir.delete()
-
-    if exec_swap:
-        for i in range(n // 2):
-            swap(qv[i], qv[n - i - 1])
-
-    return qv

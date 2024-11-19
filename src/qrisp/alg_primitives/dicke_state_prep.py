@@ -56,7 +56,6 @@ def dicke_state(qv, k):
     for index in reversed(range(2,k+1)):
         split_cycle_shift(qv, index, index-1)
     
-    
 
 def split_cycle_shift(qv, highIndex, lowIndex):
 
