@@ -19,7 +19,7 @@
 import numpy as np
 import networkx as nx
 
-from qrisp.circuit import QuantumCircuit, Qubit, PTControlledOperation, ControlledOperation, transpile, Instruction, fast_append
+from qrisp.circuit import QuantumCircuit, Operation, Qubit, PTControlledOperation, ControlledOperation, transpile, Instruction, fast_append, RXGate, RYGate, RZGate, PGate
 from qrisp.misc import get_depth_dic, retarget_instructions
 from qrisp.permeability import optimize_allocations, parallelize_qc, lightcone_reduction
 
@@ -131,8 +131,6 @@ def qompiler(
         # Transpile to the first level
         
         qc = transpile(qc, transpile_predicate = permeability_transpile_predicate)
-        qc = cancel_inverses(qc)
-        
         
         
         if intended_measurements and len(qc.clbits) == 0:
@@ -150,6 +148,7 @@ def qompiler(
         # For more details check the implementation of this function
         
         qc = parallelize_qc(qc, depth_indicator = gate_speed)
+        qc = cancel_inverses(qc)
         
         # We now reorder the transpiled circuit to achieve a good (de)allocation order. 
         # Reordering is performed based on the DAG representation of Unqomp. 
@@ -440,8 +439,9 @@ def qompiler(
                 sorted_qubit_list.append(qc.qubits[i])
 
         qc.qubits = sorted_qubit_list
-        qc = cancel_inverses(qc)
+        
         reduced_qc = parallelize_qc(qc, depth_indicator = gate_speed)
+        reduced_qc = cancel_inverses(reduced_qc)
 
     if reduced_qc.depth(depth_indicator = gate_speed) > qc.depth(depth_indicator = gate_speed):
         return qc
@@ -741,33 +741,49 @@ def qft_cancellation(qc):
 
 
 
-def eval_instr_neutrality(instr_a, instr_b):
+def fuse_instructions(instr_a, instr_b):
     
     if len(instr_a.qubits) != len(instr_b.qubits):
-        return False
+        return None
     
     for i, qb in enumerate(instr_a.qubits):
         if instr_b.qubits[i] != qb:
-            return False
+            return None
     
-    return eval_operatiom_neutrality(instr_a.op, instr_b.op)
+    temp = fuse_operations(instr_a.op, instr_b.op)
+    if isinstance(temp, Operation):
+        return Instruction(temp, instr_a.qubits)
+    else:
+        return temp
 
-def eval_operatiom_neutrality(op_a, op_b):
+def fuse_operations(op_a, op_b):
     
     if op_a.definition is not None:
         if isinstance(op_a, ControlledOperation) and isinstance(op_b, ControlledOperation):
            if op_a.ctrl_state == op_b.ctrl_state:
-               return eval_operatiom_neutrality(op_a.base_operation, op_b.base_operation)
+               if fuse_operations(op_a.base_operation, op_b.base_operation) == 1:
+                   return 1
            
-        return False
+        return None
 
     if op_a.inverse().name == op_b.name:
-        if len(op_a.params) == 0 and op_a.name[-5:] != "alloc":
-            return True
+        if op_a.name[-5:] == "alloc":
+            return None
+        if len(op_a.params) == 0:
+            return 1
+        if op_a.name in ["rz", "rx", "ry", "p"]:
+            if op_a.name == "rz":
+                return RZGate(sum(op_a.params+op_b.params))
+            if op_a.name == "p":
+                return PGate(sum(op_a.params+op_b.params))
+            if op_a.name == "rx":
+                return RXGate(sum(op_a.params+op_b.params))
+            if op_a.name == "ry":
+                return RYGate(sum(op_a.params+op_b.params))
         else:
-            return False
+            return None
         
-    return False
+    return None
 
 def cancel_inverses(qc):
     G = nx.DiGraph()
@@ -777,10 +793,11 @@ def cancel_inverses(qc):
         qubit_dic[qc.qubits[i]] = -i - 1
         G.add_node(-i-1)
     
-    for i in range(len(qc.data)):
+    data_list = list(qc.data)
+    for i in range(len(data_list)):
         
         G.add_node(i)
-        instr = qc.data[i]
+        instr = data_list[i]
         
         predecessors = set()
         for qb in instr.qubits:
@@ -798,13 +815,24 @@ def cancel_inverses(qc):
         
         if len(predecessors) == 1:
             pred = predecessors[0]
-            if eval_instr_neutrality(qc.data[pred], qc.data[i]):
+            if pred < 0:
+                continue
+            fused_gate = fuse_instructions(data_list[pred], data_list[i])
+            if fused_gate is not None:
+                if fused_gate == 1:
+                    for edge in G.in_edges(pred):
+                        for qb in edge_dic[edge]:
+                            qubit_dic[qb] = edge[0]
+                        del edge_dic[edge]
+                    G.remove_node(pred)
+                else:
+                    data_list[pred] = fused_gate
+                    for edge in G.in_edges(i):
+                        for qb in edge_dic[edge]:
+                            qubit_dic[qb] = edge[0]
+                        del edge_dic[edge]
+                    
                 G.remove_node(i)
-                for edge in G.in_edges(pred):
-                    for qb in edge_dic[edge]:
-                        qubit_dic[qb] = edge[0]
-                    del edge_dic[edge]
-                G.remove_node(pred)
     
     qc_new = qc.clearcopy()
     
@@ -813,6 +841,6 @@ def cancel_inverses(qc):
             if i < 0:
                 continue
             else:
-                qc_new.append(qc.data[i].op, qc.data[i].qubits, qc.data[i].clbits)
+                qc_new.append(data_list[i].op, qc.data[i].qubits, qc.data[i].clbits)
             
     return qc_new

@@ -304,7 +304,7 @@ class QubitTerm:
             projector_ctrl_state += str(int(projector_state[i]))
             projector_qubits.append(qv[projector_indices[i]])
         
-        
+        flip_control_phase = False
         # If the term has no projectors,
         # we don't need a controlled RZ
         if len(projector_qubits) == 0:
@@ -315,9 +315,8 @@ class QubitTerm:
             hs_anc = projector_qubits[0]
             control_qubit_available = True
             if not projector_state[i]:
-                env = conjugate(x)(hs_anc)
-            else:
-                env = QuantumEnvironment()
+                flip_control_phase = True
+            env = QuantumEnvironment()
         else:
             # In any other case, we allocate an additional quantum bool,
             # perform a mcx to compute the control value.
@@ -364,6 +363,8 @@ class QubitTerm:
                     # Use Selinger's circuit (page 5)
                     with conjugate(cx)(qv[anchor_index], hs_anc):
                         rz(-coeff, qv[anchor_index])
+                        if flip_control_phase:
+                            coeff = -coeff
                         rz(coeff, hs_anc)
                 else:
                     rz(-coeff*2, qv[anchor_index])
