@@ -1,10 +1,6 @@
 Operators
 =========
 
-.. note::
-
-    This module is still under heavy development and the interface can therefore change at any time!
-
 This Operators submodule of Qrisp provides a unified framework to describe, optimize and simulate quantum Hamiltonians.
 It provides a collection of different types of Operators that can be used to model and solve a variety of problems in physics, chemistry, or optimization.
 (Up to now, :ref:`QubitOperators <QubitOperator>` and :ref:`FermionicOperators <FermionicOperator>` have been implemented, but stay tuned for future updates!)
