@@ -41,7 +41,7 @@ def test_qiro_maxsat():
 
 
 
-    res_qiro = qiro_instance.run_qiro(qarg=qarg, depth = 3, n_recursions = 2)
+    res_qiro = qiro_instance.run_qiro(qarg=qarg, depth = 3, n_recursions = 2,mes_kwargs={"shots":100000})
 
     # find optimal solution by brute force    
     temp_binStrings = list(itertools.product([1,0], repeat=num_vars))

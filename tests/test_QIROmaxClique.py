@@ -38,7 +38,7 @@ def test_qiro_max_clique():
                                 cl_cost_function = create_max_clique_cl_cost_function,
                                 init_function = qiro_init_function
                                 )
-    res_qiro = qiro_instance.run_qiro(qarg=qarg, depth=3, n_recursions=2)    
+    res_qiro = qiro_instance.run_qiro(qarg=qarg, depth=3, n_recursions=2, mes_kwargs={"shots":100000})    
 
     # QIRO most likely result
     most_likely = sorted(res_qiro, key=res_qiro.get, reverse=True)[0]
