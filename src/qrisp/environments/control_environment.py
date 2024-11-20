@@ -139,7 +139,7 @@ class ControlEnvironment(QuantumEnvironment):
 
     def compile(self):
         from qrisp import QuantumBool
-        from qrisp.environments import ConditionEnvironment
+        from qrisp.environments import ConditionEnvironment, CustomControlOperation
 
         # Create the quantum variable where the condition truth value should be saved
         # Incase we have a parent environment we create two qubits because
@@ -284,7 +284,7 @@ class ControlEnvironment(QuantumEnvironment):
                 # Support for inversion of the condition without opening a new
                 # environment
                 # if set(instruction.qubits).issubset(self.user_exposed_qbool):
-                if set(instruction.qubits).issubset([self.condition_truth_value]):
+                if set(instruction.qubits).issubset([self.condition_truth_value]) and not isinstance(instruction.op, CustomControlOperation):
                     if instruction.op.name == "x":
                         inversion_tracker *= -1
                         x(self.condition_truth_value)

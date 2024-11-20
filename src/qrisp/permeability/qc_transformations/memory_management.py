@@ -129,9 +129,6 @@ def topological_sort(G, prefer=None, delay=None, sub_sort=nx.topological_sort):
     if delay is None:
         delay = lambda x: True
 
-    G = G.copy()
-
-    
     delay_nodes = []
     prefered_nodes = []
 

@@ -1512,7 +1512,7 @@ class QubitOperator(Hamiltonian):
                             intersect_groups = diagonal_operator.group_up(lambda a, b: not a.intersect(b))
                             for intersect_group in intersect_groups:
                                 for term,coeff in intersect_group.terms_dict.items():
-                                    term.simulate(coeff*t/steps, qarg, do_change_of_basis = False)
+                                    term.simulate(coeff*t/steps, qarg)
         
         if method=='commuting':
             def trotter_step(qarg, t, steps):

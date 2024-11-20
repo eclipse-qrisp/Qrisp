@@ -16,7 +16,7 @@
 ********************************************************************************/
 """
 
-from qrisp import gphase, rz, cx, conjugate
+from qrisp import gphase, rz, cx, conjugate, custom_control
 from qrisp.operators.qubit.visualization import X_,Y_,Z_
 
 from sympy import Symbol
@@ -185,9 +185,10 @@ class QubitTerm:
     #
     # Simulation
     #
-    def simulate(self, coeff, qv, do_change_of_basis = True):
+    @custom_control
+    def simulate(self, coeff, qv, ctrl = None):
 
-        from qrisp import h, cx, rz, mcp, conjugate, control, QuantumBool, mcx, x, p, s, QuantumEnvironment, gphase
+        from qrisp import h, cx, rz, mcp, conjugate, control, QuantumBool, mcx, x, p, s, QuantumEnvironment, gphase, QuantumVariable
         from qrisp.operators import QubitOperator
         import numpy as np
         # If required, do change of basis. Change of basis here means, that
@@ -225,10 +226,23 @@ class QubitTerm:
             elif factor_dict[i] == "P1":
                 projector_indices.append(i)
                 projector_state.append(True)
+                
+        # Determine the control qubits and the control state
+        projector_ctrl_state = ""
+        projector_qubits = []
+        
+        if ctrl is not None:
+            projector_qubits.append(ctrl)
+            projector_ctrl_state = "1"
+        
+        for i in range(len(projector_indices)):
+            projector_ctrl_state += str(int(projector_state[i]))
+            projector_qubits.append(qv[projector_indices[i]])
+        
         
         # If no non-trivial indices are found, we perform a global phase
         # and are done.
-        if len(Z_indices + projector_indices) == 0:
+        if len(Z_indices + projector_qubits) == 0:
             gphase(coeff, qv[0])
             return
         
@@ -236,7 +250,7 @@ class QubitTerm:
         elif len(Z_indices) == 0:
             
             # Flip the relevant qubits to ensure the right states are projected.
-            flip_qubits = [qv[projector_indices[i]] for i in range(len(projector_indices)) if not projector_state[i]]
+            flip_qubits = [projector_qubits[i] for i in range(len(projector_indices)) if projector_ctrl_state[i] == "0"]
             
             if len(flip_qubits) == 0:
                 env = QuantumEnvironment()
@@ -245,10 +259,10 @@ class QubitTerm:
             
             # Perform the mcp            
             with env:
-                if len(projector_indices) == 1:
-                    p(coeff, qv[projector_indices[0]])
+                if len(projector_qubits) == 1:
+                    p(coeff, projector_qubits[0])
                 else:
-                    mcp(coeff, [qv[i] for i in projector_indices], method = "balauca")
+                    mcp(coeff, projector_qubits, method = "balauca")
                 
             return
         
@@ -296,14 +310,6 @@ class QubitTerm:
         # the control qubit. If the projector indices are in the wrong state,
         # no phase will be performed, which is precisely what we want
         
-        # Determine the control qubits and the control state
-        projector_ctrl_state = ""
-        projector_qubits = []
-        
-        for i in range(len(projector_indices)):
-            projector_ctrl_state += str(int(projector_state[i]))
-            projector_qubits.append(qv[projector_indices[i]])
-        
         flip_control_phase = False
         # If the term has no projectors,
         # we don't need a controlled RZ
@@ -314,7 +320,7 @@ class QubitTerm:
             # If there is only one projector qubit, we can use this as control value
             hs_anc = projector_qubits[0]
             control_qubit_available = True
-            if not projector_state[i]:
+            if not projector_ctrl_state[0] == "1":
                 flip_control_phase = True
             env = QuantumEnvironment()
         else:
@@ -327,11 +333,38 @@ class QubitTerm:
             control_qubit_available = True
             
             # Compute the control value
-            env = conjugate(mcx)(projector_qubits, 
-                                 hs_anc, 
-                                 ctrl_state = projector_ctrl_state, 
-                                 method = "gray_pt")
-        
+            
+            from qrisp.alg_primitives.mcx_algs import balauca_layer
+            
+            def semi_balauca_mcx(projector_qubits, target, ctrl_state, ancillae):
+                
+                reduction_qubits = list(projector_qubits)
+                fresh_ancillae = list(ancillae)
+                ctrl_list = [ctrl_state[i] for i in range(len(reduction_qubits))]
+            
+                while len(reduction_qubits) > 2:
+                    
+                    k = len(reduction_qubits)//2
+                    
+                    balauca_layer(reduction_qubits[:2*k], 
+                                  fresh_ancillae[:k], 
+                                  structure=k*[2], 
+                                  ctrl_list = [ctrl_list[i] for i in range(2*k)],
+                                  use_mcm = True)
+                    
+                    reduction_qubits = reduction_qubits[2*k:] + fresh_ancillae[:k]
+                    ctrl_list = ctrl_list[2*k:] + k*["1"]
+                    fresh_ancillae = fresh_ancillae[k:]
+                
+                
+                mcx(reduction_qubits, target, method = "gidney", ctrl_state = "".join(ctrl_list))
+                    
+            balauca_ancillae = QuantumVariable(len(projector_qubits)-1, qs = projector_qubits[0].qs())
+            
+            env = conjugate(semi_balauca_mcx)(projector_qubits,
+                                              hs_anc,
+                                              projector_ctrl_state,
+                                              ancillae = balauca_ancillae)
         
         # Perform the conjugation
         with env:
@@ -373,6 +406,7 @@ class QubitTerm:
         if len(projector_indices) >= 2:
             # Delete ancilla
             hs_anc.delete()
+            balauca_ancillae.delete()
                     
     #
     # Printing
@@ -384,7 +418,7 @@ class QubitTerm:
         return str(expr)
     
     def __repr__(self):
-        return str(self)
+        return str(s4elf)
     
     def non_trivial_indices(self):
         res = set()

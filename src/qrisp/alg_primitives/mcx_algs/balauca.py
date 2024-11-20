@@ -85,8 +85,7 @@ def hybrid_mcx(
     qs = target[0].qs()
     
     if len(input_qubits) <= 2 + int(not use_mcm) or num_ancilla == 0:
-
-        if len(input_qubits) == 2:
+        if len(input_qubits) == 2 + int(not use_mcm):
             
             if phase is None:
                 
@@ -94,7 +93,7 @@ def hybrid_mcx(
                     jones_toffoli(input_qubits, target, ctrl_state = ctrl_state)
                 else:
                     qs.append(
-                        XGate().control(2, ctrl_state=ctrl_state, method="gray"),
+                        XGate().control(len(input_qubits), ctrl_state=ctrl_state, method="gray"),
                         input_qubits + target,
                     )
             else:
@@ -102,7 +101,7 @@ def hybrid_mcx(
                 if use_mcm:
                     gate = GidneyLogicalAND(ctrl_state=ctrl_state)
                 else:
-                    gate = XGate().control(2, method="gray_pt", ctrl_state=ctrl_state)
+                    gate = XGate().control(len(input_qubits), method="gray_pt", ctrl_state=ctrl_state)
                 
                 qs.append(gate,
                           input_qubits + target,
