@@ -391,7 +391,7 @@ class VQEProblem:
             The quantum argument the benchmark is executed on. Compare to the :meth:`.run <qrisp.vqe.VQEProblem.run>` method.
         depth_range : list[int]
             A list of integers indicating, which depth parameters should be explored. Depth means the amount of VQE layers.
-        precision_range : list[int]
+        precision_range : list[float]
             A list of floats indicating, which precision parameters should be explored. Precision refers to how accurately the Hamiltonian is evaluated.
             The number of shots the backend performs per iteration scales quadratically with the inverse precision.
         iter_range : list[int]

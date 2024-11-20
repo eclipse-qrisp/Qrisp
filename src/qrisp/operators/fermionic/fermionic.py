@@ -17,7 +17,7 @@
 """
 
 from qrisp.circuit.qubit import Qubit
-from qrisp.operators.fermionic.fermionic_hamiltonian import FermionicOperator
+from qrisp.operators.fermionic.fermionic_operator import FermionicOperator
 from qrisp.operators.fermionic.fermionic_term import FermionicTerm
 
 def a(arg):

@@ -34,7 +34,7 @@ threshold = 1e-9
 
 class FermionicOperator(Hamiltonian):
     r"""
-    This class provides an efficient implementation of ladder_term operators, i.e.,
+    This class provides an efficient implementation of ladder term operators, i.e.,
     operators of the form
 
     .. math::

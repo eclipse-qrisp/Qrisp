@@ -18,6 +18,6 @@
 
 # -*- coding: utf-8 -*-
 
-from qrisp.operators.fermionic.fermionic_hamiltonian import *
+from qrisp.operators.fermionic.fermionic_operator import *
 from qrisp.operators.fermionic.fermionic import *
 from qrisp.operators.fermionic.graph_coloring import *
