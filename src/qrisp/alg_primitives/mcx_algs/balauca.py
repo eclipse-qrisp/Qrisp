@@ -98,10 +98,24 @@ def hybrid_mcx(
                         input_qubits + target,
                     )
             else:
+                
+                if use_mcm:
+                    gate = GidneyLogicalAND(ctrl_state=ctrl_state)
+                else:
+                    gate = XGate().control(2, method="gray_pt", ctrl_state=ctrl_state)
+                
+                qs.append(gate,
+                          input_qubits + target,
+                          )
+                
                 qs.append(
-                    PGate(phase).control(2, ctrl_state=ctrl_state),
-                    input_qubits + target,
+                    PGate(phase),
+                    target,
                 )
+                
+                qs.append(gate,
+                          input_qubits + target,
+                          )
 
         elif num_dirty_ancilla and phase is None:
             balauca_dirty(

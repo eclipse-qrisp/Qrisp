@@ -685,19 +685,16 @@ def mcp(phi, qubits, method="auto", ctrl_state=-1):
 
     """
 
-    from qrisp.alg_primitives.mcx_algs import balauca_mcx
+    from qrisp.alg_primitives.mcx_algs import balauca_mcx, hybrid_mcx
     from qrisp.misc import bin_rep, gate_wrap
-
+    import numpy as np
     @gate_wrap(permeability="full", is_qfree=True, name="anc supported mcp")
     def balauca_mcp(phi, qubits, ctrl_state):
         from qrisp.circuit.quantum_circuit import convert_to_qb_list
-
         qubits = convert_to_qb_list(qubits)
         if ctrl_state[-1] == "0":
             x(qubits[-1])
-
-        balauca_mcx(qubits[:-1], [qubits[-1]], ctrl_state=ctrl_state[:-1], phase=phi)
-
+        hybrid_mcx(qubits[:-1], [qubits[-1]], ctrl_state=ctrl_state[:-1], phase=phi, num_ancilla=np.inf)
         if ctrl_state[-1] == "0":
             x(qubits[-1])
 
