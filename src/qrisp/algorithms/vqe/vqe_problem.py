@@ -280,8 +280,9 @@ class VQEProblem:
         depth : int
             The amount of VQE layers.
         mes_kwargs : dict, optional
-            The keyword arguments for the measurement function. Default is an empty dictionary.
-            By default, the target ``precision`` is set to 0.01, and the maximum amount of ``shots`` is 100000.
+            The keyword arguments for the :meth:`get_measurement <qrisp.operators.qubit.QubitOperator.get_measurement>` function. Default is an empty dictionary.
+            By default, the target ``precision`` is set to 0.01. Precision refers to how accurately the Hamiltonian is evaluated.
+            The number of shots the backend performs per iteration scales quadratically with the inverse precision.
         max_iter : int, optional
             The maximum number of iterations for the optimization method. Default is 50.
         init_type : string, optional
@@ -303,8 +304,6 @@ class VQEProblem:
         self.optimization_params = []
         self.optimization_costs = []
 
-        if not "shots" in mes_kwargs:
-            mes_kwargs["shots"] = 1000000
         if not "precision" in mes_kwargs:
             mes_kwargs["precision"] = 0.01
 
@@ -343,8 +342,9 @@ class VQEProblem:
         depth : int
             The amount of VQE layers.
         mes_kwargs : dict, optional
-            The keyword arguments for the measurement function. Default is an empty dictionary.
-            By default, the target ``precision`` is set to 0.01, and the maximum amount of ``shots`` is 100000.
+            The keyword arguments for the :meth:`get_measurement <qrisp.operators.qubit.QubitOperator.get_measurement>` function. Default is an empty dictionary.
+            By default, the target ``precision`` is set to 0.01. Precision refers to how accurately the Hamiltonian is evaluated.
+            The number of shots the backend performs per iteration scales quadratically with the inverse precision.
         max_iter : int, optional
             The maximum number of iterations for the optimization method. Default is 50.
         init_type : string, optional
@@ -364,8 +364,6 @@ class VQEProblem:
 
         """
 
-        if not "shots" in mes_kwargs:
-            mes_kwargs["shots"] = 1000000
         if not "precision" in mes_kwargs:
             mes_kwargs["precision"] = 0.01
 
@@ -383,7 +381,7 @@ class VQEProblem:
             
         return circuit_generator
     
-    def benchmark(self, qarg, depth_range, shot_range, iter_range, optimal_energy, repetitions = 1, mes_kwargs = {}, init_type = "random"):
+    def benchmark(self, qarg, depth_range, precision_range, iter_range, optimal_energy, repetitions = 1, mes_kwargs = {}, init_type = "random"):
         """
         This method enables convenient data collection regarding performance of the implementation.
 
@@ -393,16 +391,17 @@ class VQEProblem:
             The quantum argument the benchmark is executed on. Compare to the :meth:`.run <qrisp.vqe.VQEProblem.run>` method.
         depth_range : list[int]
             A list of integers indicating, which depth parameters should be explored. Depth means the amount of VQE layers.
-        shot_range : list[int]
-            A list of integers indicating, which shots parameters should be explored. Shots means the amount of repetitions, the backend performs per iteration and per measurement setting.
+        precision_range : list[int]
+            A list of floats indicating, which precision parameters should be explored. Precision refers to how accurately the Hamiltonian is evaluated.
+            The number of shots the backend performs per iteration scales quadratically with the inverse precision.
         iter_range : list[int]
             A list of integers indicating, what iterations parameter should be explored. Iterations means the amount of backend calls, the optimizer is allowed to do.
-        optimal_energy: float
+        optimal_energy : float
             The exact ground state energy of the problem Hamiltonian. 
         repetitions : int, optional
             The amount of repetitions, each parameter constellation should go though. Can be used to get a better statistical significance. The default is 1.
         mes_kwargs : dict, optional
-            The keyword arguments, that are used for the ``qarg.get_spin_measurement``. The default is {}.
+            The keyword arguments, that are used for the :meth:`get_measurement <qrisp.operators.qubit.QubitOperator.get_measurement>` function. The default is {}.
         init_type : string, optional
             Specifies the way the initial optimization parameters are chosen. Available is ``random``. 
             The default is ``random``: Parameters are initialized uniformly at random in the interval $[0,\pi/2)]$.
@@ -418,19 +417,20 @@ class VQEProblem:
         We create a Heisenberg problem instance and benchmark several parameters:
         
         ::
-            
+
+            from qrisp import QuantumVariable
+            from qrisp.vqe.problems.heisenberg import *
             from networkx import Graph
 
-            G =Graph()
+            G = Graph()
             G.add_edges_from([(0,1),(1,2),(2,3),(3,4)])
-            from qrisp.vqe.problems.heisenberg import *
 
             vqe = heisenberg_problem(G,1,0)
             H = create_heisenberg_hamiltonian(G,1,0)
 
             benchmark_data = vqe.benchmark(qarg = QuantumVariable(5),
                                 depth_range = [1,2,3],
-                                shot_range = [5000,10000],
+                                precision_range = [0.02,0.01],
                                 iter_range = [25,50],
                                 optimal_energy = H.ground_state_energy(),
                                 repetitions = 2
@@ -452,14 +452,14 @@ class VQEProblem:
         data_dict = {"layer_depth" : [],
                      "circuit_depth" : [],
                      "qubit_amount" : [],
-                     "shots" : [],
+                     "precision" : [],
                      "iterations" : [],
                      "runtime" : [],
                      "energy" : []
                      }
         
         for p in depth_range:
-            for s in shot_range:
+            for s in precision_range:
                 for it in iter_range:
                     for k in range(repetitions):
                         
@@ -471,7 +471,7 @@ class VQEProblem:
                         start_time = time.time()
                         
                         temp_mes_kwargs = dict(mes_kwargs)
-                        temp_mes_kwargs["shots"] = s
+                        temp_mes_kwargs["precision"] = s
 
                         energy = self.run(qarg=qarg_dupl, depth = p, max_iter = it, mes_kwargs = temp_mes_kwargs, init_type=init_type)
 
@@ -482,7 +482,7 @@ class VQEProblem:
                         data_dict["layer_depth"].append(p)
                         data_dict["circuit_depth"].append(compiled_qc.depth())
                         data_dict["qubit_amount"].append(compiled_qc.num_qubits())
-                        data_dict["shots"].append(s)
+                        data_dict["precision"].append(s)
                         data_dict["iterations"].append(it)
                         data_dict["energy"].append(energy)
                         data_dict["runtime"].append(final_time)

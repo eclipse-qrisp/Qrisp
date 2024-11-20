@@ -31,8 +31,8 @@ class VQEBenchmark:
         The depth of the compiled circuit of each run.
     qubit_amount : list[int]
         The amount of qubits of the compiled circuit of each run.
-    shots : list[int]
-        The amount of shots per backend call of each run.
+    precision : list[float]
+        The precision with which the expectation of the Hamiltonian is evaluated.
     iterations : list[int]
         The amount of backend calls of each run.
     energy : list[dict]
@@ -51,7 +51,7 @@ class VQEBenchmark:
         self.layer_depth = benchmark_data["layer_depth"]
         self.circuit_depth = benchmark_data["circuit_depth"]
         self.qubit_amount = benchmark_data["qubit_amount"]
-        self.shots = benchmark_data["shots"]
+        self.precision = benchmark_data["precision"]
         self.iterations = benchmark_data["iterations"]
         self.energy= benchmark_data["energy"]
         self.runtime = benchmark_data["runtime"]
@@ -69,10 +69,13 @@ class VQEBenchmark:
         .. math::
             
             \text{OQV} = \text{circuit_depth} \times \text{qubits} \times \text{shots} \times \text{iterations}
+
+        where $\text{shots} = 1/\text{precision}^2$. The acutal number of shots exhibits a scaling factor that depends on the Hamiltonian.
+        For different Hamiltonians, the results for the OQV metric are not comparable.
         
         **Gain metric**
         
-        By default, two gain metrics are avialable.
+        By default, two gain metrics are available.
         
         The `approximation ratio <https://en.wikipedia.org/wiki/Approximation_algorithm>`_ 
         is a standard quantity in approximation algorithms and can be selected by
@@ -103,18 +106,19 @@ class VQEBenchmark:
         
         ::
 
+            from qrisp import QuantumVariable
+            from qrisp.vqe.problems.heisenberg import *
             from networkx import Graph
 
-            G =Graph()
+            G = Graph()
             G.add_edges_from([(0,1),(1,2),(2,3),(3,4)])
-            from qrisp.vqe.problems.heisenberg import *
 
             vqe = heisenberg_problem(G,1,0)
             H = create_heisenberg_hamiltonian(G,1,0)
 
             benchmark_data = vqe.benchmark(qarg = QuantumVariable(5),
                                 depth_range = [1,2,3],
-                                shot_range = [5000,10000],
+                                precision_range = [0.02,0.01],
                                 iter_range = [25,50],
                                 optimal_energy = H.ground_state_energy(),
                                 repetitions = 2
@@ -127,9 +131,9 @@ class VQEBenchmark:
             cost_data, gain_data = benchmark_data.evaluate()
             
             print(cost_data[:10])
-            #Yields: [15625000, 15625000, 31250000, 31250000, 31250000, 31250000, 62500000, 62500000, 29375000, 29375000]
+            #Yields: [7812500.0, 7812500.0, 15625000.0, 15625000.0, 31250000.0, 31250000.0, 62500000.0, 62500000.0, 14687500.0, 14687500.0]
             print(gain_data[:10])
-            #Yields: [0.8580900440328681, 0.8543553838641942, 0.8510356859364849, 0.8539404216232306, 0.8587643576744335, 0.8635364234455172, 0.8497389289334728, 0.8600092443973252, 0.884232665213583, 0.8656112346503356]
+            #Yields: [0.8611554188923896, 0.8585520978550613, 0.8581865630518749, 0.8576694650376105, 0.8589623529655623, 0.8594148020629763, 0.8591696326013233, 0.8597669545624406, 0.9715380139717106, 0.9490977432492607]
 
         To set up a user specified cost metric we create a customized function
         
@@ -146,7 +150,7 @@ class VQEBenchmark:
         * ``layer_depth``: The amount of layers
         * ``circuit_depth``: The depth of the compiled circuit as returned by :meth:`.depth <qrisp.QuantumCircuit.depth>` method.
         * ``qubit_amount``: The amount of qubits of the compiled circuit.
-        * ``shots``: The amount of shots that have been performed in this run.
+        * ``precision``: The precision with which the expectation of the Hamiltonian is evaluated.
         * ``iterations``: The amount of backend calls, that the optimizer was allowed to do.
         * ``energy``: The energy of the problem Hamiltonian for the optimized ciruits for each run.
         * ``runtime``: The time (in seconds) that the ``run`` method of :ref:`VQEProblem` took.
@@ -178,7 +182,7 @@ class VQEBenchmark:
             run_data = {"layer_depth" : self.layer_depth[i],
                          "circuit_depth" : self.circuit_depth[i],
                          "qubit_amount" : self.qubit_amount[i],
-                         "shots" : self.shots[i],
+                         "precision" : self.precision[i],
                          "iterations" : self.iterations[i],
                          "energy" : self.energy[i],
                          "runtime" : self.runtime[i],
@@ -208,18 +212,19 @@ class VQEBenchmark:
         
         ::
             
-            from networkx import Graph
-            G =Graph()
-            G.add_edges_from([(0,1),(1,2),(2,3),(3,4)])
-
+            from qrisp import QuantumVariable
             from qrisp.vqe.problems.heisenberg import *
+            from networkx import Graph
+
+            G = Graph()
+            G.add_edges_from([(0,1),(1,2),(2,3),(3,4)])
 
             vqe = heisenberg_problem(G,1,0)
             H = create_heisenberg_hamiltonian(G,1,0)
 
             benchmark_data = vqe.benchmark(qarg = QuantumVariable(5),
                                 depth_range = [1,2,3],
-                                shot_range = [5000,10000],
+                                precision_range = [0.02,0.01],
                                 iter_range = [25,50],
                                 optimal_energy = H.ground_state_energy(),
                                 repetitions = 2
@@ -281,18 +286,19 @@ class VQEBenchmark:
         
         ::
             
-            from networkx import Graph
-            G =Graph()
-            G.add_edges_from([(0,1),(1,2),(2,3),(3,4)])
-
+            from qrisp import QuantumVariable
             from qrisp.vqe.problems.heisenberg import *
+            from networkx import Graph
+
+            G = Graph()
+            G.add_edges_from([(0,1),(1,2),(2,3),(3,4)])
 
             vqe = heisenberg_problem(G,1,0)
             H = create_heisenberg_hamiltonian(G,1,0)
 
             benchmark_data = vqe.benchmark(qarg = QuantumVariable(5),
                                 depth_range = [1,2,3],
-                                shot_range = [5000,10000],
+                                precision_range = [0.02,0.01],
                                 iter_range = [25,50],
                                 optimal_energy = H.ground_state_energy(),
                                 repetitions = 2
@@ -303,7 +309,7 @@ class VQEBenchmark:
         ::
             
             print(benchmark_data.rank()[0])
-            #Yields: {'layer_depth': 3, 'circuit_depth': 69, 'qubit_amount': 5, 'shots': 10000, 'iterations': 50, 'runtime': 2.202655076980591, 'optimal_energy': -7.711545013271984, 'energy': -7.465600000000004, 'metric': 0.9681069081683767}
+            #Yields: {'layer_depth': 3, 'circuit_depth': 69, 'qubit_amount': 5, 'precision': 0.01, 'iterations': 50, 'runtime': 1.996392011642456, 'optimal_energy': -7.711545013271988, 'energy': -7.572235160661036, 'metric': 0.9819348973038227}
 
         """
         
@@ -326,7 +332,7 @@ class VQEBenchmark:
             run_data = {"layer_depth": self.layer_depth[i],
                         "circuit_depth": self.circuit_depth[i],
                         "qubit_amount": self.qubit_amount[i],
-                        "shots": self.shots[i],
+                        "precision": self.precision[i],
                         "iterations": self.iterations[i],
                         "runtime": self.runtime[i],
                         "optimal_energy": self.optimal_energy,
@@ -336,7 +342,7 @@ class VQEBenchmark:
             run_data["metric"] = metric(run_data)
             if average_repetitions:
                 # Create a unique key based on the parameters
-                key = (run_data['layer_depth'], run_data['shots'], run_data['iterations'])
+                key = (run_data['layer_depth'], run_data['precision'], run_data['iterations'])
     
                 # Add the result to the corresponding key in the dictionary
                 if key not in average_dict:
@@ -355,7 +361,7 @@ class VQEBenchmark:
             temp = list(run_data_list)
             run_data_list = []
             for run_data in temp:
-                key = (run_data['layer_depth'], run_data['shots'], run_data['iterations'])
+                key = (run_data['layer_depth'], run_data['precision'], run_data['iterations'])
                 
                 if not key in average_dict:
                     continue
@@ -387,7 +393,7 @@ class VQEBenchmark:
             Function to rank the run data
     
         """
-        header = ["Rank", metric_name, "Overall QV", "p", "QC depth", "QB count", "Shots", "Iterations"]
+        header = ["Rank", metric_name, "Overall QV", "p", "QC depth", "QB count", "Precision", "Iterations"]
         
         
         # Print the header row
@@ -401,7 +407,7 @@ class VQEBenchmark:
             
             
             row = [i, metric_value, oqv, run_data["layer_depth"], run_data["circuit_depth"], run_data["qubit_amount"],
-                   run_data["shots"], run_data["iterations"]]
+                   run_data["precision"], run_data["iterations"]]
             
             # Print each row
             print("{:<5} {:<12} {:<12} {:<4} {:<10} {:<9} {:<7} {:<10}".format(*row))
@@ -422,18 +428,19 @@ class VQEBenchmark:
         
         ::
             
-            from networkx import Graph
-            G =Graph()
-            G.add_edges_from([(0,1),(1,2),(2,3),(3,4)])
-
+            from qrisp import QuantumVariable
             from qrisp.vqe.problems.heisenberg import *
+            from networkx import Graph
+
+            G = Graph()
+            G.add_edges_from([(0,1),(1,2),(2,3),(3,4)])
 
             vqe = heisenberg_problem(G,1,0)
             H = create_heisenberg_hamiltonian(G,1,0)
 
             benchmark_data = vqe.benchmark(qarg = QuantumVariable(5),
                                 depth_range = [1,2,3],
-                                shot_range = [5000,10000],
+                                precision_range = [0.02,0.01],
                                 iter_range = [25,50],
                                 optimal_energy = H.ground_state_energy(),
                                 repetitions = 2
@@ -496,7 +503,7 @@ class VQEBenchmark:
 # create qScore        
 
 def overall_quantum_volume(run_data):
-    return run_data["circuit_depth"]*run_data["qubit_amount"]*run_data["shots"]*run_data["iterations"]
+    return run_data["circuit_depth"]*run_data["qubit_amount"]*1/(run_data["precision"])**2*run_data["iterations"]
 
 def approximation_ratio(energy, optimal_energy):
     """
