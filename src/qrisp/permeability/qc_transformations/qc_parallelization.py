@@ -197,9 +197,9 @@ def depth_sensitive_topological_sort(indices, indptr, int_qc, num_qubits, depth_
             # If multiple gates have the same max depth, the faster ones should
             # be executed first, because they might block other gates
             depth_array = np.array(depth_list)
-            node_costs[i] = np.max(depth_array) + depth_indicators[node]/10**8 - np.min(depth_array)/10**12
+            # node_costs[i] = np.max(depth_array) + depth_indicators[node]/10**8 - np.min(depth_array)/10**12
             # node_costs[i] = np.sum((np.max(depth_array) + depth_indicators[node]) - depth_array)/num_qubits
-            # node_costs[i] = depth_indicators[node]/1E8 + np.sum((np.max(depth_array) + depth_indicators[node]) - depth_array)/1E8
+            node_costs[i] = depth_indicators[node]/1E8 + np.sum((np.max(depth_array) + depth_indicators[node]) - depth_array)/1E8
             # node_costs[i] = depth_indicators[node]/1E8 + np.sum((np.max(depth_array) + depth_indicators[node]) - depth_array)
             
 

@@ -359,7 +359,7 @@ class QubitTerm:
                 
                 mcx(reduction_qubits, target, method = "gidney", ctrl_state = "".join(ctrl_list))
                     
-            balauca_ancillae = QuantumVariable(len(projector_qubits)-1, qs = projector_qubits[0].qs())
+            balauca_ancillae = QuantumVariable(len(projector_qubits)-1, qs = projector_qubits[0].qs(), name = "balauca_ancilla*")
             
             env = conjugate(semi_balauca_mcx)(projector_qubits,
                                               hs_anc,

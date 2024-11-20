@@ -695,7 +695,7 @@ def mcp(phi, qubits, method="auto", ctrl_state=-1):
         qubits = convert_to_qb_list(qubits)
 
         temp = QuantumBool()
-        hybrid_mcx(qubits, 
+        hybrid_mcx(qubits,
                    temp[0], 
                    ctrl_state=ctrl_state, 
                    phase=phi, 

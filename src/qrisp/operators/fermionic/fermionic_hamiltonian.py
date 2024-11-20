@@ -821,6 +821,22 @@ class FermionicOperator(Hamiltonian):
             
         return groups
     
+    @classmethod
+    def from_openfermion(cls, of_fermionic_hamiltonian):
+        
+        terms_dict = {}
+        
+        for term, coeff in of_fermionic_hamiltonian.terms.items():
+            
+            ladder_list = []
+            
+            for tup in term[::-1]:
+                ladder_list.append((tup[0], bool(tup[1])))
+            
+            terms_dict[FermionicTerm(ladder_list)] = coeff
+            
+        return FermionicOperator(terms_dict)
+    
                     
 def apply_fermionic_swap(qv, permutation):
     from qrisp import cz

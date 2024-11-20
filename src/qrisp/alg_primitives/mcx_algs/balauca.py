@@ -112,7 +112,7 @@ def hybrid_mcx(
                     target,
                 )
                 
-                qs.append(gate,
+                qs.append(gate.inverse(),
                           input_qubits + target,
                           )
 
@@ -178,7 +178,7 @@ def hybrid_mcx(
 def balauca_layer(input_qubits, output_qubits, structure, invert=False, use_mcm = False, ctrl_list = None):
     if not output_qubits:
         return
-
+    
     qs = output_qubits[0].qs()
     input_qubits = list(input_qubits)
 

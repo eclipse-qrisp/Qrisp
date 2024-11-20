@@ -165,6 +165,9 @@ class FermionicTerm:
                     temp = temp*A(self.ladder_list[i][0])
             
                 res = temp*res
+            if res == 1:
+                from qrisp.operators import QubitOperator, QubitTerm
+                return QubitOperator({QubitTerm(): 1})
             
             return res
         else:
