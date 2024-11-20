@@ -19,7 +19,7 @@ from qrisp.operators.hamiltonian_tools import group_up_terms
 from qrisp.operators.hamiltonian import Hamiltonian
 from qrisp.operators.qubit.qubit_term import QubitTerm
 from qrisp.operators.qubit.measurement import get_measurement
-from qrisp.operators.qubit.commutativity_tools import gaussian_elimination_mod2, inverse_mod2, construct_change_of_basis
+from qrisp.operators.qubit.commutativity_tools import construct_change_of_basis
 from qrisp import cx, cz, h, s, x, sx_dg, IterationEnvironment, conjugate, merge
 
 import sympy as sp
@@ -1332,7 +1332,6 @@ class QubitOperator(Hamiltonian):
         qarg,
         precision=0.01,
         backend=None,
-        shots=1000000,
         compile=True,
         compilation_kwargs={},
         subs_dic={},
@@ -1360,9 +1359,6 @@ class QubitOperator(Hamiltonian):
         backend : BackendClient, optional
             The backend on which to evaluate the quantum circuit. The default can be
             specified in the file default_backend.py.
-        shots : integer, optional
-            The maximum amount of shots to evaluate the expectation of the Hamiltonian. 
-            The default is 1000000.
         compile : bool, optional
             Boolean indicating if the .compile method of the underlying QuantumSession
             should be called before. The default is True.
@@ -1411,7 +1407,6 @@ class QubitOperator(Hamiltonian):
                                 qarg, 
                                 precision=precision, 
                                 backend=backend, 
-                                shots=shots, 
                                 compile=compile, 
                                 compilation_kwargs=compilation_kwargs, 
                                 subs_dic=subs_dic,

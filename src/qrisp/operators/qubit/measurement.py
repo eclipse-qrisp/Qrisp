@@ -30,12 +30,11 @@ def get_measurement(
     qarg,
     precision=0.01,
     backend=None,
-    shots=1000000,
     compile=True,
     compilation_kwargs={},
     subs_dic={},
     precompiled_qc=None,
-    diagonalisation_method="ommuting_qw",
+    diagonalisation_method="commuting_qw",
     measurement_data=None # measurement settings
     ):
     r"""
@@ -51,9 +50,6 @@ def get_measurement(
     backend : BackendClient, optional
         The backend on which to evaluate the quantum circuit. The default can be
         specified in the file default_backend.py.
-    shots : integer, optional
-        The maximum amount of shots to evaluate the expectation of the Hamiltonian. 
-        The default is 1000000.
     compile : bool, optional
         Boolean indicating if the .compile method of the underlying QuantumSession
         should be called before. The default is True.

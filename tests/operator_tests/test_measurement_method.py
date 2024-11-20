@@ -32,12 +32,12 @@ def test_measurement_method(sample_size=100, seed=42, exhaustive = False):
                 continue
             
             print(H)
-            assert abs(H.get_measurement(qv, precision=0.0005, shots=int(1E8), backend =non_sampling_backend) - 
-                       H.to_pauli().get_measurement(qv, precision=0.0005, shots=int(1E8), backend = non_sampling_backend)) < 1E-1
-            assert abs(H.get_measurement(qv, precision=0.0005, shots=int(1E8), 
+            assert abs(H.get_measurement(qv, precision=0.0005, backend =non_sampling_backend) - 
+                       H.to_pauli().get_measurement(qv, precision=0.0005, backend = non_sampling_backend)) < 1E-1
+            assert abs(H.get_measurement(qv, precision=0.0005, 
                        diagonalisation_method="commuting", backend = non_sampling_backend) - 
-                       H.to_pauli().get_measurement(qv, diagonalisation_method="commuting", 
-                       precision=0.0005, shots=int(1E8), backend = non_sampling_backend)) < 1E-1
+                       H.to_pauli().get_measurement(qv, precision=0.0005, 
+                       diagonalisation_method="commuting", backend = non_sampling_backend)) < 1E-1
 
     # Set the random seed for reproducibility
     random.seed(seed)
