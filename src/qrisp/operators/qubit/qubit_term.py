@@ -258,12 +258,17 @@ class QubitTerm:
                 env = conjugate(x)(flip_qubits)
             
             # Perform the mcp            
-            with env:
-                if len(projector_qubits) == 1:
-                    p(coeff, projector_qubits[0])
+            if len(projector_qubits) == 1:
+                if len(flip_qubits) == 1:
+                    p(-coeff, projector_qubits[0])
+                    gphase(coeff, projector_qubits[0])
                 else:
-                    mcp(coeff, projector_qubits, method = "balauca")
-                
+                    p(coeff, projector_qubits[0])
+            else:
+                with env:
+                    
+                        mcp(coeff, projector_qubits, method = "balauca")
+                    
             return
         
         # For your reference, here is the circuit that that implements

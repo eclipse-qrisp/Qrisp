@@ -19,7 +19,7 @@
 import numpy as np
 import networkx as nx
 
-from qrisp.circuit import QuantumCircuit, Operation, Qubit, PTControlledOperation, ControlledOperation, transpile, Instruction, fast_append, RXGate, RYGate, RZGate, PGate
+from qrisp.circuit import QuantumCircuit, Operation, Qubit, PTControlledOperation, ControlledOperation, transpile, Instruction, fast_append, RXGate, RYGate, RZGate, PGate, GPhaseGate, CPGate
 from qrisp.misc import get_depth_dic, retarget_instructions
 from qrisp.permeability import optimize_allocations, parallelize_qc, lightcone_reduction
 
@@ -130,6 +130,7 @@ def qompiler(
         
         # Transpile to the first level
         
+        
         qc = transpile(qc, transpile_predicate = permeability_transpile_predicate)
         
         
@@ -146,7 +147,6 @@ def qompiler(
         
         # Reorder circuit for parallelization. 
         # For more details check the implementation of this function
-        
         qc = parallelize_qc(qc, depth_indicator = gate_speed)
         qc = cancel_inverses(qc)
         
@@ -174,7 +174,7 @@ def qompiler(
         
         
         reordered_qc = optimize_allocations(transpiled_qc)
-        
+                
 
         if cancel_qfts:
             # Cancel adjacent QFT gates, which are inverse to each
@@ -200,7 +200,7 @@ def qompiler(
         # We now determine the amount of Qubits the circuit will need
         required_qubits = 0
         max_required_qubits = 0
-
+        
 
         for instr in reordered_qc.data:
             if instr.op.name == "qb_alloc":
@@ -741,7 +741,7 @@ def qft_cancellation(qc):
 
 
 
-def fuse_instructions(instr_a, instr_b):
+def fuse_instructions(instr_a, instr_b, gphase_array):
     
     if len(instr_a.qubits) != len(instr_b.qubits):
         return None
@@ -750,38 +750,53 @@ def fuse_instructions(instr_a, instr_b):
         if instr_b.qubits[i] != qb:
             return None
     
-    temp = fuse_operations(instr_a.op, instr_b.op)
+    temp = fuse_operations(instr_a.op, instr_b.op, gphase_array)
     if isinstance(temp, Operation):
         return Instruction(temp, instr_a.qubits)
     else:
         return temp
 
-def fuse_operations(op_a, op_b):
+def fuse_operations(op_a, op_b, gphase_array):
     
     if op_a.definition is not None:
         if isinstance(op_a, ControlledOperation) and isinstance(op_b, ControlledOperation):
            if op_a.ctrl_state == op_b.ctrl_state:
-               if fuse_operations(op_a.base_operation, op_b.base_operation) == 1:
+               temp = fuse_operations(op_a.base_operation, op_b.base_operation, gphase_array)
+               if temp == 1:
                    return 1
+               elif temp is not None:
+                   return ControlledOperation(temp, num_ctrl_qubits=len(op_a.controls), ctrl_state = op_a.ctrl_state)
            
         return None
-
-    if op_a.inverse().name == op_b.name:
-        if op_a.name[-5:] == "alloc":
-            return None
-        if len(op_a.params) == 0:
-            return 1
-        if op_a.name in ["rz", "rx", "ry", "p"]:
-            if op_a.name == "rz":
+    
+    if op_a.params:
+        if op_a.name == "rz":
+            if op_b.name == "rz":
+                gphase_array[0] += (op_b.global_phase + op_b.global_phase)
                 return RZGate(sum(op_a.params+op_b.params))
-            if op_a.name == "p":
+            if op_b.name == "p":
+                gphase_array[0] += op_a.global_phase
                 return PGate(sum(op_a.params+op_b.params))
+        elif op_a.name == "p":
+            if op_b.name == "rz":
+                gphase_array[0] += op_b.global_phase
+                return PGate(sum(op_a.params+op_b.params))
+            if op_b.name == "p":
+                return PGate(sum(op_a.params+op_b.params))
+            
+        if op_a.name == op_b.name:
             if op_a.name == "rx":
                 return RXGate(sum(op_a.params+op_b.params))
-            if op_a.name == "ry":
+            elif op_a.name == "ry":
                 return RYGate(sum(op_a.params+op_b.params))
-        else:
-            return None
+            if op_a.name == "gphase":
+                return GPhaseGate(op_a.global_phase + op_b.global_phase)
+            else:
+                return None
+
+    if op_a.inverse().name == op_b.name and op_a.name[-5:] != "alloc":
+        return 1
+        
         
     return None
 
@@ -789,6 +804,8 @@ def cancel_inverses(qc):
     G = nx.DiGraph()
     qubit_dic = {}
     edge_dic = {}
+    
+    gphase_array = [0]
     for i in range(qc.num_qubits()):
         qubit_dic[qc.qubits[i]] = -i - 1
         G.add_node(-i-1)
@@ -817,7 +834,9 @@ def cancel_inverses(qc):
             pred = predecessors[0]
             if pred < 0:
                 continue
-            fused_gate = fuse_instructions(data_list[pred], data_list[i])
+            
+            
+            fused_gate = fuse_instructions(data_list[pred], data_list[i], gphase_array)
             if fused_gate is not None:
                 if fused_gate == 1:
                     for edge in G.in_edges(pred):
@@ -827,6 +846,7 @@ def cancel_inverses(qc):
                     G.remove_node(pred)
                 else:
                     data_list[pred] = fused_gate
+                    
                     for edge in G.in_edges(i):
                         for qb in edge_dic[edge]:
                             qubit_dic[qb] = edge[0]
@@ -836,11 +856,19 @@ def cancel_inverses(qc):
     
     qc_new = qc.clearcopy()
     
+    topo_sort = list(nx.topological_sort(G))
     with fast_append(3):
-        for i in nx.topological_sort(G):
+        for i in topo_sort:
             if i < 0:
                 continue
             else:
-                qc_new.append(data_list[i].op, qc.data[i].qubits, qc.data[i].clbits)
-            
+                if i == topo_sort[-1]:
+                    if data_list[i].op.name == "gphase":
+                        gphase_array[0] += data_list[i].op.params[0]
+                    if gphase_array[0] != 0:
+                        qc_new.gphase(gphase_array[0], qc.data[i].qubits[0])
+                if data_list[i].op.name != "gphase":
+                    qc_new.append(data_list[i].op, qc.data[i].qubits, qc.data[i].clbits)
+                else:
+                    gphase_array[0] += data_list[i].op.params[0]
     return qc_new
