@@ -1450,12 +1450,12 @@ class QubitOperator(Hamiltonian):
         -------
         U : function 
             A Python function that implements the first order Suzuki-Trotter formula.
-            Given a Hamiltonian $H=H_1+\dotsb +H_m$ the unitary evolution $e^{itH}$ is 
+            Given a Hamiltonian $H=H_1+\dotsb +H_m$ the unitary evolution $e^{-itH}$ is 
             approximated by 
             
             .. math::
 
-                e^{itH}\approx U_1(t,N)=\left(e^{iH_1t/N}\dotsb e^{iH_mt/N}\right)^N
+                e^{-itH}\approx U(t,N)=\left(e^{-iH_1t/N}\dotsb e^{-iH_mt/N}\right)^N
 
             This function receives the following arguments:
 
@@ -1466,7 +1466,7 @@ class QubitOperator(Hamiltonian):
             * steps : int, optional
                 The number of Trotter steps $N$. The default is 1.
             * iter : int, optional 
-                The number of iterations the unitary $U_1(t,N)$ is applied. The default is 1.
+                The number of iterations the unitary $U(t,N)$ is applied. The default is 1.
                 
         Examples
         --------
@@ -1484,15 +1484,15 @@ class QubitOperator(Hamiltonian):
         >>> print(qv.qs)
         QuantumCircuit:
         ---------------
-              ┌───┐                       ┌───┐┌───────────┐ ┌───┐          ┌───┐
-        qv.0: ┤ X ├───────────────────────┤ X ├┤ Rz(0.5*t) ├─┤ X ├──────────┤ X ├
-              └─┬─┘     ┌───┐      ┌───┐  └─┬─┘├───────────┴┐└─┬─┘┌───┐┌───┐└─┬─┘
-        qv.1: ──■───────┤ H ├──────┤ X ├────■──┤ Rz(-0.5*t) ├──■──┤ X ├┤ H ├──■──
-                        └───┘      └─┬─┘       └────────────┘     └─┬─┘└───┘     
-        qv.2: ───────────────────────■──────────────────────────────■────────────
-              ┌────┐┌────────────┐┌──────┐                                       
-        qv.3: ┤ √X ├┤ Rz(-2.0*t) ├┤ √Xdg ├───────────────────────────────────────
-              └────┘└────────────┘└──────┘                                       
+              ┌───┐                      ┌───┐┌────────────┐┌───┐          ┌───┐
+        qv.0: ┤ X ├──────────────────────┤ X ├┤ Rz(-0.5*t) ├┤ X ├──────────┤ X ├
+              └─┬─┘     ┌───┐     ┌───┐  └─┬─┘├───────────┬┘└─┬─┘┌───┐┌───┐└─┬─┘
+        qv.1: ──■───────┤ H ├─────┤ X ├────■──┤ Rz(0.5*t) ├───■──┤ X ├┤ H ├──■──
+                        └───┘     └─┬─┘       └───────────┘      └─┬─┘└───┘     
+        qv.2: ──────────────────────■──────────────────────────────■────────────
+              ┌────┐┌───────────┐┌──────┐                                       
+        qv.3: ┤ √X ├┤ Rz(2.0*t) ├┤ √Xdg ├───────────────────────────────────────
+              └────┘└───────────┘└──────┘                                       
         Live QuantumVariables:
         ----------------------
         QuantumVariable qv
