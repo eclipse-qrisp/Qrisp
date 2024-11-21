@@ -1045,7 +1045,6 @@ def measure(qubits, clbits=None):
 
     """
     from qrisp import find_qs
-    from qrisp.jisp import TracingQuantumSession
     qs = find_qs(qubits)
     
     if clbits is None:
