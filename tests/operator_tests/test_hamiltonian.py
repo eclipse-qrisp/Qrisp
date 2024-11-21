@@ -73,7 +73,7 @@ def test_trotterization():
     # Find minimum Eigenvalue with Hamiltonian simulation + QPE
     qv = QuantumVariable(2)
     x(qv) # Initial state close to exact solution
-    res = QPE(qv,U,precision=10,kwargs={"steps":3},iter_spec=True)
+    res = QPE(qv,U,precision=5,kwargs={"steps":3},iter_spec=True)
     meas = res.get_measurement()
     sorted_meas = dict(sorted(meas.items(), key=lambda item: item[1], reverse=True))
     phi = list(sorted_meas.items())[0][0]
