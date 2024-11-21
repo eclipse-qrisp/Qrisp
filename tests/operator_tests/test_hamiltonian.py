@@ -63,7 +63,7 @@ def test_trotterization():
     E0 = G.ground_state_energy()
     assert np.abs(E0-(-0.804899065613056)) < 2e-2
 
-    U = G.trotterization()
+    U = G.trotterization(forward_evolution = False)
 
     qv = QuantumVariable(2)
     x(qv) 

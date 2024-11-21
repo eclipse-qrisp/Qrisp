@@ -646,7 +646,6 @@ class BoundQubitOperator(Hamiltonian):
         return unbound_operator.get_measurement(qarg,
                                                 precision=precision, 
                                                 backend=backend, 
-                                                shots=shots, 
                                                 compile=compile, 
                                                 compilation_kwargs=compilation_kwargs, 
                                                 subs_dic=subs_dic,

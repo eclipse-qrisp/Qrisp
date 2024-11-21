@@ -17,7 +17,7 @@
 """
 
 from qrisp import QuantumVariable, x, QPE
-from qrisp.operators import X, Y, Z, A, C, P0, P1
+from qrisp.operators import X, Y, Z, A, C, P0, P1, QubitOperator
 import numpy as np
 
 def test_qubit_hamiltonian_simulation():
@@ -29,7 +29,7 @@ def test_qubit_hamiltonian_simulation():
 
     for method in ['commuting_qw', 'commuting']:
 
-        U = H.trotterization(method=method)
+        U = H.trotterization(method=method, forward_evolution = False)
 
         # Find minimum eigenvalue of H with Hamiltonian simulation and QPE
 
@@ -38,7 +38,7 @@ def test_qubit_hamiltonian_simulation():
         x(qv[0])
         E1 = H.get_measurement(qv)
         assert abs(E1-E0)<5e-2
-
+        
         qpe_res = QPE(qv,U,precision=10,kwargs={"steps":3},iter_spec=True)
 
         results = qpe_res.get_measurement()    
@@ -53,10 +53,10 @@ def test_qubit_hamiltonian_simulation():
     def verify_trotterization(H,method):
         
         # Compute hermitean matrix
-        H_matrix = H.to_sparse_matrix().todense()
+        H_matrix = H.to_sparse_matrix(4).todense()
         H_matrix = (H_matrix + H_matrix.transpose().conjugate())/2
         # Compute unitary matrix
-        U_matrix = expm(1j*H_matrix)
+        U_matrix = expm(-1j*H_matrix)
         
         # Perform trotterization
         qv = QuantumVariable(int(np.log2(H_matrix.shape[0])))
@@ -96,7 +96,7 @@ def test_qubit_hamiltonian_simulation():
                 for O3 in operator_list:
                     H = O0(0)*O1(1)*O2(2)*O3(3)
                     if H is 1:
-                        continue
+                        H = QubitOperator() + 1
                     print(H)
                     verify_trotterization(H,'commuting_qw')
                     verify_trotterization(H,'commuting')

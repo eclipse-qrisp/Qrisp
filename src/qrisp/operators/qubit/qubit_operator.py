@@ -778,6 +778,8 @@ class QubitOperator(Hamiltonian):
     
     def group_up(self, group_denominator):
         term_groups = group_up_terms(self, group_denominator)
+        if len(term_groups) == 0:
+            return [self]
         groups = []
         for term_group in term_groups:
             H = QubitOperator({term : self.terms_dict[term] for term in term_group})
@@ -1423,11 +1425,11 @@ class QubitOperator(Hamiltonian):
     # Trotterization
     #
 
-    def trotterization(self, method='commuting_qw'):
+    def trotterization(self, method='commuting_qw', forward_evolution = True):
         r"""
         .. _ham_sim:
         
-        Returns a function for performing Hamiltonian simulation, i.e., approximately implementing the unitary operator $e^{itH}$ via Trotterization.
+        Returns a function for performing Hamiltonian simulation, i.e., approximately implementing the unitary operator $U(t) = e^{-itH}$ via Trotterization.
         Note that this method will always simulate the **hermitized** operator, i.e.
         
         .. math::
@@ -1441,6 +1443,8 @@ class QubitOperator(Hamiltonian):
             The method for grouping the QubitTerms. 
             Available are ``commuting`` (groups such that all QubitTerms mutually commute) and ``commuting_qw`` (groups such that all QubitTerms mutually commute qubit-wise).
             The default is ``commuting_qw``.
+        forward_evolution : bool, optional
+            If set to False $U(t)^\dagger = e^{itH}$ will be executed (usefull for quantum phase estimation). The default is True.
 
         Returns
         -------
@@ -1512,7 +1516,7 @@ class QubitOperator(Hamiltonian):
                             intersect_groups = diagonal_operator.group_up(lambda a, b: not a.intersect(b))
                             for intersect_group in intersect_groups:
                                 for term,coeff in intersect_group.terms_dict.items():
-                                    term.simulate(coeff*t/steps, qarg)
+                                    term.simulate(-coeff*t/steps*(-1)**int(forward_evolution), qarg)
         
         if method=='commuting':
             def trotter_step(qarg, t, steps):
@@ -1521,7 +1525,7 @@ class QubitOperator(Hamiltonian):
                         intersect_groups = diagonal_operator.group_up(lambda a, b: not a.intersect(b))
                         for intersect_group in intersect_groups:
                             for term,coeff in intersect_group.terms_dict.items():
-                                term.simulate(coeff*t/steps, qarg)
+                                term.simulate(-coeff*t/steps*(-1)**int(forward_evolution), qarg)
 
         def U(qarg, t=1, steps=1, iter=1):
             merge([qarg])

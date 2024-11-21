@@ -178,6 +178,9 @@ def dsatur_coloring(num_vertices, adjacency_matrix):
     return colors
 
 def find_coloring(G):
+    if len(G) == 0:
+        return []
+    
     adjacency_matrix = nx.to_numpy_array(G)
     
     coloring_1 = rlf_coloring(len(G), adjacency_matrix)
@@ -201,6 +204,9 @@ def group_up_terms(H, group_denominator):
                 G.add_edge(term_a, term_b)
     
     coloring = find_coloring(G)
+    
+    if len(coloring) == 0:
+        return []
     
     groups = []
     for i in range(np.max(coloring)+1): groups.append([])

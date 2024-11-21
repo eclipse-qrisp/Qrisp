@@ -708,14 +708,19 @@ class FermionicOperator(Hamiltonian):
     #
     
 
-    def trotterization(self, t = 1, steps = 1, iter = 1):
+    def trotterization(self, forward_evolution = True):
         r"""
-        Returns a function for performing Hamiltonian simulation, i.e., approximately implementing the unitary operator $e^{itH}$ via Trotterization.
+        Returns a function for performing Hamiltonian simulation, i.e., approximately implementing the unitary operator $U(t) = e^{-itH}$ via Trotterization.
         Note that this method will always simulate the **hermitized** operator, i.e.
         
         .. math::
             
             H = (O + O^\dagger)/2
+            
+        Parameters
+        ----------
+        forward_evolution, bool, optional
+            If set to False $U(t)^\dagger = e^{itH}$ will be executed (usefull for quantum phase estimation). The default is True.
 
         Returns
         -------
@@ -801,7 +806,7 @@ class FermionicOperator(Hamiltonian):
                         coeff = reduced_H.terms_dict[ferm_term]
                         pauli_hamiltonian = ferm_term.fermionic_swap(permutation).to_qubit_term()
                         pauli_term = list(pauli_hamiltonian.terms_dict.keys())[0]
-                        pauli_term.simulate(coeff*t/steps*pauli_hamiltonian.terms_dict[pauli_term], new_qarg)
+                        pauli_term.simulate(-coeff*t/steps*pauli_hamiltonian.terms_dict[pauli_term]*(-1)**int(forward_evolution), new_qarg)
                 
 
         def U(qarg, t=1, steps=1, iter=1):
@@ -812,8 +817,9 @@ class FermionicOperator(Hamiltonian):
         return U
     
     def group_up(self, denominator):
-        
         term_groups = group_up_terms(self, denominator)
+        if len(term_groups) == 0:
+            return [self]
         groups = []
         for term_group in term_groups:
             O = FermionicOperator({term : self.terms_dict[term] for term in term_group})

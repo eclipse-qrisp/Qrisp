@@ -243,7 +243,7 @@ class QubitTerm:
         # If no non-trivial indices are found, we perform a global phase
         # and are done.
         if len(Z_indices + projector_qubits) == 0:
-            gphase(coeff, qv[0])
+            gphase(-coeff, qv[0])
             return
         
         # If there are only projectors, the circuit is a mcp gate
@@ -260,14 +260,13 @@ class QubitTerm:
             # Perform the mcp            
             if len(projector_qubits) == 1:
                 if len(flip_qubits) == 1:
-                    p(-coeff, projector_qubits[0])
-                    gphase(coeff, projector_qubits[0])
-                else:
                     p(coeff, projector_qubits[0])
+                    gphase(-coeff, projector_qubits[0])
+                else:
+                    p(-coeff, projector_qubits[0])
             else:
                 with env:
-                    
-                        mcp(coeff, projector_qubits, method = "balauca")
+                    mcp(-coeff, projector_qubits, method = "balauca")
                     
             return
         
@@ -400,12 +399,12 @@ class QubitTerm:
                 if control_qubit_available:
                     # Use Selinger's circuit (page 5)
                     with conjugate(cx)(qv[anchor_index], hs_anc):
-                        rz(-coeff, qv[anchor_index])
+                        rz(coeff, qv[anchor_index])
                         if flip_control_phase:
                             coeff = -coeff
-                        rz(coeff, hs_anc)
+                        rz(-coeff, hs_anc)
                 else:
-                    rz(-coeff*2, qv[anchor_index])
+                    rz(coeff*2, qv[anchor_index])
                 
     
         if len(projector_indices) >= 2:
