@@ -1048,36 +1048,21 @@ def measure(qubits, clbits=None):
     from qrisp.jisp import TracingQuantumSession
     qs = find_qs(qubits)
     
-    if not isinstance(qs, TracingQuantumSession):
-        if clbits is None:
-            clbits = []
-            if hasattr(qubits, "__len__"):
-                for qb in qubits:
-                    try:
-                        clbits.append(qs.add_clbit())
-                    except AttributeError:
-                        clbits.append(qs.add_clbit())
+    if clbits is None:
+        clbits = []
+        if hasattr(qubits, "__len__"):
+            for qb in qubits:
+                try:
+                    clbits.append(qs.add_clbit())
+                except AttributeError:
+                    clbits.append(qs.add_clbit())
+
+        else:
+            clbits = qs.add_clbit()
+    append_operation(std_ops.Measurement(), [qubits], [clbits])
     
-            else:
-                clbits = qs.add_clbit()
-        append_operation(std_ops.Measurement(), [qubits], [clbits])
-        
-        return clbits
-    else:
-        from qrisp.jisp import Measurement_p, AbstractQubit
-        from qrisp import Qubit, QuantumVariable
-        
-        if isinstance(qubits, QuantumVariable):
-            abs_qc, res = Measurement_p.bind(qs.abs_qc, qubits.reg)
-            res = qubits.decoder(res)
-        elif isinstance(qubits.aval, AbstractQubit):
-            abs_qc, res = Measurement_p.bind(qs.abs_qc, qubits)
-        
-        qs.abs_qc = abs_qc
-        
-        return res
-
-
+    return clbits
+    
 def barrier(qubits):
     """
     A visual marker for structuring the QuantumCircuit.
