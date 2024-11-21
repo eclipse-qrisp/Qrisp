@@ -17,6 +17,7 @@
 """
 
 import numpy as np
+import sympy as sp
 
 # Checks if a gate is permeable on a set of qubits
 # Permeable means that the gate has the form
@@ -80,6 +81,10 @@ def is_permeable(gate, qubit_indices):
 
             return True
 
+    for par in gate.params:
+        if isinstance(par, sp.Expr):
+            return False
+    
     # Create qubit order
     qubit_order = []
     for i in range(gate.num_qubits):
