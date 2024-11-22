@@ -284,6 +284,8 @@ def compute_all_ancestors_sparse(indptr, indices, node_amount):
             in_degree[child] -= 1
             if in_degree[child] == 0:
                 queue.append(child)
+                
+        ancestors[node] = set([])
     
     return ancestors
 
