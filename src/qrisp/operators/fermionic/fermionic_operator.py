@@ -726,12 +726,12 @@ class FermionicOperator(Hamiltonian):
         -------
         U : function 
             A Python function that implements the first order Suzuki-Trotter formula.
-            Given a Hamiltonian $H=H_1+\dotsb +H_m$ the unitary evolution $e^{itH}$ is 
+            Given a Hamiltonian $H=H_1+\dotsb +H_m$ the unitary evolution $e^{-itH}$ is 
             approximated by 
             
             .. math::
 
-                e^{itH}\approx U_1(t,N)=\left(e^{iH_1t/N}\dotsb e^{iH_mt/N}\right)^N
+                e^{-itH}\approx U(t,N)=\left(e^{-iH_1t/N}\dotsb e^{-iH_mt/N}\right)^N
 
             This function recieves the following arguments:
 
@@ -742,7 +742,7 @@ class FermionicOperator(Hamiltonian):
             * steps : int, optional
                 The number of Trotter steps $N$. The default is 1.
             * iter : int, optional 
-                The number of iterations the unitary $U_1(t,N)$ is applied. The default is 1.
+                The number of iterations the unitary $U(t,N)$ is applied. The default is 1.
                 
         Examples
         --------
@@ -760,13 +760,13 @@ class FermionicOperator(Hamiltonian):
         >>> print(qv.qs)
         QuantumCircuit:
         ---------------
-                    ┌───┐    ┌───┐          ┌────────────┐     ┌───┐┌───┐      
-        qv.0: ────■─┤ X ├────┤ X ├───────■──┤ Rz(-0.5*t) ├──■──┤ X ├┤ X ├─■────
-                  │ └─┬─┘    ├───┤     ┌─┴─┐├────────────┤┌─┴─┐├───┤└─┬─┘ │    
-        qv.1: ─■──┼───■──────┤ H ├─────┤ X ├┤ Rz(-0.5*t) ├┤ X ├┤ H ├──■───┼──■─
-               │  │ ┌───┐┌───┴───┴────┐├───┤└────────────┘└───┘└───┘      │  │ 
-        qv.2: ─■──■─┤ H ├┤ Rz(-1.0*t) ├┤ H ├──────────────────────────────■──■─
-                    └───┘└────────────┘└───┘                                   
+                    ┌───┐             ┌───┐┌────────────┐┌───┐     ┌───┐      
+        qv.0: ────■─┤ X ├─────────────┤ X ├┤ Rz(-0.5*t) ├┤ X ├─────┤ X ├─■────
+                  │ └─┬─┘    ┌───┐    └─┬─┘├────────────┤└─┬─┘┌───┐└─┬─┘ │    
+        qv.1: ─■──┼───■──────┤ H ├──────■──┤ Rz(-0.5*t) ├──■──┤ H ├──■───┼──■─
+               │  │ ┌───┐┌───┴───┴───┐┌───┐└────────────┘     └───┘      │  │ 
+        qv.2: ─■──■─┤ H ├┤ Rz(1.0*t) ├┤ H ├──────────────────────────────■──■─
+                    └───┘└───────────┘└───┘                                   
         Live QuantumVariables:
         ----------------------
         QuantumVariable qv
@@ -829,6 +829,46 @@ class FermionicOperator(Hamiltonian):
     
     @classmethod
     def from_openfermion(cls, of_fermionic_hamiltonian):
+        """
+        Imports a FermionicOperator from `OpenFermion <https://quantumai.google/reference/python/openfermion/ops/FermionOperator>`_.
+
+        Parameters
+        ----------
+        of_fermionic_operator : openfermion.FermionOperator
+            The OpenFermion operator.
+
+        Returns
+        -------
+        FermionicOperator
+            The equivlanet Qrisp operator.
+            
+        Examples
+        --------
+        
+        We load the $H_2$ molecule from PySCF via OpenFermion and import it into Qrisp:
+            
+        ::
+            
+            import openfermion as of
+            import openfermionpyscf as ofpyscf
+            # Set molecule parameters
+            geometry = [("H", (0.0, 0.0, 0.0)), ("H", (0.0, 0.0, 0.8))]
+            basis = "sto-3g"
+            multiplicity = 1
+            charge = 0
+            
+            # Perform electronic structure calculations and
+            # obtain Hamiltonian as an InteractionOperator
+            hamiltonian = ofpyscf.generate_molecular_hamiltonian(
+                geometry, basis, multiplicity, charge
+            )
+            # Convert to a FermionOperator
+            hamiltonian_ferm_op = of.get_fermion_operator(hamiltonian)
+            
+            from qrisp.operators import FermionicOperator
+            H = FermionicOperator.from_openfermion(hamiltonian_ferm_op)
+
+        """
         
         terms_dict = {}
         

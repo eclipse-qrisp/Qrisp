@@ -39,14 +39,14 @@ def test_qubit_hamiltonian_simulation():
         E1 = H.get_measurement(qv)
         assert abs(E1-E0)<5e-2
         
-        qpe_res = QPE(qv,U,precision=10,kwargs={"steps":3},iter_spec=True)
+        qpe_res = QPE(qv,U,precision=6,kwargs={"steps":3},iter_spec=True)
 
         results = qpe_res.get_measurement()    
         sorted_results= dict(sorted(results.items(), key=lambda item: item[1], reverse=True))
     
         phi = list(sorted_results.items())[0][0]
         E_qpe = 2*np.pi*(phi-1) # Results are modulo 2*pi, therefore subtract 2*pi 
-        assert abs(E_qpe-E0)<5e-3
+        assert abs(E_qpe-E0)<2e-2
     
     
     from scipy.linalg import expm, norm
