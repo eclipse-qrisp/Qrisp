@@ -199,6 +199,10 @@ class QuantumModulus(QuantumFloat):
         
         return montgomery_encoder(i, 2**self.m, self.modulus)
 
+    def encode(self, i):
+        QuantumVariable.encode(self, self.encoder(i))
+        
+
     @gate_wrap(permeability="args", is_qfree=True)    
     def __mul__(self, other):
         from qrisp.alg_primitives.arithmetic.modular_arithmetic import montgomery_mod_mul, montgomery_mod_semi_mul

@@ -63,4 +63,5 @@ class GidneyLogicalAND(Operation):
         res = ctrl_state_wrap(compiled_qc, self.ctrl_state).to_op(name)
         res.is_qfree = True
         res.permeability = {0: True, 1: True, 2: False}
+        res.ctrl_state = self.ctrl_state
         return res

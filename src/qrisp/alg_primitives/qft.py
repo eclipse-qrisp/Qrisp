@@ -166,7 +166,6 @@ def QFT(
 
     """
     from qrisp import gate_wrap, invert
-
     name = "QFT"
     if not exec_swap:
         name += " no swap"

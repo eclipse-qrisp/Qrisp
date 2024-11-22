@@ -381,7 +381,7 @@ class QuantumFloat(QuantumVariable):
                 np.argmin(np.abs(encoding_number - np.array(outcome_labels)))
             ]
 
-        super().encode(self.encoder(encoding_number), permit_dirtyness=permit_dirtyness)
+        super().encode(encoding_number, permit_dirtyness=permit_dirtyness)
 
     @gate_wrap(permeability="args", is_qfree=True)
     def __mul__(self, other):

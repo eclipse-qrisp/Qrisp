@@ -88,14 +88,10 @@ def hybrid_mcx(
         if len(input_qubits) == 2 + int(not use_mcm):
             
             if phase is None:
-                
-                if use_mcm:
-                    jones_toffoli(input_qubits, target, ctrl_state = ctrl_state)
-                else:
-                    qs.append(
-                        XGate().control(len(input_qubits), ctrl_state=ctrl_state, method="gray"),
-                        input_qubits + target,
-                    )
+                qs.append(
+                    XGate().control(len(input_qubits), ctrl_state=ctrl_state, method="gray"),
+                    input_qubits + target,
+                )
             else:
                 
                 if use_mcm:

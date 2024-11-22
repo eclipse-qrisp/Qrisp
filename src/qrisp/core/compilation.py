@@ -228,15 +228,18 @@ def qompiler(
 
         allocated_qb_list = []
 
-        if compile_mcm:
-            # This list contains the clbits used for mcm mcx compilation
-            mcm_clbits = []
+        # This list contains the clbits used for mcm mcx compilation
+        mcm_clbits = []
 
         depth_dic = {b: 0 for b in qc.qubits + qc.clbits}
         
         # We now iterate through the data of the preprocessed QuantumCircuit
-        for i in range(len(reordered_qc.data)):
-            instr = reordered_qc.data[i]
+        data_list = list(reordered_qc.data)
+        
+        while data_list:
+            
+            instr = data_list.pop(0)
+            
             if instr.op.name == "barrier":
                 continue
 
@@ -289,11 +292,12 @@ def qompiler(
 
                 if use_dirty_anc_for_mcx_recomp:
                     dirty_ancillae = list(
-                        set(translation_dic.values())
-                        - set([translation_dic[qb] for qb in instr.qubits])
+                        set(translation_dic.keys())
+                        - set(instr.qubits)
                     )
+                    
                     dirty_ancillae.sort(
-                        key=lambda x: depth_dic[x] + qc.qubits.index(x) * 1e-5
+                        key=lambda x: depth_dic[translation_dic[x]]
                     )
                 else:
                     dirty_ancillae = []
@@ -307,7 +311,11 @@ def qompiler(
                         instr.op.ctrl_state,
                         clean_ancillae,
                         dirty_ancillae,
+                        compile_mcm
                     )
+                    
+                    data_list = compiled_mcx_data + data_list
+                    continue
     
                     # We now append the data
                     for qb in clean_ancillae + dirty_ancillae:
@@ -449,7 +457,13 @@ def qompiler(
         return reduced_qc
 
 
-def gen_hybrid_mcx_data(controls, target, ctrl_state, clean_ancillae, dirty_ancillae):
+def gen_hybrid_mcx_data(controls, 
+                        target, 
+                        ctrl_state, 
+                        clean_ancillae, 
+                        dirty_ancillae, 
+                        compile_mcm):
+    
     # This function generates the data for the hybrid mcx implementation
 
     from qrisp.core import QuantumVariable
@@ -465,13 +479,14 @@ def gen_hybrid_mcx_data(controls, target, ctrl_state, clean_ancillae, dirty_anci
         ctrl_state=ctrl_state,
         num_ancilla=len(clean_ancillae),
         num_dirty_ancilla=len(dirty_ancillae),
+        use_mcm = compile_mcm
     )
 
     # Get the list of used ancillae
     used_ancillae_set = (
         set(control_qv.qs.qubits) - set(control_qv.reg) - set(target_qv.reg)
     )
-
+    
     # If we used the list() function to transform the set, this introduces a
     # non-deterministic element in the compilation algorithm, which can hamper bugfixing
     used_clean_ancillae = []
@@ -499,22 +514,22 @@ def gen_hybrid_mcx_data(controls, target, ctrl_state, clean_ancillae, dirty_anci
 
     # Now retarget the instructions such that they use the appropriate qubits
     data = control_qv.qs.data
-
-    retarget_instructions(data, list(control_qv), controls)
-    retarget_instructions(data, list(target_qv), [target])
-    retarget_instructions(data, used_clean_ancillae, clean_ancillae)
-    retarget_instructions(data, used_dirty_ancillae, dirty_ancillae)
-
+    
     i = 0
     # Remove (de)allocation gates
     while i < len(data):
-        if data[i].op.name in ["qb_dealloc", "qb_alloc"]:
+        if data[i].op.name in ["qb_dealloc", "qb_alloc"] and not data[i].qubits[0] in used_clean_ancillae:
             data.pop(i)
             continue
         i += 1
 
+    
+    retarget_instructions(data, list(control_qv), controls)
+    retarget_instructions(data, list(target_qv), [target])
+    # retarget_instructions(data, used_clean_ancillae, clean_ancillae)
+    retarget_instructions(data, used_dirty_ancillae, dirty_ancillae)
+    
     return data
-
 
 
 # Function to combine any sequences of single qubit gates into a single U3
@@ -757,8 +772,9 @@ def fuse_instructions(instr_a, instr_b, gphase_array):
         return temp
 
 def fuse_operations(op_a, op_b, gphase_array):
-    
     if op_a.definition is not None:
+        
+        from qrisp.alg_primitives import GidneyLogicalAND
         if isinstance(op_a, ControlledOperation) and isinstance(op_b, ControlledOperation):
            if op_a.ctrl_state == op_b.ctrl_state:
                temp = fuse_operations(op_a.base_operation, op_b.base_operation, gphase_array)
@@ -766,7 +782,10 @@ def fuse_operations(op_a, op_b, gphase_array):
                    return 1
                elif temp is not None:
                    return ControlledOperation(temp, num_ctrl_qubits=len(op_a.controls), ctrl_state = op_a.ctrl_state)
-           
+        elif isinstance(op_a, GidneyLogicalAND) and isinstance(op_b, GidneyLogicalAND):
+            if op_a.ctrl_state == op_b.ctrl_state:
+                if op_a.inv != op_b.inv:
+                    return 1
         return None
     
     if op_a.params:
@@ -794,8 +813,8 @@ def fuse_operations(op_a, op_b, gphase_array):
             else:
                 return None
 
-    if op_a.inverse().name == op_b.name and op_a.name[-5:] != "alloc":
-        return 1
+    # if op_a.inverse().name == op_b.name and op_a.name[-5:] != "alloc":
+        # return 1
         
         
     return None
