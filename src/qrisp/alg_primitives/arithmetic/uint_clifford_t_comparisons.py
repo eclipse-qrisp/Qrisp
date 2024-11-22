@@ -17,67 +17,81 @@
 """
 
 
-from qrisp.core import QuantumVariable
+from qrisp.core import QuantumVariable, cx
 from qrisp.qtypes import QuantumBool
-from qrisp.environments import invert, adaptive_condition
+from qrisp.environments import invert, adaptive_condition, conjugate
 
-def uint_qq_less_than(a, b, inpl_adder):
+def uint_qq_less_than(a, b, inv_adder):
+    comparison_anc = QuantumBool()
+    comparison_res = QuantumBool()
     
-    res = QuantumBool()
     if a.size < b.size:
         temp_var = QuantumVariable(b.size-a.size)
         a = list(a) + list(temp_var)
     
-    with invert():
-        inpl_adder(b, list(a) + [res[0]])
-    inpl_adder(b, a)
+    with conjugate(inv_adder, allocation_management = False)(b, list(a) + [comparison_anc]):
+        cx(comparison_anc, comparison_res)
+    
+    comparison_anc.delete()
     
     try:
         temp_var.delete()
     except UnboundLocalError:
         pass
     
-    return res
+    return comparison_res
 
-def uint_cq_less_than(a, b, inpl_adder):
+def uint_cq_less_than(a, b, inv_adder):
     
-    res = QuantumBool()
+    comparison_res = QuantumBool()
     
     if a > 2**b.size:
-        res.flip()
-        return res
+        comparison_res.flip()
+        return comparison_res
     
     elif a < 0:
-        return res
+        return comparison_res
     
-    inpl_adder(-a-1, list(b) + [res[0]])
-    inpl_adder(a+1, b)
+    comparison_anc = QuantumBool()
     
-    return res.flip()
+    with conjugate(inv_adder, allocation_management = False)(a+1, list(b) + [comparison_anc]):
+        cx(comparison_anc, comparison_res)
+    
+    comparison_anc.delete()
+    
+    return comparison_res.flip()
 
-def uint_qc_less_than(a, b, inpl_adder):
+def uint_qc_less_than(a, b, inv_adder):
     
-    res = QuantumBool()
+    comparison_res = QuantumBool()
     
     if b > 2**a.size:
-        res.flip()
-        return res
+        comparison_res.flip()
+        return comparison_res
     elif b < 0:
-        return res
+        return comparison_res
     
-    inpl_adder(-b, list(a) + [res[0]])
-    inpl_adder(b, a)
+    comparison_anc = QuantumBool()
     
-    return res
+    with conjugate(inv_adder, allocation_management = False)(b, list(a) + [comparison_anc]):
+        cx(comparison_anc, comparison_res)
+    
+    comparison_anc.delete()
+    
+    return comparison_res
 
 def uint_less_than(a,b, inpl_adder):
     
+    def inv_adder(a, b):
+        with invert():
+            inpl_adder(a, b)
+    
     if isinstance(a, QuantumVariable) and isinstance(b, QuantumVariable):
-        return uint_qq_less_than(a, b, inpl_adder)
+        return uint_qq_less_than(a, b, inv_adder)
     elif isinstance(a, QuantumVariable):
-        return uint_qc_less_than(a, b, inpl_adder)
+        return uint_qc_less_than(a, b, inv_adder)
     elif isinstance(b, QuantumVariable):
-        return uint_cq_less_than(a, b, inpl_adder)
+        return uint_cq_less_than(a, b, inv_adder)
     else:
         return a < b
 

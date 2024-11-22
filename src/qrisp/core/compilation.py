@@ -772,20 +772,19 @@ def fuse_instructions(instr_a, instr_b, gphase_array):
         return temp
 
 def fuse_operations(op_a, op_b, gphase_array):
-    if op_a.definition is not None:
-        
-        from qrisp.alg_primitives import GidneyLogicalAND
-        if isinstance(op_a, ControlledOperation) and isinstance(op_b, ControlledOperation):
-           if op_a.ctrl_state == op_b.ctrl_state:
-               temp = fuse_operations(op_a.base_operation, op_b.base_operation, gphase_array)
-               if temp == 1:
-                   return 1
-               elif temp is not None:
-                   return ControlledOperation(temp, num_ctrl_qubits=len(op_a.controls), ctrl_state = op_a.ctrl_state)
-        elif isinstance(op_a, GidneyLogicalAND) and isinstance(op_b, GidneyLogicalAND):
-            if op_a.ctrl_state == op_b.ctrl_state:
-                if op_a.inv != op_b.inv:
-                    return 1
+    
+    from qrisp.alg_primitives import GidneyLogicalAND
+    if isinstance(op_a, ControlledOperation) and isinstance(op_b, ControlledOperation):
+       if op_a.ctrl_state == op_b.ctrl_state:
+           temp = fuse_operations(op_a.base_operation, op_b.base_operation, gphase_array)
+           if temp == 1:
+               return 1
+           elif temp is not None:
+               return ControlledOperation(temp, num_ctrl_qubits=len(op_a.controls), ctrl_state = op_a.ctrl_state)
+    elif isinstance(op_a, GidneyLogicalAND) and isinstance(op_b, GidneyLogicalAND):
+        if op_a.ctrl_state == op_b.ctrl_state:
+            if op_a.inv != op_b.inv:
+                return 1
         return None
     
     if op_a.params:
@@ -813,9 +812,8 @@ def fuse_operations(op_a, op_b, gphase_array):
             else:
                 return None
 
-    # if op_a.inverse().name == op_b.name and op_a.name[-5:] != "alloc":
-        # return 1
-        
+    if op_a.inverse().name == op_b.name and op_a.name[-5:] != "alloc":
+        return 1
         
     return None
 
@@ -853,8 +851,6 @@ def cancel_inverses(qc):
             pred = predecessors[0]
             if pred < 0:
                 continue
-            
-            
             fused_gate = fuse_instructions(data_list[pred], data_list[i], gphase_array)
             if fused_gate is not None:
                 if fused_gate == 1:

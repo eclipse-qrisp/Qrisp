@@ -130,7 +130,7 @@ class ConjugationEnvironment(QuantumEnvironment):
     """
     
     
-    def __init__(self, conjugation_function, args, kwargs):
+    def __init__(self, conjugation_function, args, kwargs, allocation_management = True):
         
         self.conjugation_function = conjugation_function
         
@@ -138,7 +138,7 @@ class ConjugationEnvironment(QuantumEnvironment):
         
         self.kwargs = kwargs
         
-        self.manual_allocation_management = True
+        self.manual_allocation_management = allocation_management
         
         QuantumEnvironment.__init__(self)
         
@@ -293,11 +293,11 @@ class ConjugatedOperation(Operation):
         
         
         
-def conjugate(conjugation_function):
+def conjugate(conjugation_function, allocation_management = True):
 
      def conjugation_env_creator(*args, **kwargs):
          
-         return ConjugationEnvironment(conjugation_function, args, kwargs)
+         return ConjugationEnvironment(conjugation_function, args, kwargs, allocation_management = allocation_management)
      
      return conjugation_env_creator
         
