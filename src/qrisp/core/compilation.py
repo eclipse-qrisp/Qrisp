@@ -770,25 +770,41 @@ def fuse_operations(op_a, op_b, gphase_array):
         return None
     
     if op_a.params:
+        param_sum = sum(op_a.params+op_b.params)
         if op_a.name == "rz":
             if op_b.name == "rz":
                 gphase_array[0] += (op_b.global_phase + op_b.global_phase)
-                return RZGate(sum(op_a.params+op_b.params))
+                if param_sum == 0:
+                    return 1
+                else:
+                    return RZGate(param_sum)
             if op_b.name == "p":
                 gphase_array[0] += op_a.global_phase
-                return PGate(sum(op_a.params+op_b.params))
+                if param_sum == 0:
+                    return 1
+                else:
+                    return PGate(param_sum)
         elif op_a.name == "p":
             if op_b.name == "rz":
                 gphase_array[0] += op_b.global_phase
-                return PGate(sum(op_a.params+op_b.params))
+                if param_sum == 0:
+                    return 1
+                else:
+                    return PGate(param_sum)
             if op_b.name == "p":
-                return PGate(sum(op_a.params+op_b.params))
+                return PGate(param_sum)
             
         if op_a.name == op_b.name:
             if op_a.name == "rx":
-                return RXGate(sum(op_a.params+op_b.params))
+                if param_sum == 0:
+                    return 1
+                else:
+                    return RXGate(param_sum)
             elif op_a.name == "ry":
-                return RYGate(sum(op_a.params+op_b.params))
+                if param_sum == 0:
+                    return 1
+                else:
+                    return RYGate(param_sum)
             if op_a.name == "gphase":
                 return GPhaseGate(op_a.global_phase + op_b.global_phase)
             else:
