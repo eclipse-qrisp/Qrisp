@@ -1509,9 +1509,8 @@ class QubitOperator(Hamiltonian):
         if method=='commuting_qw':
             def trotter_step(qarg, t, steps):
                 for com_group in commuting_groups:
-                    qw_groups, bases = com_group.commuting_qw_groups(show_bases=True)
-                    for index,basis in enumerate(bases):
-                        qw_group = qw_groups[index]
+                    qw_groups= com_group.group_up(lambda a,b : a.commute_qw(b) and a.ladders_agree(b))
+                    for qw_group in qw_groups:
                         with conjugate(qw_group.change_of_basis)(qarg) as diagonal_operator:
                             intersect_groups = diagonal_operator.group_up(lambda a, b: not a.intersect(b))
                             for intersect_group in intersect_groups:

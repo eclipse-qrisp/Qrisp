@@ -159,6 +159,11 @@ class FermionicOperator(Hamiltonian):
             # Compute the new coefficient.
             new_terms_dict[sorted_term] = flip_sign*coeff + new_terms_dict.get(sorted_term, 0)
             
+        for term, coeff in list(new_terms_dict.items()):
+            if isinstance(coeff, (int, float)):
+                if coeff == 0:
+                    del new_terms_dict[term]
+            
         return FermionicOperator(new_terms_dict)
 
     def len(self):
