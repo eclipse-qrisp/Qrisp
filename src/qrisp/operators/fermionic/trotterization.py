@@ -50,19 +50,26 @@ def fermionic_trotterization(H, forward_evolution = True):
                     return 0
             terms = sorted(terms, key = sorting_key)
             
-            
             singles = []
-            couples = []
+            couples = {}
             
             for term in terms:
                 
                 ladder_list = list(term.ladder_list)
                 
+                i = 0
+                while i < len(ladder_list)-1:
+                    if ladder_list[i][0] == ladder_list[i+1][0]:
+                        ladder_list.pop(i)
+                        ladder_list.pop(i)
+                        continue
+                    i += 1
+                
                 if len(ladder_list)%2:
                     singles.append(ladder_list.pop(-1)[0])
                 
                 for i in range(len(ladder_list)//2):
-                    couples.append((ladder_list[i][0], ladder_list[i+1][0]))
+                    couples[ladder_list[2*i+1][0]] = ladder_list[2*i][0]
                 
                 
                 for ladder in term.ladder_list[::-1]:
@@ -77,12 +84,18 @@ def fermionic_trotterization(H, forward_evolution = True):
             
             # permutation = permutation[::-1]
             
-            with conjugate(apply_fermionic_swap)(qarg, permutation) as new_qarg:
-                
+            swaps, permutation = generate_fermionic_swaps(singles, couples, len(qarg))
+            # print(permutation)
+            with conjugate(apply_fermionic_swaps)(qarg, swaps) as new_qarg:
                 for ferm_term in terms:
                     coeff = reduced_H.terms_dict[ferm_term]
                     pauli_hamiltonian = ferm_term.fermionic_swap(permutation).to_qubit_term()
                     pauli_term = list(pauli_hamiltonian.terms_dict.keys())[0]
+                    if len(ferm_term.ladder_list) > 1:
+                        for factor in pauli_term.factor_dict.values():
+                                if factor == "Z":
+                                    raise Exception("Fermionic matching failed: Z Operator found")
+                    # print(pauli_term)
                     
                     pauli_term.simulate(-coeff*t/steps*pauli_hamiltonian.terms_dict[pauli_term]*(-1)**int(forward_evolution), new_qarg)
             
@@ -93,8 +106,46 @@ def fermionic_trotterization(H, forward_evolution = True):
             trotter_step(qarg, t, steps)
 
     return U
-  
+
+
+def generate_fermionic_swaps(singles, couples, n):
     
+    singles.sort()
+    permutation = list(range(n))
+    
+    swaps = []
+    k = 0
+    for s in singles:
+        for i in range(k, s)[::-1]:
+            swap = (i+1, i)
+            permutation[swap[0]], permutation[swap[1]] = permutation[swap[1]], permutation[swap[0]]
+            swaps.append(swap)
+        k += 1
+    
+    females = list(couples.keys())
+    females.sort()
+    
+    for f in females[::-1]:
+        for i in range(permutation.index(f), permutation.index(couples[f])-1):
+            # print(permutation)
+            swap = (i, i+1)
+            # print(swap)
+            permutation[swap[0]], permutation[swap[1]] = permutation[swap[1]], permutation[swap[0]]
+            swaps.append(swap)
+            
+    return swaps, permutation
+  
+def apply_fermionic_swaps(qarg, swaps):
+    from qrisp import cz
+    qb_list = list(qarg)
+    
+    for swap in swaps:
+        cz(qb_list[swap[0]], qb_list[swap[1]])
+        qb_list[swap[0]], qb_list[swap[1]] = qb_list[swap[1]], qb_list[swap[0]]
+        
+    return qb_list
+    
+
                     
 def apply_fermionic_swap(qv, permutation):
     from qrisp import cz

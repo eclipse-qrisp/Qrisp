@@ -333,7 +333,7 @@ class QubitTerm:
             # To achieve the multi-controlled RZ behavior, we control the RZ
             # on that quantum bool.
 
-            hs_anc = QuantumBool()
+            hs_anc = QuantumBool(qs = projector_qubits[0].qs(), name = "hs_anc*")
             control_qubit_available = True
             
             # Compute the control value
