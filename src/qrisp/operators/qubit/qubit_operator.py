@@ -1100,6 +1100,7 @@ class QubitOperator(Hamiltonian):
             
             # Next we treat the ladder operators
             ladder_operators = [base for base in term.factor_dict.items() if base[1] in ["A", "C"]]
+            ladder_operators.sort(key = lambda x : x[0])
             
             if len(ladder_operators):
                 

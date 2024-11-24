@@ -20,8 +20,8 @@ import numpy as np
 
 from qrisp.operators import Hamiltonian
 from qrisp.operators.fermionic.fermionic_term import FermionicTerm
+from qrisp.operators.fermionic.trotterization import fermionic_trotterization
 from qrisp.operators.hamiltonian_tools import group_up_terms
-from qrisp import merge, IterationEnvironment, conjugate
 from qrisp.operators.qubit import QubitOperator
 
 import sympy as sp
@@ -782,55 +782,7 @@ class FermionicOperator(Hamiltonian):
         {'000': 0.9242, '001': 0.06026, '110': 0.01459, '111': 0.00095}
             
         """
-        
-        reduced_H = self.reduce(assume_hermitian=True)
-        
-        groups = reduced_H.group_up(denominator = lambda a,b : a.indices_agree(b) or not a.intersect(b))
-        
-        
-        def trotter_step(qarg, t, steps):
-            
-            for group in groups:
-                
-                permutation = []
-                terms = list(group.terms_dict.keys())
-                
-                def sorting_key(term):
-                    if len(term.ladder_list):
-                        return term.ladder_list[-1][-1]
-                    else:
-                        return 0
-                
-                terms = sorted(terms, key = sorting_key)
-                for term in terms:
-                    for ladder in term.ladder_list[::-1]:
-                        if ladder[0] not in permutation:
-                            permutation.append(ladder[0])
-                        # else:
-                            # permutation.remove(ladder[0])
-                
-                for k in range(len(qarg)):
-                    if k not in permutation:
-                        permutation.append(k)
-                
-                # permutation = permutation[::-1]
-                
-                with conjugate(apply_fermionic_swap)(qarg, permutation) as new_qarg:
-                    
-                    for ferm_term in terms:
-                        coeff = reduced_H.terms_dict[ferm_term]
-                        pauli_hamiltonian = ferm_term.fermionic_swap(permutation).to_qubit_term()
-                        pauli_term = list(pauli_hamiltonian.terms_dict.keys())[0]
-                        
-                        pauli_term.simulate(-coeff*t/steps*pauli_hamiltonian.terms_dict[pauli_term]*(-1)**int(forward_evolution), new_qarg)
-                
-
-        def U(qarg, t=1, steps=1, iter=1):
-            merge([qarg])
-            with IterationEnvironment(qarg.qs, iter*steps):
-                trotter_step(qarg, t, steps)
-
-        return U
+        return fermionic_trotterization(self, forward_evolution)
     
     def group_up(self, denominator):
         term_groups = group_up_terms(self, denominator)
