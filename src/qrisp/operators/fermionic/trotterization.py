@@ -31,8 +31,8 @@ threshold = 1e-9
 
 def fermionic_trotterization(H, forward_evolution = True):
     
+    H = H.hermitize()
     reduced_H = H.reduce(assume_hermitian=True)
-    
     groups = reduced_H.group_up(denominator = lambda a,b : a.unipolars_agree(b))
     
     def meta_group_denominator(H0, H1):
