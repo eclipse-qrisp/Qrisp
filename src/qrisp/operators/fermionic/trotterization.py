@@ -40,15 +40,37 @@ def fermionic_trotterization(H, forward_evolution = True):
         
         for group in groups:
             
-            permutation = []
-            terms = list(group.terms_dict.keys())
             
-            def sorting_key(term):
-                if len(term.ladder_list):
-                    return term.ladder_list[-1][-1]
-                else:
-                    return 0
-            terms = sorted(terms, key = sorting_key)
+            # We now treat the fermionic swaps.
+            # The problem here is that terms like 
+            # a(0)*a(2) + a(1)*a(3)
+            # Have the JW embedding
+            # -A(0)*Z(1)*A(2) - A(1)*Z(2)*A(3)
+            # Implying the both need access to qubit 1&2 which makes them block
+            # each other.
+            # The goal is therefore to reorder the terms via fermionic swaps
+            # to unblock. For an overview over the fermionic swapping topic
+            # please check https://arxiv.org/abs/2310.12256
+            
+            # Obviously we want to reduce the amount of fermionic swaps to a minimum.
+            # We approach this by noticing that (contrary to Selingers approach),
+            # it is not necessary to group all ladder operators together. It is
+            # sufficient to match them into "couples".
+            # a(0)*a(1)*a(7)*a(8)
+            # => A(0)*A(1)*A(7)*A(8)
+
+            # Matching the ladder operator into couples takes significantly less
+            # swaps them grouping them up in one big chunk.
+
+            # For that reason we will now go through the ladder terms that need
+            # to be simulated and match them into couples and singles.
+            # Singles are ladder terms that can't be matched because the corresponding
+            # operator targets an odd amount of qubits.
+            # Consider for instance
+            # a(1)*a(3)*a(4)
+            # Here, 3&4 are a couple and 1 is a single             
+            
+            terms = list(group.terms_dict.keys())
             
             singles = []
             couples = {}
@@ -57,6 +79,8 @@ def fermionic_trotterization(H, forward_evolution = True):
                 
                 ladder_list = list(term.ladder_list)
                 
+                # For ladder terms of the form a(3)*a(4) no matching is necessary.
+                # We filter them.
                 i = 0
                 while i < len(ladder_list)-1:
                     if ladder_list[i][0] == ladder_list[i+1][0]:
@@ -65,39 +89,36 @@ def fermionic_trotterization(H, forward_evolution = True):
                         continue
                     i += 1
                 
+                # If there is an od amount of ladder operators, remove the last one
+                # (has the lowest index)
                 if len(ladder_list)%2:
                     singles.append(ladder_list.pop(-1)[0])
                 
+                # We now group the ladder operators into couples
                 for i in range(len(ladder_list)//2):
                     couples[ladder_list[2*i+1][0]] = ladder_list[2*i][0]
                 
-                
-                for ladder in term.ladder_list[::-1]:
-                    if ladder[0] not in permutation:
-                        permutation.append(ladder[0])
-                    # else:
-                        # permutation.remove(ladder[0])
+            # This function computes the swaps that are necessary to match
+            # all couples and moves the singles to the lowest positions.
+            swaps, permutation = kai_pflaume(singles, couples, len(qarg))
             
-            for k in range(len(qarg)):
-                if k not in permutation:
-                    permutation.append(k)
             
-            # permutation = permutation[::-1]
-            
-            swaps, permutation = generate_fermionic_swaps(singles, couples, len(qarg))
-            # print(permutation)
+            # This function applies the CZ gates on the quantum argument to
+            # perform the fermionic swap
             with conjugate(apply_fermionic_swaps)(qarg, swaps) as new_qarg:
                 for ferm_term in terms:
                     coeff = reduced_H.terms_dict[ferm_term]
-                    pauli_hamiltonian = ferm_term.fermionic_swap(permutation).to_qubit_term()
-                    pauli_term = list(pauli_hamiltonian.terms_dict.keys())[0]
+                    
+                    # This function permutes the indices of the fermionic term
+                    qubit_operator = ferm_term.fermionic_swap(permutation).to_qubit_term()
+                    qubit_term = list(qubit_operator.terms_dict.keys())[0]
+                    
                     if len(ferm_term.ladder_list) > 1:
-                        for factor in pauli_term.factor_dict.values():
+                        for factor in qubit_term.factor_dict.values():
                                 if factor == "Z":
                                     raise Exception("Fermionic matching failed: Z Operator found")
-                    # print(pauli_term)
                     
-                    pauli_term.simulate(-coeff*t/steps*pauli_hamiltonian.terms_dict[pauli_term]*(-1)**int(forward_evolution), new_qarg)
+                    qubit_term.simulate(-coeff*t/steps*qubit_operator.terms_dict[qubit_term]*(-1)**int(forward_evolution), new_qarg)
             
 
     def U(qarg, t=1, steps=1, iter=1):
@@ -107,29 +128,45 @@ def fermionic_trotterization(H, forward_evolution = True):
 
     return U
 
-
-def generate_fermionic_swaps(singles, couples, n):
+# This function takes a list of indices (singles) and a dictionary of indices (couples)
+# and generates the swaps to move the K singles to the K lowest positions. It furthermore
+# generates the swaps to move all couples adjacent to each other.
+def kai_pflaume(singles, couples, n):
+    
+    permutation = list(range(n))
+    swaps = []
     
     singles.sort()
-    permutation = list(range(n))
     
-    swaps = []
     k = 0
     for s in singles:
+        # Move the k-th single to position k
         for i in range(k, s)[::-1]:
             swap = (i+1, i)
             permutation[swap[0]], permutation[swap[1]] = permutation[swap[1]], permutation[swap[0]]
             swaps.append(swap)
         k += 1
     
+    # The female indices are the indices that are moved towards the males
+    # Imagine we have the female 3 and the male 6
+    # We start with the permutation
+    # [0,1,2,3,4,5,6,7]
+    # We now need to move 3 adjacent to 6 and record the necessary swaps
+    # We end up in
+    # [0,1,2,4,5,3,6,7]
+    
+    # We begin by moving the female with the highest index first to avoid
+    # accidentally moving other females.
     females = list(couples.keys())
     females.sort()
+    females.reverse()
     
-    for f in females[::-1]:
-        for i in range(permutation.index(f), permutation.index(couples[f])-1):
-            # print(permutation)
+    for f in females:
+        
+        m = couples[f]
+        # Move the female adjacent to the male
+        for i in range(permutation.index(f), permutation.index(m)-1):
             swap = (i, i+1)
-            # print(swap)
             permutation[swap[0]], permutation[swap[1]] = permutation[swap[1]], permutation[swap[0]]
             swaps.append(swap)
             
