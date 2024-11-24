@@ -192,16 +192,16 @@ def find_coloring(G):
         return coloring_2
 
 
-def group_up_terms(H, group_denominator):
+def group_up_iterable(iterable, group_denominator):
     G = nx.Graph()
     
-    for term_a in H.terms_dict.keys():
-        G.add_node(term_a)
-        for term_b in H.terms_dict.keys():
-            if term_a is term_b:
+    for i in range(len(iterable)):
+        G.add_node(i)
+        for j in range(len(iterable)):
+            if i == j:
                 continue
-            if not group_denominator(term_a, term_b):
-                G.add_edge(term_a, term_b)
+            if not group_denominator(iterable[i], iterable[j]):
+                G.add_edge(i, j)
     
     coloring = find_coloring(G)
     
@@ -213,7 +213,7 @@ def group_up_terms(H, group_denominator):
     
     node_list = list(G.nodes())
     for i in range(len(G)):
-        groups[coloring[i]].append(node_list[i])
+        groups[coloring[i]].append(iterable[node_list[i]])
     
     return groups
 

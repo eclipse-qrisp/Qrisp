@@ -21,7 +21,7 @@ import numpy as np
 from qrisp.operators import Hamiltonian
 from qrisp.operators.fermionic.fermionic_term import FermionicTerm
 from qrisp.operators.fermionic.trotterization import fermionic_trotterization
-from qrisp.operators.hamiltonian_tools import group_up_terms
+from qrisp.operators.hamiltonian_tools import group_up_iterable
 from qrisp.operators.qubit import QubitOperator
 
 import sympy as sp
@@ -785,7 +785,7 @@ class FermionicOperator(Hamiltonian):
         return fermionic_trotterization(self, forward_evolution)
     
     def group_up(self, denominator):
-        term_groups = group_up_terms(self, denominator)
+        term_groups = group_up_iterable(list(self.terms_dict.keys()), denominator)
         if len(term_groups) == 0:
             return [self]
         groups = []

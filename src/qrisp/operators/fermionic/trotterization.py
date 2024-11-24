@@ -20,7 +20,7 @@ import numpy as np
 
 from qrisp.operators import Hamiltonian
 from qrisp.operators.fermionic.fermionic_term import FermionicTerm
-from qrisp.operators.hamiltonian_tools import group_up_terms
+from qrisp.operators.hamiltonian_tools import group_up_iterable
 from qrisp import merge, IterationEnvironment, conjugate
 from qrisp.operators.qubit import QubitOperator
 
@@ -33,8 +33,15 @@ def fermionic_trotterization(H, forward_evolution = True):
     
     reduced_H = H.reduce(assume_hermitian=True)
     
-    groups = reduced_H.group_up(denominator = lambda a,b : a.indices_agree(b) or not a.intersect(b))
+    groups = reduced_H.group_up(denominator = lambda a,b : a.unipolars_agree(b))
     
+    def meta_group_denominator(H0, H1):
+        term_0 = next(iter(H0.terms_dict.keys()))
+        term_1 = next(iter(H1.terms_dict.keys()))
+        return not term_0.unipolars_intersect(term_1)
+    
+    meta_groups = group_up_iterable(groups, meta_group_denominator)
+    groups = [sum(meta_group, 0) for meta_group in meta_groups]
     
     def trotter_step(qarg, t, steps):
         
@@ -76,27 +83,18 @@ def fermionic_trotterization(H, forward_evolution = True):
             couples = {}
             
             for term in terms:
-                
-                ladder_list = list(term.ladder_list)
-                
-                # For ladder terms of the form a(3)*a(4) no matching is necessary.
-                # We filter them.
-                i = 0
-                while i < len(ladder_list)-1:
-                    if ladder_list[i][0] == ladder_list[i+1][0]:
-                        ladder_list.pop(i)
-                        ladder_list.pop(i)
-                        continue
-                    i += 1
+                    
+                # For non-unipolar factors (i.e. a(i)*c(i) for instance), no matching is necessary.
+                index_list = term.get_unipolars()
                 
                 # If there is an od amount of ladder operators, remove the last one
                 # (has the lowest index)
-                if len(ladder_list)%2:
-                    singles.append(ladder_list.pop(-1)[0])
+                if len(index_list)%2:
+                    singles.append(index_list.pop(-1))
                 
                 # We now group the ladder operators into couples
-                for i in range(len(ladder_list)//2):
-                    couples[ladder_list[2*i+1][0]] = ladder_list[2*i][0]
+                for i in range(len(index_list)//2):
+                    couples[index_list[2*i+1]] = index_list[2*i]
                 
             # This function computes the swaps that are necessary to match
             # all couples and moves the singles to the lowest positions.
@@ -113,7 +111,7 @@ def fermionic_trotterization(H, forward_evolution = True):
                     qubit_operator = ferm_term.fermionic_swap(permutation).to_qubit_term()
                     qubit_term = list(qubit_operator.terms_dict.keys())[0]
                     
-                    if len(ferm_term.ladder_list) > 1:
+                    if not len(ferm_term.get_unipolars())%2:
                         for factor in qubit_term.factor_dict.values():
                                 if factor == "Z":
                                     raise Exception("Fermionic matching failed: Z Operator found")
@@ -156,7 +154,7 @@ def kai_pflaume(singles, couples, n):
     # [0,1,2,4,5,3,6,7]
     
     # We begin by moving the female with the highest index first to avoid
-    # accidentally moving other females.
+    # accidentally moving other females away from their partner.
     females = list(couples.keys())
     females.sort()
     females.reverse()

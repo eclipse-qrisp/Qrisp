@@ -15,7 +15,7 @@
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************/
 """
-from qrisp.operators.hamiltonian_tools import group_up_terms
+from qrisp.operators.hamiltonian_tools import group_up_iterable
 from qrisp.operators.hamiltonian import Hamiltonian
 from qrisp.operators.qubit.qubit_term import QubitTerm
 from qrisp.operators.qubit.measurement import get_measurement
@@ -777,7 +777,7 @@ class QubitOperator(Hamiltonian):
         return groups
     
     def group_up(self, group_denominator):
-        term_groups = group_up_terms(self, group_denominator)
+        term_groups = group_up_iterable(list(self.terms_dict.keys()), group_denominator)
         if len(term_groups) == 0:
             return [self]
         groups = []
@@ -811,7 +811,7 @@ class QubitOperator(Hamiltonian):
 
         if use_graph_coloring:        
             
-            term_groups = group_up_terms(self, lambda a, b : a.commute_qw(b))
+            term_groups = group_up_iterable(list(self.terms_dict.keys()), lambda a, b : a.commute_qw(b))
             for term_group in term_groups:
                 H = QubitOperator({term : self.terms_dict[term] for term in term_group})
                 groups.append(H)
