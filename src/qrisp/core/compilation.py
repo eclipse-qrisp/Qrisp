@@ -773,7 +773,7 @@ def fuse_operations(op_a, op_b, gphase_array):
         param_sum = sum(op_a.params+op_b.params)
         if op_a.name == "rz":
             if op_b.name == "rz":
-                gphase_array[0] += (op_b.global_phase + op_b.global_phase)
+                gphase_array[0] += (op_a.global_phase + op_b.global_phase)
                 if param_sum == 0:
                     return 1
                 else:
