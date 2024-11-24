@@ -788,17 +788,27 @@ class FermionicOperator(Hamiltonian):
             for group in groups:
                 
                 permutation = []
-                terms = group.terms_dict.keys()
+                terms = list(group.terms_dict.keys())
+                
+                def sorting_key(term):
+                    if len(term.ladder_list):
+                        return term.ladder_list[-1][-1]
+                    else:
+                        return 0
+                
+                terms = sorted(terms, key = sorting_key)
                 for term in terms:
-                    for ladder in term.ladder_list:
+                    for ladder in term.ladder_list[::-1]:
                         if ladder[0] not in permutation:
                             permutation.append(ladder[0])
+                        else:
+                            permutation.remove(ladder[0])
                 
                 for k in range(len(qarg)):
                     if k not in permutation:
                         permutation.append(k)
                 
-                permutation = permutation[::-1]
+                # permutation = permutation[::-1]
                 
                 with conjugate(apply_fermionic_swap)(qarg, permutation) as new_qarg:
                     
@@ -806,6 +816,7 @@ class FermionicOperator(Hamiltonian):
                         coeff = reduced_H.terms_dict[ferm_term]
                         pauli_hamiltonian = ferm_term.fermionic_swap(permutation).to_qubit_term()
                         pauli_term = list(pauli_hamiltonian.terms_dict.keys())[0]
+                        
                         pauli_term.simulate(-coeff*t/steps*pauli_hamiltonian.terms_dict[pauli_term]*(-1)**int(forward_evolution), new_qarg)
                 
 
