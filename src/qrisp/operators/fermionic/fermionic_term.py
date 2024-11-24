@@ -151,6 +151,9 @@ class FermionicTerm:
         """
         return len(set([ladder[0] for ladder in self.ladder_list]).intersection([ladder[0] for ladder in other.ladder_list])) != 0
     
+    def indices_agree(self, other):
+        return set([ladder[0] for ladder in self.ladder_list]) == set([ladder[0] for ladder in other.ladder_list])
+    
     def to_qubit_term(self, mapping_type = "jordan_wigner"):
         if mapping_type == "jordan_wigner":
             res = 1

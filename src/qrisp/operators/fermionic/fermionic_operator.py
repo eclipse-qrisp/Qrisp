@@ -785,7 +785,7 @@ class FermionicOperator(Hamiltonian):
         
         reduced_H = self.reduce(assume_hermitian=True)
         
-        groups = reduced_H.group_up(denominator = lambda a,b : not a.intersect(b))
+        groups = reduced_H.group_up(denominator = lambda a,b : a.indices_agree(b) or not a.intersect(b))
         
         
         def trotter_step(qarg, t, steps):
@@ -806,8 +806,8 @@ class FermionicOperator(Hamiltonian):
                     for ladder in term.ladder_list[::-1]:
                         if ladder[0] not in permutation:
                             permutation.append(ladder[0])
-                        else:
-                            permutation.remove(ladder[0])
+                        # else:
+                            # permutation.remove(ladder[0])
                 
                 for k in range(len(qarg)):
                     if k not in permutation:
