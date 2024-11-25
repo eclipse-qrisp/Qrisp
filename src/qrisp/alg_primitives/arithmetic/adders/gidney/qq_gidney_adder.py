@@ -84,8 +84,6 @@ def qq_gidney_adder(a, b, c_in = None, c_out = None, ctrl = None):
     
     with invert():
         for i in range(len(b)-1):
-            from qrisp import barrier
-            barrier(list(a) + list(b))
             
             if i != 0:
                 if i != len(b) -1:
