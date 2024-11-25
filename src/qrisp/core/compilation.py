@@ -19,7 +19,7 @@
 import numpy as np
 import networkx as nx
 
-from qrisp.circuit import QuantumCircuit, Operation, Qubit, PTControlledOperation, ControlledOperation, transpile, Instruction, fast_append, RXGate, RYGate, RZGate, PGate, GPhaseGate, CPGate
+from qrisp.circuit import QuantumCircuit, Operation, Qubit, PTControlledOperation, ControlledOperation, transpile, Instruction, fast_append, RXGate, RYGate, RZGate, PGate, GPhaseGate
 from qrisp.misc import get_depth_dic, retarget_instructions
 from qrisp.permeability import optimize_allocations, parallelize_qc, lightcone_reduction
 
@@ -57,7 +57,7 @@ def qompiler(
     
     if gate_speed is None:
         gate_speed = lambda x : 1
-        
+    
     if compile_mcm is True:
         compile_mcm = "gidney"
     elif compile_mcm is False:
@@ -387,7 +387,7 @@ def qompiler(
                 else:
                     clbit = mcm_clbits[min_clbit]
                 
-                qc.append(instr.op.recompile(compile_mcm),
+                qc.append(instr.op.recompile(),
                           [translation_dic[qb] for qb in instr.qubits],
                           [clbit])
                 update_depth_dic(qc.data[-1], depth_dic, depth_indicator = gate_speed)
@@ -779,19 +779,29 @@ def fuse_instructions(instr_a, instr_b, gphase_array):
 def fuse_operations(op_a, op_b, gphase_array):
     
     from qrisp.alg_primitives import GidneyLogicalAND
-    if isinstance(op_a, ControlledOperation) and isinstance(op_b, ControlledOperation):
-       if op_a.ctrl_state == op_b.ctrl_state:
-           temp = fuse_operations(op_a.base_operation, op_b.base_operation, gphase_array)
-           if temp == 1:
-               return 1
-           elif temp is not None:
-               return ControlledOperation(temp, num_ctrl_qubits=len(op_a.controls), ctrl_state = op_a.ctrl_state)
-    elif isinstance(op_a, GidneyLogicalAND) and isinstance(op_b, GidneyLogicalAND):
-        if op_a.ctrl_state == op_b.ctrl_state:
-            if op_a.inv != op_b.inv:
-                return 1
-        return None
+    from qrisp.environments import CustomControlOperation
     
+    if op_a.definition or op_a.name in ["cx", "cy", "cz"]:
+        
+        if isinstance(op_a, ControlledOperation) and isinstance(op_b, ControlledOperation):
+            if op_a.ctrl_state == op_b.ctrl_state:
+                temp = fuse_operations(op_a.base_operation, op_b.base_operation, gphase_array)
+                if temp == 1:
+                    return 1
+                elif temp is not None:
+                    return ControlledOperation(temp, num_ctrl_qubits=len(op_a.controls), ctrl_state = op_a.ctrl_state)
+                
+        elif isinstance(op_a, GidneyLogicalAND) and isinstance(op_b, GidneyLogicalAND):
+            if op_a.ctrl_state == op_b.ctrl_state:
+                if op_a.inv != op_b.inv:
+                    return 1
+            return None
+        
+        if isinstance(op_a, CustomControlOperation) and isinstance(op_b, CustomControlOperation):
+            return fuse_operations(op_a.definition.data[0].op, op_b.definition.data[0].op, gphase_array)
+        
+        return None
+        
     if op_a.params:
         param_sum = sum(op_a.params+op_b.params)
         if op_a.name == "rz":
