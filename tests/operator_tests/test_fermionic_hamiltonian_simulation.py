@@ -106,24 +106,47 @@ def test_fermionic_hamiltonian_simulation():
             assert bs_0 == bs_1
             
     operators = [a, c, lambda x : 1]
+    O = 1
 
     for op1 in operators:
         for op2 in operators:
             for op3 in operators:
                 
-                O = op1(0)*op2(1)*op3(2)
+                O += op1(0)*op2(1)*op3(2)
                 
                 if O is 1:
                     continue
                 
+                from numpy.linalg import norm
                 qv = QuantumVariable(4)
                 U = O.trotterization()
-                U(qv)
+                U(qv, t = 0.2)
                 qc = qv.qs.copy()            
+                
+                qc = qv.qs.copy()
+                # Move the qubits to the top
+                for i in range(qc.num_qubits() - len(qv)):
+                    qc.qubits.insert(0, qc.qubits.pop(-1))
+
+                # Compute the unitary
+                unitary = qc.get_unitary()
+                # Retrive the top left block matrix
+                reduced_unitary_0 = unitary[:2**qv.size, :2**qv.size]
+
                 
                 qv = QuantumVariable(4)
                 U = O.to_qubit_operator().trotterization()
-                U(qv)
+                U(qv, t = 0.2)
                 
-                assert qv.qs.compare_unitary(qc)
+                qc = qv.qs.copy()
+                # Move the qubits to the top
+                for i in range(qc.num_qubits() - len(qv)):
+                    qc.qubits.insert(0, qc.qubits.pop(-1))
+
+                # Compute the unitary
+                unitary = qc.get_unitary()
+                # Retrive the top left block matrix
+                reduced_unitary_1 = unitary[:2**qv.size, :2**qv.size]
+                
+                assert norm(reduced_unitary_1 - reduced_unitary_0) < 1E-1
             

@@ -249,24 +249,15 @@ class QubitTerm:
         # If there are only projectors, the circuit is a mcp gate
         elif len(Z_indices) == 0:
             
-            # Flip the relevant qubits to ensure the right states are projected.
-            flip_qubits = [projector_qubits[i] for i in range(len(projector_indices)) if projector_ctrl_state[i] == "0"]
-            
-            if len(flip_qubits) == 0:
-                env = QuantumEnvironment()
-            else:
-                env = conjugate(x)(flip_qubits)
-            
             # Perform the mcp            
             if len(projector_qubits) == 1:
-                if len(flip_qubits) == 1:
+                if projector_ctrl_state[0] == "0":
                     p(coeff, projector_qubits[0])
                     gphase(-coeff, projector_qubits[0])
                 else:
                     p(-coeff, projector_qubits[0])
             else:
-                with env:
-                    mcp(-coeff, projector_qubits, method = "balauca")
+                mcp(-coeff, projector_qubits, method = "balauca", ctrl_state = projector_ctrl_state)
                     
             return
         
@@ -333,7 +324,7 @@ class QubitTerm:
             # To achieve the multi-controlled RZ behavior, we control the RZ
             # on that quantum bool.
 
-            hs_anc = QuantumBool()
+            hs_anc = QuantumBool(qs = projector_qubits[0].qs(), name = "hs_anc*")
             control_qubit_available = True
             
             # Compute the control value

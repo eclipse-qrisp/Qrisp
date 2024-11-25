@@ -15,7 +15,7 @@
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************/
 """
-from qrisp.operators.hamiltonian_tools import group_up_terms
+from qrisp.operators.hamiltonian_tools import group_up_iterable
 from qrisp.operators.hamiltonian import Hamiltonian
 from qrisp.operators.qubit.qubit_term import QubitTerm
 from qrisp.operators.qubit.measurement import get_measurement
@@ -777,7 +777,7 @@ class QubitOperator(Hamiltonian):
         return groups
     
     def group_up(self, group_denominator):
-        term_groups = group_up_terms(self, group_denominator)
+        term_groups = group_up_iterable(list(self.terms_dict.keys()), group_denominator)
         if len(term_groups) == 0:
             return [self]
         groups = []
@@ -811,7 +811,7 @@ class QubitOperator(Hamiltonian):
 
         if use_graph_coloring:        
             
-            term_groups = group_up_terms(self, lambda a, b : a.commute_qw(b))
+            term_groups = group_up_iterable(list(self.terms_dict.keys()), lambda a, b : a.commute_qw(b))
             for term_group in term_groups:
                 H = QubitOperator({term : self.terms_dict[term] for term in term_group})
                 groups.append(H)
@@ -1100,6 +1100,7 @@ class QubitOperator(Hamiltonian):
             
             # Next we treat the ladder operators
             ladder_operators = [base for base in term.factor_dict.items() if base[1] in ["A", "C"]]
+            ladder_operators.sort(key = lambda x : x[0])
             
             if len(ladder_operators):
                 
@@ -1509,9 +1510,8 @@ class QubitOperator(Hamiltonian):
         if method=='commuting_qw':
             def trotter_step(qarg, t, steps):
                 for com_group in commuting_groups:
-                    qw_groups, bases = com_group.commuting_qw_groups(show_bases=True)
-                    for index,basis in enumerate(bases):
-                        qw_group = qw_groups[index]
+                    qw_groups= com_group.group_up(lambda a,b : a.commute_qw(b) and a.ladders_agree(b))
+                    for qw_group in qw_groups:
                         with conjugate(qw_group.change_of_basis)(qarg) as diagonal_operator:
                             intersect_groups = diagonal_operator.group_up(lambda a, b: not a.intersect(b))
                             for intersect_group in intersect_groups:

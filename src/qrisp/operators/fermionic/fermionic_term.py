@@ -44,7 +44,8 @@ class FermionicTerm:
             is_creator_hash += ladder_list[i][1]*2**i
         
         self.hash_value = hash(tuple(index_list + [is_creator_hash]))
-
+        
+        
     def __hash__(self):
         return self.hash_value
 
@@ -144,12 +145,40 @@ class FermionicTerm:
         
         return FermionicTerm(new_ladder_list)
     
-    def intersect(self, other):
+    def unipolars_intersect(self, other):
         """
-        Checks if two QubitTerms operate on the same qubit.
-
+        Checks if two terms have intersecting unipolar factos.
+        Unipolar factors are factors that are not of the form a(i)*c(i),
+        i.e. the index i appears only once.
         """
-        return len(set([ladder[0] for ladder in self.ladder_list]).intersection([ladder[0] for ladder in other.ladder_list])) != 0
+        return len(set(self.get_unipolars()).intersection(other.get_unipolars())) != 0
+    
+    def unipolars_agree(self, other):
+        """
+        Checks if two terms have intersecting unipolar factos.
+        Unipolar factors are factors that are not of the form a(i)*c(i),
+        i.e. the index i appears only once.
+        """
+        return set(self.get_unipolars()) == set(other.get_unipolars())
+    
+    def get_unipolars(self):
+        if hasattr(self, "unipolars"):
+            return list(self.unipolars)
+        else:
+            index_list = [index for index, is_creator in self.ladder_list]
+            index_list.sort()
+            
+            i = 0
+            while i < len(index_list)-1:
+                if index_list[i] == index_list[i+1]:
+                    index_list.pop(i)
+                    index_list.pop(i)
+                    continue
+                i += 1
+            
+            self.unipolars = index_list[::-1]
+            return list(self.unipolars)
+        
     
     def to_qubit_term(self, mapping_type = "jordan_wigner"):
         if mapping_type == "jordan_wigner":
