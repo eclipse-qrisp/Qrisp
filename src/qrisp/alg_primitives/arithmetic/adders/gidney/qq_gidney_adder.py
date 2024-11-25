@@ -73,22 +73,32 @@ def qq_gidney_adder(a, b, c_in = None, c_out = None, ctrl = None):
             cx(gidney_anc[i], b[i+1])
             
     if ctrl is not None:
-        mcx([ctrl, gidney_anc[0]], b[-1])
+        mcx([ctrl, gidney_anc[-1]], b[-1])
+        
+        mcx([ctrl, a[-1]], gidney_control_anc[0], method = "gidney")
+        cx(gidney_control_anc[0], b[-1])
+        mcx([ctrl, a[-1]], gidney_control_anc[0], method = "gidney_inv")
+        
     else:
         cx(gidney_anc[-1], b[-1])
     
     with invert():
-        
         for i in range(len(b)-1):
-            
-            if ctrl is not None:
-                if i != 0:
-                    cx(gidney_anc[i-1], b[i])
-                mcx([ctrl, a[i]], gidney_control_anc[0], method = "gray")
-                cx(gidney_control_anc[0], b[i])
-                mcx([ctrl, a[i]], gidney_control_anc[0], method = "gray")
+            from qrisp import barrier
+            barrier(list(a) + list(b))
             
             if i != 0:
+                if i != len(b) -1:
+                    cx(gidney_anc[i-1], a[i])
+                    
+                if ctrl is not None:
+                    if i != len(b) -1:
+                        cx(gidney_anc[i-1], b[i])
+                    mcx([ctrl, a[i]], gidney_control_anc[0], method = "gidney")
+                    cx(gidney_control_anc[0], b[i])
+                    mcx([ctrl, a[i]], gidney_control_anc[0], method = "gidney_inv")
+                    
+                
                 mcx([a[i], b[i]], gidney_anc[i], method = "gidney")
                 cx(gidney_anc[i-1], gidney_anc[i])
             elif c_in is not None:
@@ -103,11 +113,14 @@ def qq_gidney_adder(a, b, c_in = None, c_out = None, ctrl = None):
                 mcx([a[i], b[i]], gidney_anc[i], method = "gidney")
                 cx(c_in, gidney_anc[i])
             else:
+                
+                if ctrl is not None:
+                    mcx([ctrl, a[i]], gidney_control_anc[0], method = "gidney")
+                    cx(gidney_control_anc[0], b[i])
+                    mcx([ctrl, a[i]], gidney_control_anc[0], method = "gidney_inv")
+                
                 mcx([a[i], b[i]], gidney_anc[i], method = "gidney")
             
-            if i != len(b) -2:
-                cx(gidney_anc[i], a[i+1])
-                
     
     if ctrl is None:
         for i in range(len(a)):
