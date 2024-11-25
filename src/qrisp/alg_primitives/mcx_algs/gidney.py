@@ -49,12 +49,17 @@ class GidneyLogicalAND(Operation):
     
     def inverse(self):
         return GidneyLogicalAND(inv = not self.inv, ctrl_state = self.ctrl_state)
-    
-    def recompile(self):
+        # Implementation from https://arxiv.org/abs/2101.04764
+    def recompile(self, computation_strategy = "gidney"):
         if self.inv:
             compiled_qc = gidney_qc_inv
         else:
-            compiled_qc = gidney_qc
+            if computation_strategy == "gidney":
+                compiled_qc = gidney_qc
+            elif computation_strategy == "margolus":
+                compiled_qc = margolus_qc
+            else:
+                raise Exception(f"Don't know measurement based uncomputation strategy {computation_strategy}")
         
         name = "compiled_gidney_mcx"
         if self.inv:

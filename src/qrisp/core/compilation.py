@@ -57,6 +57,11 @@ def qompiler(
     
     if gate_speed is None:
         gate_speed = lambda x : 1
+        
+    if compile_mcm is True:
+        compile_mcm = "gidney"
+    elif compile_mcm is False:
+        compile_mcm = None
 
     with fast_append():
         qc = qs.copy()
@@ -311,7 +316,7 @@ def qompiler(
                         instr.op.ctrl_state,
                         clean_ancillae,
                         dirty_ancillae,
-                        compile_mcm
+                        use_mcm = (compile_mcm != None)
                     )
                     
                     data_list = compiled_mcx_data + data_list
@@ -335,7 +340,7 @@ def qompiler(
             ):
                 
                 if not instr.op.inv:
-                    qc.append(instr.op.recompile(), 
+                    qc.append(instr.op.recompile(compile_mcm), 
                               [translation_dic[qb] for qb in instr.qubits])
                 else:
                     
@@ -356,7 +361,7 @@ def qompiler(
                     else:
                         clbit = mcm_clbits[min_clbit]
                                         
-                    qc.append(instr.op.recompile(), 
+                    qc.append(instr.op.recompile(compile_mcm), 
                               [translation_dic[qb] for qb in instr.qubits], 
                               [clbit])
                 update_depth_dic(qc.data[-1], depth_dic, depth_indicator = gate_speed)
@@ -382,7 +387,7 @@ def qompiler(
                 else:
                     clbit = mcm_clbits[min_clbit]
                 
-                qc.append(instr.op.recompile(),
+                qc.append(instr.op.recompile(compile_mcm),
                           [translation_dic[qb] for qb in instr.qubits],
                           [clbit])
                 update_depth_dic(qc.data[-1], depth_dic, depth_indicator = gate_speed)
@@ -462,7 +467,7 @@ def gen_hybrid_mcx_data(controls,
                         ctrl_state, 
                         clean_ancillae, 
                         dirty_ancillae, 
-                        compile_mcm):
+                        use_mcm):
     
     # This function generates the data for the hybrid mcx implementation
 
@@ -479,7 +484,7 @@ def gen_hybrid_mcx_data(controls,
         ctrl_state=ctrl_state,
         num_ancilla=len(clean_ancillae),
         num_dirty_ancilla=len(dirty_ancillae),
-        use_mcm = compile_mcm
+        use_mcm = use_mcm
     )
 
     # Get the list of used ancillae
