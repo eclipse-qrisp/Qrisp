@@ -798,8 +798,11 @@ def fuse_operations(op_a, op_b, gphase_array):
             return None
         
         if isinstance(op_a, CustomControlOperation) and isinstance(op_b, CustomControlOperation):
-            return fuse_operations(op_a.definition.data[0].op, op_b.definition.data[0].op, gphase_array)
-        
+            temp = fuse_operations(op_a.definition.data[0].op, op_b.definition.data[0].op, gphase_array)
+            if temp == 1:
+                return 1
+            elif temp is not None:
+                return CustomControlOperation(temp, op_a.targeting_control)        
         return None
         
     if op_a.params:
