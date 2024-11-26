@@ -194,7 +194,7 @@ def sb_polynomial_encoder(
     symbol_list = []
 
     for qf in input_qf_list:
-        temp_var_list = list(sp.symbols(qf.name + "_" + "0:" + str(qf.size)))
+        temp_var_list = list(sp.symbols(str(hash(qf)) + "_" + "0:" + str(qf.size)))
         symbol_list += temp_var_list
 
     n = len(symbol_list)
