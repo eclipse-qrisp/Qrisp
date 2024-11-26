@@ -3,7 +3,7 @@
 Qrisp 0.5
 =========
 
-In this update many things revolve around one of the most original purposes of quantum computing: Simulating quantum mechanical systems.
+Welcome to the latest update of Qrisp, our quantum computing programming language! This release introduces powerful new features designed to enhance your quantum programming experience. We are excited to announce the addition of Hamiltonian simulations, enabling users to tackle complex chemistry problems with greater efficiency and precision. Additionally, a cutting-edge algorithm for combinatorial optimization has been integrated, offering significant improvements in solving challenging optimization tasks. Alongside these advancements, we've also introduced several new algorithmic primitives, further expanding the capabilities of Qrisp.
 
 The Operators module
 --------------------
@@ -17,6 +17,16 @@ For this purpose, Qrisp provides the following classes:
 * :ref:`VQEProblem` which allows you to quickly formulate and run the VQE algorithm using Hamiltonians expressed through the two operator classes.
 
 Explore these features in the following examples and tutorials: :ref:`H2` :ref:`computing the ground state energy of the Hydrogen molecule <GroundStateEnergyQPE>`, :ref:`determine the molecular potential energy curve of the Hydrogen molecule <MolecularPotentialEnergyCurve>`, :ref:`simulate the Ising-modell with a disturbance <IsingModel>`.
+
+Hamiltonian simulation in Qrisp is very performant. In a benchmark against Google's `OpenFermion <https://quantumai.google/openfermion/tutorials/intro_workshop_exercises#hamiltonian_simulation_with_trotter_formulas>`_, Qrisp requires 20 times less RZ gates.
+
+
+.. image:: openfermion_comparison.png
+    :width: 400px
+    :align: center
+
+The amount of RZ gates is proportional to the required computation effort because Hamiltonian simulation is an algorithm, which requires fault tolerant devices. In this device model, arbitrary angle gates (like RZ, P or RX) need to be synthesized by a sequence of Clifford+T gates. More details `here <https://arxiv.org/abs/1403.2975>`__.
+
 
 QIRO
 ----
