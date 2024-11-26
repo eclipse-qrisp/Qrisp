@@ -1374,7 +1374,7 @@ def app_phase_polynomial(qf_list, poly, symbol_list=None, t=1):
         else:
             sb_poly_list.append(qf.sb_poly())
 
-        temp_var_list = list(sp.symbols(qf.name + "_" + "0:" + str(qf.size)))
+        temp_var_list = list(sp.symbols(str(hash(qf)) + "_" + "0:" + str(qf.size)))
         new_symbol_list += temp_var_list    
 
     repl_dic = {symbol_list[i]: sb_poly_list[i] for i in range(len(qf_list))}
