@@ -413,7 +413,7 @@ class QubitTerm:
         return str(expr)
     
     def __repr__(self):
-        return str(s4elf)
+        return str(self)
     
     def non_trivial_indices(self):
         res = set()

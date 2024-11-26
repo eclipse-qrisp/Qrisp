@@ -1039,7 +1039,7 @@ class QuantumCircuit:
         """
         from qrisp.interface import convert_to_qiskit
 
-        qiskit_qc = convert_to_qiskit(self, "qiskit", transpile=False)
+        qiskit_qc = convert_to_qiskit(self, transpile = False)
 
         from qiskit.visualization import circuit_drawer
 
