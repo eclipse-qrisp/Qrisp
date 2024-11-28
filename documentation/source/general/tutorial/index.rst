@@ -15,9 +15,13 @@ To gradually qrispify your programming game you will start with the basics and g
 
 - :ref:`Solving the Traveling Salesman Problem (TSP) <tsp>` is again pretty self explanatory - you'll set up a **superposition** of all routes, **evaluate** route distance, and create a **Grover's oracle** to eventually evaluate it.
 
-- :ref:`Implementing Shor's algorithm <shor_tutorial>` will guide you through our state-of-the-art implementation of  **Shor's algorithm**, allowing you to factor numbers and fiddle around encrypting and decrypting hidden messages.
+- :ref:`The Quantum Monte Carlo Integration tutorial <QMCItutorial>` will show you how to integrate functions with **Quantum Monte Carlo methods**, using **Iterative Quantum Amplitude Estimation**. 
 
-- :ref:`The Quantum Monte Carlo Integration tutorial <QMCItutorial>` will show you how to integrate functions with **Quantum Monte Carlo methods**, using **Iterative Quantum Ampltide Estimation**. 
+- :ref:`Solving Sudoku with quantum Backtracking <Sudoku>` explains to you how to efficiently implement the Sudoku problem specific quantum oracles, and how to use the general **Quantum Backtracking** implementation within Qrisp.
+
+- :ref:`Simulating the dynamics of the $H_2$ molecule <H2>` will show you how to leverage Qrisp’s advanced capabilities to perform **molecular simulations** on quantum computers.
+
+- :ref:`Implementing Shor's algorithm <shor_tutorial>` will guide you through our state-of-the-art implementation of  **Shor's algorithm**, allowing you to factor numbers and fiddle around encrypting and decrypting hidden messages.
 
 - :ref:`Fault-Tolerant compilation of Shor's algorithm <ft_compilation_shor>` delves into the realm of **compiling for fault-tolerant quantum devices**, exploring the specialized techniques and considerations that set this stage apart from the compilation challenges encountered in NISQ environments. At the end you will also optimize the implementation of Shor's from the tutorial above.
 
@@ -35,10 +39,10 @@ By the end of this tutorial, you'll have a solid foundation of our high-level fr
    Quantum Alternating Operator Ansatz/index
    QIROtutorial
    TSP
+   QMCItutorial
    Sudoku
    H2
    Shor
-   QMCItutorial
    FT_compilation
    
    
