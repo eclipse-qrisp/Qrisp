@@ -24,39 +24,56 @@ def uniform(*args):
 
 
 def QMCI(qargs, function, distribution=None):
-    """
-    Implements a general algorithms for `Quantum Monte Carlo Integration <https://www.nature.com/articles/s41598-024-61010-9>`.
+    r"""
+    Implements a general algorithm for `Quantum Monte Carlo Integration <https://www.nature.com/articles/s41598-024-61010-9>`_.
+    This implementation utilizes :ref:`IQAE`. A detailed explanation can be found in the :ref:`tutorial <QMCItutorial>`.
+
+    QMCI performs numerical integration of (high-dimensional) functions over probility distributions:
+
+    .. math::
+
+        \int_{[0,1]^n} f(x_1 , ... , x_n) \mathrm{d}\mu (x_1 , ... , x_n)
 
     Parameters
     ----------
-    qargs : list[ref:`QuantumFloat`]
+    qargs : list[:ref:`QuantumFloat`]
         The quantum variables the given ``function`` acts on.
     function : function
         A Python function which takes :ref:`QuantumFloats <QuantumFloat>` as inputs and applies the ``function`` which is to be integrated.
     distribution : function
         A Python function which takes :ref:`QuantumFloats <QuantumFloat>` as inputs and applies the distribution over which to integrate.
+        By default, the uniform distribution is applied.
 
     Returns
     -------
     float
-        The result of the integration.
+        The result of the numerical integration.
 
     Examples
     --------
 
     We integrate the function $f(x)=x^2$ over the integral $[0,1]$.
-    Therefore the function is evaluated at $8=2^3$ points as specified by ``QuantumFloat(3,-3)``.
+    Therefore, the function is evaluated at $8=2^3$ sampling points as specified by ``QuantumFloat(3,-3)``.
 
     ::
 
         from qrisp import QuantumFloat
-        from qrisp.algorithms.qmci import *
+        from qrisp.algorithms.qmci import QMCI
 
         def f(qf):
             return qf*qf
 
         qf = QuantumFloat(3,-3)
         QMCI([qf], f)
+        # Yields: 0.27373180511103606
+
+    This result is consistent with numerically calculating the integral by evaluating the function $f$ at 8 sampling points:
+
+    ::
+
+        N = 8
+        sum((i/N)**2 for i in range(N))/N
+        # Yields: 0.2734375
 
     """
     if distribution==None:

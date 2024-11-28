@@ -20,7 +20,7 @@ from qrisp.alg_primitives.qae import amplitude_amplification
 import numpy as np
 
 
-def IQAE(qargs,state_function, oracle_function, eps, alpha, kwargs_oracle = {}):
+def IQAE(qargs, state_function, oracle_function, eps, alpha, kwargs_oracle = {}):
     r"""
     Accelerated Quantum Amplitude Estimation (IQAE). This function performs :ref:`QAE <QAE>` with a fraction of the quantum resources of the well-known `QAE algorithm <https://arxiv.org/abs/quant-ph/0005055>`_.
     See `Accelerated Quantum Amplitude Estimation without QFT <https://arxiv.org/abs/2407.16795>`_.
@@ -38,11 +38,11 @@ def IQAE(qargs,state_function, oracle_function, eps, alpha, kwargs_oracle = {}):
         the quantum amplitude estimation is performed on.
     state_function : function
         A Python function preparing the state :math:`\ket{\Psi}`.
-        This function will receive the variables in the list ``args`` as arguments in the
+        This function will receive the variables in the list ``qargs`` as arguments in the
         course of this algorithm.
     oracle_function : function
         A Python function tagging the good state :math:`\ket{\Psi_1}`.
-        This function will receive the variables in the list ``args`` as arguments in the
+        This function will receive the variables in the list ``qargs`` as arguments in the
         course of this algorithm.
     eps : float
         Accuracy $\epsilon>0$ of the algorithm.
