@@ -28,7 +28,7 @@ def QMCI(qargs, function, distribution=None):
     Implements a general algorithm for `Quantum Monte Carlo Integration <https://www.nature.com/articles/s41598-024-61010-9>`_.
     This implementation utilizes :ref:`IQAE`. A detailed explanation can be found in the :ref:`tutorial <QMCItutorial>`.
 
-    QMCI performs numerical integration of (high-dimensional) functions over probility distributions:
+    QMCI performs numerical integration of (high-dimensional) functions over probability distributions:
 
     .. math::
 
