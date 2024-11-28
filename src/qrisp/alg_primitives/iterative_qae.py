@@ -183,9 +183,6 @@ def quant_step(k, N, qargs, state_function, oracle_function, kwargs_oracle):
         state_function(*qargs)
         amplitude_amplification(qargs, state_function, oracle_function, kwargs_oracle, iter = k)
 
-    #for arg in qargs:
-        #print(arg)
-
     # store result of last qubit 
     # shot-based measurement 
     res_dict = qargs[-1].get_measurement(shots = N)
@@ -199,7 +196,6 @@ def quant_step(k, N, qargs, state_function, oracle_function, kwargs_oracle):
     return a_i 
 
 
-# theta arithmetics
 def compute_thetas(m_i, K_i, A_i, E): 
     """
     Helper function to perform statistical evaluation and compute the angles for the next iteration. 
@@ -210,7 +206,7 @@ def compute_thetas(m_i, K_i, A_i, E):
     m_i : Int
         Used for the computation of the interval of allowed angles.
     K_i : Int
-        Maximal power of ``oracle_function`` for next iteration.
+        Maximal amount of amplitude amplification steps for the next iteration.
     A_i : Float
         Share of ``1``-measurements in amplitude amplification steps
     E : 
@@ -226,8 +222,8 @@ def compute_thetas(m_i, K_i, A_i, E):
     sh_theta_intermed = update_angle(sh_min, m_i)
     sh_theta = sh_theta_intermed/K_i
 
-    assert round( pow( np.sin(K_i * theta_b),2) , 8 )  == round( b_max,8)
-    assert round( pow( np.sin(K_i * sh_theta),2), 8 )  == round( sh_min,8)
+    assert round( pow( np.sin(K_i * theta_b),2) , 8 )  == round(b_max, 8)
+    assert round( pow( np.sin(K_i * sh_theta),2), 8 )  == round(sh_min, 8)
 
     return theta_b, sh_theta
 
@@ -238,9 +234,9 @@ def update_angle(old_angle, m_in):
 
     Parameters
     ----------
-    old_angle : Float
-        Ond angle from last iteration.    
-    m_in : Int
+    old_angle : float
+        Old angle from last iteration.    
+    m_in : int
         Used for the computation of the interval of allowed angles.
     """
 
@@ -249,14 +245,14 @@ def update_angle(old_angle, m_in):
     cond_break = True
     while cond_break :
         if not (m_in*np.pi/2 <= val_intermed1 <= (m_in+1)*np.pi/2):
-            val_intermed1 +=   np.pi
+            val_intermed1 += np.pi
         else: 
             final_intermed = val_intermed1
             cond_break = False
             break
 
         if not (m_in*np.pi/2 <= val_intermed2 <= (m_in+1)*np.pi/2):
-            val_intermed2 +=  np.pi
+            val_intermed2 += np.pi
         else: 
             final_intermed = val_intermed2
             cond_break = False
@@ -275,10 +271,10 @@ def compute_Li(m_i , K_i, theta_b, theta_sh):
     m_i : int
         Used for the computation of the interval of allowed angles.
     K_i : int
-        Maximal power of ``oracle_function`` for next iteration.
-    theta_b : Float
+        Maximal amount of amplitude amplification steps for the next iteration.
+    theta_b : float
         Lower bound for angle from last iteration.
-    theta_b : Float
+    theta_b : float
         Upper bound for angle from last iteration.
     """
 
