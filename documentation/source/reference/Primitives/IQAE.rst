@@ -5,12 +5,5 @@ Iterative Quantum Amplitude Estimation
 
 .. currentmodule:: qrisp
 
-.. autofunction:: acc_IQAE
+.. autofunction:: IQAE
 
-.. autofunction:: quantCirc
-
-.. autofunction:: compute_thetas
-
-.. autofunction:: update_angle
-    
-.. autofunction:: compute_Li

@@ -20,10 +20,16 @@ from qrisp.alg_primitives.qae import amplitude_amplification
 import numpy as np
 
 
-def acc_IQAE(qargs,state_function, oracle_function, eps, alpha, kwargs_oracle = {}):
+def IQAE(qargs,state_function, oracle_function, eps, alpha, kwargs_oracle = {}):
     r"""
-    Accelerated Quantum Amplitude Estimation (IQAE). This function performs QAE with a fraction of the quantum resources of the well known QAE algorithm.
-    See `Accelerated Quantum Amplitude Estimation without QFT <https://arxiv.org/abs/2407.16795>`_
+    Accelerated Quantum Amplitude Estimation (IQAE). This function performs :ref:`QAE <QAE>` with a fraction of the quantum resources of the well-known `QAE algorithm <https://arxiv.org/abs/quant-ph/0005055>`_.
+    See `Accelerated Quantum Amplitude Estimation without QFT <https://arxiv.org/abs/2407.16795>`_.
+
+    The problem of quantum amplitude estimation is described as follows:
+
+    * Given a unitary operator :math:`\mathcal{A}`, let :math:`\ket{\Psi}=\mathcal{A}\ket{0}`.
+    * Write :math:`\ket{\Psi}=\ket{\Psi_1}+\ket{\Psi_0}` as a superposition of the orthogonal good and bad components of :math:`\ket{\Psi}`.
+    * Find an estimate for :math:`a=\langle\Psi_1|\Psi_1\rangle`, the probability that a measurement of $\ket{\Psi}$ yields a good state.
 
     Parameters
     ----------
@@ -38,22 +44,26 @@ def acc_IQAE(qargs,state_function, oracle_function, eps, alpha, kwargs_oracle = 
         A Python function tagging the good state :math:`\ket{\Psi_1}`.
         This function will receive the variables in the list ``args`` as arguments in the
         course of this algorithm.
-    eps: Float
-        Accuracy of the algorithm. Choose to be :math:`> 0`. See paper for explanation.
-    alpha: Float
-        Confidence level of the algorithm. Choose to be :math:`\in (0,1)`. See paper for explanation.
+    eps : float
+        Accuracy $\epsilon>0$ of the algorithm.
+    alpha : float
+        Confidence level $\alpha\in (0,1)$ of the algorithm.
     kwargs_oracle : dict, optional
         A dictionary containing keyword arguments for the oracle. The default is {}.
 
     Returns
     -------
-    a_l, a_u : Float, Float
-        Confidence bounds on the amplitude which is to be estimated.
+    a : float
+        An enstimate $\hat{a}$ of $a$ such that 
+        
+    .. math::
+        
+        \mathbb P\{|\hat{a}-a|<\epsilon\}\geq 1-\alpha
 
     Examples
     --------
 
-    We show the same QAE **Numerical integration** example which can also be found in the original QAE documentation.
+    We show the same **Numerical integration** example which can also be found in the :ref:`QAE documentation <QAE>`.
 
     We wish to evaluate
 
@@ -61,25 +71,19 @@ def acc_IQAE(qargs,state_function, oracle_function, eps, alpha, kwargs_oracle = 
 
         A=\int_0^1f(x)\mathrm dx.
 
-    For this, we set up the corresponding ``state_function`` acting on the ``input_list``:
+    For this, we set up the corresponding ``state_function`` acting on the variables in ``input_list``:
 
     ::
 
-        from qrisp import QuantumFloat, QuantumBool, control, z, h, ry, QAE
+        from qrisp import QuantumFloat, QuantumBool, control, z, h, ry, IQAE
         import numpy as np
 
         n = 6 
         inp = QuantumFloat(n,-n)
         tar = QuantumBool()
         input_list = [inp, tar]
-    
-    We define the oracle:
 
-        def oracle_function(qb):   
-            z(qb)
-
-
-    For the ``state_function`` we want to evaluate $f(x)=\sin^2(x)$:  
+    For example, if $f(x)=\sin^2(x)$, the ``state_function`` can be implemented as follows:
 
     ::
 
@@ -91,23 +95,26 @@ def acc_IQAE(qargs,state_function, oracle_function, eps, alpha, kwargs_oracle = 
                 with control(inp[k]):
                     ry(2**(k+1)/N,tar)
 
-    Finally, we apply QAE and obtain an estimate $a$ for the value of the integral $A=0.27268$.
+    We define the ``oracle_function``:
+
+    ::
+
+        def oracle_function(inp, tar):   
+            z(inp)
+
+    Finally, we apply IQAE and obtain an estimate $a$ for the value of the integral $A=0.27268$.
 
     ::
 
         eps = 0.01
         alpha = 0.01
 
-        a_l, a_u = acc_QAE(input_list, state_function, oracle_function,eps=eps, alpha=alpha )
+        a = IQAE(input_list, state_function, oracle_function, eps=eps, alpha=alpha)
 
-    >>> a_l 
+    >>> a 
     0.26782038552705856
 
-    >>> a_u
-    0.2741565776801965
-
     """
-
 
     E = 1/2 * pow(np.sin(np.pi * 3/14), 2) -  1/2 * pow(np.sin(np.pi * 1/6), 2) 
     F = 1/2 * np.arcsin(np.sqrt(2 * E))
@@ -119,13 +126,13 @@ def acc_IQAE(qargs,state_function, oracle_function, eps, alpha, kwargs_oracle = 
     K_i = 1
     m_i = 0
     index_tot = 0
-    while break_cond > 2 * eps : 
+    while break_cond > 2 * eps: 
         index_tot +=1
         
         alp_i = C*alpha * eps * K_i 
         N_i = int(np.ceil(1/(2 * pow(E, 2) ) * np.log(2/alp_i) ) )
 
-        # perform quantum-stuff
+        # Perform quantum step
         qargs_dupl = [qarg.duplicate() for qarg in qargs]
         A_i  = quantCirc( int((K_i -1 )/2) , N_i, qargs_dupl, state_function, 
                         oracle_function, kwargs_oracle ) 
@@ -133,18 +140,16 @@ def acc_IQAE(qargs,state_function, oracle_function, eps, alpha, kwargs_oracle = 
         for qarg in qargs_dupl:
             qarg.delete()
         
-        
         #for qarg in qargs_dupl:
             #qarg.delete()
         
-        # compute new thetas
+        # Compute new thetas
         theta_b, theta_sh = compute_thetas(m_i,  K_i, A_i, E)
-        #compute new Li
+        # Compute new Li
         L_new, m_new = compute_Li(m_i , K_i, theta_b, theta_sh)
         
         m_i = m_new
         K_i = L_new * K_i
-        
 
         break_cond = abs( theta_b - theta_sh )
     
@@ -153,9 +158,7 @@ def acc_IQAE(qargs,state_function, oracle_function, eps, alpha, kwargs_oracle = 
     return final_res
 
 
-
-def quantCirc(k,N, qargs,state_function, 
-        oracle_function, kwargs_oracle ):
+def quantCirc(k, N, qargs, state_function, oracle_function, kwargs_oracle):
     """
     Performs the quantum diffusion step, i.e. Quantum Amplitude Amplification, 
     in accordance to `Accelerated Quantum Amplitude Estimation without QFT <https://arxiv.org/abs/2407.16795>`_
@@ -163,9 +166,9 @@ def quantCirc(k,N, qargs,state_function,
     Parameters
     ----------
     k : int
-        The amount of amplification steps, i.e. the power of :math:`\mathcal{Q}` in amplitude amplification.
+        The amount of amplification steps, i.e., the power of :math:`\mathcal{Q}` in amplitude amplification.
     N : int
-        The amount of shots, i.e. the amount of times the last qubit is measured after the amplitude amplification steps.
+        The amount of shots, i.e., the amount of times the last qubit is measured after the amplitude amplification steps.
     state_function : function
         A Python function preparing the state :math:`\ket{\Psi}`.
         This function will receive the variables in the list ``args`` as arguments in the
@@ -192,13 +195,12 @@ def quantCirc(k,N, qargs,state_function,
     res_dict = qargs[-1].get_measurement(shots = N)
     
     # case of single dict return, this should not occur but to be safe
-    if True not in  list(res_dict.keys()):
+    if True not in list(res_dict.keys()):
         return 0 
     
     a_i = res_dict[True]
 
     return a_i 
-
 
 
 # theta arithmetics
@@ -219,7 +221,6 @@ def compute_thetas(m_i, K_i, A_i, E):
         :math:`\epsilon` limit
     """
     
-    
     b_max = max(A_i - E, 0)
     sh_min = min(A_i + E, 1)
 
@@ -235,13 +236,12 @@ def compute_thetas(m_i, K_i, A_i, E):
     return theta_b, sh_theta
 
 
-
 def update_angle(old_angle, m_in):
     """
-    Subroutine to compute new angles
+    Subroutine to compute new angles#
+
     Parameters
     ----------
-
     old_angle : Float
         Ond angle from last iteration.    
     m_in : Int
@@ -268,8 +268,6 @@ def update_angle(old_angle, m_in):
 
     return final_intermed
     
-
-
 
 def compute_Li(m_i , K_i, theta_b, theta_sh):
     """

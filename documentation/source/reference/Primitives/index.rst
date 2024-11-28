@@ -18,7 +18,7 @@ This submodule of Qrisp provides a collection of commonly used buildings blocks 
    * - :ref:`Quantum Amplitude Estimation <QAE>`
      - estimating the amplitude of a target state
    * - :ref:`Iterative Quantum Amplitude Estimation <IQAE>`
-     - resource efficient QAE
+     - resource efficient quantum amplitude estimation
    * - :ref:`phase_polynomials` 
      - provides functions for applying diagonal Hamiltonians given by polynomials
    * - :ref:`Grover's Algorithm <grover_tools>`

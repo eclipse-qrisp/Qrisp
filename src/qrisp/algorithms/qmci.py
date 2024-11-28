@@ -16,7 +16,7 @@
 ********************************************************************************/
 """
 
-from qrisp import h, acc_IQAE, cx, z, auto_uncompute, QuantumBool
+from qrisp import h, IQAE, cx, z, auto_uncompute, QuantumBool
 
 def uniform(*args):
     for arg in args:
@@ -90,7 +90,7 @@ def QMCI(qargs, function, distribution=None):
         tar = args[2]
         z(tar)
 
-    a = acc_IQAE(qargs, state_function, oracle_function, eps= 0.01, alpha= 0.01)   
+    a = IQAE(qargs, state_function, oracle_function, eps=0.01, alpha=0.01)   
 
     V = V0*a
     return V
