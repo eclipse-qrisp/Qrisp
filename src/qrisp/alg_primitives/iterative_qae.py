@@ -54,7 +54,7 @@ def IQAE(qargs,state_function, oracle_function, eps, alpha, kwargs_oracle = {}):
     Returns
     -------
     a : float
-        An enstimate $\hat{a}$ of $a$ such that 
+        An estimate $\hat{a}$ of $a$ such that 
         
     .. math::
         
@@ -89,7 +89,7 @@ def IQAE(qargs,state_function, oracle_function, eps, alpha, kwargs_oracle = {}):
 
         def state_function(inp, tar):
             h(inp)
-    
+
             N = 2**inp.size
             for k in range(inp.size):
                 with control(inp[k]):
@@ -99,8 +99,8 @@ def IQAE(qargs,state_function, oracle_function, eps, alpha, kwargs_oracle = {}):
 
     ::
 
-        def oracle_function(inp, tar):   
-            z(inp)
+        def oracle_function(inp, tar):
+            z(tar)
 
     Finally, we apply IQAE and obtain an estimate $a$ for the value of the integral $A=0.27268$.
 
@@ -134,14 +134,11 @@ def IQAE(qargs,state_function, oracle_function, eps, alpha, kwargs_oracle = {}):
 
         # Perform quantum step
         qargs_dupl = [qarg.duplicate() for qarg in qargs]
-        A_i  = quantCirc( int((K_i -1 )/2) , N_i, qargs_dupl, state_function, 
+        A_i  = quant_step( int((K_i -1 )/2) , N_i, qargs_dupl, state_function, 
                         oracle_function, kwargs_oracle ) 
         
         for qarg in qargs_dupl:
             qarg.delete()
-        
-        #for qarg in qargs_dupl:
-            #qarg.delete()
         
         # Compute new thetas
         theta_b, theta_sh = compute_thetas(m_i,  K_i, A_i, E)
@@ -153,14 +150,13 @@ def IQAE(qargs,state_function, oracle_function, eps, alpha, kwargs_oracle = {}):
 
         break_cond = abs( theta_b - theta_sh )
     
-    #full_res: 
     final_res = np.sin((theta_b+theta_sh)/2)**2
     return final_res
 
 
-def quantCirc(k, N, qargs, state_function, oracle_function, kwargs_oracle):
+def quant_step(k, N, qargs, state_function, oracle_function, kwargs_oracle):
     """
-    Performs the quantum diffusion step, i.e. Quantum Amplitude Amplification, 
+    Performs the quantum step, i.e., Quantum Amplitude Amplification, 
     in accordance to `Accelerated Quantum Amplitude Estimation without QFT <https://arxiv.org/abs/2407.16795>`_
 
     Parameters
@@ -191,7 +187,7 @@ def quantCirc(k, N, qargs, state_function, oracle_function, kwargs_oracle):
         #print(arg)
 
     # store result of last qubit 
-    # shot-based measurement auf den zustand, aber eigentlich nur auf das letzte QUbit, bzw. quantum_bool, welche getaggede zustände widerspiegelt
+    # shot-based measurement 
     res_dict = qargs[-1].get_measurement(shots = N)
     
     # case of single dict return, this should not occur but to be safe
@@ -238,7 +234,7 @@ def compute_thetas(m_i, K_i, A_i, E):
 
 def update_angle(old_angle, m_in):
     """
-    Subroutine to compute new angles#
+    Subroutine to compute new angles.
 
     Parameters
     ----------
@@ -246,8 +242,8 @@ def update_angle(old_angle, m_in):
         Ond angle from last iteration.    
     m_in : Int
         Used for the computation of the interval of allowed angles.
-
     """
+
     val_intermed1 = np.arcsin( np.sqrt(old_angle) ) - np.pi
     val_intermed2 = np.arcsin( - np.sqrt(old_angle) )
     cond_break = True
@@ -276,9 +272,9 @@ def compute_Li(m_i , K_i, theta_b, theta_sh):
 
     Parameters
     ----------
-    m_i : Int
+    m_i : int
         Used for the computation of the interval of allowed angles.
-    K_i : Int
+    K_i : int
         Maximal power of ``oracle_function`` for next iteration.
     theta_b : Float
         Lower bound for angle from last iteration.
@@ -296,7 +292,7 @@ def compute_Li(m_i , K_i, theta_b, theta_sh):
         sec_val = Li *K_i * theta_sh
 
         for m_new in m_new_list:
-            #check the conditions
+            # check the conditions
             if m_new*np.pi/2 <= first_val <= (m_new+1)*np.pi/2:
                 if m_new*np.pi/2 <= sec_val <= (m_new+1)*np.pi/2:
                     
