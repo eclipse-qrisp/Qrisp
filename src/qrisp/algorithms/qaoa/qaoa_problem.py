@@ -87,10 +87,6 @@ class QAOAProblem:
         self.init_function = init_function
         self.cl_post_processor = None
         self.init_type = 'random'
-        # Fourier heuristic parameterization
-        self.fourier_depth = None
-        # should be set in the 
-        self.init_params = None
 
         # parameters for callback
         self.callback = callback
@@ -137,21 +133,7 @@ class QAOAProblem:
         beta = (1 - t) * dt
         return  np.concatenate((gamma,beta)) 
     
-    def set_fourier_depth(self, fourier_depth, init_params = None):
-        """
-        Set the FOURIER heuristic for a QAOA problem.
 
-        Parameters
-        ----------
-        fourier_depth : int
-            Number of Fourier parameters.
-        init_params : np.array
-            (Optional) NumPy array of initial Fourier Parameters.
-        """
-        
-        self.fourier_depth = fourier_depth
-        self.init_params = init_params
-      
     def compile_circuit(self, qarg, depth):
         """
         Compiles the circuit that is evaluated by the :meth:`run <qrisp.qaoa.QAOAProblem.run>` method.
@@ -416,14 +398,6 @@ class QAOAProblem:
         # init_point = np.pi * np.random.rand(2 * depth)/2
         
         # initial point is set here, potentially subject to change
-        if not isinstance(self.fourier_depth, int):
-            init_point = np.pi * np.random.rand(2 * depth)/2
-        elif not isinstance(self.init_params, list):
-            init_point = np.pi * np.random.rand(2 * self.fourier_depth)/2
-        else:
-            if len(self.init_params)/2 != self.fourier_depth:
-                raise Exception("Fourier-depth does not match match length of init_params! (should be half the length)")
-            init_point = self.init_params
 
         if self.init_type=='random':
             # Set initial random values for optimization parameters
@@ -435,25 +409,14 @@ class QAOAProblem:
 
 
         # Perform optimization using COBYLA method
-        if isinstance(self.fourier_depth, int):
-            from qrisp.qaoa.optimization_wrappers.fourier_wrapper import fourier_optimization_wrapper
-            for index_p in range(1, depth + 1):
-                compiled_qc, symbols = self.compile_circuit(qarg, index_p)
-                res_sample =  minimize(fourier_optimization_wrapper,
-                                    init_point, 
-                                    method=optimizer, 
-                                    options={'maxiter':max_iter}, 
-                                    args = (compiled_qc, symbols, qarg, self.cl_cost_function,self.fourier_depth, index_p , mes_kwargs))
-                init_point = res_sample['x']
-                
-        else:
-            compiled_qc, symbols = self.compile_circuit(qarg, depth)
-            # Perform optimization using COBYLA method
-            res_sample = minimize(optimization_wrapper,
-                                init_point, 
-                                method=optimizer, 
-                                options={'maxiter':max_iter}, 
-                                args = (compiled_qc, symbols, qarg, mes_kwargs))
+
+        compiled_qc, symbols = self.compile_circuit(qarg, depth)
+        # Perform optimization using COBYLA method
+        res_sample = minimize(optimization_wrapper,
+                            init_point, 
+                            method=optimizer, 
+                            options={'maxiter':max_iter}, 
+                            args = (compiled_qc, symbols, qarg, mes_kwargs))
             
         return res_sample['x']
         
@@ -504,9 +467,7 @@ class QAOAProblem:
         #res_sample = self.optimization_routine(qarg, compiled_qc, symbols , depth,  mes_kwargs, max_iter)
         res_sample = self.optimization_routine(qarg, depth, mes_kwargs, max_iter, optimizer)
         optimal_theta = res_sample 
-        if isinstance(self.fourier_depth, int):
-            from qrisp.qaoa.parameters.fourier_params import fourier_params_helper
-            optimal_theta = fourier_params_helper(optimal_theta, self.fourier_depth , depth) 
+
         
         # Prepare initial state - if no init_function is specified, prepare uniform superposition
         if self.init_function is not None:
@@ -522,7 +483,6 @@ class QAOAProblem:
             self.cost_operator(qarg, optimal_theta[i])
             self.mixer(qarg, optimal_theta[i+depth])
         opt_res = qarg.get_measurement(**mes_kwargs)
-        
         return opt_res
     
     def train_function(self, qarg, depth, mes_kwargs = {}, max_iter = 50, init_type = "random", optimizer="COBYLA"):

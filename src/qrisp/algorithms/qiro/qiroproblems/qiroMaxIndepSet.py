@@ -19,10 +19,13 @@
 from qrisp import rz, rzz, x
 import numpy as np
 import copy
-from qrisp.algorithms.qiro.qiroproblems.qiro_utils import * 
+from qrisp.algorithms.qiro.qiroproblems.qiro_utils import find_max
+from qrisp.algorithms.qiro.qiro_mixers import qiro_controlled_RX_mixer_gen
+from qrisp import QuantumBool, mcx
+from qrisp.algorithms.qaoa import controlled_RX_mixer_gen
 
 
-def create_max_indep_replacement_routine(res, graph, solutions=[], exclusions=[]):
+def create_max_indep_replacement_routine(res, problem_updated):
     """
     Creates a replacement routine for the problem structure, i.e., defines the replacement rules. 
     See the `original paper <https://journals.aps.org/prxquantum/abstract/10.1103/PRXQuantum.5.020327>`_ for a description of the update rules.
@@ -31,12 +34,9 @@ def create_max_indep_replacement_routine(res, graph, solutions=[], exclusions=[]
     ----------
     res : dict
         Result dictionary of QAOA optimization procedure.
-    graph : nx.Graph
-        The graph defining the problem instance.
-    solutions : list
-        Qubits which were found to be positively correlated, i.e., part of the problem solution.
-    exclusions : list
-        Qubits which were found to be negatively correlated, i.e., not part of the problem solution, or contradict solution qubits in accordance with the update rules.  
+    problem_updated : List
+        Updates that happened during the QIRO routine. Consits of the updated problem, a list of Qubits which were found to be positively correlated, i.e. part of the problem solution, 
+        and a list Qubits which were found to be negatively correlated, i.e. they contradict solution qubits in accordance with the update rules.  
 
     Returns
     -------
@@ -50,6 +50,9 @@ def create_max_indep_replacement_routine(res, graph, solutions=[], exclusions=[]
         Updated set of exclusions for the problem.
         
     """
+    graph = problem_updated[0]
+    solutions = problem_updated[1]
+    exclusions =  problem_updated[2]
 
     # for multi qubit correlations
     orig_edges = [list(item) for item in graph.edges()]
@@ -57,23 +60,25 @@ def create_max_indep_replacement_routine(res, graph, solutions=[], exclusions=[]
     # for single qubit correlations
     orig_nodes = list(graph.nodes())
     
-    max_item = []
     max_item, sign = find_max(orig_nodes, orig_edges , res, solutions)
+    if max_item == None:
+        return graph, solutions, 0 ,exclusions
 
     # create a copy of the graph
-    new_graph = copy.deepcopy(graph)
+    new_graph = copy.copy(graph)
 
     # we remove nodes from the graph, as suggested by the replacement rules
     # if the item is an int, it is a single node, else it is an edge
     if isinstance(max_item, int):
-        if sign > 0:
+        # if sign <0 then its mostly appeared as a "1" in the results--> part of solution set
+        if sign < 0:
             # remove all adjacent nodes
-            to_remove = graph.adj[max_item]
+            to_remove = list(graph.adj[max_item])
             new_graph.remove_nodes_from(to_remove)
             solutions.append(max_item)
             exclusions += to_remove
-
-        elif sign < 0:
+        # if sign >0 then its mostly appeared as a "0" in the results
+        elif sign > 0:
             # remove the node
             new_graph.remove_node(max_item)
             exclusions.append(max_item)
@@ -93,17 +98,16 @@ def create_max_indep_replacement_routine(res, graph, solutions=[], exclusions=[]
     return new_graph, solutions, sign, exclusions
 
 
-def create_max_indep_cost_operator_reduced(graph, solutions=[]):
+def create_max_indep_cost_operator_reduced(problem_updated):
     r"""
     Creates the ``cost_operator`` for the problem instance.
     This operator is adjusted to consider qubits that were found to be a part of the problem solution.
 
     Parameters
     ----------
-    G : nx.Graph
-        The graph for the problem instance.
-    solutions : list
-        Qubits which were found to be positively correlated, i.e., part of the problem solution.
+    problem_updated : List
+        Updates that happened during the QIRO routine. Consits of the updated problem, a list of Qubits which were found to be positively correlated, i.e. part of the problem solution, 
+        and a list Qubits which were found to be negatively correlated, i.e. they contradict solution qubits in accordance with the update rules.  
     
     Returns
     -------
@@ -111,13 +115,17 @@ def create_max_indep_cost_operator_reduced(graph, solutions=[]):
         A function receiving a :ref:`QuantumVariable` and a real parameter $\gamma$. This function performs the application of the cost operator.
 
     """
+
+    problem = problem_updated[0]
+    solutions = problem_updated[1]
+
     def cost_operator(qv, gamma):
-        for pair in list(graph.edges()):
+        for pair in list(problem.edges()):
             #cx(qv[pair[0]], qv[pair[1]])
             rzz(3*gamma, qv[pair[0]], qv[pair[1]])
             rz(-gamma, qv[pair[0]])
             rz(-gamma, qv[pair[1]])
-        for i in graph.nodes():
+        for i in problem.nodes():
             if not i in solutions:
                 rz(gamma, qv[i])
 
@@ -125,56 +133,61 @@ def create_max_indep_cost_operator_reduced(graph, solutions=[]):
 
 
 
-""" def create_maxIndep_mixer_reduced(graph, solutions):
+def create_max_indep_controlled_mixer_reduced(problem_updated):
+    r"""
+    Creates the ``controlled_RX_mixer`` for a QIRO instance of the maximal independet set problem for a given graph ``G`` following `Hadfield et al. <https://arxiv.org/abs/1709.03489>`_
 
-    def RX_mixer(qv, beta):
+    The belonging ``predicate`` function indicates if a set can be swapped into the solution.
 
-        from qrisp import rx
-        for i in graph.nodes():
-            if not i in solutions:
-                rx(2 * beta, qv[i])
-    return RX_mixer
+    Parameters
+    ----------
+    problem_updated : List
+        Updates that happened during the QIRO routine. Consits of the updated problem, a list of Qubits which were found to be positively correlated, i.e. part of the problem solution, 
+        and a list Qubits which were found to be negatively correlated, i.e. they contradict solution qubits in accordance with the update rules.  
+
+    Returns
+    -------
+    controlled_RX_mixer : function
+        A Python function receiving a :ref:`QuantumVariable` and real parameter $\beta$. 
+        This function performs the application of the mixer associated to the graph ``G``.
+
+    """
+
+    problem = problem_updated[0]
+    solutions = problem_updated[1]
+    exclusions =  problem_updated[2]
+    neighbors_dict = {node: list(problem.adj[node]) for node in problem.nodes()}
+
+    def qiro_predicate(qv,i):
+        qbl = QuantumBool()
+        if len(neighbors_dict[i])==0:
+            x(qbl)
+        else:
+            mcx([qv[j] for j in neighbors_dict[i]],qbl,ctrl_state='0'*len(neighbors_dict[i]))
+        return qbl
+
+    controlled_RX_mixer=qiro_controlled_RX_mixer_gen(qiro_predicate, solutions+exclusions)
+
+    return controlled_RX_mixer
 
 
-def init_function_reduced(graph, solutions):
-
-    def init_state(qv):
-        from qrisp import h
-        for i in graph.nodes():
-            if not i in solutions:
-                h(qv[i])
-        for i in solutions:
-            x(qv[i])
-    return init_state
 
 
+def qiro_max_indep_set_init_function(solutions =[], exclusions = []):
+    r"""
+    To be used for the controlled mixer approach of QIRO MIS. Only flips qubits which we found to be a part of the problem soultion.
+    
+    Parameters
+    ----------
+    solutions : List
+        List of Qubits which were found to be positively correlated, i.e. part of the problem solution
+    exclusions : List
+        List Qubits which were found to be negatively correlated, i.e. they contradict solution qubits in accordance with the update rules.  
+    
+    """
+    def init_function(qv):
+        for i in range(len(qv)):
+            if i in solutions:
+                x(qv[i])
 
-#TODO:
-def create_maxIndep_cl_cost_function_reduced(graph):
-
-        #btw alternative formulation: for edge: check if string[edge[0]] != string[edge[1]] 
-    def aClcostFct(res_dic):
-        tot_energy = 0.001
-        tot_counts = 0
-        for state in res_dic.keys():
-            # we assume solution is right
-            temp = True
-            energy = 0 
-            for edge in graph.edges():
-                if not state[edge[0]] != state[edge[1]]:
-                    temp = False 
-            
-            # else we just add the number of marked as |1> nodes
-            if temp: 
-                intlist = [s for s in range(len(list(state))) if list(state)[s] == "1"]
-                energy = -len(intlist)
-            
-            tot_energy += energy * res_dic[state]
-            tot_counts += res_dic[state]
-
-        #print(tot_energy/tot_counts)
-
-        return tot_energy/tot_counts
-
-    return aClcostFct 
-"""
+    return init_function

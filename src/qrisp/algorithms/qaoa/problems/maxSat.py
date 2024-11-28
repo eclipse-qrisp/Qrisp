@@ -44,6 +44,7 @@ def create_maxsat_cost_polynomials(problem):
     cost_polynomials = []
     for clause in clauses:
         C = 1 - sp.prod((1-symbols[index-1]) if index>0 else symbols[-index-1] for index in clause)
+        
         cost_polynomials.append(C)
 
     return cost_polynomials, symbols

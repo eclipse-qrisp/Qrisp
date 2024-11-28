@@ -20,6 +20,7 @@ import numpy as np
 
 from qrisp.qtypes.quantum_float import QuantumFloat
 from qrisp.misc import gate_wrap
+from qrisp.core import QuantumVariable
 
 def comparison_wrapper(func):
     
@@ -186,6 +187,10 @@ class QuantumModulus(QuantumFloat):
         return montgomery_decoder(i, 2**self.m, self.modulus)
     
     def encoder(self, i):
+        if i >= self.modulus:
+            raise Exception("Tried to encode a number into QuantumModulus, which is greator or equal to the modulus")
+        if i < 0:
+            raise Exception("Tried to encode a negative number into QuantumModulus")
         
         from qrisp.alg_primitives.arithmetic.modular_arithmetic import montgomery_encoder
         
@@ -193,6 +198,10 @@ class QuantumModulus(QuantumFloat):
             return np.nan
         
         return montgomery_encoder(i, 2**self.m, self.modulus)
+
+    def encode(self, i):
+        QuantumVariable.encode(self, self.encoder(i))
+        
 
     @gate_wrap(permeability="args", is_qfree=True)    
     def __mul__(self, other):
@@ -324,27 +333,31 @@ class QuantumModulus(QuantumFloat):
     
     @comparison_wrapper
     def __lt__(self, other):
-        return QuantumFloat.__lt__(self, other)
+        from qrisp.alg_primitives import uint_lt
+        return uint_lt(self, other, self.inpl_adder)
     
     @comparison_wrapper
     def __gt__(self, other):
-        return QuantumFloat.__gt__(self, other)
+        from qrisp.alg_primitives import uint_gt
+        return uint_gt(self, other, self.inpl_adder)
 
     @comparison_wrapper
     def __le__(self, other):
-        return QuantumFloat.__le__(self, other)
+        from qrisp.alg_primitives import uint_le
+        return uint_le(self, other, self.inpl_adder)
 
     @comparison_wrapper
     def __ge__(self, other):
-        return QuantumFloat.__ge__(self, other)
+        from qrisp.alg_primitives import uint_ge
+        return uint_ge(self, other, self.inpl_adder)
     
     @comparison_wrapper
     def __eq__(self, other):
-        return QuantumFloat.__eq__(self, other)
+        return QuantumVariable.__eq__(self, other)
 
     @comparison_wrapper
     def __ne__(self, other):
-        return QuantumFloat.__ne__(self, other)
+        return QuantumVariable.__ne__(self, other)
 
     def __hash__(self):
         return QuantumFloat.__hash__(self)

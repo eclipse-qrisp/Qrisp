@@ -9,6 +9,8 @@ This algorithms submodule of Qrisp provides a collection of commonly used quantu
 
    * - ALGORITHM
      - USED FOR
+   * - :ref:`VQE <VQE>`
+     - finding the ground state energy of a Hamiltonian
    * - :ref:`QAOA <QAOA>`
      - solving combinatorial optimization problems
    * - :ref:`QIRO <QIRO>`
@@ -33,6 +35,7 @@ We encourage you to explore these algorithms, delve into their documentation, an
    :maxdepth: 2
    :hidden:
    
+   vqe/VQE
    qaoa/QAOA
    qiro/QIRO
    Shor

@@ -19,26 +19,7 @@
 import numpy as np
 
 from qrisp import QuantumCircuit
-
-# Toffoli Implementation according to https://arxiv.org/pdf/1206.0758.pdf
-toffoli_qc = QuantumCircuit(3)
-
-toffoli_qc.h(2)
-toffoli_qc.p(-np.pi / 4, [0, 1])
-toffoli_qc.cx(2, 0)
-toffoli_qc.cx(1, 2)
-toffoli_qc.p(np.pi / 4, 0)
-toffoli_qc.cx(1, 0)
-toffoli_qc.p(np.pi / 4, 2)
-toffoli_qc.cx(1, 2)
-toffoli_qc.p(-np.pi / 4, 0)
-toffoli_qc.cx(2, 0)
-toffoli_qc.p(np.pi / 4, 0)
-toffoli_qc.p(-np.pi / 4, 2)
-toffoli_qc.cx(1, 0)
-toffoli_qc.h(2)
-toffoli_qc.qubits[1], toffoli_qc.qubits[0] = toffoli_qc.qubits[0], toffoli_qc.qubits[1]
-
+from qrisp.alg_primitives.mcx_algs.circuit_library import toffoli_qc
 
 # Function to synthesize a multi controlled X gate using gray synthesis
 def gray_multi_cx(n):

@@ -22,8 +22,8 @@ from qrisp.misc import multi_measurement
 
 
 def test_quantum_divison():
-    numerator = QuantumFloat(3, -2, signed=True)
-    divisor = QuantumFloat(3, -2, signed=True)
+    numerator = QuantumFloat(4, -2, signed=True)
+    divisor = QuantumFloat(4, -2, signed=True)
 
     n = 4 / 8
     d = -5 / 4

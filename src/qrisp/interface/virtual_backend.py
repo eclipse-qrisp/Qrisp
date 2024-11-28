@@ -60,8 +60,8 @@ class VirtualBackend(BackendClient):
 
             print(qiskit_qc)
 
-            from qiskit import Aer
-            qiskit_backend = Aer.get_backend('qasm_simulator')
+            from qiskit_aer import AerSimulator
+            qiskit_backend = AerSimulator()
 
             #Run Circuit on the Qiskit backend
             return qiskit_backend.run(qiskit_qc, shots = shots).result().get_counts()

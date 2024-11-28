@@ -23,7 +23,7 @@ import copy
 
 class QIROProblem(QAOAProblem):
     r"""
-    Central structure to run QIRO algorithms. A subcalss of the :ref:`QAOAProblem` class.
+    Central structure to run QIRO algorithms. A subclass of the :ref:`QAOAProblem` class.
     The idea is based on the paper by `J. Finzgar et al. <https://journals.aps.org/prxquantum/abstract/10.1103/PRXQuantum.5.020327>`_.
 
     This class encapsulates the replacement routine, cost operator, mixer operator, classical cost function 
@@ -100,7 +100,7 @@ class QIROProblem(QAOAProblem):
     Parameters
     ----------
     problem : Any
-        The problem structure to be considered for the algorithm. For example, in the case of MaxClique a graph, or MaxSat a list of clauses.
+        The problem structure to be considered for the algorithm. For example, in the case of MaxClique a graph, or in the case of MaxSat a list of clauses.
     replacement_routine  : function
         A routine for adjusting the problem after the highest correlation value was found.
     cost_operator  : function
@@ -120,23 +120,20 @@ class QIROProblem(QAOAProblem):
 
     """
     
-    #try without QAOAProblem
-    """ def __init__(self, problem, qaoaProblem, replacement_routine , qiro_cost_operator, qiro_mixer, qiro_init_function, ):
-        super().__init__(qaoaProblem.cost_operator, qaoaProblem.mixer, qaoaProblem.cl_cost_function)
-        self.problem = problem
-        self.replacement_routine = replacement_routine
-        self.qiro_cost_operator = qiro_cost_operator
-        self.qiro_mixer = qiro_mixer
-        self.qiro_init_function = qiro_init_function """
+
     
-    def __init__(self, problem, replacement_routine , cost_operator, mixer, cl_cost_function, init_function):
-        super().__init__(cost_operator(problem), mixer(), cl_cost_function(problem))
-        self.problem = problem
-        self.replacement_routine = replacement_routine
+    def __init__(self, problem, replacement_routine , cost_operator, mixer, cl_cost_function, init_function, revert = False):
+
+        super().__init__(cost_operator([problem, [], []]), mixer([problem, [], []]), cl_cost_function(problem))
         self.qiro_cost_operator = cost_operator
         self.qiro_mixer = mixer
+
+        self.problem = copy.deepcopy(problem)
+        self.replacement_routine = replacement_routine
+        
         self.init_function = init_function()
         self.qiro_init_function = init_function
+        
     
     def run_qiro(self, qarg, depth, n_recursions,  mes_kwargs = {}, max_iter = 50):
         """
@@ -164,7 +161,9 @@ class QIROProblem(QAOAProblem):
         """       
 
         from qrisp import QuantumVariable
-        res= QAOAProblem.run(self, qarg, depth, mes_kwargs, max_iter)
+
+        self.set_init_function(self.init_function)
+        res= self.run(qarg, depth, mes_kwargs, max_iter)
 
         corr_vals = []
         solutions = []
@@ -172,23 +171,20 @@ class QIROProblem(QAOAProblem):
 
         for index in range(n_recursions):
             
-            new_problem, solutions , sign, exclusions = self.replacement_routine(res, self.problem, solutions, exclusions)
-            
+            new_problem, solutions , sign, exclusions = self.replacement_routine(res, [self.problem, solutions, exclusions])
+
             corr_vals.append(sign)    
             self.problem = new_problem
-            self.cost_operator = self.qiro_cost_operator(new_problem, solutions=solutions)
-            self.mixer = self.qiro_mixer(solutions=solutions, exclusions = exclusions)
+    
+            self.cost_operator = self.qiro_cost_operator( [new_problem, solutions, exclusions] )
+            self.mixer = self.qiro_mixer( [new_problem, solutions, exclusions] )
             self.init_function = self.qiro_init_function(#problem = new_problem, 
                                                          solutions=solutions, exclusions = exclusions)
 
             new_qarg = QuantumVariable(len(qarg))
-            res = QAOAProblem.run(self, new_qarg, depth, mes_kwargs, max_iter)
+            res= self.run(new_qarg, depth, mes_kwargs, max_iter)
 
         return res
-
-
-
-
 
 
 

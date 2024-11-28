@@ -70,3 +70,6 @@ class Qubit:
     def __eq__(self, other):
         return self.hash_value == other.hash_value
         return bool(self.hash_value & other.hash_value)
+    
+    def __lt__(self, other):
+        return self.identifier<other.identifier

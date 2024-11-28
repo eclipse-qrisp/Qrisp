@@ -404,6 +404,10 @@ class QuantumEnvironment:
 
     # Method to exit the environment
     def __exit__(self, exception_type, exception_value, traceback):
+        
+        if exception_type is not None:
+            raise exception_value
+        
         self.deepest_environment[0] = self.parent
 
         # Stop dumping

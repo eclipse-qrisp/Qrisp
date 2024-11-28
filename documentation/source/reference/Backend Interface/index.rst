@@ -78,10 +78,10 @@ This class is a wrapper for the VirtualBackend to quickly integrate Qiskit backe
 
 ::
 
-   from qiskit import Aer
+   from qiskit_aer import AerSimulator
    from qrisp.interface import QiskitBackend
-   qiskit_backend = Aer.get_backend('qasm_simulator')
-   vrtl_qasm_sim = QiskitBackend(qiskit_backend)
+   qiskit_backend = AerSimulator()
+   vrtl_aer_sim = QiskitBackend(qiskit_backend)
 
 Naturally, this also works for non-simulator Qiskit backends.
 

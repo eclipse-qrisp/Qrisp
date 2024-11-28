@@ -177,14 +177,14 @@
     
         .. raw:: html
 
-            <a href="./general/tutorial/TSP.html">
+            <a href="./general/tutorial/H2.html">
             <div class="example-img-plot-overlay">
-            <p class="sd-card-text">Solve the traveling salesman problem using quantum search</code></p>
+            <p class="sd-card-text">Simulate the quantum dynamics of molecules using chemistry data</code></p>
             </div>
             </a>
 
     
-        .. image:: ./_static/tsp.svg
+        .. image:: ./_static/hydrogen.png
 
 
 .. raw:: html

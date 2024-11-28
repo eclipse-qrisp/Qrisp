@@ -27,7 +27,7 @@ Example implementation
 ::
 
     from qrisp import QuantumVariable
-    from qrisp.qiro import QIROProblem, create_max_indep_replacement_routine, create_max_indep_cost_operator_reduced, qiro_RXMixer, qiro_init_function
+    from qrisp.qiro import QIROProblem, create_max_indep_replacement_routine, create_max_indep_cost_operator_reduced, qiro_rx_mixer, qiro_init_function
     from qrisp.qaoa import create_max_indep_set_cl_cost_function
     import matplotlib.pyplot as plt
     import networkx as nx
@@ -41,7 +41,7 @@ Example implementation
     qiro_instance = QIROProblem(G,
                                 replacement_routine=create_max_indep_replacement_routine,
                                 cost_operator=create_max_indep_cost_operator_reduced,
-                                mixer=qiro_RXMixer,
+                                mixer=qiro_rx_mixer,
                                 cl_cost_function=create_max_indep_set_cl_cost_function,
                                 init_function=qiro_init_function
                                 )
