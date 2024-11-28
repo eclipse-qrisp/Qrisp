@@ -16,7 +16,7 @@
 ********************************************************************************/
 """
 
-from qrisp import h, IQAE, cx, z, auto_uncompute, QuantumBool
+from qrisp import h, IQAE, cx, x, z, auto_uncompute, QuantumBool, control
 
 def uniform(*args):
     for arg in args:
@@ -39,7 +39,8 @@ def QMCI(qargs, function, distribution=None):
     qargs : list[:ref:`QuantumFloat`]
         The quantum variables the given ``function`` acts on.
     function : function
-        A Python function which takes :ref:`QuantumFloats <QuantumFloat>` as inputs and applies the ``function`` which is to be integrated.
+        A Python function which takes :ref:`QuantumFloats <QuantumFloat>` as inputs, 
+        and returns a :ref:`QuantumFloat` containing the values of the integrand.
     distribution : function
         A Python function which takes :ref:`QuantumFloats <QuantumFloat>` as inputs and applies the distribution over which to integrate.
         By default, the uniform distribution is applied.
@@ -90,24 +91,23 @@ def QMCI(qargs, function, distribution=None):
     V0=1
     for arg in qargs:
         V0 *= 2**(arg.size+arg.exponent)
+
     qargs.append(QuantumBool())
 
     @auto_uncompute
     def state_function(*args):
-        qf_x = args[0]
-        qf_y = args[1]
-        tar = args[2]
+        qf_x = args[:-2]
+        qf_y = args[-2]
+        tar = args[-1]
 
-        distribution(qf_x)
+        distribution(*qf_x)
         h(qf_y)
-        qbl = (qf_y < function(qf_x))
+
+        qbl = (qf_y < function(*qf_x))
         cx(qbl,tar)
 
-    def oracle_function(*args):  
-        tar = args[2]
-        z(tar)
-
-    a = IQAE(qargs, state_function, oracle_function, eps=0.01, alpha=0.01)   
+    a = IQAE(qargs, state_function, eps=0.01, alpha=0.01)   
 
     V = V0*a
     return V
+

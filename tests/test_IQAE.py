@@ -29,9 +29,6 @@ def test_IQAE_integration():
         for k in range(inp.size):
             with control(inp[k]):
                 ry(2**(k+1)/N,tar)
-    
-    def oracle_function(inp, tar):
-        z(tar)
 
     n = 6 # 2^n sampling points for integration
     inp = QuantumFloat(n,-n)
@@ -41,7 +38,7 @@ def test_IQAE_integration():
     eps = 0.01
     alpha = 0.01
 
-    a = IQAE(input_list, state_function, oracle_function, eps=eps, alpha=alpha)
+    a = IQAE(input_list, state_function, eps=eps, alpha=alpha)
     assert np.abs(a-0.26716231971793425)<0.01
 
 

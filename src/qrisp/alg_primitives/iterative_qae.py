@@ -16,40 +16,35 @@
 ********************************************************************************/
 """
 
+from qrisp import z
 from qrisp.alg_primitives.qae import amplitude_amplification 
 import numpy as np
 
 
-def IQAE(qargs, state_function, oracle_function, eps, alpha, kwargs_oracle = {}):
+def IQAE(qargs, state_function, eps, alpha, kwargs_oracle = {}):
     r"""
     Accelerated Quantum Amplitude Estimation (IQAE). This function performs :ref:`QAE <QAE>` with a fraction of the quantum resources of the well-known `QAE algorithm <https://arxiv.org/abs/quant-ph/0005055>`_.
     See `Accelerated Quantum Amplitude Estimation without QFT <https://arxiv.org/abs/2407.16795>`_.
 
-    The problem of quantum amplitude estimation is described as follows:
+    The problem of iterative quantum amplitude estimation is described as follows:
 
-    * Given a unitary operator :math:`\mathcal{A}`, let :math:`\ket{\Psi}=\mathcal{A}\ket{0}`.
-    * Write :math:`\ket{\Psi}=\ket{\Psi_1}+\ket{\Psi_0}` as a superposition of the orthogonal good and bad components of :math:`\ket{\Psi}`.
-    * Find an estimate for :math:`a=\langle\Psi_1|\Psi_1\rangle`, the probability that a measurement of $\ket{\Psi}$ yields a good state.
+    * Given a unitary operator :math:`\mathcal{A}`, let :math:`\ket{\Psi}=\mathcal{A}\ket{0}\ket{\text{False}}`.
+    * Write :math:`\ket{\Psi}=\sqrt{a}\ket{\Psi_1}\ket{\text{True}}+\sqrt{1-a}\ket{\Psi_0}\ket{\text{False}}` as a superposition of the orthogonal good and bad components of :math:`\ket{\Psi}`.
+    * Find an estimate for $a$, the probability that a measurement of $\ket{\Psi}$ yields a good state.
 
     Parameters
     ----------
-    qargs : QuantumVariable or list[QuantumVariable]
-        The (list of) QuantumVariables which represent the state,
-        the quantum amplitude estimation is performed on.
+    qargs : list[QuantumVariable]
+        The list of QuantumVariables which represent the state,
+        the quantum amplitude estimation is performed on. The last variable in the list must be of type :ref:`QuantumBool`.
     state_function : function
         A Python function preparing the state :math:`\ket{\Psi}`.
-        This function will receive the variables in the list ``qargs`` as arguments in the
-        course of this algorithm.
-    oracle_function : function
-        A Python function tagging the good state :math:`\ket{\Psi_1}`.
         This function will receive the variables in the list ``qargs`` as arguments in the
         course of this algorithm.
     eps : float
         Accuracy $\epsilon>0$ of the algorithm.
     alpha : float
         Confidence level $\alpha\in (0,1)$ of the algorithm.
-    kwargs_oracle : dict, optional
-        A dictionary containing keyword arguments for the oracle. The default is {}.
 
     Returns
     -------
@@ -95,26 +90,21 @@ def IQAE(qargs, state_function, oracle_function, eps, alpha, kwargs_oracle = {})
                 with control(inp[k]):
                     ry(2**(k+1)/N,tar)
 
-    We define the ``oracle_function``:
-
-    ::
-
-        def oracle_function(inp, tar):
-            z(tar)
-
     Finally, we apply IQAE and obtain an estimate $a$ for the value of the integral $A=0.27268$.
 
     ::
 
-        eps = 0.01
-        alpha = 0.01
-
-        a = IQAE(input_list, state_function, oracle_function, eps=eps, alpha=alpha)
+        a = IQAE(input_list, state_function, eps=0.01, alpha=0.01)
 
     >>> a 
     0.26782038552705856
 
     """
+
+    # The oracle tagging the good states
+    def oracle_function(*args):  
+        tar = args[-1]
+        z(tar)
 
     E = 1/2 * pow(np.sin(np.pi * 3/14), 2) -  1/2 * pow(np.sin(np.pi * 1/6), 2) 
     F = 1/2 * np.arcsin(np.sqrt(2 * E))
