@@ -323,11 +323,8 @@ class Jaspr(Jaxpr):
                 pjit_to_gate(eqn, context_dic)
             else:
                 return True
-        try:
-            res = eval_jaxpr(jaspr, eqn_evaluator = eqn_evaluator)(*([QuantumCircuit()] + list(args)))
-        except:
-            import pdb
-            pdb.set_trace()
+            
+        res = eval_jaxpr(jaspr, eqn_evaluator = eqn_evaluator)(*([QuantumCircuit()] + list(args)))
         
         return res
     

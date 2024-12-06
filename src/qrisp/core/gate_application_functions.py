@@ -16,9 +16,10 @@
 ********************************************************************************/
 """
 
-
+import sympy
 
 import qrisp.circuit.standard_operations as std_ops
+from qrisp.jasp import check_for_tracing_mode
 
 def append_operation(operation, qubits=[], clbits=[]):
     from qrisp import find_qs
@@ -770,8 +771,14 @@ def cp(phi, qubits_0, qubits_1):
         The second Qubit.
 
     """
-
-    append_operation(std_ops.CPGate(phi), [qubits_0, qubits_1])
+    
+    if check_for_tracing_mode():
+        cp_gate = std_ops.CPGate(sympy.Symbol("alpha"))
+        cp_gate.params[0] = phi
+    else:
+        cp_gate = std_ops.CPGate(phi)
+    
+    append_operation(cp_gate, [qubits_0, qubits_1])
 
     # std_ops.CPGate(phi).append([qubits_0, qubits_1])
 
