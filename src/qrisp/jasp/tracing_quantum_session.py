@@ -55,7 +55,7 @@ class TracingQuantumSession:
         return temp
         
         
-    def append(self, operation, qubits = [], clbits = []):
+    def append(self, operation, qubits = [], clbits = [], param_tracers = []):
     
         if len(clbits):
             raise Exception("Tried to append Operation with non-zero classical bits in JAX mode.")
@@ -68,7 +68,7 @@ class TracingQuantumSession:
         
         op_primitive = OperationPrimitive(temp_op)
         
-        self.abs_qc = op_primitive.bind(self.abs_qc, *(operation.params + [b for b in qubits]))
+        self.abs_qc = op_primitive.bind(self.abs_qc, *(param_tracers + [b for b in qubits]))
         
     def register_qv(self, qv, size):
         if qv.name in [temp_qv.name for temp_qv in self.qv_list + self.deleted_qv_list]:

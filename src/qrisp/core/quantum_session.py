@@ -434,7 +434,7 @@ class QuantumSession(QuantumCircuit):
     def __eq__(self, other):
         return id(self.data) == id(other.data)
     
-    def append(self, operation_or_instruction, qubits=[], clbits=[]):
+    def append(self, operation_or_instruction, qubits=[], clbits=[], param_tracers = []):
         # Check the type of the instruction/operation
         
         

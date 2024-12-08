@@ -21,12 +21,12 @@ import sympy
 import qrisp.circuit.standard_operations as std_ops
 from qrisp.jasp import check_for_tracing_mode
 
-def append_operation(operation, qubits=[], clbits=[]):
+def append_operation(operation, qubits=[], clbits=[], param_tracers = []):
     from qrisp import find_qs
     
     qs = find_qs(qubits)
     
-    qs.append(operation, qubits, clbits)
+    qs.append(operation, qubits, clbits, param_tracers = param_tracers)
 
 
 def cx(control, target):
@@ -714,10 +714,14 @@ def mcp(phi, qubits, method="auto", ctrl_state=-1):
     if method == "gray" or method == "gray_pt":
         if ctrl_state[-1] == "0":
             x(qubits[-1])
+            
+        if check_for_tracing_mode():
+            mcp_gate = std_ops.PGate(sympy.Symbol("alpha")).control(n - 1, ctrl_state=ctrl_state[:-1], method = method)
+            append_operation(mcp_gate, qubits, param_tracers = [phi])
+        else:
+            mcp_gate = std_ops.PGate(phi).control(n - 1, ctrl_state=ctrl_state[:-1], method = method)
+            append_operation(mcp_gate, qubits)
 
-        append_operation(
-            std_ops.PGate(phi).control(n - 1, ctrl_state=ctrl_state[:-1], method = method), qubits
-        )
 
         if ctrl_state[-1] == "0":
             x(qubits[-1])
@@ -749,8 +753,11 @@ def p(phi, qubits):
         The Qubit on which to apply the phase gate.
 
     """
-
-    append_operation(std_ops.PGate(phi), [qubits])
+    
+    if check_for_tracing_mode():
+        append_operation(std_ops.PGate(sympy.Symbol("alpha")), [qubits], param_tracers = [phi])
+    else:
+        append_operation(std_ops.PGate(phi), [qubits])
 
     # std_ops.PGate(phi).append([qubits])
 
@@ -774,14 +781,11 @@ def cp(phi, qubits_0, qubits_1):
     
     if check_for_tracing_mode():
         cp_gate = std_ops.CPGate(sympy.Symbol("alpha"))
-        cp_gate.params[0] = phi
+        append_operation(cp_gate, [qubits_0, qubits_1], param_tracers = [phi])    
     else:
         cp_gate = std_ops.CPGate(phi)
+        append_operation(cp_gate, [qubits_0, qubits_1])    
     
-    append_operation(cp_gate, [qubits_0, qubits_1])
-
-    # std_ops.CPGate(phi).append([qubits_0, qubits_1])
-
     return qubits_0, qubits_1
 
 
@@ -798,7 +802,10 @@ def rx(phi, qubits):
 
     """
 
-    append_operation(std_ops.RXGate(phi), [qubits])
+    if check_for_tracing_mode():
+        append_operation(std_ops.RXGate(sympy.Symbol("alpha")), [qubits], param_tracers = [phi])
+    else:
+        append_operation(std_ops.RXGate(phi), [qubits])
 
     return qubits
 
@@ -816,7 +823,10 @@ def ry(phi, qubits):
 
     """
 
-    append_operation(std_ops.RYGate(phi), [qubits])
+    if check_for_tracing_mode():
+        append_operation(std_ops.RYGate(sympy.Symbol("alpha")), [qubits], param_tracers = [phi])
+    else:
+        append_operation(std_ops.RYGate(phi), [qubits])
 
     return qubits
 
@@ -834,7 +844,10 @@ def rz(phi, qubits):
 
     """
 
-    append_operation(std_ops.RZGate(phi), [qubits])
+    if check_for_tracing_mode():
+        append_operation(std_ops.RZGate(sympy.Symbol("alpha")), [qubits], param_tracers = [phi])
+    else:
+        append_operation(std_ops.RZGate(phi), [qubits])
 
     return qubits
 
@@ -854,7 +867,13 @@ def crz(phi, qubits_0, qubits_1):
 
     """
 
-    append_operation(std_ops.RZGate(phi).control(1), [qubits_0, qubits_1])
+    if check_for_tracing_mode():
+        crz_gate = std_ops.RZGate(sympy.Symbol("alpha")).control(1)
+        append_operation(crz_gate, [qubits_0, qubits_1], param_tracers = [phi])
+    else:
+        crz_gate = std_ops.RZGate(phi).control(1)
+        append_operation(crz_gate, [qubits_0, qubits_1])
+        
     return qubits_0, qubits_1
 
 
@@ -952,7 +971,10 @@ def gphase(phi, qubits):
         The Qubit to perform the global phase gate on.
     """
 
-    append_operation(std_ops.GPhaseGate(phi), qubits)
+    if check_for_tracing_mode():
+        append_operation(std_ops.GPhaseGate(sympy.Symbol("alpha")), [qubits], param_tracers = [phi])
+    else:
+        append_operation(std_ops.GPhaseGate(phi), [qubits])
     return qubits
 
 
@@ -973,7 +995,14 @@ def xxyy(phi, beta, qubits_0, qubits_1):
         The second Qubit to perform the XXYY gate on.
     """
 
-    append_operation(std_ops.XXYYGate(phi, beta), [qubits_0, qubits_1])
+    if check_for_tracing_mode():
+        xxyy_gate = std_ops.XXYYGate(sympy.Symbol("alpha"), sympy.Symbol("beta"))
+        append_operation(xxyy_gate, [qubits_0, qubits_1], param_tracers = [phi, beta])
+        
+    else:
+        xxyy_gate = std_ops.XXYYGate(phi, beta)
+        append_operation(xxyy_gate, [qubits_0, qubits_1])
+    
     return qubits_0, qubits_1
 
 
@@ -993,7 +1022,12 @@ def rzz(phi, qubits_0, qubits_1):
         The second argument to perform the RZZ gate one.
     """
 
-    append_operation(std_ops.RZZGate(phi), [qubits_0, qubits_1])
+    if check_for_tracing_mode():
+        rzz_gate = std_ops.RZZGate(sympy.Symbol("alpha"))
+        append_operation(rzz_gate, [qubits_0, qubits_1], param_tracers = [phi])
+    else:
+        rzz_gate = std_ops.RZZGate(phi)
+        append_operation(rzz_gate, [qubits_0, qubits_1])
     return qubits_0, qubits_1
 
 def rxx(phi, qubits_0, qubits_1):
@@ -1012,7 +1046,14 @@ def rxx(phi, qubits_0, qubits_1):
         The second argument to perform the RXX gate one.
     """
 
-    append_operation(std_ops.RXXGate(phi), [qubits_0, qubits_1])
+    if check_for_tracing_mode():
+        rxx_gate = std_ops.RXXGate(sympy.Symbol("alpha"))
+        append_operation(rxx_gate, [qubits_0, qubits_1], param_tracers = [phi])
+    else:
+        rxx_gate = std_ops.RZZGate(phi)
+        append_operation(rxx_gate, [qubits_0, qubits_1])
+        
+    append_operation(rxx_gate, [qubits_0, qubits_1])
     return qubits_0, qubits_1
 
 def u3(theta, phi, lam, qubits):
@@ -1031,7 +1072,10 @@ def u3(theta, phi, lam, qubits):
         The Qubit to perform the U3 gate on.
     """
 
-    append_operation(std_ops.RZGate(phi), [qubits])
+    if check_for_tracing_mode():
+        append_operation(std_ops.U3Gate(sympy.Symbol("alpha"), sympy.Symbol("beta"), sympy.symbol("gamma")), [qubits], param_tracers = [phi, theta, lam])
+    else:
+        append_operation(std_ops.U3Gate(theta, phi, lam), [qubits])
 
     return qubits
 
@@ -1132,18 +1176,3 @@ def swap(qubits_0, qubits_1):
     append_operation(std_ops.SwapGate(), [qubits_0, qubits_1])
 
     return qubits_0, qubits_1
-
-
-def id(qubits):
-    """
-    Applies an ID gate.
-
-    Parameters
-    ----------
-    qubits : Qubit or list[Qubit] or QuantumVariable
-        The qubits to perform the ID gate on.
-
-    """
-    append_operation(std_ops.IDGate(), [qubits])
-
-    return qubits

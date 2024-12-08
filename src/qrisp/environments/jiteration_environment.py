@@ -240,6 +240,7 @@ def verify_semantic_equivalence(jaxpr_0, jaxpr_1):
     
     while eqn_list_0:
         
+        
         eqn_0 = eqn_list_0.pop(0)
         eqn_1 = eqn_list_1.pop(0)
         
@@ -265,6 +266,7 @@ def verify_semantic_equivalence(jaxpr_0, jaxpr_1):
                     raise Exception("Jax semantics changed during jrange iteration")
             elif var_0 in translation_dic:
                 if translation_dic[var_0] != var_1:
+
                     raise Exception("Jax semantics changed during jrange iteration")
             else:
                 translation_dic[var_0] = var_1
