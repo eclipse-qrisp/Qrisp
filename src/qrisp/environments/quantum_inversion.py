@@ -354,7 +354,7 @@ class InversionEnvironment(QuantumEnvironment):
         args = extract_invalues(eqn, context_dic)
         body_jaspr = eqn.params["jaspr"]
         
-        inverted_jaspr = body_jaspr.inverse()
+        inverted_jaspr = body_jaspr.flatten_environments().inverse()
         
         res = inverted_jaspr.eval(*args)
         insert_outvalues(eqn, context_dic, res)

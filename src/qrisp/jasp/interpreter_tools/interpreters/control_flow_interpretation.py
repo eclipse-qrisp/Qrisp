@@ -16,8 +16,6 @@
 ********************************************************************************/
 """
 
-from jax.core import JaxprEqn, Literal, ClosedJaxpr
-from jax import jit, make_jaxpr
 from qrisp.jasp.interpreter_tools import eval_jaxpr, extract_invalues, insert_outvalues, exec_eqn
 
 def evaluate_cond_eqn(cond_eqn, context_dic, eqn_evaluator = exec_eqn):
@@ -50,6 +48,7 @@ def evaluate_while_loop(while_loop_eqn, context_dic, eqn_evaluator = exec_eqn):
     outvalues = invalues[num_const_body_args:]
     
     while break_condition(invalues):
+        
         outvalues = eval_jaxpr(while_loop_eqn.params["body_jaxpr"], eqn_evaluator = eqn_evaluator)(*invalues)
         
         # Update the non-const invalues

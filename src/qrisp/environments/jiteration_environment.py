@@ -219,7 +219,7 @@ def iteration_env_evaluator(eqn, context_dic):
     # The condition function should compare whether the loop index (second last position)
     # is smaller than the loop cancelation threshold (last position)
     def cond_fun(val):
-        return val[-2] < val[-1]
+        return val[-2] <= val[-1]
     
     # We now prepare the "init_val" keyword of the loop.
     

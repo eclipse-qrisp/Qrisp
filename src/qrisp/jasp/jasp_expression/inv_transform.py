@@ -16,7 +16,9 @@
 ********************************************************************************/
 """
 
+from jax import make_jaxpr
 from jax.core import JaxprEqn, ClosedJaxpr
+from jax.lax import add_p, sub_p, while_loop
 
 from qrisp.jasp.primitives import AbstractQuantumCircuit, OperationPrimitive
 
@@ -42,6 +44,8 @@ def invert_eqn(eqn):
         params["jaxpr"] = ClosedJaxpr(invert_jaspr(eqn.params["jaxpr"].jaxpr),
                                       eqn.params["jaxpr"].consts)
         primitive = eqn.primitive
+    elif eqn.primitive.name == "while":
+        return invert_loop_eqn(eqn)
     else:
         params = dict(eqn.params)
         primitive = eqn.primitive.inverse()
@@ -85,7 +89,7 @@ def invert_jaspr(jaspr):
     # and the Operation equations to the back.
     
     for eqn in jaspr.eqns:
-        if isinstance(eqn.primitive, OperationPrimitive) or (eqn.primitive.name == "pjit" and isinstance(eqn.outvars[0].aval, AbstractQuantumCircuit)):
+        if isinstance(eqn.primitive, OperationPrimitive) or ((eqn.primitive.name == "pjit" or eqn.primitive.name == "while") and isinstance(eqn.outvars[0].aval, AbstractQuantumCircuit)):
             # Insert the inverted equation at the front
             op_eqs.insert(0, invert_eqn(eqn))
         elif eqn.primitive.name == "jasp.measure":
@@ -112,3 +116,64 @@ def invert_jaspr(jaspr):
                  outvars = op_eqs[-1].outvars[:1] + jaspr.outvars[1:], 
                  eqns = non_op_eqs + op_eqs + deletions)
         
+
+
+def invert_loop_body(jaspr):
+    from qrisp.jasp import Jaspr
+    
+    new_eqn_list = list(jaspr.eqns)
+    
+    increment_eqn = new_eqn_list[-1]
+    
+    if increment_eqn.primitive is add_p:
+        new_primitive = sub_p
+    else:
+        new_primitive = add_p
+    
+    if increment_eqn.invars[1].val != 1:
+        raise Exception
+    
+    decrement_eqn = JaxprEqn(primitive = new_primitive,
+                            invars = list(increment_eqn.invars),
+                            outvars = list(increment_eqn.outvars),
+                            params = increment_eqn.params,
+                            source_info = increment_eqn.source_info,
+                            effects = increment_eqn.effects,)
+    
+    new_eqn_list[-1] = decrement_eqn
+    
+    return Jaspr(jaspr.jaxpr).update_eqns(new_eqn_list).inverse()
+
+
+def invert_loop_eqn(eqn):
+    
+    body_jaxpr = eqn.params["body_jaxpr"]
+    inv_loop_body = invert_loop_body(body_jaxpr)
+    
+    def body_fun(val):
+        return inv_loop_body.eval(*val)
+    
+    # The condition function should compare whether the loop index (second last position)
+    # is smaller than the loop cancelation threshold (last position)
+    def cond_fun(val):
+        return val[-2] >= val[-1]
+
+    def tracing_function(*args):
+        return while_loop(cond_fun, body_fun, tuple(args))
+
+    jaxpr = make_jaxpr(tracing_function)(*[var.aval for var in eqn.invars])
+    
+    new_eqn = jaxpr.eqns[0]
+    
+    invars = eqn.invars
+    new_invars = list(invars)
+    new_invars[-1], new_invars[-2] = new_invars[-2], new_invars[-1]
+    
+    res = JaxprEqn(primitive = new_eqn.primitive,
+                   invars = new_invars,
+                   outvars = eqn.outvars,
+                   params = new_eqn.params,
+                   source_info = eqn.source_info,
+                   effects = eqn.effects)
+    
+    return res
