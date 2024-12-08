@@ -52,37 +52,44 @@ from qrisp.environments import QuantumEnvironment
 # It gives us 
 
 # { lambda ; a:QuantumCircuit b:i32[]. let
-#     c:QuantumCircuit d:QubitArray = create_qubits a b
-#     e:Qubit = get_qubit d 0
-#     f:QuantumCircuit = h c e
-#     g:i32[] = get_size d
+#     c:QuantumCircuit d:QubitArray = jasp.create_qubits a b
+#     e:Qubit = jasp.get_qubit d 0
+#     f:QuantumCircuit = jasp.h c e
+#     g:i32[] = jasp.get_size d
 #     h:i32[] = sub g 1
-#     i:QuantumCircuit j:i32[] = q_env[
-#       jaspr={ lambda ; k:QuantumCircuit e:Qubit h:i32[] d:QubitArray. let
-#           l:i32[] = add h 1
-#           m:Qubit = get_qubit d l
-#           n:QuantumCircuit = cx k e m
-#           j:i32[] = add h 1
-#         in (n, j) }
+#     i:i32[] = sub h h
+#     j:QuantumCircuit k:i32[] = jasp.q_env[
+#       jaspr={ lambda ; l:QuantumCircuit h:i32[] i:i32[] d:QubitArray e:Qubit. let
+#           _:i32[] = add h 0
+#           m:i32[] = add i 1
+#           n:Qubit = jasp.get_qubit d m
+#           o:QuantumCircuit = jasp.cx l e n
+#           k:i32[] = add i 1
+#         in (o, k) }
 #       type=JIterationEnvironment
-#     ] f e h d
-#     o:QuantumCircuit = q_env[
-#       jaspr={ lambda ; p:QuantumCircuit e:Qubit j:i32[] d:QubitArray. let
-#           q:i32[] = add j 1
-#           r:Qubit = get_qubit d q
-#           s:QuantumCircuit = cx p e r
-#           _:i32[] = add j 1
-#         in (s,) }
+#     ] f h i d e
+#     p:QuantumCircuit = jasp.q_env[
+#       jaspr={ lambda ; q:QuantumCircuit h:i32[] k:i32[] d:QubitArray e:Qubit. let
+#           _:i32[] = add h 0
+#           r:i32[] = add k 1
+#           s:Qubit = jasp.get_qubit d r
+#           t:QuantumCircuit = jasp.cx q e s
+#           _:i32[] = add k 1
+#         in (t,) }
 #       type=JIterationEnvironment
-#     ] i e j d
-#     t:QuantumCircuit u:i32[] = measure o d
-#   in (t, u) }
+#     ] j h k d e
+#     u:QuantumCircuit v:i32[] = jasp.measure p d
+#     w:f32[] = integer_pow[y=0] 2.0
+#     x:f32[] = convert_element_type[new_dtype=float32 weak_type=False] v
+#     y:f32[] = mul x w
+#     z:i32[] = convert_element_type[new_dtype=int32 weak_type=False] y
+#   in (u, z) }
 
-# For both iterations we see that the q_env primitive receives four inputs
+# For both iterations we see that the q_env primitive receives five inputs
 # However for the second iteration, input 0 and input 2 are updated.
 
-# These inputs represent the loop index and the QuantumCircuit. The other
-# two inputs (QubitArray and the base_qb) stay constant.
+# These inputs represent the QuantumCircuit and the loop index. The other
+# inputs (QubitArray, loop threshold and the base_qb) stay constant.
 
 # From this information we now need to construct the information to build the
 # while primitive.
@@ -114,25 +121,42 @@ def iteration_env_evaluator(eqn, context_dic):
     # of the incrementation equation.
     increment_eq = iter_1_jaspr.eqns[-1]
     arg_pos = iter_1_jaspr.invars.index(increment_eq.invars[0])
-    
-    # Move the index to the last position in both the jaspr and the equation
+    # Move the loop index to the last position in both the jaspr and the equation
     iter_1_jaspr.invars.append(iter_1_jaspr.invars.pop(arg_pos))
     iteration_1_eqn.invars.append(iteration_1_eqn.invars.pop(arg_pos))
 
-    # In the second iteration there is a +=0 term as the first equation
-    # (see jrange.py for more details)
-    increment_eq = iter_2_jaspr.eqns[0]
+    # The same for the jaspr of the second iteration
+    increment_eq = iter_2_jaspr.eqns[-1]
     arg_pos = iter_2_jaspr.invars.index(increment_eq.invars[0])
-    
-    # Move the index to the last position in both the jaspr and the equation
+    # Move the loop index to the last position in both the jaspr and the equation
     iter_2_jaspr.invars.append(iter_2_jaspr.invars.pop(arg_pos))
     iteration_2_eqn.invars.append(iteration_2_eqn.invars.pop(arg_pos))
+    
+    # Move the loop threshold variable to the last position
+    # The loop threshold is demarked as the variable that gets incremented
+    # by 0 in the first equation
+    
+    demark_eq = iter_1_jaspr.eqns[0]
+    arg_pos = iter_1_jaspr.invars.index(demark_eq.invars[0])
+    iter_1_jaspr.invars.append(iter_1_jaspr.invars.pop(arg_pos))
+    iteration_1_eqn.invars.append(iteration_1_eqn.invars.pop(arg_pos))
+
+    # Same for second iteration
+    demark_eq = iter_2_jaspr.eqns[0]
+    arg_pos = iter_2_jaspr.invars.index(demark_eq.invars[0])
+    iter_2_jaspr.invars.append(iter_2_jaspr.invars.pop(arg_pos))
+    iteration_2_eqn.invars.append(iteration_2_eqn.invars.pop(arg_pos))
+    
+    # For the jaspr of both iterations we now have the situation that 
+    # the loop threshold is the argument at the last position and the loop
+    # index the argument at the second last position.
+
+
     
     # The way the environment jaspr is collected allows for permuted arguments,
     # ie. the first argument of the first iteration could be the the last argument
     # of the second iteration. We outsource this task to this function.
     verify_semantic_equivalence(iter_1_jaspr, iter_2_jaspr)
-    
     
     # Now, we figure out which of the return values need to be updated after 
     # each iteration. The update needs to happen if the input values of 
@@ -171,8 +195,8 @@ def iteration_env_evaluator(eqn, context_dic):
     
     def body_fun(val):
         
-        # We evaluate the body (without the loop cancelation treshold).
-        res = iter_1_jaspr.eval(*val[:-1])
+        # We evaluate the body
+        res = iter_1_jaspr.eval(*val)
         
         # Convert the result into a tuple if it isn't one already
         if not isinstance(res, tuple):
@@ -190,7 +214,7 @@ def iteration_env_evaluator(eqn, context_dic):
                 return_values.append(res[update_rules[i]])
         
         # Return the appropriate values (with the cancelation threshold).
-        return tuple(return_values + [val[-1]])
+        return tuple(return_values)
     
     # The condition function should compare whether the loop index (second last position)
     # is smaller than the loop cancelation threshold (last position)
@@ -202,9 +226,6 @@ def iteration_env_evaluator(eqn, context_dic):
     # For that we extract the invalues for the first iteration
     # Note that the treshold is given as the last argument
     init_val = [context_dic[x] for x in iteration_1_eqn.invars]
-    
-    # We insert the looping index (starts at 0)
-    init_val.insert(-1, jnp.asarray(0, dtype = "int32"))
     
     # And evaluate the loop primitive.
     res = while_loop(cond_fun, body_fun, init_val = tuple(init_val))
@@ -236,7 +257,8 @@ def verify_semantic_equivalence(jaxpr_0, jaxpr_1):
     
     # Filter out the += 0 in the second iteration (see jrange.py for more details
     # about this)
-    eqn_list_1 = list(jaxpr_1.eqns)[1:]
+    eqn_list_1 = list(jaxpr_1.eqns)#[1:]
+    # translation_dic[jaxpr_0.invars[-1]] = jaxpr_1.eqns[0].outvars[0]
     
     while eqn_list_0:
         

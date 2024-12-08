@@ -30,30 +30,24 @@ class JRangeIterator:
             self.stop = jnp.asarray(args[0], dtype = "int32")
             self.step = jnp.asarray(1, dtype = "int32")
         elif len(args) == 2:
-            
-            # In the case of two arguments, the first one is the start value
-            # and the second one is the stop value.
-            
-            # To keep the environment flattening simple, we apply a trick such that we
-            # only have to keep the flatten the case where the start value is 0
-            
-            # For that, we set the stop value to stop minus start.
-            # This way we can start the counter always at 0.
-            
-            # We make up for this by increment the iterator results by start
-            # to keep the semantics
             self.start = jnp.asarray(args[0], dtype = "int32")
-            self.stop = jnp.asarray(args[1] - args[0], dtype = "int32")
+            self.stop = jnp.asarray(args[1], dtype = "int32")
             self.step = jnp.asarray(1, dtype = "int32")
         elif len(args) == 3:
             # Three arguments denote the case of a non-trivial step
             self.start = jnp.asarray(args[0], dtype = "int32")
-            self.stop = jnp.asarray(args[1] - args[0], dtype = "int32")
+            self.stop = jnp.asarray(args[1], dtype = "int32")
             self.step = jnp.asarray(args[2], dtype = "int32")
             
         
     def __iter__(self):
         self.iteration = 0
+        
+        # We create the loop iteration index tracer
+        if self.start is None:
+            self.loop_index = self.stop - self.stop
+        else:
+            self.loop_index = self.start + 0
         return self
     
     def __next__(self):
@@ -70,39 +64,27 @@ class JRangeIterator:
             # Enter the environment
             self.iter_env.__enter__()
             
-            # To avoid creating a new tracer, we use the stop value tracer as
-            # a loop index. Note that this is just to capture the loop iteration
-            # instructions. The actual compilation to a while primitive happens
-            # in JIterationEnvironment.jcompile.
-            if self.start is None:
-                return self.stop
-            else:
-                # If we have a non-trivial start value, we increment the counter
-                # because in the jcompile method we assume that the counter starts
-                # at 0.
-                return self.stop + self.start
+            # We perform a trivial addition on the loop cancelation index.
+            # This way the loop cancelation index will appear in the collected
+            # quantum environment jaxpr and can therefore be identified as such.
+            self.stop + 0
+            
+            return self.loop_index
             
         elif self.iteration == 2:
             # Perform the incrementation
-            self.stop += self.step
+            self.loop_index += self.step
             
             # Exit the old environment and enter the new one.
             self.iter_env.__exit__(None, None, None)
             self.iter_env.__enter__()
+            # Similar to the incrementation above
+            self.stop + 0
             
-            # We add the += 0 here such that a new tracer is produced and
-            # send through the code of the second iteration.
-            # This is important to catch the error that should arise when
-            # the user wants to use the loop index as a carry value.
-            self.stop += 0
-            
-            if self.start is None:
-                return self.stop
-            else:
-                return self.stop + self.start
+            return self.loop_index
             
         elif self.iteration == 3:
-            self.stop += self.step
+            self.loop_index += self.step
             self.iter_env.__exit__(None, None, None)
             raise StopIteration
 
