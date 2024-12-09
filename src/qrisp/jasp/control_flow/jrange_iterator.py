@@ -39,6 +39,8 @@ class JRangeIterator:
             self.stop = jnp.asarray(args[1], dtype = "int32")
             self.step = jnp.asarray(args[2], dtype = "int32")
             
+        # The loop index should be inclusive because this makes loop inversion
+        # much easier. For more details check inv_transform.py.
         self.stop -= 1
         
     def __iter__(self):

@@ -205,7 +205,7 @@ def invert_loop_eqn(eqn):
     # Create the Equation    
     res = JaxprEqn(primitive = new_eqn.primitive,
                    invars = new_invars,
-                   outvars = eqn.outvars,
+                   outvars = list(eqn.outvars),
                    params = new_eqn.params,
                    source_info = eqn.source_info,
                    effects = eqn.effects)

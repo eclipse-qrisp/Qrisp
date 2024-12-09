@@ -16,7 +16,7 @@
 ********************************************************************************/
 """
 
-from jax.core import Literal, ClosedJaxpr, Literal
+from jax.core import ClosedJaxpr, Literal
 from jax import make_jaxpr
 from qrisp.jasp import check_for_tracing_mode
 
@@ -117,6 +117,7 @@ def eval_jaxpr_with_context_dic(jaxpr, context_dic, eqn_evaluator = exec_eqn):
                 continue
             
             exec_eqn(eqn, context_dic)
+            
         
 def extract_invalues(eqn, context_dic):
     invalues = []
