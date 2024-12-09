@@ -19,7 +19,7 @@
 import jax
 from qrisp.jasp import TracingQuantumSession, check_for_tracing_mode
 
-def qache(func):
+def qache(*func, **kwargs):
     """
     This decorator allows you to mark a function as "reusable". Reusable here means
     that the jasp expression of this function will be cached and reused in the next
@@ -127,6 +127,14 @@ def qache(func):
 
     """
     
+    if len(kwargs):
+        return lambda x : qache_helper(x, kwargs)
+    else:
+        return qache_helper(func[0], {})
+    
+    
+    
+def qache_helper(func, jax_kwargs):
     # 
     # To achieve the desired behavior we leverage the Jax inbuild caching mechanism.
     # This feature can be used by calling a jitted function in a tracing context.
@@ -142,7 +150,7 @@ def qache(func):
     
     # This function performs the input function but also has the AbstractQuantumCircuit
     # in the signature.
-    def ammended_function(abs_qc, *args):
+    def ammended_function(abs_qc, *args, **kwargs):
         
         # Set the given AbstractQuantumCircuit as the 
         # one carried by the tracing QuantumSession
@@ -150,7 +158,7 @@ def qache(func):
         qs.abs_qc = abs_qc
         
         # Execute the function
-        res = func(*args)
+        res = func(*args, **kwargs)
         
         # Return the result and the result AbstractQuantumCircuit.
         return qs.abs_qc, res
@@ -158,7 +166,7 @@ def qache(func):
     # Modify the name of the ammended function to reflect the input
     ammended_function.__name__ = func.__name__
     # Wrap in jax.jit
-    ammended_function = jax.jit(ammended_function)
+    ammended_function = jax.jit(ammended_function, **jax_kwargs)
     
     from qrisp.core.quantum_variable import QuantumVariable, flatten_qv, unflatten_qv
     
