@@ -123,7 +123,12 @@ def invert_loop_body(jaspr):
     
     new_eqn_list = list(jaspr.eqns)
     
-    increment_eqn = new_eqn_list[-1]
+    loop_index = jaspr.jaxpr.outvars[-2]
+    for i in range(len(new_eqn_list))[::-1]:
+        if loop_index == new_eqn_list[i].outvars[0]:
+            break
+    
+    increment_eqn = new_eqn_list[i]
     
     if increment_eqn.primitive is add_p:
         new_primitive = sub_p
@@ -148,6 +153,7 @@ def invert_loop_body(jaspr):
 def invert_loop_eqn(eqn):
     
     body_jaxpr = eqn.params["body_jaxpr"]
+    cond_jaxpr = eqn.params["cond_jaxpr"]
     inv_loop_body = invert_loop_body(body_jaxpr)
     
     def body_fun(val):
@@ -156,7 +162,10 @@ def invert_loop_eqn(eqn):
     # The condition function should compare whether the loop index (second last position)
     # is smaller than the loop cancelation threshold (last position)
     def cond_fun(val):
-        return val[-2] >= val[-1]
+        if cond_jaxpr.eqns[0].primitive.name == "ge":
+            return val[-2] <= val[-1]
+        else:
+            return val[-2] >= val[-1]
 
     def tracing_function(*args):
         return while_loop(cond_fun, body_fun, tuple(args))

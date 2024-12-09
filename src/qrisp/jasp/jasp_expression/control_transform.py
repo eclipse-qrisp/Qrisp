@@ -142,8 +142,9 @@ def control_eqn(eqn, ctrl_qubit_var):
         
         return temp
     else:
+        num_qubits = eqn.primitive.op.num_qubits
         return JaxprEqn(primitive = eqn.primitive.control(),
-                        invars = [eqn.invars[0], ctrl_qubit_var] + eqn.invars[1:],
+                        invars = eqn.invars[:-num_qubits] + [ctrl_qubit_var] + eqn.invars[-num_qubits:],
                         outvars = eqn.outvars,
                         params = eqn.params,
                         source_info = eqn.source_info,
