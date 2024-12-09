@@ -117,67 +117,91 @@ def invert_jaspr(jaspr):
                  eqns = non_op_eqs + op_eqs + deletions)
         
 
+# The following two functions manage the logic behind inverting a loop.
+# For this we have to consider two aspects.
 
-def invert_loop_body(jaspr):
-    from qrisp.jasp import Jaspr
+# 1. The loop body contains the loop index incrementation. This incrementation
+#    needs to be reversed to a decrementation. Furthermore the quantum part of
+#    the loop body needs to be inverted.
+
+# 2. The loop index initialization and the threshold need to be switched and
+#    the comparison to determine the break condition needs to be adjusted.
+
+def invert_loop_body(jaxpr):
+    # This function treats the loop body
     
-    new_eqn_list = list(jaspr.eqns)
+    # This list will contain the equations with the loop index decrementation
+    new_eqn_list = list(jaxpr.eqns)
     
-    loop_index = jaspr.jaxpr.outvars[-2]
+    # Find the incrementation equation. For this we identify the equation,
+    # which updates the loop index
+    
+    loop_index = jaxpr.jaxpr.outvars[-2]
     for i in range(len(new_eqn_list))[::-1]:
         if loop_index == new_eqn_list[i].outvars[0]:
             break
-    
     increment_eqn = new_eqn_list[i]
     
+    # Change the primitive
     if increment_eqn.primitive is add_p:
         new_primitive = sub_p
     else:
         new_primitive = add_p
     
     if increment_eqn.invars[1].val != 1:
-        raise Exception
+        raise Exception("Dynamic loop inversion is only supported for loops the have step size 1.")
     
+    # Create the decrement equation
     decrement_eqn = JaxprEqn(primitive = new_primitive,
                             invars = list(increment_eqn.invars),
                             outvars = list(increment_eqn.outvars),
                             params = increment_eqn.params,
                             source_info = increment_eqn.source_info,
                             effects = increment_eqn.effects,)
-    
     new_eqn_list[-1] = decrement_eqn
+
+    # Create the new Jaspr
+    from qrisp.jasp import Jaspr
+    new_jaspr = Jaspr(jaxpr.jaxpr).update_eqns(new_eqn_list)
     
-    return Jaspr(jaspr.jaxpr).update_eqns(new_eqn_list).inverse()
+    # Quantum inversion
+    res_jaspr = new_jaspr.inverse()
+    
+    return res_jaspr
 
-
+# This function performs the above mentioned step 2 to treat the loop primitive
 def invert_loop_eqn(eqn):
     
+    # Process the loop body
     body_jaxpr = eqn.params["body_jaxpr"]
-    cond_jaxpr = eqn.params["cond_jaxpr"]
     inv_loop_body = invert_loop_body(body_jaxpr)
     
     def body_fun(val):
         return inv_loop_body.eval(*val)
-    
-    # The condition function should compare whether the loop index (second last position)
-    # is smaller than the loop cancelation threshold (last position)
+
+    # Process the loop cancelation    
+    cond_jaxpr = eqn.params["cond_jaxpr"]
+
     def cond_fun(val):
         if cond_jaxpr.eqns[0].primitive.name == "ge":
             return val[-2] <= val[-1]
         else:
             return val[-2] >= val[-1]
 
+    # Create the new equation by tracing the while loop
     def tracing_function(*args):
         return while_loop(cond_fun, body_fun, tuple(args))
-
-    jaxpr = make_jaxpr(tracing_function)(*[var.aval for var in eqn.invars])
     
+    jaxpr = make_jaxpr(tracing_function)(*[var.aval for var in eqn.invars])
     new_eqn = jaxpr.eqns[0]
     
+    # The new invars should have initial loop index at loop treshold switched.
+    # The loop initialization is located at invars[-2] and the treshold at invars[-1]
     invars = eqn.invars
     new_invars = list(invars)
     new_invars[-1], new_invars[-2] = new_invars[-2], new_invars[-1]
-    
+
+    # Create the Equation    
     res = JaxprEqn(primitive = new_eqn.primitive,
                    invars = new_invars,
                    outvars = eqn.outvars,
