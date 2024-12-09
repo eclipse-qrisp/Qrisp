@@ -38,6 +38,7 @@ class Clbit:
     {'0': 5000, '1': 5000}
 
     """
+    dtype = np.dtype("bool")
     clbit_hash = np.zeros(1)
     def __init__(self, identifier):
         self.identifier = identifier

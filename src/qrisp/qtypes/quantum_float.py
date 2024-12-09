@@ -327,6 +327,8 @@ class QuantumFloat(QuantumVariable):
             return res
 
     def jdecoder(self, i):
+        if isinstance(self.exponent, int) and self.exponent == 0:
+            return i
         return self.decoder(i)
     
     def encoder(self, i):

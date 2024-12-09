@@ -140,7 +140,8 @@ def invert_loop_body(jaxpr):
     for i in range(len(new_eqn_list))[::-1]:
         if loop_index == new_eqn_list[i].outvars[0]:
             break
-    increment_eqn = new_eqn_list[i]
+    increment_eqn_index = int(i)
+    increment_eqn = new_eqn_list[increment_eqn_index]
     
     # Change the primitive
     if increment_eqn.primitive is add_p:
@@ -158,7 +159,7 @@ def invert_loop_body(jaxpr):
                             params = increment_eqn.params,
                             source_info = increment_eqn.source_info,
                             effects = increment_eqn.effects,)
-    new_eqn_list[-1] = decrement_eqn
+    new_eqn_list[increment_eqn_index] = decrement_eqn
 
     # Create the new Jaspr
     from qrisp.jasp import Jaspr

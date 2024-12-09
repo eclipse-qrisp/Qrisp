@@ -42,12 +42,11 @@ def measure_abstract_eval(qc, meas_object):
     else:
         raise Exception(f"Tried to call measurement primitive with type {type(meas_object)}")
 
-# Measurement_p.num_qubits = 1
 Measurement_p.multiple_results = True
 
 
 @Measurement_p.def_impl
-def measure_abstract_eval(qc, meas_object):
+def measure_implementation(qc, meas_object):
     from qrisp import Qubit, QuantumCircuit
     return_bool = False
     if isinstance(meas_object, Qubit):
@@ -55,8 +54,15 @@ def measure_abstract_eval(qc, meas_object):
         return_bool = True
     
     if isinstance(qc, QuantumCircuit):
-        qc.measure(meas_object)
-        return qc, qc.clbits[-len(meas_object)]
+        if return_bool:        
+            qc.measure(meas_object)
+            return qc, qc.clbits[-1]
+        else:
+            clbit_list = []
+            for i in range(len(meas_object)):
+                qc.measure(meas_object[i])
+                clbit_list.append(qc.clbits[-1])
+            return qc, clbit_list
     else:
         res = 0
         for i in range(len(meas_object)):

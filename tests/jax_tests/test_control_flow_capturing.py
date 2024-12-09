@@ -149,6 +149,38 @@ def test_jrange():
 
     assert jaspr(5) == 29
     
+    ######
+    # Test loop inversion
+        
+    def test_function():
+        
+        qv = QuantumFloat(5)
+        x(qv[qv.size-1])
+        
+        with invert():
+            for i in jrange(1, qv.size):
+                cx(qv[i], qv[i-1])
+        
+        return measure(qv[0])
+    jaspr = make_jaspr(test_function)()
+    
+    assert jaspr() == True
+    
+    def test_function():
+        
+        qv = QuantumFloat(5)
+        x(qv[qv.size-1])
+        
+        with invert():
+            with invert():
+                with invert():
+                    for i in jrange(1, qv.size):
+                        cx(qv[i], qv[i-1])
+        
+        return measure(qv[0])
+    jaspr = make_jaspr(test_function)()
+
+    assert jaspr() == True
 
 
 def test_cl_control_env():
