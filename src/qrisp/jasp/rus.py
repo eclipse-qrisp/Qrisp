@@ -29,8 +29,7 @@ def RUS(trial_function):
             
             previous_trial_res = args[1:len(res_vals)+1]
             
-            abs_qs = TracingQuantumSession.get_instance()
-            abs_qc = abs_qs.abs_qc
+            abs_qc = args[0]
             
             for res_val in previous_trial_res:
                 if isinstance(res_val.aval, AbstractQubitArray):
@@ -38,12 +37,10 @@ def RUS(trial_function):
             
             abs_qs.abs_qc = abs_qc
             
+            trial_args = [abs_qc] + list(args[len(res_vals)+1:])
+            trial_res = trial_func_jaspr.eval(*trial_args)
             
-            trial_args = args[len(res_vals)+1:]
-            trial_res = trial_func_jaspr.inline(*trial_args)
-            
-            
-            return tuple([abs_qs.abs_qc] + list(trial_res) + list(trial_args))
+            return tuple(list(trial_res) + list(trial_args)[1:])
         
         def cond_fun(val):
             return ~val[1]
