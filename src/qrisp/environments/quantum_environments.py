@@ -432,6 +432,9 @@ class QuantumEnvironment(QuantumPrimitive):
     # Method to exit the environment
     def __exit__(self, exception_type, exception_value, traceback):
         
+        if exception_value:
+            raise exception_value
+        
         from qrisp.jasp import check_for_tracing_mode
         if check_for_tracing_mode():
             abs_qs = TracingQuantumSession.get_instance()
