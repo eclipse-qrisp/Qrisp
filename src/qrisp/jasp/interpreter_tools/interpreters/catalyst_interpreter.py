@@ -293,7 +293,6 @@ def exec_multi_measurement(catalyst_register, start, stop):
 
 
 def process_while(eqn, context_dic):
-    
     for invar in eqn.invars:
         if isinstance(invar.aval, AbstractQuantumCircuit):
             break
@@ -386,7 +385,18 @@ def process_cond(eqn, context_dic):
 
     outvalues = cond_p.bind(*flattened_invalues, branch_jaxprs = (true_jaxpr, false_jaxpr), nimplicit_outputs = 0)
     
-    context_dic[eqn.outvars[0]] = tuple(outvalues)
+    unflattened_outvalues = []
+    for outvar in eqn.outvars:
+        if isinstance(outvar.aval, AbstractQuantumCircuit):
+            unflattened_outvalues.append((outvalues.pop(0), outvalues.pop(0)))
+        elif isinstance(outvar.aval, AbstractQubitArray):
+            unflattened_outvalues.append((outvalues.pop(0), outvalues.pop(0)))
+        else:
+            unflattened_outvalues.append(outvalues.pop(0))
+    
+    
+    insert_outvalues(eqn, context_dic, unflattened_outvalues)
+    
 
 def process_pjit(eqn, context_dic):
     
