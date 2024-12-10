@@ -308,8 +308,14 @@ class QuantumFloat(QuantumVariable):
 
     # Define outcome_labels
     def decoder(self, i):
-        if self.signed:
+        if isinstance(self.signed, bool) and self.signed:
             res = signed_int_iso_inv(i, self.size - 1) * 2.0**self.exponent
+            
+            if self.exponent >= 0:
+                if isinstance(res, (int, float)):
+                    return int(res)
+                else:
+                    return res.astype(int)
         else:
             from jax.numpy import float32
             from jax.core import Tracer
@@ -318,12 +324,6 @@ class QuantumFloat(QuantumVariable):
             else:
                 res = i * 2**self.exponent
 
-        if self.exponent >= 0:
-            if isinstance(res, (int, float)):
-                return int(res)
-            else:
-                return res.astype(int)
-        else:
             return res
 
     def jdecoder(self, i):

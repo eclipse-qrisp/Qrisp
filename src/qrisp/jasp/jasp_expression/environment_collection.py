@@ -89,7 +89,10 @@ def collect_environments(jaxpr):
             
             # Remove the AbstractQuantumCircuit variable and prepend it.            
             invars = find_invars(environment_body_eqn_list)
-            invars.remove(enter_eq.outvars[0])
+            try:
+                invars.remove(enter_eq.outvars[0])
+            except ValueError:
+                pass
             
             # Same for the outvars
             outvars = find_outvars(environment_body_eqn_list, eqn_list, jaxpr.outvars)

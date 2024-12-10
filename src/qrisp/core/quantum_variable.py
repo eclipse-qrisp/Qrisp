@@ -297,10 +297,18 @@ class QuantumVariable:
 
                     # name = self.get_unique_name(python_var_name)
                     name = python_var_name
-
-                    self.name = name
-                    self.qs.register_qv(self, size)
-                    name_found = True
+                    
+                    name_found = False
+                    i = 0
+                    while True:
+                        try:
+                            self.name = name
+                            self.qs.register_qv(self, size)
+                            name_found = True
+                            break
+                        except RuntimeError:
+                            name = python_var_name + "_" + str(i)
+                            i += 1
 
             # If this didn't work, generate a generic, unique name
             if not name_found:

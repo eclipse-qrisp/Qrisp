@@ -18,7 +18,6 @@
 
 from jax.lax import while_loop
 from jax.core import Literal
-import jax.numpy as jnp
 
 from qrisp.environments import QuantumEnvironment
 
