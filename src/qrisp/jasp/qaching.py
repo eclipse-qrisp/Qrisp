@@ -198,7 +198,7 @@ def qache_helper(func, jax_kwargs):
         abs_qc_new, res = ammended_function(abs_qs.abs_qc, *args, **kwargs)
         
         abs_qs.qubit_cache = temp_qubit_cache
-        
+        from jax.interpreters import xla
         eqn = jax._src.core.thread_local_state.trace_state.trace_stack.dynamic.jaxpr_stack[0].eqns[-1]
         # eqn.params["jaxpr"] = "="
         from qrisp.jasp import Jaspr

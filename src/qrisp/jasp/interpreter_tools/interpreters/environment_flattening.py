@@ -50,8 +50,11 @@ def flatten_environments(jaspr):
     """
     from qrisp.jasp import Jaspr
     
-    if not isinstance(jaspr, Jaspr):
+    if not (isinstance(jaspr.invars[0].aval, AbstractQuantumCircuit) and isinstance(jaspr.outvars[0].aval, AbstractQuantumCircuit)):
         return jaspr
+    
+    if not isinstance(jaspr, Jaspr):
+        jaspr = Jaspr.from_cache(jaspr)
     
     if jaspr.envs_flattened:
         return jaspr
@@ -149,8 +152,8 @@ def flatten_environments_in_cond_eqn(eqn, context_dic):
     """
     
     eqn = copy_jaxpr_eqn(eqn)
-    eqn.params["branches"] = (eqn.params["branches"][0], ClosedJaxpr(flatten_environments(eqn.params["branches"][1].jaxpr),
-                                      eqn.params["branches"][1].consts))
+    eqn.params["branches"] = (ClosedJaxpr(flatten_environments(eqn.params["branches"][0].jaxpr), eqn.params["branches"][0].consts),
+                              ClosedJaxpr(flatten_environments(eqn.params["branches"][1].jaxpr), eqn.params["branches"][1].consts))
     
     exec_eqn(eqn, context_dic)
 

@@ -98,19 +98,22 @@ def control_eqn(eqn, ctrl_qubit_var):
         
         new_params = dict(eqn.params)
         
+        invars = list(eqn.invars)
         if isinstance(eqn.params["jaxpr"].jaxpr, Jaspr):
             new_params["jaxpr"] = ClosedJaxpr(new_params["jaxpr"].jaxpr.control(1),
                                               eqn.params["jaxpr"].consts)
             
             new_params["name"] = "c" + new_params["name"]
             
+            invars = [eqn.invars[0], ctrl_qubit_var] + eqn.invars[1:]
+            
         return JaxprEqn(primitive = eqn.primitive,
-                        invars = [eqn.invars[0], ctrl_qubit_var] + eqn.invars[1:],
-                        outvars = eqn.outvars,
+                        invars = invars,
+                        outvars = list(eqn.outvars),
                         params = new_params,
                         source_info = eqn.source_info,
                         effects = eqn.effects,)
-        return eqn
+    
     elif eqn.primitive.name == "while":
         
         new_params = dict(eqn.params)
@@ -175,7 +178,7 @@ def control_jaspr(jaspr):
     
     from qrisp.jasp import Jaspr, AbstractQubit
     
-    ctrl_qubit_var = Var(suffix = "", aval = AbstractQubit(), count = control_var_count[0])
+    ctrl_qubit_var = Var(suffix = str(control_var_count[0]), aval = AbstractQubit())
     control_var_count[0] += 1
     
     new_eqns = []
@@ -220,7 +223,7 @@ def multi_control_jaspr(jaspr, num_ctrl, ctrl_state):
     
     from qrisp.jasp import AbstractQubit, make_jaspr
     
-    ctrl_vars = [Var(suffix = "", aval = AbstractQubit(), count = control_var_count[0] + _) for _ in range(num_ctrl)]
+    ctrl_vars = [Var(suffix = str(control_var_count[0] + _) , aval = AbstractQubit()) for _ in range(num_ctrl)]
     control_var_count[0] += num_ctrl
     ctrl_avals = [x.aval for x in ctrl_vars]
     

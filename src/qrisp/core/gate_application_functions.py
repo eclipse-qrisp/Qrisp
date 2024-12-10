@@ -1107,6 +1107,8 @@ def measure(qubits):
             res = qubits.jdecoder(res)
         elif isinstance(qubits.aval, AbstractQubit):
             abs_qc, res = Measurement_p.bind(qs.abs_qc, qubits)
+        else:
+            raise Exception(f"Tried to measure type {type(qubits.aval)}")
         
         qs.abs_qc = abs_qc
         

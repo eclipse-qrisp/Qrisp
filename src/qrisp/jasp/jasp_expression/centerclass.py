@@ -983,7 +983,7 @@ def make_jaspr(fun):
         # Update the QuantumVariable objects to their former tracers (happens in-place)
         for tup in flattened_qvs:
             unflatten_qv(*tup[::-1])
-        
+            
         return Jaspr.from_cache(collect_environments(jaxpr))
     
     return jaspr_creator

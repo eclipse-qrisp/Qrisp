@@ -19,6 +19,7 @@
 from qrisp.jasp.primitives import*
 from qrisp.jasp.tracing_quantum_session import *
 from qrisp.jasp.qaching import qache
+from qrisp.jasp.rus import RUS
 from qrisp.jasp.interpreter_tools import *
 from qrisp.jasp.jasp_expression import *
 from qrisp.jasp.testing_utils import *

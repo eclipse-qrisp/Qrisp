@@ -95,7 +95,7 @@ def collect_environments(jaxpr):
                 pass
             
             # Same for the outvars
-            outvars = find_outvars(environment_body_eqn_list, eqn_list, jaxpr.outvars)
+            outvars = find_outvars(environment_body_eqn_list, eqn_list, [var for var in jaxpr.outvars if not isinstance(var, Literal)])
             
             # Create the Jaxpr
             environment_body_jaspr = Jaspr(constvars = [],
