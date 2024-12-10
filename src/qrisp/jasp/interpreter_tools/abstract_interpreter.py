@@ -18,12 +18,15 @@
 
 from jax.core import ClosedJaxpr, Literal
 from jax import make_jaxpr
+import jax.numpy as jnp
 from qrisp.jasp import check_for_tracing_mode
 
 class ContextDict(dict):
     
     def __getitem__(self, key):
         if isinstance(key, Literal):
+            if isinstance(key.val, int):
+                return jnp.array(key.val, dtype = jnp.dtype("int32"))
             return key.val
         else:
             return dict.__getitem__(self, key)

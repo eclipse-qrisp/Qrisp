@@ -1488,6 +1488,7 @@ def plot_histogram(outcome_labels, counts, filename=None):
 
 
 from jax import tree_util
+import jax.numpy as jnp
 from qrisp.jasp.tracing_quantum_session import TracingQuantumSession
 from builtins import id
 
@@ -1497,7 +1498,10 @@ def flatten_qv(qv):
     # aux_data = (QVNameContainer(qv.name),)
     # Iterate through the attributes that are marked as traced
     for traced_attribute in qv.traced_attributes:
-        children.append(getattr(qv, traced_attribute))
+        attr = getattr(qv, traced_attribute)
+        if isinstance(attr, int):
+            attr = jnp.array(attr, jnp.dtype("int32"))
+        children.append(attr)
     
     return tuple(children), None
 
