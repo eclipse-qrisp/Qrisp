@@ -399,10 +399,25 @@ def advance_quantum_state(qc, quantum_state):
     if len(qc.data) == 0:
         return quantum_state
 
+    progress_bar = tqdm(
+        desc=f"Simulating {len(qc.qubits)} qubits..",
+        bar_format="{desc} |{bar}| [{percentage:3.0f}%]",
+        ncols=85,
+        leave=False,
+        delay=0.1,
+        position=0,
+        smoothing=1,
+        file=sys.stdout
+    )
+    
+    LINE_CLEAR = "\x1b[2K"
+    progress_bar.display()
+
+
     # This command enables fast appending. Fast appending means that the .append method
     # of the QuantumCircuit class checks much less validity conditions and is also less
     # tolerant regarding inputs.
-    with fast_append():
+    with fast_append(2):
         # We convert the circuit which is given with portable objects to a qrisp circuit
 
         # Treat allocation gates (ie. remove them)
@@ -412,6 +427,13 @@ def advance_quantum_state(qc, quantum_state):
         import random
         # Main loop - this loop successively executes operations onto the impure
         # quantum state object
+        
+        total_flops = 0
+        for i in range(len(qc.data)):
+            total_flops += 2 ** qc.data[i].op.num_qubits
+        
+        progress_bar.total = total_flops
+        
         for i in range(len(qc.data)):
 
             # Set alias for the instruction of this operation
@@ -449,6 +471,9 @@ def advance_quantum_state(qc, quantum_state):
             # indices
             else:
                 quantum_state.apply_operation(instr.op, qubit_indices)
+
+        progress_bar.close()
+        print("\r" + 85*" ", end=LINE_CLEAR + "\r")
 
         return quantum_state
     
