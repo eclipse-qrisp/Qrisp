@@ -16,6 +16,8 @@
 ********************************************************************************/
 """
 
+from functools import lru_cache
+
 import numpy as np
 
 from jax.core import JaxprEqn, ClosedJaxpr, Var, Jaxpr
@@ -100,6 +102,8 @@ def control_eqn(eqn, ctrl_qubit_var):
             new_params["jaxpr"] = ClosedJaxpr(new_params["jaxpr"].jaxpr.control(1),
                                               eqn.params["jaxpr"].consts)
             
+            new_params["name"] = "c" + new_params["name"]
+            
         return JaxprEqn(primitive = eqn.primitive,
                         invars = [eqn.invars[0], ctrl_qubit_var] + eqn.invars[1:],
                         outvars = eqn.outvars,
@@ -150,6 +154,7 @@ def control_eqn(eqn, ctrl_qubit_var):
                         source_info = eqn.source_info,
                         effects = eqn.effects,)
 
+@lru_cache(int(1E5))
 def control_jaspr(jaspr):
     """
     Takes a Jaspr and returns a Jaspr that has an additional Qubit argument

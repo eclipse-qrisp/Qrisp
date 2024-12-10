@@ -21,7 +21,7 @@ from functools import lru_cache
 from jax.core import JaxprEqn, ClosedJaxpr
 
 from qrisp.jasp.interpreter_tools import exec_eqn, reinterpret
-
+from qrisp.jasp.primitives import AbstractQuantumCircuit
     
 def copy_jaxpr_eqn(eqn):
     return JaxprEqn(primitive = eqn.primitive,
@@ -48,6 +48,13 @@ def flatten_environments(jaspr):
         The jaxpr without q_env primitives.
 
     """
+    from qrisp.jasp import Jaspr
+    
+    if not isinstance(jaspr, Jaspr):
+        return jaspr
+    
+    if jaspr.envs_flattened:
+        return jaspr
     
     # It is now much easier to apply higher order transformations with this kind
     # of data structure.
@@ -65,15 +72,11 @@ def flatten_environments(jaspr):
     
     # The flatten_environment_eqn function below executes the collected QuantumEnvironments
     # according to their semantics
-    from qrisp.jasp import Jaspr
     # To perform the flattening, we evaluate with the usual tools
     reinterpreted_jaxpr = reinterpret(jaspr, eqn_evaluator)
-    
-    try:
-        return Jaspr(reinterpreted_jaxpr)
-    except:
-        return reinterpreted_jaxpr
-    
+    res = Jaspr(reinterpreted_jaxpr)
+    res.envs_flattened = True
+    return res
     
 def flatten_environments_in_pjit_eqn(eqn, context_dic):
     """

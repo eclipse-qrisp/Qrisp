@@ -16,6 +16,8 @@
 ********************************************************************************/
 """
 
+from functools import lru_cache
+
 from jax import make_jaxpr
 from jax.core import JaxprEqn, ClosedJaxpr
 from jax.lax import add_p, sub_p, while_loop
@@ -43,6 +45,12 @@ def invert_eqn(eqn):
         params = dict(eqn.params)
         params["jaxpr"] = ClosedJaxpr(invert_jaspr(eqn.params["jaxpr"].jaxpr),
                                       eqn.params["jaxpr"].consts)
+
+        if params["name"][-3:] == "_dg":        
+            params["name"] = params["name"][:-3]
+        else:
+            params["name"] += "_dg"
+        
         primitive = eqn.primitive
     elif eqn.primitive.name == "while":
         return invert_loop_eqn(eqn)
@@ -59,7 +67,7 @@ def invert_eqn(eqn):
     
         
 
-
+@lru_cache(int(1E5))
 def invert_jaspr(jaspr):
     """
     Takes a Jaspr and returns a Jaspr, which performs the inverted quantum operation

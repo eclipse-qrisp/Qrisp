@@ -108,7 +108,7 @@ class Jaspr(Jaxpr):
     5.5
     """
     
-    __slots__ = "permeability", "isqfree", "hashvalue", "ctrl_jaspr"
+    __slots__ = "permeability", "isqfree", "hashvalue", "ctrl_jaspr", "envs_flattened"
     
     def __init__(self, *args, permeability = None, isqfree = None, ctrl_jaspr = None, **kwargs):
         
@@ -143,6 +143,7 @@ class Jaspr(Jaxpr):
         
         self.isqfree = isqfree
         self.ctrl_jaspr = ctrl_jaspr
+        self.envs_flattened = False
             
         if not isinstance(self.invars[0].aval, AbstractQuantumCircuit):
             raise Exception(f"Tried to create a Jaspr from data that doesn't have a QuantumCircuit as first argument (got {type(self.invars[0].aval)} instead)")
@@ -477,8 +478,7 @@ class Jaspr(Jaxpr):
         return Jaspr(constvars = list(self.constvars), 
                      invars = list(self.invars),
                      outvars = list(self.outvars),
-                     eqns = list(eqns),
-                     ctrl_jaspr = self.ctrl_jaspr)
+                     eqns = list(eqns))
     
     def to_qir(self):
         """
