@@ -119,7 +119,10 @@ def collect_environments(jaxpr):
         new_eqn_list.append(eqn)
     
     if isinstance(jaxpr, Jaspr):
-        return jaxpr.update_eqns(new_eqn_list)
+        res = jaxpr.update_eqns(new_eqn_list)
+        if jaxpr.ctrl_jaspr is not None:
+            res.ctrl_jaspr = jaxpr.ctrl_jaspr
+        return res
     else:
     # Return the transformed equation
         return type(jaxpr)(constvars = jaxpr.constvars, 
