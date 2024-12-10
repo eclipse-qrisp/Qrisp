@@ -25,11 +25,14 @@ class ContextDict(dict):
     
     def __getitem__(self, key):
         if isinstance(key, Literal):
-            if isinstance(key.val, int):
-                return jnp.array(key.val, dtype = jnp.dtype("int32"))
-            return key.val
+            res = key.val
         else:
-            return dict.__getitem__(self, key)
+            res = dict.__getitem__(self, key)
+        
+        if type(res) == int:
+            return jnp.array(res, dtype = jnp.dtype("int32"))
+        else:
+            return res
 
 def exec_eqn(eqn, context_dic):
     invalues = extract_invalues(eqn, context_dic)
