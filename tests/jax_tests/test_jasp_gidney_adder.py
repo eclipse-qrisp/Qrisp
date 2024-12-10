@@ -116,8 +116,8 @@ def test_jasp_gidney_adder():
     assert jaspr(4) == 11
     
     # Ensure that the Qaching mechanisms keeps only on reference of each function
-    gidney_mcx_jaspr_1 = jaspr.eqns[-4].params["jaxpr"].eqns[-3].params["jaxpr"].jaxpr
-    gidney_mcx_jaspr_2 = jaspr.eqns[-4].params["jaxpr"].eqns[-4].params["jaspr"].eqns[-6].params["jaxpr"].jaxpr
+    gidney_mcx_jaspr_1 = jaspr.eqns[-6].params["jaxpr"].eqns[-3].params["jaxpr"].jaxpr
+    gidney_mcx_jaspr_2 = jaspr.eqns[-6].params["jaxpr"].eqns[-4].params["jaspr"].eqns[-6].params["jaxpr"].jaxpr    
     
     assert id(gidney_mcx_jaspr_1) == id(gidney_mcx_jaspr_2)
 

@@ -37,6 +37,7 @@ class TracingQuantumSession:
         self.deleted_qv_list = []
         self.qubit_cache = None
         TracingQuantumSession.tr_qs_container.insert(0, self)
+        self.qv_stack = []
     
     def start_tracing(self, abs_qc):
         self.abs_qc_stack.append(self.abs_qc)
@@ -44,14 +45,17 @@ class TracingQuantumSession:
         
         self.abs_qc = abs_qc
         self.qubit_cache = {}
+        
+        self.qv_stack.append((self.qv_list, self.deleted_qv_list))
+        self.qv_list = []
+        self.deleted_qv_list = []
     
     def conclude_tracing(self):
         temp = self.abs_qc
         self.abs_qc = self.abs_qc_stack.pop(-1)
         self.qubit_cache = self.qubit_cache_stack.pop(-1)
-        if self.abs_qc is None:
-            self.qv_list = []
-            self.deleted_qv_list = []
+        
+        self.qv_list, self.deleted_qv_list = self.qv_stack.pop(-1)
         return temp
         
         
