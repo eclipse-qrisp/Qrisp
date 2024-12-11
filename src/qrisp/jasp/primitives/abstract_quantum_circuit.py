@@ -84,10 +84,8 @@ def delete_qubits_abstract_eval(qc, qarr):
 @delete_qubits_p.def_impl
 def delete_qubits_impl(qc, qarr):
     from qrisp.circuit import QubitDealloc
-    qubit_list = []
     
     for i in range(len(qarr)):
-        qubit_list.append(qc.add_qubit())
-        qc.append(QubitDealloc(), qubit_list[-1])
+        qc.append(QubitDealloc(), qarr[i])
     
     return qc
