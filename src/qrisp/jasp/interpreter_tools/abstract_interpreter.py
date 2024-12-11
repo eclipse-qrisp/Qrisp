@@ -31,6 +31,8 @@ class ContextDict(dict):
         
         if type(res) == int:
             return jnp.array(res, dtype = jnp.dtype("int32"))
+        elif type(res) == float:
+            return jnp.array(res, dtype = jnp.dtype("float32"))
         else:
             return res
 
