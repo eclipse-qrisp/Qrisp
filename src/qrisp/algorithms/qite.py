@@ -94,7 +94,7 @@ def QITE(qarg, U_0, exp_H, s, k):
     :: 
 
         def exp_H(qv, t):
-            H.trotterization()(qv,t,5)
+            H.trotterization(method='commuting')(qv,t,5)
 
     With all the necessary ingredients, we use QITE to approximate the ground state:
 
@@ -120,7 +120,7 @@ def QITE(qarg, U_0, exp_H, s, k):
 
             # Find optimal evolution time 
             # Use "precompliled_qc" keyword argument to avoid repeated compilation of the QITE circuit
-            energies = [H.get_measurement(qv,subs_dic={theta:s_},precompiled_qc=qc) for s_ in s_values]
+            energies = [H.get_measurement(qv,subs_dic={theta:s_},precompiled_qc=qc,diagonalisation_method='commuting') for s_ in s_values]
             index = np.argmin(energies)
             s_min = s_values[index]
 

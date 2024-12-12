@@ -46,7 +46,7 @@ def test_qite_heisenberg():
     E_0 = H.get_measurement(qv)
 
     def exp_H(qv, t):
-        H.trotterization()(qv,t,5)
+        H.trotterization(method='commuting')(qv,t,5)
     
     steps = 4
     s_values = np.linspace(.01,.3,10)
@@ -63,7 +63,7 @@ def test_qite_heisenberg():
         qc = qv.qs.compile()
 
         # Find optimal evolution time 
-        energies = [H.get_measurement(qv,subs_dic={theta:s_},precompiled_qc=qc) for s_ in s_values]
+        energies = [H.get_measurement(qv,subs_dic={theta:s_},precompiled_qc=qc,diagonalisation_method='commuting') for s_ in s_values]
         index = np.argmin(energies)
         s_min = s_values[index]
 
