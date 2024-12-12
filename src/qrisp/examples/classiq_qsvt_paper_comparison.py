@@ -45,7 +45,7 @@ def controlled_reflection(data, ctrl_qb):
     
     h(ctrl_qb)
     h(data[0])
-    mcx([ctrl_qb] + data[:-1], data[-1], method = "balauca")
+    mcx([ctrl_qb] + data[:-1], data[-1], method = "balauca", ctrl_state = 0)
     h(data[0])
     h(ctrl_qb)
 
