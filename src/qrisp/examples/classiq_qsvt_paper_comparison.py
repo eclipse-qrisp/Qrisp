@@ -21,7 +21,7 @@
 # and computes some performance metrics
 from qrisp import *
 coin_0 = QuantumBool()
-qv = QuantumFloat(20)
+qv = QuantumFloat(5)
 
 def walk_operator(data, coin, inpl_adder = fourier_adder):
 
@@ -37,8 +37,8 @@ print("Walk Operator: ")
 print("CNOT count: ", qc.cnot_count())
 print("Qubits: ", qc.num_qubits())
 # Walk Operator: 
-# CNOT count:  420
-# Qubits:  21
+#CNOT count:  30
+# Qubits:  6
 
 # This is the circuit described on page 8
 def controlled_reflection(data, ctrl_qb):
@@ -49,7 +49,10 @@ def controlled_reflection(data, ctrl_qb):
     h(data[0])
     h(ctrl_qb)
 
-coin_1 = QuantumBool()    
+qv = QuantumFloat(20)
+coin_0 = QuantumBool()
+coin_1 = QuantumBool()
+walk_operator(qv, coin_0)
 controlled_reflection(qv, coin_1)
 
 qc = qv.qs.compile()
