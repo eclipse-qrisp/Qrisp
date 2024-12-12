@@ -15,6 +15,8 @@ This algorithms submodule of Qrisp provides a collection of commonly used quantu
      - solving combinatorial optimization problems
    * - :ref:`QIRO <QIRO>`
      - solving combinatorial optimization problems, with quantum informed update rules
+   * - :ref:`QITE <QITE>`
+     - performing quantum imaginary-time evolution
    * - :ref:`Shor's Algorithm <Shor>`
      - efficiently factoring large numbers
    * - :ref:`Grover's Algorithm <grovers_alg>`
@@ -36,6 +38,7 @@ We encourage you to explore these algorithms, delve into their documentation, an
    vqe/VQE
    qaoa/QAOA
    qiro/QIRO
+   QITE
    Shor
    Grover
    QuantumBacktrackingTree
