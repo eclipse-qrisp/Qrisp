@@ -19,9 +19,85 @@
 from jax.lax import while_loop, cond
 import jax
 
-from qrisp.jasp import TracingQuantumSession, check_for_tracing_mode, delete_qubits_p, AbstractQubitArray
+from qrisp.jasp import TracingQuantumSession, delete_qubits_p, AbstractQubitArray
 
 def RUS(trial_function):
+    r"""
+    Decorator to deploy repeat-until-success (RUS) components. At the core,
+    RUS repeats a given quantum subroutine followed by a qubit measurement until 
+    the measurement returns the value ``1``. This step is prevalent
+    in many important algorithms, among them the 
+    `HHL algorithm <https://arxiv.org/abs/0811.3171>`_ or the  
+    `LCU procedure <https://arxiv.org/abs/1202.5822>`_.
+    
+    Within Jasp, RUS steps can be realized by providing the quantum subroutine
+    as a "trial function", which returns a boolean value (the repetition condition) and
+    possibly other return values.
+    
+    It is important to note that the trial function can not receive quantum
+    arguments. This is because after each trial, a new copy of these arguments
+    would be required to perform the next iteration, which is prohibited by
+    the no-clone theorem. It is however legal to provide classical arguments.
+
+    Parameters
+    ----------
+    trial_function : callable
+        A function returning a boolean value as the first return value. More 
+        return values are possible.
+
+    Returns
+    -------
+    callable
+        A function that performs the RUS protocol with the trial function. The
+        return values of this function are the return values of the trial function
+        WITHOUT the boolean value.
+        
+    Examples
+    --------
+    
+    To demonstrate the RUS behavior, we initialize a GHZ state
+    
+    .. math::
+        
+        \ket{\psi} = \frac{\ket{00000} + \ket{11111}}{\sqrt{2}}
+
+    and measure the first qubit into a boolean value. This will be the value
+    to cancel the repetition. This will collapse the GHZ state into either 
+    $\ket{00000}$ (which will cause a new repetition) or $\ket{11111}$, which
+    cancels the loop. After the repetition is canceled we are therefore
+    guaranteed to have the latter state.
+    
+    ::
+        
+        from qrisp.jasp import RUS, make_jaspr
+        from qrisp import QuantumFloat, h, cx, measure
+        
+        @RUS
+        def rus_trial_function():
+            qf = QuantumFloat(5)
+            h(qf[0])
+            
+            for i in range(1, 5):
+                cx(qf[0], qf[i])
+            
+            cancelation_bool = measure(qf[0])
+            return cancelation_bool, qf
+        
+        def call_RUS_example():
+            
+            qf = rus_trial_function()
+            
+            return measure(qf)
+        
+    Create the ``jaspr`` and simulate:
+        
+    ::
+        
+        jaspr = make_jaspr(call_RUS_example)()
+        print(jaspr())
+        # Yields, 31 which is the decimal version of 11111
+            
+    """
     
     def return_function(*trial_args):
         
