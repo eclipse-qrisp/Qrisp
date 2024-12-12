@@ -89,7 +89,7 @@ def QITE(qarg, U_0, exp_H, s, k):
         E_0 = H.get_measurement(qv)
         print(E_0)
 
-    For the function ``exp_H`` that performs forward evolution $e^{-itH}$, we use the :meth:`trotterization <qrisp.operators.qubit.QubitOperator.trotterization>` method with 5 steps:
+    For the function ``exp_H`` that performs forward evolution $e^{-itH}$, we use the :meth:`trotterization <qrisp.operators.qubit.QubitOperator.trotterization>` method with 5 Trotter steps:
 
     :: 
 

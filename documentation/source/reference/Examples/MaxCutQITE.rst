@@ -4,7 +4,7 @@ Solving MaxCut with QITE
 ========================
 
 In this example, we demonstrate how MaxCut can be solved with :ref:`QITE`.
-As detailed introduction to solving MaxCut with :ref:`QAOA` can be found in this :ref:`tutorial <MaxCutQAOA>`.
+A detailed introduction to solving MaxCut with :ref:`QAOA` can be found in this :ref:`tutorial <MaxCutQAOA>`.
 
 We start by defining the problem instance.
 

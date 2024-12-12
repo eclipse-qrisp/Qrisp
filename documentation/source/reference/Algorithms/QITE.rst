@@ -3,7 +3,7 @@
 Quantum Imaginary-Time Evolution
 ================================
 
-.. currentmodule:: qrisp.algorithms.qite
+.. currentmodule:: qrisp.qite
 
 .. autofunction:: QITE
 
