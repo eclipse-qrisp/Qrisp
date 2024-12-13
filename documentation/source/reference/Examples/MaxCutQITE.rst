@@ -88,7 +88,7 @@ In the following, we print the 5 most likely solutions (for the optimal evolutio
 ::
 
     qv = QuantumVariable(N)
-    QITE(qv, U_0, exp_H, optimal_s, k)
+    QITE(qv, U_0, exp_H, optimal_s, steps)
     results = qv.get_measurement()
 
     print("5 most likely solutions")
