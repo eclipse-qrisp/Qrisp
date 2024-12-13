@@ -49,13 +49,16 @@ def controlled_reflection(data, ctrl_qb):
     h(data[0])
     h(ctrl_qb)
 
-qv = QuantumFloat(20)
+import time
+t0 = time.time()
+qv = QuantumFloat(200)
 coin_0 = QuantumBool()
 coin_1 = QuantumBool()
 walk_operator(qv, coin_0)
 controlled_reflection(qv, coin_1)
 
-qc = qv.qs.compile()
+qc = qv.qs.compile(cancel_qfts = False)
+print(t0 - time.time())
 print("QSVT circuit:")
 print("CNOT count: ", qc.cnot_count())
 print("Qubits: ", qc.num_qubits())
