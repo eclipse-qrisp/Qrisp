@@ -16,7 +16,7 @@
 ********************************************************************************/
 """
 
-from qrisp import mcp, conjugate, invert
+from qrisp import QuantumArray, mcp, conjugate, invert
 import sympy as sp
 
 def QITE(qarg, U_0, exp_H, s, k):
@@ -32,12 +32,12 @@ def QITE(qarg, U_0, exp_H, s, k):
 
     Parameters
     ----------
-    qarg : :ref:`QuantumVariable`
+    qarg : :ref:`QuantumVariable` or :ref:`QuantumArray`
         The quantum argument on which quantum imaginary time evolution is performed.
     U_0 : function
-        A Python function that takes a QuantumVariable ``qarg`` as  input, and prepares the initial state.
+        A Python function that takes a QuantumVariable or QuantumArray ``qarg`` as input, and prepares the initial state.
     exp_H : function
-        A Python function that takes a QuantumVariable ``qarg`` and time ``t`` as input, and performs forward evolution $e^{-itH}$.
+        A Python function that takes a QuantumVariable or QuantumArray ``qarg`` and time ``t`` as input, and performs forward evolution $e^{-itH}$.
     s : list[float] or list[Sympy.Symbol]
         A list of evolution times for each step.
     k : int
@@ -165,5 +165,9 @@ def QITE(qarg, U_0, exp_H, s, k):
         QITE(qarg, U_0, exp_H, s, k-1)
 
         with conjugate(conjugator)(qarg):
-            mcp(s_, qarg, ctrl_state='0'*len(qarg))
+            if isinstance(qarg,QuantumArray):
+                qubits = sum([qv.reg for qv in qarg.flatten()],[])
+                mcp(s_, qubits, ctrl_state=0)
+            else:
+                mcp(s_, qarg, ctrl_state=0)
 
