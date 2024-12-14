@@ -384,9 +384,19 @@ def gate_wrap(*args, permeability=None, is_qfree=None, name=None, verify=False):
 def gate_wrap_inner(
     function, permeability=None, is_qfree=None, name=None, verify=False
 ):
+    
+    from qrisp.jasp import qache
+    qached_function = qache(function)
+    
     def wrapped_function(
         *args, permeability=permeability, is_qfree=is_qfree, verify=verify, **kwargs
     ):
+        
+        from qrisp.jasp import check_for_tracing_mode
+        
+        if check_for_tracing_mode():
+            return qached_function(*args, **kwargs)
+        
         wrapped_function.__name__ = function.__name__
         from qrisp.circuit import Qubit
         from qrisp.core import recursive_qs_search, recursive_qv_search
