@@ -376,7 +376,7 @@ class QuantumFloat(QuantumVariable):
         if m == 0:
             m = self.size
 
-        symbols = [sp.symbols(self.name + "_" + str(i)) for i in range(self.size)]
+        symbols = [sp.symbols(str(hash(self)) + "_" + str(i)) for i in range(self.size)]
 
         poly = sum([2.0 ** (i) * symbols[i] for i in range(self.size)])
 

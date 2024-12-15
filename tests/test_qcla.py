@@ -343,13 +343,13 @@ def test_cq_qcla_adder():
     from qrisp import t_depth_indicator
     gate_speed = lambda x : t_depth_indicator(x, epsilon = 2**-10)
     qc = b.qs.compile(gate_speed = gate_speed, compile_mcm = True)
-    assert qc.t_depth() < 11
+    assert qc.t_depth() < 10
     
     qc = b.qs.compile(workspace = 10, gate_speed = gate_speed, compile_mcm = True)
-    assert qc.t_depth() < 7
+    assert qc.t_depth() < 6
     
     a = QuantumFloat(40)
     b = QuantumFloat(40)
     qcla(a, b)
     qc = b.qs.compile(workspace = 50, gate_speed = gate_speed, compile_mcm = True)
-    assert qc.t_depth() < 22
+    assert qc.t_depth() < 21

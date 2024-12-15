@@ -17,3 +17,4 @@ Methods
    QAOAProblem.compile_circuit
    QAOAProblem.benchmark
    QAOAProblem.set_init_function
+   QAOAProblem.visualize_cost

@@ -339,25 +339,25 @@ def rw_spectrum(f):
     return np.dot(T(n), f)
 
 
-def C(f):
-    size = len(f)
+# def C(f):
+#     size = len(f)
 
-    if np.log2(size) != int(np.log2(size)):
-        raise Exception(
-            "The given function does not have the length to properly represent "
-            "a truth table"
-        )
+#     if np.log2(size) != int(np.log2(size)):
+#         raise Exception(
+#             "The given function does not have the length to properly represent "
+#             "a truth table"
+#         )
 
-    n = int(np.log2(size))
+#     n = int(np.log2(size))
 
-    rw_spec = rw_spectrum(f)
-    sum_ = 0
-    for i in range(size):
-        sum_ += sum(int_as_array(i, n)) * rw_spec[i] ** 2
+#     rw_spec = rw_spectrum(f)
+#     sum_ = 0
+#     for i in range(size):
+#         sum_ += sum(int_as_array(i, n)) * rw_spec[i] ** 2
 
-    sum_ = sum_ / 2 ** (n - 2)
+#     sum_ = sum_ / 2 ** (n - 2)
 
-    return 1 / 2 * (n * size - sum_)
+#     return 1 / 2 * (n * size - sum_)
 
 
 def NZ(f):
@@ -370,17 +370,17 @@ def NZ(f):
     return sum_
 
 
-def D(f):
-    size = len(f)
-    if np.log2(size) != int(np.log2(size)):
-        raise Exception(
-            "The given function does not have the length to properly represent "
-            "a truth table"
-        )
+# def D(f):
+#     size = len(f)
+#     if np.log2(size) != int(np.log2(size)):
+#         raise Exception(
+#             "The given function does not have the length to properly represent "
+#             "a truth table"
+#         )
 
-    n = int(np.log2(size))
+#     n = int(np.log2(size))
 
-    return int(n * 2 ** (n - 3) * NZ(f) + C(f))
+#     return int(n * 2 ** (n - 3) * NZ(f) + C(f))
 
 
 def synth_poly(truth_table, column=0, coeff=None):

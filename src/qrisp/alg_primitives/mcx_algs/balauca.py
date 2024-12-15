@@ -85,23 +85,32 @@ def hybrid_mcx(
     qs = target[0].qs()
     
     if len(input_qubits) <= 2 + int(not use_mcm) or num_ancilla == 0:
-
-        if len(input_qubits) == 2:
+        if len(input_qubits) == 2 + int(not use_mcm):
             
             if phase is None:
-                
-                if use_mcm:
-                    jones_toffoli(input_qubits, target, ctrl_state = ctrl_state)
-                else:
-                    qs.append(
-                        XGate().control(2, ctrl_state=ctrl_state, method="gray"),
-                        input_qubits + target,
-                    )
-            else:
                 qs.append(
-                    PGate(phase).control(2, ctrl_state=ctrl_state),
+                    XGate().control(len(input_qubits), ctrl_state=ctrl_state, method="gray"),
                     input_qubits + target,
                 )
+            else:
+                
+                if use_mcm:
+                    gate = GidneyLogicalAND(ctrl_state=ctrl_state)
+                else:
+                    gate = XGate().control(len(input_qubits), method="gray_pt", ctrl_state=ctrl_state)
+                
+                qs.append(gate,
+                          input_qubits + target,
+                          )
+                
+                qs.append(
+                    PGate(phase),
+                    target,
+                )
+                
+                qs.append(gate.inverse(),
+                          input_qubits + target,
+                          )
 
         elif num_dirty_ancilla and phase is None:
             balauca_dirty(
@@ -165,7 +174,7 @@ def hybrid_mcx(
 def balauca_layer(input_qubits, output_qubits, structure, invert=False, use_mcm = False, ctrl_list = None):
     if not output_qubits:
         return
-
+    
     qs = output_qubits[0].qs()
     input_qubits = list(input_qubits)
 

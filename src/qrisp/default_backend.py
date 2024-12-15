@@ -24,8 +24,6 @@ from qrisp import QuantumCircuit
 
 class DefaultBackend:
     def run(self, qc, shots=None, token=""):
-        if shots is None:
-            shots = 100000
         return run(qc, shots, token)
 
 

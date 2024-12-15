@@ -769,6 +769,7 @@ def multi_measurement(qv_list, shots=None, backend=None):
     # noise_model = noise_model, shots = shots).result().get_counts()
     counts = backend.run(compiled_qc, shots)
     counts = {k: counts[k] for k in sorted(counts)}
+    shots = sum(counts.values())
 
     # Convert the labeling bistrings of counts into list of labels
     new_counts = {}
@@ -1311,7 +1312,9 @@ def get_measurement_from_qc(qc, qubits, backend, shots=None):
 
     # Remove other measurements outcomes from counts dic
     new_counts_dic = {}
+
     no_of_shots_executed = 0
+
     for key in counts.keys():
         # Remove possible whitespaces
         new_key = key.replace(" ", "")
@@ -1323,7 +1326,7 @@ def get_measurement_from_qc(qc, qubits, backend, shots=None):
             new_counts_dic[new_key] += counts[key]
         except KeyError:
             new_counts_dic[new_key] = counts[key]
-
+            
         no_of_shots_executed += counts[key]
 
     counts = new_counts_dic
@@ -1914,12 +1917,15 @@ def t_depth_indicator(op, epsilon):
         "s",
         "h",
         "s_dg",
+        "sx",
+        "sx_dg",
         "measure",
         "reset",
         "qb_alloc",
         "qb_dealloc",
         "barrier",
         "gphase",
+        
     ]:
         return 0
     elif op.name in ["rx", "ry", "rz", "p", "u1"]:

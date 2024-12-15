@@ -49,19 +49,17 @@ def maxcut_energy(outcome_array, count_array, edge_list):
 
 def create_maxcut_cl_cost_function(G):
     """
-    Creates the classical cost function for maxcut for the specific graph G that we are attempting to cut.
+    Creates the classical cost function for an instance of the maximum cut problem for a given graph ``G``.
 
     Parameters
     ----------
     G : nx.Graph
-        Graph to color.
+        The Graph for the problem instance.
 
     Returns
     -------
     cl_cost_function : function
-        Classical cost function, which in the end returns the ratio between 
-        the energy calculated using the maxcut_obj objective funcion and the 
-        amount of counts used in the experiment.
+        The classical cost function for the problem instance, which takes a dictionary of measurement results as input.
 
     """    
     def cl_cost_function(counts):
@@ -90,17 +88,19 @@ def create_maxcut_cl_cost_function(G):
 
 
 def create_maxcut_cost_operator(G):
-    """
-    Creates the maxcut operator as a sequence of unitary gates. In the QAOA overview section this is also called the phase separator U_P.
+    r"""
+    Creates the cost operator for an instance of the maximum cut problem for a given graph ``G``.
 
     Parameters
     ----------
     G : nx.Graph
-        Graph to color.
+        The Graph for the problem instance.
 
     Returns
     -------
-    cost_operator function.
+    cost_operator : function
+        A function receiving a :ref:`QuantumVariable` and a real parameter $\gamma$.
+        This function performs the application of the cost operator.
 
     """
     def maxcut_cost_operator(qv, gamma):
@@ -120,18 +120,18 @@ def create_maxcut_cost_operator(G):
 
 def maxcut_problem(G):
     """
-    Creates a QAOA problem instance taking the phase separator, appropriate mixer, and
-    appropriate classical cost function into account.
+    Creates a QAOA problem instance with appropriate phase separator, mixer, and
+    classical cost function.
 
     Parameters
     ----------
     G : nx.Graph
-        Graph to color.
+        The graph for the problem instance.
 
     Returns
     -------
-    QAOAProblem : function
-        QAOA problem instance for maxcut with which the QAOA algorithm is ran for.
+    :ref:`QAOAProblem`
+        A QAOA problem instance for MaxCut for a given graph ``G``.
 
     """        
     from qrisp.qaoa import QAOAProblem, RX_mixer

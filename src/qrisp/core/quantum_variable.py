@@ -1050,7 +1050,7 @@ class QuantumVariable:
 
         # Return dictionary of measurement results
         return counts
-
+    
     def most_likely(self, **kwargs):
         """
         Performs a measurement and returns the most likely outcome.
@@ -1465,7 +1465,6 @@ class QuantumVariable:
         from qrisp.misc import custom_qv
 
         return custom_qv(label_list, decoder=decoder, qs=qs, name=name)
-
 
 def plot_histogram(outcome_labels, counts, filename=None):
     res_list = []

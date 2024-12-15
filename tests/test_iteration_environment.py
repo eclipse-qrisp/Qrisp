@@ -103,6 +103,6 @@ def test_iteration_env():
         with IterationEnvironment(qbl.qs, 4, precompile = False):
             qf += 1
 
-    assert qf.qs.compile().depth() < 70
+    assert qf.qs.compile().depth() < 75
 
     

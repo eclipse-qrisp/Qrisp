@@ -175,7 +175,7 @@ def depth_sensitive_topological_sort(indices, indptr, int_qc, num_qubits, depth_
     # Create a vector to store result (A topological
     # ordering of the vertices)
     top_order = np.zeros(n, dtype=np.int32)
-
+    max_time = np.max(depth_indicators)
     # One by one dequeue vertices from queue and enqueue
     # adjacents if indegree of adjacent becomes 0
 
@@ -188,16 +188,27 @@ def depth_sensitive_topological_sort(indices, indptr, int_qc, num_qubits, depth_
 
             qubits = int_qc[node]
 
-            # Collect the depth of each participating qubit
             depth_list = []
             for j in range(num_qubits):
-                if qubits[j//64] & (1 << (j%64)):
+                if int(qubits[j//64]) & (1 << (j%64)):
                     depth_list.append(depths[j])
             
             # If multiple gates have the same max depth, the faster ones should
             # be executed first, because they might block other gates
-            node_costs[i] = np.max(np.array(depth_list)) + depth_indicators[node]/10**8
-
+            depth_array = np.array(depth_list)
+            node_costs[i] = np.max(depth_array) + depth_indicators[node]/10**8
+            
+            # Multiple possible heuristics
+            # node_costs[i] = np.max(depth_array) + depth_indicators[node]/10**8 - np.min(depth_array)/10**12
+            # node_costs[i] = np.sum((np.max(depth_array) + depth_indicators[node]) - depth_array)/num_qubits
+            # node_costs[i] = depth_indicators[node]/1E8 + np.sum((np.max(depth_array) + depth_indicators[node]) - depth_array)/1E8
+            # node_costs[i] = depth_indicators[node]/1E8 + np.sum((np.max(depth_array) + depth_indicators[node]) - depth_array)*len(depth_list)
+            # node_costs[i] = depth_indicators[node]/1E8 + np.sum((np.max(depth_array) + depth_indicators[node]) - depth_array)*len(depth_list)
+            a = 10
+            b = 1
+            
+            node_costs[i] = depth_indicators[node]*a*max_time + b*np.sum((np.max(depth_array) + depth_indicators[node]) - depth_array)
+            
         u = queue.pop(np.argmin(node_costs))
 
         top_order[cnt] = u

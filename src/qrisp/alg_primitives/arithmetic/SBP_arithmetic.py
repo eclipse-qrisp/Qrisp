@@ -194,7 +194,7 @@ def sb_polynomial_encoder(
     symbol_list = []
 
     for qf in input_qf_list:
-        temp_var_list = list(sp.symbols(qf.name + "_" + "0:" + str(qf.size)))
+        temp_var_list = list(sp.symbols(str(hash(qf)) + "_" + "0:" + str(qf.size)))
         symbol_list += temp_var_list
 
     n = len(symbol_list)
@@ -1370,11 +1370,11 @@ def app_phase_polynomial(qf_list, poly, symbol_list=None, t=1):
     for qf in qf_list:
         if qf.signed:
             # We do not use modular arithmetic.
-            sb_poly_list.append(qf.sb_poly()-2**(qf.msize+2+qf.exponent)*sp.symbols(qf.name + "_" + str(qf.msize)))
+            sb_poly_list.append(qf.sb_poly()-2**(qf.msize+2+qf.exponent)*sp.symbols(str(hash(qf)) + "_" + str(qf.msize)))
         else:
             sb_poly_list.append(qf.sb_poly())
 
-        temp_var_list = list(sp.symbols(qf.name + "_" + "0:" + str(qf.size)))
+        temp_var_list = list(sp.symbols(str(hash(qf)) + "_" + "0:" + str(qf.size)))
         new_symbol_list += temp_var_list    
 
     repl_dic = {symbol_list[i]: sb_poly_list[i] for i in range(len(qf_list))}

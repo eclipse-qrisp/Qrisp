@@ -39,7 +39,7 @@ def jasp_function_test(func):
         for qb in qv_qubits:
             clbit_list.append(qc.measure(qb))
             
-        counts = qc.run(shots = 100000)
+        counts = qc.run(shots = None)
         
         # Remove other measurements outcomes from counts dic
         new_counts_dic = {}

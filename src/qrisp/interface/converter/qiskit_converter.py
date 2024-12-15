@@ -143,7 +143,6 @@ def convert_to_qiskit(qc, transpile=False):
 
         # Append to qiskit circuit
         qiskit_qc.append(qiskit_ins, qubit_list, clbit_list)
-
     # Return result
     return qiskit_qc
 
@@ -247,9 +246,10 @@ def create_qiskit_instruction(op, params=[]):
     elif op.definition:
         qiskit_definition = convert_to_qiskit(op.definition)
         try:
-            qiskit_ins = qiskit_definition.to_instruction()
-        except QiskitError:
             qiskit_ins = qiskit_definition.to_gate()
+        except QiskitError:
+            qiskit_ins = qiskit_definition.to_instruction()
+            
         qiskit_ins.name = op.name
     else:
         raise Exception("Could not convert operation " + str(op.name) + " to Qiskit")

@@ -139,15 +139,15 @@ class QuantumSession(QuantumCircuit):
         Examples
         --------
 
-        We create a QuantumSession with the QASM simulator as default backend and
+        We create a QuantumSession with the Aer simulator as default backend and
         register a QuantumFloat in it:
 
-        >>> from qiskit import Aer
-        >>> qasm_sim = Aer.get_backend("qasm_simulator")
+        >>> from qiskit_aer import AerSimulator
+        >>> aer_sim = AerSimulator()
         >>> from qrisp.interface import QiskitBackend
-        >>> vrtl_qasm_sim = QiskitBackend(qasm_sim)
+        >>> vrtl_aer_sim = QiskitBackend(aer_sim)
         >>> from qrisp import QuantumSession, QuantumFloat
-        >>> qs = QuantumSession(vrtl_qasm_sim)
+        >>> qs = QuantumSession(vrtl_aer_sim)
         >>> qf = QuantumFloat(4, qs = qs)
 
 

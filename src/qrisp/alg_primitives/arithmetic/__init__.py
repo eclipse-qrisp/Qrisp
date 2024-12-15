@@ -16,10 +16,11 @@
 ********************************************************************************/
 """
 
-
 from qrisp.alg_primitives.arithmetic.comparisons import *
+from qrisp.alg_primitives.arithmetic.uint_clifford_t_comparisons import *
 from qrisp.alg_primitives.arithmetic.SBP_arithmetic import *
 from qrisp.alg_primitives.arithmetic.ripple_division import *
+from qrisp.alg_primitives.arithmetic.ripple_mult import *
 from qrisp.alg_primitives.arithmetic.matrix_multiplication import *
 from qrisp.alg_primitives.arithmetic.modular_arithmetic import *
 from qrisp.alg_primitives.arithmetic.adders import *

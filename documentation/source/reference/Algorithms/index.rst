@@ -9,14 +9,18 @@ This algorithms submodule of Qrisp provides a collection of commonly used quantu
 
    * - ALGORITHM
      - USED FOR
+   * - :ref:`VQE <VQE>`
+     - finding the ground state energy of a Hamiltonian
    * - :ref:`QAOA <QAOA>`
-     - solving combinatorial optimizatin problems
+     - solving combinatorial optimization problems
    * - :ref:`QIRO <QIRO>`
-     - solving combinatorial optimizatin problems, with quantum informed update rules
+     - solving combinatorial optimization problems, with quantum informed update rules
+   * - :ref:`QITE <QITE>`
+     - performing quantum imaginary-time evolution
    * - :ref:`Shor's Algorithm <Shor>`
      - efficiently factoring large numbers
    * - :ref:`Grover's Algorithm <grovers_alg>`
-     - unstructured search.
+     - unstructured search
    * - :ref:`Quantum Backtracking Algorithms <QuantumBacktrackingTree>`
      - solving constraint-satisfaction problems like 3-SAT or the :ref:`Traveling Salesman Problem (TSP) <tsp>`
    * - :ref:`Quantum Counting <QCounting>`
@@ -31,8 +35,10 @@ We encourage you to explore these algorithms, delve into their documentation, an
    :maxdepth: 2
    :hidden:
    
-   qaoa/index
-   QIRO
+   vqe/VQE
+   qaoa/QAOA
+   qiro/QIRO
+   QITE
    Shor
    Grover
    QuantumBacktrackingTree

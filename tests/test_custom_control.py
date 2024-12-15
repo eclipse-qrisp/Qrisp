@@ -89,7 +89,6 @@ def test_custom_control():
                 
                 qc = b.qs.compile(gate_speed = gate_speed, compile_mcm = True)
                 if env_num_qubits <= qc.num_qubits() +2 and env_t_depth <= qc.t_depth() + 2:
-                    
                     break
                 
             else:

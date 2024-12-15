@@ -177,14 +177,14 @@
     
         .. raw:: html
 
-            <a href="./general/tutorial/TSP.html">
+            <a href="./general/tutorial/H2.html">
             <div class="example-img-plot-overlay">
-            <p class="sd-card-text">Solve the traveling salesman problem using quantum search</code></p>
+            <p class="sd-card-text">Simulate the quantum dynamics of molecules using chemistry data</code></p>
             </div>
             </a>
 
     
-        .. image:: ./_static/tsp.svg
+        .. image:: ./_static/hydrogen.png
 
 
 .. raw:: html
@@ -404,7 +404,7 @@ Who is behind Qrisp
     <div class="code-example-text">
     
 
-Qrisp is an open-source project developed at `Fraunhofer FOKUS <https://www.fokus.fraunhofer.de/en/>`_, an industrial research facility based in Berlin. It is publicly funded by the `German ministry of economic affairs <https://www.digitale-technologien.de/DT/Navigation/DE/ProgrammeProjekte/AktuelleTechnologieprogramme/Quanten_Computing/Projekte/Qompiler/qompiler.html>`_ and the European Union with the aim to enable commercial use of quantum computation. To achieve this, we aim to open this field of research to a broad audience of developers. Furthermore we are proud to announce that Qrisp will become a part of the `Eclipse foundation <https://www.eclipse.org/>`_!
+Qrisp is an Eclipse open-source project developed mainly at `Fraunhofer FOKUS <https://www.fokus.fraunhofer.de/en/>`_, an industrial research facility based in Berlin. It is publicly funded by the `German ministry of economic affairs <https://www.digitale-technologien.de/DT/Navigation/DE/ProgrammeProjekte/AktuelleTechnologieprogramme/Quanten_Computing/Projekte/Qompiler/qompiler.html>`_ and the European Union with the aim to enable commercial use of quantum computation. To achieve this, we aim to open this field of research to a broad audience of developers. Furthermore we are proud to announce that Qrisp will become a part of the `Eclipse foundation <https://www.eclipse.org/>`_!
 
 .. raw:: html
 
@@ -457,6 +457,15 @@ Qrisp is an open-source project developed at `Fraunhofer FOKUS <https://www.foku
         :shadow: none
     
         .. image:: ./_static/bmwk_logo.png
+            :align: center
+            :width: 150
+            :class: no-scaled-link
+
+    .. grid-item-card::
+        :class-card: sd-border-0
+        :shadow: none
+    
+        .. image:: ./_static/iqm_logo.jpg
             :align: center
             :width: 150
             :class: no-scaled-link

@@ -78,10 +78,10 @@ This class is a wrapper for the VirtualBackend to quickly integrate Qiskit backe
 
 ::
 
-   from qiskit import Aer
+   from qiskit_aer import AerSimulator
    from qrisp.interface import QiskitBackend
-   qiskit_backend = Aer.get_backend('qasm_simulator')
-   vrtl_qasm_sim = QiskitBackend(qiskit_backend)
+   qiskit_backend = AerSimulator()
+   vrtl_aer_sim = QiskitBackend(qiskit_backend)
 
 Naturally, this also works for non-simulator Qiskit backends.
 
@@ -90,7 +90,7 @@ Naturally, this also works for non-simulator Qiskit backends.
 ---------------------
 
 The IQMBackend class allows to run Qrisp programs on IQM quantum computers available via 
-`IQM Resonance <https://resonance.meetiqm.com/>`. 
+`IQM Resonance <https://resonance.meetiqm.com/>`_. 
 For an up-to-date list of device instance names check the IQM Resonance Dashboard. 
 Devices available via IQM Resonance currently support up to 20 000 shots. 
 

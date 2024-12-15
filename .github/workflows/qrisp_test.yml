@@ -24,8 +24,9 @@ jobs:
           pip install -e ./
           pip install pennylane
           pip install qiskit-aer
-          pip install jax==0.4.23
-          pip install jaxlib==0.4.23
+          pip install jax==0.4.28
+          pip install jaxlib==0.4.28
+          pip install pyscf
           pip install qiskit-iqm
       - name: Test with pytest
         run: |

@@ -53,7 +53,7 @@ Of course, Qrisp offers much more than just handling strings with a quantum comp
 
 
 ## Authors and Citation
-Qrisp was mainly devised and implemented by Raphael Seidel, supported by Sebastian Bock and Nikolay Tcholtchev.
+Qrisp was mainly devised and implemented by Raphael Seidel, supported by Sebastian Bock, Nikolay Tcholtchev, René Zander, Niklas Steinmann and Matic Petric.
 
 If you have comments, questions or love letters, feel free to reach out to us:
 

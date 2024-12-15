@@ -17,8 +17,9 @@
 """
 
 import numpy as np
+import networkx as nx
 
-from qrisp.circuit import QuantumCircuit, Qubit, PTControlledOperation, ControlledOperation, transpile, Instruction, fast_append
+from qrisp.circuit import QuantumCircuit, Operation, Qubit, PTControlledOperation, ControlledOperation, transpile, Instruction, fast_append, RXGate, RYGate, RZGate, PGate, GPhaseGate
 from qrisp.misc import get_depth_dic, retarget_instructions
 from qrisp.permeability import optimize_allocations, parallelize_qc, lightcone_reduction
 
@@ -56,6 +57,11 @@ def qompiler(
     
     if gate_speed is None:
         gate_speed = lambda x : 1
+    
+    if compile_mcm is True:
+        compile_mcm = "gidney"
+    elif compile_mcm is False:
+        compile_mcm = None
 
     with fast_append():
         qc = qs.copy()
@@ -129,7 +135,10 @@ def qompiler(
         
         # Transpile to the first level
         
+        
         qc = transpile(qc, transpile_predicate = permeability_transpile_predicate)
+        
+        
         if intended_measurements and len(qc.clbits) == 0:
             # This function reorders the circuit such that the intended measurements can
             # be executed as early as possible additionally, any instructions that are
@@ -143,8 +152,8 @@ def qompiler(
         
         # Reorder circuit for parallelization. 
         # For more details check the implementation of this function
-        
         qc = parallelize_qc(qc, depth_indicator = gate_speed)
+        qc = cancel_inverses(qc)
         
         # We now reorder the transpiled circuit to achieve a good (de)allocation order. 
         # Reordering is performed based on the DAG representation of Unqomp. 
@@ -170,7 +179,7 @@ def qompiler(
         
         
         reordered_qc = optimize_allocations(transpiled_qc)
-        
+                
 
         if cancel_qfts:
             # Cancel adjacent QFT gates, which are inverse to each
@@ -196,7 +205,7 @@ def qompiler(
         # We now determine the amount of Qubits the circuit will need
         required_qubits = 0
         max_required_qubits = 0
-
+        
 
         for instr in reordered_qc.data:
             if instr.op.name == "qb_alloc":
@@ -224,15 +233,18 @@ def qompiler(
 
         allocated_qb_list = []
 
-        if compile_mcm:
-            # This list contains the clbits used for mcm mcx compilation
-            mcm_clbits = []
+        # This list contains the clbits used for mcm mcx compilation
+        mcm_clbits = []
 
         depth_dic = {b: 0 for b in qc.qubits + qc.clbits}
         
         # We now iterate through the data of the preprocessed QuantumCircuit
-        for i in range(len(reordered_qc.data)):
-            instr = reordered_qc.data[i]
+        data_list = list(reordered_qc.data)
+        
+        while data_list:
+            
+            instr = data_list.pop(0)
+            
             if instr.op.name == "barrier":
                 continue
 
@@ -285,11 +297,12 @@ def qompiler(
 
                 if use_dirty_anc_for_mcx_recomp:
                     dirty_ancillae = list(
-                        set(translation_dic.values())
-                        - set([translation_dic[qb] for qb in instr.qubits])
+                        set(translation_dic.keys())
+                        - set(instr.qubits)
                     )
+                    
                     dirty_ancillae.sort(
-                        key=lambda x: depth_dic[x] + qc.qubits.index(x) * 1e-5
+                        key=lambda x: depth_dic[translation_dic[x]]
                     )
                 else:
                     dirty_ancillae = []
@@ -303,7 +316,11 @@ def qompiler(
                         instr.op.ctrl_state,
                         clean_ancillae,
                         dirty_ancillae,
+                        use_mcm = (compile_mcm != None)
                     )
+                    
+                    data_list = compiled_mcx_data + data_list
+                    continue
     
                     # We now append the data
                     for qb in clean_ancillae + dirty_ancillae:
@@ -323,7 +340,7 @@ def qompiler(
             ):
                 
                 if not instr.op.inv:
-                    qc.append(instr.op.recompile(), 
+                    qc.append(instr.op.recompile(compile_mcm), 
                               [translation_dic[qb] for qb in instr.qubits])
                 else:
                     
@@ -344,7 +361,7 @@ def qompiler(
                     else:
                         clbit = mcm_clbits[min_clbit]
                                         
-                    qc.append(instr.op.recompile(), 
+                    qc.append(instr.op.recompile(compile_mcm), 
                               [translation_dic[qb] for qb in instr.qubits], 
                               [clbit])
                 update_depth_dic(qc.data[-1], depth_dic, depth_indicator = gate_speed)
@@ -435,8 +452,9 @@ def qompiler(
                 sorted_qubit_list.append(qc.qubits[i])
 
         qc.qubits = sorted_qubit_list
-
+        
         reduced_qc = parallelize_qc(qc, depth_indicator = gate_speed)
+        reduced_qc = cancel_inverses(reduced_qc)
 
     if reduced_qc.depth(depth_indicator = gate_speed) > qc.depth(depth_indicator = gate_speed):
         return qc
@@ -444,7 +462,13 @@ def qompiler(
         return reduced_qc
 
 
-def gen_hybrid_mcx_data(controls, target, ctrl_state, clean_ancillae, dirty_ancillae):
+def gen_hybrid_mcx_data(controls, 
+                        target, 
+                        ctrl_state, 
+                        clean_ancillae, 
+                        dirty_ancillae, 
+                        use_mcm):
+    
     # This function generates the data for the hybrid mcx implementation
 
     from qrisp.core import QuantumVariable
@@ -460,13 +484,14 @@ def gen_hybrid_mcx_data(controls, target, ctrl_state, clean_ancillae, dirty_anci
         ctrl_state=ctrl_state,
         num_ancilla=len(clean_ancillae),
         num_dirty_ancilla=len(dirty_ancillae),
+        use_mcm = use_mcm
     )
 
     # Get the list of used ancillae
     used_ancillae_set = (
         set(control_qv.qs.qubits) - set(control_qv.reg) - set(target_qv.reg)
     )
-
+    
     # If we used the list() function to transform the set, this introduces a
     # non-deterministic element in the compilation algorithm, which can hamper bugfixing
     used_clean_ancillae = []
@@ -494,22 +519,22 @@ def gen_hybrid_mcx_data(controls, target, ctrl_state, clean_ancillae, dirty_anci
 
     # Now retarget the instructions such that they use the appropriate qubits
     data = control_qv.qs.data
-
-    retarget_instructions(data, list(control_qv), controls)
-    retarget_instructions(data, list(target_qv), [target])
-    retarget_instructions(data, used_clean_ancillae, clean_ancillae)
-    retarget_instructions(data, used_dirty_ancillae, dirty_ancillae)
-
+    
     i = 0
     # Remove (de)allocation gates
     while i < len(data):
-        if data[i].op.name in ["qb_dealloc", "qb_alloc"]:
+        if data[i].op.name in ["qb_dealloc", "qb_alloc"] and not data[i].qubits[0] in used_clean_ancillae:
             data.pop(i)
             continue
         i += 1
 
+    
+    retarget_instructions(data, list(control_qv), controls)
+    retarget_instructions(data, list(target_qv), [target])
+    # retarget_instructions(data, used_clean_ancillae, clean_ancillae)
+    retarget_instructions(data, used_dirty_ancillae, dirty_ancillae)
+    
     return data
-
 
 
 # Function to combine any sequences of single qubit gates into a single U3
@@ -732,3 +757,167 @@ def qft_cancellation(qc):
     # print(len(new_qc.data))
     # print("====")
     return new_qc
+
+
+
+
+def fuse_instructions(instr_a, instr_b, gphase_array):
+    
+    if len(instr_a.qubits) != len(instr_b.qubits):
+        return None
+    
+    for i, qb in enumerate(instr_a.qubits):
+        if instr_b.qubits[i] != qb:
+            return None
+    
+    temp = fuse_operations(instr_a.op, instr_b.op, gphase_array)
+    if isinstance(temp, Operation):
+        return Instruction(temp, instr_a.qubits)
+    else:
+        return temp
+
+def fuse_operations(op_a, op_b, gphase_array):
+    
+    from qrisp.alg_primitives import GidneyLogicalAND
+    from qrisp.environments import CustomControlOperation
+    
+    if op_a.definition or op_a.name in ["cx", "cy", "cz"]:
+        
+        if isinstance(op_a, ControlledOperation) and isinstance(op_b, ControlledOperation):
+            if op_a.ctrl_state == op_b.ctrl_state:
+                temp = fuse_operations(op_a.base_operation, op_b.base_operation, gphase_array)
+                if temp == 1:
+                    return 1
+                elif temp is not None:
+                    return ControlledOperation(temp, num_ctrl_qubits=len(op_a.controls), ctrl_state = op_a.ctrl_state)
+                
+        elif isinstance(op_a, GidneyLogicalAND) and isinstance(op_b, GidneyLogicalAND):
+            if op_a.ctrl_state == op_b.ctrl_state:
+                if op_a.inv != op_b.inv:
+                    return 1
+            return None
+        
+        if isinstance(op_a, CustomControlOperation) and isinstance(op_b, CustomControlOperation):
+            temp = fuse_operations(op_a.definition.data[0].op, op_b.definition.data[0].op, gphase_array)
+            if temp == 1:
+                return 1
+            elif temp is not None:
+                return CustomControlOperation(temp, op_a.targeting_control)        
+        return None
+        
+    if op_a.params:
+        param_sum = sum(op_a.params+op_b.params)
+        if op_a.name == "rz":
+            if op_b.name == "rz":
+                gphase_array[0] += (op_a.global_phase + op_b.global_phase)
+                if param_sum == 0:
+                    return 1
+                else:
+                    return RZGate(param_sum)
+            if op_b.name == "p":
+                gphase_array[0] += op_a.global_phase
+                if param_sum == 0:
+                    return 1
+                else:
+                    return PGate(param_sum)
+        elif op_a.name == "p":
+            if op_b.name == "rz":
+                gphase_array[0] += op_b.global_phase
+                if param_sum == 0:
+                    return 1
+                else:
+                    return PGate(param_sum)
+            if op_b.name == "p":
+                return PGate(param_sum)
+            
+        if op_a.name == op_b.name:
+            if op_a.name == "rx":
+                if param_sum == 0:
+                    return 1
+                else:
+                    return RXGate(param_sum)
+            elif op_a.name == "ry":
+                if param_sum == 0:
+                    return 1
+                else:
+                    return RYGate(param_sum)
+            if op_a.name == "gphase":
+                return GPhaseGate(op_a.global_phase + op_b.global_phase)
+            else:
+                return None
+
+    if op_a.inverse().name == op_b.name and op_a.name[-5:] != "alloc":
+        return 1
+        
+    return None
+
+def cancel_inverses(qc):
+    G = nx.DiGraph()
+    qubit_dic = {}
+    edge_dic = {}
+    
+    gphase_array = [0]
+    for i in range(qc.num_qubits()):
+        qubit_dic[qc.qubits[i]] = -i - 1
+        G.add_node(-i-1)
+    
+    data_list = list(qc.data)
+    for i in range(len(data_list)):
+        
+        G.add_node(i)
+        instr = data_list[i]
+        
+        predecessors = set()
+        for qb in instr.qubits:
+            
+            predecessors.add(qubit_dic[qb])
+            
+            if not G.has_edge(qubit_dic[qb], i):
+                G.add_edge(qubit_dic[qb], i)
+                edge_dic[(qubit_dic[qb], i)] = []
+            
+            edge_dic[(qubit_dic[qb], i)].append(qb)
+            qubit_dic[qb] = i
+        
+        predecessors = list(predecessors)
+        
+        if len(predecessors) == 1:
+            pred = predecessors[0]
+            if pred < 0:
+                continue
+            fused_gate = fuse_instructions(data_list[pred], data_list[i], gphase_array)
+            if fused_gate is not None:
+                if fused_gate == 1:
+                    for edge in G.in_edges(pred):
+                        for qb in edge_dic[edge]:
+                            qubit_dic[qb] = edge[0]
+                        del edge_dic[edge]
+                    G.remove_node(pred)
+                else:
+                    data_list[pred] = fused_gate
+                    
+                    for edge in G.in_edges(i):
+                        for qb in edge_dic[edge]:
+                            qubit_dic[qb] = edge[0]
+                        del edge_dic[edge]
+                    
+                G.remove_node(i)
+    
+    qc_new = qc.clearcopy()
+    
+    topo_sort = list(nx.topological_sort(G))
+    with fast_append(3):
+        for i in topo_sort:
+            if i < 0:
+                continue
+            else:
+                if i == topo_sort[-1]:
+                    if data_list[i].op.name == "gphase":
+                        gphase_array[0] += data_list[i].op.params[0]
+                    if gphase_array[0] != 0:
+                        qc_new.gphase(gphase_array[0], qc.data[i].qubits[0])
+                if data_list[i].op.name != "gphase":
+                    qc_new.append(data_list[i].op, qc.data[i].qubits, qc.data[i].clbits)
+                else:
+                    gphase_array[0] += data_list[i].op.params[0]
+    return qc_new
