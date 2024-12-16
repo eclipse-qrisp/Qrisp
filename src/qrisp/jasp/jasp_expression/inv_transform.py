@@ -43,7 +43,7 @@ def invert_eqn(eqn):
     
     if eqn.primitive.name == "pjit":
         params = dict(eqn.params)
-        params["jaxpr"] = ClosedJaxpr(invert_jaspr(eqn.params["jaxpr"].jaxpr),
+        params["jaxpr"] = ClosedJaxpr((eqn.params["jaxpr"].jaxpr).inverse(),
                                       eqn.params["jaxpr"].consts)
 
         if params["name"][-3:] == "_dg":        

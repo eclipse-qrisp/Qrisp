@@ -48,6 +48,9 @@ def collect_environments(jaxpr):
     
     from qrisp.jasp import Jaspr
     
+    if isinstance(jaxpr, Jaspr) and jaxpr.envs_flattened:
+        return jaxpr
+    
     while len(eqn_list) != 0:
         
         eqn = eqn_list.pop(0)
