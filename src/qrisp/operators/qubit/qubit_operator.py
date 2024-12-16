@@ -86,7 +86,7 @@ class QubitOperator(Hamiltonian):
         & = (X_0X_1 + X_0Y_1 - Y_0X_1 + Y_0Y_1)/4
         \end{align}
     
-    Recently a much more efficient method of simulating ``A`` and ``C`` `has 
+    Recently, a much more efficient method of simulating ``A`` and ``C`` `has 
     been proposed by Kornell and Selinger <https://arxiv.org/abs/2310.12256>`_,
     which avoids decomposing these Operators into Paulis strings
     but instead simulates 
@@ -547,12 +547,12 @@ class QubitOperator(Hamiltonian):
 
         Parameters
         ----------
-        matrix : numpy.ndarray or scipy.csr_matrix
+        matrix : numpy.ndarray or scipy.sparse.csr_matrix
             The matrix.
 
         Returns
         -------
-        O : QubitOperator
+        QubitOperator
             The operator represented by the matrix.
 
 
@@ -625,7 +625,7 @@ class QubitOperator(Hamiltonian):
     
         Returns
         -------
-        M : scipy.sparse.csr_matrix
+        scipy.sparse.csr_matrix
             The sparse matrix representing the operator.
 
         """
@@ -734,7 +734,7 @@ class QubitOperator(Hamiltonian):
         Returns
         -------
         QubitOperator
-            An operator that contains only Pauli-Factor.
+            An operator that contains only Pauli factors.
 
         Examples
         --------
@@ -768,7 +768,7 @@ class QubitOperator(Hamiltonian):
         Examples
         --------
         
-        We create a QubitOperator and inspect it' adjoint.
+        We create a QubitOperator and inspect its adjoint.
         
         >>> from qrisp.operators import A,C,Z
         >>> H = A(0)*C(1)*Z(2)
@@ -818,7 +818,7 @@ class QubitOperator(Hamiltonian):
     
         Returns
         -------
-        E : float
+        float
             The ground state energy. 
 
         """

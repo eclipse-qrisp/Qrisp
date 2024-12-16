@@ -552,7 +552,7 @@ class FermionicOperator(Hamiltonian):
     
         Returns
         -------
-        E : float
+        float
             The ground state energy. 
 
         """
@@ -674,7 +674,7 @@ class FermionicOperator(Hamiltonian):
 
         Parameters
         ----------
-        qarg : QuantumVariable or list[Qubit]
+        qarg : :ref:`QuantumVariable` or list[Qubit]
             The quantum argument to evaluate the Hamiltonian on.
         mapping_type : str
             The strategy on how to map the FermionicOperator to a QubitOperator. Default is ``jordan_wigner``
