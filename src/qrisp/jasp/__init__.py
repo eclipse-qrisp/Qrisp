@@ -17,6 +17,7 @@
 """
 
 from qrisp.jasp.primitives import*
+from qrisp.jasp.dynamic_qubit_array import *
 from qrisp.jasp.tracing_quantum_session import *
 from qrisp.jasp.qaching import qache
 from qrisp.jasp.rus import RUS

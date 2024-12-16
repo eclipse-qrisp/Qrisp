@@ -1102,12 +1102,15 @@ def measure(qubits):
     if not isinstance(qs, TracingQuantumSession):
         raise Exception("measure function is available only in Jasp mode")
     else:
-        from qrisp.jasp import Measurement_p, AbstractQubit
+        from qrisp.jasp import Measurement_p, AbstractQubit, AbstractQubitArray
         from qrisp import QuantumVariable
         
+        
         if isinstance(qubits, QuantumVariable):
-            abs_qc, res = Measurement_p.bind(qs.abs_qc, qubits.reg)
+            abs_qc, res = Measurement_p.bind(qs.abs_qc, qubits.reg.tracer)
             res = qubits.jdecoder(res)
+        elif isinstance(qubits.aval, AbstractQubitArray):
+            abs_qc, res = Measurement_p.bind(qs.abs_qc, qubits.tracer)
         elif isinstance(qubits.aval, AbstractQubit):
             abs_qc, res = Measurement_p.bind(qs.abs_qc, qubits)
         else:

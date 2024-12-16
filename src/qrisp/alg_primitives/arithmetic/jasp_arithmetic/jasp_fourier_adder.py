@@ -18,7 +18,7 @@
 
 import numpy as np
 
-from qrisp.jasp import qache, jrange
+from qrisp.jasp import qache, jrange, DynamicQubitArray
 from qrisp.core import swap, h, p, cp
 from qrisp.qtypes import QuantumFloat
 from qrisp.environments import control, conjugate
@@ -42,7 +42,7 @@ def qft(qv):
 def jasp_fourier_adder(a, b):
 
     with conjugate(qft)(b):
-        if isinstance(a, QuantumFloat):
+        if isinstance(a, (QuantumFloat, DynamicQubitArray)):
             for i in jrange(a.size):
                 with control(a[i]):
                     for j in jrange(b.size):

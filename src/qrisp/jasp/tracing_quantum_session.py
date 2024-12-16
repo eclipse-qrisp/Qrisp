@@ -19,6 +19,7 @@
 import jax
 
 from qrisp.jasp.primitives import create_qubits, delete_qubits_p, OperationPrimitive
+from qrisp.jasp.dynamic_qubit_array import DynamicQubitArray
 
 from sympy import symbols
 
@@ -81,8 +82,12 @@ class TracingQuantumSession:
             )
             
         # Determine amount of required qubits
-        self.abs_qc, qv.reg = create_qubits(self.abs_qc, size)
+        
+        
+        self.abs_qc, qb_array_tracer = create_qubits(self.abs_qc, size)
         # Register in the list of active quantum variable
+        dynamic_qubit_array = DynamicQubitArray(qb_array_tracer)
+        qv.reg = dynamic_qubit_array
         self.qv_list.append(qv)
         
     def delete_qv(self, qv, verify=False):
@@ -110,7 +115,7 @@ class TracingQuantumSession:
         
     def clear_qubits(self, qubits, verify=False):
         
-        self.abs_qc = delete_qubits_p.bind(self.abs_qc, qubits)
+        self.abs_qc = delete_qubits_p.bind(self.abs_qc, qubits.tracer)
     
     @classmethod
     def release(cls):

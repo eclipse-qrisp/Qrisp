@@ -1076,14 +1076,8 @@ class QuantumVariable:
         return list(self.get_measurement())[0]
 
     def __getitem__(self, key):
-        if isinstance(self.reg, list):
-            return self.reg[key]
-        else:
-            id_tuple = (id(self.reg), id(key))
-            if not id_tuple in self.qs.qubit_cache:
-                from qrisp.jasp import get_qubit
-                self.qs.qubit_cache[id_tuple] = get_qubit(self.reg, key)
-            return self.qs.qubit_cache[id_tuple]
+        return self.reg[key]
+        
     def __str__(self):
         return str(self.get_measurement())
 
@@ -1108,9 +1102,7 @@ class QuantumVariable:
         if isinstance(self.reg, list):
             return len(self.reg)
         else:
-            from qrisp.jasp import get_size
-            return get_size(self.reg)
-        
+            return self.reg.size
 
     # Overload equality operator to use python syntax for if environments?
     # Not sure if the possible user confusion is worth it
@@ -1488,7 +1480,7 @@ def plot_histogram(outcome_labels, counts, filename=None):
 
 from jax import tree_util
 import jax.numpy as jnp
-from qrisp.jasp.tracing_quantum_session import TracingQuantumSession
+from qrisp.jasp import TracingQuantumSession, DynamicQubitArray
 from builtins import id
 
 # This class hides the QuantumVariable object from jax to transfer it via the
@@ -1503,7 +1495,7 @@ class QuantumVariableIdentityContainer:
 
 def flatten_qv(qv):
     # return the tracers and auxiliary data (structure of the object)
-    children = [qv.reg]
+    children = [qv.reg.tracer]
     # aux_data = (QVNameContainer(qv.name),)
     # Iterate through the attributes that are marked as traced
     for traced_attribute in qv.traced_attributes:
@@ -1518,7 +1510,7 @@ def unflatten_qv(aux_data, children):
     qs = TracingQuantumSession.get_instance()
     
     qv = aux_data[0].qv
-    qv.reg = children[0]
+    qv.reg = DynamicQubitArray(children[0])
     for i in range(len(qv.traced_attributes)):
         setattr(qv, qv.traced_attributes[i], children[i+1])
     return qv
