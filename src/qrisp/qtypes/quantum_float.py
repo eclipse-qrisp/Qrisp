@@ -401,6 +401,14 @@ class QuantumFloat(QuantumVariable):
     @gate_wrap(permeability="args", is_qfree=True)
     def __mul__(self, other):
         
+        from qrisp.jasp import check_for_tracing_mode
+        
+        if check_for_tracing_mode():
+            from qrisp.alg_primitives.arithmetic import jasp_fourier_multiplyer
+            s = jasp_fourier_multiplyer(other, self)
+            return s
+        
+        
         from qrisp.alg_primitives.arithmetic import q_mult, polynomial_encoder
         
         if isinstance(other, QuantumFloat):

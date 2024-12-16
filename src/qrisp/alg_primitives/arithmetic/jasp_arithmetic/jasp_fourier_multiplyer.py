@@ -16,8 +16,20 @@
 ********************************************************************************/
 """
 
-from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_fourier_adder import jasp_fourier_adder
-from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_gidney_adder import jasp_gidney_adder
-from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_adder import jasp_mod_adder
-from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_fourier_multiplyer import jasp_fourier_multiplyer
+import numpy as np
 
+from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_fourier_adder import jasp_fourier_adder
+from qrisp.jasp import qache, jrange
+from qrisp.qtypes import QuantumFloat
+from qrisp.environments import control
+
+@qache
+def jasp_fourier_multiplyer(a, b):
+    
+    s = QuantumFloat(a.size + b.size)
+    
+    for i in jrange(b.size):
+        with control(b[i]):
+            jasp_fourier_adder(a, s[i:i+a.size+1])
+    
+    return s
