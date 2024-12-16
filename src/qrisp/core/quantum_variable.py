@@ -1491,6 +1491,16 @@ import jax.numpy as jnp
 from qrisp.jasp.tracing_quantum_session import TracingQuantumSession
 from builtins import id
 
+# This class hides the QuantumVariable object from jax to transfer it via the
+# the aux_data feature
+class QuantumVariableIdentityContainer:
+    def __init__(self, qv):
+        self.qv = qv
+    def __hash__(self):
+        return 0
+    def __eq__(self, other):
+        return True
+
 def flatten_qv(qv):
     # return the tracers and auxiliary data (structure of the object)
     children = [qv.reg]
@@ -1502,18 +1512,13 @@ def flatten_qv(qv):
             attr = jnp.array(attr, jnp.dtype("int32"))
         children.append(attr)
     
-    return tuple(children), None
+    return tuple(children), (QuantumVariableIdentityContainer(qv),)
 
 def unflatten_qv(aux_data, children):
     qs = TracingQuantumSession.get_instance()
     
-    for qv in qs.qv_list:
-        
-        if qv.reg.aval is children[0].aval:
-            qv.reg = children[0]
-            for i in range(len(qv.traced_attributes)):
-                setattr(qv, qv.traced_attributes[i], children[i+1])
-            return qv
-    else:
-        raise Exception("Could not find QuantumVariable object in QuantumSession during unflattening")
-
+    qv = aux_data[0].qv
+    qv.reg = children[0]
+    for i in range(len(qv.traced_attributes)):
+        setattr(qv, qv.traced_attributes[i], children[i+1])
+    return qv

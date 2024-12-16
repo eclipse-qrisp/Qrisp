@@ -516,6 +516,13 @@ class QuantumFloat(QuantumVariable):
     @gate_wrap(permeability=[1], is_qfree=True)
     def __iadd__(self, other):
         
+        from qrisp.jasp import check_for_tracing_mode
+        
+        if check_for_tracing_mode():
+            from qrisp.alg_primitives.arithmetic import jasp_fourier_adder
+            jasp_fourier_adder(other, self)
+            return self
+        
         from qrisp.alg_primitives.arithmetic import polynomial_encoder
         
         if isinstance(other, QuantumFloat):

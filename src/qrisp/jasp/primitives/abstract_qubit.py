@@ -18,7 +18,7 @@ class AbstractQubit(AbstractValue):
     def __eq__(self, other):
         if not isinstance(other, AbstractQubit):
             return False
-        return hash(self) == hash(other)
+        return isinstance(other, AbstractQubit)
 
 raise_to_shaped_mappings[AbstractQubit] = lambda aval, _: aval
 
