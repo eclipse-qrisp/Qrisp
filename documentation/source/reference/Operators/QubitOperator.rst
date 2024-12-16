@@ -13,10 +13,13 @@ Methods
    :toctree: generated/
    
    QubitOperator.adjoint
-   QubitOperator.hermitize
    QubitOperator.commutator
-   QubitOperator.ground_state_energy
+   QubitOperator.from_matrix
    QubitOperator.get_measurement
+   QubitOperator.ground_state_energy
+   QubitOperator.hermitize
+   QubitOperator.to_array
+   QubitOperator.to_sparse_matrix
    QubitOperator.to_pauli
    QubitOperator.trotterization
    
