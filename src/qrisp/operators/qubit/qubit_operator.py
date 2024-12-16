@@ -676,8 +676,8 @@ class QubitOperator(Hamiltonian):
                 M = sp.csr_matrix((1,1))
                 M[0,0] = res
                 return M
-        elif participating_indices and factor_amount < max(participating_indices):
-            raise Exception("Tried to compute Hermitian matrix with factor_amount variable lower than the largest factor index")
+        elif participating_indices and factor_amount < max(participating_indices) + 1:
+            raise Exception("Tried to construct matrix with insufficient factor_amount")
 
         keys = list(range(factor_amount))
         
