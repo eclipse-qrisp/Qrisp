@@ -22,6 +22,7 @@ import sympy as sp
 
 from qrisp.core import QuantumVariable
 from qrisp.misc import gate_wrap
+from qrisp.environments import invert
 
 
 def signed_int_iso_2(x, n):
@@ -316,6 +317,8 @@ class QuantumFloat(QuantumVariable):
                     return int(res)
                 else:
                     return res.astype(int)
+            else:
+                return res
         else:
             from jax.numpy import float32
             from jax.core import Tracer
@@ -556,6 +559,14 @@ class QuantumFloat(QuantumVariable):
     def __isub__(self, other):
         
         from qrisp.alg_primitives.arithmetic import polynomial_encoder
+        
+        from qrisp.jasp import check_for_tracing_mode
+        
+        if check_for_tracing_mode():
+            from qrisp.alg_primitives.arithmetic import jasp_fourier_adder
+            with invert():
+                jasp_fourier_adder(other, self)
+            return self
         
         if isinstance(other, QuantumFloat):
             input_qf_list = [other]

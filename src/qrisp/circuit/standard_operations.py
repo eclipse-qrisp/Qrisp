@@ -105,7 +105,7 @@ def RYGate(phi=0):
 
 
 def RZGate(phi=0):
-    res = U3Gate(0, phi, 0, name="rz")
+    res = U3Gate(0, phi, 0, name="rz", global_phase = -phi/2)
     return res
 
 
