@@ -17,7 +17,7 @@
 """
 
 from qrisp.jasp import qache, jrange, AbstractQubit, make_jaspr, Jaspr
-from qrisp.core import h, cx, t, t_dg, s, measure, cz, QuantumVariable
+from qrisp.core import x, h, cx, t, t_dg, s, measure, cz, QuantumVariable
 from qrisp.qtypes import QuantumBool
 from qrisp.environments import control, custom_control
 
@@ -48,6 +48,7 @@ def gidney_mcx_inv_impl(a, b, c):
     
     with control(bl):
         cz(a,b)
+        x(c)
 
 gidney_mcx_jaspr = make_jaspr(gidney_mcx_impl)(AbstractQubit(), AbstractQubit(), AbstractQubit()).flatten_environments()
 gidney_mcx_inv_jaspr = make_jaspr(gidney_mcx_inv_impl)(AbstractQubit(), AbstractQubit(), AbstractQubit()).flatten_environments()
