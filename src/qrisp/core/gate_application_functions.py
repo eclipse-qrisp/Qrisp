@@ -464,7 +464,7 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
     """
 
     from qrisp.misc import bin_rep
-    from qrisp.alg_primitives.mcx_algs import GidneyLogicalAND, amy_toffoli, jones_toffoli
+    from qrisp.alg_primitives.mcx_algs import GidneyLogicalAND, amy_toffoli, jones_toffoli, jasp_gidney_mcx, jasp_gidney_mcx_inv
     from qrisp.core import QuantumVariable
     from qrisp.qtypes import QuantumBool
 
@@ -520,19 +520,25 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
         if len(qubits_0) != 2:
             raise Exception(f"Tried to call Gidney logical AND with {len(qubits_0)} controls instead of two")
         
-        append_operation(
-            GidneyLogicalAND(ctrl_state = ctrl_state),
-            qubits_0 + qubits_1,
-        )
+        if check_for_tracing_mode():
+            jasp_gidney_mcx(qubits_0[0], qubits_0[1], qubits_1[0])
+        else:
+            append_operation(
+                GidneyLogicalAND(ctrl_state = ctrl_state),
+                qubits_0 + qubits_1,
+            )
     
     elif method == "gidney_inv":
         if len(qubits_0) != 2:
             raise Exception(f"Tried to call Gidney logical AND with {len(qubits_0)} controls instead of two")
-        
-        append_operation(
-            GidneyLogicalAND(ctrl_state = ctrl_state, inv = True),
-            qubits_0 + qubits_1,
-        )
+
+        if check_for_tracing_mode():
+            jasp_gidney_mcx_inv(qubits_0[0], qubits_0[1], qubits_1[0])
+        else:
+            append_operation(
+                GidneyLogicalAND(ctrl_state = ctrl_state, inv = True),
+                qubits_0 + qubits_1,
+            )
 
     elif method == "maslov":
         from qrisp import QuantumBool

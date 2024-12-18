@@ -19,7 +19,7 @@
 import jax.numpy as jnp
 
 from qrisp.jasp import qache, jrange, AbstractQubit, make_jaspr, Jaspr
-from qrisp.core import x, h, cx, t, t_dg, s, measure, cz, QuantumVariable
+from qrisp.core import x, h, cx, t, t_dg, s, measure, cz, QuantumVariable, mcx
 from qrisp.qtypes import QuantumBool
 from qrisp.environments import control, custom_control
 
@@ -90,7 +90,8 @@ def jasp_cq_gidney_adder(a, b, ctrl = None):
         if ctrl is None:
             cx(b[i], gidney_anc[i])
         else:
-            gidney_mcx(ctrl, b[i], gidney_anc[i])
+            # gidney_mcx(ctrl, b[i], gidney_anc[i])
+            mcx([ctrl, b[i]], gidney_anc[i], method = "gidney")
 
     for j in jrange(b.size-2):
         i = j+1
@@ -101,18 +102,18 @@ def jasp_cq_gidney_adder(a, b, ctrl = None):
             if ctrl is None:
                 x(gidney_anc[i-1])
             else:
-                cx(ctrl, x(gidney_anc[i-1]))
-                
-        gidney_mcx(gidney_anc[i-1], b[i], gidney_anc[i])
+                cx(ctrl, gidney_anc[i-1])
+        
+        mcx([gidney_anc[i-1], b[i]], gidney_anc[i], method = "gidney")
         
         with control(extract_boolean_digit(a, i)):
             if ctrl is None:
                 x(gidney_anc[i-1])
             else:
-                cx(ctrl, x(gidney_anc[i-1]))
+                cx(ctrl, gidney_anc[i-1])
                 
         cx(gidney_anc[i-1], gidney_anc[i])
-        
+    
     cx(gidney_anc[b.size-2], b[b.size-1])
     
     for j in jrange(b.size-2):
@@ -124,7 +125,8 @@ def jasp_cq_gidney_adder(a, b, ctrl = None):
             
             with control(extract_boolean_digit(a, i)):
                 cx(ctrl, gidney_anc[i-1])
-            gidney_mcx_inv(gidney_anc[i-1], b[i], gidney_anc[i])
+            # gidney_mcx_inv(gidney_anc[i-1], b[i], gidney_anc[i])
+            mcx([gidney_anc[i-1], b[i]], gidney_anc[i], method = "gidney")
             with control(extract_boolean_digit(a, i)):
                 cx(ctrl, gidney_anc[i-1])
                 
@@ -132,7 +134,8 @@ def jasp_cq_gidney_adder(a, b, ctrl = None):
             
             with control(extract_boolean_digit(a, i)):
                 x(gidney_anc[i-1])
-            gidney_mcx_inv(gidney_anc[i-1], b[i], gidney_anc[i])
+            # gidney_mcx_inv(gidney_anc[i-1], b[i], gidney_anc[i])
+            mcx([gidney_anc[i-1], b[i]], gidney_anc[i], method = "gidney_inv")
             with control(extract_boolean_digit(a, i)):
                 x(gidney_anc[i-1])
             
@@ -141,7 +144,8 @@ def jasp_cq_gidney_adder(a, b, ctrl = None):
         if ctrl is None:
             cx(b[0], gidney_anc[0])
         else:
-            gidney_mcx_inv(ctrl, b[0], gidney_anc[0])
+            # gidney_mcx_inv(ctrl, b[0], gidney_anc[0])
+            mcx([ctrl, b[0]], gidney_anc[0], method = "gidney_inv")
     
     for i in jrange(b.size):
         with control(extract_boolean_digit(a, i)):
