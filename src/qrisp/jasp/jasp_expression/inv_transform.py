@@ -119,10 +119,15 @@ def invert_jaspr(jaspr):
     
     from qrisp.jasp import Jaspr
     
-    return Jaspr(constvars = jaspr.constvars, 
+    res = Jaspr(constvars = jaspr.constvars, 
                  invars = jaspr.invars, 
                  outvars = op_eqs[-1].outvars[:1] + jaspr.outvars[1:], 
                  eqns = non_op_eqs + op_eqs + deletions)
+    
+    if jaspr.ctrl_jaspr:
+        res.ctrl_jaspr = jaspr.ctrl_jaspr.inverse()
+        
+    return res
         
 
 # The following two functions manage the logic behind inverting a loop.
