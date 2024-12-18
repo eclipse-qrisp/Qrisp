@@ -167,6 +167,13 @@ class ClControlEnvironment(QuantumEnvironment):
         
         self.invert = invert
     
+    def compile(self):
+        for i in range(len(self.ctrl_bls)):
+            if self.ctrl_bls[i] != bool((self.ctrl_state >> i) & 1):
+                break
+        else:
+            QuantumEnvironment.compile(self)
+    
     def jcompile(self, eqn, context_dic):
         
         args = extract_invalues(eqn, context_dic)

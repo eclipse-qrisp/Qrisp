@@ -26,7 +26,10 @@ from qrisp.environments import control, conjugate
 @qache
 def qft(qv):
     """Performs qft on the first n qubits in circuit (without swaps)"""
-    n = qv.size
+    if isinstance(qv, list):
+        n = len(qv)
+    else:
+        n = qv.size
     
     for i in jrange(n):
         # pass
@@ -40,15 +43,24 @@ def qft(qv):
 
 @qache
 def jasp_fourier_adder(a, b):
+    
+    if isinstance(b, list):
+        n_a = len(a)
+    else:
+        n_a = a.size
+    
+    if isinstance(b, list):
+        n_b = len(b)
+    else:
+        n_b = b.size
 
     with conjugate(qft)(b):
-        if isinstance(a, (QuantumFloat, DynamicQubitArray)):
-            for i in jrange(a.size):
+        if isinstance(a, (QuantumFloat, DynamicQubitArray, list)):
+            for i in jrange(n_a):
                 with control(a[i]):
-                    for j in jrange(b.size):
-                        p(np.pi*2.**(j-b.size+1+i), b[j])
-    
+                    for j in jrange(n_b):
+                        p(np.pi*2.**(j-n_b+1+i), b[j])
                     
         else: 
-            for i in jrange(b.size):
-                p(a*np.pi*2.**(i-b.size+1), b[i])
+            for i in jrange(n_b):
+                p(a*np.pi*2.**(i-n_b+1), b[i])
