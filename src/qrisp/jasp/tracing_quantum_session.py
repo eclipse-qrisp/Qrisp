@@ -65,6 +65,17 @@ class TracingQuantumSession:
         if len(clbits):
             raise Exception("Tried to append Operation with non-zero classical bits in JAX mode.")
         
+        from qrisp.core import QuantumVariable
+        
+        if isinstance(qubits[0], QuantumVariable):
+            
+            from qrisp.jasp import jrange
+            
+            for i in jrange(qubits[0].size):
+                self.append(operation, [qubits[j][i] for j in range(operation.num_qubits)], param_tracers = param_tracers)
+            return
+            
+        
         temp_op = operation.copy()
         
         temp_op.params = list(temp_op.params)
