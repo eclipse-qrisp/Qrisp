@@ -999,9 +999,11 @@ def make_jaspr(fun):
         # we flatten each QuantumVariable (ie. turn it into a tuple)
         flattened_qvs = []
         for i in range(len(args)):
-            if isinstance(args[i], int):
+            if isinstance(args[i], bool):
+                args[i] = jnp.asarray(args[i], dtype = "bool")
+            elif isinstance(args[i], int):
                 args[i] = jnp.asarray(args[i], dtype = "int32")
-            if isinstance(args[i], QuantumVariable):
+            elif isinstance(args[i], QuantumVariable):
                 flattened_qvs.append(flatten_qv(args[i]))
         
         jaxpr = make_jaxpr(ammended_function)(AbstractQuantumCircuit(), *args, **kwargs).jaxpr

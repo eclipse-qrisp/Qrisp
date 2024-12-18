@@ -165,6 +165,8 @@ class ClControlEnvironment(QuantumEnvironment):
             else:
                 self.ctrl_state = int(self.ctrl_state, 2)
         
+        self.ctrl_state = self.ctrl_state%(2**len(self.ctrl_bls))
+        
         self.invert = invert
     
     def compile(self):

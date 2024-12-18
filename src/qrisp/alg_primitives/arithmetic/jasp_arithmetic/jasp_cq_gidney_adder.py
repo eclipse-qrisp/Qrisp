@@ -16,6 +16,8 @@
 ********************************************************************************/
 """
 
+import jax.numpy as jnp
+
 from qrisp.jasp import qache, jrange, AbstractQubit, make_jaspr, Jaspr
 from qrisp.core import x, h, cx, t, t_dg, s, measure, cz, QuantumVariable
 from qrisp.qtypes import QuantumBool
@@ -73,49 +75,81 @@ def gidney_mcx(a, b, c):
 def gidney_mcx_inv(a, b, c):
     GidneyMCXJaspr(True).embedd(a, b, c, name = "gidney_mcx_inv")
 
+@qache
+def extract_boolean_digit(integer, digit):
+    return jnp.bool((integer>>digit & 1))
+
 @custom_control
-def jasp_gidney_adder(a, b, ctrl = None):
+def jasp_cq_gidney_adder(a, b, ctrl = None):
     
-    gidney_anc = QuantumVariable(a.size-1, name = "gidney_anc*")
-    
-    if ctrl is not None:
-        ctrl_anc = QuantumBool(name = "gidney_anc_2*")
+    gidney_anc = QuantumVariable(b.size-1, name = "gidney_anc*")
     
     i = 0
-    gidney_mcx(a[i], b[i], gidney_anc[i])
-    
-    for j in jrange(a.size-2):
+
+    with control(extract_boolean_digit(a, i)):
+        if ctrl is None:
+            cx(b[i], gidney_anc[i])
+        else:
+            gidney_mcx(ctrl, b[i], gidney_anc[i])
+
+    for j in jrange(b.size-2):
         i = j+1
     
-        cx(gidney_anc[i-1], a[i])
         cx(gidney_anc[i-1], b[i])
-        gidney_mcx(a[i], b[i], gidney_anc[i])
+        
+        with control(extract_boolean_digit(a, i)):
+            if ctrl is None:
+                x(gidney_anc[i-1])
+            else:
+                cx(ctrl, x(gidney_anc[i-1]))
+                
+        gidney_mcx(gidney_anc[i-1], b[i], gidney_anc[i])
+        
+        with control(extract_boolean_digit(a, i)):
+            if ctrl is None:
+                x(gidney_anc[i-1])
+            else:
+                cx(ctrl, x(gidney_anc[i-1]))
+                
         cx(gidney_anc[i-1], gidney_anc[i])
         
-    cx(gidney_anc[a.size-2], b[b.size-1])
+    cx(gidney_anc[b.size-2], b[b.size-1])
     
-    for j in jrange(a.size-2):
-        i = a.size-j-2
+    for j in jrange(b.size-2):
         
-        cx(gidney_anc[i-1], gidney_anc[i])
-        gidney_mcx_inv(a[i], b[i], gidney_anc[i])
+        i = b.size-j-2
+        cx(gidney_anc[i-1], gidney_anc[i])        
         
         if ctrl is not None:
             
-            gidney_mcx(ctrl, a[i], ctrl_anc[0])
-            cx(ctrl_anc[0], b[i])
-            gidney_mcx(ctrl, a[i], ctrl_anc[0])
-            
-            cx(gidney_anc[i-1], a[i])
-            cx(gidney_anc[i-1], b[i])
+            with control(extract_boolean_digit(a, i)):
+                cx(ctrl, gidney_anc[i-1])
+            gidney_mcx_inv(gidney_anc[i-1], b[i], gidney_anc[i])
+            with control(extract_boolean_digit(a, i)):
+                cx(ctrl, gidney_anc[i-1])
+                
         else:
-            cx(gidney_anc[i-1], a[i])
-            cx(a[i], b[i])
+            
+            with control(extract_boolean_digit(a, i)):
+                x(gidney_anc[i-1])
+            gidney_mcx_inv(gidney_anc[i-1], b[i], gidney_anc[i])
+            with control(extract_boolean_digit(a, i)):
+                x(gidney_anc[i-1])
+            
     
-    gidney_mcx_inv(a[0], b[0], gidney_anc[0])
-    cx(a[0], b[0])
+    with control(extract_boolean_digit(a, 0)):
+        if ctrl is None:
+            cx(b[0], gidney_anc[0])
+        else:
+            gidney_mcx_inv(ctrl, b[0], gidney_anc[0])
+    
+    for i in jrange(b.size):
+        with control(extract_boolean_digit(a, i)):
+            if ctrl is not None:
+                cx(ctrl, b[i])
+            else:
+                x(b[i])
+        
     
     gidney_anc.delete()
     
-    if ctrl is not None:
-        ctrl_anc.delete()        

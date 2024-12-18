@@ -17,7 +17,8 @@
 """
 
 from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_fourier_adder import jasp_fourier_adder
-from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_gidney_adder import jasp_gidney_adder
+from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_cq_gidney_adder import jasp_cq_gidney_adder
+from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_qq_gidney_adder import jasp_qq_gidney_adder
 from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_adder import jasp_mod_adder
 from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_fourier_multiplyer import jasp_fourier_multiplyer
 

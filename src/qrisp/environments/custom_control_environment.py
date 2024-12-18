@@ -206,6 +206,8 @@ def custom_control(func):
             # Qache the function
             res = qache(func)(*args, **kwargs)
             
+            # Retrieve the equation
+            jit_eqn = jax._src.core.thread_local_state.trace_state.trace_stack.dynamic.jaxpr_stack[0].eqns[-1]
             
             # Trace the controlled version
             new_kwargs = dict(kwargs)
@@ -222,8 +224,7 @@ def custom_control(func):
             # Move it to the place after the QuantumCircuit argument
             controlled_jaspr.invars.insert(1, controlled_jaspr.invars.pop(i))
             
-            # Retrieve the equation
-            jit_eqn = jax._src.core.thread_local_state.trace_state.trace_stack.dynamic.jaxpr_stack[0].eqns[-1]
+
             
             # Store controlled version
             jit_eqn.params["jaxpr"].jaxpr.ctrl_jaspr = controlled_jaspr
