@@ -245,7 +245,7 @@ def exec_multi_controlled_jaspr(jaspr, num_ctrls, ctrl_state):
             
             if ctrl_state == "0":
                 qs.append(XGate(), ctrls[0])
-            temp = controlled_jaspr.inline(*args)
+            temp = controlled_jaspr.embedd(*args, inline = True)
             if ctrl_state == "0":
                 qs.append(XGate(), ctrls[0])
             return temp
@@ -260,7 +260,7 @@ def exec_multi_controlled_jaspr(jaspr, num_ctrls, ctrl_state):
             ctrl_qb = ctrl_qbl[0]
             
             qs.append(mcx_operation, ctrls + [ctrl_qb])
-            res = controlled_jaspr.inline(*([ctrl_qb] + invalues))
+            res = controlled_jaspr.embedd(*([ctrl_qb] + invalues), inline = True)
             qs.append(mcx_operation, ctrls + [ctrl_qb])
             
             ctrl_qbl.delete()

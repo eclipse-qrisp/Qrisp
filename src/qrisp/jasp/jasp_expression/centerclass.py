@@ -448,24 +448,31 @@ class Jaspr(Jaxpr):
         qs.abs_qc = new_abs_qc
         return res
     
-    def embedd(self, *args, name = None):
+    def embedd(self, *args, name = None, inline = False):
         from qrisp.jasp import TracingQuantumSession
         
         qs = TracingQuantumSession.get_instance()
         abs_qc = qs.abs_qc
         
-        res = jax.jit(eval_jaxpr(self))(*([abs_qc] + list(args)))
-        
-        eqn = jax._src.core.thread_local_state.trace_state.trace_stack.dynamic.jaxpr_stack[0].eqns[-1]
-        eqn.params["jaxpr"] = jax.core.ClosedJaxpr(self, eqn.params["jaxpr"].consts)
-        if name is not None:
-            eqn.params["name"] = name
-        
-        if not isinstance(res, tuple):
-            res = (res,)
-        
-        qs.abs_qc = res[0]
-        return res[1:]
+        if not inline:
+            res = jax.jit(eval_jaxpr(self))(*([abs_qc] + list(args)))
+            
+            eqn = jax._src.core.thread_local_state.trace_state.trace_stack.dynamic.jaxpr_stack[0].eqns[-1]
+            eqn.params["jaxpr"] = jax.core.ClosedJaxpr(self, eqn.params["jaxpr"].consts)
+            if name is not None:
+                eqn.params["name"] = name
+        else:
+            res = eval_jaxpr(self)(*([abs_qc] + list(args)))
+            
+        if isinstance(res, tuple):
+            new_abs_qc = res[0]
+            res = res[1:]
+        else:
+            new_abs_qc = res
+            res = None
+        qs.abs_qc = new_abs_qc
+        return res
+
     
     def qjit(self, *args, function_name = "jaspr_function"):
         """
