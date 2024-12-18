@@ -20,8 +20,9 @@ import numpy as np
 
 from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_fourier_adder import jasp_fourier_adder
 from qrisp.jasp import qache, jrange
-from qrisp.qtypes import QuantumFloat
+from qrisp.qtypes import QuantumFloat, QuantumBool
 from qrisp.environments import control
+from qrisp.core import cx
 
 @qache
 def jasp_fourier_multiplyer(a, b):
@@ -29,7 +30,27 @@ def jasp_fourier_multiplyer(a, b):
     s = QuantumFloat(a.size + b.size)
     
     for i in jrange(b.size):
+        
         with control(b[i]):
             jasp_fourier_adder(a, s[i:i+a.size+1])
+    
+    return s
+
+@qache
+def jasp_squaring(a):
+    
+    s = QuantumFloat(2*a.size)
+    temp = QuantumBool()
+    
+    for i in jrange(a.size):
+        
+        cx(a[i], temp[0])
+        
+        with control(temp[0]):
+            jasp_fourier_adder(a, s[i:i+a.size+1])
+            
+        cx(a[i], temp[0])
+        
+    temp.delete()
     
     return s
