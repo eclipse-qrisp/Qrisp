@@ -17,61 +17,10 @@
 """
 
 from qrisp.jasp import qache, jrange, AbstractQubit, make_jaspr, Jaspr
-from qrisp.core import x, h, cx, t, t_dg, s, measure, cz, QuantumVariable
+from qrisp.core import x, h, cx, t, t_dg, s, measure, cz, mcx, QuantumVariable
 from qrisp.qtypes import QuantumBool
 from qrisp.environments import control, custom_control
 
-
-def gidney_mcx_impl(a, b, c):
-    
-    h(c)
-    t(c)
-    
-    cx(a, c)
-    cx(b, c)
-    cx(c, a)
-    cx(c, b)
-    
-    t_dg(a)
-    t_dg(b)
-    t(c)
-    
-    cx(c,a)
-    cx(c,b)
-    
-    h(c)
-    s(c)
-
-def gidney_mcx_inv_impl(a, b, c):
-    h(c)
-    bl = measure(c)
-    
-    with control(bl):
-        cz(a,b)
-        x(c)
-
-gidney_mcx_jaspr = make_jaspr(gidney_mcx_impl)(AbstractQubit(), AbstractQubit(), AbstractQubit()).flatten_environments()
-gidney_mcx_inv_jaspr = make_jaspr(gidney_mcx_inv_impl)(AbstractQubit(), AbstractQubit(), AbstractQubit()).flatten_environments()
-
-class GidneyMCXJaspr(Jaspr):
-    
-    slots = ["inv"]
-    def __init__(self, inv):
-        self.inv = inv
-        if self.inv:
-            Jaspr.__init__(self, gidney_mcx_inv_jaspr)
-        else:
-            Jaspr.__init__(self, gidney_mcx_jaspr)
-        self.envs_flattened = True
-            
-    def inverse(self):
-        return GidneyMCXJaspr(not self.inv)
-
-def gidney_mcx(a, b, c):
-    GidneyMCXJaspr(False).embedd(a, b, c, name = "gidney_mcx")
-
-def gidney_mcx_inv(a, b, c):
-    GidneyMCXJaspr(True).embedd(a, b, c, name = "gidney_mcx_inv")
 
 @custom_control
 def jasp_qq_gidney_adder(a, b, ctrl = None):
@@ -82,14 +31,14 @@ def jasp_qq_gidney_adder(a, b, ctrl = None):
         ctrl_anc = QuantumBool(name = "gidney_anc_2*")
     
     i = 0
-    gidney_mcx(a[i], b[i], gidney_anc[i])
+    mcx([a[i], b[i]], gidney_anc[i], method = "gidney")
     
     for j in jrange(a.size-2):
         i = j+1
     
         cx(gidney_anc[i-1], a[i])
         cx(gidney_anc[i-1], b[i])
-        gidney_mcx(a[i], b[i], gidney_anc[i])
+        mcx([a[i], b[i]], gidney_anc[i], method = "gidney")
         cx(gidney_anc[i-1], gidney_anc[i])
         
     cx(gidney_anc[a.size-2], b[b.size-1])
@@ -98,13 +47,15 @@ def jasp_qq_gidney_adder(a, b, ctrl = None):
         i = a.size-j-2
         
         cx(gidney_anc[i-1], gidney_anc[i])
-        gidney_mcx_inv(a[i], b[i], gidney_anc[i])
+        mcx([a[i], b[i]], gidney_anc[i], method = "gidney_inv")
         
         if ctrl is not None:
             
-            gidney_mcx(ctrl, a[i], ctrl_anc[0])
+            mcx([ctrl, a[i]], ctrl_anc[0], method = "gidney")
+            # mcx([ctrl, a[i]], ctrl_anc[0], method = "gray")
             cx(ctrl_anc[0], b[i])
-            gidney_mcx(ctrl, a[i], ctrl_anc[0])
+            mcx([ctrl, a[i]], ctrl_anc[0], method = "gidney_inv")
+            # mcx([ctrl, a[i]], ctrl_anc[0], method = "gray")
             
             cx(gidney_anc[i-1], a[i])
             cx(gidney_anc[i-1], b[i])
@@ -112,7 +63,7 @@ def jasp_qq_gidney_adder(a, b, ctrl = None):
             cx(gidney_anc[i-1], a[i])
             cx(a[i], b[i])
     
-    gidney_mcx_inv(a[0], b[0], gidney_anc[0])
+    mcx([a[0], b[0]], gidney_anc[0], method = "gidney_inv")
     cx(a[0], b[0])
     
     gidney_anc.delete()

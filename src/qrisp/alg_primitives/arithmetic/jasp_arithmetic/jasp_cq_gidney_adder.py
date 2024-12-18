@@ -18,62 +18,10 @@
 
 import jax.numpy as jnp
 
-from qrisp.jasp import qache, jrange, AbstractQubit, make_jaspr, Jaspr
-from qrisp.core import x, h, cx, t, t_dg, s, measure, cz, QuantumVariable, mcx
-from qrisp.qtypes import QuantumBool
+from qrisp.jasp import qache, jrange
+from qrisp.core import x, cx, QuantumVariable, mcx
 from qrisp.environments import control, custom_control
 
-
-def gidney_mcx_impl(a, b, c):
-    
-    h(c)
-    t(c)
-    
-    cx(a, c)
-    cx(b, c)
-    cx(c, a)
-    cx(c, b)
-    
-    t_dg(a)
-    t_dg(b)
-    t(c)
-    
-    cx(c,a)
-    cx(c,b)
-    
-    h(c)
-    s(c)
-
-def gidney_mcx_inv_impl(a, b, c):
-    h(c)
-    bl = measure(c)
-    
-    with control(bl):
-        cz(a,b)
-        x(c)
-
-gidney_mcx_jaspr = make_jaspr(gidney_mcx_impl)(AbstractQubit(), AbstractQubit(), AbstractQubit()).flatten_environments()
-gidney_mcx_inv_jaspr = make_jaspr(gidney_mcx_inv_impl)(AbstractQubit(), AbstractQubit(), AbstractQubit()).flatten_environments()
-
-class GidneyMCXJaspr(Jaspr):
-    
-    slots = ["inv"]
-    def __init__(self, inv):
-        self.inv = inv
-        if self.inv:
-            Jaspr.__init__(self, gidney_mcx_inv_jaspr)
-        else:
-            Jaspr.__init__(self, gidney_mcx_jaspr)
-        self.envs_flattened = True
-            
-    def inverse(self):
-        return GidneyMCXJaspr(not self.inv)
-
-def gidney_mcx(a, b, c):
-    GidneyMCXJaspr(False).embedd(a, b, c, name = "gidney_mcx")
-
-def gidney_mcx_inv(a, b, c):
-    GidneyMCXJaspr(True).embedd(a, b, c, name = "gidney_mcx_inv")
 
 @qache
 def extract_boolean_digit(integer, digit):

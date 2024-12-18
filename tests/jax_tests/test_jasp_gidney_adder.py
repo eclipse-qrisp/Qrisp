@@ -68,6 +68,22 @@ def test_jasp_gidney_adder():
     
     ##############
     # Test semi classical gidney adder
+    
+    def call_cq_gidney_adder(i):
+        b = QuantumFloat(5)
+        b[:] = i
+        a = 6
+        jasp_cq_gidney_adder(a, b)
+        
+        return measure(b)
+    
+    import jax.numpy as jnp
+    jaspr = make_jaspr(call_cq_gidney_adder)(1)
+
+    for i in range(2**5):
+        assert jaspr(i) == (i+6)%32    
+    
+    
     def call_cq_gidney_adder(i, ctrl_true):
         b = QuantumFloat(5)
         qbl = QuantumBool()
@@ -92,6 +108,6 @@ def test_jasp_gidney_adder():
         import catalyst
     except ModuleNotFoundError:
         return
-    assert qjit(call_gidney_adder)(4)[0] == 11
+    assert qjit(call_qq_gidney_adder)(4)[0] == 11
     
     

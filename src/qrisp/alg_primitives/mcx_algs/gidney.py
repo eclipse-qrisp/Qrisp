@@ -102,7 +102,7 @@ def gidney_mcx_inv_impl(a, b, c):
     
     with control(bl):
         cz(a,b)
-        # x(c)
+        x(c)
 
 gidney_mcx_jaspr = make_jaspr(gidney_mcx_impl)(AbstractQubit(), AbstractQubit(), AbstractQubit()).flatten_environments()
 gidney_mcx_inv_jaspr = make_jaspr(gidney_mcx_inv_impl)(AbstractQubit(), AbstractQubit(), AbstractQubit()).flatten_environments()
