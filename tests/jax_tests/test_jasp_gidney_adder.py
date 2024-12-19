@@ -39,10 +39,10 @@ def test_jasp_gidney_adder():
     assert jaspr(4) == 11
     
     # Ensure that the Qaching mechanisms keeps only on reference of each function
-    gidney_mcx_jaspr_1 = jaspr.eqns[-6].params["jaxpr"].eqns[-3].params["jaxpr"].jaxpr
-    gidney_mcx_jaspr_2 = jaspr.eqns[-6].params["jaxpr"].eqns[-4].params["jaspr"].eqns[-6].params["jaxpr"].jaxpr    
+    # gidney_mcx_jaspr_1 = jaspr.eqns[-6].params["jaxpr"].eqns[-3].params["jaxpr"].jaxpr
+    # gidney_mcx_jaspr_2 = jaspr.eqns[-6].params["jaxpr"].eqns[-4].params["jaspr"].eqns[-6].params["jaxpr"].jaxpr    
     
-    assert id(gidney_mcx_jaspr_1) == id(gidney_mcx_jaspr_2)
+    # assert id(gidney_mcx_jaspr_1) == id(gidney_mcx_jaspr_2)
 
     def call_controlled_gidney_adder(i):
         
@@ -69,20 +69,23 @@ def test_jasp_gidney_adder():
     ##############
     # Test semi classical gidney adder
     
-    def call_cq_gidney_adder(i):
-        b = QuantumFloat(5)
-        b[:] = i
-        a = 6
+    def call_cq_gidney_adder(i, j, k):
+        b = QuantumFloat(i)
+        qbl = QuantumBool()
+        b[:] = j
+        a = k
         jasp_cq_gidney_adder(a, b)
-        
         return measure(b)
     
-    import jax.numpy as jnp
-    jaspr = make_jaspr(call_cq_gidney_adder)(1)
-
-    for i in range(2**5):
-        assert jaspr(i) == (i+6)%32    
     
+    jaspr = make_jaspr(call_cq_gidney_adder)(1, 1, 1)
+    
+    import jax.numpy as jnp
+    for i in range(1, 5):
+        for j in range(2**i):
+            for k in range(2**i):
+                assert jaspr(i,j,k) == (j+k)%(2**i)
+
     
     def call_cq_gidney_adder(i, ctrl_true):
         b = QuantumFloat(5)

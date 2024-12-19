@@ -222,8 +222,12 @@ def jrange(*args):
     Exception: Jax semantics changed during jrange iteration
 
     """
-    if all(isinstance(arg, int) for arg in args):
-        return range(*args)
+    new_args = []
+    for i in range(len(args)):
+        if not isinstance(args[i], int):
+            break
     else:
-        return JRangeIterator(*args)
+        return range(*new_args)
+            
+    return JRangeIterator(*args)
     

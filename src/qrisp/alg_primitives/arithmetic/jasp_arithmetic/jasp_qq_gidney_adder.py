@@ -16,16 +16,21 @@
 ********************************************************************************/
 """
 
+import jax.numpy as jnp
+
 from qrisp.jasp import qache, jrange, AbstractQubit, make_jaspr, Jaspr
 from qrisp.core import x, h, cx, t, t_dg, s, measure, cz, mcx, QuantumVariable
 from qrisp.qtypes import QuantumBool
 from qrisp.environments import control, custom_control
+from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_cq_gidney_adder import jasp_cq_gidney_adder
 
-
-@custom_control
+# @custom_control
 def jasp_qq_gidney_adder(a, b, ctrl = None):
     
-    gidney_anc = QuantumVariable(a.size-1, name = "gidney_anc*")
+    n = jnp.min(jnp.array([a.size, b.size]))
+    perform_incrementation = n < b.size
+    
+    gidney_anc = QuantumVariable(n-1, name = "gidney_anc*")
     
     if ctrl is not None:
         ctrl_anc = QuantumBool(name = "gidney_anc_2*")
@@ -33,18 +38,48 @@ def jasp_qq_gidney_adder(a, b, ctrl = None):
     i = 0
     mcx([a[i], b[i]], gidney_anc[i], method = "gidney")
     
-    for j in jrange(a.size-2):
+    for j in jrange(n-2):
         i = j+1
     
         cx(gidney_anc[i-1], a[i])
         cx(gidney_anc[i-1], b[i])
+        
         mcx([a[i], b[i]], gidney_anc[i], method = "gidney")
         cx(gidney_anc[i-1], gidney_anc[i])
         
-    cx(gidney_anc[a.size-2], b[b.size-1])
+    with control(perform_incrementation):
+        
+        cx(gidney_anc[n-2], a[n-1])
+        cx(gidney_anc[n-2], b[n-1])
+        
+        temp_carry_value = QuantumBool()
+        
+        mcx([a[n-1], b[n-1]], temp_carry_value[0], method = "gidney")
+        
+        cx(gidney_anc[n-2], temp_carry_value[0])
+        
+        with control(temp_carry_value[0]):
+            jasp_cq_gidney_adder(1, b[n:])
+        
+        cx(gidney_anc[n-2], temp_carry_value[0])
+        
+        mcx([a[n-1], b[n-1]], temp_carry_value[0], method = "gidney_inv")
+        
+        cx(gidney_anc[n-2], a[n-1])
+        cx(gidney_anc[n-2], b[n-1])
     
-    for j in jrange(a.size-2):
-        i = a.size-j-2
+    cx(gidney_anc[n-2], b[n-1])
+    
+    if ctrl is not None:
+        mcx([ctrl, a[n-1]], ctrl_anc[0], method = "gidney")
+        cx(ctrl_anc[0], b[n-1])
+        mcx([ctrl, a[n-1]], ctrl_anc[0], method = "gidney_inv")
+    else:
+        cx(a[n-1], b[n-1])
+    
+    
+    for j in jrange(n-2):
+        i = n-j-2
         
         cx(gidney_anc[i-1], gidney_anc[i])
         mcx([a[i], b[i]], gidney_anc[i], method = "gidney_inv")
@@ -52,19 +87,22 @@ def jasp_qq_gidney_adder(a, b, ctrl = None):
         if ctrl is not None:
             
             mcx([ctrl, a[i]], ctrl_anc[0], method = "gidney")
-            # mcx([ctrl, a[i]], ctrl_anc[0], method = "gray")
             cx(ctrl_anc[0], b[i])
             mcx([ctrl, a[i]], ctrl_anc[0], method = "gidney_inv")
-            # mcx([ctrl, a[i]], ctrl_anc[0], method = "gray")
             
             cx(gidney_anc[i-1], a[i])
             cx(gidney_anc[i-1], b[i])
         else:
             cx(gidney_anc[i-1], a[i])
             cx(a[i], b[i])
-    
+
     mcx([a[0], b[0]], gidney_anc[0], method = "gidney_inv")
-    cx(a[0], b[0])
+    if ctrl is not None:
+        mcx([ctrl, a[0]], ctrl_anc[0], method = "gidney")
+        cx(ctrl_anc[0], b[0])
+        mcx([ctrl, a[0]], ctrl_anc[0], method = "gidney_inv")
+    else:
+        cx(a[0], b[0])
     
     gidney_anc.delete()
     
