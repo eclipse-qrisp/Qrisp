@@ -24,94 +24,115 @@ from qrisp.qtypes import QuantumBool
 from qrisp.environments import control, custom_control
 from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_cq_gidney_adder import jasp_cq_gidney_adder
 
+# Addition implementation based on https://arxiv.org/pdf/1709.06648
+
 @custom_control
 def jasp_qq_gidney_adder(a, b, ctrl = None):
     
-    n = jnp.min(jnp.array([a.size, b.size]))
-    perform_incrementation = n < b.size
+    if isinstance(b, list):
+        n = min(len(a), len(b))
+    else:
+        n = jnp.min(jnp.array([a.size, b.size]))
     
-    gidney_anc = QuantumVariable(n-1, name = "gidney_anc*")
+    perform_incrementation = n < b.size
     
     if ctrl is not None:
         ctrl_anc = QuantumBool(name = "gidney_anc_2*")
     
-    i = 0
-    mcx([a[i], b[i]], gidney_anc[i], method = "gidney")
-    
-    for j in jrange(n-2):
-        i = j+1
-    
-        cx(gidney_anc[i-1], a[i])
-        cx(gidney_anc[i-1], b[i])
+    # If the addition is only a single qubit, it can be done with a CX gate (below)
+    with control(n > 1):
         
+        # Allocate the ancillae        
+        gidney_anc = QuantumVariable(n-1, name = "gidney_anc*")
+        
+        i = 0
+        # Perform the initial mcx        
         mcx([a[i], b[i]], gidney_anc[i], method = "gidney")
-        cx(gidney_anc[i-1], gidney_anc[i])
         
-    with control(perform_incrementation):
+        # Perform the left part of the V-Shape
+        for j in jrange(n-2):
+            i = j+1
         
-        cx(gidney_anc[n-2], a[n-1])
-        cx(gidney_anc[n-2], b[n-1])
-        
-        temp_carry_value = QuantumBool()
-        
-        mcx([a[n-1], b[n-1]], temp_carry_value[0], method = "gidney")
-        
-        cx(gidney_anc[n-2], temp_carry_value[0])
-        
-        ctrl_list = [temp_carry_value]
-        
-        if ctrl is not None:
-            ctrl_list.append(ctrl)
-        
-        with control(ctrl_list):
-            jasp_cq_gidney_adder(1, b[n:])
-        
-        cx(gidney_anc[n-2], temp_carry_value[0])
-        
-        mcx([a[n-1], b[n-1]], temp_carry_value[0], method = "gidney_inv")
-        
-        temp_carry_value.delete()
-        
-        cx(gidney_anc[n-2], a[n-1])
-        cx(gidney_anc[n-2], b[n-1])
-    
-    cx(gidney_anc[n-2], b[n-1])
-    
-    if ctrl is not None:
-        mcx([ctrl, a[n-1]], ctrl_anc[0], method = "gidney")
-        cx(ctrl_anc[0], b[n-1])
-        mcx([ctrl, a[n-1]], ctrl_anc[0], method = "gidney_inv")
-    else:
-        cx(a[n-1], b[n-1])
-    
-    
-    for j in jrange(n-2):
-        i = n-j-2
-        
-        cx(gidney_anc[i-1], gidney_anc[i])
-        mcx([a[i], b[i]], gidney_anc[i], method = "gidney_inv")
-        
-        if ctrl is not None:
-            
-            mcx([ctrl, a[i]], ctrl_anc[0], method = "gidney")
-            cx(ctrl_anc[0], b[i])
-            mcx([ctrl, a[i]], ctrl_anc[0], method = "gidney_inv")
-            
             cx(gidney_anc[i-1], a[i])
             cx(gidney_anc[i-1], b[i])
-        else:
-            cx(gidney_anc[i-1], a[i])
-            cx(a[i], b[i])
+            
+            mcx([a[i], b[i]], gidney_anc[i], method = "gidney")
+            cx(gidney_anc[i-1], gidney_anc[i])
+            
+        # This part handles the case that the addition target has more qubit than
+        # the control value.
+        # We solve this issue by performing a 1-incrementation on the remainder
+        # if the carry out value is True
+        with control(perform_incrementation):
+            
+            # Compute the carry out similar to the loop above
+            
+            carry_out = QuantumBool()
+            
+            cx(gidney_anc[n-2], a[n-1])
+            cx(gidney_anc[n-2], b[n-1])
+            
+            mcx([a[n-1], b[n-1]], carry_out[0], method = "gidney")
+            cx(gidney_anc[n-2], carry_out[0])
 
-    mcx([a[0], b[0]], gidney_anc[0], method = "gidney_inv")
+            # Perform a controlled incrtementation            
+            ctrl_list = [carry_out]
+            if ctrl is not None:
+                ctrl_list.append(ctrl)
+                
+            with control(ctrl_list):
+                jasp_cq_gidney_adder(1, b[n:])
+            
+            # Uncompute the carry
+            cx(gidney_anc[n-2], carry_out[0])
+            mcx([a[n-1], b[n-1]], carry_out[0], method = "gidney_inv")
+            cx(gidney_anc[n-2], a[n-1])
+            cx(gidney_anc[n-2], b[n-1])
+            
+            carry_out.delete()
+        
+        # This is the CX at the "tip" of the V shape
+        cx(gidney_anc[n-2], b[n-1])
+        
+        # This is the CX at the lower right of the circuit
+        if ctrl is not None:
+            mcx([ctrl, a[n-1]], ctrl_anc[0], method = "gidney")
+            cx(ctrl_anc[0], b[n-1])
+            mcx([ctrl, a[n-1]], ctrl_anc[0], method = "gidney_inv")
+        else:
+            cx(a[n-1], b[n-1])
+        
+        # Perform the right part of the V shape
+        for j in jrange(n-2):
+            i = n-j-2
+            
+            cx(gidney_anc[i-1], gidney_anc[i])
+            mcx([a[i], b[i]], gidney_anc[i], method = "gidney_inv")
+            
+            if ctrl is not None:
+                # This is the controlled version described on page 4                
+                mcx([ctrl, a[i]], ctrl_anc[0], method = "gidney")
+                cx(ctrl_anc[0], b[i])
+                mcx([ctrl, a[i]], ctrl_anc[0], method = "gidney_inv")
+                cx(gidney_anc[i-1], a[i])
+                cx(gidney_anc[i-1], b[i])
+            else:
+                cx(gidney_anc[i-1], a[i])
+                cx(a[i], b[i])
+    
+        # The final uncomputation
+        mcx([a[0], b[0]], gidney_anc[0], method = "gidney_inv")
+        
+        # Delete the ancilla
+        gidney_anc.delete()
+    
+    # Perform the CX gate at the top right of the circuit
     if ctrl is not None:
         mcx([ctrl, a[0]], ctrl_anc[0], method = "gidney")
         cx(ctrl_anc[0], b[0])
         mcx([ctrl, a[0]], ctrl_anc[0], method = "gidney_inv")
     else:
         cx(a[0], b[0])
-    
-    gidney_anc.delete()
     
     if ctrl is not None:
         ctrl_anc.delete()        
