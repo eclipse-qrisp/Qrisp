@@ -724,7 +724,7 @@ class QuantumArray(np.ndarray):
 
         from qrisp import init_state
 
-        init_state(qubit_list, target_array)
+        init_state(self, target_array)
 
     def init_from(self, other):
         """
