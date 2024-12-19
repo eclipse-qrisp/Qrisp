@@ -99,69 +99,117 @@ def RUS(trial_function):
             
     """
     
+    
+    # The idea for implementing this feature is to execute the function once
+    # to collect the output QuantumVariable object.
+    # Subsequently a jaspr in extracted, which is looped over until the condition is met
+    
     def return_function(*trial_args):
         
-        def body_fun(args):
-            
-            previous_trial_res = args[1:len(res_vals)+1]
-            
-            abs_qc = args[0]
-            
-            for res_val in previous_trial_res:
-                if isinstance(res_val.aval, AbstractQubitArray):
-                    abs_qc = delete_qubits_p.bind(abs_qc, res_val)
-            
-            abs_qs.abs_qc = abs_qc
-            
-            trial_args = [abs_qc] + list(args[len(res_vals)+1:])
-            trial_res = trial_func_jaspr.eval(*trial_args)
-            
-            return tuple(list(trial_res) + list(trial_args)[1:])
         
-        def cond_fun(val):
-            return ~val[1]
+        # Execute the function
+        first_iter_res = trial_function(*trial_args)
         
-        # We now prepare the "init_val" keyword of the loop.
+        # Flatten the arguments and the res values
+        arg_vals, arg_tree_def = jax.tree.flatten(trial_args)
+        res_vals, res_tree_def = jax.tree.flatten(first_iter_res)
         
-        # For that we extract the invalues for the first iteration
-        # Note that the treshold is given as the last argument
         
+        
+        # Extract the jaspr
         from qrisp.jasp import make_jaspr
         trial_func_jaspr = make_jaspr(trial_function)(*trial_args)
         trial_func_jaspr = trial_func_jaspr.flatten_environments()
         
-        first_iter_res = trial_function(*trial_args)
         
-        arg_vals, arg_tree_def = jax.tree.flatten(trial_args)
-        res_vals, res_tree_def = jax.tree.flatten(first_iter_res)
+        # Next we construct the body of the loop
+        # In order to work with the while_loop interface from jax
+        # this function receives a tuple of arguments and also returns
+        # a tuple.
         
+        # This tuple contains several sections of argument types:
+        
+        # The first argument is an AbstractQuantumCircuit
+        # The next section are the results from the previous iteration
+        # And the final section are trial function arguments
         abs_qs = TracingQuantumSession.get_instance()
+        combined_args = tuple([abs_qs.abs_qc] + list(res_vals) + list(arg_vals))    
+
+            
+        def body_fun(args):
+            
+            # We now need to deallocate the AbstractQubitArrays from the previous
+            # iteration since they are no longer needed.
+            previous_trial_res = args[1:len(res_vals)+1]
+            
+            abs_qc = args[0]
+            for res_val in previous_trial_res:
+                if isinstance(res_val.aval, AbstractQubitArray):
+                    abs_qc = delete_qubits_p.bind(abs_qc, res_val)
+
+            # Next we evaluate the trial function by evaluating the corresponding jaspr
+            # Prepare the arguments tuple
+            trial_args = [abs_qc] + list(args[len(res_vals)+1:])
+            
+            # Evaluate the function
+            trial_res = trial_func_jaspr.eval(*trial_args)
+            
+            # Return the results
+            return tuple(list(trial_res) + list(trial_args)[1:])
         
-        combined_args = tuple([abs_qs.abs_qc] + list(res_vals) + list(arg_vals))
-    
+        def cond_fun(val):
+            # The loop cancelation index is located at the second position of the
+            # return value tuple
+            return ~val[1]
+
+        # We now evaluate the loop
+        
+        # If the first iteration was already successful, we simply return the results
+        # To realize this behavior we use a cond primitive
+        
         def true_fun(combined_args):
             return combined_args
         
         def false_fun(combined_args):
+            # Here is the while_loop
             return while_loop(cond_fun, body_fun, init_val = combined_args)
     
+        # Evaluate everything
         combined_res = cond(first_iter_res[0], true_fun, false_fun, combined_args)
+        
+        # Update the AbstractQuantumCircuit
         abs_qs.abs_qc = combined_res[0]
         
+        # Extract the results of the trial function
         flat_trial_function_res = combined_res[1:len(res_vals)+1]
         
+        # The results are however still "flattened" i.e. if the trial function
+        # returned a QuantumVariable, they show up as a AbstractQubitArray.
+        
+        # To call the unflattening function, we manually update the .reg attribute
+        # to give the proper array
+        
+        # For this we use the flattened results from the first iteration
         replacement_dic = {}
         
         for i in range(len(flat_trial_function_res)):
             replacement_dic[res_vals[i]] = flat_trial_function_res[i]
         
         from qrisp import QuantumVariable
+        
+        # We loop over the results of the first iteration. If the result is a
+        # QuantumVariable, we update the .reg attribute
         for res_val in first_iter_res:
             if isinstance(res_val, QuantumVariable):
                 res_val.reg = replacement_dic[res_val.reg]
         
+        # We can now call the registered unflattening procedure. We need to do this
+        # because the QuantumVariable contains more traced attributes than just
+        # the QubitArray. The unflattening however uses the QubitArray to properly
+        # identify the QuantumVariable
         trial_function_res = jax.tree.unflatten(res_tree_def, flat_trial_function_res)
         
+        # Return the results
         if len(first_iter_res) == 2:
             return trial_function_res[1]
         else:
