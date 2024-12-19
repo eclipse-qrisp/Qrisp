@@ -397,7 +397,8 @@ class ControlEnvironment(QuantumEnvironment):
         jit_eqn.params["jaxpr"] = jax.core.ClosedJaxpr(controlled_jaspr, jit_eqn.params["jaxpr"].consts)
         jit_eqn.params["name"] = "ctrl_env"
         
-        # res = pjit_p.bind(*args, jaxpr = controlled_jaspr, name = "ctrl_env", inline = False)
+        if not isinstance(res, tuple):
+            res = (res,)
         
         insert_outvalues(eqn, context_dic, res)
         

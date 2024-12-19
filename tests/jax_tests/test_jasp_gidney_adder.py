@@ -74,15 +74,15 @@ def test_jasp_gidney_adder():
         return measure(b)
     
     jaspr = make_jaspr(call_qq_gidney_adder)(3)
-    
+    jaspr = jaspr.flatten_environments()
     assert jaspr(4) == 11
     
     # Ensure that the Qaching mechanisms keeps only on reference of each function
-    gidney_mcx_jaspr_1 = jaspr.eqns[-6].params["jaxpr"].eqns[-3].params["jaxpr"].jaxpr
-    gidney_mcx_jaspr_2 = jaspr.eqns[-6].params["jaxpr"].eqns[-4].params["jaspr"].eqns[-6].params["jaxpr"].jaxpr    
+    gidney_mcx_jaspr_1 = jaspr.eqns[-5].params["jaxpr"].jaxpr.eqns[-4].params["branches"][1].eqns[-2].params["jaxpr"].jaxpr
+    gidney_mcx_jaspr_2 = jaspr.eqns[-5].params["jaxpr"].jaxpr.eqns[-4].params["branches"][1].eqns[-3].params["body_jaxpr"].eqns[-6].params["jaxpr"].jaxpr
     
     assert id(gidney_mcx_jaspr_1) == id(gidney_mcx_jaspr_2)
-
+    
     # Test controlled version
     def call_controlled_gidney_adder(i):
         

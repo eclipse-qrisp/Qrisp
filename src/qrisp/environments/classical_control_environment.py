@@ -223,4 +223,4 @@ class ClControlEnvironment(QuantumEnvironment):
         
         res_abs_qc = cond(cond_bl, true_fun, false_fun, *env_vars)
         
-        insert_outvalues(eqn, context_dic, res_abs_qc)
+        insert_outvalues(eqn, context_dic, [res_abs_qc])

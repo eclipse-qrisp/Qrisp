@@ -249,6 +249,9 @@ class ConjugationEnvironment(QuantumEnvironment):
         jit_eqn.params["jaxpr"] = jax.core.ClosedJaxpr(flattened_jaspr, jit_eqn.params["jaxpr"].consts)
         jit_eqn.params["name"] = "conjugation_env"
         
+        if not isinstance(res, tuple):
+            res = (res,)
+        
         insert_outvalues(eqn, context_dic, res)
     
     def compile_(self, ctrl = None):

@@ -357,6 +357,10 @@ class InversionEnvironment(QuantumEnvironment):
         inverted_jaspr = body_jaspr.flatten_environments().inverse()
         
         res = inverted_jaspr.eval(*args)
+        
+        if not isinstance(res, tuple):
+            res = (res,)
+        
         insert_outvalues(eqn, context_dic, res)
 
 

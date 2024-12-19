@@ -332,6 +332,7 @@ class QuantumEnvironment(QuantumPrimitive):
     def __init__(self, env_args = []):
         
         QuantumPrimitive.__init__(self, name = "q_env")
+        self.multiple_results = True
         
                 
         @self.def_abstract_eval
@@ -342,7 +343,7 @@ class QuantumEnvironment(QuantumPrimitive):
             abstractions of the actual arguments. 
             """
             
-            return AbstractQuantumCircuit()
+            return (AbstractQuantumCircuit(),)
         
         self.env_args = env_args
 
@@ -386,7 +387,7 @@ class QuantumEnvironment(QuantumPrimitive):
             abs_qs = TracingQuantumSession.get_instance()
             self.temp_qubit_cache = abs_qs.qubit_cache
             abs_qs.qubit_cache = {}
-            abs_qs.abs_qc = self.bind(abs_qs.abs_qc, *self.env_args, stage = "enter", type = str(type(self)).split(".")[-1][:-2])
+            abs_qs.abs_qc = self.bind(abs_qs.abs_qc, *self.env_args, stage = "enter", type = str(type(self)).split(".")[-1][:-2])[0]
             return
             
         # The QuantumSessions operating inside this environment will be merged
@@ -439,7 +440,7 @@ class QuantumEnvironment(QuantumPrimitive):
         if check_for_tracing_mode():
             abs_qs = TracingQuantumSession.get_instance()
             abs_qs.qubit_cache = self.temp_qubit_cache
-            abs_qs.abs_qc = self.bind(abs_qs.abs_qc, stage = "exit", type = str(type(self)).split(".")[-1][:-2])
+            abs_qs.abs_qc = self.bind(abs_qs.abs_qc, stage = "exit", type = str(type(self)).split(".")[-1][:-2])[0]
             return
         
         self.deepest_environment[0] = self.parent
@@ -529,6 +530,10 @@ class QuantumEnvironment(QuantumPrimitive):
         body_jaspr = eqn.params["jaspr"]
         
         res = eval_jaxpr(body_jaspr.flatten_environments())(*args)
+        
+        if not isinstance(res, tuple):
+            res = (res,)
+        
         insert_outvalues(eqn, context_dic, res)
                 
                 

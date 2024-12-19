@@ -76,7 +76,7 @@ def jasp_qq_gidney_adder(a, b, ctrl = None):
             cx(gidney_anc[n-2], carry_out[0])
 
             # Perform a controlled incrtementation            
-            ctrl_list = [carry_out]
+            ctrl_list = [carry_out[0]]
             if ctrl is not None:
                 ctrl_list.append(ctrl)
                 
