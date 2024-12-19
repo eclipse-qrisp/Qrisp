@@ -17,6 +17,7 @@
 """
 
 from jax.core import ShapedArray
+from jaxlib.xla_extension import ArrayImpl
 
 from qrisp.circuit import Qubit, QuantumCircuit, XGate
 from qrisp.core.session_merging_tools import merge, merge_sessions, multi_session_merge
@@ -482,6 +483,9 @@ def control(*args, **kwargs):
         if all(isinstance(obj, (Qubit, QuantumBool)) for obj in args[0]):
             return ControlEnvironment(*args, **kwargs)
         elif all(isinstance(obj, bool) for obj in [x for x in args[0]]):
+            return ClControlEnvironment(*args, **kwargs)
+        elif all(isinstance(obj, ArrayImpl) for obj in [x for x in args[0]]):
+            args[0] = [bool(bit) for bit in args[0]]
             return ClControlEnvironment(*args, **kwargs)
         else:
             raise Exception(f"Don't know how to control from input type {args[0]}")

@@ -24,7 +24,7 @@ from qrisp.qtypes import QuantumBool
 from qrisp.environments import control, custom_control
 from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_cq_gidney_adder import jasp_cq_gidney_adder
 
-# @custom_control
+@custom_control
 def jasp_qq_gidney_adder(a, b, ctrl = None):
     
     n = jnp.min(jnp.array([a.size, b.size]))

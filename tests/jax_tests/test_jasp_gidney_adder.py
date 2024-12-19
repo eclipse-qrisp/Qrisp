@@ -21,6 +21,24 @@ from qrisp.jasp import *
 
 def test_jasp_gidney_adder():
     
+    def call_qq_gidney_adder(i, j, k):
+        a = QuantumFloat(i)
+        b = QuantumFloat(i)
+        qbl = QuantumBool()
+        b[:] = j
+        a[:] = k
+        jasp_qq_gidney_adder(a, b)
+        return measure(b)
+    
+    jaspr = make_jaspr(call_qq_gidney_adder)(1, 1, 1)
+    
+    # import jax.numpy as jnp
+    # for i in range(1, 5):
+    #     for j in range(2**i):
+    #         for k in range(2**i):
+    #             assert jaspr(i,j,k) == (j+k)%(2**i)
+    
+    
     def call_qq_gidney_adder(i):
         
         a = QuantumFloat(i)
@@ -37,11 +55,11 @@ def test_jasp_gidney_adder():
     jaspr = make_jaspr(call_qq_gidney_adder)(3)
     
     assert jaspr(4) == 11
-    jaspr = jaspr.flatten_environments()
     
     # Ensure that the Qaching mechanisms keeps only on reference of each function
-    gidney_mcx_jaspr_1 = jaspr.eqns[-4].params["jaxpr"].jaxpr
-    gidney_mcx_jaspr_2 = jaspr.eqns[-5].params["body_jaxpr"].eqns[-6].params["jaxpr"].jaxpr    
+    gidney_mcx_jaspr_1 = jaspr.eqns[-6].params["jaxpr"].eqns[-3].params["jaxpr"].jaxpr
+    gidney_mcx_jaspr_2 = jaspr.eqns[-6].params["jaxpr"].eqns[-4].params["jaspr"].eqns[-6].params["jaxpr"].jaxpr    
+    
     assert id(gidney_mcx_jaspr_1) == id(gidney_mcx_jaspr_2)
 
     def call_controlled_gidney_adder(i):

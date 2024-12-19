@@ -17,6 +17,8 @@
 """
 
 import jax.numpy as jnp
+from jaxlib.xla_extension import ArrayImpl
+
 class JRangeIterator:
     
     def __init__(self, *args):
@@ -224,8 +226,9 @@ def jrange(*args):
     """
     new_args = []
     for i in range(len(args)):
-        if not isinstance(args[i], int):
+        if not isinstance(args[i], (int, ArrayImpl)):
             break
+        new_args.append(int(args[i]))
     else:
         return range(*new_args)
             

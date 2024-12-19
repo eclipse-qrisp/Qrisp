@@ -21,7 +21,7 @@ class DynamicQubitArray:
                 start = 0
             stop = key.stop
             if key.stop is None:
-                stop = get_size(tracer) - 1
+                stop = get_size(tracer)
             
             return DynamicQubitArray(slice_qb_array(tracer, start, stop))
         else:
