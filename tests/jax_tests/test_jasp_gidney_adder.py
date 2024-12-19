@@ -24,7 +24,6 @@ def test_jasp_gidney_adder():
     def call_qq_gidney_adder(i, j, k):
         a = QuantumFloat(i)
         b = QuantumFloat(i)
-        qbl = QuantumBool()
         b[:] = j
         a[:] = k
         jasp_qq_gidney_adder(a, b)
@@ -32,13 +31,35 @@ def test_jasp_gidney_adder():
     
     jaspr = make_jaspr(call_qq_gidney_adder)(1, 1, 1)
     
-    # import jax.numpy as jnp
-    # for i in range(1, 5):
-    #     for j in range(2**i):
-    #         for k in range(2**i):
-    #             assert jaspr(i,j,k) == (j+k)%(2**i)
+    import jax.numpy as jnp
+    for i in range(1, 5):
+        for j in range(2**i):
+            for k in range(2**i):
+                assert jaspr(i,j,k) == (j+k)%(2**i)
+    
+    # Test adder with differing input sizes
+    def call_controlled_gidney_adder(i, j, k):
+        
+        a = QuantumFloat(i+k)
+        a[:] = 5
+        b = QuantumFloat(i+j)
+        b[:] = 2**i - 1
+        
+        ctrl_qbl = QuantumBool()
+        
+        jasp_qq_gidney_adder(a, b)
+    
+        return measure(b)
+    
+    jaspr = make_jaspr(call_controlled_gidney_adder)(1,1,1)
+    
+    for i in range(3, 5):
+        for j in range(3):
+            for k in range(3):
+                assert jaspr(i, j, k) == (5 + 2**i - 1)%2**(i+j)
     
     
+    # Test multiple subsequent calls
     def call_qq_gidney_adder(i):
         
         a = QuantumFloat(i)
@@ -62,6 +83,7 @@ def test_jasp_gidney_adder():
     
     assert id(gidney_mcx_jaspr_1) == id(gidney_mcx_jaspr_2)
 
+    # Test controlled version
     def call_controlled_gidney_adder(i):
         
         a = QuantumFloat(i)

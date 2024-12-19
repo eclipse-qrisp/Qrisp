@@ -58,12 +58,19 @@ def jasp_qq_gidney_adder(a, b, ctrl = None):
         
         cx(gidney_anc[n-2], temp_carry_value[0])
         
-        with control(temp_carry_value[0]):
+        ctrl_list = [temp_carry_value]
+        
+        if ctrl is not None:
+            ctrl_list.append(ctrl)
+        
+        with control(ctrl_list):
             jasp_cq_gidney_adder(1, b[n:])
         
         cx(gidney_anc[n-2], temp_carry_value[0])
         
         mcx([a[n-1], b[n-1]], temp_carry_value[0], method = "gidney_inv")
+        
+        temp_carry_value.delete()
         
         cx(gidney_anc[n-2], a[n-1])
         cx(gidney_anc[n-2], b[n-1])
