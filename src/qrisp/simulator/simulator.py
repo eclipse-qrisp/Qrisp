@@ -421,7 +421,6 @@ def advance_quantum_state(qc, quantum_state):
     LINE_CLEAR = "\x1b[2K"
     progress_bar.display()
 
-
     # This command enables fast appending. Fast appending means that the .append method
     # of the QuantumCircuit class checks much less validity conditions and is also less
     # tolerant regarding inputs.

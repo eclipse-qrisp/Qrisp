@@ -106,7 +106,7 @@ class GroupedInstruction:
                 except:
                     pass
 
-            temp_qc.data.append(self.instr_list[self.indices[i]])
+            temp_qc.append(self.instr_list[self.indices[i]])
         # Create instruction
         self.instruction = Instruction(temp_qc.to_op(), temp_qc.qubits, temp_qc.clbits)
 
@@ -156,10 +156,9 @@ def group_qc(qc):
 
 # This function determines a set of grouping options and chooses the best option
 def find_group(int_qc, max_recursion_depth):
-    try:
+    if int_qc.source.num_qubits() < 63:
         int_qc.data = np.array(int_qc.data, dtype=np.int64)
-    except OverflowError:
-        pass
+    
     grouping_options = find_grouping_options(int_qc, [], max_recursion_depth)
 
     int_qc.data = list(int_qc.data)

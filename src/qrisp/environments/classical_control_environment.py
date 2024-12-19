@@ -216,9 +216,7 @@ class ClControlEnvironment(QuantumEnvironment):
         def identity_fun(*args):
             return args[0]
         
-        flattened_body_jaspr = body_jaspr.flatten_environments()
-        
-        true_fun = flattened_body_jaspr.eval
+        true_fun = body_jaspr.eval
         false_fun = identity_fun
         
         res_abs_qc = cond(cond_bl, true_fun, false_fun, *env_vars)

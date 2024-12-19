@@ -530,8 +530,8 @@ class QuantumFloat(QuantumVariable):
         from qrisp.jasp import check_for_tracing_mode
         
         if check_for_tracing_mode():
-            from qrisp.alg_primitives.arithmetic import jasp_fourier_adder
-            jasp_fourier_adder(other, self)
+            from qrisp.alg_primitives.arithmetic import gidney_adder
+            gidney_adder(other, self)
             return self
         
         from qrisp.alg_primitives.arithmetic import polynomial_encoder
@@ -571,9 +571,9 @@ class QuantumFloat(QuantumVariable):
         from qrisp.jasp import check_for_tracing_mode
         
         if check_for_tracing_mode():
-            from qrisp.alg_primitives.arithmetic import jasp_fourier_adder
+            from qrisp.alg_primitives.arithmetic import gidney_adder
             with invert():
-                jasp_fourier_adder(other, self)
+                gidney_adder(other, self)
             return self
         
         if isinstance(other, QuantumFloat):

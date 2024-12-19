@@ -20,6 +20,10 @@ from qrisp.alg_primitives.arithmetic.adders.gidney.cq_gidney_adder import *
 from qrisp.alg_primitives.arithmetic.adders.gidney.qq_gidney_adder import *
 from qrisp.alg_primitives.arithmetic.adders.adder_tools import ammend_inpl_adder
 from qrisp.environments import custom_control
+from qrisp.core import QuantumVariable
+
+from qrisp.jasp import check_for_tracing_mode, DynamicQubitArray
+from qrisp.alg_primitives.arithmetic.jasp_arithmetic import *
 
 def gidney_adder(a, b, c_in = None, c_out = None):
     """
@@ -57,6 +61,11 @@ def gidney_adder(a, b, c_in = None, c_out = None):
     {9: 1.0}
 
     """
+    if check_for_tracing_mode():
+        if isinstance(a, (QuantumVariable, DynamicQubitArray)):
+            return jasp_qq_gidney_adder(a, b)
+        else:
+            return jasp_cq_gidney_adder(a, b)
     
     if isinstance(a, (int, str)):
         return custom_control(cq_gidney_adder)(a, b, c_in = c_in, c_out = c_out)
