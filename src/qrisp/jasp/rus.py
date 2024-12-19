@@ -19,7 +19,7 @@
 from jax.lax import while_loop, cond
 import jax
 
-from qrisp.jasp import TracingQuantumSession, delete_qubits_p, AbstractQubitArray
+from qrisp.jasp import TracingQuantumSession, delete_qubits_p, AbstractQubitArray, DynamicQubitArray
 
 def RUS(trial_function):
     r"""
@@ -186,27 +186,8 @@ def RUS(trial_function):
         # The results are however still "flattened" i.e. if the trial function
         # returned a QuantumVariable, they show up as a AbstractQubitArray.
         
-        # To call the unflattening function, we manually update the .reg attribute
-        # to give the proper array
-        
-        # For this we use the flattened results from the first iteration
-        replacement_dic = {}
-        
-        for i in range(len(flat_trial_function_res)):
-            replacement_dic[res_vals[i]] = flat_trial_function_res[i]
-        
-        from qrisp import QuantumVariable
-        
-        # We loop over the results of the first iteration. If the result is a
-        # QuantumVariable, we update the .reg attribute
-        for res_val in first_iter_res:
-            if isinstance(res_val, QuantumVariable):
-                res_val.reg = replacement_dic[res_val.reg]
-        
-        # We can now call the registered unflattening procedure. We need to do this
-        # because the QuantumVariable contains more traced attributes than just
-        # the QubitArray. The unflattening however uses the QubitArray to properly
-        # identify the QuantumVariable
+        # We call the unflattening function with the auxiliary results values of the
+        # first iteration and the traced values of the loop.
         trial_function_res = jax.tree.unflatten(res_tree_def, flat_trial_function_res)
         
         # Return the results

@@ -19,7 +19,7 @@ class AbstractQubitArray(AbstractValue):
         return "QubitArray"
     
     def __eq__(self, other):
-        return id(self) == id(other)
+        return type(self) == type(other)
     
     def __hash__(self):
         return hash(type(self))
