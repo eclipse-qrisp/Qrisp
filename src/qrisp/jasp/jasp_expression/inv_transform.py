@@ -54,6 +54,18 @@ def invert_eqn(eqn):
         primitive = eqn.primitive
     elif eqn.primitive.name == "while":
         return invert_loop_eqn(eqn)
+    elif eqn.primitive.name == "cond":
+        params = dict(eqn.params)
+        
+        branches = params["branches"]
+        
+        params["branches"] = (ClosedJaxpr((branches[0].jaxpr).inverse(),
+                                           branches[0].consts),
+                              ClosedJaxpr((branches[1].jaxpr).inverse(),
+                                           branches[1].consts))
+        
+        primitive = eqn.primitive
+        
     else:
         params = dict(eqn.params)
         primitive = eqn.primitive.inverse()
@@ -97,7 +109,7 @@ def invert_jaspr(jaspr):
     # and the Operation equations to the back.
     
     for eqn in jaspr.eqns:
-        if isinstance(eqn.primitive, OperationPrimitive) or ((eqn.primitive.name == "pjit" or eqn.primitive.name == "while") and isinstance(eqn.outvars[0].aval, AbstractQuantumCircuit)):
+        if isinstance(eqn.primitive, OperationPrimitive) or ((eqn.primitive.name in ["pjit", "while", "cond"]) and isinstance(eqn.outvars[0].aval, AbstractQuantumCircuit)):
             # Insert the inverted equation at the front
             op_eqs.insert(0, invert_eqn(eqn))
         elif eqn.primitive.name == "jasp.measure":
@@ -114,15 +126,48 @@ def invert_jaspr(jaspr):
     
     for i in range(n//2):
         
-        op_eqs[i].invars[0], op_eqs[n-i-1].invars[0] = op_eqs[n-i-1].invars[0], op_eqs[i].invars[0]
-        op_eqs[i].outvars[0], op_eqs[n-i-1].outvars[0] = op_eqs[n-i-1].outvars[0], op_eqs[i].outvars[0]
+        for j in range(len(op_eqs[i].invars)):
+            if isinstance(op_eqs[i].invars[j].aval, AbstractQuantumCircuit):
+                break
+        else:
+            raise            
+            
+        for k in range(len(op_eqs[n-i-1].invars)):
+            if isinstance(op_eqs[n-i-1].invars[k].aval, AbstractQuantumCircuit):
+                break
+        else:
+            raise
+            
+        op_eqs[i].invars[j], op_eqs[n-i-1].invars[k] = op_eqs[n-i-1].invars[k], op_eqs[i].invars[j]
+        
+        for j in range(len(op_eqs[i].outvars)):
+            if isinstance(op_eqs[i].outvars[j].aval, AbstractQuantumCircuit):
+                break
+        else:
+            raise
+            
+        for k in range(len(op_eqs[n-i-1].outvars)):
+            if isinstance(op_eqs[n-i-1].outvars[k].aval, AbstractQuantumCircuit):
+                break
+        else:
+            raise
+        
+        op_eqs[i].outvars[j], op_eqs[n-i-1].outvars[k] = op_eqs[n-i-1].outvars[k], op_eqs[i].outvars[j]
     
     from qrisp.jasp import Jaspr
     
+    # Find the last AbstractQuantumCircuit variable
+    
+    for j in range(len(op_eqs[-1].outvars)):
+        if isinstance(op_eqs[-1].outvars[j].aval, AbstractQuantumCircuit):
+            last_abs_qc = op_eqs[-1].outvars[j]
+            break
+    
     res = Jaspr(constvars = jaspr.constvars, 
-                 invars = jaspr.invars, 
-                 outvars = op_eqs[-1].outvars[:1] + jaspr.outvars[1:], 
+                 invars = list(jaspr.invars), 
+                 outvars = [last_abs_qc] + jaspr.outvars[1:], 
                  eqns = non_op_eqs + op_eqs + deletions)
+    
     
     if jaspr.ctrl_jaspr:
         res.ctrl_jaspr = jaspr.ctrl_jaspr.inverse()

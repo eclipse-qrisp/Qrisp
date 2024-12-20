@@ -24,7 +24,7 @@ from qrisp.qtypes import QuantumBool, QuantumFloat
 from qrisp.environments import control, custom_control, conjugate, invert
 from qrisp.alg_primitives.arithmetic import gidney_adder
                 
-@qache(static_argnames = "inpl_adder")
+# @qache(static_argnames = "inpl_adder")
 def jasp_mod_adder(a, b, modulus, inpl_adder = gidney_adder, ctrl = None):
     
     reduction_not_necessary = QuantumBool()

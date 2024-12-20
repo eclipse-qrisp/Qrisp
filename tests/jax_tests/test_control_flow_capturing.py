@@ -298,3 +298,17 @@ def test_cl_control_env():
     
     for i in range(10): assert jaspr(4) in [4,5]
     
+    # Test inversion of classical control
+    # cq addition contains a lot of classical inversion
+    
+    def test_fun():
+        
+        qf = QuantumFloat(5)
+        
+        with invert():
+            jasp_cq_gidney_adder(3, qf)
+            
+        return measure(qf)
+    
+    jaspr = make_jaspr(test_fun)()
+    assert jaspr() == 29

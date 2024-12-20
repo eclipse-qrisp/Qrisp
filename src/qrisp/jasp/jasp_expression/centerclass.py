@@ -159,7 +159,8 @@ class Jaspr(Jaxpr):
     def __eq__(self, other):
         if not isinstance(other, Jaxpr):
             return False
-        return self.hashvalue == hash(other) and len(self.eqns) == len(other.eqns)
+        
+        return self.hashvalue == hash(other) and len(self.eqns) == len(other.eqns) and check_aval_equivalence(self.invars, other.invars)
     
     def inverse(self):
         """
@@ -1079,3 +1080,8 @@ def qjit(function):
         return function.jaspr_dict[signature].qjit(*args, function_name = function.__name__)
     
     return jitted_function
+
+def check_aval_equivalence(invars_1, invars_2):
+    avals_1 = [invar.aval for invar in invars_1]
+    avals_2 = [invar.aval for invar in invars_2]
+    return all([type(avals_1[i]) == type(avals_2[i]) for i in range(len(avals_1))])
