@@ -131,8 +131,8 @@ Now, we arrive at the heart of the algorithm, the definition of the ``state_func
         distribution(qf_x)
         h(qf_y)
 
-        qbl = (qf_y < function(qf_x))
-        cx(qbl,tar)
+        with(qf_y < function(*qf_x)):
+            x(tar)
 
 It receives the ``@auto_uncompute`` :ref:`decorator <uncomputation>` ensuring that all intermediate variables are properly uncomputed. 
 We apply the chosen distribution to ``qf_x``, which represents the :math:`x`-axes support. 

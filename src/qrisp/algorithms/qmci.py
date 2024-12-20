@@ -103,8 +103,8 @@ def QMCI(qargs, function, distribution=None):
         distribution(*qf_x)
         h(qf_y)
 
-        qbl = (qf_y < function(*qf_x))
-        cx(qbl,tar)
+        with(qf_y < function(*qf_x)):
+            x(tar)
 
     a = IQAE(qargs, state_function, eps=0.01, alpha=0.01)   
 
