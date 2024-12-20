@@ -160,7 +160,10 @@ class Jaspr(Jaxpr):
         if not isinstance(other, Jaxpr):
             return False
         
-        return self.hashvalue == hash(other) and len(self.eqns) == len(other.eqns) and check_aval_equivalence(self.invars, other.invars)
+        return (self.hashvalue == hash(other) 
+                and len(self.eqns) == len(other.eqns)
+                and len(self.invars) == len(other.invars)
+                and check_aval_equivalence(self.invars, other.invars))
     
     def inverse(self):
         """
