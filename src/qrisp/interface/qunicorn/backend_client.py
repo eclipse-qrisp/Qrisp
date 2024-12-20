@@ -17,6 +17,7 @@
 """
 from typing import Optional, List
 import time
+import qiskit
 
 from qrisp.interface.request_manager import RequestManager
 
@@ -244,7 +245,6 @@ class BackendClient:
             job_state = job_get_response.json()["state"]
             if job_state == "ERROR":
                 raise RuntimeError("Job has failed!")
-                break
 
             if job_state == "FINISHED":
                 break
@@ -254,7 +254,6 @@ class BackendClient:
         batch_idx = 0
         for i in range(len(job_get_response.json()["results"])):
             job_result = job_get_response.json()["results"][i]
-            print("job_result", job_result)
 
             if job_result["resultType"] == self.measurement_value:
                 measurement = job_result["data"]
@@ -298,8 +297,6 @@ class BackendClient:
 
 
 def monolithical_clreg(qc):
-    import qiskit
-
     # Filter (de)allocations
     new_qc = qc.clearcopy()
     for instr in qc.data:
