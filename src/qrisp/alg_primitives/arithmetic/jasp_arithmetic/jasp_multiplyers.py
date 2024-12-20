@@ -18,26 +18,25 @@
 
 import numpy as np
 
-from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_fourier_adder import jasp_fourier_adder
+from qrisp.alg_primitives.arithmetic import gidney_adder
 from qrisp.jasp import qache, jrange
 from qrisp.qtypes import QuantumFloat, QuantumBool
 from qrisp.environments import control
-from qrisp.core import cx
+from qrisp.core import cx, x
 
-@qache
-def jasp_fourier_multiplyer(a, b):
+@qache(static_argnames = "inpl_adder")
+def jasp_controlling_multiplyer(a, b, inpl_adder = gidney_adder):
     
     s = QuantumFloat(a.size + b.size)
     
     for i in jrange(b.size):
-        
         with control(b[i]):
-            jasp_fourier_adder(a, s[i:i+a.size+1])
+            inpl_adder(a, s[i:i+a.size+1])
     
     return s
 
-@qache
-def jasp_squaring(a):
+@qache(static_argnames = "inpl_adder")
+def jasp_squaring(a, inpl_adder = gidney_adder):
     
     s = QuantumFloat(2*a.size)
     temp = QuantumBool()
@@ -47,10 +46,48 @@ def jasp_squaring(a):
         cx(a[i], temp[0])
         
         with control(temp[0]):
-            jasp_fourier_adder(a, s[i:i+a.size+1])
+            inpl_adder(a, s[i:i+a.size+1])
             
         cx(a[i], temp[0])
         
     temp.delete()
     
+    return s
+
+@qache(static_argnames = "inpl_adder")
+def jasp_multiplyer(factor_1, factor_2, inpl_adder = gidney_adder):
+    
+    n = factor_1.size-1
+    s = QuantumFloat(factor_1.size + factor_2.size + 1, 
+                     exponent = factor_1.exponent + factor_2.exponent)
+    
+    for i in jrange(factor_2.size):
+        cx(factor_2[i], s[i+1+n])
+
+    x(s)
+    
+    inpl_adder(factor_2, s)
+    
+    for i in jrange(s.size):
+        cx(factor_1[0], s[i])
+        
+    for i in jrange(factor_1.size-1):
+        
+        inpl_adder(factor_2[:s.size-i], s[i:])    
+        
+        cx(factor_1[i], factor_1[i+1])
+        for j in jrange(s.size):
+            cx(factor_1[i+1], s[j])
+        cx(factor_1[i], factor_1[i+1])
+
+    inpl_adder(factor_2[:s.size-factor_1.size+1], s[factor_1.size-1:])
+    
+    for i in jrange(s.size):
+        cx(factor_1[factor_1.size-1], s[i])
+
+    x(s)
+    
+    s.qs.clear_qubits(s.reg[:1])
+    s.reg = s.reg[1:]
+
     return s

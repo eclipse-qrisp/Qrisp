@@ -404,8 +404,8 @@ class QuantumFloat(QuantumVariable):
         from qrisp.jasp import check_for_tracing_mode
         
         if check_for_tracing_mode():
-            from qrisp.alg_primitives.arithmetic import jasp_fourier_multiplyer
-            s = jasp_fourier_multiplyer(other, self)
+            from qrisp.alg_primitives.arithmetic import jasp_multiplyer
+            s = jasp_multiplyer(other, self)
             return s
         
         

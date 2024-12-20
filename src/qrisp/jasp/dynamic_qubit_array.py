@@ -26,8 +26,8 @@ class DynamicQubitArray:
             return DynamicQubitArray(slice_qb_array(tracer, start, stop))
         else:
             from qrisp.jasp.tracing_quantum_session import TracingQuantumSession
-            id_tuple = (id(tracer), id(key))
             qs = TracingQuantumSession.get_instance()
+            id_tuple = (id(tracer), id(key))
             if not id_tuple in qs.qubit_cache:
                 qs.qubit_cache[id_tuple] = get_qubit(tracer, key)
             return qs.qubit_cache[id_tuple]

@@ -1079,7 +1079,11 @@ class QuantumVariable:
         return self.reg[key]
         
     def __str__(self):
-        return str(self.get_measurement())
+        from qrisp.jasp import check_for_tracing_mode
+        if check_for_tracing_mode():
+            return self.__repr__()
+        else:
+            return str(self.get_measurement())
 
     def __repr__(self):
         return "<" + str(type(self)).split(".")[-1][:-2] + " '" + self.name + "'>"

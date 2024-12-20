@@ -1106,7 +1106,21 @@ def measure(qubits):
     qs = find_qs(qubits)
     
     if not isinstance(qs, TracingQuantumSession):
-        raise Exception("measure function is available only in Jasp mode")
+        
+        clbits = []
+        if hasattr(qubits, "__len__"):
+            for qb in qubits:
+                try:
+                    clbits.append(qs.add_clbit())
+                except AttributeError:
+                    clbits.append(qs.add_clbit())
+    
+        else:
+            clbits = qs.add_clbit()
+                
+        append_operation(std_ops.Measurement(), [qubits], [clbits])
+        
+        return clbits
     else:
         from qrisp.jasp import Measurement_p, AbstractQubit, AbstractQubitArray
         from qrisp import QuantumVariable
