@@ -43,13 +43,13 @@ class RequestManager:
     def get(self, endpoint: str, **kwargs):
         """Execute GET request. """
         url = f"{self.base_url}{endpoint}"
-        response = requests.get(url, **kwargs)
+        response = self.session.get(url, **kwargs)
         return response
 
     def post(self, endpoint: str, data=None, json=None, **kwargs):
         """Execute POST request. """
         url = f"{self.base_url}{endpoint}"
-        response = requests.post(url, data=data, json=json, **kwargs)
+        response = self.session.post(url, data=data, json=json, **kwargs)
         return response
 
     def delete(self, endpoint: str, data=None, json=None, **kwargs):
