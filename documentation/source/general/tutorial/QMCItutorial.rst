@@ -84,15 +84,22 @@ Mathematically speaking this means, given an error :math:`\epsilon` and a confid
 A documentation explaining how to use the Qrisp implementation of this algorithm can found in the :ref:`IQAE <IQAE>` reference.
 
 
-QMCI example implementation
+QMCI implementation example
 ---------------------------
 
-Next up, we will step-by-step go through a full example implementation of QMCI tailored to the example of integrating the function $f(x)=x^2$ over the uniform distribution in the interval $[0,1]$.
-A general implementation for integration of multidimensional functions is provided by the :ref:`QMCI <QMCI>` function.
+Next up, we will step-by-step go through a example implementation of QMCI tailored to the example of integrating the function $f(x)=x^2$ w.r.t. the uniform distribution over the interval $[0,1]$,
+i.e.,
+
+$$\\int_0^1x^2\\mathrm dx$$
+
+A general implementation for integration of multidimensional functions w.r.t. arbitrary probability distributions is provided by the :ref:`QMCI method <QMCI>`.
 
 First, we define the function that we want to integrate, and a function for preparing the uniform distribution. 
 Additionally, we define a list of variables ``qargs`` repesenting the $x$-axis (``qargs[0]``) and $y$-axis (``qargs[1]``). 
-Thereby, the QuantumVariable representing the $y$-axis has to be chosen appropriately with respect to the values that the result of ``function(qargs[0])`` assumes.
+Thereby, the QuantumVariable representing the $y$-axis has to be chosen appropriately with respect to the values that ``function(qargs[0])`` assumes.
+
+In this example, we evaluate the function $f(x)$ at $2^3=8$ sampling points as speciefied by ``QuantumFloat(3,-3)``. 
+The resulting values that the function assumes are represented by ``QuantumFloat(6,-6)``.
 
 ::
 
@@ -104,7 +111,7 @@ Thereby, the QuantumVariable representing the $y$-axis has to be chosen appropri
     def distribution(qf):
         h(qf)
 
-    qargs = [QuantumFloat(2,-2), QuantumFloat(4,-4)]
+    qargs = [QuantumFloat(3,-3), QuantumFloat(6,-6)]
 
 Second, we determine the correct scaling factor by calculating the volume of the hypercube spanned by the intervals for the $x$-axis and $y$-axis.
 
@@ -135,14 +142,14 @@ Now, we arrive at the heart of the algorithm, the definition of the ``state_func
             x(tar)
 
 It receives the ``@auto_uncompute`` :ref:`decorator <uncomputation>` ensuring that all intermediate variables are properly uncomputed. 
-We apply the chosen distribution to ``qf_x``, which represents the :math:`x`-axes support. 
+We apply the chosen distribution to ``qf_x``, which represents the :math:`x`-axis support. 
 As explained earlier, we also discretize the :math:`y`-axis by appling an ``h`` gate to ``qf_y``.
-We then evaluate in superposition which states in ``qf_y`` are smaller than the chosen function evaluated on ``qf_x``.
 
-We store the result of the comparison in the QuantumBool ``tar``, by applying a ``cx`` gate on the previously mentioned QuantumBool.
+We then evaluate in superposition which states in ``qf_y`` are smaller than the chosen function evaluated on ``qf_x``.
+We store the result of the comparison in the QuantumBool ``tar``, by applying an ``x`` gate on the previously mentioned QuantumBool.
 
 With everything in place, we can now execute the :ref:`Iterative QAE algorithm <IQAE>`, with a chosen error tolerance ``eps`` and a confidence level ``alpha``.
-We also have to rescale with the previously calculated volume ``V0``.
+We also have to rescale the result with the previously calculated volume ``V0``.
 
 ::
 
@@ -155,8 +162,9 @@ Let us now have a look at the result, and compare it to the expected result:
 
 ::
 
-    >>> V
-    0.21855991519015455
+    print(V)
+    # Yields: 0.27442553839756095
 
-    >>> (0+0.25**2+0.5**2+0.75**2)/4
-    0.21855991519015455
+    N = 8
+    print(sum((i/N)**2 for i in range(N))/N)
+    # Yields: 0.2734375
