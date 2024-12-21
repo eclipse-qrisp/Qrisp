@@ -7,7 +7,7 @@ This tutorial will provide you with an introduction to Quantum Monte Carlo Integ
 
 For this purpose, we will first give you a theoretical overview of what this technique is about and where it is used. 
 Then we will dive into the practical implemention within Qrisp. This also includes the usage of :ref:`Iterative Quantum Amplitude Estimation <IQAE>`. 
-To finish of this tutorial, we investigate the full implementation of a simple example by integrating :math:`f(x)=x^2` over a uniform distribution in the interval :math:`\lbrack 0,1 \rbrack`.
+To finish of this tutorial, we investigate the full implementation of a simple example by integrating :math:`f(x)=x^2` w.r.t. the uniform distribution over the interval :math:`\lbrack 0,1 \rbrack`.
 
 The relevant literature can be found in the following papers: `A general quantum algorithm for numerical integration <https://www.nature.com/articles/s41598-024-61010-9>`_ and `Option pricing using Quantum computers <https://arxiv.org/pdf/1905.02666>`_ for QMCI and `Accelerated Quantum Amplitude Estimation
 without QFT <https://arxiv.org/pdf/2407.16795>`_ for IQAE.
@@ -15,7 +15,7 @@ without QFT <https://arxiv.org/pdf/2407.16795>`_ for IQAE.
 Theoretical overview of QMCI
 ----------------------------
 
-QMCI tackels the same problems as its classical counterpart: Numerical integration of high-dimensional functions over probility distributions.
+QMCI tackels the same problems as its classical counterpart: Numerical integration of high-dimensional functions w.r.t. probility distributions.
 
 Mathemically speaking, we want to find an approximation for the following (general) integral
 
@@ -145,8 +145,8 @@ It receives the ``@auto_uncompute`` :ref:`decorator <uncomputation>` ensuring th
 We apply the chosen distribution to ``qf_x``, which represents the :math:`x`-axis support. 
 As explained earlier, we also discretize the :math:`y`-axis by appling an ``h`` gate to ``qf_y``.
 
-We then evaluate in superposition which states in ``qf_y`` are smaller than the chosen function evaluated on ``qf_x``.
-We store the result of the comparison in the QuantumBool ``tar``, by applying an ``x`` gate on the previously mentioned QuantumBool.
+Within a :ref:`ConditionEnvironment`, we then evaluate in superposition which states in ``qf_y`` are smaller than the chosen function evaluated on ``qf_x``.
+We store the result of the comparison in the QuantumBool ``tar``, by applying an ``x`` gate on the previously mentioned QuantumBool if said condition is satisfied.
 
 With everything in place, we can now execute the :ref:`Iterative QAE algorithm <IQAE>`, with a chosen error tolerance ``eps`` and a confidence level ``alpha``.
 We also have to rescale the result with the previously calculated volume ``V0``.
