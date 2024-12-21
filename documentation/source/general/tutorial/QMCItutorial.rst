@@ -131,7 +131,7 @@ Now, we arrive at the heart of the algorithm, the definition of the ``state_func
         distribution(qf_x)
         h(qf_y)
 
-        with(qf_y < function(*qf_x)):
+        with(qf_y < function(qf_x)):
             x(tar)
 
 It receives the ``@auto_uncompute`` :ref:`decorator <uncomputation>` ensuring that all intermediate variables are properly uncomputed. 
