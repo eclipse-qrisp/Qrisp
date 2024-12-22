@@ -1084,6 +1084,12 @@ def qjit(function):
     
     return jitted_function
 
+def jaspify(func):
+    def return_function(*args):
+        jaspr = make_jaspr(func)(*args)
+        return jaspr(*args)
+    return return_function
+
 def check_aval_equivalence(invars_1, invars_2):
     avals_1 = [invar.aval for invar in invars_1]
     avals_2 = [invar.aval for invar in invars_2]
