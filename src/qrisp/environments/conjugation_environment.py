@@ -149,7 +149,7 @@ class ConjugationEnvironment(QuantumEnvironment):
         
         if check_for_tracing_mode():
             with QuantumEnvironment():
-                res = qache(self.conjugation_function)(*self.args, **self.kwargs)
+                res = qache(self.conjugation_function)(*list(self.args), **self.kwargs)
             return res
             
         
@@ -189,7 +189,7 @@ class ConjugationEnvironment(QuantumEnvironment):
         else:
             from qrisp.environments import invert
             with invert():
-                qache(self.conjugation_function)(*self.args, **self.kwargs)
+                qache(self.conjugation_function)(*list(self.args), **self.kwargs)
         
         QuantumEnvironment.__exit__(self, exception_type, exception_value, traceback)
         

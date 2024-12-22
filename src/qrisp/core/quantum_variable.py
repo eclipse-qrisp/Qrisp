@@ -1511,8 +1511,6 @@ def flatten_qv(qv):
     return tuple(children), (QuantumVariableIdentityContainer(qv),)
 
 def unflatten_qv(aux_data, children):
-    qs = TracingQuantumSession.get_instance()
-    
     qv = aux_data[0].qv
     qv.reg = DynamicQubitArray(children[0])
     for i in range(len(qv.traced_attributes)):

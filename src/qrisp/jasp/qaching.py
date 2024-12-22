@@ -17,6 +17,9 @@
 """
 
 import jax
+
+from qrisp.core import recursive_qv_search
+
 from qrisp.jasp import TracingQuantumSession, check_for_tracing_mode
 
 def qache(*func, **kwargs):
@@ -184,9 +187,9 @@ def qache_helper(func, jax_kwargs):
         # tracers of the jit trace. To reverse this, we store the current tracers
         # by flattening each QuantumVariable in the signature.
         flattened_qvs = []
-        for arg in args:
-            if isinstance(arg, QuantumVariable):
-                flattened_qvs.append(flatten_qv(arg))
+        
+        for qv in recursive_qv_search(args):
+            flattened_qvs.append(flatten_qv(qv))
         
         # Get the AbstractQuantumCircuit for tracing
         abs_qs = TracingQuantumSession.get_instance()
