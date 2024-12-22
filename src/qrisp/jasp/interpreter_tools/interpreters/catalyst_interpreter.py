@@ -154,6 +154,10 @@ def process_op(op_prim, invars, outvars, context_dic):
     
     num_qubits = len(qb_pos)
     
+    param_dict = {}
+    for i in range(len(op.params)):
+        param_dict[op.params[i]] = context_dic[invars[i+1]]
+    
     # Extract the catalyst qubit tracers by using the qextract primitive.
     catalyst_qb_tracers = []
     for i in range(num_qubits):
@@ -162,7 +166,7 @@ def process_op(op_prim, invars, outvars, context_dic):
         catalyst_qb_tracers.append(catalyst_qb_tracer)
     
     # We can now apply the gate primitive
-    res_qbs = exec_qrisp_op(op, catalyst_qb_tracers)
+    res_qbs = exec_qrisp_op(op, catalyst_qb_tracers, param_dict)
         
     
     # Finally, we reinsert the qubits and update the register tracer
@@ -173,7 +177,7 @@ def process_op(op_prim, invars, outvars, context_dic):
         
     context_dic[outvars[0]] = (catalyst_register_tracer, context_dic[invars[0]][1])
 
-def exec_qrisp_op(op, catalyst_qbs):
+def exec_qrisp_op(op, catalyst_qbs, param_dict):
     # This function takes a Qrisp operation and a list of catalyst qubit tracers
     # and applies the operation to these qubits.
     
@@ -184,7 +188,7 @@ def exec_qrisp_op(op, catalyst_qbs):
             qubits = instr.qubits
             qubit_indices = [defn.qubits.index(qb) for qb in qubits]
             temp_catalyst_qbs = [catalyst_qbs[i] for i in qubit_indices]
-            res_qbs = exec_qrisp_op(instr.op, temp_catalyst_qbs)
+            res_qbs = exec_qrisp_op(instr.op, temp_catalyst_qbs, param_dict)
             
             for i in range(len(qubit_indices)):
                 catalyst_qbs[qubit_indices[i]] = res_qbs[i]
@@ -203,10 +207,12 @@ def exec_qrisp_op(op, catalyst_qbs):
         
         catalyst_name = op_name_translation_dic[op_name]
         
-        res_qbs = qinst_p.bind(*catalyst_qbs, 
+        param_list = [param_dict[symb] for symb in op.params]
+        res_qbs = qinst_p.bind(*(catalyst_qbs+param_list), 
                                op = catalyst_name, 
                                qubits_len = op.num_qubits,
-                               adjoint = invert)
+                               adjoint = invert,
+                               params_len = len(param_list))
         return res_qbs
 
 
