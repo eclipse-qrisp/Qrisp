@@ -88,6 +88,8 @@ def catalyst_eqn_evaluator(eqn, context_dic):
             process_measurement(invars, outvars, context_dic)
         elif eqn.primitive.name == "jasp.get_size":
             process_get_size(invars, outvars, context_dic)
+        elif eqn.primitive.name == "jasp.slice":
+            process_slice(invars, outvars, context_dic)
         elif eqn.primitive.name == "jasp.delete_qubits":
             # Not available in Catalyst
             context_dic[outvars[0]] = context_dic[invars[0]]
@@ -129,6 +131,20 @@ def process_get_qubit(invars, outvars, context_dic):
     qubit_array_starting_index = context_dic[invars[0]][0]
     qubit_index = context_dic[invars[1]]
     context_dic[outvars[0]] = qubit_array_starting_index + qubit_index
+    
+def process_slice(invars, outvars, context_dic):
+    # The get_qubit primitive needs to retrieve the integer that indexes the 
+    # AbstractQubit in the stack.
+    # For that we add the Qubit index (in the QubitArray) to the QubitArray 
+    # starting index.
+    
+    base_qubit_array_starting_index = context_dic[invars[0]][0]
+    new_starting_index = context_dic[invars[1]] + base_qubit_array_starting_index
+    new_size = context_dic[invars[2]] - context_dic[invars[1]]
+    
+    context_dic[outvars[0]] = (new_starting_index, new_size)
+    
+    
     
 def process_get_size(invars, outvars, context_dic):
     # The size is simply the second entry of the QubitArray representation
