@@ -133,10 +133,6 @@ def process_get_qubit(invars, outvars, context_dic):
     context_dic[outvars[0]] = qubit_array_starting_index + qubit_index
     
 def process_slice(invars, outvars, context_dic):
-    # The get_qubit primitive needs to retrieve the integer that indexes the 
-    # AbstractQubit in the stack.
-    # For that we add the Qubit index (in the QubitArray) to the QubitArray 
-    # starting index.
     
     base_qubit_array_starting_index = context_dic[invars[0]][0]
     new_starting_index = context_dic[invars[1]] + base_qubit_array_starting_index

@@ -16,6 +16,8 @@
 ********************************************************************************/
 """
 
+import jax.numpy as jnp
+
 from qrisp.alg_primitives.arithmetic.adders.gidney.cq_gidney_adder import *
 from qrisp.alg_primitives.arithmetic.adders.gidney.qq_gidney_adder import *
 from qrisp.alg_primitives.arithmetic.adders.adder_tools import ammend_inpl_adder
@@ -66,7 +68,7 @@ def gidney_adder(a, b, c_in = None, c_out = None):
         if isinstance(a, (QuantumVariable, DynamicQubitArray)):
             return jasp_qq_gidney_adder(a, b)
         else:
-            return jasp_cq_gidney_adder(a, b)
+            return jasp_cq_gidney_adder(jnp.array(a, dtype = "int32"), b)
     
     if isinstance(a, (int, str)):
         return custom_control(cq_gidney_adder)(a, b, c_in = c_in, c_out = c_out)

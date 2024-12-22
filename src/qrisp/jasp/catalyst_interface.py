@@ -18,6 +18,7 @@
 from functools import lru_cache
 
 from jax import make_jaxpr
+from jax.core import Literal
 import jax.numpy as jnp
 
 import pennylane as qml
@@ -75,6 +76,11 @@ def jaspr_to_catalyst_jaxpr(jaspr):
             args.append((jnp.asarray(0, dtype = "int32"), jnp.asarray(0, dtype = "int32")))
         elif isinstance(invar.aval, AbstractQubit):
             args.append(jnp.asarray(0, dtype = "int32"))
+        elif isinstance(invar, Literal):
+            if isinstance(invar.val, int):    
+                args.append(jnp.asarray(invar.val, dtype = "int32"))
+            if isinstance(invar.val, float):
+                args.append(jnp.asarray(invar.val, dtype = "f32"))
         else:
             args.append(invar.aval)
     
