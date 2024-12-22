@@ -394,7 +394,7 @@ def recursive_qv_search(input):
             for key in input.keys():
                 result += recursive_qv_search(key)
                 result += recursive_qv_search(input[key])
-        else:
+        elif isinstance(input, (tuple, list)):
             for i in range(len(input)):
                 result += recursive_qv_search(input[i])
     else:
