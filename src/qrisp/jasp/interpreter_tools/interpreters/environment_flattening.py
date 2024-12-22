@@ -128,9 +128,10 @@ def flatten_environments_in_while_eqn(eqn, context_dic):
     """
     
     eqn = copy_jaxpr_eqn(eqn)
+    
     eqn.params["body_jaxpr"] = ClosedJaxpr(flatten_environments(eqn.params["body_jaxpr"].jaxpr),
                                       eqn.params["body_jaxpr"].consts)
-    
+
     
     exec_eqn(eqn, context_dic)
 

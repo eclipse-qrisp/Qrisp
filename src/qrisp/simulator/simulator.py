@@ -403,12 +403,12 @@ def single_shot_sim(qc, quantum_state=None):
 
         return "".join(result_str)[::-1], quantum_state
 
-def advance_quantum_state(qc, quantum_state):
+def advance_quantum_state(qc, quantum_state, deallocated_qubits = []):
     if len(qc.data) == 0:
         return quantum_state
 
     progress_bar = tqdm(
-        desc=f"Simulating {len(qc.qubits)} qubits..",
+        desc=f"Simulating {len(qc.qubits)-len(deallocated_qubits)} qubits..",
         bar_format="{desc} |{bar}| [{percentage:3.0f}%]",
         ncols=85,
         leave=False,
@@ -420,6 +420,10 @@ def advance_quantum_state(qc, quantum_state):
     
     LINE_CLEAR = "\x1b[2K"
     progress_bar.display()
+    
+    for instr in qc.data:
+        if instr.op.name == "qb_dealloc":
+            deallocated_qubits.append(instr.qubits[0])
 
     # This command enables fast appending. Fast appending means that the .append method
     # of the QuantumCircuit class checks much less validity conditions and is also less
@@ -490,6 +494,7 @@ class BufferedQuantumState:
         
         self.quantum_state = QuantumState(n = 0)
         self.buffer_qc = QuantumCircuit(0)
+        self.deallocated_qubits = []
     
     def add_qubit(self):
         self.quantum_state.add_qubit()
@@ -499,7 +504,8 @@ class BufferedQuantumState:
         self.buffer_qc.append(op, qubits)
             
     def apply_buffer(self):
-        self.quantum_state = advance_quantum_state(self.buffer_qc, self.quantum_state)
+        
+        self.quantum_state = advance_quantum_state(self.buffer_qc, self.quantum_state, self.deallocated_qubits)
         self.buffer_qc = self.buffer_qc.clearcopy()
     
     def measure(self, qubit):
