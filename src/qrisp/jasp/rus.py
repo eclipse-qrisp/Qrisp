@@ -16,7 +16,7 @@
 ********************************************************************************/
 """
 
-from jax.lax import while_loop, cond, fori_loop
+from jax.lax import while_loop, cond
 import jax
 import jax.numpy as jnp
 
@@ -229,9 +229,9 @@ def reset_qubit_array(abs_qc, qb_array):
     
     from qrisp.jasp.primitives import Measurement_p, OperationPrimitive, get_qubit_p, get_size_p, delete_qubits_p
     
-    def body_func(i, arg_tuple):
+    def body_func(arg_tuple):
         
-        abs_qc, qb_array = arg_tuple
+        abs_qc, qb_array, i = arg_tuple
         
         abs_qb = get_qubit_p.bind(qb_array, i)
         abs_qc, meas_bl = Measurement_p.bind(abs_qc, abs_qb)
@@ -246,12 +246,17 @@ def reset_qubit_array(abs_qc, qb_array):
         
         abs_qc, qb = cond(meas_bl, true_fun, false_fun, (abs_qc, abs_qb))
         
-        return (abs_qc, qb_array)
+        i += 1
+        
+        return (abs_qc, qb_array, i)
     
-    abs_qc, qb_array = fori_loop(0, 
-                                 get_size_p.bind(qb_array),
+    def cond_fun(arg_tuple):
+        return arg_tuple[-1] < get_size_p.bind(arg_tuple[1])
+    
+    
+    abs_qc, qb_array, i = while_loop(cond_fun,
                                  body_func,
-                                 (abs_qc, qb_array)
+                                 (abs_qc, qb_array, 0)
                                  )
     
     abs_qc = delete_qubits_p.bind(abs_qc, qb_array)
