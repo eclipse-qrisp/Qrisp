@@ -1526,6 +1526,10 @@ def flatten_qv(qv):
     return tuple(children), QuantumVariableIdentityContainer(qv)
 
 def unflatten_qv(aux_data, children):
+    # The unflattening procedure creates a copy of the QuantumVariable object
+    # and updates the traced attributes. When calling this procedure,
+    # the user has to make sure that the result of this function is
+    # registered in a QuantumSession.
     
     qv_container = aux_data
     reg = DynamicQubitArray(children[0])

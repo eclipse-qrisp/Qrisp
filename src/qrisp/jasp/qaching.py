@@ -165,8 +165,13 @@ def qache_helper(func, jax_kwargs):
         abs_qs = TracingQuantumSession.get_instance()
         abs_qs.abs_qc = abs_qc
         
+        # We now iterate through the QuantumVariables of the signature to perform two steps:
+        # 1. The QuantumVariables from the signature went through a flatten/unflattening process.
+        # The unflattening creates a copy of the QuantumVariable object, which is however not
+        # registered in any QuantumSession. We therefore need to register them.
+        # 2. To prevent the user from performing any in-place modifications of traced QuantumVariable
+        # attributes, we collect the tracers to compare them after the function has concluded.
         arg_qvs = recursive_qv_search(args)
-        
         flattened_qvs = []
         for qv in arg_qvs:
             abs_qs.register_qv(qv, None)
@@ -178,9 +183,11 @@ def qache_helper(func, jax_kwargs):
         
         res_qvs = recursive_qv_search(res)
         
+        # It is not legal to return a QuantumVariable that was already given in the parameters.
         if set([hash(qv) for qv in res_qvs]).intersection([hash(qv) for qv in arg_qvs]):
             raise Exception("Found parameter QuantumVariable within returned results")
-            
+        
+        # Check whether there have been in-place modifications of traced attributes of QuantumVariables.
         for qv in arg_qvs:
             flat_qv = list(flatten_qv(qv)[0])
             for i in range(len(flat_qv)):
@@ -205,14 +212,8 @@ def qache_helper(func, jax_kwargs):
             return func(*args, **kwargs)
         
         
-        # Calling the jitted function on a QuantumVariable will call the 
-        # flatten/unflatten procedure. This will set the traced attributes to the
-        # tracers of the jit trace. To reverse this, we store the current tracers
-        # by flattening each QuantumVariable in the signature.
-        
         # Get the AbstractQuantumCircuit for tracing
         abs_qs = TracingQuantumSession.get_instance()
-        
         abs_qs.start_tracing(abs_qs.abs_qc)
         
         # Excecute the function
@@ -220,16 +221,17 @@ def qache_helper(func, jax_kwargs):
         
         abs_qs.conclude_tracing()
         
-        # abs_qs.qubit_cache = temp_qubit_cache
-        eqn = jax._src.core.thread_local_state.trace_state.trace_stack.dynamic.jaxpr_stack[0].eqns[-1]
-        # eqn.params["jaxpr"] = "="
+        # Convert the jaxpr from the traced equation in to a Jaspr
         from qrisp.jasp import Jaspr
-        
-        
+        eqn = jax._src.core.thread_local_state.trace_state.trace_stack.dynamic.jaxpr_stack[0].eqns[-1]
         eqn.params["jaxpr"] = jax.core.ClosedJaxpr(Jaspr.from_cache(eqn.params["jaxpr"].jaxpr), eqn.params["jaxpr"].consts)
         
+        # Update the AbstractQuantumCircuit of the TracingQuantumSession        
         abs_qs.abs_qc = abs_qc_new
         
+        # The QuantumVariables from the result went through a flatten/unflattening cycly.
+        # The unflattening creates a new QuantumVariable object, that is however not yet
+        # registered in any QuantumSession. We register these in the current QuantumSession.
         for qv in recursive_qv_search(res):
             abs_qs.register_qv(qv, None)
         

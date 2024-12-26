@@ -975,16 +975,24 @@ def make_jaspr(fun):
         
         qs = TracingQuantumSession.get_instance()
         
+        # Close any tracing quantum sessions that might have not been
+        # properly closed due to whatever reason.
         if not check_for_tracing_mode():
             while qs.abs_qc is not None:
                 qs.conclude_tracing()
         
+        
+        # This function will be traced by Jax.
+        # Note that we add the abs_qc keyword as the tracing quantum circuit        
         def ammended_function(abs_qc, *args, **kwargs):
             
             qs.start_tracing(abs_qc)
             
+            # If the signature contains QuantumVariables, these QuantumVariables went
+            # through a flattening/unflattening procedure. The unflattening creates
+            # a copy of the QuantumVariable object, which is however not yet registered in any
+            # QuantumSession. We register these QuantumVariables in the current QuantumSession.
             arg_qvs = recursive_qv_search(args)
-            
             for qv in arg_qvs:
                 qs.register_qv(qv, None)
             
@@ -998,10 +1006,11 @@ def make_jaspr(fun):
             
             return res_qc, res
         
-        args = list(args)
-        
         jaxpr = make_jaxpr(ammended_function)(AbstractQuantumCircuit(), *args, **kwargs).jaxpr
-            
+        
+        # Collect the environments
+        # This means that the quantum environments no longer appear as
+        # enter/exit primitives but as primitive that "call" a certain Jaspr.
         return Jaspr.from_cache(collect_environments(jaxpr))
     
     return jaspr_creator
