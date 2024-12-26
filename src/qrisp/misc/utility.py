@@ -385,8 +385,7 @@ def gate_wrap_inner(
     function, permeability=None, is_qfree=None, name=None, verify=False
 ):
     
-    from qrisp.jasp import qache
-    qached_function = qache(function)
+    qached_function = function
     
     def wrapped_function(
         *args, permeability=permeability, is_qfree=is_qfree, verify=verify, **kwargs

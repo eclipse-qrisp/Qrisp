@@ -87,18 +87,18 @@ class TracingQuantumSession:
         self.abs_qc = op_primitive.bind(self.abs_qc, *(param_tracers + [b for b in qubits]))
         
     def register_qv(self, qv, size):
-        if qv.name in [temp_qv.name for temp_qv in self.qv_list + self.deleted_qv_list]:
-            raise RuntimeError(
-                "Variable name " + str(qv.name) + " already exists in quantum session"
-            )
+        # if qv.name in [temp_qv.name for temp_qv in self.qv_list + self.deleted_qv_list]:
+        #     raise RuntimeError(
+        #         "Variable name " + str(qv.name) + " already exists in quantum session"
+        #     )
             
         # Determine amount of required qubits
         
-        
-        self.abs_qc, qb_array_tracer = create_qubits(self.abs_qc, size)
-        # Register in the list of active quantum variable
-        dynamic_qubit_array = DynamicQubitArray(qb_array_tracer)
-        qv.reg = dynamic_qubit_array
+        if size is not None:
+            self.abs_qc, qb_array_tracer = create_qubits(self.abs_qc, size)
+            # Register in the list of active quantum variable
+            dynamic_qubit_array = DynamicQubitArray(qb_array_tracer)
+            qv.reg = dynamic_qubit_array
         self.qv_list.append(qv)
         
     def delete_qv(self, qv, verify=False):

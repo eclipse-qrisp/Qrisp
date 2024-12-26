@@ -157,7 +157,6 @@ def RUS(trial_function):
         n_created_qv_vals = len(created_qvs_vals)
             
         def body_fun(args):
-            
             # We now need to deallocate the AbstractQubitArrays from the previous
             # iteration since they are no longer needed.
             created_qvs_vals = args[-n_created_qv_vals:]

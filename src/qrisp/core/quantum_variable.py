@@ -250,6 +250,8 @@ class QuantumVariable:
         # self.size = size
 
         self.user_given_name = False
+        self.reg = None
+        
         # If name is given, register variable in session manager
         if name is not None:
             self.user_given_name = True
@@ -471,7 +473,7 @@ class QuantumVariable:
         else:
             return False
 
-    def duplicate(self, name=None, qs=None, init=False):
+    def duplicate(self, name=None, qs=None, init=False, qubits=None):
         r"""
         Duplicates the QuantumVariable in the sense that a new QuantumVariable is
         created with same type and parameters but initialized in the $\ket{0}$ state.
@@ -507,14 +509,25 @@ class QuantumVariable:
         4
 
         """
-
-        duplicate = copy.copy(self)
-
+        
         from qrisp.core import QuantumSession
+        from qrisp.jasp import check_for_tracing_mode, TracingQuantumSession
 
-        new_qs = QuantumSession()
+        if check_for_tracing_mode():
+            new_qs = TracingQuantumSession.get_instance()
+        else:
+            new_qs = QuantumSession()
+            
+        duplicate = copy.copy(self)
+        
+        if qubits is not None:
+            duplicate.reg = qubits
+            size = None
+        else:
+            size = self.size
+        
 
-        # Register duplicate variable in session manager
+        # Register duplicate variable in session
 
         if name is not None:
 
@@ -525,22 +538,22 @@ class QuantumVariable:
                 duplicate.user_given_name = True
 
             duplicate.name = name
-            new_qs.register_qv(duplicate, self.size)
+            new_qs.register_qv(duplicate, size)
 
         else:
             duplicate.user_given_name = False
 
             try:
                 duplicate.name = self.name + "_dupl"
-                new_qs.register_qv(duplicate, self.size)
-            except NameError:
+                new_qs.register_qv(duplicate, size)
+            except RuntimeError:
                 i = 0
                 while True:
                     try:
                         duplicate.name = self.name + "_dupl" + str(i)
-                        new_qs.register_qv(duplicate, self.size)
+                        new_qs.register_qv(duplicate, size)
                         break
-                    except NameError:
+                    except RuntimeError:
                         pass
                     i += 1
 
@@ -555,7 +568,7 @@ class QuantumVariable:
         duplicate.creation_time = int(self.creation_counter[0])
         duplicate.creation_counter += 1
 
-        if qs is not None:
+        if qs is not None and isinstance(qs, QuantumSession):
             merge(qs, new_qs)
 
         if init:
@@ -1500,19 +1513,24 @@ class QuantumVariableIdentityContainer:
 def flatten_qv(qv):
     # return the tracers and auxiliary data (structure of the object)
     children = [qv.reg.tracer]
-    # aux_data = (QVNameContainer(qv.name),)
-    # Iterate through the attributes that are marked as traced
     for traced_attribute in qv.traced_attributes:
         attr = getattr(qv, traced_attribute)
         if isinstance(attr, int):
             attr = jnp.array(attr, jnp.dtype("int32"))
+        elif isinstance(attr, bool):
+            attr = jnp.array(attr, jnp.dtype("bool"))
+        elif isinstance(attr, float):
+            attr = jnp.array(attr, jnp.dtype("float32"))
         children.append(attr)
     
-    return tuple(children), (QuantumVariableIdentityContainer(qv),)
+    return tuple(children), QuantumVariableIdentityContainer(qv)
 
 def unflatten_qv(aux_data, children):
-    qv = aux_data[0].qv
-    qv.reg = DynamicQubitArray(children[0])
+    
+    qv_container = aux_data
+    reg = DynamicQubitArray(children[0])
+    qv = qv_container.qv.duplicate(qubits = reg)
+    
     for i in range(len(qv.traced_attributes)):
         setattr(qv, qv.traced_attributes[i], children[i+1])
     return qv

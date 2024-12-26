@@ -138,6 +138,14 @@ def custom_control(func):
 
     """
     
+    # The idea to realize the custom control feature in traced mode is to
+    # first trace the non-controlled version into a pjit primitive using
+    # the qache feature and the trace the controlled version.
+    # The controlled version is then stored in the params attribute
+    
+    # Qache the function (in non-traced mode, this has no effect)
+    func = qache(func)    
+    
     def adaptive_control_function(*args, **kwargs):
         
         if not check_for_tracing_mode():
@@ -198,15 +206,11 @@ def custom_control(func):
                     res = func(*args, ctrl = control_qb, **kwargs)
                     
         else:
-            # The idea to realize the custom control feature in traced mode is to
-            # first trace the non-controlled version into a pjit primitive using
-            # the qache feature and the trace the controlled version.
-            # The controlled version is then stored in the params attribute
+
+            # Call the (qached) function
+            res = func(*args, **kwargs)
             
-            # Qache the function
-            res = qache(func)(*args, **kwargs)
-            
-            # Retrieve the equation
+            # Retrieve the pjit equation
             jit_eqn = jax._src.core.thread_local_state.trace_state.trace_stack.dynamic.jaxpr_stack[0].eqns[-1]
             
             # Trace the controlled version

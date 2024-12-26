@@ -524,7 +524,7 @@ class QuantumFloat(QuantumVariable):
 
         return qf_inversion(self)
 
-    @gate_wrap(permeability=[1], is_qfree=True)
+    # @gate_wrap(permeability=[1], is_qfree=True)
     def __iadd__(self, other):
         
         from qrisp.jasp import check_for_tracing_mode

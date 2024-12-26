@@ -136,7 +136,7 @@ def qache(*func, **kwargs):
         return qache_helper(func[0], {})
     
     
-    
+# temp_list = [False]    
 def qache_helper(func, jax_kwargs):
     # 
     # To achieve the desired behavior we leverage the Jax inbuild caching mechanism.
@@ -144,6 +144,11 @@ def qache_helper(func, jax_kwargs):
     # To cache the function we therefore simply need to wrap it with jit and
     # it will be properly cached.
     
+    # if func.__name__ == "jasp_qq_gidney_adder":
+        # if temp_list[0]:
+            # raise
+        # temp_list[0] = True
+        
     # There are however some more things to consider.
     
     # The Qrisp function doesn't have the AbstractQuantumCircuit object (which is carried by 
@@ -155,24 +160,40 @@ def qache_helper(func, jax_kwargs):
     # in the signature.
     def ammended_function(abs_qc, *args, **kwargs):
         
+        arg_qvs = recursive_qv_search(args)
+        
+        flattened_qvs = []
+        for qv in arg_qvs:
+            flattened_qvs.extend(list(flatten_qv(qv)[0]))
+        
         # Set the given AbstractQuantumCircuit as the 
         # one carried by the tracing QuantumSession
         qs = TracingQuantumSession.get_instance()
         qs.abs_qc = abs_qc
-        
         # Execute the function
         res = func(*args, **kwargs)
+        new_abs_qc = qs.abs_qc
+        
+        res_qvs = recursive_qv_search(res)
+        
+        if set([hash(qv) for qv in res_qvs]).intersection([hash(qv) for qv in arg_qvs]):
+            raise Exception("Found parameter QuantumVariable within returned results")
+            
+        for qv in arg_qvs:
+            flat_qv = list(flatten_qv(qv)[0])
+            for i in range(len(flat_qv)):
+                if not flat_qv[i] is flattened_qvs.pop(0):
+                    raise Exception(f"Found in-place parameter modification of QuantumVariable {qv.name}")
         
         # Return the result and the result AbstractQuantumCircuit.
-        return qs.abs_qc, res
+        return new_abs_qc, res
     
     # Modify the name of the ammended function to reflect the input
     ammended_function.__name__ = func.__name__
     # Wrap in jax.jit
     ammended_function = jax.jit(ammended_function, **jax_kwargs)
     
-    from qrisp.core.quantum_variable import QuantumVariable, flatten_qv, unflatten_qv
-    
+    from qrisp.core.quantum_variable import flatten_qv
     
     # We now prepare the return function
     def return_function(*args, **kwargs):
@@ -186,21 +207,18 @@ def qache_helper(func, jax_kwargs):
         # flatten/unflatten procedure. This will set the traced attributes to the
         # tracers of the jit trace. To reverse this, we store the current tracers
         # by flattening each QuantumVariable in the signature.
-        flattened_qvs = []
-        
-        for qv in recursive_qv_search(args):
-            flattened_qvs.append(flatten_qv(qv))
         
         # Get the AbstractQuantumCircuit for tracing
         abs_qs = TracingQuantumSession.get_instance()
         
-        temp_qubit_cache = abs_qs.qubit_cache
-        abs_qs.qubit_cache = {}
+        abs_qs.start_tracing(abs_qs.abs_qc)
         
         # Excecute the function
         abs_qc_new, res = ammended_function(abs_qs.abs_qc, *args, **kwargs)
         
-        abs_qs.qubit_cache = temp_qubit_cache
+        abs_qs.conclude_tracing()
+        
+        # abs_qs.qubit_cache = temp_qubit_cache
         eqn = jax._src.core.thread_local_state.trace_state.trace_stack.dynamic.jaxpr_stack[0].eqns[-1]
         # eqn.params["jaxpr"] = "="
         from qrisp.jasp import Jaspr
@@ -208,13 +226,11 @@ def qache_helper(func, jax_kwargs):
         
         eqn.params["jaxpr"] = jax.core.ClosedJaxpr(Jaspr.from_cache(eqn.params["jaxpr"].jaxpr), eqn.params["jaxpr"].consts)
         
-        # print(type(eqn.params["jaxpr"].jaxpr))
         
         abs_qs.abs_qc = abs_qc_new
         
-        # Update the QuantumVariable objects to their former tracers (happens in-place)
-        for tup in flattened_qvs:
-            unflatten_qv(*tup[::-1])
+        for qv in recursive_qv_search(res):
+            abs_qs.register_qv(qv, None)
         
         # Return the result.
         return res
