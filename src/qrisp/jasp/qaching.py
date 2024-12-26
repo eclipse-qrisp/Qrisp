@@ -160,19 +160,21 @@ def qache_helper(func, jax_kwargs):
     # in the signature.
     def ammended_function(abs_qc, *args, **kwargs):
         
+        # Set the given AbstractQuantumCircuit as the 
+        # one carried by the tracing QuantumSession
+        abs_qs = TracingQuantumSession.get_instance()
+        abs_qs.abs_qc = abs_qc
+        
         arg_qvs = recursive_qv_search(args)
         
         flattened_qvs = []
         for qv in arg_qvs:
+            abs_qs.register_qv(qv, None)
             flattened_qvs.extend(list(flatten_qv(qv)[0]))
         
-        # Set the given AbstractQuantumCircuit as the 
-        # one carried by the tracing QuantumSession
-        qs = TracingQuantumSession.get_instance()
-        qs.abs_qc = abs_qc
         # Execute the function
         res = func(*args, **kwargs)
-        new_abs_qc = qs.abs_qc
+        new_abs_qc = abs_qs.abs_qc
         
         res_qvs = recursive_qv_search(res)
         
@@ -225,7 +227,6 @@ def qache_helper(func, jax_kwargs):
         
         
         eqn.params["jaxpr"] = jax.core.ClosedJaxpr(Jaspr.from_cache(eqn.params["jaxpr"].jaxpr), eqn.params["jaxpr"].consts)
-        
         
         abs_qs.abs_qc = abs_qc_new
         

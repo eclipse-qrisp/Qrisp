@@ -1498,7 +1498,7 @@ def plot_histogram(outcome_labels, counts, filename=None):
 from jax import tree_util
 import jax.numpy as jnp
 from qrisp.jasp import TracingQuantumSession, DynamicQubitArray
-from builtins import id
+import copy
 
 # This class hides the QuantumVariable object from jax to transfer it via the
 # the aux_data feature
@@ -1529,7 +1529,9 @@ def unflatten_qv(aux_data, children):
     
     qv_container = aux_data
     reg = DynamicQubitArray(children[0])
-    qv = qv_container.qv.duplicate(qubits = reg)
+    qv = copy.copy(qv_container.qv)
+    qv.reg = reg
+    qv.qs = None
     
     for i in range(len(qv.traced_attributes)):
         setattr(qv, qv.traced_attributes[i], children[i+1])

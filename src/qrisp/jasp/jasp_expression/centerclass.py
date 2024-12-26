@@ -969,7 +969,7 @@ class Jaspr(Jaxpr):
 def make_jaspr(fun):
     from qrisp.jasp import AbstractQuantumCircuit, TracingQuantumSession, check_for_tracing_mode
     from qrisp.core.quantum_variable import QuantumVariable, flatten_qv, unflatten_qv
-    
+    from qrisp.core import recursive_qv_search    
     
     def jaspr_creator(*args, **kwargs):
         
@@ -983,6 +983,11 @@ def make_jaspr(fun):
             
             qs.start_tracing(abs_qc)
             
+            arg_qvs = recursive_qv_search(args)
+            
+            for qv in arg_qvs:
+                qs.register_qv(qv, None)
+            
             try:
                 res = fun(*args, **kwargs)
             except Exception as e:
@@ -995,23 +1000,7 @@ def make_jaspr(fun):
         
         args = list(args)
         
-        # During tracing, the .reg attribute of the QuantumVariable is updated
-        # in-place. To recover the original.reg attribute after tracing, 
-        # we flatten each QuantumVariable (ie. turn it into a tuple)
-        flattened_qvs = []
-        for i in range(len(args)):
-            if isinstance(args[i], bool):
-                args[i] = jnp.asarray(args[i], dtype = "bool")
-            elif isinstance(args[i], int):
-                args[i] = jnp.asarray(args[i], dtype = "int32")
-            elif isinstance(args[i], QuantumVariable):
-                flattened_qvs.append(flatten_qv(args[i]))
-        
         jaxpr = make_jaxpr(ammended_function)(AbstractQuantumCircuit(), *args, **kwargs).jaxpr
-        
-        # Update the QuantumVariable objects to their former tracers (happens in-place)
-        for tup in flattened_qvs:
-            unflatten_qv(*tup[::-1])
             
         return Jaspr.from_cache(collect_environments(jaxpr))
     

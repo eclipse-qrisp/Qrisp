@@ -100,6 +100,7 @@ class TracingQuantumSession:
             dynamic_qubit_array = DynamicQubitArray(qb_array_tracer)
             qv.reg = dynamic_qubit_array
         self.qv_list.append(qv)
+        qv.qs = self
         
     def delete_qv(self, qv, verify=False):
         
