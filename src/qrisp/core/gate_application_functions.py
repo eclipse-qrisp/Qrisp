@@ -1140,6 +1140,39 @@ def measure(qubits):
         
         return res
 
+def reset(qubits):
+    """
+    Performs a reset of the specified Qubit.
+
+    Parameters
+    ----------
+    qubit : Qubit or list[Qubit] or QuantumVariable
+        The Qubit to measure.
+    """
+    from qrisp import find_qs
+    from qrisp.jasp import TracingQuantumSession
+    qs = find_qs(qubits)
+    
+    if not isinstance(qs, TracingQuantumSession):
+        append_operation(std_ops.Reset(), [qubits])
+        return None
+    else:
+        from qrisp.jasp import reset_p, AbstractQubit, AbstractQubitArray
+        from qrisp import QuantumVariable
+        
+        if isinstance(qubits, QuantumVariable):
+            abs_qc = reset_p.bind(qs.abs_qc, qubits.reg.tracer)
+        elif isinstance(qubits.aval, AbstractQubitArray):
+            abs_qc = reset_p.bind(qs.abs_qc, qubits.tracer)
+        elif isinstance(qubits.aval, AbstractQubit):
+            abs_qc = reset_p.bind(qs.abs_qc, qubits)
+        else:
+            raise Exception(f"Tried to reset type {type(qubits.aval)}")
+        
+        qs.abs_qc = abs_qc
+        
+        return None
+
 
 def barrier(qubits):
     """

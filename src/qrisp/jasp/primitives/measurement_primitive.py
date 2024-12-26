@@ -17,6 +17,7 @@
 """
 
 from jax.core import ShapedArray
+from qrisp.circuit import Reset, Qubit
 
 from qrisp.jasp.primitives import AbstractQuantumCircuit, AbstractQubit, QuantumPrimitive, AbstractQubitArray
 
@@ -71,3 +72,26 @@ def measure_implementation(qc, meas_object):
         if return_bool:
             return qc, bool(res)
         return qc, res        
+
+reset_p = QuantumPrimitive("reset")
+
+@reset_p.def_abstract_eval
+def reset_abstract_eval(qc, reset_object):
+    """Abstract evaluation of the primitive.
+    
+    This function does not need to be JAX traceable. It will be invoked with
+    abstractions of the actual arguments. 
+    Args:
+      xs, ys, zs: abstractions of the arguments.
+    Result:
+      a ShapedArray for the result of the primitive.
+    """
+    return AbstractQuantumCircuit()
+
+@reset_p.def_impl
+def reset_implementation(qc, reset_object):
+    if isinstance(reset_object, Qubit):
+        reset_object = [reset_object]
+    for i in range(len(reset_object)):
+        qc.reset(reset_object[i])
+    return qc

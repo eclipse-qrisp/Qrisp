@@ -25,6 +25,7 @@ from numba import njit
 from qrisp.circuit import (
     QuantumCircuit,
     fast_append,
+    XGate
 )
 from qrisp.simulator.circuit_preprocessing import (
     circuit_preprocessor,
@@ -518,3 +519,8 @@ class BufferedQuantumState:
         else:
             self.quantum_state = mes_res[3]
             return True
+    
+    def reset(self, qubit):
+        meas_res = self.measure(qubit)
+        if meas_res:
+            self.buffer_qc.append(XGate(), qubit)
