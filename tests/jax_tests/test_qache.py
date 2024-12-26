@@ -54,6 +54,58 @@ def test_qache():
     # The function has been called four times but only for two different types
     assert counter.count == 2
     
-
+    # Test whether the Jasprs of the qached functions appear only once
+    # (i.e. only a single copy is kept and the rest are referenciations)
+    
+    def main(i):
+        
+        a = QuantumFloat(i)
+        a[:] = 4
+        b = QuantumFloat(i)
+        b[:] = 5
+        
+        s = jasp_multiplyer(a, b, inpl_adder = gidney_adder)
+    
+        return measure(s)
+    
+    jaspr = make_jaspr(main)(3)
+    assert jaspr(4) == 20
+    jaspr = jaspr.flatten_environments()
+    
+    
+    # Set up an interpreter that associates a function name and it signature
+    # to a Jaspr object id
+    jaspr_id_dict = {}
+    def eqn_evaluator(eqn, context_dic):
+        
+        if eqn.primitive.name == "pjit":
+            name = eqn.params["name"]
+            if isinstance(eqn.params["jaxpr"].jaxpr, Jaspr) and name != "ctrl_env":
+                jaspr = eqn.params["jaxpr"].jaxpr
+                signature_hash = [name] + [type(invar.aval) for invar in jaspr.invars]
+                signature_hash = tuple(signature_hash)
+                signature_hash = hash(signature_hash)
+                if signature_hash not in jaspr_id_dict:
+                    jaspr_id_dict[signature_hash] = id(jaspr)
+                    
+                if not jaspr_id_dict[signature_hash] == id(jaspr):
+                    print(name)
+                    assert False
+                    
+            invalues = extract_invalues(eqn, context_dic)
+            outvalues = eval_jaxpr(eqn.params["jaxpr"], eqn_evaluator = eqn_evaluator)(*invalues)
+            if not isinstance(outvalues, (list, tuple)):
+                outvalues = [outvalues]
+            insert_outvalues(eqn, context_dic, outvalues)
+            return
+        
+        # If no pjit primitive is found, we return True, which triggers the default
+        # interpreter behavior
+        return True
+    
+    # We perform a simulation with the above interpreter
+    from qrisp.simulator import BufferedQuantumState
+    args = [BufferedQuantumState(), 5]
+    eval_jaxpr(jaspr, eqn_evaluator = eqn_evaluator)(*args)
 
 

@@ -104,8 +104,6 @@ def gidney_mcx_inv_impl(a, b, c):
         cz(a,b)
         x(c)
 
-gidney_mcx_jaspr = make_jaspr(gidney_mcx_impl)(AbstractQubit(), AbstractQubit(), AbstractQubit()).flatten_environments()
-gidney_mcx_inv_jaspr = make_jaspr(gidney_mcx_inv_impl)(AbstractQubit(), AbstractQubit(), AbstractQubit()).flatten_environments()
 
 class GidneyMCXJaspr(Jaspr):
     
@@ -113,16 +111,24 @@ class GidneyMCXJaspr(Jaspr):
     def __init__(self, inv):
         self.inv = inv
         if self.inv:
-            Jaspr.__init__(self, gidney_mcx_inv_jaspr)
+            temp_jaspr = make_jaspr(gidney_mcx_inv_impl)(AbstractQubit(), AbstractQubit(), AbstractQubit()).flatten_environments()
         else:
-            Jaspr.__init__(self, gidney_mcx_jaspr)
+            temp_jaspr = make_jaspr(gidney_mcx_impl)(AbstractQubit(), AbstractQubit(), AbstractQubit()).flatten_environments()
+            
+        Jaspr.__init__(self, temp_jaspr)
         self.envs_flattened = True
             
     def inverse(self):
-        return GidneyMCXJaspr(not self.inv)
+        if self.inv:
+            return gidney_mcx_jaspr
+        else:
+            return gidney_mcx_inv_jaspr
+
+gidney_mcx_jaspr = GidneyMCXJaspr(False)
+gidney_mcx_inv_jaspr = GidneyMCXJaspr(True)
 
 def jasp_gidney_mcx(a, b, c):
-    GidneyMCXJaspr(False).embedd(a, b, c, name = "gidney_mcx")
+    gidney_mcx_jaspr.embedd(a, b, c, name = "gidney_mcx")
 
 def jasp_gidney_mcx_inv(a, b, c):
-    GidneyMCXJaspr(True).embedd(a, b, c, name = "gidney_mcx_inv")
+    gidney_mcx_inv_jaspr.embedd(a, b, c, name = "gidney_mcx_inv")

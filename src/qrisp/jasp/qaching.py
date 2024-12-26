@@ -225,6 +225,8 @@ def qache_helper(func, jax_kwargs):
         from qrisp.jasp import Jaspr
         eqn = jax._src.core.thread_local_state.trace_state.trace_stack.dynamic.jaxpr_stack[0].eqns[-1]
         eqn.params["jaxpr"] = jax.core.ClosedJaxpr(Jaspr.from_cache(eqn.params["jaxpr"].jaxpr), eqn.params["jaxpr"].consts)
+        if eqn.params["name"] == "gidney_mcx_inv":
+            print(id(eqn.params["jaxpr"].jaxpr))
         
         # Update the AbstractQuantumCircuit of the TracingQuantumSession        
         abs_qs.abs_qc = abs_qc_new
