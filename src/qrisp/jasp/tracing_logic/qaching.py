@@ -20,7 +20,7 @@ import jax
 
 from qrisp.core import recursive_qv_search
 
-from qrisp.jasp import TracingQuantumSession, check_for_tracing_mode
+from qrisp.jasp.tracing_logic import TracingQuantumSession, check_for_tracing_mode
 
 def qache(*func, **kwargs):
     """

@@ -19,7 +19,7 @@
 import jax
 
 from qrisp.jasp.primitives import create_qubits, delete_qubits_p, OperationPrimitive
-from qrisp.jasp.dynamic_qubit_array import DynamicQubitArray
+from qrisp.jasp.tracing_logic.dynamic_qubit_array import DynamicQubitArray
 
 from sympy import symbols
 
