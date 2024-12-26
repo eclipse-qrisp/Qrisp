@@ -69,6 +69,55 @@ def test_rus():
     
     assert jaspr() == 8
     
+    # Test LCU feature
+    
+    def case_function_0(x):
+        pass
+
+    def case_function_1(x):
+        x += 1
+
+    def case_function_2(x):
+        x += 2
+
+    def case_function_3(x):
+        x += 3
+
+    def case_function_4(x):
+        x += 4
+
+    case_function_list = [case_function_0, case_function_1, case_function_2, case_function_3]
+
+    def state_preparation(qv):
+        h(qv)
+
+
+    # Encodes |3> + |4> + |5> + |6>
+    def block_encoding():
+        
+        qf = QuantumFloat(3)
+        qf[:] = 3
+        
+        case_indicator = QuantumFloat(2)
+        case_indicator_qubits = [case_indicator[i] for i in range(2)]
+        
+        with conjugate(state_preparation)(case_indicator):
+            for i in range(len(case_function_list)):
+                with control(case_indicator_qubits, ctrl_state = i):
+                    case_function_list[i](qf)
+        
+        return measure(case_indicator) == 0, qf
+
+
+    @jaspify
+    def main():
+        
+        qf = RUS(block_encoding)()
+        
+        return measure(qf)
+
+    assert main() in [3,4,5,6]
+    
 
 
 
