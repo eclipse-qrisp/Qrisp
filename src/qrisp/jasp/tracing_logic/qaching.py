@@ -34,6 +34,16 @@ def qache(*func, **kwargs):
     
     Using the ``qache`` decorator not only improves the compilation speed but also
     enables the compiler to speed up transformation processes. 
+    
+    .. warning::
+        
+        Two important rules apply to the ``qache`` decorator to adhere to the
+        functional programming paradigm.
+        
+        * It is illegal to have a qached function return a QuantumVariable that has been passed as an argument to the function.
+        * It is illegal to modify traced attributes of QuantumVariables that have been passed as an argument to the function.
+        
+        See the examples section for representatives of these cases.
 
     Parameters
     ----------
@@ -69,7 +79,7 @@ def qache(*func, **kwargs):
             
             return res_bl
         
-        def outer_function():
+        def main():
             a = QuantumVariable(2)
             b = QuantumFloat(2)
             
@@ -82,7 +92,7 @@ def qache(*func, **kwargs):
         
         # Measure the time required for tracing
         t0 = time.time()
-        jaspr = make_jaspr(outer_function)()
+        jaspr = make_jaspr(main)()
         print(time.time() - t0) # 2.0225703716278076
         
     Even though ``inner_function`` has been called 4 times, we only see a delay of 2 seconds.
@@ -91,22 +101,22 @@ def qache(*func, **kwargs):
     
     >>> print(jaspr)
     let inner_function = { lambda ; a:QuantumCircuit b:QubitArray. let
-        c:Qubit = get_qubit b 0
-        d:QuantumCircuit = h a c
-        e:Qubit = get_qubit b 1
-        f:QuantumCircuit = cx d c e
-        g:QuantumCircuit h:bool[] = measure f c
+        c:Qubit = jasp.get_qubit b 0
+        d:QuantumCircuit = jasp.h a c
+        e:Qubit = jasp.get_qubit b 1
+        f:QuantumCircuit = jasp.cx d c e
+        g:QuantumCircuit h:bool[] = jasp.measure f c
       in (g, h) } in
     let inner_function1 = { lambda ; i:QuantumCircuit j:QubitArray k:i32[] l:bool[]. let
-        m:Qubit = get_qubit j 0
-        n:QuantumCircuit = h i m
-        o:Qubit = get_qubit j 1
-        p:QuantumCircuit = cx n m o
-        q:QuantumCircuit r:bool[] = measure p m
+        m:Qubit = jasp.get_qubit j 0
+        n:QuantumCircuit = jasp.h i m
+        o:Qubit = jasp.get_qubit j 1
+        p:QuantumCircuit = jasp.cx n m o
+        q:QuantumCircuit r:bool[] = jasp.measure p m
       in (q, r) } in
     { lambda ; s:QuantumCircuit. let
-        t:QuantumCircuit u:QubitArray = create_qubits s 2
-        v:QuantumCircuit w:QubitArray = create_qubits t 2
+        t:QuantumCircuit u:QubitArray = jasp.create_qubits s 2
+        v:QuantumCircuit w:QubitArray = jasp.create_qubits t 2
         x:QuantumCircuit y:bool[] = pjit[name=inner_function jaxpr=inner_function] v
           u
         z:QuantumCircuit ba:bool[] = pjit[name=inner_function jaxpr=inner_function1] x
@@ -120,13 +130,56 @@ def qache(*func, **kwargs):
         bf:bool[] = and y ba
         bg:bool[] = and bf bc
         bh:bool[] = and bg be
-      in (bd, bh) }
+        bi:QuantumCircuit = jasp.reset bd u
+        bj:QuantumCircuit = jasp.delete_qubits bi u
+      in (bj, bh) }
 
     As expected, we see three different function definitions:
     
     * The first one describes ``inner_function`` called with a :ref:`QuantumVariable`. For this kind of signature only the ``QubitArray`` is required.
     * The second one describes ``inner_function`` called with :ref:`QuantumFloat`. Additionally to the ``QubitArray``, the ``.exponent`` and ``.signed`` attribute are also passed to the function.
     * The third function definition is ``outer_function``, which calls the previously defined functions.
+    
+    **Illegal functions**
+    
+    We will now demonstrate what type of functions can not be qached.
+    
+    ::
+        
+        @qache
+        def inner_function(qv):
+            h(qv[0])
+            return qv
+        
+        @jaspify
+        def main():
+            qf_0 = QuantumFloat(2)
+            qf_1 = inner_function(qf_0)
+            return measure(qf_1)
+        
+        main()
+        # Yields: Exception: Found parameter QuantumVariable within returned results
+        
+    ``inner_function`` returns a :ref:`QuantumVariable` that has been passed as an
+    argument and can therefore not be qached.
+    
+    The second case of an illegal functions is a function that tries to modify
+    a traced attribute of a ``QuantumVariable`` that has been passed as an argument.
+    A traced attribute is for instance the ``exponent`` attribute of :ref:`QuantumFloat`.
+    
+    ::
+        
+        @qache
+        def inner_function(qf):
+            qf.exponent += 1
+
+        @jaspify
+        def main():
+            qf = QuantumFloat(2)
+            inner_function(qf)
+            
+        main()
+        # Yields: Exception: Found in-place parameter modification of QuantumVariable qf
 
     """
     
