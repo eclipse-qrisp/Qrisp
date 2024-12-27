@@ -34,7 +34,10 @@ def test_basic_primitives():
              'jasp.h',
              'jasp.get_qubit',
              'jasp.cx',
-             'jasp.measure'])
+             'jasp.measure',
+             'jasp.reset',
+             'jasp.delete_qubits',
+             ])
     
     def test_function():
         qv = QuantumVariable(2)
@@ -50,7 +53,9 @@ def test_basic_primitives():
                 ['jasp.create_qubits',
                  'jasp.q_env',
                  'jasp.get_qubit',
-                 'jasp.measure'])    
+                 'jasp.measure',
+                 'jasp.reset',
+                 'jasp.delete_qubits'])    
 
     def test_function():
         qv = QuantumVariable(2)

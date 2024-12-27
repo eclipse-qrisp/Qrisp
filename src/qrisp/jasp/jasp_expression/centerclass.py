@@ -966,7 +966,7 @@ class Jaspr(Jaxpr):
     
 
 
-def make_jaspr(fun):
+def make_jaspr(fun, garbage_collection = "auto"):
     from qrisp.jasp import AbstractQuantumCircuit, TracingQuantumSession, check_for_tracing_mode
     from qrisp.core.quantum_variable import QuantumVariable, flatten_qv, unflatten_qv
     from qrisp.core import recursive_qv_search    
@@ -986,7 +986,7 @@ def make_jaspr(fun):
         # Note that we add the abs_qc keyword as the tracing quantum circuit        
         def ammended_function(abs_qc, *args, **kwargs):
             
-            qs.start_tracing(abs_qc)
+            qs.start_tracing(abs_qc, garbage_collection)
             
             # If the signature contains QuantumVariables, these QuantumVariables went
             # through a flattening/unflattening procedure. The unflattening creates
@@ -1001,7 +1001,11 @@ def make_jaspr(fun):
             except Exception as e:
                 qs.conclude_tracing()
                 raise e
-                
+            
+            res_qvs = recursive_qv_search(res)
+            
+            qs.garbage_collection(spare_qv_list = arg_qvs + res_qvs)
+            
             res_qc = qs.conclude_tracing()
             
             return res_qc, res

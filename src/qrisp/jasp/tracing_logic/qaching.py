@@ -193,6 +193,8 @@ def qache_helper(func, jax_kwargs):
             for i in range(len(flat_qv)):
                 if not flat_qv[i] is flattened_qvs.pop(0):
                     raise Exception(f"Found in-place parameter modification of QuantumVariable {qv.name}")
+                    
+        abs_qs.garbage_collection(arg_qvs + res_qvs)
         
         # Return the result and the result AbstractQuantumCircuit.
         return new_abs_qc, res

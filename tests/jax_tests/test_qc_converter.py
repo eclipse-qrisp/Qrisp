@@ -31,7 +31,7 @@ def test_qc_converter():
     
     for i in range(3, 7):
         
-        jaspr = make_jaspr(test_function)(i)
+        jaspr = make_jaspr(test_function, garbage_collection = "manual")(i)
         qc = jaspr.to_qc(i)
         
         comparison_qc = QuantumCircuit(i)
@@ -54,7 +54,7 @@ def test_qc_converter():
         inner_function(qv, 2)
         
     
-    jaspr = make_jaspr(test_function)(5)
+    jaspr = make_jaspr(test_function, garbage_collection = "manual")(5)
     qc = jaspr.to_qc(5)
     
     assert len(qc.data) == 3 + len(qc.qubits)
@@ -72,7 +72,7 @@ def test_qc_converter():
     
     assert qc.compare_unitary(comparison_qc)
     
-    jaspr = make_jaspr(test_function)(5)
+    jaspr = make_jaspr(test_function, garbage_collection = "manual")(5)
     flattened_jaspr = flatten_pjit(jaspr)
     
     qc = flattened_jaspr.to_qc(5)
