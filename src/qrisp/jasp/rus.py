@@ -21,8 +21,8 @@ import jax
 import jax.numpy as jnp
 
 from qrisp.circuit import XGate
-from qrisp.jasp import TracingQuantumSession, AbstractQubitArray, DynamicQubitArray
-
+from qrisp.jasp import TracingQuantumSession, AbstractQubitArray, DynamicQubitArray, qache
+from qrisp.jasp.primitives import Measurement_p, OperationPrimitive, get_qubit_p, get_size_p, delete_qubits_p, reset_p
         
 
 def RUS(trial_function):
@@ -110,31 +110,18 @@ def RUS(trial_function):
     
     def return_function(*trial_args):
         
-        
-        def ammended_function(*args):
-            abs_qs = TracingQuantumSession.get_instance()
-            initial_qv_list = list(abs_qs.qv_list)
-            
-            res = trial_function(*args)
-            
-            created_qvs = list(set(abs_qs.qv_list) - set(initial_qv_list))
-            created_qvs.sort(key = lambda x : x.creation_time)
-            
-            return res, tuple(created_qvs)
-        
         # Execute the function
-        first_iter_res, created_qvs = ammended_function(*trial_args)
+        first_iter_res = qache(trial_function)(*trial_args)
         
         # Flatten the arguments and the res values
         arg_vals, arg_tree_def = jax.tree.flatten(trial_args)
         res_vals, res_tree_def = jax.tree.flatten(first_iter_res)
-        created_qvs_vals, created_qvs_tree_def = jax.tree.flatten(created_qvs)
         
         
         # Extract the jaspr
         from qrisp.jasp import make_jaspr
         
-        ammended_trial_func_jaspr = make_jaspr(ammended_function)(*trial_args)
+        ammended_trial_func_jaspr = make_jaspr(trial_function)(*trial_args)
         ammended_trial_func_jaspr = ammended_trial_func_jaspr.flatten_environments()
         
         
@@ -150,22 +137,21 @@ def RUS(trial_function):
         # And the final section are trial function arguments
         
         abs_qs = TracingQuantumSession.get_instance()
-        combined_args = tuple([abs_qs.abs_qc] + list(arg_vals) + list(res_vals) + list(created_qvs_vals))
+        combined_args = tuple([abs_qs.abs_qc] + list(arg_vals) + list(res_vals))
         
         n_res_vals = len(res_vals)
         n_arg_vals = len(arg_vals)
-        n_created_qv_vals = len(created_qvs_vals)
             
         def body_fun(args):
             # We now need to deallocate the AbstractQubitArrays from the previous
             # iteration since they are no longer needed.
-            created_qvs_vals = args[-n_created_qv_vals:]
+            res_qv_vals = args[-n_res_vals:]
             
             abs_qc = args[0]
-            for res_val in created_qvs_vals:
+            for res_val in res_qv_vals:
                 if isinstance(res_val.aval, AbstractQubitArray):
-                    # abs_qc = delete_qubits_p.bind(abs_qc, res_val)
-                    abs_qc = reset_qubit_array(abs_qc, res_val)
+                    abs_qc = reset_p.bind(abs_qc, res_val)
+                    abs_qc = delete_qubits_p.bind(abs_qc, res_val)
 
             # Next we evaluate the trial function by evaluating the corresponding jaspr
             # Prepare the arguments tuple
@@ -226,7 +212,6 @@ def extract_boolean_digit(integer, digit):
 @jax.jit
 def reset_qubit_array(abs_qc, qb_array):
     
-    from qrisp.jasp.primitives import Measurement_p, OperationPrimitive, get_qubit_p, get_size_p, delete_qubits_p
     
     def body_func(arg_tuple):
         
