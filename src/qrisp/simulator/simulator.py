@@ -524,3 +524,16 @@ class BufferedQuantumState:
         meas_res = self.measure(qubit)
         if meas_res:
             self.buffer_qc.append(XGate(), qubit)
+            
+    def copy(self):
+        res = BufferedQuantumState()
+        res.buffer_qc = self.buffer_qc.copy()
+        res.deallocated_qubits = list(self.deallocated_qubits)
+        res.quantum_state = self.quantum_state.copy()
+        return res
+    
+    def multi_measure(self, qubits):
+        self.apply_buffer()
+        qubit_indices = [self.buffer_qc.qubits.index(qb) for qb in qubits]
+        mes_ints, probs = self.quantum_state.multi_measure(qubit_indices)
+        return mes_ints, probs        
