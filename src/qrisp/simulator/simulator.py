@@ -532,8 +532,21 @@ class BufferedQuantumState:
         res.quantum_state = self.quantum_state.copy()
         return res
     
-    def multi_measure(self, qubits):
+    def multi_measure(self, qubits, shots):
         self.apply_buffer()
         qubit_indices = [self.buffer_qc.qubits.index(qb) for qb in qubits]
         mes_ints, probs = self.quantum_state.multi_measure(qubit_indices)
-        return mes_ints, probs        
+            
+        if shots is not None:
+            samples = np.random.choice(len(mes_ints), shots, p=probs)
+            
+            samples = gen_res_dict(samples)
+            res = {}
+            for k, v in samples.items():
+                res[mes_ints[k]] = v
+            return res
+        else:
+            res = {}
+            for i in range(len(mes_ints)):
+                res[mes_ints[i]] = probs[i]
+            return res

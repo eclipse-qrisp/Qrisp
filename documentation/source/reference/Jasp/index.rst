@@ -135,3 +135,4 @@ If you are interested in how the QIR representation looks like, try calling
    qache
    hb_control_flow
    RUS
+   Terminal Sampling
