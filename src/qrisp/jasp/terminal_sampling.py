@@ -123,24 +123,37 @@ def terminal_sampling(func, shots = None):
     def return_function(*args, **kwargs):
         from qrisp.core import measure
         
-        @qache
-        def terminal_sampling_helper_1(reg):
-            return measure(reg)
-        
-        @qache
-        def terminal_sampling_helper_2(i, qv):
-            return qv.decoder(i)
         
         def ammended_function(*args, **kwargs):
-            qv = func(*args, **kwargs)
-            measurement_int = terminal_sampling_helper_1(qv.reg)
-            decoded_value = terminal_sampling_helper_2(measurement_int, qv)
-            return decoded_value
+            qv_tuple = func(*args, **kwargs)
+            
+            if not isinstance(qv_tuple, tuple):
+                qv_tuple = (qv_tuple,)
+                
+            @qache
+            def terminal_sampling_helper_1(*args):
+                res_list = []
+                for reg in args:
+                    res_list.append(measure(reg))
+                return tuple(res_list)
+            
+            measurement_ints = terminal_sampling_helper_1(*[qv.reg for qv in qv_tuple])
+            
+            @qache
+            def terminal_sampling_helper_2(*meas_tuples):
+                res_list = []
+                for i in range(len(qv_tuple)):
+                    res_list.append(meas_tuples[i+len(qv_tuple)].decoder(meas_tuples[i]))
+                return tuple(res_list)
+            
+            decoded_values = terminal_sampling_helper_2(*(list(measurement_ints) + list(qv_tuple)))
+            return decoded_values
         
         jaspr = make_jaspr(ammended_function)(*args, **kwargs)
         flattened_jaspr = jaspr.flatten_environments()
         
         meas_res_dic = {}
+        return_signature = []
         decoded_meas_res_dic = {}
         
         def eqn_evaluator(eqn, context_dic):
@@ -150,9 +163,11 @@ def terminal_sampling(func, shots = None):
                 
                 if eqn.params["name"] == "terminal_sampling_helper_1":
                     invalues[0].apply_buffer()
-                    
                     quantum_state = invalues[0].copy()
-                    qubits = invalues[1]
+                    qubits = []
+                    for i in range(1, len(invalues)):
+                        qubits.extend(invalues[i])
+                        return_signature.append(len(invalues[i]))
                     
                     meas_res_dic.update(quantum_state.multi_measure(qubits, shots))
                 
@@ -160,19 +175,39 @@ def terminal_sampling(func, shots = None):
                     
                     for k, v in meas_res_dic.items():
                         new_invalues = list(invalues)
-                        new_invalues[1] = k
+                        
+                        j = 0
+                        for i in range(len(return_signature)):
+                            new_invalues[1+i] = (k & ((2**(return_signature[i])-1) << j))>>j
+                            j += return_signature[i]
+                        
                         outvalues = eval_jaxpr(eqn.params["jaxpr"], eqn_evaluator = eqn_evaluator)(*new_invalues)
                         
-                        key = outvalues[1]
-                        
-                        if key.dtype == jnp.int32:
-                            key = int(key)
-                        elif key.dtype == jnp.float32:
-                            key = float(key)
-                        elif key.dtype == jnp.bool:
-                            key = bool(key)
-                        
-                        decoded_meas_res_dic[key] = v
+                        if len(outvalues) == 2:
+                            key = outvalues[1]
+                            if key.dtype == jnp.int32:
+                                key = int(key)
+                            elif key.dtype == jnp.float32:
+                                key = float(key)
+                            elif key.dtype == jnp.bool:
+                                key = bool(key)
+                            
+                            decoded_meas_res_dic[key] = v
+                        else:
+                            key_list = []
+                            
+                            for i in range(1, len(outvalues)):
+                                key = outvalues[i]
+                                if key.dtype == jnp.int32:
+                                    key = int(key)
+                                elif key.dtype == jnp.float32:
+                                    key = float(key)
+                                elif key.dtype == jnp.bool:
+                                    key = bool(key)
+                                key_list.append(key)        
+                            
+                            decoded_meas_res_dic[tuple(key_list)] = v
+                            
                     
                 outvalues = eval_jaxpr(eqn.params["jaxpr"], eqn_evaluator = eqn_evaluator)(*invalues)
                 if not isinstance(outvalues, (list, tuple)):
