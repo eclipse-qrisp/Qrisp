@@ -19,6 +19,7 @@
 import sys
 
 import jax.numpy as jnp
+from jax.core import Tracer
 
 from qrisp.core.quantum_variable import QuantumVariable
 
@@ -130,7 +131,10 @@ class QuantumBool(QuantumVariable):
         self.qfloat_comparison = False
 
     def decoder(self, integer):
-        return bool(integer)
+        if isinstance(integer, Tracer):
+            return jnp.array(integer, dtype = jnp.bool)
+        else:
+            return bool(integer)
 
     def __and__(self, other):
         from qrisp import mcx
