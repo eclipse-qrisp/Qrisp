@@ -16,6 +16,7 @@
 ********************************************************************************/
 """
 
+import numpy as np
 
 import jax.numpy as jnp
 
@@ -23,9 +24,9 @@ from qrisp.jasp.tracing_logic import qache
 from qrisp.jasp.jasp_expression import make_jaspr
 from qrisp.jasp.interpreter_tools import extract_invalues, insert_outvalues, eval_jaxpr
 
-def terminal_sampling(func, shots = None):
+def terminal_sampling(func = None, shots = None):
     """
-    The ``terminal_sampling`` function performs a hybrid simulation and afterwards
+    The ``terminal_sampling`` decorator is a performs a hybrid simulation and afterwards
     samples from the resulting quantum state.
     The idea behind this function is that it is very cheap for a classical simulator
     to sample from a given quantum state without simulating the whole state from
@@ -41,13 +42,13 @@ def terminal_sampling(func, shots = None):
     will not return a valid distribution. A demonstration for this is given in the
     examples section.
 
-    To use the terminal sampling function, a Jasp-compatible function returning
-    a QuantumVariable has to be given as a parameter.
-
+    To use the terminal sampling decorator, a Jasp-compatible function returning
+    some QuantumVariables has to be given as a parameter.
+    
     Parameters
     ----------
     func : callable
-        A Jasp compatible function returning a QuantumVariable.
+        A Jasp compatible function returning QuantumVariables.
     shots : int, optional
         An integer specifying the amount of shots. The default is None, which 
         will result in probabilities being returned.
@@ -65,25 +66,28 @@ def terminal_sampling(func, shots = None):
     
     ::
         
-        from qrisp import QuantumFloat, h
+        from qrisp import QuantumFloat, QuantumBool, h
         from qrisp.jasp import terminal_sampling
 
+        @terminal_sampling(shots = 1000)
         def main(i):
             qf = QuantumFloat(8)
+            qbl = QuantumBool()
             h(qf[i])
-            return qf
+            cx(qf[i], qbl[0])
+            return qf, qbl
 
         sampling_function = terminal_sampling(main, shots = 1000)
         
-        print(sampling_function(0))
-        print(sampling_function(1))
-        print(sampling_function(2))
+        print(main(0))
+        print(main(1))
+        print(main(2))
 
         # Yields:        
-        # {0.0: 516, 1.0: 484}
-        # {0.0: 527, 2.0: 473}
-        # {0.0: 498, 4.0: 502}
-    
+        {(1.0, True): 526, (0.0, False): 474}
+        {(2.0, True): 503, (0.0, False): 497}
+        {(4.0, True): 502, (0.0, False): 498}    
+        
     **Example of invalid use**
     
     In this example we demonstrate a hybrid program that can not be properly sample
@@ -93,6 +97,7 @@ def terminal_sampling(func, shots = None):
         
         from qrisp import QuantumBool, measure, control
         
+        @terminal_sampling
         def main():
             
             qbl = QuantumBool()
@@ -111,7 +116,7 @@ def terminal_sampling(func, shots = None):
             
             return qf
         
-        print(terminal_sampling(main)())
+        print(main())
         # Yields either {0.0: 1.0} or {1.0: 0.5, 5.0: 0.5} (with a 50/50 probability)
         
     The problem here is the fact that the distribution of the returned QuantumFloat
@@ -120,8 +125,15 @@ def terminal_sampling(func, shots = None):
     only once and simply samples from the final distribution.
     """
     
+    if isinstance(func, int):
+        shots = func
+        func = None
+    
+    if func is None:
+        return lambda x : terminal_sampling(x, shots)
+    
     def return_function(*args, **kwargs):
-        from qrisp.core import measure
+        from qrisp.core import measure, QuantumVariable
         # The idea for realizing this function is to create an ammended function 
         # which first traces the user given function and then performs two steps:
         
@@ -143,6 +155,10 @@ def terminal_sampling(func, shots = None):
             # Turn the result (if necessary) into a tuple
             if not isinstance(qv_tuple, tuple):
                 qv_tuple = (qv_tuple,)
+            
+            for qv in qv_tuple:
+                if not isinstance(qv, QuantumVariable):
+                    raise Exception("Terminal sampling function didn't return QuantumVariables")
             
             # Trace the DynamicQubitArray measurements
             @qache
@@ -206,6 +222,16 @@ def terminal_sampling(func, shots = None):
                     # float representing the probability.
                     
                     meas_res_dic.update(quantum_state.multi_measure(qubits, shots))
+
+                    if shots is None:
+                        # Round to prevent floating point errors of the simulation                    
+                        norm = 0
+                        for k, v in meas_res_dic.items():
+                            meas_res_dic[k] = np.round(v, decimals = 5)
+                            norm += meas_res_dic[k]
+                        
+                        for k, v in meas_res_dic.items():
+                            meas_res_dic[k] = v/norm
                 
                 # Each int in the values of meas_res_dic represents the values
                 # of all QuantumVariables. We therefore need to "split" the ints
@@ -278,6 +304,10 @@ def terminal_sampling(func, shots = None):
         from qrisp.simulator import BufferedQuantumState
         args = [BufferedQuantumState()] + list(args)
         eval_jaxpr(flattened_jaspr, eqn_evaluator = eqn_evaluator)(*args)
+    
+        # Sort counts_list such the most probable values come first
+        decoded_meas_res_dic = dict(sorted(decoded_meas_res_dic.items(), key=lambda item: item[0]))
+        decoded_meas_res_dic = dict(sorted(decoded_meas_res_dic.items(), key=lambda item: -item[1]))
     
         return decoded_meas_res_dic
     
