@@ -17,6 +17,7 @@
 """
 
 import jax
+import jax.numpy as jnp
 
 from qrisp.core import recursive_qv_search
 
@@ -229,6 +230,18 @@ def qache_helper(func, jax_kwargs):
         for qv in arg_qvs:
             abs_qs.register_qv(qv, None)
             flattened_qvs.extend(list(flatten_qv(qv)[0]))
+        
+        # Make sure literals are 32 bit
+        args = list(args)
+        for i in range(len(args)):
+            if isinstance(args[i], bool):
+                args[i] = jnp.array(args[i], dtype = jnp.bool)
+            elif isinstance(args[i], int):
+                args[i] = jnp.array(args[i], dtype = jnp.int32)
+            elif isinstance(args[i], float):
+                args[i] = jnp.array(args[i], dtype = jnp.float32)
+            elif isinstance(args[i], complex):
+                args[i] = jnp.array(args[i], dtype = jnp.complex)
         
         # Execute the function
         res = func(*args, **kwargs)

@@ -19,11 +19,11 @@
 import jax.numpy as jnp
 from jax import jit
 
-from qrisp.jasp import jrange
+from qrisp.jasp import jrange, qache
 from qrisp.core import x, cx, QuantumVariable, mcx
 from qrisp.environments import control, custom_control
 
-@jit
+@qache
 def extract_boolean_digit(integer, digit):
     return jnp.bool((integer>>digit & 1))
 
