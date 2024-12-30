@@ -212,7 +212,6 @@ def extract_boolean_digit(integer, digit):
 @jax.jit
 def reset_qubit_array(abs_qc, qb_array):
     
-    
     def body_func(arg_tuple):
         
         abs_qc, qb_array, i = arg_tuple
