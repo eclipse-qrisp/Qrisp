@@ -23,7 +23,7 @@ from qrisp.jasp import jrange, qache
 from qrisp.core import x, cx, QuantumVariable, mcx
 from qrisp.environments import control, custom_control
 
-@qache
+@jit
 def extract_boolean_digit(integer, digit):
     return jnp.bool((integer>>digit & 1))
 
@@ -36,6 +36,7 @@ def jasp_cq_gidney_adder(a, b, ctrl = None):
     else:
         n = b.size
 
+    a = jnp.array(a, dtype = jnp.int32)
     # If the quantum target only has a single qubit, the addition can be performed
     # with a simply X-gate
     
