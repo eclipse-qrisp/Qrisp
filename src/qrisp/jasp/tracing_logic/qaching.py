@@ -231,18 +231,6 @@ def qache_helper(func, jax_kwargs):
             abs_qs.register_qv(qv, None)
             flattened_qvs.extend(list(flatten_qv(qv)[0]))
         
-        # Make sure literals are 32 bit
-        args = list(args)
-        for i in range(len(args)):
-            if isinstance(args[i], bool):
-                args[i] = jnp.array(args[i], dtype = jnp.bool)
-            elif isinstance(args[i], int):
-                args[i] = jnp.array(args[i], dtype = jnp.int32)
-            elif isinstance(args[i], float):
-                args[i] = jnp.array(args[i], dtype = jnp.float32)
-            elif isinstance(args[i], complex):
-                args[i] = jnp.array(args[i], dtype = jnp.complex)
-        
         # Execute the function
         res = func(*args, **kwargs)
         new_abs_qc = abs_qs.abs_qc
@@ -283,6 +271,18 @@ def qache_helper(func, jax_kwargs):
         # Get the AbstractQuantumCircuit for tracing
         abs_qs = TracingQuantumSession.get_instance()
         abs_qs.start_tracing(abs_qs.abs_qc)
+
+        # Make sure literals are 32 bit
+        args = list(args)
+        for i in range(len(args)):
+            if isinstance(args[i], bool):
+                args[i] = jnp.array(args[i], dtype = jnp.bool)
+            elif isinstance(args[i], int):
+                args[i] = jnp.array(args[i], dtype = jnp.int32)
+            elif isinstance(args[i], float):
+                args[i] = jnp.array(args[i], dtype = jnp.float32)
+            elif isinstance(args[i], complex):
+                args[i] = jnp.array(args[i], dtype = jnp.complex)
         
         # Excecute the function
         abs_qc_new, res = ammended_function(abs_qs.abs_qc, *args, **kwargs)

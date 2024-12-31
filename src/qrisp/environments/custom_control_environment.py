@@ -19,6 +19,7 @@
 import inspect
 
 import jax
+import jax.numpy as jnp
 
 from qrisp.environments.quantum_environments import QuantumEnvironment
 from qrisp.environments.gate_wrap_environment import GateWrapEnvironment
@@ -206,6 +207,19 @@ def custom_control(func):
                     res = func(*args, ctrl = control_qb, **kwargs)
                     
         else:
+            
+            args = list(args)
+            if func.__name__ == "extract_boolean_digit":
+                print(args)
+            for i in range(len(args)):
+                if isinstance(args[i], bool):
+                    args[i] = jnp.array(args[i], dtype = jnp.bool)
+                elif isinstance(args[i], int):
+                    args[i] = jnp.array(args[i], dtype = jnp.int32)
+                elif isinstance(args[i], float):
+                    args[i] = jnp.array(args[i], dtype = jnp.float32)
+                elif isinstance(args[i], complex):
+                    args[i] = jnp.array(args[i], dtype = jnp.complex)
 
             # Call the (qached) function
             res = func(*args, **kwargs)
