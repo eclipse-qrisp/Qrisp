@@ -91,7 +91,7 @@ class TracingQuantumSession:
         
         from qrisp.core import QuantumVariable
         
-        if isinstance(qubits[0], QuantumVariable):
+        if isinstance(qubits[0], (QuantumVariable, DynamicQubitArray)):
             
             from qrisp.jasp import jrange
             

@@ -118,6 +118,68 @@ def test_rus():
 
     assert main() in [3,4,5,6]
     
+    # Test static arguments
+    
+    def case_function_0(x):
+        x += 3
+
+    def case_function_1(x):
+        x += 4
+
+    def case_function_2(x):
+        x += 5
+
+    def case_function_3(x):
+        x += 6
+
+    case_functions = (case_function_0, 
+                      case_function_1, 
+                      case_function_2, 
+                      case_function_3)
+
+    def state_prep_full(qv):
+        h(qv[0])
+        h(qv[1])
+
+    def state_prep_half(qv):
+        h(qv[0])
+
+    # Specify the corresponding arguments of the block encoding as "static",
+    # i.e. compile time constants.
+
+    @RUS(static_argnums = [2,3])
+    def block_encoding(return_size, state_preparation, case_functions):
+        
+        # This QuantumFloat will be returned
+        qf = QuantumFloat(return_size)
+        
+        # Specify the QuantumVariable that indicates, which
+        # case to execute
+        n = int(np.ceil(np.log2(len(case_functions))))
+        case_indicator = QuantumFloat(n)
+        
+        # Turn into a list of qubits
+        case_indicator_qubits = [case_indicator[i] for i in range(n)]
+        
+        # Perform the LCU protocoll
+        with conjugate(state_preparation)(case_indicator):
+            for i in range(len(case_functions)):
+                with control(case_indicator_qubits, ctrl_state = i):
+                    case_functions[i](qf)
+        
+        # Compute the success condition
+        success_bool = (measure(case_indicator) == 0)
+        
+        return success_bool, qf
+
+    @terminal_sampling
+    def main():
+        return block_encoding(4, state_prep_full, case_functions)
+        
+    assert main() == {3.0: 0.25, 4.0: 0.25, 5.0: 0.25, 6.0: 0.25}
+
+
+    
 
 
 

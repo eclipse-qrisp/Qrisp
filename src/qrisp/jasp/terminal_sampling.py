@@ -227,7 +227,7 @@ def terminal_sampling(func = None, shots = None):
                         # Round to prevent floating point errors of the simulation                    
                         norm = 0
                         for k, v in meas_res_dic.items():
-                            meas_res_dic[k] = np.round(v, decimals = 8)
+                            meas_res_dic[k] = np.round(v, decimals = 7)
                             norm += meas_res_dic[k]
                         
                         for k, v in meas_res_dic.items():
