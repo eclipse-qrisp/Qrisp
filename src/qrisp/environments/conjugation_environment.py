@@ -16,6 +16,7 @@
 ********************************************************************************/
 """
 
+import jax
 
 from qrisp.environments import QuantumEnvironment, control
 from qrisp.environments.custom_control_environment import custom_control
@@ -148,8 +149,9 @@ class ConjugationEnvironment(QuantumEnvironment):
         QuantumEnvironment.__enter__(self)
         
         if check_for_tracing_mode():
-            with QuantumEnvironment():
-                res = qache(self.conjugation_function)(*list(self.args), **self.kwargs)
+            with PJITEnvironment():
+                res = self.conjugation_function(*list(self.args), **self.kwargs)
+                # res = qache(self.conjugation_function)(*list(self.args), **self.kwargs)
             return res
             
         
@@ -189,7 +191,9 @@ class ConjugationEnvironment(QuantumEnvironment):
         else:
             from qrisp.environments import invert
             with invert():
-                qache(self.conjugation_function)(*list(self.args), **self.kwargs)
+                with PJITEnvironment():
+                    self.conjugation_function(*list(self.args), **self.kwargs)
+                    # qache(self.conjugation_function)(*list(self.args), **self.kwargs)
         
         QuantumEnvironment.__exit__(self, exception_type, exception_value, traceback)
         
@@ -360,4 +364,22 @@ def conjugate(conjugation_function, allocation_management = True):
         
             
     
+class PJITEnvironment(QuantumEnvironment):
+    
+    def jcompile(self, eqn, context_dic):
         
+        from qrisp.jasp import extract_invalues, insert_outvalues, Jaspr
+        args = extract_invalues(eqn, context_dic)
+        body_jaspr = eqn.params["jaspr"]
+        
+        flattened_jaspr = body_jaspr.flatten_environments()
+        
+        res = jax.jit(flattened_jaspr.eval)(*args)
+        
+        jit_eqn = jax._src.core.thread_local_state.trace_state.trace_stack.dynamic.jaxpr_stack[0].eqns[-1]
+        jit_eqn.params["jaxpr"] = jax.core.ClosedJaxpr(Jaspr.from_cache(jit_eqn.params["jaxpr"].jaxpr), jit_eqn.params["jaxpr"].consts)
+        
+        if not isinstance(res, tuple):
+            res = (res,)
+        
+        insert_outvalues(eqn, context_dic, res)

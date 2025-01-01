@@ -209,8 +209,6 @@ def custom_control(func):
         else:
             
             args = list(args)
-            if func.__name__ == "extract_boolean_digit":
-                print(args)
             for i in range(len(args)):
                 if isinstance(args[i], bool):
                     args[i] = jnp.array(args[i], dtype = jnp.bool)
