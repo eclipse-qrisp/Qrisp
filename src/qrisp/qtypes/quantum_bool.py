@@ -212,3 +212,11 @@ class QuantumBool(QuantumVariable):
         
     def jdecoder(self, i):
         return jnp.asarray(i, dtype = "bool")
+    
+    @property
+    def size(self):
+        return 1
+    
+    def __len__(self):
+        return 1
+        

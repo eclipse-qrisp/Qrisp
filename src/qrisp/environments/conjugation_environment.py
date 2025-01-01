@@ -183,6 +183,9 @@ class ConjugationEnvironment(QuantumEnvironment):
     
     def __exit__(self, exception_type, exception_value, traceback):
         
+        if exception_value:
+            raise exception_value
+        
         if not check_for_tracing_mode():
             conjugation_center_data = list(self.env_qs.data)
             self.env_qs.data = []

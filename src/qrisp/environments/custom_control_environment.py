@@ -29,7 +29,7 @@ from qrisp.core import merge
 
 from qrisp.jasp import check_for_tracing_mode, qache, AbstractQubit, make_jaspr
 
-def custom_control(func):
+def custom_control(*func, **cusc_kwargs):
     """
     The ``custom_control`` decorator allows to specify the controlled version of 
     the decorated function. If this function is called within a :ref:`ControlEnvironment`
@@ -139,13 +139,18 @@ def custom_control(func):
 
     """
     
+    if len(func) == 0:
+        return lambda x : custom_control(x, **cusc_kwargs)
+    else:
+        func = func[0]
+    
     # The idea to realize the custom control feature in traced mode is to
     # first trace the non-controlled version into a pjit primitive using
     # the qache feature and the trace the controlled version.
     # The controlled version is then stored in the params attribute
     
     # Qache the function (in non-traced mode, this has no effect)
-    func = qache(func)    
+    func = qache(func, **cusc_kwargs)    
     
     def adaptive_control_function(*args, **kwargs):
         
@@ -230,7 +235,11 @@ def custom_control(func):
             ctrl_aval = AbstractQubit()
             new_kwargs["ctrl"] = ctrl_aval
             
-            controlled_jaspr = make_jaspr(func)(*args, **new_kwargs)
+            
+            from qrisp.jasp import TracingQuantumSession
+            abs_qs = TracingQuantumSession.get_instance()
+            
+            controlled_jaspr = make_jaspr(func, **cusc_kwargs)(*args, **new_kwargs)
             
             # Find the variable that contains the control qubit
             for i, invar in enumerate(controlled_jaspr.invars):

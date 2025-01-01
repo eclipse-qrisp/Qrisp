@@ -966,7 +966,7 @@ class Jaspr(Jaxpr):
     
 
 
-def make_jaspr(fun, garbage_collection = "auto"):
+def make_jaspr(fun, garbage_collection = "auto", **jax_kwargs):
     from qrisp.jasp import AbstractQuantumCircuit, TracingQuantumSession, check_for_tracing_mode
     from qrisp.core.quantum_variable import QuantumVariable, flatten_qv, unflatten_qv
     from qrisp.core import recursive_qv_search    
@@ -1010,7 +1010,7 @@ def make_jaspr(fun, garbage_collection = "auto"):
             
             return res_qc, res
         
-        jaxpr = make_jaxpr(ammended_function)(AbstractQuantumCircuit(), *args, **kwargs).jaxpr
+        jaxpr = make_jaxpr(ammended_function, **jax_kwargs)(AbstractQuantumCircuit(), *args, **kwargs).jaxpr
         
         # Collect the environments
         # This means that the quantum environments no longer appear as

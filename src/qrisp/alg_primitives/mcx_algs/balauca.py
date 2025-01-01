@@ -16,6 +16,7 @@
 ********************************************************************************/
 """
 
+from jax.core import Tracer
 import numpy as np
 from qrisp.circuit import XGate, PGate, convert_to_qb_list, Qubit
 from qrisp.qtypes import QuantumBool, QuantumVariable
@@ -24,7 +25,7 @@ from qrisp.alg_primitives.mcx_algs.circuit_library import reduced_maslov_qc, mar
 from qrisp.alg_primitives.mcx_algs.gidney import GidneyLogicalAND
 from qrisp.alg_primitives.mcx_algs.jones import jones_toffoli
 from qrisp.environments.quantum_inversion import invert
-
+from qrisp.jasp import check_for_tracing_mode, AbstractQubit
 
 # Ancilla supported multi controlled X with logarithmic depth based on
 # https://www.iccs-meeting.org/archive/iccs2022/papers/133530169.pdf
@@ -175,7 +176,12 @@ def balauca_layer(input_qubits, output_qubits, structure, invert=False, use_mcm 
     if not output_qubits:
         return
     
-    qs = output_qubits[0].qs()
+    if check_for_tracing_mode():
+        from qrisp.jasp import TracingQuantumSession
+        qs = TracingQuantumSession.get_instance()
+    else:
+        qs = input_qubits[0].qs()
+        
     input_qubits = list(input_qubits)
 
     counter = 0
@@ -222,6 +228,8 @@ def balauca_layer(input_qubits, output_qubits, structure, invert=False, use_mcm 
                 gate = gate.inverse()
             
             if isinstance(output_qubits[i], Qubit):
+                target = output_qubits[i]
+            elif isinstance(output_qubits[i], Tracer) and isinstance(output_qubits[i].aval, AbstractQubit):
                 target = output_qubits[i]
             else:
                 target = output_qubits[i][0]

@@ -194,7 +194,7 @@ def qache(*func, **kwargs):
     
 # temp_list = [False]    
 def qache_helper(func, jax_kwargs):
-    # 
+    
     # To achieve the desired behavior we leverage the Jax inbuild caching mechanism.
     # This feature can be used by calling a jitted function in a tracing context.
     # To cache the function we therefore simply need to wrap it with jit and
