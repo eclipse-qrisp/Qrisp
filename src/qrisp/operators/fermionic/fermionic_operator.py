@@ -851,6 +851,13 @@ class FermionicOperator(Hamiltonian):
             
         return FermionicOperator(terms_dict)
     
+    def find_minimal_qubit_amount(self):
+        indices = sum([[tup[0] for tup in term.ladder_list] for term in self.terms_dict.keys()], [])
+        if len(indices) == 0:
+            return 0
+        return max(indices)+1
+
+    
                     
 def apply_fermionic_swap(qv, permutation):
     from qrisp import cz
