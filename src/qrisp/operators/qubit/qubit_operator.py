@@ -22,6 +22,8 @@ from qrisp.operators.qubit.measurement import get_measurement
 from qrisp.operators.qubit.commutativity_tools import construct_change_of_basis
 from qrisp import cx, cz, h, s, x, sx_dg, IterationEnvironment, conjugate, merge
 
+from qrisp.jasp import check_for_tracing_mode, jrange
+
 import sympy as sp
 import numpy as np
 
@@ -937,7 +939,7 @@ class QubitOperator(Hamiltonian):
         # whereas the anchor qubit becomes a Z gate.
         
         n = self.find_minimal_qubit_amount()
-        if len(qarg) < n:
+        if not check_for_tracing_mode() and len(qarg) < n:
             raise Exception("Tried to change the basis of an Operator on a quantum argument with insufficient qubits.")
         
      
@@ -1512,6 +1514,7 @@ class QubitOperator(Hamiltonian):
                 for com_group in commuting_groups:
                     qw_groups= com_group.group_up(lambda a,b : a.commute_qw(b) and a.ladders_agree(b))
                     for qw_group in qw_groups:
+                        
                         with conjugate(qw_group.change_of_basis)(qarg) as diagonal_operator:
                             intersect_groups = diagonal_operator.group_up(lambda a, b: not a.intersect(b))
                             for intersect_group in intersect_groups:
@@ -1528,9 +1531,13 @@ class QubitOperator(Hamiltonian):
                                 term.simulate(-coeff*t/steps*(-1)**int(forward_evolution), qarg)
 
         def U(qarg, t=1, steps=1, iter=1):
-            merge([qarg])
-            with IterationEnvironment(qarg.qs, iter*steps):
-                trotter_step(qarg, t, steps)
+            if check_for_tracing_mode():
+                for i in jrange(iter*steps):
+                    trotter_step(qarg, t, steps)
+            else:
+                merge([qarg])
+                with IterationEnvironment(qarg.qs, iter*steps):
+                    trotter_step(qarg, t, steps)
 
         return U
 
