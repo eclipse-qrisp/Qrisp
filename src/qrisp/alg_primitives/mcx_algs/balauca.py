@@ -16,16 +16,20 @@
 ********************************************************************************/
 """
 
-from jax.core import Tracer
 import numpy as np
+
+from jax.core import Tracer
+import jax.numpy as jnp
+from jax.lax import cond
+from jax import jit
+
 from qrisp.circuit import XGate, PGate, convert_to_qb_list, Qubit
 from qrisp.qtypes import QuantumBool, QuantumVariable
 from qrisp.core.gate_application_functions import x, cx, mcx
 from qrisp.alg_primitives.mcx_algs.circuit_library import reduced_maslov_qc, margolus_qc, reduced_margolus_qc
 from qrisp.alg_primitives.mcx_algs.gidney import GidneyLogicalAND
-from qrisp.alg_primitives.mcx_algs.jones import jones_toffoli
-from qrisp.environments.quantum_inversion import invert
-from qrisp.jasp import check_for_tracing_mode, AbstractQubit
+from qrisp.environments import invert, control, conjugate
+from qrisp.jasp import check_for_tracing_mode, AbstractQubit, qache, jrange, make_tracer
 
 # Ancilla supported multi controlled X with logarithmic depth based on
 # https://www.iccs-meeting.org/archive/iccs2022/papers/133530169.pdf
@@ -434,3 +438,64 @@ def vchain_2_dirty(control, target, dirty_ancillae=None):
                 )
 
     [qbl.delete() for qbl in dirty_ancilla_qbls]
+    
+
+
+@jit
+def extract_boolean_digit(integer, digit):
+    return jnp.bool((integer>>digit & 1))
+
+
+def ctrl_state_conjugator(ctrls, ctrl_state):
+    for i in jrange(ctrls.size):
+        with control(~extract_boolean_digit(ctrl_state, i)):
+            x(ctrls[i])
+    
+    
+@qache
+def jasp_balauca_mcx(ctrls, target, ctrl_state):
+    
+    from qrisp import mcx
+    ctrl_state = jnp.int32(ctrl_state)
+    ctrl_state = cond(ctrl_state == -1, lambda x : x + 2**ctrls.size, lambda x : x, ctrl_state)
+    
+    N = ctrls.size
+    
+    with conjugate(ctrl_state_conjugator)(ctrls, ctrl_state):
+        
+        with control(N == 1):
+            cx(ctrls[0], target[0])
+        with control(N == 2):
+            mcx([ctrls[0], ctrls[1]], target[0])
+        with control(N > 2):
+            balauca_anc = QuantumVariable(N-2+N%2)
+            with conjugate(jasp_balauca_helper)(ctrls, balauca_anc):
+                mcx([balauca_anc[balauca_anc.size-1], balauca_anc[balauca_anc.size-2]], target[0])
+            balauca_anc.delete()
+
+def jasp_balauca_helper(ctrls, balauca_anc):
+    from qrisp import mcx
+    
+    N = ctrls.size
+    n = jnp.int32(jnp.ceil(jnp.log2(N)))
+    
+    for i in jrange(N//2):
+        mcx([ctrls[2*i], ctrls[2*i+1]], balauca_anc[i])
+        
+    with control(jnp.bool(N%2)):
+        cx(ctrls[N-1], balauca_anc[N//2-1+N%2])
+    
+    n = jnp.int32(jnp.ceil(jnp.log2(N)))
+    
+    l = make_tracer(0)
+    k = N
+    for i in jrange(n-2):
+        k = jnp.int32(jnp.ceil(k/2))
+        
+        for j in jrange(k//2):
+            mcx([balauca_anc[l+2*j], balauca_anc[l+2*j+1]], 
+                balauca_anc[l+k+j], 
+                method = "gidney")
+        
+        l = cond(jnp.bool(k%2), lambda x : x-1, lambda x : x, l)
+        l += k

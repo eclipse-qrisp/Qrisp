@@ -25,7 +25,6 @@ def append_operation(operation, qubits=[], clbits=[], param_tracers = []):
     from qrisp import find_qs
     
     qs = find_qs(qubits)
-    
     qs.append(operation, qubits, clbits, param_tracers = param_tracers)
 
 
@@ -468,50 +467,61 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
     from qrisp.core import QuantumVariable
     from qrisp.qtypes import QuantumBool
 
-    new_controls = []
 
-    for qbl in controls:
-        if isinstance(qbl, QuantumBool):
-            new_controls.append(qbl[0])
-        else:
-            new_controls.append(qbl)
-    
-    if isinstance(target, (list, QuantumVariable)):
+    if not check_for_tracing_mode():
         
-        if len(target) > 1:
-            raise Exception("Target of mcx contained more than one qubit")
-        target = target[0]
+        new_controls = []
+
+        for qbl in controls:
+            if isinstance(qbl, QuantumBool):
+                new_controls.append(qbl[0])
+            else:
+                new_controls.append(qbl)
         
+        if isinstance(target, (list, QuantumVariable)):
+            
+            if len(target) > 1:
+                raise Exception("Target of mcx contained more than one qubit")
+            target = target[0]
+            
+            
+        qubits_0 = new_controls
+        qubits_1 = [target]
         
-    qubits_0 = new_controls
-    qubits_1 = [target]
+        n = len(qubits_0)
 
-    n = len(qubits_0)
+        if n == 0:
+            return controls, target
+        elif n == 1:
+            append_operation(
+                std_ops.MCXGate(len(qubits_0), ctrl_state, method=method),
+                qubits_0 + qubits_1,
+            )
+            return
+        
+        if not isinstance(ctrl_state, str):
+            if ctrl_state == -1:
+                ctrl_state += 2**n
+            ctrl_state = bin_rep(ctrl_state, n)[::-1]
 
-    if n == 0:
-        return controls, target
-
-    if not isinstance(ctrl_state, str):
-        if ctrl_state == -1:
-            ctrl_state += 2**n
-        ctrl_state = bin_rep(ctrl_state, n)[::-1]
-
-    if len(ctrl_state) != n:
-        raise Exception(
-            f"Given control state {ctrl_state} does not match control qubit amount {n}"
-        )
-
+        if len(ctrl_state) != n:
+            raise Exception(
+                f"Given control state {ctrl_state} does not match control qubit amount {n}"
+            )
+    else:
+        qubits_0 = controls
+        qubits_1 = [target]
     from qrisp.alg_primitives.mcx_algs import (
         balauca_dirty,
         balauca_mcx,
         hybrid_mcx,
         maslov_mcx,
         yong_mcx,
+        jasp_balauca_mcx
+        
     )
 
-    if method in ["gray", "gray_pt", "gray_pt_inv"] or len(qubits_0) == 1:
-        if len(qubits_0) == 1:
-            method = "gray"
+    if method in ["gray", "gray_pt", "gray_pt_inv"]:
         append_operation(
             std_ops.MCXGate(len(qubits_0), ctrl_state, method=method),
             qubits_0 + qubits_1,
@@ -552,7 +562,10 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
         [qv.delete() for qv in ancilla]
 
     elif method == "balauca":
-        balauca_mcx(qubits_0, qubits_1, ctrl_state=ctrl_state)
+        if check_for_tracing_mode():
+            jasp_balauca_mcx(qubits_0, qubits_1, ctrl_state)
+        else:
+            balauca_mcx(qubits_0, qubits_1, ctrl_state=ctrl_state)
 
     elif method == "balauca_dirty":
         balauca_dirty(qubits_0, qubits_1, k=num_ancilla, ctrl_state=ctrl_state)
@@ -580,7 +593,6 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
         #     return mcx(qubits_0, qubits_1, method = "maslov", ctrl_state = ctrl_state)
         # else:
         #     return mcx(qubits_0, qubits_1, method = "balauca", ctrl_state = ctrl_state) # noqa:501
-
         gate = std_ops.MCXGate(len(qubits_0), ctrl_state, method="auto")
         append_operation(gate, qubits_0 + qubits_1)
 

@@ -1093,3 +1093,14 @@ def check_aval_equivalence(invars_1, invars_2):
     avals_1 = [invar.aval for invar in invars_1]
     avals_2 = [invar.aval for invar in invars_2]
     return all([type(avals_1[i]) == type(avals_2[i]) for i in range(len(avals_1))])
+
+def make_tracer(x):
+    if isinstance(x, bool):
+        dtype = jnp.float32
+    elif isinstance(x, int):
+        dtype = jnp.int32
+    elif isinstance(x, float):
+        dtype = jnp.float32
+    elif isinstance(x, complex):
+        dtype = jnp.complex32
+    return jax.jit(lambda: jnp.array(x, dtype))()
