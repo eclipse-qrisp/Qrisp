@@ -475,6 +475,34 @@ def jasp_balauca_mcx(ctrls, target, ctrl_state):
                 mcx([balauca_anc[balauca_anc.size-1], balauca_anc[balauca_anc.size-2]], target[0])
             balauca_anc.delete()
 
+@qache
+def jasp_balauca_mcp(phi, ctrls, ctrl_state):
+    
+    from qrisp import mcx, QuantumBool, cp, p
+    ctrl_state = jnp.int32(ctrl_state)
+    ctrl_state = cond(ctrl_state == -1, lambda x : x + 2**ctrls.size, lambda x : x, ctrl_state)
+    target = QuantumBool()
+    
+    N = ctrls.size
+    
+    with conjugate(ctrl_state_conjugator)(ctrls, ctrl_state):
+        
+        with control(N == 1):
+            cp(phi, ctrls[0], target[0])
+            
+        with control(N == 2):
+            with conjugate(mcx)([ctrls[0], ctrls[1]], target[0], method = "gray_pt"):
+                p(phi, target[0])
+            
+        with control(N > 2):
+            balauca_anc = QuantumVariable(N-2+N%2)
+            with conjugate(jasp_balauca_helper)(ctrls, balauca_anc):
+                with conjugate(mcx)([balauca_anc[balauca_anc.size-1], balauca_anc[balauca_anc.size-2]], target[0], method = "gray_pt"):
+                    p(phi, target[0])
+            balauca_anc.delete()
+
+    target.delete()
+
 def jasp_balauca_helper(ctrls, balauca_anc):
     from qrisp import mcx
     
