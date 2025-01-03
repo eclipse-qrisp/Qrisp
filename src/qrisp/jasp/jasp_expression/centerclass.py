@@ -1017,6 +1017,17 @@ def make_jaspr(fun, garbage_collection = "auto", **jax_kwargs):
         # enter/exit primitives but as primitive that "call" a certain Jaspr.
         return Jaspr.from_cache(collect_environments(jaxpr))
     
+    # Since we are calling the "ammended function", where the first parameter
+    # is the AbstractQuantumCircuit, we need to move the static_argnums indicator.
+    if "static_argnums" in jax_kwargs:
+        jax_kwargs = dict(jax_kwargs)
+        if isinstance(jax_kwargs["static_argnums"], list):
+            jax_kwargs["static_argnums"] = list(jax_kwargs["static_argnums"])
+            for i in range(len(jax_kwargs["static_argnums"])):
+                jax_kwargs["static_argnums"][i] += 1
+        else:
+            jax_kwargs["static_argnums"] += 1
+    
     return jaspr_creator
 
 

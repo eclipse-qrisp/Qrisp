@@ -21,6 +21,7 @@ import jax.numpy as jnp
 
 from qrisp.core import recursive_qv_search
 
+from qrisp.jasp.primitives import AbstractQuantumCircuit
 from qrisp.jasp.tracing_logic import TracingQuantumSession, check_for_tracing_mode
 
 def qache(*func, **kwargs):
@@ -254,6 +255,17 @@ def qache_helper(func, jax_kwargs):
         
         # Return the result and the result AbstractQuantumCircuit.
         return new_abs_qc, res
+
+    # Since we are calling the "ammended function", where the first parameter
+    # is the AbstractQuantumCircuit, we need to move the static_argnums indicator.
+    if "static_argnums" in jax_kwargs:
+        jax_kwargs = dict(jax_kwargs)
+        if isinstance(jax_kwargs["static_argnums"], list):
+            jax_kwargs["static_argnums"] = list(jax_kwargs["static_argnums"])
+            for i in range(len(jax_kwargs["static_argnums"])):
+                jax_kwargs["static_argnums"][i] += 1
+        else:
+            jax_kwargs["static_argnums"] += 1
     
     # Modify the name of the ammended function to reflect the input
     ammended_function.__name__ = func.__name__
@@ -294,7 +306,20 @@ def qache_helper(func, jax_kwargs):
         # Convert the jaxpr from the traced equation in to a Jaspr
         from qrisp.jasp import Jaspr
         eqn = jax._src.core.thread_local_state.trace_state.trace_stack.dynamic.jaxpr_stack[0].eqns[-1]
-        eqn.params["jaxpr"] = jax.core.ClosedJaxpr(Jaspr.from_cache(eqn.params["jaxpr"].jaxpr), eqn.params["jaxpr"].consts)
+        jaxpr = eqn.params["jaxpr"].jaxpr
+        
+        if not isinstance(eqn.invars[0].aval, AbstractQuantumCircuit):
+            for i in range(len(eqn.invars)):
+                if isinstance(eqn.invars[i].aval, AbstractQuantumCircuit):
+                    eqn.invars[0], eqn.invars[i] = eqn.invars[i], eqn.invars[0]
+                    break
+        if not isinstance(jaxpr.invars[0].aval, AbstractQuantumCircuit):
+            for i in range(len(jaxpr.invars)):
+                if isinstance(jaxpr.invars[i].aval, AbstractQuantumCircuit):
+                    jaxpr.invars[0], jaxpr.invars[i] = jaxpr.invars[i], jaxpr.invars[0]
+                    break
+        
+        eqn.params["jaxpr"] = jax.core.ClosedJaxpr(Jaspr.from_cache(jaxpr), eqn.params["jaxpr"].consts)
         
         # Update the AbstractQuantumCircuit of the TracingQuantumSession        
         abs_qs.abs_qc = abs_qc_new

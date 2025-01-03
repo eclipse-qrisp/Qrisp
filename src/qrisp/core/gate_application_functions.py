@@ -493,6 +493,7 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
         if n == 0:
             return controls, target
         elif n == 1:
+            method = "gray"
             append_operation(
                 std_ops.MCXGate(len(qubits_0), ctrl_state, method=method),
                 qubits_0 + qubits_1,

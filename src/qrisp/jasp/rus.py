@@ -291,12 +291,12 @@ def RUS(*trial_function, **jit_kwargs):
             argname_list = inspect.getfullargspec(trial_function)
             for i in range(len(argname_list)):
                 if argname_list[i] in jit_kwargs["static_argnames"]:
-                    static_argnums.append(i+1)
+                    static_argnums.append(i)
 
         new_trial_args = []
         
         for i in range(len(trial_args)):
-            if i+1 not in static_argnums:
+            if i not in static_argnums:
                 new_trial_args.append(trial_args[i])
         
         trial_args = new_trial_args

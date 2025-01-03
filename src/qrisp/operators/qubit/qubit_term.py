@@ -185,7 +185,7 @@ class QubitTerm:
     #
     # Simulation
     #
-    @custom_control(static_argnums = 1)
+    @custom_control(static_argnums = 0)
     def simulate(self, coeff, qv, ctrl = None):
 
         from qrisp import h, cx, rz, mcp, conjugate, control, QuantumBool, mcx, x, p, s, QuantumEnvironment, gphase, QuantumVariable, find_qs
