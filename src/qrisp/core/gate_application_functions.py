@@ -19,7 +19,7 @@
 import sympy
 
 import qrisp.circuit.standard_operations as std_ops
-from qrisp.jasp import check_for_tracing_mode
+from qrisp.jasp import check_for_tracing_mode, DynamicQubitArray
 
 def append_operation(operation, qubits=[], clbits=[], param_tracers = []):
     from qrisp import find_qs
@@ -510,6 +510,8 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
             )
     else:
         qubits_0 = controls
+        if isinstance(qubits_0, (QuantumVariable, DynamicQubitArray)):
+            method = "balauca"
         qubits_1 = [target]
     from qrisp.alg_primitives.mcx_algs import (
         balauca_dirty,

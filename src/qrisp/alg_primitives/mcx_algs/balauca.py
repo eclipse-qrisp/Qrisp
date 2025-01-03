@@ -465,8 +465,10 @@ def jasp_balauca_mcx(ctrls, target, ctrl_state):
         
         with control(N == 1):
             cx(ctrls[0], target[0])
+            
         with control(N == 2):
             mcx([ctrls[0], ctrls[1]], target[0])
+            
         with control(N > 2):
             balauca_anc = QuantumVariable(N-2+N%2)
             with conjugate(jasp_balauca_helper)(ctrls, balauca_anc):
@@ -497,5 +499,4 @@ def jasp_balauca_helper(ctrls, balauca_anc):
                 balauca_anc[l+k+j], 
                 method = "gidney")
         
-        l = cond(jnp.bool(k%2), lambda x : x-1, lambda x : x, l)
-        l += k
+        l += k - k%2
