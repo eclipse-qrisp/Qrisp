@@ -143,11 +143,16 @@ def process_get_qubit(invars, outvars, context_dic):
 def process_slice(invars, outvars, context_dic):
     
     base_qubit_array_starting_index = context_dic[invars[0]][0]
+    base_qubit_array_ending_index = base_qubit_array_starting_index + context_dic[invars[0]][1]
+    
     new_starting_index = context_dic[invars[1]] + base_qubit_array_starting_index
-    new_size = context_dic[invars[2]] - context_dic[invars[1]]
     
-    context_dic[outvars[0]] = (new_starting_index, new_size)
+    new_max_index = jnp.min(jnp.array([base_qubit_array_ending_index, 
+                                       base_qubit_array_starting_index + context_dic[invars[2]]]))
     
+    new_size = new_max_index - new_starting_index
+    
+    context_dic[outvars[0]] = (new_starting_index, new_size)    
     
     
 def process_get_size(invars, outvars, context_dic):
