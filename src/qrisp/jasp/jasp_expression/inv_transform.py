@@ -48,7 +48,7 @@ def invert_eqn(eqn):
 
         if params["name"][-3:] == "_dg":        
             params["name"] = params["name"][:-3]
-        else:
+        elif params["name"] not in ["gidney_mcx", "gidney_mcx_inv"]:
             params["name"] += "_dg"
         
         primitive = eqn.primitive

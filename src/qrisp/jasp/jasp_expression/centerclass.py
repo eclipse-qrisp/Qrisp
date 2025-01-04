@@ -322,7 +322,7 @@ class Jaspr(Jaxpr):
         jaspr = self.flatten_environments()
         
         def eqn_evaluator(eqn, context_dic):
-            if eqn.primitive.name == "pjit":
+            if eqn.primitive.name == "pjit" and isinstance(eqn.params["jaxpr"].jaxpr, Jaspr):
                 pjit_to_gate(eqn, context_dic)
             else:
                 return True

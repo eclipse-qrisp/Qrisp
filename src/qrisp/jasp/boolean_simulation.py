@@ -16,20 +16,31 @@
 ********************************************************************************/
 """
 
-from qrisp.jasp.primitives import*
-from qrisp.jasp.tracing_logic import *
-from qrisp.jasp.rus import RUS
-from qrisp.jasp.interpreter_tools import *
-from qrisp.jasp.jasp_expression import *
-from qrisp.jasp.testing_utils import *
-from qrisp.jasp.control_flow import *
-from qrisp.jasp.terminal_sampling import *
-from qrisp.jasp.boolean_simulation import boolean_simulation
+import jax.numpy as jnp
+from jax import jit
+from jax.core import eval_jaxpr
 
-def compare_jaxpr(jaxpr, primitive_name_list):
-    assert len(jaxpr.eqns) == len(primitive_name_list)
-    for i in range(len(primitive_name_list)):
-        assert jaxpr.eqns[i].primitive.name == primitive_name_list[i]
+from qrisp.jasp import make_jaspr
+
+from qrisp.jasp.interpreter_tools.interpreters.cl_func_interpreter import jaspr_to_cl_func_jaxpr
+
+def boolean_simulation(func, bit_array_size = 2**15):
     
-
-
+    @jit    
+    def return_function(*args):
+        
+        jaspr = make_jaspr(func)(*args)
+        cl_func_jaxpr = jaspr_to_cl_func_jaxpr(jaspr.flatten_environments(), bit_array_size)
+        
+        
+        res = eval_jaxpr(cl_func_jaxpr, 
+                         [], 
+                         jnp.zeros(cl_func_jaxpr.invars[0].aval.shape, dtype = jnp.bool), 
+                         0, *args)
+        
+        if len(res) == 3:
+            return res[2]
+        else:
+            return res[2:]
+    
+    return return_function
