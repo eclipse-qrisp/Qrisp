@@ -454,11 +454,9 @@ def conditional_bit_flip_bit_array(bit_array, index, condition):
     index = jnp.uint64(index)
     array_index = index>>6
     int_index = (index ^ (array_index << 6))
-    int_index = jnp.uint64(int_index)
-    condition = jnp.uint64(condition)
     set_value = bit_array[array_index] ^ (condition << int_index)
     # set_value = bit_array[index]
-    return bit_array.at[array_index].set(set_value, mode = "promise_in_bounds")
+    return bit_array.at[array_index].set(set_value)
 
 conditional_bit_flip_bit_array = jit(conditional_bit_flip_bit_array, donate_argnums=0)
 
