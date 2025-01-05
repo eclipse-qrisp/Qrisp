@@ -18,6 +18,9 @@
 
 import jax.numpy as jnp
 from jaxlib.xla_extension import ArrayImpl
+from jax import jit
+
+from qrisp.jasp.tracing_logic import check_for_tracing_mode
 
 class JRangeIterator:
     
@@ -61,6 +64,8 @@ class JRangeIterator:
         # We capture the loop semantics using the JIterationEnvironment.
         # The actual jax loop primitive is then compiled in
         # JIterationEnvironment.jcompile
+        from qrisp.jasp import TracingQuantumSession
+        from qrisp import reset
         
         self.iteration += 1
         if self.iteration == 1:
@@ -74,9 +79,24 @@ class JRangeIterator:
             # quantum environment jaxpr and can therefore be identified as such.
             self.stop + 0
             
+            self.iter_1_qvs = list(TracingQuantumSession.get_instance().qv_list)
+            
             return self.loop_index
             
         elif self.iteration == 2:
+            
+            qs = TracingQuantumSession.get_instance()
+            created_qvs = set(list(qs.qv_list)) - set(self.iter_1_qvs)
+            created_qvs = list(created_qvs)
+            created_qvs = sorted(created_qvs, key = lambda x : hash(x))
+            
+            if qs.gc_mode == "auto":
+                for qv in created_qvs:
+                    reset(qv)
+                    qv.delete()
+            elif qs.gc_mode == "debug" and len(created_qvs):
+                raise Exception(f"QuantumVariables {created_qvs} went out of scope without deletion during jrange")
+            
             # Perform the incrementation
             self.loop_index += self.step
             
@@ -84,12 +104,30 @@ class JRangeIterator:
             self.iter_env.__exit__(None, None, None)
             self.iter_env.__enter__()
             # Similar to the incrementation above
+            
+            
             self.stop + 0
+            self.iter_2_qvs = list(TracingQuantumSession.get_instance().qv_list)
             
             return self.loop_index
             
         elif self.iteration == 3:
+                        
+            qs = TracingQuantumSession.get_instance()
+            created_qvs = set(list(qs.get_instance().qv_list)) - set(self.iter_2_qvs)
+            created_qvs = list(created_qvs)
+            created_qvs = sorted(created_qvs, key = lambda x : hash(x))
+            
+            if qs.gc_mode == "auto":
+                for qv in created_qvs:
+                    reset(qv)
+                    qv.delete()
+            elif qs.gc_mode == "debug" and len(created_qvs):
+                raise Exception(f"QuantumVariables {created_qvs} went out of scope without deletion during jrange")
+            
+            
             self.loop_index += self.step
+            
             self.iter_env.__exit__(None, None, None)
             raise StopIteration
 
@@ -224,13 +262,37 @@ def jrange(*args):
     Exception: Jax semantics changed during jrange iteration
 
     """
-    new_args = []
-    for i in range(len(args)):
-        if not isinstance(args[i], (int, ArrayImpl)):
-            break
-        new_args.append(int(args[i]))
-    else:
-        return range(*new_args)
-            
-    return JRangeIterator(*args)
     
+    new_args = []
+    if check_for_tracing_mode():
+        for i in range(len(args)):
+            if isinstance(args[i], (int, ArrayImpl)):
+                new_args.append(make_tracer(args[i]))
+            else:
+                new_args.append(args[i])
+                
+        return JRangeIterator(*new_args)
+        
+    else:
+        for i in range(len(args)):
+            if not isinstance(args[i], int):
+                new_args.append(int(args[i]))
+            else:
+                new_args.append(args[i])
+                
+        return range(*new_args)
+    
+def make_tracer(x):
+    if isinstance(x, bool):
+        dtype = jnp.float32
+    elif isinstance(x, int):
+        dtype = jnp.int32
+    elif isinstance(x, float):
+        dtype = jnp.float32
+    elif isinstance(x, complex):
+        dtype = jnp.complex32
+        
+    def tracerizer():
+        return jnp.array(x, dtype)
+
+    return jit(tracerizer)()

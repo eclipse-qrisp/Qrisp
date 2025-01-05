@@ -67,7 +67,7 @@ def cl_func_eqn_evaluator(eqn, context_dic):
             process_pjit(eqn, context_dic)
         else:
             return True
-    
+
 def process_create_qubits(invars, outvars, context_dic):
     
     # The first invar of the create_qubits primitive is an AbstractQuantumCircuit
@@ -153,7 +153,8 @@ def cl_multi_cx(bit_array, ctrl_state, bit_pos):
         else:
             flip = flip & (~bit_array[bit_pos[i]])
             
-    bit_array = bit_array.at[bit_pos[-1]].set((bit_array[bit_pos[-1]] ^ flip), mode = "promise_in_bounds")
+    bit_array = update_bit_array(bit_array, bit_pos[-1], bit_array[bit_pos[-1]] ^ flip)
+    # bit_array = bit_array.at[bit_pos[-1]].set((bit_array[bit_pos[-1]] ^ flip), mode = "promise_in_bounds")
     
     return bit_array
 
@@ -402,14 +403,16 @@ def process_reset(eqn, context_dic):
         stop = start + invalues[1][1]
         
         def loop_body(i, bit_array):
-            bit_array = bit_array.at[i].set(jnp_false)
+            bit_array = update_bit_array(bit_array, i, jnp_false)
+            # bit_array = bit_array.at[i].set(jnp_false)
             return bit_array
         
         bit_array = fori_loop(start, stop, loop_body, bit_array)
         
     else:
         
-        bit_array = bit_array.at[invalues[1]].set(jnp_false)
+        bit_array = update_bit_array(bit_array, invalues[1], jnp_false)
+        # bit_array = bit_array.at[invalues[1]].set(jnp_false)
     
     outvalues = (bit_array, invalues[0][1])
     insert_outvalues(eqn, context_dic, outvalues)
@@ -437,3 +440,8 @@ def jaspr_to_cl_func_jaxpr(jaspr, bit_array_size):
     
     # Call the Catalyst interpreter
     return make_jaxpr(eval_jaxpr(jaspr, eqn_evaluator = cl_func_eqn_evaluator))(*args).jaxpr
+
+def update_bit_array(bit_array, index, value):
+    return bit_array.at[index].set(value, mode = "promise_in_bounds")
+
+update_bit_array = jit(update_bit_array, donate_argnums=0)
