@@ -456,7 +456,7 @@ def ctrl_state_conjugator(ctrls, ctrl_state):
 def jasp_balauca_mcx(ctrls, target, ctrl_state):
     
     from qrisp import mcx
-    ctrl_state = jnp.int32(ctrl_state)
+    ctrl_state = jnp.int64(ctrl_state)
     ctrl_state = cond(ctrl_state == -1, lambda x : x + 2**ctrls.size, lambda x : x, ctrl_state)
     
     N = ctrls.size
@@ -479,7 +479,7 @@ def jasp_balauca_mcx(ctrls, target, ctrl_state):
 def jasp_balauca_mcp(phi, ctrls, ctrl_state):
     
     from qrisp import mcx, QuantumBool, cp, p
-    ctrl_state = jnp.int32(ctrl_state)
+    ctrl_state = jnp.int64(ctrl_state)
     ctrl_state = cond(ctrl_state == -1, lambda x : x + 2**ctrls.size, lambda x : x, ctrl_state)
     target = QuantumBool()
     
@@ -507,7 +507,7 @@ def jasp_balauca_helper(ctrls, balauca_anc):
     from qrisp import mcx
     
     N = ctrls.size
-    n = jnp.int32(jnp.ceil(jnp.log2(N)))
+    n = jnp.int64(jnp.ceil(jnp.log2(N)))
     
     for i in jrange(N//2):
         mcx([ctrls[2*i], ctrls[2*i+1]], balauca_anc[i])
@@ -515,12 +515,12 @@ def jasp_balauca_helper(ctrls, balauca_anc):
     with control(jnp.bool(N%2)):
         cx(ctrls[N-1], balauca_anc[N//2-1+N%2])
     
-    n = jnp.int32(jnp.ceil(jnp.log2(N)))
+    n = jnp.int64(jnp.ceil(jnp.log2(N)))
     
     l = make_tracer(0)
     k = N
     for i in jrange(n-2):
-        k = jnp.int32(jnp.ceil(k/2))
+        k = jnp.int64(jnp.ceil(k/2))
         
         for j in jrange(k//2):
             mcx([balauca_anc[l+2*j], balauca_anc[l+2*j+1]], 
