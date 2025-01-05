@@ -320,10 +320,10 @@ class QuantumFloat(QuantumVariable):
             else:
                 return res
         else:
-            from jax.numpy import float32
+            from jax.numpy import float64
             from jax.core import Tracer
             if isinstance(i, Tracer):
-                res = i * float32(2)**self.exponent
+                res = i * float64(2)**self.exponent
             else:
                 res = i * 2**self.exponent
 
@@ -335,8 +335,8 @@ class QuantumFloat(QuantumVariable):
         return self.decoder(i)
     
     def encoder(self, i):
-        from jax.numpy import float32
-        res = signed_int_iso_2(i/(float32(2)**self.exponent), self.size)
+        from jax.numpy import float64
+        res = signed_int_iso_2(i/(float64(2)**self.exponent), self.size)
         # if self.signed:
         #     res = signed_int_iso(i/2**self.exponent, self.size-1)
         # else:
