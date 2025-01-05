@@ -54,40 +54,39 @@ def jasp_squaring(a, inpl_adder = gidney_adder):
     
     return s
 
-@qache(static_argnames = "inpl_adder")
+# @qache(static_argnames = "inpl_adder")
 def jasp_multiplyer(factor_1, factor_2, inpl_adder = gidney_adder):
     
     n = factor_1.size-1
-    s = QuantumFloat(factor_1.size + factor_2.size + 1, 
+    s = QuantumFloat(factor_1.size + factor_2.size, 
                      exponent = factor_1.exponent + factor_2.exponent)
     
     for i in jrange(factor_2.size):
-        cx(factor_2[i], s[i+1+n])
+        cx(factor_2[i], s[i+n])
 
+    
     x(s)
     
-    inpl_adder(factor_2, s)
+    with control(factor_1[0], ctrl_state = 0):
+        inpl_adder(factor_2, s)
     
-    for i in jrange(s.size):
-        cx(factor_1[0], s[i])
+    for j in jrange(s.size):
+        cx(factor_1[1], s[j])
         
-    for i in jrange(factor_1.size-1):
+    for i in jrange(1, factor_1.size-1):
         
-        inpl_adder(factor_2[:s.size-i], s[i:])    
+        inpl_adder(factor_2[:s.size-i], s[i-1:])    
         
         cx(factor_1[i], factor_1[i+1])
         for j in jrange(s.size):
             cx(factor_1[i+1], s[j])
         cx(factor_1[i], factor_1[i+1])
 
-    inpl_adder(factor_2[:s.size-factor_1.size+1], s[factor_1.size-1:])
+    inpl_adder(factor_2[:s.size-factor_1.size+1], s[factor_1.size-2:])
     
     for i in jrange(s.size):
         cx(factor_1[factor_1.size-1], s[i])
 
     x(s)
-    
-    s.qs.clear_qubits(s.reg[:1])
-    s.reg = s.reg[1:]
 
     return s

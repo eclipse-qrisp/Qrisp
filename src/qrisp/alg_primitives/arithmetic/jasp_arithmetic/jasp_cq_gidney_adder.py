@@ -37,7 +37,7 @@ def jasp_cq_gidney_adder(a, b, ctrl = None):
         n = b.size
     
     if isinstance(a, int):
-        a = jnp.array(a, dtype = jnp.int32)
+        a = jnp.array(a, dtype = jnp.int64)
     
     # If the quantum target only has a single qubit, the addition can be performed
     # with a simply X-gate

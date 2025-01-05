@@ -31,10 +31,10 @@ def jasp_qq_gidney_adder(a, b, ctrl = None):
     
     if isinstance(b, list):
         n = min(len(a), len(b))
+        perform_incrementation = n < len(b)
     else:
         n = jnp.min(jnp.array([a.size, b.size]))
-    
-    perform_incrementation = n < b.size
+        perform_incrementation = n < b.size
     
     if ctrl is not None:
         ctrl_anc = QuantumBool(name = "gidney_anc_2*")
@@ -86,8 +86,14 @@ def jasp_qq_gidney_adder(a, b, ctrl = None):
             # Uncompute the carry
             cx(gidney_anc[n-2], carry_out[0])
             mcx([a[n-1], b[n-1]], carry_out[0], method = "gidney_inv")
+            
+            if ctrl is not None:
+                mcx([ctrl, gidney_anc[n-2]], ctrl_anc[0], method = "gidney")
+                cx(ctrl_anc[0], b[n-1])
+                mcx([ctrl, gidney_anc[n-2]], ctrl_anc[0], method = "gidney_inv")
+            else:
+                cx(gidney_anc[n-2], b[n-1])
             cx(gidney_anc[n-2], a[n-1])
-            cx(gidney_anc[n-2], b[n-1])
             
             carry_out.delete()
         
@@ -110,7 +116,8 @@ def jasp_qq_gidney_adder(a, b, ctrl = None):
             mcx([a[i], b[i]], gidney_anc[i], method = "gidney_inv")
             
             if ctrl is not None:
-                # This is the controlled version described on page 4                
+                # This is the controlled version described on page 4
+                pass
                 mcx([ctrl, a[i]], ctrl_anc[0], method = "gidney")
                 cx(ctrl_anc[0], b[i])
                 mcx([ctrl, a[i]], ctrl_anc[0], method = "gidney_inv")
