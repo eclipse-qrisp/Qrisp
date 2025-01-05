@@ -24,7 +24,7 @@ from qrisp.jasp import make_jaspr
 
 from qrisp.jasp.interpreter_tools.interpreters.cl_func_interpreter import jaspr_to_cl_func_jaxpr
 
-def boolean_simulation(func, bit_array_size = 2**16):
+def boolean_simulation(func, bit_array_size = 2**14):
     
     @jit    
     def return_function(*args):
@@ -32,11 +32,11 @@ def boolean_simulation(func, bit_array_size = 2**16):
         jaspr = make_jaspr(func)(*args)
         cl_func_jaxpr = jaspr_to_cl_func_jaxpr(jaspr.flatten_environments(), bit_array_size)
         
-        
+        aval = cl_func_jaxpr.invars[0].aval
         res = eval_jaxpr(cl_func_jaxpr, 
                          [], 
-                         jnp.zeros(cl_func_jaxpr.invars[0].aval.shape, dtype = jnp.int32), 
-                         0, *args)
+                         jnp.zeros(aval.shape, dtype = aval.dtype), 
+                         jnp.array(0, dtype = jnp.int32), *args)
         
         if len(res) == 3:
             return res[2]

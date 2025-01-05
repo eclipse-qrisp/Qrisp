@@ -16,6 +16,9 @@
 ********************************************************************************/
 """
 import sys
+import jax
+jax.config.update("jax_enable_x64", True)
+
 
 from qrisp.circuit import *
 from qrisp.core import *

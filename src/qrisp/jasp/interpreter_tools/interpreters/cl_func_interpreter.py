@@ -146,7 +146,7 @@ def process_op(op_prim, invars, outvars, context_dic):
 
 def cl_multi_cx(bit_array, ctrl_state, bit_pos):
     
-    flip = jnp.int32(1)
+    flip = jnp.asarray(1, dtype = bit_array.dtype)
     for i in range(len(bit_pos) - 1):
         if ctrl_state[i] == "1":
             flip = flip & (get_bit_array(bit_array, bit_pos[i]))
@@ -426,7 +426,7 @@ def jaspr_to_cl_func_jaxpr(jaspr, bit_array_size):
     args = []
     for invar in jaspr.invars:
         if isinstance(invar.aval, AbstractQuantumCircuit):
-            args.append((jnp.zeros(bit_array_size, dtype = jnp.int32), jnp.asarray(0, dtype = "int32")))
+            args.append((jnp.zeros(bit_array_size, dtype = jnp.uint64), jnp.asarray(0, dtype = "int32")))
         elif isinstance(invar.aval, AbstractQubitArray):
             args.append((jnp.asarray(0, dtype = "int32"), jnp.asarray(0, dtype = "int32")))
         elif isinstance(invar.aval, AbstractQubit):
@@ -451,9 +451,11 @@ def jaspr_to_cl_func_jaxpr(jaspr, bit_array_size):
 #     return bit_array[index]
 
 def conditional_bit_flip_bit_array(bit_array, index, condition):
-    array_index = index>>4
-    int_index = (index ^ (array_index << 4))
-    condition = jnp.int32(condition)
+    index = jnp.uint64(index)
+    array_index = index>>6
+    int_index = (index ^ (array_index << 6))
+    int_index = jnp.uint64(int_index)
+    condition = jnp.uint64(condition)
     set_value = bit_array[array_index] ^ (condition << int_index)
     # set_value = bit_array[index]
     return bit_array.at[array_index].set(set_value, mode = "promise_in_bounds")
@@ -461,6 +463,7 @@ def conditional_bit_flip_bit_array(bit_array, index, condition):
 conditional_bit_flip_bit_array = jit(conditional_bit_flip_bit_array, donate_argnums=0)
 
 def get_bit_array(bit_array, index):
-    array_index = index>>4
-    int_index = (index ^ (array_index << 4))
+    index = jnp.uint64(index)
+    array_index = index>>6
+    int_index = (index ^ (array_index << 6))
     return (bit_array[array_index] >> int_index) & 1
