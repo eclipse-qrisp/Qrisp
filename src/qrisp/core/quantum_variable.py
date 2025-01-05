@@ -1517,9 +1517,9 @@ def flatten_qv(qv):
         if isinstance(attr, bool):
             attr = jnp.array(attr, jnp.dtype("bool"))
         elif isinstance(attr, int):
-            attr = jnp.array(attr, jnp.dtype("int32"))
+            attr = jnp.array(attr, jnp.dtype("int64"))
         elif isinstance(attr, float):
-            attr = jnp.array(attr, jnp.dtype("float32"))
+            attr = jnp.array(attr, jnp.dtype("float64"))
         children.append(attr)
     
     return tuple(children), QuantumVariableIdentityContainer(qv)
