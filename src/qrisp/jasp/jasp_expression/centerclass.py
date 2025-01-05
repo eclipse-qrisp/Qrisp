@@ -89,7 +89,7 @@ class Jaspr(Jaxpr):
             h:Qubit = get_qubit d g
             i:QuantumCircuit = cx f e h
             j:QuantumCircuit k:i32[] = measure i d
-            l:f32[] = convert_element_type[new_dtype=float32 weak_type=True] k
+            l:f32[] = convert_element_type[new_dtype=float64 weak_type=True] k
             m:f32[] = mul l 0.5
             n:f32[] = add m 1.0
           in (j, n) }
@@ -953,7 +953,7 @@ class Jaspr(Jaxpr):
             #     nimplicit=0
             #     preserve_dimensions=True
             #   ] b 0 p b r
-            #   bp:i32[] = convert_element_type[new_dtype=int32 weak_type=False] s
+            #   bp:i32[] = convert_element_type[new_dtype=int64 weak_type=False] s
             #   bq:i32[] = mul bp 1
             #   br:i32[] = add bq 1
             # in (t, e, br) }
@@ -1070,11 +1070,11 @@ def qjit(function):
     We execute the function a couple of times to demonstrate the randomness
     
     >>> test_fun(4)
-    [array(5.25, dtype=float32)]
+    [array(5.25, dtype=float64)]
     >>> test_fun(5)
-    [array(3., dtype=float32)]
+    [array(3., dtype=float64)]
     >>> test_fun(5)
-    [array(7.25, dtype=float32)]
+    [array(7.25, dtype=float64)]
 
     """
     

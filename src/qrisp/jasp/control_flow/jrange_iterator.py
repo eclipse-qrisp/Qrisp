@@ -32,17 +32,17 @@ class JRangeIterator:
         if len(args) == 1:
             # In the case of one input argument, this argument is the stop value
             self.start = None
-            self.stop = jnp.asarray(args[0], dtype = "int32")
-            self.step = jnp.asarray(1, dtype = "int32")
+            self.stop = jnp.asarray(args[0], dtype = "int64")
+            self.step = jnp.asarray(1, dtype = "int64")
         elif len(args) == 2:
-            self.start = jnp.asarray(args[0], dtype = "int32")
-            self.stop = jnp.asarray(args[1], dtype = "int32")
-            self.step = jnp.asarray(1, dtype = "int32")
+            self.start = jnp.asarray(args[0], dtype = "int64")
+            self.stop = jnp.asarray(args[1], dtype = "int64")
+            self.step = jnp.asarray(1, dtype = "int64")
         elif len(args) == 3:
             # Three arguments denote the case of a non-trivial step
-            self.start = jnp.asarray(args[0], dtype = "int32")
-            self.stop = jnp.asarray(args[1], dtype = "int32")
-            self.step = jnp.asarray(args[2], dtype = "int32")
+            self.start = jnp.asarray(args[0], dtype = "int64")
+            self.stop = jnp.asarray(args[1], dtype = "int64")
+            self.step = jnp.asarray(args[2], dtype = "int64")
             
         # The loop index should be inclusive because this makes loop inversion
         # much easier. For more details check inv_transform.py.
@@ -284,11 +284,11 @@ def jrange(*args):
     
 def make_tracer(x):
     if isinstance(x, bool):
-        dtype = jnp.float32
+        dtype = jnp.bool
     elif isinstance(x, int):
-        dtype = jnp.int32
+        dtype = jnp.int64
     elif isinstance(x, float):
-        dtype = jnp.float32
+        dtype = jnp.float64
     elif isinstance(x, complex):
         dtype = jnp.complex32
         

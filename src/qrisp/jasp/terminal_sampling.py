@@ -266,9 +266,9 @@ def terminal_sampling(func = None, shots = None):
                         
                         if len(outvalues) == 2:
                             key = outvalues[1]
-                            if key.dtype == jnp.int32:
+                            if key.dtype == jnp.int64:
                                 key = int(key)
-                            elif key.dtype == jnp.float32:
+                            elif key.dtype == jnp.float64:
                                 key = float(key)
                             elif key.dtype == jnp.bool:
                                 key = bool(key)
@@ -281,9 +281,9 @@ def terminal_sampling(func = None, shots = None):
                             
                             for i in range(1, len(outvalues)):
                                 key = outvalues[i]
-                                if key.dtype == jnp.int32:
+                                if key.dtype == jnp.int64:
                                     key = int(key)
-                                elif key.dtype == jnp.float32:
+                                elif key.dtype == jnp.float64:
                                     key = float(key)
                                 elif key.dtype == jnp.bool:
                                     key = bool(key)

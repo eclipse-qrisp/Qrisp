@@ -30,9 +30,9 @@ class ContextDict(dict):
             res = dict.__getitem__(self, key)
         
         if type(res) == int:
-            return jnp.array(res, dtype = jnp.dtype("int32"))
+            return jnp.array(res, dtype = jnp.dtype("int64"))
         elif type(res) == float:
-            return jnp.array(res, dtype = jnp.dtype("float32"))
+            return jnp.array(res, dtype = jnp.dtype("float64"))
         else:
             return res
 

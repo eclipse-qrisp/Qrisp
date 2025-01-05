@@ -298,15 +298,15 @@ def exec_multi_measurement(catalyst_register, start, stop):
         qb = qextract_p.bind(reg, i)
         res_bl, res_qb = qmeasure_p.bind(qb)
         reg = qinsert_p.bind(reg, i, res_qb)
-        acc = acc + (jnp.asarray(1, dtype = "int32")<<(i-start))*res_bl
-        i += jnp.asarray(1, dtype = "int32")
+        acc = acc + (jnp.asarray(1, dtype = "int64")<<(i-start))*res_bl
+        i += jnp.asarray(1, dtype = "int64")
         return i, acc, reg, start, stop
     
     def cond_body(i, acc, reg, start, stop):
         return i < stop
     
     # Turn them into jaxpr
-    zero = jnp.asarray(0, dtype = "int32")
+    zero = jnp.asarray(0, dtype = "int64")
     loop_jaxpr = make_jaxpr(loop_body)(zero, zero, catalyst_register.aval, zero, zero)
     cond_jaxpr = make_jaxpr(cond_body)(zero, zero, catalyst_register.aval, zero, zero)
 
@@ -357,7 +357,7 @@ def process_while(eqn, context_dic):
     # to i64, which raises a typing error)
     for i in range(len(flattened_invalues)):
         if isinstance(flattened_invalues[i], int):
-            flattened_invalues[i] = jnp.asarray(flattened_invalues[i], dtype = "int32")
+            flattened_invalues[i] = jnp.asarray(flattened_invalues[i], dtype = "int64")
     
     outvalues = while_p.bind(*flattened_invalues,
                             cond_jaxpr = cond_jaxpr, 
@@ -411,7 +411,7 @@ def process_cond(eqn, context_dic):
 
     for i in range(len(flattened_invalues)):
         if isinstance(flattened_invalues[i], int):
-            flattened_invalues[i] = jnp.asarray(flattened_invalues[i], dtype = "int32")
+            flattened_invalues[i] = jnp.asarray(flattened_invalues[i], dtype = "int64")
     
 
     outvalues = cond_p.bind(*flattened_invalues, branch_jaxprs = (true_jaxpr, false_jaxpr), nimplicit_outputs = 0)
@@ -503,7 +503,7 @@ def reset_qubit_array(abs_qc, qb_array):
     
     abs_qc, qb_array, i = while_loop(cond_fun,
                                  body_func,
-                                 (abs_qc, qb_array, jnp.array(0, dtype = jnp.int32))
+                                 (abs_qc, qb_array, jnp.array(0, dtype = jnp.int64))
                                  )
     
     abs_qc = delete_qubits_p.bind(abs_qc, qb_array)

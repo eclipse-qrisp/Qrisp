@@ -71,14 +71,14 @@ def jaspr_to_catalyst_jaxpr(jaspr):
     args = []
     for invar in jaspr.invars:
         if isinstance(invar.aval, AbstractQuantumCircuit):
-            args.append((AbstractQreg(), jnp.asarray(0, dtype = "int32")))
+            args.append((AbstractQreg(), jnp.asarray(0, dtype = "int64")))
         elif isinstance(invar.aval, AbstractQubitArray):
-            args.append((jnp.asarray(0, dtype = "int32"), jnp.asarray(0, dtype = "int32")))
+            args.append((jnp.asarray(0, dtype = "int64"), jnp.asarray(0, dtype = "int64")))
         elif isinstance(invar.aval, AbstractQubit):
-            args.append(jnp.asarray(0, dtype = "int32"))
+            args.append(jnp.asarray(0, dtype = "int64"))
         elif isinstance(invar, Literal):
             if isinstance(invar.val, int):    
-                args.append(jnp.asarray(invar.val, dtype = "int32"))
+                args.append(jnp.asarray(invar.val, dtype = "int64"))
             if isinstance(invar.val, float):
                 args.append(jnp.asarray(invar.val, dtype = "f32"))
         else:
@@ -116,7 +116,7 @@ def jaspr_to_catalyst_function(jaspr):
         # Insert the Qreg into the list of arguments (such that it is used by the
         # Catalyst interpreter.
         args = list(args)
-        args.insert(0, (qreg, jnp.asarray(0, dtype = "int32")))
+        args.insert(0, (qreg, jnp.asarray(0, dtype = "int64")))
         
         # Call the catalyst interpreter. The first return value will be the AbstractQreg
         # tuple, which is why we exclude it from the return values

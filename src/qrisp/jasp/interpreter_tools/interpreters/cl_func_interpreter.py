@@ -203,8 +203,8 @@ def exec_multi_measurement(bit_array, start, stop):
     def loop_body(i, arg_tuple):
         acc, bit_array = arg_tuple
         res_bl = get_bit_array(bit_array, i)
-        acc = acc + (jnp.asarray(1, dtype = "int32")<<(i-start))*res_bl
-        i += jnp.asarray(1, dtype = "int32")
+        acc = acc + (jnp.asarray(1, dtype = "int64")<<(i-start))*res_bl
+        i += jnp.asarray(1, dtype = "int64")
         return (acc, bit_array)
     
     acc, bit_array = fori_loop(start, stop, loop_body, (0, bit_array))
@@ -252,7 +252,7 @@ def process_while(eqn, context_dic):
     # to i64, which raises a typing error)
     for i in range(len(flattened_invalues)):
         if isinstance(flattened_invalues[i], int):
-            flattened_invalues[i] = jnp.asarray(flattened_invalues[i], dtype = "int32")
+            flattened_invalues[i] = jnp.asarray(flattened_invalues[i], dtype = "int64")
             
     outvalues = while_loop(cond_fun, body_fun, tuple(flattened_invalues))
     
@@ -298,7 +298,7 @@ def process_cond(eqn, context_dic):
 
     for i in range(len(flattened_invalues)):
         if isinstance(flattened_invalues[i], int):
-            flattened_invalues[i] = jnp.asarray(flattened_invalues[i], dtype = "int32")
+            flattened_invalues[i] = jnp.asarray(flattened_invalues[i], dtype = "int64")
             
     outvalues = cond(flattened_invalues[0], true_fun, false_fun, *flattened_invalues[1:])
     outvalues = list(outvalues)
@@ -426,14 +426,14 @@ def jaspr_to_cl_func_jaxpr(jaspr, bit_array_size):
     args = []
     for invar in jaspr.invars:
         if isinstance(invar.aval, AbstractQuantumCircuit):
-            args.append((jnp.zeros(bit_array_size, dtype = jnp.uint64), jnp.asarray(0, dtype = "int32")))
+            args.append((jnp.zeros(bit_array_size, dtype = jnp.uint64), jnp.asarray(0, dtype = "int64")))
         elif isinstance(invar.aval, AbstractQubitArray):
-            args.append((jnp.asarray(0, dtype = "int32"), jnp.asarray(0, dtype = "int32")))
+            args.append((jnp.asarray(0, dtype = "int64"), jnp.asarray(0, dtype = "int64")))
         elif isinstance(invar.aval, AbstractQubit):
-            args.append(jnp.asarray(0, dtype = "int32"))
+            args.append(jnp.asarray(0, dtype = "int64"))
         elif isinstance(invar, Literal):
             if isinstance(invar.val, int):    
-                args.append(jnp.asarray(invar.val, dtype = "int32"))
+                args.append(jnp.asarray(invar.val, dtype = "int64"))
             if isinstance(invar.val, float):
                 args.append(jnp.asarray(invar.val, dtype = "f32"))
         else:

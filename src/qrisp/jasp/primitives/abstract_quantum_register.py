@@ -81,7 +81,7 @@ def get_size_abstract_eval(qb_array):
     Result:
       a ShapedArray for the result of the primitive.
     """
-    return ShapedArray((), dtype = "int32")
+    return ShapedArray((), dtype = "int64")
 
 
 @slice_p.def_abstract_eval

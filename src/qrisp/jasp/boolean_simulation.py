@@ -36,7 +36,7 @@ def boolean_simulation(func, bit_array_size = 2**14):
         res = eval_jaxpr(cl_func_jaxpr, 
                          [], 
                          jnp.zeros(aval.shape, dtype = aval.dtype), 
-                         jnp.array(0, dtype = jnp.int32), *args)
+                         jnp.array(0, dtype = jnp.int64), *args)
         
         if len(res) == 3:
             return res[2]
