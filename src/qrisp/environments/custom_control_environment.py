@@ -218,9 +218,9 @@ def custom_control(*func, **cusc_kwargs):
                 if isinstance(args[i], bool):
                     args[i] = jnp.array(args[i], dtype = jnp.bool)
                 elif isinstance(args[i], int):
-                    args[i] = jnp.array(args[i], dtype = jnp.int32)
+                    args[i] = jnp.array(args[i], dtype = jnp.int64)
                 elif isinstance(args[i], float):
-                    args[i] = jnp.array(args[i], dtype = jnp.float32)
+                    args[i] = jnp.array(args[i], dtype = jnp.float64)
                 elif isinstance(args[i], complex):
                     args[i] = jnp.array(args[i], dtype = jnp.complex)
 

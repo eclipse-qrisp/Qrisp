@@ -79,9 +79,9 @@ from qrisp.environments import QuantumEnvironment
 #     ] j h k d e
 #     u:QuantumCircuit v:i32[] = jasp.measure p d
 #     w:f32[] = integer_pow[y=0] 2.0
-#     x:f32[] = convert_element_type[new_dtype=float32 weak_type=False] v
+#     x:f32[] = convert_element_type[new_dtype=float64 weak_type=False] v
 #     y:f32[] = mul x w
-#     z:i32[] = convert_element_type[new_dtype=int32 weak_type=False] y
+#     z:i32[] = convert_element_type[new_dtype=int64 weak_type=False] y
 #   in (u, z) }
 
 # For both iterations we see that the q_env primitive receives five inputs
