@@ -54,8 +54,13 @@ def jasp_squaring(a, inpl_adder = gidney_adder):
     
     return s
 
-# @qache(static_argnames = "inpl_adder")
+@qache(static_argnames = "inpl_adder")
 def jasp_multiplyer(factor_1, factor_2, inpl_adder = gidney_adder):
+    
+    # Executes the algorithm
+    
+    # x*y = (x<<n - y_0*x - sum([x<<i*(-1)**y_i for i in range(1, len(x)+1)))
+    # https://arxiv.org/abs/2112.10537
     
     n = factor_1.size-1
     s = QuantumFloat(factor_1.size + factor_2.size, 
