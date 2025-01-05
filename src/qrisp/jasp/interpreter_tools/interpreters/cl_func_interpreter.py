@@ -146,14 +146,14 @@ def process_op(op_prim, invars, outvars, context_dic):
 
 def cl_multi_cx(bit_array, ctrl_state, bit_pos):
     
-    flip = jnp.bool(True)
+    flip = jnp.int32(1)
     for i in range(len(bit_pos) - 1):
         if ctrl_state[i] == "1":
-            flip = flip & (bit_array[bit_pos[i]])
+            flip = flip & (get_bit_array(bit_array, bit_pos[i]))
         else:
-            flip = flip & (~bit_array[bit_pos[i]])
+            flip = flip & (~get_bit_array(bit_array, bit_pos[i]))
             
-    bit_array = update_bit_array(bit_array, bit_pos[-1], bit_array[bit_pos[-1]] ^ flip)
+    bit_array = conditional_bit_flip_bit_array(bit_array, bit_pos[-1], flip)
     # bit_array = bit_array.at[bit_pos[-1]].set((bit_array[bit_pos[-1]] ^ flip), mode = "promise_in_bounds")
     
     return bit_array
@@ -181,8 +181,9 @@ def process_measurement(invars, outvars, context_dic):
     # The singular Qubit case
     else:
         
-        # Get the position of the Qubit
-        meas_res = bit_array[context_dic[invars[1]]]
+        # Get the boolean value of the Qubit
+        meas_res = get_bit_array(bit_array, context_dic[invars[1]])
+        # meas_res = bit_array[context_dic[invars[1]]]
     
     # Insert the result values into the context dict
     context_dic[outvars[0]] = (bit_array, context_dic[invars[0]][1])
@@ -201,7 +202,7 @@ def exec_multi_measurement(bit_array, start, stop):
     
     def loop_body(i, arg_tuple):
         acc, bit_array = arg_tuple
-        res_bl = bit_array[i]
+        res_bl = get_bit_array(bit_array, i)
         acc = acc + (jnp.asarray(1, dtype = "int32")<<(i-start))*res_bl
         i += jnp.asarray(1, dtype = "int32")
         return (acc, bit_array)
@@ -382,7 +383,7 @@ def process_delete_qubits(eqn, context_dic):
         return
     
     def loop_body(i, bit_array):
-        cond(bit_array[i], true_fun, false_fun)
+        cond(get_bit_array(bit_array,i), true_fun, false_fun)
         return bit_array
     
     fori_loop(start, stop, loop_body, invalues[0][0])
@@ -403,7 +404,7 @@ def process_reset(eqn, context_dic):
         stop = start + invalues[1][1]
         
         def loop_body(i, bit_array):
-            bit_array = update_bit_array(bit_array, i, jnp_false)
+            bit_array = conditional_bit_flip_bit_array(bit_array, i, get_bit_array(bit_array, i))
             # bit_array = bit_array.at[i].set(jnp_false)
             return bit_array
         
@@ -411,7 +412,7 @@ def process_reset(eqn, context_dic):
         
     else:
         
-        bit_array = update_bit_array(bit_array, invalues[1], jnp_false)
+        bit_array = conditional_bit_flip_bit_array(bit_array, invalues[1], get_bit_array(bit_array, invalues[1]))
         # bit_array = bit_array.at[invalues[1]].set(jnp_false)
     
     outvalues = (bit_array, invalues[0][1])
@@ -425,7 +426,7 @@ def jaspr_to_cl_func_jaxpr(jaspr, bit_array_size):
     args = []
     for invar in jaspr.invars:
         if isinstance(invar.aval, AbstractQuantumCircuit):
-            args.append((jnp.zeros(bit_array_size, dtype = jnp.bool), jnp.asarray(0, dtype = "int32")))
+            args.append((jnp.zeros(bit_array_size, dtype = jnp.int32), jnp.asarray(0, dtype = "int32")))
         elif isinstance(invar.aval, AbstractQubitArray):
             args.append((jnp.asarray(0, dtype = "int32"), jnp.asarray(0, dtype = "int32")))
         elif isinstance(invar.aval, AbstractQubit):
@@ -441,7 +442,25 @@ def jaspr_to_cl_func_jaxpr(jaspr, bit_array_size):
     # Call the Catalyst interpreter
     return make_jaxpr(eval_jaxpr(jaspr, eqn_evaluator = cl_func_eqn_evaluator))(*args).jaxpr
 
-def update_bit_array(bit_array, index, value):
-    return bit_array.at[index].set(value, mode = "promise_in_bounds")
+# def set_bit_array(bit_array, index, value):
+#     return bit_array.at[index].set(value, mode = "promise_in_bounds")
 
-update_bit_array = jit(update_bit_array, donate_argnums=0)
+# set_bit_array = jit(set_bit_array, donate_argnums=0)
+
+# def get_bit_array(bit_array, index):
+#     return bit_array[index]
+
+def conditional_bit_flip_bit_array(bit_array, index, condition):
+    array_index = index>>4
+    int_index = (index ^ (array_index << 4))
+    condition = jnp.int32(condition)
+    set_value = bit_array[array_index] ^ (condition << int_index)
+    # set_value = bit_array[index]
+    return bit_array.at[array_index].set(set_value, mode = "promise_in_bounds")
+
+conditional_bit_flip_bit_array = jit(conditional_bit_flip_bit_array, donate_argnums=0)
+
+def get_bit_array(bit_array, index):
+    array_index = index>>4
+    int_index = (index ^ (array_index << 4))
+    return (bit_array[array_index] >> int_index) & 1
