@@ -7,3 +7,4 @@ networkx
 tdqm
 dill
 flask
+psutil
