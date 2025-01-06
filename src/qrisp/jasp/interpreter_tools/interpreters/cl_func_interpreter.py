@@ -18,16 +18,16 @@
 
 from functools import lru_cache
 
+import numpy as np
+
 from jax import make_jaxpr, jit, debug
 from jax.core import ClosedJaxpr, Literal
 from jax.lax import fori_loop, cond, while_loop
-from jax._src.linear_util import wrap_init
 import jax.numpy as jnp
 
 from qrisp.circuit import ControlledOperation
 from qrisp.jasp import (QuantumPrimitive, OperationPrimitive, AbstractQuantumCircuit, AbstractQubitArray, 
-AbstractQubit, eval_jaxpr, Jaspr, extract_invalues, insert_outvalues, Measurement_p, get_qubit_p,
-get_size_p, delete_qubits_p)
+AbstractQubit, eval_jaxpr, Jaspr, extract_invalues, insert_outvalues)
 
 
 def cl_func_eqn_evaluator(eqn, context_dic):
@@ -225,9 +225,9 @@ def process_while(eqn, context_dic):
     invalues = extract_invalues(eqn, context_dic)
     
     if isinstance(body_jaxpr.jaxpr.invars[0].aval, AbstractQuantumCircuit):
-        body_jaxpr = jaspr_to_cl_func_jaxpr(body_jaxpr.jaxpr, invalues[0][0].shape[0])
+        body_jaxpr = jaspr_to_cl_func_jaxpr(body_jaxpr.jaxpr, invalues[0][0].shape[0]*64)
     if isinstance(cond_jaxpr.jaxpr.invars[0].aval, AbstractQuantumCircuit):
-        cond_jaxpr = jaspr_to_cl_func_jaxpr(cond_jaxpr.jaxpr, invalues[0][0].shape[0])
+        cond_jaxpr = jaspr_to_cl_func_jaxpr(cond_jaxpr.jaxpr, invalues[0][0].shape[0]*64)
         
     def body_fun(args):
         return tuple(eval_jaxpr(body_jaxpr)(*args))
@@ -277,9 +277,9 @@ def process_cond(eqn, context_dic):
     invalues = extract_invalues(eqn, context_dic)
     
     if isinstance(false_jaxpr.jaxpr.invars[0].aval, AbstractQuantumCircuit):
-        false_jaxpr = jaspr_to_cl_func_jaxpr(false_jaxpr.jaxpr, invalues[1][0].shape[0])
+        false_jaxpr = jaspr_to_cl_func_jaxpr(false_jaxpr.jaxpr, invalues[1][0].shape[0]*64)
     if isinstance(true_jaxpr.jaxpr.invars[0].aval, AbstractQuantumCircuit):
-        true_jaxpr = jaspr_to_cl_func_jaxpr(true_jaxpr.jaxpr, invalues[1][0].shape[0])
+        true_jaxpr = jaspr_to_cl_func_jaxpr(true_jaxpr.jaxpr, invalues[1][0].shape[0]*64)
 
     
 
@@ -350,12 +350,12 @@ def process_pjit(eqn, context_dic):
         jaxpr = eqn.params["jaxpr"]
 
         if isinstance(jaxpr.jaxpr, Jaspr):
-            bit_array_size = invalues[0][0].shape[0]
+            bit_array_padding = invalues[0][0].shape[0]*64
         else:
-            bit_array_size = 0
+            bit_array_padding = 0
                 
         
-        traced_fun = get_traced_fun(jaxpr.jaxpr, bit_array_size)
+        traced_fun = get_traced_fun(jaxpr.jaxpr, bit_array_padding)
                 
         outvalues = traced_fun(*flattened_invalues)
     
@@ -390,13 +390,13 @@ def process_delete_qubits(eqn, context_dic):
     
     insert_outvalues(eqn, context_dic, invalues[0])
     
+    
 def process_reset(eqn, context_dic):
     
     invalues = extract_invalues(eqn, context_dic)
     
     bit_array = invalues[0][0]
     
-    jnp_false = jnp.array(False, dtype = jnp.bool)
     
     if isinstance(eqn.invars[1].aval, AbstractQubitArray):
         
@@ -405,7 +405,6 @@ def process_reset(eqn, context_dic):
         
         def loop_body(i, bit_array):
             bit_array = conditional_bit_flip_bit_array(bit_array, i, get_bit_array(bit_array, i))
-            # bit_array = bit_array.at[i].set(jnp_false)
             return bit_array
         
         bit_array = fori_loop(start, stop, loop_body, bit_array)
@@ -413,20 +412,18 @@ def process_reset(eqn, context_dic):
     else:
         
         bit_array = conditional_bit_flip_bit_array(bit_array, invalues[1], get_bit_array(bit_array, invalues[1]))
-        # bit_array = bit_array.at[invalues[1]].set(jnp_false)
     
     outvalues = (bit_array, invalues[0][1])
     insert_outvalues(eqn, context_dic, outvalues)
     
     
     
-def jaspr_to_cl_func_jaxpr(jaspr, bit_array_size):
+def jaspr_to_cl_func_jaxpr(jaspr, bit_array_padding):
 
-    # Translate the input args according to the above rules.
     args = []
     for invar in jaspr.invars:
         if isinstance(invar.aval, AbstractQuantumCircuit):
-            args.append((jnp.zeros(bit_array_size, dtype = jnp.uint64), jnp.asarray(0, dtype = "int64")))
+            args.append((jnp.zeros(int(np.ceil(bit_array_padding/64)), dtype = jnp.uint64), jnp.asarray(0, dtype = "int64")))
         elif isinstance(invar.aval, AbstractQubitArray):
             args.append((jnp.asarray(0, dtype = "int64"), jnp.asarray(0, dtype = "int64")))
         elif isinstance(invar.aval, AbstractQubit):
@@ -435,20 +432,11 @@ def jaspr_to_cl_func_jaxpr(jaspr, bit_array_size):
             if isinstance(invar.val, int):    
                 args.append(jnp.asarray(invar.val, dtype = "int64"))
             if isinstance(invar.val, float):
-                args.append(jnp.asarray(invar.val, dtype = "f32"))
+                args.append(jnp.asarray(invar.val, dtype = "float64"))
         else:
             args.append(invar.aval)
     
-    # Call the Catalyst interpreter
     return make_jaxpr(eval_jaxpr(jaspr, eqn_evaluator = cl_func_eqn_evaluator))(*args).jaxpr
-
-# def set_bit_array(bit_array, index, value):
-#     return bit_array.at[index].set(value, mode = "promise_in_bounds")
-
-# set_bit_array = jit(set_bit_array, donate_argnums=0)
-
-# def get_bit_array(bit_array, index):
-#     return bit_array[index]
 
 def conditional_bit_flip_bit_array(bit_array, index, condition):
     index = jnp.uint64(index)

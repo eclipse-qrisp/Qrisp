@@ -72,12 +72,13 @@ def jasp_multiplyer(factor_1, factor_2, inpl_adder = gidney_adder):
     
     x(s)
     
+    
     with control(factor_1[0], ctrl_state = 0):
         inpl_adder(factor_2, s)
     
     for j in jrange(s.size):
         cx(factor_1[1], s[j])
-        
+    
     for i in jrange(1, factor_1.size-1):
         
         inpl_adder(factor_2[:s.size-i], s[i-1:])    
@@ -88,7 +89,8 @@ def jasp_multiplyer(factor_1, factor_2, inpl_adder = gidney_adder):
         cx(factor_1[i], factor_1[i+1])
 
     inpl_adder(factor_2[:s.size-factor_1.size+1], s[factor_1.size-2:])
-    
+
+        
     for i in jrange(s.size):
         cx(factor_1[factor_1.size-1], s[i])
 
