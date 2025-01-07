@@ -24,6 +24,15 @@ from jax.lax import add_p, sub_p, while_loop
 
 from qrisp.jasp.primitives import AbstractQuantumCircuit, OperationPrimitive
 
+def copy_jaxpr_eqn(eqn):
+    return JaxprEqn(primitive = eqn.primitive,
+                    invars = list(eqn.invars),
+                    outvars = list(eqn.outvars),
+                    params = dict(eqn.params),
+                    source_info = eqn.source_info,
+                    effects = eqn.effects,)
+
+
 def invert_eqn(eqn):
     """
     Receives and equation that describes either an operation or a pjit primitive
@@ -162,6 +171,11 @@ def invert_jaspr(jaspr):
         if isinstance(op_eqs[-1].outvars[j].aval, AbstractQuantumCircuit):
             last_abs_qc = op_eqs[-1].outvars[j]
             break
+        
+    if len(deletions):
+        first_deletion = copy_jaxpr_eqn(deletions[0])
+        first_deletion.invars[0] = last_abs_qc
+        last_abs_qc = deletions[-1].outvars[0]
     
     res = Jaspr(constvars = jaspr.constvars, 
                  invars = list(jaspr.invars), 

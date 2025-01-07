@@ -162,6 +162,27 @@ class Jaspr(Jaxpr):
         
         return id(self) == id(other)
     
+    def copy(self):
+        
+        if self.ctrl_jaspr is None:
+            ctrl_jaspr = None
+        else:
+            ctrl_jaspr = self.ctrl_jaspr.copy()
+        
+        res = Jaspr(permeability = self.permeability,
+                    isqfree = self.isqfree,
+                    ctrl_jaspr = ctrl_jaspr,
+                    constvars = list(self.constvars),
+                    invars = list(self.invars),
+                    outvars = list(self.outvars),
+                    eqns = list(self.eqns),
+                    effects = self.effects,
+                    debug_info = self.debug_info)
+        
+        res.envs_flattened = self.envs_flattened
+        
+        return res
+    
     def inverse(self):
         """
         Returns the inverse Jaspr (if applicable). For Jaspr that contain realtime

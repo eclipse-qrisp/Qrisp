@@ -251,7 +251,7 @@ class QuantumFloat(QuantumVariable):
     >>> a.exp_shift(3)
     >>> print(a)
     {-120: 1.0}
-    >>> a >> 5
+    >>> a =>> 5
     >>> print(a)
     {-3.75: 1.0}
 
@@ -612,11 +612,11 @@ class QuantumFloat(QuantumVariable):
 
         return self
 
-    def __rshift__(self, k):
+    def __irshift__(self, k):
         self.exp_shift(-k)
         return self
 
-    def __lshift__(self, k):
+    def __ilshift__(self, k):
         self.exp_shift(k)
         return self
 

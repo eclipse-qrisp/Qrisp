@@ -386,7 +386,18 @@ class QuantumVariable:
             cx(other[i], and_res[i])
 
         return and_res
-
+    
+    def __lshift__(self, other):
+        if not callable(other):
+            raise Exception("Tried to inject QuantumVariable into non-callable")
+        
+        from qrisp.misc.utility import redirect_qfunction
+        
+        def return_function(*args, **kwargs):
+            return redirect_qfunction(other)(*args, target = self, **kwargs)
+        
+        return return_function
+        
     def delete(self, verify=False, recompute=False):
         r"""
         This method is for deleting a QuantumVariable and thus freeing up and resetting
