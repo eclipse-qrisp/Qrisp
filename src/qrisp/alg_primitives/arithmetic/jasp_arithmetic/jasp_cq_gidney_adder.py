@@ -108,7 +108,7 @@ def jasp_cq_gidney_adder(a, b, ctrl = None):
             if ctrl is not None:
                 with control(extract_boolean_digit(a, i)):
                     cx(ctrl, gidney_anc[i-1])
-                mcx([gidney_anc[i-1], b[i]], gidney_anc[i], method = "gidney")
+                mcx([gidney_anc[i-1], b[i]], gidney_anc[i], method = "gidney_inv")
                 with control(extract_boolean_digit(a, i)):
                     cx(ctrl, gidney_anc[i-1])
                     
