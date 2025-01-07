@@ -18,6 +18,8 @@
 
 from functools import lru_cache
 
+from sympy import lambdify, symbols
+
 from jax import make_jaxpr, jit
 from jax.core import ClosedJaxpr
 from jax.lax import fori_loop, cond, while_loop
@@ -31,6 +33,7 @@ from qrisp.jasp import (QuantumPrimitive, OperationPrimitive, AbstractQuantumCir
 AbstractQubit, eval_jaxpr, Jaspr, extract_invalues, insert_outvalues, Measurement_p, get_qubit_p,
 get_size_p, delete_qubits_p)
 
+greek_letters = symbols('alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu nu xi omicron pi rho sigma tau upsilon phi chi psi omega')
 
 # Name translator from Qrisp gate naming to Catalyst gate naming
 op_name_translation_dic = {"cx" : "CNOT",
@@ -232,7 +235,11 @@ def exec_qrisp_op(op, catalyst_qbs, param_dict):
         
         catalyst_name = op_name_translation_dic[op_name]
         
-        param_list = [param_dict[symb] for symb in op.params]
+        jax_values = list(param_dict.values())
+        
+        param_list = [lambdify(greek_letters[:len(op.abstract_params)], expr)(*jax_values) for expr in op.params]
+        # param_list = [param_dict[symb] for symb in op.params]
+        
         res_qbs = qinst_p.bind(*(catalyst_qbs+param_list), 
                                op = catalyst_name, 
                                qubits_len = op.num_qubits,
