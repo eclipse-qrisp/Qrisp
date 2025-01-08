@@ -51,7 +51,10 @@ def test_basic_primitives():
     
     compare_jaxpr(make_jaspr(test_function)(), 
                 ['jasp.create_qubits',
-                 'jasp.q_env',
+                 'jasp.get_qubit',
+                 'jasp.h',
+                 'jasp.get_qubit',
+                 'jasp.cx',
                  'jasp.get_qubit',
                  'jasp.measure',
                  'jasp.reset',

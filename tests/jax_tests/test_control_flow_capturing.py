@@ -80,7 +80,7 @@ def test_jrange():
     
         return measure(qv)
     
-    jaspr = make_jaspr(test_f)(1,1)
+    jaspr = make_jaspr(test_f, flatten_envs = False)(1,1)
     
     try:
         jaspr(4,5)
@@ -108,7 +108,7 @@ def test_jrange():
     
         return measure(qv)
     
-    jaspr = make_jaspr(test_f)(1,1)
+    jaspr = make_jaspr(test_f, flatten_envs = False)(1,1)
     
     try:
         jaspr(4,5)
@@ -260,7 +260,7 @@ def test_cl_control_env():
     
         return measure(c)
 
-    jaspr = make_jaspr(test_f)(1)
+    jaspr = make_jaspr(test_f, flatten_envs = False)(1)
     
     try:
         jaspr(4)

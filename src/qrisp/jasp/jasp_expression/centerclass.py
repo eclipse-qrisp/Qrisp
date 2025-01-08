@@ -340,7 +340,7 @@ class Jaspr(Jaxpr):
 
         """
         from qrisp import QuantumCircuit
-        jaspr = self.flatten_environments()
+        jaspr = self
         
         def eqn_evaluator(eqn, context_dic):
             if eqn.primitive.name == "pjit" and isinstance(eqn.params["jaxpr"].jaxpr, Jaspr):
@@ -433,7 +433,7 @@ class Jaspr(Jaxpr):
         args = [BufferedQuantumState()] + list(args)
         
         from qrisp.jasp import extract_invalues, insert_outvalues, eval_jaxpr
-        flattened_jaspr = self.flatten_environments()
+        flattened_jaspr = self
         
         def eqn_evaluator(eqn, context_dic):
             if eqn.primitive.name == "pjit":
@@ -511,7 +511,7 @@ class Jaspr(Jaxpr):
             The values returned by the compiled, executed function.
 
         """
-        flattened_jaspr = self.flatten_environments()
+        flattened_jaspr = self
         
         from qrisp.jasp.catalyst_interface import jaspr_to_catalyst_qjit
         qjit_obj = jaspr_to_catalyst_qjit(flattened_jaspr, function_name = function_name)
@@ -987,7 +987,7 @@ class Jaspr(Jaxpr):
     
 
 
-def make_jaspr(fun, garbage_collection = "auto", **jax_kwargs):
+def make_jaspr(fun, garbage_collection = "auto", flatten_envs = True, **jax_kwargs):
     from qrisp.jasp import AbstractQuantumCircuit, TracingQuantumSession, check_for_tracing_mode
     from qrisp.core.quantum_variable import QuantumVariable, flatten_qv, unflatten_qv
     from qrisp.core import recursive_qv_search    
@@ -1036,7 +1036,12 @@ def make_jaspr(fun, garbage_collection = "auto", **jax_kwargs):
         # Collect the environments
         # This means that the quantum environments no longer appear as
         # enter/exit primitives but as primitive that "call" a certain Jaspr.
-        return Jaspr.from_cache(collect_environments(jaxpr))
+        res = Jaspr.from_cache(collect_environments(jaxpr))
+        
+        if flatten_envs:
+            res = res.flatten_environments()
+        
+        return res
     
     # Since we are calling the "ammended function", where the first parameter
     # is the AbstractQuantumCircuit, we need to move the static_argnums indicator.

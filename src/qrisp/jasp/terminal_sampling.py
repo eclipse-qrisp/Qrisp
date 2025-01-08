@@ -184,7 +184,7 @@ def terminal_sampling(func = None, shots = None):
         
         # Make the jaspr and flatten the environments
         jaspr = make_jaspr(ammended_function)(*args, **kwargs)
-        flattened_jaspr = jaspr.flatten_environments()
+        flattened_jaspr = jaspr
         
         # This dictionary will contain the integer measurement resuts
         meas_res_dic = {}
