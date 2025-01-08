@@ -30,7 +30,8 @@ REQUIREMENTS = ["qiskit>=0.44.0",
                 "pyyaml",
                 "requests",
                 "psutil",
-                "jax==0.4.28"]
+                "jax==0.4.28",
+                "jaxlib==0.4.28"]
 
 
 with open("README.md", "r", encoding="utf-8") as fh:
