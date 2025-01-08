@@ -18,13 +18,13 @@
 
 import jax.numpy as jnp
 from jax import jit
-from jax.core import eval_jaxpr
 
 from qrisp.jasp import make_jaspr
 
 from qrisp.jasp.interpreter_tools.interpreters.cl_func_interpreter import jaspr_to_cl_func_jaxpr
+from qrisp.jasp.interpreter_tools import Jlist, eval_jaxpr
 
-def boolean_simulation(*func, bit_array_padding = 2**20):
+def boolean_simulation(*func, bit_array_padding = 2**16):
     """
     Decorator to simulate Jasp functions containing only classical logic (like X, CX, CCX etc.).
     This decorator transforms the function into a Jax-Expression without any
@@ -164,24 +164,28 @@ def boolean_simulation(*func, bit_array_padding = 2**20):
     if bit_array_padding < 64:
         raise Exception("Tried to initialize boolean_simulation with less than 64 bits")
     
-    @jit    
+    @jit
     def return_function(*args):
         
-        jaspr = make_jaspr(func)(*args)
+        jaspr = make_jaspr(func, garbage_collection="manual")(*args)
+        
         cl_func_jaxpr = jaspr_to_cl_func_jaxpr(jaspr.flatten_environments(), bit_array_padding)
         
         aval = cl_func_jaxpr.invars[0].aval
-        res = eval_jaxpr(cl_func_jaxpr, 
-                         [], 
-                         jnp.zeros(aval.shape, dtype = aval.dtype), 
-                         jnp.array(0, dtype = jnp.int64), *args)
+        
+        bit_array = jnp.zeros(aval.shape, dtype = aval.dtype)
+        free_qubit_list = Jlist(jnp.arange(bit_array_padding), max_size = bit_array_padding).flatten()[0]
+        boolean_quantum_circuit = (bit_array, *free_qubit_list)
         
         
-        if len(res) == 3:
-            return res[2]
-        elif len(res) == 2:
+        res = eval_jaxpr(cl_func_jaxpr)(*boolean_quantum_circuit, 
+                                        *args)
+        
+        if len(res) == 4:
+            return res[3]
+        elif len(res) == 3:
             return None
         else:
-            return res[2:]
+            return res[3:]
     
     return return_function
