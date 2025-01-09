@@ -429,9 +429,10 @@ class Jaspr(Jaxpr):
         if len(self.outvars) == 1:
             return None
         
+        from jax.tree_util import tree_flatten
         from qrisp.simulator import BufferedQuantumState
-        args = [BufferedQuantumState()] + list(args)
-        
+        args = [BufferedQuantumState()] + list(tree_flatten(args)[0])
+                
         from qrisp.jasp import extract_invalues, insert_outvalues, eval_jaxpr
         flattened_jaspr = self
         
@@ -1120,10 +1121,22 @@ def qjit(function):
     
     return jitted_function
 
+from jax.tree_util import tree_flatten, tree_unflatten
 def jaspify(func):
+    
+    treedef_container = []
+    def tracing_function(*args):
+        res = func(*args)
+        flattened_values, tree_def = tree_flatten(res)
+        treedef_container.append(tree_def)
+        return flattened_values
+    
     def return_function(*args):
-        jaspr = make_jaspr(func)(*args)
-        return jaspr(*args)
+        jaspr = make_jaspr(tracing_function)(*args)
+        jaspr_res = jaspr(*args)
+        if isinstance(jaspr_res, tuple):
+            jaspr_res = tree_unflatten(treedef_container[0], jaspr_res)
+        return jaspr_res
     return return_function
 
 def check_aval_equivalence(invars_1, invars_2):
