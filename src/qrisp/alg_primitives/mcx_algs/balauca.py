@@ -488,11 +488,11 @@ def jasp_balauca_mcx(ctrls, target, ctrl_state):
 def jasp_balauca_mcp(phi, ctrls, ctrl_state):
     
     from qrisp import mcx, QuantumBool, cp, p
-    ctrl_state = jnp.int64(ctrl_state)
-    ctrl_state = cond(ctrl_state == -1, lambda x : x + 2**ctrls.size, lambda x : x, ctrl_state)
-    target = QuantumBool()
+    N = jlen(ctrls)
     
-    N = ctrls.size
+    ctrl_state = jnp.int64(ctrl_state)
+    ctrl_state = cond(ctrl_state == -1, lambda x : x + 2**N, lambda x : x, ctrl_state)
+    target = QuantumBool()
     
     with conjugate(ctrl_state_conjugator)(ctrls, ctrl_state):
         

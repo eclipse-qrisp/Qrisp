@@ -57,5 +57,43 @@ def test_dynamic_mcx():
                 assert k[1]
             else:
                 assert not k[1]
-
+                
+    # Test dynamic mcp
         
+    @jaspify
+    def main(phi, i):
+        
+        qv = QuantumFloat(i)
+    
+        x(qv[:qv.size-1])
+        
+        with conjugate(h)(qv[qv.size-1]):
+            mcp(phi, qv)
+        
+        return measure(qv)
+            
+    assert main(np.pi, 5) == 31
+
+    @jaspify
+    def main(phi, i, j):
+        
+        qv = QuantumFloat(i)
+    
+        with conjugate(h)(qv[qv.size-1]):
+            mcp(phi, qv, ctrl_state = j)
+        
+        return measure(qv)
+            
+    assert main(np.pi, 5, 0) == 16        
+    
+    @jaspify
+    def main(phi, i, j):
+        
+        qv = QuantumFloat(i)
+    
+        with conjugate(h)(qv[qv.size-1]):
+            mcp(phi, [qv[i] for i in range(5)], ctrl_state = j)
+        
+        return measure(qv)
+            
+    assert main(np.pi, 5, 0) == 16        

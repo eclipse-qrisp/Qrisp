@@ -707,7 +707,7 @@ def mcp(phi, qubits, method="auto", ctrl_state=-1):
 
     """
 
-    from qrisp.alg_primitives.mcx_algs import hybrid_mcx
+    from qrisp.alg_primitives.mcx_algs import hybrid_mcx, jasp_balauca_mcp
     from qrisp import QuantumBool
     from qrisp.misc import bin_rep, gate_wrap
     import numpy as np
@@ -725,6 +725,10 @@ def mcp(phi, qubits, method="auto", ctrl_state=-1):
                    use_mcm = True)
         
         temp.delete()
+
+    if check_for_tracing_mode():
+        jasp_balauca_mcp(phi, qubits, ctrl_state)
+        return
 
     n = len(qubits)
 
