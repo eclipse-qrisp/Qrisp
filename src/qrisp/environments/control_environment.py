@@ -474,7 +474,9 @@ def control(*args, **kwargs):
         args[0] = [args[0]]
     
     if check_for_tracing_mode():
-        if all(isinstance(obj, AbstractQubit) for obj in [x.aval for x in args[0]]):
+        if all(isinstance(obj, bool) for obj in [x for x in args[0]]):
+            return ClControlEnvironment(*args, **kwargs)
+        elif all(isinstance(obj, AbstractQubit) for obj in [x.aval for x in args[0]]):
             return ControlEnvironment(*args, **kwargs)
         elif all(isinstance(obj, ShapedArray) for obj in [x.aval for x in args[0]]):
             return ClControlEnvironment(*args, **kwargs)

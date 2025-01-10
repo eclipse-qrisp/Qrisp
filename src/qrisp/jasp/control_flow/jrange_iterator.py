@@ -296,3 +296,10 @@ def make_tracer(x):
         return jnp.array(x, dtype)
 
     return jit(tracerizer)()
+
+def jlen(x):
+    if isinstance(x, list):
+        return len(x)
+    else:
+        return x.size
+    

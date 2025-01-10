@@ -516,7 +516,13 @@ class Jaspr(Jaxpr):
         
         from qrisp.jasp.catalyst_interface import jaspr_to_catalyst_qjit
         qjit_obj = jaspr_to_catalyst_qjit(flattened_jaspr, function_name = function_name)
-        return qjit_obj.compiled_function(*args)
+        res = qjit_obj.compiled_function(*args)
+        if not isinstance(res, (tuple,list)):
+            return res
+        elif len(res) == 1:
+            return res[0]
+        else:
+            return res
     
     @classmethod
     @lru_cache(maxsize = int(1E5))

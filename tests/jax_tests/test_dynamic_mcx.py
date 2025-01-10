@@ -38,4 +38,24 @@ def test_dynamic_mcx():
                     assert k[1]
                 else:
                     assert not k[1]
+
+    # Test static list behavior
+    @terminal_sampling
+    def main(j):
+        qf = QuantumFloat(5)
+        h(qf)
+        qbl = QuantumBool()
+        qb_list = [qf[i] for i in range(5)]
+        mcx(qf.reg, qbl[0], method = "balauca", ctrl_state = j)
+        return qf, qbl
+
+    for j in range(2**5):
+        res_dict = main(j)
+        
+        for k in res_dict.keys():
+            if k[0] == j:
+                assert k[1]
+            else:
+                assert not k[1]
+
         

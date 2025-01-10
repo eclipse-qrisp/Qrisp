@@ -29,7 +29,7 @@ from qrisp.core.gate_application_functions import x, cx, mcx
 from qrisp.alg_primitives.mcx_algs.circuit_library import reduced_maslov_qc, margolus_qc, reduced_margolus_qc
 from qrisp.alg_primitives.mcx_algs.gidney import GidneyLogicalAND
 from qrisp.environments import invert, control, conjugate
-from qrisp.jasp import check_for_tracing_mode, AbstractQubit, qache, jrange, make_tracer
+from qrisp.jasp import check_for_tracing_mode, AbstractQubit, qache, jrange, make_tracer, jlen
 
 # Ancilla supported multi controlled X with logarithmic depth based on
 # https://www.iccs-meeting.org/archive/iccs2022/papers/133530169.pdf
@@ -447,7 +447,15 @@ def extract_boolean_digit(integer, digit):
 
 
 def ctrl_state_conjugator(ctrls, ctrl_state):
-    for i in jrange(ctrls.size):
+    
+    if isinstance(ctrls, list):
+        xrange = range
+    else:
+        xrange = jrange
+    
+    N = jlen(ctrls)
+    
+    for i in xrange(N):
         with control(~extract_boolean_digit(ctrl_state, i)):
             x(ctrls[i])
     
@@ -455,11 +463,12 @@ def ctrl_state_conjugator(ctrls, ctrl_state):
 @qache
 def jasp_balauca_mcx(ctrls, target, ctrl_state):
     
+    N = jlen(ctrls)
+    
     from qrisp import mcx
     ctrl_state = jnp.int64(ctrl_state)
-    ctrl_state = cond(ctrl_state == -1, lambda x : x + 2**ctrls.size, lambda x : x, ctrl_state)
+    ctrl_state = cond(ctrl_state == -1, lambda x : x + 2**N, lambda x : x, ctrl_state)
     
-    N = ctrls.size
     
     with conjugate(ctrl_state_conjugator)(ctrls, ctrl_state):
         
@@ -506,23 +515,31 @@ def jasp_balauca_mcp(phi, ctrls, ctrl_state):
 def jasp_balauca_helper(ctrls, balauca_anc):
     from qrisp import mcx
     
-    N = ctrls.size
+    if isinstance(ctrls, list):
+        xrange = range
+        import numpy as jnp
+    else:
+        xrange = jrange
+        import jax.numpy as jnp
+        
+    N = jlen(ctrls)
+    
     n = jnp.int64(jnp.ceil(jnp.log2(N)))
     
-    for i in jrange(N//2):
+    for i in xrange(N//2):
         mcx([ctrls[2*i], ctrls[2*i+1]], balauca_anc[i])
         
-    with control(jnp.bool(N%2)):
+    with control(N%2 != 0):
         cx(ctrls[N-1], balauca_anc[N//2-1+N%2])
     
     n = jnp.int64(jnp.ceil(jnp.log2(N)))
     
     l = make_tracer(0)
     k = N
-    for i in jrange(n-2):
+    for i in xrange(n-2):
         k = jnp.int64(jnp.ceil(k/2))
         
-        for j in jrange(k//2):
+        for j in xrange(k//2):
             mcx([balauca_anc[l+2*j], balauca_anc[l+2*j+1]], 
                 balauca_anc[l+k+j], 
                 method = "gidney")
