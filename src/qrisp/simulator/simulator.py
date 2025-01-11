@@ -413,14 +413,14 @@ def advance_quantum_state(qc, quantum_state, deallocated_qubits = []):
         bar_format="{desc} |{bar}| [{percentage:3.0f}%]",
         ncols=85,
         leave=False,
-        delay=0.1,
+        delay=0.2,
         position=0,
         smoothing=1,
         file=sys.stdout
     )
     
     LINE_CLEAR = "\x1b[2K"
-    progress_bar.display()
+    # progress_bar.display()
     
     for instr in qc.data:
         if instr.op.name == "qb_dealloc":

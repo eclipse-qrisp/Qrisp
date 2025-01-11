@@ -109,7 +109,7 @@ class Jaspr(Jaxpr):
     5.5
     """
     
-    __slots__ = "permeability", "isqfree", "hashvalue", "ctrl_jaspr", "envs_flattened"
+    __slots__ = "permeability", "isqfree", "hashvalue", "ctrl_jaspr", "envs_flattened", "consts"
     
     def __init__(self, *args, permeability = None, isqfree = None, ctrl_jaspr = None, **kwargs):
         
@@ -145,6 +145,7 @@ class Jaspr(Jaxpr):
         self.isqfree = isqfree
         self.ctrl_jaspr = ctrl_jaspr
         self.envs_flattened = False
+        self.consts = []
             
         if not isinstance(self.invars[0].aval, AbstractQuantumCircuit):
             raise Exception(f"Tried to create a Jaspr from data that doesn't have a QuantumCircuit as first argument (got {type(self.invars[0].aval)} instead)")
@@ -446,7 +447,7 @@ class Jaspr(Jaxpr):
             else:
                 return True
         
-        res = eval_jaxpr(flattened_jaspr, eqn_evaluator = eqn_evaluator)(*args)
+        res = eval_jaxpr(flattened_jaspr, eqn_evaluator = eqn_evaluator)(*(args + self.consts))
         
         if len(self.outvars) == 2:
             return res[1]
@@ -1038,7 +1039,8 @@ def make_jaspr(fun, garbage_collection = "auto", flatten_envs = True, **jax_kwar
             
             return res_qc, res
         
-        jaxpr = make_jaxpr(ammended_function, **jax_kwargs)(AbstractQuantumCircuit(), *args, **kwargs).jaxpr
+        closed_jaxpr = make_jaxpr(ammended_function, **jax_kwargs)(AbstractQuantumCircuit(), *args, **kwargs)
+        jaxpr = closed_jaxpr.jaxpr
         
         # Collect the environments
         # This means that the quantum environments no longer appear as
@@ -1047,6 +1049,8 @@ def make_jaspr(fun, garbage_collection = "auto", flatten_envs = True, **jax_kwar
         
         if flatten_envs:
             res = res.flatten_environments()
+        
+        res.consts = closed_jaxpr.consts
         
         return res
     
