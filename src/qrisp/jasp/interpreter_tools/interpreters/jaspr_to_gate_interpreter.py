@@ -44,7 +44,7 @@ def pjit_to_gate(pjit_eqn, context_dic):
     # Create new context dic and fill with invalues
     
     # Exchange the QuantumCircuit to an empty one to "track" the function
-    if isinstance(invalues[0], QuantumCircuit):
+    if len(invalues) and isinstance(invalues[0], QuantumCircuit):
         old_qc = invalues[0]
         new_qc = old_qc.clearcopy()
         invalues = list(invalues)
@@ -62,7 +62,7 @@ def pjit_to_gate(pjit_eqn, context_dic):
     if len(definition_jaxpr.outvars) == 1:
         res = [res]
     
-    if isinstance(invalues[0], QuantumCircuit):
+    if len(invalues) and isinstance(invalues[0], QuantumCircuit):
         
         # Add new qubits/clbits to the circuit        
         for qb in set(new_qc.qubits) - set(old_qc.qubits):
