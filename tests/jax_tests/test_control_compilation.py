@@ -81,3 +81,21 @@ def test_control_compilation():
     jaspr = make_jaspr(test_f_1)()
     qc = jaspr.to_qc()
     assert qc.cnot_count() < 50
+    
+    @terminal_sampling
+    def main(phi, i):
+        
+        qv = QuantumFloat(i)
+
+        x(qv[:qv.size-1])
+        
+        qbl = QuantumBool()
+        h(qbl)
+        
+        with control(qbl[0]):
+            with conjugate(h)(qv[qv.size-1]):
+                mcp(phi, qv)
+            
+        return qv
+            
+    assert main(np.pi, 5) == {15.0: 0.5, 31.0: 0.5}
