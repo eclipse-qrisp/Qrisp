@@ -915,6 +915,105 @@ class Jaspr(Jaxpr):
         from qrisp.jasp.catalyst_interface import jaspr_to_mlir
         return jaspr_to_mlir(self.flatten_environments())
     
+    def to_qasm(self, *args):
+        """
+        Compiles the Jaspr into an OpenQASM 2 string. Real-time control is possible
+        as long as no computations on the measurement results are performed.
+
+        Parameters
+        ----------
+        *args : list
+            The arguments to call the :ref:`QuantumCircuit` evaluation with.
+
+        Returns
+        -------
+        str
+            The OpenQASM 2 string.
+            
+        Examples
+        --------
+        
+        We create a simple script and inspect the QASM 2 string:
+            
+        ::
+        
+            from qrisp import *
+            from qrisp.jasp import make_jaspr
+            
+            def main(i):
+                
+                qv = QuantumVariable(i)
+                cx(qv[0], qv[1])
+                t(qv[1])
+                return qv
+            
+            jaspr = make_jaspr(main)(2)
+            
+            qasm_str = jaspr.to_qasm(2)
+            print(qasm_str)
+            # Yields
+            
+            # OPENQASM 2.0;
+            # include "qelib1.inc";
+            # qreg qb_59[1];
+            # qreg qb_60[1];
+            # cx qb_59[0],qb_60[0];
+            # t qb_60[0];        
+        
+        
+        It is also possible to compile simple real-time control features:
+            
+        ::
+            
+            def main(phi):
+                
+                qf = QuantumFloat(5)
+                h(qf)
+                bl = measure(qf[0])
+                
+                with control(bl):
+                    rz(phi, qf[1])
+                    x(qf[1])
+                
+                return
+
+            jaspr = make_jaspr(main)(0.5)
+            print(jaspr.to_qasm(0.5))
+
+        This gives:
+            
+        ::
+            
+            OPENQASM 2.0;
+            include "qelib1.inc";
+            qreg qb_59[1];
+            qreg qb_60[1];
+            qreg qb_61[1];
+            qreg qb_62[1];
+            qreg qb_63[1];
+            creg cb_0[1];
+            h qb_59[0];
+            h qb_60[0];
+            h qb_61[0];
+            reset qb_61[0];
+            h qb_62[0];
+            reset qb_62[0];
+            h qb_63[0];
+            reset qb_63[0];
+            measure qb_59[0] -> cb_0[0];
+            reset qb_59[0];
+            if(cb_0==1) rz(0.5) qb_60[0];
+            if(cb_0==1) x qb_60[0];
+            reset qb_60[0];            
+            
+        """
+        res = self.to_qc(*args)
+        if len(self.outvars) == 1:
+            res = [res]
+        qrisp_qc = res[0]
+        return qrisp_qc.qasm()
+        
+    
     def to_catalyst_jaxpr(self):
         """
         Compiles the jaspr to the corresponding `Catalyst jaxpr <https://docs.pennylane.ai/projects/catalyst/en/stable/index.html>`__.

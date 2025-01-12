@@ -17,7 +17,6 @@ Manipulation
    
    Jaspr.inverse
    Jaspr.control
-   Jaspr.flatten_environments
    
    
 Evaluation
@@ -30,6 +29,7 @@ Evaluation
    Jaspr.to_qc
    Jaspr.to_qir
    Jaspr.to_mlir
+   Jaspr.to_qasm
    Jaspr.to_catalyst_jaxpr
    
 
