@@ -67,8 +67,6 @@ def eval_jaxpr(jaxpr,
         temp_var_list = jaxpr.invars + jaxpr.constvars
         
         if len(temp_var_list) != len(args):
-            print(args)
-            print(temp_var_list)
             raise Exception("Tried to evaluate jaxpr with insufficient arguments")
         
         context_dic = ContextDict({temp_var_list[i] : args[i] for i in range(len(args))})

@@ -1067,11 +1067,18 @@ class QuantumCircuit:
             The OPENQASM string.
 
         """
+        qiskit_qc = self.to_qiskit()
         try:
-            return self.to_qiskit().qasm(formatted, filename, encoding)
+            return qiskit_qc.qasm(formatted, filename, encoding)
         except:
-            from qiskit.qasm2 import dumps
-            return dumps( self.to_qiskit())
+            from qiskit.qasm2 import dumps, QASM2ExportError
+            try:
+                return dumps(self.to_qiskit())
+            except QASM2ExportError:
+                from qiskit import transpile
+                transpiled_qiskit_qc = transpile(qiskit_qc, basis_gates = ["x", "y", "z", "h", "s", "t", "s_dg", "t_dg", "cx", "cz", "rz"])
+                return dumps(transpiled_qiskit_qc)
+                
 
     def depth(self, depth_indicator = lambda x : 1, transpile=True):
         """

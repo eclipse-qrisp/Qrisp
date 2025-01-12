@@ -17,7 +17,7 @@
 """
 
 from jax import make_jaxpr
-from qrisp import QuantumVariable, cx, QuantumCircuit
+from qrisp import QuantumVariable, cx, QuantumCircuit, QuantumFloat, x, rz, measure, control
 from qrisp.jasp import qache, flatten_pjit, make_jaspr
 
 def test_qc_converter():
@@ -79,6 +79,26 @@ def test_qc_converter():
     
     assert qc.compare_unitary(comparison_qc)
     
+    ######
+    # Test classically controlled Operations
     
+    def main():
+        
+        qf = QuantumFloat(5)
+        bl = measure(qf[0])
+        
+        with control(bl):
+            rz(0.5, qf[1])
+            x(qf[1])
+        
+        return
+
+    jaspr = make_jaspr(main)()
+
+    qrisp_qc = jaspr.to_qc()
+    qiskit_qc = qrisp_qc.to_qiskit()
+    qasm_str = qrisp_qc.qasm()
+
+    assert qasm_str.count("if(cb_0==1)") == 2
     
     

@@ -23,7 +23,7 @@ from jax.core import Jaxpr, Literal
 import jax.numpy as jnp
 
 from qrisp.jasp.jasp_expression import invert_jaspr, collect_environments
-from qrisp.jasp import eval_jaxpr, pjit_to_gate, flatten_environments
+from qrisp.jasp import eval_jaxpr, pjit_to_gate, flatten_environments, cond_to_cl_control
 from qrisp.jasp.primitives import AbstractQuantumCircuit
 
 class Jaspr(Jaxpr):
@@ -340,12 +340,17 @@ class Jaspr(Jaxpr):
             #       └───┘└───┘
 
         """
-        from qrisp import QuantumCircuit
+        from qrisp import QuantumCircuit, Clbit
         jaspr = self
         
         def eqn_evaluator(eqn, context_dic):
             if eqn.primitive.name == "pjit" and isinstance(eqn.params["jaxpr"].jaxpr, Jaspr):
-                pjit_to_gate(eqn, context_dic)
+                return pjit_to_gate(eqn, context_dic)
+            elif eqn.primitive.name == "cond":
+                return cond_to_cl_control(eqn, context_dic)
+            elif eqn.primitive.name == "convert_element_type":
+                if isinstance(context_dic[eqn.invars[0]], Clbit):
+                    context_dic[eqn.outvars[0]] = context_dic[eqn.invars[0]]
             else:
                 return True
             
