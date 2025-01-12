@@ -117,23 +117,26 @@ def control_eqn(eqn, ctrl_qubit_var):
     elif eqn.primitive.name == "while":
         
         new_params = dict(eqn.params)
+        body_jaxpr = eqn.params["body_jaxpr"].jaxpr
+        cond_jaxpr = eqn.params["cond_jaxpr"].jaxpr
         
-        try:
+        if isinstance(body_jaxpr.invars[0].aval, AbstractQuantumCircuit) and isinstance(body_jaxpr.outvars[0].aval, AbstractQuantumCircuit):
             new_params["body_jaxpr"] = ClosedJaxpr(control_jaspr(Jaspr(eqn.params["body_jaxpr"].jaxpr)),
                                               eqn.params["body_jaxpr"].consts)
             
             new_params["body_jaxpr"].jaxpr.outvars.insert(1, new_params["body_jaxpr"].jaxpr.invars[1])
-        except:
             
+        else:
             new_jaxpr = copy_jaxpr(new_params["body_jaxpr"].jaxpr)
             new_jaxpr.invars.insert(1, ctrl_qubit_var)
             new_params["body_jaxpr"] = ClosedJaxpr(new_jaxpr,
                                                    eqn.params["body_jaxpr"].consts)
         
-        try:
+        if isinstance(cond_jaxpr.invars[0].aval, AbstractQuantumCircuit) and isinstance(cond_jaxpr.outvars[0].aval, AbstractQuantumCircuit):
             new_params["cond_jaxpr"] = ClosedJaxpr(control_jaspr(Jaspr(eqn.params["cond_jaxpr"].jaxpr)),
                                               eqn.params["cond_jaxpr"].consts)
-        except:
+            
+        else:
             new_jaxpr = copy_jaxpr(new_params["cond_jaxpr"].jaxpr)
             new_jaxpr.invars.insert(1, ctrl_qubit_var)
             new_params["cond_jaxpr"] = ClosedJaxpr(new_jaxpr,
