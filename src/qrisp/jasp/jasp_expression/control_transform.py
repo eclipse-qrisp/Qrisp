@@ -93,7 +93,7 @@ def control_eqn(eqn, ctrl_qubit_var):
         The equation with inverted operation.
 
     """
-    from qrisp.jasp import Jaspr
+    from qrisp.jasp import Jaspr, AbstractQuantumCircuit
     if eqn.primitive.name == "pjit":
         
         new_params = dict(eqn.params)
@@ -148,6 +148,32 @@ def control_eqn(eqn, ctrl_qubit_var):
                         effects = eqn.effects,)
         
         return temp
+    elif eqn.primitive.name == "cond":
+        
+        new_params = dict(eqn.params)
+        
+        false_jaxpr = new_params["branches"][0].jaxpr
+        true_jaxpr = new_params["branches"][1].jaxpr
+        
+        if isinstance(false_jaxpr.invars[0].aval, AbstractQuantumCircuit) and isinstance(false_jaxpr.outvars[0].aval, AbstractQuantumCircuit):
+            ctrl_false_jaxpr = control_jaspr(Jaspr(false_jaxpr))
+            ctrl_true_jaxpr = control_jaspr(Jaspr(true_jaxpr))
+        else:
+            return eqn
+        
+        ctrl_false_jaxpr = ClosedJaxpr(ctrl_false_jaxpr, new_params["branches"][0].consts)
+        ctrl_true_jaxpr = ClosedJaxpr(ctrl_true_jaxpr, new_params["branches"][1].consts)
+        
+        new_params["branches"] = (ctrl_false_jaxpr, ctrl_true_jaxpr)
+        
+        temp = JaxprEqn(primitive = eqn.primitive,
+                        invars = [eqn.invars[0], eqn.invars[1], ctrl_qubit_var] + eqn.invars[2:],
+                        outvars = eqn.outvars,
+                        params = new_params,
+                        source_info = eqn.source_info,
+                        effects = eqn.effects,)
+        return temp
+    
     else:
         num_qubits = eqn.primitive.op.num_qubits
         return JaxprEqn(primitive = eqn.primitive.control(),
@@ -183,7 +209,7 @@ def control_jaspr(jaspr):
     
     new_eqns = []
     for eqn in jaspr.eqns:
-        if isinstance(eqn.primitive, OperationPrimitive) or eqn.primitive.name in ["pjit", "while"]:
+        if isinstance(eqn.primitive, OperationPrimitive) or eqn.primitive.name in ["pjit", "while", "cond"]:
             new_eqns.append(control_eqn(eqn, ctrl_qubit_var))
         elif eqn.primitive.name == "measure":
             raise Exception("Tried to applied quantum control to a measurement")
