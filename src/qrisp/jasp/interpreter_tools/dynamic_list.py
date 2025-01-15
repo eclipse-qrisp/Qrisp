@@ -40,11 +40,14 @@ class Jlist:
             else:
                 n = init_val.size
             
-            # Create an index array for updating
-            idx = jnp.arange(min(n, jax_array.size), dtype = jnp.int64)
-    
-            # Use JAX's index_update to fill the array
-            jax_array = jax_array.at[idx].set(jnp.array(init_val[:jax_array.size], dtype = jnp.int64), indices_are_sorted = True)
+            if n == self.max_size:
+                jax_array = init_val
+            else:
+                # Create an index array for updating
+                idx = jnp.arange(min(n, jax_array.size), dtype = jnp.int64)
+        
+                # Use JAX's index_update to fill the array
+                jax_array = jax_array.at[idx].set(jnp.array(init_val[:jax_array.size], dtype = jnp.int64), indices_are_sorted = True)
         
         return jax_array, jnp.array(min(n, self.max_size), dtype = jnp.int64)
 

@@ -25,9 +25,8 @@ import pennylane as qml
 import catalyst
 from catalyst.jax_primitives import qalloc_p, qdevice_p, AbstractQreg
 
-from qrisp.jasp import AbstractQubitArray, AbstractQubit, AbstractQuantumCircuit
+from qrisp.jasp import AbstractQubitArray, AbstractQubit, AbstractQuantumCircuit, eval_jaxpr, Jlist
 from qrisp.jasp.interpreter_tools.interpreters.catalyst_interpreter import catalyst_eqn_evaluator
-from qrisp.jasp import eval_jaxpr
 
 def jaspr_to_catalyst_jaxpr(jaspr):
     """
@@ -71,9 +70,11 @@ def jaspr_to_catalyst_jaxpr(jaspr):
     args = []
     for invar in jaspr.invars:
         if isinstance(invar.aval, AbstractQuantumCircuit):
-            args.append((AbstractQreg(), jnp.asarray(0, dtype = "int64")))
+            # We initialize with the inverted list [... 3, 2, 1, 0] since the
+            # pop method of the dynamic list always removes the last element
+            args.append((AbstractQreg(), Jlist(jnp.arange(30, 0, -1), max_size = 30)))
         elif isinstance(invar.aval, AbstractQubitArray):
-            args.append((jnp.asarray(0, dtype = "int64"), jnp.asarray(0, dtype = "int64")))
+            args.append(Jlist())
         elif isinstance(invar.aval, AbstractQubit):
             args.append(jnp.asarray(0, dtype = "int64"))
         elif isinstance(invar, Literal):
@@ -97,26 +98,28 @@ def jaspr_to_catalyst_function(jaspr):
     
     # Initiate Catalyst backend info
     device = qml.device("lightning.qubit", wires=0)        
-    program_features = catalyst.utils.toml.ProgramFeatures(shots_present=False)
-    # device_capabilities = catalyst.device.get_device_capabilities(device, program_features)
     device_capabilities = catalyst.device.get_device_capabilities(device)
     backend_info = catalyst.device.extract_backend_info(device, device_capabilities)
     
     def catalyst_function(*args):
         #Initiate the backend
         qdevice_p.bind(
+        0,
         rtd_lib=backend_info.lpath,
         rtd_name=backend_info.c_interface_name,
         rtd_kwargs=str(backend_info.kwargs),
         )
         
         # Create the AbstractQreg
-        qreg = qalloc_p.bind(20)
+        qreg = qalloc_p.bind(25)
         
         # Insert the Qreg into the list of arguments (such that it is used by the
         # Catalyst interpreter.
         args = list(args)
-        args.insert(0, (qreg, jnp.asarray(0, dtype = "int64")))
+        
+        # We initialize with the inverted list [... 3, 2, 1, 0] since the
+        # pop method of the dynamic list always removes the last element
+        args.insert(0, (qreg, Jlist(jnp.arange(30, 0, -1), max_size = 30)))
         
         # Call the catalyst interpreter. The first return value will be the AbstractQreg
         # tuple, which is why we exclude it from the return values
