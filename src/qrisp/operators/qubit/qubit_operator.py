@@ -15,17 +15,22 @@
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************/
 """
+
+from itertools import product
+
+import sympy as sp
+import numpy as np
+import jax.numpy as jnp
+
 from qrisp.operators.hamiltonian_tools import group_up_iterable
 from qrisp.operators.hamiltonian import Hamiltonian
 from qrisp.operators.qubit.qubit_term import QubitTerm
 from qrisp.operators.qubit.measurement import get_measurement
 from qrisp.operators.qubit.commutativity_tools import construct_change_of_basis
-from qrisp import cx, cz, h, s, x, sx_dg, IterationEnvironment, conjugate, merge
+from qrisp import cx, cz, h, s, sx_dg, IterationEnvironment, conjugate, merge
 
 from qrisp.jasp import check_for_tracing_mode, jrange
 
-import sympy as sp
-import numpy as np
 
 threshold = 1e-9
 
@@ -532,11 +537,45 @@ class QubitOperator(Hamiltonian):
         """
 
         delete_list = []
+        new_terms_dict = dict(self.terms_dict)
         for term,coeff in self.terms_dict.items():
             if abs(coeff)<threshold:
                 delete_list.append(term)
         for term in delete_list:
-            del self.terms_dict[term]
+            del new_terms_dict[term]
+        return QubitOperator(new_terms_dict)
+    
+    @classmethod
+    def from_numpy_array(cls, numpy_array, threshold = np.inf):
+        
+        from qrisp.operators import X, Y, Z
+        
+        n = int(np.log2(numpy_array.shape[0]))
+        H = 0
+        
+        for pauli_indicator_tuple in product(range(4), repeat = n):
+            
+            temp_H = 1
+            for i in range(n):
+                
+                if pauli_indicator_tuple[i] == 1:
+                    temp_H = X(i)*temp_H
+                if pauli_indicator_tuple[i] == 2:
+                    temp_H = Y(i)*temp_H
+                if pauli_indicator_tuple[i] == 3:
+                    temp_H = Z(i)*temp_H
+            
+            if isinstance(temp_H, int) and temp_H == 1:
+                temp_H_array = np.eye(2**n)
+            else:
+                temp_H_array = temp_H.to_array(n)
+            
+            coefficient = np.dot(temp_H_array.flatten().conjugate(), numpy_array.flatten())
+            
+            H += (coefficient/2**(n)) * temp_H
+            
+        return H
+
 
     def to_sparse_matrix(self, factor_amount = None):
         """
@@ -627,7 +666,7 @@ class QubitOperator(Hamiltonian):
             The array describing the operator.
 
         """
-        return self.to_sparse_matrix(factor_amount).todense()
+        return np.array(self.to_sparse_matrix(factor_amount).todense())
     
     def to_pauli(self):
         """
@@ -1519,6 +1558,8 @@ class QubitOperator(Hamiltonian):
                             intersect_groups = diagonal_operator.group_up(lambda a, b: not a.intersect(b))
                             for intersect_group in intersect_groups:
                                 for term,coeff in intersect_group.terms_dict.items():
+                                    coeff = jnp.real(coeff)
+                                    
                                     term.simulate(-coeff*t/steps*(-1)**int(forward_evolution), qarg)
         
         if method=='commuting':

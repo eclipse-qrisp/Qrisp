@@ -222,7 +222,7 @@ def custom_control(*func, **cusc_kwargs):
                 elif isinstance(args[i], float):
                     args[i] = jnp.array(args[i], dtype = jnp.float64)
                 elif isinstance(args[i], complex):
-                    args[i] = jnp.array(args[i], dtype = jnp.complex)
+                    args[i] = jnp.array(args[i], dtype = jnp.complex64)
 
             # Call the (qached) function
             res = func(*args, **kwargs)
