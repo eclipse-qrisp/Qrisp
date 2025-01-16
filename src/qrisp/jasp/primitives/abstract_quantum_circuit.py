@@ -89,3 +89,19 @@ def delete_qubits_impl(qc, qarr):
         qc.append(QubitDealloc(), qarr[i])
     
     return qc
+
+quantum_kernel_p = QuantumPrimitive("quantum_kernel")
+
+@quantum_kernel_p.def_abstract_eval
+def quantum_kernel_abstract_eval():
+    """Abstract evaluation of the primitive.
+    
+    This function does not need to be JAX traceable. It will be invoked with
+    abstractions of the actual arguments. 
+    Args:
+      xs, ys, zs: abstractions of the arguments.
+    Result:
+      a ShapedArray for the result of the primitive.
+    """
+    
+    return AbstractQuantumCircuit()

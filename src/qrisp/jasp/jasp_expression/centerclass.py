@@ -449,6 +449,8 @@ class Jaspr(Jaxpr):
                 if not isinstance(outvalues, (list, tuple)):
                     outvalues = [outvalues]
                 insert_outvalues(eqn, context_dic, outvalues)
+            elif eqn.primitive.name == "jasp.quantum_kernel":
+                insert_outvalues(eqn, context_dic, BufferedQuantumState())
             else:
                 return True
         

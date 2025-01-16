@@ -16,8 +16,34 @@
 ********************************************************************************/
 """
 
-from qrisp.jasp.tracing_logic.dynamic_qubit_array import *
-from qrisp.jasp.tracing_logic.tracing_quantum_session import*
-from qrisp.jasp.tracing_logic.qaching import *
-from qrisp.jasp.tracing_logic.quantum_kernel import *
+from qrisp import *
+from qrisp.jasp import *
+from jax import make_jaxpr
 
+def test_quantum_kernel():
+        
+    @quantum_kernel
+    def inner_f(k):
+        qf = QuantumFloat(4)
+        
+        with conjugate(h)(qf):
+            for i in jrange(k):
+                t(qf[0])
+                
+        return measure(qf)
+
+    
+    def main(a, b):
+        
+        a = inner_f(a)
+        b = inner_f(b)
+        
+        return a + b
+    
+    jaxpr = make_jaxpr(main)(1,1)
+    main = jaspify(main)    
+    
+    assert main(4, 8) == 1
+    assert main(4, 4) == 2
+    assert main(8, 4) == 1
+    assert main(8, 8) == 0
