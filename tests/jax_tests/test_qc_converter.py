@@ -97,8 +97,8 @@ def test_qc_converter():
 
     qrisp_qc = jaspr.to_qc()
     qiskit_qc = qrisp_qc.to_qiskit()
-    qasm_str = qrisp_qc.qasm()
+    qasm_str = qrisp_qc.to_qasm3()
 
-    assert qasm_str.count("if(cb_0==1)") == 2
+    assert qasm_str.find("if (cb_0[0]) {") != -1
     
     

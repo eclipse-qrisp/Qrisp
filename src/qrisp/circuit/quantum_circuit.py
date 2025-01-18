@@ -1045,7 +1045,7 @@ class QuantumCircuit:
 
         return circuit_drawer(qiskit_qc, output="latex_source", **kwargs)
 
-    def qasm(self, formatted=False, filename=None, encoding=None):
+    def to_qasm2(self, formatted=False, filename=None, encoding=None):
         """
         Returns the `OpenQASM <https://en.wikipedia.org/wiki/OpenQASM>`_ string of self.
 
@@ -1074,11 +1074,41 @@ class QuantumCircuit:
             from qiskit.qasm2 import dumps, QASM2ExportError
             try:
                 return dumps(qiskit_qc)
-            except QASM2ExportError:
+            except (QASM2ExportError, TypeError):
+                from qiskit.qasm3 import dumps
                 from qiskit import transpile
                 transpiled_qiskit_qc = transpile(qiskit_qc, basis_gates = ["x", "y", "z", "h", "s", "t", "s_dg", "t_dg", "cx", "cz", "rz"])
-                return dumps(transpiled_qiskit_qc)
-                
+                return dumps(qiskit_qc)
+            
+    def to_qasm3(self, formatted=False, filename=None, encoding=None):
+        """
+        Returns the `OpenQASM <https://en.wikipedia.org/wiki/OpenQASM>`_ string of self.
+
+        Parameters
+        ----------
+        formatted : bool, optional
+            Return formatted Qasm string. The default is False.
+        filename : string, optional
+            Save Qasm to file with name ‘filename’. The default is None.
+        encoding : TYPE, optional
+            Optionally specify the encoding to use for the output file if filename is
+            specified. By default, this is set to the system’s default encoding
+            (i.e. whatever locale.getpreferredencoding() returns) and can be set to any
+            valid codec or alias from stdlib’s codec module.
+
+        Returns
+        -------
+        string
+            The OPENQASM string.
+
+        """
+        qiskit_qc = self.to_qiskit()
+        from qiskit.qasm3 import dumps
+        return dumps(qiskit_qc)
+    
+    def qasm(self, **kwargs):
+        return self.to_qasm2(**kwargs)
+        
 
     def depth(self, depth_indicator = lambda x : 1, transpile=True):
         """
