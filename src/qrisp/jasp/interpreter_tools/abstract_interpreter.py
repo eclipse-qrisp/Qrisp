@@ -70,7 +70,6 @@ def eval_jaxpr(jaxpr,
             raise Exception("Tried to evaluate jaxpr with insufficient arguments")
         
         context_dic = ContextDict({temp_var_list[i] : args[i] for i in range(len(args))})
-        
         eval_jaxpr_with_context_dic(jaxpr, context_dic, eqn_evaluator)
         
         if return_context_dic:
@@ -113,14 +112,17 @@ def eval_jaxpr_with_context_dic(jaxpr, context_dic, eqn_evaluator = exec_eqn):
         default_eval = eqn_evaluator(eqn, context_dic)
         
         if default_eval:
-            if eqn.primitive.name in ["while", "cond"] and not check_for_tracing_mode():
+            if eqn.primitive.name in ["while", "cond", "scan"] and not check_for_tracing_mode():
                 
-                from qrisp.jasp import evaluate_cond_eqn, evaluate_while_loop
+                from qrisp.jasp import evaluate_cond_eqn, evaluate_while_loop, evaluate_scan
                 
                 if eqn.primitive.name == "while":
                     evaluate_while_loop(eqn, context_dic, eqn_evaluator)
-                else:
+                elif eqn.primitive.name == "cond":
                     evaluate_cond_eqn(eqn, context_dic, eqn_evaluator)
+                else:
+                    evaluate_scan(eqn, context_dic, eqn_evaluator)
+                    
                 
                 continue
             

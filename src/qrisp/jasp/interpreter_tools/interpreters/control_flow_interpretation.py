@@ -16,6 +16,8 @@
 ********************************************************************************/
 """
 
+import jax.numpy as jnp
+
 from qrisp.jasp.interpreter_tools import eval_jaxpr, extract_invalues, insert_outvalues, exec_eqn
 
 def evaluate_cond_eqn(cond_eqn, context_dic, eqn_evaluator = exec_eqn):
@@ -56,3 +58,43 @@ def evaluate_while_loop(while_loop_eqn, context_dic, eqn_evaluator = exec_eqn):
     
     
     insert_outvalues(while_loop_eqn, context_dic, outvalues)
+    
+
+def evaluate_scan(scan_eq, context_dic, eqn_evaluator = exec_eqn):
+    
+    invalues = extract_invalues(scan_eq, context_dic)
+    
+    f = eval_jaxpr(scan_eq.params["jaxpr"], eqn_evaluator = eqn_evaluator)
+    
+    length = scan_eq.params["length"]
+
+    carry_amount = scan_eq.params["num_carry"]
+    
+    init = invalues[:carry_amount]
+    
+    if len(invalues) == carry_amount:
+        xs = [[]] * length
+    else:
+        xs = [[invalues[-1][i]] for i in range(length)]
+    
+    carry = init
+    ys = []
+    for x in xs:
+        args = list(carry) + x
+        res = f(*args)
+        
+        if not isinstance(res, tuple):
+            res = (res,)
+        
+        carry = res[:carry_amount]
+        y = res[carry_amount:]
+        
+        if len(y):
+            ys.append(y[0])
+        
+    if len(ys):
+        ys = [jnp.stack(ys)]
+        
+    outvalues = list(carry) + ys
+    
+    insert_outvalues(scan_eq, context_dic, outvalues)
