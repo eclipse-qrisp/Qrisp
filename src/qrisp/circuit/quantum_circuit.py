@@ -1073,7 +1073,7 @@ class QuantumCircuit:
         except:
             from qiskit.qasm2 import dumps, QASM2ExportError
             try:
-                return dumps(self.to_qiskit())
+                return dumps(qiskit_qc)
             except QASM2ExportError:
                 from qiskit import transpile
                 transpiled_qiskit_qc = transpile(qiskit_qc, basis_gates = ["x", "y", "z", "h", "s", "t", "s_dg", "t_dg", "cx", "cz", "rz"])
