@@ -16,6 +16,19 @@
 ********************************************************************************/
 """
 
-from qrisp.jasp.program_control.jrange_iterator import *
-from qrisp.jasp.program_control.rus import *
-from qrisp.jasp.program_control.sampling import *
+import jax
+from qrisp.jasp.tracing_logic import quantum_kernel
+
+def sample(func, amount):
+    
+    def return_function(*args, **kwargs):
+    
+        @quantum_kernel
+        def kernel(argtuple, dummy_arg):
+            return argtuple, func(*argtuple, **kwargs)
+    
+        return jax.lax.scan(kernel, args, length = amount)[1]
+    
+    return return_function
+        
+        

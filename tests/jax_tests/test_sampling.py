@@ -16,6 +16,23 @@
 ********************************************************************************/
 """
 
-from qrisp.jasp.program_control.jrange_iterator import *
-from qrisp.jasp.program_control.rus import *
-from qrisp.jasp.program_control.sampling import *
+from qrisp import QuantumFloat, h, t, conjugate, measure
+from qrisp.jasp import jaspify, sample, jrange
+
+def test_sampling():
+    
+    def inner_f(i):
+        qf = QuantumFloat(4)
+        
+        with conjugate(h)(qf):
+            for k in jrange(i):
+                t(qf[0])
+                
+        return measure(qf)
+
+    @jaspify
+    def main():
+        res = sample(inner_f, 100)(2)
+        return res
+    
+    assert set(int(i) for i in main()) == {0,1}
