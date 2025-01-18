@@ -23,6 +23,7 @@ import numpy as np
 from sympy.core.expr import Expr
 from sympy import lambdify
 from jax.core import Tracer
+from jaxlib.xla_extension import ArrayImpl
 
 
 def adaptive_substitution(expr, subs_dic, precision=10):
@@ -125,7 +126,7 @@ class Operation:
 
         # Find abstract parameters (ie. sympy expressions and log them)
         for par in params:
-            if isinstance(par, np.number):
+            if isinstance(par, (np.number, ArrayImpl)):
                 par = par.item()
             elif isinstance(par, Expr):
                 if len(par.free_symbols):
