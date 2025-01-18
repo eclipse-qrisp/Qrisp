@@ -28,7 +28,7 @@ def test_sampling():
             for k in jrange(i):
                 t(qf[0])
                 
-        return measure(qf)
+        return qf
 
     @jaspify
     def main():
@@ -36,3 +36,24 @@ def test_sampling():
         return res
     
     assert set(int(i) for i in main()) == {0,1}
+    
+    def inner_f(i):
+        qf = QuantumFloat(4)
+        qf_2 = QuantumFloat(4)
+        qf_3 = QuantumFloat(4)
+        with conjugate(h)(qf):
+            for k in jrange(i):
+                t(qf[0])
+                
+        return qf, qf_2, qf_3
+
+    
+    @jaspify
+    def main():
+        
+        res = sample(inner_f, 10)(2)
+        
+        return res
+    
+    assert main().shape == (10, 3)
+

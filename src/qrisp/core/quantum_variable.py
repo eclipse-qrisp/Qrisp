@@ -1508,7 +1508,7 @@ def plot_histogram(outcome_labels, counts, filename=None):
 
 from jax import tree_util
 import jax.numpy as jnp
-from qrisp.jasp import TracingQuantumSession, DynamicQubitArray
+from qrisp.jasp.tracing_logic import TracingQuantumSession, DynamicQubitArray
 
 # This class hides the QuantumVariable object from jax to transfer it via the
 # the aux_data feature

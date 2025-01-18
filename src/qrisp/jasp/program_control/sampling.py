@@ -17,7 +17,9 @@
 """
 
 import jax
+
 from qrisp.jasp.tracing_logic import quantum_kernel
+
 
 def sample(func, amount):
     
@@ -25,10 +27,28 @@ def sample(func, amount):
     
         @quantum_kernel
         def kernel(argtuple, dummy_arg):
-            return argtuple, func(*argtuple, **kwargs)
+            from qrisp.core import QuantumVariable, measure
+            
+            res = func(*argtuple, **kwargs)
+            
+            if not isinstance(res, tuple):
+                res = (res,)
+            
+            meas_res = []
+            for qv in res:
+                if not isinstance(qv, QuantumVariable):
+                    raise Exception("Tried to sample from function not returning a QuantumVariable")
+                meas_res.append(measure(qv))
+            
+            return argtuple, jax.numpy.array(meas_res)
     
-        return jax.lax.scan(kernel, args, length = amount)[1]
+        scan_res = jax.lax.scan(kernel, args, length = amount)[1]
+        
+        if scan_res.shape[1] == 1:
+            return scan_res[:,0]
+        else:
+            return scan_res
     
     return return_function
-        
+
         
