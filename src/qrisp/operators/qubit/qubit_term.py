@@ -230,15 +230,17 @@ class QubitTerm:
                 projector_state.append(True)
                 
         # Determine the control qubits and the control state
-        projector_ctrl_state = ""
+        projector_ctrl_state = 0
         projector_qubits = []
         
         if ctrl is not None:
             projector_qubits.append(ctrl)
-            projector_ctrl_state = "1"
+            projector_ctrl_state = 1
+            # projector_ctrl_state = "1"
         
         for i in range(len(projector_indices)):
-            projector_ctrl_state += str(int(projector_state[i]))
+            # projector_ctrl_state += str(int(projector_state[i]))
+            projector_ctrl_state += int(projector_state[i] == "1")*2**len(projector_qubits)
             projector_qubits.append(qv[projector_indices[i]])
         
         
@@ -253,7 +255,7 @@ class QubitTerm:
             
             # Perform the mcp            
             if len(projector_qubits) == 1:
-                if projector_ctrl_state[0] == "0":
+                if projector_ctrl_state[0] == 0:
                     p(coeff, projector_qubits[0])
                     gphase(-coeff, projector_qubits[0])
                 else:
