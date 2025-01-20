@@ -255,7 +255,7 @@ class QubitTerm:
             
             # Perform the mcp            
             if len(projector_qubits) == 1:
-                if projector_ctrl_state[0] == 0:
+                if projector_ctrl_state == 0:
                     p(coeff, projector_qubits[0])
                     gphase(-coeff, projector_qubits[0])
                 else:
