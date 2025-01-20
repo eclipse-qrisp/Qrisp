@@ -23,6 +23,8 @@ import jax.numpy as jnp
 from qrisp.jasp.tracing_logic import qache
 from qrisp.jasp.jasp_expression import make_jaspr
 from qrisp.jasp.interpreter_tools import extract_invalues, insert_outvalues, eval_jaxpr
+from qrisp.jasp.program_control import sampling_eqn_evaluator
+from qrisp.simulator import BufferedQuantumState
 
 def terminal_sampling(func = None, shots = None):
     """
@@ -140,7 +142,7 @@ def terminal_sampling(func = None, shots = None):
         # 1. The measurements of the relevant DynamicQuantumArrays are performed.
         # 2. The decoding is performed.
         
-        # These steps are traced into a Jasp, which is then evaluated with a
+        # These steps are traced into a Jaspr, which is then evaluated with a
         # modified interpreter. This interpreter performs the usual simulation
         # logic but for the two final steps implements custom logic to make use
         # of the powerful sampling features of the Qrisp simulator infrastructure.
@@ -198,6 +200,10 @@ def terminal_sampling(func = None, shots = None):
         
         # Set up the custom interpreter
         def eqn_evaluator(eqn, context_dic):
+            
+            if eqn.primitive.name == "jasp.quantum_kernel":
+                insert_outvalues(eqn, context_dic, BufferedQuantumState())
+                return
             
             # Implement custom logic for the last two steps
             if eqn.primitive.name == "pjit":
@@ -291,7 +297,9 @@ def terminal_sampling(func = None, shots = None):
                             
                             decoded_meas_res_dic[tuple(key_list)] = v
                             
-                
+                if eqn.params["name"] == "expectation_value_return_function":
+                    sampling_eqn_evaluator(eqn, context_dic, eqn_evaluator = eqn_evaluator)
+                    return
                 # Performs the default logic for simulating a Jaspr
                 outvalues = eval_jaxpr(eqn.params["jaxpr"], eqn_evaluator = eqn_evaluator)(*invalues)
                 if not isinstance(outvalues, (list, tuple)):
@@ -302,7 +310,8 @@ def terminal_sampling(func = None, shots = None):
         
         # Initiate the simulation
         from qrisp.simulator import BufferedQuantumState
-        args = [BufferedQuantumState()] + list(args)
+        args = [BufferedQuantumState()] + list(args) + list(flattened_jaspr.consts)
+        
         eval_jaxpr(flattened_jaspr, eqn_evaluator = eqn_evaluator)(*args)
     
         # Sort counts_list such the most probable values come first

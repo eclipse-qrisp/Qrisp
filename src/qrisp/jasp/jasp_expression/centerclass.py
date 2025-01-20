@@ -444,6 +444,12 @@ class Jaspr(Jaxpr):
         
         def eqn_evaluator(eqn, context_dic):
             if eqn.primitive.name == "pjit":
+                
+                if eqn.params["name"] == "expectation_value_eval_function":
+                    from qrisp.jasp.program_control import sampling_eqn_evaluator
+                    sampling_eqn_evaluator(eqn, context_dic, eqn_evaluator = eqn_evaluator)
+                    return
+                    
                 invalues = extract_invalues(eqn, context_dic)
                 outvalues = eval_jaxpr(eqn.params["jaxpr"], eqn_evaluator = eqn_evaluator)(*invalues)
                 if not isinstance(outvalues, (list, tuple)):

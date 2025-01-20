@@ -357,7 +357,7 @@ class QubitTerm:
                     fresh_ancillae = fresh_ancillae[k:]
                 
                 
-                mcx(reduction_qubits, target, method = "gray", ctrl_state = "".join(ctrl_list))
+                mcx(reduction_qubits, target, method = "gidney", ctrl_state = "".join(ctrl_list))
                     
             balauca_ancillae = QuantumVariable(len(projector_qubits)-1, qs = qs, name = "balauca_ancilla*")
             

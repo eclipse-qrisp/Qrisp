@@ -36,7 +36,7 @@ def evaluate_cond_eqn(cond_eqn, context_dic, eqn_evaluator = exec_eqn):
     insert_outvalues(cond_eqn, context_dic, res)
     
     
-def evaluate_while_loop(while_loop_eqn, context_dic, eqn_evaluator = exec_eqn):
+def evaluate_while_loop(while_loop_eqn, context_dic, eqn_evaluator = exec_eqn, break_after_first_iter = False):
     
     num_const_cond_args = while_loop_eqn.params["body_nconsts"]
     num_const_body_args = while_loop_eqn.params["body_nconsts"]
@@ -49,12 +49,16 @@ def evaluate_while_loop(while_loop_eqn, context_dic, eqn_evaluator = exec_eqn):
     invalues = extract_invalues(while_loop_eqn, context_dic)
     outvalues = invalues[num_const_body_args:]
     
+    
     while break_condition(invalues):
         
         outvalues = eval_jaxpr(while_loop_eqn.params["body_jaxpr"], eqn_evaluator = eqn_evaluator)(*invalues)
         
         # Update the non-const invalues
         invalues[num_const_body_args:] = outvalues
+        
+        if break_after_first_iter:
+            break
     
     
     insert_outvalues(while_loop_eqn, context_dic, outvalues)
