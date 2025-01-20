@@ -340,7 +340,7 @@ class QubitTerm:
                 
                 reduction_qubits = list(projector_qubits)
                 fresh_ancillae = list(ancillae)
-                ctrl_list = [ctrl_state[i] for i in range(len(reduction_qubits))]
+                ctrl_list = [str(int((ctrl_state>>i)%2)) for i in range(len(reduction_qubits))]
             
                 while len(reduction_qubits) > 2:
                     
