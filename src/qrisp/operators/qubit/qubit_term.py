@@ -319,7 +319,7 @@ class QubitTerm:
             # If there is only one projector qubit, we can use this as control value
             hs_anc = projector_qubits[0]
             control_qubit_available = True
-            if not projector_ctrl_state[0] == "1":
+            if not projector_ctrl_state == 1:
                 flip_control_phase = True
             env = QuantumEnvironment()
         else:
