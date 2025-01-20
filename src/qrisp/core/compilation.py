@@ -455,6 +455,7 @@ def qompiler(
         
         reduced_qc = parallelize_qc(qc, depth_indicator = gate_speed)
         reduced_qc = cancel_inverses(reduced_qc)
+        qc = cancel_inverses(qc)
 
     if reduced_qc.depth(depth_indicator = gate_speed) > qc.depth(depth_indicator = gate_speed):
         return qc
