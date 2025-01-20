@@ -13,11 +13,11 @@ Methods
    :toctree: generated/
    
    FermionicOperator.dagger
-   FermionicOperator.hermitize
-   FermionicOperator.ground_state_energy
-   FermionicOperator.from_pyscf
    FermionicOperator.from_openfermion
-   FermionicOperator.reduce
+   FermionicOperator.from_pyscf
    FermionicOperator.get_measurement
+   FermionicOperator.ground_state_energy
+   FermionicOperator.hermitize
+   FermionicOperator.reduce
    FermionicOperator.to_qubit_operator
    FermionicOperator.trotterization

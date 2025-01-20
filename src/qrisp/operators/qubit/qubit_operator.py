@@ -86,7 +86,7 @@ class QubitOperator(Hamiltonian):
         & = (X_0X_1 + X_0Y_1 - Y_0X_1 + Y_0Y_1)/4
         \end{align}
     
-    Recently a much more efficient method of simulating ``A`` and ``C`` `has 
+    Recently, a much more efficient method of simulating ``A`` and ``C`` `has 
     been proposed by Kornell and Selinger <https://arxiv.org/abs/2310.12256>`_,
     which avoids decomposing these Operators into Paulis strings
     but instead simulates 
@@ -514,9 +514,7 @@ class QubitOperator(Hamiltonian):
         
         res.apply_threshold(min_coeff_self*min_coeff_other/2)
         
-        return res
-        
-    
+        return res    
 
     def apply_threshold(self,threshold):
         """
@@ -536,14 +534,99 @@ class QubitOperator(Hamiltonian):
         for term in delete_list:
             del self.terms_dict[term]
 
-    def to_sparse_matrix(self, factor_amount = None):
+    @classmethod
+    def from_matrix(self, matrix):
+        r"""
+        Represents a matrix as an operator
+            
+        .. math::
+
+            O=\sum_i\alpha_i\bigotimes_{j=0}^{n-1}O_{ij}
+
+        where $O_{ij}\in\{A,C,P_0,P_1\}$.
+
+        Parameters
+        ----------
+        matrix : numpy.ndarray or scipy.sparse.csr_matrix
+            The matrix.
+
+        Returns
+        -------
+        QubitOperator
+            The operator represented by the matrix.
+
+
+        Examples
+        --------
+
+        ::
+
+            from scipy.sparse import csr_matrix
+            from qrisp.operators import QubitOperator
+
+            sparse_matrix = csr_matrix([[0, 5, 0, 1],
+                                        [5, 0, 0, 0],
+                                        [0, 0, 0, 2],
+                                        [1, 0, 2, 0]])
+
+            O = QubitOperator.from_matrix(sparse_matrix)
+            print(O)
+            # Yields: A_0*A_1 + C_0*C_1 + 5*P^0_0*A_1 + 5*P^0_0*C_1 + 2*P^1_0*A_1 + 2*P^1_0*C_1
+
         """
-        Returns a matrix representing the operator.
+        from scipy.sparse import csr_matrix
+        from numpy import ndarray
+        import numpy as np
+
+        OPERATOR_TABLE = {(0,0):"P0",(0,1):"A",(1,0):"C",(1,1):"P1"}
+
+        if isinstance(matrix,ndarray):
+            new_matrix = csr_matrix(matrix)
+        elif isinstance(matrix,csr_matrix):
+            new_matrix = matrix.copy()
+        else:
+            raise Exception("Cannot construct QubitOperator from type " + str(type(matrix)))
+        
+        M, N = new_matrix.shape
+        n = max(int(np.ceil(np.log2(M))),int(np.ceil(np.log2(N))))
+
+        new_matrix.eliminate_zeros()
+    
+        rows, cols = new_matrix.nonzero()
+        values = new_matrix.data
+
+        O = QubitOperator({})
+        for row, col, value in zip(rows, cols, values):
+            factor_dict = {}
+            for k in range(n):
+                i = (row >> k) & 1
+                j = (col >> k) & 1
+                factor_dict[n-k-1]=OPERATOR_TABLE[(i,j)]
+
+            O.terms_dict[QubitTerm(factor_dict)] = value
+        return O
+
+    def to_sparse_matrix(self, factor_amount=None):
+        r"""
+        Returns a scipy matrix representing the operator
+
+        .. math::
+
+            O=\sum_i\alpha_i\bigotimes_{j=0}^{n-1}O_{ij}
+
+        where $O_{ij}\in\{X,Y,Z,A,C,P_0,P_1,I\}$.
+
+        Parameters
+        ----------
+        factor_amount : int, optional
+            The amount of factors $n$ to represent this matrix. The matrix will have 
+            the dimension $2^n \times 2^n$, where n is the amount of factors. 
+            By default the minimal number $n$ is chosen.
     
         Returns
         -------
-        M : scipy.sparse.csr_matrix
-            A sparse matrix representing the operator.
+        scipy.sparse.csr_matrix
+            The sparse matrix representing the operator.
 
         """
 
@@ -593,8 +676,8 @@ class QubitOperator(Hamiltonian):
                 M = sp.csr_matrix((1,1))
                 M[0,0] = res
                 return M
-        elif participating_indices and factor_amount < max(participating_indices):
-            raise Exception("Tried to compute Hermitian matrix with factor_amount variable lower than the largest factor index")
+        elif participating_indices and factor_amount < max(participating_indices) + 1:
+            raise Exception("Tried to construct matrix with insufficient factor_amount")
 
         keys = list(range(factor_amount))
         
@@ -608,21 +691,38 @@ class QubitOperator(Hamiltonian):
         # res.sum_duplicates()
         return M
     
-    def to_array(self, factor_amount = None):
-        """
-        Returns a numpy array describing the operator.
+    def to_array(self, factor_amount=None):
+        r"""
+        Returns a numpy array representing the operator
+
+        .. math::
+
+            O=\sum_i\alpha_i\bigotimes_{j=0}^{n-1}O_{ij}
+
+        where $O_{ij}\in\{X,Y,Z,A,C,P_0,P_1,I\}$.
 
         Parameters
         ----------
         factor_amount : int, optional
-            The amount of factors to represent this array. The array will have 
+            The amount of factors $n$ to represent this matrix. The matrix will have 
             the dimension $2^n \times 2^n$, where n is the amount of factors. 
-            By default the minimal number is chosen.
+            By default the minimal number $n$ is chosen.
 
         Returns
         -------
         np.ndarray
-            The array describing the operator.
+            The array representing the operator.
+
+        Examples
+        --------
+
+        >>> from qrisp.operators import *
+        >>> O = X(0)*X(1) + 2*P0(0)*P0(1) + 3*P1(0)*P1(1)
+        >>> O.to_array()
+        matrix([[2.+0.j, 0.+0.j, 0.+0.j, 1.+0.j],
+                [0.+0.j, 0.+0.j, 1.+0.j, 0.+0.j],
+                [0.+0.j, 1.+0.j, 0.+0.j, 0.+0.j],
+                [1.+0.j, 0.+0.j, 0.+0.j, 3.+0.j]])
 
         """
         return self.to_sparse_matrix(factor_amount).todense()
@@ -634,7 +734,7 @@ class QubitOperator(Hamiltonian):
         Returns
         -------
         QubitOperator
-            An operator that contains only Pauli-Factor.
+            An operator that contains only Pauli factors.
 
         Examples
         --------
@@ -668,7 +768,7 @@ class QubitOperator(Hamiltonian):
         Examples
         --------
         
-        We create a QubitOperator and inspect it' adjoint.
+        We create a QubitOperator and inspect its adjoint.
         
         >>> from qrisp.operators import A,C,Z
         >>> H = A(0)*C(1)*Z(2)
@@ -718,7 +818,7 @@ class QubitOperator(Hamiltonian):
     
         Returns
         -------
-        E : float
+        float
             The ground state energy. 
 
         """
