@@ -240,7 +240,7 @@ class QubitTerm:
         
         for i in range(len(projector_indices)):
             # projector_ctrl_state += str(int(projector_state[i]))
-            projector_ctrl_state += int(projector_state[i] == "1")*2**len(projector_qubits)
+            projector_ctrl_state += int(projector_state[i])*2**(len(projector_qubits))
             projector_qubits.append(qv[projector_indices[i]])
         
         
