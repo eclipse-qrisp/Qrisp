@@ -299,7 +299,11 @@ def qache_helper(func, jax_kwargs):
                 args[i] = jnp.array(args[i], dtype = jnp.complex)
         
         # Excecute the function
-        abs_qc_new, res = ammended_function(abs_qs.abs_qc, *args, **kwargs)
+        try:
+            abs_qc_new, res = ammended_function(abs_qs.abs_qc, *args, **kwargs)
+        except Exception as e:
+            abs_qs.conclude_tracing()
+            raise e
         
         abs_qs.conclude_tracing()
         

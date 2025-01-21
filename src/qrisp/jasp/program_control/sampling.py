@@ -21,7 +21,7 @@ import jax
 from qrisp.jasp.tracing_logic import quantum_kernel
 
 
-def sample(func, amount):
+def sample_(func, amount):
     
     def return_function(*args, **kwargs):
     

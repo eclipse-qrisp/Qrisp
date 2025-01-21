@@ -446,8 +446,13 @@ class Jaspr(Jaxpr):
             if eqn.primitive.name == "pjit":
                 
                 if eqn.params["name"] == "expectation_value_eval_function":
-                    from qrisp.jasp.program_control import sampling_eqn_evaluator
-                    sampling_eqn_evaluator(eqn, context_dic, eqn_evaluator = eqn_evaluator)
+                    from qrisp.jasp.program_control import sampling_evaluator
+                    sampling_evaluator("ev")(eqn, context_dic, eqn_evaluator = eqn_evaluator)
+                    return
+                
+                if eqn.params["name"] == "sampling_eval_function":
+                    from qrisp.jasp.program_control import sampling_evaluator
+                    sampling_evaluator("array")(eqn, context_dic, eqn_evaluator = eqn_evaluator)
                     return
                     
                 invalues = extract_invalues(eqn, context_dic)

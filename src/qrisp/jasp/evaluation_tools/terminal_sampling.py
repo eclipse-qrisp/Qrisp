@@ -23,7 +23,6 @@ import jax.numpy as jnp
 from qrisp.jasp.tracing_logic import qache
 from qrisp.jasp.jasp_expression import make_jaspr
 from qrisp.jasp.interpreter_tools import extract_invalues, insert_outvalues, eval_jaxpr
-from qrisp.jasp.program_control import sampling_eqn_evaluator
 from qrisp.simulator import BufferedQuantumState
 
 def terminal_sampling(func = None, shots = None):

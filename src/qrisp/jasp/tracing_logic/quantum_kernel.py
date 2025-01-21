@@ -33,7 +33,11 @@ def quantum_kernel(func):
         
         qs.start_tracing(quantum_kernel_p.bind())
         
-        res = func(*args, **kwargs)
+        try:
+            res = func(*args, **kwargs)
+        except Exception as e:
+            qs.conclude_tracing()
+            raise e
         
         eqn = jax._src.core.thread_local_state.trace_state.trace_stack.dynamic.jaxpr_stack[0].eqns[-1]
         flattened_jaspr = Jaspr.from_cache(collect_environments(eqn.params["jaxpr"].jaxpr)).flatten_environments()
