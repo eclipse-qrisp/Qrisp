@@ -536,7 +536,7 @@ class BufferedQuantumState:
         self.apply_buffer()
         qubit_indices = [self.buffer_qc.qubits.index(qb) for qb in qubits]
         mes_ints, probs = self.quantum_state.multi_measure(qubit_indices)
-        print(shots)
+        
         if shots is not None and shots != 0:
             samples = np.random.choice(len(mes_ints), int(shots), p=probs)
             

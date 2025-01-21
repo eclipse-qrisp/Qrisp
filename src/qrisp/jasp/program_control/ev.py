@@ -36,27 +36,12 @@ def sample(func = None, shots = None):
     if func is None:
         return lambda x : sample(x, shots)
     
-    if not check_for_tracing_mode():
-        from qrisp.jasp import jaspify
-        
-        def return_function(*args):
-            
-            def tracing_function(*args):
-                return expectation_value(func, 1, return_dict = True)(*args)
-            
-            return jaspify(tracing_function, return_dict = True)(*args)
-        
-        return return_function
-    
-    
     @qache
     def user_func(*args):
         return func(*args)
-    
-    tracerized_shots = make_tracer(shots)
-    
+
     @jax.jit
-    def sampling_eval_function(*args):
+    def sampling_eval_function(tracerized_shots, *args):
         
         return_amount = []
         
@@ -112,8 +97,19 @@ def sample(func = None, shots = None):
         except ValueError:
             loop_res = jax.lax.fori_loop(0, tracerized_shots, sampling_body_func, (jnp.zeros((shots, return_amount[0])), *args))
             return loop_res[0]
+    
+    from qrisp.jasp import jaspify
+    def return_function(*args):
+        
+        if check_for_tracing_mode():
+            return sampling_eval_function(shots, *args)
+        else: 
+            def tracing_function(*args):
+                return expectation_value(func, shots, return_dict = True)(*args)
             
-    return sampling_eval_function
+            return jaspify(tracing_function, return_dict = True)(*args)
+    
+    return return_function
 
 def expectation_value(func, shots, return_dict = False):
     
@@ -304,13 +300,15 @@ def sampling_evaluator(sampling_res_type):
         
         invalues = extract_invalues(eqn, context_dic)
         
+        
         # Extract the shot number
         if sampling_res_type == "ev":
             shots = invalues[1]
         elif sampling_res_type == "array":
             shots = invalues[0]
         elif sampling_res_type == "dict":
-            shots = invalues[0]
+            shots = invalues[1]
+            
         
         # We will use this dictionary to store the sampling results
         meas_res_dic = {}
@@ -443,8 +441,7 @@ def sampling_evaluator(sampling_res_type):
                             elif sampling_res_type == "array":
                                 sampling_res.extend(v*[outvalues])
                             elif sampling_res_type == "dict":
-
-                                sampling_res[tuple(outvalues)] = v
+                                sampling_res[tuple(x.item() for x in outvalues)] = v
 
                     if sampling_res_type == "array":
                         shuffle(sampling_res)
