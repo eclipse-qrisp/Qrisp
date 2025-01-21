@@ -20,11 +20,13 @@ from functools import lru_cache
 import jax
 from jax import make_jaxpr
 from jax.core import Jaxpr, Literal
-import jax.numpy as jnp
+from jax.tree_util import tree_flatten, tree_unflatten
+
 
 from qrisp.jasp.jasp_expression import invert_jaspr, collect_environments
 from qrisp.jasp import eval_jaxpr, pjit_to_gate, flatten_environments, cond_to_cl_control
 from qrisp.jasp.primitives import AbstractQuantumCircuit
+
 
 class Jaspr(Jaxpr):
     """
@@ -431,6 +433,9 @@ class Jaspr(Jaxpr):
         return res
     
     def __call__(self, *args):
+        from qrisp.jasp.evaluation_tools.jaspification import simulate_jaspr
+        return simulate_jaspr(self, *args)
+        
         
         if len(self.outvars) == 1:
             return None
@@ -1184,87 +1189,6 @@ def make_jaspr(fun, garbage_collection = "auto", flatten_envs = True, **jax_kwar
     
     return jaspr_creator
 
-
-def qjit(function):
-    """
-    Decorator to leverage the jasp + Catalyst infrastructure to compile the given
-    function to QIR and run it on the Catalyst QIR runtime.
-
-    Parameters
-    ----------
-    function : callable
-        A function performing Qrisp code.
-
-    Returns
-    -------
-    callable
-        A function executing the compiled code.
-        
-    Examples
-    --------
-    
-    We write a simple function using the QuantumFloat quantum type and execute
-    via ``qjit``:
-        
-    ::
-        
-        from qrisp import *
-        from qrisp.jasp import qjit
-
-        @qjit
-        def test_fun(i):
-            qv = QuantumFloat(i, -2)
-            with invert():
-                cx(qv[0], qv[qv.size-1])
-                h(qv[0])
-            meas_res = measure(qv)
-            return meas_res + 3
-            
-    
-    We execute the function a couple of times to demonstrate the randomness
-    
-    >>> test_fun(4)
-    [array(5.25, dtype=float64)]
-    >>> test_fun(5)
-    [array(3., dtype=float64)]
-    >>> test_fun(5)
-    [array(7.25, dtype=float64)]
-
-    """
-    
-    
-    def jitted_function(*args):
-        
-        if not hasattr(function, "jaspr_dict"):
-            function.jaspr_dict = {}
-        
-        args = list(args)
-        
-        signature = tuple([type(arg) for arg in args])
-        if not signature in function.jaspr_dict:
-            function.jaspr_dict[signature] = make_jaspr(function)(*args)
-        
-        return function.jaspr_dict[signature].qjit(*args, function_name = function.__name__)
-    
-    return jitted_function
-
-from jax.tree_util import tree_flatten, tree_unflatten
-def jaspify(func):
-    
-    treedef_container = []
-    def tracing_function(*args):
-        res = func(*args)
-        flattened_values, tree_def = tree_flatten(res)
-        treedef_container.append(tree_def)
-        return flattened_values
-    
-    def return_function(*args):
-        jaspr = make_jaspr(tracing_function)(*args)
-        jaspr_res = jaspr(*args)
-        if isinstance(jaspr_res, tuple):
-            jaspr_res = tree_unflatten(treedef_container[0], jaspr_res)
-        return jaspr_res
-    return return_function
 
 def check_aval_equivalence(invars_1, invars_2):
     avals_1 = [invar.aval for invar in invars_1]

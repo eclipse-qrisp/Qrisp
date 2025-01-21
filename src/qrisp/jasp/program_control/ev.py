@@ -21,15 +21,34 @@ from random import shuffle
 import jax
 import jax.numpy as jnp
 import numpy as np
-from qrisp.simulator import BufferedQuantumState
 
+from qrisp.jasp.tracing_logic import quantum_kernel, check_for_tracing_mode
 
-from qrisp.jasp.tracing_logic import quantum_kernel
-
-def sample(func, shots):
+def sample(func = None, shots = None):
     
     from qrisp.jasp import make_tracer, qache
     from qrisp.core import QuantumVariable, measure
+    
+    if isinstance(func, int):
+        shots = func
+        func = None
+    
+    if func is None:
+        return lambda x : sample(x, shots)
+    
+    if not check_for_tracing_mode():
+        from qrisp.jasp import jaspify
+        
+        def return_function(*args):
+            
+            @jaspify
+            def tracing_function(*args):
+                return sample(func, 0)(*args)
+            
+            return tracing_function(*args)
+        
+        return return_function
+    
     
     @qache
     def user_func(*args):
@@ -288,6 +307,7 @@ def sampling_evaluator(sampling_res_type):
         if sampling_res_type == "ev":
             shots = invalues[1]
         elif sampling_res_type == "array":
+            print(invalues)
             shots = invalues[0]
         elif sampling_res_type == "dict":
             shots = None

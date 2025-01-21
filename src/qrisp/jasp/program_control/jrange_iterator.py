@@ -291,6 +291,8 @@ def make_tracer(x):
         dtype = jnp.float64
     elif isinstance(x, complex):
         dtype = jnp.complex32
+    else:
+        raise Exception(f"Don't know how to tracerize type {type(x)}")
         
     def tracerizer():
         return jnp.array(x, dtype)
