@@ -503,7 +503,7 @@ def process_reset(eqn, context_dic):
     
 
 def ensure_conversion(jaxpr):
-    from qrisp.jasp.catalyst_interface import jaspr_to_catalyst_jaxpr
+    from qrisp.jasp.evaluation_tools.catalyst_interface import jaspr_to_catalyst_jaxpr
     for invar in jaxpr.invars:
         if isinstance(invar.aval, (AbstractQuantumCircuit, AbstractQubitArray, AbstractQubit)):
             return jaspr_to_catalyst_jaxpr(jaxpr)

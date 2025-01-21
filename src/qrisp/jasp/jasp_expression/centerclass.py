@@ -925,7 +925,7 @@ class Jaspr(Jaxpr):
             }
             
         """
-        from qrisp.jasp.catalyst_interface import jaspr_to_mlir
+        from qrisp.jasp.evaluation_tools.catalyst_interface import jaspr_to_mlir
         return jaspr_to_mlir(self.flatten_environments())
     
     def to_qasm(self, *args):
