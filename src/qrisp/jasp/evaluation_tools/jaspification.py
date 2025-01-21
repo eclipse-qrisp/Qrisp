@@ -21,7 +21,7 @@ from jax.tree_util import tree_flatten, tree_unflatten
 from qrisp.jasp.interpreter_tools import extract_invalues, insert_outvalues, eval_jaxpr
 from qrisp.simulator import BufferedQuantumState
 
-def jaspify(func):
+def jaspify(func, return_dict = False):
     
     from qrisp.jasp import make_jaspr
     
@@ -62,6 +62,12 @@ def simulate_jaspr(jaspr, *args):
                 from qrisp.jasp.program_control import sampling_evaluator
                 sampling_evaluator("array")(eqn, context_dic, eqn_evaluator = eqn_evaluator)
                 return
+            
+            if eqn.params["name"] == "dict_sampling_eval_function":
+                from qrisp.jasp.program_control import sampling_evaluator
+                sampling_evaluator("dict")(eqn, context_dic, eqn_evaluator = eqn_evaluator)
+                return
+            
                 
             invalues = extract_invalues(eqn, context_dic)
             outvalues = eval_jaxpr(eqn.params["jaxpr"], eqn_evaluator = eqn_evaluator)(*invalues)

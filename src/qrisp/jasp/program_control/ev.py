@@ -41,11 +41,10 @@ def sample(func = None, shots = None):
         
         def return_function(*args):
             
-            @jaspify
             def tracing_function(*args):
-                return sample(func, 0)(*args)
+                return expectation_value(func, 1, return_dict = True)(*args)
             
-            return tracing_function(*args)
+            return jaspify(tracing_function, return_dict = True)(*args)
         
         return return_function
     
@@ -116,7 +115,7 @@ def sample(func = None, shots = None):
             
     return sampling_eval_function
 
-def expectation_value(func, shots):
+def expectation_value(func, shots, return_dict = False):
     
     from qrisp.jasp import make_tracer, qache
     from qrisp.core import QuantumVariable, measure
@@ -128,7 +127,6 @@ def expectation_value(func, shots):
     def user_func(*args):
         return func(*args)
     
-    @jax.jit
     def expectation_value_eval_function(*args):
         
         return_amount = []
@@ -180,8 +178,11 @@ def expectation_value(func, shots):
         except TypeError:
             loop_res = jax.lax.fori_loop(0, shots, sampling_body_func, (jnp.array([0.]*return_amount[0]), *args))
             return loop_res[0]/shots
+        
+    if return_dict:
+        expectation_value_eval_function.__name__ = "dict_sampling_eval_function"
             
-    return expectation_value_eval_function
+    return jax.jit(expectation_value_eval_function)
 
 from qrisp.jasp.interpreter_tools import extract_invalues, insert_outvalues, exec_eqn, eval_jaxpr, evaluate_while_loop
 
@@ -307,10 +308,9 @@ def sampling_evaluator(sampling_res_type):
         if sampling_res_type == "ev":
             shots = invalues[1]
         elif sampling_res_type == "array":
-            print(invalues)
             shots = invalues[0]
         elif sampling_res_type == "dict":
-            shots = None
+            shots = invalues[0]
         
         # We will use this dictionary to store the sampling results
         meas_res_dic = {}
@@ -319,7 +319,10 @@ def sampling_evaluator(sampling_res_type):
         # in each QuantumVariable of the returned function
         return_signature = []
         
+        decoded_meas_res = []
+        
         def ev_eqn_evaluator(eqn, context_dic):
+            
             
             # The reset and delete instructions are not relevant for sampling with
             # the simulator.
@@ -337,7 +340,6 @@ def sampling_evaluator(sampling_res_type):
             
             
             if eqn.primitive.name == "pjit":
-                
                 invalues = extract_invalues(eqn, context_dic)
                 
                 # sampling_body_func is called with the ev_eqn_evaluator
@@ -429,7 +431,7 @@ def sampling_evaluator(sampling_res_type):
                             elif sampling_res_type == "array":
                                 sampling_res.extend(v*[outvalues[len(return_signature)-1]])
                             elif sampling_res_type == "dict":
-                                key = outvalues[1]
+                                key = outvalues
                                 
                                 sampling_res[key.item()] = v
                             
@@ -446,11 +448,16 @@ def sampling_evaluator(sampling_res_type):
 
                     if sampling_res_type == "array":
                         shuffle(sampling_res)
-                        sampling_res = [jnp.array(sampling_res)]
+                        sampling_res = jnp.array(sampling_res)
+                    if sampling_res_type == "ev":
+                        sampling_res = sampling_res/shots
+                        if sampling_res.shape[0] == 1:
+                            sampling_res = sampling_res[0]
                         
-                            
-                    insert_outvalues(eqn, context_dic, sampling_res)
+                    decoded_meas_res.append(sampling_res)
             
+            if eqn.primitive.name == "jasp.quantum_kernel":
+                return eqn_evaluator(eqn, context_dic)
             else:
                 return eqn_evaluator(eqn, context_dic)
     
@@ -462,6 +469,6 @@ def sampling_evaluator(sampling_res_type):
         if not isinstance(outvalues, (list, tuple)):
             outvalues = [outvalues]
         
-        insert_outvalues(eqn, context_dic, outvalues)
+        insert_outvalues(eqn, context_dic, decoded_meas_res)
             
     return sampling_eqn_evaluator
