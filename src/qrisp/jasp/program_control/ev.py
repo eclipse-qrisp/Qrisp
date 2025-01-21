@@ -24,9 +24,9 @@ import numpy as np
 
 from qrisp.jasp.tracing_logic import quantum_kernel, check_for_tracing_mode
 
-def sample(func = None, shots = None):
+def sample(func = None, shots = 0):
     
-    from qrisp.jasp import make_tracer, qache
+    from qrisp.jasp import qache
     from qrisp.core import QuantumVariable, measure
     
     if isinstance(func, int):
@@ -308,6 +308,8 @@ def sampling_evaluator(sampling_res_type):
             shots = invalues[0]
         elif sampling_res_type == "dict":
             shots = invalues[1]
+            if shots == 0:
+                invalues[1] = 1
             
         
         # We will use this dictionary to store the sampling results

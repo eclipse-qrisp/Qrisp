@@ -16,8 +16,8 @@
 ********************************************************************************/
 """
 
-from qrisp import QuantumFloat, h, t, conjugate, measure
-from qrisp.jasp import jaspify, sample, jrange
+from qrisp import QuantumFloat, h, t, x, conjugate, measure, control, QuantumBool, cx
+from qrisp.jasp import jaspify, sample, jrange, expectation_value
 
 def test_sampling():
     
@@ -56,4 +56,90 @@ def test_sampling():
         return res
     
     assert main().shape == (10, 3)
+
+    @sample
+    def main():
+        
+        qbl = QuantumBool()
+        qf = QuantumFloat(4)
+        
+        # Bring qbl into superposition
+        h(qbl)
+        
+        # Perform a measure
+        cl_bl = measure(qbl)
+        
+        # Perform a conditional operation based on the measurement outcome
+        with control(cl_bl):
+            qf[:] = 1
+            h(qf[2])
+        
+        return qf, qbl
+
+    assert main() in [{(1.0, True): 0.5, (5.0, True): 0.5}, {(0.0, False): 1.0}]
+    
+    @sample
+    def main(i, j):
+        qf = QuantumFloat(3)
+        a = QuantumFloat(3)
+        qbl = QuantumBool()
+        h(qf[i])
+        cx(qf[i], a[j])
+        cx(qf[i], qbl[0])
+        return qf, a, qbl
+
+    for i in range(3):
+        for j in range(3):
+            assert main(i, j) == {(0.0, 0.0, False): 0.5, (2**i, 2**j, True): 0.5}
+
+
+    @sample(100)
+    def main(i, j):
+        qf = QuantumFloat(3)
+        a = QuantumFloat(3)
+        qbl = QuantumBool()
+        h(qf[i])
+        cx(qf[i], a[j])
+        cx(qf[i], qbl[0])
+        return qf, a, qbl
+
+    assert sum(main(2,2).values()) == 100
+    
+def test_expectation_value():
+    
+    def inner_f(i):
+        qf = QuantumFloat(4)
+        
+        with conjugate(h)(qf):
+            for k in jrange(i):
+                t(qf[0])
+                
+        return qf
+
+    @jaspify
+    def main():
+        res = expectation_value(inner_f, 10000)(2)
+        return res
+    
+    assert abs(main()-0.5) < 0.05
+    
+    def inner_f(i):
+        a = QuantumFloat(4)
+        b = QuantumFloat(4)
+        
+        with conjugate(h)(a):
+            for k in jrange(i):
+                t(a[0])
+                x(b[0])
+                
+        return a, b
+
+    @jaspify
+    def main():
+        res = expectation_value(inner_f, 10000)(2)
+        return res
+    
+    ev_res = main()
+    assert abs(ev_res[0]-0.5) < 0.05 and ev_res[1] == 0
+    
 
