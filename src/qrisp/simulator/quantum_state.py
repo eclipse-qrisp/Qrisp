@@ -235,6 +235,8 @@ class QuantumState:
         else:
             ind_array = permute_axes(ind_array, index_permutation, jit = False)
         
+        prob_array = prob_array/np.sum(prob_array)
+        
         return ind_array, prob_array
             
     def add_qubit(self):

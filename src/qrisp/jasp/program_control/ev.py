@@ -75,8 +75,8 @@ def sample(func = None, shots = 0):
             @jax.jit
             def sampling_helper_2(acc, i, *meas_ints):
                 decoded_values = []
-                for i in range(len(qv_tuple)):
-                    decoded_values.append(qv_tuple[i].decoder(meas_ints[i]))
+                for j in range(len(qv_tuple)):
+                    decoded_values.append(qv_tuple[j].decoder(meas_ints[j]))
             
                 if len(qv_tuple) > 1:
                     decoded_values = jnp.array(decoded_values)

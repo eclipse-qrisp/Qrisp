@@ -21,7 +21,14 @@ from jax.tree_util import tree_flatten, tree_unflatten
 from qrisp.jasp.interpreter_tools import extract_invalues, insert_outvalues, eval_jaxpr
 from qrisp.simulator import BufferedQuantumState
 
-def jaspify(func, return_dict = False):
+def jaspify(func = None, terminal_sampling = True, return_dict = False):
+    
+    if isinstance(func, bool):
+        terminal_sampling = func
+        func = None
+    
+    if func is None:
+        return lambda x : jaspify(x, terminal_sampling = terminal_sampling)
     
     from qrisp.jasp import make_jaspr
     
@@ -34,14 +41,14 @@ def jaspify(func, return_dict = False):
     
     def return_function(*args):
         jaspr = make_jaspr(tracing_function)(*args)
-        jaspr_res = jaspr(*args)
+        jaspr_res = simulate_jaspr(jaspr, *args, terminal_sampling = terminal_sampling)
         if isinstance(jaspr_res, tuple):
             jaspr_res = tree_unflatten(treedef_container[0], jaspr_res)
         return jaspr_res
     return return_function
 
 
-def simulate_jaspr(jaspr, *args):
+def simulate_jaspr(jaspr, *args, terminal_sampling = True):
     
     if len(jaspr.outvars) == 1:
         return None
@@ -53,20 +60,19 @@ def simulate_jaspr(jaspr, *args):
     def eqn_evaluator(eqn, context_dic):
         if eqn.primitive.name == "pjit":
             
-            if eqn.params["name"] == "expectation_value_eval_function":
+            if terminal_sampling:
+                
+                function_name = eqn.params["name"]
+                
+                translation_dic = {"expectation_value_eval_function" : "ev",
+                                   "sampling_eval_function" : "array",
+                                   "dict_sampling_eval_function" : "dict"}
+                
                 from qrisp.jasp.program_control import sampling_evaluator
-                sampling_evaluator("ev")(eqn, context_dic, eqn_evaluator = eqn_evaluator)
-                return
-            
-            if eqn.params["name"] == "sampling_eval_function":
-                from qrisp.jasp.program_control import sampling_evaluator
-                sampling_evaluator("array")(eqn, context_dic, eqn_evaluator = eqn_evaluator)
-                return
-            
-            if eqn.params["name"] == "dict_sampling_eval_function":
-                from qrisp.jasp.program_control import sampling_evaluator
-                sampling_evaluator("dict")(eqn, context_dic, eqn_evaluator = eqn_evaluator)
-                return
+                
+                if function_name in translation_dic:
+                    sampling_evaluator(translation_dic[function_name])(eqn, context_dic, eqn_evaluator = eqn_evaluator)
+                    return
             
                 
             invalues = extract_invalues(eqn, context_dic)

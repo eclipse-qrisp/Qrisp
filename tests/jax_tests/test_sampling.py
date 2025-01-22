@@ -37,6 +37,14 @@ def test_sampling():
     
     assert set(int(i) for i in main()) == {0,1}
     
+    @jaspify(terminal_sampling = False)
+    def main():
+        res = sample(inner_f, 100)(2)
+        return res
+    
+    assert set(int(i) for i in main()) == {0,1}
+    
+    
     def inner_f(i):
         qf = QuantumFloat(4)
         qf_2 = QuantumFloat(4)
@@ -123,6 +131,14 @@ def test_expectation_value():
     
     assert abs(main()-0.5) < 0.05
     
+    @jaspify(terminal_sampling = False)
+    def main():
+        res = expectation_value(inner_f, 50)(2)
+        return res
+    
+    assert abs(main()-0.5) < 0.15
+    
+    
     def inner_f(i):
         a = QuantumFloat(4)
         b = QuantumFloat(4)
@@ -141,5 +157,15 @@ def test_expectation_value():
     
     ev_res = main()
     assert abs(ev_res[0]-0.5) < 0.05 and ev_res[1] == 0
+    
+    @jaspify(terminal_sampling = False)
+    def main():
+        res = expectation_value(inner_f, 50)(2)
+        return res
+    
+    ev_res = main()
+    assert abs(ev_res[0]-0.5) < 0.15 and ev_res[1] == 0
+    
+
     
 
