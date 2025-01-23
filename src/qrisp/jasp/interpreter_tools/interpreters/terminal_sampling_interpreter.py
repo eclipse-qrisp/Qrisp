@@ -25,8 +25,8 @@ import jax.numpy as jnp
 from qrisp.jasp.interpreter_tools.abstract_interpreter import eval_jaxpr, extract_invalues, insert_outvalues, exec_eqn
 from qrisp.jasp.interpreter_tools.interpreters.control_flow_interpretation import evaluate_while_loop
 
-# The following function implements the behavior of the jaspify Simulator for sampling
-# tasks. To understand the function consider the result of tracing a simple sampling task
+# The following function implements the behavior of the jaspify simulator for terminal sampling
+# To understand the function consider the result of tracing a simple sampling task
 
 # from qrisp.jasp import *
 # from qrisp import *
@@ -43,11 +43,12 @@ from qrisp.jasp.interpreter_tools.interpreters.control_flow_interpretation impor
 
 # print(main(100))
 
-# While the resulting Jaxpr accurately performs a sampling task, the sampling
+# While the resulting Jaxpr accurately describes a sampling task, the sampling
 # is not as scalable as it could be, given the powerfull sampling features of the
 # Qrisp simulator.
 
-# When called via @jaspify, we therefore modify the logic to enable fast sampling.
+# When called via @jaspify and terminal_sampling = True, we need some custom logic
+# to implement the terminal_sampling behavior.
 
 # The traced Jaxpr contains the "sampling_body_func", which
 # is (visually) partioned into three sections:
@@ -164,41 +165,33 @@ def terminal_sampling_evaluator(sampling_res_type):
         
         decoded_meas_res = []
         
-        def ev_eqn_evaluator(eqn, context_dic):
-            
-            
-            # The reset and delete instructions are not relevant for sampling with
-            # the simulator.
-            if eqn.primitive.name in ["jasp.reset", "jasp.delete_qubits"]:
-                insert_outvalues(eqn, context_dic, context_dic[eqn.invars[0]])
-                return
+        def sampling_body_eqn_evaluator(eqn, context_dic):
             
             # We only do a single iteration (the actual iteration is performed within)
             # the simulator.
             if eqn.primitive.name == "while":
                 return evaluate_while_loop(eqn, 
                                            context_dic, 
-                                           eqn_evaluator = ev_eqn_evaluator, 
+                                           eqn_evaluator = sampling_body_eqn_evaluator, 
                                            break_after_first_iter = True)
             
             
             if eqn.primitive.name == "pjit":
                 invalues = extract_invalues(eqn, context_dic)
                 
+                function_name = eqn.params["name"]
+                
                 # sampling_body_func is called with the ev_eqn_evaluator
-                if eqn.params["name"] == "sampling_body_func":
-                    outvalues = eval_jaxpr(eqn.params["jaxpr"], eqn_evaluator=ev_eqn_evaluator)(*invalues)
+                if function_name == "sampling_body_func":
+                    outvalues = eval_jaxpr(eqn.params["jaxpr"], eqn_evaluator=sampling_body_eqn_evaluator)(*invalues)
                     insert_outvalues(eqn, context_dic, outvalues)
                     return
                 
-                # The user function is called with the un-modified interpreter
-                if eqn.params["name"] == "user_func":
-                    outvalues = eval_jaxpr(eqn.params["jaxpr"], eqn_evaluator=eqn_evaluator)(*invalues)
-                    insert_outvalues(eqn, context_dic, outvalues)
-                    return
+                if function_name == "user_func":
+                    pass
             
                 # This case describes the logic to use the simulator sampling features
-                if eqn.params["name"] == "sampling_helper_1":
+                if function_name == "sampling_helper_1":
                 
                     # Collect the qubits to be measured into a single list
                     qubits = []
@@ -234,7 +227,7 @@ def terminal_sampling_evaluator(sampling_res_type):
                 # of all QuantumVariables. We therefore need to "split" the ints
                 # into the appropriate parts and decode them.
                 # Splitting means turning the int "1001001" into "100" and "1001".
-                if eqn.params["name"] == "sampling_helper_2":
+                if function_name == "sampling_helper_2":
                     
                     if sampling_res_type == "ev":
                         sampling_res = jnp.zeros(len(return_signature))
@@ -298,15 +291,12 @@ def terminal_sampling_evaluator(sampling_res_type):
                         
                     decoded_meas_res.append(sampling_res)
             
-            if eqn.primitive.name == "jasp.quantum_kernel":
-                return eqn_evaluator(eqn, context_dic)
-            else:
-                return eqn_evaluator(eqn, context_dic)
+            return eqn_evaluator(eqn, context_dic)
     
         # Execute the above defined interpreter
         sampling_body_jaxpr = eqn.params["jaxpr"].jaxpr
     
-        outvalues = eval_jaxpr(sampling_body_jaxpr, eqn_evaluator = ev_eqn_evaluator)(*invalues)
+        outvalues = eval_jaxpr(sampling_body_jaxpr, eqn_evaluator = sampling_body_eqn_evaluator)(*invalues)
         
         if not isinstance(outvalues, (list, tuple)):
             outvalues = [outvalues]

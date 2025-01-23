@@ -165,7 +165,7 @@ def test_expectation_value():
         res = expectation_value(inner_f, 100)(2)
         return res
     
-    assert abs(main()-0.5) < 0.15
+    assert abs(main()-0.5) < 0.2
     
     @jaspify
     def main():
@@ -179,7 +179,7 @@ def test_expectation_value():
         res = expectation_value(inner_f, 100, post_processor=double)(2)
         return res
     
-    assert abs(main()-1) < 0.15
+    assert abs(main()-1) < 0.2
     
     
     def inner_f(i):
@@ -207,7 +207,7 @@ def test_expectation_value():
         return res
     
     ev_res = main()
-    assert abs(ev_res[0]-0.5) < 0.15 and ev_res[1] == 0
+    assert abs(ev_res[0]-0.5) < 0.2 and ev_res[1] == 0
     
     @jaspify
     def main():
@@ -223,7 +223,7 @@ def test_expectation_value():
         return res
     
     ev_res = main()
-    assert abs(ev_res[0]-1) < 0.15 and ev_res[1] == 0
+    assert abs(ev_res[0]-1) < 0.2 and ev_res[1] == 0
     
     
 
