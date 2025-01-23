@@ -119,12 +119,16 @@ def sample(func = None, shots = 0, post_processor = None):
                     decoded_values.append(qv_tuple[j].decoder(meas_ints[j]))
             
                 if len(qv_tuple) > 1:
-                    decoded_values = jnp.array(post_processor(*decoded_values))
+                    decoded_values = post_processor(*decoded_values)
+                else:
+                    decoded_values = post_processor(*decoded_values)
+                
+                if isinstance(decoded_values, tuple):
                     # Save the return amount (for more details check the comment of the)
                     # initialization command of return_amount
                     return_amount.append(len(decoded_values))
-                else:
-                    decoded_values = post_processor(*decoded_values)
+                    if len(acc.shape) == 1:
+                        raise AuxException()
                     
                 # Insert into the accumulating array
                 acc = acc.at[i].set(decoded_values)
@@ -147,7 +151,7 @@ def sample(func = None, shots = 0, post_processor = None):
         try:
             loop_res = jax.lax.fori_loop(0, tracerized_shots, sampling_body_func, (jnp.zeros(shots), *args))
             return loop_res[0]
-        except ValueError:
+        except AuxException:
             loop_res = jax.lax.fori_loop(0, tracerized_shots, sampling_body_func, (jnp.zeros((shots, return_amount[0])), *args))
             return loop_res[0]
     
@@ -160,3 +164,6 @@ def sample(func = None, shots = 0, post_processor = None):
             return terminal_sampling(func, shots)(*args)
     
     return return_function
+
+class AuxException(Exception):
+    pass

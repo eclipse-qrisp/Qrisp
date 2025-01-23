@@ -110,10 +110,12 @@ def expectation_value(func, shots, return_dict = False, post_processor = None):
             
             decoded_values = sampling_helper_2(*(list(measurement_ints)))
             
-            # Save the return amount (for more details check the comment of the)
-            # initialization command of return_amount
-            if isinstance(decoded_values, tuple):
+            if isinstance(decoded_values, tuple) and len(decoded_values) != 1:
+                # Save the return amount (for more details check the comment of the)
+                # initialization command of return_amount
                 return_amount.append(len(decoded_values))
+                if acc.shape[0] == 1:
+                    raise AuxException()
 
             # Turn into jax array and add to the accumulator            
             meas_res = jnp.array(decoded_values)
@@ -134,7 +136,7 @@ def expectation_value(func, shots, return_dict = False, post_processor = None):
         try:
             loop_res = jax.lax.fori_loop(0, shots, sampling_body_func, (jnp.array([0.]), *args))
             return loop_res[0][0]/shots
-        except TypeError:
+        except AuxException:
             loop_res = jax.lax.fori_loop(0, shots, sampling_body_func, (jnp.array([0.]*return_amount[0]), *args))
             return loop_res[0]/shots
     
@@ -142,3 +144,6 @@ def expectation_value(func, shots, return_dict = False, post_processor = None):
         expectation_value_eval_function.__name__ = "dict_sampling_eval_function"
             
     return jax.jit(expectation_value_eval_function)
+
+class AuxException(Exception):
+    pass
