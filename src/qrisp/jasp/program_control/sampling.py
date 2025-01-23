@@ -95,10 +95,6 @@ def sample(func = None, shots = 0, post_processor = None):
             if not isinstance(qv_tuple, tuple):
                 qv_tuple = (qv_tuple,)
             
-            # Save the return amount (for more details check the comment of the)
-            # initialization command of return_amount
-            return_amount.append(len(qv_tuple))
-            
             for qv in qv_tuple:
                 if not isinstance(qv, QuantumVariable):
                     raise Exception("Tried to sample from function not returning a QuantumVariable")
@@ -124,6 +120,9 @@ def sample(func = None, shots = 0, post_processor = None):
             
                 if len(qv_tuple) > 1:
                     decoded_values = jnp.array(post_processor(*decoded_values))
+                    # Save the return amount (for more details check the comment of the)
+                    # initialization command of return_amount
+                    return_amount.append(len(decoded_values))
                 else:
                     decoded_values = post_processor(*decoded_values)
                     

@@ -230,7 +230,7 @@ def terminal_sampling_evaluator(sampling_res_type):
                 if function_name == "sampling_helper_2":
                     
                     if sampling_res_type == "ev":
-                        sampling_res = jnp.zeros(len(return_signature))
+                        sampling_res = jnp.zeros(len(eqn.outvars))
                     elif sampling_res_type == "array":
                         sampling_res = []
                     elif sampling_res_type == "dict":

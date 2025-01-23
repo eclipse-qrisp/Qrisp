@@ -81,10 +81,6 @@ def expectation_value(func, shots, return_dict = False, post_processor = None):
             if not isinstance(qv_tuple, tuple):
                 qv_tuple = (qv_tuple,)
             
-            # Save the return amount (for more details check the comment of the)
-            # initialization command of return_amount
-            return_amount.append(len(qv_tuple))
-            
             # Ensure all results are QuantumVariables            
             for qv in qv_tuple:
                 if not isinstance(qv, QuantumVariable):
@@ -113,6 +109,11 @@ def expectation_value(func, shots, return_dict = False, post_processor = None):
                 return post_processor(*res_list)
             
             decoded_values = sampling_helper_2(*(list(measurement_ints)))
+            
+            # Save the return amount (for more details check the comment of the)
+            # initialization command of return_amount
+            return_amount.append(len(decoded_values))
+            
 
             # Turn into jax array and add to the accumulator            
             meas_res = jnp.array(decoded_values)
