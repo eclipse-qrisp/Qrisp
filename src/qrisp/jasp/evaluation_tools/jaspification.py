@@ -21,7 +21,7 @@ from jax.tree_util import tree_flatten, tree_unflatten
 from qrisp.jasp.interpreter_tools import extract_invalues, insert_outvalues, eval_jaxpr
 from qrisp.simulator import BufferedQuantumState
 
-def jaspify(func = None, terminal_sampling = True, return_dict = False):
+def jaspify(func = None, terminal_sampling = True):
     
     if isinstance(func, bool):
         terminal_sampling = func

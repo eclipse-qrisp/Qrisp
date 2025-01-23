@@ -151,16 +151,12 @@ def sample(func = None, shots = 0, post_processor = None):
             loop_res = jax.lax.fori_loop(0, tracerized_shots, sampling_body_func, (jnp.zeros((shots, return_amount[0])), *args))
             return loop_res[0]
     
-    from qrisp.jasp import jaspify
+    from qrisp.jasp import jaspify, terminal_sampling
     def return_function(*args):
         
         if check_for_tracing_mode():
             return sampling_eval_function(shots, *args)
-        else: 
-            def tracing_function(*args):
-                from qrisp.jasp.program_control import expectation_value
-                return expectation_value(func, shots, return_dict = True)(*args)
-            
-            return jaspify(tracing_function, return_dict = True)(*args)
+        else:
+            return terminal_sampling(func, shots)(*args)
     
     return return_function

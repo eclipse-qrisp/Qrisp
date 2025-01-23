@@ -112,8 +112,8 @@ def expectation_value(func, shots, return_dict = False, post_processor = None):
             
             # Save the return amount (for more details check the comment of the)
             # initialization command of return_amount
-            return_amount.append(len(decoded_values))
-            
+            if isinstance(decoded_values, tuple):
+                return_amount.append(len(decoded_values))
 
             # Turn into jax array and add to the accumulator            
             meas_res = jnp.array(decoded_values)
