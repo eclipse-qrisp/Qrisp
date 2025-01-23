@@ -24,7 +24,7 @@ import numpy as np
 
 from qrisp.jasp.tracing_logic import quantum_kernel, check_for_tracing_mode
 
-def sample(func = None, shots = 0):
+def sample(func = None, shots = 0, post_processor = None):
     
     from qrisp.jasp import qache
     from qrisp.core import QuantumVariable, measure
@@ -34,7 +34,20 @@ def sample(func = None, shots = 0):
         func = None
     
     if func is None:
-        return lambda x : sample(x, shots)
+        return lambda x : sample(x, shots, post_processor = post_processor)
+    
+    if post_processor is None:
+        def identity(*args):
+            if len(args) == 1:
+                return args[0]
+            return args
+        
+        post_processor = identity
+    
+    if isinstance(shots, jax.core.Tracer):
+        raise Exception("Tried to sample with dynamic shots value (static integer required)")
+    elif not isinstance(shots, int):
+        raise Exception(f"Tried to sample with shots value of non-integer type {type(shots)}")
     
     @qache
     def user_func(*args):
@@ -79,10 +92,9 @@ def sample(func = None, shots = 0):
                     decoded_values.append(qv_tuple[j].decoder(meas_ints[j]))
             
                 if len(qv_tuple) > 1:
-                    decoded_values = jnp.array(decoded_values)
+                    decoded_values = jnp.array(post_processor(*decoded_values))
                 else:
-                    decoded_values = decoded_values[0]
-                    
+                    decoded_values = post_processor(*decoded_values)
                 acc = acc.at[i].set(decoded_values)
                 
                 return acc
@@ -111,13 +123,19 @@ def sample(func = None, shots = 0):
     
     return return_function
 
-def expectation_value(func, shots, return_dict = False):
+def expectation_value(func, shots, return_dict = False, post_processor = None):
     
     from qrisp.jasp import make_tracer, qache
     from qrisp.core import QuantumVariable, measure
     
     if isinstance(shots, int):
         shots = make_tracer(shots)
+    
+    if post_processor is None:
+        def identity(*args):
+            return args
+        
+        post_processor = identity
     
     @qache
     def user_func(*args):
@@ -158,8 +176,8 @@ def expectation_value(func, shots, return_dict = False):
                 res_list = []
                 for i in range(len(qv_tuple)):
                     res_list.append(qv_tuple[i].decoder(meas_ints[i]))
-                    # res_list.append(meas_tuples[i+len(qv_tuple)].decoder(meas_tuples[i]))
-                return tuple(res_list)
+                
+                return post_processor(*res_list)
             
             decoded_values = sampling_helper_2(*(list(measurement_ints)))
             
@@ -429,7 +447,7 @@ def sampling_evaluator(sampling_res_type):
                             if sampling_res_type == "ev":
                                 sampling_res += outvalues*v
                             elif sampling_res_type == "array":
-                                sampling_res.extend(v*[outvalues[len(return_signature)-1]])
+                                sampling_res.extend(v*[outvalues[0]])
                             elif sampling_res_type == "dict":
                                 key = outvalues
                                 
