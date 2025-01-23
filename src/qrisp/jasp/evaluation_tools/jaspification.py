@@ -68,10 +68,10 @@ def simulate_jaspr(jaspr, *args, terminal_sampling = True):
                                    "sampling_eval_function" : "array",
                                    "dict_sampling_eval_function" : "dict"}
                 
-                from qrisp.jasp.program_control import sampling_evaluator
+                from qrisp.jasp.interpreter_tools import terminal_sampling_evaluator
                 
                 if function_name in translation_dic:
-                    sampling_evaluator(translation_dic[function_name])(eqn, context_dic, eqn_evaluator = eqn_evaluator)
+                    terminal_sampling_evaluator(translation_dic[function_name])(eqn, context_dic, eqn_evaluator = eqn_evaluator)
                     return
             
                 
