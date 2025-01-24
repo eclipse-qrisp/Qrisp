@@ -42,7 +42,7 @@ def test_sampling():
     
     assert set(int(i) for i in main()) == {0,1}
     
-    @jaspify(terminal_sampling = False)
+    @jaspify(terminal_sampling = True)
     def main():
         res = sample(inner_f, 100)(2)
         return res
@@ -57,7 +57,7 @@ def test_sampling():
     assert set(int(i) for i in main()) == {0,2}
     
     
-    @jaspify(terminal_sampling = False)
+    @jaspify(terminal_sampling = True)
     def main():
         res = sample(inner_f, 100, post_processor = double)(2)
         return res
@@ -86,6 +86,24 @@ def test_sampling():
     assert main().shape == (10, 3)
     
     @jaspify
+    def main():
+        
+        res = sample(inner_f, 10, post_processor=double)(2)
+        
+        return res
+    
+    assert main().shape == (10, 3)
+    
+    @jaspify(terminal_sampling = True)
+    def main():
+        
+        res = sample(inner_f, 10)(2)
+        
+        return res
+    
+    assert main().shape == (10, 3)
+    
+    @jaspify(terminal_sampling = True)
     def main():
         
         res = sample(inner_f, 10, post_processor=double)(2)
@@ -153,28 +171,28 @@ def test_expectation_value():
                 
         return qf
 
-    @jaspify
+    @jaspify(terminal_sampling = True)
     def main():
         res = expectation_value(inner_f, 10000)(2)
         return res
     
     assert abs(main()-0.5) < 0.05
     
-    @jaspify(terminal_sampling = False)
+    @jaspify
     def main():
         res = expectation_value(inner_f, 100)(2)
         return res
     
     assert abs(main()-0.5) < 0.2
     
-    @jaspify
+    @jaspify(terminal_sampling = True)
     def main():
         res = expectation_value(inner_f, 10000, post_processor=double)(2)
         return res
     
     assert abs(main()-1) < 0.05
     
-    @jaspify(terminal_sampling = False)
+    @jaspify
     def main():
         res = expectation_value(inner_f, 100, post_processor=double)(2)
         return res
@@ -193,7 +211,7 @@ def test_expectation_value():
                 
         return a, b
 
-    @jaspify
+    @jaspify(terminal_sampling = True)
     def main():
         res = expectation_value(inner_f, 10000)(2)
         return res
@@ -201,7 +219,7 @@ def test_expectation_value():
     ev_res = main()
     assert abs(ev_res[0]-0.5) < 0.05 and ev_res[1] == 0
     
-    @jaspify(terminal_sampling = False)
+    @jaspify
     def main():
         res = expectation_value(inner_f, 100)(2)
         return res
@@ -209,7 +227,7 @@ def test_expectation_value():
     ev_res = main()
     assert abs(ev_res[0]-0.5) < 0.2 and ev_res[1] == 0
     
-    @jaspify
+    @jaspify(terminal_sampling = True)
     def main():
         res = expectation_value(inner_f, 10000, post_processor=double)(2)
         return res
@@ -217,7 +235,7 @@ def test_expectation_value():
     ev_res = main()
     assert abs(ev_res[0]-1) < 0.05 and ev_res[1] == 0
     
-    @jaspify(terminal_sampling = False)
+    @jaspify
     def main():
         res = expectation_value(inner_f, 100, post_processor=double)(2)
         return res

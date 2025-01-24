@@ -130,11 +130,9 @@ If you are interested in how the QIR representation looks like, try calling
    :maxdepth: 2
    :hidden:
    
-   QJIT
    Jaspr
    qache
-   hb_control_flow
-   RUS
-   Terminal Sampling
-   Boolean Simulation
+   Control Flow/index
    Sampling
+   Expectation Value
+   Simulation Tools/index

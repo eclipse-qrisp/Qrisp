@@ -21,7 +21,99 @@ from jax.tree_util import tree_flatten, tree_unflatten
 from qrisp.jasp.interpreter_tools import extract_invalues, insert_outvalues, eval_jaxpr
 from qrisp.simulator import BufferedQuantumState
 
-def jaspify(func = None, terminal_sampling = True):
+def jaspify(func = None, terminal_sampling = False):
+    """
+    This simulator is the established Qrisp simulator linked to the Jasp infrastructure.
+    Among a variety of simulation tricks, the simulator can leverage state sparsity,
+    allowing simulations with up to hundreds of qubits!
+    
+    To be called as a decorator of a Jasp-traceable function.
+    
+    .. note::
+        
+        If you are developing a hybrid algorithm like QAOA or VQE that relies
+        heavily on sampling, please activate the ``terminal_sampling`` feature.
+
+    Parameters
+    ----------
+    func : callable
+        The function to simulate.
+    terminal_sampling : bool, optional
+        Whether to leverage the terminal sampling strategy. Significantly fast 
+        for all sampling tasks but can yield incorrect results in some situations.
+        Check out :ref:`terminal_sampling` form more details. The default is False.
+
+    Returns
+    -------
+    callable
+        A function performing the simulation.
+        
+    Examples
+    --------
+    
+    We simulate a function creating a simple GHZ state:
+        
+    ::
+        
+        from qrisp import *
+        from qrisp.jasp import *
+        
+        @jaspify
+        def main():
+            
+            qf = QuantumFloat(5)
+            
+            h(qf[0])
+            
+            for i in range(1, 5):
+                cx(qf[0], qf[i])
+                
+            return measure(qf)
+
+        print(main())            
+        # Yields either 0 or 31
+        
+    To highlight the speed of the terminal sampling feature, we :ref:`sample` from a
+    unform superposition
+    
+    ::
+            
+        def state_prep():
+            qf = QuantumFloat(5)
+            h(qf)
+            return qf
+        
+        @jaspify
+        def without_terminal_sampling():
+            sampling_func = sample(state_prep, shots = 10000)
+            return sampling_func()
+        
+        @jaspify(terminal_sampling = True)
+        def with_terminal_sampling():
+            sampling_func = sample(state_prep, shots = 10000)
+            return sampling_func()
+        
+        
+    Benchmark the time difference:
+        
+    ::
+        
+        import time
+        
+        t0 = time.time()
+        res = without_terminal_sampling()
+        print(time.time() - t0)
+        # Yields
+        # 43.78982925
+        
+        t0 = time.time()
+        res = with_terminal_sampling()
+        print(time.time() - t0)
+        # Yields
+        # 0.550775527
+
+
+    """
     
     if isinstance(func, bool):
         terminal_sampling = func

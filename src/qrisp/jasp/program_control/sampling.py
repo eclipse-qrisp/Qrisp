@@ -66,12 +66,12 @@ def sample(state_prep = None, shots = 0, post_processor = None):
         A function returning one or more :ref:`QuantumVariables <QuantumVariable>`. 
         The state from this QuantumVariables will be sampled.
         The state preparation function can only take classical values as arguments.
-        This is because a quantum value would need to be copied for each sample,
-        which is prohibited by the no-cloning theorem.
+        This is because a quantum value would need to be copied for each sampling 
+        iteration, which is prohibited by the no-cloning theorem.
     shots : int
         The amounts of samples to take.
     post_processor : callable, optional
-        A function to apply to the samples directly after measuring. The default is None.
+        A function to apply to the samples directly after measuring. By default no post processing is applied.
 
     Raises
     ------
@@ -82,8 +82,9 @@ def sample(state_prep = None, shots = 0, post_processor = None):
 
     Returns
     -------
-    jax.Array
-        An array containing the measurement results of each shot.
+    callable
+        A classical, Jax traceable function returning a jax array containing 
+        the measurement results of each shot.
 
     Examples
     --------
@@ -92,7 +93,7 @@ def sample(state_prep = None, shots = 0, post_processor = None):
     
     .. math::
         
-        \ket{\psi} = \frac{1}{\sqrt{2}} \left(\ket{0}\ket{0} + \ket{k}\ket{k})
+        \ket{\psi} = \frac{1}{\sqrt{2}} \left(\ket{0}\ket{0}\ket{\text{True}} + \ket{k}\ket{k}\ket{\text{True}})\right)
     
     ::
         
@@ -114,7 +115,7 @@ def sample(state_prep = None, shots = 0, post_processor = None):
             
             return a, b
 
-    And subsequently sample:
+    And subsequently sample from the QuantumFloats:
         
     ::
         
@@ -195,6 +196,10 @@ def sample(state_prep = None, shots = 0, post_processor = None):
     @jax.jit
     def sampling_eval_function(tracerized_shots, *args):
         
+        for arg in args:
+            if isinstance(arg, QuantumVariable):
+                raise Exception("Tried to sample from state preparation function taking a quantum value")
+        
         # We now construct a loop to collect the samples by 
         # inserting the postprocessed measurement result into an array.
         # The following function is the loop body, which is kernelized.
@@ -271,10 +276,6 @@ def sample(state_prep = None, shots = 0, post_processor = None):
     
     from qrisp.jasp import terminal_sampling
     def return_function(*args):
-        
-        for arg in args:
-            if isinstance(arg, QuantumVariable):
-                raise Exception("Tried to sample from state preparation function taking a quantum value")
         
         if check_for_tracing_mode():
             return sampling_eval_function(shots, *args)
