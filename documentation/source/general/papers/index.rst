@@ -30,7 +30,7 @@ Research from within the Qrisp community
             algorithm. For the latter, the resulting circuit shows significantly reduced quantum resource requirements, strongly supporting the claim that 
             systematic quantum algorithm development can give quantitative benefits.
 
-.. grid:
+.. grid::
 
     .. grid-item-card:: Solving the Product Breakdown Structure Problem with constrained QAOA
 
@@ -102,6 +102,24 @@ Research from within the Qrisp community
             itself is a fully compilable, high-level programming language/framework for gate-based quantum computers, which abstracts from 
             many of the underlying hardware details. Qrisp's goal is to support a high-level programming paradigm as known from classical software development.
 
+.. grid::
+  
+    .. grid-item-card:: End-to-end compilable implementation of quantum elliptic curve logarithm in Qrisp
+
+        | Diego Polimeni, Raphael Seidel
+        | `ArXiv, 2025 <https://arxiv.org/abs/2501.10228>`__
+
+        .. dropdown:: :fa:`eye me-1` Abstract
+            :color: primary
+
+            Elliptic curve cryptography (ECC) is a widely established cryptographic technique, recognized for its effectiveness and 
+            reliability across a broad range of applications such as securing telecommunications or safeguarding cryptocurrency wallets. 
+            Although being more robust than RSA, ECC is, nevertheless, also threatened by attacks based on Shor's algorithm, which made it 
+            a popular field of study in quantum information science. A variety of techniques have been proposed to perform EC arithmetic in quantum devices; 
+            however, software support for compiling these algorithms into executables is extremely limited. Within this work, we leverage 
+            the Qrisp programming language to realize one of the first fully compilable implementations of EC arithmetic and verify its correctness 
+            using Qrisp's built-in sparse matrix simulator.        
+
 
 External research utilizing or citing Qrisp
 ===========================================
@@ -118,7 +136,7 @@ External research utilizing or citing Qrisp
       - 2024
     * - `Eclipse Qrisp QAOA: description and preliminary comparison with Qiskit counterparts <https://arxiv.org/abs/2405.20173>`_
       - E\. Osaba, Matic Petrič, Izaskun Oregi et al. 
-      - 2023
+      - 2024
     * - `A Testing Pipeline for Quantum Computing Applications <https://publica.fraunhofer.de/entities/publication/ff4f1dc4-ab7d-41a6-8157-0b663aee83eb/details>`_
       - C\. Becker, I.D. Gheorghe-Pop, N. Tscholtchev
       - 2023
@@ -154,4 +172,28 @@ External research utilizing or citing Qrisp
       - 2023
     * - `Automated Software Engineering (2024) 31:36 <https://link.springer.com/article/10.1007/s10515-024-00436-x>`_
       - A\. Sarkar 
+      - 2024
+    * - `A Framework for Debugging Quantum Programs <https://arxiv.org/abs/2412.12269>`_
+      - D\. Rovara, L. Burgholzer, R. Wille
+      - 2024
+    * - `D-Wave's Nonlinear-Program Hybrid Solver: Description and Performance Analysis <https://ieeexplore.ieee.org/abstract/document/10820320>`_
+      - E\. Osaba, P. Miranda-Rodriguez
+      - 2025
+    * - `Static Analysis of Quantum Programs <https://link.springer.com/chapter/10.1007/978-3-031-74776-2_1>`_
+      - N\. Assolini, A. Di Pierro, I. Mastroeni
+      - 2025
+    * - `Qurts: Automatic Quantum Uncomputation by Affine Types with Lifetime <https://dl.acm.org/doi/abs/10.1145/3704842>`_
+      - K\. Hirata, C. Heunen
+      - 2025
+    * - `Quantum types: going beyond qubits and quantum gates <https://dl.acm.org/doi/abs/10.1145/3643667.3648225?casa_token=b2839-ZSiG8AAAAA:IW2Fb22kgZlzyuvK8gFIs7ZprzZwsRZGbwWMdTbho1Keh3u2Ul39GuFgU2h9b4mXdQmaD5Cd1Dg1Fw>`_
+      - T\. Varga, Y. Aragonés-Soria, M. Oriol
+      - 2024
+    * - `Quff: A Dynamically Typed Hybrid Quantum-Classical Programming Language <https://dl.acm.org/doi/abs/10.1145/3679007.3685063>`_
+      - C\. J. Wright, M. Luján, P. Petoumenos et al.
+      - 2024
+    * - `Improving Quantum Developer Experience with Kubernetes and Jupyter Notebooks <https://ieeexplore.ieee.org/document/10821037>`_
+      - O\. Kinaen, A. D. Muñoz-Moller, V. Stirbu et al.
+      - 2024
+    * - `Resilience of lattice-based Cryptosystems to Quantum Attacks <https://ieeexplore.ieee.org/document/10733570>`_
+      - T\. Köppl, R. Zander, N. Tcholtchev
       - 2024
