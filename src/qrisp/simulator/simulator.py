@@ -420,7 +420,7 @@ def advance_quantum_state(qc, quantum_state, deallocated_qubits = []):
     )
     
     LINE_CLEAR = "\x1b[2K"
-    # progress_bar.display()
+    progress_bar.display()
     
     for instr in qc.data:
         if instr.op.name == "qb_dealloc":
