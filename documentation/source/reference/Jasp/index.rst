@@ -137,3 +137,4 @@ If you are interested in how the QIR representation looks like, try calling
    RUS
    Terminal Sampling
    Boolean Simulation
+   Sampling

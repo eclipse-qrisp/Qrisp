@@ -34,7 +34,7 @@ def boolean_simulation(*func, bit_array_padding = 2**16):
     .. note::
         
         The ``boolean_simulation`` decorator will check if deleted 
-        :ref:`QuantumVariables <QuantumVariables>`
+        :ref:`QuantumVariables <QuantumVariable>`
         have been properly uncomputed and submit a warning otherwise. 
         It therefore provides a valuable tool for verifying the correctness 
         of your algorithms at scale.

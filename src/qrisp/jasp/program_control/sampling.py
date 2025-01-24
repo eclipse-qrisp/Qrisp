@@ -47,16 +47,130 @@ from qrisp.jasp.tracing_logic import quantum_kernel, check_for_tracing_mode
 # eqn.params["name"] attribute and executes the custom logic.
 
 
-def sample(func = None, shots = 0, post_processor = None):
+def sample(state_prep = None, shots = 0, post_processor = None):
+    r"""
+    The ``sample`` function allows to take samples from a state that is specified
+    by a preparation procedure. This preparation procedure can be supplied via
+    a Python function that returns one or more :ref:`QuantumVariables <QuantumVariable>`.
+    
+    The samples are returned in the form of a 
+    `Jax Array <https://jax.readthedocs.io/en/latest/_autosummary/jax.Array.html>`_
+    which is shaped according to the ``shots`` parameter. Because of this, shots
+    can only be a **static integer** (no dynamic values!). If you want to sample
+    with a dynamic shot amount, look into :ref:`expectation_value`.
+    
+    
+    Parameters
+    ----------
+    state_prep : callable
+        A function returning one or more :ref:`QuantumVariables <QuantumVariable>`. 
+        The state from this QuantumVariables will be sampled.
+        The state preparation function can only take classical values as arguments.
+        This is because a quantum value would need to be copied for each sample,
+        which is prohibited by the no-cloning theorem.
+    shots : int
+        The amounts of samples to take.
+    post_processor : callable, optional
+        A function to apply to the samples directly after measuring. The default is None.
+
+    Raises
+    ------
+    Exception
+        Tried to sample with dynamic shots value (static integer required)
+    Exception
+        Tried to sample from state preparation function taking a quantum value
+
+    Returns
+    -------
+    jax.Array
+        An array containing the measurement results of each shot.
+
+    Examples
+    --------
+    
+    We prepare the state
+    
+    .. math::
+        
+        \ket{\psi} = \frac{1}{\sqrt{2}} \left(\ket{0}\ket{0} + \ket{k}\ket{k})
+    
+    ::
+        
+        from qrisp import *
+        from qrisp.jasp import *
+
+
+        def state_prep(k):
+            a = QuantumFloat(4)
+            b = QuantumFloat(4)
+            
+            qbl = QuantumBool()
+            h(qbl)
+            
+            with control(qbl[0]):
+                a[:] = k
+                
+            cx(a, b)
+            
+            return a, b
+
+    And subsequently sample:
+        
+    ::
+        
+        @jaspify
+        def main(k):
+            
+            sampling_function = sample(state_prep, 
+                                       shots = 10)
+            
+            return sampling_function(k)
+
+        print(main(3))
+        
+        # Yields
+        # [[3. 3.]
+        #  [0. 0.]
+        #  [0. 0.]
+        #  [3. 3.]
+        #  [0. 0.]
+        #  [0. 0.]
+        #  [3. 3.]
+        #  [3. 3.]
+        #  [0. 0.]
+        #  [0. 0.]]
+
+    To demonstrate the post processing feature, we write a simple post 
+    processing function:
+        
+    ::
+        
+        def post_processor(x, y):
+            return 2*x + y//2
+        
+        @jaspify
+        def main(k):
+            
+            sampling_function = sample(state_prep, 
+                                       shots = 10,
+                                       post_processor = post_processor)
+            
+            return sampling_function(k)
+
+        print(main(4))
+        # Yields
+        # [10. 10.  0.  0.  0.  0.  0.  0. 10. 10.]
+
+    """
     
     from qrisp.jasp import qache
     from qrisp.core import QuantumVariable, measure
     
-    if isinstance(func, int):
-        shots = func
-        func = None
+    if isinstance(state_prep, int):
+        shots = state_prep
+        state_prep = None
     
-    if func is None:
+    if state_prep is None:
         return lambda x : sample(x, shots, post_processor = post_processor)
     
     if post_processor is None:
@@ -75,7 +189,7 @@ def sample(func = None, shots = 0, post_processor = None):
     # Qache the user function
     @qache
     def user_func(*args):
-        return func(*args)
+        return state_prep(*args)
 
     # This function evaluates the sampling process
     @jax.jit
@@ -155,13 +269,17 @@ def sample(func = None, shots = 0, post_processor = None):
             loop_res = jax.lax.fori_loop(0, tracerized_shots, sampling_body_func, (jnp.zeros((shots, return_amount[0])), *args))
             return loop_res[0]
     
-    from qrisp.jasp import jaspify, terminal_sampling
+    from qrisp.jasp import terminal_sampling
     def return_function(*args):
+        
+        for arg in args:
+            if isinstance(arg, QuantumVariable):
+                raise Exception("Tried to sample from state preparation function taking a quantum value")
         
         if check_for_tracing_mode():
             return sampling_eval_function(shots, *args)
         else:
-            return terminal_sampling(func, shots)(*args)
+            return terminal_sampling(state_prep, shots)(*args)
     
     return return_function
 

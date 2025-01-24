@@ -40,7 +40,7 @@ def jaspify(func = None, terminal_sampling = True):
         return flattened_values
     
     def return_function(*args):
-        jaspr = make_jaspr(tracing_function)(*args)
+        jaspr = make_jaspr(tracing_function, garbage_collection = "manual")(*args)
         jaspr_res = simulate_jaspr(jaspr, *args, terminal_sampling = terminal_sampling)
         if isinstance(jaspr_res, tuple):
             jaspr_res = tree_unflatten(treedef_container[0], jaspr_res)
