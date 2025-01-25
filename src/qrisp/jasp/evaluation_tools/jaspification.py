@@ -19,7 +19,8 @@
 from jax.tree_util import tree_flatten, tree_unflatten
 
 from qrisp.jasp.interpreter_tools import extract_invalues, insert_outvalues, eval_jaxpr
-from qrisp.simulator import BufferedQuantumState
+from qrisp.jasp.evaluation_tools.buffered_quantum_state import BufferedQuantumState
+from qrisp.core import QuantumVariable
 
 def jaspify(func = None, terminal_sampling = False):
     """
@@ -136,19 +137,95 @@ def jaspify(func = None, terminal_sampling = False):
         jaspr_res = simulate_jaspr(jaspr, *args, terminal_sampling = terminal_sampling)
         if isinstance(jaspr_res, tuple):
             jaspr_res = tree_unflatten(treedef_container[0], jaspr_res)
+        for res in jaspr_res:
+            if isinstance(res, QuantumVariable):
+                raise Exception("Tried to simulate function returning a QuantumVariable")
         return jaspr_res
     return return_function
 
 
-def simulate_jaspr(jaspr, *args, terminal_sampling = True):
+def stimulate(func = None):
+    """
+    This function leverages the 
+    `Stim simulator <https://github.com/quantumlib/Stim?tab=readme-ov-file>`_
+    to evaluate a Jasp-traceable function containing only Clifford gates.
+    
+    .. note::
+        
+        To use this simulator, you need stim installed, which can be achieved via
+        ``pip install stim``.
+    
+    Parameters
+    ----------
+    func : callable
+        The function to simulate.
+
+    Returns
+    -------
+    callable
+        A function performing the simulation.
+        
+    Examples
+    --------
+    
+    We simulate a function creating a simple GHZ state:
+        
+    ::
+        
+        from qrisp import *
+        from qrisp.jasp import *
+        
+        @stimulate
+        def main():
+            
+            qf = QuantumFloat(5)
+            
+            h(qf[0])
+            
+            for i in range(1, 5):
+                cx(qf[0], qf[i])
+                
+            return measure(qf)
+
+        print(main())            
+        # Yields either 0 or 31
+
+    """
+    
+    from qrisp.jasp import make_jaspr
+    
+    treedef_container = []
+    def tracing_function(*args):
+        res = func(*args)
+        flattened_values, tree_def = tree_flatten(res)
+        treedef_container.append(tree_def)
+        return flattened_values
+    
+    def return_function(*args):
+        jaspr = make_jaspr(tracing_function, garbage_collection = "manual")(*args)
+        jaspr_res = simulate_jaspr(jaspr, *args, simulator = "stim")
+        if isinstance(jaspr_res, tuple):
+            jaspr_res = tree_unflatten(treedef_container[0], jaspr_res)
+        for res in jaspr_res:
+            if isinstance(res, QuantumVariable):
+                raise Exception("Tried to simulate function returning a QuantumVariable")
+        return jaspr_res
+    return return_function
+
+
+def simulate_jaspr(jaspr, *args, terminal_sampling = False, simulator = "qrisp"):
     
     if len(jaspr.outvars) == 1:
         return None
     
-    args = [BufferedQuantumState()] + list(tree_flatten(args)[0])
-            
-    flattened_jaspr = jaspr
+    if simulator == "stim":
+        if terminal_sampling:
+            raise Exception("Terminal sampling with stim is currently not implemented")
+    elif not simulator == "qrisp":
+        raise Exception(f"Don't know simulator {simulator}")
     
+    args = [BufferedQuantumState(simulator)] + list(tree_flatten(args)[0])
+            
     def eqn_evaluator(eqn, context_dic):
         if eqn.primitive.name == "pjit":
             
@@ -177,7 +254,7 @@ def simulate_jaspr(jaspr, *args, terminal_sampling = True):
         else:
             return True
     
-    res = eval_jaxpr(flattened_jaspr, eqn_evaluator = eqn_evaluator)(*(args + jaspr.consts))
+    res = eval_jaxpr(jaspr, eqn_evaluator = eqn_evaluator)(*(args + jaspr.consts))
     
     if len(jaspr.outvars) == 2:
         return res[1]
