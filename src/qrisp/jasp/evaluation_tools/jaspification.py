@@ -20,7 +20,7 @@ from jax.tree_util import tree_flatten, tree_unflatten
 
 from qrisp.jasp.interpreter_tools import extract_invalues, insert_outvalues, eval_jaxpr
 from qrisp.jasp.evaluation_tools.buffered_quantum_state import BufferedQuantumState
-from qrisp.core import QuantumVariable
+from qrisp.core import recursive_qv_search
 
 def jaspify(func = None, terminal_sampling = False):
     """
@@ -137,9 +137,8 @@ def jaspify(func = None, terminal_sampling = False):
         jaspr_res = simulate_jaspr(jaspr, *args, terminal_sampling = terminal_sampling)
         if isinstance(jaspr_res, tuple):
             jaspr_res = tree_unflatten(treedef_container[0], jaspr_res)
-        for res in jaspr_res:
-            if isinstance(res, QuantumVariable):
-                raise Exception("Tried to simulate function returning a QuantumVariable")
+        if len(recursive_qv_search(jaspr_res)):
+            raise Exception("Tried to simulate function returning a QuantumVariable")
         return jaspr_res
     return return_function
 
@@ -149,6 +148,7 @@ def stimulate(func = None):
     This function leverages the 
     `Stim simulator <https://github.com/quantumlib/Stim?tab=readme-ov-file>`_
     to evaluate a Jasp-traceable function containing only Clifford gates.
+    Stim is a popular tool to simulate quantum error correction codes.
     
     .. note::
         
@@ -189,6 +189,28 @@ def stimulate(func = None):
 
         print(main())            
         # Yields either 0 or 31
+        
+    The ``stimulate`` decorator can also simulate real-time features:
+        
+    ::
+
+        @stimulate
+        def main():
+            
+            qf = QuantumFloat(5)
+            
+            h(qf[0])
+            
+            cl_bl = measure(qf[0])
+            
+            with control(cl_bl):
+                for i in range(1, 5):
+                    x(qf[i])
+                
+            return measure(qf)
+
+        print(main())            
+        # Yields either 0 or 31        
 
     """
     
@@ -206,9 +228,8 @@ def stimulate(func = None):
         jaspr_res = simulate_jaspr(jaspr, *args, simulator = "stim")
         if isinstance(jaspr_res, tuple):
             jaspr_res = tree_unflatten(treedef_container[0], jaspr_res)
-        for res in jaspr_res:
-            if isinstance(res, QuantumVariable):
-                raise Exception("Tried to simulate function returning a QuantumVariable")
+        if len(recursive_qv_search(jaspr_res)):
+            raise Exception("Tried to simulate function returning a QuantumVariable")
         return jaspr_res
     return return_function
 

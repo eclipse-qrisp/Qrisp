@@ -23,6 +23,8 @@ Jasp is tightly integrated within the Jax infrastructure, implying a variety of 
      - Leverages the Jax pipeline to compile the program into a series of boolean operations. Restricted to programs that require only X, CX, CCX, etc. gates. This simulator can be extremely powerful for verifying the correctness of large classical subroutines, that are called by another quantum function.
    * - :ref:`Terminal Sampling <terminal_sampling>`
      - Uses the terminal sampling technique to perform accelerated quantum sampling. Some restrictions apply.
+   * - :ref:`Stim Simulation <stimulate>`
+     - Calls the `Stim simulator <https://github.com/quantumlib/Stim?tab=readme-ov-file>`_ to perform a simulation of Jasp functions, containing only Clifford gates.
 
 We encourage you to explore these simulators, as each one has their own perks/drawbacks. If your development is slowed down by slow simulation, feel free to try out a different simulation technique!
 
@@ -34,3 +36,4 @@ We encourage you to explore these simulators, as each one has their own perks/dr
    QJIT
    Boolean Simulation
    Terminal Sampling
+   Stimulation
