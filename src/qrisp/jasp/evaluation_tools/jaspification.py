@@ -74,7 +74,7 @@ def jaspify(func = None, terminal_sampling = False):
         # Yields either 0 or 31
         
     To highlight the speed of the terminal sampling feature, we :ref:`sample` from a
-    unform superposition
+    uniform superposition
     
     ::
             

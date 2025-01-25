@@ -20,7 +20,7 @@ Jasp is tightly integrated within the Jax infrastructure, implying a variety of 
    * - :ref:`QJIT <qjit>`
      - Calls the `Catalyst pipeline <https://docs.pennylane.ai/projects/catalyst/en/stable/index.html>`__ to compile and run the program via the Lightning simulator. Requires Catalyst to be installed.     
    * - :ref:`Boolean Simulation <boolean_simulation>`
-     - Leverages the Jax pipeline to compile the program into a series of boolean operations. Restricted to programs that require only X, CX, CCX, etc. gates.
+     - Leverages the Jax pipeline to compile the program into a series of boolean operations. Restricted to programs that require only X, CX, CCX, etc. gates. This simulator can be extremely powerful for verifying the correctness of large classical subroutines, that are called by another quantum function.
    * - :ref:`Terminal Sampling <terminal_sampling>`
      - Uses the terminal sampling technique to perform accelerated quantum sampling. Some restrictions apply.
 

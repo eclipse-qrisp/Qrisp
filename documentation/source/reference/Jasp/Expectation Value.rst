@@ -1,4 +1,4 @@
-.. _ev:
+.. _expectation_value:
 
 Expectation Value
 =================

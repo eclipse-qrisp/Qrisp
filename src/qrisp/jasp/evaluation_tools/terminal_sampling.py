@@ -27,7 +27,7 @@ from qrisp.simulator import BufferedQuantumState
 
 def terminal_sampling(func = None, shots = 0):
     """
-    The ``terminal_sampling`` decorator is a performs a hybrid simulation and afterwards
+    The ``terminal_sampling`` decorator performs a hybrid simulation and afterwards
     samples from the resulting quantum state.
     The idea behind this function is that it is very cheap for a classical simulator
     to sample from a given quantum state without simulating the whole state from
