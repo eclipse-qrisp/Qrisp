@@ -133,7 +133,7 @@ html_theme_options = {
     "secondary_sidebar_items": ["page-toc.html", "slack_link.html", "thebe_button.html"]
 }
 html_sidebars = {
-    "**": ["sidebar-nav-bs"],
+    "**": ["search-field", "sidebar-nav-bs"],
     "index": [],
     "install": [],
     "tutorial": [],
