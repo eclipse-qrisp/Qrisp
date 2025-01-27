@@ -17,7 +17,9 @@
 """
 
 from qrisp.core.gate_application_functions import h
-from qrisp.alg_primitives.qft import QFT
+from qrisp.alg_primitives.qft import QFT, invert
+from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_fourier_adder import qft as jasp_QFT
+from qrisp.jasp import check_for_tracing_mode, jrange
 
 
 def QPE(
@@ -134,15 +136,20 @@ def QPE(
 
     h(qpe_res)
 
-    for i in range(qpe_res.size):
+    for i in jrange(qpe_res.size):
         if iter_spec:
             with control(qpe_res[i], ctrl_method=ctrl_method):
                 U(args, iter=2**i, **kwargs)
         else:
             with control(qpe_res[i], ctrl_method=ctrl_method):
-                for j in range(2**i):
+                for j in jrange(2**i):
                     U(args, **kwargs)
 
-    QFT(qpe_res, inv=True)
+    if check_for_tracing_mode():
+        with invert():
+            jasp_QFT(qpe_res)
+    else:
+        QFT(qpe_res, inv=True)
 
     return qpe_res
+
