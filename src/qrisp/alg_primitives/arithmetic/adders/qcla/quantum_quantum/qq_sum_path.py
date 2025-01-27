@@ -7,7 +7,7 @@ Created on Tue Nov 21 11:22:37 2023
 
 import numpy as np
 
-from qrisp.alg_primitives import x, cx
+from qrisp.core.gate_application_functions import x, cx
 from qrisp.qtypes import QuantumVariable, QuantumBool
 from qrisp.environments import invert
 from qrisp.misc import redirect_qfunction

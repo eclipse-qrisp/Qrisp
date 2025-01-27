@@ -17,9 +17,10 @@
 """
 
 from qrisp.core.gate_application_functions import h
-from qrisp.alg_primitives.qft import QFT, invert
+from qrisp.alg_primitives.qft import QFT
 from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_fourier_adder import qft as jasp_QFT
 from qrisp.jasp import check_for_tracing_mode, jrange
+from qrisp.environments import invert
 
 
 def QPE(
