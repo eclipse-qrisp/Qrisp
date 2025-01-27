@@ -18,20 +18,27 @@
 
 
 import numpy as np
-from qrisp import QuantumArray, QuantumVariable, gate_wrap, gphase, h, mcp, mcz, x, merge, recursive_qs_search, IterationEnvironment, conjugate, invert
-
+from qrisp import QuantumArray, QuantumVariable, QuantumFloat, gate_wrap, gphase, h, mcx, mcp, mcz, p, x, z, merge, recursive_qs_search, IterationEnvironment, conjugate, invert
+from qrisp.jasp import check_for_tracing_mode, jrange
 
 # Applies the grover diffuser onto the (list of) quantum variable input_object
-def diffuser(input_object, phase=np.pi, state_function=None):
-    """
+def diffuser(input_object, phase=np.pi, state_function=None, reflection_indices=None):
+    r"""
     Applies the Grover diffuser onto (multiple) QuantumVariables.
 
     Parameters
     ----------
     input_object : QuantumVariable or list[QuantumVariable]
         The (list of) QuantumVariables to apply the Grover diffuser on.
-    state_function : function
-        A Python function preparing the initial state. The default is None.
+    phase : float or sympy.Symbol, optional
+        Specifies the phase shift. The default is $\pi$, i.e. a
+        multi-controlled Z gate.
+    state_function : function, optional
+        A Python function preparing the initial state. 
+        By default, the function prepares the uniform superposition state.
+    refection_indices : list[int], optional
+        A list indicating with respect to which variables the reflection is performed.
+        By default, the reflection is performed with respect to all variables in ``input_object``.
 
     Examples
     --------
@@ -79,40 +86,46 @@ def diffuser(input_object, phase=np.pi, state_function=None):
                   └────────────┘
                   
     """
-    init_state = True if state_function is not None else False
-    if init_state:
-        def inv_state_function(args):
-            with invert():
-                state_function(*args)
-
+    
     if isinstance(input_object, QuantumArray):
         input_object = [qv for qv in input_object.flatten()]
 
-    if isinstance(input_object, list):
-        if init_state:
-            with conjugate(inv_state_function)(input_object):
-                tag_state(
-                    {qv: "0" * qv.size for qv in input_object}, binary_values=True, phase=phase
-                )    
+    if isinstance(input_object,list) and reflection_indices is None:
+        reflection_indices = [i for i in range(len(input_object))]  
+
+    if state_function is not None:
+        def inv_state_function(args):
+            with invert():
+                state_function(*args)
+    else:
+        if isinstance(input_object,list):
+            def inv_state_function(args):
+                [h(qv) for qv in args]
         else:
-            [h(qv) for qv in input_object]
-            tag_state(
-                {qv: "0" * qv.size for qv in input_object}, binary_values=True, phase=phase
-            )
-            [h(qv) for qv in input_object]
+            def inv_state_function(args):
+                h(args)
+
+    if isinstance(input_object, list):
+        with conjugate(inv_state_function)(input_object):
+            if check_for_tracing_mode():
+                tag_state(
+                    {input_object[i]: 0 for i in reflection_indices}, phase=phase
+                )
+            else: 
+                tag_state(
+                    {input_object[i]: "0" * input_object[i].size for i in reflection_indices}, binary_values=True, phase=phase
+                )    
         gphase(np.pi, input_object[0][0])
     else:
-        if init_state:
-            with conjugate(inv_state_function)(input_object):
-                tag_state(
+        with conjugate(inv_state_function)(input_object):
+            if check_for_tracing_mode():
+                tag_state(    
+                    {input_object: 0}, phase=phase
+                )
+            else:
+                tag_state(    
                     {input_object: input_object.size * "0"}, binary_values=True, phase=phase
                 )
-        else:
-            h(input_object)
-            tag_state(
-                {input_object: input_object.size * "0"}, binary_values=True, phase=phase
-            )
-            h(input_object)
         gphase(np.pi, input_object[0])
 
     return input_object
@@ -157,34 +170,72 @@ def tag_state(tag_specificator, binary_values=False, phase=np.pi):
 
     states = [tag_specificator[qv] for qv in qv_list]
 
-    if not len(states):
-        states = ["1" * qv.size for qv in qv_list]
+    if check_for_tracing_mode():
 
-    bit_string = ""
-    from qrisp.misc import bin_rep
+        def conjugator(qv_list,temp_qf):
+            for i in range(len(qv_list)):
+                mcx(qv_list[i], 
+                    temp_qf[i], 
+                    method = "balauca", 
+                    ctrl_state = states[i])
 
-    for i in range(len(qv_list)):
-        if binary_values:
-            bit_string += states[i][::-1]
+        m = len(qv_list)                
+        temp_qf = QuantumFloat(m)
+
+        if m==1:
+            with conjugate(conjugator)(qv_list,temp_qf): 
+                if phase == np.pi:
+                    z(temp_qf)
+                else:
+                    p(phase, temp_qf)
+            
         else:
-            bit_string += bin_rep(qv_list[i].encoder(states[i]), qv_list[i].size)[::-1]
+            with conjugate(conjugator)(qv_list,temp_qf):  
+                if phase == np.pi:
+                    h(temp_qf[-1])
 
-    qubit_list = sum([list(qv.reg) for qv in qv_list], [])
-    state = bit_string
+                    mcx(temp_qf[:m-1],
+                        temp_qf[-1],     
+                        method= "balauca",
+                        ctrl_state=-1)
 
-    if state[-1] == "0":
-        x(qubit_list[-1])
-
-    # The control state is the state we are looking for without the base qubit
-    ctrl_state = state[:-1]
-    if phase == np.pi:
-        mcz(qubit_list, ctrl_state=ctrl_state + "1")
+                    h(temp_qf[-1])
+                else: 
+                    mcp(phase, 
+                        temp_qf, 
+                        method= "balauca",
+                        ctrl_state=-1)
+    
     else:
-        mcp(phase, qubit_list, ctrl_state=ctrl_state + "1")
 
-    # Apply the final x gate
-    if state[-1] == "0":
-        x(qubit_list[-1])
+        if not len(states):
+            states = ["1" * qv.size for qv in qv_list]
+
+        bit_string = ""
+        from qrisp.misc import bin_rep
+
+        for i in range(len(qv_list)):
+            if binary_values:
+                bit_string += states[i][::-1]
+            else:
+                bit_string += bin_rep(qv_list[i].encoder(states[i]), qv_list[i].size)[::-1]
+
+        qubit_list = sum([list(qv.reg) for qv in qv_list], [])
+        state = bit_string
+
+        if state[-1] == "0":
+            x(qubit_list[-1])
+
+        # The control state is the state we are looking for without the base qubit
+        ctrl_state = state[:-1]
+        if phase == np.pi:
+            mcz(qubit_list, ctrl_state=ctrl_state + "1")
+        else:
+            mcp(phase, qubit_list, ctrl_state=ctrl_state + "1")
+
+        # Apply the final x gate
+        if state[-1] == "0":
+            x(qubit_list[-1])
 
 
 def grovers_alg(
