@@ -94,3 +94,27 @@ def test_prefix_control():
         return measure(qf)
 
     assert main(6) == 31
+
+
+    @jaspify
+    def main():
+        
+        def false_fun(qbl):
+            qbl.flip()
+            return qbl
+        
+        def true_fun(qbl):
+            return qbl
+        
+        qbl = QuantumBool()
+        h(qbl)
+        pred = measure(qbl)
+        
+        qbl = q_cond(pred, 
+                    true_fun, 
+                    false_fun, 
+                    qbl)
+        
+        return measure(qbl)
+
+    assert main()
