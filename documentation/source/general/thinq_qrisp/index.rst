@@ -14,6 +14,7 @@ Quantum computers are associated with the hope of achieving enormous leaps in co
 
 This will change with the Thinq Qrisp Community!
 ''''''''''''''''''''''''''''''''''''''''''''''''
+The offical Thinq-Qrisp website [REF]
 
 The community will offer a platform where developers can work on new ideas for programming quantum computers. Newly developed technologies will be quickly integrated into the open-source project Qrisp. The Thinq Qrisp Community is the central meeting place for all those who want to engage in quantum and pull it from the realm of abstract science into application oriented software development. For this we want to bundle and network the activities of the quantum software engineering community.
 
@@ -71,26 +72,36 @@ Joining our community offers numerous advantages, including access to exclusive 
 How to join?
 ''''''''''''
 
-The community will start with the Kick-Off event:
+.. figure:: Quantum-Computer_Berlin_Ai-generated_korr.jpg
+    :width: 325
+    :align: right
+    :class: image-class-value
+    :figclass: figure-class-value
+
+
+**To join the community you can get in touch with us!**
+
+We will launch exclusive membership access to the Thinq Qrisp Community starting April 1st. 
+To ensure the sustainability of the community, we will implement a participant model tied to a minimal annual participation fee. 
+
+If you have any questions, don't hestiate to reach out! 
+We are happy to answer any question regarding the community's services, sign-up form and contract!
+
+Send us an E-Mail under **thinq-qrisp@fokus.fraunhofer.de**.
+
+Or contact our team member and developer Sebastian under **sebastian.bock@fokus.fraunhofer.de**.
+
+Planned activities
+''''''''''''''''''
+
+On the 12th of Febuary we will have a new free webinar, which will revolve around the integration of `JAX <https://jax.readthedocs.io/en/latest/quickstart.html>`_ in Qrisp. We will introduce you to our high-performance module **Jasp**, which leaverages the compilation speed-ups of JAX. 
 
 .. grid::
 
-    .. grid-item-card:: Thinq Qrisp Kick-Off
+    .. grid-item-card:: Jasp: the Jax integration in Qrisp,
 
         .. dropdown:: :fa:`eye me-1` Event Details
 
-            | **Date:**     10. September 2024.
-            | **Location:** Fraunhofer FOKUS (Kaiserin-Augusta-Allee 31, 10589 Berlin).
-            | **How?**      Registration will be opened soon.
-
-Prior to the launch event you will have the chance to exchange with us to learn more details about our plans and how you can benefit from a membership. For that, we welcome you to our initial Webinar:
-
-.. grid::
-
-    .. grid-item-card:: Initial Webinar
-
-        .. dropdown:: :fa:`eye me-1` Event Details
-
-            | **Date:**     5. August 2024, 10:30.
-            | **Location:** Online.
-            | **How?**      Please register `here <https://www.fokus.fraunhofer.de/en/akademie/schulungen/qrisp-quantum-programming-language>`_.
+            | **Date:**     12. Febuary 2025.
+            | **Location:** Microsoft Teams.
+            | **How?**      `Registrate here <https://www.thinq-qrisp.eu/en/news/fokus/sqc/jasp_webinar>`_
