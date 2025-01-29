@@ -284,10 +284,17 @@ def terminal_sampling_evaluator(sampling_res_type):
                     if sampling_res_type == "array":
                         shuffle(sampling_res)
                         sampling_res = jnp.array(sampling_res)
-                    if sampling_res_type == "ev":
+                    elif sampling_res_type == "ev":
                         sampling_res = sampling_res/shots
                         if sampling_res.shape[0] == 1:
                             sampling_res = sampling_res[0]
+                    elif sampling_res_type == "dict":
+                        # Sort the counts such the most probable values come first
+                        sampling_res = dict(sorted(sampling_res.items(), key=lambda item: item[0]))
+                        sampling_res = dict(sorted(sampling_res.items(), key=lambda item: -item[1]))
+                        
+                        
+                        
                         
                     decoded_meas_res.append(sampling_res)
             
