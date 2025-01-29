@@ -546,6 +546,78 @@ class QubitOperator(Hamiltonian):
         return QubitOperator(new_terms_dict)
     
     @classmethod
+    def from_matrix(self, matrix):
+        r"""
+        Represents a matrix as an operator
+            
+        .. math::
+
+            O=\sum_i\alpha_i\bigotimes_{j=0}^{n-1}O_{ij}
+
+        where $O_{ij}\in\{A,C,P_0,P_1\}$.
+
+        Parameters
+        ----------
+        matrix : numpy.ndarray or scipy.sparse.csr_matrix
+            The matrix.
+
+        Returns
+        -------
+        QubitOperator
+            The operator represented by the matrix.
+
+
+        Examples
+        --------
+
+        ::
+
+            from scipy.sparse import csr_matrix
+            from qrisp.operators import QubitOperator
+
+            sparse_matrix = csr_matrix([[0, 5, 0, 1],
+                                        [5, 0, 0, 0],
+                                        [0, 0, 0, 2],
+                                        [1, 0, 2, 0]])
+
+            O = QubitOperator.from_matrix(sparse_matrix)
+            print(O)
+            # Yields: A_0*A_1 + C_0*C_1 + 5*P^0_0*A_1 + 5*P^0_0*C_1 + 2*P^1_0*A_1 + 2*P^1_0*C_1
+
+        """
+        from scipy.sparse import csr_matrix
+        from numpy import ndarray
+        import numpy as np
+
+        OPERATOR_TABLE = {(0,0):"P0",(0,1):"A",(1,0):"C",(1,1):"P1"}
+
+        if isinstance(matrix,ndarray):
+            new_matrix = csr_matrix(matrix)
+        elif isinstance(matrix,csr_matrix):
+            new_matrix = matrix.copy()
+        else:
+            raise Exception("Cannot construct QubitOperator from type " + str(type(matrix)))
+        
+        M, N = new_matrix.shape
+        n = max(int(np.ceil(np.log2(M))),int(np.ceil(np.log2(N))))
+
+        new_matrix.eliminate_zeros()
+    
+        rows, cols = new_matrix.nonzero()
+        values = new_matrix.data
+
+        O = QubitOperator({})
+        for row, col, value in zip(rows, cols, values):
+            factor_dict = {}
+            for k in range(n):
+                i = (row >> k) & 1
+                j = (col >> k) & 1
+                factor_dict[n-k-1]=OPERATOR_TABLE[(i,j)]
+
+            O.terms_dict[QubitTerm(factor_dict)] = value
+        return O
+    
+    @classmethod
     def from_numpy_array(cls, numpy_array, threshold = np.inf):
         
         from qrisp.operators import X, Y, Z
