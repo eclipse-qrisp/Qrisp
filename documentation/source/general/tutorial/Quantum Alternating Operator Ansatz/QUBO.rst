@@ -149,6 +149,7 @@ These are exactly the pieces in the mosaic of code that :meth:`solve_QUBO <qrisp
     
     from qrisp.default_backend import def_backend
     from qrisp import QuantumVariable, QuantumArray
+    from qrisp.qaoa import QUBO_problem, QUBO_obj
     from operator import itemgetter
 
     Q = np.array(
