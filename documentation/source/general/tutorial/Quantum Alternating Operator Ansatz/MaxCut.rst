@@ -265,7 +265,6 @@ The ``print('RND')`` was used because since the 0.4 update we have also included
 ::
 
     print('TQA')
-    maxcut_instance = maxcut_problem(G)
 
     benchmark_data = maxcut_instance.benchmark(qarg = QuantumVariable(len(G)),
                             depth_range = [1,2,3,4,5],
@@ -287,30 +286,30 @@ Again, since QAOA is probabilistic, every run returns different results. You can
 ::
 
     TQA
-    Rank  approx_ratio Overall QV   p    QC depth   QB count  Shots   Iterations         
+    Rank  approx_ratio Overall QV   p    QC depth   QB count  Shots   Iterations         [2K[2K[2K[2K[2K[2K
     ============================================================================
-    0     0.989e+0     4.4000e+8    5    44         5         10000   200       
-    1     0.983e+0     2.2000e+8    5    44         5         10000   100       
-    2     0.963e+0     1.8000e+8    4    36         5         10000   100       
-    3     0.963e+0     3.6000e+8    4    36         5         10000   200       
-    4     0.957e+0     4.4000e+7    5    44         5         1000    200       
-    5     0.897e+0     1.4000e+8    3    28         5         10000   100       
-    6     0.897e+0     2.8000e+8    3    28         5         10000   200       
-    7     0.892e+0     2.8000e+7    3    28         5         1000    200       
-    8     0.880e+0     1.0000e+8    2    20         5         10000   100       
-    9     0.880e+0     2.0000e+8    2    20         5         10000   200       
-    10    0.875e+0     1.4000e+7    3    28         5         1000    100       
-    11    0.867e+0     1.8000e+7    4    36         5         1000    100       
-    12    0.866e+0     1.0000e+7    2    20         5         1000    100       
-    13    0.860e+0     2.0000e+7    2    20         5         1000    200       
-    14    0.847e+0     2.2000e+7    5    44         5         1000    100       
-    15    0.822e+0     3.6000e+7    4    36         5         1000    200       
-    16    0.717e+0     6.0000e+7    1    12         5         10000   100       
-    17    0.717e+0     1.2000e+8    1    12         5         10000   200       
-    18    0.715e+0     5.5000e+6    1    11         5         1000    100       
-    19    0.691e+0     1.1000e+7    1    11         5         1000    200       
-    Approximation ratio:  0.8639683333333332
-    Variance:  0.007950404719444411
+    0     0.990e+0     2.2500e+8    4    45         5         10000   100       
+    1     0.988e+0     4.5000e+8    4    45         5         10000   200       
+    2     0.974e+0     5.5000e+8    5    55         5         10000   200       
+    3     0.974e+0     4.5000e+7    4    45         5         1000    200       
+    4     0.968e+0     3.5000e+8    3    35         5         10000   200       
+    5     0.966e+0     1.7500e+8    3    35         5         10000   100       
+    6     0.965e+0     2.7500e+8    5    55         5         10000   100       
+    7     0.958e+0     3.5000e+7    3    35         5         1000    200       
+    8     0.957e+0     5.5000e+7    5    55         5         1000    200       
+    9     0.957e+0     2.7500e+7    5    55         5         1000    100       
+    10    0.931e+0     2.5000e+8    2    25         5         10000   200       
+    11    0.930e+0     1.7500e+7    3    35         5         1000    100       
+    12    0.927e+0     1.2500e+8    2    25         5         10000   100       
+    13    0.925e+0     1.2500e+7    2    25         5         1000    100       
+    14    0.923e+0     2.2500e+7    4    45         5         1000    100       
+    15    0.918e+0     2.5000e+7    2    25         5         1000    200       
+    16    0.719e+0     1.5000e+8    1    15         5         10000   200       
+    17    0.717e+0     7.5000e+7    1    15         5         10000   100       
+    18    0.713e+0     1.5000e+7    1    15         5         1000    200       
+    19    0.707e+0     7.5000e+6    1    15         5         1000    100       
+    Approximation ratio:  0.9054391666666666
+    Variance:  0.009620043340972212
 
 As we can see, the TQA initialization tends to return better approximation ratios more consistently. Feel free to play around with the :meth:`benchmark <qrisp.qaoa.QAOAProblem.benchmark>` method (or leave it running over night) to try and compare the two approaches further.
 
@@ -327,7 +326,7 @@ IV. select **MIXER** from the :ref:`assortment we provide and list here <MIXers>
 Let's condense all of the above, and implement QAOA for MaxCut one last time in one block of code
 ::
 
-    from qrisp.qaoa import QuantumArray, QuantumVariable, QAOAProblem, maxcut_obj,create_maxcut_cl_cost_function,create_maxcut_cost_operator, RX_mixer
+    from qrisp.qaoa import QuantumArray, QuantumVariable, QAOAProblem, maxcut_problem, maxcut_obj
     import networkx as nx
     from operator import itemgetter
 
@@ -338,15 +337,18 @@ Let's condense all of the above, and implement QAOA for MaxCut one last time in 
 
     depth = 5
 
-    maxcut_instance = QAOAProblem(create_maxcut_cost_operator(G), RX_mixer, create_maxcut_cl_cost_function(G))
+    maxcut_instance = maxcut_problem(G)
+
+    res = maxcut_instance.run(qarg, depth, max_iter = 50, init_type='tqa')
+
+    best_cut, best_solution = min(
+        [(maxcut_obj(''.join(np.array(x, dtype=str)[::-1]), G), x) for x in res.keys()],
+        key=itemgetter(0))
     
-    res = maxcut_instance.run(qarg, depth, max_iter = 50)
-
-    best_cut, best_solution = min([(maxcut_obj(x,G),x) for x in res.keys()], key=itemgetter(0))
-
     res_str = list(res.keys())[0]
     print("QAOA solution: ", res_str)
-    best_cut, best_solution = (maxcut_obj(res_str,G),res_str)
+
+    best_cut, best_solution = (maxcut_obj(''.join(np.array(res_str, dtype=str)[::-1]), G),res_str)
 
     colors = ['r' if best_solution[node] == '0' else 'b' for node in G]
     nx.draw(G,node_color = colors, pos=nx.bipartite_layout(G, [0,1,2]))
