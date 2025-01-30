@@ -234,9 +234,9 @@ def process_op(op_prim, invars, outvars, context_dic):
     
     param_dict = {}
     if op.name == "u3":
-        param_dict[op.params[0]] = context_dic[invars[2]]
-        param_dict[op.params[1]] = context_dic[invars[3]]
-        param_dict[op.params[2]] = context_dic[invars[1]]
+        param_dict[op.params[0]] = context_dic[invars[3]]
+        param_dict[op.params[1]] = context_dic[invars[1]]
+        param_dict[op.params[2]] = context_dic[invars[2]]
     else:
         for i in range(len(op.params)):
             param_dict[op.params[i]] = context_dic[invars[i+1]]
