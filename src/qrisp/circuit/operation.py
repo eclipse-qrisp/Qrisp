@@ -515,7 +515,7 @@ class U3Gate(Operation):
             res.name = self.name
             res.params = [-par for par in self.params]
 
-        if self.name in ["s", "t", "s_dg", "t_dg"]:
+        if self.name in ["s", "t", "s_dg", "t_dg", "sx", "sx_dg"]:
             res.params = []
 
         if res.is_qfree is not None:

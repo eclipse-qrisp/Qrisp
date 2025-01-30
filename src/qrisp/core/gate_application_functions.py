@@ -969,7 +969,7 @@ def sx(qubits):
         The Qubit to perform the SX gate on.
     """
 
-    append_operation(std_ops.SXGate().inverse(), [qubits])
+    append_operation(std_ops.SXGate(), [qubits])
 
     return qubits
 

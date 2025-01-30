@@ -67,4 +67,9 @@ def test_catalyst_interface():
     # Test QJIT caching
     assert time.time() - t0 < 2
     
+    def main():
+        qv = QuantumFloat(1)
+        u3(np.pi, np.pi, 0, qv[0])
+        return measure(qv[0])
     
+    assert qjit(main)() == jaspify(main)()
