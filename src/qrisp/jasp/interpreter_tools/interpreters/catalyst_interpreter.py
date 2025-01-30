@@ -51,7 +51,8 @@ op_name_translation_dic = {"cx" : "CNOT",
                            "rz" : "RZ",
                            "s" : "S",
                            "t" : "T",
-                           "p" : "RZ"}
+                           "p" : "RZ",
+                           "u3" : "Rot"}
 
 
 def catalyst_eqn_evaluator(eqn, context_dic):
@@ -232,8 +233,15 @@ def process_op(op_prim, invars, outvars, context_dic):
     num_qubits = len(qb_pos)
     
     param_dict = {}
-    for i in range(len(op.params)):
-        param_dict[op.params[i]] = context_dic[invars[i+1]]
+    if op.name == "u3":
+        param_dict[op.params[0]] = context_dic[invars[2]]
+        param_dict[op.params[1]] = context_dic[invars[3]]
+        param_dict[op.params[2]] = context_dic[invars[1]]
+    else:
+        for i in range(len(op.params)):
+            param_dict[op.params[i]] = context_dic[invars[i+1]]
+
+    
     
     # Extract the catalyst qubit tracers by using the qextract primitive.
     catalyst_qb_tracers = []

@@ -1101,7 +1101,7 @@ def u3(theta, phi, lam, qubits):
     """
 
     if check_for_tracing_mode():
-        append_operation(std_ops.U3Gate(sympy.Symbol("alpha"), sympy.Symbol("beta"), sympy.symbol("gamma")), [qubits], param_tracers = [phi, theta, lam])
+        append_operation(std_ops.U3Gate(sympy.Symbol("alpha"), sympy.Symbol("beta"), sympy.Symbol("gamma")), [qubits], param_tracers = [theta, phi, lam])
     else:
         append_operation(std_ops.U3Gate(theta, phi, lam), [qubits])
 
