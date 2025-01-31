@@ -19,9 +19,9 @@
 from qrisp import QuantumFloat
 import numpy as np
 
-def prepare(array, reversed=False):
+def prepare(qv, target_array, reversed=False):
     r"""
-    This method returns a function that performs quantum state preparation. Given a vector $b=(b_0,\dotsc,b_{N-1})$, the returned function acts as 
+    This method performs quantum state preparation. Given a vector $b=(b_0,\dotsc,b_{N-1})$, the function acts as 
 
     .. math:: 
 
@@ -29,15 +29,12 @@ def prepare(array, reversed=False):
 
     Parameters
     ----------
-    array : numpy.ndarray
+    qv : QuantumVariable
+        The quantum variable on which to apply state preparation.
+    target_array : numpy.ndarray
         The vector $b$.
     reversed : boolean
         If set to ``True``, the endianness is reversed. The default is ``False``.
-
-    Returns
-    -------
-    function
-        A Python function that takes a :ref:`QuantumVariable` as argument and performs quantum state preparation.
 
     Examples
     --------
@@ -46,14 +43,10 @@ def prepare(array, reversed=False):
 
     ::
 
-        from qrisp import *
-        import numpy as np
-
         b = np.array([0,1,2,3])
-        prep_b = prepare(b)
 
         qf = QuantumFloat(2)
-        prep_b(qf)
+        prepare(qf, b)
 
         res_dict = qf.get_measurement()
 
@@ -68,19 +61,40 @@ def prepare(array, reversed=False):
 
     """
 
-    n = len(array)
+    from qiskit.circuit.library.data_preparation.state_preparation import StatePreparation
+
+    n = len(target_array)
     m = int(np.ceil(np.log2(n)))
 
-    qf = QuantumFloat(m)
-    qf.init_state({i : array[i] for i in range(n)})
+    # Fill target_array with zeros
+    if not (n & (1 << m)): 
+        target_array = np.concatenate((target_array, np.zeros((1 << m) - n)))
+
+    target_array = target_array / np.vdot(target_array, target_array) ** 0.5
+
+    qiskit_qc = StatePreparation(target_array).definition
+    from qrisp import QuantumCircuit
+
+    init_qc = QuantumCircuit.from_qiskit(qiskit_qc)
+
+    # Find global phase correction
+    from qrisp.simulator import statevector_sim
+
+    init_qc.qubits.reverse()
+    sim_array = statevector_sim(init_qc)
+    init_qc.qubits.reverse()
+
+    arg_max = np.argmax(np.abs(sim_array))
+
+    gphase_dif = (np.angle(target_array[arg_max] / sim_array[arg_max])) % (2 * np.pi)
+
+    init_qc.gphase(gphase_dif, 0)
+
+    init_gate = init_qc.to_gate()
+
+    init_gate.name = "state_init"
 
     if reversed:
-        qf.reg = qf.reg[::-1]
-
-    qc = qf.qs.compile()
-    op = qc.to_gate()
-
-    def prepare_fun(qf):
-        qf.qs.append(op,[qf[i] for i in range(m)])
-
-    return prepare_fun
+        qv.qs.append(init_gate, [qv[m-1-i] for i in range(m)])
+    else:
+        qv.qs.append(init_gate, [qv[i] for i in range(m)])

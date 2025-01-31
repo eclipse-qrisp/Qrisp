@@ -347,14 +347,14 @@ class Jaspr(Jaxpr):
         
         def eqn_evaluator(eqn, context_dic):
             if eqn.primitive.name == "pjit" and isinstance(eqn.params["jaxpr"].jaxpr, Jaspr):
-                return pjit_to_gate(eqn, context_dic)
+                return pjit_to_gate(eqn, context_dic, eqn_evaluator)
             elif eqn.primitive.name == "cond":
-                return cond_to_cl_control(eqn, context_dic)
+                return cond_to_cl_control(eqn, context_dic, eqn_evaluator)
             elif eqn.primitive.name == "convert_element_type":
                 if isinstance(context_dic[eqn.invars[0]], Clbit):
                     context_dic[eqn.outvars[0]] = context_dic[eqn.invars[0]]
-            else:
-                return True
+                    return
+            return True
             
         res = eval_jaxpr(jaspr, eqn_evaluator = eqn_evaluator)(*([QuantumCircuit()] + list(args)))
         

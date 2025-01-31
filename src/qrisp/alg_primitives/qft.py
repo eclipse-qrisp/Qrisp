@@ -19,6 +19,7 @@
 import numpy as np
 
 from qrisp.core import p, h, cp, cx, x, s, swap
+from qrisp.jasp import qache, jrange, check_for_tracing_mode
 
 def QFT_inner(qv, exec_swap=True, qiskit_endian=True, inplace_mult=1, use_gms=False, inpl_adder = None):
     from qrisp.misc import is_inv
@@ -176,6 +177,22 @@ def QFT(
 
     if inv:
         with invert():
+            if check_for_tracing_mode():
+                jasp_qft(qv, exec_swap)
+            else:
+                gate_wrap(permeability=[], is_qfree=False, name=name)(QFT_inner)(
+                    qv,
+                    exec_swap=exec_swap,
+                    qiskit_endian=qiskit_endian,
+                    inplace_mult=inplace_mult,
+                    use_gms=use_gms,
+                    inpl_adder=inpl_adder
+                )
+
+    else:
+        if check_for_tracing_mode():
+            jasp_qft(qv, exec_swap)
+        else:
             gate_wrap(permeability=[], is_qfree=False, name=name)(QFT_inner)(
                 qv,
                 exec_swap=exec_swap,
@@ -184,14 +201,24 @@ def QFT(
                 use_gms=use_gms,
                 inpl_adder=inpl_adder
             )
-    else:
-        gate_wrap(permeability=[], is_qfree=False, name=name)(QFT_inner)(
-            qv,
-            exec_swap=exec_swap,
-            qiskit_endian=qiskit_endian,
-            inplace_mult=inplace_mult,
-            use_gms=use_gms,
-            inpl_adder=inpl_adder
-        )
 
     return qv
+
+@qache(static_argnums = [1])
+def jasp_qft(qv, exec_swap):
+    
+    """Performs qft on the first n qubits in circuit (without swaps)"""
+    if isinstance(qv, list):
+        n = len(qv)
+    else:
+        n = qv.size
+    
+    for i in jrange(n):
+        # pass
+        h(qv[n - 1- i])
+        for k in jrange(n - i-1):
+            cp(2. * np.pi / pow(2., (k + 2)), qv[n - 1 - (k + i + 1)], qv[n - 1 -i])
+    
+    if exec_swap:
+        for i in jrange(n//2):
+            swap(qv[i], qv[n-i-1])

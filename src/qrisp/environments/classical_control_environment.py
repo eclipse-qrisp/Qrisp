@@ -26,8 +26,6 @@ from qrisp.jasp import extract_invalues, insert_outvalues
 
 class ClControlEnvironment(QuantumEnvironment):
     r"""
-    .. _ClControlEnvironment:
-    
     The ``ClControlEnvironment`` enables execution of quantum code conditioned on
     classical values. The environment works with similar semantics as the 
     :ref:`ControlEnvironment`, implying this environment can also be entered

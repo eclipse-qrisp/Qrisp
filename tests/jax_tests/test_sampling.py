@@ -19,6 +19,11 @@
 from qrisp import QuantumFloat, h, t, x, conjugate, measure, control, QuantumBool, cx
 from qrisp.jasp import jaspify, sample, jrange, expectation_value
 
+def double(*args):
+    if len(args) == 1:
+        return 2*args[0]
+    return tuple([2*x for x in args])
+
 def test_sampling():
     
     def inner_f(i):
@@ -37,12 +42,27 @@ def test_sampling():
     
     assert set(int(i) for i in main()) == {0,1}
     
-    @jaspify(terminal_sampling = False)
+    @jaspify(terminal_sampling = True)
     def main():
         res = sample(inner_f, 100)(2)
         return res
     
     assert set(int(i) for i in main()) == {0,1}
+
+    @jaspify
+    def main():
+        res = sample(inner_f, 100, post_processor = double)(2)
+        return res
+    
+    assert set(int(i) for i in main()) == {0,2}
+    
+    
+    @jaspify(terminal_sampling = True)
+    def main():
+        res = sample(inner_f, 100, post_processor = double)(2)
+        return res
+    
+    assert set(int(i) for i in main()) == {0,2}
     
     
     def inner_f(i):
@@ -64,6 +84,34 @@ def test_sampling():
         return res
     
     assert main().shape == (10, 3)
+    
+    @jaspify
+    def main():
+        
+        res = sample(inner_f, 10, post_processor=double)(2)
+        
+        return res
+    
+    assert main().shape == (10, 3)
+    
+    @jaspify(terminal_sampling = True)
+    def main():
+        
+        res = sample(inner_f, 10)(2)
+        
+        return res
+    
+    assert main().shape == (10, 3)
+    
+    @jaspify(terminal_sampling = True)
+    def main():
+        
+        res = sample(inner_f, 10, post_processor=double)(2)
+        
+        return res
+    
+    assert main().shape == (10, 3)
+    
 
     @sample
     def main():
@@ -100,7 +148,6 @@ def test_sampling():
         for j in range(3):
             assert main(i, j) == {(0.0, 0.0, False): 0.5, (2**i, 2**j, True): 0.5}
 
-
     @sample(100)
     def main(i, j):
         qf = QuantumFloat(3)
@@ -124,19 +171,33 @@ def test_expectation_value():
                 
         return qf
 
-    @jaspify
+    @jaspify(terminal_sampling = True)
     def main():
         res = expectation_value(inner_f, 10000)(2)
         return res
     
     assert abs(main()-0.5) < 0.05
     
-    @jaspify(terminal_sampling = False)
+    @jaspify
     def main():
-        res = expectation_value(inner_f, 50)(2)
+        res = expectation_value(inner_f, 100)(2)
         return res
     
-    assert abs(main()-0.5) < 0.15
+    assert abs(main()-0.5) < 0.2
+    
+    @jaspify(terminal_sampling = True)
+    def main():
+        res = expectation_value(inner_f, 10000, post_processor=double)(2)
+        return res
+    
+    assert abs(main()-1) < 0.05
+    
+    @jaspify
+    def main():
+        res = expectation_value(inner_f, 100, post_processor=double)(2)
+        return res
+    
+    assert abs(main()-1) < 0.2
     
     
     def inner_f(i):
@@ -150,7 +211,7 @@ def test_expectation_value():
                 
         return a, b
 
-    @jaspify
+    @jaspify(terminal_sampling = True)
     def main():
         res = expectation_value(inner_f, 10000)(2)
         return res
@@ -158,13 +219,30 @@ def test_expectation_value():
     ev_res = main()
     assert abs(ev_res[0]-0.5) < 0.05 and ev_res[1] == 0
     
-    @jaspify(terminal_sampling = False)
+    @jaspify
     def main():
-        res = expectation_value(inner_f, 50)(2)
+        res = expectation_value(inner_f, 100)(2)
         return res
     
     ev_res = main()
-    assert abs(ev_res[0]-0.5) < 0.15 and ev_res[1] == 0
+    assert abs(ev_res[0]-0.5) < 0.2 and ev_res[1] == 0
+    
+    @jaspify(terminal_sampling = True)
+    def main():
+        res = expectation_value(inner_f, 10000, post_processor=double)(2)
+        return res
+    
+    ev_res = main()
+    assert abs(ev_res[0]-1) < 0.05 and ev_res[1] == 0
+    
+    @jaspify
+    def main():
+        res = expectation_value(inner_f, 100, post_processor=double)(2)
+        return res
+    
+    ev_res = main()
+    assert abs(ev_res[0]-1) < 0.2 and ev_res[1] == 0
+    
     
 
     

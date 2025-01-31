@@ -132,9 +132,7 @@ class JRangeIterator:
             raise StopIteration
 
 def jrange(*args):
-    """
-    .. _jrange:
-    
+    """  
     Performs a loop with a dynamic bound. Similar to the Python native ``range``,
     this iterator can receive multiple arguments. If it receives just one, this
     value is interpreted as the stop value and the start value is assumed to be 0.

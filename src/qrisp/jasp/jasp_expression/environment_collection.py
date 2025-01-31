@@ -66,13 +66,30 @@ def collect_environments(jaxpr):
             
             eqn = JaxprEqn(params = new_params,
                                     primitive = eqn.primitive,
-                                    invars = list(eqn.invars), # Note that the constvars of the jaxpr are appended to the invars of the equation
+                                    invars = list(eqn.invars),
                                     outvars = list(eqn.outvars),
                                     effects = eqn.effects,
                                     source_info = eqn.source_info,)
             
+        if eqn.primitive.name == "cond":
             
-        
+            new_params = dict(eqn.params)
+            
+            false_collected_jaspr = collect_environments(eqn.params["branches"][0].jaxpr)
+            true_collected_jaspr = collect_environments(eqn.params["branches"][1].jaxpr)
+            
+            false_collected_jaspr = ClosedJaxpr(false_collected_jaspr, eqn.params["branches"][0].consts)
+            true_collected_jaspr = ClosedJaxpr(true_collected_jaspr, eqn.params["branches"][1].consts)
+            
+            new_params["branches"] = (false_collected_jaspr, true_collected_jaspr)
+            
+            eqn = JaxprEqn(params = new_params,
+                                    primitive = eqn.primitive,
+                                    invars = list(eqn.invars),
+                                    outvars = list(eqn.outvars),
+                                    effects = eqn.effects,
+                                    source_info = eqn.source_info,)
+
         # If an exit primitive is found, start the collecting mechanism.
         if eqn.primitive.name == "jasp.q_env" and "exit" in eqn.params.values():
             
