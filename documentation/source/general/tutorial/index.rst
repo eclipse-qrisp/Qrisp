@@ -19,6 +19,8 @@ To gradually qrispify your programming game you will start with the basics and g
 
 - :ref:`Fault-Tolerant compilation of Shor's algorithm <ft_compilation_shor>` delves into the realm of **compiling for fault-tolerant quantum devices**, exploring the specialized techniques and considerations that set this stage apart from the compilation challenges encountered in NISQ environments. At the end you will also optimize the implementation of Shor's from the tutorial above.
 
+- :ref:`Solving linear system problems with HHL <HHL_tutorial>` introduces the Harrow-Hassidim-Lloyd (HHL) quantum algorithm, which offers exponential speed-up for certain sparse matrices in solving linear system problems $Ax=b$. The tutorial demonstrates hybrid quantum-classical workflows using the Catalyst framework and highlights how Qrisp and Catalyst work together for implementing advanced quantum algorithms.
+
 
 Along the way, we'll introduce you to important concepts and techniques that you'll need to know in order to write highly efficient algorithms in Qrisp.
 We encourage you to follow along with the examples and try out the code for yourself. Don't worry if you make mistakes or don't understand something right away - programming is a process of learning and experimentation, and it takes time to become proficient.
@@ -37,5 +39,6 @@ By the end of this tutorial, you'll have a solid foundation of our high-level fr
    H2
    Shor
    FT_compilation
+   HHL
    
    
