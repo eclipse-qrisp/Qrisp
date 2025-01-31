@@ -16,7 +16,7 @@
 ********************************************************************************/
 """
 
-def test_QAE():
+def test_jasp_QAE():
     from qrisp import QuantumFloat, ry, z, QAE
     from qrisp.jasp import terminal_sampling
     import numpy as np

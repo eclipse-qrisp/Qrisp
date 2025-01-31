@@ -16,26 +16,31 @@
 ********************************************************************************/
 """
 
-def test_jasp_amplitude_amplification():
-    from qrisp import QuantumFloat, ry, z, amplitude_amplification
+def test_jasp_grovers_algorithm():
+    from qrisp import QuantumFloat
     from qrisp.jasp import terminal_sampling
+    from qrisp.grover import tag_state, grovers_alg
     import numpy as np
 
-    def state_function(qb):
-        ry(np.pi/8,qb)
-
-    def oracle_function(qb):   
-        z(qb)
+    def test_oracle(qf_list, phase = np.pi):
+        tag_dic = {qf_list[0] : 0, qf_list[1] : 0.5}
+        tag_state(tag_dic, phase=phase)
 
     @terminal_sampling
-    def main(i):
-        qb = QuantumFloat(1)     
-        state_function(qb)
-        amplitude_amplification([qb], state_function, oracle_function, iter=i)
-        return qb
+    def main():
+        qf_list = [QuantumFloat(2,-2), QuantumFloat(2,-2)]
+        grovers_alg(qf_list, test_oracle)
+        return qf_list[0], qf_list[1]
 
-    assert np.round(main(0)[1],2) == 0.04
-    assert np.round(main(1)[1],2) == 0.31
-    assert np.round(main(2)[1],2) == 0.69
-    assert np.round(main(3)[1],2) == 0.96
+    res_dict = main()
+    assert res_dict[(0,0.5)]>0.95
 
+    # Exact Grover's algorithm
+    @terminal_sampling
+    def main():
+        qf_list = [QuantumFloat(2,-2), QuantumFloat(2,-2)]
+        grovers_alg(qf_list, test_oracle, winner_state_amount=1, exact=True)
+        return qf_list[0], qf_list[1]
+
+    res_dict = main()
+    assert np.abs(res_dict[(0,0.5)]-1) < 1e-4
