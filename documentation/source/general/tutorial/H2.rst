@@ -139,6 +139,7 @@ If you don't feel like solving integrals right now, we've got you covered! Qrisp
 ::
 
     from pyscf import gto
+    from qrisp.operators import FermionicOperator
     mol = gto.M(atom = '''H 0 0 0; H 0 0 0.74''', basis = 'sto-3g')
     H_ferm = FermionicOperator.from_pyscf(mol)
     print(H_ferm)
