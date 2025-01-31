@@ -18,7 +18,7 @@
 
 
 import numpy as np
-from qrisp import QuantumArray, QuantumVariable, QuantumFloat, gate_wrap, gphase, h, mcx, mcp, mcz, p, x, z, merge, recursive_qs_search, IterationEnvironment, conjugate, invert
+from qrisp import QuantumArray, QuantumVariable, QuantumFloat, gate_wrap, gphase, h, mcx, mcp, mcz, p, x, z, merge, recursive_qs_search, conjugate, invert, control
 from qrisp.jasp import check_for_tracing_mode, jrange
 
 # Applies the grover diffuser onto the (list of) quantum variable input_object
@@ -168,9 +168,9 @@ def tag_state(tag_specificator, binary_values=False, phase=np.pi):
 
     qv_list = list(tag_specificator.keys())
 
-    states = [tag_specificator[qv] for qv in qv_list]
-
     if check_for_tracing_mode():
+
+        states = [qv.encoder(tag_specificator[qv]) for qv in qv_list]
 
         def conjugator(qv_list,temp_qf):
             for i in range(len(qv_list)):
@@ -184,14 +184,14 @@ def tag_state(tag_specificator, binary_values=False, phase=np.pi):
 
         if m==1:
             with conjugate(conjugator)(qv_list,temp_qf): 
-                if phase == np.pi:
+                with control(phase == np.pi):
                     z(temp_qf)
-                else:
+                with control(phase != np.pi):
                     p(phase, temp_qf)
             
         else:
             with conjugate(conjugator)(qv_list,temp_qf):  
-                if phase == np.pi:
+                with control(phase == np.pi):
                     h(temp_qf[-1])
 
                     mcx(temp_qf[:m-1],
@@ -200,13 +200,17 @@ def tag_state(tag_specificator, binary_values=False, phase=np.pi):
                         ctrl_state=-1)
 
                     h(temp_qf[-1])
-                else: 
+                with control(phase != np.pi):
                     mcp(phase, 
                         temp_qf, 
                         method= "balauca",
                         ctrl_state=-1)
+                    
+        temp_qf.delete()
     
     else:
+
+        states = [tag_specificator[qv] for qv in qv_list]
 
         if not len(states):
             states = ["1" * qv.size for qv in qv_list]
@@ -398,10 +402,15 @@ def grovers_alg(
     elif winner_state_amount is None:
         winner_state_amount = 1
 
+    if check_for_tracing_mode():
+        import jax.numpy as jnp
+    else:
+        import numpy as jnp
+
     if isinstance(qv_list, list):
-        N = 2 ** sum([qv.size for qv in qv_list])
+        N = 2 ** jnp.sum(jnp.array([qv.size for qv in qv_list]))
     elif isinstance(qv_list, QuantumArray):
-        N = 2 ** sum([qv.size for qv in qv_list.flatten()])
+        N = 2 ** sum(jnp.array([qv.size for qv in qv_list.flatten()]))
     elif isinstance(qv_list, QuantumVariable):
         N = 2**qv_list.size
 
@@ -410,44 +419,62 @@ def grovers_alg(
         # https://arxiv.org/pdf/quant-ph/0106071.pdf
         iterations = 1
         tmp = (
-            np.sin(np.pi / (4 * (iterations - 1) + 6))
+            jnp.sin(jnp.pi / (4 * (iterations - 1) + 6))
             * (N / winner_state_amount) ** 0.5
         )
 
-        while tmp > 1:
-            iterations += 1
-            tmp = (
-                np.sin(np.pi / (4 * (iterations - 1) + 6))
-                * (N / winner_state_amount) ** 0.5
-            )
+        if check_for_tracing_mode():
 
-        phi = 2 * np.arcsin(
-            np.sin(np.pi / (4 * (iterations - 1) + 6))
+            from jax.lax import while_loop
+
+            def body_fun(state):
+                iterations, tmp, winner_state_amount = state
+                return iterations+1, jnp.sin(jnp.pi / (4 * (iterations - 1) + 6)) * (N / winner_state_amount) ** 0.5, winner_state_amount
+            
+            def cond_fun(state):
+                iterations, tmp, winner_state_amount = state
+                return tmp > 1
+
+            iterations, tmp, winner_state_amount = while_loop(cond_fun, body_fun, (iterations, tmp, winner_state_amount))
+
+        else:
+
+            while tmp > 1:
+                iterations += 1
+                tmp = (
+                    jnp.sin(jnp.pi / (4 * (iterations - 1) + 6))
+                    * (N / winner_state_amount) ** 0.5
+                )
+
+        phi = 2 * jnp.arcsin(
+            jnp.sin(jnp.pi / (4 * (iterations - 1) + 6))
             * (N / winner_state_amount) ** 0.5
         )
 
     else:
         if iterations == 0:
-            iterations = np.pi / 4 * np.sqrt(N / winner_state_amount)
-            iterations = int(np.round(iterations))
+            iterations = jnp.pi / 4 * jnp.sqrt(N / winner_state_amount)
+            iterations = jnp.int64(jnp.round(iterations))
 
-    for qv in qv_list:
-        h(qv)
-
-    merge(qv_list)
-    qs = recursive_qs_search(qv_list)[0]
+    if isinstance(qv_list,(list,QuantumArray)):
+        [h(qv) for qv in qv_list]
+    else:
+        h(qv_list)
     
-    qv_amount = len(qs.qv_list)
+    if not check_for_tracing_mode():
+        merge(qv_list)
+        qs = recursive_qs_search(qv_list)[0]
+        qv_amount = len(qs.qv_list)
 
-    with IterationEnvironment(qs, iterations, precompile = False):
-    # for i in range(iterations):
+    for i in jrange(iterations):
         if exact:
             oracle_function(qv_list, phase=phi, **kwargs)
             diffuser(qv_list, phase=phi)
         else:
             oracle_function(qv_list, **kwargs)
             diffuser(qv_list)
-            
+
+    if not check_for_tracing_mode():       
         if qv_amount != len(qs.qv_list):
             raise Exception("Applied oracle introducing new QuantumVariables without uncomputing/deleting")
 
