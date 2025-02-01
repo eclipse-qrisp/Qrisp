@@ -265,7 +265,6 @@ The ``print('RND')`` was used because since the 0.4 update we have also included
 ::
 
     print('TQA')
-    maxcut_instance = maxcut_problem(G)
 
     benchmark_data = maxcut_instance.benchmark(qarg = QuantumVariable(len(G)),
                             depth_range = [1,2,3,4,5],
@@ -327,14 +326,15 @@ IV. select **MIXER** from the :ref:`assortment we provide and list here <MIXers>
 Let's condense all of the above, and implement QAOA for MaxCut one last time in one block of code
 ::
 
-    from qrisp.qaoa import QuantumArray, QuantumVariable, QAOAProblem, maxcut_obj,create_maxcut_cl_cost_function,create_maxcut_cost_operator, RX_mixer
+    from qrisp import QuantumArray, QuantumVariable
+    from qrisp.qaoa import QAOAProblem, maxcut_obj, create_maxcut_cl_cost_function, create_maxcut_cost_operator, RX_mixer
     import networkx as nx
     from operator import itemgetter
 
     G = nx.Graph()
     G.add_edges_from([[0,3],[0,4],[1,3],[1,4],[2,3],[2,4]])
 
-    qarg = QuantumArray(qtype = QuantumVariable(1), shape = len(G))
+    qarg = QuantumVariable(len(G))
 
     depth = 5
 
