@@ -21,7 +21,7 @@ Mathemically speaking, we want to find an approximation for the following (gener
 
 .. math::
 
-    \int_{ { \lbrack 0,1 \rbrack }^n } f(x_1 , ... , x_n) \text{d} \mu (x_1 , ... , x_n)
+    \int_{ { \lbrack 0,1 \rbrack }^n } f(x_1 , \dotsc , x_n) \text{d} \mu (x_1 , \dotsc , x_n)
 
 As one does, we approximate an integral which cannot be solved analytically as a bunch of sums.
 

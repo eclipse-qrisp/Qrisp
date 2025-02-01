@@ -32,16 +32,16 @@ def QMCI(qargs, function, distribution=None, mes_kwargs={}):
 
     .. math::
 
-        \int_{[0,1]^n} f(x_1 , ... , x_n) \mathrm{d}\mu (x_1 , ... , x_n)
+        \int_{[0,1]^n} f(x_1 ,\dotsc , x_n) \mathrm{d}\mu (x_1 ,\dotsc , x_n)
 
     Parameters
     ----------
     qargs : list[:ref:`QuantumFloat`]
-        The quantum variables representing the $x$-axes (the variables the given ``function`` acts on), and a quantum variable representing the $y$-axis.
+        The quantum variables representing the $x$-axes (the variables on which the given ``function`` acts), and a quantum variable representing the $y$-axis.
     function : function
         A Python function which takes :ref:`QuantumFloats <QuantumFloat>` as inputs, 
         and returns a :ref:`QuantumFloat` containing the values of the integrand.
-    distribution : function
+    distribution : function, optional
         A Python function which takes :ref:`QuantumFloats <QuantumFloat>` as inputs and applies the distribution over which to integrate.
         By default, the uniform distribution is applied.
     mes_kwargs : dict, optional
