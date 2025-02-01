@@ -17,17 +17,12 @@
 """
 
 def test_quantum_counting():
-    from qrisp import quantum_counting, z, QuantumFloat
+    from qrisp import quantum_counting, z, QuantumVariable
     import numpy as np
 
     def oracle(qv):
         z(qv[-1])
 
-    @jaspify
-    def main():
-        res = quantum_counting(QuantumFloat(3), oracle, 3)
-        return res
+    res = quantum_counting(QuantumVariable(3), oracle, 3)
     
-    res = main()
-
     assert np.abs(res-4) < 1e-4

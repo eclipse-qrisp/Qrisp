@@ -16,7 +16,7 @@
 ********************************************************************************/
 """
 
-def test_quantum_counting():
+def test_jasp_quantum_counting():
     from qrisp import quantum_counting, z, QuantumFloat
     from qrisp.jasp import jaspify
     import numpy as np
