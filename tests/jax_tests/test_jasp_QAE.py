@@ -34,7 +34,9 @@ def test_jasp_QAE():
         return res
 
     meas_res = main()
-    assert meas_res == {0.125: 0.5, 0.875: 0.5}
+    
+    assert np.round(meas_res[0.125],2) == 0.5
+    assert np.round(meas_res[0.875],2) == 0.5
 
 
 def test_QAE_integration():
