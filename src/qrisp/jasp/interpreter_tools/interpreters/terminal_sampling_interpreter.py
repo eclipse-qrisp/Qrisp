@@ -279,7 +279,7 @@ def terminal_sampling_evaluator(sampling_res_type):
                             elif sampling_res_type == "array":
                                 sampling_res.extend(v*[outvalues])
                             elif sampling_res_type == "dict":
-                                sampling_res[tuple(x.item() for x in outvalues)] = v
+                                sampling_res[tuple(x.item() for x in outvalues)] = v.item()
 
                     if sampling_res_type == "array":
                         shuffle(sampling_res)
