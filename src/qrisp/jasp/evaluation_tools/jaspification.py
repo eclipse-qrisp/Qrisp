@@ -274,7 +274,7 @@ def simulate_jaspr(jaspr, *args, terminal_sampling = False, simulator = "qrisp")
             
             # outvalues = eval_jaxpr(eqn.params["jaxpr"], eqn_evaluator = eqn_evaluator)(*invalues)
             
-            if eqn.params["name"] == "gidney_mcx_inv" and False:
+            if eqn.params["name"] == "gidney_mcx_inv":
                 invalues[0].append(gidney_qc.inverse().to_gate(), invalues[1:])
                 outvalues = [invalues[0]]
             else:
