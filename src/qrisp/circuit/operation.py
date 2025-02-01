@@ -894,11 +894,30 @@ class ClControlledOperation(Operation):
         self.num_control = num_control
         self.ctrl_state = ctrl_state
         
+        if base_op.definition:
+            
+            from qrisp import QuantumCircuit, Clbit
+            definition = QuantumCircuit()
+            definition.qubits = list(base_op.definition.qubits)
+            for _ in range(num_control):
+                definition.add_clbit()
+            
+            cl_control_bits = list(definition.clbits)
+            definition.clbits = cl_control_bits + list(base_op.definition.clbits)
+            
+            for instr in base_op.definition.data:
+                definition.append(instr.op.c_if(num_control, ctrl_state), instr.qubits, cl_control_bits + instr.clbits)
+                
+        else:
+            definition = None
+            
+        
         Operation.__init__(self, 
                            name = "c_if_" + base_op.name, 
                            num_qubits = base_op.num_qubits,
                            num_clbits = base_op.num_clbits + num_control,
-                           params = list(base_op.params))
+                           params = list(base_op.params),
+                           definition = definition)
         
         self.permeability = dict(base_op.permeability)
         

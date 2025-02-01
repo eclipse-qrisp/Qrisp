@@ -236,6 +236,8 @@ def stimulate(func = None):
 
 def simulate_jaspr(jaspr, *args, terminal_sampling = False, simulator = "qrisp"):
     
+    from qrisp.alg_primitives.mcx_algs.circuit_library import gidney_qc
+    
     if len(jaspr.outvars) == 1:
         return None
     
@@ -264,17 +266,27 @@ def simulate_jaspr(jaspr, *args, terminal_sampling = False, simulator = "qrisp")
                     terminal_sampling_evaluator(translation_dic[function_name])(eqn, context_dic, eqn_evaluator = eqn_evaluator)
                     return
             
-                
             invalues = extract_invalues(eqn, context_dic)
-            outvalues = eval_jaxpr(eqn.params["jaxpr"], eqn_evaluator = eqn_evaluator)(*invalues)
+
+            # We simulate the inverse Gidney mcx via the non-hybrid version because
+            # the hybrid version prevents the simulator from fusing gates, which
+            # slows down the simulation
+            
+            # outvalues = eval_jaxpr(eqn.params["jaxpr"], eqn_evaluator = eqn_evaluator)(*invalues)
+            
+            if eqn.params["name"] == "gidney_mcx_inv" and False:
+                invalues[0].append(gidney_qc.inverse().to_gate(), invalues[1:])
+                outvalues = [invalues[0]]
+            else:
+                outvalues = eval_jaxpr(eqn.params["jaxpr"], eqn_evaluator = eqn_evaluator)(*invalues)
             if not isinstance(outvalues, (list, tuple)):
                 outvalues = [outvalues]
             insert_outvalues(eqn, context_dic, outvalues)
         elif eqn.primitive.name == "jasp.quantum_kernel":
-            insert_outvalues(eqn, context_dic, BufferedQuantumState())
+            insert_outvalues(eqn, context_dic, BufferedQuantumState(simulator))
         else:
             return True
-    
+        
     res = eval_jaxpr(jaspr, eqn_evaluator = eqn_evaluator)(*(args + jaspr.consts))
     
     if len(jaspr.outvars) == 2:

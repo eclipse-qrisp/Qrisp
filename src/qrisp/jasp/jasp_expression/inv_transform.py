@@ -55,10 +55,15 @@ def invert_eqn(eqn):
         params["jaxpr"] = ClosedJaxpr((eqn.params["jaxpr"].jaxpr).inverse(),
                                       eqn.params["jaxpr"].consts)
 
-        if params["name"][-3:] == "_dg":        
+        name = params["name"]
+        if name[-3:] == "_dg":        
             params["name"] = params["name"][:-3]
-        elif params["name"] not in ["gidney_mcx", "gidney_mcx_inv"]:
+        elif name not in ["gidney_mcx", "gidney_mcx_inv"]:
             params["name"] += "_dg"
+        elif name == "gidney_mcx":
+            params["name"] = "gidney_mcx_inv"
+        elif name == "gidney_mcx_inv":
+            params["name"] = "gidney_mcx"
         
         primitive = eqn.primitive
     elif eqn.primitive.name == "while":
@@ -221,7 +226,10 @@ def invert_loop_body(jaxpr):
     else:
         new_primitive = add_p
     
-    if increment_eqn.invars[1].val != 1:
+    try:
+        if increment_eqn.invars[1].val != 1:
+            raise
+    except:
         raise Exception("Dynamic loop inversion is only supported for loops the have step size 1.")
     
     # Create the decrement equation

@@ -504,7 +504,7 @@ def jasp_balauca_mcp(phi, ctrls, ctrl_state):
                 p(phi, target[0])
             
         with control(N > 2):
-            balauca_anc = QuantumVariable(N-2+N%2)
+            balauca_anc = QuantumVariable(N+N%2-1)
             with conjugate(jasp_balauca_helper)(ctrls, balauca_anc):
                 with conjugate(mcx)([balauca_anc[balauca_anc.size-1], balauca_anc[balauca_anc.size-2]], target[0], method = "gray_pt"):
                     p(phi, target[0])
@@ -524,24 +524,14 @@ def jasp_balauca_helper(ctrls, balauca_anc):
         
     N = jlen(ctrls)
     
-    n = jnp.int64(jnp.ceil(jnp.log2(N)))
-    
     for i in xrange(N//2):
-        mcx([ctrls[2*i], ctrls[2*i+1]], balauca_anc[i])
+        mcx([ctrls[2*i], ctrls[2*i+1]], balauca_anc[i], method = "gidney")
         
     with control(N%2 != 0):
         cx(ctrls[N-1], balauca_anc[N//2-1+N%2])
     
-    n = jnp.int64(jnp.ceil(jnp.log2(N)))
-    
-    l = make_tracer(0)
-    k = N
-    for i in xrange(n-2):
-        k = jnp.int64(jnp.ceil(k/2))
-        
-        for j in xrange(k//2):
-            mcx([balauca_anc[l+2*j], balauca_anc[l+2*j+1]], 
-                balauca_anc[l+k+j], 
-                method = "gidney")
-        
-        l += k - k%2
+    l = N//2+N%2
+    for i in jrange(balauca_anc.size-l):
+        mcx([balauca_anc[2*i], balauca_anc[2*i+1]], 
+            balauca_anc[l+i],
+            method = "gidney")
