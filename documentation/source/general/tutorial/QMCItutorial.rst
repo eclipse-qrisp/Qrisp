@@ -50,7 +50,7 @@ As a second step, it applies the oracle that encodes the "points under the curve
 
     \ket{x} \ket{y} \ket{\text{False}} \rightarrow \mathbb{1}_{y \geq f(x)} \ket{x} \ket{y} \ket{\text{False}} + \mathbb{1}_{y < f(x)} \ket{x} \ket{y} \ket{\text{True}}
 
-We now arrive at the central step of this algorithm, which is :ref:`Quantum Amplitude Estimation <QAE>`. We use it to find
+We now arrive at the central step of this algorithm, which is :ref:`Quantum Amplitude Estimation <QAE>`. We use it to find the probability of measuring a good state $\ket{x}\ket{y}\ket{\text{True}}$, i.e.
 
 .. math::
 
@@ -62,16 +62,16 @@ The last expression is then (up to a scaling factor) the approximation for the i
 Iterative Quantum Amplitude Estimation
 --------------------------------------
 
-In Qrisp we have the option of using a resource efficient amplitude estimation algorithm, namely `Accelerated Quantum Amplitude Estimation, see Algorithm 1 <https://arxiv.org/pdf/2407.16795>`_ , which iteratively applies :ref:`amplitude amplification <QAE>` to find an estimation for the amplitude of the good state.
+In Qrisp we have the option of using a resource efficient amplitude estimation algorithm, namely `Accelerated Quantum Amplitude Estimation, see Algorithm 1 <https://arxiv.org/pdf/2407.16795>`_ , which iteratively applies :ref:`amplitude amplification <QAE>` to find an estimation for the probability of measureing a good state.
 The goal of the algorithm is as follows: 
 
-We start with a unitary operator :math:`\mathcal{A}`, which acts on the input QuantumVariables as
+We start with a unitary operator :math:`\mathcal{A}`, which acts on the input quantum variables as
 
 .. math::
 
     \textbf{A} \ket{0}\ket{\text{False}} = \sqrt{1-a} \ket{\Psi_0} \ket{\text{False}} + \sqrt{a} \ket{\Psi_1} \ket{\text{True}},
 
-where :math:`a \in [0,1]` is unknown.
+producing a superposition of orthogonal good and bad components where :math:`a \in [0,1]` is unknown.
 
 The algorithm in question allows for us to establish an estimate :math:`\hat{a}` of the unknown :math:`a`. 
 
