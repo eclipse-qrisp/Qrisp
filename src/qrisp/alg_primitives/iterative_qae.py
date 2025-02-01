@@ -21,7 +21,7 @@ from qrisp.alg_primitives.qae import amplitude_amplification
 import numpy as np
 
 
-def IQAE(qargs, state_function, eps, alpha, kwargs_oracle = {}):
+def IQAE(qargs, state_function, eps, alpha, mes_kwargs={}):
     r"""
     Accelerated Quantum Amplitude Estimation (IQAE). This function performs :ref:`QAE <QAE>` with a fraction of the quantum resources of the well-known `QAE algorithm <https://arxiv.org/abs/quant-ph/0005055>`_.
     See `Accelerated Quantum Amplitude Estimation without QFT <https://arxiv.org/abs/2407.16795>`_.
@@ -45,6 +45,8 @@ def IQAE(qargs, state_function, eps, alpha, kwargs_oracle = {}):
         Accuracy $\epsilon>0$ of the algorithm.
     alpha : float
         Confidence level $\alpha\in (0,1)$ of the algorithm.
+    mes_kwargs : dict, optional
+        The keyword arguments for the measurement function. Default is an empty dictionary.
 
     Returns
     -------
@@ -125,7 +127,7 @@ def IQAE(qargs, state_function, eps, alpha, kwargs_oracle = {}):
         # Perform quantum step
         qargs_dupl = [qarg.duplicate() for qarg in qargs]
         A_i  = quant_step( int((K_i -1 )/2) , N_i, qargs_dupl, state_function, 
-                        oracle_function, kwargs_oracle ) 
+                        oracle_function, mes_kwargs ) 
         
         for qarg in qargs_dupl:
             qarg.delete()
@@ -144,7 +146,7 @@ def IQAE(qargs, state_function, eps, alpha, kwargs_oracle = {}):
     return final_res
 
 
-def quant_step(k, N, qargs, state_function, oracle_function, kwargs_oracle):
+def quant_step(k, N, qargs, state_function, oracle_function, mes_kwargs):
     """
     Performs the quantum step, i.e., Quantum Amplitude Amplification, 
     in accordance to `Accelerated Quantum Amplitude Estimation without QFT <https://arxiv.org/abs/2407.16795>`_
@@ -163,19 +165,20 @@ def quant_step(k, N, qargs, state_function, oracle_function, kwargs_oracle):
         A Python function tagging the good state :math:`\ket{\Psi_1}`.
         This function will receive the variables in the list ``args`` as arguments in the
         course of this algorithm.
-    kwargs_oracle : dict, optional
-        A dictionary containing keyword arguments for the oracle. The default is {}.
+    mes_kwargs : dict, optional
+        The keyword arguments for the measurement function. Default is an empty dictionary.
     """
 
     if k==0:
         state_function(*qargs)
     else:
         state_function(*qargs)
-        amplitude_amplification(qargs, state_function, oracle_function, kwargs_oracle, iter = k)
+        amplitude_amplification(qargs, state_function, oracle_function, iter = k)
 
     # store result of last qubit 
     # shot-based measurement 
-    res_dict = qargs[-1].get_measurement(shots = N)
+    mes_kwargs["shots"] = N
+    res_dict = qargs[-1].get_measurement(**mes_kwargs)
     
     # case of single dict return, this should not occur but to be safe
     if True not in list(res_dict.keys()):

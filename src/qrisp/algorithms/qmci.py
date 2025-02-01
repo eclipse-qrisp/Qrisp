@@ -23,7 +23,7 @@ def uniform(*args):
         h(arg)
 
 
-def QMCI(qargs, function, distribution=None):
+def QMCI(qargs, function, distribution=None, mes_kwargs={}):
     r"""
     Implements a general algorithm for `Quantum Monte Carlo Integration <https://www.nature.com/articles/s41598-024-61010-9>`_.
     This implementation utilizes :ref:`IQAE`. A detailed explanation can be found in the :ref:`tutorial <QMCItutorial>`.
@@ -44,6 +44,8 @@ def QMCI(qargs, function, distribution=None):
     distribution : function
         A Python function which takes :ref:`QuantumFloats <QuantumFloat>` as inputs and applies the distribution over which to integrate.
         By default, the uniform distribution is applied.
+    mes_kwargs : dict, optional
+        The keyword arguments for the measurement function. Default is an empty dictionary.
 
     Returns
     -------
@@ -60,7 +62,7 @@ def QMCI(qargs, function, distribution=None):
     ::
 
         from qrisp import QuantumFloat
-        from qrisp.algorithms.qmci import QMCI
+        from qrisp.qmci import QMCI
 
         def f(qf):
             return qf*qf
@@ -110,7 +112,7 @@ def QMCI(qargs, function, distribution=None):
         with(qf_y < function(*qf_x)):
             x(tar)
 
-    a = IQAE(qargs, state_function, eps=0.01, alpha=0.01)   
+    a = IQAE(qargs, state_function, eps=0.01, alpha=0.01, mes_kwargs=mes_kwargs)   
 
     V = V0*a
     return V
