@@ -252,9 +252,9 @@ def simulate_jaspr(jaspr, *args, terminal_sampling = False, simulator = "qrisp")
     def eqn_evaluator(eqn, context_dic):
         if eqn.primitive.name == "pjit":
             
+            function_name = eqn.params["name"]
+            
             if terminal_sampling:
-                
-                function_name = eqn.params["name"]
                 
                 translation_dic = {"expectation_value_eval_function" : "ev",
                                    "sampling_eval_function" : "array",

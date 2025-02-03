@@ -52,4 +52,54 @@ def test_fourier_adder():
     jaspr = make_jaspr(call_fourier_adder)()
     assert jaspr() == 9
     
+def test_out_of_place_arithmetic():
+    
+    @terminal_sampling
+    def main(i):
+        a = QuantumFloat(i)
+        b = QuantumFloat(i)
+        h(a)
+        h(b)
+        c = a + b
+        return a, b, c
+    
+    for i in range(1, 5):
+        sampling_dic = main(i)
+        
+        for a, b, c in sampling_dic.keys():
+            assert (a + b) % 2**i == c
+            
+    @terminal_sampling
+    def main(i):
+        a = QuantumFloat(i)
+        b = QuantumFloat(i)
+        h(a)
+        h(b)
+        c = a - b
+        return a, b, c
+    
+    for i in range(1, 5):
+        sampling_dic = main(i)
+        
+        for a, b, c in sampling_dic.keys():
+            assert (a - b) % 2**i == c
+            
+def test_pow():
+    
+    
+    for i in range(1, 4):
+        for j in range(3):
+            
+            @terminal_sampling
+            def main(i):
+                a = QuantumFloat(i)
+                h(a)
+                b = a**j
+                return a, b
+            
+            sampling_dic = main(i)
+            for a, b in sampling_dic.keys():
+                assert a**j == b
+        
+        
     

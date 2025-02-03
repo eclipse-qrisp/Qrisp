@@ -474,7 +474,7 @@ class QuantumFloat(QuantumVariable):
         from qrisp import check_for_tracing_mode
 
         if isinstance(other, QuantumFloat):
-            if not check_for_tracing_mode():
+            if check_for_tracing_mode():
                 res = self.duplicate()
                 cx(self, res)
                 res -= other
@@ -538,12 +538,17 @@ class QuantumFloat(QuantumVariable):
         if power == -1:
             from qrisp.alg_primitives.arithmetic import qf_inversion
             return qf_inversion(self)
+        elif power == 0:
+            res = self.duplicate()
+            res[:] = 1
+            return res
         else:
-            
+            from qrisp import jasp_multiplyer
             def power_conjugator(base, power, temp_results):
                 cx(base, temp_results[0])
                 for i in range(power-1):
-                    (temp_results[i+1] << (lambda a, b : a * b))(base, temp_results[i])
+                    (temp_results[i+1] << jasp_multiplyer)(base, temp_results[i])
+                    # (temp_results[i+1] << (lambda a, b : a * b))(base, temp_results[i])
             
             temp_results = [QuantumFloat((i+1)*self.size) for i in range(power)]
             
@@ -557,11 +562,8 @@ class QuantumFloat(QuantumVariable):
                 
             return res
                 
-            
-            
-            
 
-    # @gate_wrap(permeability=[1], is_qfree=True)
+    @gate_wrap(permeability=[1], is_qfree=True)
     def __iadd__(self, other):
         
         from qrisp.jasp import check_for_tracing_mode
