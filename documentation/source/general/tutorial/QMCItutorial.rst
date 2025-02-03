@@ -62,7 +62,7 @@ As a second step, we apply the oracle that evaluates the "points under the curve
 
     \ket{x_i} \ket{y_j} \ket{\text{False}} \rightarrow \mathbb{1}_{y_j \geq f(x_i)} \ket{x_i} \ket{y_j} \ket{\text{False}} + \mathbb{1}_{y_j < f(x_i)} \ket{x_i} \ket{y_j} \ket{\text{True}}
 
-where $\mathbb{1}_{y_j < f(x_i)}$ is $1$ if $\tilde{y_j} < f(x_i)$ and $0$ otherwise, and similarly for $\mathbb{1}_{y_j\geq f(x_i)}$.
+where $\mathbb{1}_{y_j < f(x_i)}$ is $1$ if $y_j < f(x_i)$ and $0$ otherwise, and similarly for $\mathbb{1}_{y_j\geq f(x_i)}$.
 
 We now arrive at the central step of this algorithm, which is :ref:`Quantum Amplitude Estimation <QAE>`. We use it to find the probability of measuring a good state $\ket{x_i}\ket{y_j}\ket{\text{True}}$, i.e.
 
@@ -70,7 +70,9 @@ We now arrive at the central step of this algorithm, which is :ref:`Quantum Ampl
 
     p(\{ (x_i,y_j) \mid y_j < f(x_i) \}) = \frac{1}{N} \sum^{N-1}_{i=0} \frac{1}{M} \sum^{M-1}_{j=0}  \mathbb{1}_{y_j < f(x_i)} \approx \frac{1}{N} \sum^{N-1}_{x=0} \frac{f(x_i)}{C}
 
-The last expression is then (up to a scaling factor $C$) an approximation for the integral in question. (For more information on why this is the case check out this `link <https://en.wikipedia.org/wiki/Riemann_integral>`_.)
+In the last step, we calculate the ratio between the number of points under the curve and the total number of points $M$ in the interval $[0,C]$. This serves as an approximation for $f(x)/C$.
+The last expression is then (up to the scaling factor $C$) an approximation for the integral in question. (For more information on why this is the case check out this `link <https://en.wikipedia.org/wiki/Riemann_integral>`_.)
+
 
 
 Iterative Quantum Amplitude Estimation
@@ -169,3 +171,8 @@ Let us now have a look at the result, and compare it to the expected result:
     N = 8
     print(sum((i/N)**2 for i in range(N))/N)
     # Yields: 0.2734375
+
+Congratulations, in this tutorial you learned about the basic theory behind Quantum Monte Carlo Integration, as well as, how to implement it using the high-level concepts that Qrisp offers.
+You witnessed the power of quantum computing that allows for evaluation of functions at exponentially many points all at once, 
+but also experienced the intricacies of making the quantum computer reveal the solution by using Quantum Amplitude Estimation. 
+By doing so, you're diving a step further into the world of quantum algorithms.
