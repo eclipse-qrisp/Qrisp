@@ -64,7 +64,7 @@ class TracingQuantumSession:
         if self.gc_mode in ["auto", "debug"]:
             from qrisp import reset
             spare_hash_list = [hash(qv) for qv in spare_qv_list]
-            for qv in self.qv_list:
+            for qv in list(self.qv_list):
                 if hash(qv) in spare_hash_list:
                     continue
                 if self.gc_mode == "auto":

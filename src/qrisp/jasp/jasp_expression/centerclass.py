@@ -294,7 +294,7 @@ class Jaspr(Jaxpr):
         else:
             ctrl_state = str(ctrl_state)
         
-        return ControlledJaspr(self, ctrl_state)
+        return ControlledJaspr.from_cache(self, ctrl_state)
     
     def to_qc(self, *args):
         """

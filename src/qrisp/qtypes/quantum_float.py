@@ -20,9 +20,9 @@
 import numpy as np
 import sympy as sp
 
-from qrisp.core import QuantumVariable
+from qrisp.core import QuantumVariable, cx
 from qrisp.misc import gate_wrap
-from qrisp.environments import invert
+from qrisp.environments import invert, conjugate
 
 
 def signed_int_iso_2(x, n):
@@ -405,9 +405,10 @@ class QuantumFloat(QuantumVariable):
         
         if check_for_tracing_mode():
             from qrisp.alg_primitives.arithmetic import jasp_multiplyer
-            s = jasp_multiplyer(other, self)
-            return s
-        
+            if isinstance(other, QuantumFloat):
+                return jasp_multiplyer(other, self)
+            else:
+                raise Exception(f"Tried to multiply class {type(other)} with QuantumFloat")
         
         from qrisp.alg_primitives.arithmetic import q_mult, polynomial_encoder
         
@@ -447,11 +448,19 @@ class QuantumFloat(QuantumVariable):
     def __add__(self, other):
         
         from qrisp.alg_primitives.arithmetic import sbp_add
-        
+        from qrisp import check_for_tracing_mode
         if isinstance(other, QuantumFloat):
-            return sbp_add(self, other)
+            if check_for_tracing_mode():
+                res = self.duplicate()
+                cx(self, res)
+                res += other
+                return res
+            else:
+                return sbp_add(self, other)
+
         elif isinstance(other, (int, float)):
-            res = self.duplicate(init=True)
+            res = self.duplicate()
+            cx(self, res)
             res += other
             return res
         else:
@@ -462,11 +471,20 @@ class QuantumFloat(QuantumVariable):
     @gate_wrap(permeability="args", is_qfree=True)
     def __sub__(self, other):
         from qrisp.alg_primitives.arithmetic import sbp_sub
+        from qrisp import check_for_tracing_mode
 
         if isinstance(other, QuantumFloat):
-            return sbp_sub(self, other)
+            if check_for_tracing_mode():
+                res = self.duplicate()
+                cx(self, res)
+                res -= other
+                return res
+            else:
+                return sbp_sub(self, other)
+
         elif isinstance(other, (int, float)):
-            res = self.duplicate(init=True)
+            res = self.duplicate()
+            cx(self, res)
             res -= other
             return res
         else:
@@ -517,14 +535,35 @@ class QuantumFloat(QuantumVariable):
 
     @gate_wrap(permeability="args", is_qfree=True)
     def __pow__(self, power):
-        if power != -1:
-            raise Exception("Currently the only supported power is -1")
+        if power == -1:
+            from qrisp.alg_primitives.arithmetic import qf_inversion
+            return qf_inversion(self)
+        elif power == 0:
+            res = self.duplicate()
+            res[:] = 1
+            return res
+        else:
+            from qrisp import jasp_multiplyer
+            def power_conjugator(base, power, temp_results):
+                cx(base, temp_results[0])
+                for i in range(power-1):
+                    (temp_results[i+1] << jasp_multiplyer)(base, temp_results[i])
+                    # (temp_results[i+1] << (lambda a, b : a * b))(base, temp_results[i])
+            
+            temp_results = [QuantumFloat((i+1)*self.size) for i in range(power)]
+            
+            res = QuantumFloat(self.size*power)
+            with conjugate(power_conjugator)(self, power, temp_results):
+                cx(temp_results[-1], res)
+                
+            for qv in temp_results:
+                qv.delete()
+                
+                
+            return res
+                
 
-        from qrisp.alg_primitives.arithmetic import qf_inversion
-
-        return qf_inversion(self)
-
-    # @gate_wrap(permeability=[1], is_qfree=True)
+    @gate_wrap(permeability=[1], is_qfree=True)
     def __iadd__(self, other):
         
         from qrisp.jasp import check_for_tracing_mode

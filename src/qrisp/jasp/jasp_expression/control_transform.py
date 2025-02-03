@@ -62,10 +62,15 @@ class ControlledJaspr(Jaspr):
         else:
             ctrl_state = str(ctrl_state)
         
-        return ControlledJaspr(self.base_jaspr, ctrl_state + self.ctrl_state)
+        return ControlledJaspr.from_cache(self.base_jaspr, ctrl_state + self.ctrl_state)
     
     def inverse(self):
-        return ControlledJaspr(self.base_jaspr.inverse(), self.ctrl_state)
+        return ControlledJaspr.from_cache(self.base_jaspr.inverse(), self.ctrl_state)
+    
+    @classmethod
+    @lru_cache(maxsize = int(1E5))
+    def from_cache(cls, base_jaspr, ctrl_state):
+        return ControlledJaspr(base_jaspr, ctrl_state)
 
 control_var_count = np.zeros(1)
 

@@ -300,6 +300,17 @@ def exec_qrisp_op(op, catalyst_qbs, param_dict):
         if op_name == "sx":
             op_name = "rx"
             param_list = [jnp.pi/2]
+            
+        if op_name == "u3":
+            
+            def qiskit_to_pennylane_rot(theta, phi, lam):
+                pl_phi = lam
+                pl_theta = theta
+                pl_omega = phi
+                
+                return pl_phi, pl_theta, pl_omega
+            
+            param_list = list(qiskit_to_pennylane_rot(*param_list))
         
         # param_list = [param_dict[symb] for symb in op.params]
 

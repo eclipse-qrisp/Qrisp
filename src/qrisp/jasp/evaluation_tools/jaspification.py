@@ -133,7 +133,13 @@ def jaspify(func = None, terminal_sampling = False):
         return flattened_values
     
     def return_function(*args):
-        jaspr = make_jaspr(tracing_function, garbage_collection = "manual")(*args)
+        # To prevent "accidental deletion" induced non-determinism we set the 
+        # garbage collection mode to manual
+        if terminal_sampling:
+            garbage_collection = "manual"
+        else:
+            garbage_collection = "auto"
+        jaspr = make_jaspr(tracing_function, garbage_collection = garbage_collection)(*args)
         jaspr_res = simulate_jaspr(jaspr, *args, terminal_sampling = terminal_sampling)
         if isinstance(jaspr_res, tuple):
             jaspr_res = tree_unflatten(treedef_container[0], jaspr_res)
@@ -224,7 +230,7 @@ def stimulate(func = None):
         return flattened_values
     
     def return_function(*args):
-        jaspr = make_jaspr(tracing_function, garbage_collection = "manual")(*args)
+        jaspr = make_jaspr(tracing_function)(*args)
         jaspr_res = simulate_jaspr(jaspr, *args, simulator = "stim")
         if isinstance(jaspr_res, tuple):
             jaspr_res = tree_unflatten(treedef_container[0], jaspr_res)
@@ -250,11 +256,12 @@ def simulate_jaspr(jaspr, *args, terminal_sampling = False, simulator = "qrisp")
     args = [BufferedQuantumState(simulator)] + list(tree_flatten(args)[0])
             
     def eqn_evaluator(eqn, context_dic):
+        
         if eqn.primitive.name == "pjit":
             
+            function_name = eqn.params["name"]
+            
             if terminal_sampling:
-                
-                function_name = eqn.params["name"]
                 
                 translation_dic = {"expectation_value_eval_function" : "ev",
                                    "sampling_eval_function" : "array",
@@ -271,9 +278,6 @@ def simulate_jaspr(jaspr, *args, terminal_sampling = False, simulator = "qrisp")
             # We simulate the inverse Gidney mcx via the non-hybrid version because
             # the hybrid version prevents the simulator from fusing gates, which
             # slows down the simulation
-            
-            # outvalues = eval_jaxpr(eqn.params["jaxpr"], eqn_evaluator = eqn_evaluator)(*invalues)
-            
             if eqn.params["name"] == "gidney_mcx_inv":
                 invalues[0].append(gidney_qc.inverse().to_gate(), invalues[1:])
                 outvalues = [invalues[0]]
