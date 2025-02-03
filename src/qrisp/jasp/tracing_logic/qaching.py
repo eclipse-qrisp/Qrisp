@@ -236,7 +236,6 @@ def qache_helper(func, jax_kwargs):
         
         # Execute the function
         res = func(*args, **kwargs)
-        new_abs_qc = abs_qs.abs_qc
         
         res_qvs = recursive_qv_search(res)
         
@@ -253,6 +252,7 @@ def qache_helper(func, jax_kwargs):
                     
         abs_qs.garbage_collection(arg_qvs + res_qvs)
         
+        new_abs_qc = abs_qs.abs_qc
         # Return the result and the result AbstractQuantumCircuit.
         return new_abs_qc, res
 
