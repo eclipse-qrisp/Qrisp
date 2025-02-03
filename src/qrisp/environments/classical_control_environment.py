@@ -215,7 +215,7 @@ class ClControlEnvironment(QuantumEnvironment):
         def identity_fun(*args):
             return args[0]
         
-        true_fun = body_jaspr.eval
+        true_fun = identity_fun
         false_fun = identity_fun
         
         res_abs_qc = cond(cond_bl, true_fun, false_fun, *env_vars)
@@ -231,7 +231,7 @@ class ClControlEnvironment(QuantumEnvironment):
         
         traced_eqn.params["branches"] = (jax.core.ClosedJaxpr(Jaspr.from_cache(branch_0.jaxpr),
                                               branch_0.consts),
-                                  jax.core.ClosedJaxpr(Jaspr.from_cache(branch_1.jaxpr),
+                                  jax.core.ClosedJaxpr(body_jaspr,
                                               branch_1.consts))
         
         

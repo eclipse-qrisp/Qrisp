@@ -271,9 +271,6 @@ def simulate_jaspr(jaspr, *args, terminal_sampling = False, simulator = "qrisp")
             # We simulate the inverse Gidney mcx via the non-hybrid version because
             # the hybrid version prevents the simulator from fusing gates, which
             # slows down the simulation
-            
-            # outvalues = eval_jaxpr(eqn.params["jaxpr"], eqn_evaluator = eqn_evaluator)(*invalues)
-            
             if eqn.params["name"] == "gidney_mcx_inv":
                 invalues[0].append(gidney_qc.inverse().to_gate(), invalues[1:])
                 outvalues = [invalues[0]]

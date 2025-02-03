@@ -33,6 +33,7 @@ def copy_jaxpr_eqn(eqn):
                     source_info = eqn.source_info,
                     effects = eqn.effects,)
 
+@lru_cache
 def injection_transform(jaspr, qubit_array_outvar):
     """
     This function takes in a Jaspr that returns a QubitArray, which has been
