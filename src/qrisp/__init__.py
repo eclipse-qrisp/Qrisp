@@ -16,9 +16,11 @@
 ********************************************************************************/
 """
 import sys
+import types
+
+
 import jax
 jax.config.update("jax_enable_x64", True)
-
 
 from qrisp.circuit import *
 from qrisp.core import *
@@ -35,3 +37,14 @@ for i in ['shor','qaoa','qiro','grover','quantum_backtracking','vqe','qite']:
   sys.modules['qrisp.'+i] = sys.modules['qrisp.algorithms.'+i]
 from qrisp.default_backend import *
 from qrisp.jasp import *
+
+# Register functions as "always static" within Jasp (there is no way of "flattening"
+# a function anyway)
+from jax import tree_util
+def unflatten_function(aux_data, children):
+    return aux_data
+def flatten_function(arg):
+    # return the tracers and auxiliary data (structure of the object)
+    return tuple(), arg
+
+tree_util.register_pytree_node(types.FunctionType, flatten_function, unflatten_function)

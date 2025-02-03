@@ -147,7 +147,7 @@ def test_rus():
     # Specify the corresponding arguments of the block encoding as "static",
     # i.e. compile time constants.
 
-    @RUS(static_argnums = [1,2])
+    @RUS
     def block_encoding(return_size, state_preparation, case_functions):
         
         # This QuantumFloat will be returned

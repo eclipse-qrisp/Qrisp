@@ -51,7 +51,8 @@ op_name_translation_dic = {"cx" : "CNOT",
                            "rz" : "RZ",
                            "s" : "S",
                            "t" : "T",
-                           "p" : "RZ"}
+                           "p" : "RZ",
+                           "u3" : "Rot"}
 
 
 def catalyst_eqn_evaluator(eqn, context_dic):
@@ -232,8 +233,15 @@ def process_op(op_prim, invars, outvars, context_dic):
     num_qubits = len(qb_pos)
     
     param_dict = {}
-    for i in range(len(op.params)):
-        param_dict[op.params[i]] = context_dic[invars[i+1]]
+    if op.name == "u3":
+        param_dict[op.params[0]] = context_dic[invars[3]]
+        param_dict[op.params[1]] = context_dic[invars[1]]
+        param_dict[op.params[2]] = context_dic[invars[2]]
+    else:
+        for i in range(len(op.params)):
+            param_dict[op.params[i]] = context_dic[invars[i+1]]
+
+    
     
     # Extract the catalyst qubit tracers by using the qextract primitive.
     catalyst_qb_tracers = []
@@ -275,6 +283,9 @@ def exec_qrisp_op(op, catalyst_qbs, param_dict):
     # Otherwise we simply call the bind method
     else:
         
+        if op.name == "gphase":
+            return catalyst_qbs
+        
         if op.name[-3:] == "_dg":
             op_name = op.name[:-3]
             invert = True
@@ -282,12 +293,17 @@ def exec_qrisp_op(op, catalyst_qbs, param_dict):
             invert = False
             op_name = op.name
         
-        catalyst_name = op_name_translation_dic[op_name]
-        
         jax_values = list(param_dict.values())
         
         param_list = [lambdify(greek_letters[:len(op.abstract_params)], expr)(*jax_values) for expr in op.params]
+        
+        if op_name == "sx":
+            op_name = "rx"
+            param_list = [jnp.pi/2]
+        
         # param_list = [param_dict[symb] for symb in op.params]
+
+        catalyst_name = op_name_translation_dic[op_name]        
         
         res_qbs = qinst_p.bind(*(catalyst_qbs+param_list), 
                                op = catalyst_name, 
