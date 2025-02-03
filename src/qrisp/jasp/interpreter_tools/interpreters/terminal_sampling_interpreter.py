@@ -268,7 +268,13 @@ def terminal_sampling_evaluator(sampling_res_type):
                                 sampling_res.extend(v*[outvalues[0]])
                             elif sampling_res_type == "dict":
                                 key = outvalues
-                                
+                                if not type(v) in [int, float]:
+                                    if v.dtype in [np.float64, np.float32]:
+                                        v = float(v.item())
+                                    elif v.dtype in [np.int32, np.int64]:
+                                        v = int(v.item())
+                                    else:
+                                        raise
                                 sampling_res[key.item()] = v
                             
                         # If the user given function returned more than one
@@ -279,8 +285,13 @@ def terminal_sampling_evaluator(sampling_res_type):
                             elif sampling_res_type == "array":
                                 sampling_res.extend(v*[outvalues])
                             elif sampling_res_type == "dict":
-                                if not isinstance(v, (int, float)):
-                                    v = v.item()
+                                if not type(v) in [int, float]:
+                                    if v.dtype in [np.float64, np.float32]:
+                                        v = float(v.item())
+                                    elif v.dtype in [np.int32, np.int64]:
+                                        v = int(v.item())
+                                    else:
+                                        raise
                                 sampling_res[tuple(x.item() for x in outvalues)] = v
 
                     if sampling_res_type == "array":
@@ -294,9 +305,6 @@ def terminal_sampling_evaluator(sampling_res_type):
                         # Sort the counts such the most probable values come first
                         sampling_res = dict(sorted(sampling_res.items(), key=lambda item: item[0]))
                         sampling_res = dict(sorted(sampling_res.items(), key=lambda item: -item[1]))
-                        
-                        
-                        
                         
                     decoded_meas_res.append(sampling_res)
             
