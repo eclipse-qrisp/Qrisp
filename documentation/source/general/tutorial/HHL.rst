@@ -194,7 +194,7 @@ that was initialized in state $\\ket{b}$, in the target state $\ket{x}$.
     qf, qpe_res, inv_res = HHL_encoding(b, hamiltonian_evolution, n, precision)
     
     with invert():
-        QPE(qf, hamiltonian_evolution, res=qpe_res)
+        QPE(qf, hamiltonian_evolution, target=qpe_res)
         fake_inversion(qpe_res, res=inv_res)
 
     # Reverse the endianness for compatibility with Hamiltonian simulation.
