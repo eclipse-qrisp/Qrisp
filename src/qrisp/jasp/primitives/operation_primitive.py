@@ -63,7 +63,7 @@ class OperationPrimitive(QuantumPrimitive):
             qubit_args = args[-self.op.num_qubits:]
             
             temp_op = self.op.bind_parameters({greek_letters[i] : float(parameter_args[i]) for i in range(len(parameter_args))})
-            qc.append(temp_op, qubit_args)
+            qc.append(temp_op, list(qubit_args))
             return qc
     
     def inverse(self):

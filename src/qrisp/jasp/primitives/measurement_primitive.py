@@ -67,7 +67,7 @@ def measure_implementation(qc, meas_object):
     else:
         res = 0
         for i in range(len(meas_object)):
-            res += 2**i*qc.measure(meas_object[i])
+            res += 2**i*qc.measure([meas_object[i]])
             
         if return_bool:
             return qc, bool(res)
@@ -93,5 +93,5 @@ def reset_implementation(qc, reset_object):
     if isinstance(reset_object, Qubit):
         reset_object = [reset_object]
     for i in range(len(reset_object)):
-        qc.reset(reset_object[i])
+        qc.reset([reset_object[i]])
     return qc

@@ -425,7 +425,7 @@ def advance_quantum_state(qc, quantum_state, deallocated_qubits = []):
     for instr in qc.data:
         if instr.op.name == "qb_dealloc":
             deallocated_qubits.append(instr.qubits[0])
-
+            
     # This command enables fast appending. Fast appending means that the .append method
     # of the QuantumCircuit class checks much less validity conditions and is also less
     # tolerant regarding inputs.
@@ -440,20 +440,22 @@ def advance_quantum_state(qc, quantum_state, deallocated_qubits = []):
         # Main loop - this loop successively executes operations onto the impure
         # quantum state object
         
-        total_flops = 0
-        for i in range(len(qc.data)):
-            total_flops += 2 ** qc.data[i].op.num_qubits
+        progress_bar.total = len(qc.data)
         
-        progress_bar.total = total_flops
+        qubit_to_index_dic = {}
+        for i in range(len(qc.qubits)):
+            qubit_to_index_dic[qc.qubits[i]] = i
         
         for i in range(len(qc.data)):
 
             # Set alias for the instruction of this operation
             instr = qc.data[i]
+            
+            progress_bar.update(1)
 
             # Gather the indices of the qubits from the circuits (i.e. integers instead
             # of the identifier strings)
-            qubit_indices = [qc.qubits.index(qb) for qb in instr.qubits]
+            qubit_indices = [qubit_to_index_dic[qb] for qb in instr.qubits]
 
             # Perform instructions
             if instr.op.name == "reset":

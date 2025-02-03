@@ -60,7 +60,7 @@ def create_qubit_impl(qc, size):
     
     for i in range(int(size)):
         qubit_list.append(qc.add_qubit())
-        qc.append(QubitAlloc(), qubit_list[-1])
+        qc.append(QubitAlloc(), [qubit_list[-1]])
     
     return qc, qubit_list
 
@@ -86,7 +86,7 @@ def delete_qubits_impl(qc, qarr):
     from qrisp.circuit import QubitDealloc
     
     for i in range(len(qarr)):
-        qc.append(QubitDealloc(), qarr[i])
+        qc.append(QubitDealloc(), [qarr[i]])
     
     return qc
 
