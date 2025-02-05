@@ -16,6 +16,15 @@ Finally a third aspect is static analysis of quantum programs. This field encomp
 
 More details can be found in the :ref:`documentation <jasp>` or in the tutorial.
 
+Integration of Quantum Monte Carlo with Iterative QAE
+-----------------------------------------------------
+
+Numerical integration is now available within Qrisp, which allows for approximating integrals not solvable analytically. Such integrals appear in many different places, from chemistry, through many-body physics, to mathematical finance.
+
+This is done by combining Quantum Monte Carlo techniques with a resource efficient amplitude estimation algorithm, which iteratively applies quantum amplitude amplification to find an estimation for the probability of measuring a good state (more info in :ref:`IQAE <IQAE>`)
+
+More details and example of using this approach for integrating the function $f(x)=x^2$ w.r.t. the uniform distribution over the interval $[0,1]$ can be found in the :ref:`tutorial <QMCItutorial>`.
+
 UI Changes
 ----------
 
