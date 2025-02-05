@@ -1,6 +1,6 @@
 """
 \********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+* Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -16,12 +16,29 @@
 ********************************************************************************/
 """
 
-import qrisp.algorithms.grover as grover
-import qrisp.algorithms.shor as shor
-import qrisp.algorithms.qaoa as qaoa
-import qrisp.algorithms.qiro as qiro
-import qrisp.algorithms.quantum_backtracking as quantum_backtracking
-from qrisp.algorithms.quantum_counting import quantum_counting
-import qrisp.algorithms.vqe as vqe
-import qrisp.algorithms.qite as qite
-import qrisp.algorithms.qmci as qmci
+
+def test_IQAE_integration():
+    from qrisp import QuantumFloat, QuantumBool, control, z, h, ry, IQAE
+    import numpy as np
+
+    # We compute the integral of f(x)=(sin(x))^2 from 0 to 1
+    def state_function(inp, tar):
+        h(inp) # Distribution
+    
+        N = 2**inp.size
+        for k in range(inp.size):
+            with control(inp[k]):
+                ry(2**(k+1)/N,tar)
+
+    n = 6 # 2^n sampling points for integration
+    inp = QuantumFloat(n,-n)
+    tar = QuantumBool()
+    input_list = [inp, tar]
+
+    eps = 0.01
+    alpha = 0.01
+
+    a = IQAE(input_list, state_function, eps=eps, alpha=alpha)
+    assert np.abs(a-0.26716231971793425)<0.01
+
+

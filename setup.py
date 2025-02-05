@@ -39,7 +39,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="qrisp",
-    author="Raphael Seidel",
+    author="The Qrisp team",
     author_email="raphael.seidel@fokus.fraunhofer.de",
     description="Qrisp - A high level language for gate-based quantum computing",
     long_description=long_description,

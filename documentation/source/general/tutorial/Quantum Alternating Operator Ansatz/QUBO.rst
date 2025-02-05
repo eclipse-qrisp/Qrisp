@@ -122,11 +122,11 @@ Like we did for :ref:`MaxCut <MaxCutQAOA>` and :ref:`M$\\kappa$CS <MkCSQAOA>` we
     
         return cl_cost_function
 
-    def QUBO_problem(Q,init_type='random'):
+    def QUBO_problem(Q):
 
         from qrisp.qaoa import QAOAProblem, RX_mixer
     
-        return QAOAProblem(create_QUBO_cost_operator(Q), RX_mixer, create_QUBO_cl_cost_function(Q),init_type=init_type)
+        return QAOAProblem(create_QUBO_cost_operator(Q), RX_mixer, create_QUBO_cl_cost_function(Q))
 
 That's it for the necessary ingredients you learned about in the :ref:`QAOA theory 101 section <QAOA101>`! Let's solve the set partitioning problem from above using this newly acquired information, and combine with how we already ran the QAOA algorithm using the :meth:`run <qrisp.qaoa.QAOAProblem.run>` method:
 

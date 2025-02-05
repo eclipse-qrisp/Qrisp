@@ -25,6 +25,8 @@ This algorithms submodule of Qrisp provides a collection of commonly used quantu
      - solving constraint-satisfaction problems like 3-SAT or the :ref:`Traveling Salesman Problem (TSP) <tsp>`
    * - :ref:`Quantum Counting <QCounting>`
      - estimating the amount of solutions for a given Grover oracle
+   * - :ref:`Quantum Monte Carlo Integration <QMCI>`
+     - numerical integration
 
 
 We encourage you to explore these algorithms, delve into their documentation, and experiment with their implementations.
@@ -43,3 +45,4 @@ We encourage you to explore these algorithms, delve into their documentation, an
    Grover
    QuantumBacktrackingTree
    quantum_counting   
+   QMCI

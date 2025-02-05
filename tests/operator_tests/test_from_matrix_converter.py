@@ -1,6 +1,6 @@
 """
 \********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+* Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -16,12 +16,19 @@
 ********************************************************************************/
 """
 
-import qrisp.algorithms.grover as grover
-import qrisp.algorithms.shor as shor
-import qrisp.algorithms.qaoa as qaoa
-import qrisp.algorithms.qiro as qiro
-import qrisp.algorithms.quantum_backtracking as quantum_backtracking
-from qrisp.algorithms.quantum_counting import quantum_counting
-import qrisp.algorithms.vqe as vqe
-import qrisp.algorithms.qite as qite
-import qrisp.algorithms.qmci as qmci
+from scipy.sparse import random as random_sparse
+from scipy.sparse.linalg import norm
+from qrisp.operators import QubitOperator
+
+def test_from_matrix_converter():
+
+    for k in range(100):
+
+        matrix = random_sparse(8, 8, density=0.3, format='csr')
+        operator = QubitOperator.from_matrix(matrix)
+        delta = norm(operator.to_sparse_matrix()-matrix)
+        
+        if not delta<1e-5:
+            print(matrix.todense())
+            print(operator)
+        assert delta<1e-5

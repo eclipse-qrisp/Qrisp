@@ -1,6 +1,6 @@
 """
 \********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+* Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -16,12 +16,17 @@
 ********************************************************************************/
 """
 
-import qrisp.algorithms.grover as grover
-import qrisp.algorithms.shor as shor
-import qrisp.algorithms.qaoa as qaoa
-import qrisp.algorithms.qiro as qiro
-import qrisp.algorithms.quantum_backtracking as quantum_backtracking
-from qrisp.algorithms.quantum_counting import quantum_counting
-import qrisp.algorithms.vqe as vqe
-import qrisp.algorithms.qite as qite
-import qrisp.algorithms.qmci as qmci
+
+def test_QMCI():
+    from qrisp import QuantumFloat
+    from qrisp.algorithms.qmci import QMCI
+    import numpy as np
+
+    def f(qf):
+        return qf*qf
+
+    qf_x = QuantumFloat(3,-3)
+    qf_y = QuantumFloat(6,-6)
+    a = QMCI([qf_x,qf_y], f)
+
+    assert np.abs(a-0.2734375)<0.01
