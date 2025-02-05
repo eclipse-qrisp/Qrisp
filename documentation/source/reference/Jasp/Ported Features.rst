@@ -1,16 +1,9 @@
-.. _jasp_algorithms:
+.. _jasp_ported_features:
 
+Ported Features
+===============
 
-
-Algorithms in Jasp
-=================================
-
-Here you can find and overview of the Qrisp algorithms and primitives that have been ported with Jasp as of now.
-
-
-.. note::
-    
-    This is a work in progress, all non-ported algorithms will be updated shortly!
+Since Jasp is a fundamentally different compilation architecture, not all Qrisp features are available within Jasp at this point. We are working on porting the remaining features as soon as possible.
 
 
 .. list-table::
@@ -19,7 +12,11 @@ Here you can find and overview of the Qrisp algorithms and primitives that have 
 
    * - Algorithm
      - Jaspified
-   * - :ref:`QFT (jasp_fourier_adder) <QFT>`
+   * - Unsigned integer quantum arithmetic (apart from division)
+     -    ✅ 
+   * - :ref:`mcx <mcx>` with a dynamic amount of controls
+     -    ✅ 
+   * - :ref:`QFT <QFT>`
      -    ✅
    * - :ref:`Quantum Phase Estimation (QPE) <QPE>`
      -    ✅
@@ -27,8 +24,6 @@ Here you can find and overview of the Qrisp algorithms and primitives that have 
      -    ✅
    * - :ref:`Quantum Amplitude Estimation <QAE>`
      -    ✅ 
-   * - :ref:`MaxIndependentSet <maxIndepSetQAOA>`
-     -    ✅
    * - :ref:`Grover tools <grover_tools>`
      -    ✅
    * - :ref:`Grover's algorithm <grovers_alg>`
@@ -37,6 +32,12 @@ Here you can find and overview of the Qrisp algorithms and primitives that have 
      -    ✅
    * - :ref:`Hamiltonian Simulation (Operators module) <Operators>`
      -    ✅ 
+   * - :ref:`Quantum function injection <injection>`
+     -    ✅ 
+   * - :ref:`Automatic Uncomputation <uncomputation>`
+     -   	❌ 
+   * - :ref:`QuantumArrays <QuantumArray>`
+     -   	❌ 
    * - :ref:`QAOA <QAOA>`
      -   	❌ 
    * - :ref:`QIRO <QIRO>`
@@ -47,4 +48,6 @@ Here you can find and overview of the Qrisp algorithms and primitives that have 
      -    ❌
    * - :ref:`Quantumn Backtracking <QuantumBacktrackingTree>`
      -    ❌
+   * - :ref:`Operator measurement (Operators module) <Operators>`
+     -    ❌ 
      
