@@ -14,7 +14,7 @@ Apart from the compilation scaling issues, many frameworks (Qrisp included) suff
 
 Finally a third aspect is static analysis of quantum programs. This field encompasses important techniques like quantum resource estimation or formal verification. Jasp computations are stored within `Jaxpr <https://jax.readthedocs.io/en/latest/jaxpr.html>`_ objects, a fully functional, SSA intermediate representation. This enables a variety of analysis and evaluation techniques, such as :ref:`boolean simulation <boolean_simulation>`, which transforms Jasp programs that contain only boolean logic into executable binaries and thus facilitates highly scalable simulations. This is particularly important for testing and verifying classical code running in superposition on the quantum device.
 
-More details can be found in the :ref:`documentation <jasp>` or in the tutorial.
+More details can be found in the :ref:`documentation <jasp>` or in the :ref:`tutorial <jasp_tutorial>`.
 
 UI Changes
 ----------
