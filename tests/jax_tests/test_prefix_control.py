@@ -74,6 +74,28 @@ def test_prefix_control():
         return acc, measure(qf)
 
     assert main(6) == (5, 31)
+    
+    @jaspify
+    def main():
+        
+        qf = QuantumFloat(7)
+        
+        def body_fun(val):
+            i, acc, qf = val
+            x(qf[i])
+            QFT(qf)
+            acc += measure(qf)
+            
+            i += 1
+            return (i, acc, qf)
+        
+        def cond_fun(val):
+            return val[0] < 5
+        
+        i, acc, qf = q_while_loop(cond_fun, body_fun, (0, 0, qf))
+        return acc ,measure(qf)
+
+    main()
 
     @jaspify
     def main(k):
