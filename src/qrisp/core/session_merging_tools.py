@@ -17,6 +17,7 @@
 """
 
 import weakref
+from jaxlib.xla_extension import ArrayImpl
 
 # This module contains the necessary tools to merge QuantumSessions
 
@@ -353,6 +354,8 @@ def recursive_qs_search(input):
         else:
             input = list(input)
             for i in range(len(input)):
+                if isinstance(input[i], ArrayImpl):
+                    continue
                 result += recursive_qs_search(input[i])
     else:
         if isinstance(input, QuantumSession):
@@ -394,7 +397,7 @@ def recursive_qv_search(input):
             for key in input.keys():
                 result += recursive_qv_search(key)
                 result += recursive_qv_search(input[key])
-        else:
+        elif isinstance(input, (tuple, list)):
             for i in range(len(input)):
                 result += recursive_qv_search(input[i])
     else:

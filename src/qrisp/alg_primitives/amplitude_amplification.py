@@ -16,7 +16,7 @@
 ********************************************************************************/
 """
 
-def amplitude_amplification(args, state_function, oracle_function, kwargs_oracle={}, iter=1):
+def amplitude_amplification(args, state_function, oracle_function, kwargs_oracle={}, iter=1, reflection_indices=None):
     r"""
     This method performs `quantum amplitude amplification <https://arxiv.org/abs/quant-ph/0005055>`_.
 
@@ -52,6 +52,9 @@ def amplitude_amplification(args, state_function, oracle_function, kwargs_oracle
         A dictionary containing keyword arguments for the oracle. The default is {}.
     iter : int, optional
         The amount of amplitude amplification iterations to perform. The default is 1.
+    refection_indices : list[int], optional
+        A list indicating with respect to which variables the reflection within the diffuser is performed, i.e. oblivious amplitude amplification is performed.
+        By default, the reflection is performed with respect to all variables in ``args``, i.e. standard amplitude amplification is performed.
 
     Examples
     --------
@@ -93,11 +96,9 @@ def amplitude_amplification(args, state_function, oracle_function, kwargs_oracle
 
     """
 
-    from qrisp import merge, IterationEnvironment, recursive_qs_search
     from qrisp.grover import diffuser
+    from qrisp.jasp import jrange
 
-    merge(args)
-    qs = recursive_qs_search(args)[0]
-    with IterationEnvironment(qs, iter):
+    for i in jrange(iter):
         oracle_function(*args, **kwargs_oracle)
-        diffuser(args, state_function=state_function)
+        diffuser(args, state_function=state_function, reflection_indices=reflection_indices)

@@ -328,10 +328,9 @@ compiled_pt_gates = {}
 
 import time
 def gray_synth_qc(target_phases, phase_tolerant=False, flip_bit_order = False):
-    
     start_time = time.time()
     bit_amount = int(np.log2(len(target_phases)))
-    
+
     if not flip_bit_order:
         target_phases = np.array(target_phases)
         target_phases = target_phases.reshape(bit_amount*[2])

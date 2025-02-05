@@ -16,8 +16,10 @@
 ********************************************************************************/
 """
 
-
 import sys
+
+import jax.numpy as jnp
+from jax.core import Tracer
 
 from qrisp.core.quantum_variable import QuantumVariable
 
@@ -129,14 +131,17 @@ class QuantumBool(QuantumVariable):
         self.qfloat_comparison = False
 
     def decoder(self, integer):
-        return bool(integer)
+        if isinstance(integer, Tracer):
+            return jnp.array(integer, dtype = jnp.bool)
+        else:
+            return bool(integer)
 
     def __and__(self, other):
         from qrisp import mcx
 
         and_qbl = QuantumBool()
 
-        mcx(self.reg + other.reg, and_qbl.reg)
+        mcx(self.reg + other.reg, and_qbl[0])
 
         return and_qbl
 
@@ -148,7 +153,7 @@ class QuantumBool(QuantumVariable):
         x(self)
         x(other)
 
-        mcx(self.reg + other.reg, or_qbl.reg)
+        mcx(self.reg + other.reg, or_qbl[0])
 
         x(self)
         x(other)
@@ -175,7 +180,7 @@ class QuantumBool(QuantumVariable):
 
         from qrisp import x
 
-        x(self)
+        x(self[0])
         return self
     
     def __invert__(self):
@@ -188,7 +193,7 @@ class QuantumBool(QuantumVariable):
 
     def __enter__(self):
         from qrisp.environments import control
-        self.env = control(self)
+        self.env = control(self[0])
         self.env.__enter__()
 
     def __exit__(self, a, b, c):
@@ -199,8 +204,19 @@ class QuantumBool(QuantumVariable):
         # after exiting. We therefore uncompute
 
         self.env.__exit__(a, b, c)
-        if ref_count == 5:
+        if ref_count == 4:
             self.uncompute()
             
     def __bool__(self):
         raise Exception("Tried to convert QuantumBool to classical bool (probable due using the and + or keywords - try using & + | instead)")
+        
+    def jdecoder(self, i):
+        return jnp.asarray(i, dtype = "bool")
+    
+    @property
+    def size(self):
+        return 1
+    
+    def __len__(self):
+        return 1
+        

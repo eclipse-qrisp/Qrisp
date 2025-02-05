@@ -16,12 +16,14 @@
 ********************************************************************************/
 """
 
+import jax
 
 from qrisp.environments import QuantumEnvironment, control
 from qrisp.environments.custom_control_environment import custom_control
-from qrisp.circuit import Operation, ControlledOperation
+from qrisp.circuit import Operation
 from qrisp.core.session_merging_tools import recursive_qs_search, merge
 from qrisp.misc import get_depth_dic
+from qrisp.jasp import check_for_tracing_mode, qache
 
 class ConjugationEnvironment(QuantumEnvironment):
     r"""
@@ -144,8 +146,14 @@ class ConjugationEnvironment(QuantumEnvironment):
         
     def __enter__(self):
         
-        # merge(recursive_qs_search(self.args) + [self.env_qs])
         QuantumEnvironment.__enter__(self)
+        
+        if check_for_tracing_mode():
+            with PJITEnvironment():
+                res = self.conjugation_function(*list(self.args), **self.kwargs)
+                # res = qache(self.conjugation_function)(*list(self.args), **self.kwargs)
+            return res
+            
         
         merge(recursive_qs_search(self.args) + [self.env_qs])
         
@@ -175,9 +183,20 @@ class ConjugationEnvironment(QuantumEnvironment):
     
     def __exit__(self, exception_type, exception_value, traceback):
         
-        conjugation_center_data = list(self.env_qs.data)
-        self.env_qs.data = []
-        self.perform_conjugation(conjugation_center_data)
+        if exception_value:
+            raise exception_value
+        
+        if not check_for_tracing_mode():
+            conjugation_center_data = list(self.env_qs.data)
+            self.env_qs.data = []
+            self.perform_conjugation(conjugation_center_data)
+            
+        else:
+            from qrisp.environments import invert
+            with invert():
+                with PJITEnvironment():
+                    self.conjugation_function(*list(self.args), **self.kwargs)
+                    # qache(self.conjugation_function)(*list(self.args), **self.kwargs)
         
         QuantumEnvironment.__exit__(self, exception_type, exception_value, traceback)
         
@@ -196,7 +215,51 @@ class ConjugationEnvironment(QuantumEnvironment):
         
         for instr in self.conjugation_circ.inverse().data:
             self.env_qs.append(instr)
+    
+    def jcompile(self, eqn, context_dic):
         
+        from qrisp.jasp import extract_invalues, insert_outvalues
+        args = extract_invalues(eqn, context_dic)
+        body_jaspr = eqn.params["jaspr"]
+        
+        flattened_jaspr = body_jaspr.flatten_environments()
+        
+        controlled_flattened_jaspr = flattened_jaspr.control(1)
+        
+        import jax
+        
+        def copy_jaxpr_eqn(jaxpr_eqn):
+            return jax.core.JaxprEqn(invars = list(jaxpr_eqn.invars),
+                                     outvars = list(jaxpr_eqn.outvars),
+                                     params = dict(jaxpr_eqn.params),
+                                     primitive = jaxpr_eqn.primitive,
+                                     effects = jaxpr_eqn.effects,
+                                     source_info = jaxpr_eqn.source_info)
+        
+        
+        controlled_eqn_list = list(controlled_flattened_jaspr.eqns)
+        controlled_eqn_list[0] = copy_jaxpr_eqn(controlled_flattened_jaspr.eqns[0])
+        controlled_eqn_list[-1] = copy_jaxpr_eqn(controlled_flattened_jaspr.eqns[-1])
+        
+        controlled_eqn_list[0].invars.pop(1)
+        controlled_eqn_list[-1].invars.pop(1)
+        
+        controlled_eqn_list[0].params["jaxpr"] = flattened_jaspr.eqns[0].params["jaxpr"]
+        controlled_eqn_list[-1].params["jaxpr"] = flattened_jaspr.eqns[-1].params["jaxpr"]
+        
+        flattened_jaspr.ctrl_jaspr = controlled_flattened_jaspr.update_eqns(controlled_eqn_list)
+        
+        res = jax.jit(flattened_jaspr.eval)(*args)
+        
+        # Retrieve the equation
+        jit_eqn = jax._src.core.thread_local_state.trace_state.trace_stack.dynamic.jaxpr_stack[0].eqns[-1]
+        jit_eqn.params["jaxpr"] = jax.core.ClosedJaxpr(flattened_jaspr, jit_eqn.params["jaxpr"].consts)
+        jit_eqn.params["name"] = "conjugation_env"
+        
+        if not isinstance(res, tuple):
+            res = (res,)
+        
+        insert_outvalues(eqn, context_dic, res)
     
     def compile_(self, ctrl = None):
         
@@ -304,4 +367,22 @@ def conjugate(conjugation_function, allocation_management = True):
         
             
     
+class PJITEnvironment(QuantumEnvironment):
+    
+    def jcompile(self, eqn, context_dic):
         
+        from qrisp.jasp import extract_invalues, insert_outvalues, Jaspr
+        args = extract_invalues(eqn, context_dic)
+        body_jaspr = eqn.params["jaspr"]
+        
+        flattened_jaspr = body_jaspr.flatten_environments()
+        
+        res = jax.jit(flattened_jaspr.eval)(*args)
+        
+        jit_eqn = jax._src.core.thread_local_state.trace_state.trace_stack.dynamic.jaxpr_stack[0].eqns[-1]
+        jit_eqn.params["jaxpr"] = jax.core.ClosedJaxpr(Jaspr.from_cache(jit_eqn.params["jaxpr"].jaxpr), jit_eqn.params["jaxpr"].consts)
+        
+        if not isinstance(res, tuple):
+            res = (res,)
+        
+        insert_outvalues(eqn, context_dic, res)

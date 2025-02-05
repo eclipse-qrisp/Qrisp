@@ -24,6 +24,7 @@ from qrisp.operators.hamiltonian_tools import group_up_iterable
 from qrisp import merge, IterationEnvironment, conjugate
 from qrisp.operators.qubit import QubitOperator
 
+from qrisp.jasp import check_for_tracing_mode, jrange
 import sympy as sp
 
 threshold = 1e-9
@@ -44,6 +45,9 @@ def fermionic_trotterization(H, forward_evolution = True):
     groups = [sum(meta_group, 0) for meta_group in meta_groups]
     
     def trotter_step(qarg, t, steps):
+        
+        n = H.find_minimal_qubit_amount()
+        qarg = [qarg[i] for i in range(n)]
         
         for group in groups:
             
@@ -81,6 +85,7 @@ def fermionic_trotterization(H, forward_evolution = True):
             
             singles = []
             couples = {}
+            n = group.find_minimal_qubit_amount()
             
             for term in terms:
                     
@@ -98,7 +103,7 @@ def fermionic_trotterization(H, forward_evolution = True):
                 
             # This function computes the swaps that are necessary to match
             # all couples and moves the singles to the lowest positions.
-            swaps, permutation = kai_pflaume(singles, couples, len(qarg))
+            swaps, permutation = kai_pflaume(singles, couples, n)
             
             
             # This function applies the CZ gates on the quantum argument to
@@ -120,10 +125,13 @@ def fermionic_trotterization(H, forward_evolution = True):
             
 
     def U(qarg, t=1, steps=1, iter=1):
-        merge([qarg])
-        with IterationEnvironment(qarg.qs, iter*steps):
-            trotter_step(qarg, t, steps)
-
+        if check_for_tracing_mode():
+            for i in jrange(iter*steps):
+                trotter_step(qarg, t, steps)
+        else:
+            merge([qarg])
+            with IterationEnvironment(qarg.qs, iter*steps):
+                trotter_step(qarg, t, steps)
     return U
 
 # This function takes a list of indices (singles) and a dictionary of indices (couples)

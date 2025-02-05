@@ -48,7 +48,7 @@ class GroupedInstruction:
 
             for i in range(len(indices)):
                 qubit_set |= int_qc.data[indices[i]]
-
+            
             qubit_set = int_to_qb_set(int(qubit_set), int_qc.source)
         else:
             qubit_set = set(qubits)
@@ -106,7 +106,7 @@ class GroupedInstruction:
                 except:
                     pass
 
-            temp_qc.data.append(self.instr_list[self.indices[i]])
+            temp_qc.append(self.instr_list[self.indices[i]])
         # Create instruction
         self.instruction = Instruction(temp_qc.to_op(), temp_qc.qubits, temp_qc.clbits)
 
@@ -156,10 +156,9 @@ def group_qc(qc):
 
 # This function determines a set of grouping options and chooses the best option
 def find_group(int_qc, max_recursion_depth):
-    try:
+    if int_qc.source.num_qubits() < 63:
         int_qc.data = np.array(int_qc.data, dtype=np.int64)
-    except OverflowError:
-        pass
+    
     grouping_options = find_grouping_options(int_qc, [], max_recursion_depth)
 
     int_qc.data = list(int_qc.data)
@@ -218,7 +217,7 @@ def find_grouping_options(
     for i in range(len(expansion_options)):
         # Calculate the hash of the proposed set of qubits
         # proposed_set = sum([hash(qb) for qb in qubits + [expansion_options[i]]])
-        proposed_set = qubits | qb_set_to_int([expansion_options[i]], int_qc.source)
+        proposed_set = qubits | qb_set_to_int([expansion_options[i]], int_qc.qb_to_index)
         # proposed_set = qubits.union(BinaryQubitSet([expansion_options[i]], qc.source))
 
         # If this set has not been checked yet, add to the options
@@ -511,17 +510,17 @@ def delete_multiple_element(list_object, indices):
             list_object.pop(idx)
 
 
-def qb_set_to_int(qubits, qc):
+def qb_set_to_int(qubits, qb_to_index):
     res = 0
     for qb in qubits:
-        res |= 1 << qc.qubits.index(qb)
+        res |= 1 << qb_to_index[qb]
     return res
 
 
-def qc_to_int_list(qc):
+def qc_to_int_list(qc, qb_to_index):
     res_list = []
     for instr in qc.data:
-        res_list.append(qb_set_to_int(instr.qubits, qc))
+        res_list.append(qb_set_to_int(instr.qubits, qb_to_index))
         if instr.op.name in ["measure", "reset", "disentangle"] or (
             isinstance(instr.op, ClControlledOperation)
         ):
@@ -682,9 +681,13 @@ def binary_get_circuit_block(int_qc_list, qubits, n, established_indices):
 
 def int_to_qb_set(integer, qc):
     res = []
+    temp = int(integer)
     for i in range(len(qc.qubits)):
-        if int(integer) & (1 << i):
+        if temp & 1:
             res.append(qc.qubits[i])
+        temp = temp >> 1
+        if temp == 0:
+            break
 
     return res
 
@@ -692,9 +695,10 @@ def int_to_qb_set(integer, qc):
 class IntegerCircuit:
     def __init__(self, qc):
         self.source = qc
-        self.data = qc_to_int_list(qc)
+        self.qb_to_index = {qc.qubits[i] : i for i in range(len(qc.qubits))}
+        self.data = qc_to_int_list(qc, self.qb_to_index)
         self.n = len(qc.qubits)
-
+    
 
 def average_group_size(qc):
     average_group_size = 0

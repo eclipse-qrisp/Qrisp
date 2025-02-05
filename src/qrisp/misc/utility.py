@@ -21,7 +21,7 @@ import traceback
 
 import numpy as np
 import sympy
-
+from jax.lax import fori_loop, cond
 
 def bin_rep(n, bits):
     if n < 0:
@@ -38,16 +38,41 @@ def bin_rep(n, bits):
 
 
 def int_encoder(qv, encoding_number):
-    if encoding_number > 2 ** len(qv) - 1:
-        raise Exception("Not enough qubits to encode integer " + str(encoding_number))
-
-    binary_rep = bin_rep(encoding_number, len(qv))[::-1]
-    from qrisp import x
-
-    for i in range(len(binary_rep)):
-        if int(binary_rep[i]):
-            x(qv[i])
-
+    
+    from qrisp import x, control
+    from qrisp.jasp import TracingQuantumSession, jrange, check_for_tracing_mode
+    
+    if not check_for_tracing_mode():
+        if encoding_number > 2 ** len(qv) - 1:
+            raise Exception("Not enough qubits to encode integer " + str(encoding_number))
+    
+        for i in range(len(qv)):
+            if (1<<i) & encoding_number:
+                x(qv[i])
+    
+    else:
+        
+        for i in jrange(qv.size):
+            with control(encoding_number & (1<<i)):
+                x(qv[i])
+        
+        # def true_fun(qc, cond, qb):
+        #     tr_qs.abs_qc = qc
+        #     x(qb)
+        #     return tr_qs.abs_qc
+        
+        # def false_fun(qc, cond, qb):
+        #     return qc
+        
+        # def loop_fun(i, qc):
+        #     cond_bool = (1<<i) & encoding_number
+        #     qb = qv[i]
+        #     qc = cond(cond_bool, true_fun, false_fun, qc, cond_bool, qb)
+            
+        #     return qc
+        # qc = fori_loop(0, qv.size, loop_fun, (tr_qs.abs_qc))
+        # tr_qs.abs_qc = qc
+        
 
 # Calculates the binary expression of a given integer and returns it as an array of
 # length bits
@@ -359,9 +384,18 @@ def gate_wrap(*args, permeability=None, is_qfree=None, name=None, verify=False):
 def gate_wrap_inner(
     function, permeability=None, is_qfree=None, name=None, verify=False
 ):
+    
+    qached_function = function
+    
     def wrapped_function(
         *args, permeability=permeability, is_qfree=is_qfree, verify=verify, **kwargs
     ):
+        
+        from qrisp.jasp import check_for_tracing_mode
+        
+        if check_for_tracing_mode():
+            return qached_function(*args, **kwargs)
+        
         wrapped_function.__name__ = function.__name__
         from qrisp.circuit import Qubit
         from qrisp.core import recursive_qs_search, recursive_qv_search
@@ -605,7 +639,12 @@ def gate_wrap_inner(
 
 
 def find_qs(args):
-
+    
+    from qrisp.jasp import TracingQuantumSession, check_for_tracing_mode
+    
+    if check_for_tracing_mode():
+        return TracingQuantumSession.get_instance()
+    
     if hasattr(args, "qs"):
         return args.qs()
 
@@ -1401,69 +1440,91 @@ def redirect_qfunction(function_to_redirect):
     """
     from qrisp import QuantumEnvironment, QuantumVariable, merge, QuantumArray
     import weakref
+    from qrisp.jasp import check_for_tracing_mode, make_jaspr, injection_transform, TracingQuantumSession, eval_jaxpr
 
     def redirected_qfunction(*args, target=None, **kwargs):
+        
+        if check_for_tracing_mode():
+            jaspr = make_jaspr(function_to_redirect, garbage_collection = "manual")(*args, **kwargs).flatten_environments()
+            
+            transformed_jaspr = injection_transform(jaspr, jaspr.outvars[1])
+            
+            qs = TracingQuantumSession.get_instance()
+            abs_qc = qs.abs_qc
+            from jax.tree_util import tree_flatten
+            
+            flattened_args = [abs_qc]
+            
+            for arg in args:
+                flattened_args.extend(tree_flatten(arg)[0])
+                
+            flattened_args.append(target.reg.tracer)
+            
+            res = eval_jaxpr(transformed_jaspr, [])(*flattened_args)
+            qs.abs_qc = res[0]
+        
+        else:
 
-        merge(
-            [
-                arg
-                for arg in list(args) + [target]
-                if isinstance(arg, (QuantumVariable, QuantumArray))
-            ]
-        )
-        env = QuantumEnvironment()
-        env.manual_allocation_management = True
-        qs = target.qs
-
-        with env:
-            res = function_to_redirect(*args, **kwargs)
-
-            if not isinstance(res, QuantumVariable):
-                raise Exception("Given function did not return a QuantumVariable")
-
-            target = list(target)
-
-            if len(res) != len(target):
-                raise Exception(
-                    "Tried to redirect quantum function into QuantumVariable of "
-                    "differing size"
-                )
-
-            i = 0
-            res_is_new = False
-            while i < len(env.env_qs.data):
-
-                instr = env.env_qs.data[i]
-
-                if isinstance(instr, QuantumEnvironment):
-                    pass
-                elif instr.op.name == "qb_alloc" and instr.qubits[0] in list(res):
-                    env.env_qs.data.pop(i)
-                    res_is_new = True
-                    continue
-                else:
-                    for qb in instr.qubits:
-                        qb.qs = weakref.ref(qs)
-
-                i += 1
-
-            retarget_instructions(env.env_qs.data, list(res), target)
-
-        if res_is_new:
-            # Remove all traces of res
-            res.delete()
-
-            for i in range(res.size):
-                res.qs.qubits.remove(res[i])
-                res.qs.data.pop(-1)
-
-            for i in range(len(res.qs.deleted_qv_list)):
-                qv = res.qs.deleted_qv_list[i]
-                if qv.name == res.name:
-                    res.qs.deleted_qv_list.pop(i)
-                    break
-
-        return target
+            merge(
+                [
+                    arg
+                    for arg in list(args) + [target]
+                    if isinstance(arg, (QuantumVariable, QuantumArray))
+                ]
+            )
+            env = QuantumEnvironment()
+            env.manual_allocation_management = True
+            qs = target.qs
+    
+            with env:
+                res = function_to_redirect(*args, **kwargs)
+    
+                if not isinstance(res, QuantumVariable):
+                    raise Exception("Given function did not return a QuantumVariable")
+    
+                target = list(target)
+    
+                if len(res) != len(target):
+                    raise Exception(
+                        "Tried to redirect quantum function into QuantumVariable of "
+                        "differing size"
+                    )
+    
+                i = 0
+                res_is_new = False
+                while i < len(env.env_qs.data):
+    
+                    instr = env.env_qs.data[i]
+    
+                    if isinstance(instr, QuantumEnvironment):
+                        pass
+                    elif instr.op.name == "qb_alloc" and instr.qubits[0] in list(res):
+                        env.env_qs.data.pop(i)
+                        res_is_new = True
+                        continue
+                    else:
+                        for qb in instr.qubits:
+                            qb.qs = weakref.ref(qs)
+    
+                    i += 1
+    
+                retarget_instructions(env.env_qs.data, list(res), target)
+    
+            if res_is_new:
+                # Remove all traces of res
+                res.delete()
+    
+                for i in range(res.size):
+                    res.qs.qubits.remove(res[i])
+                    res.qs.data.pop(-1)
+    
+                for i in range(len(res.qs.deleted_qv_list)):
+                    qv = res.qs.deleted_qv_list[i]
+                    if qv.name == res.name:
+                        res.qs.deleted_qv_list.pop(i)
+                        break
+    
+            return target
 
     redirected_qfunction.__name__ = function_to_redirect.__name__
 

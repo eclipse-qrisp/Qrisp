@@ -17,13 +17,16 @@
 """
 
 from qrisp.qtypes import QuantumFloat, QuantumVariable
+from qrisp.jasp import check_for_tracing_mode
 
 def ammend_inpl_adder(raw_inpl_adder, ammend_cl_int = True):
     
     
     def ammended_adder(qf2, qf1, *args, ignore_rounding_error = False, ignore_overflow_error = True, **kwargs):
-    
         
+        if check_for_tracing_mode():
+            return raw_inpl_adder(qf2, qf1)
+    
     
         if isinstance(qf1, QuantumFloat) and isinstance(qf2, QuantumFloat) and False:
             qs = qf1.qs

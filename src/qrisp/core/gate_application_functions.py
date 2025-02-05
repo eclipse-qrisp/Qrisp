@@ -16,16 +16,16 @@
 ********************************************************************************/
 """
 
-
+import sympy
 
 import qrisp.circuit.standard_operations as std_ops
+from qrisp.jasp import check_for_tracing_mode, DynamicQubitArray
 
-def append_operation(operation, qubits=[], clbits=[]):
+def append_operation(operation, qubits=[], clbits=[], param_tracers = []):
     from qrisp import find_qs
     
     qs = find_qs(qubits)
-    
-    qs.append(operation, qubits, clbits)
+    qs.append(operation, qubits, clbits, param_tracers = param_tracers)
 
 
 def cx(control, target):
@@ -138,6 +138,8 @@ def z(qubits):
 
 def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
     r"""
+    .. _mcx:
+    
     Applies a multi-controlled X gate.
 
     The following methods are available:
@@ -183,7 +185,7 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
     ----------
     controls : list[Qubits] or QuantumVariable
         The Qubits to control on.
-    target : Qubit
+    target : Qubit or QuantumBool
         The Qubit to perform the X gate on.
     method : str, optional
         The synthesis method. Available are ``auto``, ``gray``, ``gray_pt``,
@@ -463,54 +465,71 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
     """
 
     from qrisp.misc import bin_rep
-    from qrisp.alg_primitives.mcx_algs import GidneyLogicalAND, amy_toffoli, jones_toffoli
+    from qrisp.alg_primitives.mcx_algs import GidneyLogicalAND, amy_toffoli, jones_toffoli, jasp_gidney_mcx, jasp_gidney_mcx_inv
     from qrisp.core import QuantumVariable
     from qrisp.qtypes import QuantumBool
 
-    new_controls = []
-
-    for qbl in controls:
-        if isinstance(qbl, QuantumBool):
-            new_controls.append(qbl[0])
-        else:
-            new_controls.append(qbl)
     
+
+    if isinstance(controls, list):
+        
+        new_controls = []
+        for qbl in controls:
+            if isinstance(qbl, QuantumBool):
+                new_controls.append(qbl[0])
+            else:
+                new_controls.append(qbl)
+        controls = new_controls
+
     if isinstance(target, (list, QuantumVariable)):
         
-        if len(target) > 1:
-            raise Exception("Target of mcx contained more than one qubit")
-        target = target[0]
+        if isinstance(target, QuantumBool):
+            target = target[0]
+        else:
+            raise Exception("mcx target is not of type Qubit or QuantumBool")
+
+    if not check_for_tracing_mode():
+            
+        qubits_0 = list(controls)
+        qubits_1 = [target]
         
+        n = len(qubits_0)
+
+        if n == 0:
+            return controls, target
+        elif n == 1:
+            method = "gray"
+            append_operation(
+                std_ops.MCXGate(len(qubits_0), ctrl_state, method=method),
+                qubits_0 + qubits_1,
+            )
+            return
         
-    qubits_0 = new_controls
-    qubits_1 = [target]
+        if not isinstance(ctrl_state, str):
+            if ctrl_state == -1:
+                ctrl_state += 2**n
+            ctrl_state = bin_rep(ctrl_state, n)[::-1]
 
-    n = len(qubits_0)
-
-    if n == 0:
-        return controls, target
-
-    if not isinstance(ctrl_state, str):
-        if ctrl_state == -1:
-            ctrl_state += 2**n
-        ctrl_state = bin_rep(ctrl_state, n)[::-1]
-
-    if len(ctrl_state) != n:
-        raise Exception(
-            f"Given control state {ctrl_state} does not match control qubit amount {n}"
-        )
-
+        if len(ctrl_state) != n:
+            raise Exception(
+                f"Given control state {ctrl_state} does not match control qubit amount {n}"
+            )
+    else:
+        qubits_0 = controls
+        if isinstance(qubits_0, (QuantumVariable, DynamicQubitArray)):
+            method = "balauca"
+        qubits_1 = [target]
     from qrisp.alg_primitives.mcx_algs import (
         balauca_dirty,
         balauca_mcx,
         hybrid_mcx,
         maslov_mcx,
         yong_mcx,
+        jasp_balauca_mcx
+        
     )
 
-    if method in ["gray", "gray_pt", "gray_pt_inv"] or len(qubits_0) == 1:
-        if len(qubits_0) == 1:
-            method = "gray"
+    if method in ["gray", "gray_pt", "gray_pt_inv"]:
         append_operation(
             std_ops.MCXGate(len(qubits_0), ctrl_state, method=method),
             qubits_0 + qubits_1,
@@ -519,19 +538,25 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
         if len(qubits_0) != 2:
             raise Exception(f"Tried to call Gidney logical AND with {len(qubits_0)} controls instead of two")
         
-        append_operation(
-            GidneyLogicalAND(ctrl_state = ctrl_state),
-            qubits_0 + qubits_1,
-        )
+        if check_for_tracing_mode():
+            jasp_gidney_mcx(qubits_0[0], qubits_0[1], qubits_1[0])
+        else:
+            append_operation(
+                GidneyLogicalAND(ctrl_state = ctrl_state),
+                qubits_0 + qubits_1,
+            )
     
     elif method == "gidney_inv":
         if len(qubits_0) != 2:
             raise Exception(f"Tried to call Gidney logical AND with {len(qubits_0)} controls instead of two")
-        
-        append_operation(
-            GidneyLogicalAND(ctrl_state = ctrl_state, inv = True),
-            qubits_0 + qubits_1,
-        )
+
+        if check_for_tracing_mode():
+            jasp_gidney_mcx_inv(qubits_0[0], qubits_0[1], qubits_1[0])
+        else:
+            append_operation(
+                GidneyLogicalAND(ctrl_state = ctrl_state, inv = True),
+                qubits_0 + qubits_1,
+            )
 
     elif method == "maslov":
         from qrisp import QuantumBool
@@ -545,7 +570,10 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
         [qv.delete() for qv in ancilla]
 
     elif method == "balauca":
-        balauca_mcx(qubits_0, qubits_1, ctrl_state=ctrl_state)
+        if check_for_tracing_mode():
+            jasp_balauca_mcx(qubits_0, qubits_1, ctrl_state)
+        else:
+            balauca_mcx(qubits_0, qubits_1, ctrl_state=ctrl_state)
 
     elif method == "balauca_dirty":
         balauca_dirty(qubits_0, qubits_1, k=num_ancilla, ctrl_state=ctrl_state)
@@ -573,9 +601,11 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
         #     return mcx(qubits_0, qubits_1, method = "maslov", ctrl_state = ctrl_state)
         # else:
         #     return mcx(qubits_0, qubits_1, method = "balauca", ctrl_state = ctrl_state) # noqa:501
-
         gate = std_ops.MCXGate(len(qubits_0), ctrl_state, method="auto")
         append_operation(gate, qubits_0 + qubits_1)
+    
+    else:
+        raise Exception(f"Don't know mcx method {method}")
 
     return controls, target
 
@@ -685,7 +715,7 @@ def mcp(phi, qubits, method="auto", ctrl_state=-1):
 
     """
 
-    from qrisp.alg_primitives.mcx_algs import hybrid_mcx
+    from qrisp.alg_primitives.mcx_algs import hybrid_mcx, jasp_balauca_mcp
     from qrisp import QuantumBool
     from qrisp.misc import bin_rep, gate_wrap
     import numpy as np
@@ -704,6 +734,10 @@ def mcp(phi, qubits, method="auto", ctrl_state=-1):
         
         temp.delete()
 
+    if check_for_tracing_mode():
+        jasp_balauca_mcp(phi, qubits, ctrl_state)
+        return
+
     n = len(qubits)
 
     if not isinstance(ctrl_state, str):
@@ -716,10 +750,14 @@ def mcp(phi, qubits, method="auto", ctrl_state=-1):
     if method == "gray" or method == "gray_pt":
         if ctrl_state[-1] == "0":
             x(qubits[-1])
+            
+        if check_for_tracing_mode():
+            mcp_gate = std_ops.PGate(sympy.Symbol("alpha")).control(n - 1, ctrl_state=ctrl_state[:-1], method = method)
+            append_operation(mcp_gate, qubits, param_tracers = [phi])
+        else:
+            mcp_gate = std_ops.PGate(phi).control(n - 1, ctrl_state=ctrl_state[:-1], method = method)
+            append_operation(mcp_gate, qubits)
 
-        append_operation(
-            std_ops.PGate(phi).control(n - 1, ctrl_state=ctrl_state[:-1], method = method), qubits
-        )
 
         if ctrl_state[-1] == "0":
             x(qubits[-1])
@@ -751,8 +789,11 @@ def p(phi, qubits):
         The Qubit on which to apply the phase gate.
 
     """
-
-    append_operation(std_ops.PGate(phi), [qubits])
+    
+    if check_for_tracing_mode():
+        append_operation(std_ops.PGate(sympy.Symbol("alpha")), [qubits], param_tracers = [phi])
+    else:
+        append_operation(std_ops.PGate(phi), [qubits])
 
     # std_ops.PGate(phi).append([qubits])
 
@@ -773,11 +814,14 @@ def cp(phi, qubits_0, qubits_1):
         The second Qubit.
 
     """
-
-    append_operation(std_ops.CPGate(phi), [qubits_0, qubits_1])
-
-    # std_ops.CPGate(phi).append([qubits_0, qubits_1])
-
+    
+    if check_for_tracing_mode():
+        cp_gate = std_ops.CPGate(sympy.Symbol("alpha"))
+        append_operation(cp_gate, [qubits_0, qubits_1], param_tracers = [phi])    
+    else:
+        cp_gate = std_ops.CPGate(phi)
+        append_operation(cp_gate, [qubits_0, qubits_1])    
+    
     return qubits_0, qubits_1
 
 
@@ -794,7 +838,10 @@ def rx(phi, qubits):
 
     """
 
-    append_operation(std_ops.RXGate(phi), [qubits])
+    if check_for_tracing_mode():
+        append_operation(std_ops.RXGate(sympy.Symbol("alpha")), [qubits], param_tracers = [phi])
+    else:
+        append_operation(std_ops.RXGate(phi), [qubits])
 
     return qubits
 
@@ -812,7 +859,10 @@ def ry(phi, qubits):
 
     """
 
-    append_operation(std_ops.RYGate(phi), [qubits])
+    if check_for_tracing_mode():
+        append_operation(std_ops.RYGate(sympy.Symbol("alpha")), [qubits], param_tracers = [phi])
+    else:
+        append_operation(std_ops.RYGate(phi), [qubits])
 
     return qubits
 
@@ -830,7 +880,10 @@ def rz(phi, qubits):
 
     """
 
-    append_operation(std_ops.RZGate(phi), [qubits])
+    if check_for_tracing_mode():
+        append_operation(std_ops.RZGate(sympy.Symbol("alpha")), [qubits], param_tracers = [phi])
+    else:
+        append_operation(std_ops.RZGate(phi), [qubits])
 
     return qubits
 
@@ -850,7 +903,13 @@ def crz(phi, qubits_0, qubits_1):
 
     """
 
-    append_operation(std_ops.RZGate(phi).control(1), [qubits_0, qubits_1])
+    if check_for_tracing_mode():
+        crz_gate = std_ops.RZGate(sympy.Symbol("alpha")).control(1)
+        append_operation(crz_gate, [qubits_0, qubits_1], param_tracers = [phi])
+    else:
+        crz_gate = std_ops.RZGate(phi).control(1)
+        append_operation(crz_gate, [qubits_0, qubits_1])
+        
     return qubits_0, qubits_1
 
 
@@ -918,7 +977,7 @@ def sx(qubits):
         The Qubit to perform the SX gate on.
     """
 
-    append_operation(std_ops.SXGate().inverse(), [qubits])
+    append_operation(std_ops.SXGate(), [qubits])
 
     return qubits
 
@@ -948,7 +1007,10 @@ def gphase(phi, qubits):
         The Qubit to perform the global phase gate on.
     """
 
-    append_operation(std_ops.GPhaseGate(phi), qubits)
+    if check_for_tracing_mode():
+        append_operation(std_ops.GPhaseGate(sympy.Symbol("alpha")), [qubits], param_tracers = [phi])
+    else:
+        append_operation(std_ops.GPhaseGate(phi), [qubits])
     return qubits
 
 
@@ -969,7 +1031,14 @@ def xxyy(phi, beta, qubits_0, qubits_1):
         The second Qubit to perform the XXYY gate on.
     """
 
-    append_operation(std_ops.XXYYGate(phi, beta), [qubits_0, qubits_1])
+    if check_for_tracing_mode():
+        xxyy_gate = std_ops.XXYYGate(sympy.Symbol("alpha"), sympy.Symbol("beta"))
+        append_operation(xxyy_gate, [qubits_0, qubits_1], param_tracers = [phi, beta])
+        
+    else:
+        xxyy_gate = std_ops.XXYYGate(phi, beta)
+        append_operation(xxyy_gate, [qubits_0, qubits_1])
+    
     return qubits_0, qubits_1
 
 
@@ -989,7 +1058,12 @@ def rzz(phi, qubits_0, qubits_1):
         The second argument to perform the RZZ gate one.
     """
 
-    append_operation(std_ops.RZZGate(phi), [qubits_0, qubits_1])
+    if check_for_tracing_mode():
+        rzz_gate = std_ops.RZZGate(sympy.Symbol("alpha"))
+        append_operation(rzz_gate, [qubits_0, qubits_1], param_tracers = [phi])
+    else:
+        rzz_gate = std_ops.RZZGate(phi)
+        append_operation(rzz_gate, [qubits_0, qubits_1])
     return qubits_0, qubits_1
 
 def rxx(phi, qubits_0, qubits_1):
@@ -1008,7 +1082,14 @@ def rxx(phi, qubits_0, qubits_1):
         The second argument to perform the RXX gate one.
     """
 
-    append_operation(std_ops.RXXGate(phi), [qubits_0, qubits_1])
+    if check_for_tracing_mode():
+        rxx_gate = std_ops.RXXGate(sympy.Symbol("alpha"))
+        append_operation(rxx_gate, [qubits_0, qubits_1], param_tracers = [phi])
+    else:
+        rxx_gate = std_ops.RZZGate(phi)
+        append_operation(rxx_gate, [qubits_0, qubits_1])
+        
+    append_operation(rxx_gate, [qubits_0, qubits_1])
     return qubits_0, qubits_1
 
 def u3(theta, phi, lam, qubits):
@@ -1027,12 +1108,15 @@ def u3(theta, phi, lam, qubits):
         The Qubit to perform the U3 gate on.
     """
 
-    append_operation(std_ops.RZGate(phi), [qubits])
+    if check_for_tracing_mode():
+        append_operation(std_ops.U3Gate(sympy.Symbol("alpha"), sympy.Symbol("beta"), sympy.Symbol("gamma")), [qubits], param_tracers = [theta, phi, lam])
+    else:
+        append_operation(std_ops.U3Gate(theta, phi, lam), [qubits])
 
     return qubits
 
 
-def measure(qubits, clbits=None):
+def measure(qubits):
     """
     Performs a measurement of the specified Qubit.
 
@@ -1045,9 +1129,11 @@ def measure(qubits, clbits=None):
 
     """
     from qrisp import find_qs
+    from qrisp.jasp import TracingQuantumSession
     qs = find_qs(qubits)
     
-    if clbits is None:
+    if not isinstance(qs, TracingQuantumSession):
+        
         clbits = []
         if hasattr(qubits, "__len__"):
             for qb in qubits:
@@ -1055,13 +1141,68 @@ def measure(qubits, clbits=None):
                     clbits.append(qs.add_clbit())
                 except AttributeError:
                     clbits.append(qs.add_clbit())
-
+    
         else:
             clbits = qs.add_clbit()
-    append_operation(std_ops.Measurement(), [qubits], [clbits])
+                
+        append_operation(std_ops.Measurement(), [qubits], [clbits])
+        
+        return clbits
+    else:
+        from qrisp.jasp import Measurement_p, AbstractQubit, AbstractQubitArray, DynamicQubitArray
+        from qrisp import QuantumVariable
+        
+        
+        if isinstance(qubits, QuantumVariable):
+            abs_qc, res = Measurement_p.bind(qs.abs_qc, qubits.reg.tracer)
+            res = qubits.jdecoder(res)
+        elif isinstance(qubits, DynamicQubitArray):
+            abs_qc, res = Measurement_p.bind(qs.abs_qc, qubits.tracer)
+        elif isinstance(qubits.aval, AbstractQubitArray):
+            abs_qc, res = Measurement_p.bind(qs.abs_qc, qubits)
+        elif isinstance(qubits.aval, AbstractQubit):
+            abs_qc, res = Measurement_p.bind(qs.abs_qc, qubits)
+        else:
+            raise Exception(f"Tried to measure type {type(qubits.aval)}")
+        
+        qs.abs_qc = abs_qc
+        
+        return res
+
+def reset(qubits):
+    """
+    Performs a reset of the specified Qubit.
+
+    Parameters
+    ----------
+    qubit : Qubit or list[Qubit] or QuantumVariable
+        The Qubit to measure.
+    """
+    from qrisp import find_qs
+    from qrisp.jasp import TracingQuantumSession
+    qs = find_qs(qubits)
     
-    return clbits
-    
+    if not isinstance(qs, TracingQuantumSession):
+        append_operation(std_ops.Reset(), [qubits])
+        return None
+    else:
+        from qrisp.jasp import reset_p, AbstractQubit, AbstractQubitArray
+        from qrisp import QuantumVariable
+        
+        if isinstance(qubits, QuantumVariable):
+            abs_qc = reset_p.bind(qs.abs_qc, qubits.reg.tracer)
+        elif isinstance(qubits.aval, AbstractQubitArray):
+            abs_qc = reset_p.bind(qs.abs_qc, qubits.tracer)
+        elif isinstance(qubits.aval, AbstractQubit):
+            abs_qc = reset_p.bind(qs.abs_qc, qubits)
+        else:
+            raise Exception(f"Tried to reset type {type(qubits.aval)}")
+        
+        qs.abs_qc = abs_qc
+        
+        return None
+
+
 def barrier(qubits):
     """
     A visual marker for structuring the QuantumCircuit.
@@ -1125,18 +1266,3 @@ def swap(qubits_0, qubits_1):
     append_operation(std_ops.SwapGate(), [qubits_0, qubits_1])
 
     return qubits_0, qubits_1
-
-
-def id(qubits):
-    """
-    Applies an ID gate.
-
-    Parameters
-    ----------
-    qubits : Qubit or list[Qubit] or QuantumVariable
-        The qubits to perform the ID gate on.
-
-    """
-    append_operation(std_ops.IDGate(), [qubits])
-
-    return qubits

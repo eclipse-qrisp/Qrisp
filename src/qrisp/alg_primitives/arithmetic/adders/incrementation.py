@@ -18,7 +18,7 @@
 
 
 from qrisp.core import QuantumVariable
-from qrisp.alg_primitives import x, cx, mcx
+from qrisp.core.gate_application_functions import x, cx, mcx
 from qrisp.misc import gate_wrap
 
 

@@ -18,13 +18,18 @@
 
 import inspect
 
+import jax
+import jax.numpy as jnp
+
 from qrisp.environments.quantum_environments import QuantumEnvironment
 from qrisp.environments.gate_wrap_environment import GateWrapEnvironment
 from qrisp.circuit import Operation, QuantumCircuit, Instruction
 from qrisp.environments.iteration_environment import IterationEnvironment
 from qrisp.core import merge
 
-def custom_control(func):
+from qrisp.jasp import check_for_tracing_mode, qache, AbstractQubit, make_jaspr
+
+def custom_control(*func, **cusc_kwargs):
     """
     The ``custom_control`` decorator allows to specify the controlled version of 
     the decorated function. If this function is called within a :ref:`ControlEnvironment`
@@ -134,62 +139,121 @@ def custom_control(func):
 
     """
     
+    if len(func) == 0:
+        return lambda x : custom_control(x, **cusc_kwargs)
+    else:
+        func = func[0]
+    
+    # The idea to realize the custom control feature in traced mode is to
+    # first trace the non-controlled version into a pjit primitive using
+    # the qache feature and the trace the controlled version.
+    # The controlled version is then stored in the params attribute
+    
+    # Qache the function (in non-traced mode, this has no effect)
+    func = qache(func, **cusc_kwargs)    
+    
     def adaptive_control_function(*args, **kwargs):
         
-        from qrisp.core import recursive_qs_search
-        from qrisp import merge, ControlEnvironment, ConditionEnvironment, QuantumEnvironment, InversionEnvironment, ConjugationEnvironment
+        if not check_for_tracing_mode():
         
-        qs_list = recursive_qs_search(args)
-           
-        if "ctrl" in kwargs:
-            if kwargs["ctrl"] is not None:
-                qs_list.append(kwargs["ctrl"].qs())
-        
-        merge(qs_list)
-        
-        if len(qs_list) == 0:
-            return func(*args, **kwargs)
-        
-        qs = qs_list[0]
-        
-        # Search for a Control/Condition Environment and get the control qubit
-        control_qb = None
-        for env in qs.env_stack[::-1]:
-            if type(env) == QuantumEnvironment:
-                continue
-            if isinstance(env, (ControlEnvironment, ConditionEnvironment)):
-                control_qb = env.condition_truth_value
-                break
-            if not isinstance(env, (InversionEnvironment, ConjugationEnvironment, GateWrapEnvironment)):
-                if isinstance(env, IterationEnvironment):
-                    if env.precompile:
-                        break
-                    else:
-                        continue
-                break
-
-        # If no control qubit was found, simply execute the function
-        if control_qb is None:
-            return func(*args, **kwargs)
-
-        # Check whether the function supports the ctrl_method kwarg and adjust
-        # the kwargs accordingly
-        if "ctrl_method" in list(inspect.getfullargspec(func))[0] and isinstance(env, ControlEnvironment):
-            kwargs.update({"ctrl_method" : env.ctrl_method})
-        
-        
-        # In the case that a qubit was found, we use the CustomControlEnvironent (definded below)
-        # This environments gatewraps the function and compiles it to a specific Operation subtype
-        # called CustomControlledOperation.
-        # The Condition/Control Environment compiler recognizes this Operation type
-        # and processes it accordingly
-
-        with CustomControlEnvironment(control_qb, func.__name__):
+            from qrisp.core import recursive_qs_search
+            from qrisp import merge, ControlEnvironment, ConditionEnvironment, QuantumEnvironment, InversionEnvironment, ConjugationEnvironment
+            
+            qs_list = recursive_qs_search(args)
+               
             if "ctrl" in kwargs:
-                kwargs["ctrl"] = control_qb
-                res = func(*args, **kwargs)
-            else:
-                res = func(*args, ctrl = control_qb, **kwargs)
+                if kwargs["ctrl"] is not None:
+                    qs_list.append(kwargs["ctrl"].qs())
+            
+            merge(qs_list)
+            
+            if len(qs_list) == 0:
+                return func(*args, **kwargs)
+            
+            qs = qs_list[0]
+            
+            # Search for a Control/Condition Environment and get the control qubit
+            control_qb = None
+            for env in qs.env_stack[::-1]:
+                if type(env) == QuantumEnvironment:
+                    continue
+                if isinstance(env, (ControlEnvironment, ConditionEnvironment)):
+                    control_qb = env.condition_truth_value
+                    break
+                if not isinstance(env, (InversionEnvironment, ConjugationEnvironment, GateWrapEnvironment)):
+                    if isinstance(env, IterationEnvironment):
+                        if env.precompile:
+                            break
+                        else:
+                            continue
+                    break
+    
+            # If no control qubit was found, simply execute the function
+            if control_qb is None:
+                return func(*args, **kwargs)
+    
+            # Check whether the function supports the ctrl_method kwarg and adjust
+            # the kwargs accordingly
+            if "ctrl_method" in list(inspect.getfullargspec(func))[0] and isinstance(env, ControlEnvironment):
+                kwargs.update({"ctrl_method" : env.ctrl_method})
+            
+            
+            # In the case that a qubit was found, we use the CustomControlEnvironent (definded below)
+            # This environments gatewraps the function and compiles it to a specific Operation subtype
+            # called CustomControlledOperation.
+            # The Condition/Control Environment compiler recognizes this Operation type
+            # and processes it accordingly
+    
+            with CustomControlEnvironment(control_qb, func.__name__):
+                if "ctrl" in kwargs:
+                    kwargs["ctrl"] = control_qb
+                    res = func(*args, **kwargs)
+                else:
+                    res = func(*args, ctrl = control_qb, **kwargs)
+                    
+        else:
+            
+            args = list(args)
+            for i in range(len(args)):
+                if isinstance(args[i], bool):
+                    args[i] = jnp.array(args[i], dtype = jnp.bool)
+                elif isinstance(args[i], int):
+                    args[i] = jnp.array(args[i], dtype = jnp.int64)
+                elif isinstance(args[i], float):
+                    args[i] = jnp.array(args[i], dtype = jnp.float64)
+                elif isinstance(args[i], complex):
+                    args[i] = jnp.array(args[i], dtype = jnp.complex64)
+
+            # Call the (qached) function
+            res = func(*args, **kwargs)
+            
+            # Retrieve the pjit equation
+            jit_eqn = jax._src.core.thread_local_state.trace_state.trace_stack.dynamic.jaxpr_stack[0].eqns[-1]
+            
+            
+            if not jit_eqn.params["jaxpr"].jaxpr.ctrl_jaspr:
+                # Trace the controlled version
+                new_kwargs = dict(kwargs)
+                ctrl_aval = AbstractQubit()
+                new_kwargs["ctrl"] = ctrl_aval
+                
+                
+                from qrisp.jasp import TracingQuantumSession
+                abs_qs = TracingQuantumSession.get_instance()
+                
+                controlled_jaspr = make_jaspr(func, **cusc_kwargs)(*args, **new_kwargs)
+                
+                # Find the variable that contains the control qubit
+                for i, invar in enumerate(controlled_jaspr.invars):
+                    if invar.aval is ctrl_aval:
+                        break
+                
+                # Move it to the place after the QuantumCircuit argument
+                controlled_jaspr.invars.insert(1, controlled_jaspr.invars.pop(i))
+                
+                # Store controlled version
+                jit_eqn.params["jaxpr"].jaxpr.ctrl_jaspr = controlled_jaspr
+            
         
         return res
         
@@ -202,6 +266,7 @@ class CustomControlEnvironment(QuantumEnvironment):
         
         self.control_qb = control_qb
         self.manual_allocation_management = True
+        QuantumEnvironment.__init__(self, env_args = [])
     
     def __enter__(self):
         

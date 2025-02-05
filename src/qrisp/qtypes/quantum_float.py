@@ -20,22 +20,13 @@
 import numpy as np
 import sympy as sp
 
-# from qrisp.alg_primitives.arithmetic import (
-#     eq,
-#     geq,
-#     gt,
-#     inpl_mult,
-#     leq,
-#     lt,
-#     neq,
-#     polynomial_encoder,
-#     q_mult,
-#     sbp_add,
-#     quantum_bit_shift,
-# )
-from qrisp.core import QuantumVariable
+from qrisp.core import QuantumVariable, cx
 from qrisp.misc import gate_wrap
+from qrisp.environments import invert, conjugate
 
+
+def signed_int_iso_2(x, n):
+    return x % (int(1)<<(n))
 
 def signed_int_iso(x, n):
     if int(x) < -(2**n) or int(x) >= 2**n:
@@ -260,7 +251,7 @@ class QuantumFloat(QuantumVariable):
     >>> a.exp_shift(3)
     >>> print(a)
     {-120: 1.0}
-    >>> a >> 5
+    >>> a =>> 5
     >>> print(a)
     {-3.75: 1.0}
 
@@ -294,43 +285,67 @@ class QuantumFloat(QuantumVariable):
     def __init__(self, msize, exponent=0, qs=None, name=None, signed=False):
         # Boolean to indicate if the float is signed
         self.signed = signed
-
         # Exponent
         self.exponent = exponent
-
-        # Size of the mantissa
-        self.msize = msize
-
-        # Array that consists of (log2(min), log2(max)) where min and max are the
-        # minimal and maximal values of the absolutes that the QuantumFloat can
-        # represent.
-        self.mshape = np.array([exponent, exponent + msize])
 
         # Initialize QuantumVariable
         if signed:
             super().__init__(msize + 1, qs, name=name)
         else:
             super().__init__(msize, qs, name=name)
+            
+        self.traced_attributes = ["exponent", "signed"]
+
+    @property
+    def msize(self):
+        return self.size - self.signed
+    
+    @property
+    def mshape(self):
+        # Tuple that consists of (log2(min), log2(max)) where min and max are the
+        # minimal and maximal values of the absolutes that the QuantumFloat can
+        # represent.
+        return (self.exponent, self.exponent + self.msize)
 
     # Define outcome_labels
     def decoder(self, i):
-        if self.signed:
+        if isinstance(self.signed, bool) and self.signed:
             res = signed_int_iso_inv(i, self.size - 1) * 2.0**self.exponent
+            
+            if self.exponent >= 0:
+                if isinstance(res, (int, float)):
+                    return int(res)
+                else:
+                    return res.astype(int)
+            else:
+                return res
         else:
-            res = i * 2**self.exponent
+            from jax.numpy import float64
+            from jax.core import Tracer
+            if isinstance(i, Tracer):
+                res = i * float64(2)**self.exponent
+            else:
+                res = i * 2**self.exponent
 
-        if self.exponent >= 0:
-            return int(res)
-        else:
             return res
 
-    # def encoder(self, i):
-    #     if self.signed:
-    #         res = int(signed_int_iso(i/2**self.exponent, self.size-1))
-    #     else:
-    #         res =  int(i/2**self.exponent)
-
-    #     return res
+    def jdecoder(self, i):
+        if isinstance(self.exponent, int) and self.exponent == 0:
+            return i
+        return self.decoder(i)
+    
+    def encoder(self, i):
+        from jax.numpy import float64
+        res = signed_int_iso_2(i/(float64(2)**self.exponent), self.size)
+        # if self.signed:
+        #     res = signed_int_iso(i/2**self.exponent, self.size-1)
+        # else:
+        #     res = i/2**self.exponent
+        
+        if isinstance(res, (int, float)):
+            return int(res)
+        else:
+            return res.astype(int)
 
     def sb_poly(self, m=0):
         """
@@ -386,6 +401,15 @@ class QuantumFloat(QuantumVariable):
     @gate_wrap(permeability="args", is_qfree=True)
     def __mul__(self, other):
         
+        from qrisp.jasp import check_for_tracing_mode
+        
+        if check_for_tracing_mode():
+            from qrisp.alg_primitives.arithmetic import jasp_multiplyer
+            if isinstance(other, QuantumFloat):
+                return jasp_multiplyer(other, self)
+            else:
+                raise Exception(f"Tried to multiply class {type(other)} with QuantumFloat")
+        
         from qrisp.alg_primitives.arithmetic import q_mult, polynomial_encoder
         
         if isinstance(other, QuantumFloat):
@@ -424,11 +448,19 @@ class QuantumFloat(QuantumVariable):
     def __add__(self, other):
         
         from qrisp.alg_primitives.arithmetic import sbp_add
-        
+        from qrisp import check_for_tracing_mode
         if isinstance(other, QuantumFloat):
-            return sbp_add(self, other)
+            if check_for_tracing_mode():
+                res = self.duplicate()
+                cx(self, res)
+                res += other
+                return res
+            else:
+                return sbp_add(self, other)
+
         elif isinstance(other, (int, float)):
-            res = self.duplicate(init=True)
+            res = self.duplicate()
+            cx(self, res)
             res += other
             return res
         else:
@@ -439,11 +471,20 @@ class QuantumFloat(QuantumVariable):
     @gate_wrap(permeability="args", is_qfree=True)
     def __sub__(self, other):
         from qrisp.alg_primitives.arithmetic import sbp_sub
+        from qrisp import check_for_tracing_mode
 
         if isinstance(other, QuantumFloat):
-            return sbp_sub(self, other)
+            if check_for_tracing_mode():
+                res = self.duplicate()
+                cx(self, res)
+                res -= other
+                return res
+            else:
+                return sbp_sub(self, other)
+
         elif isinstance(other, (int, float)):
-            res = self.duplicate(init=True)
+            res = self.duplicate()
+            cx(self, res)
             res -= other
             return res
         else:
@@ -494,15 +535,43 @@ class QuantumFloat(QuantumVariable):
 
     @gate_wrap(permeability="args", is_qfree=True)
     def __pow__(self, power):
-        if power != -1:
-            raise Exception("Currently the only supported power is -1")
-
-        from qrisp.alg_primitives.arithmetic import qf_inversion
-
-        return qf_inversion(self)
+        if power == -1:
+            from qrisp.alg_primitives.arithmetic import qf_inversion
+            return qf_inversion(self)
+        elif power == 0:
+            res = self.duplicate()
+            res[:] = 1
+            return res
+        else:
+            from qrisp import jasp_multiplyer
+            def power_conjugator(base, power, temp_results):
+                cx(base, temp_results[0])
+                for i in range(power-1):
+                    (temp_results[i+1] << jasp_multiplyer)(base, temp_results[i])
+                    # (temp_results[i+1] << (lambda a, b : a * b))(base, temp_results[i])
+            
+            temp_results = [QuantumFloat((i+1)*self.size) for i in range(power)]
+            
+            res = QuantumFloat(self.size*power)
+            with conjugate(power_conjugator)(self, power, temp_results):
+                cx(temp_results[-1], res)
+                
+            for qv in temp_results:
+                qv.delete()
+                
+                
+            return res
+                
 
     @gate_wrap(permeability=[1], is_qfree=True)
     def __iadd__(self, other):
+        
+        from qrisp.jasp import check_for_tracing_mode
+        
+        if check_for_tracing_mode():
+            from qrisp.alg_primitives.arithmetic import gidney_adder
+            gidney_adder(other, self)
+            return self
         
         from qrisp.alg_primitives.arithmetic import polynomial_encoder
         
@@ -537,6 +606,14 @@ class QuantumFloat(QuantumVariable):
     def __isub__(self, other):
         
         from qrisp.alg_primitives.arithmetic import polynomial_encoder
+        
+        from qrisp.jasp import check_for_tracing_mode
+        
+        if check_for_tracing_mode():
+            from qrisp.alg_primitives.arithmetic import gidney_adder
+            with invert():
+                gidney_adder(other, self)
+            return self
         
         if isinstance(other, QuantumFloat):
             input_qf_list = [other]
@@ -574,11 +651,11 @@ class QuantumFloat(QuantumVariable):
 
         return self
 
-    def __rshift__(self, k):
+    def __irshift__(self, k):
         self.exp_shift(-k)
         return self
 
-    def __lshift__(self, k):
+    def __ilshift__(self, k):
         self.exp_shift(k)
         return self
 
@@ -686,23 +763,6 @@ class QuantumFloat(QuantumVariable):
             raise Exception("Tried to shift QuantumFloat exponent by non-integer value")
 
         self.exponent += shift
-        self.mshape = self.mshape + shift
-
-    def reduce(self, qubits, verify=False):
-        QuantumVariable.reduce(self, qubits, verify)
-
-        try:
-            self.mshape[1] -= len(qubits)
-            self.msize -= len(qubits)
-        except TypeError:
-            self.mshape[1] -= 1
-            self.msize -= 1
-
-    def extend(self, amount, position=-1):
-        QuantumVariable.extend(self, amount, position=position)
-
-        self.mshape[1] += amount
-        self.msize += amount
 
     def add_sign(self):
         """
@@ -730,8 +790,6 @@ class QuantumFloat(QuantumVariable):
             raise Exception(r'Tried to add sign to signed QuantumFloat')
 
         self.extend(1, self.size)
-        self.mshape[1] -= 1
-        self.msize -= 1
         self.signed = True
 
     def sign(self):
@@ -985,14 +1043,6 @@ class QuantumFloat(QuantumVariable):
         
         quantum_bit_shift(self, shift_amount)
         
-    def duplicate(self, name=None, qs=None, init=False):
-        
-        res = QuantumVariable.duplicate(self, name, qs, init)
-        res.mshape = np.array(self.mshape)
-        return res
-        
-        
-
 
 def create_output_qf(operands, op):
     if isinstance(op, sp.core.expr.Expr):

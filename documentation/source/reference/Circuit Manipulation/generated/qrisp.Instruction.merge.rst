@@ -1,4 +1,4 @@
-﻿qrisp.Instruction.merge
+qrisp.Instruction.merge
 =======================
 
 .. currentmodule:: qrisp

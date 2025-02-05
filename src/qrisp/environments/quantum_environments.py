@@ -56,8 +56,9 @@
 from qrisp.circuit import QubitAlloc, QubitDealloc, fast_append
 from qrisp.core.quantum_session import QuantumSession
 
+from qrisp.jasp import QuantumPrimitive, AbstractQuantumCircuit, TracingQuantumSession
 
-class QuantumEnvironment:
+class QuantumEnvironment(QuantumPrimitive):
     """
 
     QuantumEnvironments are blocks of code, that undergo some user-specified compilation
@@ -325,8 +326,26 @@ class QuantumEnvironment:
         QuantumVariable qv
 
     """
-
+    
     deepest_environment = [None]
+    
+    def __init__(self, env_args = []):
+        
+        QuantumPrimitive.__init__(self, name = "q_env")
+        self.multiple_results = True
+        
+                
+        @self.def_abstract_eval
+        def abstract_eval(abs_qc, *env_args, stage = None, type = None, jaxpr = None):
+            """Abstract evaluation of the primitive.
+            
+            This function does not need to be JAX traceable. It will be invoked with
+            abstractions of the actual arguments. 
+            """
+            
+            return (AbstractQuantumCircuit(),)
+        
+        self.env_args = env_args
 
     # The methods to start the dumping process for this environment
     # The dumping basically consists of copying the original data into a temporary
@@ -362,6 +381,15 @@ class QuantumEnvironment:
 
     # Method to enter the environment
     def __enter__(self):
+        
+        from qrisp.jasp import check_for_tracing_mode
+        if check_for_tracing_mode():
+            abs_qs = TracingQuantumSession.get_instance()
+            self.temp_qubit_cache = abs_qs.qubit_cache
+            abs_qs.qubit_cache = {}
+            abs_qs.abs_qc = self.bind(abs_qs.abs_qc, *self.env_args, stage = "enter", type = str(type(self)).split(".")[-1][:-2])[0]
+            return
+            
         # The QuantumSessions operating inside this environment will be merged
         # into this QuantumSession
         self.env_qs = QuantumSession()
@@ -405,8 +433,15 @@ class QuantumEnvironment:
     # Method to exit the environment
     def __exit__(self, exception_type, exception_value, traceback):
         
-        if exception_type is not None:
+        if exception_value:
             raise exception_value
+        
+        from qrisp.jasp import check_for_tracing_mode
+        if check_for_tracing_mode():
+            abs_qs = TracingQuantumSession.get_instance()
+            abs_qs.qubit_cache = self.temp_qubit_cache
+            abs_qs.abs_qc = self.bind(abs_qs.abs_qc, stage = "exit", type = str(type(self)).split(".")[-1][:-2])[0]
+            return
         
         self.deepest_environment[0] = self.parent
 
@@ -487,3 +522,18 @@ class QuantumEnvironment:
             else:
                 # Append instruction
                 self.env_qs.append(instruction)
+                
+    def jcompile(self, eqn, context_dic):
+        from qrisp.jasp import eval_jaxpr, extract_invalues, insert_outvalues
+        
+        args = extract_invalues(eqn, context_dic)
+        body_jaspr = eqn.params["jaspr"]
+        
+        res = eval_jaxpr(body_jaspr.flatten_environments())(*args)
+        
+        if not isinstance(res, tuple):
+            res = (res,)
+        
+        insert_outvalues(eqn, context_dic, res)
+                
+                

@@ -133,7 +133,7 @@ html_theme_options = {
     "secondary_sidebar_items": ["page-toc.html", "slack_link.html", "thebe_button.html"]
 }
 html_sidebars = {
-    "**": ["search-field", "sidebar-nav-bs"],
+    "**": ["sidebar-nav-bs"],
     "index": [],
     "install": [],
     "tutorial": [],
@@ -167,7 +167,7 @@ html_logo = "../../logo/qrisp_logo.png"
 add_module_names = False
 
 html_css_files = [
-    'css/custom04.css',
+    'css/custom05.css',
 ]
 
 source_suffix = ['.rst', '.md']
