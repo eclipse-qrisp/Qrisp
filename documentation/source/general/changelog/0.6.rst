@@ -20,4 +20,4 @@ UI Changes
 ----------
 
 * :ref:`QuantumFloats <QuantumFloat>` are now bitshifted by the **in-place** bitshift operators ``<<=`` and ``>>=``, which describes the behavior better then the previous out-of-place operators ``<<`` and ``>>``.
-* The in-place bit-shift Operator is now called Injection operator and facilitates in-place application of out-of-place functions.
+* The in-place bit-shift Operator is now called :ref:`Injection operator <injection>` and facilitates in-place application of out-of-place functions.
