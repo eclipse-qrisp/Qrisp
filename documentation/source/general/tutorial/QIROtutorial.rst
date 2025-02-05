@@ -171,11 +171,11 @@ As you might have noticed in the code above, we add the nodes that are included 
 This allows us to directly use the same ideas for the  ``cost_operator``, ``mixer`` and ``init_function`` of the original unconstrained QAOA theory with minor adjustments.
 
 Since we have to consider nodes that are already asigned to be in the solution set, or exluded from the algorithm, we do not want to apply ``cost_operator`` or ``mixer`` to said nodes. 
-We therefore include some simple lines of code into the functions to take this into account, for example the ``if not``-statement in the ``qiro_RXMixer``:
+We therefore include some simple lines of code into the functions to take this into account, for example the ``if not``-statement in the ``qiro_rx_mixer``:
 
 ::
 
-    def qiro_RXMixer(solutions = [], exclusions = []):
+    def qiro_rx_mixer(solutions = [], exclusions = []):
         union = solutions + exclusions
         def RX_mixer(qv, beta):
             for i in range(len(qv)):
@@ -236,7 +236,7 @@ With this, we can directly throw everything that is relevant at the :ref:`QIROPr
     qiro_instance = QIROProblem(G,
                                 replacement_routine=create_max_indep_replacement_routine,
                                 cost_operator=create_max_indep_cost_operator_reduced,
-                                mixer=qiro_RXMixer,
+                                mixer=qiro_rx_mixer,
                                 cl_cost_function=create_max_indep_set_cl_cost_function,
                                 init_function=qiro_init_function
                                 )
@@ -288,11 +288,13 @@ As a final caveat, we can look at the graph we are left with after all reduction
 Constrained mixer implementation
 --------------------------------
 
-Before we end this tutorial we want to show you what the constrained mixer implementation looks like for the MIS QIRO algorithm. In analogy to our :ref:` general QAOA implementation for the MIS problem  <maxIndepSetQAOA>` 
+Before we end this tutorial we want to show you what the constrained mixer implementation looks like for the MIS QIRO algorithm. In analogy to our :ref:`general QAOA implementation for the MIS problem <maxIndepSetQAOA>` 
 we use the :ref:`qiro_rz_mixer <QIRO>` as the mixer and the :ref:`create_max_indep_controlled_mixer_reduced <maxIndependentSetQIRO>` as the cost operator. In principle, these functions do the exact same thing as the general implementations,
 but they respect the solutions and exclusions chosen via the update routine.  We suggest to try this instance with larger graph sizes (more than 20 nodes). 
 
 ::
+
+    from qrisp.algorithms.qiro import qiro_rz_mixer, create_max_indep_controlled_mixer_reduced, qiro_max_indep_set_init_function
 
     # assign the correct update functions for constrained qiro 
     qiro_instance = QIROProblem(G, 
