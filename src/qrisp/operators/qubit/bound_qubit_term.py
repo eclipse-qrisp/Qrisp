@@ -35,7 +35,8 @@ class BoundQubitTerm:
 
     def __init__(self, factor_dict={}):
         self.factor_dict = factor_dict
-        self.hash_value = hash(tuple(sorted(factor_dict.items())))
+        
+        self.hash_value = hash(tuple(sorted(factor_dict.items(), key = lambda x : hash(x))))
 
     def update(self, update_dict):
         self.factor_dict.update(update_dict)

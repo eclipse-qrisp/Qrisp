@@ -22,6 +22,8 @@ import copy
 import numpy as np
 from sympy.core.expr import Expr
 from sympy import lambdify
+from jax.core import Tracer
+from jaxlib.xla_extension import ArrayImpl
 
 
 def adaptive_substitution(expr, subs_dic, precision=10):
@@ -124,14 +126,14 @@ class Operation:
 
         # Find abstract parameters (ie. sympy expressions and log them)
         for par in params:
-            if isinstance(par, np.number):
+            if isinstance(par, (np.number, ArrayImpl)):
                 par = par.item()
             elif isinstance(par, Expr):
                 if len(par.free_symbols):
                     self.abstract_params = self.abstract_params.union(par.free_symbols)
                 else:
                     par = float(par)
-            elif not isinstance(par, (float, int, complex)):
+            elif not isinstance(par, (float, int, complex, Tracer)):
                 raise Exception(
                     f"Tried to create operation with parameters of type {type(par)}"
                 )
@@ -463,19 +465,24 @@ class U3Gate(Operation):
         self.phi = self.params[1]
         self.lam = self.params[2]
 
-        if self.name in ["rx", "ry", "rz", "p"]:
-            self.params = [sum(self.params)]
-
-            if self.name in ["rz", "p"]:
-                self.permeability[0] = True
-                self.is_qfree = True
-            else:
-                self.permeability[0] = False
-                self.is_qfree = False
-
-        elif self.name in ["h"]:
+        if self.name == "p":
+            self.permeability[0] = True
+            self.is_qfree = True
+            self.params = [self.lam]
+        elif self.name == "rz":
+            self.permeability[0] = True
+            self.is_qfree = True
+            self.params = [self.phi]
+        elif self.name in ["rx", "ry"]:
+            self.permeability[0] = False
+            self.is_qfree = False
+            self.params = [self.theta]
+        elif self.name == "gphase":
+            self.params = [self.global_phase]
+            self.permeability[0] = True
+            self.is_qfree = True
+        elif self.name == "h":
             self.params = []
-
             self.permeability[0] = False
             self.is_qfree = False
 
@@ -508,7 +515,7 @@ class U3Gate(Operation):
             res.name = self.name
             res.params = [-par for par in self.params]
 
-        if self.name in ["s", "t", "s_dg", "t_dg"]:
+        if self.name in ["s", "t", "s_dg", "t_dg", "sx", "sx_dg"]:
             res.params = []
 
         if res.is_qfree is not None:
@@ -887,11 +894,30 @@ class ClControlledOperation(Operation):
         self.num_control = num_control
         self.ctrl_state = ctrl_state
         
+        if base_op.definition:
+            
+            from qrisp import QuantumCircuit, Clbit
+            definition = QuantumCircuit()
+            definition.qubits = list(base_op.definition.qubits)
+            for _ in range(num_control):
+                definition.add_clbit()
+            
+            cl_control_bits = list(definition.clbits)
+            definition.clbits = cl_control_bits + list(base_op.definition.clbits)
+            
+            for instr in base_op.definition.data:
+                definition.append(instr.op.c_if(num_control, ctrl_state), instr.qubits, cl_control_bits + instr.clbits)
+                
+        else:
+            definition = None
+            
+        
         Operation.__init__(self, 
                            name = "c_if_" + base_op.name, 
                            num_qubits = base_op.num_qubits,
                            num_clbits = base_op.num_clbits + num_control,
-                           params = list(base_op.params))
+                           params = list(base_op.params),
+                           definition = definition)
         
         self.permeability = dict(base_op.permeability)
         

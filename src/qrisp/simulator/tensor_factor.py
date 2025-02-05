@@ -223,7 +223,7 @@ class TensorFactor:
             temp = xp.zeros(2, dtype = self.tensor_array.data.dtype)
             if outcome_index_list[0] == 1:
                 if warning:
-                    print("WARNING: Faulty uncomputation found during simulation.")
+                    print("\r" + 85*" " + "\rWARNING: Faulty uncomputation found during simulation.")
                 temp[1] = 1
             else:
                 temp[0] = 1
@@ -234,7 +234,7 @@ class TensorFactor:
         
         if not new_bi_arrays[0].exclude_linear_indpendence(new_bi_arrays[1]):
             if warning:
-                print("WARNING: Faulty uncomputation found during simulation.")
+                print("\r" + 85*" " + "\rWARNING: Faulty uncomputation found during simulation.")
             return self, self
         
         vdot_value = new_bi_arrays[0].vdot(new_bi_arrays[1])
@@ -242,7 +242,7 @@ class TensorFactor:
         
         if xp.abs(xp.abs(vdot_value) - (p_list[0]*p_list[1])**0.5) > 1E-7:
             if warning:
-                print("WARNING: Faulty uncomputation found during simulation.")
+                print("\r" + 85*" " + "\rWARNING: Faulty uncomputation found during simulation.")
             # print("disentangling failed")
             # print(vdot_value)
             # print(xp.abs(xp.abs(vdot_value) - (p_list[0]*p_list[1])**0.5))

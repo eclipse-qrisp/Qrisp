@@ -70,3 +70,65 @@ class GidneyLogicalAND(Operation):
         res.permeability = {0: True, 1: True, 2: False}
         res.ctrl_state = self.ctrl_state
         return res
+
+from qrisp.jasp import AbstractQubit, make_jaspr, Jaspr
+from qrisp.core import x, h, cx, t, t_dg, s, measure, cz
+from qrisp.environments import control
+
+
+def gidney_mcx_impl(a, b, c):
+    
+    h(c)
+    t(c)
+    
+    cx(a, c)
+    cx(b, c)
+    cx(c, a)
+    cx(c, b)
+    
+    t_dg(a)
+    t_dg(b)
+    t(c)
+    
+    cx(c,a)
+    cx(c,b)
+    
+    h(c)
+    s(c)
+
+def gidney_mcx_inv_impl(a, b, c):
+    h(c)
+    bl = measure(c)
+    
+    with control(bl):
+        cz(a,b)
+        x(c)
+
+
+class GidneyMCXJaspr(Jaspr):
+    
+    slots = ["inv"]
+    def __init__(self, inv):
+        self.inv = inv
+        if self.inv:
+            temp_jaspr = make_jaspr(gidney_mcx_inv_impl)(AbstractQubit(), AbstractQubit(), AbstractQubit()).flatten_environments()
+        else:
+            temp_jaspr = make_jaspr(gidney_mcx_impl)(AbstractQubit(), AbstractQubit(), AbstractQubit()).flatten_environments()
+            
+        Jaspr.__init__(self, temp_jaspr)
+        self.envs_flattened = True
+            
+    def inverse(self):
+        if self.inv:
+            return gidney_mcx_jaspr
+        else:
+            return gidney_mcx_inv_jaspr
+
+gidney_mcx_jaspr = GidneyMCXJaspr(False)
+gidney_mcx_inv_jaspr = GidneyMCXJaspr(True)
+
+def jasp_gidney_mcx(a, b, c):
+    gidney_mcx_jaspr.embedd(a, b, c, name = "gidney_mcx")
+
+def jasp_gidney_mcx_inv(a, b, c):
+    gidney_mcx_inv_jaspr.embedd(a, b, c, name = "gidney_mcx_inv")

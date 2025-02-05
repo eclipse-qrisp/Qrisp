@@ -205,6 +205,7 @@ class QuantumCircuit:
     """
 
     qubit_index_counter = np.zeros(1, dtype=int)
+    clbit_index_counter = np.zeros(1, dtype=int)
     xla_mode = 0
 
     def __init__(self, num_qubits=0, num_clbits=0, name=None):
@@ -225,7 +226,8 @@ class QuantumCircuit:
 
         if isinstance(num_clbits, int):
             for i in range(num_clbits):
-                self.add_clbit()
+                self.clbits.append(Clbit("cb_" + str(self.clbit_index_counter[0]+i)))
+            self.clbit_index_counter[0] += num_clbits
         else:
             raise Exception(
                 f"Tried to initialize QuantumCircuit with type {type(num_clbits)}"
@@ -1045,7 +1047,7 @@ class QuantumCircuit:
 
         return circuit_drawer(qiskit_qc, output="latex_source", **kwargs)
 
-    def qasm(self, formatted=False, filename=None, encoding=None):
+    def to_qasm2(self, formatted=False, filename=None, encoding=None):
         """
         Returns the `OpenQASM <https://en.wikipedia.org/wiki/OpenQASM>`_ string of self.
 
@@ -1067,11 +1069,48 @@ class QuantumCircuit:
             The OPENQASM string.
 
         """
+        qiskit_qc = self.to_qiskit()
         try:
-            return self.to_qiskit().qasm(formatted, filename, encoding)
+            return qiskit_qc.qasm(formatted, filename, encoding)
         except:
-            from qiskit.qasm2 import dumps
-            return dumps( self.to_qiskit())
+            from qiskit.qasm2 import dumps, QASM2ExportError
+            try:
+                return dumps(qiskit_qc)
+            except (QASM2ExportError, TypeError):
+                from qiskit.qasm3 import dumps
+                from qiskit import transpile
+                transpiled_qiskit_qc = transpile(qiskit_qc, basis_gates = ["x", "y", "z", "h", "s", "t", "s_dg", "t_dg", "cx", "cz", "rz"])
+                return dumps(qiskit_qc)
+            
+    def to_qasm3(self, formatted=False, filename=None, encoding=None):
+        """
+        Returns the `OpenQASM <https://en.wikipedia.org/wiki/OpenQASM>`_ string of self.
+
+        Parameters
+        ----------
+        formatted : bool, optional
+            Return formatted Qasm string. The default is False.
+        filename : string, optional
+            Save Qasm to file with name ‘filename’. The default is None.
+        encoding : TYPE, optional
+            Optionally specify the encoding to use for the output file if filename is
+            specified. By default, this is set to the system’s default encoding
+            (i.e. whatever locale.getpreferredencoding() returns) and can be set to any
+            valid codec or alias from stdlib’s codec module.
+
+        Returns
+        -------
+        string
+            The OPENQASM string.
+
+        """
+        qiskit_qc = self.to_qiskit()
+        from qiskit.qasm3 import dumps
+        return dumps(qiskit_qc)
+    
+    def qasm(self, **kwargs):
+        return self.to_qasm2(**kwargs)
+        
 
     def depth(self, depth_indicator = lambda x : 1, transpile=True):
         """

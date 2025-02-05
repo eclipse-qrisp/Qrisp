@@ -44,5 +44,6 @@ By the end of this tutorial, you'll have a solid foundation of our high-level fr
    H2
    Shor
    FT_compilation
+   Jasp
    
    

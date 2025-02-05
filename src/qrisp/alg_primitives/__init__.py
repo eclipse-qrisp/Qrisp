@@ -27,3 +27,4 @@ from qrisp.alg_primitives.iterable_processing import *
 from qrisp.alg_primitives.dicke_state_prep import *
 from qrisp.alg_primitives.switch_case import *
 from qrisp.alg_primitives.amplitude_amplification import *
+from qrisp.alg_primitives.prepare import *

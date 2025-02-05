@@ -101,17 +101,24 @@ def convert_to_qiskit(qc, transpile=False):
 
         elif isinstance(op, ClControlledOperation):
             q_reg = QuantumRegister(op.num_qubits)
-            cl_reg = ClassicalRegister(op.num_clbits)
             
-            temp_qc = QuantumCircuit(q_reg, cl_reg)
             
-            qiskit_ins = create_qiskit_instruction(op.base_op, params)
-            qiskit_ins = qiskit_ins.c_if(cl_reg, int(op.ctrl_state[::-1], 2))
+            base_qiskit_ins = create_qiskit_instruction(op.base_op, params)
             
-            temp_qc.append(qiskit_ins, q_reg)
-            
-            qiskit_ins = temp_qc.to_instruction()
-            qiskit_ins.name = op.name
+            # In Qiskit 1.3, the c_if interface was deprecated
+            try:
+                from qiskit.circuit import IfElseOp
+                body_qc = QuantumCircuit(q_reg)
+                body_qc.append(base_qiskit_ins, q_reg)
+                qiskit_ins = IfElseOp((clbit_list[0], 1), true_body = body_qc)
+                clbit_list = []
+            except ImportError:
+                cl_reg = ClassicalRegister(op.num_clbits)
+                temp_qc = QuantumCircuit(q_reg, cl_reg)
+                qiskit_ins = qiskit_ins.c_if(cl_reg, int(op.ctrl_state[::-1], 2))
+                temp_qc.append(qiskit_ins, q_reg)
+                qiskit_ins = temp_qc.to_instruction()
+                qiskit_ins.name = op.name
             
         elif issubclass(op.__class__, ControlledOperation):
             base_name = op.base_operation.name
@@ -196,9 +203,6 @@ def create_qiskit_instruction(op, params=[]):
     
     elif op.name == "measure":
         qiskit_ins = Measure()
-
-    elif op.name == "swap":
-        qiskit_ins = qsk_gates.SwapGate()
     elif op.name == "barrier":
         qiskit_ins = Barrier(op.num_qubits)
     elif op.name == "cp":

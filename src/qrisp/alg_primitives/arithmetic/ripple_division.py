@@ -157,13 +157,9 @@ def q_int_div(numerator, divisor, adder="cuccaro", n=None, log_output=True):
 
         # Remove from remainder
         remainder_sign_bit = remainder.reg.pop(-1)
-        remainder.size -= 1
-        remainder.mshape[1] -= 1
 
         # Add to quotient at position 0
         quotient.reg.insert(0, remainder_sign_bit)
-        quotient.size += 1
-        quotient.mshape[1] += 1
 
         # This next instruction is a bit involved to understand
 

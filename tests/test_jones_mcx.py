@@ -26,7 +26,7 @@ def test_jones_mcx():
     for i in range(4):
         
         ctrl = QuantumFloat(2)
-        target = QuantumVariable(1)
+        target = QuantumBool()
         
         ctrl[:] = i
         mcx(ctrl, target, method = "jones")
@@ -37,7 +37,7 @@ def test_jones_mcx():
         
         
         ctrl = QuantumFloat(2)
-        target = QuantumVariable(1)
+        target = QuantumBool()
         ctrl[:] = i
         
         h(ctrl)
@@ -49,7 +49,7 @@ def test_jones_mcx():
         assert ctrl.get_measurement(compilation_kwargs = compilation_kwargs) == {i : 1}
         
         ctrl = QuantumFloat(2)
-        target = QuantumVariable(1)
+        target = QuantumBool()
         
         ctrl[:] = i
         mcx(ctrl, target, method = "jones")
@@ -59,7 +59,7 @@ def test_jones_mcx():
         
         
         ctrl = QuantumFloat(2)
-        target = QuantumVariable(1)
+        target = QuantumBool()
         ctrl[:] = i
         
         h(ctrl)

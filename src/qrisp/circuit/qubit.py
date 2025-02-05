@@ -16,6 +16,7 @@
 ********************************************************************************/
 """
 import numpy as np
+from jax.core import AbstractValue, Primitive, raise_to_shaped_mappings
 
 qubit_hash = np.zeros(1)
 class Qubit:
@@ -54,7 +55,6 @@ class Qubit:
         self.identifier = identifier
         self.hash_value = int(qubit_hash[0])
         qubit_hash[0] += 1
-        # self.hash_value = id(self)#%(2**29)
         self.lock = False
         self.perm_lock = False
 
@@ -69,7 +69,3 @@ class Qubit:
 
     def __eq__(self, other):
         return self.hash_value == other.hash_value
-        return bool(self.hash_value & other.hash_value)
-    
-    def __lt__(self, other):
-        return self.identifier<other.identifier

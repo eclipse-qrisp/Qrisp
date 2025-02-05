@@ -15,15 +15,22 @@
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************/
 """
+
+from itertools import product
+
+import sympy as sp
+import numpy as np
+import jax.numpy as jnp
+
 from qrisp.operators.hamiltonian_tools import group_up_iterable
 from qrisp.operators.hamiltonian import Hamiltonian
 from qrisp.operators.qubit.qubit_term import QubitTerm
 from qrisp.operators.qubit.measurement import get_measurement
 from qrisp.operators.qubit.commutativity_tools import construct_change_of_basis
-from qrisp import cx, cz, h, s, x, sx_dg, IterationEnvironment, conjugate, merge
+from qrisp import cx, cz, h, s, sx_dg, IterationEnvironment, conjugate, merge
 
-import sympy as sp
-import numpy as np
+from qrisp.jasp import check_for_tracing_mode, jrange
+
 
 threshold = 1e-9
 
@@ -528,11 +535,117 @@ class QubitOperator(Hamiltonian):
         """
 
         delete_list = []
+        new_terms_dict = dict(self.terms_dict)
         for term,coeff in self.terms_dict.items():
             if abs(coeff)<threshold:
                 delete_list.append(term)
         for term in delete_list:
-            del self.terms_dict[term]
+            del new_terms_dict[term]
+        return QubitOperator(new_terms_dict)
+    
+    @classmethod
+    def from_matrix(self, matrix):
+        r"""
+        Represents a matrix as an operator
+            
+        .. math::
+
+            O=\sum_i\alpha_i\bigotimes_{j=0}^{n-1}O_{ij}
+
+        where $O_{ij}\in\{A,C,P_0,P_1\}$.
+
+        Parameters
+        ----------
+        matrix : numpy.ndarray or scipy.sparse.csr_matrix
+            The matrix.
+
+        Returns
+        -------
+        QubitOperator
+            The operator represented by the matrix.
+
+
+        Examples
+        --------
+
+        ::
+
+            from scipy.sparse import csr_matrix
+            from qrisp.operators import QubitOperator
+
+            sparse_matrix = csr_matrix([[0, 5, 0, 1],
+                                        [5, 0, 0, 0],
+                                        [0, 0, 0, 2],
+                                        [1, 0, 2, 0]])
+
+            O = QubitOperator.from_matrix(sparse_matrix)
+            print(O)
+            # Yields: A_0*A_1 + C_0*C_1 + 5*P^0_0*A_1 + 5*P^0_0*C_1 + 2*P^1_0*A_1 + 2*P^1_0*C_1
+
+        """
+        from scipy.sparse import csr_matrix
+        from numpy import ndarray
+        import numpy as np
+
+        OPERATOR_TABLE = {(0,0):"P0",(0,1):"A",(1,0):"C",(1,1):"P1"}
+
+        if isinstance(matrix,ndarray):
+            new_matrix = csr_matrix(matrix)
+        elif isinstance(matrix,csr_matrix):
+            new_matrix = matrix.copy()
+        else:
+            raise Exception("Cannot construct QubitOperator from type " + str(type(matrix)))
+        
+        M, N = new_matrix.shape
+        n = max(int(np.ceil(np.log2(M))),int(np.ceil(np.log2(N))))
+
+        new_matrix.eliminate_zeros()
+    
+        rows, cols = new_matrix.nonzero()
+        values = new_matrix.data
+
+        O = QubitOperator({})
+        for row, col, value in zip(rows, cols, values):
+            factor_dict = {}
+            for k in range(n):
+                i = (row >> k) & 1
+                j = (col >> k) & 1
+                factor_dict[n-k-1]=OPERATOR_TABLE[(i,j)]
+
+            O.terms_dict[QubitTerm(factor_dict)] = value
+        return O
+    
+    @classmethod
+    def from_numpy_array(cls, numpy_array, threshold = np.inf):
+        
+        from qrisp.operators import X, Y, Z
+        
+        n = int(np.log2(numpy_array.shape[0]))
+        H = 0
+        
+        for pauli_indicator_tuple in product(range(4), repeat = n):
+            
+            temp_H = 1
+            for i in range(n):
+                
+                if pauli_indicator_tuple[i] == 1:
+                    temp_H = X(i)*temp_H
+                if pauli_indicator_tuple[i] == 2:
+                    temp_H = Y(i)*temp_H
+                if pauli_indicator_tuple[i] == 3:
+                    temp_H = Z(i)*temp_H
+            
+            if isinstance(temp_H, int) and temp_H == 1:
+                temp_H_array = np.eye(2**n)
+            else:
+                temp_H_array = temp_H.to_array(n)
+            
+            coefficient = np.dot(temp_H_array.flatten().conjugate(), numpy_array.flatten())
+            
+            H += (coefficient/2**(n)) * temp_H
+            
+        return H
+
 
     @classmethod
     def from_matrix(self, matrix):
@@ -725,7 +838,7 @@ class QubitOperator(Hamiltonian):
                 [1.+0.j, 0.+0.j, 0.+0.j, 3.+0.j]])
 
         """
-        return self.to_sparse_matrix(factor_amount).todense()
+        return np.array(self.to_sparse_matrix(factor_amount).todense())
     
     def to_pauli(self):
         """
@@ -1037,7 +1150,7 @@ class QubitOperator(Hamiltonian):
         # whereas the anchor qubit becomes a Z gate.
         
         n = self.find_minimal_qubit_amount()
-        if len(qarg) < n:
+        if not check_for_tracing_mode() and len(qarg) < n:
             raise Exception("Tried to change the basis of an Operator on a quantum argument with insufficient qubits.")
         
      
@@ -1612,10 +1725,13 @@ class QubitOperator(Hamiltonian):
                 for com_group in commuting_groups:
                     qw_groups= com_group.group_up(lambda a,b : a.commute_qw(b) and a.ladders_agree(b))
                     for qw_group in qw_groups:
+                        
                         with conjugate(qw_group.change_of_basis)(qarg) as diagonal_operator:
                             intersect_groups = diagonal_operator.group_up(lambda a, b: not a.intersect(b))
                             for intersect_group in intersect_groups:
                                 for term,coeff in intersect_group.terms_dict.items():
+                                    coeff = jnp.real(coeff)
+                                    
                                     term.simulate(-coeff*t/steps*(-1)**int(forward_evolution), qarg)
         
         if method=='commuting':
@@ -1628,9 +1744,13 @@ class QubitOperator(Hamiltonian):
                                 term.simulate(-coeff*t/steps*(-1)**int(forward_evolution), qarg)
 
         def U(qarg, t=1, steps=1, iter=1):
-            merge([qarg])
-            with IterationEnvironment(qarg.qs, iter*steps):
-                trotter_step(qarg, t, steps)
+            if check_for_tracing_mode():
+                for i in jrange(iter*steps):
+                    trotter_step(qarg, t, steps)
+            else:
+                merge([qarg])
+                with IterationEnvironment(qarg.qs, iter*steps):
+                    trotter_step(qarg, t, steps)
 
         return U
 

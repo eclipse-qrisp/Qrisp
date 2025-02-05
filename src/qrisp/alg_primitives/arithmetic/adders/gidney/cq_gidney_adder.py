@@ -26,7 +26,7 @@
 from qrisp.qtypes import QuantumBool
 from qrisp.core import QuantumVariable, merge
 from qrisp.misc.utility import bin_rep
-from qrisp.alg_primitives import x, cx, mcx
+from qrisp.core.gate_application_functions import x, cx, mcx
 from qrisp.circuit import fast_append
 from qrisp.environments import invert
 

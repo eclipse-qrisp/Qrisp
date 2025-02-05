@@ -185,10 +185,10 @@ class QubitTerm:
     #
     # Simulation
     #
-    @custom_control
+    @custom_control(static_argnums = 0)
     def simulate(self, coeff, qv, ctrl = None):
 
-        from qrisp import h, cx, rz, mcp, conjugate, control, QuantumBool, mcx, x, p, s, QuantumEnvironment, gphase, QuantumVariable
+        from qrisp import h, cx, rz, mcp, conjugate, control, QuantumBool, mcx, x, p, s, QuantumEnvironment, gphase, QuantumVariable, find_qs
         from qrisp.operators import QubitOperator
         import numpy as np
         # If required, do change of basis. Change of basis here means, that
@@ -202,6 +202,8 @@ class QubitTerm:
                     for diagonal_term, coeff in diagonal_op.terms_dict.items():
                         diagonal_term.simulate(coeff, qv)
                 return        
+        
+        qs = find_qs(qv)
         
         # We group the term into 2 types:
         
@@ -228,15 +230,17 @@ class QubitTerm:
                 projector_state.append(True)
                 
         # Determine the control qubits and the control state
-        projector_ctrl_state = ""
+        projector_ctrl_state = 0
         projector_qubits = []
         
         if ctrl is not None:
             projector_qubits.append(ctrl)
-            projector_ctrl_state = "1"
+            projector_ctrl_state = 1
+            # projector_ctrl_state = "1"
         
         for i in range(len(projector_indices)):
-            projector_ctrl_state += str(int(projector_state[i]))
+            # projector_ctrl_state += str(int(projector_state[i]))
+            projector_ctrl_state += int(projector_state[i])*2**(len(projector_qubits))
             projector_qubits.append(qv[projector_indices[i]])
         
         
@@ -251,7 +255,7 @@ class QubitTerm:
             
             # Perform the mcp            
             if len(projector_qubits) == 1:
-                if projector_ctrl_state[0] == "0":
+                if projector_ctrl_state == 0:
                     p(coeff, projector_qubits[0])
                     gphase(-coeff, projector_qubits[0])
                 else:
@@ -315,7 +319,7 @@ class QubitTerm:
             # If there is only one projector qubit, we can use this as control value
             hs_anc = projector_qubits[0]
             control_qubit_available = True
-            if not projector_ctrl_state[0] == "1":
+            if not projector_ctrl_state == 1:
                 flip_control_phase = True
             env = QuantumEnvironment()
         else:
@@ -324,7 +328,8 @@ class QubitTerm:
             # To achieve the multi-controlled RZ behavior, we control the RZ
             # on that quantum bool.
 
-            hs_anc = QuantumBool(qs = projector_qubits[0].qs(), name = "hs_anc*")
+            hs_anc_qbl = QuantumBool(qs = qs, name = "hs_anc*")
+            hs_anc = hs_anc_qbl[0]
             control_qubit_available = True
             
             # Compute the control value
@@ -335,7 +340,7 @@ class QubitTerm:
                 
                 reduction_qubits = list(projector_qubits)
                 fresh_ancillae = list(ancillae)
-                ctrl_list = [ctrl_state[i] for i in range(len(reduction_qubits))]
+                ctrl_list = [str(int((ctrl_state>>i)%2)) for i in range(len(reduction_qubits))]
             
                 while len(reduction_qubits) > 2:
                     
@@ -354,12 +359,12 @@ class QubitTerm:
                 
                 mcx(reduction_qubits, target, method = "gidney", ctrl_state = "".join(ctrl_list))
                     
-            balauca_ancillae = QuantumVariable(len(projector_qubits)-1, qs = projector_qubits[0].qs(), name = "balauca_ancilla*")
+            balauca_ancillae = QuantumVariable(len(projector_qubits)-1, qs = qs, name = "balauca_ancilla*")
             
             env = conjugate(semi_balauca_mcx)(projector_qubits,
                                               hs_anc,
                                               projector_ctrl_state,
-                                              ancillae = balauca_ancillae)
+                                              ancillae = [balauca_ancillae[k] for k in range(len(projector_qubits)-1)])
         
         # Perform the conjugation
         with env:
@@ -400,7 +405,7 @@ class QubitTerm:
     
         if len(projector_indices) >= 2:
             # Delete ancilla
-            hs_anc.delete()
+            hs_anc_qbl.delete()
             balauca_ancillae.delete()
                     
     #

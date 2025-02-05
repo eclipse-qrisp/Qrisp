@@ -185,9 +185,7 @@ class QuantumState:
 
         # log measurement outcome. Note that we can't return here, because this function
         # is called as a thread, implying it does not keep the returned result
-        self.last_mes_outcome = (p_0, outcome_state_0, p_1, outcome_state_1)
-
-        return self.last_mes_outcome
+        return p_0, outcome_state_0, p_1, outcome_state_1
     
     def multi_measure(self, mes_qubits, return_res_states = True):
         
@@ -236,6 +234,8 @@ class QuantumState:
             ind_array = permute_axes(ind_array, index_permutation)    
         else:
             ind_array = permute_axes(ind_array, index_permutation, jit = False)
+        
+        prob_array = prob_array/np.sum(prob_array)
         
         return ind_array, prob_array
             

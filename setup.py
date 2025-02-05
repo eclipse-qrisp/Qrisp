@@ -29,7 +29,9 @@ REQUIREMENTS = ["qiskit>=0.44.0",
                 "waitress",
                 "pyyaml",
                 "requests",
-                "psutil"]
+                "psutil",
+                "jax==0.4.28",
+                "jaxlib==0.4.28"]
 
 
 with open("README.md", "r", encoding="utf-8") as fh:
@@ -37,7 +39,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="qrisp",
-    author="Raphael Seidel",
+    author="The Qrisp team",
     author_email="raphael.seidel@fokus.fraunhofer.de",
     description="Qrisp - A high level language for gate-based quantum computing",
     long_description=long_description,

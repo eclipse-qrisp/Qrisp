@@ -184,7 +184,7 @@ class QuantumSession(QuantumCircuit):
         # when this session is merged into another session.
         self.shadow_sessions = []
 
-    def register_qv(self, qv):
+    def register_qv(self, qv, size):
         """
         Method to register QuantumVariables
 
@@ -208,11 +208,8 @@ class QuantumSession(QuantumCircuit):
                 "Variable name " + str(qv.name) + " already exists in quantum session"
             )
 
-        # Determine amount of required qubits
-        req_qubits = qv.size
-
         # Hand qubits to quantum variable
-        qv.reg = self.request_qubits(req_qubits, name=qv.name)
+        qv.reg = self.request_qubits(size, name=qv.name)
 
         # Register in the list of active quantum variable
         self.qv_list.append(qv)
@@ -437,7 +434,7 @@ class QuantumSession(QuantumCircuit):
     def __eq__(self, other):
         return id(self.data) == id(other.data)
     
-    def append(self, operation_or_instruction, qubits=[], clbits=[]):
+    def append(self, operation_or_instruction, qubits=[], clbits=[], param_tracers = []):
         # Check the type of the instruction/operation
         
         

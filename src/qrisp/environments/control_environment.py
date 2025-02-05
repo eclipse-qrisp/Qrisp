@@ -16,11 +16,14 @@
 ********************************************************************************/
 """
 
+from jax.core import ShapedArray
+from jaxlib.xla_extension import ArrayImpl
 
 from qrisp.circuit import Qubit, QuantumCircuit, XGate
 from qrisp.core.session_merging_tools import merge, merge_sessions, multi_session_merge
-from qrisp.environments import QuantumEnvironment
+from qrisp.environments import QuantumEnvironment, ClControlEnvironment
 from qrisp.misc import perm_lock, perm_unlock, bin_rep
+from qrisp.jasp import check_for_tracing_mode
 from qrisp.core import mcx, p, rz, x
 
 class ControlEnvironment(QuantumEnvironment):
@@ -67,17 +70,6 @@ class ControlEnvironment(QuantumEnvironment):
 
     def __init__(self, ctrl_qubits, ctrl_state=-1, ctrl_method=None, invert = False):
         
-        if isinstance(ctrl_qubits, list):
-            self.arg_qs = multi_session_merge([qb.qs() for qb in ctrl_qubits])
-        else:
-            self.arg_qs = ctrl_qubits.qs()
-        self.arg_qs = merge(ctrl_qubits)
-
-    
-        self.ctrl_method = ctrl_method
-        if isinstance(ctrl_qubits, Qubit):
-            ctrl_qubits = [ctrl_qubits]
-            
         if isinstance(ctrl_state, int):
             if ctrl_state < 0:
                 ctrl_state += 2**len(ctrl_qubits)
@@ -86,20 +78,45 @@ class ControlEnvironment(QuantumEnvironment):
         else:
             self.ctrl_state = str(ctrl_state)
         
+        if check_for_tracing_mode():
             
-        self.ctrl_qubits = ctrl_qubits
-        self.invert = invert
-
-        self.manual_allocation_management = True
-
-        # For more information on why this attribute is neccessary check the comment
-        # on the line containing subcondition_truth_values = []
-        self.sub_condition_envs = []
-
-        QuantumEnvironment.__init__(self)
+            QuantumEnvironment.__init__(self, list(ctrl_qubits))
+            if not isinstance(ctrl_qubits, list):
+                ctrl_qubits = [ctrl_qubits]
+            
+        else:
+        
+            if isinstance(ctrl_qubits, list):
+                self.arg_qs = multi_session_merge([qb.qs() for qb in ctrl_qubits])
+            else:
+                self.arg_qs = ctrl_qubits.qs()
+            self.arg_qs = merge(ctrl_qubits)
+    
+        
+            self.ctrl_method = ctrl_method
+            if isinstance(ctrl_qubits, Qubit):
+                ctrl_qubits = [ctrl_qubits]
+                
+                
+            self.ctrl_qubits = ctrl_qubits
+            self.invert = invert
+    
+            self.manual_allocation_management = True
+    
+            # For more information on why this attribute is neccessary check the comment
+            # on the line containing subcondition_truth_values = []
+            self.sub_condition_envs = []
+    
+            QuantumEnvironment.__init__(self)
+            
 
     # Method to enter the environment
     def __enter__(self):
+        
+        if check_for_tracing_mode():
+            QuantumEnvironment.__enter__(self)
+            return
+            
         from qrisp.qtypes.quantum_bool import QuantumBool
 
         if len(self.ctrl_qubits) == 1:
@@ -121,6 +138,9 @@ class ControlEnvironment(QuantumEnvironment):
             InversionEnvironment,
         )
 
+        if check_for_tracing_mode():
+            QuantumEnvironment.__exit__(self, exception_type, exception_value, traceback)
+            return
         self.parent_cond_env = None
 
         QuantumEnvironment.__exit__(self, exception_type, exception_value, traceback)
@@ -358,7 +378,30 @@ class ControlEnvironment(QuantumEnvironment):
             self.parent_cond_env.sub_condition_envs.extend(
                 self.sub_condition_envs + [self]
             )
-
+            
+    def jcompile(self, eqn, context_dic):
+        
+        from qrisp.jasp import extract_invalues, insert_outvalues
+        args = extract_invalues(eqn, context_dic)
+        body_jaspr = eqn.params["jaspr"]
+        
+        num_ctrl = len(args) - len(body_jaspr.invars)
+        flattened_jaspr = body_jaspr.flatten_environments()
+        controlled_jaspr = flattened_jaspr.control(num_ctrl, ctrl_state = self.ctrl_state)
+        
+        import jax
+        res = jax.jit(controlled_jaspr.eval)(*args)
+        
+        # Retrieve the equation
+        jit_eqn = jax._src.core.thread_local_state.trace_state.trace_stack.dynamic.jaxpr_stack[0].eqns[-1]
+        jit_eqn.params["jaxpr"] = jax.core.ClosedJaxpr(controlled_jaspr, jit_eqn.params["jaxpr"].consts)
+        jit_eqn.params["name"] = "ctrl_env"
+        
+        if not isinstance(res, tuple):
+            res = (res,)
+        
+        insert_outvalues(eqn, context_dic, res)
+        
 
 # This function turns instructions where the definition contains CustomControlOperations
 # into CustomControlOperations. For this it checks that all Instructions that are acting
@@ -419,5 +462,34 @@ def convert_to_custom_control(instruction, control_qubit, invert_control = False
     
     return res
                 
+
+def control(*args, **kwargs):
+    args = list(args)
+    from qrisp import Qubit, QuantumBool, QuantumVariable
+    from qrisp.jasp import AbstractQubit, check_for_tracing_mode
     
-control = ControlEnvironment    
+    if isinstance(args[0], QuantumVariable):
+        args[0] = list(args[0])
+    if not isinstance(args[0], list):
+        args[0] = [args[0]]
+    
+    if check_for_tracing_mode():
+        if all(isinstance(obj, bool) for obj in [x for x in args[0]]):
+            return ClControlEnvironment(*args, **kwargs)
+        elif all(isinstance(obj, AbstractQubit) for obj in [x.aval for x in args[0]]):
+            return ControlEnvironment(*args, **kwargs)
+        elif all(isinstance(obj, ShapedArray) for obj in [x.aval for x in args[0]]):
+            return ClControlEnvironment(*args, **kwargs)
+        else:
+            raise Exception(f"Don't know how to control from input type {args[0]}")
+    else:
+        if all(isinstance(obj, (Qubit, QuantumBool)) for obj in args[0]):
+            return ControlEnvironment(*args, **kwargs)
+        elif all(isinstance(obj, bool) for obj in [x for x in args[0]]):
+            return ClControlEnvironment(*args, **kwargs)
+        elif all(isinstance(obj, ArrayImpl) for obj in [x for x in args[0]]):
+            args[0] = [bool(bit) for bit in args[0]]
+            return ClControlEnvironment(*args, **kwargs)
+        else:
+            raise Exception(f"Don't know how to control from input type {args[0]}")
+    
