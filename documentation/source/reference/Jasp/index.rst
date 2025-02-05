@@ -137,3 +137,4 @@ If you are interested in how the QIR representation looks like, try calling
    Sampling
    Expectation Value
    Simulation Tools/index
+   Algorithms in Jasp
