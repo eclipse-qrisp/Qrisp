@@ -8,14 +8,23 @@ The latest 0.6 Qrisp update is centered around Jasp submodule, which significant
 Jasp
 ----
 
-Jasp allows you to scale up your Qrisp code to to previously unseen problem scales allowing for the following features: 
+Jasp allows you to scale up your Qrisp code to previously unseen problem scales with the folowing features: 
 
-* Compilation performance
-* Performing classical real-time computations
-* Statit Analysis of quantum programs
+* :meth:`Jaspr class <qrisp.jasp.jaspr>`: enables an efficient representation of a wide variety of (hybrid algorithms)
+* :meth:`quantum_kernel decorator <qrisp.jasp.quantum_kernel>`: allows to annotate a subroutine as a quantum kernel resulting in parallelization of quantum routines hosted on several QPUs.
+* :meth:`qache decorator <qrisp.jasp.qache>`: allows to mark a function as "reusable". Using the ``qache`` decorator not only improves the compilation speed, but also enables the compiler to speed up transformation processes.
+* :meth:`jrange <qrisp.jasp.jrange>`: performs a loop with a dynamic bound.
+* :meth:`Repeat Until Success decorator <qrisp.jasp.rus>`: repeats a given subroutine followed by a qubit measurement until the measurement returns the value 1. 
+* :meth:`sample function <qrisp.jasp.sample>`: allows to take samples from a state that is specified by a preparation procedure.
+* :meth:`jaspify decorator <qrisp.jasp.jaspify>`: a fast general pupose simulator that can use state sparsity. 
+* :meth:`qjit decorator <qrisp.jasp.qjit>`: calls the Catalyst pipeline to compile and run the program via the Lightning simulator.
+* :meth:`boolean_simulation decorator <qrisp.jasp.boolean_simulation>`: Leverages the Jax pipeline to compile the program into a series of boolean operations. Restricted to programs that require only X, CX, CCX, etc. gates. This simulator can be extremely powerful for verifying the correctness of large classical subroutines, that are called by another quantum function.
+* :meth:`terminal_sampling decorator <qrisp.jasp..qacheterminal_sampling>`: performs a hybrid simulation and afterwards samples from the resulting quantum state. Used to perform accelerated quantum sampling.
 
-Compilation performance
-~~~~~~~~~~~~~~~~~~~~~~~
+All of the above allows for the following:
+
+Improvement in compilation performance
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The fundamental problem that many Python based quantum frameworks face is that the Python interpreter is slow compared to what is possible with compiled languages. As an example, a 35 bit modular in-place multiplication takes already ~20 seconds to compile in Qrisp. Considering typical RSA key sizes contain up to 2000 bits, compiling a circuit addressing practically relevant problem scales therefore seems unlikely. 
 
