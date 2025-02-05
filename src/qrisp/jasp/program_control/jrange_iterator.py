@@ -264,6 +264,9 @@ def jrange(*args):
     new_args = []
     if check_for_tracing_mode():
         for i in range(len(args)):
+            if i == 2:
+                new_args.append(args[i])
+                continue
             if isinstance(args[i], (int, ArrayImpl)):
                 new_args.append(make_tracer(args[i]))
             else:
