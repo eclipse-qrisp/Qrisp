@@ -19,7 +19,7 @@
 from qrisp.core import QuantumVariable
 from qrisp.qtypes import QuantumBool
 from qrisp.environments import invert, custom_control
-from qrisp.alg_primitives import mcx, cx
+from qrisp.core.gate_application_functions import mcx, cx
 
 # This function performs the Gidney adder from https://arxiv.org/pdf/1709.06648.pdf
 @custom_control

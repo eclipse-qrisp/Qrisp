@@ -22,7 +22,7 @@ from qrisp.qtypes import QuantumFloat, QuantumModulus
 from qrisp.alg_primitives.arithmetic.comparisons import less_than
 from qrisp.alg_primitives.arithmetic.modular_arithmetic.mod_tools import modinv, montgomery_encoder
 from qrisp.environments import custom_control
-from qrisp.alg_primitives import cx, swap, mcx
+from qrisp.core.gate_application_functions import cx, swap, mcx
 from qrisp.misc.utility import bin_rep, redirect_qfunction
 from qrisp.environments import control, invert
 from qrisp.circuit import fast_append

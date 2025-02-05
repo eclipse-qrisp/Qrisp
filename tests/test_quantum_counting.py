@@ -1,6 +1,6 @@
 """
 \********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -16,11 +16,13 @@
 ********************************************************************************/
 """
 
-import qrisp.algorithms.grover as grover
-import qrisp.algorithms.shor as shor
-import qrisp.algorithms.qaoa as qaoa
-import qrisp.algorithms.qiro as qiro
-import qrisp.algorithms.quantum_backtracking as quantum_backtracking
-from qrisp.algorithms.quantum_counting import quantum_counting
-import qrisp.algorithms.vqe as vqe
-import qrisp.algorithms.qite as qite
+def test_quantum_counting():
+    from qrisp import quantum_counting, z, QuantumVariable
+    import numpy as np
+
+    def oracle(qv):
+        z(qv[-1])
+
+    res = quantum_counting(QuantumVariable(3), oracle, 3)
+    
+    assert np.abs(res-4) < 1e-4

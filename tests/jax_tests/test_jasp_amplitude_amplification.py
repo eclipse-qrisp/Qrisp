@@ -1,6 +1,6 @@
 """
 \********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -16,11 +16,26 @@
 ********************************************************************************/
 """
 
-import qrisp.algorithms.grover as grover
-import qrisp.algorithms.shor as shor
-import qrisp.algorithms.qaoa as qaoa
-import qrisp.algorithms.qiro as qiro
-import qrisp.algorithms.quantum_backtracking as quantum_backtracking
-from qrisp.algorithms.quantum_counting import quantum_counting
-import qrisp.algorithms.vqe as vqe
-import qrisp.algorithms.qite as qite
+def test_jasp_amplitude_amplification():
+    from qrisp import QuantumFloat, ry, z, amplitude_amplification
+    from qrisp.jasp import terminal_sampling
+    import numpy as np
+
+    def state_function(qb):
+        ry(np.pi/8,qb)
+
+    def oracle_function(qb):   
+        z(qb)
+
+    @terminal_sampling
+    def main(i):
+        qb = QuantumFloat(1)     
+        state_function(qb)
+        amplitude_amplification([qb], state_function, oracle_function, iter=i)
+        return qb
+
+    assert np.round(main(0)[1],2) == 0.04
+    assert np.round(main(1)[1],2) == 0.31
+    assert np.round(main(2)[1],2) == 0.69
+    assert np.round(main(3)[1],2) == 0.96
+

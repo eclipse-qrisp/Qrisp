@@ -3,6 +3,6 @@
 Quantum Counting
 ================
 
-.. currentmodule:: qrisp.quantum_counting
+.. currentmodule:: qrisp
 
 .. autofunction:: quantum_counting
