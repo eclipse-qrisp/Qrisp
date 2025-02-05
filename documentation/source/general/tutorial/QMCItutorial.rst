@@ -1,7 +1,7 @@
 .. _QMCItutorial:
 
-Quantum Monte Carlo Integration with Iterative QAE
-==================================================
+Quantum Monte Carlo Integration
+===============================
 
 This tutorial will provide you with an introduction to Quantum Monte Carlo (QMCI) Integration within Qrisp.
 

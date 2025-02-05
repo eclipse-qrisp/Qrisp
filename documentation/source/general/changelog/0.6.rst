@@ -70,7 +70,7 @@ More details and example of using this approach for integrating the function $f(
 UI Changes
 ----------
 
-* :ref:`QuantumFloats <QuantumFloat>` are now bitshifted by the **in-place** bitshift operators ``<<=`` and ``>>=``, which describes the behavior better then the previous out-of-place operators ``<<`` and ``>>``.
+* :ref:`QuantumFloats <QuantumFloat>` are now bitshifted by the **in-place** bitshift operators ``<<=`` and ``>>=``, which describes the behavior better than the previous out-of-place operators ``<<`` and ``>>``.
 * The in-place bit-shift Operator is now called :ref:`Injection operator <injection>` and facilitates in-place application of out-of-place functions.
 * The :ref:`mcx <mcx>` function no longer accepts lists and arbitrary :ref:`QuantumVariables <QuantumVariable>` as target. Target values have to be either :ref:`Qubit` or :ref:`QuantumBool`.
 
