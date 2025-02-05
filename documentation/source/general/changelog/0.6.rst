@@ -3,18 +3,51 @@
 Qrisp 0.6
 =========
 
-Welcome to the latest update of Qrisp, our quantum computing programming language! This release introduces powerful new features designed to enhance your quantum programming experience. We are excited to announce the addition of Hamiltonian simulations, enabling users to tackle complex chemistry problems with greater efficiency and precision. Additionally, a cutting-edge algorithm for combinatorial optimization has been integrated, offering significant improvements in solving challenging optimization tasks. Alongside these advancements, we've also introduced several new algorithmic primitives, further expanding the capabilities of Qrisp.
+The latest 0.6 Qrisp update is centered around Jasp submodule, which significantly enhances scalability by enabling faster compilation for large quantum circuits and seamless integration of real-time classical computations. Additionally, we've incorporated Quantum Monte Carlo techniques with Iterative Quantum Amplitude Estimation for efficient numerical integration. UI improvements, including in-place bit-shift operators for QuantumFloats, round out this release.
 
 Jasp
 ----
 
-Jasp is a submodule of Qrisp that allows you to scale up your Qrisp code to to previously unseen problem scales. The fundamental problem that many Python based quantum frameworks face is that the Python interpreter is slow compared to what is possible with compiled languages. As an example, a 35 bit modular in-place multiplication takes already ~20 seconds to compile in Qrisp. Considering typical RSA key sizes contain up to 2000 bits, compiling a circuit addressing practically relevant problem scales therefore seems unlikely. Note that this issue is not restricted to Qrisp but similar numbers can be observed for Qiskit or any other Python based quantum circuit SDK. Jasp addresses this problem by capturing the computation using `Jax <https://jax.readthedocs.io/en/latest/index.html>`_ infrastructure and subsequently compiling it to QIR using `Catalyst <https://docs.pennylane.ai/projects/catalyst/en/stable/index.html>`_ and established `LLVM infrastructure <https://mlir.llvm.org/>`_. Using this pipeline, Jasp achieves industrial grade compilation performance.
+Jasp allows you to scale up your Qrisp code to to previously unseen problem scales allowing for the following features: 
 
-Apart from the compilation scaling issues, many frameworks (Qrisp included) suffer from the inability to integrate classical real-time computations. What is a real-time computation? A classical computation that happens during the quantum computation, while the quantum computer stays in superposition. This computation has to happen much faster than the coherence time, so performing that computation by waiting for the Python interpreter to generate a new circuit is impossible. Real-time computations are essential for many techniques in error correction, such as syndrom decoding or magic state distillation. On the algorithmic level, real-time computations also become more popular since they are so much cheaper than the quantum equivalent. Examples are Gidney’s adder or repeat until success protocols like HHL. Real-time computations are deeply ingrained into the Jasp archictecture - anything that can be done with Jax can also be a real-time computation.
+* Compilation performance
+* Performing classical real-time computations
+* Statit Analysis of quantum programs
 
-Finally a third aspect is static analysis of quantum programs. This field encompasses important techniques like quantum resource estimation or formal verification. Jasp computations are stored within `Jaxpr <https://jax.readthedocs.io/en/latest/jaxpr.html>`_ objects, a fully functional, SSA intermediate representation. This enables a variety of analysis and evaluation techniques, such as :ref:`boolean simulation <boolean_simulation>`, which transforms Jasp programs that contain only boolean logic into executable binaries and thus facilitates highly scalable simulations. This is particularly important for testing and verifying classical code running in superposition on the quantum device.
+Compilation performance
+~~~~~~~~~~~~~~~~~~~~~~~
 
-More details can be found in the :ref:`documentation <jasp>` or in the tutorial.
+The fundamental problem that many Python based quantum frameworks face is that the Python interpreter is slow compared to what is possible with compiled languages. As an example, a 35 bit modular in-place multiplication takes already ~20 seconds to compile in Qrisp. Considering typical RSA key sizes contain up to 2000 bits, compiling a circuit addressing practically relevant problem scales therefore seems unlikely. 
+
+Note that this issue is not restricted to Qrisp but similar numbers can be observed for Qiskit or any other Python based quantum circuit SDK. 
+
+Jasp addresses this problem by capturing the computation using `Jax <https://jax.readthedocs.io/en/latest/index.html>`_ infrastructure and subsequently compiling it to QIR using `Catalyst <https://docs.pennylane.ai/projects/catalyst/en/stable/index.html>`_ and established `LLVM infrastructure <https://mlir.llvm.org/>`_. Using this pipeline, Jasp achieves industrial grade compilation performance.
+
+Performing classical real-time computations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Apart from the compilation scaling issues, many frameworks (Qrisp included) suffer from the inability to integrate classical real-time computations. 
+
+What is a real-time computation? A classical computation that happens during the quantum computation, while the quantum computer stays in superposition. This computation has to happen much faster than the coherence time, so performing that computation by waiting for the Python interpreter to generate a new circuit is impossible. 
+
+Real-time computations are essential for many techniques in error correction, such as syndrom decoding or magic state distillation. On the algorithmic level, real-time computations also become more popular since they are so much cheaper than the quantum equivalent. Examples are Gidney’s adder or repeat until success protocols like HHL. 
+
+Real-time computations are deeply ingrained into the Jasp archictecture - anything that can be done with Jax can also be a real-time computation.
+
+Static Analysis of quantum programs
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Jasp also allows for static analysis of quantum programs. This field encompasses important techniques like quantum resource estimation or formal verification. 
+
+Jasp computations are stored within `Jaxpr <https://jax.readthedocs.io/en/latest/jaxpr.html>`_ objects, a fully functional, SSA intermediate representation. This enables a variety of analysis and evaluation techniques, such as :ref:`boolean simulation <boolean_simulation>`, which transforms Jasp programs that contain only boolean logic into executable binaries and thus facilitates highly scalable simulations. 
+
+This is particularly important for testing and verifying classical code running in superposition on the quantum device.
+
+Jasp tutorial
+~~~~~~~~~~~~~
+
+More details and an user friendly walkthrough through the added functionalities of the Jasp module are provided in :ref:`documentation <jasp>` or in the :ref:`Jasp tutorial <jasp_tutorial>`.
+
 
 Integration of Quantum Monte Carlo with Iterative QAE
 -----------------------------------------------------
@@ -30,3 +63,6 @@ UI Changes
 
 * :ref:`QuantumFloats <QuantumFloat>` are now bitshifted by the **in-place** bitshift operators ``<<=`` and ``>>=``, which describes the behavior better then the previous out-of-place operators ``<<`` and ``>>``.
 * The in-place bit-shift Operator is now called :ref:`Injection operator <injection>` and facilitates in-place application of out-of-place functions.
+
+Minor features & bugfixes
+-------------------------
