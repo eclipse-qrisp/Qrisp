@@ -89,6 +89,21 @@ def collect_environments(jaxpr):
                                     outvars = list(eqn.outvars),
                                     effects = eqn.effects,
                                     source_info = eqn.source_info,)
+            
+        if eqn.primitive.name == "while":
+            
+            new_params = dict(eqn.params)
+            
+            body_collected_jaspr = collect_environments(eqn.params["body_jaxpr"].jaxpr)
+            
+            new_params["body_jaxpr"] = ClosedJaxpr(body_collected_jaspr, eqn.params["body_jaxpr"].consts)
+            
+            eqn = JaxprEqn(params = new_params,
+                                    primitive = eqn.primitive,
+                                    invars = list(eqn.invars),
+                                    outvars = list(eqn.outvars),
+                                    effects = eqn.effects,
+                                    source_info = eqn.source_info,)
 
         # If an exit primitive is found, start the collecting mechanism.
         if eqn.primitive.name == "jasp.q_env" and "exit" in eqn.params.values():
