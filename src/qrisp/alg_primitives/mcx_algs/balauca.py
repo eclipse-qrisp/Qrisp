@@ -347,7 +347,7 @@ def vchain_2_dirty(control, target, dirty_ancillae=None):
         cx(control, target)
         return
     elif len(control) == 2:
-        mcx(control, target, method="gray")
+        mcx(control, target[0], method="gray")
 
     n = len(control)
     k = n - 2

@@ -141,7 +141,7 @@ class QuantumBool(QuantumVariable):
 
         and_qbl = QuantumBool()
 
-        mcx(self.reg + other.reg, and_qbl.reg)
+        mcx(self.reg + other.reg, and_qbl[0])
 
         return and_qbl
 
@@ -153,7 +153,7 @@ class QuantumBool(QuantumVariable):
         x(self)
         x(other)
 
-        mcx(self.reg + other.reg, or_qbl.reg)
+        mcx(self.reg + other.reg, or_qbl[0])
 
         x(self)
         x(other)
