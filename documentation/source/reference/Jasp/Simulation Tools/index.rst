@@ -1,8 +1,5 @@
 .. _jasp_simulators:
 
-.. note::
-    
-    This module is still under heavy development and the interface can therefore change at any time!
 
 Simulation Tools
 ================
