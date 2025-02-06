@@ -261,3 +261,4 @@ The following icons have been used on the Thinq Qrisp page:
 * `Hackathon icons created by Hervv <https://www.flaticon.com/free-icons/hackathon>`_.
 * `Lecture icons created by istar_design_bureau <https://www.flaticon.com/free-icons/lecture>`_.
 * `Desktop icons created by turkkub <https://www.flaticon.com/free-icons/desktop>`_.
+* `Quantum computing icons created by Vlad Szirka <https://www.flaticon.com/free-icons/quantum-computing>`_.

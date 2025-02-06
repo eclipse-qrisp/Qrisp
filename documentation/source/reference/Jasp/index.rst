@@ -1,5 +1,9 @@
 .. _jasp:
 
+.. image:: /_static/hybrid_realtime.png
+    :align: center
+    :width: 300
+
 Jasp
 ====
 

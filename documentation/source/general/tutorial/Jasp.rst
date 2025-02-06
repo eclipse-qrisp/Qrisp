@@ -508,6 +508,9 @@ To call this simulator, we simply use the ``boolean_simulation`` decorator like 
         return measure(c)
 
 
+
+Note the :ref:`injection operator <injection>`, which allows us to transform the out-of-place multiplication function into an in-place version (required for uncomputation of the temporary result.
+
 The first call needs some time for compilation
 ::
 
