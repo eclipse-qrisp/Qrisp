@@ -345,7 +345,8 @@ def grovers_alg(
         def count_ones(qv):
             prec = int(np.ceil(np.log2(qv.size+1)))
             res = QPE(qv, U, precision = prec, iter_spec = True, kwargs = {"prec" : prec})
-            return res<<prec
+            res <<= prec
+            return res
 
 
     Quick test:
