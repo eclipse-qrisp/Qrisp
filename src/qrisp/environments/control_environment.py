@@ -467,9 +467,12 @@ def control(*args, **kwargs):
     args = list(args)
     from qrisp import Qubit, QuantumBool, QuantumVariable
     from qrisp.jasp import AbstractQubit, check_for_tracing_mode
-    
+
     if isinstance(args[0], QuantumVariable):
-        args[0] = list(args[0])
+        if isinstance(args[0], QuantumBool):
+            args[0] = [args[0][0]]
+        else:
+            args[0] = list(args[0])
     if not isinstance(args[0], list):
         args[0] = [args[0]]
     

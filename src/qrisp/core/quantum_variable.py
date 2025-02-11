@@ -1363,7 +1363,10 @@ class QuantumVariable:
         return name
     
     def __iter__(self):
-        raise Exception("Tried to iterate on a QuantumVariable")
+        if not isinstance(self.reg, list):
+            raise Exception("Tried to perform a static iteration on a dynamic QuantumVariable")
+        else:
+            return self.reg.__iter__()
 
     def init_from(self, other):
         r"""
