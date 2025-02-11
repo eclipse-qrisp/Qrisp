@@ -20,9 +20,7 @@ from jax.lax import cond
 import jax
 
 from qrisp.environments import QuantumEnvironment
-from qrisp.jasp import extract_invalues, insert_outvalues
-
-
+from qrisp.jasp import extract_invalues, insert_outvalues, check_for_tracing_mode
 
 class ClControlEnvironment(QuantumEnvironment):
     r"""
@@ -167,13 +165,31 @@ class ClControlEnvironment(QuantumEnvironment):
         self.ctrl_state = self.ctrl_state%(2**len(self.ctrl_bls))
         
         self.invert = invert
-    
+        
     def compile(self):
         for i in range(len(self.ctrl_bls)):
             if self.ctrl_bls[i] != bool((self.ctrl_state >> i) & 1):
                 break
         else:
             QuantumEnvironment.compile(self)
+            
+    def __exit__(self, exception_type, exception_value, traceback):
+        
+        
+        static_error_appeared = False
+        if not check_for_tracing_mode():
+            if exception_type is not None:
+                for i in range(len(self.ctrl_bls)):
+                    ctrl_bl = self.ctrl_bls[i]
+                    if (ctrl_bl ^ (self.ctrl_state >> i)) & 1:
+                        static_error_appeared = True
+                        break
+        
+        QuantumEnvironment.__exit__(self, None, None, None)
+        
+        if static_error_appeared:
+            return True
+                
     
     def jcompile(self, eqn, context_dic):
         
