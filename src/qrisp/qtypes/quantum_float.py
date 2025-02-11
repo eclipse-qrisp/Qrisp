@@ -175,7 +175,7 @@ class QuantumFloat(QuantumVariable):
 
     >>> a = QuantumFloat(3, -1)
     >>> a[:] = 3.5
-    >>> b= a**-1
+    >>> b = a**-1
     >>> print(b)
     {0.25: 1.0}
 
@@ -251,7 +251,7 @@ class QuantumFloat(QuantumVariable):
     >>> a.exp_shift(3)
     >>> print(a)
     {-120: 1.0}
-    >>> a =>> 5
+    >>> a >>= 5
     >>> print(a)
     {-3.75: 1.0}
 
