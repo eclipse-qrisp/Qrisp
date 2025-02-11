@@ -1313,6 +1313,8 @@ class QubitOperator(Hamiltonian):
                     prefactor = (-1)**sign_vector[index]*(-1)**(n1+n2/2)
                     prefactors.append(prefactor)
 
+        processed_ladder_index_sets = []
+        
         # Ladder operators 
         for term, coeff in self.terms_dict.items():    
 
@@ -1330,11 +1332,10 @@ class QubitOperator(Hamiltonian):
                 anchor_factor = ladder_operators[-1]
                 new_factor_dict[ladder_operators[-1][0]] = "Z"
                 
+                ladder_indices = set(ladder_factor[0] for ladder_factor in ladder_operators)
+                
                 # Perform the cnot gates
                 for j in range(len(ladder_operators)-1):
-                    if not ladder_conjugation_performed:
-                        ladder_indices.append(ladder_operators[j][0])
-                        cx(qarg[anchor_factor[0]], qarg[ladder_operators[j][0]])
                     
                     if anchor_factor[1] == "C":
                         if ladder_operators[j][1] == "A":
@@ -1347,15 +1348,21 @@ class QubitOperator(Hamiltonian):
                         else:
                             new_factor_dict[ladder_operators[j][0]] = "P1"
                 
-                if not ladder_conjugation_performed:
-                    # Execute the H-gate
-                    ladder_indices.append(anchor_factor[0])
-                    h(qarg[anchor_factor[0]])
-                else:
-                    if set(ladder_indices) != set(ladder_factor[0] for ladder_factor in ladder_operators):
-                        raise Exception("Tried to perform change of basis on operator containing non-matching ladder indices")
                 
-                ladder_conjugation_performed = True
+                for ind_set in processed_ladder_index_sets:
+                    if ind_set.intersection(ladder_indices):
+                        if ladder_indices != ind_set:
+                            raise Exception("Tried to perform change of basis on operator containing non-matching ladder indices")
+                        break
+                else:
+                    
+                    # Perform the cnot gates
+                    for j in range(len(ladder_operators)-1):
+                        cx(qarg[anchor_factor[0]], qarg[ladder_operators[j][0]])
+                    
+                    # Execute the H-gate
+                    h(qarg[anchor_factor[0]])
+                    processed_ladder_index_sets.append(ladder_indices)
                 
                 prefactor *= 0.5
                 
