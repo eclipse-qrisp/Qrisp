@@ -537,7 +537,7 @@ class QubitOperator(Hamiltonian):
         delete_list = []
         new_terms_dict = dict(self.terms_dict)
         for term,coeff in self.terms_dict.items():
-            if abs(coeff)<threshold:
+            if abs(coeff) <= threshold:
                 delete_list.append(term)
         for term in delete_list:
             del new_terms_dict[term]
@@ -784,10 +784,11 @@ class QubitOperator(Hamiltonian):
                 factor_amount = max(participating_indices) + 1
             else:
                 res = 1
+                M = sp.csr_matrix((1,1))
                 for coeff in coeffs:
                     res *= coeff
-                M = sp.csr_matrix((1,1))
-                M[0,0] = res
+                if len(coeffs):
+                    M[0,0] = res
                 return M
         elif participating_indices and factor_amount < max(participating_indices) + 1:
             raise Exception("Tried to construct matrix with insufficient factor_amount")
@@ -922,7 +923,7 @@ class QubitOperator(Hamiltonian):
             else:
                 new_terms_dict[term] = coeff
         
-        return QubitOperator(new_terms_dict)
+        return QubitOperator(new_terms_dict).apply_threshold(0)
         
     
     def ground_state_energy(self):
@@ -937,6 +938,13 @@ class QubitOperator(Hamiltonian):
         """
 
         from scipy.sparse.linalg import eigsh
+        
+        hamiltonian = self.hermitize()
+        hamiltonian = hamiltonian.eliminate_ladder_conjugates()
+        hamiltonian = hamiltonian.apply_threshold(0)
+        
+        if len(hamiltonian.terms_dict) == 0:
+            return 0
 
         M = self.hermitize().to_sparse_matrix()
         # Compute the smallest eigenvalue

@@ -85,7 +85,7 @@ def get_measurement(
     """
 
     from qrisp import QuantumSession, merge
-
+    
     if isinstance(qarg,QuantumVariable):
         if qarg.is_deleted():
             raise Exception("Tried to get measurement from deleted QuantumVariable")
@@ -118,6 +118,11 @@ def get_measurement(
     if len(qs.env_stack) != 0:
         raise Exception("Tried to get measurement within open environment")
 
+    hamiltonian = hamiltonian.hermitize()
+    hamiltonian = hamiltonian.eliminate_ladder_conjugates()
+    hamiltonian = hamiltonian.apply_threshold(0)
+    if len(hamiltonian.terms_dict) == 0:
+        return 0
 
     # Copy circuit in over to prevent modification
     if precompiled_qc is None:        
@@ -146,11 +151,9 @@ def get_measurement(
 
 class QubitOperatorMeasurement:
     
-    def __init__(self, qubit_op, diagonalisation_method="commuting_qw"):
+    def __init__(self, hamiltonian, diagonalisation_method="commuting_qw"):
         
-        n = qubit_op.find_minimal_qubit_amount()
-        hamiltonian = qubit_op.hermitize()
-        hamiltonian = hamiltonian.eliminate_ladder_conjugates()
+        n = hamiltonian.find_minimal_qubit_amount()
         
         if diagonalisation_method=="commuting_qw":
             self.groups = hamiltonian.commuting_qw_groups()

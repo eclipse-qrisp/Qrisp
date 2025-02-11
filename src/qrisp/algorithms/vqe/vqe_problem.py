@@ -106,7 +106,11 @@ class VQEProblem:
         
         if isinstance(hamiltonian, FermionicOperator):
             hamiltonian = hamiltonian.to_qubit_operator()
-            
+        
+        hamiltonian = hamiltonian.hermitize()
+        hamiltonian = hamiltonian.eliminate_ladder_conjugates()
+        hamiltonian = hamiltonian.apply_threshold(0)
+        
         self.hamiltonian = hamiltonian
         self.ansatz_function = ansatz_function
         self.num_params = num_params
