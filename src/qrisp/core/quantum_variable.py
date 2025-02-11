@@ -1361,6 +1361,9 @@ class QuantumVariable:
                 break
 
         return name
+    
+    def __iter__(self):
+        raise Exception("Tried to iterate on a QuantumVariable")
 
     def init_from(self, other):
         r"""
