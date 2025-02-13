@@ -50,7 +50,8 @@ class DynamicQubitArray:
     def __add__(self, other):
         return DynamicQubitArray(fuse_qb_array(self.tracer, other.tracer))
     
-    def ensure_reg(self):
+    @property
+    def reg(self):
         return self
         
 from jax import tree_util
