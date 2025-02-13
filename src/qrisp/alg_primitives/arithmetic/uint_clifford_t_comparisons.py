@@ -68,7 +68,7 @@ def uint_qc_less_than(a, b, inv_adder):
     with control(b >= 0):
         comparison_anc = QuantumBool()
         
-        with conjugate(inv_adder, allocation_management = False)(b, a.reg + a.reg):
+        with conjugate(inv_adder, allocation_management = False)(b, a.reg + comparison_anc.reg):
             cx(comparison_anc, comparison_res)
         
         comparison_anc.delete()
