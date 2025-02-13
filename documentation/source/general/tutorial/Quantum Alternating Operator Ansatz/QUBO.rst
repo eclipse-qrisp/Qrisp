@@ -42,7 +42,7 @@ Our implementation of solving QUBO problems using QAOA works for both the upper 
         ]
     )
 
-    solve_QUBO(Q, depth = 1, shots=5000, print_res=True)
+    solve_QUBO(Q, depth = 1, shots=5000)[:5]
 
 That's it! You can try running this block of code on the website using the Thebe interactivity integration, or run it on your own Qrispy environment. 
 We see that we obtain the 5 best solutions with the corresponding bitsring of the binary variables. 
@@ -84,7 +84,7 @@ Let's translate this into a function:
         def QUBO_cost_operator(qv, gamma):
 
             # Rescaling for enhancing the performance of the QAOA
-            gamma = gamma/np.linalg.norm(Q)
+            gamma = gamma/np.sqrt(np.linalg.norm(Q))
 
             gphase(-gamma/4*(np.sum(Q)+np.trace(Q)),qv[0])
             for i in range(len(Q)):
