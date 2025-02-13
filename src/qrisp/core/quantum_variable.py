@@ -1491,6 +1491,9 @@ class QuantumVariable:
         from qrisp.misc import custom_qv
 
         return custom_qv(label_list, decoder=decoder, qs=qs, name=name)
+    
+    def ensure_reg(self):
+        return self.reg
 
 def plot_histogram(outcome_labels, counts, filename=None):
     res_list = []
