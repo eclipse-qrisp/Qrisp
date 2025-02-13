@@ -38,7 +38,7 @@ def jasp_qq_gidney_adder(a, b, ctrl = None):
     
     if ctrl is not None:
         ctrl_anc = QuantumBool(name = "gidney_anc_2*")
-    
+        
     # If the addition is only a single qubit, it can be done with a CX gate (below)
     with control(n > 1):
         
@@ -132,6 +132,17 @@ def jasp_qq_gidney_adder(a, b, ctrl = None):
         
         # Delete the ancilla
         gidney_anc.delete()
+        
+    with control((n == 1) & perform_incrementation):
+        
+        ctrl_list = [a[0], b[0]]
+        
+        if ctrl is not None:
+            ctrl_list.append(ctrl)
+        
+        with control(ctrl_list):
+            jasp_cq_gidney_adder(1, b[n:])
+    
     
     # Perform the CX gate at the top right of the circuit
     if ctrl is not None:
@@ -142,5 +153,4 @@ def jasp_qq_gidney_adder(a, b, ctrl = None):
         cx(a[0], b[0])
     
     if ctrl is not None:
-        ctrl_anc.delete()        
-
+        ctrl_anc.delete()

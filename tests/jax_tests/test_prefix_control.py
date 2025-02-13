@@ -24,7 +24,7 @@ def test_prefix_control():
     @jaspify
     def main(k):
         
-        qf = QuantumFloat(6)
+        qf_ = QuantumFloat(6)
         
         def body_fun(i, val):
             acc, qf = val
@@ -32,7 +32,7 @@ def test_prefix_control():
             acc += measure(qf[i])
             return acc, qf
         
-        acc, qf = q_fori_loop(0, k, body_fun, (0, qf))
+        acc, qf = q_fori_loop(0, k, body_fun, (0, qf_))
         
         return acc, measure(qf)
 

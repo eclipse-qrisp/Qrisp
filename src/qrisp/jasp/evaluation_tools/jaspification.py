@@ -145,7 +145,7 @@ def jaspify(func = None, terminal_sampling = False):
         if isinstance(jaspr_res, tuple):
             jaspr_res = tree_unflatten(treedef_container[0], jaspr_res)
         if len(recursive_qv_search(jaspr_res)):
-            raise Exception("Tried to simulate function returning a QuantumVariable")
+            raise Exception("Tried to jaspify function returning a QuantumVariable")
         return jaspr_res
     return return_function
 

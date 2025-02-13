@@ -47,7 +47,9 @@ Once the container is running, you can start using the following backends on you
      
 
 
-To utilize these simulators you can import the corresponding backend in Python
+To utilize these simulators you can import the corresponding backend in Python. 
+
+**Attention**! It is required to assign a `shots`-argument in the `get_measurement`-call!
 
 >>> from qrisp import QuantumFloat
 >>> a = QuantumFloat(3)
@@ -56,5 +58,5 @@ To utilize these simulators you can import the corresponding backend in Python
 >>> b[:] = 4
 >>> c = a*b
 >>> from qrisp.interface import MQTSim
->>> c.get_measurement(backend = MQTSim())
+>>> c.get_measurement(backend = MQTSim(), shots = 1000)
 {12: 1.0}

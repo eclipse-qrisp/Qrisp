@@ -16,28 +16,26 @@
 ********************************************************************************/
 """
 
+import jax.numpy as jnp
 
 from qrisp.core import QuantumVariable, cx
 from qrisp.qtypes import QuantumBool
-from qrisp.environments import invert, adaptive_condition, conjugate
+from qrisp.environments import invert, adaptive_condition, conjugate, control
+
 
 def uint_qq_less_than(a, b, inv_adder):
     comparison_anc = QuantumBool()
     comparison_res = QuantumBool()
     
-    if a.size < b.size:
-        temp_var = QuantumVariable(b.size-a.size)
-        a = list(a) + list(temp_var)
+    temp_var = QuantumVariable(jnp.maximum(0, b.size-a.size))
+    a = a.ensure_reg() + temp_var.ensure_reg()
     
-    with conjugate(inv_adder, allocation_management = False)(b, list(a) + [comparison_anc]):
+    with conjugate(inv_adder, allocation_management = False)(b, a + comparison_anc.ensure_reg()):
         cx(comparison_anc, comparison_res)
     
     comparison_anc.delete()
     
-    try:
-        temp_var.delete()
-    except UnboundLocalError:
-        pass
+    temp_var.delete()
     
     return comparison_res
 
@@ -45,38 +43,35 @@ def uint_cq_less_than(a, b, inv_adder):
     
     comparison_res = QuantumBool()
     
-    if a > 2**b.size:
+    
+    with control(a > 2**b.size):
         comparison_res.flip()
-        return comparison_res
     
-    elif a < 0:
-        return comparison_res
-    
-    comparison_anc = QuantumBool()
-    
-    with conjugate(inv_adder, allocation_management = False)(a+1, list(b) + [comparison_anc]):
-        cx(comparison_anc, comparison_res)
-    
-    comparison_anc.delete()
+    with control(a >= 0):    
+        comparison_anc = QuantumBool()
+        
+        with conjugate(inv_adder, allocation_management = False)(a+1, b.reg + comparison_anc.reg):
+            cx(comparison_anc, comparison_res)
+        
+        comparison_anc.delete()
     
     return comparison_res.flip()
+
 
 def uint_qc_less_than(a, b, inv_adder):
     
     comparison_res = QuantumBool()
     
-    if b > 2**a.size:
+    
+    with control(b > 2**a.size):
         comparison_res.flip()
-        return comparison_res
-    elif b < 0:
-        return comparison_res
-    
-    comparison_anc = QuantumBool()
-    
-    with conjugate(inv_adder, allocation_management = False)(b, list(a) + [comparison_anc]):
-        cx(comparison_anc, comparison_res)
-    
-    comparison_anc.delete()
+    with control(b >= 0):
+        comparison_anc = QuantumBool()
+        
+        with conjugate(inv_adder, allocation_management = False)(b, a.reg + comparison_anc.reg):
+            cx(comparison_anc, comparison_res)
+        
+        comparison_anc.delete()
     
     return comparison_res
 
@@ -95,18 +90,14 @@ def uint_less_than(a,b, inpl_adder):
     else:
         return a < b
 
-@adaptive_condition
 def uint_lt(a, b, inpl_adder):
     return uint_less_than(a, b, inpl_adder)
 
-@adaptive_condition
 def uint_gt(a, b, inpl_adder):
     return uint_less_than(b, a, inpl_adder)
 
-@adaptive_condition
 def uint_le(a, b, inpl_adder):
     return uint_less_than(b, a, inpl_adder).flip()
 
-@adaptive_condition
 def uint_ge(a, b, inpl_adder):
     return uint_less_than(a, b, inpl_adder).flip()

@@ -23,7 +23,7 @@ import sympy as sp
 from qrisp.core import QuantumVariable, cx
 from qrisp.misc import gate_wrap
 from qrisp.environments import invert, conjugate
-
+from qrisp.jasp import check_for_tracing_mode
 
 def signed_int_iso_2(x, n):
     return x % (int(1)<<(n))
@@ -660,40 +660,49 @@ class QuantumFloat(QuantumVariable):
         return self
 
     def __lt__(self, other):
+        from qrisp.alg_primitives.arithmetic import lt, uint_lt, gidney_adder
         
-        from qrisp.alg_primitives.arithmetic import lt
-        
-        if not isinstance(other, (QuantumFloat, int, float)):
-            raise Exception(f"Comparison with type {type(other)} not implemented")
-
-        return lt(self, other)
+        if check_for_tracing_mode():
+            return uint_lt(self, other, gidney_adder)
+        else:
+            if not isinstance(other, (QuantumFloat, int, float)):
+                raise Exception(f"Comparison with type {type(other)} not implemented")
+    
+            return lt(self, other)
 
     def __gt__(self, other):
+        from qrisp.alg_primitives.arithmetic import gt, uint_gt, gidney_adder
         
-        from qrisp.alg_primitives.arithmetic import gt
-        
-        if not isinstance(other, (QuantumFloat, int, float)):
-            raise Exception(f"Comparison with type {type(other)} not implemented")
-
-        return gt(self, other)
+        if check_for_tracing_mode():
+            return uint_gt(self, other, gidney_adder)
+        else:
+            if not isinstance(other, (QuantumFloat, int, float)):
+                raise Exception(f"Comparison with type {type(other)} not implemented")
+    
+            return gt(self, other)
 
     def __le__(self, other):
+        from qrisp.alg_primitives.arithmetic import leq, uint_le, gidney_adder
         
-        from qrisp.alg_primitives.arithmetic import leq
-        
-        if not isinstance(other, (QuantumFloat, int, float)):
-            raise Exception(f"Comparison with type {type(other)} not implemented")
-
-        return leq(self, other)
+        if check_for_tracing_mode():
+            return uint_le(self, other, gidney_adder)
+        else:
+            if not isinstance(other, (QuantumFloat, int, float)):
+                raise Exception(f"Comparison with type {type(other)} not implemented")
+    
+            return leq(self, other)
 
     def __ge__(self, other):
+        from qrisp.alg_primitives.arithmetic import geq, uint_ge, gidney_adder
         
-        from qrisp.alg_primitives.arithmetic import geq        
-        
-        if not isinstance(other, (QuantumFloat, int, float)):
-            raise Exception(f"Comparison with type {type(other)} not implemented")
-
-        return geq(self, other)
+        if check_for_tracing_mode():
+            return uint_ge(self, other, gidney_adder)
+        else:
+            
+            if not isinstance(other, (QuantumFloat, int, float)):
+                raise Exception(f"Comparison with type {type(other)} not implemented")
+    
+            return geq(self, other)
 
     def __eq__(self, other):
         

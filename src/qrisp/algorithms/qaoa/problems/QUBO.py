@@ -18,7 +18,6 @@
 
 from qrisp import *
 import numpy as np
-import sympy as sp
 from operator import itemgetter
 
 def QUBO_obj(bitstring, Q):
@@ -83,7 +82,7 @@ def create_QUBO_cost_operator(Q):
     def QUBO_cost_operator(qv, gamma):
 
         # Rescaling for enhancing the performance of the QAOA
-        gamma = gamma/np.linalg.norm(Q)
+        gamma = gamma/np.sqrt(np.linalg.norm(Q))
 
         gphase(-gamma/4*(np.sum(Q)+np.trace(Q)),qv[0])
 
@@ -117,7 +116,7 @@ def QUBO_problem(Q):
     return QAOAProblem(create_QUBO_cost_operator(Q), RX_mixer, create_QUBO_cl_cost_function(Q))
 
 
-def solve_QUBO(Q, depth, shots=5000, max_iter = 50, backend = None, print_res = False):
+def solve_QUBO(Q, depth, shots = 5000, max_iter = 50, backend = None, print_res = False):
     """
     Solves a Quadratic Unconstrained Binary Optimization (QUBO) problem using the Quantum Approximate Optimization Algorithm (QAOA). 
 
@@ -125,7 +124,7 @@ def solve_QUBO(Q, depth, shots=5000, max_iter = 50, backend = None, print_res = 
     It defines a quantum argument as a :ref:`QuantumArray` of ``len(Q)`` :ref:`QuantumVariables <QuantumVariable>` with size 1. 
     It then runs the QAOA with the given quantum argument, ``depth`` (number of layers), maximum ``iterations`` of the classical optimizer, and ``shots`` and ``backend`` as measurement keyword arguments. 
     The method performs classical post-processing on the solutions of the QAOA optimization: 
-    it calculates the cost for each such solution, sorts the solutions by their cost in ascending order, and returns the optimal solution.
+    it calculates the cost for each such solution, sorts the solutions by their costs in ascending order, and returns the sorted list of solutions.
 
     .. warning::
      
@@ -152,9 +151,10 @@ def solve_QUBO(Q, depth, shots=5000, max_iter = 50, backend = None, print_res = 
 
     Returns
     -------
-    optimal_solution : tuple
-        A tuple where the first element is the cost value and the second element is the optimal bitstring. 
-        If ``print_res`` is set to ``True``, the function prints the 5 best solutions with their respective costs.
+    list[tuple]
+        A list of tuples representing the solutions: The first element is the cost, the second element is the bitstring, and the thrid element is the probability. 
+        Solutions are sorted by their costs in ascending order.
+        If ``print_res`` is set to ``True``, the function prints the best 5 solutions with their respective costs and probabilities.
 
     Examples
     --------
@@ -175,7 +175,7 @@ def solve_QUBO(Q, depth, shots=5000, max_iter = 50, backend = None, print_res = 
             ]
         )
 
-        solve_QUBO(Q, depth = 1, print_res=True)
+        solve_QUBO(Q, depth = 1, shots = 5000)[:5]
 
     """
 
@@ -194,17 +194,17 @@ def solve_QUBO(Q, depth, shots=5000, max_iter = 50, backend = None, print_res = 
     res = QUBO_instance.run(qarg, depth, mes_kwargs={"backend" : backend, "shots" : shots}, max_iter = max_iter, init_type='tqa') # runs the simulation
 
     # Calculate the cost for each solution
-    costs_and_solutions = [(QUBO_obj(bitstring, Q), bitstring) for bitstring in res.keys()]
+    costs_and_solutions = [(QUBO_obj(bitstring, Q), bitstring, res[bitstring]) for bitstring in res.keys()]
 
     # Sort the solutions by their cost in ascending order
     sorted_costs_and_solutions = sorted(costs_and_solutions, key=itemgetter(0))
 
-    optimal_solution = sorted_costs_and_solutions[0]
+    #optimal_solution = sorted_costs_and_solutions[0]
 
     if print_res is True:
         # Get the best solutions and print them
         for i in range(5):
             print(f"Solution {i+1}: {sorted_costs_and_solutions[i][1]} with cost: {sorted_costs_and_solutions[i][0]} and probability: {res[sorted_costs_and_solutions[i][1]]}")
     
-    return optimal_solution
+    return sorted_costs_and_solutions
 

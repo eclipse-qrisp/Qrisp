@@ -90,7 +90,9 @@ def catalyst_eqn_evaluator(eqn, context_dic):
         invars = eqn.invars
         outvars = eqn.outvars
         
-        if eqn.primitive.name == "jasp.create_qubits":
+        if isinstance(eqn.primitive, OperationPrimitive):
+            process_op(eqn.primitive, invars, outvars, context_dic)
+        elif eqn.primitive.name == "jasp.create_qubits":
             process_create_qubits(invars, outvars, context_dic)
         elif eqn.primitive.name == "jasp.get_qubit":
             process_get_qubit(invars, outvars, context_dic)
@@ -104,8 +106,8 @@ def catalyst_eqn_evaluator(eqn, context_dic):
             process_delete_qubits(eqn, context_dic)
         elif eqn.primitive.name == "jasp.reset":
             process_reset(eqn, context_dic)
-        elif isinstance(eqn.primitive, OperationPrimitive):
-            process_op(eqn.primitive, invars, outvars, context_dic)
+        elif eqn.primitive.name == "jasp.fuse":
+            process_fuse(eqn, context_dic)
         else:
             raise Exception(f"Don't know how to process QuantumPrimitive {eqn.primitive}")
     else:
@@ -117,20 +119,6 @@ def catalyst_eqn_evaluator(eqn, context_dic):
             process_pjit(eqn, context_dic)
         else:
             return True
-    
-# def process_create_qubits(invars, outvars, context_dic):
-    
-#     # The first invar of the create_qubits primitive is an AbstractQuantumCircuit
-#     # which is represented by an AbstractQreg and an integer
-#     qreg, stack_size = context_dic[invars[0]]
-    
-#     # We create the new QubitArray representation by putting the appropriate tuple
-#     # in the context_dic
-#     context_dic[outvars[1]] = (stack_size, context_dic[invars[1]])
-    
-#     # Furthermore we create the updated AbstractQuantumCircuit representation.
-#     # The new stack size is the old stask size + the size of the QubitArray
-#     context_dic[outvars[0]] = (qreg, stack_size + context_dic[invars[1]])
     
 def process_create_qubits(invars, outvars, context_dic):
     
@@ -188,6 +176,29 @@ def process_delete_qubits(eqn, context_dic):
     free_qubits, reg_qubits = fori_loop(0, reg_qubits.counter, loop_body, (free_qubits, reg_qubits))
     
     context_dic[eqn.outvars[0]] = (qreg, free_qubits)
+
+def process_fuse(eqn, context_dic):
+    
+    invalues = extract_invalues(eqn, context_dic)
+    
+    res_qubits = Jlist()
+    
+    def loop_body(i, val_tuple):
+        res_qubits, source_qubits = val_tuple
+        res_qubits.append(source_qubits[i])
+        return res_qubits, source_qubits
+    
+    res_qubits, source_qubits = fori_loop(0, 
+                                          invalues[0].counter, 
+                                          loop_body, 
+                                          (res_qubits, invalues[0]))
+    
+    res_qubits, source_qubits = fori_loop(0, 
+                                       invalues[1].counter, 
+                                       loop_body, 
+                                       (res_qubits, invalues[1]))
+
+    insert_outvalues(eqn, context_dic, res_qubits)
 
 def process_get_qubit(invars, outvars, context_dic):
     # The get_qubit primitive needs to retrieve the integer that indexes the 

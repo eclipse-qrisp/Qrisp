@@ -537,7 +537,7 @@ class QubitOperator(Hamiltonian):
         delete_list = []
         new_terms_dict = dict(self.terms_dict)
         for term,coeff in self.terms_dict.items():
-            if abs(coeff)<threshold:
+            if abs(coeff) <= threshold:
                 delete_list.append(term)
         for term in delete_list:
             del new_terms_dict[term]
@@ -784,10 +784,11 @@ class QubitOperator(Hamiltonian):
                 factor_amount = max(participating_indices) + 1
             else:
                 res = 1
+                M = sp.csr_matrix((1,1))
                 for coeff in coeffs:
                     res *= coeff
-                M = sp.csr_matrix((1,1))
-                M[0,0] = res
+                if len(coeffs):
+                    M[0,0] = res
                 return M
         elif participating_indices and factor_amount < max(participating_indices) + 1:
             raise Exception("Tried to construct matrix with insufficient factor_amount")
@@ -922,7 +923,7 @@ class QubitOperator(Hamiltonian):
             else:
                 new_terms_dict[term] = coeff
         
-        return QubitOperator(new_terms_dict)
+        return QubitOperator(new_terms_dict).apply_threshold(0)
         
     
     def ground_state_energy(self):
@@ -937,6 +938,13 @@ class QubitOperator(Hamiltonian):
         """
 
         from scipy.sparse.linalg import eigsh
+        
+        hamiltonian = self.hermitize()
+        hamiltonian = hamiltonian.eliminate_ladder_conjugates()
+        hamiltonian = hamiltonian.apply_threshold(0)
+        
+        if len(hamiltonian.terms_dict) == 0:
+            return 0
 
         M = self.hermitize().to_sparse_matrix()
         # Compute the smallest eigenvalue
@@ -1305,6 +1313,8 @@ class QubitOperator(Hamiltonian):
                     prefactor = (-1)**sign_vector[index]*(-1)**(n1+n2/2)
                     prefactors.append(prefactor)
 
+        processed_ladder_index_sets = []
+        
         # Ladder operators 
         for term, coeff in self.terms_dict.items():    
 
@@ -1322,11 +1332,10 @@ class QubitOperator(Hamiltonian):
                 anchor_factor = ladder_operators[-1]
                 new_factor_dict[ladder_operators[-1][0]] = "Z"
                 
+                ladder_indices = set(ladder_factor[0] for ladder_factor in ladder_operators)
+                
                 # Perform the cnot gates
                 for j in range(len(ladder_operators)-1):
-                    if not ladder_conjugation_performed:
-                        ladder_indices.append(ladder_operators[j][0])
-                        cx(qarg[anchor_factor[0]], qarg[ladder_operators[j][0]])
                     
                     if anchor_factor[1] == "C":
                         if ladder_operators[j][1] == "A":
@@ -1339,15 +1348,21 @@ class QubitOperator(Hamiltonian):
                         else:
                             new_factor_dict[ladder_operators[j][0]] = "P1"
                 
-                if not ladder_conjugation_performed:
-                    # Execute the H-gate
-                    ladder_indices.append(anchor_factor[0])
-                    h(qarg[anchor_factor[0]])
-                else:
-                    if set(ladder_indices) != set(ladder_factor[0] for ladder_factor in ladder_operators):
-                        raise Exception("Tried to perform change of basis on operator containing non-matching ladder indices")
                 
-                ladder_conjugation_performed = True
+                for ind_set in processed_ladder_index_sets:
+                    if ind_set.intersection(ladder_indices):
+                        if ladder_indices != ind_set:
+                            raise Exception("Tried to perform change of basis on operator containing non-matching ladder indices")
+                        break
+                else:
+                    
+                    # Perform the cnot gates
+                    for j in range(len(ladder_operators)-1):
+                        cx(qarg[anchor_factor[0]], qarg[ladder_operators[j][0]])
+                    
+                    # Execute the H-gate
+                    h(qarg[anchor_factor[0]])
+                    processed_ladder_index_sets.append(ladder_indices)
                 
                 prefactor *= 0.5
                 
