@@ -40,7 +40,9 @@ def cl_func_eqn_evaluator(eqn, context_dic):
         invars = eqn.invars
         outvars = eqn.outvars
         
-        if eqn.primitive.name == "jasp.create_qubits":
+        if isinstance(eqn.primitive, OperationPrimitive):
+            process_op(eqn.primitive, invars, outvars, context_dic)
+        elif eqn.primitive.name == "jasp.create_qubits":
             process_create_qubits(invars, outvars, context_dic)
         elif eqn.primitive.name == "jasp.get_qubit":
             process_get_qubit(invars, outvars, context_dic)
@@ -54,8 +56,8 @@ def cl_func_eqn_evaluator(eqn, context_dic):
             process_delete_qubits(eqn, context_dic)
         elif eqn.primitive.name == "jasp.reset":
             process_reset(eqn, context_dic)
-        elif isinstance(eqn.primitive, OperationPrimitive):
-            process_op(eqn.primitive, invars, outvars, context_dic)
+        elif eqn.primitive.name == "jasp.fuse":
+            process_fuse(eqn, context_dic)
         else:
             raise Exception(f"Don't know how to process QuantumPrimitive {eqn.primitive}")
     else:
@@ -92,7 +94,6 @@ def process_create_qubits(invars, outvars, context_dic):
     
     size = make_tracer(size)
     
-    
     free_qubits, reg_qubits = fori_loop(0, size, loop_body, (free_qubits, reg_qubits))
     
     context_dic[outvars[1]] = reg_qubits
@@ -101,6 +102,32 @@ def process_create_qubits(invars, outvars, context_dic):
     # The new stack size is the old stask size + the size of the QubitArray
     context_dic[outvars[0]] = (qreg, free_qubits)
     
+
+
+def process_fuse(eqn, context_dic):
+    
+    invalues = extract_invalues(eqn, context_dic)
+    
+    res_qubits = Jlist()
+    
+    def loop_body(i, val_tuple):
+        res_qubits, source_qubits = val_tuple
+        res_qubits.append(source_qubits[i])
+        return res_qubits, source_qubits
+    
+    res_qubits, source_qubits = fori_loop(0, 
+                                          invalues[0].counter, 
+                                          loop_body, 
+                                          (res_qubits, invalues[0]))
+    
+    res_qubits, source_qubits = fori_loop(0, 
+                                       invalues[1].counter, 
+                                       loop_body, 
+                                       (res_qubits, invalues[1]))
+
+    insert_outvalues(eqn, context_dic, res_qubits)
+    
+
 
 def process_get_qubit(invars, outvars, context_dic):
     # The get_qubit primitive needs to retrieve the integer that indexes the 
@@ -392,7 +419,6 @@ def process_reset(eqn, context_dic):
     
     outvalues = (bit_array, invalues[0][1])
     insert_outvalues(eqn, context_dic, outvalues)
-    
     
     
 def jaspr_to_cl_func_jaxpr(jaspr, bit_array_padding):

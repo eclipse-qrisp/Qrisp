@@ -22,7 +22,7 @@ from qrisp.jasp import *
 
 def test_qubit_array_fusion():
 
-    @jaspify
+    
     def main():
         
         qv_a = QuantumFloat(3).ensure_reg()
@@ -33,4 +33,12 @@ def test_qubit_array_fusion():
         
         return measure(tmp)
 
-    assert main() == 63
+    assert jaspify(main)() == 63
+    assert boolean_simulation(main)() == 63
+    
+    try:
+        import catalyst
+    except:
+        return
+    
+    assert qjit(main)() == 63
