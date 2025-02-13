@@ -38,8 +38,7 @@ def dicke_state(qv, k):
 
     ::
         
-        from qrisp import QuantumVariable, x
-        from qrisp.misc.dicke_state import dicke_state
+        from qrisp import QuantumVariable, x, dicke_state
         
         qv = QuantumVariable(4)
         x(qv[2])

@@ -141,11 +141,11 @@ def process_op(op_prim, invars, outvars, context_dic):
     if op.name == "x":
         ctrl_state = ""
     elif isinstance(op, ControlledOperation) and op.base_operation.name in ["x", "y", "z"]:
-        if op.base_operation.name == "z":
+        if op.base_operation.name in ["z", "rz", "t", "s", "t_dg", "s_dg", "p"]:
             context_dic[outvars[0]] = context_dic[invars[0]]
             return
         ctrl_state = op.ctrl_state
-    elif op.name == "z":
+    elif op.name in ["z", "rz", "t", "s", "t_dg", "s_dg", "p"]:
         context_dic[outvars[0]] = context_dic[invars[0]]
         return
     else:
