@@ -135,10 +135,10 @@ Hence, upon measuring the ``case_indicator`` in state $\ket{0}$ and the target `
         with conjugate(qrisp.h)(case_indicator):
             qbl = (case_indicator >= inv_res)
         
-        cancelation_bool = (measure(case_indicator) == 0) & (measure(qbl) == 0)
+        cancellation_bool = (measure(case_indicator) == 0) & (measure(qbl) == 0)
 
         # The irst return value is a boolean. Additional return values are QuantumVaraibles.
-        return cancelation_bool, qf, qpe_res, inv_res
+        return cancellation_bool, qf, qpe_res, inv_res
 
       
             
@@ -225,7 +225,7 @@ Finally, let's compare to the classical result.
     print(x)
 
 
-And viola! Now, let's tackle some more complicated examples! Next, we try some randomly generated matrices whose eigenvalues are inverse powers of 2, i.e. of the form $2^{-k}$ for $k<K$.
+And voila! Now, let's tackle some more complicated examples! Next, we try some randomly generated matrices whose eigenvalues are inverse powers of 2, i.e. of the form $2^{-k}$ for $k<K$.
 
 To facilitate fast simulations, we restrict ourselves to $K=4$ (required ``precision`` of QPE) as the runtime of the HHL algorithm scales linearly in the inverse precision $\epsilon=2^{-K}$ (and therefore exponentially in $K$).
 
