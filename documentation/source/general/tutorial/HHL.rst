@@ -7,9 +7,7 @@ The Harrow-Hassidim-Lloyd (HHL) quantum algorithm offers an exponential speed-up
 
 The implementation features hybrid quantum-classical workflows and is compiled using `Catalyst <https://docs.pennylane.ai/projects/catalyst/en/stable/index.html>`_, a quantum just-in-time (:ref:`QJIT <qjit>`) compiler framework.
 
-The goal of this demo is to showcase how Qrisp and Catalyst complement each other for implemententing advanced quantum algorithms and compling them for practically relevant problem sizes.
-As quantum computing `steadily progresses towards the era of fault-tolerant quantum processors <https://www.quera.com/press-releases/harvard-quera-mit-and-the-nist-university-of-maryland-usher-in-new-era-of-quantum-computing-by-performing-complex-error-corrected-quantum-algorithms-on-48-logical-qubits>`_, 
-the landscape of compilation techniques undergoes a profound transformation. While Noisy Intermediate-Scale Quantum (NISQ) devices have been the pioneers in demonstrating quantum computational capabilities, the vision for practical quantum computing hinges on fault-tolerant architectures capable of handling errors that naturally arise in quantum systems.
+The goal of this demo is to showcase how Qrisp and Catalyst complement each other for implemententing advanced quantum algorithms and compling them for practically relevant problem sizes through the :ref:`Jasp compilation pipeline <Jasp>`.
 
 HHL algorithm in theory
 -----------------------
@@ -83,7 +81,7 @@ As a fist step, we define a function ``fake_inversion`` that performs the invers
 Essentially, the controlled-NOT operations in the loop reverse the positions of the bits in input variable and place them in the result variable in the opposite order. 
 For example, for $\lambda=2^{-3}$, which is $0.001$ in binary, the function would produce $\lambda^{-1}=2^3$, which in binary is 1000.
 
-Let's see if it works indeed!
+Let's see if it works as intended!
 
 ::
 
@@ -97,40 +95,27 @@ Let's see if it works indeed!
 Next, we define the function ``HHL_encoding`` that performs **Steps 1-4** and prepares the state $\ket{\Psi_4}$.
 But, how do get the values $\widetilde{\lambda}^{-1}_i$ into the amplitudes of the states, i.e. how do we go from $\ket{\Psi_3}$ to $\ket{\Psi_4}$?
 
-Recently, efficient methods for black-box quantum state preparation that avoid arithmetic were proposed, see `Sanders et al. <https://arxiv.org/pdf/1807.03206>`_, `Wang et al. <https://arxiv.org/pdf/2012.11056>`_ In this demo, we use a routine proposed in the latter reference.
+Recently, efficient methods for black-box quantum state preparation that avoid arithmetic were proposed, see `Sanders et al. <https://arxiv.org/pdf/1807.03206>`_, `Wang et al. <https://arxiv.org/pdf/2012.11056>`_ In this demo, we use a routine proposed in the latter reference which is based on a comparison between integers. This is implemented via the aforementioned comparisons of QuantumFloats.
 
-To simplify the notation, we write $y^{(i)}=\widetilde{\lambda}^{-1}_i$. Consider the binary representation $(y_0,\dotsc,y_{n-1})$ of an unsigned integer $y=\sum_{j=0}^{n-1}2^j y_j$. We observe that
+To simplify the notation, we write $y^{(i)}=\widetilde{\lambda}^{-1}_i$. Recall that the values $y^{(i)}$ represent unsigned integers between $0$ and $2^n-1$. 
 
-$$ \\dfrac{y}{2^n} = \\dfrac{1}{2^n}\\sum_{j=0}^{n-1}2^j y_j = \\dfrac{1}{2^n}\\sum_{j=0}^{n-1}\\left(\\sum_{k=1}^{2^j}y_j\\right) $$
-
-We start by peparing a uniform superposition of $2^n$ states in a ``case_inditator`` :ref:`QuantumFloat`, and initializing a target :ref:`QuantumBool` ``qbl`` in state $\ket{0}$. 
-
-From the equation above we observe:
-
-* For the $y_{n-1}$ qubit the coefficient is $2^{n-1}$, hence if $y_{n-1}=1$, the target ``qbl`` is flipped for half of the $2^n$ states, i.e. the states where the the first qubit of ``case_indicator`` is 0.
-
-* For the $y_{n-2}$ qubit the coefficient is $2^{n-2}$, hence if $y_{n-2}=1$, the target ``qbl`` is flipped for half of the remaining $2^{n-1}$ states, i.e. the states where the first two qubits of ``case_indicator`` are $(1,0)$. 
-
-The same holds true for $y_{n-3}$ etc. That is, for the qubit $y_{n-j}$ the coefficient is $2^{n-j}$, hence if $y_{n-j}=1$, the target ``qbl`` is flipped for the states where the first $j$ qubits of ``case_indicator`` are $(1,\dotsc,1,0)=2^j-1$. 
-
-Finally, the ``case_inditator`` unprepared. Essentially, one can think of this as a `Linear Combination of Unitaries <https://arxiv.org/pdf/1202.5822>`_ procedure, where PREP prepares a uniform superposition of the ``case_indicator`` and SEL applies a controlled-NOT 
-with control $y_{n-j}$ and target ``qbl`` for the states where the first $j$ qubits of ``case_indicator`` are $(1,\dotsc,1,0)=2^j-1$.
-The figure below shows this as a circuit.
-
-ILLUSTRATION
-
-Starting from the state 
-
+Starting from the state
 $$ \\ket{\\Psi_3} = \\sum_i \\beta_i\\ket{u_i}\\ket{\\widetilde{\\lambda_i}}\\ket{y^{(i)}}_{\\text{res}} $$
 
-we obtain the state
+we prepare a uniform superposition of $2^n$ states in a ``case_indicator`` QuantumFloat.
+$$ \\ket{\\Psi_3'} = \\sum_i \\beta_i\\ket{u_i}\\ket{\\widetilde{\\lambda_i}}\\ket{y^{(i)}}_{\\text{res}}\\otimes\\frac{1}{\\sqrt{2^n}}\\sum_{x=0}^{2^n-1}\\ket{x}_{\\text{case}} $$
 
-$$ \\ket{\\Psi_3'} = \\sum_i \\dfrac{y^{(i)}}{2^n}\\beta_i\\ket{u_i}\\ket{\\widetilde{\\lambda_i}}\\ket{y^{(i)}}_{\\text{res}}\\ket{0}_{\\text{case}}\\ket{1}_{\\text{qbl}} + \\ket{\\Phi} $$
+Next we calculate the comparison $a\geq b$ between the ``res`` and the ``case_indicator`` into a QuantumBool ``qbl``.
+$$ \\ket{\\Psi_3''} = \\sum_i \\beta_i\\ket{u_i}\\ket{\\widetilde{\\lambda_i}}\\ket{y^{(i)}}_{\\text{res}}\\otimes\\frac{1}{\\sqrt{2^n}}\\left(\\sum_{x=0}^{y^{(i)}-1}\\ket{x}_{\\text{case}}\\ket{0}_{\\text{qbl}} + \\sum_{x=y^{(i)}}^{2^n-1}\\ket{x}_{\\text{case}}\\ket{1}_{\\text{qbl}}\\right) $$
 
-where $\ket{\Phi}$ is an orthogonal state with the last variables not in $\ket{0}_{\text{case}}\ket{1}_{\text{qbl}}$.
+Finally, the ``case_indicator`` is unprepared with $n$ Hadamards and we obtain the state
+$$ \\ket{\\Psi_3'''} = \\sum_i \\dfrac{y^{(i)}}{2^n}\\beta_i\\ket{u_i}\\ket{\\widetilde{\\lambda_i}}\\ket{y^{(i)}}_{\\text{res}}\\ket{0}_{\\text{case}}\\ket{0}_{\\text{qbl}} + \\ket{\\Phi} $$
 
-Hence, upon measuring the ``case_indicator`` in state $\ket{0}$ and the target ``qbl`` in state $\ket{1}$, the desired state is prepared. 
-Therefore, **Steps 1-4** are preformed as :ref:`repeat-until-success (RUS) routine <RUS>`. The probability of success could be further increased by oblivious :ref:`amplitude amplification<AA>` in order to obain an optimal asymptotic scaling.
+where $\ket{\Phi}$ is an orthogonal state with the last variables not in $\ket{0}_{\text{case}}\ket{0}_{\text{qbl}}$.
+
+Hence, upon measuring the ``case_indicator`` in state $\ket{0}$ and the target ``qbl`` in state $\ket{0}$, the desired state is prepared. 
+
+**Steps 1-4** are preformed as :ref:`repeat-until-success (RUS) routine <RUS>`. This decorator converts the function to be executed within a repeat-until-success (RUS) procedure. The function must return a boolean value as first return value and is repeatedly executed until the first return value is True.
 
 ::
 
@@ -145,36 +130,20 @@ Therefore, **Steps 1-4** are preformed as :ref:`repeat-until-success (RUS) routi
         qpe_res = QPE(qf, hamiltonian_evolution, precision=precision) # Step 2
         inv_res = fake_inversion(qpe_res) # Step 3
 
-        n = inv_res.size
-        qbl = QuantumBool()
-        case_indicator = QuantumFloat(n)
-        # Auxiliary variable to evalutate the case_indicator.
-        control_qbl = QuantumBool()
+        case_indicator = QuantumFloat(inv_res.size)
 
-        with conjugate(h)(case_indicator):
-            for i in jrange(n):
-                # Identify states where the first i qubits represent 2^i-1.
-                mcx(case_indicator[:i+1], 
-                        control_qbl[0], 
-                        method = "balauca", 
-                        ctrl_state = 2**i-1)
-            
-                mcx([control_qbl[0],inv_res[n-1-i]],
-                        qbl[0])
-            
-            # Uncompute the auxiliary variable.
-                mcx(case_indicator[:i+1], 
-                        control_qbl[0], 
-                        method = "balauca", 
-                        ctrl_state = 2**i-1)
-                
-        control_qbl.delete()
+        with conjugate(qrisp.h)(case_indicator):
+            qbl = (case_indicator >= inv_res)
         
-        # The first return value is a boolean value. Additional return values are QuantumVaraibles.
-        return (measure(case_indicator) == 0) & (measure(qbl) == 1), qf, qpe_res, inv_res
+        cancelation_bool = (measure(case_indicator) == 0) & (measure(qbl) == 0)
+
+        # The irst return value is a boolean. Additional return values are QuantumVaraibles.
+        return cancelation_bool, qf, qpe_res, inv_res
 
       
             
+The probability of success could be further increased by oblivious :ref:`amplitude amplification<AA>` in order to obain an optimal asymptotic scaling.
+
 Finally, we put all things together into the **HHL** function.
 
 This function takes the follwoing arguments:
@@ -185,7 +154,7 @@ This function takes the follwoing arguments:
 * ``precision`` The precison of the quantum phase estimation.
 
 The HHL function uses the previously defined subroutine to prepare the state $\ket{\Psi_4}$ and subsequently uncomputes the $\ket{\widetilde{\lambda}}$ and $\ket{\lambda}$ quantum variables leaving the first variable, 
-that was initialized in state $\\ket{b}$, in the target state $\ket{x}$.
+that was initialized in state $\ket{b}$, in the target state $\ket{x}$.
 
 ::
 
