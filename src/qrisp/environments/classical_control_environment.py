@@ -185,7 +185,7 @@ class ClControlEnvironment(QuantumEnvironment):
                         static_error_appeared = True
                         break
         
-        QuantumEnvironment.__exit__(self, None, None, None)
+        QuantumEnvironment.__exit__(self, exception_type, exception_value, traceback)
         
         if static_error_appeared:
             return True
