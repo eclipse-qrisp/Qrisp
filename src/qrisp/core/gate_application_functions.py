@@ -522,7 +522,7 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
             )
     else:
         qubits_0 = controls
-        if isinstance(qubits_0, (QuantumVariable, DynamicQubitArray)):
+        if isinstance(qubits_0, (QuantumVariable, DynamicQubitArray)) and method not in ['balauca', 'khattar']:
             method = "balauca"
         qubits_1 = [target]
     from qrisp.alg_primitives.mcx_algs import (
@@ -531,7 +531,7 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
         hybrid_mcx,
         maslov_mcx,
         yong_mcx,
-        jasp_balauca_mcx,
+        jasp_balauca_mcx, #Merge the import
     )
 
     if method in ["gray", "gray_pt", "gray_pt_inv"]:
@@ -618,10 +618,10 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
         append_operation(gate, qubits_0 + qubits_1)
         
     elif method == "khattar":
-        if check_for_tracing_mode():
-            khattar_mcx(qubits_0, qubits_1)
-        else:
-            balauca_mcx(qubits_0, qubits_1, ctrl_state=ctrl_state) # PLACEHOLDER
+        #if check_for_tracing_mode():
+        khattar_mcx(qubits_0, qubits_1, ctrl_state)
+        #else:
+        #    balauca_mcx(qubits_0, qubits_1, ctrl_state=ctrl_state) # PLACEHOLDER
 
     else:
         raise Exception(f"Don't know mcx method {method}")
