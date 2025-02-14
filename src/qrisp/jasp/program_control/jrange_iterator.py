@@ -1,6 +1,6 @@
 """
 \********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -264,6 +264,9 @@ def jrange(*args):
     new_args = []
     if check_for_tracing_mode():
         for i in range(len(args)):
+            if i == 2:
+                new_args.append(args[i])
+                continue
             if isinstance(args[i], (int, ArrayImpl)):
                 new_args.append(make_tracer(args[i]))
             else:

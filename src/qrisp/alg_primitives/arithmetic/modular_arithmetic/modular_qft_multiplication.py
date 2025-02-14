@@ -1,6 +1,6 @@
 """
 \********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -20,8 +20,9 @@
 import numpy as np
 
 from qrisp.qtypes.quantum_float import QuantumFloat
+from qrisp.alg_primitives import QFT
 from qrisp.alg_primitives.arithmetic import multi_controlled_U_g, hybrid_mult
-from qrisp.alg_primitives import QFT, h, cx, swap, mcx
+from qrisp.core.gate_application_functions import h, cx, swap, mcx
 from qrisp.environments import conjugate, control
 from qrisp.alg_primitives.arithmetic.modular_arithmetic.mod_tools import modinv, montgomery_encoder
 

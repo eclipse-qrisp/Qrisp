@@ -1,6 +1,6 @@
 """
 \********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -106,7 +106,11 @@ class VQEProblem:
         
         if isinstance(hamiltonian, FermionicOperator):
             hamiltonian = hamiltonian.to_qubit_operator()
-            
+        
+        hamiltonian = hamiltonian.hermitize()
+        hamiltonian = hamiltonian.eliminate_ladder_conjugates()
+        hamiltonian = hamiltonian.apply_threshold(0)
+        
         self.hamiltonian = hamiltonian
         self.ansatz_function = ansatz_function
         self.num_params = num_params

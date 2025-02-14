@@ -1,6 +1,6 @@
 """
 \********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -147,7 +147,7 @@ def test_rus():
     # Specify the corresponding arguments of the block encoding as "static",
     # i.e. compile time constants.
 
-    @RUS(static_argnums = [1,2])
+    @RUS
     def block_encoding(return_size, state_preparation, case_functions):
         
         # This QuantumFloat will be returned

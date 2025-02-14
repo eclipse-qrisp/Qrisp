@@ -1,6 +1,6 @@
 """
 \********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -25,7 +25,7 @@
 
 import numpy as np
 
-from qrisp.alg_primitives import cx, mcx
+from qrisp.core.gate_application_functions import cx, mcx
 from qrisp.qtypes import QuantumVariable, QuantumBool
 from qrisp.circuit import QuantumCircuit
 from qrisp.permeability import auto_uncompute

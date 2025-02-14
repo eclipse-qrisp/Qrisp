@@ -1,6 +1,6 @@
 """
 \********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -383,6 +383,9 @@ def recursive_qv_search(input):
         return []
     from qrisp.core import QuantumVariable
 
+    if isinstance(input, QuantumVariable):
+        return [input]
+    
     if hasattr(input, "__iter__"):
         iterable = True
     elif hasattr(input, "__dict__") and not isinstance(input, QuantumVariable):
@@ -400,9 +403,6 @@ def recursive_qv_search(input):
         elif isinstance(input, (tuple, list)):
             for i in range(len(input)):
                 result += recursive_qv_search(input[i])
-    else:
-        if isinstance(input, QuantumVariable):
-            result = [input]
 
     return result
 

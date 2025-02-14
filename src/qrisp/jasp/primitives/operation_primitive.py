@@ -1,6 +1,6 @@
 """
 \********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -63,7 +63,7 @@ class OperationPrimitive(QuantumPrimitive):
             qubit_args = args[-self.op.num_qubits:]
             
             temp_op = self.op.bind_parameters({greek_letters[i] : float(parameter_args[i]) for i in range(len(parameter_args))})
-            qc.append(temp_op, qubit_args)
+            qc.append(temp_op, list(qubit_args))
             return qc
     
     def inverse(self):

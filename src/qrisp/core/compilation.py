@@ -1,6 +1,6 @@
 """
 \********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -455,6 +455,7 @@ def qompiler(
         
         reduced_qc = parallelize_qc(qc, depth_indicator = gate_speed)
         reduced_qc = cancel_inverses(reduced_qc)
+        qc = cancel_inverses(qc)
 
     if reduced_qc.depth(depth_indicator = gate_speed) > qc.depth(depth_indicator = gate_speed):
         return qc

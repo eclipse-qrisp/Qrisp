@@ -1,6 +1,6 @@
 """
 \********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -37,21 +37,21 @@ def test_sampling():
 
     @jaspify
     def main():
-        res = sample(inner_f, 100)(2)
+        res = sample(inner_f, 500)(2)
         return res
     
     assert set(int(i) for i in main()) == {0,1}
     
     @jaspify(terminal_sampling = True)
     def main():
-        res = sample(inner_f, 100)(2)
+        res = sample(inner_f, 500)(2)
         return res
     
     assert set(int(i) for i in main()) == {0,1}
 
     @jaspify
     def main():
-        res = sample(inner_f, 100, post_processor = double)(2)
+        res = sample(inner_f, 500, post_processor = double)(2)
         return res
     
     assert set(int(i) for i in main()) == {0,2}
@@ -59,7 +59,7 @@ def test_sampling():
     
     @jaspify(terminal_sampling = True)
     def main():
-        res = sample(inner_f, 100, post_processor = double)(2)
+        res = sample(inner_f, 500, post_processor = double)(2)
         return res
     
     assert set(int(i) for i in main()) == {0,2}
@@ -148,7 +148,7 @@ def test_sampling():
         for j in range(3):
             assert main(i, j) == {(0.0, 0.0, False): 0.5, (2**i, 2**j, True): 0.5}
 
-    @sample(100)
+    @sample(500)
     def main(i, j):
         qf = QuantumFloat(3)
         a = QuantumFloat(3)
@@ -158,7 +158,7 @@ def test_sampling():
         cx(qf[i], qbl[0])
         return qf, a, qbl
 
-    assert sum(main(2,2).values()) == 100
+    assert sum(main(2,2).values()) == 500
     
 def test_expectation_value():
     
@@ -180,7 +180,7 @@ def test_expectation_value():
     
     @jaspify
     def main():
-        res = expectation_value(inner_f, 100)(2)
+        res = expectation_value(inner_f, 500)(2)
         return res
     
     assert abs(main()-0.5) < 0.2
@@ -194,7 +194,7 @@ def test_expectation_value():
     
     @jaspify
     def main():
-        res = expectation_value(inner_f, 100, post_processor=double)(2)
+        res = expectation_value(inner_f, 500, post_processor=double)(2)
         return res
     
     assert abs(main()-1) < 0.2
@@ -221,7 +221,7 @@ def test_expectation_value():
     
     @jaspify
     def main():
-        res = expectation_value(inner_f, 100)(2)
+        res = expectation_value(inner_f, 500)(2)
         return res
     
     ev_res = main()
@@ -237,7 +237,7 @@ def test_expectation_value():
     
     @jaspify
     def main():
-        res = expectation_value(inner_f, 100, post_processor=double)(2)
+        res = expectation_value(inner_f, 500, post_processor=double)(2)
         return res
     
     ev_res = main()

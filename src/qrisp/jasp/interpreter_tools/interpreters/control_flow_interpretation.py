@@ -1,6 +1,6 @@
 """
 \********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -73,6 +73,7 @@ def evaluate_scan(scan_eq, context_dic, eqn_evaluator = exec_eqn):
     length = scan_eq.params["length"]
 
     carry_amount = scan_eq.params["num_carry"]
+    const_amount = scan_eq.params["num_consts"]
     
     init = invalues[:carry_amount]
     
@@ -84,7 +85,7 @@ def evaluate_scan(scan_eq, context_dic, eqn_evaluator = exec_eqn):
     carry = init
     ys = []
     for x in xs:
-        args = list(carry) + x
+        args = list(carry) + invalues[carry_amount:carry_amount+const_amount] + x
         res = f(*args)
         
         if not isinstance(res, tuple):

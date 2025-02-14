@@ -1,6 +1,6 @@
 """
 \********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -67,4 +67,9 @@ def test_catalyst_interface():
     # Test QJIT caching
     assert time.time() - t0 < 2
     
+    def main():
+        qv = QuantumFloat(1)
+        u3(np.pi, np.pi, 0, qv[0])
+        return measure(qv[0])
     
+    assert qjit(main)() == jaspify(main)()

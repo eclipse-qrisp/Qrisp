@@ -1,6 +1,6 @@
 """
 \********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -235,7 +235,7 @@ def sample(state_prep = None, shots = 0, post_processor = None):
             def sampling_helper_2(acc, i, *meas_ints):
                 decoded_values = []
                 for j in range(len(qv_tuple)):
-                    decoded_values.append(qv_tuple[j].decoder(meas_ints[j]))
+                    decoded_values.append(qv_tuple[j].jdecoder(meas_ints[j]))
             
                 if len(qv_tuple) > 1:
                     decoded_values = post_processor(*decoded_values)

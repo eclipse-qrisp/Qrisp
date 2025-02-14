@@ -1,6 +1,6 @@
 """
 \********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -26,7 +26,7 @@
 from qrisp.qtypes import QuantumBool
 from qrisp.core import QuantumVariable, merge
 from qrisp.misc.utility import bin_rep
-from qrisp.alg_primitives import x, cx, mcx
+from qrisp.core.gate_application_functions import x, cx, mcx
 from qrisp.circuit import fast_append
 from qrisp.environments import invert
 

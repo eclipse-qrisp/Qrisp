@@ -1,6 +1,6 @@
 """
 \********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -205,6 +205,7 @@ class QuantumCircuit:
     """
 
     qubit_index_counter = np.zeros(1, dtype=int)
+    clbit_index_counter = np.zeros(1, dtype=int)
     xla_mode = 0
 
     def __init__(self, num_qubits=0, num_clbits=0, name=None):
@@ -225,7 +226,8 @@ class QuantumCircuit:
 
         if isinstance(num_clbits, int):
             for i in range(num_clbits):
-                self.add_clbit()
+                self.clbits.append(Clbit("cb_" + str(self.clbit_index_counter[0]+i)))
+            self.clbit_index_counter[0] += num_clbits
         else:
             raise Exception(
                 f"Tried to initialize QuantumCircuit with type {type(num_clbits)}"

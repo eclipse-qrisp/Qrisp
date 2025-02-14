@@ -1,6 +1,6 @@
 """
 \********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -212,7 +212,7 @@ def expectation_value(state_prep, shots, return_dict = False, post_processor = N
             def sampling_helper_2(*meas_ints):
                 res_list = []
                 for i in range(len(qv_tuple)):
-                    res_list.append(qv_tuple[i].decoder(meas_ints[i]))
+                    res_list.append(qv_tuple[i].jdecoder(meas_ints[i]))
                 
                 # Apply the post processing
                 return post_processor(*res_list)

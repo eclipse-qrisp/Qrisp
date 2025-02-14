@@ -1,6 +1,6 @@
 """
 \********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -35,7 +35,7 @@ sys.path.insert(0, os.path.abspath('../../src/qrisp'))
 # -- Project information -----------------------------------------------------
 
 project = ""
-copyright = '2023, Qrisp developers'
+copyright = '2025, Qrisp developers'
 
 
 # -- General configuration ---------------------------------------------------
@@ -167,7 +167,7 @@ html_logo = "../../logo/qrisp_logo.png"
 add_module_names = False
 
 html_css_files = [
-    'css/custom04.css',
+    'css/custom05.css',
 ]
 
 source_suffix = ['.rst', '.md']

@@ -1,6 +1,6 @@
 """
 \********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -667,7 +667,7 @@ class QuantumArray(np.ndarray):
 
     def init_state(self, tuple_list):
         """
-        Method to initiate arbitrary quantum states in this array. The semantics are
+        Method to initialize arbitrary quantum states in this array. The semantics are
         similar to the :meth:`QuantumVariable equivalent
         <qrisp.QuantumVariable.init_state>` of this method.
 
@@ -676,7 +676,7 @@ class QuantumArray(np.ndarray):
         Parameters
         ----------
         tuple_list : list of tuples
-            The list of tuples describing the quantum state. The first componenet of the
+            The list of tuples describing the quantum state. The first component of the
             tuples needs to represent the array and the second the required amplitude.
 
         Raises
@@ -687,9 +687,10 @@ class QuantumArray(np.ndarray):
         Examples
         --------
 
-        We initiate a quantum state on an array and evaluate the measurement
+        We initialize a quantum state on an array and evaluate the measurement
         probabilities.
 
+        >>> import numpy as np
         >>> from qrisp import QuantumArray, QuantumFloat
         >>> qtype = QuantumFloat(3)
         >>> q_array = QuantumArray(qtype, shape = 3)
@@ -724,7 +725,7 @@ class QuantumArray(np.ndarray):
 
         from qrisp import init_state
 
-        init_state(qubit_list, target_array)
+        init_state(self, target_array)
 
     def init_from(self, other):
         """

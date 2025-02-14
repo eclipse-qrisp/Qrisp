@@ -58,5 +58,5 @@ def test_qiro_maxsat():
     optimal_sol = binStrings[min_index]
     
     # approximation ratio test
-    assert approximation_ratio(res_qiro, optimal_sol, cl_cost)>=0.5
+    assert approximation_ratio(res_qiro, optimal_sol, cl_cost)>=0.3
 

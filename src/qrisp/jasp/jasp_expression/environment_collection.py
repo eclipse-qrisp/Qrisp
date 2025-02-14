@@ -1,6 +1,6 @@
 """
 \********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -82,6 +82,21 @@ def collect_environments(jaxpr):
             true_collected_jaspr = ClosedJaxpr(true_collected_jaspr, eqn.params["branches"][1].consts)
             
             new_params["branches"] = (false_collected_jaspr, true_collected_jaspr)
+            
+            eqn = JaxprEqn(params = new_params,
+                                    primitive = eqn.primitive,
+                                    invars = list(eqn.invars),
+                                    outvars = list(eqn.outvars),
+                                    effects = eqn.effects,
+                                    source_info = eqn.source_info,)
+            
+        if eqn.primitive.name == "while":
+            
+            new_params = dict(eqn.params)
+            
+            body_collected_jaspr = collect_environments(eqn.params["body_jaxpr"].jaxpr)
+            
+            new_params["body_jaxpr"] = ClosedJaxpr(body_collected_jaspr, eqn.params["body_jaxpr"].consts)
             
             eqn = JaxprEqn(params = new_params,
                                     primitive = eqn.primitive,

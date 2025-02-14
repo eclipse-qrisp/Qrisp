@@ -1,6 +1,6 @@
 """
 \********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -408,8 +408,23 @@ def advance_quantum_state(qc, quantum_state, deallocated_qubits = []):
     if len(qc.data) == 0:
         return quantum_state
 
+    allocated_qubits = len(qc.qubits) - len(deallocated_qubits)
+    max_req_qubits = allocated_qubits
+    allocation_amount = 0
+    
+    for instr in qc.data:
+        
+        if instr.op.name == "qb_dealloc":
+            allocated_qubits -= 1
+            deallocated_qubits.append(instr.qubits[0])
+        elif instr.op.name == "qb_alloc":
+            allocated_qubits += 1
+            allocation_amount += 1
+            if allocated_qubits > max_req_qubits:
+                max_req_qubits += 1
+            
     progress_bar = tqdm(
-        desc=f"Simulating {len(qc.qubits)-len(deallocated_qubits)} qubits..",
+        desc=f"Simulating {max_req_qubits-allocation_amount} qubits..",
         bar_format="{desc} |{bar}| [{percentage:3.0f}%]",
         ncols=85,
         leave=False,
@@ -422,10 +437,7 @@ def advance_quantum_state(qc, quantum_state, deallocated_qubits = []):
     LINE_CLEAR = "\x1b[2K"
     progress_bar.display()
     
-    for instr in qc.data:
-        if instr.op.name == "qb_dealloc":
-            deallocated_qubits.append(instr.qubits[0])
-
+            
     # This command enables fast appending. Fast appending means that the .append method
     # of the QuantumCircuit class checks much less validity conditions and is also less
     # tolerant regarding inputs.
@@ -440,20 +452,22 @@ def advance_quantum_state(qc, quantum_state, deallocated_qubits = []):
         # Main loop - this loop successively executes operations onto the impure
         # quantum state object
         
-        total_flops = 0
-        for i in range(len(qc.data)):
-            total_flops += 2 ** qc.data[i].op.num_qubits
+        progress_bar.total = len(qc.data)
         
-        progress_bar.total = total_flops
+        qubit_to_index_dic = {}
+        for i in range(len(qc.qubits)):
+            qubit_to_index_dic[qc.qubits[i]] = i
         
         for i in range(len(qc.data)):
 
             # Set alias for the instruction of this operation
             instr = qc.data[i]
+            
+            progress_bar.update(1)
 
             # Gather the indices of the qubits from the circuits (i.e. integers instead
             # of the identifier strings)
-            qubit_indices = [qc.qubits.index(qb) for qb in instr.qubits]
+            qubit_indices = [qubit_to_index_dic[qb] for qb in instr.qubits]
 
             # Perform instructions
             if instr.op.name == "reset":

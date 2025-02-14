@@ -1,6 +1,6 @@
 """
 \********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -51,7 +51,8 @@ op_name_translation_dic = {"cx" : "CNOT",
                            "rz" : "RZ",
                            "s" : "S",
                            "t" : "T",
-                           "p" : "RZ"}
+                           "p" : "RZ",
+                           "u3" : "Rot"}
 
 
 def catalyst_eqn_evaluator(eqn, context_dic):
@@ -89,7 +90,9 @@ def catalyst_eqn_evaluator(eqn, context_dic):
         invars = eqn.invars
         outvars = eqn.outvars
         
-        if eqn.primitive.name == "jasp.create_qubits":
+        if isinstance(eqn.primitive, OperationPrimitive):
+            process_op(eqn.primitive, invars, outvars, context_dic)
+        elif eqn.primitive.name == "jasp.create_qubits":
             process_create_qubits(invars, outvars, context_dic)
         elif eqn.primitive.name == "jasp.get_qubit":
             process_get_qubit(invars, outvars, context_dic)
@@ -103,8 +106,8 @@ def catalyst_eqn_evaluator(eqn, context_dic):
             process_delete_qubits(eqn, context_dic)
         elif eqn.primitive.name == "jasp.reset":
             process_reset(eqn, context_dic)
-        elif isinstance(eqn.primitive, OperationPrimitive):
-            process_op(eqn.primitive, invars, outvars, context_dic)
+        elif eqn.primitive.name == "jasp.fuse":
+            process_fuse(eqn, context_dic)
         else:
             raise Exception(f"Don't know how to process QuantumPrimitive {eqn.primitive}")
     else:
@@ -116,20 +119,6 @@ def catalyst_eqn_evaluator(eqn, context_dic):
             process_pjit(eqn, context_dic)
         else:
             return True
-    
-# def process_create_qubits(invars, outvars, context_dic):
-    
-#     # The first invar of the create_qubits primitive is an AbstractQuantumCircuit
-#     # which is represented by an AbstractQreg and an integer
-#     qreg, stack_size = context_dic[invars[0]]
-    
-#     # We create the new QubitArray representation by putting the appropriate tuple
-#     # in the context_dic
-#     context_dic[outvars[1]] = (stack_size, context_dic[invars[1]])
-    
-#     # Furthermore we create the updated AbstractQuantumCircuit representation.
-#     # The new stack size is the old stask size + the size of the QubitArray
-#     context_dic[outvars[0]] = (qreg, stack_size + context_dic[invars[1]])
     
 def process_create_qubits(invars, outvars, context_dic):
     
@@ -188,6 +177,29 @@ def process_delete_qubits(eqn, context_dic):
     
     context_dic[eqn.outvars[0]] = (qreg, free_qubits)
 
+def process_fuse(eqn, context_dic):
+    
+    invalues = extract_invalues(eqn, context_dic)
+    
+    res_qubits = Jlist()
+    
+    def loop_body(i, val_tuple):
+        res_qubits, source_qubits = val_tuple
+        res_qubits.append(source_qubits[i])
+        return res_qubits, source_qubits
+    
+    res_qubits, source_qubits = fori_loop(0, 
+                                          invalues[0].counter, 
+                                          loop_body, 
+                                          (res_qubits, invalues[0]))
+    
+    res_qubits, source_qubits = fori_loop(0, 
+                                       invalues[1].counter, 
+                                       loop_body, 
+                                       (res_qubits, invalues[1]))
+
+    insert_outvalues(eqn, context_dic, res_qubits)
+
 def process_get_qubit(invars, outvars, context_dic):
     # The get_qubit primitive needs to retrieve the integer that indexes the 
     # AbstractQubit in the stack.
@@ -232,8 +244,15 @@ def process_op(op_prim, invars, outvars, context_dic):
     num_qubits = len(qb_pos)
     
     param_dict = {}
-    for i in range(len(op.params)):
-        param_dict[op.params[i]] = context_dic[invars[i+1]]
+    if op.name == "u3":
+        param_dict[op.params[0]] = context_dic[invars[3]]
+        param_dict[op.params[1]] = context_dic[invars[1]]
+        param_dict[op.params[2]] = context_dic[invars[2]]
+    else:
+        for i in range(len(op.params)):
+            param_dict[op.params[i]] = context_dic[invars[i+1]]
+
+    
     
     # Extract the catalyst qubit tracers by using the qextract primitive.
     catalyst_qb_tracers = []
@@ -275,6 +294,9 @@ def exec_qrisp_op(op, catalyst_qbs, param_dict):
     # Otherwise we simply call the bind method
     else:
         
+        if op.name == "gphase":
+            return catalyst_qbs
+        
         if op.name[-3:] == "_dg":
             op_name = op.name[:-3]
             invert = True
@@ -282,12 +304,28 @@ def exec_qrisp_op(op, catalyst_qbs, param_dict):
             invert = False
             op_name = op.name
         
-        catalyst_name = op_name_translation_dic[op_name]
-        
         jax_values = list(param_dict.values())
         
         param_list = [lambdify(greek_letters[:len(op.abstract_params)], expr)(*jax_values) for expr in op.params]
+        
+        if op_name == "sx":
+            op_name = "rx"
+            param_list = [jnp.pi/2]
+            
+        if op_name == "u3":
+            
+            def qiskit_to_pennylane_rot(theta, phi, lam):
+                pl_phi = lam
+                pl_theta = theta
+                pl_omega = phi
+                
+                return pl_phi, pl_theta, pl_omega
+            
+            param_list = list(qiskit_to_pennylane_rot(*param_list))
+        
         # param_list = [param_dict[symb] for symb in op.params]
+
+        catalyst_name = op_name_translation_dic[op_name]        
         
         res_qbs = qinst_p.bind(*(catalyst_qbs+param_list), 
                                op = catalyst_name, 

@@ -1,6 +1,6 @@
 """
 \********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -18,6 +18,7 @@
 
 from qrisp.core.gate_application_functions import h
 from qrisp.alg_primitives.qft import QFT
+from qrisp.jasp import jrange
 
 
 def QPE(
@@ -134,15 +135,16 @@ def QPE(
 
     h(qpe_res)
 
-    for i in range(qpe_res.size):
+    for i in jrange(qpe_res.size):
         if iter_spec:
             with control(qpe_res[i], ctrl_method=ctrl_method):
                 U(args, iter=2**i, **kwargs)
         else:
             with control(qpe_res[i], ctrl_method=ctrl_method):
-                for j in range(2**i):
+                for j in jrange(2**i):
                     U(args, **kwargs)
 
     QFT(qpe_res, inv=True)
 
     return qpe_res
+

@@ -1,6 +1,6 @@
 """
 \********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -1361,6 +1361,12 @@ class QuantumVariable:
                 break
 
         return name
+    
+    def __iter__(self):
+        if not isinstance(self.reg, list):
+            raise Exception("Tried to perform a static iteration on a dynamic QuantumVariable")
+        else:
+            return self.reg.__iter__()
 
     def init_from(self, other):
         r"""
@@ -1485,6 +1491,9 @@ class QuantumVariable:
         from qrisp.misc import custom_qv
 
         return custom_qv(label_list, decoder=decoder, qs=qs, name=name)
+    
+    def ensure_reg(self):
+        return self.reg
 
 def plot_histogram(outcome_labels, counts, filename=None):
     res_list = []

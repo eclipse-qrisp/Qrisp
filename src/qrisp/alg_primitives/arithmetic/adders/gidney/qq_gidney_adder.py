@@ -1,6 +1,6 @@
 """
 \********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -19,7 +19,7 @@
 from qrisp.core import QuantumVariable
 from qrisp.qtypes import QuantumBool
 from qrisp.environments import invert, custom_control
-from qrisp.alg_primitives import mcx, cx
+from qrisp.core.gate_application_functions import mcx, cx
 
 # This function performs the Gidney adder from https://arxiv.org/pdf/1709.06648.pdf
 @custom_control

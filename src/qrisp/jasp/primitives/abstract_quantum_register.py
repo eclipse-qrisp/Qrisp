@@ -1,8 +1,19 @@
-# -*- coding: utf-8 -*-
 """
-Created on Thu Apr 11 16:58:12 2024
-
-@author: sea
+\********************************************************************************
+* Copyright (c) 2025 the Qrisp authors
+*
+* This program and the accompanying materials are made available under the
+* terms of the Eclipse Public License 2.0 which is available at
+* http://www.eclipse.org/legal/epl-2.0.
+*
+* This Source Code may also be made available under the following Secondary
+* Licenses when the conditions for such availability set forth in the Eclipse
+* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+* with the GNU Classpath Exception which is
+* available at https://www.gnu.org/software/classpath/license.html.
+*
+* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+********************************************************************************/
 """
 
 import jax.numpy as jnp
@@ -12,6 +23,7 @@ from qrisp.jasp.primitives import QuantumPrimitive, AbstractQubit
 get_qubit_p = QuantumPrimitive("get_qubit")
 get_size_p = QuantumPrimitive("get_size")
 slice_p = QuantumPrimitive("slice")
+fuse_p = QuantumPrimitive("fuse")
 
 class AbstractQubitArray(AbstractValue):
     
@@ -52,6 +64,9 @@ def get_size(qb_array):
     
 def slice_qb_array(qb_array, start, stop):
     return slice_p.bind(qb_array, start, stop)
+
+def fuse_qb_array(qb_array_0, qb_array_1):
+    return fuse_p.bind(qb_array_0, qb_array_1)
 
 
 raise_to_shaped_mappings[AbstractQubitArray] = lambda aval, _: aval
@@ -97,6 +112,20 @@ def get_slice_abstract_eval(qb_array, start, stop):
     """
     return AbstractQubitArray()
 
+@fuse_p.def_abstract_eval
+def fuse_abstract_eval(qb_array_0, qb_array_1):
+    """Abstract evaluation of the primitive.
+    
+    This function does not need to be JAX traceable. It will be invoked with
+    abstractions of the actual arguments. 
+    Args:
+      xs, ys, zs: abstractions of the arguments.
+    Result:
+      a ShapedArray for the result of the primitive.
+    """
+    return AbstractQubitArray()
+
+
 @get_qubit_p.def_impl
 def get_qubit_impl(qb_array, index):
     """Abstract evaluation of the primitive.
@@ -135,3 +164,16 @@ def get_slice_impl(qb_array, start, stop):
       a ShapedArray for the result of the primitive.
     """
     return qb_array[start:stop]
+
+@fuse_p.def_impl
+def fuse_impl(qb_array_0, qb_array_1):
+    """Abstract evaluation of the primitive.
+    
+    This function does not need to be JAX traceable. It will be invoked with
+    abstractions of the actual arguments. 
+    Args:
+      xs, ys, zs: abstractions of the arguments.
+    Result:
+      a ShapedArray for the result of the primitive.
+    """
+    return qb_array_0 + qb_array_1

@@ -1,6 +1,6 @@
 """
 \********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -39,7 +39,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="qrisp",
-    author="Raphael Seidel",
+    author="The Qrisp team",
     author_email="raphael.seidel@fokus.fraunhofer.de",
     description="Qrisp - A high level language for gate-based quantum computing",
     long_description=long_description,

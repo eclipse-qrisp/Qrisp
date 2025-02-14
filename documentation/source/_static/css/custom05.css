@@ -6,6 +6,7 @@ html[data-theme="light"] {
   --pst-color-plot-background: rgb(255, 255, 255);
   --pst-color-inline-code: var(--pst-color-text-base);
   --pst-heading-color: var(--pst-color-primary);
+  --pst-color-heading: var(--pst-color-primary);
   --pst-color-link: #085d6c;
   --pst-color-table-row-hover-bg: #a2b6c1;
 }

@@ -1,6 +1,6 @@
 """
 \********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -78,7 +78,7 @@ class BufferedQuantumState:
     def measure(self, qubit):
         self.apply_buffer()
         if self.simulator == "qrisp":
-            mes_res = self.quantum_state.measure(self.buffer_qc.qubits.index(qubit), keep_res = True)
+            mes_res = self.quantum_state.measure(self.buffer_qc.qubits.index(qubit[0]), keep_res = True)
             rnd = np.random.random(1)
             if rnd < mes_res[0]:
                 self.quantum_state = mes_res[1]
@@ -87,7 +87,7 @@ class BufferedQuantumState:
                 self.quantum_state = mes_res[3]
                 return True
         elif self.simulator == "stim":
-            return self.quantum_state.measure(self.buffer_qc.qubits.index(qubit))
+            return self.quantum_state.measure(self.buffer_qc.qubits.index(qubit[0]))
     
     def reset(self, qubit):
         meas_res = self.measure(qubit)

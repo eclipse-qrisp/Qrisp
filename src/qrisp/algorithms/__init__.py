@@ -1,6 +1,6 @@
 """
 \********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -21,6 +21,7 @@ import qrisp.algorithms.shor as shor
 import qrisp.algorithms.qaoa as qaoa
 import qrisp.algorithms.qiro as qiro
 import qrisp.algorithms.quantum_backtracking as quantum_backtracking
-import qrisp.algorithms.quantum_counting as quantum_counting
+from qrisp.algorithms.quantum_counting import quantum_counting
 import qrisp.algorithms.vqe as vqe
 import qrisp.algorithms.qite as qite
+import qrisp.algorithms.qmci as qmci

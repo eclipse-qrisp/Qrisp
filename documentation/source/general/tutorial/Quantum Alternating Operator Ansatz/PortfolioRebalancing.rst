@@ -189,21 +189,23 @@ Example implementation
 Let us now look at what these building blocks look like in working code example. We start off by defining the relevant parameters for a portfolio rebalancing instance, namely the number of assets and lots, the asset covariance matrix, the previous portfolio positions, the risk return factor, the normalized asset returns and the trading cost.   
 
 ::
+    
+    #imports
+    import sklearn
+    import numpy as np
 
     # assign problem definitions
     
     # number of assets
     n_assets = 4
-
     # lots
     lots = 2
-
     # old positions
     old_pos = [1, 1, 0, 1, 0, 0]
     # risk return factor
     risk_return = 0.9
     # trading costs
-    T = 0 
+    tc = 0.01 
 
     # covariance between assets -- create covar_matrix 
     covar_string = "99.8 42.5 37.2 40.3 38.0 30.0 46.8 14.9 42.5 100.5 41.1 15.2 71.1 27.8 47.5 12.7 37.2 41.1 181.3 17.9 38.4 27.9 39.0 8.3 40.3 15.2 17.9 253.1 12.4 48.7 33.3 3.8 38.0 71.1 38.4 12.4 84.7 28.5 42.0 13.1 30.0 27.8 27.9 48.7 28.5 173.1 28.9 -12.7 46.8 47.5 39.0 33.3 42.0 28.9 125.8 14.6 14.9 12.7 8.3 3.8 13.1 -12.7 14.6 179.0"

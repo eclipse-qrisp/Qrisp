@@ -1,6 +1,6 @@
 """
 \********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -294,7 +294,7 @@ class Jaspr(Jaxpr):
         else:
             ctrl_state = str(ctrl_state)
         
-        return ControlledJaspr(self, ctrl_state)
+        return ControlledJaspr.from_cache(self, ctrl_state)
     
     def to_qc(self, *args):
         """
@@ -538,7 +538,7 @@ class Jaspr(Jaxpr):
         """
         flattened_jaspr = self
         
-        from qrisp.jasp.catalyst_interface import jaspr_to_catalyst_qjit
+        from qrisp.jasp.evaluation_tools.catalyst_interface import jaspr_to_catalyst_qjit
         qjit_obj = jaspr_to_catalyst_qjit(flattened_jaspr, function_name = function_name)
         res = qjit_obj.compiled_function(*args)
         if not isinstance(res, (tuple,list)):
@@ -837,7 +837,7 @@ class Jaspr(Jaxpr):
             !0 = !{i32 2, !"Debug Info Version", i32 3}            
 
         """
-        from qrisp.jasp.catalyst_interface import jaspr_to_qir
+        from qrisp.jasp.evaluation_tools.catalyst_interface import jaspr_to_qir
         return jaspr_to_qir(self.flatten_environments())
     
     def to_mlir(self):

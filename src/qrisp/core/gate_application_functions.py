@@ -1,6 +1,6 @@
 """
 \********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -138,6 +138,8 @@ def z(qubits):
 
 def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
     r"""
+    .. _mcx:
+    
     Applies a multi-controlled X gate.
 
     The following methods are available:
@@ -183,7 +185,7 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
     ----------
     controls : list[Qubits] or QuantumVariable
         The Qubits to control on.
-    target : Qubit
+    target : Qubit or QuantumBool
         The Qubit to perform the X gate on.
     method : str, optional
         The synthesis method. Available are ``auto``, ``gray``, ``gray_pt``,
@@ -467,25 +469,28 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
     from qrisp.core import QuantumVariable
     from qrisp.qtypes import QuantumBool
 
+    
 
-    if not check_for_tracing_mode():
+    if isinstance(controls, list):
         
         new_controls = []
-
         for qbl in controls:
             if isinstance(qbl, QuantumBool):
                 new_controls.append(qbl[0])
             else:
                 new_controls.append(qbl)
+        controls = new_controls
+
+    if isinstance(target, (list, QuantumVariable)):
         
-        if isinstance(target, (list, QuantumVariable)):
-            
-            if len(target) > 1:
-                raise Exception("Target of mcx contained more than one qubit")
+        if isinstance(target, QuantumBool):
             target = target[0]
+        else:
+            raise Exception("mcx target is not of type Qubit or QuantumBool")
+
+    if not check_for_tracing_mode():
             
-            
-        qubits_0 = new_controls
+        qubits_0 = list(controls)
         qubits_1 = [target]
         
         n = len(qubits_0)
@@ -598,6 +603,9 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
         #     return mcx(qubits_0, qubits_1, method = "balauca", ctrl_state = ctrl_state) # noqa:501
         gate = std_ops.MCXGate(len(qubits_0), ctrl_state, method="auto")
         append_operation(gate, qubits_0 + qubits_1)
+    
+    else:
+        raise Exception(f"Don't know mcx method {method}")
 
     return controls, target
 
@@ -969,7 +977,7 @@ def sx(qubits):
         The Qubit to perform the SX gate on.
     """
 
-    append_operation(std_ops.SXGate().inverse(), [qubits])
+    append_operation(std_ops.SXGate(), [qubits])
 
     return qubits
 
@@ -1101,7 +1109,7 @@ def u3(theta, phi, lam, qubits):
     """
 
     if check_for_tracing_mode():
-        append_operation(std_ops.U3Gate(sympy.Symbol("alpha"), sympy.Symbol("beta"), sympy.symbol("gamma")), [qubits], param_tracers = [phi, theta, lam])
+        append_operation(std_ops.U3Gate(sympy.Symbol("alpha"), sympy.Symbol("beta"), sympy.Symbol("gamma")), [qubits], param_tracers = [theta, phi, lam])
     else:
         append_operation(std_ops.U3Gate(theta, phi, lam), [qubits])
 

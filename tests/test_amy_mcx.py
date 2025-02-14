@@ -1,6 +1,6 @@
 """
 \********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -26,7 +26,7 @@ def test_amy_mcx():
     for i in range(4):
         
         ctrl = QuantumFloat(2)
-        target = QuantumVariable(1)
+        target = QuantumBool()
         
         ctrl[:] = i
         mcx(ctrl, target, method = "amy")
@@ -37,7 +37,7 @@ def test_amy_mcx():
         
         
         ctrl = QuantumFloat(2)
-        target = QuantumVariable(1)
+        target = QuantumBool()
         ctrl[:] = i
         
         h(ctrl)
@@ -49,7 +49,7 @@ def test_amy_mcx():
         assert ctrl.get_measurement(compilation_kwargs = compilation_kwargs) == {i : 1}
         
         ctrl = QuantumFloat(2)
-        target = QuantumVariable(1)
+        target = QuantumBool()
         
         ctrl[:] = i
         mcx(ctrl, target, method = "amy")
@@ -59,7 +59,7 @@ def test_amy_mcx():
         
         
         ctrl = QuantumFloat(2)
-        target = QuantumVariable(1)
+        target = QuantumBool()
         ctrl[:] = i
         
         h(ctrl)

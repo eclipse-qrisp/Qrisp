@@ -1,6 +1,6 @@
 """
 \********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -38,8 +38,7 @@ def dicke_state(qv, k):
 
     ::
         
-        from qrisp import QuantumVariable, x
-        from qrisp.misc.dicke_state import dicke_state
+        from qrisp import QuantumVariable, x, dicke_state
         
         qv = QuantumVariable(4)
         x(qv[2])

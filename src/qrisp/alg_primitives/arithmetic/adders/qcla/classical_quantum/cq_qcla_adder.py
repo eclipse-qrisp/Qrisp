@@ -1,6 +1,6 @@
 """
 \********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -18,7 +18,7 @@
 
 import numpy as np
 
-from qrisp.alg_primitives import x, cx
+from qrisp.core.gate_application_functions import x, cx
 from qrisp.alg_primitives.arithmetic.adders.qcla.classical_quantum.cq_carry_path import cq_calc_carry
 from qrisp.alg_primitives.arithmetic.adders.qcla.classical_quantum.cq_sum_path import cq_sum_path, cq_sum_path_direct_uncomputation
 from qrisp.alg_primitives.arithmetic.adders.gidney import cq_gidney_adder

@@ -1,6 +1,6 @@
 """
 \********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -19,6 +19,7 @@
 from qrisp.alg_primitives.qft import *
 from qrisp.alg_primitives.qpe import *
 from qrisp.alg_primitives.qae import *
+from qrisp.alg_primitives.iterative_qae import *
 from qrisp.alg_primitives.logic_synthesis import *
 from qrisp.alg_primitives.mcx_algs import *
 from qrisp.alg_primitives.arithmetic import *

@@ -1,6 +1,6 @@
 """
 \********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -20,10 +20,10 @@
 import numpy as np
 import sympy as sp
 
-from qrisp.core import QuantumVariable
+from qrisp.core import QuantumVariable, cx
 from qrisp.misc import gate_wrap
-from qrisp.environments import invert
-
+from qrisp.environments import invert, conjugate
+from qrisp.jasp import check_for_tracing_mode
 
 def signed_int_iso_2(x, n):
     return x % (int(1)<<(n))
@@ -175,7 +175,7 @@ class QuantumFloat(QuantumVariable):
 
     >>> a = QuantumFloat(3, -1)
     >>> a[:] = 3.5
-    >>> b= a**-1
+    >>> b = a**-1
     >>> print(b)
     {0.25: 1.0}
 
@@ -251,7 +251,7 @@ class QuantumFloat(QuantumVariable):
     >>> a.exp_shift(3)
     >>> print(a)
     {-120: 1.0}
-    >>> a =>> 5
+    >>> a >>= 5
     >>> print(a)
     {-3.75: 1.0}
 
@@ -405,9 +405,10 @@ class QuantumFloat(QuantumVariable):
         
         if check_for_tracing_mode():
             from qrisp.alg_primitives.arithmetic import jasp_multiplyer
-            s = jasp_multiplyer(other, self)
-            return s
-        
+            if isinstance(other, QuantumFloat):
+                return jasp_multiplyer(other, self)
+            else:
+                raise Exception(f"Tried to multiply class {type(other)} with QuantumFloat")
         
         from qrisp.alg_primitives.arithmetic import q_mult, polynomial_encoder
         
@@ -447,11 +448,19 @@ class QuantumFloat(QuantumVariable):
     def __add__(self, other):
         
         from qrisp.alg_primitives.arithmetic import sbp_add
-        
+        from qrisp import check_for_tracing_mode
         if isinstance(other, QuantumFloat):
-            return sbp_add(self, other)
+            if check_for_tracing_mode():
+                res = self.duplicate()
+                cx(self, res)
+                res += other
+                return res
+            else:
+                return sbp_add(self, other)
+
         elif isinstance(other, (int, float)):
-            res = self.duplicate(init=True)
+            res = self.duplicate()
+            cx(self, res)
             res += other
             return res
         else:
@@ -462,11 +471,20 @@ class QuantumFloat(QuantumVariable):
     @gate_wrap(permeability="args", is_qfree=True)
     def __sub__(self, other):
         from qrisp.alg_primitives.arithmetic import sbp_sub
+        from qrisp import check_for_tracing_mode
 
         if isinstance(other, QuantumFloat):
-            return sbp_sub(self, other)
+            if check_for_tracing_mode():
+                res = self.duplicate()
+                cx(self, res)
+                res -= other
+                return res
+            else:
+                return sbp_sub(self, other)
+
         elif isinstance(other, (int, float)):
-            res = self.duplicate(init=True)
+            res = self.duplicate()
+            cx(self, res)
             res -= other
             return res
         else:
@@ -517,14 +535,35 @@ class QuantumFloat(QuantumVariable):
 
     @gate_wrap(permeability="args", is_qfree=True)
     def __pow__(self, power):
-        if power != -1:
-            raise Exception("Currently the only supported power is -1")
+        if power == -1:
+            from qrisp.alg_primitives.arithmetic import qf_inversion
+            return qf_inversion(self)
+        elif power == 0:
+            res = self.duplicate()
+            res[:] = 1
+            return res
+        else:
+            from qrisp import jasp_multiplyer
+            def power_conjugator(base, power, temp_results):
+                cx(base, temp_results[0])
+                for i in range(power-1):
+                    (temp_results[i+1] << jasp_multiplyer)(base, temp_results[i])
+                    # (temp_results[i+1] << (lambda a, b : a * b))(base, temp_results[i])
+            
+            temp_results = [QuantumFloat((i+1)*self.size) for i in range(power)]
+            
+            res = QuantumFloat(self.size*power)
+            with conjugate(power_conjugator)(self, power, temp_results):
+                cx(temp_results[-1], res)
+                
+            for qv in temp_results:
+                qv.delete()
+                
+                
+            return res
+                
 
-        from qrisp.alg_primitives.arithmetic import qf_inversion
-
-        return qf_inversion(self)
-
-    # @gate_wrap(permeability=[1], is_qfree=True)
+    @gate_wrap(permeability=[1], is_qfree=True)
     def __iadd__(self, other):
         
         from qrisp.jasp import check_for_tracing_mode
@@ -621,40 +660,49 @@ class QuantumFloat(QuantumVariable):
         return self
 
     def __lt__(self, other):
+        from qrisp.alg_primitives.arithmetic import lt, uint_lt, gidney_adder
         
-        from qrisp.alg_primitives.arithmetic import lt
-        
-        if not isinstance(other, (QuantumFloat, int, float)):
-            raise Exception(f"Comparison with type {type(other)} not implemented")
-
-        return lt(self, other)
+        if check_for_tracing_mode():
+            return uint_lt(self, other, gidney_adder)
+        else:
+            if not isinstance(other, (QuantumFloat, int, float)):
+                raise Exception(f"Comparison with type {type(other)} not implemented")
+    
+            return lt(self, other)
 
     def __gt__(self, other):
+        from qrisp.alg_primitives.arithmetic import gt, uint_gt, gidney_adder
         
-        from qrisp.alg_primitives.arithmetic import gt
-        
-        if not isinstance(other, (QuantumFloat, int, float)):
-            raise Exception(f"Comparison with type {type(other)} not implemented")
-
-        return gt(self, other)
+        if check_for_tracing_mode():
+            return uint_gt(self, other, gidney_adder)
+        else:
+            if not isinstance(other, (QuantumFloat, int, float)):
+                raise Exception(f"Comparison with type {type(other)} not implemented")
+    
+            return gt(self, other)
 
     def __le__(self, other):
+        from qrisp.alg_primitives.arithmetic import leq, uint_le, gidney_adder
         
-        from qrisp.alg_primitives.arithmetic import leq
-        
-        if not isinstance(other, (QuantumFloat, int, float)):
-            raise Exception(f"Comparison with type {type(other)} not implemented")
-
-        return leq(self, other)
+        if check_for_tracing_mode():
+            return uint_le(self, other, gidney_adder)
+        else:
+            if not isinstance(other, (QuantumFloat, int, float)):
+                raise Exception(f"Comparison with type {type(other)} not implemented")
+    
+            return leq(self, other)
 
     def __ge__(self, other):
+        from qrisp.alg_primitives.arithmetic import geq, uint_ge, gidney_adder
         
-        from qrisp.alg_primitives.arithmetic import geq        
-        
-        if not isinstance(other, (QuantumFloat, int, float)):
-            raise Exception(f"Comparison with type {type(other)} not implemented")
-
-        return geq(self, other)
+        if check_for_tracing_mode():
+            return uint_ge(self, other, gidney_adder)
+        else:
+            
+            if not isinstance(other, (QuantumFloat, int, float)):
+                raise Exception(f"Comparison with type {type(other)} not implemented")
+    
+            return geq(self, other)
 
     def __eq__(self, other):
         

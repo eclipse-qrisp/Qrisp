@@ -1,8 +1,8 @@
 .. _jasp:
 
-.. note::
-    
-    This module is still under heavy development and the interface can therefore change at any time!
+.. image:: /_static/hybrid_realtime.png
+    :align: center
+    :width: 300
 
 Jasp
 ====
@@ -137,3 +137,4 @@ If you are interested in how the QIR representation looks like, try calling
    Sampling
    Expectation Value
    Simulation Tools/index
+   Ported Features

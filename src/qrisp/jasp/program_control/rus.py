@@ -1,6 +1,6 @@
 """
 \********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -266,9 +266,15 @@ def RUS(*trial_function, **jit_kwargs):
     
     def return_function(*trial_args):
         
-        # Execute the function
+        abs_qs = TracingQuantumSession.get_instance()
         
+        initial_gc_mode = abs_qs.gc_mode
+        
+        abs_qs.gc_mode = "auto"
+        # Execute the function
         first_iter_res = qache(trial_function, **jit_kwargs)(*trial_args)
+        
+        abs_qs.gc_mode = initial_gc_mode
         
         # Extract the jaspr
         eqn = jax._src.core.thread_local_state.trace_state.trace_stack.dynamic.jaxpr_stack[0].eqns[-1]        
@@ -316,7 +322,6 @@ def RUS(*trial_function, **jit_kwargs):
         # The next section are the results from the previous iteration
         # And the final section are trial function arguments
         
-        abs_qs = TracingQuantumSession.get_instance()
         combined_args = tuple([abs_qs.abs_qc] + list(arg_vals) + list(res_vals))
         
         n_res_vals = len(res_vals)

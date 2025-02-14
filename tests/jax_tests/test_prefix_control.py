@@ -1,6 +1,6 @@
 """
 \********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -24,7 +24,7 @@ def test_prefix_control():
     @jaspify
     def main(k):
         
-        qf = QuantumFloat(6)
+        qf_ = QuantumFloat(6)
         
         def body_fun(i, val):
             acc, qf = val
@@ -32,7 +32,7 @@ def test_prefix_control():
             acc += measure(qf[i])
             return acc, qf
         
-        acc, qf = q_fori_loop(0, k, body_fun, (0, qf))
+        acc, qf = q_fori_loop(0, k, body_fun, (0, qf_))
         
         return acc, measure(qf)
 
@@ -74,6 +74,28 @@ def test_prefix_control():
         return acc, measure(qf)
 
     assert main(6) == (5, 31)
+    
+    @jaspify
+    def main():
+        
+        qf = QuantumFloat(7)
+        
+        def body_fun(val):
+            i, acc, qf = val
+            x(qf[i])
+            QFT(qf)
+            acc += measure(qf)
+            
+            i += 1
+            return (i, acc, qf)
+        
+        def cond_fun(val):
+            return val[0] < 5
+        
+        i, acc, qf = q_while_loop(cond_fun, body_fun, (0, 0, qf))
+        return acc ,measure(qf)
+
+    main()
 
     @jaspify
     def main(k):
