@@ -158,6 +158,8 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
             - More efficient but introduce extra phases that need to be uncomputed by performing the inverse of this gate on the same inputs. For more information on phase tolerance, check `this paper <https://iopscience.iop.org/article/10.1088/2058-9565/acaf9d/meta>`__.
         *   - ``balauca``
             - Method based on this `paper <https://www.iccs-meeting.org/archive/iccs2022/papers/133530169.pdf>`__ with logarithmic depth but requires many ancilla qubits.
+    	*   - ``khattar``
+            - Method based on this `paper <https://arxiv.org/abs/2407.17966>`_, implements the n-bit mcx with 2n − 3 Toffoli and linear depth using 1 clean ancilla. The case n=3 implements this `paper <https://arxiv.org/abs/2106.11513>`_^.
         *   - ``maslov``
             - Documented `here <https://arxiv.org/abs/1508.03273>`_, requires less ancilla qubits but is only available for 4 or less control qubits.
         *   - ``yong``

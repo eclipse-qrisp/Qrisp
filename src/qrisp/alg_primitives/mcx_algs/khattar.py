@@ -163,6 +163,5 @@ def khattar_mcx(ctrls, target, ctrl_state):
             khattar_anc = QuantumFloat(1)
             with conjugate(cca_mcx)(ctrls, target, khattar_anc):
                 # STEP 3
-                print(type(khattar_anc))
                 mcx([khattar_anc[0], ctrls[0]], target[0])
             khattar_anc.delete()
