@@ -82,6 +82,7 @@ def qswitch(operand, case, case_function_list, method = "sequential"):
             def conjugator(case, control_qbl):
                 mcx(case,
                     control_qbl,
+                    method='baluaca',
                     ctrl_state=i)
 
             for i in range(len(case_function_list)):
