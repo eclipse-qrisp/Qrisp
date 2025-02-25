@@ -447,13 +447,13 @@ class QubitTerm:
             if P=="Z":
                 return Z_(index)
             if P=="A":
-                return Symbol("A_" + str(index), commutative = False)
+                return Symbol("A(" + str(index) + ")", commutative = False)
             if P=="C":
-                return Symbol("C_" + str(index), commutative = False)
+                return Symbol("C(" + str(index) + ")", commutative = False)
             if P=="P0":
-                return Symbol("P^0_" + str(index), commutative = False)
+                return Symbol("P0(" + str(index) + ")", commutative = False)
             if P=="P1":
-                return Symbol("P^1_" + str(index), commutative = False)
+                return Symbol("P1(" + str(index) + ")", commutative = False)
         
         expr = 1
         index_list = sorted(list(self.factor_dict.keys()))
@@ -604,4 +604,22 @@ class QubitTerm:
         ladder_indices_self = [factor[0] for factor in self.factor_dict.items() if factor[1] in ["A", "C"]]
         ladder_indices_other = [factor[0] for factor in other.factor_dict.items() if factor[1] in ["A", "C"]]
         return set(ladder_indices_self) == set(ladder_indices_other)
+    
+    def ladders_intersect(self, other):
+        """
+        Checks if the ladder operators of two QubitTerms operate on the same qubit.
+
+        Parameters
+        ----------
+        other : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        """
+        ladder_indices_self = [factor[0] for factor in self.factor_dict.items() if factor[1] in ["A", "C"]]
+        ladder_indices_other = [factor[0] for factor in other.factor_dict.items() if factor[1] in ["A", "C"]]
+        return len(set(ladder_indices_self).intersection(ladder_indices_other)) != 0
         
