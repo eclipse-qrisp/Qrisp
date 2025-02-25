@@ -604,4 +604,22 @@ class QubitTerm:
         ladder_indices_self = [factor[0] for factor in self.factor_dict.items() if factor[1] in ["A", "C"]]
         ladder_indices_other = [factor[0] for factor in other.factor_dict.items() if factor[1] in ["A", "C"]]
         return set(ladder_indices_self) == set(ladder_indices_other)
+    
+    def ladders_intersect(self, other):
+        """
+        Checks if the ladder operators of two QubitTerms operate on the same qubit.
+
+        Parameters
+        ----------
+        other : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        """
+        ladder_indices_self = [factor[0] for factor in self.factor_dict.items() if factor[1] in ["A", "C"]]
+        ladder_indices_other = [factor[0] for factor in other.factor_dict.items() if factor[1] in ["A", "C"]]
+        return len(set(ladder_indices_self).intersection(ladder_indices_other)) != 0
         
