@@ -6,10 +6,7 @@ Tutorials
 Welcome to the tutorial of Qrisp! This page will help you get started by providing step-by-step instructions and examples. 
 Whether you're a beginner or an experienced quantum programmer, these tutorials provide a helping hand exploring the fundamentals of the framework and make you familiar with its syntax and features.
 
-Along the way, we'll introduce you to important concepts and techniques that you'll need to know in order to write highly efficient algorithms in Qrisp.
-We encourage you to follow along with the examples and try out the code for yourself. Don't worry if you make mistakes or don't understand something right away - programming is a process of learning and experimentation, and it takes time to become proficient.
-
-By the end of this tutorial, you'll have a solid foundation of our high-level framework and be ready to tackle more complex projects. So let's get **started**!
+To gradually qrispify your programming game you will start with the basics and step-by-step build your qrispertoire to more advanced features like automatic :ref:`recomputation <recomputation>`. We've structured the tutorial in a way that is easy to follow:
 
 
 .. grid::
@@ -71,6 +68,12 @@ By the end of this tutorial, you'll have a solid foundation of our high-level fr
     .. grid-item-card:: :ref:`How to think in Jasp <jasp_tutorial>`
 
         | explains how this **new compilation pipeline** accelerates quantum algorithm compilation, and allows for **real-time computations**.
+
+
+Along the way, we'll introduce you to important concepts and techniques that you'll need to know in order to write highly efficient algorithms in Qrisp.
+We encourage you to follow along with the examples and try out the code for yourself. Don't worry if you make mistakes or don't understand something right away - programming is a process of learning and experimentation, and it takes time to become proficient.
+
+By the end of this tutorial, you'll have a solid foundation of our high-level framework and be ready to tackle more complex projects. So let's get **started**!
 
 
 .. toctree::
