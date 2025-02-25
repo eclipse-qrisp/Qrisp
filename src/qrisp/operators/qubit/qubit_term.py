@@ -447,13 +447,13 @@ class QubitTerm:
             if P=="Z":
                 return Z_(index)
             if P=="A":
-                return Symbol("A_" + str(index), commutative = False)
+                return Symbol("A(" + str(index) + ")", commutative = False)
             if P=="C":
-                return Symbol("C_" + str(index), commutative = False)
+                return Symbol("C(" + str(index) + ")", commutative = False)
             if P=="P0":
-                return Symbol("P^0_" + str(index), commutative = False)
+                return Symbol("P0(" + str(index) + ")", commutative = False)
             if P=="P1":
-                return Symbol("P^1_" + str(index), commutative = False)
+                return Symbol("P1(" + str(index) + ")", commutative = False)
         
         expr = 1
         index_list = sorted(list(self.factor_dict.keys()))
