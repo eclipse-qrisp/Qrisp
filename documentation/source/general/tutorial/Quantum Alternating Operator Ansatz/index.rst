@@ -8,10 +8,10 @@
 
 .. _QAOA101:
 
-QAOA implementation and QAOAProblem
-===================================
+Combinatorial optimization with QAOA
+====================================
 
-Welcome to our :ref:`Quantum Approximate Optimization Algorithm (QAOA) <QAOA>` module! This module equips you with the essential theoretical fundamentals of QAOA, a promising algorithm for tackling combinatorial optimization problems. We’ll highlight why qrisp is the ideal framework for implementing QAOA, thanks to its unique features.
+Welcome to our :ref:`Quantum Approximate Optimization Algorithm (QAOA) <QAOA>` module! This module equips you with the essential theoretical fundamentals of QAOA, a promising algorithm for tackling combinatorial optimization problems. We’ll highlight why Qrisp is the ideal framework for implementing QAOA, thanks to its unique features.
 
 Once you’ve grasped the basics including the structure, operation, and the functions of phase separator and mixer Hamiltonians in QAOA, we’ll transition into its practical application. Our focus will be on two specific problem instances: :ref:`MaxCut <MaxCutQAOA>` and :ref:`Max-$\\kappa$-Colorable Subgraph <MkCSQAOA>`. In the latter we will see that in the quantum realm of Qrisp, we’re not just seeing in black and white, we’re coding in :red:`Q`:orange:`U`:yellow:`A`:green:`N`:blue:`T`:indigo:`U`:violet:`M`:red:`C`:orange:`O`:yellow:`L`:green:`O`:blue:`R`:indigo:`!`
 
@@ -26,7 +26,7 @@ The quantum and classical part work together iteratively: the quantum computer p
 Before even running the algorithm there is a need to define some initial state $|\psi_0\rangle$, often chosen to be equal superposition state 
 $$|s\\rangle=\\frac{1}{\\sqrt{2^n}}\\sum_z|z\\rangle, $$ where $n$ is the number of qubits.
 
-The QAOA operates in a sequence of layers, each consisting of a problem-specific operator and a mixing operator. To be a little more exact, the state $|\psi_0\rangle$ is then evolved under the action of $p$ layers of QAOA, where one layer consists of applying the unitary phase separating operator
+The QAOA operates in a sequence of layers, each consisting of a problem-specific operator and a mixing operator. To be a little more exact, the state $\ket{\psi_0}$ is then evolved under the action of $p$ layers of QAOA, where one layer consists of applying the unitary phase separating operator
 $$U_P(C,\\gamma)=e^{-i\\gamma C}=\\prod_{\\alpha=1}^me^{-i\\gamma C _{\\alpha}}, $$ which applies phase to each computational basis state based on its cost function value; 
 and the unitary mixer operator 
 $$U_M(B,\\beta)=e^{-i\\beta B}, $$ 
@@ -35,7 +35,7 @@ where $B$ represents a specific mixer operator that drives the transitions betwe
 After $p$ layers of QAOA, we can define the angle dependent quantum state
 $$|\\psi_p\\rangle=|\\boldsymbol\\gamma,\\boldsymbol\\beta\\rangle=U_M(B,\\beta_p)U_P(C,\\gamma_p)\\cdots U_M(B,\\beta_1)U_P(C,\\gamma_1)|s\\rangle.$$
 
-The end goal in QAOA is now to optimize the variational parameters $\gamma_p$ and $\beta_p$ in order to minimize the expectation value of the cost function with respect to the final state $∣\psi_p\rangle$. This is done using classical optimization techniques.
+The end goal in QAOA is now to optimize the variational parameters $\gamma_p$ and $\beta_p$ in order to minimize the expectation value of the cost function with respect to the final state $\ket{\psi_p}$. This is done using classical optimization techniques.
 
 It's important to remember that QAOA provides an approximate solution, and its performance depends on factors like problem size and structure, choice of initial state, and number of layers $p$. Increasing $p$ generally leads to better solutions but also increases computational cost.
 
@@ -61,26 +61,29 @@ In their paper, Hadfield and his colleagues give us some really useful examples 
 
    * - PROBLEM INSTANCE
      - MIXER TYPE
-     - 
-   * - :ref:`MaxCut <MaxCutQAOA>`
+     - IMPLEMENTED IN QRISP
+   * - :ref:`MaxCut <maxCutQAOA>`
      - X mixer
      -    ✅
-   * - Max-$\ell$-SAT
+   * - :ref:`Max-$\\ell$-SAT <maxsatQAOA>`
      - X mixer
      -    ✅
-   * - :ref:`QUBO (NEW since 0.4!) <QUBOQAOA>`
+   * - :ref:`E3Lin2 <eThrLinTwoQAOA>`
+     - X mixer
+     -    ✅
+   * - :ref:`QUBO <QUBOQAOA>`
      - X mixer
      -    ✅ 
-   * - MaxIndependentSet
+   * - :ref:`MaxIndependentSet <maxIndepSetQAOA>`
      - Controlled X mixer
      -    ✅
-   * - MaxClique
+   * - :ref:`MaxClique <maxCliqueQAOA>`
      - Controlled X mixer
      -    ✅
-   * - MaxSetPacking
+   * - :ref:`MaxSetPacking <maxSetPackingQAOA>`
      - Controlled X mixer
      -    ✅
-   * - MinSetCover
+   * - :ref:`MinSetCover <minSetCoverQAOA>`
      - Controlled X mixer
      -    ✅
    * - :ref:`Max-$\\kappa$-Colorable Subgraph <MkCSQAOA>`
@@ -95,9 +98,8 @@ Our QAOA journey doesn’t stop here. In the next tutorials we’re going to tac
    :maxdepth: 2
    :hidden:
    
-   Theoretical
    MaxCut
    MkCS
-   ConstrainedMixers
    QUBO
+   ConstrainedMixers
    PortfolioRebalancing
