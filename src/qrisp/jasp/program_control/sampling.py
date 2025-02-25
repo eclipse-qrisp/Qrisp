@@ -268,10 +268,10 @@ def sample(state_prep = None, shots = 0, post_processor = None):
         return_amount = []
         
         try:
-            loop_res = jax.lax.fori_loop(0, tracerized_shots, sampling_body_func, (jnp.zeros(shots), *args))
+            loop_res = jax.lax.fori_loop(0, tracerized_shots, sampling_body_func, (jax.lax.broadcast(0., (shots,)), *args))
             return loop_res[0]
         except AuxException:
-            loop_res = jax.lax.fori_loop(0, tracerized_shots, sampling_body_func, (jnp.zeros((shots, return_amount[0])), *args))
+            loop_res = jax.lax.fori_loop(0, tracerized_shots, sampling_body_func, (jax.lax.broadcast(0., (shots, return_amount[0])), *args))
             return loop_res[0]
     
     from qrisp.jasp import terminal_sampling
