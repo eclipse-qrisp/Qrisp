@@ -478,7 +478,7 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
     )
     from qrisp.core import QuantumVariable
     from qrisp.qtypes import QuantumBool
-
+#
     if isinstance(controls, list):
 
         new_controls = []
