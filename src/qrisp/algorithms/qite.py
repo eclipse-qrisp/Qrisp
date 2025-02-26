@@ -18,17 +18,28 @@
 
 from qrisp import QuantumArray, mcp, conjugate, invert
 import sympy as sp
+import numpy as np
 
-def QITE(qarg, U_0, exp_H, s, k):
+def QITE(qarg, U_0, exp_H, s, k, method='GC'):
     r"""
-    Performs `Double-Braket Quantum Imaginary-Time Evolution (DB-QITE) <https://arxiv.org/abs/2412.04554>`_
-    via implementing the unitary $U_k$ that is defined recursively by
+    Performs `Double-Braket Quantum Imaginary-Time Evolution (DB-QITE) <https://arxiv.org/abs/2412.04554>`_.
+    Given a Hamiltonian :ref:`Operator <Operators>` $H$, this method implements the unitary $U_k$ that is recursively defined by either of
+
+    * Group commutator (GQ) approximation:
 
     .. math::
 
-        U_{k+1} = e^{i\sqrt{s_k}H}U_ke^{i\sqrt{s_k}\ket{0}\bra{0}}U_k^{\dagger}e^{-i\sqrt{s_k}H}U_k
+        U_{k+1} = e^{i\sqrt{s_k}H}e^{i\sqrt{s_k}\omega_k}e^{-i\sqrt{s_k}H}U_k
 
-    where $H$ is the Hamiltonian :ref:`Operator <Operators>`.
+    * Higher-order product formula (HOPF) approximation:
+
+    .. math:: 
+
+        U_{k+1} = e^{i\phi\sqrt{s_k}H}e^{i\phi\sqrt{s_k}\omega_k}e^{-i\sqrt{s_k}H}e^{-i(1+\phi)\sqrt{s_k}\omega_k}e^{i(1-\phi)\sqrt{s_k}H}U_k
+
+    where $e^{-it\omega_k}=U_ke^{it\ket{0}\bra{0}}U_k^{\dagger}$ is the refection around the state $\ket{\omega_k}=U_k\ket{0}$.
+
+
 
     Parameters
     ----------
@@ -42,6 +53,9 @@ def QITE(qarg, U_0, exp_H, s, k):
         A list of evolution times for each step.
     k : int
         The number of steps.
+    method : str, optional
+        The method for approximating the double-bracket flow (DBF). Available are ``GC`` and ``HOPF``.
+        The default is ``GC``.
 
 
     Examples
@@ -158,16 +172,36 @@ def QITE(qarg, U_0, exp_H, s, k):
         s_ = sp.sqrt(s[k-1])
 
         def conjugator(qarg):
-            exp_H(qarg, s_)
             with invert():
-                QITE(qarg, U_0, exp_H, s, k-1)
-                
-        QITE(qarg, U_0, exp_H, s, k-1)
+                QITE(qarg, U_0, exp_H, s, k-1, method=method)
 
-        with conjugate(conjugator)(qarg):
-            if isinstance(qarg,QuantumArray):
-                qubits = sum([qv.reg for qv in qarg.flatten()],[])
-                mcp(s_, qubits, ctrl_state=0)
-            else:
-                mcp(s_, qarg, ctrl_state=0)
+        def reflection(qarg, t_):
+            with conjugate(conjugator)(qarg):
+                if isinstance(qarg,QuantumArray):
+                    qubits = sum([qv.reg for qv in qarg.flatten()],[])
+                    mcp(t_, qubits, ctrl_state=0)
+                else:
+                    mcp(t_, qarg, ctrl_state=0)
+
+        if method=='GC':
+
+            QITE(qarg, U_0, exp_H, s, k-1, method=method)
+
+            with conjugate(exp_H)(qarg, s_):
+                reflection(qarg, s_)
+
+        if method=='HOPF':
+
+            phi = (sp.sqrt(5)-1)/2
+                
+            QITE(qarg, U_0, exp_H, s, k-1, method=method)
+
+            # exp_H performs forward evolution $e^{-itH}
+            exp_H(qarg, -(1-phi)*s_)
+            reflection(qarg, -(1+phi)*s_)
+            exp_H(qarg, s_)
+            reflection(qarg, phi*s_)
+            exp_H(qarg, -phi*s_)
+
+
 
