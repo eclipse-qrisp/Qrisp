@@ -56,5 +56,5 @@ setuptools.setup(
         'iqm': ['qiskit-iqm']
     },
     packages=setuptools.find_packages(where="src"),
-    python_requires=">=3.8",
+    python_requires=">=3.10",
 )

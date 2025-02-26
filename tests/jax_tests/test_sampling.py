@@ -17,7 +17,7 @@
 """
 
 from qrisp import QuantumFloat, h, t, x, conjugate, measure, control, QuantumBool, cx
-from qrisp.jasp import jaspify, sample, jrange, expectation_value
+from qrisp.jasp import jaspify, sample, jrange, expectation_value, q_while_loop
 
 def double(*args):
     if len(args) == 1:
@@ -242,6 +242,32 @@ def test_expectation_value():
     
     ev_res = main()
     assert abs(ev_res[0]-1) < 0.2 and ev_res[1] == 0
+    
+    def prep(k):
+        qf = QuantumFloat(k)
+        h(qf)
+        return qf
+
+
+    # Code example from https://github.com/eclipse-qrisp/Qrisp/issues/140
+    @jaspify
+    def test():
+
+        def cond_fun(state):
+            index, sum = state
+            return index < 5
+
+        def body_fun(state):
+            index, sum = state
+            a = expectation_value(prep, shots=10)(index)
+            index += 1
+            sum += a
+            return index, sum
+
+        index, sum = q_while_loop(cond_fun, body_fun, (1,0))
+        return sum
+
+    test()
     
     
 

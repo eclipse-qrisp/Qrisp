@@ -1110,7 +1110,7 @@ class Jaspr(Jaxpr):
             # in (t, e, br) }
         
         """
-        from qrisp.jasp.catalyst_interface import jaspr_to_catalyst_jaxpr
+        from qrisp.jasp.evaluation_tools.catalyst_interface import jaspr_to_catalyst_jaxpr
         return jaspr_to_catalyst_jaxpr(self.flatten_environments())
     
     

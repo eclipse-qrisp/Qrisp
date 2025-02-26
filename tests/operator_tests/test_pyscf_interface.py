@@ -33,3 +33,10 @@ def test_pyscf_interface():
     electron_state = QuantumVariable(4)
     electron_state[:] = "0011"
     U(electron_state, t = 100, steps = 20)
+    
+    mol = gto.M(atom = '''Li     0.0000     0.0000     0.0000; H      1.595     0.0000     0.0000''', basis = 'sto-3g') # DOES NOT WORK
+
+    H_ferm = FermionicOperator.from_pyscf(mol) # DOES NOT WORK
+    
+    qv = QuantumVariable(12)
+    H_ferm.get_measurement(qv)
