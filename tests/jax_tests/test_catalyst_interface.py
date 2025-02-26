@@ -16,9 +16,13 @@
 ********************************************************************************/
 """
 
+import time
+import itertools
+
 from qrisp import *
 from qrisp.jasp import *
-import time
+
+
 
 def test_catalyst_interface():
     
@@ -41,7 +45,7 @@ def test_catalyst_interface():
     jaspr.to_mlir()
     jaspr.to_catalyst_jaxpr()
     
-    assert jaspr.qjit(4)[0] == 5.25
+    assert jaspr.qjit(4) == 5.25
     
     
     def int_encoder(qv, encoding_int):
@@ -51,7 +55,7 @@ def test_catalyst_interface():
 
     @qjit
     def test_f(a):
-        time.sleep(1)        
+        time.sleep(10)        
         qv = QuantumFloat(4)
         int_encoder(qv, a)
         return measure(qv)
@@ -59,17 +63,32 @@ def test_catalyst_interface():
     t0 = time.time()
 
     # Test classical control flow    
-    assert test_f(4)[0] == 4
-    assert test_f(5)[0] == 5
-    assert test_f(6)[0] == 6
-    assert test_f(7)[0] == 7
+    assert test_f(4) == 4
+    assert test_f(5) == 5
+    assert test_f(6) == 6
+    assert test_f(7) == 7
 
     # Test QJIT caching
-    assert time.time() - t0 < 2
-    
-    def main():
+    assert time.time() - t0 < 15
+
+    # Test U3 translation    
+    def main(a, b, c, d):
         qv = QuantumFloat(1)
-        u3(np.pi, np.pi, 0, qv[0])
+        with control(d == 0):
+            h(qv[0])
+        u3(a*np.pi, b*np.pi, c*np.pi, qv[0])
+        with control(d == 0):
+            h(qv[0])
         return measure(qv[0])
     
-    assert qjit(main)() == jaspify(main)()
+    for a,b,c,d in itertools.product(*4*[[0,1]]):
+        assert qjit(main)(a,b,c,d) == jaspify(main)(a,b,c,d)
+        
+    for i in range(8):
+        statevector_array = 8*[0]
+        statevector_array[i] = 1
+        def main():
+            qv = QuantumFloat(3)
+            prepare(qv, statevector_array)
+            return measure(qv)
+        assert jaspify(main)() == qjit(main)()
