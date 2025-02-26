@@ -29,7 +29,7 @@ from qrisp.core.gate_application_functions import (
 )
 from qrisp.qtypes import QuantumFloat
 from qrisp.environments import invert, control, conjugate
-from qrisp.jasp import jlen, jrange, check_for_tracing_mode
+from qrisp.jasp import jlen, jrange, check_for_tracing_mode, qache
 
 # Move this one layer up
 import jax.numpy as jnp
@@ -134,6 +134,7 @@ def cca_mcx(ctrls, target, anc):
 
 
 # SHOULD USE @qache DECORATOR?
+@qache
 def khattar_mcx(ctrls, target, ctrl_state):
     N = jlen(ctrls)
     
