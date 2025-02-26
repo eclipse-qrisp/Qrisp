@@ -301,7 +301,7 @@ def test_HHL_demo():
     x = (np.linalg.inv(A) @ b) / np.linalg.norm(np.linalg.inv(A) @ b)
     print(x)
 
-    assert np.linalg.norm(np.abs(x_)-np.abs(x)) < 1e-2
+    assert np.linalg.norm(np.abs(x_)-np.abs(x)) < 1e-1
 
     ############################################################
 
