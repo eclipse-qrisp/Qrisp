@@ -151,6 +151,6 @@ def test_jasp_gidney_adder():
         import catalyst
     except ModuleNotFoundError:
         return
-    assert qjit(call_qq_gidney_adder)(4)[0] == 11
+    assert qjit(call_qq_gidney_adder)(4) == 11
     
     
