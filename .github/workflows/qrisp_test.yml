@@ -9,7 +9,7 @@ jobs:
     timeout-minutes: 60
     strategy:
       matrix:
-        python-version: ["3.9.16"]
+        python-version: ["3.10.*"]
 
     steps:
       - uses: actions/checkout@v3
@@ -22,7 +22,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install pytest
           pip install -e ./
-          pip install pennylane-catalyst==0.10.*
+          pip install --upgrade pennylane-catalyst
           pip install qiskit-aer
           pip install jax==0.4.28
           pip install jaxlib==0.4.28
