@@ -74,7 +74,8 @@ def gidney_CCCZ(ctrls, target):
     cx(ctrls[2], gidney_anc[0])
     t_dg(gidney_anc[0])
     cx(target[0], gidney_anc[0])
-    sx(gidney_anc[0])
+    with invert():
+        sx(gidney_anc[0])
     cl_res = measure(gidney_anc[0])
 
     with control(cl_res):
@@ -82,7 +83,7 @@ def gidney_CCCZ(ctrls, target):
     cz(ctrls[2], target[0])
         
     with control(cl_res):
-        cz(ctrls[0], target[0])
+        cz(ctrls[0], ctrls[1])
         x(gidney_anc[0])
     
     gidney_anc.delete()
@@ -135,10 +136,14 @@ def cca_mcx(ctrls, target, anc):
 # SHOULD USE @qache DECORATOR?
 def khattar_mcx(ctrls, target, ctrl_state):
     N = jlen(ctrls)
+    
+    if isinstance(ctrl_state,str):
+        ctrl_state = int(ctrl_state[::-1],2)
+        
 
     ctrl_state = jnp.int64(ctrl_state)
     ctrl_state = cond(ctrl_state == -1, lambda x: x + 2**N, lambda x: x, ctrl_state)
-
+    
     with conjugate(ctrl_state_conjugator)(ctrls, ctrl_state):
 
         # CASE DISTINCTION
