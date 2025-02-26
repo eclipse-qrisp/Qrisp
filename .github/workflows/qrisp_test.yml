@@ -23,6 +23,7 @@ jobs:
           pip install pytest
           pip install -e ./
           pip install pennylane
+          pip install pennylane-catalyst
           pip install qiskit-aer
           pip install jax==0.4.28
           pip install jaxlib==0.4.28

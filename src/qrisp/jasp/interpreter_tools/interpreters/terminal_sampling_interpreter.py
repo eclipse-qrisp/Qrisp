@@ -147,13 +147,13 @@ def terminal_sampling_evaluator(sampling_res_type):
         
         # Extract the shot number
         if sampling_res_type == "ev":
-            shots = invalues[1]
+            shots = invalues[0]
         elif sampling_res_type == "array":
             shots = invalues[0]
         elif sampling_res_type == "dict":
-            shots = invalues[1]
+            shots = invalues[0]
             if shots == 0:
-                invalues[1] = 1
+                invalues[0] = 1
             
         
         # We will use this dictionary to store the sampling results
