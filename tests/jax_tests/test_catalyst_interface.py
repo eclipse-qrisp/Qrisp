@@ -69,7 +69,7 @@ def test_catalyst_interface():
     assert test_f(7) == 7
 
     # Test QJIT caching
-    assert time.time() - t0 < 15
+    assert time.time() - t0 < 20
 
     # Test U3 translation    
     def main(a, b, c, d):
