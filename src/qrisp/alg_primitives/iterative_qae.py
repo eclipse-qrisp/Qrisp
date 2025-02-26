@@ -132,46 +132,45 @@ def IQAE(init_function, state_function, eps, alpha, mes_kwargs={}):
     m_arr = jnp.array([0,1,2,0,1,2,3,4,0,1,2,3,4,5,6])
 
     def cond_fun(state):
-        L_arr, m_arr, init_function, state_function, oracle_function, mes_kwargs, E, F, C, break_cond, alpha, eps, m_i, K_i, theta_b, theta_sh = state
+        L_arr, m_arr, break_cond, alpha, eps, m_i, K_i, theta_b, theta_sh = state
         return break_cond > 2 * eps
 
     def body_fun(state):
-        L_arr, m_arr, init_function, state_function, oracle_function, mes_kwargs, E, F, C, break_cond, alpha, eps, m_i, K_i, theta_b, theta_sh = state
+        L_arr, m_arr, break_cond, alpha, eps, m_i, K_i, theta_b, theta_sh = state
 
         alp_i = C * alpha * eps * K_i 
         N_i = jnp.int64(jnp.ceil(1/(2 * jnp.pow(E, 2) ) * jnp.log(2/alp_i) ) )
 
         # Perform quantum step
-        A_i  = quant_step( jnp.int64((K_i -1 )/2) , N_i, init_function, state_function, 
+        A_i  = quantum_step( jnp.int64((K_i -1 )/2) , N_i, init_function, state_function, 
                             oracle_function, mes_kwargs ) 
         
-        #A_i = 0.75
         # Compute new thetas
         theta_b, theta_sh = compute_thetas(m_i, K_i, A_i, E)
-        # Compute new Li
-        L_new, m_new = compute_Li2(L_arr, m_arr, m_i , K_i, theta_b, theta_sh)
-        #L_new, m_new = compute_Li(m_i , K_i, theta_b, theta_sh)
+
+        # Compute new L_i
+        L_new, m_new = compute_Li(L_arr, m_arr, m_i , K_i, theta_b, theta_sh)
         m_i = m_new
         K_i = L_new * K_i
 
         break_cond = jnp.float64(jnp.abs( theta_b - theta_sh ))
 
-        return L_arr, m_arr, init_function, state_function, oracle_function, mes_kwargs, E, F, C, break_cond, alpha, eps, m_i, K_i, theta_b, theta_sh
+        return L_arr, m_arr, break_cond, alpha, eps, m_i, K_i, theta_b, theta_sh
     
-    state = (L_arr, m_arr, init_function, state_function, oracle_function, mes_kwargs, E, F, C, break_cond, alpha, eps, m_i, K_i, theta_b, theta_sh)
+    state = (L_arr, m_arr, break_cond, alpha, eps, m_i, K_i, theta_b, theta_sh)
 
     if check_for_tracing_mode():
-        L_arr, m_arr, init_function, state_function, oracle_function, mes_kwargs, E, F, C, break_cond, alpha, eps, m_i, K_i, theta_b, theta_sh = q_while_loop(cond_fun, body_fun, state)
+        L_arr, m_arr, break_cond, alpha, eps, m_i, K_i, theta_b, theta_sh = while_loop(cond_fun, body_fun, state)
     else:
         while cond_fun(state):
             state = body_fun(state)
-        L_arr, m_arr, init_function, state_function, oracle_function, mes_kwargs, E, F, C, break_cond, alpha, eps, m_i, K_i, theta_b, theta_sh = state
+        L_arr, m_arr, break_cond, alpha, eps, m_i, K_i, theta_b, theta_sh = state
     
     final_res = jnp.sin((theta_b+theta_sh)/2)**2
     return final_res
 
 
-def quant_step(k, N, init_function, state_function, oracle_function, mes_kwargs):
+def quantum_step(k, N, init_function, state_function, oracle_function, mes_kwargs):
     """
     Performs the quantum step, i.e., Quantum Amplitude Amplification, 
     in accordance to `Accelerated Quantum Amplitude Estimation without QFT <https://arxiv.org/abs/2407.16795>`_
@@ -194,8 +193,6 @@ def quant_step(k, N, init_function, state_function, oracle_function, mes_kwargs)
         The keyword arguments for the measurement function. Default is an empty dictionary.
     """
 
-    #print(N)
-
     def state_prep(k):
         qargs = init_function()
         state_function(*qargs)
@@ -206,11 +203,8 @@ def quant_step(k, N, init_function, state_function, oracle_function, mes_kwargs)
         a_i = expectation_value(state_prep, shots = N)(k)
     else:
         mes_kwargs["shots"] = N
-        res_dict = state_prep().get_measurement(**mes_kwargs)
+        res_dict = state_prep(k).get_measurement(**mes_kwargs)
         a_i = res_dict.get(True, 0)
-
-    #for qarg in qargs_dupl:
-    #    qarg.delete()
 
     return a_i 
 
@@ -243,72 +237,13 @@ def compute_thetas(m_i, K_i, A_i, E):
     theta_b = ( (m_i + m_i%2)*jnp.pi/2 + jnp.pow(-1,m_i%2)*jnp.arcsin(jnp.sqrt(b_max)) )/K_i
     theta_sh = ( (m_i + m_i%2)*jnp.pi/2 + jnp.pow(-1,m_i%2)*jnp.arcsin(jnp.sqrt(sh_min)) )/K_i
     
-    #assert round( pow( np.sin(K_i * theta_b),2) , 8 )  == round(b_max, 8)
-    #assert round( pow( np.sin(K_i * theta_sh),2), 8 )  == round(sh_min, 8)
-    #if round( pow( np.sin(K_i * theta_b),2) , 8 )  != round(b_max, 8):
-    #    print(round( pow( np.sin(K_i * theta_b),2) , 8 ))
-    #    print(round(b_max, 8))
-
-    #if round( pow( np.sin(K_i * theta_sh),2), 8 )  != round(sh_min, 8):
-    #    print(round( pow( np.sin(K_i * theta_sh),2), 8 ))
-    #    print(round(sh_min, 8))  
+    #assert np.round( np.pow( np.sin(K_i * theta_b),2) , 8 )  == np.round(b_max, 8)
+    #assert np.round( np.pow( np.sin(K_i * theta_sh),2), 8 )  == np.round(sh_min, 8)
 
     return theta_b, theta_sh
 
 
-def compute_Li(m_i ,K_i, theta_b, theta_sh):
-    """
-    Helper function to compute further values for the next iteration. 
-    See `the original paper <https://arxiv.org/abs/2407.16795>`_ , Algorithm 1.
-
-    Parameters
-    ----------
-    m_i : int
-        Used for the computation of the interval of allowed angles.
-    K_i : int
-        Maximal amount of amplitude amplification steps for the next iteration.
-    theta_b : float
-        Lower bound for angle from last iteration.
-    theta_b : float
-        Upper bound for angle from last iteration.
-    """
-
-    if check_for_tracing_mode:
-        import jax.numpy as jnp
-    else:
-        import numpy as jnp
-
-    Li_list = jnp.array([(3,0),(3,1),(3,2),(5,0),(5,1),(5,2),(5,3),(5,4),(7,0),(7,1),(7,2),(7,3),(7,4),(7,5),(7,6)])     
-                
-    def cond_fun(state):
-        index, Li_list, m_i, K_i, theta_b, theta_sh = state
-        first_val = Li_list[index][0] * K_i * theta_b
-        sec_val = Li_list[index][0] * K_i * theta_sh
-        m_new = Li_list[index][0]*m_i + Li_list[index][1]
-        return not ((m_new*jnp.pi/2 <= first_val <= (m_new+1)*jnp.pi/2) & (m_new*jnp.pi/2 <= sec_val <= (m_new+1)*jnp.pi/2))
-
-    def body_fun(state):
-        index, Li_list, m_i, K_i, theta_b, theta_sh = state
-        index += 1
-        return index, Li_list, m_i, K_i, theta_b, theta_sh
-
-    state = (0, Li_list, m_i, K_i, theta_b, theta_sh) 
-    
-    if check_for_tracing_mode():
-        index, Li_list, m_i, K_i, theta_b, theta_sh = while_loop(cond_fun, body_fun, state)
-    else:
-        while(cond_fun(state)):
-            state = body_fun(state)
-
-    index, Li_list, m_i, K_i, theta_b, theta_sh = state
-
-    L_new = Li_list[index][0]
-    m_new = L_new*m_i + Li_list[index][1]
-
-    return L_new, m_new
-
-
-def compute_Li2(L_arr, m_arr, m_i , K_i, theta_b, theta_sh):
+def compute_Li(L_arr, m_arr, m_i , K_i, theta_b, theta_sh):
     """
     Helper function to compute further values for the next iteration. 
     See `the original paper <https://arxiv.org/abs/2407.16795>`_ , Algorithm 1.
@@ -336,7 +271,7 @@ def compute_Li2(L_arr, m_arr, m_i , K_i, theta_b, theta_sh):
     lower_arr = (L_arr*m_i + m_arr) * jnp.pi/2
     upper_arr = lower_arr + jnp.pi/2
 
-    index = jnp.argmax((first_arr >= lower_arr) & (second_arr <= upper_arr))
+    index = jnp.argmax((first_arr >= lower_arr) & (first_arr <= upper_arr) & (second_arr >= lower_arr) & (second_arr <= upper_arr))
 
     L_new = L_arr[index]
     m_new = L_new*m_i + m_arr[index]
