@@ -24,7 +24,7 @@ import numpy as np
 from qrisp import QuantumFloat, h, measure
 
 
-def IQAE(qargs, state_function, eps, alpha, mes_kwargs={}):
+def IQAE(init_function, state_function, eps, alpha, mes_kwargs={}):
     r"""
     Accelerated Quantum Amplitude Estimation (IQAE). This function performs :ref:`QAE <QAE>` with a fraction of the quantum resources of the well-known `QAE algorithm <https://arxiv.org/abs/quant-ph/0005055>`_.
     See `Accelerated Quantum Amplitude Estimation without QFT <https://arxiv.org/abs/2407.16795>`_.
@@ -132,17 +132,17 @@ def IQAE(qargs, state_function, eps, alpha, mes_kwargs={}):
     m_arr = jnp.array([0,1,2,0,1,2,3,4,0,1,2,3,4,5,6])
 
     def cond_fun(state):
-        L_arr, m_arr, qargs, state_function, oracle_function, mes_kwargs, E, F, C, break_cond, alpha, eps, m_i, K_i, theta_b, theta_sh = state
+        L_arr, m_arr, init_function, state_function, oracle_function, mes_kwargs, E, F, C, break_cond, alpha, eps, m_i, K_i, theta_b, theta_sh = state
         return break_cond > 2 * eps
 
     def body_fun(state):
-        L_arr, m_arr, qargs, state_function, oracle_function, mes_kwargs, E, F, C, break_cond, alpha, eps, m_i, K_i, theta_b, theta_sh = state
+        L_arr, m_arr, init_function, state_function, oracle_function, mes_kwargs, E, F, C, break_cond, alpha, eps, m_i, K_i, theta_b, theta_sh = state
 
         alp_i = C * alpha * eps * K_i 
         N_i = jnp.int64(jnp.ceil(1/(2 * jnp.pow(E, 2) ) * jnp.log(2/alp_i) ) )
 
         # Perform quantum step
-        A_i  = quant_step( jnp.int64((K_i -1 )/2) , N_i, qargs, state_function, 
+        A_i  = quant_step( jnp.int64((K_i -1 )/2) , N_i, init_function, state_function, 
                             oracle_function, mes_kwargs ) 
         
         #A_i = 0.75
@@ -156,22 +156,22 @@ def IQAE(qargs, state_function, eps, alpha, mes_kwargs={}):
 
         break_cond = jnp.float64(jnp.abs( theta_b - theta_sh ))
 
-        return L_arr, m_arr, qargs, state_function, oracle_function, mes_kwargs, E, F, C, break_cond, alpha, eps, m_i, K_i, theta_b, theta_sh
+        return L_arr, m_arr, init_function, state_function, oracle_function, mes_kwargs, E, F, C, break_cond, alpha, eps, m_i, K_i, theta_b, theta_sh
     
-    state = (L_arr, m_arr, qargs, state_function, oracle_function, mes_kwargs, E, F, C, break_cond, alpha, eps, m_i, K_i, theta_b, theta_sh)
+    state = (L_arr, m_arr, init_function, state_function, oracle_function, mes_kwargs, E, F, C, break_cond, alpha, eps, m_i, K_i, theta_b, theta_sh)
 
     if check_for_tracing_mode():
-        L_arr, m_arr, qargs, state_function, oracle_function, mes_kwargs, E, F, C, break_cond, alpha, eps, m_i, K_i, theta_b, theta_sh = q_while_loop(cond_fun, body_fun, state)
+        L_arr, m_arr, init_function, state_function, oracle_function, mes_kwargs, E, F, C, break_cond, alpha, eps, m_i, K_i, theta_b, theta_sh = q_while_loop(cond_fun, body_fun, state)
     else:
         while cond_fun(state):
             state = body_fun(state)
-        L_arr, m_arr, qargs, state_function, oracle_function, mes_kwargs, E, F, C, break_cond, alpha, eps, m_i, K_i, theta_b, theta_sh = state
+        L_arr, m_arr, init_function, state_function, oracle_function, mes_kwargs, E, F, C, break_cond, alpha, eps, m_i, K_i, theta_b, theta_sh = state
     
     final_res = jnp.sin((theta_b+theta_sh)/2)**2
     return final_res
 
 
-def quant_step(k, N, qargs, state_function, oracle_function, mes_kwargs):
+def quant_step(k, N, init_function, state_function, oracle_function, mes_kwargs):
     """
     Performs the quantum step, i.e., Quantum Amplitude Amplification, 
     in accordance to `Accelerated Quantum Amplitude Estimation without QFT <https://arxiv.org/abs/2407.16795>`_
@@ -194,16 +194,16 @@ def quant_step(k, N, qargs, state_function, oracle_function, mes_kwargs):
         The keyword arguments for the measurement function. Default is an empty dictionary.
     """
 
-    #qargs_dupl = [qarg.duplicate() for qarg in qargs]
+    #print(N)
 
-    def state_prep():
-        qargs_dupl = [qarg.duplicate() for qarg in qargs]
-        state_function(*qargs_dupl)
-        amplitude_amplification(qargs_dupl, state_function, oracle_function, iter = k)
-        return qargs_dupl[-1]
+    def state_prep(k):
+        qargs = init_function()
+        state_function(*qargs)
+        amplitude_amplification(qargs, state_function, oracle_function, iter = k)
+        return qargs[-1]
 
     if check_for_tracing_mode():
-        a_i = expectation_value(state_prep, shots = N)()
+        a_i = expectation_value(state_prep, shots = N)(k)
     else:
         mes_kwargs["shots"] = N
         res_dict = state_prep().get_measurement(**mes_kwargs)
