@@ -16,12 +16,17 @@
 ********************************************************************************/
 """
 
+from functools import lru_cache
+
+import jax
 from jax.tree_util import tree_flatten, tree_unflatten
 
 from qrisp.jasp.interpreter_tools import extract_invalues, insert_outvalues, eval_jaxpr
 from qrisp.jasp.evaluation_tools.buffered_quantum_state import BufferedQuantumState
+from qrisp.jasp.primitives import OperationPrimitive, AbstractQuantumCircuit, AbstractQubitArray, AbstractQubit
 from qrisp.core import recursive_qv_search
 from qrisp.circuit import fast_append
+
 
 def jaspify(func = None, terminal_sampling = False):
     """
@@ -261,6 +266,7 @@ def simulate_jaspr(jaspr, *args, terminal_sampling = False, simulator = "qrisp")
         if eqn.primitive.name == "pjit":
             
             function_name = eqn.params["name"]
+            jaxpr = eqn.params["jaxpr"]
             
             if terminal_sampling:
                 
@@ -275,6 +281,15 @@ def simulate_jaspr(jaspr, *args, terminal_sampling = False, simulator = "qrisp")
                     return
             
             invalues = extract_invalues(eqn, context_dic)
+            
+            # If there are only classical values, we attempt to compile using the jax pipeline
+            for var in jaxpr.jaxpr.invars + jaxpr.jaxpr.outvars:
+                if isinstance(var.aval, (AbstractQuantumCircuit, AbstractQubitArray, AbstractQubit)):
+                    break
+            else:
+                outvalues = compile_cl_func(jaxpr, function_name)(*(invalues + jaxpr.consts))
+                insert_outvalues(eqn, context_dic, [outvalues])
+                return False
 
             # We simulate the inverse Gidney mcx via the non-hybrid version because
             # the hybrid version prevents the simulator from fusing gates, which
@@ -287,6 +302,8 @@ def simulate_jaspr(jaspr, *args, terminal_sampling = False, simulator = "qrisp")
             if not isinstance(outvalues, (list, tuple)):
                 outvalues = [outvalues]
             insert_outvalues(eqn, context_dic, outvalues)
+            
+            
         elif eqn.primitive.name == "jasp.quantum_kernel":
             insert_outvalues(eqn, context_dic, BufferedQuantumState(simulator))
         else:
@@ -299,3 +316,10 @@ def simulate_jaspr(jaspr, *args, terminal_sampling = False, simulator = "qrisp")
         return res[1]
     else:
         return res[1:]
+    
+@lru_cache(maxsize = int(1E5))
+def compile_cl_func(jaxpr, function_name):
+    print("compiling " + function_name)
+    return jax.jit(eval_jaxpr(jaxpr))
+    
+    
