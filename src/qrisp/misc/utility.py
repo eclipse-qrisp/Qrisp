@@ -1461,7 +1461,11 @@ def redirect_qfunction(function_to_redirect):
             flattened_args.append(target.reg.tracer)
             
             res = eval_jaxpr(transformed_jaspr, [])(*flattened_args)
-            qs.abs_qc = res[0]
+            
+            if len(transformed_jaspr.outvars) == 1:
+                qs.abs_qc = res
+            else:
+                qs.abs_qc = res[0]
         
         else:
 
