@@ -22,7 +22,7 @@ from qrisp.jasp import sample
 
 import jax
 import jax.numpy as jnp
-from jax.lax import while_loop
+from jax.lax import while_loop, fori_loop
 
 
 def get_jasp_measurement(
@@ -96,7 +96,7 @@ def get_jasp_measurement(
 
         qv = state_prep()
         meas_op = group.change_of_basis(qv, diagonalisation_method)
-        res = measure(qv)
+        qv.delete()
 
         def new_state_prep():
             qv = state_prep()
@@ -127,13 +127,18 @@ def jasp_evaluate_expectation_jitted(samples, operators, coefficients):
     Evaluate the expectation.
     
     """
+    
+    def body_fun(i, val):
+        expectation, N, op, samples, coefficient = val
+        expectation += 1/N*jasp_evaluate_observable_jitted(op, samples[i])*jnp.real(coefficient)
+        return expectation, N, op, samples, coefficient
+
     expectation = 0
 
     for index1,ops in enumerate(operators):
         for index2,op in enumerate(ops):
             N = len(samples[index1])
-            for i in range(N):
-                expectation += 1/N*jasp_evaluate_observable_jitted(op, samples[index1][i])*jnp.real(coefficients[index1][index2])
+            expectation, _, _, _, _ = fori_loop(0, N, body_fun, (expectation, N, op, samples[index1], coefficients[index1][index2]))
     
     return expectation
 
