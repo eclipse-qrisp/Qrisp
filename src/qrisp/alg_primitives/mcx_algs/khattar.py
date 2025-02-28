@@ -25,6 +25,8 @@ from qrisp.core.gate_application_functions import (
     t_dg,
     sx,
     cz,
+    p,
+    cp,
     measure,
 )
 from qrisp.qtypes import QuantumFloat
@@ -133,7 +135,6 @@ def cca_mcx(ctrls, target, anc):
     return ctrls, target, anc
 
 
-# SHOULD USE @qache DECORATOR?
 @qache
 def khattar_mcx(ctrls, target, ctrl_state):
     N = jlen(ctrls)
@@ -147,7 +148,6 @@ def khattar_mcx(ctrls, target, ctrl_state):
     
     with conjugate(ctrl_state_conjugator)(ctrls, ctrl_state):
 
-        # CASE DISTINCTION
         with control(N == 1):
             cx(ctrls[0], target[0])
 
@@ -171,3 +171,51 @@ def khattar_mcx(ctrls, target, ctrl_state):
                 # STEP 3
                 mcx([khattar_anc[0], ctrls[0]], target[0])
             khattar_anc.delete()
+@qache
+def khattar_mcp(phi, ctrls, ctrl_state):
+    N = jlen(ctrls)
+    
+    if isinstance(ctrl_state,str):
+        ctrl_state = int(ctrl_state[::-1],2)
+        
+    ctrl_state = jnp.int64(ctrl_state)
+    ctrl_state = cond(ctrl_state == -1, lambda x: x + 2**N, lambda x: x, ctrl_state)
+    target = QuantumFloat(1)
+    
+    with conjugate(ctrl_state_conjugator)(ctrls, ctrl_state):
+
+        with control(N == 1):
+            cp(phi, ctrls[0], target[0])
+
+        with control(N == 2):
+            with conjugate(mcx)([ctrls[0], ctrls[1]], target[0], method = "gray_pt"):
+                p(phi, target[0])
+
+        with control(N == 3):
+            if check_for_tracing_mode():
+                h(target[0])
+                gidney_CCCZ(ctrls, target)
+                h(target[0])
+                
+                p(phi, target[0])           # Use a conjugation environment also here? Maybe yes
+
+                h(target[0])
+                gidney_CCCZ(ctrls, target)
+                h(target[0])
+            else:
+                with conjugate(mcx)(ctrls, target[0], method="balauca"):
+                    p(phi, target[0])
+                    
+        with control(N == 4):
+            with conjugate(cca_4ctrls)(ctrls, target):
+                p(phi, target[0])
+
+        with control(N > 4):
+            khattar_anc = QuantumFloat(1)
+            with conjugate(cca_mcx)(ctrls, target, khattar_anc):
+                with conjugate(mcx)([khattar_anc[0], ctrls[0]], target[0]):
+                    p(phi, target[0])
+            khattar_anc.delete()
+            
+    target.delete()
+    

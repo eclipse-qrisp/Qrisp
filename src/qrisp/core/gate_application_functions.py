@@ -478,7 +478,7 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
     )
     from qrisp.core import QuantumVariable
     from qrisp.qtypes import QuantumBool
-#
+
     if isinstance(controls, list):
 
         new_controls = []
@@ -736,7 +736,7 @@ def mcp(phi, qubits, method="auto", ctrl_state=-1):
 
     """
 
-    from qrisp.alg_primitives.mcx_algs import hybrid_mcx, jasp_balauca_mcp
+    from qrisp.alg_primitives.mcx_algs import hybrid_mcx, jasp_balauca_mcp, khattar_mcp
     from qrisp import QuantumBool
     from qrisp.misc import bin_rep, gate_wrap
     import numpy as np
@@ -759,9 +759,6 @@ def mcp(phi, qubits, method="auto", ctrl_state=-1):
 
         temp.delete()
 
-    if check_for_tracing_mode():
-        jasp_balauca_mcp(phi, qubits, ctrl_state)
-        return
 
     n = len(qubits)
 
@@ -792,9 +789,17 @@ def mcp(phi, qubits, method="auto", ctrl_state=-1):
         return qubits
 
     elif method == "balauca":
-        balauca_mcp(phi, qubits, ctrl_state=ctrl_state)
+        if check_for_tracing_mode():
+            jasp_balauca_mcp(phi, qubits, ctrl_state)
+            return
+        else:
+            balauca_mcp(phi, qubits, ctrl_state=ctrl_state)
         return qubits
-
+    
+    elif method == "khattar":
+        khattar_mcp(phi, qubits, ctrl_state=ctrl_state)
+        # return qubits   #is it needed? maybe for static case
+        
     elif method == "auto":
         if n < 4:
             return mcp(phi, qubits, method="gray", ctrl_state=ctrl_state)
