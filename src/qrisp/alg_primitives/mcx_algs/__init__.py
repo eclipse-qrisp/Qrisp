@@ -26,6 +26,7 @@ from qrisp.alg_primitives.mcx_algs.gray_pt import *
 from qrisp.alg_primitives.mcx_algs.jones import *
 from qrisp.alg_primitives.mcx_algs.maslov import *
 from qrisp.alg_primitives.mcx_algs.yong import *
+from qrisp.alg_primitives.mcx_algs.khattar import *
 
 # Interface function to quickly change between different implementations of
 # multi controlled not gates
