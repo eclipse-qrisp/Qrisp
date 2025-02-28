@@ -16,12 +16,17 @@
 ********************************************************************************/
 """
 
+from functools import lru_cache
+
+import jax
 from jax.tree_util import tree_flatten, tree_unflatten
 
 from qrisp.jasp.interpreter_tools import extract_invalues, insert_outvalues, eval_jaxpr
 from qrisp.jasp.evaluation_tools.buffered_quantum_state import BufferedQuantumState
+from qrisp.jasp.primitives import OperationPrimitive, AbstractQuantumCircuit, AbstractQubitArray, AbstractQubit
 from qrisp.core import recursive_qv_search
 from qrisp.circuit import fast_append
+
 
 def jaspify(func = None, terminal_sampling = False):
     """
@@ -261,6 +266,7 @@ def simulate_jaspr(jaspr, *args, terminal_sampling = False, simulator = "qrisp")
         if eqn.primitive.name == "pjit":
             
             function_name = eqn.params["name"]
+            jaxpr = eqn.params["jaxpr"]
             
             if terminal_sampling:
                 
@@ -275,6 +281,31 @@ def simulate_jaspr(jaspr, *args, terminal_sampling = False, simulator = "qrisp")
                     return
             
             invalues = extract_invalues(eqn, context_dic)
+            
+            # If there are only classical values, we attempt to compile using the jax pipeline
+            for var in jaxpr.jaxpr.invars + jaxpr.jaxpr.outvars:
+                if isinstance(var.aval, (AbstractQuantumCircuit, AbstractQubitArray, AbstractQubit)):
+                    break
+            else:
+                
+                
+                compiled_function, is_executable = compile_cl_func(jaxpr.jaxpr, function_name)
+                
+                # Functions with purely classical inputs/outputs can still contain
+                # kernelized quantum functions. This will raise an NotImplementedError
+                # when attempting to compile. Since the compile_cl_func is lru_cached
+                # we can store this information to avoid further attempts at compiling
+                # such a function.
+                if is_executable[0]:
+                    try:
+                        outvalues = compiled_function(*(invalues + jaxpr.consts))
+                        if len(jaxpr.jaxpr.outvars) > 1:
+                            insert_outvalues(eqn, context_dic, outvalues)
+                        else:
+                            insert_outvalues(eqn, context_dic, [outvalues])
+                        return False
+                    except NotImplementedError:
+                        is_executable[0] = False
 
             # We simulate the inverse Gidney mcx via the non-hybrid version because
             # the hybrid version prevents the simulator from fusing gates, which
@@ -287,6 +318,8 @@ def simulate_jaspr(jaspr, *args, terminal_sampling = False, simulator = "qrisp")
             if not isinstance(outvalues, (list, tuple)):
                 outvalues = [outvalues]
             insert_outvalues(eqn, context_dic, outvalues)
+            
+            
         elif eqn.primitive.name == "jasp.quantum_kernel":
             insert_outvalues(eqn, context_dic, BufferedQuantumState(simulator))
         else:
@@ -299,3 +332,9 @@ def simulate_jaspr(jaspr, *args, terminal_sampling = False, simulator = "qrisp")
         return res[1]
     else:
         return res[1:]
+    
+@lru_cache(maxsize = int(1E5))
+def compile_cl_func(jaxpr, function_name):
+    return jax.jit(eval_jaxpr(jaxpr)), [True]
+    
+    
