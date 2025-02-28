@@ -30,6 +30,7 @@ def get_jasp_measurement(
     state_prep,
     precision=0.01,
     diagonalisation_method="commuting_qw",
+    state_args=(),
     measurement_data=None # measurement settings
     ):
     r"""
@@ -94,17 +95,17 @@ def get_jasp_measurement(
 
     for index, group in enumerate(groups):
 
-        qv = state_prep()
+        qv = state_prep(*state_args)
         meas_op = group.change_of_basis(qv, diagonalisation_method)
         qv.delete()
 
-        def new_state_prep():
-            qv = state_prep()
+        def new_state_prep(state_args):
+            qv = state_prep(*state_args)
             meas_op = group.change_of_basis(qv, diagonalisation_method)
             return qv
         
         shots = int(shots_list[index]/precision**2)
-        res = sample(new_state_prep, shots=shots)()
+        res = sample(new_state_prep, shots=shots)(state_args)
 
         samples.append(jnp.int64(res))
             
