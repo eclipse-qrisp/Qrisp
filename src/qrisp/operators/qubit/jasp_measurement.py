@@ -95,10 +95,6 @@ def get_jasp_measurement(
 
     for index, group in enumerate(groups):
 
-        qv = state_prep(*state_args)
-        meas_op = group.change_of_basis(qv, diagonalisation_method)
-        qv.delete()
-
         def new_state_prep(state_args):
             qv = state_prep(*state_args)
             meas_op = group.change_of_basis(qv, diagonalisation_method)
