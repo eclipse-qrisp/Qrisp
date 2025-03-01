@@ -95,6 +95,9 @@ def get_jasp_measurement(
 
     for index, group in enumerate(groups):
 
+        # Warning: This works only for diagonalization_method='commuting_qw'. 
+        # For 'commuting' serialized terms of meas_op and group may differ.
+        
         def new_state_prep(state_args):
             qv = state_prep(*state_args)
             meas_op = group.change_of_basis(qv, diagonalisation_method)
