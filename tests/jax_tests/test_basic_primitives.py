@@ -99,3 +99,29 @@ def test_basic_primitives():
                  'jasp.p(alpha)',
                  'jasp.measure',
                  'jasp.delete_qubits'])
+    
+
+def test_qc_loss_error_message():
+    # Test    
+    @jaspify
+    def main():
+    
+    
+        def body_fun(k, state):
+            
+            qv = QuantumFloat(2)
+            qv.delete()
+        
+            return state
+        
+        state = fori_loop(0,5,body_fun,1)
+    
+        return state
+    
+    try:
+        main()
+    except Exception as e:
+        assert "quantum_kernel" in str(e)
+        return
+    
+    assert False

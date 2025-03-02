@@ -21,7 +21,7 @@ import jax
 from jax import make_jaxpr
 from jax.core import Jaxpr, Literal
 from jax.tree_util import tree_flatten, tree_unflatten
-
+from jax.errors import UnexpectedTracerError
 
 from qrisp.jasp.jasp_expression import invert_jaspr, collect_environments
 from qrisp.jasp import eval_jaxpr, pjit_to_gate, flatten_environments, cond_to_cl_control
@@ -1161,7 +1161,13 @@ def make_jaspr(fun, garbage_collection = "auto", flatten_envs = True, **jax_kwar
             
             return res_qc, res
         
-        closed_jaxpr = make_jaxpr(ammended_function, **jax_kwargs)(AbstractQuantumCircuit(), *args, **kwargs)
+        try:
+            closed_jaxpr = make_jaxpr(ammended_function, **jax_kwargs)(AbstractQuantumCircuit(), *args, **kwargs)
+        except UnexpectedTracerError as e:
+            if "intermediate value with type QuantumCircuit" in str(e):
+                raise Exception("""Lost track of QuantumCircuit during tracing. This might have been caused by a missing quantum_kernel decorator. Please visit https://www.qrisp.eu/reference/Jasp/Quantum%20Kernel.html for more details""")
+            raise e
+            
         jaxpr = closed_jaxpr.jaxpr
         
         # Collect the environments
