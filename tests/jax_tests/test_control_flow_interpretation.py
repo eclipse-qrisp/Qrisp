@@ -17,6 +17,8 @@
 """
 
 from qrisp import *
+from jax.lax import fori_loop
+from jax import random
 
 def test_control_flow_interpretation():
     
@@ -41,3 +43,23 @@ def test_control_flow_interpretation():
         res = jasp_program(i + 0.5)
         
         assert res == i + 4.5
+    
+    @jaspify
+    def main():
+
+        params = jnp.array([1.5, -0.5])
+        
+        rng = random.PRNGKey(4)
+
+        def body_fun(k, val):
+            rng, res = val
+            rng, rng_input = random.split(rng)
+            delta = random.choice(rng_input, jnp.array([1, -1]), shape=(2,))
+            res += delta
+            return rng, res
+        
+        rng_, res = fori_loop(0,10,body_fun,(rng, params))
+
+        return res
+
+    main()
