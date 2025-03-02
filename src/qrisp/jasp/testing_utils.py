@@ -51,9 +51,9 @@ def jasp_function_test(func):
 
             # new_key = int(new_key, base=2)
             try:
-                new_counts_dic[new_key] += counts[key]/100000
+                new_counts_dic[new_key] += counts[key]
             except KeyError:
-                new_counts_dic[new_key] = counts[key]/100000
+                new_counts_dic[new_key] = counts[key]
         
         for k in old_counts_dic.keys():
             if abs(old_counts_dic[k] - new_counts_dic[k]) > 1E-4:
