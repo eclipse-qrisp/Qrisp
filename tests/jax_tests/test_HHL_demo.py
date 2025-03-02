@@ -317,11 +317,17 @@ def test_HHL_demo():
         # quantum variables, while most other evaluation modes require
         # classical return values.
         return qrisp.measure(x)
+    
+    try:
+        import catalyst
+    except ImportError:
+        return
 
     jaspr = qrisp.make_jaspr(main)()
     qir_str = jaspr.to_qir()
     # Print only the first few lines - the whole string is very long.
     print(qir_str[:200])
+
 
     ############################################################
 
