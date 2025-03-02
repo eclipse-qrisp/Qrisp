@@ -75,17 +75,19 @@ def evaluate_scan(scan_eq, context_dic, eqn_evaluator = exec_eqn):
     carry_amount = scan_eq.params["num_carry"]
     const_amount = scan_eq.params["num_consts"]
     
-    init = invalues[:carry_amount]
+    init = invalues[const_amount:carry_amount + const_amount]
     
-    if len(invalues) == carry_amount:
+    if len(invalues) == carry_amount + const_amount:
         xs = [[]] * length
     else:
         xs = [[invalues[-1][i]] for i in range(length)]
     
     carry = init
+    consts = invalues[carry_amount:carry_amount+const_amount]
     ys = []
     for x in xs:
-        args = list(carry) + invalues[carry_amount:carry_amount+const_amount] + x
+        args =  consts + list(carry)  + x
+        
         res = f(*args)
         
         if not isinstance(res, tuple):
