@@ -199,7 +199,7 @@ def run(qc, shots, token="", iqs=None, insert_reset=True):
             
             for k, v in temp.items():
                 outcome_str = bin(outcome_list[k])[2:].zfill(len(mes_list))
-                res[outcome_str] = v
+                res[outcome_str] = int(v)
         
         return res
 
