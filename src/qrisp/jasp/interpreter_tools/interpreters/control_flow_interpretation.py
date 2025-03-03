@@ -83,7 +83,7 @@ def evaluate_scan(scan_eq, context_dic, eqn_evaluator = exec_eqn):
         xs = [[invalues[-1][i]] for i in range(length)]
     
     carry = init
-    consts = invalues[carry_amount:carry_amount+const_amount]
+    consts = invalues[:const_amount]
     ys = []
     for x in xs:
         args =  consts + list(carry)  + x

@@ -63,3 +63,24 @@ def test_control_flow_interpretation():
         return res
 
     main()
+    
+    @jaspify
+    def main():
+
+        params = jnp.array([1.5, -0.5, 0.4, 0.2])
+        a = 1
+
+        rng = random.PRNGKey(4)
+
+        def body_fun(k, val):
+            rng, res, a = val
+            rng, rng_input = random.split(rng)
+            delta = random.choice(rng_input, jnp.array([1, -1]), shape=(4,))
+            res += delta
+            return rng, res, a
+        
+        rng_, res, a = fori_loop(0,10,body_fun,(rng, params, a))
+
+        return res
+
+    main()
