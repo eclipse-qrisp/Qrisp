@@ -25,27 +25,29 @@ from jax.lax import fori_loop
 def spsa(objective, init_point, max_iter, a=2.0, c=0.1, alpha=0.702, gamma=0.201, seed=3):
     
     rng = random.PRNGKey(seed)
-    # Generate random perturbation delta with components +/-1
-    delta = random.choice(rng, jnp.array([1, -1]), shape=(max_iter,*init_point.shape))
     
     objective_values = jnp.zeros(max_iter)
 
     def body_fun(k, state):
 
-        objective_values, params, delta, a, c, alpha, gamma = state
+        objective_values, params, rng, a, c, alpha, gamma = state
+
+        # Generate random perturbation delta with components +/-1
+        rng, rng_input = random.split(rng)
+        delta = random.choice(rng, jnp.array([1, -1]), shape=(*params.shape,))
     
         ak = a / (k + 1) ** alpha
         ck = c / (k + 1) ** gamma
 
         # Evaluate loss function at perturbed points
-        params_plus = params + ck * delta[k]
-        params_minus = params - ck * delta[k]
+        params_plus = params + ck * delta
+        params_minus = params - ck * delta
 
         loss_plus = objective(params_plus)
         loss_minus = objective(params_minus)
 
         # Approximate gradient
-        gk = (loss_plus - loss_minus) / (2.0 * ck * delta[k])
+        gk = (loss_plus - loss_minus) / (2.0 * ck * delta)
 
         # Update parameters
         params_new = params - ak * gk
@@ -53,10 +55,10 @@ def spsa(objective, init_point, max_iter, a=2.0, c=0.1, alpha=0.702, gamma=0.201
         loss = objective(params_new)
         callback = objective_values.at[k].set(loss)
 
-        return callback, params_new, delta, a, c, alpha, gamma
+        return callback, params_new, rng, a, c, alpha, gamma
     
 
-    objective_values, optimal_params, delta, a, c, alpha, gamma = fori_loop(0, max_iter, body_fun, (objective_values, init_point, delta, a, c, alpha, gamma))
+    objective_values, optimal_params, rng, a, c, alpha, gamma = fori_loop(0, max_iter, body_fun, (objective_values, init_point, rng, a, c, alpha, gamma))
 
     optimal_value = objective(optimal_params)
 
