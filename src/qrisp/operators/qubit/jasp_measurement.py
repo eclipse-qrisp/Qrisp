@@ -102,7 +102,7 @@ def get_jasp_measurement(
             qv = state_prep(*state_args)
             meas_op = group.change_of_basis(qv, diagonalisation_method)
             return qv
-        
+
         shots = int(shots_list[index]/precision**2)
         res = sample(new_state_prep, shots=shots)(state_args)
 

@@ -22,7 +22,7 @@ from jax.lax import fori_loop
 
 # https://www.jhuapl.edu/SPSA/PDF-SPSA/Spall_An_Overview.PDF
 # Conditions: alpha <= 1; 1/6 <= gamma <= 1/2; 2*(alpha-gamma) > 1
-def spsa(objective, init_point, max_iter, a=2.0, c=0.1, alpha=0.702, gamma=0.201, seed=3):
+def spsa(objective, init_point, args, max_iter=50, a=2.0, c=0.1, alpha=0.702, gamma=0.201, seed=3):
     
     rng = random.PRNGKey(seed)
     
@@ -43,8 +43,8 @@ def spsa(objective, init_point, max_iter, a=2.0, c=0.1, alpha=0.702, gamma=0.201
         params_plus = params + ck * delta
         params_minus = params - ck * delta
 
-        loss_plus = objective(params_plus)
-        loss_minus = objective(params_minus)
+        loss_plus = objective(params_plus, *args)
+        loss_minus = objective(params_minus, *args)
 
         # Approximate gradient
         gk = (loss_plus - loss_minus) / (2.0 * ck * delta)
@@ -52,7 +52,7 @@ def spsa(objective, init_point, max_iter, a=2.0, c=0.1, alpha=0.702, gamma=0.201
         # Update parameters
         params_new = params - ak * gk
 
-        loss = objective(params_new)
+        loss = objective(params_new, *args)
         callback = objective_values.at[k].set(loss)
 
         return callback, params_new, rng, a, c, alpha, gamma
@@ -60,6 +60,6 @@ def spsa(objective, init_point, max_iter, a=2.0, c=0.1, alpha=0.702, gamma=0.201
 
     objective_values, optimal_params, rng, a, c, alpha, gamma = fori_loop(0, max_iter, body_fun, (objective_values, init_point, rng, a, c, alpha, gamma))
 
-    optimal_value = objective(optimal_params)
+    optimal_value = objective(optimal_params, *args)
 
     return optimal_params, optimal_value, objective_values
