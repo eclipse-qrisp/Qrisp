@@ -176,10 +176,15 @@ def run(qc, shots, token="", iqs=None, insert_reset=True):
                 
                 outcome_str = bin(outcome_list[j])[2:].zfill(len(mes_list))
                 
+                p = float(cl_prob[j])
+                
+                if p == 0:
+                    continue
+                
                 try:
-                    res[outcome_str] += cl_prob[j]
+                    res[outcome_str] += p
                 except KeyError:
-                    res[outcome_str] = cl_prob[j]
+                    res[outcome_str] = p
 
         #Generate samples
         else:
