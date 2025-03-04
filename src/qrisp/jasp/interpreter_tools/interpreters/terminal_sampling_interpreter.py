@@ -275,7 +275,10 @@ def terminal_sampling_evaluator(sampling_res_type):
                             elif sampling_res_type == "array":
                                 #sampling_res.extend(v*[outvalues[0]])
                                 key = outvalues[0]
-                                sampling_res_dict[key.item()] = v
+                                if key.size == 1:
+                                    sampling_res_dict[key.item()] = v
+                                else:
+                                    sampling_res.extend(v*[key])
                             elif sampling_res_type == "dict":
                                 key = outvalues
                                 if not type(v) in [int, float]:
@@ -305,7 +308,7 @@ def terminal_sampling_evaluator(sampling_res_type):
                                 sampling_res[tuple(x.item() for x in outvalues)] = v
                                 
                     if sampling_res_type == "array":
-                        if not isinstance(outvalues, tuple):
+                        if outvalues[0].size == 1:
                             keys = np.array(list(sampling_res_dict.keys()))
                             counts = np.array(list(sampling_res_dict.values()))
                             sampling_res = np.repeat(keys, counts)
