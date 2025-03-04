@@ -31,6 +31,9 @@ from qrisp import cx, cz, h, s, sx_dg, IterationEnvironment, conjugate, merge
 
 from qrisp.jasp import check_for_tracing_mode, jrange
 
+import jax
+from jax import tree_util
+
 
 threshold = 1e-9
 
@@ -1078,7 +1081,6 @@ class QubitOperator(Hamiltonian):
     #
     # Measurement settings and measurement
     #
-    
     def change_of_basis(self, qarg, method="commuting_qw"):
         """
         Performs several operations on a quantum argument such that the hermitian
@@ -1769,3 +1771,19 @@ class QubitOperator(Hamiltonian):
 
         return U
 
+
+# Function to flatten QubitOperator
+def flatten_qubit_operator(operator):
+    leaves = tuple(operator.terms_dict.values())
+    aux_data = tuple(operator.terms_dict.keys())
+    return leaves, aux_data
+
+
+# Function to unflatten QubitOperator from leaves and auxiliary data
+def unflatten_qubit_operator(aux_data, leaves):
+    terms_dict = dict(zip(aux_data, leaves))
+    return QubitOperator(terms_dict)
+
+
+# Register QubitOperator as a PyTree node
+tree_util.register_pytree_node(QubitOperator, flatten_qubit_operator, unflatten_qubit_operator)
