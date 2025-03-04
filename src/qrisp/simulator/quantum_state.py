@@ -140,52 +140,42 @@ class QuantumState:
         # |psi> = 2**-0.5 |0>|a> + 2**-0.5|1>|b>
         # we have p_0 = 0.5 and outcome_tensor_f_0 = |a>
         p_0, outcome_tensor_f_0, p_1, outcome_tensor_f_1 = tensor_factor.measure(i)
-
-        # This code block handles several cases that mainly serve to prevent simulation
-        # of QuantumStates with a probablity of 0 to be measured.
-        if p_0 != 0:
-            # If both measurement results have non-zero probability, we copy self
-            # In case only one state has non-zero probability we can continue using self
-            if p_1 != 0:
-                outcome_state_0 = self.copy()
-            else:
-                outcome_state_0 = self
-
-            # Update the tensor factors of the qubits that have been entangled to the
-            # measured qubit
-            outcome_qubits = outcome_tensor_f_0.qubits
-            for j in range(len(outcome_qubits)):
-                outcome_state_0.tensor_factors[outcome_qubits[j]] = outcome_tensor_f_0
-
-            # Update the qubit that has been measured (now it's own tensor factor again)
-            outcome_state_0.tensor_factors[i] = TensorFactor([i])
-
+        
+        if outcome_tensor_f_0 is None:
+            outcome_tensor = outcome_tensor_f_1
+            meas_res = True
+        elif outcome_tensor_f_1 is None:
+            outcome_tensor = outcome_tensor_f_0
+            meas_res = False
         else:
-            outcome_state_0 = None
-
-        # In case the probability to measure a 1 is non-zero, we can basically proceed
-        # as above, but we need to set the measured qubit to the |1> state if this is
-        # required
-        if p_1 != 0:
-            outcome_state_1 = self
-            temp = outcome_tensor_f_1.qubits
-            for j in range(len(temp)):
-                outcome_state_1.tensor_factors[temp[j]] = outcome_tensor_f_1
-
-            if keep_res:
-                # This set the measured qubit to the |1> state (described by the
-                # array [0,1] instead of [1,0] which descibes the |0> state)
-                outcome_state_1.tensor_factors[i] = TensorFactor(
-                    [i], xp.array([0, 1], dtype=xp.complex64)
-                )
+            rnd = np.random.random(1)
+            if rnd < p_0:
+                outcome_tensor = outcome_tensor_f_0
+                meas_res = False
             else:
-                outcome_state_1.tensor_factors[i] = TensorFactor([i])
-        else:
-            outcome_state_1 = None
+                outcome_tensor = outcome_tensor_f_1
+                meas_res = True
 
-        # log measurement outcome. Note that we can't return here, because this function
-        # is called as a thread, implying it does not keep the returned result
-        return p_0, outcome_state_0, p_1, outcome_state_1
+        outcome_state = self
+        # Update the tensor factors of the qubits that have been entangled to the
+        # measured qubit
+        outcome_qubits = outcome_tensor.qubits
+        for j in range(len(outcome_qubits)):
+            outcome_state.tensor_factors[outcome_qubits[j]] = outcome_tensor
+
+        # Update the qubit that has been measured (now it's own tensor factor again)
+        outcome_state.tensor_factors[i] = TensorFactor([i])
+        
+        if keep_res and meas_res:
+            # This sets the measured qubit to the |1> state (described by the
+            # array [0,1] instead of [1,0] which descibes the |0> state)
+            outcome_state.tensor_factors[i] = TensorFactor(
+                [i], xp.array([0, 1], dtype=xp.complex64)
+            )
+        else:
+            outcome_state.tensor_factors[i] = TensorFactor([i])
+        
+        return meas_res, outcome_state
     
     def multi_measure(self, mes_qubits, return_res_states = True):
         

@@ -88,14 +88,8 @@ class BufferedQuantumState:
     def measure(self, qubit):
         self.apply_buffer()
         if self.simulator == "qrisp":
-            mes_res = self.quantum_state.measure(self.qubit_to_index_dict[qubit[0]], keep_res = True)
-            rnd = np.random.random(1)
-            if rnd < mes_res[0]:
-                self.quantum_state = mes_res[1]
-                return False
-            else:
-                self.quantum_state = mes_res[3]
-                return True
+            meas_res, self.quantum_state = self.quantum_state.measure(self.qubit_to_index_dict[qubit[0]], keep_res = True)
+            return meas_res
         elif self.simulator == "stim":
             return self.quantum_state.measure(self.qubit_to_index_dict[qubit[0]])
     
