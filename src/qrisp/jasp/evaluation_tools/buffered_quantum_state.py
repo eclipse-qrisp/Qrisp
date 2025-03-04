@@ -35,22 +35,27 @@ class BufferedQuantumState:
         self.buffer_qc = QuantumCircuit(0)
         self.deallocated_qubits = []
         self.simulator = simulator
+        self.qubit_to_index_dict = {}
+        self.qubit_counter = 0
     
     def add_qubit(self):
         if self.simulator == "qrisp":
             self.quantum_state.add_qubit()
-            
-        return self.buffer_qc.add_qubit()
+        qb = self.buffer_qc.add_qubit()
+        self.qubit_to_index_dict[qb] = self.qubit_counter
+        self.qubit_counter += 1
+        return qb
     
     def append(self, op, qubits):
         self.buffer_qc.append(op, qubits)
             
     def apply_buffer(self):
+        
         if self.simulator == "qrisp":
-            self.quantum_state = advance_quantum_state(self.buffer_qc, self.quantum_state, self.deallocated_qubits)
+            self.quantum_state = advance_quantum_state(self.buffer_qc.copy(), self.quantum_state, self.deallocated_qubits, self.qubit_to_index_dict)
         else:
             for instr in self.buffer_qc.data:
-                qubit_indices = [self.buffer_qc.qubits.index(qb) for qb in instr.qubits]
+                qubit_indices = [self.qubit_to_index_dict[qb] for qb in instr.qubits]
                 
                 if instr.op.name == "x":
                     self.quantum_state.x(*qubit_indices)
@@ -72,13 +77,18 @@ class BufferedQuantumState:
                     self.quantum_state.s_dag(*qubit_indices)
                 elif not instr.op.name in ["qb_alloc", "qb_dealloc"]:
                     raise Exception(f"Don't know how to simulate quantum gate {instr.op.name} with stim")
-                
+        
+        for instr in self.buffer_qc.data:
+            if instr.op.name == "qb_dealloc":
+                self.buffer_qc.qubits.remove(instr.qubits[0])
+                del self.qubit_to_index_dict[instr.qubits[0]]
+        
         self.buffer_qc = self.buffer_qc.clearcopy()
     
     def measure(self, qubit):
         self.apply_buffer()
         if self.simulator == "qrisp":
-            mes_res = self.quantum_state.measure(self.buffer_qc.qubits.index(qubit[0]), keep_res = True)
+            mes_res = self.quantum_state.measure(self.qubit_to_index_dict[qubit[0]], keep_res = True)
             rnd = np.random.random(1)
             if rnd < mes_res[0]:
                 self.quantum_state = mes_res[1]
@@ -87,9 +97,13 @@ class BufferedQuantumState:
                 self.quantum_state = mes_res[3]
                 return True
         elif self.simulator == "stim":
-            return self.quantum_state.measure(self.buffer_qc.qubits.index(qubit[0]))
+            return self.quantum_state.measure(self.qubit_to_index_dict[qubit[0]])
     
     def reset(self, qubit):
+        
+        if qubit[0] not in self.qubit_to_index_dict:
+            return
+        
         meas_res = self.measure(qubit)
         if meas_res:
             self.buffer_qc.append(XGate(), qubit)
@@ -99,11 +113,13 @@ class BufferedQuantumState:
         res.buffer_qc = self.buffer_qc.copy()
         res.deallocated_qubits = list(self.deallocated_qubits)
         res.quantum_state = self.quantum_state.copy()
+        res.qubit_to_index_dict = dict(self.qubit_to_index_dict)
+        res.qubit_counter = self.qubit_counter
         return res
     
     def multi_measure(self, qubits, shots):
         self.apply_buffer()
-        qubit_indices = [self.buffer_qc.qubits.index(qb) for qb in qubits]
+        qubit_indices = [self.qubit_to_index_dict[qb] for qb in qubits]
         mes_ints, probs = self.quantum_state.multi_measure(qubit_indices)
         
         if shots is not None and shots != 0:
