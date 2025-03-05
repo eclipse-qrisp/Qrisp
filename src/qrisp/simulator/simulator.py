@@ -406,11 +406,11 @@ def single_shot_sim(qc, quantum_state=None):
 
         return "".join(result_str)[::-1], quantum_state
 
-def advance_quantum_state(qc, quantum_state, deallocated_qubits = []):
+def advance_quantum_state(qc, quantum_state, deallocated_qubits, qubit_to_index_dic):
     if len(qc.data) == 0:
         return quantum_state
 
-    allocated_qubits = len(qc.qubits) - len(deallocated_qubits)
+    allocated_qubits = len(qc.qubits)
     max_req_qubits = allocated_qubits
     allocation_amount = 0
     
@@ -456,9 +456,9 @@ def advance_quantum_state(qc, quantum_state, deallocated_qubits = []):
         
         progress_bar.total = len(qc.data)
         
-        qubit_to_index_dic = {}
-        for i in range(len(qc.qubits)):
-            qubit_to_index_dic[qc.qubits[i]] = i
+        # qubit_to_index_dic = {}
+        # for i in range(len(qc.qubits)):
+        #     qubit_to_index_dic[qc.qubits[i]] = i
         
         for i in range(len(qc.data)):
 
