@@ -163,7 +163,7 @@ def run(qc, shots, token="", iqs=None, insert_reset=True):
         # The iqs object contains the outcome bitstrings in the attribute .outcome_list
         # and the probablities in .cl_prob. In order to ensure qiskit compatibility, we
         # reverse the bitstrings
-        
+        cl_prob = np.round(cl_prob, 5)
         norm = np.sum(cl_prob)
         cl_prob = cl_prob/norm
         
@@ -171,18 +171,20 @@ def run(qc, shots, token="", iqs=None, insert_reset=True):
         #If shots >= 1000000, no samples will be drawn and the distribution will
         #be returned instead
         if shots is None:
-            shots = 100000
             
             for j in range(len(outcome_list)):
                 
                 outcome_str = bin(outcome_list[j])[2:].zfill(len(mes_list))
                 
-                shot_val = int(np.round(cl_prob[j]*abs(shots)))
+                p = float(cl_prob[j])
+                
+                if p == 0:
+                    continue
                 
                 try:
-                    res[outcome_str] += shot_val
+                    res[outcome_str] += p
                 except KeyError:
-                    res[outcome_str] = shot_val
+                    res[outcome_str] = p
 
         #Generate samples
         else:
@@ -197,7 +199,7 @@ def run(qc, shots, token="", iqs=None, insert_reset=True):
             
             for k, v in temp.items():
                 outcome_str = bin(outcome_list[k])[2:].zfill(len(mes_list))
-                res[outcome_str] = v
+                res[outcome_str] = int(v)
         
         return res
 
