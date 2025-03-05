@@ -1079,14 +1079,14 @@ class QubitOperator(Hamiltonian):
     # Measurement settings and measurement
     #
     
-    def change_of_basis(self, qarg, method="commuting_qw"):
+    def change_of_basis(self, qarg=None, method="commuting_qw"):
         """
         Performs several operations on a quantum argument such that the hermitian
         part of self is diagonal when conjugated with these operations.
 
         Parameters
         ----------
-        qarg : QuantumVariable or list[Qubit]
+        qarg : QuantumVariable or list[Qubit], optional
             The quantum argument to apply the change of basis on.
         method : str, optional
             The method for calculating the change of basis. 
@@ -1212,11 +1212,12 @@ class QubitOperator(Hamiltonian):
                     basis_dict[j] = factor_dict[j]
                 
                     # Append the appropriate basis-change gate
-                    if factor_dict[j]=="X":
-                        h(qarg[j])
+                    if qarg is not None:
+                        if factor_dict[j]=="X":
+                            h(qarg[j])
                     
-                    if factor_dict[j]=="Y":
-                        sx_dg(qarg[j])
+                        if factor_dict[j]=="Y":
+                            sx_dg(qarg[j])
             
                     new_factor_dict[j] = "Z"
                     
@@ -1265,7 +1266,8 @@ class QubitOperator(Hamiltonian):
                         s(qarg[qb_indices[perm[i]]])
                     inv_graph_state(qarg)
 
-                change_of_basis(qarg)
+                if qarg is not None:
+                    change_of_basis(qarg)
 
                 # Construct new QubitOperator
                 #
@@ -1357,11 +1359,13 @@ class QubitOperator(Hamiltonian):
                 else:
                     
                     # Perform the cnot gates
-                    for j in range(len(ladder_operators)-1):
-                        cx(qarg[anchor_factor[0]], qarg[ladder_operators[j][0]])
+                    if qarg is not None:
+                        for j in range(len(ladder_operators)-1):
+                            cx(qarg[anchor_factor[0]], qarg[ladder_operators[j][0]])
                     
-                    # Execute the H-gate
-                    h(qarg[anchor_factor[0]])
+                        # Execute the H-gate
+                        h(qarg[anchor_factor[0]])
+
                     processed_ladder_index_sets.append(ladder_indices)
                 
                 prefactor *= 0.5
