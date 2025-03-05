@@ -95,12 +95,12 @@ def get_jasp_measurement(
 
     for index, group in enumerate(groups):
 
-        # Warning: This works only for diagonalization_method='commuting_qw'. 
-        # For 'commuting' serialized terms of meas_op and group may differ.
+        # Calculate the new measurement operators (after change of basis)
+        meas_op = group.change_of_basis(method=diagonalisation_method)
         
         def new_state_prep(state_args):
             qv = state_prep(*state_args)
-            meas_op = group.change_of_basis(qv, diagonalisation_method)
+            group.change_of_basis(qv, method=diagonalisation_method)
             return qv
 
         shots = int(shots_list[index]/precision**2)
@@ -110,7 +110,7 @@ def get_jasp_measurement(
             
         temp_meas_ops = []
         temp_coeff = []
-        for term, coeff in group.terms_dict.items():
+        for term, coeff in meas_op.terms_dict.items():
             temp_meas_ops.append(term.serialize())
             temp_coeff.append(coeff)
                 
