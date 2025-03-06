@@ -110,13 +110,18 @@ def cca_mcx(ctrls, target, anc):
 
     n = jlen(ctrls)
 
+    if isinstance(ctrls, list):
+        xrange = range
+    else:
+        xrange = jrange
     # STEP 1
     # This operation is always executed regardless of the lenght of ctrls
     mcx(
         [ctrls[0], ctrls[1]], anc[0]
-    )  # DISCUSS, MAYBE THIS SHOULD CALL GIDNEY LOGICAL AND
+    )
+    
 
-    for i in jrange((n - 2) // 2):
+    for i in xrange((n - 2) // 2):
         mcx([ctrls[2 * i + 2], ctrls[2 * i + 3]], ctrls[2 * i + 1])
 
     x(ctrls[:-2])
@@ -130,7 +135,7 @@ def cca_mcx(ctrls, target, anc):
         mcx([ctrls[a], ctrls[b]], ctrls[c])
 
     with invert():
-        for i in jrange((c + 1) // 2):
+        for i in xrange((c + 1) // 2):
             mcx([ctrls[2 * i + 2], ctrls[2 * i + 1]], ctrls[2 * i])
     return ctrls, target, anc
 
