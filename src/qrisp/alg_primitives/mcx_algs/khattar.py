@@ -115,14 +115,11 @@ def cca_mcx(ctrls, target, anc):
     else:
         xrange = jrange
     # STEP 1
-    # This operation is always executed regardless of the lenght of ctrls
-    mcx(
-        [ctrls[0], ctrls[1]], anc[0]
-    )
+    mcx([ctrls[0], ctrls[1]], anc[0], method = "gidney")
     
 
     for i in xrange((n - 2) // 2):
-        mcx([ctrls[2 * i + 2], ctrls[2 * i + 3]], ctrls[2 * i + 1])
+        mcx([ctrls[2 * i + 2], ctrls[2 * i + 3]], ctrls[2 * i + 1], method = "gray_pt")
 
     x(ctrls[:-2])
 
@@ -132,11 +129,11 @@ def cca_mcx(ctrls, target, anc):
     c = n - 6 + (n & 1)
 
     with control(c > -1):
-        mcx([ctrls[a], ctrls[b]], ctrls[c])
+        mcx([ctrls[a], ctrls[b]], ctrls[c], method = "gray_pt")
 
     with invert():
         for i in xrange((c + 1) // 2):
-            mcx([ctrls[2 * i + 2], ctrls[2 * i + 1]], ctrls[2 * i])
+            mcx([ctrls[2 * i + 2], ctrls[2 * i + 1]], ctrls[2 * i], method = "gray_pt")
     return ctrls, target, anc
 
 
