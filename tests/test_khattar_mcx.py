@@ -68,8 +68,13 @@ def test_khattar_dyn():
             mcp(phi, qv, method="khattar", ctrl_state = j)
         
         return qv
-            
-    assert main(np.pi, 5, 0) == {16: 1.0}       
+    
+    for i in range(2,8):
+        for j in range(2**i):
+            if j==0 or j==2**(i-1):        
+                assert main(np.pi, i, j) == {2**(i-1): 1.0}
+            else: 
+                assert main(np.pi, i, j) == {0: 1.0}   
     
     @terminal_sampling
     def main(phi, i, j):
@@ -81,7 +86,24 @@ def test_khattar_dyn():
         
         return qv
             
-    assert main(np.pi, 5, 0) == {16: 1.0}        
+    for j in range(2**5):
+        if j==0 or j==2**(4):        
+            assert main(np.pi, 5, j) == {2**(4): 1.0}
+        else: 
+            assert main(np.pi, 5, j) == {0: 1.0}
+    
+    # Test no additional phase on output
+    @terminal_sampling
+    def main(i):
+        
+        qf = QuantumFloat(i)        
+        qbl = QuantumBool()
+        with conjugate(h)(qf[qf.size-1]):
+            h(qbl[0])
+            mcx(qf.reg, qbl[0], method = "balauca")
+        return qf
+    for i in range (1,8):                
+        assert(main(i))=={0.0: 1.0}    
 
 def test_khattar_stat():
     
