@@ -125,3 +125,24 @@ def test_qc_loss_error_message():
         return
     
     assert False
+    
+def test_list_appending():
+    
+    @jaspify
+    def main():
+        
+        qv_a = QuantumFloat(5)
+        
+        qubit_list_a = [qv_a[i] for i in range(5)]
+        
+        x(qubit_list_a)
+        
+        qv_b = QuantumFloat(5)
+        
+        qubit_list_b = [qv_b[i] for i in range(5)]
+        
+        cx(qubit_list_a, qubit_list_b)
+        
+        return measure(qv_a), measure(qv_a)
+
+    assert main() == (31, 31)
