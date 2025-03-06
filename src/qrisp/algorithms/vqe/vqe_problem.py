@@ -27,6 +27,12 @@ from qrisp.algorithms.vqe.vqe_benchmark_data import VQEBenchmark
 from qrisp.operators.qubit.measurement import QubitOperatorMeasurement
 from qrisp.operators.fermionic import FermionicOperator
 
+import jax
+import jax.numpy as jnp
+from qrisp.jasp import check_for_tracing_mode
+from qrisp.jasp.optimizers.optimize import minimize as jasp_minimize
+
+
 class VQEProblem:
     r"""
     Central structure to facilitate treatment of VQE problems.
@@ -115,7 +121,6 @@ class VQEProblem:
         self.ansatz_function = ansatz_function
         self.num_params = num_params
         self.init_function = init_function
-        self.cl_post_processor = None
 
         # parameters for callback
         self.callback = callback
@@ -130,6 +135,7 @@ class VQEProblem:
 
         self.callback = True
 
+    # DEPRECATED
     def set_init_function(self, init_function):
         """
         Set the initial state preparation function for the VQE problem.
@@ -140,8 +146,9 @@ class VQEProblem:
             The initial state preparation function for the specific VQE problem instance.
         """
         self.init_function = init_function
-      
-    def compile_circuit(self, qarg, depth):
+
+    # DEPRECATED  
+    def compile_circuit_(self, qarg, depth):
         """
         Compiles the circuit that is evaluated by the :meth:`run <qrisp.vqe.VQEProblem.run>` method.
 
@@ -181,7 +188,8 @@ class VQEProblem:
         
         return compiled_qc, theta
 
-    def optimization_routine(self, qarg, depth, mes_kwargs, max_iter, init_type="random", init_point=None, measurement_data=None, optimizer="COBYLA"): 
+    # DEPRECATED
+    def optimization_routine_(self, qarg, depth, mes_kwargs, max_iter, init_type="random", init_point=None, measurement_data=None, optimizer="COBYLA"): 
         """
         Wrapper subroutine for the optimization method used in QAOA. The initial values are set and the optimization via ``COBYLA`` is conducted here.
 
@@ -263,7 +271,7 @@ class VQEProblem:
         #    self.optimization_params.append(x)
 
         # Perform optimization using specified method
-        compiled_qc, symbols = self.compile_circuit(qarg, depth)
+        compiled_qc, symbols = self.compile_circuit_(qarg, depth)
         res_sample = minimize(optimization_wrapper,
                                 init_point, 
                                 method=optimizer,
@@ -272,6 +280,7 @@ class VQEProblem:
             
         return res_sample['x']
 
+    # DEPRECATED
     def run(self, qarg, depth, mes_kwargs = {}, max_iter = 50, init_type = "random", init_point=None, optimizer="COBYLA"):
         """
         Run the specific VQE problem instance with given quantum arguments, depth of VQE circuit,
@@ -313,7 +322,7 @@ class VQEProblem:
 
         measurement_data = QubitOperatorMeasurement(self.hamiltonian)
         
-        optimal_theta = self.optimization_routine(qarg, 
+        optimal_theta = self.optimization_routine_(qarg, 
                                                   depth, 
                                                   mes_kwargs, 
                                                   max_iter, 
@@ -334,6 +343,7 @@ class VQEProblem:
         
         return opt_res
     
+# DEPRECATED
     def train_function(self, qarg, depth, mes_kwargs = {}, max_iter = 50, init_type = "random", init_point=None, optimizer="COBYLA"):
         """
         This function allows for training of a circuit with a given instance of a ``VQEProblem``. It will then return a function that can be applied to a :ref:`QuantumVariable`,
@@ -373,7 +383,7 @@ class VQEProblem:
 
         measurement_data = QubitOperatorMeasurement(self.hamiltonian)
 
-        optimal_theta = self.optimization_routine(qarg, depth, mes_kwargs, max_iter, init_type, init_point, optimizer, measurement_data=measurement_data)
+        optimal_theta = self.optimization_routine_(qarg, depth, mes_kwargs, max_iter, init_type, init_point, optimizer, measurement_data=measurement_data)
         
         def circuit_generator(qarg_gen):
             # Prepare the initial state for particular problem instance, the default is the \ket{0} state
@@ -384,6 +394,230 @@ class VQEProblem:
                 self.ansatz_function(qarg_gen,[optimal_theta[self.num_params*i+j] for j in range(self.num_params)])
             
         return circuit_generator
+    
+
+    def compile_circuit(self):
+        """
+        Compiles the circuit that is evaluated by the :meth:`run <qrisp.vqe.VQEProblem.run>` method.
+
+        Returns
+        -------
+        compiled_qc : QuantumCircuit
+            The parametrized, compiled QuantumCircuit without measurements.
+        list[sympy.Symbol]
+            A list of the parameters that appear in ``compiled_qc``.
+
+        """
+        
+        # Define parameters theta for VQE circuit
+        theta = [Symbol("theta_" + str(i)) for i in range(self.num_params)]
+
+        qarg = self.ansatz_function(theta)
+
+        # Compile quantum circuit
+        compiled_qc = qarg.qs.compile()
+        
+        return qarg, compiled_qc, theta
+
+
+    def optimization_routine(self, mes_kwargs, max_iter, init_type="random", init_point=None, measurement_data=None, optimizer="SPSA"): 
+        """
+        Wrapper subroutine for the optimization method used in QAOA. The initial values are set and the optimization via ``COBYLA`` is conducted here.
+
+        Parameters
+        ----------
+        mes_kwargs : dict
+            The keyword arguments for the measurement function.
+        max_iter : int
+            The maximum number of iterations for the optimization method.
+        init_type : string, optional
+            Specifies the way the initial optimization parameters are chosen. Available is ``random``. 
+            The default is ``random``: Parameters are initialized uniformly at random in the interval $[0,\pi/2)]$.
+        init_point : list[float], optional
+            Specifies the initial optimization parameters. 
+        measurement_data : QubitOperatorMeasurement
+            Cached data to accelerate the measurement procedure. Automatically generated by default.
+        optimizer : str, optional
+            Specifies the optimization routine. Available are ``COBYLA``, ``COBYQA``, ``Nelder-Mead``. 
+            The Default is "COBYLA". 
+
+        Returns
+        -------
+        numpy.array
+            The optimized parameters of the problem instance.
+        """
+
+        # Define optimization wrapper function to be minimized using VQE
+        def optimization_wrapper(theta, qc, symbols, qarg, measurement_data, mes_kwargs):
+            """
+            Wrapper function for the optimization method used in VQE.
+
+            This function calculates the expected value of the Hamiltonian after post-processing if a post-processing function is set, otherwise it calculates the expected value of the Hamiltonian.
+
+            Parameters
+            ----------
+            theta : list
+                The list of angle parameters for the VQE circuit.
+            qc : QuantumCircuit
+                The compiled quantum circuit.
+            symbols : list
+                The list of symbols used in the quantum circuit.
+            qarg_dupl : :ref:`QuantumVariable`
+                The duplicated quantum variable to which the quantum circuit is applied.
+            mes_kwargs : dict
+                The keyword arguments for the measurement function.
+
+            Returns
+            -------
+            float
+                The expected value of the Hamiltonian.
+            """         
+
+            subs_dic = {symbols[i] : theta[i] for i in range(len(symbols))}
+
+            expectation = self.hamiltonian.get_measurement(qarg, 
+                                                           subs_dic = subs_dic, 
+                                                           measurement_data = measurement_data, 
+                                                           precompiled_qc = qc, **mes_kwargs)
+            
+
+            if self.callback:
+                self.optimization_costs.append(expectation)
+
+            if self.cl_post_processor is not None:
+                return self.cl_post_processor(expectation)
+            else:
+                return expectation
+            
+
+        # Define optimization wrapper function to be minimized using VQE
+        def jasp_optimization_wrapper(theta, mes_kwargs):
+            """
+            Wrapper function for the optimization method used in VQE.
+
+            This function calculates the expected value of the Hamiltonian after post-processing if a post-processing function is set, otherwise it calculates the expected value of the Hamiltonian.
+
+            Parameters
+            ----------
+            theta : list
+                The list of angle parameters for the VQE circuit.
+            mes_kwargs : dict
+                The keyword arguments for the measurement function.
+
+            Returns
+            -------
+            float
+                The expected value of the Hamiltonian.
+            """       
+   
+            expectation = self.hamiltonian.expectation_value(self.ansatz_function,
+                                                            state_args=(theta,),
+                                                            **mes_kwargs)
+            
+            return expectation
+            
+            #if self.callback:
+            #    self.optimization_costs.append(expectation)
+
+
+        if init_point is None:
+            # Set initial random values for optimization parameters 
+            if init_type=='random':
+
+                if check_for_tracing_mode():
+                    key = jax.random.key(11)
+                    init_point = jax.random.uniform(key=key, shape=(self.num_params,))*jnp.pi/2
+                else:
+                    init_point = np.random.rand(self.num_params)*np.pi/2
+
+
+        # Perform optimization using specified method
+        if check_for_tracing_mode():
+
+            res_sample = jasp_minimize(jasp_optimization_wrapper,
+                                    init_point, 
+                                    method=optimizer,
+                                    options={'max_iter':max_iter}, 
+                                    args = (mes_kwargs,))
+            return res_sample[0]
+        
+        else:
+
+            qarg, compiled_qc, symbols = self.compile_circuit()
+            res_sample = minimize(optimization_wrapper,
+                                    init_point, 
+                                    method=optimizer,
+                                    options={'maxiter':max_iter}, 
+                                    args = (compiled_qc, symbols, qarg, measurement_data, mes_kwargs))
+            
+            return res_sample['x']
+
+
+    def start(self, mes_kwargs = {}, max_iter = 50, init_type = "random", init_point=None, optimizer="SPSA"):
+        """
+        Run the specific VQE problem instance with given quantum arguments, depth of VQE circuit,
+        measurement keyword arguments (mes_kwargs) and maximum iterations for optimization (max_iter).
+        
+        Parameters
+        ----------
+        mes_kwargs : dict, optional
+            The keyword arguments for the :meth:`get_measurement <qrisp.operators.qubit.QubitOperator.get_measurement>` function. Default is an empty dictionary.
+            By default, the target ``precision`` is set to 0.01. Precision refers to how accurately the Hamiltonian is evaluated.
+            The number of shots the backend performs per iteration scales quadratically with the inverse precision.
+        max_iter : int, optional
+            The maximum number of iterations for the optimization method. Default is 50.
+        init_type : string, optional
+            Specifies the way the initial optimization parameters are chosen. Available is ``random``. 
+            The default is ``random``: Parameters are initialized uniformly at random in the interval $[0,\pi/2)]$.
+        init_point : np.array, optional
+            Specifies the initial optimization parameters. 
+        optimizer : str, optional
+            Specifies the `optimization routine <https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html>`_. 
+            Available are, e.g., ``COBYLA``, ``COBYQA``, ``Nelder-Mead``. The Default is ``COBYLA``. 
+
+        Returns
+        -------
+        opt_res : float
+            The expected value of the Hamiltonian for the ansatz with the optimal parameter values.
+        opt_theta : numpy.array
+            The optimal parameter values.
+        """
+
+        if not "precision" in mes_kwargs:
+            mes_kwargs["precision"] = 0.01
+
+        if check_for_tracing_mode():
+        
+            opt_theta = self.optimization_routine(mes_kwargs, 
+                                                    max_iter, 
+                                                    init_type, 
+                                                    init_point, 
+                                                    optimizer = optimizer)
+
+            opt_res = self.hamiltonian.expectation_value(self.ansatz_function,
+                                                        state_args=(opt_theta,),
+                                                        **mes_kwargs)
+            return opt_res, opt_theta
+            
+        else:
+            
+            measurement_data = QubitOperatorMeasurement(self.hamiltonian)
+
+            opt_theta = self.optimization_routine(mes_kwargs, 
+                                                    max_iter, 
+                                                    init_type, 
+                                                    init_point, 
+                                                    measurement_data=measurement_data, 
+                                                    optimizer = optimizer)
+            
+            #opt_res = self.hamiltonian.expectation_value(self.ansatz_function,
+            #                                                state_args=(optimal_theta,),
+            #                                                **mes_kwargs)
+            qarg = self.ansatz_function(opt_theta)
+            opt_res = self.hamiltonian.get_measurement(qarg, **mes_kwargs, measurement_data=measurement_data)
+        
+            return opt_res, opt_theta
+        
     
     def benchmark(self, qarg, depth_range, precision_range, iter_range, optimal_energy, repetitions = 1, mes_kwargs = {}, init_type = "random"):
         """

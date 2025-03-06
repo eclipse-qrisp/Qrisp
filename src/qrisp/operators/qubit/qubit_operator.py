@@ -1660,6 +1660,7 @@ class QubitOperator(Hamiltonian):
         state_prep,
         state_args=(),
         precision=0.01,
+        backend=None,
         diagonalisation_method="commuting_qw"
         ):
         r"""
@@ -1738,6 +1739,7 @@ class QubitOperator(Hamiltonian):
             return get_measurement(self, 
                                     qarg, 
                                     precision=precision, 
+                                    backend=backend,
                                     diagonalisation_method=diagonalisation_method)
 
     #

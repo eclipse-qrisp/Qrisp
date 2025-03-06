@@ -23,7 +23,7 @@ import jax.numpy as jnp
 from jax import random
 import jax
 
-from qrisp.vqe.optimizers.optimize import minimize
+from qrisp.jasp.optimizers.optimize import minimize
 
 #from scipy.optimize import minimize
 #from sympy import Symbol

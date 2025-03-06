@@ -16,9 +16,11 @@
 ********************************************************************************/
 """
 
-from qrisp.vqe.optimizers.spsa import spsa
+from qrisp.jasp.optimizers.spsa import spsa
 
 def minimize(objective, init_point, args=(), method=None, options=None):
 
-    if method=="SPSA":
+    if method=='SPSA':
         return spsa(objective, init_point, args, **options)
+    else:
+        raise Exception(f'Optimization method {method} is not available.')
