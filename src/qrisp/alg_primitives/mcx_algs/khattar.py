@@ -93,15 +93,15 @@ def cca_4ctrls(ctrls, target):
 
     cca4_anc = QuantumFloat(1)
     
-    mcx([ctrls[0], ctrls[1]], cca4_anc[0]) 
+    mcx([ctrls[1], ctrls[0]], cca4_anc[0], method = "gray_pt") 
     x(ctrls[1])
-    mcx([ctrls[2], ctrls[3]], ctrls[1])
+    mcx([ctrls[3], ctrls[2]], ctrls[1], method = "gray_pt")
     
     mcx([ctrls[1], cca4_anc[0]], target[0])
 
-    mcx([ctrls[2], ctrls[3]], ctrls[1])
+    mcx([ctrls[2], ctrls[3]], ctrls[1], method = "gray_pt")
     x(ctrls[1])
-    mcx([ctrls[0], ctrls[1]], cca4_anc[0]) 
+    mcx([ctrls[0], ctrls[1]], cca4_anc[0], method = "gray_pt") 
     
     cca4_anc.delete()
 
@@ -119,7 +119,7 @@ def cca_mcx(ctrls, target, anc):
     
 
     for i in xrange((n - 2) // 2):
-        mcx([ctrls[2 * i + 2], ctrls[2 * i + 3]], ctrls[2 * i + 1], method = "gray_pt")
+        mcx([ctrls[2 * i + 3], ctrls[2 * i + 2]], ctrls[2 * i + 1], method = "gray_pt")
 
     x(ctrls[:-2])
 
@@ -129,7 +129,7 @@ def cca_mcx(ctrls, target, anc):
     c = n - 6 + (n & 1)
 
     with control(c > -1):
-        mcx([ctrls[a], ctrls[b]], ctrls[c], method = "gray_pt")
+        mcx([ctrls[b], ctrls[a]], ctrls[c], method = "gray_pt")
 
     with invert():
         for i in xrange((c + 1) // 2):
