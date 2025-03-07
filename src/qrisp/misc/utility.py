@@ -1330,8 +1330,8 @@ def get_measurement_from_qc(qc, qubits, backend, shots=None):
 
     counts = new_counts_dic
 
-    # Plot result (if needed)
-
+    if abs(1 - no_of_shots_executed) < 1E-3:
+        return counts
     # Normalize counts
     for key in counts.keys():
         counts[key] = counts[key] / abs(no_of_shots_executed)

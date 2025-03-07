@@ -320,7 +320,10 @@ class VQEProblem:
         if not "precision" in mes_kwargs:
             mes_kwargs["precision"] = 0.01
 
-        measurement_data = QubitOperatorMeasurement(self.hamiltonian)
+        if not "diagonalisation_method" in mes_kwargs:
+            mes_kwargs["diagonalisation_method"] = "commuting_qw"
+
+        measurement_data = QubitOperatorMeasurement(self.hamiltonian, diagonalisation_method=mes_kwargs["diagonalisation_method"])
         
         optimal_theta = self.optimization_routine_(qarg, 
                                                   depth, 
@@ -329,7 +332,7 @@ class VQEProblem:
                                                   init_type, 
                                                   init_point, 
                                                   measurement_data=measurement_data, 
-                                                  optimizer = optimizer)
+                                                  optimizer=optimizer)
         
         # Prepare the initial state for particular problem instance, the default is the \ket{0} state
         if self.init_function is not None:
@@ -381,9 +384,19 @@ class VQEProblem:
         if not "precision" in mes_kwargs:
             mes_kwargs["precision"] = 0.01
 
-        measurement_data = QubitOperatorMeasurement(self.hamiltonian)
+        if not "diagonalisation_method" in mes_kwargs:
+            mes_kwargs["diagonalisation_method"] = "commuting_qw"
 
-        optimal_theta = self.optimization_routine_(qarg, depth, mes_kwargs, max_iter, init_type, init_point, optimizer, measurement_data=measurement_data)
+        measurement_data = QubitOperatorMeasurement(self.hamiltonian, diagonalisation_method=mes_kwargs["diagonalisation_method"])
+
+        optimal_theta = self.optimization_routine_(qarg, 
+                                                  depth, 
+                                                  mes_kwargs, 
+                                                  max_iter, 
+                                                  init_type, 
+                                                  init_point, 
+                                                  measurement_data=measurement_data, 
+                                                  optimizer=optimizer)
         
         def circuit_generator(qarg_gen):
             # Prepare the initial state for particular problem instance, the default is the \ket{0} state
