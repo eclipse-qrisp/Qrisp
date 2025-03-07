@@ -98,7 +98,12 @@ class TracingQuantumSession:
             for i in jrange(qubits[0].size):
                 self.append(operation, [qubits[j][i] for j in range(operation.num_qubits)], param_tracers = param_tracers)
             return
+        
+        elif isinstance(qubits[0], list):
             
+            for i in range(len(qubits[0])):
+                self.append(operation, [qubits[j][i] for j in range(operation.num_qubits)], param_tracers = param_tracers)
+            return
         
         temp_op = operation.copy()
         
