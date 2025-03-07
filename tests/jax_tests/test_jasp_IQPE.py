@@ -18,7 +18,7 @@
 
 
 def test_IQPE_integration():
-    from qrisp import p, QuantumVariable, h, x, rx, IQPE, IQPE_binary_decimals_to_float
+    from qrisp import QuantumVariable, h, x, rx, IQPE, IQPE_binary_decimals_to_float
     from qrisp.jasp import make_jaspr
     import numpy as np
     def f():

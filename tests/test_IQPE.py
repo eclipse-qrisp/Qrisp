@@ -18,7 +18,7 @@
 
 
 def test_IQPE_integration():
-    from qrisp import p, QuantumVariable, IQPE, h, run, x, rx
+    from qrisp import QuantumVariable, IQPE, h, run, x, rx
     import numpy as np
 
     def U(qv):
@@ -35,5 +35,4 @@ def test_IQPE_integration():
 
     IQPE(qv, U, precision=5)
     res = run(qv.qs, 10_000)
-    # Does not work because classical control is not working
     # assert (np.abs(res.get("01010", 0)/10_000 - 1.0) < 0.01)
