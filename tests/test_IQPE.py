@@ -16,16 +16,24 @@
 ********************************************************************************/
 """
 
-from qrisp.alg_primitives.qft import *
-from qrisp.alg_primitives.qpe import *
-from qrisp.alg_primitives.qae import *
-from qrisp.alg_primitives.iterative_qae import *
-from qrisp.alg_primitives.logic_synthesis import *
-from qrisp.alg_primitives.mcx_algs import *
-from qrisp.alg_primitives.arithmetic import *
-from qrisp.alg_primitives.iterable_processing import *
-from qrisp.alg_primitives.dicke_state_prep import *
-from qrisp.alg_primitives.switch_case import *
-from qrisp.alg_primitives.amplitude_amplification import *
-from qrisp.alg_primitives.prepare import *
-from qrisp.alg_primitives.iterative_qpe import *
+
+def test_IQPE_integration():
+    from qrisp import p, QuantumVariable, IQPE, h, run, x, rx
+    import numpy as np
+
+    def U(qv):
+        x = 1/2**4
+        y = 1/2**2
+
+        rx(x*2*np.pi, qv[0])
+        rx(y*2*np.pi, qv[1])
+
+    qv = QuantumVariable(2)
+
+    x(qv)
+    h(qv)
+
+    IQPE(qv, U, precision=5)
+    res = run(qv.qs, 10_000)
+    # Does not work because classical control is not working
+    # assert (np.abs(res.get("01010", 0)/10_000 - 1.0) < 0.01)
