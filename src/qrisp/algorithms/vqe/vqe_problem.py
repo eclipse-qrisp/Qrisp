@@ -242,7 +242,7 @@ class VQEProblem:
 
             expectation = self.hamiltonian.get_measurement(qarg, 
                                                            subs_dic = subs_dic, 
-                                                            measurement_data = measurement_data, 
+                                                           measurement_data = measurement_data, 
                                                            precompiled_qc = qc, **mes_kwargs)
             
 
@@ -311,7 +311,10 @@ class VQEProblem:
         if not "precision" in mes_kwargs:
             mes_kwargs["precision"] = 0.01
 
-        measurement_data = QubitOperatorMeasurement(self.hamiltonian)
+        if not "diagonalisation_method" in mes_kwargs:
+            mes_kwargs["diagonalisation_method"] = "commuting_qw"
+
+        measurement_data = QubitOperatorMeasurement(self.hamiltonian, diagonalisation_method=mes_kwargs["diagonalisation_method"])
         
         optimal_theta = self.optimization_routine(qarg, 
                                                   depth, 
@@ -371,7 +374,10 @@ class VQEProblem:
         if not "precision" in mes_kwargs:
             mes_kwargs["precision"] = 0.01
 
-        measurement_data = QubitOperatorMeasurement(self.hamiltonian)
+        if not "diagonalisation_method" in mes_kwargs:
+            mes_kwargs["diagonalisation_method"] = "commuting_qw"
+
+        measurement_data = QubitOperatorMeasurement(self.hamiltonian, diagonalisation_method=mes_kwargs["diagonalisation_method"])
 
         optimal_theta = self.optimization_routine(qarg, depth, mes_kwargs, max_iter, init_type, init_point, optimizer, measurement_data=measurement_data)
         
