@@ -129,7 +129,7 @@ def cca_mcx(ctrls, target, anc):
 
     with invert():
         for i in jrange((c + 1) // 2):
-            mcx([ctrls[2 * i + 2], ctrls[2 * i + 1]], ctrls[2 * i])
+            mcx([ctrls[2 * i + 1], ctrls[2 * i + 2]], ctrls[2 * i])
     return ctrls, target, anc
 
 

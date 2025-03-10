@@ -16,14 +16,18 @@
 ********************************************************************************/
 """
 
-
+import copy
 from itertools import product
 
 import numpy as np
+import jax.numpy as jnp
+import jax
+
 
 from qrisp.circuit import transpile
-from qrisp.core import QuantumVariable, qompiler
+from qrisp.core import QuantumVariable, qompiler, QuantumSession
 from qrisp.misc import bin_rep
+from qrisp.jasp import check_for_tracing_mode, q_fori_loop, jrange, create_qubits, DynamicQubitArray, TracingQuantumSession
 
 
 class QuantumArray(np.ndarray):
@@ -377,7 +381,7 @@ class QuantumArray(np.ndarray):
         indices = list(product(*[list(range(i)) for i in shape]))
 
         for i in indices:
-            temp_dup = self.qtype.duplicate(qs=self.qs)
+            temp_dup = self.qtype.duplicate(name=self.qtype.name + "_duplicate*", qs=self.qs)
             np.ndarray.__setitem__(self, i, temp_dup)
 
         self.shape_specified = True
@@ -964,3 +968,386 @@ class OutcomeArray(np.ndarray):
         res = np.ndarray.__repr__(self).replace(", dtype=int32", "")
 
         return res
+
+
+class QuantumArray:
+    
+    def __init__(self, qtype, shape):
+        
+        if isinstance(shape, int):
+            shape = (shape,)
+        size = 1
+        for s in shape:
+            if not isinstance(s, int):
+                raise Exception(f"Tried to create QuantumArray with non-integer tuple {shape}")
+            size *= s
+        
+        self.ind_array = jnp.arange(size)
+        self.ind_array = self.ind_array.reshape(shape)
+        self.qtype = qtype
+        
+        if check_for_tracing_mode():
+            qs = qtype.qs
+            self.qs = qs
+            qs.abs_qc, qb_array_tracer = create_qubits(qs.abs_qc, size*qtype.size)
+            self.qb_array = DynamicQubitArray(qb_array_tracer)
+            self.qtype_size = qtype.size
+        else:
+            self.qs = QuantumSession()
+            self.qv_list = []
+            for i in range(size):
+                self.qv_list.append(qtype.duplicate(name=self.qtype.name + "*", qs=self.qs))
+    
+    @property
+    def shape(self):
+        return self.ind_array.shape
+    
+    @property
+    def size(self):
+        return self.ind_array.size
+        
+    def __getitem__(self, key):
+        
+        if not isinstance(key, tuple):
+            key = (key,)
+        
+        sliced_ind_array = self.ind_array[key]
+        
+        if len(sliced_ind_array.shape):
+            res = copy.copy(self)
+            res.ind_array = sliced_ind_array
+            return res
+        else:
+            index = sliced_ind_array
+            if check_for_tracing_mode():
+                qv = copy.copy(self.qtype)
+                s = self.qtype_size
+                qv.reg = self.qb_array[index*s:(index+1)*s]
+                qv.qs = self.qs
+                return qv
+            else:
+                for i in range(len(key)):
+                    if key[i] >= self.shape[i]:
+                        raise Exception(f"Index {key} out of bounds for QuantumArray with shape {self.shape}")
+                return self.qv_list[index]
+    
+    def __setitem__(self, key, value):
+        sliced_array = self[key]
+        sliced_array.encode(value)
+        
+    
+    def encode(self, value):
+        
+        if isinstance(value, list):
+            value = np.array(value, dtype = "object")
+        
+        if not value.shape == self.shape:
+            raise Exception("Tried to initialize a QuantumArray with incompatible shape")
+        
+        flattened_value_array = value.flatten()
+        flat_self = self.flatten()
+        
+        if check_for_tracing_mode() and isinstance(flattened_value_array, (np.ndarray, list)):
+            flattened_value_array = jnp.array(flattened_value_array)
+        
+        for i in jrange(self.size):
+            flat_self[i][:] = flattened_value_array[i]
+    
+    def reshape(self, shape):
+        res = copy.copy(self)
+        res.ind_array = self.ind_array.reshape(shape)
+        return res
+    
+    def flatten(self):
+        return self.reshape(self.size)
+    
+    def ravel(self):
+        return self.flatten()
+    
+    def transpose(self):
+        res = copy.copy(self)
+        res.ind_array = self.ind_array.transpose()
+        return res
+    
+    def swapaxes(self, *args, **kwargs):
+        res = copy.copy(self)
+        res.ind_array = self.ind_array.swapaxes(*args, **kwargs)
+        return res
+    
+    def __iter__(self):
+        return QuantumArrayIterator(self.flatten())
+    
+    def delete(self):
+        self.qtype.qs.clear_qubits(self.qb_array)
+        
+    def measure(self):
+        from qrisp import measure
+        
+        dtype = self.qtype.decoder(jnp.zeros(1)[0]).dtype
+        
+        meas_res = jnp.zeros(self.size, dtype = dtype)
+        
+        flattened_qa = self.flatten()
+        
+        
+        def body_fun(i, val):
+            meas_res, flattened_qa = val
+            meas_res = meas_res.at[i].set(measure(flattened_qa[i]))
+            return (meas_res, flattened_qa)
+        
+        meas_res, flattened_qa = q_fori_loop(0, 
+                                             flattened_qa.size, 
+                                             body_fun,
+                                             (meas_res, flattened_qa))
+        
+        return meas_res.reshape(self.shape)
+    
+    # Retrieves a measurement of the arrays state
+    # Returns a list of tuples of the type (array, count)
+    # ie. [(array([1,1,0]), 232), (array([1,1,3]), 115), ...]
+    def get_measurement(
+        self,
+        backend=None,
+        shots=None,
+        compile=True,
+        compilation_kwargs={},
+        subs_dic={},
+        circuit_preprocessor=None,
+        precompiled_qc=None,
+    ):
+        """
+        Method for acquiring measurement results for the given array. The semantics are
+        similar to the :meth:`get_measurement <qrisp.QuantumVariable.get_measurement>`
+        method of QuantumVariable. The results are returned as a dictionary of another
+        numpy subtype called OutcomeArray.
+
+        Parameters
+        ----------
+        backend : BackendClient, optional
+            The backend on which to evaluate the quantum circuit. The default can be
+            specified in the file default_backend.py.
+        shots : integer, optional
+            The amount of shots to evaluate the circuit. The default is given by the backend used.
+        compile : bool, optional
+            Boolean indicating if the .compile method of the underlying QuantumSession
+            should be called before. The default is True.
+        compilation_kwargs  : dict, optional
+            Keyword arguments for the compile method. For more details check
+            :meth:`QuantumSession.compile <qrisp.QuantumSession.compile>`.
+            The default is ``{}``.
+        subs_dic : dict, optional
+            A dictionary of sympy symbols and floats to specify parameters in the case
+            of a circuit with unspecified, abstract parameters. The default is {}.
+        circuit_preprocessor : Python function, optional
+            A function which recieves a QuantumCircuit and returns one, which is applied
+            after compilation and parameter substitution. The default is None.
+
+        Raises
+        ------
+        Exception
+            Tried to get measurement within open environment.
+
+        Returns
+        -------
+        list of tuples
+            The measurement results in the form [(outcome_label, probability), ...].
+
+        Examples
+        --------
+
+        >>> from qrisp import QuantumFloat, QuantumArray
+        >>> qtype = QuantumFloat(3)
+        >>> q_array = QuantumArray(qtype)
+        >>> q_array[:] = [[1,0],[0,1]]
+        >>> res = q_array.get_measurement()
+        >>> print(res)
+        {OutcomeArray([[1, 0],
+                       [0, 1]]): 1.0}
+        """
+
+        if check_for_tracing_mode():
+            raise Exception("Tried to get_measurement from QuantumArray in tracing mode")
+
+        for qv in self.flatten():
+            if qv.is_deleted():
+                raise Exception(
+                    "Tried to measure QuantumArray containing deleted QuantumVariables"
+                )
+
+
+        if backend is None:
+            if self.qs.backend is None:
+                from qrisp.default_backend import def_backend
+
+                backend = def_backend
+            else:
+                backend = self.qs.backend
+
+        if len(self.qs.env_stack) != 0:
+            raise Exception("Tried to get measurement within open environment")
+
+        qubits = sum([qv.reg for qv in self.flatten()[::-1]], [])
+        # Copy circuit in over to prevent modification
+        # from qrisp.quantum_network import QuantumNetworkClient
+
+        if precompiled_qc is None:
+            if compile:
+                qc = qompiler(
+                    self.qs, intended_measurements=qubits, **compilation_kwargs
+                )
+            else:
+                qc = self.qs.copy()
+
+            # Transpile circuit
+            qc = transpile(qc)
+        else:
+            qc = precompiled_qc.copy()
+
+        # Bind parameters
+        if subs_dic:
+            qc = qc.bind_parameters(subs_dic)
+            from qrisp.core.compilation import combine_single_qubit_gates
+
+            qc = combine_single_qubit_gates(qc)
+
+        # Execute user specified circuit_preprocessor
+        if circuit_preprocessor is not None:
+            qc = circuit_preprocessor(qc)
+
+        from qrisp.misc import get_measurement_from_qc
+
+        counts = get_measurement_from_qc(qc, qubits, backend, shots)
+
+        # Insert outcome labels (if available and hashable)
+        new_counts_dic = {}
+        for key in counts.keys():
+            outcome_label = self.decoder(key)
+
+            new_counts_dic[outcome_label] = counts[key]
+
+        counts = new_counts_dic
+
+        # Sort keys
+        sorted_key_list = list(counts.keys())
+        sorted_key_list.sort(key=lambda x: -counts[x])
+        counts = {key: counts[key] for key in sorted_key_list}
+
+        return counts
+    
+    def decoder(self, code_int):
+        """
+        The decoder method specifies how a QuantumArray turns the outcomes of
+        measurements into human-readable values. It recieves an integer i and returns an
+        OutcomeArray.
+
+        Parameters
+        ----------
+        i : int
+            Integer representing the outcome of a measurement of the qubits of this
+            QuantumArray.
+
+        Returns
+        -------
+        res : np.ndarray
+            An array with entries of the type of the results of the .decoder of the
+            qtype of this array.
+
+        Examples
+        --------
+
+        We create a QuantumFloat and inspect its decoder:
+
+        >>> from qrisp import QuantumArray, QuantumFloat
+        >>> qtype = QuantumFloat(3)
+        >>> q_array = QuantumArray(qtype, (2,2))
+        >>> print(q_array.decoder(1))
+        [[0 0]
+         [0 1]]
+
+        """
+
+        flattened_array = self.flatten()
+
+        from qrisp.qtypes.quantum_float import QuantumFloat
+
+        if isinstance(self.qtype, QuantumFloat):
+            if self.qtype.exponent >= 0:
+                res = np.zeros(len(flattened_array), dtype=np.int32)
+            else:
+                res = np.zeros(len(flattened_array))
+        else:
+            res = np.zeros(len(flattened_array))
+
+        n = len(self.qtype)
+
+        bin_string = bin_rep(code_int, len(flattened_array) * n)
+
+        for i in range(len(flattened_array)):
+            if isinstance(self.qtype, QuantumFloat):
+                res[i] = self.qtype.decoder(int(bin_string[i * n : (i + 1) * n], 2))
+            else:
+                res = res.astype("object")
+                res[i] = self.qtype.decoder(int(bin_string[i * n : (i + 1) * n], 2))
+
+        return OutcomeArray(res.reshape(self.shape))
+    
+    def __len__(self):
+        return len(self.ind_array)
+    
+    def __str__(self):
+        if not check_for_tracing_mode():
+            return str(self.get_measurement())
+        else:
+            return "<QuantumArray[" + str(self.shape)[1:-1] + "]>"
+
+
+class QuantumArrayIterator:
+    
+    def __init__(self, qa):
+        self.qa = qa
+        self.counter = -1
+    
+    def __next__(self):
+        self.counter += 1
+        if self.counter >= self.qa.size:
+            raise StopIteration
+        return self.qa[self.counter]
+
+
+def flatten_qa(qa):
+    
+    children = []
+    
+    qtype_children, qtype_aux_values = jax.tree.flatten(qa.qtype)
+    
+    children.append(qa.qtype_size)
+    children.append(qa.ind_array)
+    children.append(qa.qb_array)
+    children.extend(qtype_children)
+    
+    aux_values = [qtype_aux_values]
+    
+    return tuple(children), tuple(aux_values)
+
+def unflatten_qa(aux_data, children):
+    
+    qtype_children = children[3:]
+    qtype_aux_values = aux_data[0]
+    
+    qtype = jax.tree.unflatten(qtype_aux_values, qtype_children)
+    
+    qa_dummy = object.__new__(QuantumArray)
+    
+    qtype_size = children[0]
+    ind_array = children[1]
+    qb_array  = children[2]
+    
+    qa_dummy.qtype_size = qtype_size
+    qa_dummy.qtype = qtype
+    qa_dummy.ind_array = ind_array
+    qa_dummy.qb_array = qb_array
+    qa_dummy.qs = TracingQuantumSession.get_instance()
+    
+    return qa_dummy
+    
+jax.tree_util.register_pytree_node(QuantumArray, flatten_qa, unflatten_qa)

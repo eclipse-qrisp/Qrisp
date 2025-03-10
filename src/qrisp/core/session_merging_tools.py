@@ -406,6 +406,35 @@ def recursive_qv_search(input):
 
     return result
 
+def recursive_qa_search(input):
+    if isinstance(input, str):
+        return []
+    from qrisp.core import QuantumArray
+
+    if isinstance(input, QuantumArray):
+        return [input]
+    
+    if hasattr(input, "__iter__"):
+        iterable = True
+    elif hasattr(input, "__dict__") and not isinstance(input, QuantumArray):
+        iterable = False
+        # input = input.__dict__
+    else:
+        iterable = False
+
+    result = []
+    if iterable:
+        if isinstance(input, dict):
+            for key in input.keys():
+                result += recursive_qv_search(key)
+                result += recursive_qv_search(input[key])
+        elif isinstance(input, (tuple, list)):
+            for i in range(len(input)):
+                result += recursive_qv_search(input[i])
+
+    return result
+
+
 
 def merge(*args):
     session_list = recursive_qs_search(args)
