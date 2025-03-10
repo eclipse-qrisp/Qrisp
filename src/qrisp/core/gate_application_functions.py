@@ -19,7 +19,7 @@
 import sympy
 
 import qrisp.circuit.standard_operations as std_ops
-from qrisp.jasp import check_for_tracing_mode, DynamicQubitArray
+from qrisp.jasp import check_for_tracing_mode, DynamicQubitArray, jlen
 
 
 def append_operation(operation, qubits=[], clbits=[], param_tracers=[]):
@@ -478,7 +478,7 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
     )
     from qrisp.core import QuantumVariable
     from qrisp.qtypes import QuantumBool
-#
+
     if isinstance(controls, list):
 
         new_controls = []
@@ -736,9 +736,10 @@ def mcp(phi, qubits, method="auto", ctrl_state=-1):
 
     """
 
-    from qrisp.alg_primitives.mcx_algs import hybrid_mcx, jasp_balauca_mcp
+    from qrisp.alg_primitives.mcx_algs import hybrid_mcx, jasp_balauca_mcp, khattar_mcp
     from qrisp import QuantumBool
     from qrisp.misc import bin_rep, gate_wrap
+    from qrisp.environments import control
     import numpy as np
 
     @gate_wrap(permeability="full", is_qfree=True, name="anc supported mcp")
@@ -758,19 +759,17 @@ def mcp(phi, qubits, method="auto", ctrl_state=-1):
         )
 
         temp.delete()
-
-    if check_for_tracing_mode():
-        jasp_balauca_mcp(phi, qubits, ctrl_state)
-        return
-
-    n = len(qubits)
-
-    if not isinstance(ctrl_state, str):
-        if ctrl_state == -1:
-            ctrl_state += 2**n
-        ctrl_state = bin_rep(ctrl_state, n)[::-1]
-
-    n = len(qubits)
+    n = jlen(qubits) 
+    if not check_for_tracing_mode():
+        if not isinstance(ctrl_state, str):
+            if ctrl_state == -1:
+                ctrl_state += 2**n
+            ctrl_state = bin_rep(ctrl_state, n)[::-1]
+    else:
+        if method == "auto":
+            method = "balauca"
+        if isinstance(ctrl_state, str):
+            ctrl_state = int(ctrl_state, 2)
 
     if method == "gray" or method == "gray_pt":
         if ctrl_state[-1] == "0":
@@ -792,15 +791,23 @@ def mcp(phi, qubits, method="auto", ctrl_state=-1):
         return qubits
 
     elif method == "balauca":
-        balauca_mcp(phi, qubits, ctrl_state=ctrl_state)
-        return qubits
-
-    elif method == "auto":
-        if n < 4:
-            return mcp(phi, qubits, method="gray", ctrl_state=ctrl_state)
+        if check_for_tracing_mode():
+            jasp_balauca_mcp(phi, qubits, ctrl_state)
+            return
         else:
-            return mcp(phi, qubits, method="balauca", ctrl_state=ctrl_state)
-
+            balauca_mcp(phi, qubits, ctrl_state=ctrl_state)
+        return qubits
+    
+    elif method == "khattar":
+        khattar_mcp(phi, qubits, ctrl_state=ctrl_state)
+        # return qubits   #is it needed? maybe for static case
+        
+    elif method == "auto":
+        with control(n < 4):
+            mcp(phi, qubits, method="gray", ctrl_state=ctrl_state)
+        with control(n >= 4):
+            mcp(phi, qubits, method="balauca", ctrl_state=ctrl_state)
+        return
     else:
         raise Exception(f"Don't know method {method}")
 
