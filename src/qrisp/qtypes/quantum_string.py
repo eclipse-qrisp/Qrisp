@@ -94,7 +94,6 @@ class QuantumString(QuantumArray):
                               qtype = qtype, 
                               shape = size, 
                               qs=qs)
-        
 
     def get_measurement(self, **kwargs):
         mes_result = QuantumArray.get_measurement(self, **kwargs)
@@ -105,9 +104,6 @@ class QuantumString(QuantumArray):
             return_dic["".join(list(k))] = v
 
         return return_dic
-
-    def __add__(self, other):
-        return np.concatenate((self, other)).view(QuantumString)
 
     def decoder(self, code_int):
         res_array = QuantumArray.decoder(self, code_int)
@@ -136,31 +132,14 @@ class QuantumString(QuantumArray):
         return res
     
     def __add__(self, other):
-        pass
+        return self.concatenate(other)
 
     def __iadd__(self, other):
-        from qrisp import merge
-
         if isinstance(other, QuantumString):
-            self.resize((len(self) + len(other),), refcheck=False)
-            merge(self.qs, other.qs)
-            for i in range(len(other)):
-                np.ndarray.__setitem__(self, i + len(self) - len(other), other[i])
+            return self + other
 
         elif isinstance(other, str):
-            if self.shape_specified:
-                self.resize((len(self) + len(other),), refcheck=False)
-            else:
-                self.set_shape(len(other))
-            for i in range(len(other)):
-                np.ndarray.__setitem__(
-                    self, i + len(self) - len(other), self.qtype.duplicate(qs=self.qs)
-                )
-                self[i + len(self) - len(other)] = other[i]
+            return self + QuantumString.quantize_string(other)
 
-        elif isinstance(other, QuantumChar):
-            merge(self, other)
-            self.resize((len(self) + 1,), refcheck=False)
-            np.ndarray.__setitem__(self, len(self) - 1, other)
-
-        return self
+        else:
+            raise Exception(f"Don't know how to concatenate with type {type(other)}")

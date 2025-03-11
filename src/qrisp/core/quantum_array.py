@@ -25,7 +25,7 @@ import jax
 
 
 from qrisp.circuit import transpile
-from qrisp.core import QuantumVariable, qompiler, QuantumSession
+from qrisp.core import QuantumVariable, qompiler, QuantumSession, merge
 from qrisp.misc import bin_rep
 from qrisp.jasp import check_for_tracing_mode, q_fori_loop, jrange, create_qubits, DynamicQubitArray, TracingQuantumSession
 
@@ -1360,6 +1360,7 @@ class QuantumArray:
         if check_for_tracing_mode():
             res.qb_array = self.qb_array + other.qb_array
         else:
+            merge([self.qs, other.qs])
             res.qv_list = self.qv_list + other.qv_list
         
         return res

@@ -17,7 +17,7 @@
 """
 
 # Created by ann81984 at 22.07.2022
-from qrisp import QuantumString, QuantumChar
+from qrisp import QuantumString
 
 
 def test_string_test():
@@ -25,19 +25,8 @@ def test_string_test():
 
     q_str_2 = QuantumString.quantize_string(" world")
 
-    # q_ch = QuantumChar()
-
-    # q_ch[:] = " "
-
-    # q_str += q_ch
-
     q_str += q_str_2
 
     q_str += "! "
-
-    # q_str_3 = q_str.duplicate(init=True)
-
     
-    assert (type(q_str).__name__ and type(q_str_3).__name__) == "QuantumString"
-    assert str(q_str + q_str_3) == "{'hello world! hello world! ': 1.0}"
-    print(q_str + q_str_3)
+    assert q_str.get_measurement() == {'hello world! ': 1.0}
