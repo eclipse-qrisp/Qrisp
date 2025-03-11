@@ -84,11 +84,17 @@ class QuantumString(QuantumArray):
 
     """
 
-    def __new__(subtype, size=0, qs=None, nisq_char=True):
+    def __init__(self, size, qs = None, nisq_char = True):
         if nisq_char:
-            return QuantumArray.__new__(subtype, nisq_init_quantum_char, size, qs=qs)
+            qtype = nisq_init_quantum_char
         else:
-            return QuantumArray.__new__(subtype, init_quantum_char, size, qs=qs)
+            qtype = init_quantum_char
+            
+        QuantumArray.__init__(self, 
+                              qtype = qtype, 
+                              shape = size, 
+                              qs=qs)
+        
 
     def get_measurement(self, **kwargs):
         mes_result = QuantumArray.get_measurement(self, **kwargs)
@@ -111,14 +117,10 @@ class QuantumString(QuantumArray):
             res_str += res_array[i]
 
         return res_str
-
-    def encoder(self, encoding_str):
-        encoding_array = np.zeros(len(encoding_str), dtype="object")
-
-        for i in range(len(encoding_array)):
-            encoding_array[i] = encoding_str[i]
-
-        return QuantumArray.encoder(self, encoding_array)
+    
+    def encode(self, encoding_str):
+        encoding_array = np.array(list(encoding_str), dtype = "object")
+        QuantumArray.encode(self, encoding_array)
 
     def __setitem__(self, key, value):
         if isinstance(key, int):
@@ -126,6 +128,12 @@ class QuantumString(QuantumArray):
             return
 
         QuantumArray.__setitem__(self, key, [ch for ch in value])
+        
+    @classmethod
+    def quantize_string(cls, string):
+        res = QuantumString(len(string))
+        res[:] = string
+        return res
 
     def __iadd__(self, other):
         from qrisp import merge

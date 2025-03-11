@@ -426,11 +426,11 @@ def recursive_qa_search(input):
     if iterable:
         if isinstance(input, dict):
             for key in input.keys():
-                result += recursive_qv_search(key)
-                result += recursive_qv_search(input[key])
+                result += recursive_qa_search(key)
+                result += recursive_qa_search(input[key])
         elif isinstance(input, (tuple, list)):
             for i in range(len(input)):
-                result += recursive_qv_search(input[i])
+                result += recursive_qa_search(input[i])
 
     return result
 

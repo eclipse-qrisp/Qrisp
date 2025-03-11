@@ -117,7 +117,7 @@ def test_uncomputation_example():
 
         return res
 
-    perm = QuantumArray(QuantumFloat(2))
+    perm = QuantumArray(QuantumFloat(2), shape = 4)
     perm[:] = [2, 1, 0, 3]
 
     res = calc_perm_travel_distance(perm, 5)

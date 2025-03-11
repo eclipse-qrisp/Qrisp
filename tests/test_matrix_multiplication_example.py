@@ -69,10 +69,10 @@ def test_matrix_multiplication_example():
     test_0 = np.round(np.random.rand(3, 4) * 5)
     test_1 = np.round(np.random.rand(4, 2) * 5)
 
-    q_array = QuantumArray(qtype=qtype)
+    q_array = QuantumArray(qtype=qtype, shape = test_1.shape)
 
     q_array[:] = test_1
 
-    test_0 @ q_array
+    (test_0 @ q_array)
 
     # test = semi_classic_matrix_multiplication(test_0, q_array)

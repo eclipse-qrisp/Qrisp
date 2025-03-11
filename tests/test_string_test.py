@@ -21,25 +21,21 @@ from qrisp import QuantumString, QuantumChar
 
 
 def test_string_test():
-    q_str = QuantumString()
+    q_str = QuantumString.quantize_string("hello")
 
-    q_str_2 = QuantumString()
+    q_str_2 = QuantumString.quantize_string(" world")
 
-    q_ch = QuantumChar()
+    # q_ch = QuantumChar()
 
-    q_str[:] = "hello"
+    # q_ch[:] = " "
 
-    q_ch[:] = " "
-
-    q_str_2[:] = "world"
-
-    q_str += q_ch
+    # q_str += q_ch
 
     q_str += q_str_2
 
     q_str += "! "
 
-    q_str_3 = q_str.duplicate(init=True)
+    # q_str_3 = q_str.duplicate(init=True)
 
     
     assert (type(q_str).__name__ and type(q_str_3).__name__) == "QuantumString"

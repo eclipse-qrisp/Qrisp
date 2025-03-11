@@ -177,7 +177,7 @@ class QuantumArray(np.ndarray):
     {OutcomeArray([[3., 6.],
                    [1., 4.]]): 1.0}
     """
-
+    
     def __new__(subtype, qtype, shape=0, qs=None, name=None):
         if isinstance(shape, QuantumVariable):
             raise Exception
@@ -972,7 +972,7 @@ class OutcomeArray(np.ndarray):
 
 class QuantumArray:
     
-    def __init__(self, qtype, shape):
+    def __init__(self, qtype, shape, qs = None):
         
         if isinstance(shape, int):
             shape = (shape,)
@@ -993,7 +993,10 @@ class QuantumArray:
             self.qb_array = DynamicQubitArray(qb_array_tracer)
             self.qtype_size = qtype.size
         else:
-            self.qs = QuantumSession()
+            if qs is None:
+                self.qs = QuantumSession()
+            else:
+                self.qs = qs
             self.qv_list = []
             for i in range(size):
                 self.qv_list.append(qtype.duplicate(name=self.qtype.name + "*", qs=self.qs))
@@ -1005,6 +1008,10 @@ class QuantumArray:
     @property
     def size(self):
         return self.ind_array.size
+    
+    @property
+    def ndim(self):
+        return self.ind_array.ndim
         
     def __getitem__(self, key):
         
@@ -1032,6 +1039,8 @@ class QuantumArray:
                 return self.qv_list[index]
     
     def __setitem__(self, key, value):
+        if isinstance(value, QuantumVariable):
+            return
         sliced_array = self[key]
         sliced_array.encode(value)
         
@@ -1053,7 +1062,11 @@ class QuantumArray:
         for i in jrange(self.size):
             flat_self[i][:] = flattened_value_array[i]
     
-    def reshape(self, shape):
+    def reshape(self, *args):
+        if isinstance(args[0], (tuple, list)):
+            shape = args[0]
+        else:
+            shape = args
         res = copy.copy(self)
         res.ind_array = self.ind_array.reshape(shape)
         return res
@@ -1064,9 +1077,9 @@ class QuantumArray:
     def ravel(self):
         return self.flatten()
     
-    def transpose(self):
+    def transpose(self, *args):
         res = copy.copy(self)
-        res.ind_array = self.ind_array.transpose()
+        res.ind_array = self.ind_array.transpose(*args)
         return res
     
     def swapaxes(self, *args, **kwargs):
@@ -1074,11 +1087,12 @@ class QuantumArray:
         res.ind_array = self.ind_array.swapaxes(*args, **kwargs)
         return res
     
-    def __iter__(self):
-        return QuantumArrayIterator(self.flatten())
-    
-    def delete(self):
-        self.qtype.qs.clear_qubits(self.qb_array)
+    def delete(self, verify = False):
+        if check_for_tracing_mode():
+            self.qs.clear_qubits(self.qb_array)
+        else:
+            for i in range(self.size):
+                self.qv_list[i].delete(verify = verify)
         
     def measure(self):
         from qrisp import measure
@@ -1299,6 +1313,36 @@ class QuantumArray:
             return str(self.get_measurement())
         else:
             return "<QuantumArray[" + str(self.shape)[1:-1] + "]>"
+        
+    def __matmul__(self, other):
+        from qrisp import QuantumFloat
+
+        if isinstance(self.qtype, QuantumFloat):
+            if isinstance(other, QuantumArray):
+                from qrisp.alg_primitives.arithmetic import q_matmul
+
+                return q_matmul(self, other)
+
+            elif isinstance(other, np.ndarray):
+                from qrisp.alg_primitives.arithmetic import semi_classic_matmul
+
+                return semi_classic_matmul(self, other)
+
+        raise Exception("Matrix multiplication for non-float types not implemented")
+        
+    def __rmatmul__(self, other):
+        from qrisp import QuantumFloat
+
+        if isinstance(self.qtype, QuantumFloat):
+            return (self.transpose() @ other.transpose()).transpose()
+        
+    def __iter__(self):
+        return QuantumArrayIterator(self.flatten())
+    
+    def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
+        if ufunc is np.matmul:
+            return inputs[1].__rmatmul__(inputs[0])
+        return NotImplemented
 
 
 class QuantumArrayIterator:
