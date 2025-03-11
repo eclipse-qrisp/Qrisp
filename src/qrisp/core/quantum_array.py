@@ -101,21 +101,6 @@ class QuantumArray(np.ndarray):
                    [2.  , 2.  , 2.  , 2.  ]]): 0.5}
 
 
-    The shape of a QuantumArray does not have to be specified at creation. We can either
-    set it through the :meth:`set_shape <qrisp.QuantumArray.set_shape>` method or by
-    initiating:
-
-    >>> q_array_1 = QuantumArray(qtype = qtype)
-    >>> q_array_1.set_shape((2,2))
-    >>> print(q_array_1)
-    {OutcomeArray([[0., 0.],
-                   [0., 0.]]): 1.0}
-    >>> q_array_2 = QuantumArray(qtype = qtype)
-    >>> q_array_2[:] = np.eye(2)
-    >>> print(q_array_2)
-    {OutcomeArray([[1., 0.],
-                   [0., 1.]]): 1.0}
-
     **Quantum indexing**
 
     QuantumArrays can be dereferenced by :ref:`QuantumFloats <QuantumFloat>`. This
@@ -124,7 +109,7 @@ class QuantumArray(np.ndarray):
 
         from qrisp import QuantumBool, QuantumArray, QuantumFloat, h, multi_measurement
 
-        q_array = QuantumArray(QuantumBool(), shape = (4,4))
+        q_array = QuantumArray(QuantumFloat(1), shape = (4,4))
         index_0 = QuantumFloat(2)
         index_1 = QuantumFloat(2)
 
@@ -135,7 +120,7 @@ class QuantumArray(np.ndarray):
         h(index_0[0])
 
         with q_array[index_0, index_1] as entry:
-            entry.flip()
+            x(entry)
 
     >>> print(multi_measurement([index_0, index_1, q_array]))
     {(2, 1, OutcomeArray([[0., 0., 0., 0.],
@@ -154,8 +139,8 @@ class QuantumArray(np.ndarray):
 
     For QuantumArrays with ``qtype`` QuantumFloat, matrix multiplication is available.
 
-    >>> q_array_1 = QuantumArray(qtype)
-    >>> q_array_2 = QuantumArray(qtype)
+    >>> q_array_1 = QuantumArray(qtype, (2,2))
+    >>> q_array_2 = QuantumArray(qtype, (2,2))
     >>> q_array_1[:] = 2*np.eye(2)
     >>> q_array_2[:] = [[1,2],[3,4]]
     >>> print(q_array_1 @ q_array_2)
@@ -170,7 +155,7 @@ class QuantumArray(np.ndarray):
 
     It is also possible to multiply classical and quantum matrices
 
-    >>> q_array = QuantumArray(qtype)
+    >>> q_array = QuantumArray(qtype, (2,2))
     >>> q_array[:] = 3*np.eye(2)
     >>> cl_array = np.array([[1,2],[3,4]])
     >>> print(q_array @ cl_array)
@@ -1014,6 +999,17 @@ class QuantumArray:
         return self.ind_array.ndim
         
     def __getitem__(self, key):
+        
+        from qrisp.environments import conjugate
+
+        if isinstance(key, QuantumVariable):
+            merge([self.qs, key.qs])
+            return conjugate(manipulate_array)(self, key)
+
+        if isinstance(key, tuple):
+            if all(isinstance(index, QuantumVariable) for index in key):
+                merge([self.qs, key[0].qs])
+                return conjugate(manipulate_array)(self, key)
         
         if not isinstance(key, tuple):
             key = (key,)
