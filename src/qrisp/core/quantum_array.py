@@ -238,7 +238,7 @@ class QuantumArray(np.ndarray):
         for i in indices:
 
             temp_dup = qtype.duplicate(name=obj.name + "*", qs=qs)
-            np.ndarray.__setitem__(obj, i, temp_dup)
+            np.ndarray.__.__(obj, i, temp_dup)
 
         obj.qs = qs
 
@@ -1343,6 +1343,26 @@ class QuantumArray:
         if ufunc is np.matmul:
             return inputs[1].__rmatmul__(inputs[0])
         return NotImplemented
+    
+    def concatenate(self, other, axis = 0):
+        
+        if not self.qtype is other.qtype:
+            raise Exception("Tried to concatenate two QuantumArrays with non-identical qtype")
+        
+        res = copy.copy(self)
+        
+        ind_array_other_shifted = other.ind_array + self.size
+        
+        concat_ind_array = jnp.concatenate((self.ind_array, ind_array_other_shifted), axis = axis)
+        
+        res.ind_array = concat_ind_array
+        
+        if check_for_tracing_mode():
+            res.qb_array = self.qb_array + other.qb_array
+        else:
+            res.qv_list = self.qv_list + other.qv_list
+        
+        return res
 
 
 class QuantumArrayIterator:

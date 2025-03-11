@@ -134,6 +134,9 @@ class QuantumString(QuantumArray):
         res = QuantumString(len(string))
         res[:] = string
         return res
+    
+    def __add__(self, other):
+        pass
 
     def __iadd__(self, other):
         from qrisp import merge
