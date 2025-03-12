@@ -33,6 +33,22 @@ def test_quantum_array():
     
     assert qa.most_likely()[0,:] == OutcomeArray([0, 1, 2, 3, 4])
     
+    # test dynamic indexing
+    
+    @jaspify
+    def main(k):
+        
+        qtype = QuantumFloat(8)
+        q_array = QuantumArray(qtype, 10)
+        q_array[:] = np.arange(10)
+        
+        for i in jrange(1, k):
+            q_array[i] += q_array[i-1]
+
+        return measure(q_array)
+
+    assert np.all(main(8) == np.array([ 0.,  1.,  3.,  6., 10., 15., 21., 28.,  8.,  9.]))
+    
     # Test the snippets from the documentation
     
     qtype = QuantumFloat(5, -2)
