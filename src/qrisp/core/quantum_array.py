@@ -33,8 +33,8 @@ from qrisp.jasp import check_for_tracing_mode, q_fori_loop, jrange, create_qubit
 class QuantumArray(np.ndarray):
     """
     This class allows the convenient management of multiple QuantumVariables of one
-    type. As a subclass of `numpy's ndarray
-    <https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html>`_, the
+    type. Inspired by the well known
+    `numpy ndarray<https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html>`_, the
     QuantumArray supports many convenient array manipulation methods. Similar to the
     numpy equivalent, creating a QuantumArray can be achieved by specifying a shape and
     a ``qtype``:
@@ -956,6 +956,137 @@ class OutcomeArray(np.ndarray):
 
 
 class QuantumArray:
+    """
+    This class allows the convenient management of multiple QuantumVariables of one
+    type. Inspired by the well known
+    `numpy ndarray<https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html>`_, the
+    QuantumArray supports many convenient array manipulation methods. Similar to the
+    numpy equivalent, creating a QuantumArray can be achieved by specifying a shape and
+    a ``qtype``:
+
+    >>> import numpy as np
+    >>> from qrisp import QuantumArray, QuantumFloat
+    >>> qtype = QuantumFloat(5, -2)
+    >>> q_array = QuantumArray(qtype = qtype, shape = (2, 2, 2))
+
+    Note that ``qtype`` is not a type object but a QuantumVariable which serves as an
+    "example".
+
+    To retrieve the entries (i.e. QuantumVariables) from the QuantumArray, we simply
+    index as with regular numpy arrays:
+
+    >>> from qrisp import h
+    >>> qv = q_array[0,0,1]
+    >>> h(qv[0])
+    >>> print(q_array)
+    {OutcomeArray([[[0., 0.],
+                    [0., 0.]],
+                   [[0., 0.],
+                    [0., 0.]]]): 0.5,
+     OutcomeArray([[[0.  , 0.25],
+                    [0.  , 0.  ]],
+                   [[0.  , 0.  ],
+                    [0.  , 0.  ]]]): 0.5}
+
+    We see the value 0.25 in the second entry because we applied an H-gate onto the 0-th
+    qubit of the QuantumVariable at position (0,0,1). Since the type of this array is a
+    QuantumFloat, with exponent -2, the significance of this qubit is 0.25.
+
+    Note that the keys of the dictionary returned by the get_measurement method are no
+    regular numpy arrays, as key objects need to be hashable. Instead, they are objects
+    of an immutable subclass of np.ndarray called OutcomeArray, that supports hashing.
+
+    For QuantumArrays, many methods known from numpy arrays work here too:
+
+    >>> q_array = q_array.reshape(2,4)
+
+    Not only do the ndarray methods work but also many other convenience functions from
+    the numpy module:
+
+    >>> q_array_swap = np.swapaxes(q_array, 0, 1)
+    >>> print(q_array_swap)
+    {OutcomeArray([[0., 0.],
+                   [0., 0.],
+                   [0., 0.],
+                   [0., 0.]]): 0.5,
+     OutcomeArray([[0.  , 0.  ],
+                   [0.25, 0.  ],
+                   [0.  , 0.  ],
+                   [0.  , 0.  ]]): 0.5}
+
+    To initiate the array, we use the :meth:`encode <qrisp.QuantumArray.encode>` method.
+    Similar to QuantumVariables, we can also use the slicing operator, but this time
+    non-trivial slices are possible as well:
+
+    >>> q_array[1:,:] = 2*np.ones((1,4))
+    >>> print(q_array)
+    {OutcomeArray([[0., 0., 0., 0.],
+                   [2., 2., 2., 2.]]): 0.5,
+     OutcomeArray([[0.  , 0.25, 0.  , 0.  ],
+                   [2.  , 2.  , 2.  , 2.  ]]): 0.5}
+
+
+    **Quantum indexing**
+
+    QuantumArrays can be dereferenced by :ref:`QuantumFloats <QuantumFloat>`. This
+    returns a :ref:`QuantumEnvironment` in which the corresponding entry is avaliable as
+    a QuantumVariable. ::
+
+        from qrisp import QuantumBool, QuantumArray, QuantumFloat, h, x, multi_measurement
+
+        q_array = QuantumArray(QuantumFloat(1), shape = (4,4))
+        index_0 = QuantumFloat(2)
+        index_1 = QuantumFloat(2)
+
+
+        index_0[:] = 2
+        index_1[:] = 1
+
+        h(index_0[0])
+
+        with q_array[index_0, index_1] as entry:
+            x(entry)
+
+    >>> print(multi_measurement([index_0, index_1, q_array]))
+    {(2, 1, OutcomeArray([[0., 0., 0., 0.],
+                          [0., 0., 0., 0.],
+                          [0., 1., 0., 0.],
+                          [0., 0., 0., 0.]])): 0.5,
+     (3, 1, OutcomeArray([[0., 0., 0., 0.],
+                          [0., 0., 0., 0.],
+                          [0., 0., 0., 0.],
+                          [0., 1., 0., 0.]])): 0.5}
+
+    .. note::
+        This only works for arrays which have a size of an integer power of 2.
+
+    **Matrix multiplication**
+
+    For QuantumArrays with ``qtype`` QuantumFloat, matrix multiplication is available.
+
+    >>> q_array_1 = QuantumArray(qtype, (2,2))
+    >>> q_array_2 = QuantumArray(qtype, (2,2))
+    >>> q_array_1[:] = 2*np.eye(2)
+    >>> q_array_2[:] = [[1,2],[3,4]]
+    >>> print(q_array_1 @ q_array_2)
+    {OutcomeArray([[2., 4.],
+                   [6., 0.]]): 1.0}
+
+    .. note::
+        By default, the output matrix will have the same ``qtype`` as the first input
+        matrix. Here, the ``qtype`` is a QuantumFloat with 5 mantissa bits and exponent
+        -2, implying that the result 8 yields overflow. Since qrisps unsigend arithmetic
+        is modular, we get a 0.
+
+    It is also possible to multiply classical and quantum matrices
+
+    >>> q_array = QuantumArray(qtype, (2,2))
+    >>> q_array[:] = 3*np.eye(2)
+    >>> cl_array = np.array([[1,2],[3,4]])
+    >>> print(q_array @ cl_array)
+    {OutcomeArray([[3., 6.],
+                   [1., 4.]]): 1.0}
+    """
     
     def __init__(self, qtype, shape, qs = None):
         
@@ -1225,7 +1356,7 @@ class QuantumArray:
             qc = circuit_preprocessor(qc)
 
         from qrisp.misc import get_measurement_from_qc
-
+        
         counts = get_measurement_from_qc(qc, qubits, backend, shots)
 
         # Insert outcome labels (if available and hashable)
@@ -1360,6 +1491,87 @@ class QuantumArray:
             res.qv_list = self.qv_list + other.qv_list
         
         return res
+    
+    def duplicate(self, init=False, qs=None):
+        """
+        This method returns a fresh QuantumArray, with equal ``qtype`` and shape.
+    
+        Parameters
+        ----------
+        init : bool, optional
+            If set to True, the :meth:`init_from <qrisp.QuantumArray.init_from>` method
+            will be called after creation. The default is False.
+        qs : QuantumSession, optional
+            The QuantumSession where the duplicate should be registered. By default,
+            the duplicate will be registered in a new QuantumSession.
+    
+        Returns
+        -------
+        res : QuantumArray
+            The duplicated array.
+    
+        Examples
+        --------
+    
+        We duplicate a QuantumArray consisting of QuantumFloats with and without
+        initiation.
+    
+    
+        >>> from qrisp import QuantumArray, QuantumFloat
+        >>> qtype = QuantumFloat(4)
+        >>> q_array_0 = QuantumArray(qtype, (2,2))
+        >>> q_array_0[:] = np.ones((2,2))
+        >>> print(q_array_0)
+        {OutcomeArray([[1, 1],
+                       [1, 1]]): 1.0}
+        >>> q_array_1 = q_array_0.duplicate()
+        >>> print(q_array_1)
+        {OutcomeArray([[0, 0],
+                       [0, 0]]): 1.0}
+    
+        Note that no values have been carried over:
+    
+        >>> q_array_2 = q_array_0.duplicate(init = True)
+        >>> print(q_array_2)
+        {OutcomeArray([[1, 1],
+                       [1, 1]]): 1.0}
+    
+        Now the values have been carried over. Note that this does NOT copy the state.
+        For more information on this check the documentation of the
+        :meth:`init_from <qrisp.QuantumVariable.init_from>` method of QuantumVariable.
+        """
+    
+        res = copy.copy(self)
+    
+        if check_for_tracing_mode():
+            qs = self.qs
+            qs.abs_qc, qb_array_tracer = create_qubits(qs.abs_qc, self.size*self.qtype_size)
+            res.qb_array = DynamicQubitArray(qb_array_tracer)
+            
+            if init:
+                from qrisp import cx
+                for i in jrange(self.size*self.qtype_size):
+                    cx(self.qb_array[i], res.qb_array[i])
+            
+        else:
+                
+            if qs is None:
+                res.qs = QuantumSession()
+            else:
+                res.qs = qs
+                
+            res.qv_list = []
+            for i in range(self.size):
+                res.qv_list.append(self.qv_list[i].duplicate(name= self.qtype.name + "*", 
+                                                         qs= res.qs, 
+                                                         init = init))
+            
+        return res
+    
+    def most_likely(self, **meas_kwargs):
+        meas_res = self.get_measurement(**meas_kwargs)
+        return list(meas_res.keys())[0]
+        
 
 
 class QuantumArrayIterator:

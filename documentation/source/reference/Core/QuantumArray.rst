@@ -16,17 +16,16 @@ Methods
    QuantumArray.get_measurement
    QuantumArray.most_likely
    QuantumArray.duplicate
-   QuantumArray.set_shape
 
-
-De/Encoding states
+Array manipulation
 ------------------
 
 .. autosummary::
    :toctree: generated/
 
-   QuantumArray.decoder
-   QuantumArray.encoder
-   QuantumArray.encode
-   QuantumArray.init_state  
-   QuantumArray.init_from
+   QuantumArray.reshape
+   QuantumArray.transpose
+   QuantumArray.flatten
+   QuantumArray.ravel
+   QuantumArray.swapaxes
+   QuantumArray.concatenate
