@@ -172,6 +172,21 @@ class QuantumArray:
             if not isinstance(s, int):
                 raise Exception(f"Tried to create QuantumArray with non-integer tuple {shape}")
             size *= s
+
+        # The idea to implement this class with compatibility to dynamic features
+        # (such as dynamic index support) is rooted in two core attributes:
+            
+        # 1. An integer jax array containing adresses
+        # 2. A dynamic qubit array containig ALL qubits of the array
+        
+        # Many of the important properties (such as shape, size etc.) are derived
+        # from the index array. Therefore manipulating these things can be achieved
+        # by manipulating the index array.
+        
+        # If the user requests to retrieve a QuantumVariable from the QuantumArray,
+        # the (dynamic) position of the corresponding qubits is retrieved from 
+        # the index array and from this a QuantumVariable is built up.
+        # More on that in the __getitem__ method.
         
         self.ind_array = jnp.arange(size)
         self.ind_array = self.ind_array.reshape(shape)
@@ -212,6 +227,7 @@ class QuantumArray:
         
         from qrisp.environments import conjugate
 
+        # These cases represent the quantum indexing features
         if isinstance(key, QuantumVariable):
             merge([self.qs, key.qs])
             return conjugate(manipulate_array)(self, key)
@@ -221,18 +237,30 @@ class QuantumArray:
                 merge([self.qs, key[0].qs])
                 return conjugate(manipulate_array)(self, key)
         
+        # If the key is not a tuple, convert to make further processing easier
         if not isinstance(key, tuple):
             key = (key,)
         
+        # Retrieve the index address
+        # This can either be an integer or an array slice, depending on what
+        # the type of key is
         sliced_ind_array = self.ind_array[key]
         
         if len(sliced_ind_array.shape):
+            # If the sliced_ind_array has a non trivial shape,
+            # the result will be a QuantumArray (instead of a QuantumVariable).
+            # We construct the sliced QuantumArray by copying all attributes
+            # but instead use the sliced array as the index array.
             res = copy.copy(self)
             res.ind_array = sliced_ind_array
             return res
         else:
+            # Otherwise the sliced_ind_array represents an integer indicating
+            # the address.
             index = sliced_ind_array
             if check_for_tracing_mode():
+                # To construct the resulting QuantumVariable we copy the qtype
+                # variable and update the qv.reg attribute.                
                 qv = copy.copy(self.qtype)
                 s = self.qtype_size
                 qv.reg = self.qb_array[index*s:(index+1)*s]
@@ -249,7 +277,6 @@ class QuantumArray:
             return
         sliced_array = self[key]
         sliced_array.encode(value)
-        
     
     def encode(self, value):
         """
