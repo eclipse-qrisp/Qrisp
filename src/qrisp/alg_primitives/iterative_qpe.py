@@ -16,7 +16,7 @@
 ********************************************************************************/
 """
 
-from qrisp import h, control, rz, measure, reset, QuantumBool, Clbit
+from qrisp import h, control, rz, measure, reset, QuantumBool, QuantumFloat
 from qrisp.jasp import jrange
 import numpy as np
 
@@ -52,8 +52,8 @@ def IQPE(args, U, precision, iter_spec=False, ctrl_method=None, kwargs={}):
 
     Returns
     -------
-    res : list[list[ClBits]]
-        A list of classical bits containing the result.
+    theta : float
+        The estimated phase as a fraction of $2 \pi$.
 
     Examples
     --------
@@ -61,7 +61,8 @@ def IQPE(args, U, precision, iter_spec=False, ctrl_method=None, kwargs={}):
     We define a function that applies two rotations onto its input and estimate the
     applied phase. ::
 
-        from qrisp import p, QuantumVariable, IQPE, multi_measurement, h, run, x, rx, QuantumFloat
+        from qrisp import IQPE, h, run, x, rx, QuantumFloat
+        from qrisp.jasp import make_jaspr
         import numpy as np
 
         def f():
@@ -81,35 +82,23 @@ def IQPE(args, U, precision, iter_spec=False, ctrl_method=None, kwargs={}):
         jaspr = make_jaspr(f)()
 
     >>> jaspr()
-    (Array(False, dtype=bool),
-    Array(True, dtype=bool),
-    Array(True, dtype=bool),
-    Array(False, dtype=bool))
-    >>> IQPE_binary_decimals_to_float(jaspr())
-    0.375
+    Array(0.375, dtype=float64)
 
     """
-    iqpe_aux = QuantumBool()
-    clbits: Clbit = []
+    theta = 0.0
+    iqpe_aux = QuantumFloat(1)
     for k in range(precision):
         reset(iqpe_aux)
         h(iqpe_aux)
         if iter_spec:
-            with control(iqpe_aux, ctrl_method=ctrl_method):
+            with control(iqpe_aux[0], ctrl_method=ctrl_method):
                 U(args, iter=2**(precision-k), **kwargs)
         else:
-            with control(iqpe_aux[0]):
+            with control(iqpe_aux[0], ctrl_method=ctrl_method):
                 for j in jrange(2**(precision-k)):
                     U(args, **kwargs)
-        for i in range(k):
-            with control(clbits[i] == 1):
-                rz(-np.pi/2**(i+1), iqpe_aux)
+        rz(-np.pi*theta, iqpe_aux)
         h(iqpe_aux)
-        clbits.insert(0, measure(iqpe_aux))
-    return clbits
-
-def IQPE_binary_decimals_to_float(bits):
-    theta = 0
-    for i in range(len(bits)):
-        theta += int(bits[i].tolist())/2**(i+1)
+        r = measure(iqpe_aux)
+        theta = (theta + r)/2
     return theta

@@ -18,7 +18,7 @@
 
 
 def test_IQPE_integration():
-    from qrisp import QuantumVariable, h, x, rx, IQPE, IQPE_binary_decimals_to_float
+    from qrisp import QuantumVariable, h, x, rx, IQPE
     from qrisp.jasp import make_jaspr
     import numpy as np
     def f():
@@ -35,4 +35,4 @@ def test_IQPE_integration():
 
         return IQPE(qv, U, precision=4)
     jaspr = make_jaspr(f)()
-    assert(np.abs(IQPE_binary_decimals_to_float(jaspr()) - 1/2**3 - 1/2**2) < 0.001)
+    assert(np.abs(jaspr() - 1/2**3 - 1/2**2) < 0.001)
