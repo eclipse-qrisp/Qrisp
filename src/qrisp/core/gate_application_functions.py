@@ -1201,21 +1201,15 @@ def measure(qubits):
             AbstractQubitArray,
             DynamicQubitArray,
         )
-        from qrisp import QuantumVariable
+        from qrisp import QuantumVariable, QuantumArray
 
-        if isinstance(qubits, QuantumVariable):
-            abs_qc, res = Measurement_p.bind(qs.abs_qc, qubits.reg.tracer)
-            res = qubits.jdecoder(res)
-        elif isinstance(qubits, DynamicQubitArray):
-            abs_qc, res = Measurement_p.bind(qs.abs_qc, qubits.tracer)
-        elif isinstance(qubits.aval, AbstractQubitArray):
+        if isinstance(qubits, (DynamicQubitArray, QuantumVariable, QuantumArray)):
+            res = qubits.measure()
+        elif isinstance(qubits.aval, (AbstractQubitArray, AbstractQubit)):
             abs_qc, res = Measurement_p.bind(qs.abs_qc, qubits)
-        elif isinstance(qubits.aval, AbstractQubit):
-            abs_qc, res = Measurement_p.bind(qs.abs_qc, qubits)
+            qs.abs_qc = abs_qc
         else:
             raise Exception(f"Tried to measure type {type(qubits.aval)}")
-
-        qs.abs_qc = abs_qc
 
         return res
 

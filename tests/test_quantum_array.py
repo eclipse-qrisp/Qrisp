@@ -103,8 +103,9 @@ def test_quantum_array():
     assert (q_array @ cl_array).get_measurement() ==     {OutcomeArray([[3., 6.],
                        [1., 4.]]): 1.0}                                        
     
-    q_array_0 = QuantumArray(qtype, (2,2))
     
+    # test duplicate    
+    q_array_0 = QuantumArray(qtype, (2,2))
     q_array_0[:,:] = np.eye(2)
     q_array_1 = q_array_0.duplicate()
     q_array_2 = q_array_0.duplicate(init = True)
