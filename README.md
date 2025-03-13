@@ -1,4 +1,5 @@
-<p align="center" width="100%"><img src="logo/qrisp_logo.png" width=30% height=30%></p>
+<p align="center" width="100%"><img src="https://github.com/eclipse-qrisp/Qrisp/blob/main/logo/qrisp_logo.png" width=30% height=30%></p>
+</h1><br>
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![PyPI version](https://badge.fury.io/py/qrisp.svg)](https://badge.fury.io/py/qrisp)
@@ -26,26 +27,21 @@ Qrisp is a high-level quantum programming framework that allows for intuitive de
 
 You can install Qrisp using pip:
 
+```bash
+pip install qrisp
+```
+Qrisp has been confirmed to work with Python version 3.10, 3.11 & 3.12.
 
-
+If you want to work with IQM quantum computers as a backend, you need to install additional dependencies using
+```bash
+pip install qrisp[iqm]
+```
 
 Qrisp is an open-source python framework for high-level programming of Quantum computers.
 By automating many steps one usually encounters when progrmaming a quantum computer, introducing quantum types, and many more features Qrisp makes quantum programming more user-friendly yet stays performant when it comes to compiling programs to the circuit level.
 
 ## Documentation
 The full documentation, alongside with many tutorials and examples, is available under [Qrisp Documentation](https://www.qrisp.eu/).
-
-## Installing
-The easiest way to install Qrisp is via ``pip``
-```bash
-pip install qrisp
-```
-Qrisp has been confirmed to work with Python version 3.8, 3.9 & 3.10.
-
-If you want to work with IQM quantum computers as a backend, you need to install additional dependencies using
-```bash
-pip install qrisp[iqm]
-```
 
 ## Shor's Algorithm with Qrisp
 
