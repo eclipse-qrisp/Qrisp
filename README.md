@@ -1,5 +1,34 @@
 <p align="center" width="100%"><img src="logo/qrisp_logo.png" width=30% height=30%></p>
 
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![PyPI version](https://badge.fury.io/py/qrisp.svg)](https://badge.fury.io/py/qrisp)
+[![Build Status](https://github.com/eclipse-qrisp/Qrisp/workflows/CI/badge.svg)](https://github.com/eclipse-qrisp/Qrisp/actions)
+[![Downloads](https://img.shields.io/pypi/dm/qrisp.svg)](https://pypi.org/project/qrisp/)
+[![Contributors](https://img.shields.io/github/contributors/eclipse-qrisp/Qrisp.svg)](https://github.com/eclipse-qrisp/Qrisp/graphs/contributors)
+[![Open Issues](https://img.shields.io/github/issues/eclipse-qrisp/Qrisp.svg)](https://github.com/eclipse-qrisp/Qrisp/issues)
+[![Forks](https://img.shields.io/github/forks/eclipse-qrisp/Qrisp.svg)](https://github.com/eclipse-qrisp/Qrisp/network/members)
+[![Stars](https://img.shields.io/github/stars/eclipse-qrisp/Qrisp.svg)](https://github.com/eclipse-qrisp/Qrisp/stargazers)
+
+Qrisp is the next generation of quantum algorithm development.
+
+## About
+
+Qrisp is a high-level quantum programming framework that allows for intuitive development of quantum algorithms. It provides a rich set of tools and abstractions to make quantum computing more accessible to developers and researchers.
+
+## Features
+
+- Intuitive quantum circuit design
+- High-level quantum operations
+- Efficient quantum algorithm implementation
+- Extensive documentation and examples
+
+## Installation
+
+You can install Qrisp using pip:
+
+
+
+
 Qrisp is an open-source python framework for high-level programming of Quantum computers.
 By automating many steps one usually encounters when progrmaming a quantum computer, introducing quantum types, and many more features Qrisp makes quantum programming more user-friendly yet stays performant when it comes to compiling programs to the circuit level.
 
