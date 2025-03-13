@@ -1,20 +1,22 @@
-<p align="center" width="100%"><img src="https://github.com/eclipse-qrisp/Qrisp/blob/main/logo/qrisp_logo.png" width=30% height=30%></p>
+<p align="center" width="100%"><img src="https://github.com/eclipse-qrisp/Qrisp/blob/main/logo/logo_with_contour.png" width=30% height=30%></p>
 
 </h1><br>
+<div align="center">
 
-<center>
-[![Slack](https://img.shields.io/badge/Slack-4A154B?style=for-the-badge&logo=slack&logoColor=white)](https://join.slack.com/t/qrisp-workspace/shared_invite/zt-20yv9bbvo-igspbQpslCBK9ZlYSVijsw)
-[![License](https://img.shields.io/badge/License-EPL_2.0-20193e?style=for-the-badge&labelColor=2C2255)](https://www.eclipse.org/legal/epl-2.0/)
+
+[![License](https://img.shields.io/badge/License-EPL_2.0-20193e?style=plastic&labelColor=2C2255)](https://www.eclipse.org/legal/epl-2.0/)
 [![PyPI version](https://badge.fury.io/py/qrisp.svg)](https://badge.fury.io/py/qrisp)
-[![Build Status](https://github.com/eclipse-qrisp/Qrisp/blob/main/.github/workflows/qrisp_test.yml/badge.svg)](https://github.com/eclipse-qrisp/Qrisp/actions)
+[![Slack](https://img.shields.io/badge/Slack-4A154B?style=plastic&logo=slack&logoColor=white)](https://join.slack.com/t/qrisp-workspace/shared_invite/zt-20yv9bbvo-igspbQpslCBK9ZlYSVijsw)
+[![Pytest](https://github.com/eclipse-qrisp/Qrisp/actions/workflows/qrisp_test.yml/badge.svg)](https://github.com/eclipse-qrisp/Qrisp/actions/workflows/qrisp_test.yml)
 [![Downloads](https://img.shields.io/pypi/dm/qrisp.svg)](https://pypi.org/project/qrisp/)
-[![Contributors](https://img.shields.io/github/contributors/eclipse-qrisp/Qrisp.svg)](https://github.com/eclipse-qrisp/Qrisp/graphs/contributors)
+
+[![Paper](https://img.shields.io/badge/DOI-10.1038%2Fs41586--020--2649--2-blue)](https://doi.org/10.48550/arXiv.2406.14792)
 [![Open Issues](https://img.shields.io/github/issues/eclipse-qrisp/Qrisp.svg)](https://github.com/eclipse-qrisp/Qrisp/issues)
 [![Forks](https://img.shields.io/github/forks/eclipse-qrisp/Qrisp.svg)](https://github.com/eclipse-qrisp/Qrisp/network/members)
 [![Stars](https://img.shields.io/github/stars/eclipse-qrisp/Qrisp.svg)](https://github.com/eclipse-qrisp/Qrisp/stargazers)
-</center>
+[![Contributors](https://img.shields.io/github/contributors/eclipse-qrisp/Qrisp.svg)](https://github.com/eclipse-qrisp/Qrisp/graphs/contributors)
 
-Qrisp is the next generation of quantum algorithm development.
+</div>
 
 ## About
 
@@ -22,8 +24,8 @@ Qrisp is a high-level quantum programming framework that allows for intuitive de
 
 ## Features
 
-- Intuitive quantum circuit design
-- High-level quantum operations
+- Intuitive quantum program design
+- High-level quantum programming
 - Efficient quantum algorithm implementation
 - Extensive documentation and examples
 
@@ -34,9 +36,10 @@ You can install Qrisp using pip:
 ```bash
 pip install qrisp
 ```
+
 Qrisp has been confirmed to work with Python version 3.10, 3.11 & 3.12.
 
-If you want to work with IQM quantum computers as a backend, you need to install additional dependencies using
+Qrisp is compatible with any QASM-capable quantum backend! If you want to work with IQM quantum computers as a backend, you need to install additional dependencies using
 ```bash
 pip install qrisp[iqm]
 ```
