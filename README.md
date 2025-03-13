@@ -18,39 +18,32 @@ If you want to work with IQM quantum computers as a backend, you need to install
 pip install qrisp[iqm]
 ```
 
-## First Quantum Program with Qrisp
-The very first program you usually write, when learning a new programming language, is printing 'hello world'.
-We want to do the same, but in a quantum way.
+## Shor's Algorithm with Qrisp
 
-For this we can make use of the ``QuantumString`` type implemented in Qrisp. So we start by creating a new variable of the type QuantumString and assign the value 'hello world':
+Shor's algorithm is among the most famous quantum algorithm since it provides a provably exponential speed-up for a practically relevant problem: Facotrizing integers. This is an important application because much of modern cryptography is based on RSA, which heavily relies on integer factorization being insurmountable.
+
+Despite this importance, the amount of software that is actually able to compile the algorithm to the circuit level is extremely limited. This is because a key operation within the algorithm (modular in-place multiplication) is difficult to implement and has strong requirements for the underlying compiler. These problems highlight how the Qrisp programming-model delivers significant advantages to quantum programmers because the quantum part of the algorithm can be expressend within a few lines of code:
+
 ```python
-from qrisp import QuantumString
 
-q_str = QuantumString()
-q_str[:] = "hello world"
+from qrisp import QuantumFloat, QuantumModulus, h, QFT
 
-print(q_str)
+def find_order(a, N):
+    qg = QuantumModulus(N)
+    qg[:] = 1
+    qpe_res = QuantumFloat(2*qg.size + 1, exponent = -(2*qg.size + 1))
+    h(qpe_res)
+    for i in range(len(qpe_res)):
+        with control(qpe_res[i]):
+            qg *= a
+            a = (a*a)%N
+    QFT(qpe_res, inv = True)
+    return qpe_res.get_measurement()
 ```
 
-With the ``print(q_str)`` command, we automatically simulate the circuit generated when assigning ``hello world`` to ``q_str``. And es expected we get ``hello world`` with a probility of 1 as output:
-```python
-{'hello world': 1.0}
-```
+To find out how this can be used to break encryption be sure to check the [tutorial](https://www.qrisp.eu/general/tutorial.html).
 
-Now, let's make things more interesting: What happens, if we apply a Hadamard gate to the first qubit of the 7th character in our string?
-```python
-from qrisp import h, QuantumString
-
-q_str = QuantumString()
-q_str[:] = "hello world"
-h(q_str[6][0])
-
-print(q_str)
-```
-Go on, install Qrisp and try it yourself!
-
-Of course, Qrisp offers much more than just handling strings with a quantum computer. More examples, like how to solve a quadratic equation with Grover's algorithm or how to solve the Travelling Salesman Problem on a quantum computer, can be found [here](https://www.qrisp.eu/general/tutorial.html).
-
+Qrisp offers much more than just factoring! More examples, like simulating molecules at the quantum level or how to solve the Travelling Salesman Problem, can be found [here](https://www.qrisp.eu/general/tutorial.html).
 
 ## Authors and Citation
 Qrisp was mainly devised and implemented by Raphael Seidel, supported by Sebastian Bock, Nikolay Tcholtchev, René Zander, Niklas Steinmann and Matic Petric.
