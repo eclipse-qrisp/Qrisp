@@ -356,7 +356,7 @@ class Jaspr(Jaxpr):
                     return
             return True
             
-        res = eval_jaxpr(jaspr, eqn_evaluator = eqn_evaluator)(*([QuantumCircuit()] + list(args)))
+        res = eval_jaxpr(jaspr, eqn_evaluator = eqn_evaluator)(*([QuantumCircuit()] + list(args) + jaspr.consts))
         
         return res
     

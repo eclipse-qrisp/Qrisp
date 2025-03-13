@@ -534,7 +534,9 @@ def inplace_matrix_app(vector, matrix):
     # In order to enter the reorder values in the QuantumArray, we need to use the
     # setitem method of ndarray because setitem for QuantumArray
     # is overloaded with initialization
-    np.ndarray.__setitem__(vector, slice(None, None, None), qv_reordering_array)
+    from qrisp import permute_iterable
+    permute_iterable(vector, eliminated_variables)
+    # np.ndarray.__setitem__(vector, slice(None, None, None), qv_reordering_array)
 
 
 def auto_matmul_wrapper(a, b, out=None):
@@ -759,7 +761,7 @@ def tensordot(a, b, axes):
         axes_b = [axes_b]
         nb = 1
 
-    a, b = np.asanyarray(a), np.asanyarray(b)
+    # a, b = np.asanyarray(a), np.asanyarray(b)
     as_ = a.shape
     nda = a.ndim
     bs = b.shape

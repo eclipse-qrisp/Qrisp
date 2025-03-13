@@ -1,56 +1,78 @@
-<p align="center" width="100%"><img src="logo/qrisp_logo.png" width=30% height=30%></p>
+<p align="center" width="100%"><img src="https://github.com/eclipse-qrisp/Qrisp/blob/main/logo/logo_with_contour.png" width=30% height=30%></p>
 
-Qrisp is an open-source python framework for high-level programming of Quantum computers.
-By automating many steps one usually encounters when progrmaming a quantum computer, introducing quantum types, and many more features Qrisp makes quantum programming more user-friendly yet stays performant when it comes to compiling programs to the circuit level.
+</h1><br>
+<div align="center">
 
-## Documentation
-The full documentation, alongside with many tutorials and examples, is available under [Qrisp Documentation](https://www.qrisp.eu/).
 
-## Installing
-The easiest way to install Qrisp is via ``pip``
+[![License](https://img.shields.io/badge/License-EPL_2.0-20193e?style=plastic&labelColor=2C2255)](https://www.eclipse.org/legal/epl-2.0/)
+[![PyPI version](https://badge.fury.io/py/qrisp.svg)](https://badge.fury.io/py/qrisp)
+[![Slack](https://img.shields.io/badge/Slack-4A154B?style=plastic&logo=slack&logoColor=white)](https://join.slack.com/t/qrisp-workspace/shared_invite/zt-20yv9bbvo-igspbQpslCBK9ZlYSVijsw)
+[![Pytest](https://github.com/eclipse-qrisp/Qrisp/actions/workflows/qrisp_test.yml/badge.svg)](https://github.com/eclipse-qrisp/Qrisp/actions/workflows/qrisp_test.yml)
+[![Downloads](https://img.shields.io/pypi/dm/qrisp.svg)](https://pypi.org/project/qrisp/)
+
+[![Paper](https://img.shields.io/badge/DOI-10.1038%2Fs41586--020--2649--2-blue)](https://doi.org/10.48550/arXiv.2406.14792)
+[![Open Issues](https://img.shields.io/github/issues/eclipse-qrisp/Qrisp.svg)](https://github.com/eclipse-qrisp/Qrisp/issues)
+[![Forks](https://img.shields.io/github/forks/eclipse-qrisp/Qrisp.svg)](https://github.com/eclipse-qrisp/Qrisp/network/members)
+[![Stars](https://img.shields.io/github/stars/eclipse-qrisp/Qrisp.svg)](https://github.com/eclipse-qrisp/Qrisp/stargazers)
+[![Contributors](https://img.shields.io/github/contributors/eclipse-qrisp/Qrisp.svg)](https://github.com/eclipse-qrisp/Qrisp/graphs/contributors)
+
+</div>
+
+## About
+
+Qrisp is a high-level quantum programming framework that allows for intuitive development of quantum algorithms. It provides a rich set of tools and abstractions to make quantum computing more accessible to developers and researchers. By automating many steps one usually encounters when programming a quantum computer, introducing quantum types, and many more features Qrisp makes quantum programming more user-friendly yet stays performant when it comes to compiling programs to the circuit level.
+
+## Features
+
+- Intuitive quantum program design
+- High-level quantum programming
+- Efficient quantum algorithm implementation
+- Extensive documentation and examples
+
+## Installation
+
+You can install Qrisp using pip:
+
 ```bash
 pip install qrisp
 ```
-Qrisp has been confirmed to work with Python version 3.8, 3.9 & 3.10.
 
-If you want to work with IQM quantum computers as a backend, you need to install additional dependencies using
+Qrisp has been confirmed to work with Python version 3.10, 3.11 & 3.12.
+
+Qrisp is compatible with any QASM-capable quantum backend! If you want to work with IQM quantum computers as a backend, you need to install additional dependencies using
 ```bash
 pip install qrisp[iqm]
 ```
 
-## First Quantum Program with Qrisp
-The very first program you usually write, when learning a new programming language, is printing 'hello world'.
-We want to do the same, but in a quantum way.
+## Documentation
+The full documentation, alongside with many tutorials and examples, is available under [Qrisp Documentation](https://www.qrisp.eu/).
 
-For this we can make use of the ``QuantumString`` type implemented in Qrisp. So we start by creating a new variable of the type QuantumString and assign the value 'hello world':
+## Shor's Algorithm with Qrisp
+
+Shor's algorithm is among the most famous quantum algorithm since it provides a provably exponential speed-up for a practically relevant problem: Facotrizing integers. This is an important application because much of modern cryptography is based on RSA, which heavily relies on integer factorization being insurmountable.
+
+Despite this importance, the amount of software that is actually able to compile the algorithm to the circuit level is extremely limited. This is because a key operation within the algorithm (modular in-place multiplication) is difficult to implement and has strong requirements for the underlying compiler. These problems highlight how the Qrisp programming-model delivers significant advantages to quantum programmers because the quantum part of the algorithm can be expressend within a few lines of code:
+
 ```python
-from qrisp import QuantumString
 
-q_str = QuantumString()
-q_str[:] = "hello world"
+from qrisp import QuantumFloat, QuantumModulus, h, QFT
 
-print(q_str)
+def find_order(a, N):
+    qg = QuantumModulus(N)
+    qg[:] = 1
+    qpe_res = QuantumFloat(2*qg.size + 1, exponent = -(2*qg.size + 1))
+    h(qpe_res)
+    for i in range(len(qpe_res)):
+        with control(qpe_res[i]):
+            qg *= a
+            a = (a*a)%N
+    QFT(qpe_res, inv = True)
+    return qpe_res.get_measurement()
 ```
 
-With the ``print(q_str)`` command, we automatically simulate the circuit generated when assigning ``hello world`` to ``q_str``. And es expected we get ``hello world`` with a probility of 1 as output:
-```python
-{'hello world': 1.0}
-```
+To find out how this can be used to break encryption be sure to check the [tutorial](https://www.qrisp.eu/general/tutorial.html).
 
-Now, let's make things more interesting: What happens, if we apply a Hadamard gate to the first qubit of the 7th character in our string?
-```python
-from qrisp import h, QuantumString
-
-q_str = QuantumString()
-q_str[:] = "hello world"
-h(q_str[6][0])
-
-print(q_str)
-```
-Go on, install Qrisp and try it yourself!
-
-Of course, Qrisp offers much more than just handling strings with a quantum computer. More examples, like how to solve a quadratic equation with Grover's algorithm or how to solve the Travelling Salesman Problem on a quantum computer, can be found [here](https://www.qrisp.eu/general/tutorial.html).
-
+Qrisp offers much more than just factoring! More examples, like simulating molecules at the quantum level or how to solve the Travelling Salesman Problem, can be found [here](https://www.qrisp.eu/general/tutorial.html).
 
 ## Authors and Citation
 Qrisp was mainly devised and implemented by Raphael Seidel, supported by Sebastian Bock, Nikolay Tcholtchev, René Zander, Niklas Steinmann and Matic Petric.

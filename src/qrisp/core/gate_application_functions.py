@@ -159,7 +159,7 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
         *   - ``balauca``
             - Method based on this `paper <https://www.iccs-meeting.org/archive/iccs2022/papers/133530169.pdf>`__ with logarithmic depth but requires many ancilla qubits.
     	*   - ``khattar``
-            - Method based on this `paper <https://arxiv.org/abs/2407.17966>`_, implements the n-controlled x with 2n − 3 Toffoli and linear depth using 1 clean ancilla. The case n=3 implements this `paper <https://arxiv.org/abs/2106.11513>`_.
+            - Method based on this `paper <https://arxiv.org/abs/2407.17966>`_, implements the n-controlled x with 2n − 3 Toffoli and linear depth using 1 clean ancilla. The case n=3 implements this `paper <https://arxiv.org/abs/2106.11513>`__.
         *   - ``maslov``
             - Documented `here <https://arxiv.org/abs/1508.03273>`_, requires less ancilla qubits but is only available for 4 or less control qubits.
         *   - ``yong``
@@ -1208,21 +1208,15 @@ def measure(qubits):
             AbstractQubitArray,
             DynamicQubitArray,
         )
-        from qrisp import QuantumVariable
+        from qrisp import QuantumVariable, QuantumArray
 
-        if isinstance(qubits, QuantumVariable):
-            abs_qc, res = Measurement_p.bind(qs.abs_qc, qubits.reg.tracer)
-            res = qubits.jdecoder(res)
-        elif isinstance(qubits, DynamicQubitArray):
-            abs_qc, res = Measurement_p.bind(qs.abs_qc, qubits.tracer)
-        elif isinstance(qubits.aval, AbstractQubitArray):
+        if isinstance(qubits, (DynamicQubitArray, QuantumVariable, QuantumArray)):
+            res = qubits.measure()
+        elif isinstance(qubits.aval, (AbstractQubitArray, AbstractQubit)):
             abs_qc, res = Measurement_p.bind(qs.abs_qc, qubits)
-        elif isinstance(qubits.aval, AbstractQubit):
-            abs_qc, res = Measurement_p.bind(qs.abs_qc, qubits)
+            qs.abs_qc = abs_qc
         else:
             raise Exception(f"Tried to measure type {type(qubits.aval)}")
-
-        qs.abs_qc = abs_qc
 
         return res
 
