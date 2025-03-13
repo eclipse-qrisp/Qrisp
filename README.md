@@ -1,15 +1,18 @@
 <p align="center" width="100%"><img src="https://github.com/eclipse-qrisp/Qrisp/blob/main/logo/qrisp_logo.png" width=30% height=30%></p>
+
 </h1><br>
 
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+<center>
+![Slack](https://img.shields.io/badge/Slack-4A154B?style=for-the-badge&logo=slack&logoColor=white)(https://join.slack.com/t/qrisp-workspace/shared_invite/zt-20yv9bbvo-igspbQpslCBK9ZlYSVijsw)
+[![License](https://img.shields.io/badge/License-EPL_2.0-20193e?style=for-the-badge&labelColor=2C2255)](https://www.eclipse.org/legal/epl-2.0/)
 [![PyPI version](https://badge.fury.io/py/qrisp.svg)](https://badge.fury.io/py/qrisp)
-[![Build Status](https://github.com/eclipse-qrisp/Qrisp/workflows/CI/badge.svg)](https://github.com/eclipse-qrisp/Qrisp/actions)
+[![Build Status](https://github.com/eclipse-qrisp/Qrisp/blob/main/.github/workflows/qrisp_test.yml/badge.svg)](https://github.com/eclipse-qrisp/Qrisp/actions)
 [![Downloads](https://img.shields.io/pypi/dm/qrisp.svg)](https://pypi.org/project/qrisp/)
 [![Contributors](https://img.shields.io/github/contributors/eclipse-qrisp/Qrisp.svg)](https://github.com/eclipse-qrisp/Qrisp/graphs/contributors)
 [![Open Issues](https://img.shields.io/github/issues/eclipse-qrisp/Qrisp.svg)](https://github.com/eclipse-qrisp/Qrisp/issues)
 [![Forks](https://img.shields.io/github/forks/eclipse-qrisp/Qrisp.svg)](https://github.com/eclipse-qrisp/Qrisp/network/members)
 [![Stars](https://img.shields.io/github/stars/eclipse-qrisp/Qrisp.svg)](https://github.com/eclipse-qrisp/Qrisp/stargazers)
-
+</center>
 Qrisp is the next generation of quantum algorithm development.
 
 ## About
