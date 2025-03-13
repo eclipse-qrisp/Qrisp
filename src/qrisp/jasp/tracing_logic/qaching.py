@@ -240,11 +240,12 @@ def qache_helper(func, jax_kwargs):
         res = func(*args, **kwargs)
         
         res_qvs = recursive_qv_search(res)
-        res_qvs += [qa.qtype for qa in recursive_qa_search(res)]
         
         # It is not legal to return a QuantumVariable that was already given in the parameters.
         if set([hash(qv) for qv in res_qvs]).intersection([hash(qv) for qv in arg_qvs]):
             raise Exception("Found parameter QuantumVariable within returned results")
+
+        res_qvs += [qa.qtype for qa in recursive_qa_search(res)]
         
         # Check whether there have been in-place modifications of traced attributes of QuantumVariables.
         for qv in arg_qvs:
