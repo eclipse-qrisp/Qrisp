@@ -20,7 +20,7 @@
 
 ## About
 
-Qrisp is a high-level quantum programming framework that allows for intuitive development of quantum algorithms. It provides a rich set of tools and abstractions to make quantum computing more accessible to developers and researchers.
+Qrisp is a high-level quantum programming framework that allows for intuitive development of quantum algorithms. It provides a rich set of tools and abstractions to make quantum computing more accessible to developers and researchers. By automating many steps one usually encounters when programming a quantum computer, introducing quantum types, and many more features Qrisp makes quantum programming more user-friendly yet stays performant when it comes to compiling programs to the circuit level.
 
 ## Features
 
@@ -43,9 +43,6 @@ Qrisp is compatible with any QASM-capable quantum backend! If you want to work w
 ```bash
 pip install qrisp[iqm]
 ```
-
-Qrisp is an open-source python framework for high-level programming of Quantum computers.
-By automating many steps one usually encounters when progrmaming a quantum computer, introducing quantum types, and many more features Qrisp makes quantum programming more user-friendly yet stays performant when it comes to compiling programs to the circuit level.
 
 ## Documentation
 The full documentation, alongside with many tutorials and examples, is available under [Qrisp Documentation](https://www.qrisp.eu/).
