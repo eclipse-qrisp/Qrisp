@@ -34,8 +34,6 @@ def test_khattar_dyn():
         return qf, qbl
     
     for i in range(1,8):
-        if i == 3:
-            continue
         for j in range(2**i):
             res_dict = main(i, j)
             
@@ -44,6 +42,68 @@ def test_khattar_dyn():
                     assert k[1], f"Assertion failed: Expected True for i={i}, j={j}, but got False."
                 else:
                     assert not k[1], f"Assertion failed: Expected False for i={i}, j={j}, but got True."
+    
+    
+    # Test dynamic mcp
+    @terminal_sampling
+    def main(phi, i):
+        
+        qv = QuantumFloat(i)
+    
+        x(qv[:qv.size-1])
+        
+        with conjugate(h)(qv[qv.size-1]):
+            mcp(phi, qv, method="khattar")
+        
+        return qv
+      
+    assert main(np.pi, 5) == {31: 1.0}
+
+    @terminal_sampling
+    def main(phi, i, j):
+        
+        qv = QuantumFloat(i)
+    
+        with conjugate(h)(qv[qv.size-1]):
+            mcp(phi, qv, method="khattar", ctrl_state = j)
+        
+        return qv
+    
+    for i in range(2,8):
+        for j in range(2**i):
+            if j==0 or j==2**(i-1):        
+                assert main(np.pi, i, j) == {2**(i-1): 1.0}
+            else: 
+                assert main(np.pi, i, j) == {0: 1.0}   
+    
+    @terminal_sampling
+    def main(phi, i, j):
+        
+        qv = QuantumFloat(i)
+    
+        with conjugate(h)(qv[qv.size-1]):
+            mcp(phi, [qv[i] for i in range(5)], method="khattar", ctrl_state = j)
+        
+        return qv
+            
+    for j in range(2**5):
+        if j==0 or j==2**(4):        
+            assert main(np.pi, 5, j) == {2**(4): 1.0}
+        else: 
+            assert main(np.pi, 5, j) == {0: 1.0}
+    
+    # Test no additional phase on output
+    @terminal_sampling
+    def main(i):
+        
+        qf = QuantumFloat(i)        
+        qbl = QuantumBool()
+        with conjugate(h)(qf[qf.size-1]):
+            h(qbl[0])
+            mcx(qf.reg, qbl[0], method = "balauca")
+        return qf
+    for i in range (1,8):                
+        assert(main(i))=={0.0: 1.0}    
 
 def test_khattar_stat():
     
@@ -61,7 +121,7 @@ def test_khattar_stat():
     
     for i in range(1,8):
         if i == 2:
-            continue   
+            continue    
         for j in range(2**i):
             res_dict = test_mcx_inner(i, j)
             print(res_dict)

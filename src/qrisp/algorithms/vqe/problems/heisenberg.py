@@ -96,7 +96,7 @@ def create_heisenberg_hamiltonian(G, J, B):
 
     """
 
-    H = sum(J*X(i)*X(j)+Y(i)*Y(j)+Z(i)*Z(j) for (i,j) in G.edges()) + sum(B*Z(i) for i in G.nodes)
+    H = sum(J*(X(i)*X(j)+Y(i)*Y(j)+Z(i)*Z(j)) for (i,j) in G.edges()) + sum(B*Z(i) for i in G.nodes)
     return H
 
 
