@@ -16,16 +16,23 @@
 ********************************************************************************/
 """
 
-from qrisp.alg_primitives.qft import *
-from qrisp.alg_primitives.qpe import *
-from qrisp.alg_primitives.qae import *
-from qrisp.alg_primitives.iterative_qae import *
-from qrisp.alg_primitives.logic_synthesis import *
-from qrisp.alg_primitives.mcx_algs import *
-from qrisp.alg_primitives.arithmetic import *
-from qrisp.alg_primitives.iterable_processing import *
-from qrisp.alg_primitives.dicke_state_prep import *
-from qrisp.alg_primitives.switch_case import *
-from qrisp.alg_primitives.amplitude_amplification import *
-from qrisp.alg_primitives.prepare import *
-from qrisp.alg_primitives.iterative_qpe import *
+
+def test_IQPE_integration():
+    from qrisp import QuantumVariable, h, x, rx, IQPE
+    from qrisp.jasp import make_jaspr
+    import numpy as np
+    def f():
+        def U(qv):
+            x = 1/2**3
+            y = 1/2**2
+            rx(x*2*np.pi, qv[0])
+            rx(y*2*np.pi, qv[1])
+
+        qv = QuantumVariable(2)
+
+        x(qv)
+        h(qv)
+
+        return IQPE(qv, U, precision=4)
+    jaspr = make_jaspr(f)()
+    assert(np.abs(jaspr() - 1/2**3 - 1/2**2) < 0.001)
