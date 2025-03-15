@@ -1655,13 +1655,12 @@ class QubitOperator(Hamiltonian):
                                 diagonalisation_method=diagonalisation_method,
                                 measurement_data=measurement_data)
     
+    
     def expectation_value(
         self,
         state_prep,
-        state_args=(),
-        precision=0.01,
-        backend=None,
-        diagonalisation_method="commuting_qw"
+        precision = 0.01,
+        diagonalisation_method = "commuting",
         ):
         r"""
         This method returns the expected value of a Hamiltonian for the state 
@@ -1680,8 +1679,6 @@ class QubitOperator(Hamiltonian):
             The expectation of the Hamiltonian for the state from this QuantumVariable will be measured. 
             The state preparation function can only take classical values as arguments. 
             This is because a quantum value would need to be copied for each sampling iteration, which is prohibited by the no-cloning theorem.
-        state_args : tuple
-            A tuple of arguments of the ``state_prep`` function: ``state_prep(*state_args)``is executed.   
         precision : float, optional
             The precision with which the expectation of the Hamiltonian is to be evaluated.
             The default is 0.01. The number of shots scales quadratically with the inverse precision.
@@ -1689,12 +1686,12 @@ class QubitOperator(Hamiltonian):
             Specifies the method for grouping and diagonalizing the QubitOperator. 
             Available are ``commuting_qw``, i.e., the operator is grouped based on qubit-wise commutativity of terms, 
             and ``commuting``, i.e., the operator is grouped based on commutativity of terms.
-            The default is ``commuting_qw``.
+            The default is ``commuting``.
 
         Returns
         -------
-        float
-            The expectation value of the Hamiltonian for the prepared quantum state.
+        callable
+            A classical, Jax traceable function returning The expectation value of the Hamiltonian for the prepared quantum state.
 
         Examples
         --------
@@ -1713,7 +1710,7 @@ class QubitOperator(Hamiltonian):
 
             H = Z(0)*Z(1)
 
-            H.expectation_value(state_prep)
+            H.expectation_value(state_prep)()
             # Yields: -0.0021252656582072538
 
         We can also use this method in :ref:`Jasp`:
@@ -1722,25 +1719,30 @@ class QubitOperator(Hamiltonian):
 
             @jaspify(terminal_sampling=True)
             def main():
-                return H.expectation_value(state_prep)
+                return H.expectation_value(state_prep)()
 
             main()
             # Yields: Array(0.02062758, dtype=float64)
 
         """
-        if check_for_tracing_mode():
-            return get_jasp_measurement(self, 
-                                    state_prep, 
-                                    state_args,
-                                    precision=precision, 
-                                    diagonalisation_method=diagonalisation_method)
-        else:
-            qarg = state_prep(*state_args)
-            return get_measurement(self, 
-                                    qarg, 
-                                    precision=precision, 
-                                    backend=backend,
-                                    diagonalisation_method=diagonalisation_method)
+
+        def return_function(*args):
+
+            if check_for_tracing_mode():
+                return get_jasp_measurement(self, 
+                                        state_prep, 
+                                        args,
+                                        precision = precision, 
+                                        diagonalisation_method = diagonalisation_method)
+            else:
+
+                qarg = state_prep(*args)
+                return get_measurement(self, 
+                                        qarg, 
+                                        precision=precision, 
+                                        diagonalisation_method=diagonalisation_method)
+            
+        return return_function
 
     #
     # Trotterization
