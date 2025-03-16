@@ -576,6 +576,8 @@ class VQEProblem:
         -------
         ndarray, shape (n,)
             The optimized parameters of the problem instance.
+        float or jax.Array
+            The expectation value of the Hamiltonian for the optimized parameters.    
         """
 
         if check_for_tracing_mode():
@@ -670,8 +672,8 @@ class VQEProblem:
 
             def state_prep(theta):
                 qarg = self.init_function()
-                for i in jrange(depth):
-                    self.ansatz_function(qarg, theta)
+                for i in range(depth):
+                    self.ansatz_function(qarg, theta[self.num_params*i : self.num_params*(i+1)+1])
                 return qarg
 
             res_sample = jasp_minimize(optimization_wrapper,
@@ -693,7 +695,7 @@ class VQEProblem:
             return res_sample['x'], res_sample['fun']
 
 
-    def start(self, depth=1, mes_kwargs={}, maxiter=50, init_type="random", init_point=None, optimizer=None, options={}):
+    def start(self, depth=1, mes_kwargs={}, maxiter=50, init_type="random", init_point=None, optimizer=None, options={}, train_function=False):
         """
         Run VQE for the specific problem instance.
         
@@ -718,6 +720,9 @@ class VQEProblem:
             In :ref:`Jasp` mode: Available are ``SPSA``. The Default is ``SPSA`. 
         options : dict
             A dictionary of solver options.
+        train_function: bool, optional
+            If set to ``True`` a function returning a QuantumVariable is returned.
+            This function applies the ansatz with optimal parameters.
 
         Returns
         -------
@@ -725,6 +730,8 @@ class VQEProblem:
             The expected value of the Hamiltonian for the ansatz with the optimal parameter values.
         opt_theta : dnarray, shape (n,)
             The optimal parameter values.
+        state_prep : callable, optional
+            A function returning a QuantumVariable. 
 
         """
 
@@ -735,12 +742,6 @@ class VQEProblem:
             mes_kwargs["diagonalisation_method"] = "commuting"
 
         options["maxiter"] = maxiter
-
-        def state_prep(theta):
-            qarg = self.init_function()
-            for i in range(depth):
-                self.ansatz_function(qarg, theta[self.num_params*i : self.num_params*(i+1)+1])
-            return qarg
 
         if check_for_tracing_mode():
 
@@ -753,8 +754,6 @@ class VQEProblem:
                                                 init_point, 
                                                 optimizer,
                                                 options)
-            
-            return opt_res, opt_theta
             
         else:
 
@@ -770,10 +769,21 @@ class VQEProblem:
                                                 optimizer,
                                                 options,
                                                 measurement_data = measurement_data)
+
+        if train_function:
+            def state_prep():
+                qarg = self.init_function()
+                for i in range(depth):
+                    self.ansatz_function(qarg, opt_theta[self.num_params*i : self.num_params*(i+1)+1])
+                return qarg
         
+            return opt_res, opt_theta, state_prep
+        
+        else:
             return opt_res, opt_theta
-        
-    def start_benchmark(self, depth_range, precision_range, iter_range, optimal_energy, repetitions = 1, mes_kwargs = {}, init_type = "random"):
+            
+
+    def start_benchmark(self, depth_range, precision_range, iter_range, optimal_energy, repetitions=1, mes_kwargs={}, init_type="random", optimizer=None, options={}):
         """
         This method enables convenient data collection regarding performance of the implementation.
 
@@ -792,9 +802,15 @@ class VQEProblem:
             The amount of repetitions, each parameter constellation should go though. Can be used to get a better statistical significance. The default is 1.
         mes_kwargs : dict, optional
             The keyword arguments, that are used for the :meth:`get_measurement <qrisp.operators.qubit.QubitOperator.get_measurement>` function. The default is {}.
-        init_type : string, optional
+        init_type : str, optional
             Specifies the way the initial optimization parameters are chosen. Available is ``random``. 
             The default is ``random``: Parameters are initialized uniformly at random in the interval $[0,\pi/2)]$.
+        optimizer : str, optional
+            Specifies the `optimization routine <https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html>`_. 
+            Available are, e.g., ``COBYLA``, ``COBYQA``, ``Nelder-Mead``. The Default is ``COBYLA``.
+            In :ref:`Jasp` mode: Available are ``SPSA``. The Default is ``SPSA`. 
+        options : dict
+            A dictionary of solver options.
 
         Returns
         -------
@@ -858,7 +874,7 @@ class VQEProblem:
                         temp_mes_kwargs = dict(mes_kwargs)
                         temp_mes_kwargs["precision"] = s
 
-                        energy, _ = self.start(depth = p, maxiter = it, mes_kwargs = temp_mes_kwargs, init_type=init_type)
+                        energy, _ = self.start(depth = p, maxiter = it, mes_kwargs = temp_mes_kwargs, init_type=init_type, optimizer=optimizer, options=options)
 
                         final_time = time.time() - start_time
                     
