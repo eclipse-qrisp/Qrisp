@@ -73,7 +73,7 @@ def spsa(fun, x0, args, maxiter=50, a=2.0, c=0.1, alpha=0.702, gamma=0.201, seed
 
     def body_fun(k, state):
 
-        x, rng, a, c, alpha, gamma = state
+        x, rng = state
 
         # Generate random perturbation delta with components +/-1
         rng, rng_input = random.split(rng)
@@ -95,10 +95,10 @@ def spsa(fun, x0, args, maxiter=50, a=2.0, c=0.1, alpha=0.702, gamma=0.201, seed
         # Update parameters
         x = x - ak * gk
 
-        return x, rng, a, c, alpha, gamma
+        return x, rng
     
 
-    x, rng, a, c, alpha, gamma = fori_loop(0, maxiter, body_fun, (x0, rng, a, c, alpha, gamma))
+    x, rng = fori_loop(0, maxiter, body_fun, (x0, rng))
     fx = fun(x, *args)
 
     return x, fx
