@@ -16,17 +16,21 @@ Methods
    QuantumArray.get_measurement
    QuantumArray.most_likely
    QuantumArray.duplicate
-   QuantumArray.set_shape
 
+Array Restructuring
+-------------------
 
-De/Encoding states
-------------------
+.. note::
+    
+    These methods never allocate additional qubits and instead return a 
+    `"view" <https://numpy.org/doc/2.2/user/basics.copies.html>`_.
 
 .. autosummary::
    :toctree: generated/
 
-   QuantumArray.decoder
-   QuantumArray.encoder
-   QuantumArray.encode
-   QuantumArray.init_state  
-   QuantumArray.init_from
+   QuantumArray.reshape
+   QuantumArray.transpose
+   QuantumArray.flatten
+   QuantumArray.ravel
+   QuantumArray.swapaxes
+   QuantumArray.concatenate
