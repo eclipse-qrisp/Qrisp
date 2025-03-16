@@ -55,7 +55,7 @@ Despite this importance, the amount of software that is actually able to compile
 
 ```python
 
-from qrisp import QuantumFloat, QuantumModulus, h, QFT
+from qrisp import QuantumFloat, QuantumModulus, h, QFT, control
 
 def find_order(a, N):
     qg = QuantumModulus(N)
