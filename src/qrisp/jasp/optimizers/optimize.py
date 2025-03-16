@@ -18,9 +18,34 @@
 
 from qrisp.jasp.optimizers.spsa import spsa
 
-def minimize(objective, init_point, args=(), method=None, options=None):
+def minimize(fun, x0, args=(), method='SPSA', options=None):
+    """
+
+    Minimization of scalar functions of one ore more variables via gradient-free solvers.
+
+    The API for this functions matches SciPy with some minor deviations.
+    
+    Parameters
+    ----------
+        fun : callable
+            The objective function to be minimized, ``fun(x, *args) -> float``, where ``x`` is a
+            1-D array with shape ``(n,)``and ``args``is a tuple of parameters needed to specify the function.
+        x0 : jax.Array
+            Initial guess. Array of real elements of soze ``(n,)``, where ``n``is the number of independent variables.
+        args : tuple
+            Extra arguments passed to the objective function.
+        method : str
+            The solver type. Currently only ``SPSA`` is supported.
+        options : dict
+            A dictionary of solver options. All methods accept the following generic options:
+            * maxiter : int 
+                Maximum number of iterations to perform. Depending on the method each iteration may use several function evaluations.
+
+    ``minimize`` supports ``jax.jit``compilation.
+    
+    """
 
     if method=='SPSA':
-        return spsa(objective, init_point, args, **options)
+        return spsa(fun, x0, args, **options)
     else:
         raise Exception(f'Optimization method {method} is not available.')

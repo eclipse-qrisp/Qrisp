@@ -567,7 +567,7 @@ class VQEProblem:
             res_sample = jasp_minimize(optimization_wrapper,
                                     init_point, 
                                     method=optimizer,
-                                    options={'max_iter':max_iter}, 
+                                    options={'maxiter':max_iter}, 
                                     args = (state_prep, mes_kwargs,))
             return res_sample[0]
         
@@ -577,7 +577,7 @@ class VQEProblem:
             res_sample = minimize(optimization_wrapper,
                                     init_point, 
                                     method=optimizer,
-                                    options={'max_iter':max_iter}, 
+                                    options={'maxiter':max_iter}, 
                                     args = (compiled_qc, symbols, qarg, measurement_data, mes_kwargs))
             
             return res_sample['x']
