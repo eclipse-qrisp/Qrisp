@@ -628,8 +628,8 @@ class VQEProblem:
 
         def state_prep(theta):
             qarg = self.init_function()
-            for i in jrange(depth):
-                self.ansatz_function(qarg, theta)
+            for i in range(depth):
+                self.ansatz_function(qarg, theta[self.num_params*i : self.num_params*(i+1)+1])
             return qarg
 
         if check_for_tracing_mode():
