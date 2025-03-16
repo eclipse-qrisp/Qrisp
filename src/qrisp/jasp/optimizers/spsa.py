@@ -97,8 +97,8 @@ def spsa(fun, x0, args, maxiter=50, a=2.0, c=0.1, alpha=0.702, gamma=0.201, seed
 
         return x, rng
     
-
-    x, rng = fori_loop(0, maxiter, body_fun, (x0, rng))
+    from qrisp.jasp import make_tracer
+    x, rng = fori_loop(0, make_tracer(maxiter), body_fun, (x0, rng))
     fx = fun(x, *args)
 
     return x, fx
