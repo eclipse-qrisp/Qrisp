@@ -257,10 +257,8 @@ class VQEProblem:
             if self.callback:
                 self.optimization_costs.append(expectation)
 
-            if self.cl_post_processor is not None:
-                return self.cl_post_processor(expectation)
-            else:
-                return expectation
+            return expectation
+        
 
         if init_point is None:
             # Set initial random values for optimization parameters 
@@ -540,10 +538,7 @@ class VQEProblem:
                 if self.callback:
                     self.optimization_costs.append(expectation)
 
-                if self.cl_post_processor is not None:
-                    return self.cl_post_processor(expectation)
-                else:
-                    return expectation
+                return expectation
             
 
         if init_point is None:
