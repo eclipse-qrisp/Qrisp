@@ -31,7 +31,7 @@ def minimize(fun, x0, args=(), method='SPSA', options=None):
             The objective function to be minimized, ``fun(x, *args) -> float``, where ``x`` is a
             1-D array with shape ``(n,)``and ``args``is a tuple of parameters needed to specify the function.
         x0 : jax.Array
-            Initial guess. Array of real elements of soze ``(n,)``, where ``n``is the number of independent variables.
+            Initial guess. Array of real elements of size ``(n,)``, where ``n``is the number of independent variables.
         args : tuple
             Extra arguments passed to the objective function.
         method : str
@@ -40,6 +40,13 @@ def minimize(fun, x0, args=(), method='SPSA', options=None):
             A dictionary of solver options. All methods accept the following generic options:
             * maxiter : int 
                 Maximum number of iterations to perform. Depending on the method each iteration may use several function evaluations.
+
+    Returns
+    ------- 
+    x : jax.Array
+        The solution of the optimization.
+    fx : jax.Array
+        The value of the objective function at x.
 
     ``minimize`` supports ``jax.jit``compilation.
     

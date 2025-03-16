@@ -58,46 +58,47 @@ def spsa(fun, x0, args, maxiter=50, a=2.0, c=0.1, alpha=0.702, gamma=0.201, seed
         c : float 
             Scaling parameter for gradient estimation.
         gamma : float
-            Scaling exponent for gradient estimation.    
+            Scaling exponent for gradient estimation.   
+
+    Returns
+    -------
+    x : jax.Array
+        The solution of the optimization.
+    fx : jax.Array
+        The value of the objective function at x.
 
     """
     
     rng = random.PRNGKey(seed)
-    
-    fun_values = jnp.zeros(maxiter)
 
     def body_fun(k, state):
 
-        fun_values, params, rng, a, c, alpha, gamma = state
+        x, rng, a, c, alpha, gamma = state
 
         # Generate random perturbation delta with components +/-1
         rng, rng_input = random.split(rng)
-        delta = random.choice(rng, jnp.array([1, -1]), shape=(*params.shape,))
+        delta = random.choice(rng, jnp.array([1, -1]), shape=(*x.shape,))
     
         ak = a / (k + 1) ** alpha
         ck = c / (k + 1) ** gamma
 
         # Evaluate loss function at perturbed points
-        params_plus = params + ck * delta
-        params_minus = params - ck * delta
+        x_plus = x + ck * delta
+        x_minus = x - ck * delta
 
-        loss_plus = fun(params_plus, *args)
-        loss_minus = fun(params_minus, *args)
+        loss_plus = fun(x_plus, *args)
+        loss_minus = fun(x_minus, *args)
 
         # Approximate gradient
         gk = (loss_plus - loss_minus) / (2.0 * ck * delta)
 
         # Update parameters
-        params_new = params - ak * gk
+        x = x - ak * gk
 
-        loss = fun(params_new, *args)
-        callback = fun_values.at[k].set(loss)
-
-        return callback, params_new, rng, a, c, alpha, gamma
+        return x, rng, a, c, alpha, gamma
     
 
-    fun_values, optimal_params, rng, a, c, alpha, gamma = fori_loop(0, maxiter, body_fun, (fun_values, x0, rng, a, c, alpha, gamma))
+    x, rng, a, c, alpha, gamma = fori_loop(0, maxiter, body_fun, (x0, rng, a, c, alpha, gamma))
+    fx = fun(x, *args)
 
-    optimal_value = fun(optimal_params, *args)
-
-    return optimal_params, optimal_value, fun_values
+    return x, fx
