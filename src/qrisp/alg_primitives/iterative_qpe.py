@@ -16,8 +16,8 @@
 ********************************************************************************/
 """
 
-from qrisp import h, control, rz, measure, reset, QuantumBool, QuantumFloat
-from qrisp.jasp import jrange
+from qrisp import h, control, rz, measure, QuantumFloat
+from qrisp.jasp import jrange, q_fori_loop
 import numpy as np
 
 
@@ -85,20 +85,20 @@ def IQPE(args, U, precision, iter_spec=False, ctrl_method=None, kwargs={}):
     Array(0.375, dtype=float64)
 
     """
-    theta = 0.0
-    iqpe_aux = QuantumFloat(1)
-    for k in range(precision):
-        reset(iqpe_aux)
+    def iqpe_iteration(i, val):
+        theta, args = val
+        iqpe_aux = QuantumFloat(1)
         h(iqpe_aux)
         if iter_spec:
             with control(iqpe_aux[0], ctrl_method=ctrl_method):
-                U(args, iter=2**(precision-k), **kwargs)
+                U(args, iter=2**(precision-i), **kwargs)
         else:
             with control(iqpe_aux[0], ctrl_method=ctrl_method):
-                for j in jrange(2**(precision-k)):
+                for _ in jrange(2**(precision-i)):
                     U(args, **kwargs)
         rz(-np.pi*theta, iqpe_aux)
         h(iqpe_aux)
         r = measure(iqpe_aux)
-        theta = (theta + r)/2
-    return theta
+        iqpe_aux.delete()
+        return (theta + r)/2, args
+    return q_fori_loop(0, precision, iqpe_iteration, (0, args))[0]
