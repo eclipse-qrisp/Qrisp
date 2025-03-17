@@ -85,6 +85,7 @@ def catalyst_eqn_evaluator(eqn, context_dic):
     # If the equations primitive is a Qrisp primitive, we process it according
     # to one of the implementations below. Otherwise we return True to indicate
     # default interpretation.
+    
     if isinstance(eqn.primitive, QuantumPrimitive):
         
         invars = eqn.invars
@@ -108,6 +109,10 @@ def catalyst_eqn_evaluator(eqn, context_dic):
             process_reset(eqn, context_dic)
         elif eqn.primitive.name == "jasp.fuse":
             process_fuse(eqn, context_dic)
+        elif eqn.primitive.name == "jasp.quantum_kernel":
+            from catalyst.jax_primitives import qalloc_p
+            qreg = qalloc_p.bind(25)
+            insert_outvalues(eqn, context_dic, (qreg, Jlist(jnp.arange(30)[::-1], max_size = 30)))
         else:
             raise Exception(f"Don't know how to process QuantumPrimitive {eqn.primitive}")
     else:
@@ -403,24 +408,21 @@ def exec_multi_measurement(catalyst_register, qubit_list):
     cond_jaxpr = make_jaxpr(cond_body)(zero, zero, catalyst_register.aval, static_qubit_array, list_size)
 
     # Bind the while loop primitive
-    i, acc, reg, static_qubit_array, list_size = while_p.bind(*(zero, zero, catalyst_register, static_qubit_array, list_size),
-                                     cond_jaxpr = cond_jaxpr, 
-                                     body_jaxpr = loop_jaxpr,
-                                     cond_nconsts = 0,
-                                     body_nconsts = 0,
-                                     nimplicit = 0,
-                                     preserve_dimensions = True,
-                                     ) 
+    while_res = while_p.bind(*(zero, zero, catalyst_register, static_qubit_array, list_size),
+                             cond_jaxpr = cond_jaxpr, 
+                             body_jaxpr = loop_jaxpr,
+                             cond_nconsts = 0,
+                             body_nconsts = 0,
+                             nimplicit = 0,
+                             preserve_dimensions = True,
+                             ) 
+    
+    i, acc, reg, static_qubit_array, list_size = while_res
     
     return reg, acc
 
 
 def process_while(eqn, context_dic):
-    for invar in eqn.invars:
-        if isinstance(invar.aval, AbstractQuantumCircuit):
-            break
-    else:
-        return True
     
     body_jaxpr = ensure_conversion(eqn.params["body_jaxpr"].jaxpr)
     cond_jaxpr = ensure_conversion(eqn.params["cond_jaxpr"].jaxpr)
@@ -432,8 +434,8 @@ def process_while(eqn, context_dic):
     outvalues = while_p.bind(*flattened_invalues,
                             cond_jaxpr = cond_jaxpr, 
                             body_jaxpr = body_jaxpr,
-                            cond_nconsts = 0,
-                            body_nconsts = 0,
+                            cond_nconsts = eqn.params["cond_nconsts"],
+                            body_nconsts = eqn.params["body_nconsts"],
                             nimplicit = 0,
                             preserve_dimensions = True,)
     
@@ -537,10 +539,7 @@ def process_reset(eqn, context_dic):
 
 def ensure_conversion(jaxpr):
     from qrisp.jasp.evaluation_tools.catalyst_interface import jaspr_to_catalyst_jaxpr
-    for invar in jaxpr.invars:
-        if isinstance(invar.aval, (AbstractQuantumCircuit, AbstractQubitArray, AbstractQubit)):
-            return jaspr_to_catalyst_jaxpr(jaxpr)
-    return ClosedJaxpr(jaxpr, [])
+    return jaspr_to_catalyst_jaxpr(jaxpr)
     
     
 def flatten_signature(values, variables):
