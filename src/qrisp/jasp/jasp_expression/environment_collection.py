@@ -131,7 +131,7 @@ def collect_environments(jaxpr):
             
             # Create the Jaxpr
             environment_body_jaspr = Jaspr(constvars = [],
-                                           invars = enter_eq.outvars + invars,
+                                           invars =  invars + enter_eq.outvars,
                                            outvars = eqn.invars[:1] + outvars,
                                            eqns = environment_body_eqn_list)
             
@@ -139,7 +139,7 @@ def collect_environments(jaxpr):
             eqn = JaxprEqn(
                            params = {"type" : eqn.params["type"], "jaspr" : environment_body_jaspr},
                            primitive = eqn.primitive,
-                           invars = enter_eq.invars + invars,
+                           invars =  enter_eq.invars[:-1] + invars + enter_eq.invars[-1:],
                            outvars = eqn.outvars[:1] + outvars,
                            effects = eqn.effects,
                            source_info = eqn.source_info,)

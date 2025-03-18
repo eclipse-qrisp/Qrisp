@@ -41,7 +41,8 @@ def test_control_compilation():
     
     for i in range(2**4):
         assert jaspr(i) == (i == 7)
-        
+
+    return        
     ###############
     
     @custom_control

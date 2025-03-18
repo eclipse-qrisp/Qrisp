@@ -149,7 +149,7 @@ class Jaspr(Jaxpr):
         self.envs_flattened = False
         self.consts = []
             
-        if not isinstance(self.invars[0].aval, AbstractQuantumCircuit):
+        if not isinstance(self.invars[-1].aval, AbstractQuantumCircuit):
             raise Exception(f"Tried to create a Jaspr from data that doesn't have a QuantumCircuit as first argument (got {type(self.invars[0].aval)} instead)")
         
         if not isinstance(self.outvars[0].aval, AbstractQuantumCircuit):
@@ -355,8 +355,9 @@ class Jaspr(Jaxpr):
                     context_dic[eqn.outvars[0]] = context_dic[eqn.invars[0]]
                     return
             return True
-            
-        res = eval_jaxpr(jaspr, eqn_evaluator = eqn_evaluator)(*([QuantumCircuit()] + list(args) + jaspr.consts))
+          
+        ammended_args = list(args) + [QuantumCircuit()] + jaspr.consts
+        res = eval_jaxpr(jaspr, eqn_evaluator = eqn_evaluator)(*(ammended_args))
         
         return res
     
@@ -484,11 +485,12 @@ class Jaspr(Jaxpr):
         qs = TracingQuantumSession.get_instance()
         abs_qc = qs.abs_qc
         
-        res = eval_jaxpr(self)(*([abs_qc] + list(args)))
+        ammended_args = list(args) + [abs_qc]
+        res = eval_jaxpr(self)(*ammended_args)
         
         if isinstance(res, tuple):
-            new_abs_qc = res[0]
-            res = res[1:]
+            new_abs_qc = res[-1]
+            res = res[:-1]
         else:
             new_abs_qc = res
             res = None
@@ -501,19 +503,20 @@ class Jaspr(Jaxpr):
         qs = TracingQuantumSession.get_instance()
         abs_qc = qs.abs_qc
         
+        ammended_args = list(args) + [abs_qc]
         if not inline:
-            res = jax.jit(eval_jaxpr(self))(*([abs_qc] + list(args)))
+            res = jax.jit(eval_jaxpr(self))(*ammended_args)
             
             eqn = jax._src.core.thread_local_state.trace_state.trace_stack.dynamic.jaxpr_stack[0].eqns[-1]
             eqn.params["jaxpr"] = jax.core.ClosedJaxpr(self, eqn.params["jaxpr"].consts)
             if name is not None:
                 eqn.params["name"] = name
         else:
-            res = eval_jaxpr(self)(*([abs_qc] + list(args)))
+            res = eval_jaxpr(self)(*ammended_args)
             
         if isinstance(res, tuple):
-            new_abs_qc = res[0]
-            res = res[1:]
+            new_abs_qc = res[-1]
+            res = res[:-1]
         else:
             new_abs_qc = res
             res = None
@@ -1135,7 +1138,10 @@ def make_jaspr(fun, garbage_collection = "auto", flatten_envs = True, **jax_kwar
         
         # This function will be traced by Jax.
         # Note that we add the abs_qc keyword as the tracing quantum circuit        
-        def ammended_function(abs_qc, *args, **kwargs):
+        def ammended_function(*args, **kwargs):
+            
+            abs_qc = args[-1]
+            args = args[:-1]
             
             qs.start_tracing(abs_qc, garbage_collection)
             
@@ -1162,7 +1168,7 @@ def make_jaspr(fun, garbage_collection = "auto", flatten_envs = True, **jax_kwar
             return res_qc, res
         
         try:
-            closed_jaxpr = make_jaxpr(ammended_function, **jax_kwargs)(AbstractQuantumCircuit(), *args, **kwargs)
+            closed_jaxpr = make_jaxpr(ammended_function, **jax_kwargs)(*(list(args) + [AbstractQuantumCircuit()]), **kwargs)
         except UnexpectedTracerError as e:
             if "intermediate value with type QuantumCircuit" in str(e):
                 raise Exception("""Lost track of QuantumCircuit during tracing. This might have been caused by a missing quantum_kernel decorator. Please visit https://www.qrisp.eu/reference/Jasp/Quantum%20Kernel.html for more details""")
@@ -1177,7 +1183,7 @@ def make_jaspr(fun, garbage_collection = "auto", flatten_envs = True, **jax_kwar
         
         if flatten_envs:
             res = res.flatten_environments()
-        
+            
         res.consts = closed_jaxpr.consts
         
         return res

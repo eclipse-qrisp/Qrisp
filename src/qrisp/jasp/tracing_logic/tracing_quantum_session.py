@@ -113,7 +113,7 @@ class TracingQuantumSession:
         
         op_primitive = OperationPrimitive(temp_op)
         
-        self.abs_qc = op_primitive.bind(self.abs_qc, *(param_tracers + [b for b in qubits]))
+        self.abs_qc = op_primitive.bind(*(param_tracers + [b for b in qubits] + [self.abs_qc]))
         
     def register_qv(self, qv, size):
         # if qv.name in [temp_qv.name for temp_qv in self.qv_list + self.deleted_qv_list]:
@@ -124,7 +124,7 @@ class TracingQuantumSession:
         # Determine amount of required qubits
         
         if size is not None:
-            self.abs_qc, qb_array_tracer = create_qubits(self.abs_qc, size)
+            self.abs_qc, qb_array_tracer = create_qubits(size, self.abs_qc)
             # Register in the list of active quantum variable
             dynamic_qubit_array = DynamicQubitArray(qb_array_tracer)
             qv.reg = dynamic_qubit_array
@@ -156,7 +156,7 @@ class TracingQuantumSession:
         
     def clear_qubits(self, qubits, verify=False):
         
-        self.abs_qc = delete_qubits_p.bind(self.abs_qc, qubits.tracer)
+        self.abs_qc = delete_qubits_p.bind(qubits.tracer, self.abs_qc)
     
     @classmethod
     def release(cls):

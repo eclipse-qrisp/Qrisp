@@ -123,7 +123,7 @@ def invert_jaspr(jaspr):
     # and the Operation equations to the back.
     
     for eqn in jaspr.eqns:
-        if isinstance(eqn.primitive, OperationPrimitive) or ((eqn.primitive.name in ["pjit", "while", "cond"]) and isinstance(eqn.outvars[0].aval, AbstractQuantumCircuit)):
+        if isinstance(eqn.primitive, OperationPrimitive) or ((eqn.primitive.name in ["pjit", "while", "cond"]) and isinstance(eqn.invars[-1].aval, AbstractQuantumCircuit)):
             # Insert the inverted equation at the front
             op_eqs.insert(0, invert_eqn(eqn))
         elif eqn.primitive.name == "jasp.measure":
@@ -179,7 +179,7 @@ def invert_jaspr(jaspr):
         
     if len(deletions):
         first_deletion = copy_jaxpr_eqn(deletions[0])
-        first_deletion.invars[0] = last_abs_qc
+        first_deletion.invars[-1] = last_abs_qc
         last_abs_qc = deletions[-1].outvars[0]
     
     res = Jaspr(constvars = jaspr.constvars, 

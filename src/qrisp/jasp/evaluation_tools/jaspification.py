@@ -259,7 +259,7 @@ def simulate_jaspr(jaspr, *args, terminal_sampling = False, simulator = "qrisp")
     elif not simulator == "qrisp":
         raise Exception(f"Don't know simulator {simulator}")
     
-    args = [BufferedQuantumState(simulator)] + list(tree_flatten(args)[0])
+    args =  list(tree_flatten(args)[0]) + [BufferedQuantumState(simulator)]
             
     def eqn_evaluator(eqn, context_dic):
         

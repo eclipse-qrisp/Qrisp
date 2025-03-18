@@ -41,19 +41,23 @@ class OperationPrimitive(QuantumPrimitive):
         QuantumPrimitive.__init__(self, name)
         
         @self.def_abstract_eval
-        def abstract_eval(qc, *args):
+        def abstract_eval(*args):
+            qc = args[-1]
             """Abstract evaluation of the primitive.
             
             This function does not need to be JAX traceable. It will be invoked with
             abstractions of the actual arguments. 
             """
             if not isinstance(qc, AbstractQuantumCircuit):
-                raise Exception(f"Tried to execute OperationPrimitive.bind with the first argument of tpye {type(qc)} instead of AbstractQuantumCircuit")
+                raise Exception(f"Tried to execute OperationPrimitive.bind with the first argument of type {type(qc)} instead of AbstractQuantumCircuit")
             
             return AbstractQuantumCircuit()
         
         @self.def_impl
-        def append_impl(qc, *args):
+        def append_impl(*args):
+            
+            qc = args[-1]
+            args = args[:-1]
             """Concrete evaluation of the primitive.
             
             This function does not need to be JAX traceable. It will be invoked with

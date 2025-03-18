@@ -125,31 +125,34 @@ def control_eqn(eqn, ctrl_qubit_var):
         body_jaxpr = eqn.params["body_jaxpr"].jaxpr
         cond_jaxpr = eqn.params["cond_jaxpr"].jaxpr
         
-        if isinstance(body_jaxpr.invars[0].aval, AbstractQuantumCircuit) and isinstance(body_jaxpr.outvars[0].aval, AbstractQuantumCircuit):
+        if isinstance(body_jaxpr.invars[-1].aval, AbstractQuantumCircuit) and isinstance(body_jaxpr.outvars[0].aval, AbstractQuantumCircuit):
+            
+            # Generate controlled body jaxpr
             new_params["body_jaxpr"] = ClosedJaxpr(control_jaspr(Jaspr(eqn.params["body_jaxpr"].jaxpr)),
                                               eqn.params["body_jaxpr"].consts)
             
-            new_params["body_jaxpr"].jaxpr.outvars.insert(1, new_params["body_jaxpr"].jaxpr.invars[1])
+            # Insert control value as output variable for the next iteration            
+            new_params["body_jaxpr"].jaxpr.outvars.insert(1, new_params["body_jaxpr"].jaxpr.invars[0])
             
         else:
             new_jaxpr = copy_jaxpr(new_params["body_jaxpr"].jaxpr)
-            new_jaxpr.invars.insert(1, ctrl_qubit_var)
+            new_jaxpr.invars.insert(0, ctrl_qubit_var)
             new_params["body_jaxpr"] = ClosedJaxpr(new_jaxpr,
                                                    eqn.params["body_jaxpr"].consts)
         
-        if isinstance(cond_jaxpr.invars[0].aval, AbstractQuantumCircuit) and isinstance(cond_jaxpr.outvars[0].aval, AbstractQuantumCircuit):
+        if isinstance(cond_jaxpr.invars[-1].aval, AbstractQuantumCircuit) and isinstance(cond_jaxpr.outvars[0].aval, AbstractQuantumCircuit):
             new_params["cond_jaxpr"] = ClosedJaxpr(control_jaspr(Jaspr(eqn.params["cond_jaxpr"].jaxpr)),
                                               eqn.params["cond_jaxpr"].consts)
             
         else:
             new_jaxpr = copy_jaxpr(new_params["cond_jaxpr"].jaxpr)
-            new_jaxpr.invars.insert(1, ctrl_qubit_var)
+            new_jaxpr.invars.insert(0, ctrl_qubit_var)
             new_params["cond_jaxpr"] = ClosedJaxpr(new_jaxpr,
                                                    eqn.params["cond_jaxpr"].consts)
             
         
         temp = JaxprEqn(primitive = eqn.primitive,
-                        invars = [eqn.invars[0], ctrl_qubit_var] + eqn.invars[1:],
+                        invars = [ctrl_qubit_var] + eqn.invars,
                         outvars = eqn.outvars,
                         params = new_params,
                         source_info = eqn.source_info,
@@ -163,7 +166,7 @@ def control_eqn(eqn, ctrl_qubit_var):
         false_jaxpr = new_params["branches"][0].jaxpr
         true_jaxpr = new_params["branches"][1].jaxpr
         
-        if isinstance(false_jaxpr.invars[0].aval, AbstractQuantumCircuit) and isinstance(false_jaxpr.outvars[0].aval, AbstractQuantumCircuit):
+        if isinstance(false_jaxpr.invars[-1].aval, AbstractQuantumCircuit) and isinstance(false_jaxpr.outvars[-1].aval, AbstractQuantumCircuit):
             ctrl_false_jaxpr = control_jaspr(Jaspr(false_jaxpr))
             ctrl_true_jaxpr = control_jaspr(Jaspr(true_jaxpr))
         else:
@@ -175,7 +178,7 @@ def control_eqn(eqn, ctrl_qubit_var):
         new_params["branches"] = (ctrl_false_jaxpr, ctrl_true_jaxpr)
         
         temp = JaxprEqn(primitive = eqn.primitive,
-                        invars = [eqn.invars[0], eqn.invars[1], ctrl_qubit_var] + eqn.invars[2:],
+                        invars = [eqn.invars[0], ctrl_qubit_var] + eqn.invars[1:],
                         outvars = eqn.outvars,
                         params = new_params,
                         source_info = eqn.source_info,
@@ -185,7 +188,7 @@ def control_eqn(eqn, ctrl_qubit_var):
     else:
         num_qubits = eqn.primitive.op.num_qubits
         return JaxprEqn(primitive = eqn.primitive.control(),
-                        invars = eqn.invars[:-num_qubits] + [ctrl_qubit_var] + eqn.invars[-num_qubits:],
+                        invars = [ctrl_qubit_var] + eqn.invars[:-num_qubits] + eqn.invars[-num_qubits:],
                         outvars = eqn.outvars,
                         params = eqn.params,
                         source_info = eqn.source_info,
@@ -230,7 +233,7 @@ def control_jaspr(jaspr):
     return Jaspr(permeability = permeability,
                  isqfree = jaspr.isqfree,
                  constvars = jaspr.constvars, 
-                 invars = jaspr.invars[:1] + [ctrl_qubit_var] + jaspr.invars[1:], 
+                 invars = [ctrl_qubit_var] + jaspr.invars, 
                  outvars = jaspr.outvars, 
                  eqns = new_eqns)
         

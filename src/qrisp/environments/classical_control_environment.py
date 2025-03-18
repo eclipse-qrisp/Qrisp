@@ -209,10 +209,10 @@ class ClControlEnvironment(QuantumEnvironment):
         args = extract_invalues(eqn, context_dic)
         
         # This list stores the the variables representing the control variables
-        ctrl_vars = args[1:len(self.ctrl_bls)+1]
+        ctrl_vars = args[:len(self.ctrl_bls)]
         
         # This list stores the variables used in the environment body
-        env_vars = [args[0]] + args[len(self.ctrl_bls)+1:]
+        env_vars = args[len(self.ctrl_bls):]
         
         # Flatten the environments in the body
         body_jaspr = eqn.params["jaspr"].flatten_environments()
@@ -242,7 +242,7 @@ class ClControlEnvironment(QuantumEnvironment):
             cond_bl = ~cond_bl
         
         def identity_fun(*args):
-            return args[0]
+            return args[-1]
         
         true_fun = identity_fun
         false_fun = identity_fun

@@ -42,16 +42,17 @@ def pjit_to_gate(pjit_eqn, context_dic, eqn_evaluator):
     
     from qrisp.circuit import QuantumCircuit
 
-    if len(invalues) == 0 or not isinstance(invalues[0], QuantumCircuit):
+    if len(invalues) == 0 or not isinstance(invalues[-1], QuantumCircuit):
         return True
     
     res = eval_qc(definition_jaxpr, invalues, eqn_evaluator)
     
-    new_qc = res[0]
-    old_qc = invalues[0]
+    new_qc = res[-1]
+    old_qc = invalues[-1]
     
     # Append the wrapped old circuit to the new circuit
     old_qc.append(new_qc.to_op(name = pjit_eqn.params["name"]), new_qc.qubits, new_qc.clbits)
+    
     res = list(res)
     res[0] = old_qc
       
@@ -71,16 +72,16 @@ def cond_to_cl_control(eqn, context_dic, eqn_evaluator):
     if not isinstance(invalues[0], Clbit):
         return True
     
-    if not isinstance(invalues[1], QuantumCircuit):
+    if not isinstance(invalues[-1], QuantumCircuit):
         raise Exception
 
     false_jaxpr = eqn.params["branches"][0]
     true_jaxpr = eqn.params["branches"][1]
     
-    false_qc = eval_qc(false_jaxpr, invalues[1:], eqn_evaluator)[0]
-    true_qc = eval_qc(true_jaxpr, invalues[1:], eqn_evaluator)[0]
+    false_qc = eval_qc(false_jaxpr, invalues[1:], eqn_evaluator)[-1]
+    true_qc = eval_qc(true_jaxpr, invalues[1:], eqn_evaluator)[-1]
     
-    old_qc = invalues[1]
+    old_qc = invalues[-1]
     
     if len(false_qc.data):
         old_qc.append(false_qc.to_op().c_if(ctrl_state = 0), false_qc.qubits, [invalues[0]] + false_qc.clbits)
@@ -92,10 +93,10 @@ def cond_to_cl_control(eqn, context_dic, eqn_evaluator):
 
 def eval_qc(definition_jaxpr, invalues, eqn_evaluator):
     
-    old_qc = invalues[0]
+    old_qc = invalues[-1]
     new_qc = old_qc.clearcopy()
     invalues = list(invalues)
-    invalues[0] = new_qc
+    invalues[-1] = new_qc
 
     res = eval_jaxpr(definition_jaxpr.jaxpr, eqn_evaluator = eqn_evaluator)(*(invalues + definition_jaxpr.consts))
     
@@ -124,7 +125,8 @@ def eval_qc(definition_jaxpr, invalues, eqn_evaluator):
         new_qc.clbits.remove(cb)
     
     res = list(res)
-    res[0] = new_qc
+    res[-1] = new_qc
+    
     return res
 
 
