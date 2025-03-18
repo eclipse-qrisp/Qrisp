@@ -63,7 +63,7 @@ def measure_implementation(meas_object, qc):
             for i in range(len(meas_object)):
                 qc.measure(meas_object[i])
                 clbit_list.append(qc.clbits[-1])
-            return qc, clbit_list
+            return clbit_list, qc
     else:
         res = 0
         for i in range(len(meas_object)):

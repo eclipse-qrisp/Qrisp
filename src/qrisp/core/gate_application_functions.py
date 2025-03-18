@@ -1243,11 +1243,11 @@ def reset(qubits):
         from qrisp import QuantumVariable
 
         if isinstance(qubits, QuantumVariable):
-            abs_qc = reset_p.bind(qs.abs_qc, qubits.reg.tracer)
+            abs_qc = reset_p.bind(qubits.reg.tracer, qs.abs_qc)
         elif isinstance(qubits.aval, AbstractQubitArray):
-            abs_qc = reset_p.bind(qs.abs_qc, qubits.tracer)
+            abs_qc = reset_p.bind(qubits.tracer, qs.abs_qc)
         elif isinstance(qubits.aval, AbstractQubit):
-            abs_qc = reset_p.bind(qs.abs_qc, qubits)
+            abs_qc = reset_p.bind(qubits, qs.abs_qc)
         else:
             raise Exception(f"Tried to reset type {type(qubits.aval)}")
 

@@ -62,7 +62,7 @@ def create_qubit_impl(size, qc):
         qubit_list.append(qc.add_qubit())
         qc.append(QubitAlloc(), [qubit_list[-1]])
     
-    return qc, qubit_list
+    return qubit_list, qc
 
 # Register Deletion
 delete_qubits_p = QuantumPrimitive("delete_qubits")

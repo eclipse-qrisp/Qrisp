@@ -329,9 +329,9 @@ def simulate_jaspr(jaspr, *args, terminal_sampling = False, simulator = "qrisp")
         res = eval_jaxpr(jaspr, eqn_evaluator = eqn_evaluator)(*(args + jaspr.consts))
     
     if len(jaspr.outvars) == 2:
-        return res[1]
+        return res[0]
     else:
-        return res[1:]
+        return res[:-1]
     
 @lru_cache(maxsize = int(1E5))
 def compile_cl_func(jaxpr, function_name):
