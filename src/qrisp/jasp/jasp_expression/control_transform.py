@@ -111,7 +111,7 @@ def control_eqn(eqn, ctrl_qubit_var):
             
             new_params["name"] = "c" + new_params["name"]
             
-            invars = [eqn.invars[0], ctrl_qubit_var] + eqn.invars[1:]
+            invars = [ctrl_qubit_var] + eqn.invars
             
         return JaxprEqn(primitive = eqn.primitive,
                         invars = invars,

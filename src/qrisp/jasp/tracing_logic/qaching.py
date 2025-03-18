@@ -308,7 +308,7 @@ def qache_helper(func, jax_kwargs):
         # Excecute the function
         ammended_args = list(args) + [abs_qs.abs_qc]
         try:
-            abs_qc_new, res = ammended_function(*ammended_args, **kwargs)
+            res, abs_qc_new = ammended_function(*ammended_args, **kwargs)
         except Exception as e:
             abs_qs.conclude_tracing()
             raise e
@@ -320,16 +320,16 @@ def qache_helper(func, jax_kwargs):
         eqn = jax._src.core.thread_local_state.trace_state.trace_stack.dynamic.jaxpr_stack[0].eqns[-1]
         jaxpr = eqn.params["jaxpr"].jaxpr
         
-        # if not isinstance(eqn.invars[0].aval, AbstractQuantumCircuit):
-        #     for i in range(len(eqn.invars)):
-        #         if isinstance(eqn.invars[i].aval, AbstractQuantumCircuit):
-        #             eqn.invars[0], eqn.invars[i] = eqn.invars[i], eqn.invars[0]
-        #             break
-        # if not isinstance(jaxpr.invars[0].aval, AbstractQuantumCircuit):
-        #     for i in range(len(jaxpr.invars)):
-        #         if isinstance(jaxpr.invars[i].aval, AbstractQuantumCircuit):
-        #             jaxpr.invars[0], jaxpr.invars[i] = jaxpr.invars[i], jaxpr.invars[0]
-        #             break
+        if not isinstance(eqn.invars[-1].aval, AbstractQuantumCircuit):
+            for i in range(len(eqn.invars)):
+                if isinstance(eqn.invars[i].aval, AbstractQuantumCircuit):
+                    eqn.invars[-1], eqn.invars[i] = eqn.invars[i], eqn.invars[-1]
+                    break
+        if not isinstance(jaxpr.invars[-1].aval, AbstractQuantumCircuit):
+            for i in range(len(jaxpr.invars)):
+                if isinstance(jaxpr.invars[i].aval, AbstractQuantumCircuit):
+                    jaxpr.invars[-1], jaxpr.invars[i] = jaxpr.invars[i], jaxpr.invars[-1]
+                    break
         
         eqn.params["jaxpr"] = jax.core.ClosedJaxpr(Jaspr.from_cache(jaxpr), eqn.params["jaxpr"].consts)
         
