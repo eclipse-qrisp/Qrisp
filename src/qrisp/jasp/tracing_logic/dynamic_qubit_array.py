@@ -57,7 +57,7 @@ class DynamicQubitArray:
     def measure(self):
         from qrisp.jasp import TracingQuantumSession, Measurement_p
         qs = TracingQuantumSession.get_instance()
-        qs.abs_qc, res = Measurement_p.bind(qs.abs_qc, self.tracer)
+        res, qs.abs_qc = Measurement_p.bind(self.tracer, qs.abs_qc)
         return res
         
 from jax import tree_util

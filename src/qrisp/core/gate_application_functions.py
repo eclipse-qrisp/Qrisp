@@ -1213,7 +1213,7 @@ def measure(qubits):
         if isinstance(qubits, (DynamicQubitArray, QuantumVariable, QuantumArray)):
             res = qubits.measure()
         elif isinstance(qubits.aval, (AbstractQubitArray, AbstractQubit)):
-            abs_qc, res = Measurement_p.bind(qs.abs_qc, qubits)
+            res, abs_qc = Measurement_p.bind(qubits, qs.abs_qc)
             qs.abs_qc = abs_qc
         else:
             raise Exception(f"Tried to measure type {type(qubits.aval)}")

@@ -261,7 +261,7 @@ def qache_helper(func, jax_kwargs):
         
         new_abs_qc = abs_qs.abs_qc
         # Return the result and the result AbstractQuantumCircuit.
-        return new_abs_qc, res
+        return res, new_abs_qc
 
     # Since we are calling the "ammended function", where the first parameter
     # is the AbstractQuantumCircuit, we need to move the static_argnums indicator.

@@ -25,7 +25,7 @@ from qrisp.jasp.primitives import AbstractQuantumCircuit, AbstractQubit, Quantum
 Measurement_p = QuantumPrimitive("measure")  
 
 @Measurement_p.def_abstract_eval
-def measure_abstract_eval(qc, meas_object):
+def measure_abstract_eval(meas_object, qc):
     """Abstract evaluation of the primitive.
     
     This function does not need to be JAX traceable. It will be invoked with
@@ -37,9 +37,9 @@ def measure_abstract_eval(qc, meas_object):
     """
     
     if isinstance(meas_object, AbstractQubit):
-        return AbstractQuantumCircuit(), ShapedArray((), bool)
+        return ShapedArray((), bool), AbstractQuantumCircuit()
     elif isinstance(meas_object, AbstractQubitArray):
-        return AbstractQuantumCircuit(), ShapedArray((), dtype = "int64")
+        return ShapedArray((), dtype = "int64"), AbstractQuantumCircuit()
     else:
         raise Exception(f"Tried to call measurement primitive with type {type(meas_object)}")
 
@@ -47,7 +47,7 @@ Measurement_p.multiple_results = True
 
 
 @Measurement_p.def_impl
-def measure_implementation(qc, meas_object):
+def measure_implementation(meas_object, qc):
     from qrisp import Qubit, QuantumCircuit
     return_bool = False
     if isinstance(meas_object, Qubit):
@@ -71,12 +71,12 @@ def measure_implementation(qc, meas_object):
             
         if return_bool:
             return qc, bool(res)
-        return qc, res        
+        return res, qc
 
 reset_p = QuantumPrimitive("reset")
 
 @reset_p.def_abstract_eval
-def reset_abstract_eval(qc, reset_object):
+def reset_abstract_eval(reset_object, qc):
     """Abstract evaluation of the primitive.
     
     This function does not need to be JAX traceable. It will be invoked with
@@ -89,7 +89,7 @@ def reset_abstract_eval(qc, reset_object):
     return AbstractQuantumCircuit()
 
 @reset_p.def_impl
-def reset_implementation(qc, reset_object):
+def reset_implementation(reset_object, qc):
     if isinstance(reset_object, Qubit):
         reset_object = [reset_object]
     for i in range(len(reset_object)):

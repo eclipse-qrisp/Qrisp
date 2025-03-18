@@ -150,10 +150,10 @@ class Jaspr(Jaxpr):
         self.consts = []
             
         if not isinstance(self.invars[-1].aval, AbstractQuantumCircuit):
-            raise Exception(f"Tried to create a Jaspr from data that doesn't have a QuantumCircuit as first argument (got {type(self.invars[0].aval)} instead)")
+            raise Exception(f"Tried to create a Jaspr from data that doesn't have a QuantumCircuit the last argument (got {type(self.invars[-1].aval)} instead)")
         
-        if not isinstance(self.outvars[0].aval, AbstractQuantumCircuit):
-            raise Exception(f"Tried to create a Jaspr from data that doesn't have a QuantumCircuit as first entry of return type (got {type(self.outvars[0].aval)} instead)")
+        if not isinstance(self.outvars[-1].aval, AbstractQuantumCircuit):
+            raise Exception(f"Tried to create a Jaspr from data that doesn't have a QuantumCircuit the last entry of return type (got {type(self.outvars[-1].aval)} instead)")
         
     def __hash__(self):
         
@@ -1165,7 +1165,7 @@ def make_jaspr(fun, garbage_collection = "auto", flatten_envs = True, **jax_kwar
             
             res_qc = qs.conclude_tracing()
             
-            return res_qc, res
+            return res, res_qc
         
         try:
             closed_jaxpr = make_jaxpr(ammended_function, **jax_kwargs)(*(list(args) + [AbstractQuantumCircuit()]), **kwargs)

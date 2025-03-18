@@ -91,6 +91,7 @@ class TracingQuantumSession:
         
         from qrisp.core import QuantumVariable
         
+        
         if isinstance(qubits[0], (QuantumVariable, DynamicQubitArray)):
             
             from qrisp.jasp import jrange
@@ -124,7 +125,7 @@ class TracingQuantumSession:
         # Determine amount of required qubits
         
         if size is not None:
-            self.abs_qc, qb_array_tracer = create_qubits(size, self.abs_qc)
+            qb_array_tracer, self.abs_qc = create_qubits(size, self.abs_qc)
             # Register in the list of active quantum variable
             dynamic_qubit_array = DynamicQubitArray(qb_array_tracer)
             qv.reg = dynamic_qubit_array
