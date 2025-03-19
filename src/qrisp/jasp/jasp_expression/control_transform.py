@@ -133,11 +133,12 @@ def control_eqn(eqn, ctrl_qubit_var):
                                               eqn.params["body_jaxpr"].consts)
             
             # Insert control value as output variable for the next iteration            
-            new_params["body_jaxpr"].jaxpr.outvars.insert(0, new_params["body_jaxpr"].jaxpr.invars[0])
+            new_params["body_jaxpr"].jaxpr.outvars.insert(2, new_params["body_jaxpr"].jaxpr.invars[0])
+            new_params["body_jaxpr"].jaxpr.invars.insert(2, new_params["body_jaxpr"].jaxpr.invars.pop(0))
             
         else:
             new_jaxpr = copy_jaxpr(new_params["body_jaxpr"].jaxpr)
-            new_jaxpr.invars.insert(0, ctrl_qubit_var)
+            new_jaxpr.invars.insert(2, ctrl_qubit_var)
             new_params["body_jaxpr"] = ClosedJaxpr(new_jaxpr,
                                                    eqn.params["body_jaxpr"].consts)
         
@@ -145,9 +146,13 @@ def control_eqn(eqn, ctrl_qubit_var):
             new_params["cond_jaxpr"] = ClosedJaxpr(control_jaspr(Jaspr(eqn.params["cond_jaxpr"].jaxpr)),
                                               eqn.params["cond_jaxpr"].consts)
             
+            new_params["cond_jaxpr"].jaxpr.outvars.insert(2, new_params["cond_jaxpr"].jaxpr.invars[0])
+            new_params["cond_jaxpr"].jaxpr.invars.insert(2, new_params["cond_jaxpr"].jaxpr.invars.pop(0))
+            
+            
         else:
             new_jaxpr = copy_jaxpr(new_params["cond_jaxpr"].jaxpr)
-            new_jaxpr.invars.insert(0, ctrl_qubit_var)
+            new_jaxpr.invars.insert(2, ctrl_qubit_var)
             new_params["cond_jaxpr"] = ClosedJaxpr(new_jaxpr,
                                                    eqn.params["cond_jaxpr"].consts)
             
@@ -155,8 +160,8 @@ def control_eqn(eqn, ctrl_qubit_var):
         output_control_var = Var(suffix = str(control_var_count[0]) , aval = AbstractQubit())
         control_var_count[0] += 1
         temp = JaxprEqn(primitive = eqn.primitive,
-                        invars = [ctrl_qubit_var] + eqn.invars,
-                        outvars = [output_control_var] + eqn.outvars,
+                        invars = eqn.invars[:2] + [ctrl_qubit_var] + eqn.invars[2:],
+                        outvars = eqn.outvars[:2] + [output_control_var] + eqn.outvars[2:],
                         params = new_params,
                         source_info = eqn.source_info,
                         effects = eqn.effects,)

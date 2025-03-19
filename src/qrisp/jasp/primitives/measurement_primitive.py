@@ -57,7 +57,7 @@ def measure_implementation(meas_object, qc):
     if isinstance(qc, QuantumCircuit):
         if return_bool:        
             qc.measure(meas_object)
-            return qc, qc.clbits[-1]
+            return qc.clbits[-1], qc
         else:
             clbit_list = []
             for i in range(len(meas_object)):
@@ -70,7 +70,7 @@ def measure_implementation(meas_object, qc):
             res += 2**i*qc.measure([meas_object[i]])
             
         if return_bool:
-            return qc, bool(res)
+            return bool(res), qc
         return res, qc
 
 reset_p = QuantumPrimitive("reset")

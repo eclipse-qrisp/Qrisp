@@ -54,8 +54,8 @@ def pjit_to_gate(pjit_eqn, context_dic, eqn_evaluator):
     old_qc.append(new_qc.to_op(name = pjit_eqn.params["name"]), new_qc.qubits, new_qc.clbits)
     
     res = list(res)
-    res[0] = old_qc
-      
+    res[-1] = old_qc
+    
     # Insert the result into the context dic
     insert_outvalues(pjit_eqn, context_dic, res)
     

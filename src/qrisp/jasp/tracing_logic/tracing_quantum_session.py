@@ -114,7 +114,7 @@ class TracingQuantumSession:
         
         op_primitive = OperationPrimitive(temp_op)
         
-        self.abs_qc = op_primitive.bind(*(param_tracers + [b for b in qubits] + [self.abs_qc]))
+        self.abs_qc = op_primitive.bind(*([b for b in qubits] + param_tracers + [self.abs_qc]))
         
     def register_qv(self, qv, size):
         # if qv.name in [temp_qv.name for temp_qv in self.qv_list + self.deleted_qv_list]:

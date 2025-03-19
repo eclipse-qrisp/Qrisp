@@ -132,7 +132,7 @@ def collect_environments(jaxpr):
             # Create the Jaxpr
             environment_body_jaspr = Jaspr(constvars = [],
                                            invars =  invars + enter_eq.outvars,
-                                           outvars =  outvars + eqn.invars[:1],
+                                           outvars =  outvars + eqn.invars[-1:],
                                            eqns = environment_body_eqn_list)
             
             # Create the Equation

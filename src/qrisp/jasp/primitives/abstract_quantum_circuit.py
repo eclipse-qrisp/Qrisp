@@ -51,6 +51,8 @@ def create_qubits_abstract_eval(size, qc):
       a ShapedArray for the result of the primitive.
     """
     
+    assert isinstance(qc, AbstractQuantumCircuit)
+    
     return AbstractQubitArray(), AbstractQuantumCircuit()
 
 @create_qubits_p.def_impl

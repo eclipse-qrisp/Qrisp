@@ -244,7 +244,6 @@ def custom_control(*func, **cusc_kwargs):
                 ammended_args = [ctrl_aval] + list(args)
                 
                 controlled_jaspr = make_jaspr(ammended_func, **cusc_kwargs)(*ammended_args, **kwargs)
-                print(controlled_jaspr)
                 
                 # Store controlled version
                 jit_eqn.params["jaxpr"].jaxpr.ctrl_jaspr = controlled_jaspr
