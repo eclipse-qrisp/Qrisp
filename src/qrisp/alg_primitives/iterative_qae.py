@@ -18,11 +18,8 @@
 
 from qrisp import z
 from qrisp.alg_primitives.qae import amplitude_amplification 
-from qrisp.jasp import check_for_tracing_mode, q_while_loop, expectation_value
+from qrisp.jasp import check_for_tracing_mode, expectation_value
 from jax.lax import while_loop
-import numpy as np
-from qrisp import QuantumFloat, h, measure
-import warnings
 
 
 def IQAE(qargs, state_function, eps, alpha, mes_kwargs={}):
