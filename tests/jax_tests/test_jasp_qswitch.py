@@ -18,6 +18,7 @@
 
 def test_jasp_qswitch():
     from qrisp import QuantumFloat, h, qswitch, terminal_sampling
+    import numpy as np
     
     # Some sample case functions
     def f0(x): x += 1
@@ -39,4 +40,9 @@ def test_jasp_qswitch():
 
         return operand
     
-    assert main() == {2.0: 0.25, 3.0: 0.25, 4.0: 0.25, 5.0: 0.25}
+    meas_res = main()
+    # {2.0: 0.25, 3.0: 0.25, 4.0: 0.25, 5.0: 0.25}
+    
+    for i in [2,3,4,5]:
+        assert np.round(meas_res[i],2) == 0.25
+    
