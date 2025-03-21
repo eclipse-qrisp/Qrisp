@@ -25,7 +25,7 @@ from qrisp import QuantumFloat, h, measure
 import warnings
 
 
-def IQAE(init_function, state_function, eps, alpha, mes_kwargs={}):
+def IQAE(qargs, state_function, eps, alpha, mes_kwargs={}):
     r"""
     Accelerated Quantum Amplitude Estimation (IQAE). This function performs :ref:`QAE <QAE>` with a fraction of the quantum resources of the well-known `QAE algorithm <https://arxiv.org/abs/quant-ph/0005055>`_.
     See `Accelerated Quantum Amplitude Estimation without QFT <https://arxiv.org/abs/2407.16795>`_.
@@ -38,10 +38,10 @@ def IQAE(init_function, state_function, eps, alpha, mes_kwargs={}):
 
     Parameters
     ----------
-    init_function : callable
-        A Python function that returns a list of QuantumVariables representing the state on which the quantum amplitude estimation is performed.
+    qargs : list[QuantumVariabe]
+        The list of QuantumVariables which represent the state on which the quantum amplitude estimation is performed.
         The last variable in the list must be of type :ref:`QuantumBool`.
-    state_function : function
+    state_function : callable
         A Python function preparing the state :math:`\ket{\Psi}`.
         This function will receive the variables returned by ``init_function`` as arguments.
     eps : float
@@ -78,11 +78,10 @@ def IQAE(init_function, state_function, eps, alpha, mes_kwargs={}):
         from qrisp import QuantumFloat, QuantumBool, control, z, h, ry, IQAE
         import numpy as np
 
-        def init_function():
-            n = 6 
-            inp = QuantumFloat(n,-n)
-            tar = QuantumBool()
-            return inp, tar
+        n = 6 
+        inp = QuantumFloat(n,-n)
+        tar = QuantumBool()
+        input_list = [inp, tar]
 
     For example, if $f(x)=\sin^2(x)$, the ``state_function`` can be implemented as follows:
 
@@ -100,15 +99,16 @@ def IQAE(init_function, state_function, eps, alpha, mes_kwargs={}):
 
     ::
 
-        a = IQAE(init_function, state_function, eps=0.01, alpha=0.01)
+        a = IQAE(input_list, state_function, eps=0.01, alpha=0.01)
 
     >>> a 
     0.26782038552705856
 
     """
 
-    if isinstance(init_function,list):
-        warnings.warn("DeprecationWarning: Providing a list of QuantumVariables as first argument will no longer be supported in a later release of Qrisp. Instead a callable must be provided.")
+    def init_function():
+        qargs_ = [qv.duplicate() for qv in qargs]
+        return qargs_
 
     # The oracle tagging the good states
     def oracle_function(*args):  
@@ -185,11 +185,13 @@ def quantum_step(k, N, init_function, state_function, oracle_function, mes_kwarg
         The amount of amplification steps, i.e., the power of :math:`\mathcal{Q}` in amplitude amplification.
     N : int
         The amount of shots, i.e., the amount of times the last qubit is measured after the amplitude amplification steps.
-    state_function : function
+    init_function : callable
+        A Python function that returns a list of QuantumVariables representing the state on which the quantum amplitude estimation is performed.
+        The last variable in the list must be of type :ref:`QuantumBool`.
+    state_function : callable
         A Python function preparing the state :math:`\ket{\Psi}`.
-        This function will receive the variables in the list ``args`` as arguments in the
-        course of this algorithm.
-    oracle_function : function
+        This function will receive the variables in the list returnded by ``init_function`` as arguments.
+    oracle_function : callable
         A Python function tagging the good state :math:`\ket{\Psi_1}`.
         This function will receive the variables in the list ``args`` as arguments in the
         course of this algorithm.
@@ -198,13 +200,7 @@ def quantum_step(k, N, init_function, state_function, oracle_function, mes_kwarg
     """
 
     def state_prep(k):
-
-        # Retain backwards compatability (Providing a list of QuantumVariables will no longer be supported in a later release of Qrisp.)
-        if isinstance(init_function,list):
-            qargs = [qv.duplicate() for qv in init_function]
-        else:
-            qargs = init_function()
-
+        qargs = init_function()
         state_function(*qargs)
         amplitude_amplification(qargs, state_function, oracle_function, iter = k)
         return qargs[-1]
