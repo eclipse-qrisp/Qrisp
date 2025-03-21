@@ -78,10 +78,11 @@ def IQAE(init_function, state_function, eps, alpha, mes_kwargs={}):
         from qrisp import QuantumFloat, QuantumBool, control, z, h, ry, IQAE
         import numpy as np
 
-        n = 6 
-        inp = QuantumFloat(n,-n)
-        tar = QuantumBool()
-        input_list = [inp, tar]
+        def init_function():
+            n = 6 
+            inp = QuantumFloat(n,-n)
+            tar = QuantumBool()
+            return inp, tar
 
     For example, if $f(x)=\sin^2(x)$, the ``state_function`` can be implemented as follows:
 
@@ -99,7 +100,7 @@ def IQAE(init_function, state_function, eps, alpha, mes_kwargs={}):
 
     ::
 
-        a = IQAE(input_list, state_function, eps=0.01, alpha=0.01)
+        a = IQAE(init_function, state_function, eps=0.01, alpha=0.01)
 
     >>> a 
     0.26782038552705856
@@ -107,7 +108,7 @@ def IQAE(init_function, state_function, eps, alpha, mes_kwargs={}):
     """
 
     if isinstance(init_function,list):
-        warnings.warn("DeprecationWarning: Providing a list of QuantumVariables will no longer be supported in a later release of Qrisp. Instead a callable must be provided.")
+        warnings.warn("DeprecationWarning: Providing a list of QuantumVariables as first argument will no longer be supported in a later release of Qrisp. Instead a callable must be provided.")
 
     # The oracle tagging the good states
     def oracle_function(*args):  
