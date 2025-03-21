@@ -179,7 +179,7 @@ def boolean_simulation(*func, bit_array_padding = 2**16):
         
         
         res = eval_jaxpr(cl_func_jaxpr)(*boolean_quantum_circuit, 
-                                        *args)
+                                        *(list(args) + jaspr.consts))
         
         if len(res) == 4:
             return res[3]

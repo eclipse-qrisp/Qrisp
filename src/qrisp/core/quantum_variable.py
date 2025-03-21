@@ -1494,6 +1494,9 @@ class QuantumVariable:
     
     def ensure_reg(self):
         return self.reg
+    
+    def measure(self):
+        return self.jdecoder(self.reg.measure())
 
 def plot_histogram(outcome_labels, counts, filename=None):
     res_list = []

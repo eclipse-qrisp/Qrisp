@@ -53,6 +53,12 @@ class DynamicQubitArray:
     @property
     def reg(self):
         return self
+    
+    def measure(self):
+        from qrisp.jasp import TracingQuantumSession, Measurement_p
+        qs = TracingQuantumSession.get_instance()
+        qs.abs_qc, res = Measurement_p.bind(qs.abs_qc, self.tracer)
+        return res
         
 from jax import tree_util
 from builtins import id

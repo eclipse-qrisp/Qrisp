@@ -734,10 +734,13 @@ def multi_measurement(qv_list, shots=None, backend=None):
     merge(qv_list)
 
     # Copy circuit in order to prevent modification
-    from qrisp import QuantumArray, QuantumVariable, recursive_qv_search
+    from qrisp import QuantumArray, QuantumVariable, recursive_qv_search, recursive_qa_search
     from qrisp.core.compilation import qompiler
 
     temp = recursive_qv_search(qv_list)
+    
+    for qa in recursive_qa_search(qv_list):
+        temp.extend(list(qa.flatten()))
 
     compiled_qc = qompiler(
         qv_list[0].qs, intended_measurements=sum([qv.reg for qv in temp], [])
