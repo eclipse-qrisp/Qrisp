@@ -387,7 +387,7 @@ class QuantumEnvironment(QuantumPrimitive):
             abs_qs = TracingQuantumSession.get_instance()
             self.temp_qubit_cache = abs_qs.qubit_cache
             abs_qs.qubit_cache = {}
-            abs_qs.abs_qc = self.bind(abs_qs.abs_qc, *self.env_args, stage = "enter", type = str(type(self)).split(".")[-1][:-2])[0]
+            abs_qs.abs_qc = self.bind(*(self.env_args + [abs_qs.abs_qc]), stage = "enter", type = str(type(self)).split(".")[-1][:-2])[0]
             return
             
         # The QuantumSessions operating inside this environment will be merged

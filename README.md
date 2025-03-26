@@ -8,6 +8,7 @@
 [![Slack](https://img.shields.io/badge/Slack-4A154B?style=flat&logo=slack&logoColor=white)](https://join.slack.com/t/qrisp-workspace/shared_invite/zt-20yv9bbvo-igspbQpslCBK9ZlYSVijsw)
 [![Pytest](https://github.com/eclipse-qrisp/Qrisp/actions/workflows/qrisp_test.yml/badge.svg)](https://github.com/eclipse-qrisp/Qrisp/actions/workflows/qrisp_test.yml)
 [![Downloads](https://img.shields.io/pypi/dm/qrisp.svg)](https://pypi.org/project/qrisp/)
+[![CodeFactor](https://www.codefactor.io/repository/github/eclipse-qrisp/qrisp/badge/main)](https://www.codefactor.io/repository/github/eclipse-qrisp/qrisp/overview/main)
 
 [![Paper](https://img.shields.io/badge/DOI-10.1038%2Fs41586--020--2649--2-brightgreen)](https://doi.org/10.48550/arXiv.2406.14792)
 [![Forks](https://img.shields.io/github/forks/eclipse-qrisp/Qrisp.svg)](https://github.com/eclipse-qrisp/Qrisp/network/members)
@@ -54,7 +55,7 @@ Despite this importance, the amount of software that is actually able to compile
 
 ```python
 
-from qrisp import QuantumFloat, QuantumModulus, h, QFT
+from qrisp import QuantumFloat, QuantumModulus, h, QFT, control
 
 def find_order(a, N):
     qg = QuantumModulus(N)

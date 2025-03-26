@@ -199,7 +199,7 @@ class QuantumArray:
             
             qs = qtype.qs
             self.qs = qs
-            qs.abs_qc, qb_array_tracer = create_qubits(qs.abs_qc, size*qtype.size)
+            qb_array_tracer, qs.abs_qc = create_qubits(size*qtype.size, qs.abs_qc)
             self.qb_array = DynamicQubitArray(qb_array_tracer)
             self.qtype_size = qtype.size
         else:
@@ -859,7 +859,7 @@ class QuantumArray:
     
         if check_for_tracing_mode():
             qs = self.qs
-            qs.abs_qc, qb_array_tracer = create_qubits(qs.abs_qc, self.size*self.qtype_size)
+            qb_array_tracer, qs.abs_qc = create_qubits(self.size*self.qtype_size, qs.abs_qc)
             res.qb_array = DynamicQubitArray(qb_array_tracer)
             
             if init:

@@ -1213,7 +1213,7 @@ def measure(qubits):
         if isinstance(qubits, (DynamicQubitArray, QuantumVariable, QuantumArray)):
             res = qubits.measure()
         elif isinstance(qubits.aval, (AbstractQubitArray, AbstractQubit)):
-            abs_qc, res = Measurement_p.bind(qs.abs_qc, qubits)
+            res, abs_qc = Measurement_p.bind(qubits, qs.abs_qc)
             qs.abs_qc = abs_qc
         else:
             raise Exception(f"Tried to measure type {type(qubits.aval)}")
@@ -1243,11 +1243,11 @@ def reset(qubits):
         from qrisp import QuantumVariable
 
         if isinstance(qubits, QuantumVariable):
-            abs_qc = reset_p.bind(qs.abs_qc, qubits.reg.tracer)
+            abs_qc = reset_p.bind(qubits.reg.tracer, qs.abs_qc)
         elif isinstance(qubits.aval, AbstractQubitArray):
-            abs_qc = reset_p.bind(qs.abs_qc, qubits.tracer)
+            abs_qc = reset_p.bind(qubits.tracer, qs.abs_qc)
         elif isinstance(qubits.aval, AbstractQubit):
-            abs_qc = reset_p.bind(qs.abs_qc, qubits)
+            abs_qc = reset_p.bind(qubits, qs.abs_qc)
         else:
             raise Exception(f"Tried to reset type {type(qubits.aval)}")
 
