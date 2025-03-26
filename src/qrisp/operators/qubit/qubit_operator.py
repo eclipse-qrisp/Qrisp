@@ -1663,9 +1663,10 @@ class QubitOperator(Hamiltonian):
         diagonalisation_method = "commuting",
         ):
         r"""
-        This method returns the expected value of a Hamiltonian for the state 
-        of a quantum argument. Note that this method measures the **hermitized**
-        version of the operator:
+        The ``expectation value`` function allows to estimate the expectation value for a Hamiltonian for a state that is specified by a preparation procedure.
+        This preparation procedure can be supplied via a Python function that returns a :ref:`QuantumVariable`.
+
+        Note that this method measures the **hermitized** version of the operator:
             
         .. math::
             
@@ -1683,45 +1684,54 @@ class QubitOperator(Hamiltonian):
             The precision with which the expectation of the Hamiltonian is to be evaluated.
             The default is 0.01. The number of shots scales quadratically with the inverse precision.
         diagonalisation_method : str, optional
-            Specifies the method for grouping and diagonalizing the QubitOperator. 
+            Specifies the method for grouping and diagonalizing the :ref:`QubitOperator`. 
             Available are ``commuting_qw``, i.e., the operator is grouped based on qubit-wise commutativity of terms, 
-            and ``commuting``, i.e., the operator is grouped based on commutativity of terms.
+            and ``commuting``, i.e., the operator is grouped based on commutativity of terms. 
             The default is ``commuting``.
 
         Returns
         -------
         callable
-            A classical, Jax traceable function returning The expectation value of the Hamiltonian for the prepared quantum state.
+            A function returning a Jax array containing the expectaion value.
 
         Examples
         --------
 
         We define a Hamiltonian, and measure its expectation value for the state of a :ref:`QuantumFloat`.
 
+        We prepare the state
+
+        .. math::
+
+            \ket{\psi_{\theta}} = (\cos(\theta)\ket{0}+\sin(\theta)\ket{1})^{\otimes 2}
+
         ::
             
             from qrisp import *
             from qrisp.operators import X,Y,Z
+            import numpy as np
 
-            def state_prep():
+            def state_prep(theta):
                 qv = QuantumFloat(2)
-                h(qv)
+
+                ry(theta,qv)
+    
                 return qv
 
-            H = Z(0)*Z(1)
-
-            H.expectation_value(state_prep)()
-            # Yields: -0.0021252656582072538
-
-        We can also use this method in :ref:`Jasp`:
-
+        And compute the expectation value of the Hamiltonion $H=Z_0Z_1$ for the state $\ket{\psi_{\theta}}$
+    
         ::
 
             @jaspify(terminal_sampling=True)
             def main():
-                return H.expectation_value(state_prep)()
+            
+                H = Z(0)*Z(1)
 
-            main()
+                ev_function = H.expectation_value(state_prep)
+
+                return ev_function(np.pi/2)
+
+            print(main())
             # Yields: Array(0.02062758, dtype=float64)
 
         """
