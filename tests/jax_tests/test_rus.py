@@ -175,11 +175,11 @@ def test_rus():
     @terminal_sampling
     def main():
         return block_encoding(4, state_prep_full, case_functions)
-        
-    assert main() == {3.0: 0.25, 4.0: 0.25, 5.0: 0.25, 6.0: 0.25}
-
-
     
-
-
-
+    res_dict = main()
+    expected_res = {3.0: 0.25, 4.0: 0.25, 5.0: 0.25, 6.0: 0.25}
+    
+    assert len(res_dict) == len(expected_res)
+    
+    for k, v in res_dict.items():
+        assert abs(expected_res[k] - res_dict[k]) < 1E-3

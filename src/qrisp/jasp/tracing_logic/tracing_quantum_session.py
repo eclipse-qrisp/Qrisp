@@ -91,6 +91,7 @@ class TracingQuantumSession:
         
         from qrisp.core import QuantumVariable
         
+        
         if isinstance(qubits[0], (QuantumVariable, DynamicQubitArray)):
             
             from qrisp.jasp import jrange
@@ -98,7 +99,12 @@ class TracingQuantumSession:
             for i in jrange(qubits[0].size):
                 self.append(operation, [qubits[j][i] for j in range(operation.num_qubits)], param_tracers = param_tracers)
             return
+        
+        elif isinstance(qubits[0], list):
             
+            for i in range(len(qubits[0])):
+                self.append(operation, [qubits[j][i] for j in range(operation.num_qubits)], param_tracers = param_tracers)
+            return
         
         temp_op = operation.copy()
         
@@ -108,7 +114,7 @@ class TracingQuantumSession:
         
         op_primitive = OperationPrimitive(temp_op)
         
-        self.abs_qc = op_primitive.bind(self.abs_qc, *(param_tracers + [b for b in qubits]))
+        self.abs_qc = op_primitive.bind(*([b for b in qubits] + param_tracers + [self.abs_qc]))
         
     def register_qv(self, qv, size):
         # if qv.name in [temp_qv.name for temp_qv in self.qv_list + self.deleted_qv_list]:
@@ -119,7 +125,7 @@ class TracingQuantumSession:
         # Determine amount of required qubits
         
         if size is not None:
-            self.abs_qc, qb_array_tracer = create_qubits(self.abs_qc, size)
+            qb_array_tracer, self.abs_qc = create_qubits(size, self.abs_qc)
             # Register in the list of active quantum variable
             dynamic_qubit_array = DynamicQubitArray(qb_array_tracer)
             qv.reg = dynamic_qubit_array
@@ -151,7 +157,7 @@ class TracingQuantumSession:
         
     def clear_qubits(self, qubits, verify=False):
         
-        self.abs_qc = delete_qubits_p.bind(self.abs_qc, qubits.tracer)
+        self.abs_qc = delete_qubits_p.bind(qubits.tracer, self.abs_qc)
     
     @classmethod
     def release(cls):

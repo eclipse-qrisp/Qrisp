@@ -174,8 +174,18 @@ class ClControlEnvironment(QuantumEnvironment):
             QuantumEnvironment.compile(self)
             
     def __exit__(self, exception_type, exception_value, traceback):
+    
+        # "with" blocks in Python are always executed - the ClControlEnvironment
+        # is no exception. It can therefore happen that code is run, which is not
+        # intended to run by the semantics, because the classical condition is not
+        # True. While this can not really prevented, it can lead to the 
+        # (annoying) behavior, that Exceptions are raised (for instance
+        # out of bounds errors) from code that is not intended to be executed anyways.
         
-        
+        # If there was an exception raised, we mitigate this problem
+        # by checking if the control condition was not True in the first place.
+        # If this is the case, we simply exit the QuantumEnvironment without
+        # any further action.
         static_error_appeared = False
         if not check_for_tracing_mode():
             if exception_type is not None:
@@ -183,9 +193,12 @@ class ClControlEnvironment(QuantumEnvironment):
                     ctrl_bl = self.ctrl_bls[i]
                     if (ctrl_bl ^ (self.ctrl_state >> i)) & 1:
                         static_error_appeared = True
+                        exception_type = None
+                        exception_value = None
+                        traceback = None
                         break
         
-        QuantumEnvironment.__exit__(self, None, None, None)
+        QuantumEnvironment.__exit__(self, exception_type, exception_value, traceback)
         
         if static_error_appeared:
             return True
@@ -196,10 +209,10 @@ class ClControlEnvironment(QuantumEnvironment):
         args = extract_invalues(eqn, context_dic)
         
         # This list stores the the variables representing the control variables
-        ctrl_vars = args[1:len(self.ctrl_bls)+1]
+        ctrl_vars = args[:len(self.ctrl_bls)]
         
         # This list stores the variables used in the environment body
-        env_vars = [args[0]] + args[len(self.ctrl_bls)+1:]
+        env_vars = args[len(self.ctrl_bls):]
         
         # Flatten the environments in the body
         body_jaspr = eqn.params["jaspr"].flatten_environments()
@@ -229,7 +242,7 @@ class ClControlEnvironment(QuantumEnvironment):
             cond_bl = ~cond_bl
         
         def identity_fun(*args):
-            return args[0]
+            return args[-1]
         
         true_fun = identity_fun
         false_fun = identity_fun

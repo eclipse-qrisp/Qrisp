@@ -24,7 +24,7 @@ def test_comparisons():
         return a < b
 
     def gt_op(a, b):
-        return a < b
+        return a > b
 
     def le_op(a, b):
         return a <= b
@@ -57,5 +57,22 @@ def test_comparisons():
                     a, b, comparison_value = k
                     
                     assert op(a,b) == comparison_value
+                    
+        @terminal_sampling
+        def main(i, j):
+            
+            a = QuantumFloat(i)
+            h(a)
+            
+            return a, op(a, j)
+        
+        for i in range(1, 5):
+            for j in range(1, 5):
+                sampling_dict = main(i, j)
+                
+                for k in sampling_dict.keys():
+                    a, comparison_value = k
+                    
+                    assert op(a,j) == comparison_value
                 
         

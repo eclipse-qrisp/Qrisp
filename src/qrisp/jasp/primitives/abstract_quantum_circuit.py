@@ -40,7 +40,7 @@ create_qubits_p = QuantumPrimitive("create_qubits")
 create_qubits_p.multiple_results = True
 
 @create_qubits_p.def_abstract_eval
-def create_qubits_abstract_eval(qc, size):
+def create_qubits_abstract_eval(size, qc):
     """Abstract evaluation of the primitive.
     
     This function does not need to be JAX traceable. It will be invoked with
@@ -51,10 +51,12 @@ def create_qubits_abstract_eval(qc, size):
       a ShapedArray for the result of the primitive.
     """
     
-    return AbstractQuantumCircuit(), AbstractQubitArray()
+    assert isinstance(qc, AbstractQuantumCircuit)
+    
+    return AbstractQubitArray(), AbstractQuantumCircuit()
 
 @create_qubits_p.def_impl
-def create_qubit_impl(qc, size):
+def create_qubit_impl(size, qc):
     from qrisp.circuit import QubitAlloc
     qubit_list = []
     
@@ -62,13 +64,13 @@ def create_qubit_impl(qc, size):
         qubit_list.append(qc.add_qubit())
         qc.append(QubitAlloc(), [qubit_list[-1]])
     
-    return qc, qubit_list
+    return qubit_list, qc
 
 # Register Deletion
 delete_qubits_p = QuantumPrimitive("delete_qubits")
 
 @delete_qubits_p.def_abstract_eval
-def delete_qubits_abstract_eval(qc, qarr):
+def delete_qubits_abstract_eval(qarr, qc):
     """Abstract evaluation of the primitive.
     
     This function does not need to be JAX traceable. It will be invoked with
@@ -82,7 +84,7 @@ def delete_qubits_abstract_eval(qc, qarr):
     return AbstractQuantumCircuit()
 
 @delete_qubits_p.def_impl
-def delete_qubits_impl(qc, qarr):
+def delete_qubits_impl(qarr, qc):
     from qrisp.circuit import QubitDealloc
     
     for i in range(len(qarr)):

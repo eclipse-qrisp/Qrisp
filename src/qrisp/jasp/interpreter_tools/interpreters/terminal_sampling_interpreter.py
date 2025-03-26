@@ -16,11 +16,13 @@
 ********************************************************************************/
 """
 
+from functools import lru_cache
 from random import shuffle
 
 import numpy as np
 
 import jax.numpy as jnp
+import jax
 
 from qrisp.jasp.interpreter_tools.abstract_interpreter import eval_jaxpr, extract_invalues, insert_outvalues, exec_eqn
 from qrisp.jasp.interpreter_tools.interpreters.control_flow_interpretation import evaluate_while_loop
@@ -147,13 +149,13 @@ def terminal_sampling_evaluator(sampling_res_type):
         
         # Extract the shot number
         if sampling_res_type == "ev":
-            shots = invalues[1]
+            shots = invalues[0]
         elif sampling_res_type == "array":
             shots = invalues[0]
         elif sampling_res_type == "dict":
-            shots = invalues[1]
+            shots = invalues[0]
             if shots == 0:
-                invalues[1] = 1
+                invalues[0] = 1
             
         
         # We will use this dictionary to store the sampling results
@@ -195,13 +197,13 @@ def terminal_sampling_evaluator(sampling_res_type):
                 
                     # Collect the qubits to be measured into a single list
                     qubits = []
-                    for i in range(1, len(invalues)):
+                    for i in range(len(invalues)-1):
                         qubits.extend(invalues[i])
                         return_signature.append(len(invalues[i]))
                         
                     # Clear the buffer and copy the state to evaluate the measurement
-                    invalues[0].apply_buffer()
-                    quantum_state = invalues[0].copy()
+                    invalues[-1].apply_buffer()
+                    quantum_state = invalues[-1].copy()
                     
                     # Evaluate the measurement
                     # This returns a dictionary of the form {label int : count int}
@@ -233,9 +235,13 @@ def terminal_sampling_evaluator(sampling_res_type):
                         sampling_res = jnp.zeros(len(eqn.outvars))
                     elif sampling_res_type == "array":
                         sampling_res = []
+                        sampling_res_dict = {}
                     elif sampling_res_type == "dict":
                         sampling_res = {}
                         
+                    # Compile the decoder
+                    decoder = decoder_compiler(eqn.params["jaxpr"], eqn_evaluator)
+                    
                     # Iterate through the sampled values
                     for k, v in meas_res_dic.items():
                         
@@ -255,17 +261,25 @@ def terminal_sampling_evaluator(sampling_res_type):
                             j += return_signature[i]
                         
                         # Evaluate the decoder
-                        outvalues = eval_jaxpr(eqn.params["jaxpr"], eqn_evaluator = eqn_evaluator)(*new_invalues)
+                        #outvalues = eval_jaxpr(eqn.params["jaxpr"], eqn_evaluator = eqn_evaluator)(*new_invalues)
+                        
+                        outvalues = decoder(*new_invalues)
+                        
                         
                         # We now build the key for the result dic
                         # For that we turn the jax types into the corresponding
                         # Python types.
-                        
                         if not isinstance(outvalues, tuple):
                             if sampling_res_type == "ev":
                                 sampling_res += outvalues*v
                             elif sampling_res_type == "array":
-                                sampling_res.extend(v*[outvalues[0]])
+                                #sampling_res.extend(v*[outvalues[0]])
+                                key = outvalues[0]
+                                if key.size == 1:
+                                    sampling_res_dict[key.item()] = v
+                                else:
+                                    sampling_res_dict[tuple(np.array(key))] = v
+                                    #sampling_res.extend(v*[key])
                             elif sampling_res_type == "dict":
                                 key = outvalues
                                 if not type(v) in [int, float]:
@@ -293,10 +307,13 @@ def terminal_sampling_evaluator(sampling_res_type):
                                     else:
                                         raise
                                 sampling_res[tuple(x.item() for x in outvalues)] = v
-
+                                
                     if sampling_res_type == "array":
-                        shuffle(sampling_res)
-                        sampling_res = jnp.array(sampling_res)
+                        keys = np.array(list(sampling_res_dict.keys()))
+                        counts = np.array(list(sampling_res_dict.values()))
+                        sampling_res = np.repeat(keys, counts, axis=0)
+                        np.random.shuffle(sampling_res)
+                        
                     elif sampling_res_type == "ev":
                         sampling_res = sampling_res/shots
                         if sampling_res.shape[0] == 1:
@@ -312,8 +329,10 @@ def terminal_sampling_evaluator(sampling_res_type):
     
         # Execute the above defined interpreter
         sampling_body_jaxpr = eqn.params["jaxpr"].jaxpr
-    
+
         outvalues = eval_jaxpr(sampling_body_jaxpr, eqn_evaluator = sampling_body_eqn_evaluator)(*invalues)
+        
+        
         
         if not isinstance(outvalues, (list, tuple)):
             outvalues = [outvalues]
@@ -321,3 +340,8 @@ def terminal_sampling_evaluator(sampling_res_type):
         insert_outvalues(eqn, context_dic, decoded_meas_res)
             
     return sampling_eqn_evaluator
+
+
+@lru_cache(maxsize = int(1E5))
+def decoder_compiler(jaxpr, eqn_evaluator):
+    return jax.jit(eval_jaxpr(jaxpr, eqn_evaluator = eqn_evaluator))

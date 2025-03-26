@@ -734,10 +734,13 @@ def multi_measurement(qv_list, shots=None, backend=None):
     merge(qv_list)
 
     # Copy circuit in order to prevent modification
-    from qrisp import QuantumArray, QuantumVariable, recursive_qv_search
+    from qrisp import QuantumArray, QuantumVariable, recursive_qv_search, recursive_qa_search
     from qrisp.core.compilation import qompiler
 
     temp = recursive_qv_search(qv_list)
+    
+    for qa in recursive_qa_search(qv_list):
+        temp.extend(list(qa.flatten()))
 
     compiled_qc = qompiler(
         qv_list[0].qs, intended_measurements=sum([qv.reg for qv in temp], [])
@@ -1330,8 +1333,8 @@ def get_measurement_from_qc(qc, qubits, backend, shots=None):
 
     counts = new_counts_dic
 
-    # Plot result (if needed)
-
+    if abs(1 - no_of_shots_executed) < 1E-3:
+        return counts
     # Normalize counts
     for key in counts.keys():
         counts[key] = counts[key] / abs(no_of_shots_executed)
@@ -1447,21 +1450,27 @@ def redirect_qfunction(function_to_redirect):
         if check_for_tracing_mode():
             jaspr = make_jaspr(function_to_redirect, garbage_collection = "manual")(*args, **kwargs).flatten_environments()
             
-            transformed_jaspr = injection_transform(jaspr, jaspr.outvars[1])
+            transformed_jaspr = injection_transform(jaspr, jaspr.outvars[0])
             
             qs = TracingQuantumSession.get_instance()
             abs_qc = qs.abs_qc
             from jax.tree_util import tree_flatten
             
-            flattened_args = [abs_qc]
+            flattened_args = []
+            
+            flattened_args.append(target.reg.tracer)
             
             for arg in args:
                 flattened_args.extend(tree_flatten(arg)[0])
                 
-            flattened_args.append(target.reg.tracer)
+            flattened_args.append(abs_qc)
             
             res = eval_jaxpr(transformed_jaspr, [])(*flattened_args)
-            qs.abs_qc = res[0]
+            
+            if len(transformed_jaspr.outvars) == 1:
+                qs.abs_qc = res
+            else:
+                qs.abs_qc = res[-1]
         
         else:
 

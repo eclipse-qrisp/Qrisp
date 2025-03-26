@@ -26,6 +26,7 @@ from qrisp.operators.hamiltonian_tools import group_up_iterable
 from qrisp.operators.hamiltonian import Hamiltonian
 from qrisp.operators.qubit.qubit_term import QubitTerm
 from qrisp.operators.qubit.measurement import get_measurement
+from qrisp.operators.qubit.jasp_measurement import get_jasp_measurement
 from qrisp.operators.qubit.commutativity_tools import construct_change_of_basis
 from qrisp import cx, cz, h, s, sx_dg, IterationEnvironment, conjugate, merge
 
@@ -1079,14 +1080,14 @@ class QubitOperator(Hamiltonian):
     # Measurement settings and measurement
     #
     
-    def change_of_basis(self, qarg, method="commuting_qw"):
+    def change_of_basis(self, qarg=None, method="commuting_qw"):
         """
         Performs several operations on a quantum argument such that the hermitian
         part of self is diagonal when conjugated with these operations.
 
         Parameters
         ----------
-        qarg : QuantumVariable or list[Qubit]
+        qarg : QuantumVariable or list[Qubit], optional
             The quantum argument to apply the change of basis on.
         method : str, optional
             The method for calculating the change of basis. 
@@ -1212,11 +1213,12 @@ class QubitOperator(Hamiltonian):
                     basis_dict[j] = factor_dict[j]
                 
                     # Append the appropriate basis-change gate
-                    if factor_dict[j]=="X":
-                        h(qarg[j])
+                    if qarg is not None:
+                        if factor_dict[j]=="X":
+                            h(qarg[j])
                     
-                    if factor_dict[j]=="Y":
-                        sx_dg(qarg[j])
+                        if factor_dict[j]=="Y":
+                            sx_dg(qarg[j])
             
                     new_factor_dict[j] = "Z"
                     
@@ -1265,7 +1267,8 @@ class QubitOperator(Hamiltonian):
                         s(qarg[qb_indices[perm[i]]])
                     inv_graph_state(qarg)
 
-                change_of_basis(qarg)
+                if qarg is not None:
+                    change_of_basis(qarg)
 
                 # Construct new QubitOperator
                 #
@@ -1357,11 +1360,13 @@ class QubitOperator(Hamiltonian):
                 else:
                     
                     # Perform the cnot gates
-                    for j in range(len(ladder_operators)-1):
-                        cx(qarg[anchor_factor[0]], qarg[ladder_operators[j][0]])
+                    if qarg is not None:
+                        for j in range(len(ladder_operators)-1):
+                            cx(qarg[anchor_factor[0]], qarg[ladder_operators[j][0]])
                     
-                    # Execute the H-gate
-                    h(qarg[anchor_factor[0]])
+                        # Execute the H-gate
+                        h(qarg[anchor_factor[0]])
+
                     processed_ladder_index_sets.append(ladder_indices)
                 
                 prefactor *= 0.5
@@ -1649,6 +1654,95 @@ class QubitOperator(Hamiltonian):
                                 precompiled_qc=precompiled_qc, 
                                 diagonalisation_method=diagonalisation_method,
                                 measurement_data=measurement_data)
+    
+    
+    def expectation_value(
+        self,
+        state_prep,
+        precision = 0.01,
+        diagonalisation_method = "commuting",
+        ):
+        r"""
+        This method returns the expected value of a Hamiltonian for the state 
+        of a quantum argument. Note that this method measures the **hermitized**
+        version of the operator:
+            
+        .. math::
+            
+            H = (O + O^\dagger)/2
+
+
+        Parameters
+        ----------
+        state_prep : callable
+            A function returning a QuantumVariable. 
+            The expectation of the Hamiltonian for the state from this QuantumVariable will be measured. 
+            The state preparation function can only take classical values as arguments. 
+            This is because a quantum value would need to be copied for each sampling iteration, which is prohibited by the no-cloning theorem.
+        precision : float, optional
+            The precision with which the expectation of the Hamiltonian is to be evaluated.
+            The default is 0.01. The number of shots scales quadratically with the inverse precision.
+        diagonalisation_method : str, optional
+            Specifies the method for grouping and diagonalizing the QubitOperator. 
+            Available are ``commuting_qw``, i.e., the operator is grouped based on qubit-wise commutativity of terms, 
+            and ``commuting``, i.e., the operator is grouped based on commutativity of terms.
+            The default is ``commuting``.
+
+        Returns
+        -------
+        callable
+            A classical, Jax traceable function returning The expectation value of the Hamiltonian for the prepared quantum state.
+
+        Examples
+        --------
+
+        We define a Hamiltonian, and measure its expectation value for the state of a :ref:`QuantumFloat`.
+
+        ::
+            
+            from qrisp import *
+            from qrisp.operators import X,Y,Z
+
+            def state_prep():
+                qv = QuantumFloat(2)
+                h(qv)
+                return qv
+
+            H = Z(0)*Z(1)
+
+            H.expectation_value(state_prep)()
+            # Yields: -0.0021252656582072538
+
+        We can also use this method in :ref:`Jasp`:
+
+        ::
+
+            @jaspify(terminal_sampling=True)
+            def main():
+                return H.expectation_value(state_prep)()
+
+            main()
+            # Yields: Array(0.02062758, dtype=float64)
+
+        """
+
+        def return_function(*args):
+
+            if check_for_tracing_mode():
+                return get_jasp_measurement(self, 
+                                        state_prep, 
+                                        args,
+                                        precision = precision, 
+                                        diagonalisation_method = diagonalisation_method)
+            else:
+
+                qarg = state_prep(*args)
+                return get_measurement(self, 
+                                        qarg, 
+                                        precision=precision, 
+                                        diagonalisation_method=diagonalisation_method)
+            
+        return return_function
 
     #
     # Trotterization

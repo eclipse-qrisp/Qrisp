@@ -465,7 +465,7 @@ def jasp_balauca_mcx(ctrls, target, ctrl_state):
     
     N = jlen(ctrls)
     
-    from qrisp import mcx
+    from qrisp import mcx #Double import
     ctrl_state = jnp.int64(ctrl_state)
     ctrl_state = cond(ctrl_state == -1, lambda x : x + 2**N, lambda x : x, ctrl_state)
     

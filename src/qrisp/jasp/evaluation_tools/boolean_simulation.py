@@ -171,21 +171,22 @@ def boolean_simulation(*func, bit_array_padding = 2**16):
         
         cl_func_jaxpr = jaspr_to_cl_func_jaxpr(jaspr.flatten_environments(), bit_array_padding)
         
-        aval = cl_func_jaxpr.invars[0].aval
+        # Get the abstract value of the bit array representing the bit state        
+        aval = cl_func_jaxpr.invars[-3].aval
         
         bit_array = jnp.zeros(aval.shape, dtype = aval.dtype)
         free_qubit_list = Jlist(jnp.arange(bit_array_padding), max_size = bit_array_padding).flatten()[0]
         boolean_quantum_circuit = (bit_array, *free_qubit_list)
         
+        ammended_args = list(args) + list(boolean_quantum_circuit)
         
-        res = eval_jaxpr(cl_func_jaxpr)(*boolean_quantum_circuit, 
-                                        *args)
+        res = eval_jaxpr(cl_func_jaxpr)(*ammended_args)
         
         if len(res) == 4:
-            return res[3]
+            return res[0]
         elif len(res) == 3:
             return None
         else:
-            return res[3:]
+            return res[:-3]
     
     return return_function

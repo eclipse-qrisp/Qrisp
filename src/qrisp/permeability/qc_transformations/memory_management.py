@@ -157,9 +157,11 @@ def topological_sort(G, prefer=None, delay=None, sub_sort=nx.topological_sort):
     
     return [node_list[i] for i in res]
 
+memory = psutil.virtual_memory().total
 
 def toposort_helper(indptr, indices, node_amount, delay_nodes, prefered_nodes):
-    if psutil.virtual_memory().available/2 < node_amount**2:
+    
+    if memory/4 < node_amount**2:
         return toposort_helper_sparse(indptr, indices, node_amount, delay_nodes, prefered_nodes)
     else:
         return toposort_helper_dense(indptr, indices, node_amount, delay_nodes, prefered_nodes)

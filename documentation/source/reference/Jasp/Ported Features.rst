@@ -12,7 +12,7 @@ Since Jasp is a fundamentally different compilation architecture, not all Qrisp 
 
    * - Algorithm
      - Jaspified
-   * - Unsigned integer quantum arithmetic (apart from division)
+   * - Arithmetic and comparisons with unsigned integer :ref:`QuantumFloat`
      -    ✅ 
    * - :ref:`mcx <mcx>` with a dynamic amount of controls
      -    ✅ 
@@ -33,6 +33,12 @@ Since Jasp is a fundamentally different compilation architecture, not all Qrisp 
    * - :ref:`Hamiltonian Simulation (Operators module) <Operators>`
      -    ✅ 
    * - :ref:`Quantum function injection <injection>`
+     -    ✅ 
+   * - :ref:`InversionEnvironment`
+     -    ✅ 
+   * - :ref:`ControlEnvironment`
+     -    ✅
+   * - :ref:`ConjugationEnvironment`
      -    ✅ 
    * - :ref:`Automatic Uncomputation <uncomputation>`
      -   	❌ 

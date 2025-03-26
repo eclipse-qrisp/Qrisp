@@ -40,3 +40,22 @@ def test_injection_operator():
     
     for i in range(2, 6):
         assert main(i) == 0
+        
+    def AND(a, b):
+        res = QuantumBool()
+        mcx([a, b], res)
+        return res
+
+    @jaspify
+    def main():
+        a = QuantumBool()
+        b = QuantumBool()
+
+        tar = QuantumBool()
+
+        (tar << AND)(a,b)
+
+        res = measure(tar)
+        return res
+
+    main()

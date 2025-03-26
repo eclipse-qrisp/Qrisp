@@ -241,8 +241,8 @@ class ConjugationEnvironment(QuantumEnvironment):
         controlled_eqn_list[0] = copy_jaxpr_eqn(controlled_flattened_jaspr.eqns[0])
         controlled_eqn_list[-1] = copy_jaxpr_eqn(controlled_flattened_jaspr.eqns[-1])
         
-        controlled_eqn_list[0].invars.pop(1)
-        controlled_eqn_list[-1].invars.pop(1)
+        controlled_eqn_list[0].invars.pop(0)
+        controlled_eqn_list[-1].invars.pop(0)
         
         controlled_eqn_list[0].params["jaxpr"] = flattened_jaspr.eqns[0].params["jaxpr"]
         controlled_eqn_list[-1].params["jaxpr"] = flattened_jaspr.eqns[-1].params["jaxpr"]
