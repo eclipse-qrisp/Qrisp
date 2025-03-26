@@ -741,7 +741,7 @@ class FermionicOperator(Hamiltonian):
         Returns
         -------
         callable
-            A function returning a (Jax) array containing the expectaion value.
+            A function returning an array containing the expectaion value.
 
         Examples
         --------
@@ -768,7 +768,18 @@ class FermionicOperator(Hamiltonian):
                 return qv
 
         And compute the expectation value of the Hamiltonion $H=a_0^{\dagger}a_1+a_1^{\dagger}a_0$ for the state $\ket{\psi_{\theta}}$
-    
+
+        ::
+
+            H = c(0)*a(1) + c(1)*a(0)
+
+            ev_function = H.expectation_value(state_prep)
+            
+            print(ev_function(np.pi/2))
+            # Yields: 0.5027499999999724
+
+        Similiarly, expectation values can be calculated with Jasp
+
         ::
 
             @jaspify(terminal_sampling=True)

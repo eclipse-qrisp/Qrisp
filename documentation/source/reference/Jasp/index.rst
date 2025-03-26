@@ -136,6 +136,5 @@ If you are interested in how the QIR representation looks like, try calling
    Control Flow/index
    Sampling
    Expectation Value
-   Expectation Value Hamiltonians
    Simulation Tools/index
    Ported Features
