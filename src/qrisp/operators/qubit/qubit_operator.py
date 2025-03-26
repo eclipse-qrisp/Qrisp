@@ -1663,7 +1663,7 @@ class QubitOperator(Hamiltonian):
         diagonalisation_method = "commuting",
         ):
         r"""
-        The ``expectation value`` function allows to estimate the expectation value for a Hamiltonian for a state that is specified by a preparation procedure.
+        The ``expectation value`` function allows to estimate the expectation value of a Hamiltonian for a state that is specified by a preparation procedure.
         This preparation procedure can be supplied via a Python function that returns a :ref:`QuantumVariable`.
 
         Note that this method measures the **hermitized** version of the operator:
@@ -1692,7 +1692,7 @@ class QubitOperator(Hamiltonian):
         Returns
         -------
         callable
-            A function returning a Jax array containing the expectaion value.
+            A function returning a (Jax) array containing the expectaion value.
 
         Examples
         --------
@@ -1732,7 +1732,7 @@ class QubitOperator(Hamiltonian):
                 return ev_function(np.pi/2)
 
             print(main())
-            # Yields: Array(0.02062758, dtype=float64)
+            # Yields: 0.010126265783222899
 
         """
 

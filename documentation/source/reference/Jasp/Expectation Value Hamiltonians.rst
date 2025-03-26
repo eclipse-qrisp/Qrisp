@@ -5,3 +5,4 @@ Expectation Value for Hamiltonians
 
 .. currentmodule:: qrisp.operators.qubit.QubitOperator
 .. autofunction:: expectation_value
+    :noindex:
