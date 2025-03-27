@@ -16,8 +16,8 @@
 ********************************************************************************/
 """
 
+import jax
 import jax.numpy as jnp
-from jax import random
 from jax.lax import fori_loop
 
 # https://www.jhuapl.edu/SPSA/PDF-SPSA/Spall_An_Overview.PDF
@@ -69,15 +69,15 @@ def spsa(fun, x0, args, maxiter=50, a=2.0, c=0.1, alpha=0.702, gamma=0.201, seed
 
     """
     
-    rng = random.PRNGKey(seed)
+    rng = jax.random.PRNGKey(seed)
 
     def body_fun(k, state):
 
         x, rng = state
 
         # Generate random perturbation delta with components +/-1
-        rng, rng_input = random.split(rng)
-        delta = random.choice(rng, jnp.array([1, -1]), shape=(*x.shape,))
+        rng, rng_input = jax.random.split(rng)
+        delta = jax.random.choice(rng, jnp.array([1, -1]), shape=(*x.shape,))
     
         ak = a / (k + 1) ** alpha
         ck = c / (k + 1) ** gamma
