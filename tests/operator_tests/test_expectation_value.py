@@ -38,6 +38,13 @@ def test_expectation_value(sample_size=100, seed=42, exhaustive = False):
                        diagonalisation_method="commuting", backend = non_sampling_backend)() - 
                        H.to_pauli().expectation_value(state_prep, precision=0.0005, 
                        diagonalisation_method="commuting", backend = non_sampling_backend)()) < 1E-1
+            
+            # Jasp tests 
+            @jaspify(terminal_sampling=True)
+            def main():
+                return H.expectation_value(state_prep, precision=0.01)()
+
+            assert abs(main() - H.expectation_value(state_prep, precision=0.01, backend = non_sampling_backend)()) < 1E-1
 
     # Set the random seed for reproducibility
     random.seed(seed)
@@ -68,21 +75,21 @@ def test_expectation_value(sample_size=100, seed=42, exhaustive = False):
 
    
     def state_prep():
-        qv = QuantumVariable(4)
+        qv = QuantumFloat(4)
         return qv
 
     # Perform tests with the randomly generated operator combinations
     testing_helper(state_prep, all_combinations)
 
     def state_prep():
-        qv = QuantumVariable(4)
+        qv = QuantumFloat(4)
         h(qv[0])
         return qv
 
     testing_helper(state_prep, all_combinations)
 
     def state_prep():
-        qv = QuantumVariable(4)
+        qv = QuantumFloat(4)
         h(qv[0])
         cx(qv[0], qv[1])
         return qv
@@ -90,12 +97,12 @@ def test_expectation_value(sample_size=100, seed=42, exhaustive = False):
     testing_helper(state_prep, all_combinations)
 
     def state_prep():
-        qv = QuantumVariable(4)
+        qv = QuantumFloat(4)
         h(qv[0])
         cx(qv[0], qv[1])
         cx(qv[0], qv[2])
         return qv
 
     testing_helper(state_prep, all_combinations)
+
     
-        
