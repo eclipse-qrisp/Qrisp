@@ -548,7 +548,7 @@ class VQEProblem:
         # Compile quantum circuit
         compiled_qc = qarg.qs.compile()
         
-        return compiled_qc, theta, qarg
+        return compiled_qc, theta
 
 
     def optimization_routine_(self, depth, mes_kwargs, init_type, init_point, optimizer, options, measurement_data=None): 
@@ -615,7 +615,7 @@ class VQEProblem:
         else:
 
             # Define optimization wrapper function to be minimized using VQE
-            def optimization_wrapper(theta, qc, symbols, qarg, measurement_data, mes_kwargs):
+            def optimization_wrapper(theta, state_prep, mes_kwargs, compiled_qc, symbols, measurement_data):
                 """
                 Wrapper function for the optimization method used in VQE.
 
@@ -642,10 +642,11 @@ class VQEProblem:
 
                 subs_dic = {symbols[i] : theta[i] for i in range(len(symbols))}
 
-                expectation = self.hamiltonian.get_measurement(qarg, 
+                expectation = self.hamiltonian.expectation_value(state_prep, 
+                                                                **mes_kwargs,
+                                                                precompiled_qc = compiled_qc,
                                                                 subs_dic = subs_dic, 
-                                                                measurement_data = measurement_data, 
-                                                                precompiled_qc = qc, **mes_kwargs)
+                                                                measurement_data = measurement_data)
             
                 if self.callback:
                     self.optimization_costs.append(expectation)
@@ -685,12 +686,12 @@ class VQEProblem:
         
         else:
 
-            compiled_qc, symbols, qarg = self.compile_circuit_(depth)
+            compiled_qc, symbols = self.compile_circuit_(depth)
             res_sample = minimize(optimization_wrapper,
                                     init_point, 
                                     method=optimizer,
                                     options=options, 
-                                    args = (compiled_qc, symbols, qarg, measurement_data, mes_kwargs))
+                                    args = (state_prep, mes_kwargs, compiled_qc, symbols, measurement_data,))
             
             return res_sample['x'], res_sample['fun']
 
