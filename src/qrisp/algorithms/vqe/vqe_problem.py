@@ -30,7 +30,7 @@ from qrisp.operators.fermionic import FermionicOperator
 import jax
 import jax.numpy as jnp
 from qrisp.jasp import check_for_tracing_mode, jrange
-from qrisp.jasp.optimizers.optimize import minimize as jasp_minimize
+from qrisp.jasp.optimization_tools.optimize import minimize as jasp_minimize
 
 
 class VQEProblem:

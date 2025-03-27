@@ -16,7 +16,7 @@
 ********************************************************************************/
 """
 
-from qrisp.jasp.optimizers.spsa import spsa
+from qrisp.jasp.optimization_tools.spsa import spsa
 
 def minimize(fun, x0, args=(), method='SPSA', options=None):
     """
@@ -27,19 +27,20 @@ def minimize(fun, x0, args=(), method='SPSA', options=None):
     
     Parameters
     ----------
-        fun : callable
-            The objective function to be minimized, ``fun(x, *args) -> float``, where ``x`` is a
-            1-D array with shape ``(n,)``and ``args``is a tuple of parameters needed to specify the function.
-        x0 : jax.Array
-            Initial guess. Array of real elements of size ``(n,)``, where ``n``is the number of independent variables.
-        args : tuple
-            Extra arguments passed to the objective function.
-        method : str
-            The solver type. Currently only ``SPSA`` is supported.
-        options : dict
-            A dictionary of solver options. All methods accept the following generic options:
-            * maxiter : int 
-                Maximum number of iterations to perform. Depending on the method each iteration may use several function evaluations.
+    fun : callable
+        The objective function to be minimized, ``fun(x, *args) -> float``, where ``x`` is a
+        1-D array with shape ``(n,)`` and ``args`` is a tuple of parameters needed to specify the function.
+    x0 : jax.Array
+        Initial guess. Array of real elements of size ``(n,)``, where ``n`` is the number of independent variables.
+    args : tuple
+        Extra arguments passed to the objective function.
+    method : str
+        The solver type. Currently only ``SPSA`` is supported.
+    options : dict
+        A dictionary of solver options. All methods accept the following generic options:
+
+        * maxiter : int 
+            Maximum number of iterations to perform. Depending on the method each iteration may use several function evaluations.
 
     Returns
     ------- 
@@ -47,10 +48,11 @@ def minimize(fun, x0, args=(), method='SPSA', options=None):
         The solution of the optimization.
     fx : jax.Array
         The value of the objective function at x.
-
-    ``minimize`` supports ``jax.jit``compilation.
     
     """
+
+    if options==None:
+        options = dict()
 
     if method=='SPSA':
         return spsa(fun, x0, args, **options)
