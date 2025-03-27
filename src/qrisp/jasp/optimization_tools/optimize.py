@@ -18,7 +18,7 @@
 
 from qrisp.jasp.optimization_tools.spsa import spsa
 
-def minimize(fun, x0, args=(), method='SPSA', options=None):
+def minimize(fun, x0, args=(), method='SPSA', options={}):
     """
 
     Minimization of scalar functions of one ore more variables via gradient-free solvers.
@@ -34,9 +34,9 @@ def minimize(fun, x0, args=(), method='SPSA', options=None):
         Initial guess. Array of real elements of size ``(n,)``, where ``n`` is the number of independent variables.
     args : tuple
         Extra arguments passed to the objective function.
-    method : str
+    method : str, optional
         The solver type. Currently only ``SPSA`` is supported.
-    options : dict
+    options : dict, optional
         A dictionary of solver options. All methods accept the following generic options:
 
         * maxiter : int 
@@ -50,9 +50,6 @@ def minimize(fun, x0, args=(), method='SPSA', options=None):
         The value of the objective function at x.
     
     """
-
-    if options==None:
-        options = dict()
 
     if method=='SPSA':
         return spsa(fun, x0, args, **options)
