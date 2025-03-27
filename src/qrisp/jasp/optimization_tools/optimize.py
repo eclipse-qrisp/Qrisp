@@ -19,11 +19,14 @@
 from qrisp.jasp.optimization_tools.spsa import spsa
 
 def minimize(fun, x0, args=(), method='SPSA', options={}):
-    """
+    r"""
 
     Minimization of scalar functions of one ore more variables via gradient-free solvers.
 
-    The API for this functions matches SciPy with some minor deviations.
+    The API for this function matches SciPy with some minor deviations.
+
+    * Various optional arguments in the SciPy interface have not yet been implemented.
+    * Results are returned as a tuple and not as an OptimizeResult object.
     
     Parameters
     ----------
@@ -48,6 +51,49 @@ def minimize(fun, x0, args=(), method='SPSA', options={}):
         The solution of the optimization.
     fx : jax.Array
         The value of the objective function at x.
+
+
+    Examples
+    --------
+
+    We prepare the state 
+
+    .. math::
+
+        \ket{\psi_{\theta}} = \cos(\theta)\ket{0} + \sin(\theta)\ket{1}
+
+    ::
+    
+        from qrisp import QuantumFloat, ry
+        from qrisp.jasp import expectation_value, minimize, jaspify
+        import jax.numpy as jnp
+
+        def state_prep(theta):
+            qv = QuantumFloat(1)
+            ry(theta[0], qv)
+            return qv
+
+    Next, we define the objective function calculating the expectation value from the prepared state  
+
+    ::
+        
+        def objective(theta, state_prep):
+            return expectation_value(state_prep, shots=100)(theta)
+
+    Finally, we use ``optimize`` to find the optimal choice of the parameter $\theta_0$ that minimizes the objective function
+            
+    ::    
+
+        @jaspify(terminal_sampling=True)
+        def main():
+
+            x0 = jnp.array([1.0])
+
+            return minimize(objective,x0,args=(state_prep,))
+
+        x, fx = main()
+        print(x)
+        print(fx)
     
     """
 
