@@ -1,6 +1,6 @@
 .. _count_ops:
 
-Ressource Estimation
+Resource Estimation
 ====================
 
 .. currentmodule:: qrisp.jasp

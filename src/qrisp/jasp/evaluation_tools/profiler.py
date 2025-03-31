@@ -46,6 +46,11 @@ def count_ops(function):
     This decorator compiles the given Jasp-compatible function into a classical
     function computing the amount of each gates required. The decorated function
     will return a dictionary containing the operation counts.
+    
+    .. warning::
+        
+        It is currently not possible to estimate programs, which include a 
+        :ref:`kernelized <quantum_kernel>` function.
 
     Parameters
     ----------
@@ -77,7 +82,13 @@ def count_ops(function):
             return measure(c)
         
         print(main(5))
+        # {'cx': 506, 'x': 22, 'h': 135, 'measure': 55, '2cx': 2, 's': 45, 't': 90, 't_dg': 90}
         print(main(5000))
+        # {'cx': 462552491, 'x': 20002, 'h': 112522500, 'measure': 37517500, '2cx': 2, 's': 37507500, 't': 75015000, 't_dg': 75015000}
+    
+    Note that even though the second computation contains more than 800 million gates, 
+    determining the resources takes less than 200ms, highlighting the scalability
+    features of the Jasp infrastructure.
 
     """
     
