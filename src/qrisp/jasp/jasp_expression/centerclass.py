@@ -441,7 +441,6 @@ class Jaspr(Jaxpr):
         if len(self.outvars) == 1:
             return None
         
-        from jax.tree_util import tree_flatten
         from qrisp.simulator import BufferedQuantumState
         args = [BufferedQuantumState()] + list(tree_flatten(args)[0])
                 
@@ -496,6 +495,10 @@ class Jaspr(Jaxpr):
             res = None
         qs.abs_qc = new_abs_qc
         return res
+    
+    def count_ops(self, *args):
+        from qrisp.jasp.evaluation_tools import profile_jaspr
+        return profile_jaspr(self)(*args)
     
     def embedd(self, *args, name = None, inline = False):
         from qrisp.jasp import TracingQuantumSession

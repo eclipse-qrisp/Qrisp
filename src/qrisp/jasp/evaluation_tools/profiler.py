@@ -40,6 +40,25 @@ import jax.numpy as jnp
 from qrisp.jasp.primitives import OperationPrimitive
 from qrisp.jasp.interpreter_tools import make_profiling_eqn_evaluator, eval_jaxpr
 
+def count_ops(function):
+    
+    def ops_counter(*args):
+        
+        from qrisp.jasp import make_jaspr
+        
+        if not hasattr(function, "jaspr_dict"):
+            function.jaspr_dict = {}
+        
+        args = list(args)
+        
+        signature = tuple([type(arg) for arg in args])
+        if not signature in function.jaspr_dict:
+            function.jaspr_dict[signature] = make_jaspr(function)(*args)
+        
+        return function.jaspr_dict[signature].count_ops(*args)
+    
+    return ops_counter
+
 
 # This function is the central interface for performing resource estimation.
 # It takes a Jaspr and returns a function, returning a dictionary (with the counted
