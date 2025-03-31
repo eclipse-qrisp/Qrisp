@@ -119,7 +119,7 @@ def make_profiling_eqn_evaluator(profiling_dic):
                 insert_outvalues(eqn, context_dic, invalues[-1])
                 
             elif eqn.primitive.name == "jasp.quantum_kernel":
-                raise Exception("Tried to perform resource estimation on a function including a separate quantum kernel")
+                raise Exception("Tried to perform resource estimation on a function calling calling a kernelized function")
             else:
                 raise Exception(f"Don't know how to perform resource estimation with quantum primitive {eqn.primitive}")
                 
@@ -156,7 +156,7 @@ def make_profiling_eqn_evaluator(profiling_dic):
             
             insert_outvalues(eqn, context_dic, outvalues)
         
-        elif eqn.primitive.name == "pjit" and isinstance(eqn.params["jaxpr"].jaxpr, Jaspr):
+        elif eqn.primitive.name == "pjit":
             
             # For qached functions, we want to make sure, the compiled function
             # contains only a single implementation per qached function.

@@ -124,7 +124,10 @@ def profile_jaspr(jaspr):
         profiling_array_computer, profiling_dic = get_profiling_array_computer(jaspr)
     
         # Compute the profiling array
-        profiling_array = profiling_array_computer(*args)[-1]
+        if len(jaspr.outvars) > 1:
+            profiling_array = profiling_array_computer(*args)[-1]
+        else:
+            profiling_array = profiling_array_computer(*args)
         
         # Transform to a dictionary containing gate counts
         res_dic = {}
