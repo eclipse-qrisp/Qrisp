@@ -41,6 +41,45 @@ from qrisp.jasp.primitives import OperationPrimitive
 from qrisp.jasp.interpreter_tools import make_profiling_eqn_evaluator, eval_jaxpr
 
 def count_ops(function):
+    """
+    Decorator to determine resources of large scale quantum computations.
+    This decorator compiles the given Jasp-compatible function into a classical
+    function computing the amount of each gates required. The decorated function
+    will return a dictionary containing the operation counts.
+
+    Parameters
+    ----------
+    function : callable
+        A Jasp-compatible function without :ref:`QuantumKernels <quantum_kernel>`.
+
+    Returns
+    -------
+    resource_estimator
+        A function computing the required resources.
+        
+    Examples
+    --------
+    
+    We compute the resources required to perform a large scale integer multiplication.
+    
+    ::
+        
+        from qrisp import count_ops, QuantumFloat, measure
+        
+        @count_ops
+        def main(i):
+            
+            a = QuantumFloat(i)
+            b = QuantumFloat(i)
+            
+            c = a*b
+            
+            return measure(c)
+        
+        print(main(5))
+        print(main(5000))
+
+    """
     
     def ops_counter(*args):
         
@@ -98,6 +137,8 @@ def get_profiling_array_computer(jaspr):
     for i in range(len(primitives)):
         if isinstance(primitives[i], OperationPrimitive) and not primitives[i].op.name in profiling_dic:
             profiling_dic[primitives[i].op.name] = len(profiling_dic) - 1
+        elif primitives[i].name == "jasp.measure" and not "measure" in profiling_dic:
+            profiling_dic["measure"] = len(profiling_dic) - 1
     
     # This function calls the profiling interpeter to evaluate the gate counts
     @jax.jit

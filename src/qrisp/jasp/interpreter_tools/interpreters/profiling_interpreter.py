@@ -36,7 +36,7 @@ This file implements the interfaces to evaluating the transformed Jaspr.
 from functools import lru_cache
 
 from qrisp.jasp.interpreter_tools.abstract_interpreter import insert_outvalues, extract_invalues, eval_jaxpr
-from qrisp.jasp.primitives import QuantumPrimitive, OperationPrimitive
+from qrisp.jasp.primitives import QuantumPrimitive, OperationPrimitive, AbstractQubitArray
 
 import jax
 import jax.numpy as jnp
@@ -64,13 +64,24 @@ def make_profiling_eqn_evaluator(profiling_dic):
                 counting_array = invalues[-1]
                 
                 op_name = eqn.primitive.op.name
-                if op_name not in profiling_dic:
-                    profiling_dic[op_name] = len(profiling_dic)
                     
                 counting_index = profiling_dic[op_name]
                 counting_array = counting_array.at[counting_index].add(1)
                 
                 insert_outvalues(eqn, context_dic, counting_array)
+                
+            elif eqn.primitive.name == "jasp.measure":
+                
+                counting_index = profiling_dic["measure"]
+                counting_array = invalues[-1]
+                
+                if isinstance(eqn.invars[0].aval, AbstractQubitArray):
+                    counting_array = counting_array.at[counting_index].add(invalues[0])
+                else:
+                    counting_array = counting_array.at[counting_index].add(1)
+                
+                # The measurement returns always 0
+                insert_outvalues(eqn, context_dic, [0, counting_array])
             
             # Since we don't need to track to which qubits a certain operation
             # is applied, we can implement a really simple behavior for most 
@@ -107,9 +118,10 @@ def make_profiling_eqn_evaluator(profiling_dic):
                 # Trivial behavior: return the last argument (the counting array).
                 insert_outvalues(eqn, context_dic, invalues[-1])
                 
-            elif eqn.primitive.name == "jasp.measure":
-                # The measurement returns always 0
-                insert_outvalues(eqn, context_dic, [0, invalues[-1]])
+            elif eqn.primitive.name == "jasp.quantum_kernel":
+                raise Exception("Tried to perform resource estimation on a function including a separate quantum kernel")
+            else:
+                raise Exception(f"Don't know how to perform resource estimation with quantum primitive {eqn.primitive}")
                 
         elif eqn.primitive.name == "while":
             
@@ -170,7 +182,7 @@ def make_profiling_eqn_evaluator(profiling_dic):
                 outvalues = (outvalues, )
             
             insert_outvalues(eqn, context_dic, outvalues)
-                
+        
         else:
             return True
         
