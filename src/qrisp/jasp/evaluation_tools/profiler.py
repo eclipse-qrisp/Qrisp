@@ -16,24 +16,48 @@
 ********************************************************************************/
 """
 
+"""
+This file implements the tools to perform quantum resource estimation using Jasp
+infrastructure. The idea here is to transform the quantum instructions within a
+given Jaspr into "counting instructions". That means instead of performing some
+quantum gate, we increment an index in an array, which keeps track of how many
+instructions of each type have been performed.
+
+To do this, we implement the 
+
+qrisp.jasp.interpreter_tools.interpreters.profiling_interpreter.py
+
+Which handles the transformation logic of the Jaspr.
+This file implements the interfaces to evaluating the transformed Jaspr.
+
+"""
+
 from functools import lru_cache
 
-import jax.numpy as jnp
 import jax
+import jax.numpy as jnp
 
 from qrisp.jasp.primitives import OperationPrimitive
-from jax.core import ClosedJaxpr
-
 from qrisp.jasp.interpreter_tools import make_profiling_eqn_evaluator, eval_jaxpr
 
+
+# This function is the central interface for performing resource estimation.
+# It takes a Jaspr and returns a function, returning a dictionary (with the counted
+# operations).
 def profile_jaspr(jaspr):
     
     def profiler(*args):
-    
+        
+        # The profiling array computer is a function that computes the array 
+        # countaining the gate counts.
+        # The profiling dic is a dictionary of type {str : int}, which indicates
+        # which operation has been computed at which index of the array.
         profiling_array_computer, profiling_dic = get_profiling_array_computer(jaspr)
     
+        # Compute the profiling array
         profiling_array = profiling_array_computer(*args)[-1]
         
+        # Transform to a dictionary containing gate counts
         res_dic = {}
         for k in profiling_dic.keys():
             if int(profiling_array[profiling_dic[k]]):
@@ -43,30 +67,20 @@ def profile_jaspr(jaspr):
 
     return profiler
 
-@lru_cache(int(1E5))           
-def get_compiled_profiler(jaxpr, zipped_profiling_dic):
-    
-    profiling_dic = dict(zipped_profiling_dic)
-    
-    profiling_eqn_evaluator = make_profiling_eqn_evaluator(profiling_dic)
-    
-    @jax.jit
-    def profiler(*args):
-        return eval_jaxpr(jaxpr, eqn_evaluator = profiling_eqn_evaluator)(*args)
-    
-    return profiler
-
+# This function takes a Jaspr and returns a function computing the "counting array"
 @lru_cache(int(1E5))
 def get_profiling_array_computer(jaspr):
     
+    # This functions determines the set of primitives that appear in a given Jaxpr
     primitives = get_primitives(jaspr)
     
+    # Filter out the non OperationPrimitives and fill them in a dictionary
     profiling_dic = {}
-    
     for i in range(len(primitives)):
         if isinstance(primitives[i], OperationPrimitive) and not primitives[i].op.name in profiling_dic:
             profiling_dic[primitives[i].op.name] = len(profiling_dic) - 1
     
+    # This function calls the profiling interpeter to evaluate the gate counts
     @jax.jit
     def profiling_array_computer(*args):
         
@@ -82,7 +96,7 @@ def get_profiling_array_computer(jaspr):
     return profiling_array_computer, profiling_dic
 
 
-
+# This functions determines the set of primitives that appear in a given Jaxpr
 def get_primitives(jaxpr):
     
     primitives = set()
@@ -98,7 +112,7 @@ def get_primitives(jaxpr):
         
         # Handle call primitives (like cond/pjit)
         for param in eqn.params.values():
-            if isinstance(param, ClosedJaxpr):
+            if isinstance(param, jax.core.ClosedJaxpr):
                 primitives.update(get_primitives(param.jaxpr))
     
     return list(primitives)
