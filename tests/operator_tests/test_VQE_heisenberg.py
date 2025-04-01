@@ -31,7 +31,7 @@ def test_vqe_heisenberg():
 
     results = []
     for i in range(5):
-        res = vqe.run(QuantumVariable(G.number_of_nodes()),
+        res = vqe.run(lambda : QuantumVariable(G.number_of_nodes()),
                 depth=2,
                 max_iter=50)
         results.append(res)

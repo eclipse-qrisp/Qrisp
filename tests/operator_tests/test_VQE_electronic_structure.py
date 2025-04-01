@@ -42,7 +42,7 @@ def test_vqe_electronic_structure_H2():
     
     results = []
     for i in range(5):
-        res = vqe.run(QuantumVariable(4),
+        res = vqe.run(lambda : QuantumVariable(4),
                 depth=1,
                 max_iter=50)
         results.append(res)
