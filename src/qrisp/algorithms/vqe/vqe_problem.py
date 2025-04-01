@@ -56,7 +56,27 @@ class VQEProblem:
     Examples
     --------
 
-    For a quick demonstration, we show how to calculate the ground state energy of the $H_2$ molecule using VQE, as explained `here <https://arxiv.org/abs/2305.07092>`_.
+    For a quick demonstration, we show how to calculate the ground state energy of the $H_2$ molecule using VQE. 
+    The :meth:`electronic_structure_problem <qrisp.vqe.problems.electronic_structure.electronic_structure_problem>` method generates 
+    a VQEProblem instance with the Hamiltonian and a chemistry-inspired Qubit Coupled Cluster Single Double (QCCSD) ansatz.
+
+    ::
+
+        from pyscf import gto
+        from qrisp import QuantumVariable
+        from qrisp.vqe.problems.electronic_structure import *
+
+        mol = gto.M(
+            atom = '''H 0 0 0; H 0 0 0.74''',
+            basis = 'sto-3g')
+
+        vqe = electronic_structure_problem(mol)
+
+        energy = vqe.run(lambda : QuantumVariable(4), depth=1, max_iter=50)
+        print(energy)
+        #Yields -1.8461290172512965
+
+    You can also specify a custom Hamiltonian and a custom hardware-efficient ansatz, as explained `here <https://arxiv.org/abs/2305.07092>`_.
 
     ::
 
@@ -89,7 +109,7 @@ class VQEProblem:
                          num_params=4,
                          callback=True)
 
-        energy = vqe.run(qarg = QuantumVariable(4),
+        energy = vqe.run(lambda : QuantumVariable(4),
                       depth = 1,
                       max_iter=50)
         print(energy)
