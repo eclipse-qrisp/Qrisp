@@ -135,7 +135,7 @@ def get_measurement(
         qubit_list = qarg
     else:
         qc = precompiled_qc.copy()
-        qubit_list = qc.qubits
+        qubit_list = qc.qubits[:len(qarg.reg)]
 
     # Bind parameters
     if subs_dic:
@@ -147,7 +147,7 @@ def get_measurement(
     
     if measurement_data is None:
         measurement_data = QubitOperatorMeasurement(hamiltonian, diagonalisation_method = diagonalisation_method)
-    
+
     return measurement_data.get_measurement(qc, qubit_list, precision, backend)
     
 

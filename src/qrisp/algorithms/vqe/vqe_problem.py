@@ -338,7 +338,7 @@ class VQEProblem:
             if callable(qarg_prep):
                 qarg = qarg_prep()
             else:
-                qarg = qarg_prep
+                qarg = qarg_prep#.duplicate()
 
             # Prepare the initial state, the default is the \ket{0} state
             if self.init_function is not None:
@@ -442,7 +442,7 @@ class VQEProblem:
                                                     init_point, 
                                                     optimizer,
                                                     options)
-
+    
         return opt_res
     
 
