@@ -38,8 +38,8 @@ def test_jasp_minimize():
 
         return minimize(objective,x0,args=(state_prep,))
 
-    x, fx = main()
-    print(x)
-    print(fx)
-    assert np.round(x,1)==0
-    assert np.round(fx,1)==0
+    results = main()
+    print(results.x)
+    print(results.fun)
+    assert np.round(results.x,1)==0
+    assert np.round(results.fun,1)==0
