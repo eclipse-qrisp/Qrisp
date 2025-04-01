@@ -26,7 +26,6 @@ def minimize(fun, x0, args=(), method='SPSA', options={}):
     The API for this function matches SciPy with some minor deviations.
 
     * Various optional arguments in the SciPy interface have not yet been implemented.
-    * Results are returned as a tuple and not as an OptimizeResult object.
     
     Parameters
     ----------
@@ -47,10 +46,8 @@ def minimize(fun, x0, args=(), method='SPSA', options={}):
 
     Returns
     ------- 
-    x : jax.Array
-        The solution of the optimization.
-    fx : jax.Array
-        The value of the objective function at x.
+    results
+        An `OptimizeResults <https://docs.jax.dev/en/latest/_autosummary/jax.scipy.optimize.OptimizeResults.html#jax.scipy.optimize.OptimizeResults>`_ object.
 
 
     Examples
@@ -91,9 +88,9 @@ def minimize(fun, x0, args=(), method='SPSA', options={}):
 
             return minimize(objective,x0,args=(state_prep,))
 
-        x, fx = main()
-        print(x)
-        print(fx)
+        results = main()
+        print(results.x)
+        print(results.fun)
     
     """
 

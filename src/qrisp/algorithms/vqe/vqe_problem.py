@@ -337,7 +337,8 @@ class VQEProblem:
                                     method=optimizer,
                                     options=options, 
                                     args = (state_prep, mes_kwargs,))
-            return res_sample
+            
+            return res_sample.x, res_sample.fun
         
         else:
 
@@ -349,7 +350,7 @@ class VQEProblem:
                                     options=options, 
                                     args = (state_prep, mes_kwargs, compiled_qc, symbols, measurement_data,))
             
-            return res_sample['x'], res_sample['fun']
+            return res_sample.x, res_sample.fun
 
 
     def run(self, qarg_prep, depth, mes_kwargs={}, max_iter=50, init_type="random", init_point=None, optimizer=None, options={}):
@@ -363,7 +364,7 @@ class VQEProblem:
         depth : int
             The amount of VQE ansatz layers.
         mes_kwargs : dict, optional
-            The keyword arguments for the :meth:`get_measurement <qrisp.operators.qubit.QubitOperator.expectation_value>` function. Default is an empty dictionary.
+            The keyword arguments for the :meth:`expectation_value <qrisp.operators.qubit.QubitOperator.expectation_value>` function. Default is an empty dictionary.
             By default, the target ``precision`` is set to 0.01. Precision refers to how accurately the Hamiltonian is evaluated.
             The number of shots the backend performs per iteration scales quadratically with the inverse precision.
         max_iter : int, optional
@@ -376,14 +377,14 @@ class VQEProblem:
         optimizer : str, optional
             Specifies the `SciPy optimization routine <https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html>`_.
             Available are, e.g., ``COBYLA``, ``COBYQA``, ``Nelder-Mead``. The Default is ``COBYLA``.    
-            In tracing mode (i.e. :ref:`Jasp`) custom optimization routines are utilized: 
-            Available are ``SPSA``. The Default is ``SPSA`. 
+            In tracing mode (i.e. Jasp) Jax-traceable :ref:`optimization routines <optimization_tools>` must be utilized.
+            Available are ``SPSA``. The Default is ``SPSA``. 
         options : dict
             A dictionary of solver options.
 
         Returns
         -------
-        opt_res : float
+        float or jax.Array
             The expectation value of the Hamiltonian after applying the optimal VQE circuit to the quantum argument.
 
         """
@@ -437,7 +438,7 @@ class VQEProblem:
         depth : int
             The amount of VQE ansatz layers.
         mes_kwargs : dict, optional
-            The keyword arguments for the :meth:`get_measurement <qrisp.operators.qubit.QubitOperator.expectation_value>` function. Default is an empty dictionary.
+            The keyword arguments for the :meth:`expectation_value <qrisp.operators.qubit.QubitOperator.expectation_value>` function. Default is an empty dictionary.
             By default, the target ``precision`` is set to 0.01. Precision refers to how accurately the Hamiltonian is evaluated.
             The number of shots the backend performs per iteration scales quadratically with the inverse precision.
         max_iter : int, optional
@@ -450,14 +451,14 @@ class VQEProblem:
         optimizer : str, optional
             Specifies the `SciPy optimization routine <https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html>`_.
             Available are, e.g., ``COBYLA``, ``COBYQA``, ``Nelder-Mead``. The Default is ``COBYLA``.    
-            In tracing mode (i.e. :ref:`Jasp`) custom optimization routines are utilized: 
-            Available are ``SPSA``. The Default is ``SPSA`. 
+            In tracing mode (i.e. Jasp) Jax-traceable :ref:`optimization routines <optimization_tools>` must be utilized.
+            The Default is ``SPSA``. 
         options : dict
             A dictionary of solver options.
 
         Returns
         -------
-        circuit_generator : callable
+        callable
             A function that can be applied to a :ref:`QuantumVariable`, with optimized parameters for the problem instance. 
             The :ref:`QuantumVariable` then represents the ground state of the problem Hamiltonian.
 
@@ -528,14 +529,13 @@ class VQEProblem:
         repetitions : int, optional
             The amount of repetitions, each parameter constellation should go though. Can be used to get a better statistical significance. The default is 1.
         mes_kwargs : dict, optional
-            The keyword arguments, that are used for the :meth:`get_measurement <qrisp.operators.qubit.QubitOperator.get_measurement>` function. The default is {}.
+            The keyword arguments for the :meth:`expectation_value <qrisp.operators.qubit.QubitOperator.expectation_value>` function. Default is an empty dictionary.
         init_type : str, optional
             Specifies the way the initial optimization parameters are chosen. Available is ``random``. 
             The default is ``random``: Parameters are initialized uniformly at random in the interval $[0,\pi/2)]$.
         optimizer : str, optional
-            Specifies the `optimization routine <https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html>`_. 
+            Specifies the `SciPy optimization routine <https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html>`_. 
             Available are, e.g., ``COBYLA``, ``COBYQA``, ``Nelder-Mead``. The Default is ``COBYLA``.
-            In :ref:`Jasp` mode: Available are ``SPSA``. The Default is ``SPSA`. 
         options : dict
             A dictionary of solver options.
 

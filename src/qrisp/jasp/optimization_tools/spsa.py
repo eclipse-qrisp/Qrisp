@@ -19,6 +19,7 @@
 import jax
 import jax.numpy as jnp
 from jax.lax import fori_loop
+from jax.scipy.optimize import OptimizeResults
 
 # https://www.jhuapl.edu/SPSA/PDF-SPSA/Spall_An_Overview.PDF
 # Conditions: alpha <= 1; 1/6 <= gamma <= 1/2; 2*(alpha-gamma) > 1
@@ -101,4 +102,4 @@ def spsa(fun, x0, args, maxiter=50, a=2.0, c=0.1, alpha=0.702, gamma=0.201, seed
     x, rng = fori_loop(0, make_tracer(maxiter), body_fun, (x0, rng))
     fx = fun(x, *args)
 
-    return x, fx
+    return OptimizeResults(x, True, 0, fx, None, None, 2*maxiter+1, maxiter, maxiter)
