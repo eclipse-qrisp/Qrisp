@@ -545,7 +545,7 @@ def electronic_structure_problem(arg, active_orb=None, active_elec=None, ansatz_
         vqe = electronic_structure_problem(mol)
         vqe.set_callback()
 
-        energy = vqe.run(QuantumVariable(4),depth=1,max_iter=50)
+        energy = vqe.run(lambda : QuantumVariable(4),depth=1,max_iter=50)
         print(energy)
         #Yields -1.8461290172512965
     
