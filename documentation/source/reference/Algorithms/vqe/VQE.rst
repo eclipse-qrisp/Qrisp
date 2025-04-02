@@ -11,6 +11,7 @@ Variational Quantum Eigensolver
    VQEProblem
    VQEBenchmark
    VQEImplementations
+   JaspVQE
 
 This modules implements the `Variational Quantum Eigensolver (VQE) <https://arxiv.org/pdf/2111.05176>`_. 
 

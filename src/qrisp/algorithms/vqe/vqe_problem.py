@@ -58,7 +58,7 @@ class VQEProblem:
 
     For a quick demonstration, we show how to calculate the ground state energy of the $H_2$ molecule using VQE. 
     The :meth:`electronic_structure_problem <qrisp.vqe.problems.electronic_structure.electronic_structure_problem>` method generates 
-    a VQEProblem instance with the Hamiltonian and a chemistry-inspired Qubit Coupled Cluster Single Double (QCCSD) ansatz.
+    a VQEProblem instance with the Hamiltonian and a chemistry-inspired Qubit Coupled Cluster Single Double `(QCCSD) ansatz <https://arxiv.org/abs/2005.08451>`_.
 
     ::
 
@@ -175,7 +175,7 @@ class VQEProblem:
         Parameters
         ----------
         qarg_prep : :ref:`QuantumVariable` or :ref:`QuantumArray`
-            The argument to which the VQE circuit is applied.
+            A function returning a :ref:`QuantumVariable` to which the VQE circuit is applied.
         depth : int
             The amount of VQE layers.
 
@@ -583,7 +583,7 @@ class VQEProblem:
             vqe = heisenberg_problem(G,1,0)
             H = create_heisenberg_hamiltonian(G,1,0)
 
-            benchmark_data = vqe.benchmark(qarg = QuantumVariable(5),
+            benchmark_data = vqe.benchmark(lambda : QuantumVariable(5),
                                 depth_range = [1,2,3],
                                 precision_range = [0.02,0.01],
                                 iter_range = [25,50],
