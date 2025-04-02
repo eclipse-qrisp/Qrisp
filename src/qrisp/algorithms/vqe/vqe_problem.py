@@ -416,7 +416,7 @@ class VQEProblem:
             mes_kwargs["precision"] = 0.01
 
         if not "diagonalisation_method" in mes_kwargs:
-            mes_kwargs["diagonalisation_method"] = "commuting"
+            mes_kwargs["diagonalisation_method"] = "commuting_qw"
 
         options["maxiter"] = max_iter
 
@@ -432,7 +432,7 @@ class VQEProblem:
             if optimizer is None:
                 optimizer = "COBYLA"
 
-            measurement_data = QubitOperatorMeasurement(self.hamiltonian)
+            measurement_data = QubitOperatorMeasurement(self.hamiltonian, diagonalisation_method=mes_kwargs["diagonalisation_method"])
 
         
         opt_theta, opt_res = self.optimization_routine(qarg_prep,
@@ -441,7 +441,8 @@ class VQEProblem:
                                                     init_type, 
                                                     init_point, 
                                                     optimizer,
-                                                    options)
+                                                    options,
+                                                    measurement_data=measurement_data)
     
         return opt_res
     
@@ -491,7 +492,7 @@ class VQEProblem:
             mes_kwargs["precision"] = 0.01
 
         if not "diagonalisation_method" in mes_kwargs:
-            mes_kwargs["diagonalisation_method"] = "commuting"
+            mes_kwargs["diagonalisation_method"] = "commuting_qw"
 
         options["maxiter"] = max_iter
 
@@ -507,7 +508,7 @@ class VQEProblem:
             if optimizer is None:
                 optimizer = "COBYLA"
 
-            measurement_data = QubitOperatorMeasurement(self.hamiltonian)
+            measurement_data = QubitOperatorMeasurement(self.hamiltonian, diagonalisation_method=mes_kwargs["diagonalisation_method"])
 
         
         opt_theta, opt_res = self.optimization_routine(qarg_prep,
@@ -516,7 +517,8 @@ class VQEProblem:
                                                     init_type, 
                                                     init_point, 
                                                     optimizer,
-                                                    options)
+                                                    options,
+                                                    measurement_data=measurement_data)
             
         def circuit_generator(qarg):
                 
