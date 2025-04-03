@@ -111,7 +111,7 @@ $$\\int_0^1x^2\\mathrm dx$$
 A general implementation for integration of multidimensional functions w.r.t. arbitrary probability distributions is provided by the :ref:`QMCI method <QMCI>`.
 
 First, we define the ``function`` that we want to integrate, and a function for preparing the uniform distribution. 
-Additionally, we define the variables repesenting the $x$-axis (``qf_x``) and $y$-axis (``qf_x``). 
+Additionally, we define a function preparing the variables repesenting the $x$-axis (``qf_x``) and $y$-axis (``qf_x``). 
 Thereby, the QuantumFloat representing the $y$-axis must be chosen appropriately with respect to the values that ``function(qf_x)`` assumes.
 
 In this example, we evaluate the function $f(x)$ at $2^3=8$ sampling points as specified by ``QuantumFloat(3,-3)``. 
@@ -128,10 +128,11 @@ We also define a ``QuantumBool``, which will indicate the "points under the curv
     def distribution(qf):
         h(qf)
 
-    qf_x = QuantumFloat(3,-3)
-    qf_y = QuantumFloat(6,-6)
-
-    qbl = QuantumBool()
+    def qarg_prep():
+        qf_x = QuantumFloat(3,-3)
+        qf_y = QuantumFloat(6,-6)
+        qbl = QuantumBool()
+        return qf_x, qf_y, qbl
 
 Now, we arrive at the heart of the algorithm, the definition of the ``state_function``:
 
@@ -157,7 +158,7 @@ With everything in place, we can now execute the :ref:`Iterative QAE algorithm <
 
 ::
 
-    a = IQAE([qf_x,qf_y,qbl], state_function, eps=0.01, alpha=0.01)
+    a = IQAE(qarg_prep, state_function, eps=0.01, alpha=0.01)
 
 Aaaand that's it! The QMCI is complete! 
 

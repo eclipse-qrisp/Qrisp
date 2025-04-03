@@ -16,6 +16,7 @@
 ********************************************************************************/
 """
 
+import warnings
 from qrisp import h, IQAE, cx, x, z, auto_uncompute, QuantumBool, control
 
 def uniform(*args):
@@ -23,7 +24,7 @@ def uniform(*args):
         h(arg)
 
 
-def QMCI(qargs, function, distribution=None, mes_kwargs={}):
+def QMCI(qarg_prep, function, distribution=None, mes_kwargs={}):
     r"""
     Implements a general algorithm for `Quantum Monte Carlo Integration <https://www.nature.com/articles/s41598-024-61010-9>`_.
     This implementation utilizes :ref:`IQAE`. A detailed explanation can be found in the :ref:`tutorial <QMCItutorial>`.
@@ -36,8 +37,8 @@ def QMCI(qargs, function, distribution=None, mes_kwargs={}):
 
     Parameters
     ----------
-    qargs : list[:ref:`QuantumFloat`]
-        The quantum variables representing the $x$-axes (the variables on which the given ``function`` acts), and a quantum variable representing the $y$-axis.
+    qarg_prep : callable
+        A function returning a list of QuantumVariables representing the $x$-axes (the variables on which the given ``function`` acts), and a quantum variable representing the $y$-axis.
     function : function
         A Python function which takes :ref:`QuantumFloats <QuantumFloat>` as inputs, 
         and returns a :ref:`QuantumFloat` containing the values of the integrand.
@@ -67,9 +68,12 @@ def QMCI(qargs, function, distribution=None, mes_kwargs={}):
         def f(qf):
             return qf*qf
 
-        qf_x = QuantumFloat(3,-3)
-        qf_y = QuantumFloat(6,-6)
-        QMCI([qf_x,qf_y], f)
+        def qarg_prep():
+            qf_x = QuantumFloat(3,-3)
+            qf_y = QuantumFloat(6,-6)
+            return [qf_x, qf_y]
+
+        QMCI(qarg_prep, f)
         # Yields: 0.27373180511103606
 
     This result is consistent with numerically calculating the integral by evaluating the function $f$ at 8 sampling points:
@@ -86,19 +90,27 @@ def QMCI(qargs, function, distribution=None, mes_kwargs={}):
     if distribution==None:
         distribution = uniform
 
-    #dupl_args = [arg.duplicate() for arg in qargs]
-    #dupl_res_qf = function(*dupl_args)
-    #qargs.append(dupl_res_qf.duplicate())
+    if not callable(qarg_prep):
 
-    #for arg in dupl_args:
-    #    arg.delete()
-    #dupl_res_qf.delete()
+        warnings.warn("DeprecationWarning: Providing a list of QuantumVariables as first argument will no longer be supported in a later release of Qrisp. Instead a callable creating a list of QuantumVariables must be provided.")
+
+        def init_function():
+            qargs_ = [qv.duplicate() for qv in qarg_prep]
+            return qargs_
+
+    else:
+        init_function = qarg_prep
 
     V0=1
+    qargs = init_function()
     for arg in qargs:
         V0 *= 2**(arg.size+arg.exponent)
+    [qv.delete() for qv in qargs]
 
-    qargs.append(QuantumBool())
+    def state_prep():
+        qargs = init_function()
+        qargs.append(QuantumBool())
+        return qargs
 
     @auto_uncompute
     def state_function(*args):
@@ -112,7 +124,7 @@ def QMCI(qargs, function, distribution=None, mes_kwargs={}):
         with(qf_y < function(*qf_x)):
             x(tar)
 
-    a = IQAE(qargs, state_function, eps=0.01, alpha=0.01, mes_kwargs=mes_kwargs)   
+    a = IQAE(state_prep, state_function, eps=0.01, alpha=0.01, mes_kwargs=mes_kwargs)   
 
     V = V0*a
     return V
