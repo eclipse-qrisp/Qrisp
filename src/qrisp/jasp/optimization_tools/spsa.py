@@ -26,32 +26,32 @@ from jax.scipy.optimize import OptimizeResults
 def spsa(fun, x0, args, maxiter=50, a=2.0, c=0.1, alpha=0.702, gamma=0.201, seed=3):
     r"""
     
-    Minimize a scalar function of one or more variables using the Simultaneous Perturbation Stochastic Approximation algorithm.
+    Minimize a scalar function of one or more variables using the `Simultaneous Perturbation Stochastic Approximation algorithm <https://en.wikipedia.org/wiki/Simultaneous_perturbation_stochastic_approximation>`_.
 
     This algorithm aims at finding the optimal control $x^*$ minimizing a given loss fuction $f$:
 
     .. math::
 
-        x^* = \argmin_{x} f(x)
+        x^* = \text{argmin}_{x} f(x)
 
-    This is done by an iterative process starting from an initial guess $x0$:
+    This is done by an iterative process starting from an initial guess $x_0$:
 
     .. math::
 
         x_{k+1} = x_k - a_kg_k(x_k)
 
-    where $a_k=\frac{a}{n^{\alpha}}$ for scaling parameters $a, \alpha>0$.
+    where $a_k=\dfrac{a}{n^{\alpha}}$ for scaling parameters $a, \alpha>0$.
 
     For each step $x_k$ the gradient is approximated by   
 
     .. math::
 
-        (g_k(x_k))_i = \frac{f(x_k+c_k\Delta_k)-f(x_k-c_k\Delta_k)-}{2c_k(\Delta_k)_i}
+        (g_k(x_k))_i = \frac{f(x_k+c_k\Delta_k)-f(x_k-c_k\Delta_k)}{2c_k(\Delta_k)_i}
 
-    where $c_k=\frac{c}{n^{\gamma}}$ for scaling parameters $c, \gamma>0$, and $\Delta_k$ is a random perturbation vector.
+    where $c_k=\dfrac{c}{n^{\gamma}}$ for scaling parameters $c, \gamma>0$, and $\Delta_k$ is a random perturbation vector.
 
-    Options
-    -------
+    Parameters
+    ----------
         a : float
             Scaling parameter for update rule.
         alpha : float
@@ -63,10 +63,8 @@ def spsa(fun, x0, args, maxiter=50, a=2.0, c=0.1, alpha=0.702, gamma=0.201, seed
 
     Returns
     -------
-    x : jax.Array
-        The solution of the optimization.
-    fx : jax.Array
-        The value of the objective function at x.
+    results
+        An `OptimizeResults <https://docs.jax.dev/en/latest/_autosummary/jax.scipy.optimize.OptimizeResults.html#jax.scipy.optimize.OptimizeResults>`_ object.
 
     """
     
