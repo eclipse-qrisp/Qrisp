@@ -1773,6 +1773,7 @@ class QubitOperator(Hamiltonian):
             # Yields: 0.010126265783222899
 
         """
+        from qrisp import QuantumVariable
 
         def return_function(*args):
 
@@ -1783,8 +1784,12 @@ class QubitOperator(Hamiltonian):
                                         precision = precision, 
                                         diagonalisation_method = diagonalisation_method)
             else:
+                
+                if precompiled_qc is not None:
+                    qarg = QuantumVariable(self.find_minimal_qubit_amount())
+                else:
+                    qarg = state_prep(*args)
 
-                qarg = state_prep(*args)
                 return get_measurement(self, 
                                         qarg, 
                                         precision = precision, 
