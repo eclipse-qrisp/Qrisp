@@ -98,9 +98,12 @@ def QITE(qarg, U_0, exp_H, s, k, method='GC'):
         M = nx.maximal_matching(G)
         U_0 = create_heisenberg_init_function(M)
 
-        qv = QuantumVariable(N)
-        U_0(qv)
-        E_0 = H.get_measurement(qv)
+        def state_prep():
+            qv = QuantumVariable(N)
+            U_0(qv)
+            return qv
+
+        E_0 = H.expectation_value(state_prep)()
         print(E_0)
 
     For the function ``exp_H`` that performs forward evolution $e^{-itH}$, we use the :meth:`trotterization <qrisp.operators.qubit.QubitOperator.trotterization>` method with 5 Trotter steps:
