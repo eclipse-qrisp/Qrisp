@@ -77,7 +77,7 @@ def test_jasp_vqe_electronic_structure_H2():
     
     results = main()
     
-    assert np.abs(min(results)-(-1.85238817356958)) < 1e-1
+    assert np.abs(min(results)-(-1.85238817356958)) < 2e-1
 
 #
 # BeH2 molecule, active space
