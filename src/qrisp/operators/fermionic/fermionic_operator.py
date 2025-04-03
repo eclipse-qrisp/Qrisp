@@ -17,6 +17,7 @@
 """
 
 import numpy as np
+import warnings
 
 from qrisp.operators import Hamiltonian
 from qrisp.operators.fermionic.fermionic_term import FermionicTerm
@@ -664,6 +665,12 @@ class FermionicOperator(Hamiltonian):
         **measurement_kwargs
     ):
         r"""
+
+        .. warning::
+
+            This method will no longer be supported in a later release of Qrisp. Instead please migrate to :meth:`expectation_value <qrisp.operators.fermionic.FermionicOperator.expectation_value>`.
+
+
         This method returns the expected value of a Hamiltonian for the state 
         of a quantum argument. Note that this method measures the **hermitized**
         version of the operator:
@@ -705,6 +712,9 @@ class FermionicOperator(Hamiltonian):
         -0.007968127490039834
 
         """
+
+        warnings.warn("DeprecationWarning: This method will no longer be supported in a later release of Qrisp. Instead please migrate to .expectation_value.")
+
         qubit_operator = self.to_qubit_operator(mapping_type)
         return qubit_operator.get_measurement(qarg, **measurement_kwargs)
     
@@ -736,7 +746,7 @@ class FermionicOperator(Hamiltonian):
         mapping_type : str, optional
             The strategy on how to map the FermionicOperator to a QubitOperator. Default is ``jordan_wigner``.
         measurement_kwargs : dict, optional
-            The keyword arguments of :meth:`QubitOperator.expectation_value`.
+            The keyword arguments of :meth:`QubitOperator.expectation_value <qrisp.operators.qubit.QubitOperator.expectation_value>`.
 
         Returns
         -------

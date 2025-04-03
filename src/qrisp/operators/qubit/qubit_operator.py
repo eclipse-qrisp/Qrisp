@@ -17,6 +17,7 @@
 """
 
 from itertools import product
+import warnings
 
 import sympy as sp
 import numpy as np
@@ -1576,6 +1577,12 @@ class QubitOperator(Hamiltonian):
         measurement_data=None # measurement settings
     ):
         r"""
+
+        .. warning::
+
+            This method will no longer be supported in a later release of Qrisp. Instead please migrate to :meth:`expectation_value <qrisp.operators.qubit.QubitOperator.expectation_value>`.
+
+            
         This method returns the expected value of a Hamiltonian for the state 
         of a quantum argument. Note that this method measures the **hermitized**
         version of the operator:
@@ -1644,6 +1651,9 @@ class QubitOperator(Hamiltonian):
             #Yields 0.0011251406425802912
 
         """
+
+        warnings.warn("DeprecationWarning: This method will no longer be supported in a later release of Qrisp. Instead please migrate to .expectation_value.")
+
         return get_measurement(self, 
                                 qarg, 
                                 precision=precision, 
