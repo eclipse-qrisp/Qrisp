@@ -30,15 +30,13 @@ def test_IQAE_integration():
             with control(inp[k]):
                 ry(2**(k+1)/N,tar)
 
-    n = 6 # 2^n sampling points for integration
-    inp = QuantumFloat(n,-n)
-    tar = QuantumBool()
-    input_list = [inp, tar]
+    def qarg_prep():
+        n = 6 # 2^n sampling points for integration
+        inp = QuantumFloat(n,-n)
+        tar = QuantumBool()
+        return inp, tar
 
-    eps = 0.01
-    alpha = 0.01
-
-    a = IQAE(input_list, state_function, eps=eps, alpha=alpha)
+    a = IQAE(qarg_prep, state_function, eps=0.01, alpha=0.01)
     assert np.abs(a-0.26716231971793425)<0.01
 
 

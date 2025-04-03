@@ -25,8 +25,11 @@ def test_QMCI():
     def f(qf):
         return qf*qf
 
-    qf_x = QuantumFloat(3,-3)
-    qf_y = QuantumFloat(6,-6)
-    a = QMCI([qf_x,qf_y], f)
+    def qarg_prep():
+        qf_x = QuantumFloat(3,-3)
+        qf_y = QuantumFloat(6,-6)
+        return [qf_x, qf_y]
+
+    a = QMCI(qarg_prep, f)
 
     assert np.abs(a-0.2734375)<0.01
