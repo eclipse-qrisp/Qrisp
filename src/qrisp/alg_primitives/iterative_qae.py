@@ -16,13 +16,14 @@
 ********************************************************************************/
 """
 
+import warnings
 from qrisp import z
 from qrisp.alg_primitives.qae import amplitude_amplification 
 from qrisp.jasp import check_for_tracing_mode, expectation_value
 from jax.lax import while_loop
 
 
-def IQAE(qargs, state_function, eps, alpha, mes_kwargs={}):
+def IQAE(qarg_prep, state_function, eps, alpha, mes_kwargs={}):
     r"""
     Accelerated Quantum Amplitude Estimation (IQAE). This function performs :ref:`QAE <QAE>` with a fraction of the quantum resources of the well-known `QAE algorithm <https://arxiv.org/abs/quant-ph/0005055>`_.
     See `Accelerated Quantum Amplitude Estimation without QFT <https://arxiv.org/abs/2407.16795>`_.
@@ -35,12 +36,12 @@ def IQAE(qargs, state_function, eps, alpha, mes_kwargs={}):
 
     Parameters
     ----------
-    qargs : list[QuantumVariabe]
-        The list of QuantumVariables which represent the state on which the quantum amplitude estimation is performed.
+    qarg_prep : callable
+        A function returning a list of QuantumVariables to which the ``state_function`` is applied.
         The last variable in the list must be of type :ref:`QuantumBool`.
     state_function : callable
         A Python function preparing the state :math:`\ket{\Psi}`.
-        This function will receive the variables returned by ``init_function`` as arguments.
+        This function will receive the variables returned by ``qarg_prep`` as arguments.
     eps : float
         Accuracy $\epsilon>0$ of the algorithm.
     alpha : float
@@ -75,10 +76,11 @@ def IQAE(qargs, state_function, eps, alpha, mes_kwargs={}):
         from qrisp import QuantumFloat, QuantumBool, control, z, h, ry, IQAE
         import numpy as np
 
-        n = 6 
-        inp = QuantumFloat(n,-n)
-        tar = QuantumBool()
-        input_list = [inp, tar]
+        def qarg_prep():
+            n = 6 
+            inp = QuantumFloat(n,-n)
+            tar = QuantumBool()
+            return inp, tar
 
     For example, if $f(x)=\sin^2(x)$, the ``state_function`` can be implemented as follows:
 
@@ -96,16 +98,23 @@ def IQAE(qargs, state_function, eps, alpha, mes_kwargs={}):
 
     ::
 
-        a = IQAE(input_list, state_function, eps=0.01, alpha=0.01)
+        a = IQAE(qarg_prep, state_function, eps=0.01, alpha=0.01)
 
     >>> a 
     0.26782038552705856
 
     """
 
-    def init_function():
-        qargs_ = [qv.duplicate() for qv in qargs]
-        return qargs_
+    if not callable(qarg_prep):
+
+        warnings.warn("DeprecationWarning: Providing a list of QuantumVariables as first argument will no longer be supported in a later release of Qrisp. Instead a callable creating a list of QuantumVariables must be provided.")
+
+        def init_function():
+            qargs_ = [qv.duplicate() for qv in qarg_prep]
+            return qargs_
+
+    else:
+        init_function = qarg_prep
 
     # The oracle tagging the good states
     def oracle_function(*args):  
