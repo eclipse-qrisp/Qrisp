@@ -17,8 +17,10 @@
 """
 
 from qrisp.vqe.problems.electronic_structure import *
-from qrisp import QuantumVariable
+from qrisp import QuantumVariable, QuantumFloat
+from qrisp.jasp import jaspify
 import numpy as np
+import jax.numpy as jnp
 
 #
 # H2 molecule
@@ -46,6 +48,34 @@ def test_vqe_electronic_structure_H2():
                 depth=1,
                 max_iter=50)
         results.append(res)
+    
+    assert np.abs(min(results)-(-1.85238817356958)) < 1e-1
+
+
+def test_jasp_vqe_electronic_structure_H2():  
+    
+    try:
+        from pyscf import gto
+    except:
+        return
+    
+    @jaspify(terminal_sampling=True)
+    def main():
+
+        mol = gto.M(
+            atom = '''H 0 0 0; H 0 0 0.74''',
+            basis = 'sto-3g')
+
+        vqe = electronic_structure_problem(mol)
+
+        results = jnp.array([0.0]*5)
+        for i in range(5):
+            res = vqe.run(lambda : QuantumFloat(4), depth=1, max_iter=100)
+            results = results.at[i].set(res)
+
+        return results
+    
+    results = main()
     
     assert np.abs(min(results)-(-1.85238817356958)) < 1e-1
 
