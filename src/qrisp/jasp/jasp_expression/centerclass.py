@@ -354,6 +354,9 @@ class Jaspr(Jaxpr):
                 if isinstance(context_dic[eqn.invars[0]], Clbit):
                     context_dic[eqn.outvars[0]] = context_dic[eqn.invars[0]]
                     return
+                elif isinstance(context_dic[eqn.invars[0]], list) and isinstance(context_dic[eqn.invars[0]][0], Clbit):
+                    context_dic[eqn.outvars[0]] = context_dic[eqn.invars[0]]
+                    return
             return True
           
         ammended_args = list(args) + [QuantumCircuit()] + jaspr.consts
