@@ -134,10 +134,16 @@ class QAOAProblem:
         np.array
             A concatenated numpy array of gamma and beta values.
         """
-        t = (np.arange(1, p + 1) - 0.5)/p
+
+        if check_for_tracing_mode():
+            import jax.numpy as jnp
+        else:
+            import numpy as jnp
+
+        t = (jnp.arange(1, p + 1) - 0.5)/p
         gamma = t * dt
         beta = (1 - t) * dt
-        return  np.concatenate((gamma,beta)) 
+        return  jnp.concatenate((gamma,beta)) 
     
 
     def compile_circuit(self, qarg_prep, depth):
@@ -355,10 +361,49 @@ class QAOAProblem:
             
                 res_sample = sample(state_prep, shots=mes_kwargs["shots"])(theta)
             
-                cl_cost = self.cl_cost_function(sample)
+                cl_cost = self.cl_cost_function(res_sample)
 
                 return cl_cost
 
+            def tqa_angles(p, state_prep, mes_kwargs, steps=10): 
+                """
+                Compute the optimal parameters for the Trotterized Quantum Annealing (`TQA <https://quantum-journal.org/papers/q-2021-07-01-491/>`_) algorithm.
+
+                The function first creates a linspace array `dt` from 0.1 to 1 with `steps` steps. 
+                Then for each `dt_` in `dt`, it computes the parameters `x` using the `computeParams` 
+                function and calculates the energy `energy_` using the `optimization_wrapper` function. 
+                The energy values are stored in the `energy` list. The `dt_max` corresponding to the 
+                minimum energy is found and used to compute the optimal parameters which are returned.
+
+                Parameters
+                ----------
+                p : int
+                    The number of partitions for the time interval.
+                state_prep : callable
+                    A function returning a :ref:`QuantumVariable` or :ref:`QuantumArray`. 
+                mes_kwargs : dict
+                    The measurement keyword arguments.
+                steps : int, optional
+                    The number of steps for the linspace function, default is 10.
+
+                Returns
+                -------
+                jax.Array
+                    A concatenated jax.numpy array of optimal gamma and beta values.
+                """
+
+                dt = jnp.linspace(0.1, 1, steps)
+
+                energy = jnp.array([0.0]*steps)
+                for i in range(steps):      
+                    theta = self.computeParams(p, dt[i])
+                    energy_ = optimization_wrapper(theta, state_prep, mes_kwargs)
+                    energy = energy.at[i].set(energy_)
+            
+                idx = jnp.argmin(energy)
+                dt_max = dt[idx]
+                return self.computeParams(p, dt_max)
+        
         else:
 
             # Define optimization wrapper function to be minimized using QAOA
@@ -397,7 +442,7 @@ class QAOAProblem:
             
                 return cl_cost
             
-        def tqa_angles(p, qc, symbols, qarg_dupl, mes_kwargs, steps=10): #qarg only before
+        def tqa_angles(p, qarg, qc, symbols, mes_kwargs, steps=10): #qarg only before
             """
             Compute the optimal parameters for the Trotterized Quantum Annealing (`TQA <https://quantum-journal.org/papers/q-2021-07-01-491/>`_) algorithm.
 
@@ -411,12 +456,12 @@ class QAOAProblem:
             ----------
             p : int
                 The number of partitions for the time interval.
+            qarg : :ref:`QuantumVariable` or :ref:`QuantumArray`
+                The quantum argument to which the quantum circuit is applied.
             qc : :ref:`QuantumCircuit`
                 The quantum circuit for the specific problem instance.
             symbols : list
                 The list of symbols in the quantum circuit.
-            qarg_dupl : :ref:`QuantumVariable` or :ref:`QuantumArray`
-                The duplicated quantum argument to which the quantum circuit is applied.
             mes_kwargs : dict
                 The measurement keyword arguments.
             steps : int, optional
@@ -427,34 +472,18 @@ class QAOAProblem:
             np.array
                 A concatenated numpy array of optimal gamma and beta values.
             """
-            dt = np.linspace(0.1, 1, steps)
+
+            dt = jnp.linspace(0.1, 1, steps)
+
             energy = []
             for dt_ in dt:      
-                x = self.computeParams(p,dt_)
-                energy_ = optimization_wrapper(x,qc,symbols,qarg_dupl,mes_kwargs)
+                theta = self.computeParams(p, dt_)
+                energy_ = optimization_wrapper(theta, qarg, qc, symbols, mes_kwargs)
                 energy.append(energy_)
             
             idx = np.argmin(energy)
             dt_max = dt[idx]
             return self.computeParams(p,dt_max)
-
-
-        if not check_for_tracing_mode():
-            qarg, compiled_qc, symbols = self.compile_circuit(qarg_prep, depth)
-        
-        if init_point is None:
-            # Set initial random values for optinization parameters
-            if self.init_type=='random':
-
-                if check_for_tracing_mode():
-                    key = jax.random.key(11)
-                    init_point = jax.random.uniform(key=key, shape=(2 * depth,)) * jnp.pi/2
-                else:
-                    init_point = np.random.rand(2 * depth) * np.pi/2
-
-            elif self.init_type=='tqa':
-                # TQA initialization
-                init_point = tqa_angles(depth, compiled_qc, symbols, qarg, mes_kwargs)
 
 
         if check_for_tracing_mode():
@@ -478,6 +507,31 @@ class QAOAProblem:
                     self.mixer(qarg, theta[i+depth])
 
                 return qarg
+
+        else:
+
+            qarg, compiled_qc, symbols = self.compile_circuit(qarg_prep, depth)
+        
+
+        if init_point is None:
+            # Set initial random values for optinization parameters
+            if self.init_type=='random':
+
+                if check_for_tracing_mode():
+                    key = jax.random.key(11)
+                    init_point = jax.random.uniform(key=key, shape=(2 * depth,)) * jnp.pi/2
+                else:
+                    init_point = np.random.rand(2 * depth) * np.pi/2
+
+            elif self.init_type=='tqa':
+                # TQA initialization
+                if check_for_tracing_mode():
+                    init_point = tqa_angles(depth, qarg, compiled_qc, symbols, mes_kwargs)
+                else:
+                    init_point = tqa_angles(depth, state_prep, mes_kwargs)
+                    
+
+        if check_for_tracing_mode():
             
             res_sample = jasp_minimize(optimization_wrapper,
                                        init_point,
