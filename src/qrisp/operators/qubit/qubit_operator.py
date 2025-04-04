@@ -27,7 +27,7 @@ from qrisp.operators.hamiltonian import Hamiltonian
 from qrisp.operators.qubit.qubit_term import QubitTerm
 from qrisp.operators.qubit.measurement import get_measurement
 from qrisp.operators.qubit.commutativity_tools import construct_change_of_basis
-from qrisp import cx, cz, h, s, sx_dg, IterationEnvironment, conjugate, merge
+from qrisp import cx, cz, h, s, sx_dg, IterationEnvironment, conjugate, merge, invert
 
 from qrisp.jasp import check_for_tracing_mode, jrange
 
@@ -1742,72 +1742,29 @@ class QubitOperator(Hamiltonian):
         """
         O = self.hermitize().eliminate_ladder_conjugates()
         commuting_groups = O.group_up(lambda a, b: a.commute(b))
-        if order == 1:
-            if method=='commuting_qw':
-                def trotter_step(qarg, t, steps):
-                    for com_group in commuting_groups:
-                        qw_groups= com_group.group_up(lambda a,b : a.commute_qw(b) and a.ladders_agree(b))
-                        for qw_group in qw_groups:
-                            
-                            with conjugate(qw_group.change_of_basis)(qarg) as diagonal_operator:
-                                intersect_groups = diagonal_operator.group_up(lambda a, b: not a.intersect(b))
-                                for intersect_group in intersect_groups:
-                                    for term,coeff in intersect_group.terms_dict.items():
-                                        coeff = jnp.real(coeff)
-                                        
-                                        term.simulate(-coeff*t/steps*(-1)**int(forward_evolution), qarg)
-            
-            if method=='commuting':
-                def trotter_step(qarg, t, steps):
-                    for com_group in commuting_groups:
-                        with conjugate(com_group.change_of_basis)(qarg,method="commuting") as diagonal_operator:
+        
+        if method=='commuting_qw':
+            def trotter_step(qarg, t, steps):
+                for com_group in commuting_groups:
+                    qw_groups= com_group.group_up(lambda a,b : a.commute_qw(b) and a.ladders_agree(b))
+                    for qw_group in qw_groups:
+                        
+                        with conjugate(qw_group.change_of_basis)(qarg) as diagonal_operator:
                             intersect_groups = diagonal_operator.group_up(lambda a, b: not a.intersect(b))
                             for intersect_group in intersect_groups:
                                 for term,coeff in intersect_group.terms_dict.items():
+                                    coeff = jnp.real(coeff)
+                                    
                                     term.simulate(-coeff*t/steps*(-1)**int(forward_evolution), qarg)
-        if order == 2:
-            if method=='commuting_qw':
-                def trotter_step(qarg, t, steps):
-                    # Forward half-step: apply each term with t/(2*steps)
-                    for com_group in commuting_groups:
-                        qw_groups = com_group.group_up(lambda a, b: a.commute_qw(b) and a.ladders_agree(b))
-                        for qw_group in qw_groups:
-                            with conjugate(qw_group.change_of_basis)(qarg) as diagonal_operator:
-                                intersect_groups = diagonal_operator.group_up(lambda a, b: not a.intersect(b))
-                                for intersect_group in intersect_groups:
-                                    for term, coeff in intersect_group.terms_dict.items():
-                                        coeff = jnp.real(coeff)
-                                        term.simulate(-coeff*t/(2*steps) * (-1)**int(forward_evolution), qarg)
-                    # Reverse half-step: apply in reversed order with t/(2*steps)
-                    for com_group in reversed(commuting_groups):
-                        qw_groups = com_group.group_up(lambda a, b: a.commute_qw(b) and a.ladders_agree(b))
-                        # Reverse the order of the qw_groups if needed
-                        for qw_group in reversed(qw_groups):
-                            with conjugate(qw_group.change_of_basis)(qarg) as diagonal_operator:
-                                intersect_groups = diagonal_operator.group_up(lambda a, b: not a.intersect(b))
-                                # Reverse the intersect groups as well
-                                for intersect_group in reversed(intersect_groups):
-                                    for term, coeff in intersect_group.terms_dict.items():
-                                        coeff = jnp.real(coeff)
-                                        term.simulate(-coeff*t/(2*steps) * (-1)**int(forward_evolution), qarg)
-            elif method=='commuting':
-                def trotter_step(qarg, t, steps):
-                    # Forward half-step
-                    for com_group in commuting_groups:
-                        with conjugate(com_group.change_of_basis)(qarg, method="commuting") as diagonal_operator:
-                            intersect_groups = diagonal_operator.group_up(lambda a, b: not a.intersect(b))
-                            for intersect_group in intersect_groups:
-                                for term, coeff in intersect_group.terms_dict.items():
-                                    term.simulate(-coeff*t/(2*steps) * (-1)**int(forward_evolution), qarg)
-                    # Reverse half-step
-                    for com_group in reversed(commuting_groups):
-                        with conjugate(com_group.change_of_basis)(qarg, method="commuting") as diagonal_operator:
-                            intersect_groups = diagonal_operator.group_up(lambda a, b: not a.intersect(b))
-                            for intersect_group in reversed(intersect_groups):
-                                for term, coeff in intersect_group.terms_dict.items():
-                                    term.simulate(-coeff*t/(2*steps) * (-1)**int(forward_evolution), qarg)
-
-            
+        
+        if method=='commuting':
+            def trotter_step(qarg, t, steps):
+                for com_group in commuting_groups:
+                    with conjugate(com_group.change_of_basis)(qarg,method="commuting") as diagonal_operator:
+                        intersect_groups = diagonal_operator.group_up(lambda a, b: not a.intersect(b))
+                        for intersect_group in intersect_groups:
+                            for term,coeff in intersect_group.terms_dict.items():
+                                term.simulate(-coeff*t/steps*(-1)**int(forward_evolution), qarg)
             
         def U(qarg, t=1, steps=1, iter=1):
             if check_for_tracing_mode():
@@ -1816,7 +1773,12 @@ class QubitOperator(Hamiltonian):
             else:
                 merge([qarg])
                 with IterationEnvironment(qarg.qs, iter*steps):
-                    trotter_step(qarg, t, steps)
+                    if order == 1:
+                        trotter_step(qarg, t, steps)
+                    elif order == 2:
+                        trotter_step(qarg, t, steps*2)
+                        with invert():
+                            trotter_step(qarg, -t, steps*2)
 
         return U
 
