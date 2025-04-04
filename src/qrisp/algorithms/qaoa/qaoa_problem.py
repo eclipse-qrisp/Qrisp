@@ -473,7 +473,7 @@ class QAOAProblem:
                     A concatenated numpy array of optimal gamma and beta values.
                 """
 
-                dt = jnp.linspace(0.1, 1, steps)
+                dt = np.linspace(0.1, 1, steps)
 
                 energy = []
                 for dt_ in dt:      
