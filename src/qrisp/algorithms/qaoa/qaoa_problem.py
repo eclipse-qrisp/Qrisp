@@ -262,7 +262,7 @@ class QAOAProblem:
         if callable(qarg_prep):
             qarg = qarg_prep()
         else:
-            qarg = qarg_prep
+            qarg = qarg_prep.duplicate()
         
         temp = list(qarg.qs.data)
         
@@ -607,24 +607,38 @@ class QAOAProblem:
                                                        init_point,
                                                        optimizer,
                                                        options)
-        #optimal_theta = res_sample 
 
+        def state_prep():
+            # qarg_prep can a QuantumVariable (DEPRECATED) or a callable returning a QuantumVariable
+            if callable(qarg_prep):
+                qarg = qarg_prep()
+            else:
+                qarg = qarg_prep
+
+            # Prepare initial state - if no init_function is specified, prepare uniform superposition
+            if self.init_function is not None:
+                self.init_function(qarg)
+            elif self.init_type=='tqa': # Prepare the ground state (eigenvalue -1) of the X mixer
+                x(qarg)
+                h(qarg)
+            else:
+                h(qarg)
+
+            # Apply p layers of phase separators and mixers    
+            for i in range(depth):                          
+                self.cost_operator(qarg, opt_theta[i])
+                self.mixer(qarg, opt_theta[i+depth])
+            
+            return qarg
         
-        # Prepare initial state - if no init_function is specified, prepare uniform superposition
-        #if self.init_function is not None:
-        #     self.init_function(qarg)
-        #elif self.init_type=='tqa': # Prepare the ground state (eigenvalue -1) of the X mixer
-        #    x(qarg)
-        #    h(qarg)
-        #else:
-        #    h(qarg)
+        if check_for_tracing_mode():
+            res_sample = sample(state_prep, shots=mes_kwargs["shots"])(opt_theta)
+            
+        else:
+            qarg = state_prep(opt_theta)
+            res_sample = qarg.get_measurement(**mes_kwargs)
 
-        # Apply p layers of phase separators and mixers    
-        #for i in range(depth):                          
-        #    self.cost_operator(qarg, optimal_theta[i])
-        #    self.mixer(qarg, optimal_theta[i+depth])
-        #opt_res = qarg.get_measurement(**mes_kwargs)
-        return opt_res
+        return res_sample
     
     def train_function(self, qarg_prep, depth, mes_kwargs = {}, max_iter = 50, init_type = "random", init_point = None, optimizer = "COBYLA", options={}):
         r"""
