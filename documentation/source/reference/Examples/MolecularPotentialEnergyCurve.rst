@@ -54,7 +54,7 @@ For more acurate results we adjust the measurement precision ``mes_kwargs={'prec
         vqe = electronic_structure_problem(data)
         results = []
         for i in range(5):
-            res = vqe.run(QuantumVariable(data['num_orb']),depth=1,max_iter=50,optimizer='COBYLA',mes_kwargs={'precision':0.005})
+            res = vqe.run(lambda : QuantumVariable(data['num_orb']),depth=1,max_iter=50,optimizer='COBYLA',mes_kwargs={'precision':0.005})
             results.append(res+data['energy_nuc'])
         y_qccsd.append(min(results))
 
@@ -136,7 +136,7 @@ This lowers the quantum resource requirements to 4 qubits, and a reduced 4 qubit
         vqe = electronic_structure_problem(data,active_orb=4,active_elec=2)
         results = []
         for i in range(5):
-            res = vqe.run(QuantumVariable(6),depth=2,max_iter=100,optimizer='COBYLA',mes_kwargs={'precision':0.005})
+            res = vqe.run(lambda : QuantumVariable(6),depth=2,max_iter=100,optimizer='COBYLA',mes_kwargs={'precision':0.005})
             results.append(res+data['energy_nuc'])
         y_qccsd.append(min(results))
 
