@@ -42,12 +42,12 @@ class VQEProblem:
     ----------
     hamiltonian : :ref:`QubitOperator` or :ref:`FermionicOperator`
         The problem Hamiltonian.
-    ansatz_function : function
+    ansatz_function : callable
         A function receiving a :ref:`QuantumVariable`, and an array of real parameters of size ``(n,)``. 
         This function implements the unitary corresponding to one layer of the ansatz.
     num_params : int
         The number of parameters $n$ per layer of the ansatz.
-    init_function : function, optional
+    init_function : callable, optional
         A function receiving a :ref:`QuantumVariable` and preparing the initial state from the $\ket{0}$ state.
         By default, the inital state is the $\ket{0}$ state.
     callback : bool, optional
