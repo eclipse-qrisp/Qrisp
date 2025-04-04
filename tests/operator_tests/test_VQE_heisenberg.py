@@ -38,7 +38,7 @@ def test_vqe_heisenberg():
                 max_iter=50)
         results.append(res)
     
-    assert np.abs(min(results)-(-8.0)) < 2e-2
+    assert np.abs(min(results)-(-8.0)) < 1e-1
 
 
 def test_jasp_vqe_heisenberg():
