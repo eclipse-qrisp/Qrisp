@@ -14,6 +14,7 @@ Methods
    
    QubitOperator.adjoint
    QubitOperator.commutator
+   QubitOperator.expectation_value
    QubitOperator.from_matrix
    QubitOperator.get_measurement
    QubitOperator.ground_state_energy

@@ -16,19 +16,30 @@
 ********************************************************************************/
 """
 
-from qrisp.jasp.primitives import*
-from qrisp.jasp.tracing_logic import *
-from qrisp.jasp.interpreter_tools import *
-from qrisp.jasp.jasp_expression import *
-from qrisp.jasp.testing_utils import *
-from qrisp.jasp.program_control import *
-from qrisp.jasp.evaluation_tools import *
-from qrisp.jasp.optimization_tools import *
+def test_jasp_minimize():
+    from qrisp import QuantumFloat, ry
+    from qrisp.jasp import expectation_value, minimize, jaspify
+    import jax.numpy as jnp
+    import numpy as np
 
-def compare_jaxpr(jaxpr, primitive_name_list):
-    assert len(jaxpr.eqns) == len(primitive_name_list)
-    for i in range(len(primitive_name_list)):
-        assert jaxpr.eqns[i].primitive.name == primitive_name_list[i]
+    def state_prep(theta):
+        qv = QuantumFloat(1)
+        ry(theta[0], qv)
+        return qv
+    
+    def objective(theta, state_prep):
+        return expectation_value(state_prep, shots=100)(theta)
     
 
+    @jaspify(terminal_sampling=True)
+    def main():
 
+        x0 = jnp.array([1.0])
+
+        return minimize(objective,x0,args=(state_prep,))
+
+    results = main()
+    print(results.x)
+    print(results.fun)
+    assert np.round(results.x,1)==0
+    assert np.round(results.fun,1)==0
