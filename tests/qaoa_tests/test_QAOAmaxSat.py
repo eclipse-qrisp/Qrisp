@@ -26,12 +26,11 @@ def test_QAOAmaxSat():
     clauses = [[1,2,-3],[1,4,-6],[4,5,6],[1,3,-4],[2,4,5],[1,3,5],[-2,-3,6]]
     num_vars = 6
     problem = (num_vars, clauses)
-    qarg = QuantumVariable(num_vars)
 
     qaoa_max_indep_set = QAOAProblem(cost_operator=create_maxsat_cost_operator(problem),
                                     mixer=RX_mixer,
                                     cl_cost_function=create_maxsat_cl_cost_function(problem))
-    results = qaoa_max_indep_set.run(qarg=qarg, depth=5)
+    results = qaoa_max_indep_set.run(lambda : QuantumVariable(num_vars), depth=5)
 
 
     cl_cost = create_maxsat_cl_cost_function(problem)
