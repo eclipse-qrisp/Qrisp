@@ -71,16 +71,16 @@ class QAOAProblem:
         
     Parameters
     ----------
-    cost_operator : function
+    cost_operator : callable
         A function receiving a :ref:`QuantumVariable` or :ref:`QuantumArray` and parameter $\gamma$. This function performs the application of the cost operator.
-    mixer : function
+    mixer : callable
         A function receiving a :ref:`QuantumVariable` or :ref:`QuantumArray` and parameter $\beta$. This function performs the application mixing operator.
-    cl_cost_function : function
+    cl_cost_function : callable
         The classical cost function for the specific QAOA problem instance, which takes a dictionary of measurement results as input.
-    init_function : function, optional
+    init_function : callable, optional
         A function receiving a :ref:`QuantumVariable` or :ref:`QuantumArray` for preparing the inital state.
         By default, the uniform superposition state $\ket{+}^n$ is prepared.
-    callback : Booelan, optional
+    callback : bool, optional
         If ``True``, intermediate results are stored. The default is ``False``.
 
     """
