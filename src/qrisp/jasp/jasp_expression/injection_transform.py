@@ -33,7 +33,7 @@ def copy_jaxpr_eqn(eqn):
                     source_info = eqn.source_info,
                     effects = eqn.effects,)
 
-@lru_cache
+@lru_cache(int(1E5))
 def injection_transform(jaspr, qubit_array_outvar):
     """
     This function takes in a Jaspr that returns a QubitArray, which has been
@@ -99,8 +99,8 @@ def injection_transform(jaspr, qubit_array_outvar):
         
         # Delete the equation by skipping the last line of the loop
         if eqn.primitive.name == "jasp.create_qubits":
-            if eqn.outvars[1] is qubit_array_outvar:
-                deleted_quantum_circuit_variable = eqn.invars[0]
+            if eqn.outvars[0] is qubit_array_outvar:
+                deleted_quantum_circuit_variable = eqn.invars[-1]
                 continue
         
         # Recursively apply the injection transform
@@ -118,7 +118,7 @@ def injection_transform(jaspr, qubit_array_outvar):
                 
                 # Modify the copied equation
                 eqn.params["jaxpr"] = ClosedJaxpr(injection_transform(sub_jaspr, sub_qubit_array_outvar), [])
-                eqn.invars.append(qubit_array_outvar)
+                eqn.invars.insert(0, qubit_array_outvar)
                 eqn.outvars.remove(qubit_array_outvar)
         
         # Raise exception for the illegal case
@@ -143,7 +143,7 @@ def injection_transform(jaspr, qubit_array_outvar):
 
     # Update the signature of the new_jaspr    
     new_jaspr.outvars.remove(qubit_array_outvar)
-    new_jaspr.invars.append(qubit_array_outvar)
+    new_jaspr.invars.insert(0, qubit_array_outvar)
     
     # Update the body
     new_jaspr.eqns.clear()
@@ -152,6 +152,6 @@ def injection_transform(jaspr, qubit_array_outvar):
     # If the QuantumCircuit invar was never replaced, the QuantumCircuit is
     # is returned by the Jaspr
     if not deleted_quantum_circuit_variable is None:
-        new_jaspr.outvars[0] = deleted_quantum_circuit_variable
+        new_jaspr.outvars[-1] = deleted_quantum_circuit_variable
     
     return new_jaspr

@@ -404,9 +404,12 @@ class QuantumFloat(QuantumVariable):
         from qrisp.jasp import check_for_tracing_mode
         
         if check_for_tracing_mode():
-            from qrisp.alg_primitives.arithmetic import jasp_multiplyer
+            from qrisp.alg_primitives.arithmetic import jasp_multiplyer, jasp_squaring
             if isinstance(other, QuantumFloat):
-                return jasp_multiplyer(other, self)
+                if self is other:
+                    return jasp_squaring(self)
+                else:
+                    return jasp_multiplyer(other, self)
             else:
                 raise Exception(f"Tried to multiply class {type(other)} with QuantumFloat")
         

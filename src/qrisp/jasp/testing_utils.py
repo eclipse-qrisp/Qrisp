@@ -33,7 +33,7 @@ def jasp_function_test(func):
         
         jaspr = make_jaspr(func)(*args)
         
-        qc, qv_qubits = jaspr.to_qc(*args)
+        qv_qubits, qc = jaspr.to_qc(*args)
         
         clbit_list = []
         for qb in qv_qubits:

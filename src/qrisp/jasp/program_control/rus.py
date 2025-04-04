@@ -322,7 +322,7 @@ def RUS(*trial_function, **jit_kwargs):
         # The next section are the results from the previous iteration
         # And the final section are trial function arguments
         
-        combined_args = tuple([abs_qs.abs_qc] + list(arg_vals) + list(res_vals))
+        combined_args = tuple(list(arg_vals) + list(res_vals) + [abs_qs.abs_qc])
         
         n_res_vals = len(res_vals)
         n_arg_vals = len(arg_vals)
@@ -330,28 +330,28 @@ def RUS(*trial_function, **jit_kwargs):
         def body_fun(args):
             # We now need to deallocate the AbstractQubitArrays from the previous
             # iteration since they are no longer needed.
-            res_qv_vals = args[-n_res_vals:]
+            res_qv_vals = args[-n_res_vals-1:-1]
             
-            abs_qc = args[0]
+            abs_qc = args[-1]
             for res_val in res_qv_vals:
                 if isinstance(res_val.aval, AbstractQubitArray):
-                    abs_qc = reset_p.bind(abs_qc, res_val)
-                    abs_qc = delete_qubits_p.bind(abs_qc, res_val)
+                    abs_qc = reset_p.bind(res_val, abs_qc)
+                    abs_qc = delete_qubits_p.bind(res_val, abs_qc)
 
             # Next we evaluate the trial function by evaluating the corresponding jaspr
             # Prepare the arguments tuple
-            trial_args = [abs_qc] + list(args[1:1+n_arg_vals])
+            trial_args = list(args[:n_arg_vals]) + [abs_qc]
             
             # Evaluate the function
             trial_res = ammended_trial_func_jaspr.eval(*trial_args)
             
             # Return the results
-            return tuple([trial_res[0]] + list(trial_args)[1:] + list(trial_res)[1:])
+            return tuple(list(trial_args)[:-1] + list(trial_res)[:-1] + [trial_res[-1]])
         
         def cond_fun(val):
             # The loop cancelation index is located at the second position of the
             # return value tuple
-            return ~val[1+n_arg_vals]
+            return ~val[n_arg_vals]
 
         # We now evaluate the loop
         
@@ -369,10 +369,10 @@ def RUS(*trial_function, **jit_kwargs):
         combined_res = cond(first_iter_res[0], true_fun, false_fun, combined_args)
         
         # Update the AbstractQuantumCircuit
-        abs_qs.abs_qc = combined_res[0]
+        abs_qs.abs_qc = combined_res[-1]
         
         # Extract the results of the trial function
-        flat_trial_function_res = combined_res[1+n_arg_vals:1+n_arg_vals+n_res_vals]
+        flat_trial_function_res = combined_res[n_arg_vals:n_arg_vals+n_res_vals]
         
         # The results are however still "flattened" i.e. if the trial function
         # returned a QuantumVariable, they show up as a AbstractQubitArray.

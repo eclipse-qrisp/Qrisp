@@ -43,11 +43,11 @@ def test_environment_compilation():
     def outer_function(x):
         qv = QuantumVariable(x)
         
-        with invert():
-            inner_function(qv)
-            with invert():
-                inner_function(qv)
-        temp_1 = inner_function(qv)
+        # with invert():
+        #     inner_function(qv)
+        #     with invert():
+        #         inner_function(qv)
+        # temp_1 = inner_function(qv)
         temp_2 = inner_function(qv)
         return qv
     

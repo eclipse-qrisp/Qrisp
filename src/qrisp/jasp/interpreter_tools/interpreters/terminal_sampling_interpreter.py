@@ -197,13 +197,13 @@ def terminal_sampling_evaluator(sampling_res_type):
                 
                     # Collect the qubits to be measured into a single list
                     qubits = []
-                    for i in range(1, len(invalues)):
+                    for i in range(len(invalues)-1):
                         qubits.extend(invalues[i])
                         return_signature.append(len(invalues[i]))
                         
                     # Clear the buffer and copy the state to evaluate the measurement
-                    invalues[0].apply_buffer()
-                    quantum_state = invalues[0].copy()
+                    invalues[-1].apply_buffer()
+                    quantum_state = invalues[-1].copy()
                     
                     # Evaluate the measurement
                     # This returns a dictionary of the form {label int : count int}

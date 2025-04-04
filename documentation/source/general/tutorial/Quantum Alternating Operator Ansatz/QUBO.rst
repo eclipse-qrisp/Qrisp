@@ -1,7 +1,7 @@
 .. _QUBOQAOA:
 
-QUBO as a QAOAProblem Instance
-==============================
+QUBO as a QAOAProblem
+=====================
 
 In this tutorial you’ll be guided through the process of defining a new phase separator to be used within the scope of the :ref:`Alternating Operator Ansatz <AOA>` focussed on solving various QUBO problems with only needing the QUBO matrix $Q$ as an input.
 QUBO, or `Quadratic Unconstrained Binary Optimization <https://en.wikipedia.org/wiki/Quadratic_unconstrained_binary_optimization>`_, is a type of problem that involves optimizing a quadratic function of binary variables.

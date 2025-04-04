@@ -119,11 +119,11 @@ def jaspr_to_catalyst_function(jaspr):
         
         # We initialize with the inverted list [... 3, 2, 1, 0] since the
         # pop method of the dynamic list always removes the last element
-        args.insert(0, (qreg, Jlist(jnp.arange(30, 0, -1), max_size = 30)))
+        args.append((qreg, Jlist(jnp.arange(30, 0, -1), max_size = 30)))
         
         # Call the catalyst interpreter. The first return value will be the AbstractQreg
         # tuple, which is why we exclude it from the return values
-        return eval_jaxpr(jaspr, eqn_evaluator = catalyst_eqn_evaluator)(*args)[1:]
+        return eval_jaxpr(jaspr, eqn_evaluator = catalyst_eqn_evaluator)(*args)[:-1]
     
     return catalyst_function
 
@@ -134,7 +134,7 @@ def jaspr_to_catalyst_qjit(jaspr, function_name = "jaspr_function"):
     catalyst_function = jaspr_to_catalyst_function(jaspr)
     catalyst_function.__name__ = function_name
     jit_object = catalyst.QJIT(catalyst_function, catalyst.CompileOptions())
-    jit_object.jaxpr = make_jaxpr(catalyst_function)(*[invar.aval for invar in jaspr.invars[1:]])
+    jit_object.jaxpr = make_jaxpr(catalyst_function)(*[invar.aval for invar in jaspr.invars[:-1]])
     jit_object.workspace = jit_object._get_workspace()
     jit_object.mlir_module, jit_object.mlir = jit_object.generate_ir()
     jit_object.compiled_function, jit_object.qir = jit_object.compile()

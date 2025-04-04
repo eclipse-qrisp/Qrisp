@@ -1450,25 +1450,27 @@ def redirect_qfunction(function_to_redirect):
         if check_for_tracing_mode():
             jaspr = make_jaspr(function_to_redirect, garbage_collection = "manual")(*args, **kwargs).flatten_environments()
             
-            transformed_jaspr = injection_transform(jaspr, jaspr.outvars[1])
+            transformed_jaspr = injection_transform(jaspr, jaspr.outvars[0])
             
             qs = TracingQuantumSession.get_instance()
             abs_qc = qs.abs_qc
             from jax.tree_util import tree_flatten
             
-            flattened_args = [abs_qc]
+            flattened_args = []
+            
+            flattened_args.append(target.reg.tracer)
             
             for arg in args:
                 flattened_args.extend(tree_flatten(arg)[0])
                 
-            flattened_args.append(target.reg.tracer)
+            flattened_args.append(abs_qc)
             
             res = eval_jaxpr(transformed_jaspr, [])(*flattened_args)
             
             if len(transformed_jaspr.outvars) == 1:
                 qs.abs_qc = res
             else:
-                qs.abs_qc = res[0]
+                qs.abs_qc = res[-1]
         
         else:
 
