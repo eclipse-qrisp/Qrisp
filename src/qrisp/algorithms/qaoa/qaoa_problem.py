@@ -17,6 +17,7 @@
 """
 
 import time
+import warnings
 
 import numpy as np
 from scipy.optimize import minimize
@@ -24,6 +25,11 @@ from sympy import Symbol
 
 from qrisp import QuantumArray, h, x, parallelize_qc
 from qrisp.algorithms.qaoa.qaoa_benchmark_data import QAOABenchmark
+
+import jax
+import jax.numpy as jnp
+from qrisp.jasp import check_for_tracing_mode, sample
+from qrisp.jasp.optimization_tools.optimize import minimize as jasp_minimize
 
 
 class QAOAProblem:
@@ -134,14 +140,14 @@ class QAOAProblem:
         return  np.concatenate((gamma,beta)) 
     
 
-    def compile_circuit(self, qarg, depth):
+    def compile_circuit(self, qarg_prep, depth):
         """
         Compiles the circuit that is evaluated by the :meth:`run <qrisp.qaoa.QAOAProblem.run>` method.
 
         Parameters
         ----------
-        qarg : :ref:`QuantumVariable` or :ref:`QuantumArray`
-            The argument the cost function is called on.
+        qarg_prep : callable
+            A function returning a :ref:`QuantumVariable` or :ref:`QuantumArray` to which the QAOA circuit is applied.
         depth : int
             The amount of QAOA layers.
 
@@ -245,6 +251,12 @@ class QAOAProblem:
         «qarg_dupl.2: ┤ X ├┤ Rx(2*beta_4) ├
         «             └───┘└──────────────┘
         """
+
+        # qarg_prep can a QuantumVariable (DEPRECATED) or a callable returning a QuantumVariable
+        if callable(qarg_prep):
+            qarg = qarg_prep()
+        else:
+            qarg = qarg_prep
         
         temp = list(qarg.qs.data)
         
@@ -278,76 +290,111 @@ class QAOAProblem:
         
         qarg.qs.data = temp
         
-        return compiled_qc, gamma + beta
-
-    #def optimization_routine(self, qarg, compiled_qc, symbols , depth, mes_kwargs, max_iter):    
-    def optimization_routine(self, qarg, depth, mes_kwargs, max_iter, optimizer="COBYLA"): 
+        return qarg, compiled_qc, gamma + beta
+  
+    def optimization_routine(self, qarg_prep, depth, mes_kwargs, init_type, init_point, optimizer, options): 
         """
         Wrapper subroutine for the optimization method used in QAOA. The initial values are set and the optimization via ``COBYLA`` is conducted here.
 
         Parameters
         ----------
-        qarg : :ref:`QuantumVariable` or :ref:`QuantumArray`
-            The argument the cost function is called on.
-        complied_qc : :ref:`QuantumCircuit`
-            The compiled quantum circuit.
+        qarg_prep : callable
+            A function returning a :ref:`QuantumVariable` or :ref:`QuantumArray` to which the QAOA circuit is applied.
         depth : int
             The amont of QAOA layers.
         symbols : list
             The list of symbols used in the quantum circuit.
         mes_kwargs : dict, optional
             The keyword arguments for the measurement function. Default is an empty dictionary, as defined in previous functions.
-        max_iter : int, optional
-            The maximum number of iterations for the optimization method. Default is 50, as defined in previous functions.
         init_type : string, optional
-            Specifies the way the initial optimization parameters are chosen. Available are ``random`` and ``TQA``. The default is ``random``.
+            Specifies the way the initial optimization parameters are chosen. Available are ``random`` and ``tqa``. The default is ``random``.
+        init_point : ndarray, shape (n,), optional
+            Specifies the initial optimization parameters.
         optimizer : str, optional
-            Specifies the optimization routine. Available are, e.g., ``COBYLA``, ``COBYQA``, ``Nelder-Mead``. 
-            The Default is "COBYLA". 
+            Specifies the `SciPy optimization routine <https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html>`_.
+            Available are, e.g., ``COBYLA``, ``COBYQA``, ``Nelder-Mead``. The Default is ``COBYLA``.    
+            In tracing mode (i.e. Jasp) Jax-traceable :ref:`optimization routines <optimization_tools>` must be utilized.
+            Available are ``SPSA``. The Default is ``SPSA``. 
+        options : dict
+            A dictionary of solver options.
 
         Returns
         -------
-        res_sample
+        ndarray, shape (n,)
             The optimized parameters of the problem instance.
+        float or jax.Array
+            The expectation value of the classical cost function for the optimized parameters. 
         """
 
-        # Define optimization wrapper function to be minimized using QAOA
-        def optimization_wrapper(theta, qc, symbols, qarg, mes_kwargs):
-            """
-            Wrapper function for the optimization method used in QAOA.
+        if check_for_tracing_mode():
 
-            This function calculates the value of the classical cost function after post-processing if a post-processing function is set, otherwise it calculates the value of the classical cost function.
+            # Define optimization wrapper function to be minimized using QAOA
+            def optimization_wrapper(theta, state_prep, mes_kwargs):
+                """
+                Wrapper function for the optimization method used in QAOA.
 
-            Parameters
-            ----------
-            theta : list
-                The list of angle parameters gamma and beta for the QAOA circuit.
-            qc : :ref:`QuantumCircuit
-                The compiled quantum circuit.
-            symbols : list
-                The list of symbols used in the quantum circuit.
-            qarg_dupl : :ref:`QuantumVariable` or :ref:`QuantumArray`
-                The duplicated quantum argument to which the quantum circuit is applied.
-            mes_kwargs : dict
-                The keyword arguments for the measurement function.
+                This function calculates the value of the classical cost function.
 
-            Returns
-            -------
-            float
-                The expected value of the classical cost function.
-            """         
-            subs_dic = {symbols[i] : theta[i] for i in range(len(symbols))}
+                Parameters
+                ----------
+                theta : jax.Array
+                    The array of angle parameters gamma and beta for the QAOA circuit.
+                state_prep : callable
+                    A function returning a :ref:`QuantumVariable` or :ref:`QuantumArray`. 
+                    The expectation of the classical cost function from the state of this QuantumVariable will be measured. 
+                    The state preparation function can only take classical values as arguments. 
+                    This is because a quantum value would need to be copied for each sampling iteration, which is prohibited by the no-cloning theorem.
+                mes_kwargs : dict
+                    The keyword arguments for the sample function.
+
+                Returns
+                -------
+                float
+                    The expected value of the classical cost function.
+                """         
             
-            res_dic = qarg.get_measurement(subs_dic = subs_dic, precompiled_qc = qc, **mes_kwargs)
+                res_sample = sample(state_prep, shots=mes_kwargs["shots"])(theta)
             
-            cl_cost = self.cl_cost_function(res_dic)
+                cl_cost = self.cl_cost_function(sample)
 
-            if self.callback:
-                self.optimization_costs.append(cl_cost)
+                return cl_cost
+
+        else:
+
+            # Define optimization wrapper function to be minimized using QAOA
+            def optimization_wrapper(theta, qarg, qc, symbols, mes_kwargs):
+                """
+                Wrapper function for the optimization method used in QAOA.
+
+                This function calculates the value of the classical cost function.
+
+                Parameters
+                ----------
+                theta : list
+                    The list of angle parameters gamma and beta for the QAOA circuit.
+                qarg : :ref:`QuantumVariable` or :ref:`QuantumArray`
+                    The quantum argument to which the quantum circuit is applied.
+                qc : :ref:`QuantumCircuit`
+                    The compiled quantum circuit.
+                symbols : list
+                    The list of symbols used in the quantum circuit.
+                mes_kwargs : dict
+                    The keyword arguments for the measurement function.
+
+                Returns
+                -------
+                float
+                    The expected value of the classical cost function.
+                """         
+                subs_dic = {symbols[i] : theta[i] for i in range(len(symbols))}
             
-            if self.cl_post_processor is not None:
-                return self.cl_post_processor(cl_cost)
-            else:
+                res_dic = qarg.get_measurement(subs_dic = subs_dic, precompiled_qc = qc, **mes_kwargs)
+            
+                cl_cost = self.cl_cost_function(res_dic)
+
+                if self.callback:
+                    self.optimization_costs.append(cl_cost)
+            
                 return cl_cost
             
         def tqa_angles(p, qc, symbols, qarg_dupl, mes_kwargs, steps=10): #qarg only before
@@ -392,44 +439,74 @@ class QAOAProblem:
             return self.computeParams(p,dt_max)
 
 
-        compiled_qc, symbols = self.compile_circuit(qarg, depth)
+        if not check_for_tracing_mode():
+            qarg, compiled_qc, symbols = self.compile_circuit(qarg_prep, depth)
         
-        # Set initial random values for optimization parameters 
-        # init_point = np.pi * np.random.rand(2 * depth)/2
-        
-        # initial point is set here, potentially subject to change
+        if init_point is None:
+            # Set initial random values for optinization parameters
+            if self.init_type=='random':
 
-        if self.init_type=='random':
-            # Set initial random values for optimization parameters
-            init_point = np.pi * np.random.rand(2 * depth)/2
+                if check_for_tracing_mode():
+                    key = jax.random.key(11)
+                    init_point = jax.random.uniform(key=key, shape=(2 * depth,)) * jnp.pi/2
+                else:
+                    init_point = np.random.rand(2 * depth) * np.pi/2
 
-        elif self.init_type=='tqa':
-            # TQA initialization
-            init_point = tqa_angles(depth,compiled_qc, symbols, qarg, mes_kwargs)
+            elif self.init_type=='tqa':
+                # TQA initialization
+                init_point = tqa_angles(depth, compiled_qc, symbols, qarg, mes_kwargs)
 
 
-        # Perform optimization using COBYLA method
+        if check_for_tracing_mode():
 
-        compiled_qc, symbols = self.compile_circuit(qarg, depth)
-        # Perform optimization using COBYLA method
-        res_sample = minimize(optimization_wrapper,
-                            init_point, 
-                            method=optimizer, 
-                            options={'maxiter':max_iter}, 
-                            args = (compiled_qc, symbols, qarg, mes_kwargs))
+            def state_prep(theta):
+
+                qarg = qarg_prep()
+
+                # Prepare initial state - if no init_function is specified, prepare uniform superposition
+                if self.init_function is not None:
+                    self.init_function(qarg)
+                elif self.init_type=='tqa': # Prepare the ground state (eigenvalue -1) of the X mixer
+                    x(qarg)
+                    h(qarg)
+                else:
+                    h(qarg)
             
-        return res_sample['x']
+                # Apply p layers of phase separators and mixers
+                for i in range(depth):                           
+                    self.cost_operator(qarg, theta[i])
+                    self.mixer(qarg, theta[i+depth])
+
+                return qarg
+            
+            res_sample = jasp_minimize(optimization_wrapper,
+                                       init_point,
+                                       method = optimizer,
+                                       options = options,
+                                       args = (state_prep, mes_kwargs,))
+            
+            return res_sample.x, res_sample.fun
+            
+        else:
+
+            res_sample = minimize(optimization_wrapper,
+                                init_point, 
+                                method = optimizer, 
+                                options = options, 
+                                args = (qarg, compiled_qc, symbols, mes_kwargs))
+            
+            return res_sample.x, res_sample.fun
         
 
-    def run(self, qarg, depth, mes_kwargs = {}, max_iter = 50, init_type = "random", optimizer="COBYLA"):
+    def run(self, qarg_prep, depth, mes_kwargs = {}, max_iter = 50, init_type = "random", init_point = None, optimizer = "COBYLA", options = {}):
         """
         Run the specific QAOA problem instance with given quantum arguments, depth of QAOA circuit,
         measurement keyword arguments (mes_kwargs) and maximum iterations for optimization (max_iter).
         
         Parameters
         ----------
-        qarg : :ref:`QuantumVariable` or :ref:`QuantumArray`
-            The quantum argument to which the QAOA circuit is applied.
+        qarg_prep : callable
+            A function returning a :ref:`QuantumVariable` or :ref:`QuantumArray` to which the QAOA circuit is applied.
         depth : int
             The amount of QAOA layers.
         mes_kwargs : dict, optional
@@ -441,9 +518,15 @@ class QAOAProblem:
             The parameters are initialized uniformly at random in the interval $[0,\pi/2]$.
             For ``tqa``, the parameters are chosen based on the `Trotterized Quantum Annealing <https://quantum-journal.org/papers/q-2021-07-01-491/>`_ protocol.
             If ``tqa`` is chosen, and no ``init_function`` for the :ref:`QAOAProblem` is specified, the $\ket{-}^n$ state is prepared (the ground state for the X mixer).
+        init_point : ndarray, shape (n,), optional
+            Specifies the initial optimization parameters.
         optimizer : str, optional
-            Specifies the `optimization routine <https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html>`_. 
-            Available are, e.g., ``COBYLA``, ``COBYQA``, ``Nelder-Mead``. The Default is ``COBYLA``.
+            Specifies the `SciPy optimization routine <https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html>`_.
+            Available are, e.g., ``COBYLA``, ``COBYQA``, ``Nelder-Mead``. The Default is ``COBYLA``.    
+            In tracing mode (i.e. Jasp) Jax-traceable :ref:`optimization routines <optimization_tools>` must be utilized.
+            Available are ``SPSA``. The Default is ``SPSA``. 
+        options : dict
+            A dictionary of solver options.
 
         Returns
         -------
@@ -451,41 +534,45 @@ class QAOAProblem:
             The optimal result after running QAOA problem for a specific problem instance. It contains the measurement results after applying the optimal QAOA circuit to the quantum argument.
         """
 
-        self.init_type = init_type
+        if not callable(qarg_prep):
+            warnings.warn("DeprecationWarning: Providing a QuantumVariable or QuantumArray as first argument will no longer be supported in a later release of Qrisp. Instead a callable creating a QuantumVariable or QuantumArray must be provided.")
+
+        options["maxiter"] = max_iter
+
+        if not "shots" in mes_kwargs:
+            mes_kwargs["shots"] = 5000
 
         # Delete callback
         self.optimization_params = []
         self.optimization_costs = []
 
-        #alternative to everything below:
-        #bound_qc = self.train_circuit(qarg, depth)
-        #opt_res = bound_qc(qarg).get_measurement(**mes_kwargs)
-        #return opt_res
-        if not "shots" in mes_kwargs:
-            mes_kwargs["shots"] = 5000
-        
-        #res_sample = self.optimization_routine(qarg, compiled_qc, symbols , depth,  mes_kwargs, max_iter)
-        res_sample = self.optimization_routine(qarg, depth, mes_kwargs, max_iter, optimizer)
-        optimal_theta = res_sample 
+        opt_theta, opt_res = self.optimization_routine(qarg_prep, 
+                                                       depth, 
+                                                       mes_kwargs, 
+                                                       init_type,
+                                                       init_point,
+                                                       optimizer,
+                                                       options)
+        #optimal_theta = res_sample 
 
         
         # Prepare initial state - if no init_function is specified, prepare uniform superposition
-        if self.init_function is not None:
-            self.init_function(qarg)
-        elif self.init_type=='tqa': # Prepare the ground state (eigenvalue -1) of the X mixer
-            x(qarg)
-            h(qarg)
-        else:
-            h(qarg)
+        #if self.init_function is not None:
+        #     self.init_function(qarg)
+        #elif self.init_type=='tqa': # Prepare the ground state (eigenvalue -1) of the X mixer
+        #    x(qarg)
+        #    h(qarg)
+        #else:
+        #    h(qarg)
 
         # Apply p layers of phase separators and mixers    
-        for i in range(depth):                          
-            self.cost_operator(qarg, optimal_theta[i])
-            self.mixer(qarg, optimal_theta[i+depth])
-        opt_res = qarg.get_measurement(**mes_kwargs)
+        #for i in range(depth):                          
+        #    self.cost_operator(qarg, optimal_theta[i])
+        #    self.mixer(qarg, optimal_theta[i+depth])
+        #opt_res = qarg.get_measurement(**mes_kwargs)
         return opt_res
     
-    def train_function(self, qarg, depth, mes_kwargs = {}, max_iter = 50, init_type = "random", optimizer="COBYLA"):
+    def train_function(self, qarg_prep, depth, mes_kwargs = {}, max_iter = 50, init_type = "random", init_point = None, optimizer = "COBYLA", options={}):
         r"""
         This function allows for training of a circuit with a given ``QAOAProblem`` instance. It returns a function that can be applied to a ``QuantumVariable``,
         such that it represents a solution to the problem instance. When applied to a ``QuantumVariable``, the function therefore prepares the state
@@ -498,8 +585,8 @@ class QAOAProblem:
 
         Parameters
         ----------
-        qarg : :ref:`QuantumVariable`
-            The quantum argument to which the QAOA circuit is applied.
+        qarg_prep : callable
+            A function returning a :ref:`QuantumVariable` or :ref:`QuantumArray` to which the QAOA circuit is applied.
         depth : int
             The amount of QAOA layers.
         mes_kwargs : dict, optional
@@ -510,10 +597,16 @@ class QAOAProblem:
             Specifies the way the initial optimization parameters are chosen. Available are ``random`` and ``tqa``. The default is ``random``: 
             The parameters are initialized uniformly at random in the interval $[0,\pi/2]$.
             For ``tqa``, the parameters are chosen based on the `Trotterized Quantum Annealing <https://quantum-journal.org/papers/q-2021-07-01-491/>`_ protocol.
-            If ``tqa`` is chosen, and no ``init_function`` for the :ref:`QAOAProblem` is specified, the $\ket{-}^n$ state is prepared (the ground state for the X mixer).
+            If ``tqa`` is chosen, and no ``init_function`` for the :ref:`QAOAProblem` is specified, the $\ket{-}^n$ state is prepared (the ground state for the X mixer).#
+        init_point : ndarray, shape (n,), optional
+            Specifies the initial optimization parameters.
         optimizer : str, optional
-            Specifies the `optimization routine <https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html>`_. 
-            Available are, e.g., ``COBYLA``, ``COBYQA``, ``Nelder-Mead``. The Default is ``COBYLA``.
+            Specifies the `SciPy optimization routine <https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html>`_.
+            Available are, e.g., ``COBYLA``, ``COBYQA``, ``Nelder-Mead``. The Default is ``COBYLA``.    
+            In tracing mode (i.e. Jasp) Jax-traceable :ref:`optimization routines <optimization_tools>` must be utilized.
+            Available are ``SPSA``. The Default is ``SPSA``. 
+        options : dict
+            A dictionary of solver options.
         
         Returns
         -------
@@ -559,10 +652,21 @@ class QAOAProblem:
 
         """
 
-        self.init_type = init_type
+        if not callable(qarg_prep):
+            warnings.warn("DeprecationWarning: Providing a QuantumVariable or QuantumArray as first argument will no longer be supported in a later release of Qrisp. Instead a callable creating a QuantumVariable or QuantumArray must be provided.")
 
-        compiled_qc, symbols = self.compile_circuit(qarg, depth)
-        res_sample = self.optimization_routine(qarg, depth, mes_kwargs, max_iter, optimizer)
+        options["maxiter"] = max_iter
+
+        if not "shots" in mes_kwargs:
+            mes_kwargs["shots"] = 5000
+
+        opt_theta, opt_res = self.optimization_routine(qarg_prep, 
+                                                       depth, 
+                                                       mes_kwargs, 
+                                                       init_type,
+                                                       init_point,
+                                                       optimizer,
+                                                       options)
         
         def circuit_generator(qarg_gen):
             # Prepare initial state - if no init_function is specified, prepare uniform superposition
@@ -576,19 +680,20 @@ class QAOAProblem:
 
             for i in range(depth): 
                 
-                self.cost_operator(qarg_gen, res_sample[i])
-                self.mixer(qarg_gen, res_sample[i+depth])
+                self.cost_operator(qarg_gen, opt_theta[i])
+                self.mixer(qarg_gen, opt_theta[i+depth])
             
         return circuit_generator
     
-    def benchmark(self, qarg, depth_range, shot_range, iter_range, optimal_solution, repetitions = 1, mes_kwargs = {}, init_type = "random", optimizer="COBYLA"):
+    def benchmark(self, qarg_prep, depth_range, shot_range, iter_range, optimal_solution, repetitions = 1, mes_kwargs = {}, init_type = "random", optimizer="COBYLA", options = {}):
         """
         This method enables convenient data collection regarding performance of the implementation.
 
         Parameters
         ----------
-        qarg : QuantumVariable or QuantumArray
-            The quantum argument, the benchmark is executed on. Compare to the :meth:`.run <qrisp.qaoa.QAOAProblem.run>` method.
+        qarg_prep : callable
+            A function returning a :ref:`QuantumVariable` or :ref:`QuantumArray` to which the QAOA circuit is applied.
+            Compare to the :meth:`.run <qrisp.qaoa.QAOAProblem.run>` method.
         depth_range : list[int]
             A list of integers indicating, which depth parameters should be explored. Depth means the amount of QAOA layers.
         shot_range : list[int]
@@ -607,8 +712,12 @@ class QAOAProblem:
             For ``tqa``, the parameters are chosen based on the `Trotterized Quantum Annealing <https://quantum-journal.org/papers/q-2021-07-01-491/>`_ protocol.
             If ``tqa`` is chosen, and no ``init_function`` for the :ref:`QAOAProblem` is specified, the $\ket{-}^n$ state is prepared (the ground state for the X mixer).
         optimizer : str, optional
-            Specifies the `optimization routine <https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html>`_. 
-            Available are, e.g., ``COBYLA``, ``COBYQA``, ``Nelder-Mead``. The Default is ``COBYLA``.
+            Specifies the `SciPy optimization routine <https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html>`_.
+            Available are, e.g., ``COBYLA``, ``COBYQA``, ``Nelder-Mead``. The Default is ``COBYLA``.    
+            In tracing mode (i.e. Jasp) Jax-traceable :ref:`optimization routines <optimization_tools>` must be utilized.
+            Available are ``SPSA``. The Default is ``SPSA``. 
+        options : dict
+            A dictionary of solver options.
 
         Returns
         -------
@@ -652,6 +761,10 @@ class QAOAProblem:
         you drawing conclusions from the collected data. Make sure to check them out!
 
         """
+
+        if not callable(qarg_prep):
+            warnings.warn("DeprecationWarning: Providing a QuantumVariable or QuantumArray as first argument will no longer be supported in a later release of Qrisp. Instead a callable creating a QuantumVariable or QuantumArray must be provided.")
+
         
         data_dict = {"layer_depth" : [],
                      "circuit_depth" : [],
@@ -668,24 +781,21 @@ class QAOAProblem:
                 for it in iter_range:
                     for k in range(repetitions):
                         
-                        if isinstance(qarg, QuantumArray):
-                            qarg_dupl = QuantumArray(qtype = qarg.qtype, shape = qarg.shape)
-                            mes_qubits = sum([qv.reg for qv in qarg_dupl.flatten()], [])
-                        else:
-                            qarg_dupl = qarg.duplicate()
-                            mes_qubits = list(qarg_dupl)
+                        #if isinstance(qarg, QuantumArray):
+                        #    qarg_dupl = QuantumArray(qtype = qarg.qtype, shape = qarg.shape)
+                        #    mes_qubits = sum([qv.reg for qv in qarg_dupl.flatten()], [])
+                        #else:
+                        #    qarg_dupl = qarg.duplicate()
+                        #    mes_qubits = list(qarg_dupl)
                             
                         start_time = time.time()
                         
                         temp_mes_kwargs = dict(mes_kwargs)
                         temp_mes_kwargs["shots"] = s
-                        if init_type=='random':
-                            counts = self.run(qarg=qarg_dupl, depth = p, max_iter = it, mes_kwargs = temp_mes_kwargs, init_type='random', optimizer=optimizer)
-                        elif init_type=='tqa':
-                            counts = self.run(qarg=qarg_dupl, depth = p, max_iter = it, mes_kwargs = temp_mes_kwargs, init_type='tqa', optimizer=optimizer)
+                        counts = self.run(qarg_prep, depth = p, max_iter = it, mes_kwargs = temp_mes_kwargs, init_type = init_type, optimizer = optimizer, options = options)
                         final_time = time.time() - start_time
                         
-                        compiled_qc = qarg_dupl.qs.compile(intended_measurements=mes_qubits)
+                        compiled_qc = self.compile_circuit(qarg_prep, depth = p)
                         
                         data_dict["layer_depth"].append(p)
                         data_dict["circuit_depth"].append(compiled_qc.depth())
