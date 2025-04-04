@@ -1034,7 +1034,7 @@ class Jaspr(Jaxpr):
         res = self.to_qc(*args)
         if len(self.outvars) == 1:
             res = [res]
-        qrisp_qc = res[0]
+        qrisp_qc = res[-1]
         return qrisp_qc.qasm()
         
     
