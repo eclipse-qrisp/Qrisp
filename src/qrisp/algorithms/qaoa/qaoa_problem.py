@@ -442,48 +442,48 @@ class QAOAProblem:
             
                 return cl_cost
             
-        def tqa_angles(p, qarg, qc, symbols, mes_kwargs, steps=10): #qarg only before
-            """
-            Compute the optimal parameters for the Trotterized Quantum Annealing (`TQA <https://quantum-journal.org/papers/q-2021-07-01-491/>`_) algorithm.
+            def tqa_angles(p, qarg, qc, symbols, mes_kwargs, steps=10): #qarg only before
+                """
+                Compute the optimal parameters for the Trotterized Quantum Annealing (`TQA <https://quantum-journal.org/papers/q-2021-07-01-491/>`_) algorithm.
 
-            The function first creates a linspace array `dt` from 0.1 to 1 with `steps` steps. 
-            Then for each `dt_` in `dt`, it computes the parameters `x` using the `computeParams` 
-            function and calculates the energy `energy_` using the `optimization_wrapper` function. 
-            The energy values are stored in the `energy` list. The `dt_max` corresponding to the 
-            minimum energy is found and used to compute the optimal parameters which are returned.
+                The function first creates a linspace array `dt` from 0.1 to 1 with `steps` steps. 
+                Then for each `dt_` in `dt`, it computes the parameters `x` using the `computeParams` 
+                function and calculates the energy `energy_` using the `optimization_wrapper` function. 
+                The energy values are stored in the `energy` list. The `dt_max` corresponding to the 
+                minimum energy is found and used to compute the optimal parameters which are returned.
 
-            Parameters
-            ----------
-            p : int
-                The number of partitions for the time interval.
-            qarg : :ref:`QuantumVariable` or :ref:`QuantumArray`
-                The quantum argument to which the quantum circuit is applied.
-            qc : :ref:`QuantumCircuit`
-                The quantum circuit for the specific problem instance.
-            symbols : list
-                The list of symbols in the quantum circuit.
-            mes_kwargs : dict
-                The measurement keyword arguments.
-            steps : int, optional
-                The number of steps for the linspace function, default is 10.
+                Parameters
+                ----------
+                p : int
+                    The number of partitions for the time interval.
+                qarg : :ref:`QuantumVariable` or :ref:`QuantumArray`
+                    The quantum argument to which the quantum circuit is applied.
+                qc : :ref:`QuantumCircuit`
+                    The quantum circuit for the specific problem instance.
+                symbols : list
+                    The list of symbols in the quantum circuit.
+                mes_kwargs : dict
+                    The measurement keyword arguments.
+                steps : int, optional
+                    The number of steps for the linspace function, default is 10.
 
-            Returns
-            -------
-            np.array
-                A concatenated numpy array of optimal gamma and beta values.
-            """
+                Returns
+                -------
+                np.array
+                    A concatenated numpy array of optimal gamma and beta values.
+                """
 
-            dt = jnp.linspace(0.1, 1, steps)
+                dt = jnp.linspace(0.1, 1, steps)
 
-            energy = []
-            for dt_ in dt:      
-                theta = self.computeParams(p, dt_)
-                energy_ = optimization_wrapper(theta, qarg, qc, symbols, mes_kwargs)
-                energy.append(energy_)
+                energy = []
+                for dt_ in dt:      
+                    theta = self.computeParams(p, dt_)
+                    energy_ = optimization_wrapper(theta, qarg, qc, symbols, mes_kwargs)
+                    energy.append(energy_)
             
-            idx = np.argmin(energy)
-            dt_max = dt[idx]
-            return self.computeParams(p,dt_max)
+                idx = np.argmin(energy)
+                dt_max = dt[idx]
+                return self.computeParams(p,dt_max)
 
 
         if check_for_tracing_mode():
@@ -529,7 +529,7 @@ class QAOAProblem:
                     init_point = tqa_angles(depth, qarg, compiled_qc, symbols, mes_kwargs)
                 else:
                     init_point = tqa_angles(depth, state_prep, mes_kwargs)
-                    
+
 
         if check_for_tracing_mode():
             
