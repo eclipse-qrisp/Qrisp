@@ -1696,7 +1696,7 @@ class QubitOperator(Hamiltonian):
         ----------
         state_prep : callable
             A function returning a QuantumVariable. 
-            The expectation of the Hamiltonian for the state from this QuantumVariable will be measured. 
+            The expectation of the Hamiltonian for the state of this QuantumVariable will be measured. 
             The state preparation function can only take classical values as arguments. 
             This is because a quantum value would need to be copied for each sampling iteration, which is prohibited by the no-cloning theorem.
         precision : float, optional
