@@ -41,13 +41,13 @@ Example implementation
     G = nx.Graph()
     G.add_nodes_from(range(len(sets)))
     G.add_edges_from(non_empty_intersection(sets))
-    qarg = QuantumVariable(G.number_of_nodes())
+    qarg_prep = lambda : QuantumVariable(G.number_of_nodes())
 
     qaoa_max_indep_set = QAOAProblem(cost_operator=RZ_mixer,
                                     mixer=create_max_indep_set_mixer(G),
                                     cl_cost_function=create_max_indep_set_cl_cost_function(G),
                                     init_function=max_indep_set_init_function)
-    results = qaoa_max_indep_set.run(qarg=qarg, depth=5)
+    results = qaoa_max_indep_set.run(qarg_prep, depth=5)
 
 That's it! In the following, we print the 5 most likely solutions together with their cost values.
 

@@ -48,13 +48,13 @@ Example implementation
 
    sets = [{0,1,2,3},{1,5,6,4},{0,2,6,3,4,5},{3,4,0,1},{1,2,3,0},{1}]
    universe = set.union(*sets)
-   qarg = QuantumVariable(len(sets))
+   qarg_prep = lambda : QuantumVariable(len(sets))
 
    qaoa_min_set_cover = QAOAProblem(cost_operator=RZ_mixer, 
                                     mixer= create_min_set_cover_mixer(sets, universe), 
                                     cl_cost_function=create_min_set_cover_cl_cost_function(sets, universe),
                                     init_function=min_set_cover_init_function)
-   results = qaoa_min_set_cover.run(qarg=qarg, depth=5)
+   results = qaoa_min_set_cover.run(qarg_prep, depth=5)
 
 That’s it! In the following, we print the 5 most likely solutions together with their cost values.
 

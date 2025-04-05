@@ -71,12 +71,12 @@ Example implementation
    clauses = [[1,2,-3],[1,4,-6],[4,5,6],[1,3,-4],[2,4,5],[1,3,5],[-2,-3,6]]
    num_vars = 6
    problem = (num_vars, clauses)
-   qarg = QuantumVariable(num_vars)
+   qarg_prep = QuantumVariable(num_vars)
 
    qaoa_max_indep_set = QAOAProblem(cost_operator=create_maxsat_cost_operator(problem),
                                     mixer=RX_mixer,
                                     cl_cost_function=create_maxsat_cl_cost_function(problem))
-   results = qaoa_max_indep_set.run(qarg=qarg, depth=5)
+   results = qaoa_max_indep_set.run(qarg_prep, depth=5)
 
 That's it! Feel free to experiment with the ``init_type='tqa'`` option in the :meth:`.run <qrisp.qaoa.QAOAProblem.run>` method for improved performance.
 In the following, we print the 5 most likely solutions together with their cost values.
