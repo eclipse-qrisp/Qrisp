@@ -60,7 +60,7 @@ class QAOAProblem:
         
         from qrisp import QuantumVariable
         
-        res = maxcut_instance.run(qarg = QuantumVariable(5),
+        res = maxcut_instance.run(lambda : QuantumVariable(5),
                                   depth = 4, 
                                   max_iter = 25)
         
@@ -640,7 +640,7 @@ class QAOAProblem:
 
         return res_sample
     
-    def train_function(self, qarg_prep, depth, mes_kwargs = {}, max_iter = 50, init_type = "random", init_point = None, optimizer = "COBYLA", options={}):
+    def train_function(self, qarg_prep, depth, mes_kwargs = {}, max_iter = 50, init_type = "random", init_point = None, optimizer = "COBYLA", options = {}):
         r"""
         This function allows for training of a circuit with a given ``QAOAProblem`` instance. It returns a function that can be applied to a ``QuantumVariable``,
         such that it represents a solution to the problem instance. When applied to a ``QuantumVariable``, the function therefore prepares the state
@@ -693,16 +693,16 @@ class QAOAProblem:
             import networkx as nx
             import matplotlib.pyplot as plt
             
-            G = nx.erdos_renyi_graph(9, 0.5, seed =  133)
+            G = nx.erdos_renyi_graph(9, 0.5, seed = 133)
 
             qaoa_instance = QAOAProblem(cost_operator=RZ_mixer,
                                             mixer=create_max_indep_set_mixer(G),
                                             cl_cost_function=create_max_indep_set_cl_cost_function(G),
                                             init_function=max_indep_set_init_function)
 
-            # create a blueprint-qv to train the circuit with the problem instance 
-            qarg_new = QuantumVariable(G.number_of_nodes())
-            training_func = qaoa_instance.train_function(qarg=qarg_new, depth=5)
+            # train the circuit with the problem instance 
+            qarg_prep = lambda : QuantumVariable(G.number_of_nodes())
+            training_func = qaoa_instance.train_function(qarg_prep, depth=5)
 
             # apply the trained function to a new qv 
             qarg_trained = QuantumVariable(G.number_of_nodes())
