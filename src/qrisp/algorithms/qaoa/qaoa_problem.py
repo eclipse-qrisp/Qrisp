@@ -608,7 +608,7 @@ class QAOAProblem:
                                                        optimizer,
                                                        options)
 
-        def state_prep():
+        def state_prep(theta):
             # qarg_prep can a QuantumVariable (DEPRECATED) or a callable returning a QuantumVariable
             if callable(qarg_prep):
                 qarg = qarg_prep()
@@ -626,14 +626,14 @@ class QAOAProblem:
 
             # Apply p layers of phase separators and mixers    
             for i in range(depth):                          
-                self.cost_operator(qarg, opt_theta[i])
-                self.mixer(qarg, opt_theta[i+depth])
+                self.cost_operator(qarg, theta[i])
+                self.mixer(qarg, theta[i+depth])
             
             return qarg
         
         if check_for_tracing_mode():
             res_sample = sample(state_prep, shots=mes_kwargs["shots"])(opt_theta)
-            
+
         else:
             qarg = state_prep(opt_theta)
             res_sample = qarg.get_measurement(**mes_kwargs)

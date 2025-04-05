@@ -40,9 +40,11 @@ def test_maxcut():
     G1 = nx.Graph()
     G1.add_edge(0, 1)
 
+    qarg_prep = lambda : QuantumArray(qtype = QuantumVariable(1), shape = len(G1))
+
     maxcut_instance1 = QAOAProblem(create_maxcut_cost_operator(G1), RX_mixer, create_maxcut_cl_cost_function(G1))
 
-    res1 = maxcut_instance1.run(lambda : QuantumArray(qtype = QuantumVariable(1), shape = len(G1)), depth, mes_kwargs={"backend" : qaoa_backend, "shots" : 100000}, max_iter = 50)
+    res1 = maxcut_instance1.run(qarg_prep, depth, mes_kwargs={"backend" : qaoa_backend, "shots" : 100000}, max_iter = 50)
     best_cut1, best_solution1 = min([(maxcut_obj(x,G1),x) for x in res1.keys()], key=itemgetter(0))
 
     res_str1 = list(res1.keys())[0]
@@ -53,8 +55,10 @@ def test_maxcut():
     G4 = nx.Graph()
     G4.add_edges_from([[0,3],[0,4],[1,3],[1,4],[2,3],[2,4]])
 
+    qarg_prep = lambda : QuantumArray(qtype = QuantumVariable(1), shape = len(G4))
+
     maxcut_instance4 = QAOAProblem(create_maxcut_cost_operator(G4), RX_mixer, create_maxcut_cl_cost_function(G4))
-    res4 = maxcut_instance4.run(lambda : QuantumArray(qtype = QuantumVariable(1), shape = len(G4)), depth, mes_kwargs={"backend" : qaoa_backend, "shots" : 100000}, max_iter = 50)
+    res4 = maxcut_instance4.run(qarg_prep, depth, mes_kwargs={"backend" : qaoa_backend, "shots" : 100000}, max_iter = 50)
     best_cut4, best_solution4 = min([(maxcut_obj(x,G4),x) for x in res4.keys()], key=itemgetter(0))
 
     res_str4 = list(res4.keys())[0]
