@@ -591,6 +591,8 @@ class QAOAProblem:
         if not callable(qarg_prep):
             warnings.warn("DeprecationWarning: Providing a QuantumVariable or QuantumArray as first argument will no longer be supported in a later release of Qrisp. Instead a callable creating a QuantumVariable or QuantumArray must be provided.")
 
+        self.init_type = init_type
+
         options["maxiter"] = max_iter
 
         if not "shots" in mes_kwargs:
@@ -722,6 +724,8 @@ class QAOAProblem:
 
         if not callable(qarg_prep):
             warnings.warn("DeprecationWarning: Providing a QuantumVariable or QuantumArray as first argument will no longer be supported in a later release of Qrisp. Instead a callable creating a QuantumVariable or QuantumArray must be provided.")
+
+        self.init_type = init_type
 
         options["maxiter"] = max_iter
 
