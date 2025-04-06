@@ -16,11 +16,8 @@
 ********************************************************************************/
 """
 
-import numpy as np
-from scipy.optimize import minimize
-from sympy import Symbol
-
 from qrisp import QuantumVariable, h, barrier, rz, rx , cx, QuantumArray, xxyy, p, invert, conjugate, mcp, auto_uncompute, control
+from qrisp.jasp import jrange
 
 def RX_mixer(qv, beta):
     """
@@ -35,14 +32,8 @@ def RX_mixer(qv, beta):
     beta : float or sympy.Symbol
         The phase shift value for the RX gate.
 
-    Returns
-    -------
-    qv : QuantumVariable
-        The quantum variable after applying the RX gate.
     """
-    for i in range(qv.size):
-        rx(2 * beta, qv[i])
-    return qv
+    rx(2 * beta, qv)
 
 
 def XY_mixer(qv, beta):
@@ -60,26 +51,20 @@ def XY_mixer(qv, beta):
     beta : float or sympy.Symbol
         The phase shift value for the XY gate.
 
-    Returns
-    -------
-    qv : QuantumVariable
-        The quantum variable after applying the XY gate.
     """
     N = qv.size
     
-    for i in range(0, N//2):
+    for i in jrange(0, N//2):
         q1 = qv[2*i]
         q2 = qv[2*i+1]
         xxyy(4*beta, 0, q1, q2)
     
-    for i in range(0, (N-2+N%2)//2):
+    for i in jrange(0, (N-2+N%2)//2):
         q1 = qv[2*i+1]
         q2 = qv[2*i+2]
         xxyy(4*beta, 0, q1, q2)
         
     xxyy(4*beta, 0, qv[N-1], qv[0])
-
-    return qv
 
 
 def apply_XY_mixer(quantumcolor_array, beta):
@@ -101,6 +86,7 @@ def RZ_mixer(qv, beta):
 
     """
     rz(-beta, qv)
+ 
     
 def grover_mixer(qv, beta):
     """
@@ -114,11 +100,10 @@ def grover_mixer(qv, beta):
         The mixing parameter.
 
     """
-    
-    
     from qrisp.grover import diffuser
     diffuser(qv, phase = beta)
     
+
 def constrained_mixer_gen(constraint_oracle, winner_state_amount):
     r"""
     Generates a customized mixer function that leaves arbitrary constraints intact. 
