@@ -28,7 +28,7 @@ from qrisp.algorithms.qaoa.qaoa_benchmark_data import QAOABenchmark
 
 import jax
 import jax.numpy as jnp
-from qrisp.jasp import check_for_tracing_mode, sample
+from qrisp.jasp import check_for_tracing_mode, sample, jrange
 from qrisp.jasp.optimization_tools.optimize import minimize as jasp_minimize
 
 
@@ -502,7 +502,7 @@ class QAOAProblem:
                     h(qarg)
             
                 # Apply p layers of phase separators and mixers
-                for i in range(depth):                           
+                for i in jrange(depth):                           
                     self.cost_operator(qarg, theta[i])
                     self.mixer(qarg, theta[i+depth])
 
@@ -627,7 +627,7 @@ class QAOAProblem:
                 h(qarg)
 
             # Apply p layers of phase separators and mixers    
-            for i in range(depth):                          
+            for i in jrange(depth):                          
                 self.cost_operator(qarg, theta[i])
                 self.mixer(qarg, theta[i+depth])
             
@@ -750,7 +750,7 @@ class QAOAProblem:
             else:
                 h(qarg_gen)
 
-            for i in range(depth): 
+            for i in jrange(depth): 
                 
                 self.cost_operator(qarg_gen, opt_theta[i])
                 self.mixer(qarg_gen, opt_theta[i+depth])
