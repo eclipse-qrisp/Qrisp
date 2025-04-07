@@ -13,6 +13,7 @@ Methods
    :toctree: generated/
    
    FermionicOperator.dagger
+   FermionicOperator.expectation_value
    FermionicOperator.from_openfermion
    FermionicOperator.from_pyscf
    FermionicOperator.get_measurement

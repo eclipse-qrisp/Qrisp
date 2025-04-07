@@ -270,6 +270,7 @@ op_dic["u"] = op_dic["u3"]
 
 def convert_from_qiskit(qiskit_qc):
     from qiskit.circuit import ControlledGate, ParameterExpression
+    from qiskit import QuantumCircuit as QiskitQuantumCircuit
 
     from qrisp import Clbit, ControlledOperation, QuantumCircuit, Barrier, Qubit
 
@@ -279,10 +280,15 @@ def convert_from_qiskit(qiskit_qc):
         q_reg = qiskit_qc.qubits[i]._register
         
         if q_reg is not None:
+            
+            if hasattr(q_reg, "_bits"):
+                qb_list = q_reg._bits
+            else:
+                qb_list = list(q_reg)
         
             qubit_name = q_reg.name
             if q_reg.size > 1:
-                qubit_name += "." + str(q_reg._bits.index(qiskit_qc.qubits[i]))
+                qubit_name += "." + str(qb_list.index(qiskit_qc.qubits[i]))
     
             qc.add_qubit(Qubit(qubit_name))
         else:
@@ -305,6 +311,16 @@ def convert_from_qiskit(qiskit_qc):
     for i in range(len(qiskit_qc.data)):
         qiskit_op = qiskit_qc.data[i][0]
 
+        if hasattr(qiskit_op, "condition_bits"):
+            condition_bits = [cb_dic[cb] for cb in qiskit_op.condition_bits]
+            if len(condition_bits):
+                condition_value = qiskit_op.condition[1]
+        elif hasattr(qiskit_op, "is_control_flow") and qiskit_op.is_control_flow():
+            condition_bits = [cb_dic[cb] for cb in qiskit_qc.data[i].clbits]
+            condition_value = qiskit_op.condition[1]
+        else:
+            condition_bits = []
+
         params = list(qiskit_op.params)
         
         qrisp_params = []
@@ -325,13 +341,14 @@ def convert_from_qiskit(qiskit_qc):
                 qrisp_params.append(float(p))
             elif isinstance(p, complex):
                 qrisp_params.append(p)
+            elif isinstance(p, QiskitQuantumCircuit):
+                qiskit_op = p.to_gate()
+                break
             else:
                 print(p)
                 raise Exception(f"Could not convert parameter type {type(p)}")
 
         params = qrisp_params
-
-        condition_bits = [cb_dic[cb] for cb in qiskit_op.condition_bits]
 
         if isinstance(qiskit_op, ControlledGate):
             controlled_gate = True
@@ -376,7 +393,7 @@ def convert_from_qiskit(qiskit_qc):
         
         if condition_bits:
             clbits += condition_bits
-            op = op.c_if(len(condition_bits), qiskit_op.condition[1])
+            op = op.c_if(len(condition_bits), condition_value)
         
         qc.append(op, qubits, clbits)
         

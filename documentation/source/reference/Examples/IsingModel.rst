@@ -7,9 +7,13 @@ Transverse Field Ising Model
 
 In this example, we study Hamiltonian dynamics of the transverse field Ising model defined by the Hamiltonian
 
-$$H = -J\\sum_{(i,j)\\in E}Z_iZ_j + B\\sum_{i\\in V}X_i$$
+$$ H = -J\\sum_{(i,j)\\in E}Z_iZ_j + B\\sum_{i\\in V}X_i $$
 
-for a lattice graph $G=(V,E)$ and real parameters $J, B$. We investigate the total magnetization of the system as it evolves under the Hamiltonian.
+for a lattice graph $G=(V,E)$ and real parameters $J, B$. We investigate the total magnetization 
+
+$$ M = \\sum_{i\\in V}Z_i $$
+
+of the system of qubits as it evolves under the Hamiltonian.
 
 Here, we consider an Ising chain.
 
@@ -44,26 +48,28 @@ We implement methods for creating the Ising Hamiltonian and the total magnetizat
 
 With all the necessary ingredients, we conduct the experiment: For varying evolution times $T$:
 
-- Prepare the $\ket{0}^{\otimes N}$ state.
+- Prepare the state $\psi(t)=e^{-itH}\ket{0}^{\otimes N}$ by performing **Hamiltonian simulation** via Trotterization.
 
-- Perform **Hamiltonian simulation** via Trotterization.
-
-- Measure the total magnetization.
+- Measure the total magnetization $\langle\psi(t)|M|\psi(t)\rangle$.
 
 ::
 
     T_values = np.arange(0, 2.0, 0.05)
     M_values = []
 
+    H = create_ising_hamiltonian(G,1.0,1.0)
+    U = H.trotterization()
     M = create_magnetization(G)
 
-    for T in T_values:
-        H = create_ising_hamiltonian(G,1.0,1.0)
-        U = H.trotterization()
-
+    def psi(t):
         qv = QuantumVariable(G.number_of_nodes())
-        U(qv,t=-T,steps=5)
-        M_values.append(M.get_measurement(qv,precision=0.005))
+        U(qv,t=t,steps=5)
+        return qv
+
+    for t in T_values:
+    
+        magnetization = M.expectation_value(psi, precision=0.005)(t)
+        M_values.append(magnetization)
 
 Finally, we visualize the results. As expected, the total magnetization decreases in the presence of a transverse field with increasing evolution time $T$.
 

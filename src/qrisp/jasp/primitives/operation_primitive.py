@@ -16,9 +16,11 @@
 ********************************************************************************/
 """
 
-from qrisp.jasp.primitives import QuantumPrimitive, AbstractQuantumCircuit
-
 from sympy import symbols
+import jax.numpy as jnp
+import jax
+
+from qrisp.jasp.primitives import QuantumPrimitive, AbstractQuantumCircuit, AbstractQubit
 
 greek_letters = symbols('alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu nu xi omicron pi rho sigma tau upsilon phi chi psi omega')
 
@@ -43,6 +45,9 @@ class OperationPrimitive(QuantumPrimitive):
         @self.def_abstract_eval
         def abstract_eval(*args):
             qc = args[-1]
+            qubit_args = [args[i] for i in range(self.op.num_qubits)]
+            parameter_args = [args[i] for i in range(self.op.num_qubits, len(args)-1)]
+            
             """Abstract evaluation of the primitive.
             
             This function does not need to be JAX traceable. It will be invoked with
@@ -50,6 +55,13 @@ class OperationPrimitive(QuantumPrimitive):
             """
             if not isinstance(qc, AbstractQuantumCircuit):
                 raise Exception(f"Tried to execute OperationPrimitive.bind with the last argument of type {type(qc)} instead of AbstractQuantumCircuit")
+            
+            if not all([isinstance(qb, AbstractQubit) for qb in qubit_args]):
+                raise Exception(f"Tried to execute {self.op.name} with incompatible qubit tracers {[type(qb) for qb in qubit_args]}")
+            
+            if not all([isinstance(param, jnp.number) or (isinstance(param, jax.core.ShapedArray) and len(param.shape) == 0) for param in parameter_args]):
+                raise Exception(f"Tried to execute Operation {self.op.name} with incompatible parameter types {[type(param) for param in parameter_args]} (required are number types)")
+                
             
             return AbstractQuantumCircuit()
         
