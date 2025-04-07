@@ -43,10 +43,12 @@ The $\ket{10}$ state provides a good approximation of the ground state:
 
 ::
 
-    # ansatz state
-    qv = QuantumVariable(2)
-    x(qv[0])
-    E1 = H.get_measurement(qv)
+    def ansatz():
+        qv = QuantumVariable(2)
+        x(qv[0])
+        return qv
+
+    E1 = H.expectation_value(ansatz)()
     print(E1)
     # Yields: -1.83858104676077
 
@@ -58,6 +60,7 @@ As the results of the phase estimation are modulo :math:`2\pi` and the searched 
 
     U = H.trotterization(forward_evolution=False)
 
+    qv = ansatz()
     qpe_res = QPE(qv,U,precision=10,kwargs={"steps":3},iter_spec=True)
 
     results = qpe_res.get_measurement()    
