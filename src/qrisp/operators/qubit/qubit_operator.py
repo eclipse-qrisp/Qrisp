@@ -29,7 +29,7 @@ from qrisp.operators.qubit.qubit_term import QubitTerm
 from qrisp.operators.qubit.measurement import get_measurement
 from qrisp.operators.qubit.jasp_measurement import get_jasp_measurement
 from qrisp.operators.qubit.commutativity_tools import construct_change_of_basis
-from qrisp import cx, cz, h, s, sx_dg, IterationEnvironment, conjugate, merge
+from qrisp import cx, cz, h, s, sx_dg, IterationEnvironment, conjugate, merge, invert
 
 from qrisp.jasp import check_for_tracing_mode, jrange
 
@@ -1817,7 +1817,7 @@ class QubitOperator(Hamiltonian):
     # Trotterization
     #
 
-    def trotterization(self, method='commuting_qw', forward_evolution = True):
+    def trotterization(self, order=1, method='commuting_qw', forward_evolution = True):
         r"""
         .. _ham_sim:
         
@@ -1831,6 +1831,9 @@ class QubitOperator(Hamiltonian):
 
         Parameters
         ----------
+        order : int, optional
+            The order of Trotter-Suzuki formula.
+            Available are `1` and `2`, corresponding to the first and second order formulae.
         method : str, optional
             The method for grouping the QubitTerms. 
             Available are ``commuting`` (groups such that all QubitTerms mutually commute) and ``commuting_qw`` (groups such that all QubitTerms mutually commute qubit-wise).
@@ -1848,7 +1851,12 @@ class QubitOperator(Hamiltonian):
             .. math::
 
                 e^{-itH}\approx U(t,N)=\left(e^{-iH_1t/N}\dotsb e^{-iH_mt/N}\right)^N
+            for the first order Trotterization, and for the second order
+            
+            .. math::
 
+                e^{-itH} \approx U_2(t, N) = \left( e^{-iH_1 \frac{t}{2N}} e^{-iH_2 \frac{t}{2N}} \dotsb e^{-iH_m \frac{t}{N}} \dotsb e^{-iH_2 \frac{t}{2N}} e^{-iH_1 \frac{t}{2N}} \right)^N.
+            
             This function receives the following arguments:
 
             * qarg : QuantumVariable 
@@ -1920,7 +1928,7 @@ class QubitOperator(Hamiltonian):
                         for intersect_group in intersect_groups:
                             for term,coeff in intersect_group.terms_dict.items():
                                 term.simulate(-coeff*t/steps*(-1)**int(forward_evolution), qarg)
-
+            
         def U(qarg, t=1, steps=1, iter=1):
             if check_for_tracing_mode():
                 for i in jrange(iter*steps):
@@ -1928,7 +1936,12 @@ class QubitOperator(Hamiltonian):
             else:
                 merge([qarg])
                 with IterationEnvironment(qarg.qs, iter*steps):
-                    trotter_step(qarg, t, steps)
+                    if order == 1:
+                        trotter_step(qarg, t, steps)
+                    elif order == 2:
+                        trotter_step(qarg, t, steps*2)
+                        with invert():
+                            trotter_step(qarg, -t, steps*2)
 
         return U
 

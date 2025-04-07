@@ -19,7 +19,7 @@
 from jax.lax import fori_loop, while_loop, cond
 import jax
 
-from qrisp.jasp.tracing_logic import TracingQuantumSession
+from qrisp.jasp.tracing_logic import TracingQuantumSession, check_for_tracing_mode
 from qrisp.jasp.primitives import AbstractQuantumCircuit
     
 def q_while_loop(cond_fun, body_fun, init_val):
@@ -95,6 +95,10 @@ def q_while_loop(cond_fun, body_fun, init_val):
         # (Array(5, dtype=int64), Array(31., dtype=float64))
 
     """    
+    
+    if not check_for_tracing_mode():
+        return while_loop(cond_fun, body_fun, init_val)
+        
     
     def new_cond_fun(val):
         temp_qc = qs.abs_qc
