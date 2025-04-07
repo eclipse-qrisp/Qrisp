@@ -109,7 +109,6 @@ def create_cut_computer(G):
 def create_maxcut_sample_array_post_processor(G):
     cut_computer = create_cut_computer(G)
 
-    @jit
     def post_processor(sample_array):
         cut_values = vmap(cut_computer)(sample_array)  # Use vmap for automatic vectorization
         average_cut = jnp.mean(cut_values)  
