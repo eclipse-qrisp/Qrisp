@@ -867,7 +867,7 @@ class QAOAProblem:
                         counts = self.run(qarg_prep, depth = p, max_iter = it, mes_kwargs = temp_mes_kwargs, init_type = init_type, optimizer = optimizer, options = options)
                         final_time = time.time() - start_time
                         
-                        compiled_qc = self.compile_circuit(qarg_prep, depth = p)
+                        compiled_qc, _ = self.compile_circuit(qarg_prep, depth = p)
                         
                         data_dict["layer_depth"].append(p)
                         data_dict["circuit_depth"].append(compiled_qc.depth())
