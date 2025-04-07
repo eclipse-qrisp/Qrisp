@@ -298,7 +298,7 @@ def simulate_jaspr(jaspr, *args, terminal_sampling = False, simulator = "qrisp")
                 # such a function.
                 if is_executable[0]:
                     try:
-                        outvalues = compiled_function(*(invalues + jaxpr.consts))
+                        outvalues = compiled_function(*(jaxpr.consts + invalues))
                         if len(jaxpr.jaxpr.outvars) > 1:
                             insert_outvalues(eqn, context_dic, outvalues)
                         else:
