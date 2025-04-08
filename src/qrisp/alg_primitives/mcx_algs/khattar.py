@@ -60,6 +60,14 @@ def ctrl_state_conjugator(ctrls, ctrl_state):
 
 
 def gidney_CCCZ(ctrls, target):
+    """
+    Implements a CCCZ gate using the Gidney 
+    method described in https://arxiv.org/abs/2106.11513 using only 6 T gazes.
+    Args:
+        ctrls (list): A list of control qubits. It is expected to contain three qubits.
+        target (list): A list containing the target qubit. It is expected to contain one qubit.
+    """
+    
     gidney_anc = QuantumFloat(1)
 
     h(gidney_anc[0])
@@ -76,6 +84,7 @@ def gidney_CCCZ(ctrls, target):
     cx(ctrls[2], gidney_anc[0])
     t_dg(gidney_anc[0])
     cx(target[0], gidney_anc[0])
+    
     with invert():
         sx(gidney_anc[0])
     cl_res = measure(gidney_anc[0])
@@ -90,7 +99,7 @@ def gidney_CCCZ(ctrls, target):
     
     gidney_anc.delete()
 def cca_4ctrls(ctrls, target):
-
+    #This function handles the case of 4 control qubits in the conditionally clean ancillae MCX
     cca4_anc = QuantumFloat(1)
     
     mcx([ctrls[1], ctrls[0]], cca4_anc[0], method = "gray_pt") 
@@ -114,6 +123,7 @@ def cca_mcx(ctrls, target, anc):
         xrange = range
     else:
         xrange = jrange
+        
     # STEP 1
     mcx([ctrls[0], ctrls[1]], anc[0], method = "gidney")
     
@@ -140,6 +150,24 @@ def cca_mcx(ctrls, target, anc):
 
 @qache
 def khattar_mcx(ctrls, target, ctrl_state):
+    """
+    Implements the Khattar multi-controlled X (MCX) gate methode using conditionally clean ancillae described in https://arxiv.org/abs/2407.17966.
+    The behavior of the function varies depending on the number of 
+    control qubits (N) and the control state.
+    Args:
+        ctrls (list): A list of control qubits.
+        target (list): A list containing the target qubit(s).
+        ctrl_state (int or str): The control state, which can be provided as an integer or a binary string.
+            If provided as a string, it is reversed and converted to an integer.
+    Behavior:
+        - For N = 1: A single-controlled X gate is applied.
+        - For N = 2: A two-controlled X gate is applied.
+        - For N = 3: If in tracing mode, a decomposition using Hadamard gates and a CCCZ gate is applied.
+          Otherwise, a specific MCX method ("balauca") is used.
+        - For N = 4: A custom 4-controlled gate (`cca_4ctrls`) is applied.
+        - For N > 4: An ancillary qubit is used to decompose the operation into smaller steps.
+    """
+    
     N = jlen(ctrls)
     
     if isinstance(ctrl_state,str):
@@ -159,6 +187,7 @@ def khattar_mcx(ctrls, target, ctrl_state):
 
         with control(N == 3):
             if check_for_tracing_mode():
+                #Conjugating with H to transform the CCCZ into a CCCX
                 h(target[0])
                 gidney_CCCZ(ctrls, target)
                 h(target[0])
@@ -176,6 +205,11 @@ def khattar_mcx(ctrls, target, ctrl_state):
             khattar_anc.delete()
 @qache
 def khattar_mcp(phi, ctrls, ctrl_state):
+    """
+    Implements the multi-controlled phase (MCP) gate based on the Khattar MCX implementation.
+    
+    """
+    
     N = jlen(ctrls)
     
     if isinstance(ctrl_state,str):
