@@ -183,16 +183,24 @@ To perform Hamiltonian simulation, we use the :meth:`.trotterization <qrisp.oper
 ::
 
     from qrisp import QuantumVariable
-    
-    electron_state = QuantumVariable(4)
-    electron_state[:] = {"1100": 2**-0.5, "0001": 2**-0.5}
 
-This snippet initializes the state $\ket{\phi, t = 0}$, which is a superposition of 2 electrons in the lower two orbitals and a state of 1 electron in the highest orbital. We now perform the Hamiltonian simulation:
+    U = H_ferm.trotterization()
+
+    def state_prep():
+        electron_state = QuantumVariable(4)
+        electron_state[:] = {"1100": 2**-0.5, "0001": 2**-0.5}
+
+        U(electron_state, t = 100, steps = 20)
+
+        return electron_state
+
+This snippet defines a function ``state_prep`` that first initializes the state $\ket{\phi, t = 0}$, which is a superposition of 2 electrons in the lower two orbitals and a state of 1 electron in the highest orbital. 
+Second, we perform the Hamiltonian simulation.
 
 ::
-    
-    U = H_ferm.trotterization()
-    U(electron_state, t = 100, steps = 20)
+
+    electron_state = state_prep()
+
     
 This snippets simulates the Dihydrogen molecule for $t = 100$ `atomic units of time <https://physics.nist.gov/cgi-bin/cuu/Value?aut>`_, i.e. 
 
@@ -208,17 +216,17 @@ Finally, we want to extract some physical quantity from our simulation. Our quan
 
     N = \sum_{i = 0}^n a^\dagger_i  a_i
 
-In python code:
+In Python code:
 
 ::
 
     N = sum(c(i)*a(i) for i in range(4))
 
-For each state $i$, this operator leaves the "electron at $i$" state invariant (i.e. a +1 contribution) and maps the "no electron at $i$" state to a 0 contribution. Its eigenvalues therefore indicate the number of electrons in the system. To evaluate the expectation value $\bra{\phi} N \ket{\phi}$, we call the :meth:`.get_measurement <qrisp.operators.qubit.QubitOperator.get_measurement>` method.
+For each state $i$, this operator leaves the "electron at $i$" state invariant (i.e. a +1 contribution) and maps the "no electron at $i$" state to a 0 contribution. Its eigenvalues therefore indicate the number of electrons in the system. To evaluate the expectation value $\bra{\phi} N \ket{\phi}$, we call the :meth:`.expectation_value <qrisp.operators.qubit.QubitOperator.expectation_value>` method.
 
 ::
 
-    expectation_value = N.get_measurement(electron_state, precision = 0.01)
+    expectation_value = N.expectation_value(state_prep, precision = 0.01)()
     print(expectation_value)
     # Yields: 1.50440973329083
     
@@ -227,7 +235,7 @@ The value is not exact because of statistical noise - we can increase the precis
 
 ::
 
-    print(N.get_measurement(electron_state, precision = 0.0001))
+    print(N.expectation_value(state_prep, precision = 0.0001)())
     # Yields: 1.4999799028124874
     
 This concludes our little tutorial on Hamiltonian simulation. We hope you could learn something and feel motivated to explore more systems and techniques! Make sure to also check out the :ref:`MolecularPotentialEnergyCurve` example to learn how to compute the ground state for both types of operators!
@@ -242,18 +250,22 @@ For your reference, we give the full code below:
     mol = gto.M(atom = '''H 0 0 0; H 0 0 0.74''', basis = 'sto-3g')
     H_ferm = FermionicOperator.from_pyscf(mol)
     
-    # Initializing the quantum state
+    # Initializing the quantum state and performing Hamiltonian simulation
     from qrisp import QuantumVariable
-    electron_state = QuantumVariable(4)
-    electron_state[:] = {"1100": 2**-0.5, "0001": 2**-0.5}
 
-    # Performing the simulation
     U = H_ferm.trotterization()
-    U(electron_state, t = 100, steps = 20)
+
+    def state_prep():
+        electron_state = QuantumVariable(4)
+        electron_state[:] = {"1100": 2**-0.5, "0001": 2**-0.5}
+
+        U(electron_state, t = 100, steps = 20)
+
+        return electron_state
     
     # Evaluating the number operator
     N = sum(c(i)*a(i) for i in range(4))
-    expectation_value = N.get_measurement(electron_state, precision = 0.01)
+    expectation_value = N.expectation_value(state_prep, precision = 0.01)()
     print(expectation_value)
     
     

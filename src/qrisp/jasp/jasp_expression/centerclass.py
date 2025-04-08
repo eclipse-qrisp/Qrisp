@@ -354,6 +354,9 @@ class Jaspr(Jaxpr):
                 if isinstance(context_dic[eqn.invars[0]], Clbit):
                     context_dic[eqn.outvars[0]] = context_dic[eqn.invars[0]]
                     return
+                elif isinstance(context_dic[eqn.invars[0]], list) and isinstance(context_dic[eqn.invars[0]][0], Clbit):
+                    context_dic[eqn.outvars[0]] = context_dic[eqn.invars[0]]
+                    return
             return True
           
         ammended_args = list(args) + [QuantumCircuit()] + jaspr.consts
@@ -441,7 +444,6 @@ class Jaspr(Jaxpr):
         if len(self.outvars) == 1:
             return None
         
-        from jax.tree_util import tree_flatten
         from qrisp.simulator import BufferedQuantumState
         args = [BufferedQuantumState()] + list(tree_flatten(args)[0])
                 
@@ -496,6 +498,10 @@ class Jaspr(Jaxpr):
             res = None
         qs.abs_qc = new_abs_qc
         return res
+    
+    def count_ops(self, *args):
+        from qrisp.jasp.evaluation_tools import profile_jaspr
+        return profile_jaspr(self)(*args)
     
     def embedd(self, *args, name = None, inline = False):
         from qrisp.jasp import TracingQuantumSession
@@ -1031,7 +1037,7 @@ class Jaspr(Jaxpr):
         res = self.to_qc(*args)
         if len(self.outvars) == 1:
             res = [res]
-        qrisp_qc = res[0]
+        qrisp_qc = res[-1]
         return qrisp_qc.qasm()
         
     

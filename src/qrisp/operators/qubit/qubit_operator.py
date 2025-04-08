@@ -17,6 +17,7 @@
 """
 
 from itertools import product
+import warnings
 
 import sympy as sp
 import numpy as np
@@ -28,7 +29,7 @@ from qrisp.operators.qubit.qubit_term import QubitTerm
 from qrisp.operators.qubit.measurement import get_measurement
 from qrisp.operators.qubit.jasp_measurement import get_jasp_measurement
 from qrisp.operators.qubit.commutativity_tools import construct_change_of_basis
-from qrisp import cx, cz, h, s, sx_dg, IterationEnvironment, conjugate, merge
+from qrisp import cx, cz, h, s, sx_dg, IterationEnvironment, conjugate, merge, invert
 
 from qrisp.jasp import check_for_tracing_mode, jrange
 
@@ -1576,6 +1577,12 @@ class QubitOperator(Hamiltonian):
         measurement_data=None # measurement settings
     ):
         r"""
+
+        .. warning::
+
+            This method will no longer be supported in a later release of Qrisp. Instead please migrate to :meth:`expectation_value <qrisp.operators.qubit.QubitOperator.expectation_value>`.
+
+            
         This method returns the expected value of a Hamiltonian for the state 
         of a quantum argument. Note that this method measures the **hermitized**
         version of the operator:
@@ -1644,6 +1651,9 @@ class QubitOperator(Hamiltonian):
             #Yields 0.0011251406425802912
 
         """
+
+        warnings.warn("DeprecationWarning: This method will no longer be supported in a later release of Qrisp. Instead please migrate to .expectation_value.")
+
         return get_measurement(self, 
                                 qarg, 
                                 precision=precision, 
@@ -1661,70 +1671,119 @@ class QubitOperator(Hamiltonian):
         state_prep,
         precision = 0.01,
         diagonalisation_method = "commuting",
+        backend = None,
+        compile = True,
+        compilation_kwargs = {},
+        subs_dic = {},
+        precompiled_qc = None,
+        measurement_data = None # measurement settings        
         ):
         r"""
-        This method returns the expected value of a Hamiltonian for the state 
-        of a quantum argument. Note that this method measures the **hermitized**
-        version of the operator:
+        The ``expectation value`` function allows to estimate the expectation value of a Hamiltonian for a state that is specified by a preparation procedure.
+        This preparation procedure can be supplied via a Python function that returns a :ref:`QuantumVariable`.
+
+        Note that this method measures the **hermitized** version of the operator:
             
         .. math::
             
             H = (O + O^\dagger)/2
 
+        .. note::
+
+            When used with Jasp, only ``state_prep``, ``precision`` and ``diagonalisation_method`` are relevant parameters. Additional parameters are ignored.
 
         Parameters
         ----------
         state_prep : callable
             A function returning a QuantumVariable. 
-            The expectation of the Hamiltonian for the state from this QuantumVariable will be measured. 
+            The expectation of the Hamiltonian for the state of this QuantumVariable will be measured. 
             The state preparation function can only take classical values as arguments. 
             This is because a quantum value would need to be copied for each sampling iteration, which is prohibited by the no-cloning theorem.
         precision : float, optional
             The precision with which the expectation of the Hamiltonian is to be evaluated.
             The default is 0.01. The number of shots scales quadratically with the inverse precision.
         diagonalisation_method : str, optional
-            Specifies the method for grouping and diagonalizing the QubitOperator. 
+            Specifies the method for grouping and diagonalizing the :ref:`QubitOperator`. 
             Available are ``commuting_qw``, i.e., the operator is grouped based on qubit-wise commutativity of terms, 
-            and ``commuting``, i.e., the operator is grouped based on commutativity of terms.
+            and ``commuting``, i.e., the operator is grouped based on commutativity of terms. 
             The default is ``commuting``.
+        backend : :ref:`BackendClient`, optional
+            The backend on which to evaluate the quantum circuit. The default can be
+            specified in the file default_backend.py.
+        compile : bool, optional
+            Boolean indicating if the .compile method of the underlying QuantumSession
+            should be called before. The default is ``True``.
+        compilation_kwargs  : dict, optional
+            Keyword arguments for the compile method. For more details check
+            :meth:`QuantumSession.compile <qrisp.QuantumSession.compile>`. The default
+            is ``{}``.
+        subs_dic : dict, optional
+            A dictionary of Sympy symbols and floats to specify parameters in the case
+            of a circuit with unspecified, :ref:`abstract parameters<QuantumCircuit>`.
+            The default is ``{}``.
+        precompiled_qc : QuantumCircuit, optional
+            A precompiled quantum circuit.
+        measurement_data : QubitOperatorMeasurement
+            Cached data to accelerate the measurement procedure. Automatically generated by default.
 
         Returns
         -------
         callable
-            A classical, Jax traceable function returning The expectation value of the Hamiltonian for the prepared quantum state.
+            A function returning an array containing the expectaion value.
 
         Examples
         --------
 
         We define a Hamiltonian, and measure its expectation value for the state of a :ref:`QuantumFloat`.
 
+        We prepare the state
+
+        .. math::
+
+            \ket{\psi_{\theta}} = (\cos(\theta)\ket{0}+\sin(\theta)\ket{1})^{\otimes 2}
+
         ::
             
             from qrisp import *
             from qrisp.operators import X,Y,Z
+            import numpy as np
 
-            def state_prep():
+            def state_prep(theta):
                 qv = QuantumFloat(2)
-                h(qv)
+
+                ry(theta,qv)
+    
                 return qv
+
+        And compute the expectation value of the Hamiltonion $H=Z_0Z_1$ for the state $\ket{\psi_{\theta}}$
+
+        ::
 
             H = Z(0)*Z(1)
 
-            H.expectation_value(state_prep)()
-            # Yields: -0.0021252656582072538
+            ev_function = H.expectation_value(state_prep)
+            
+            print(ev_function(np.pi/2))
+            # Yields: 0.010126265783222899
 
-        We can also use this method in :ref:`Jasp`:
-
+        Similiarly, expectation values can be calculated with Jasp
+            
         ::
 
             @jaspify(terminal_sampling=True)
             def main():
-                return H.expectation_value(state_prep)()
+            
+                H = Z(0)*Z(1)
 
-            main()
-            # Yields: Array(0.02062758, dtype=float64)
+                ev_function = H.expectation_value(state_prep)
+
+                return ev_function(np.pi/2)
+
+            print(main())
+            # Yields: 0.010126265783222899
 
         """
+        from qrisp import QuantumVariable
 
         def return_function(*args):
 
@@ -1735,12 +1794,22 @@ class QubitOperator(Hamiltonian):
                                         precision = precision, 
                                         diagonalisation_method = diagonalisation_method)
             else:
+                
+                if precompiled_qc is not None:
+                    qarg = QuantumVariable(self.find_minimal_qubit_amount())
+                else:
+                    qarg = state_prep(*args)
 
-                qarg = state_prep(*args)
                 return get_measurement(self, 
                                         qarg, 
-                                        precision=precision, 
-                                        diagonalisation_method=diagonalisation_method)
+                                        precision = precision, 
+                                        diagonalisation_method = diagonalisation_method,
+                                        backend = backend, 
+                                        compile = compile, 
+                                        compilation_kwargs = compilation_kwargs, 
+                                        subs_dic = subs_dic,
+                                        precompiled_qc = precompiled_qc, 
+                                        measurement_data = measurement_data)
             
         return return_function
 
@@ -1748,7 +1817,7 @@ class QubitOperator(Hamiltonian):
     # Trotterization
     #
 
-    def trotterization(self, method='commuting_qw', forward_evolution = True):
+    def trotterization(self, order=1, method='commuting_qw', forward_evolution = True):
         r"""
         .. _ham_sim:
         
@@ -1762,6 +1831,9 @@ class QubitOperator(Hamiltonian):
 
         Parameters
         ----------
+        order : int, optional
+            The order of Trotter-Suzuki formula.
+            Available are `1` and `2`, corresponding to the first and second order formulae.
         method : str, optional
             The method for grouping the QubitTerms. 
             Available are ``commuting`` (groups such that all QubitTerms mutually commute) and ``commuting_qw`` (groups such that all QubitTerms mutually commute qubit-wise).
@@ -1779,7 +1851,12 @@ class QubitOperator(Hamiltonian):
             .. math::
 
                 e^{-itH}\approx U(t,N)=\left(e^{-iH_1t/N}\dotsb e^{-iH_mt/N}\right)^N
+            for the first order Trotterization, and for the second order
+            
+            .. math::
 
+                e^{-itH} \approx U_2(t, N) = \left( e^{-iH_1 \frac{t}{2N}} e^{-iH_2 \frac{t}{2N}} \dotsb e^{-iH_m \frac{t}{N}} \dotsb e^{-iH_2 \frac{t}{2N}} e^{-iH_1 \frac{t}{2N}} \right)^N.
+            
             This function receives the following arguments:
 
             * qarg : QuantumVariable 
@@ -1851,7 +1928,7 @@ class QubitOperator(Hamiltonian):
                         for intersect_group in intersect_groups:
                             for term,coeff in intersect_group.terms_dict.items():
                                 term.simulate(-coeff*t/steps*(-1)**int(forward_evolution), qarg)
-
+            
         def U(qarg, t=1, steps=1, iter=1):
             if check_for_tracing_mode():
                 for i in jrange(iter*steps):
@@ -1859,7 +1936,12 @@ class QubitOperator(Hamiltonian):
             else:
                 merge([qarg])
                 with IterationEnvironment(qarg.qs, iter*steps):
-                    trotter_step(qarg, t, steps)
+                    if order == 1:
+                        trotter_step(qarg, t, steps)
+                    elif order == 2:
+                        trotter_step(qarg, t, steps*2)
+                        with invert():
+                            trotter_step(qarg, -t, steps*2)
 
         return U
 

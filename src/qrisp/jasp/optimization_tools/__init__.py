@@ -16,9 +16,5 @@
 ********************************************************************************/
 """
 
-from qrisp.jasp.interpreter_tools.interpreters.pjit_flattening import *
-from qrisp.jasp.interpreter_tools.interpreters.environment_flattening import *
-from qrisp.jasp.interpreter_tools.interpreters.control_flow_interpretation import *
-from qrisp.jasp.interpreter_tools.interpreters.jaspr_to_gate_interpreter import *
-from qrisp.jasp.interpreter_tools.interpreters.terminal_sampling_interpreter import *
-from qrisp.jasp.interpreter_tools.interpreters.profiling_interpreter import *
+from qrisp.jasp.optimization_tools.optimize import *
+from qrisp.jasp.optimization_tools.spsa import *
