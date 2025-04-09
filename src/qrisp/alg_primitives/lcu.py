@@ -18,12 +18,14 @@
 
 from qrisp import *
 
-@RUS(static_argnums=[1, 2]) 
-def LCU(state_prep, unitaries, num_qubits):
+@RUS(static_argnums=[1, 2, 3]) 
+def LCU(state_prep, unitaries, num_qubits, num_unitaries=None):
     """
     Implements the Linear Combination of Unitaries (LCU) protocol 
     https://arxiv.org/abs/1202.5822 utilizing the RUS (Repeat-Until-Success) 
-    Jasp feature.
+    Jasp feature. This function constructs and executes the LCU protocol using 
+    the provided state preparation function and unitaries, facilitating the
+    implementation of linear combination of unitary operations on a QuantumVariable.
 
     The terminal_sampling decorator is utilized to evaluate the LCU.
 
@@ -31,24 +33,45 @@ def LCU(state_prep, unitaries, num_qubits):
     ----------
     state_prep : callable
         Quantum circuit preparing the initial state for LCU. 
-    unitaries : list of callables
-        List of unitary operations to combine. Each unitary should be a callable
-        acting on a QuantumVariable of size num_qubits.
+    unitaries : list of tuple of callables, or callable
+        Either a list or tuple of unitary functions, or a callable that returns a
+        unitary function given an index. Specifies the unitary operations to combine. 
+        Each unitary should be a callable acting on a QuantumVariable of size num_qubits.
     num_qubits : int
         Number of qubits required for the target QuantumVariable that unitaries
         act upon.
+    num_unitaries : int, optional
+        The number of unitaries. Must be specified if ``unitaries`` is a callable 
+        function. If ``unitaries`` is a list or tuple, ``num_unitaries`` defaults 
+        to ``len(unitaries)``.
 
     Returns
     -------
-    success_bool : QuantumBool
-        QuantumBool indicating successful LCU execution (true when case indicator
-        measures 0)
-    qv : QuantumVariable
-        The state to which we successfully applied a linear combination of unitaries
-        represented as a QuantumVariable.
+    success_bool : bool
+        ``True`` if the LCU protocol succeeds (the measurement of the ancilla qubits yields zero); ``False`` otherwise.
+    qv : :ref:`QuantumVariable`
+        The quantum variable after the application of the LCU protocol.
 
+    Raises
+    ------
+    ValueError
+        If ``num_unitaries`` is not specified when ``unitaries`` is a callable function.
+    TypeError
+        If ``unitaries`` is neither a list, tuple, nor a callable function.
     """
     qv = QuantumFloat(num_qubits)
+
+    if isinstance(unitaries, (list, tuple)):
+        num_unitaries = len(unitaries)
+        unitary_func = lambda index: unitaries[index]
+
+    elif callable(unitaries):
+        if num_unitaries is None:
+            raise ValueError("num_unitaries must be specified for dynamic unitaries")
+        unitary_func = unitaries
+    
+    else:
+        raise TypeError("unitaries must be a list/tuple or a callable function")
     
     # Specify the QunatumVariable that indicates which case to execute
     n = int(np.ceil(np.log2(len(unitaries))))
@@ -60,9 +83,10 @@ def LCU(state_prep, unitaries, num_qubits):
     # LCU protocol with conjugate preparation
     with conjugate(state_prep)(case_indicator):
         # SELECT
-        for i in range(len(unitaries)):
+        for i in range(num_unitaries):
             with control(case_indicator_qubits, ctrl_state=i):
-                unitaries[i](qv)  # Apply i-th unitary from unitary list
+                unitary = unitary_func(i)
+                unitary(qv)  # Apply i-th unitary from unitary list
     
     # Success condition
     success_bool = (measure(case_indicator) == 0)
