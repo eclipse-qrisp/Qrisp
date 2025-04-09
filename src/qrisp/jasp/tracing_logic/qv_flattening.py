@@ -21,8 +21,21 @@ from jax import tree_util
 import jax.numpy as jnp
 from qrisp.jasp.tracing_logic import TracingQuantumSession, DynamicQubitArray, check_for_tracing_mode
 
-# This class hides the QuantumVariable object from jax to transfer it via the
-# the aux_data feature
+
+# This class has two purposes
+
+# 1. enable flattening of typed QuantumVariables.
+# The flattening/unflattening process needs to track the type of the QuantumVariable
+# for reconstruction. For this matter, the QuantumVariableTemplate keeps a
+# copy of the type and reconstructs it when unflattening.
+
+# 2. The second usecase is for passing quantum type information to kernelized
+# functions.
+# This is a problem because passing the QuantumVariable itself to .duplicate
+# results in an error because the quantum_kernel interprets this as a passed
+# quantum value.
+# The QuantumVariable template doesn't carry the register information (only the
+# size) and can therefore be passed around like a classical value.
 class QuantumVariableTemplate:
     
     def __init__(self, qv, size_tracked = True):
