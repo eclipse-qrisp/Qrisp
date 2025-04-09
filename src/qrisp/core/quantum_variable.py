@@ -1500,6 +1500,10 @@ class QuantumVariable:
     
     def measure(self):
         return self.jdecoder(self.reg.measure())
+    
+    def template(self):
+        from qrisp.jasp.tracing_logic import QuantumVariableTemplate
+        return QuantumVariableTemplate(self)
 
 def plot_histogram(outcome_labels, counts, filename=None):
     res_list = []

@@ -19,14 +19,16 @@
 import copy
 from jax import tree_util
 import jax.numpy as jnp
-from qrisp.jasp.tracing_logic import TracingQuantumSession, DynamicQubitArray
+from qrisp.jasp.tracing_logic import TracingQuantumSession, DynamicQubitArray, check_for_tracing_mode
 
 # This class hides the QuantumVariable object from jax to transfer it via the
 # the aux_data feature
 class QuantumVariableTemplate:
     
     def __init__(self, qv, size_tracked = True):
+        self.duplication_counter = 0
         self.qv = copy.copy(qv)
+        self.qv.reg = None
         self.size_tracked = size_tracked
         self.qv_size = None
         if size_tracked:        
@@ -34,10 +36,20 @@ class QuantumVariableTemplate:
         
     def construct(self, reg = None):
         res = copy.copy(self.qv)
+        res.name = self.qv.name + "duplicate_" + str(self.duplication_counter)
+        self.duplication_counter += 1
+        
         if reg is None:
             if not self.size_tracked:
                 raise Exception("Tried to construct QuantumVariable from template lacking a size specification")
-            self.qv.qs.register_qv(res, self.qv_size)
+            
+            if check_for_tracing_mode():
+                qs = TracingQuantumSession.get_instance()
+            else:
+                from qrisp import QuantumSession
+                qs = QuantumSession()
+            
+            qs.register_qv(res, self.qv_size)
         else:
             res.reg = reg
         return res
@@ -80,5 +92,28 @@ def unflatten_qv(aux_data, children):
         setattr(qv, qv.traced_attributes[i], children[i+1])
     return qv
 
+def flatten_template(tmpl):
+    children = []
+    qv = tmpl.qv
+    for traced_attribute in qv.traced_attributes:
+        attr = getattr(qv, traced_attribute)
+        if isinstance(attr, bool):
+            attr = jnp.array(attr, jnp.dtype("bool"))
+        elif isinstance(attr, int):
+            attr = jnp.array(attr, jnp.dtype("int64"))
+        elif isinstance(attr, float):
+            attr = jnp.array(attr, jnp.dtype("float64"))
+        children.append(attr)
+    
+    return tuple(children), tmpl
 
+def unflatten_template(aux_data, children):
+    res = copy.copy(aux_data)
+    res.qv = copy.copy(res.qv)
+    for i in range(len(res.qv.traced_attributes)):
+        setattr(res.qv, res.qv.traced_attributes[i], children[i])
+    return res
+    
+    
+tree_util.register_pytree_node(QuantumVariableTemplate, flatten_template, unflatten_template)
     
