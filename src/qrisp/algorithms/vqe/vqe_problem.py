@@ -17,7 +17,6 @@
 """
 
 import time
-import warnings
 
 import numpy as np
 from scipy.optimize import minimize
@@ -72,7 +71,7 @@ class VQEProblem:
 
         vqe = electronic_structure_problem(mol)
 
-        energy = vqe.run(lambda : QuantumVariable(4), depth=1, max_iter=50)
+        energy = vqe.run(QuantumVariable(4), depth=1, max_iter=50)
         print(energy)
         #Yields -1.8461290172512965
 
@@ -109,7 +108,7 @@ class VQEProblem:
                          num_params=4,
                          callback=True)
 
-        energy = vqe.run(lambda : QuantumVariable(4),
+        energy = vqe.run(QuantumVariable(4),
                       depth = 1,
                       max_iter=50)
         print(energy)

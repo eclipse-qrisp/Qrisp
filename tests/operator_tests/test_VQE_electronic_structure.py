@@ -44,7 +44,7 @@ def test_vqe_electronic_structure_H2():
     
     results = []
     for i in range(5):
-        res = vqe.run(lambda : QuantumVariable(4),
+        res = vqe.run(QuantumVariable(4),
                 depth=1,
                 max_iter=50)
         results.append(res)
@@ -70,7 +70,7 @@ def test_jasp_vqe_electronic_structure_H2():
 
         results = jnp.array([0.0]*5)
         for i in range(5):
-            res = vqe.run(lambda : QuantumFloat(4), depth=1, max_iter=100)
+            res = vqe.run(QuantumFloat(4), depth=1, max_iter=100)
             results = results.at[i].set(res)
 
         return results
