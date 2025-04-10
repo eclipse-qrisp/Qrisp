@@ -52,15 +52,16 @@ class QuantumVariableTemplate:
         res.name = self.qv.name + "duplicate_" + str(self.duplication_counter)
         self.duplication_counter += 1
         
+        if check_for_tracing_mode():
+            qs = TracingQuantumSession.get_instance()
+        else:
+            from qrisp import QuantumSession
+            qs = QuantumSession()
+        
+        res.qs = qs
         if reg is None:
             if not self.size_tracked:
                 raise Exception("Tried to construct QuantumVariable from template lacking a size specification")
-            
-            if check_for_tracing_mode():
-                qs = TracingQuantumSession.get_instance()
-            else:
-                from qrisp import QuantumSession
-                qs = QuantumSession()
             
             qs.register_qv(res, self.qv_size)
         else:
