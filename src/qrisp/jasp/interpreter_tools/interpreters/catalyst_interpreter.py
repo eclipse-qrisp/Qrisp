@@ -116,7 +116,9 @@ def catalyst_eqn_evaluator(eqn, context_dic):
         else:
             raise Exception(f"Don't know how to process QuantumPrimitive {eqn.primitive}")
     else:
-        if eqn.primitive.name == "while":
+        if not isinstance(eqn.invars[-1].aval, AbstractQuantumCircuit):
+            return True
+        elif eqn.primitive.name == "while":
             return process_while(eqn, context_dic)
         elif eqn.primitive.name == "cond":
             return process_cond(eqn, context_dic)#
@@ -445,6 +447,9 @@ def process_while(eqn, context_dic):
     insert_outvalues(eqn, context_dic, unflattened_outvalues)
 
 def process_cond(eqn, context_dic):
+    
+    if len(eqn.params["branches"]) > 2:
+        raise Exception("Converting cond primitive with more than 2 branches to Catalyst is currently not supported.")
     
     false_jaxpr = ensure_conversion(eqn.params["branches"][0].jaxpr)
     true_jaxpr = ensure_conversion(eqn.params["branches"][1].jaxpr)

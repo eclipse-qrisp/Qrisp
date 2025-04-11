@@ -630,7 +630,7 @@ class QuantumVariable:
         return bin_rep(i, self.size)[::-1]
     
     def jdecoder(self, i):
-        raise Exception(f"jdecoder for type {type(self)} not implemented")
+        return i
 
     def encoder(self, value):
         """
