@@ -30,7 +30,7 @@ def test_TQA_warmstart():
     repetitions=10
     for i in range (repetitions):
         
-        benchmark_data1 = maxcut_instance.benchmark(lambda : QuantumVariable(len(G)),
+        benchmark_data1 = maxcut_instance.benchmark(QuantumVariable(len(G)),
                                 depth_range = [3],
                                 shot_range = [100000],
                                 iter_range = [100],
@@ -44,7 +44,7 @@ def test_TQA_warmstart():
 
         approx1 = sum(rndFO1)/len(rndFO1)
 
-        benchmark_data2 = maxcut_instance.benchmark(lambda : QuantumVariable(len(G)),
+        benchmark_data2 = maxcut_instance.benchmark(QuantumVariable(len(G)),
                                 depth_range = [3],
                                 shot_range = [100000],
                                 iter_range = [100],

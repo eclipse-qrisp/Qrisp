@@ -26,13 +26,13 @@ def test_eThrLinTwoQAOA():
 
     clauses = [[0,1,2,1],[1,2,3,0],[0,1,4,0],[0,2,4,1],[2,4,5,1],[1,3,5,1],[2,3,4,0]]
     num_variables = 6
-
-    qarg_prep = lambda : QuantumVariable(num_variables)
+    
+    qarg = QuantumVariable(num_variables)
 
     qaoa_e3lin2 = QAOAProblem(cost_operator=create_e3lin2_cost_operator(clauses),
                                     mixer=RX_mixer,
                                     cl_cost_function=create_e3lin2_cl_cost_function(clauses))
-    results = qaoa_e3lin2.run(qarg_prep, depth=5)
+    results = qaoa_e3lin2.run(qarg, depth=5)
 
     cl_cost = create_e3lin2_cl_cost_function(clauses)
 

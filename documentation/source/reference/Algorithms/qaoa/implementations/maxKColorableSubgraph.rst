@@ -50,8 +50,8 @@ Example implementation
     G.add_edges_from([[0,1],[0,4],[1,2],[1,3],[1,4],[2,3],[3,4]])
     color_list = ["red", "blue", "yellow", "green"]
 
-    qarg_prep = lambda : QuantumArray(qtype = QuantumColor(color_list, one_hot_enc=True), shape = G.number_of_nodes())
-    #qarg_prep = lambda : QuantumArray(qtype = QuantumColor(color_list, one_hot_enc=False), shape = G.number_of_nodes()) # use one_hot_enc=False for binary encoding
+    qarg = QuantumArray(qtype = QuantumColor(color_list, one_hot_enc=True), shape = G.number_of_nodes())
+    #qarg = QuantumArray(qtype = QuantumColor(color_list, one_hot_enc=False), shape = G.number_of_nodes()) # use one_hot_enc=False for binary encoding
 
     qaoa_coloring = QAOAProblem(cost_operator=create_coloring_operator(G),
                             mixer=apply_XY_mixer, # use RX_mixer for binary encoding
@@ -60,7 +60,7 @@ Example implementation
     init_state = [random.choice(color_list) for _ in range(len(G))]
     qaoa_coloring.set_init_function(lambda x : x.encode(init_state))
 
-    result = qaoa_coloring.run(qarg_prep, depth=3, max_iter=50)
+    result = qaoa_coloring.run(qarg, depth=3, max_iter=50)
 
 That's it! In the following, we print the 5 most likely solutions together with their cost values.
 

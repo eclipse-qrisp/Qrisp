@@ -27,13 +27,13 @@ def test_QAOAmaxClique():
     G = nx.erdos_renyi_graph(9, 0.7, seed =  133)
     G_complement = nx.complement(G)
 
-    qarg_prep = lambda : QuantumVariable(G.number_of_nodes())
+    qarg = QuantumVariable(G.number_of_nodes())
 
     qaoa_max_clique = QAOAProblem(cost_operator=RZ_mixer,
                                     mixer=create_max_indep_set_mixer(G_complement),
                                     cl_cost_function=create_max_indep_set_cl_cost_function(G_complement),
                                     init_function=max_indep_set_init_function)
-    results = qaoa_max_clique.run(qarg_prep, depth=5)
+    results = qaoa_max_clique.run(qarg, depth=5)
 
     cl_cost = create_max_indep_set_cl_cost_function(G_complement)
 

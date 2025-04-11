@@ -46,12 +46,12 @@ Example implementation
     import networkx as nx
 
     G = nx.erdos_renyi_graph(6, 0.7, seed =  133)
-    qarg_prep = lambda : QuantumVariable(G.number_of_nodes())
+    qarg = QuantumVariable(G.number_of_nodes())
 
     qaoa_maxcut = QAOAProblem(cost_operator=create_maxcut_cost_operator(G),
                             mixer=RX_mixer, 
                             cl_cost_function=create_maxcut_cl_cost_function(G))
-    results = qaoa_maxcut.run(qarg_prep, depth=5, max_iter=50)
+    results = qaoa_maxcut.run(qarg, depth=5, max_iter=50)
 
 That's it! Feel free to experiment with the ``init_type='tqa'`` option in the :meth:`.run <qrisp.qaoa.QAOAProblem.run>` method for improved performance.
 In the following, we print the 5 most likely solutions together with their cost values.

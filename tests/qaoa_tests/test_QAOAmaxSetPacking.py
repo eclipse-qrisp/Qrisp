@@ -35,13 +35,13 @@ def QAOAmaxSetPacking():
     G.add_nodes_from(range(len(sets)))
     G.add_edges_from(non_empty_intersection(sets))
 
-    qarg_prep : lambda : QuantumVariable(G.number_of_nodes())
+    qarg = QuantumVariable(G.number_of_nodes())
 
     qaoa_max_indep_set = QAOAProblem(cost_operator=RZ_mixer,
                                     mixer=create_max_indep_set_mixer(G),
                                     cl_cost_function=create_max_indep_set_cl_cost_function(G),
                                     init_function=max_indep_set_init_function)
-    results = qaoa_max_indep_set.run(qarg_prep, depth=5)
+    results = qaoa_max_indep_set.run(qarg, depth=5)
 
     cl_cost = create_max_indep_set_cl_cost_function(G)
 

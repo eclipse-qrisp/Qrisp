@@ -527,6 +527,9 @@ class QAOAProblem:
                 else:
                     init_point = tqa_angles(depth, qarg, compiled_qc, symbols, mes_kwargs)
 
+            else:
+                raise Exception(f'Parameter initialization method {init_type} is not available.')
+
 
         if check_for_tracing_mode():
             
@@ -594,7 +597,7 @@ class QAOAProblem:
                 return template.construct()
 
         self.init_type = init_type
-
+        # Set default options
         options["maxiter"] = max_iter
 
         if not "shots" in mes_kwargs:
@@ -731,7 +734,7 @@ class QAOAProblem:
                 return template.construct()
 
         self.init_type = init_type
-
+        # Set default options
         options["maxiter"] = max_iter
 
         if not "shots" in mes_kwargs:
