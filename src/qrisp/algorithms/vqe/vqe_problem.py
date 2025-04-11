@@ -186,9 +186,6 @@ class VQEProblem:
             A list of the parameters that appear in ``compiled_qc``.
 
         """
-
-        if callable(qarg):
-            qarg = qarg()
         
         temp = list(qarg.qs.data)
         
@@ -211,7 +208,7 @@ class VQEProblem:
         return compiled_qc, theta
 
 
-    def optimization_routine(self, qarg, depth, mes_kwargs, init_type, init_point, optimizer, options, measurement_data): 
+    def optimization_routine(self, qarg_prep, depth, mes_kwargs, init_type, init_point, optimizer, options, measurement_data): 
         """
         Wrapper subroutine for the optimization method used in QAOA. The initial values are set and the optimization via ``COBYLA`` is conducted here.
 
@@ -318,11 +315,11 @@ class VQEProblem:
 
                 return expectation
             
-
+        # Initialization for optimization parameters
         if init_point is None:
-            # Set initial random values for optimization parameters 
+           
             if init_type=='random':
-
+                # Random optimization parameters 
                 if check_for_tracing_mode():
                     key = jax.random.key(11)
                     init_point = jax.random.uniform(key=key, shape=(self.num_params*depth,))*jnp.pi/2
@@ -331,14 +328,7 @@ class VQEProblem:
 
             else:
                 raise Exception(f'Parameter initialization method {init_type} is not available.')
-
-
-        if callable(qarg):
-            qarg_prep = qarg
-        else:
-            template = qarg.template()
-            def qarg_prep():
-                return template.construct()
+            
 
         def state_prep(theta):
 
@@ -366,7 +356,7 @@ class VQEProblem:
         
         else:
 
-            compiled_qc, symbols = self.compile_circuit(qarg() if callable(qarg) else qarg, depth)
+            compiled_qc, symbols = self.compile_circuit(qarg_prep(), depth)
 
             res_sample = minimize(optimization_wrapper,
                                     init_point, 
@@ -414,6 +404,14 @@ class VQEProblem:
 
         """
 
+        if callable(qarg):
+            qarg_prep = qarg
+        else:
+            template = qarg.template()
+            def qarg_prep():
+                return template.construct()
+
+        # Set default options
         if not "precision" in mes_kwargs:
             mes_kwargs["precision"] = 0.01
 
@@ -437,7 +435,7 @@ class VQEProblem:
             measurement_data = QubitOperatorMeasurement(self.hamiltonian, diagonalisation_method = mes_kwargs["diagonalisation_method"])
 
         
-        opt_theta, opt_res = self.optimization_routine(qarg,
+        opt_theta, opt_res = self.optimization_routine(qarg_prep,
                                                     depth,
                                                     mes_kwargs, 
                                                     init_type, 
@@ -488,6 +486,14 @@ class VQEProblem:
 
         """
 
+        if callable(qarg):
+            qarg_prep = qarg
+        else:
+            template = qarg.template()
+            def qarg_prep():
+                return template.construct()
+        
+        # Set default options
         if not "precision" in mes_kwargs:
             mes_kwargs["precision"] = 0.01
 
@@ -511,7 +517,7 @@ class VQEProblem:
             measurement_data = QubitOperatorMeasurement(self.hamiltonian, diagonalisation_method = mes_kwargs["diagonalisation_method"])
 
         
-        opt_theta, opt_res = self.optimization_routine(qarg,
+        opt_theta, opt_res = self.optimization_routine(qarg_prep,
                                                     depth,
                                                     mes_kwargs, 
                                                     init_type, 
@@ -604,6 +610,13 @@ class VQEProblem:
         you drawing conclusions from the collected data. Make sure to check them out!
 
         """
+
+        if callable(qarg):
+            qarg_prep = qarg
+        else:
+            template = qarg.template()
+            def qarg_prep():
+                return template.construct()
     
         data_dict = {"layer_depth" : [],
                      "circuit_depth" : [],
@@ -624,11 +637,11 @@ class VQEProblem:
                         temp_mes_kwargs = dict(mes_kwargs)
                         temp_mes_kwargs["precision"] = s
 
-                        energy = self.run(qarg, depth = p, max_iter = it, mes_kwargs = temp_mes_kwargs, init_type = init_type, optimizer = optimizer, options = options)
+                        energy = self.run(qarg_prep, depth = p, max_iter = it, mes_kwargs = temp_mes_kwargs, init_type = init_type, optimizer = optimizer, options = options)
 
                         final_time = time.time() - start_time
                     
-                        compiled_qc, _ = self.compile_circuit(qarg() if callable(qarg) else qarg, depth = p)
+                        compiled_qc, _ = self.compile_circuit(qarg_prep(), depth = p)
                         
                         data_dict["layer_depth"].append(p)
                         data_dict["circuit_depth"].append(compiled_qc.depth())
