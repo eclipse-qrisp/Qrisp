@@ -559,7 +559,7 @@ class QAOAProblem:
         
         Parameters
         ----------
-        qarg :ref:`QuantumVariable` or :ref:`QuantumArray` or callable
+        qarg : :ref:`QuantumVariable` or :ref:`QuantumArray` or callable
             The argument to which the QAOA circuit is applied,
             or a function returning a :ref:`QuantumVariable` or :ref:`QuantumArray` to which the QAOA circuit is applied.
         depth : int
@@ -579,7 +579,7 @@ class QAOAProblem:
             Specifies the `SciPy optimization routine <https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html>`_.
             Available are, e.g., ``COBYLA``, ``COBYQA``, ``Nelder-Mead``. The Default is ``COBYLA``.    
             In tracing mode (i.e. Jasp) Jax-traceable :ref:`optimization routines <optimization_tools>` must be utilized.
-            Available are ``SPSA``. The Default is ``SPSA``. 
+            Available are ``SPSA``.
         options : dict
             A dictionary of solver options.
 
@@ -658,7 +658,7 @@ class QAOAProblem:
 
         Parameters
         ----------
-        qarg :ref:`QuantumVariable` or :ref:`QuantumArray` or callable
+        qarg : :ref:`QuantumVariable` or :ref:`QuantumArray` or callable
             The argument to which the QAOA circuit is applied,
             or a function returning a :ref:`QuantumVariable` or :ref:`QuantumArray` to which the QAOA circuit is applied.
         depth : int
@@ -678,7 +678,7 @@ class QAOAProblem:
             Specifies the `SciPy optimization routine <https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html>`_.
             Available are, e.g., ``COBYLA``, ``COBYQA``, ``Nelder-Mead``. The Default is ``COBYLA``.    
             In tracing mode (i.e. Jasp) Jax-traceable :ref:`optimization routines <optimization_tools>` must be utilized.
-            Available are ``SPSA``. The Default is ``SPSA``. 
+            Available are ``SPSA``.
         options : dict
             A dictionary of solver options.
         
@@ -772,7 +772,7 @@ class QAOAProblem:
 
         Parameters
         ----------
-        qarg :ref:`QuantumVariable` or :ref:`QuantumArray` or callable
+        qarg : :ref:`QuantumVariable` or :ref:`QuantumArray` or callable
             The argument to which the QAOA circuit is applied,
             or a function returning a :ref:`QuantumVariable` or :ref:`QuantumArray` to which the QAOA circuit is applied.
             Compare to the :meth:`.run <qrisp.qaoa.QAOAProblem.run>` method.
@@ -797,7 +797,7 @@ class QAOAProblem:
             Specifies the `SciPy optimization routine <https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html>`_.
             Available are, e.g., ``COBYLA``, ``COBYQA``, ``Nelder-Mead``. The Default is ``COBYLA``.    
             In tracing mode (i.e. Jasp) Jax-traceable :ref:`optimization routines <optimization_tools>` must be utilized.
-            Available are ``SPSA``. The Default is ``SPSA``. 
+            Available are ``SPSA``.
         options : dict
             A dictionary of solver options.
 
