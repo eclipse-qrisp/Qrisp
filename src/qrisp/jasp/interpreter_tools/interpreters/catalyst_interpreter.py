@@ -464,7 +464,7 @@ def process_cond(eqn, context_dic):
         
         flattened_invalues = flatten_signature(invalues, eqn.invars)
         
-        outvalues = cond_p.bind(*flattened_invalues, branch_jaxprs = branch_list, nimplicit_outputs = 0)
+        outvalues = cond_p.bind(*flattened_invalues, branch_jaxprs = branch_list[::-1], nimplicit_outputs = 0)
         
         unflattened_outvalues = unflatten_signature(outvalues, eqn.outvars)
     else:
