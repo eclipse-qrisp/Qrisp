@@ -59,6 +59,13 @@ def X_prime_func(i, k, n):
     qubit lists by the following pattern: Starting with a range of integers from 0 to N-1,
     skip the first index, select every other index, and append the second-to-last index
     if the list size is even.
+    
+    Example:
+    N=25
+    Iteration 1: [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23]
+    Iteration 2: [3, 7, 11, 15, 19, 21]
+    Iteration 3: [7, 15, 19]
+    Iteration 4: [15]
     """
     return jnp.int64(
         (2 ** (k + 1) - 1)
