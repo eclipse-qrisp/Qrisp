@@ -116,7 +116,7 @@ def QUBO_problem(Q):
     return QAOAProblem(create_QUBO_cost_operator(Q), RX_mixer, create_QUBO_cl_cost_function(Q))
 
 
-def solve_QUBO(Q, depth, shots = 5000, max_iter = 50, backend = None, print_res = False):
+def solve_QUBO(Q, depth, shots = 5000, max_iter = 50, backend = None):
     """
     Solves a Quadratic Unconstrained Binary Optimization (QUBO) problem using the Quantum Approximate Optimization Algorithm (QAOA). 
 
@@ -146,15 +146,12 @@ def solve_QUBO(Q, depth, shots = 5000, max_iter = 50, backend = None, print_res 
     backend : :ref:`BackendClient`, optional
         The backend to be used for the quantum simulation. 
         By default, the Qrisp simulator is used.
-    print_res : Boolean, optional
-        If set to ``True``, the 5 best solutions are printed. The default is ``False``.
 
     Returns
     -------
     list[tuple]
         A list of tuples representing the solutions: The first element is the cost, the second element is the bitstring, and the thrid element is the probability. 
         Solutions are sorted by their costs in ascending order.
-        If ``print_res`` is set to ``True``, the function prints the best 5 solutions with their respective costs and probabilities.
 
     Examples
     --------
