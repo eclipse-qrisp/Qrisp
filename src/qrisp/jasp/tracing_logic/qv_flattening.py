@@ -118,6 +118,9 @@ def flatten_template(tmpl):
         elif isinstance(attr, float):
             attr = jnp.array(attr, jnp.dtype("float64"))
         children.append(attr)
+        
+    if tmpl.size_tracked:
+        children.append(tmpl.qv_size)
     
     return tuple(children), tmpl
 
@@ -126,6 +129,10 @@ def unflatten_template(aux_data, children):
     res.qv = copy.copy(res.qv)
     for i in range(len(res.qv.traced_attributes)):
         setattr(res.qv, res.qv.traced_attributes[i], children[i])
+        
+    if res.size_tracked:
+        res.qv_size = children[-1]
+        
     return res
     
     
