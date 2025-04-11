@@ -144,17 +144,15 @@ def qswitch(operand, case, case_function_list, method = "sequential"):
             op, depth = stack.pop(0)
             op(depth)
             if op == down or op == bounce:
-                bounce_add = 0
-                if depth + 1 + bounce_add >= n:
+                if depth + 1 >= n:
                     A = cfl.pop(0)
                     B = cfl.pop(0)
-                    stack.insert(0, (lambda x: leaf(x, A, B), depth + bounce_add))
+                    stack.insert(0, (lambda x: leaf(x, A, B), depth))
                 else:
                     stack.insert(0, (up, depth + 1))
                     stack.insert(0, (bounce, depth + 1))
                     stack.insert(0, (down, depth + 1))
         up(0)
-        anc.delete()
     
     else:
         raise Exception("Don't know compile method {method} for switch-case structure.")
