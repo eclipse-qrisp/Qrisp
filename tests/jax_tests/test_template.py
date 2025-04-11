@@ -17,6 +17,7 @@
 """
 
 from qrisp import *
+from qrisp.vqe.problems.heisenberg import *
 
 def test_template():
     

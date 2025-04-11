@@ -63,6 +63,9 @@ def pjit_to_gate(pjit_eqn, context_dic, eqn_evaluator):
 def cond_to_cl_control(eqn, context_dic, eqn_evaluator):
     from qrisp.circuit import QuantumCircuit, Clbit
     
+    if len(eqn.params["branches"]) > 2:
+        raise Exception("Tried to extract QuantumCircuit from Jaspr including a condition with more than two branches")
+    
     # Extract the invalues from the context dic
     invalues = extract_invalues(eqn, context_dic)
 

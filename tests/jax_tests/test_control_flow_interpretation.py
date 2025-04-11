@@ -17,7 +17,7 @@
 """
 
 from qrisp import *
-from jax.lax import fori_loop
+from jax.lax import fori_loop, switch
 from jax import random
 
 def test_control_flow_interpretation():
@@ -84,3 +84,34 @@ def test_control_flow_interpretation():
         return res
 
     main()
+    
+    # Test https://github.com/eclipse-qrisp/Qrisp/issues/173
+    
+    @jaspify
+    def main():
+
+        def case0(x):
+            return x + 1
+
+        def case1(x):
+            return x + 2
+
+        def case2(x):
+            return x + 3
+        
+        def case3(x):
+            return x + 4
+
+        def compute(index, x):
+            return switch(index, [case0, case1, case2, case3], x)
+
+
+        qf = QuantumFloat(2)
+        qf[:] = 3
+        ind = jnp.int8(measure(qf))
+
+        res = compute(ind,jnp.int32(0))
+
+        return ind, res
+    
+    assert main() == (3,4)
