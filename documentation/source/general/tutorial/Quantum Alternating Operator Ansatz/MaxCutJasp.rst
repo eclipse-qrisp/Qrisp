@@ -6,19 +6,19 @@ MaxCut QAOA with Jasp
 In this tutorial, we will explain step-by-step how to build a custom QAOA application with Jasp.
 
 
-First, let us recall the preoblem description for MaxCut:
+First, let us recall the problem description for MaxCut:
 
-Given a Graph  :math:`G = (V,E)` find a maximum cut, i.e., a bipartition $S$, $V\setminus S$ of the set of vertices $V$ such that the number of edges between $S$ and $V\setminus S$ is maximal.
+Given a Graph  :math:`G = (V,E)` find a bipartition $S$, $V\setminus S$ of the set of vertices $V$ such that the number of edges between $S$ and $V\setminus S$ is maximal.
 
 Given a graph $G$ with $n$ nodes, such a bipartition can be encoded with a :ref:`QuantumVariable` with $n$ qubits: 
 we measure the $i$-th qubit in 0 if the node $i$ is in the set $S$, and 1 if the node $i$ is in the set $V\setminus S$.
 The cut value is the number of edges $e=(i,j)$ in $G$ such that $i\in S$ and $j\in V\setminus S$.
 
-In Jasp, varibales are decoded to integers (i.e. jax.numpy.int) and not to binrary strings. In this case, the binary representation of an integer encodes a bipartision of the graph $G$.
+In Jasp, varibales are decoded to integers (i.e. jax.numpy.int) and not to binrary strings. In this case, the binary representation of an integer encodes a bipartition of the graph $G$.
 Therefore, repeated sampling from a QuantumVariable in a superposition state will result in an array of integers representing bipartitions of the graph $G$. 
 Within QAOA, we require a post processing function to compute the average cut value for an array of samples.
 
-As a first step, we will learn how to write a ``post_processor`` that can be compided using ``jax.jit`` into a highly optimized version using Just-In-Time (JIT) compilation. 
+As a first step, we will learn how to write a ``post_processor`` that can be compiled using ``jax.jit`` into a highly optimized version using Just-In-Time (JIT) compilation. 
 This can significantly speed up the execution of numerical computations.
 
 
@@ -51,7 +51,7 @@ We will define a function that extracts the value of a specific bit (digit) from
 
 **Step 3: Create the Cut Computer Function**
 
-The cut computer function calculates the cut value for a given integer representation of a graph. This function will use the edges of the graph to determine how many edges cross the cut.
+The cut computer function calculates the cut value for a given integer representation of a bipartition of a graph. This function will use the edges of the graph to determine how many edges cross the cut.
 
 ::
 
@@ -104,23 +104,30 @@ Now we can create a graph and use our functions to compute the average cut.
     print("Average Cut:", average_cut)
 
 
-In this tutorial, we created a function using JAX to compute the average cut of a graph efficiently. 
+So far, we created a function using JAX to compute the average cut of a graph efficiently. 
 We defined a few helper functions, including one for extracting bits and another for calculating cuts, and then used JAX's vectorization capabilities to process multiple samples effectively.
 
 
 Setting up the QAOA
 -------------------
 
+For additional details, we refer to the :ref:`MaxCutQAOA` tutorial.
+
 **Step 6: Defining the QAOA ansatz**
 
-First, we will define the cost operator and mixer.
+First, we will define the the cost operator and mixer.
 
 :: 
 
-    def apply_cost_operator(qv, gamma):
-        for pair in list(G.edges()):
-            rzz(gamma, qv[pair[0]], qv[pair[1]])
+    def create_cost_operator(G):
 
+        def apply_cost_operator(qv, gamma):
+            for pair in list(G.edges()):
+                rzz(gamma, qv[pair[0]], qv[pair[1]])
+
+        return apply_cost_operator
+
+    apply_cost_operator = create_cost_operator(G)
 
     def apply_mixer(qv, beta):
         rx(beta, qv)
@@ -135,7 +142,7 @@ Next, we define the QAOA ansatz that creates a QuantumVariable, brings it into u
         # Uniform superposition
         h(qv)
 
-        for i in range(p):
+        for i in jrange(p):
             apply_cost_operator(qv, theta[i])
             apply_mixer(qv, theta[p+i])
         
@@ -143,7 +150,7 @@ Next, we define the QAOA ansatz that creates a QuantumVariable, brings it into u
 
 **Step 7: Defining the Objective Function**
 
-The objective function samples from the parametrized QAOA ansatz and computes the avaerage cut value.
+The objective function samples from the parametrized QAOA ansatz and computes the average cut value.
 
 :: 
 
