@@ -195,13 +195,6 @@ def solve_QUBO(Q, depth, shots = 5000, max_iter = 50, backend = None):
 
     # Sort the solutions by their cost in ascending order
     sorted_costs_and_solutions = sorted(costs_and_solutions, key=itemgetter(0))
-
-    #optimal_solution = sorted_costs_and_solutions[0]
-
-    if print_res is True:
-        # Get the best solutions and print them
-        for i in range(5):
-            print(f"Solution {i+1}: {sorted_costs_and_solutions[i][1]} with cost: {sorted_costs_and_solutions[i][0]} and probability: {res[sorted_costs_and_solutions[i][1]]}")
     
     return sorted_costs_and_solutions
 

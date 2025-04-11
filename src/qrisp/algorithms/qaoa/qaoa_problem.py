@@ -290,7 +290,7 @@ class QAOAProblem:
         
         qarg.qs.data = temp
         
-        return qarg, compiled_qc, gamma + beta
+        return compiled_qc, gamma + beta
   
 
     def optimization_routine(self, qarg_prep, depth, mes_kwargs, init_type, init_point, optimizer, options): 
@@ -592,9 +592,15 @@ class QAOAProblem:
         if callable(qarg):
             qarg_prep = qarg
         else:
-            template = qarg.template()
-            def qarg_prep():
-                return template.construct()
+            if isinstance(qarg,QuantumArray):
+                template = qarg.qtype.template()
+                shape = qarg.shape
+                def qarg_prep():
+                    return QuantumArray(qtype=template.construct(), shape=shape)
+            else:
+                template = qarg.template()
+                def qarg_prep():
+                    return template.construct()
 
         self.init_type = init_type
         # Set default options
@@ -729,9 +735,15 @@ class QAOAProblem:
         if callable(qarg):
             qarg_prep = qarg
         else:
-            template = qarg.template()
-            def qarg_prep():
-                return template.construct()
+            if isinstance(qarg,QuantumArray):
+                template = qarg.qtype.template()
+                shape = qarg.shape
+                def qarg_prep():
+                    return QuantumArray(qtype=template.construct(), shape=shape)
+            else:
+                template = qarg.template()
+                def qarg_prep():
+                    return template.construct()
 
         self.init_type = init_type
         # Set default options
@@ -847,9 +859,15 @@ class QAOAProblem:
         if callable(qarg):
             qarg_prep = qarg
         else:
-            template = qarg.template()
-            def qarg_prep():
-                return template.construct()
+            if isinstance(qarg,QuantumArray):
+                template = qarg.qtype.template()
+                shape = qarg.shape
+                def qarg_prep():
+                    return QuantumArray(qtype=template.construct(), shape=shape)
+            else:
+                template = qarg.template()
+                def qarg_prep():
+                    return template.construct()
         
         data_dict = {"layer_depth" : [],
                      "circuit_depth" : [],
