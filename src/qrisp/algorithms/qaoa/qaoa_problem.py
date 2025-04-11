@@ -146,14 +146,14 @@ class QAOAProblem:
         return  jnp.concatenate((gamma,beta)) 
     
 
-    def compile_circuit(self, qarg_prep, depth):
+    def compile_circuit(self, qarg, depth):
         """
         Compiles the circuit that is evaluated by the :meth:`run <qrisp.qaoa.QAOAProblem.run>` method.
 
         Parameters
         ----------
-        qarg_prep : callable
-            A function returning a :ref:`QuantumVariable` or :ref:`QuantumArray` to which the QAOA circuit is applied.
+        qarg : :ref:`QuantumVariable` or :ref:`QuantumArray`
+            The argument to which the QAOA circuit is applied.
         depth : int
             The amount of QAOA layers.
 
@@ -257,12 +257,6 @@ class QAOAProblem:
         «qarg_dupl.2: ┤ X ├┤ Rx(2*beta_4) ├
         «             └───┘└──────────────┘
         """
-
-        # qarg_prep can a QuantumVariable (DEPRECATED) or a callable returning a QuantumVariable
-        if callable(qarg_prep):
-            qarg = qarg_prep()
-        else:
-            qarg = qarg_prep.duplicate()
         
         temp = list(qarg.qs.data)
         
@@ -298,6 +292,7 @@ class QAOAProblem:
         
         return qarg, compiled_qc, gamma + beta
   
+
     def optimization_routine(self, qarg_prep, depth, mes_kwargs, init_type, init_point, optimizer, options): 
         """
         Wrapper subroutine for the optimization method used in QAOA. The initial values are set and the optimization via ``COBYLA`` is conducted here.
@@ -442,7 +437,7 @@ class QAOAProblem:
             
                 return cl_cost
             
-            def tqa_angles(p, qarg, qc, symbols, mes_kwargs, steps=10): #qarg only before
+            def tqa_angles(p, qarg, qc, symbols, mes_kwargs, steps=10): 
                 """
                 Compute the optimal parameters for the Trotterized Quantum Annealing (`TQA <https://quantum-journal.org/papers/q-2021-07-01-491/>`_) algorithm.
 
@@ -484,7 +479,7 @@ class QAOAProblem:
                 idx = np.argmin(energy)
                 dt_max = dt[idx]
                 return self.computeParams(p,dt_max)
-
+        
 
         if check_for_tracing_mode():
 
@@ -495,7 +490,7 @@ class QAOAProblem:
                 # Prepare initial state - if no init_function is specified, prepare uniform superposition
                 if self.init_function is not None:
                     self.init_function(qarg)
-                elif self.init_type=='tqa': # Prepare the ground state (eigenvalue -1) of the X mixer
+                elif init_type=='tqa': # Prepare the ground state (eigenvalue -1) of the X mixer
                     x(qarg)
                     h(qarg)
                 else:
@@ -510,13 +505,15 @@ class QAOAProblem:
 
         else:
 
-            qarg, compiled_qc, symbols = self.compile_circuit(qarg_prep, depth)
+            qarg = qarg_prep()
+            compiled_qc, symbols = self.compile_circuit(qarg, depth)
         
 
+        # Initialization for optimization parameters
         if init_point is None:
-            # Set initial random values for optinization parameters
+            
             if self.init_type=='random':
-
+                # Random initialization
                 if check_for_tracing_mode():
                     key = jax.random.key(11)
                     init_point = jax.random.uniform(key=key, shape=(2 * depth,)) * jnp.pi/2
@@ -526,9 +523,9 @@ class QAOAProblem:
             elif self.init_type=='tqa':
                 # TQA initialization
                 if check_for_tracing_mode():
-                    init_point = tqa_angles(depth, qarg, compiled_qc, symbols, mes_kwargs)
-                else:
                     init_point = tqa_angles(depth, state_prep, mes_kwargs)
+                else:
+                    init_point = tqa_angles(depth, qarg, compiled_qc, symbols, mes_kwargs)
 
 
         if check_for_tracing_mode():
@@ -552,15 +549,16 @@ class QAOAProblem:
             return res_sample.x, res_sample.fun
         
 
-    def run(self, qarg_prep, depth, mes_kwargs = {}, max_iter = 50, init_type = "random", init_point = None, optimizer = "COBYLA", options = {}):
+    def run(self, qarg, depth, mes_kwargs = {}, max_iter = 50, init_type = "random", init_point = None, optimizer = "COBYLA", options = {}):
         """
         Run the specific QAOA problem instance with given quantum arguments, depth of QAOA circuit,
         measurement keyword arguments (mes_kwargs) and maximum iterations for optimization (max_iter).
         
         Parameters
         ----------
-        qarg_prep : callable
-            A function returning a :ref:`QuantumVariable` or :ref:`QuantumArray` to which the QAOA circuit is applied.
+        qarg :ref:`QuantumVariable` or :ref:`QuantumArray` or callable
+            The argument to which the QAOA circuit is applied,
+            or a function returning a :ref:`QuantumVariable` or :ref:`QuantumArray` to which the QAOA circuit is applied.
         depth : int
             The amount of QAOA layers.
         mes_kwargs : dict, optional
@@ -588,8 +586,12 @@ class QAOAProblem:
             The optimal result after running QAOA problem for a specific problem instance. It contains the measurement results after applying the optimal QAOA circuit to the quantum argument.
         """
 
-        if not callable(qarg_prep):
-            warnings.warn("DeprecationWarning: Providing a QuantumVariable or QuantumArray as first argument will no longer be supported in a later release of Qrisp. Instead a callable creating a QuantumVariable or QuantumArray must be provided.")
+        if callable(qarg):
+            qarg_prep = qarg
+        else:
+            template = qarg.template()
+            def qarg_prep():
+                return template.construct()
 
         self.init_type = init_type
 
@@ -609,13 +611,10 @@ class QAOAProblem:
                                                        init_point,
                                                        optimizer,
                                                        options)
-
+            
         def state_prep(theta):
-            # qarg_prep can a QuantumVariable (DEPRECATED) or a callable returning a QuantumVariable
-            if callable(qarg_prep):
-                qarg = qarg_prep()
-            else:
-                qarg = qarg_prep
+
+            qarg = qarg_prep()
 
             # Prepare initial state - if no init_function is specified, prepare uniform superposition
             if self.init_function is not None:
@@ -642,7 +641,8 @@ class QAOAProblem:
 
         return res_sample
     
-    def train_function(self, qarg_prep, depth, mes_kwargs = {}, max_iter = 50, init_type = "random", init_point = None, optimizer = "COBYLA", options = {}):
+
+    def train_function(self, qarg, depth, mes_kwargs = {}, max_iter = 50, init_type = "random", init_point = None, optimizer = "COBYLA", options = {}):
         r"""
         This function allows for training of a circuit with a given ``QAOAProblem`` instance. It returns a function that can be applied to a ``QuantumVariable``,
         such that it represents a solution to the problem instance. When applied to a ``QuantumVariable``, the function therefore prepares the state
@@ -655,8 +655,9 @@ class QAOAProblem:
 
         Parameters
         ----------
-        qarg_prep : callable
-            A function returning a :ref:`QuantumVariable` or :ref:`QuantumArray` to which the QAOA circuit is applied.
+        qarg :ref:`QuantumVariable` or :ref:`QuantumArray` or callable
+            The argument to which the QAOA circuit is applied,
+            or a function returning a :ref:`QuantumVariable` or :ref:`QuantumArray` to which the QAOA circuit is applied.
         depth : int
             The amount of QAOA layers.
         mes_kwargs : dict, optional
@@ -722,8 +723,12 @@ class QAOAProblem:
 
         """
 
-        if not callable(qarg_prep):
-            warnings.warn("DeprecationWarning: Providing a QuantumVariable or QuantumArray as first argument will no longer be supported in a later release of Qrisp. Instead a callable creating a QuantumVariable or QuantumArray must be provided.")
+        if callable(qarg):
+            qarg_prep = qarg
+        else:
+            template = qarg.template()
+            def qarg_prep():
+                return template.construct()
 
         self.init_type = init_type
 
@@ -757,14 +762,16 @@ class QAOAProblem:
             
         return circuit_generator
     
-    def benchmark(self, qarg_prep, depth_range, shot_range, iter_range, optimal_solution, repetitions = 1, mes_kwargs = {}, init_type = "random", optimizer="COBYLA", options = {}):
+
+    def benchmark(self, qarg, depth_range, shot_range, iter_range, optimal_solution, repetitions = 1, mes_kwargs = {}, init_type = "random", optimizer="COBYLA", options = {}):
         """
         This method enables convenient data collection regarding performance of the implementation.
 
         Parameters
         ----------
-        qarg_prep : callable
-            A function returning a :ref:`QuantumVariable` or :ref:`QuantumArray` to which the QAOA circuit is applied.
+        qarg :ref:`QuantumVariable` or :ref:`QuantumArray` or callable
+            The argument to which the QAOA circuit is applied,
+            or a function returning a :ref:`QuantumVariable` or :ref:`QuantumArray` to which the QAOA circuit is applied.
             Compare to the :meth:`.run <qrisp.qaoa.QAOAProblem.run>` method.
         depth_range : list[int]
             A list of integers indicating, which depth parameters should be explored. Depth means the amount of QAOA layers.
@@ -834,9 +841,12 @@ class QAOAProblem:
 
         """
 
-        if not callable(qarg_prep):
-            warnings.warn("DeprecationWarning: Providing a QuantumVariable or QuantumArray as first argument will no longer be supported in a later release of Qrisp. Instead a callable creating a QuantumVariable or QuantumArray must be provided.")
-
+        if callable(qarg):
+            qarg_prep = qarg
+        else:
+            template = qarg.template()
+            def qarg_prep():
+                return template.construct()
         
         data_dict = {"layer_depth" : [],
                      "circuit_depth" : [],
