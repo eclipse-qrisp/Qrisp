@@ -22,7 +22,7 @@ import numpy as np
 
 from jax import make_jaxpr, jit, debug
 from jax.core import ClosedJaxpr, Literal
-from jax.lax import fori_loop, cond, while_loop
+from jax.lax import fori_loop, cond, while_loop, switch
 import jax.numpy as jnp
 
 from qrisp.circuit import ControlledOperation
@@ -291,24 +291,19 @@ def process_cond(eqn, context_dic):
     
     invalues = extract_invalues(eqn, context_dic)
     
-    false_jaxpr = ensure_conversion(eqn.params["branches"][0].jaxpr, invalues[1:])
-    true_jaxpr = ensure_conversion(eqn.params["branches"][1].jaxpr, invalues[1:])
+    branch_list = []
     
-
-    def true_fun(*args):
-        return eval_jaxpr(true_jaxpr)(*args)
-    
-    def false_fun(*args):
-        return eval_jaxpr(false_jaxpr)(*args)
+    for i in range(len(eqn.params["branches"])):
+        converted_jaxpr = ensure_conversion(eqn.params["branches"][i].jaxpr, invalues[1:])
+        branch_list.append(eval_jaxpr(converted_jaxpr))
     
     flattened_invalues = flatten_signature(invalues, eqn.invars)
-    outvalues = cond(flattened_invalues[0], true_fun, false_fun, *flattened_invalues[1:])
+    outvalues = switch(flattened_invalues[0], branch_list, *flattened_invalues[1:])
     
     if isinstance(outvalues, tuple):
         unflattened_outvalues = unflatten_signature(outvalues, eqn.outvars)
     else:
         unflattened_outvalues = (outvalues,)
-    
     
     insert_outvalues(eqn, context_dic, unflattened_outvalues)
 

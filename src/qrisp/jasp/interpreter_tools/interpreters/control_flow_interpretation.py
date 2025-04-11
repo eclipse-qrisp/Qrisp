@@ -25,10 +25,10 @@ def evaluate_cond_eqn(cond_eqn, context_dic, eqn_evaluator = exec_eqn):
     # Extract the invalues from the context dic
     invalues = extract_invalues(cond_eqn, context_dic)
     
-    if bool(invalues[0]):
-        res = eval_jaxpr(cond_eqn.params["branches"][1], eqn_evaluator = eqn_evaluator)(*invalues[1:])
-    else:
-        res = eval_jaxpr(cond_eqn.params["branches"][0], eqn_evaluator = eqn_evaluator)(*invalues[1:])
+    for i in range(len(cond_eqn.params["branches"])):
+        if int(invalues[0]) == i:
+            res = eval_jaxpr(cond_eqn.params["branches"][i], eqn_evaluator = eqn_evaluator)(*invalues[1:])
+            break
     
     if not isinstance(res, tuple):
         res = (res,)

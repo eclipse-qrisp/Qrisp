@@ -153,8 +153,15 @@ def flatten_environments_in_cond_eqn(eqn, context_dic):
     """
     
     eqn = copy_jaxpr_eqn(eqn)
-    eqn.params["branches"] = (ClosedJaxpr(flatten_environments(eqn.params["branches"][0].jaxpr), eqn.params["branches"][0].consts),
-                              ClosedJaxpr(flatten_environments(eqn.params["branches"][1].jaxpr), eqn.params["branches"][1].consts))
+    
+    branch_list = []
+    
+    for i in range(len(eqn.params["branches"])):
+        collected_branch_jaxpr = flatten_environments(eqn.params["branches"][i].jaxpr)
+        collected_branch_jaxpr = ClosedJaxpr(collected_branch_jaxpr, eqn.params["branches"][i].consts)
+        branch_list.append(collected_branch_jaxpr)
+    
+    eqn.params["branches"] = tuple(branch_list)
     
     exec_eqn(eqn, context_dic)
 
