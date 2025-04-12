@@ -113,16 +113,13 @@ def get_slice_abstract_eval(qb_array, start, stop):
     return AbstractQubitArray()
 
 @fuse_p.def_abstract_eval
-def fuse_abstract_eval(qb_array_0, qb_array_1):
-    """Abstract evaluation of the primitive.
+def fuse_abstract_eval(arg_0, arg_1):
     
-    This function does not need to be JAX traceable. It will be invoked with
-    abstractions of the actual arguments. 
-    Args:
-      xs, ys, zs: abstractions of the arguments.
-    Result:
-      a ShapedArray for the result of the primitive.
-    """
+    if not isinstance(arg_0, (AbstractQubit, AbstractQubitArray)):
+        raise Exception(f"Tried to fuse type {type(arg_0)}")
+    if not isinstance(arg_1, (AbstractQubit, AbstractQubitArray)):
+        raise Exception(f"Tried to fuse type {type(arg_1)}")
+    
     return AbstractQubitArray()
 
 
@@ -166,7 +163,7 @@ def get_slice_impl(qb_array, start, stop):
     return qb_array[start:stop]
 
 @fuse_p.def_impl
-def fuse_impl(qb_array_0, qb_array_1):
+def fuse_impl(arg_0, arg_1):
     """Abstract evaluation of the primitive.
     
     This function does not need to be JAX traceable. It will be invoked with
@@ -176,4 +173,11 @@ def fuse_impl(qb_array_0, qb_array_1):
     Result:
       a ShapedArray for the result of the primitive.
     """
-    return qb_array_0 + qb_array_1
+    
+    if not isinstance(arg_0, list):
+        arg_0 = [arg_0]
+    
+    if not isinstance(arg_1, list):
+        arg_1 = [arg_1]
+    
+    return arg_0 + arg_1
