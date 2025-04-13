@@ -171,7 +171,7 @@ def expectation_value(state_prep, shots, return_dict = False, post_processor = N
         return state_prep(*args)
     
     # This function performs the logic to evaluate the expectation value
-    def expectation_value_eval_function(*args):
+    def expectation_value_eval_function(*args, shots = 0):
         
         for arg in args:
             if isinstance(arg, QuantumVariable):
@@ -252,8 +252,11 @@ def expectation_value(state_prep, shots, return_dict = False, post_processor = N
     
     if return_dict:
         expectation_value_eval_function.__name__ = "dict_sampling_eval_function"
-            
-    return jax.jit(expectation_value_eval_function)
+    
+    def return_function(*args):
+        return jax.jit(expectation_value_eval_function)(*args, shots = shots)
+    
+    return return_function
 
 class AuxException(Exception):
     pass
