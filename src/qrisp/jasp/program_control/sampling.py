@@ -194,7 +194,7 @@ def sample(state_prep = None, shots = 0, post_processor = None):
 
     # This function evaluates the sampling process
     @jax.jit
-    def sampling_eval_function(tracerized_shots, *args):
+    def sampling_eval_function(*args, tracerized_shots = 0):
         
         for arg in args:
             if isinstance(arg, QuantumVariable):
@@ -278,7 +278,7 @@ def sample(state_prep = None, shots = 0, post_processor = None):
     def return_function(*args):
         
         if check_for_tracing_mode():
-            return sampling_eval_function(shots, *args)
+            return sampling_eval_function(*args, tracerized_shots = shots)
         else:
             return terminal_sampling(state_prep, shots)(*args)
     
