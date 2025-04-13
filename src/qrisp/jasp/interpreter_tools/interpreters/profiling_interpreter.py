@@ -40,16 +40,14 @@ from qrisp.jasp.primitives import QuantumPrimitive, OperationPrimitive, Abstract
 
 import jax
 import jax.numpy as jnp
-
+from jax.random import key
 
 # This functions takes a "profiling dic", i.e. a dictionary of the form {str : int}
 # indicating what kinds of quantum gates can appear in a Jaspr.
 # It returns an equation evaluator, which increments a counter in an array for
 # each quantum operation.
-def make_profiling_eqn_evaluator(profiling_dic):
+def make_profiling_eqn_evaluator(profiling_dic, meas_behavior):
     
-    from qrisp import Jaspr
-
     def profiling_eqn_evaluator(eqn, context_dic):
         
         invalues = extract_invalues(eqn, context_dic)
@@ -75,13 +73,29 @@ def make_profiling_eqn_evaluator(profiling_dic):
                 counting_index = profiling_dic["measure"]
                 counting_array = invalues[-1]
                 
+                meas_number = counting_array[counting_index]
+                
                 if isinstance(eqn.invars[0].aval, AbstractQubitArray):
+                    
+                    def rng_body(i, acc):
+                        meas_key = key(meas_number + i)
+                        meas_res = meas_behavior(meas_key)
+                        
+                        if not isinstance(meas_res, bool) and not meas_res.dtype == jnp.bool:
+                            raise Exception(f"Tried to profil Jaspr with a measurement behavior not returning a boolean (got {meas_res.dtype}) instead")
+                        acc = acc + (1<<i)*meas_res
+                        return acc
+                    
+                    meas_res = jax.lax.fori_loop(0, invalues[0], rng_body, jnp.int64(0))
                     counting_array = counting_array.at[counting_index].add(invalues[0])
                 else:
+                    meas_res = meas_behavior(key(meas_number))
+                    if not isinstance(meas_res, bool) and not meas_res.dtype == jnp.bool:
+                        raise Exception(f"Tried to profil Jaspr with a measurement behavior not returning a boolean (got {meas_res.dtype}) instead")
                     counting_array = counting_array.at[counting_index].add(1)
                 
                 # The measurement returns always 0
-                insert_outvalues(eqn, context_dic, [0, counting_array])
+                insert_outvalues(eqn, context_dic, [meas_res, counting_array])
             
             # Since we don't need to track to which qubits a certain operation
             # is applied, we can implement a really simple behavior for most 
@@ -174,7 +188,7 @@ def make_profiling_eqn_evaluator(profiling_dic):
             
             zipped_profiling_dic = tuple(profiling_dic.items())
             
-            profiler = get_compiled_profiler(eqn.params["jaxpr"].jaxpr, zipped_profiling_dic)
+            profiler = get_compiled_profiler(eqn.params["jaxpr"].jaxpr, zipped_profiling_dic, meas_behavior)
             
             outvalues = profiler(*invalues)
             
@@ -190,11 +204,11 @@ def make_profiling_eqn_evaluator(profiling_dic):
 
 
 @lru_cache(int(1E5))           
-def get_compiled_profiler(jaxpr, zipped_profiling_dic):
+def get_compiled_profiler(jaxpr, zipped_profiling_dic, meas_behavior):
     
     profiling_dic = dict(zipped_profiling_dic)
     
-    profiling_eqn_evaluator = make_profiling_eqn_evaluator(profiling_dic)
+    profiling_eqn_evaluator = make_profiling_eqn_evaluator(profiling_dic, meas_behavior)
     
     @jax.jit
     def profiler(*args):

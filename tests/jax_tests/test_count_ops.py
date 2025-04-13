@@ -23,7 +23,7 @@ from qrisp.jasp import *
 def test_count_ops():
 
     # Test general pipeline
-    @count_ops
+    @count_ops(meas_behavior="0")
     def main(i):
         
         a = QuantumFloat(i)
@@ -50,8 +50,24 @@ def test_count_ops():
         return qf
     
     for i in range(1, 10):
-        assert main(i).qs.compile().count_ops() == count_ops(main)(i)
+        assert main(i).qs.compile().count_ops() == count_ops(meas_behavior = "0")(main)(i)
         
+    def meas_behavior(key):
+        return jnp.bool(random.randint(key, (1,), 0,1)[0])    
+    
+    def main():
+        
+        qv = QuantumVariable(2)
+        meas_res = measure(qv)
+        
+        with control(meas_res==0):
+            x(qv)
+            
+        return measure(qv)
+
+    assert count_ops(meas_behavior = meas_behavior)(main)()["x"] == 2
+    assert count_ops(meas_behavior = "0")(main)()["x"] == 2
+    assert "x" not in count_ops(meas_behavior = "1")(main)()
 
     # Test kernilization error message    
     def state_prep():
@@ -59,7 +75,7 @@ def test_count_ops():
         h(qf)
         return qf
     
-    @count_ops
+    @count_ops(meas_behavior="0")
     def main():
         return expectation_value(state_prep, 10)()
     
@@ -70,8 +86,7 @@ def test_count_ops():
             return
         else:
             assert False
-        
-        
+
         
             
         

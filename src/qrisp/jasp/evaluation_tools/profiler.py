@@ -40,7 +40,7 @@ import jax.numpy as jnp
 from qrisp.jasp.primitives import OperationPrimitive
 from qrisp.jasp.interpreter_tools import make_profiling_eqn_evaluator, eval_jaxpr
 
-def count_ops(function):
+def count_ops(meas_behavior):
     """
     Decorator to determine resources of large scale quantum computations.
     This decorator compiles the given Jasp-compatible function into a classical
@@ -54,13 +54,17 @@ def count_ops(function):
 
     Parameters
     ----------
-    function : callable
-        A Jasp-compatible function without :ref:`QuantumKernels <quantum_kernel>`.
-
+    meas_behavior : str or callable
+        A string or callable indicating the behavior of the ressource computation
+        when measurements are performed. Available are
+        * ``"0"`` - computes the resource as if measurements always return 0
+        * ``"1"`` - computes the resource as if measurements always return 1
+        * callable - allows the user to specify a random number generator (see examples)
+        
     Returns
     -------
-    resource_estimator
-        A function computing the required resources.
+    resource_estimation decorator
+        A decorator, producing a function to computed the required resources.
         
     Examples
     --------
@@ -71,7 +75,7 @@ def count_ops(function):
         
         from qrisp import count_ops, QuantumFloat, measure
         
-        @count_ops
+        @count_ops(meas_behavior = "0")
         def main(i):
             
             a = QuantumFloat(i)
@@ -89,59 +93,74 @@ def count_ops(function):
     Note that even though the second computation contains more than 800 million gates, 
     determining the resources takes less than 200ms, highlighting the scalability
     features of the Jasp infrastructure.
-
     """
     
-    def ops_counter(*args):
-        
-        from qrisp.jasp import make_jaspr
-        
-        if not hasattr(function, "jaspr_dict"):
-            function.jaspr_dict = {}
-        
-        args = list(args)
-        
-        signature = tuple([type(arg) for arg in args])
-        if not signature in function.jaspr_dict:
-            function.jaspr_dict[signature] = make_jaspr(function)(*args)
-        
-        return function.jaspr_dict[signature].count_ops(*args)
+    def count_ops_decorator(function):
     
-    return ops_counter
+        def ops_counter(*args):
+            
+            from qrisp.jasp import make_jaspr
+            
+            if not hasattr(function, "jaspr_dict"):
+                function.jaspr_dict = {}
+            
+            args = list(args)
+            
+            signature = tuple([type(arg) for arg in args])
+            if not signature in function.jaspr_dict:
+                function.jaspr_dict[signature] = make_jaspr(function)(*args)
+            
+            return function.jaspr_dict[signature].count_ops(*args, meas_behavior = meas_behavior)
+        
+        return ops_counter
+    
+    return count_ops_decorator
 
+
+def always_zero(key):
+    return False
+def always_one(key):
+    return True
 
 # This function is the central interface for performing resource estimation.
 # It takes a Jaspr and returns a function, returning a dictionary (with the counted
 # operations).
-def profile_jaspr(jaspr):
+def profile_jaspr(jaspr, meas_behavior = "0"):
     
-    def profiler(*args):
-        
-        # The profiling array computer is a function that computes the array 
-        # countaining the gate counts.
-        # The profiling dic is a dictionary of type {str : int}, which indicates
-        # which operation has been computed at which index of the array.
-        profiling_array_computer, profiling_dic = get_profiling_array_computer(jaspr)
-    
-        # Compute the profiling array
-        if len(jaspr.outvars) > 1:
-            profiling_array = profiling_array_computer(*args)[-1]
-        else:
-            profiling_array = profiling_array_computer(*args)
-        
-        # Transform to a dictionary containing gate counts
-        res_dic = {}
-        for k in profiling_dic.keys():
-            if int(profiling_array[profiling_dic[k]]):
-                res_dic[k] = int(profiling_array[profiling_dic[k]])
+    if isinstance(meas_behavior, str):
+        if meas_behavior == "0":
+            meas_behavior = always_zero
+        elif meas_behavior == "1":
+            meas_behavior = always_one
+
+    if callable(meas_behavior):    
+        def profiler(*args):
             
-        return res_dic
+            # The profiling array computer is a function that computes the array 
+            # countaining the gate counts.
+            # The profiling dic is a dictionary of type {str : int}, which indicates
+            # which operation has been computed at which index of the array.
+            profiling_array_computer, profiling_dic = get_profiling_array_computer(jaspr, meas_behavior)
+        
+            # Compute the profiling array
+            if len(jaspr.outvars) > 1:
+                profiling_array = profiling_array_computer(*args)[-1]
+            else:
+                profiling_array = profiling_array_computer(*args)
+            
+            # Transform to a dictionary containing gate counts
+            res_dic = {}
+            for k in profiling_dic.keys():
+                if int(profiling_array[profiling_dic[k]]):
+                    res_dic[k] = int(profiling_array[profiling_dic[k]])
+                
+            return res_dic
 
     return profiler
 
 # This function takes a Jaspr and returns a function computing the "counting array"
 @lru_cache(int(1E5))
-def get_profiling_array_computer(jaspr):
+def get_profiling_array_computer(jaspr, meas_behavior):
     
     # This functions determines the set of primitives that appear in a given Jaxpr
     primitives = get_primitives(jaspr)
@@ -158,7 +177,7 @@ def get_profiling_array_computer(jaspr):
     @jax.jit
     def profiling_array_computer(*args):
         
-        profiling_eqn_evaluator = make_profiling_eqn_evaluator(profiling_dic)
+        profiling_eqn_evaluator = make_profiling_eqn_evaluator(profiling_dic, meas_behavior)
         
         args = list(args)
         args = args + [jnp.zeros(len(profiling_dic), dtype = "int64")]
