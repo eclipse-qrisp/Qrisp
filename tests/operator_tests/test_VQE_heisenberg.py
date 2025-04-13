@@ -53,9 +53,7 @@ def test_jasp_vqe_heisenberg():
 
         results = jnp.array([0.0]*5)
         for i in range(5):
-            res = vqe.run(QuantumFloat(G.number_of_nodes()),
-                    depth=1,
-                    max_iter=50)
+            res = vqe.run(QuantumFloat(G.number_of_nodes()), depth=1, max_iter=50, optimizer="SPSA")
             results = results.at[i].set(res)
 
         return results

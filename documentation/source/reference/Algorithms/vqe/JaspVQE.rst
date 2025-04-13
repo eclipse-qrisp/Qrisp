@@ -23,7 +23,8 @@ Running this example with Jasp is as easy as wrapping the code in a ``main`` fun
 
         vqe = electronic_structure_problem(mol)
 
-        energy = vqe.run(lambda : QuantumFloat(4), depth=1, max_iter=100)
+        energy = vqe.run(lambda : QuantumFloat(4), depth=1, max_iter=100, optimizer="SPSA")
+        
         return energy
 
 The :ref:`jaspify <jaspify>` method allows for running Jasp-traceable functions using the integrated Qrisp simulator. 

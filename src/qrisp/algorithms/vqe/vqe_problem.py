@@ -105,12 +105,12 @@ class VQEProblem:
 
         vqe = VQEProblem(hamiltonian = H,
                          ansatz_function = ansatz,
-                         num_params=4,
-                         callback=True)
+                         num_params = 4,
+                         callback = True)
 
         energy = vqe.run(QuantumVariable(4),
                       depth = 1,
-                      max_iter=50)
+                      max_iter = 50)
         print(energy)
         # Yields -1.864179046
     
@@ -367,7 +367,7 @@ class VQEProblem:
             return res_sample.x, res_sample.fun
 
 
-    def run(self, qarg, depth, mes_kwargs = {}, max_iter = 50, init_type = "random", init_point = None, optimizer = None, options = {}):
+    def run(self, qarg, depth, mes_kwargs = {}, max_iter = 50, init_type = "random", init_point = None, optimizer = "COBYLA", options = {}):
         """
         Run VQE for the specific problem instance.
         
@@ -393,7 +393,7 @@ class VQEProblem:
             Specifies the `SciPy optimization routine <https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html>`_.
             Available are, e.g., ``COBYLA``, ``COBYQA``, ``Nelder-Mead``. The Default is ``COBYLA``.    
             In tracing mode (i.e. Jasp) Jax-traceable :ref:`optimization routines <optimization_tools>` must be utilized.
-            Available are ``SPSA``. The Default is ``SPSA``. 
+            Available are ``SPSA``. 
         options : dict
             A dictionary of solver options.
 
@@ -421,16 +421,10 @@ class VQEProblem:
         options["maxiter"] = max_iter
 
         if check_for_tracing_mode():
-            
-            if optimizer is None:
-                optimizer = "SPSA"
 
             measurement_data = None
 
         else: 
-
-            if optimizer is None:
-                optimizer = "COBYLA"
 
             measurement_data = QubitOperatorMeasurement(self.hamiltonian, diagonalisation_method = mes_kwargs["diagonalisation_method"])
 
@@ -447,7 +441,7 @@ class VQEProblem:
         return opt_res
     
 
-    def train_function(self, qarg, depth, mes_kwargs = {}, max_iter = 50, init_type = "random", init_point = None, optimizer = None, options = {}):
+    def train_function(self, qarg, depth, mes_kwargs = {}, max_iter = 50, init_type = "random", init_point = None, optimizer = "COBYLA", options = {}):
         """
         This function allows for training of a circuit with a given instance of a ``VQEProblem``. It will then return a function that can be applied to a :ref:`QuantumVariable`,
         such that it prepares the ground state of the problem Hamiltonian. The function therefore applies a circuit for the problem instance with optimized parameters.
@@ -474,7 +468,7 @@ class VQEProblem:
             Specifies the `SciPy optimization routine <https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html>`_.
             Available are, e.g., ``COBYLA``, ``COBYQA``, ``Nelder-Mead``. The Default is ``COBYLA``.    
             In tracing mode (i.e. Jasp) Jax-traceable :ref:`optimization routines <optimization_tools>` must be utilized.
-            The Default is ``SPSA``. 
+            Available are ``SPSA``. 
         options : dict
             A dictionary of solver options.
 
@@ -503,16 +497,10 @@ class VQEProblem:
         options["maxiter"] = max_iter
 
         if check_for_tracing_mode():
-            
-            if optimizer is None:
-                optimizer = "SPSA"
 
             measurement_data = None
 
         else: 
-
-            if optimizer is None:
-                optimizer = "COBYLA"
 
             measurement_data = QubitOperatorMeasurement(self.hamiltonian, diagonalisation_method = mes_kwargs["diagonalisation_method"])
 
@@ -537,7 +525,7 @@ class VQEProblem:
         return circuit_generator
             
 
-    def benchmark(self, qarg, depth_range, precision_range, iter_range, optimal_energy, repetitions = 1, mes_kwargs = {}, init_type = "random", optimizer = None, options = {}):
+    def benchmark(self, qarg, depth_range, precision_range, iter_range, optimal_energy, repetitions = 1, mes_kwargs = {}, init_type = "random", optimizer = "COBYLA", options = {}):
         """
         This method enables convenient data collection regarding performance of the implementation.
 
