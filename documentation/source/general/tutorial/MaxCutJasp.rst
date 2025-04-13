@@ -1,7 +1,7 @@
 .. _MaxCutJaspQAOA:
 
-MaxCut QAOA with Jasp
-=====================
+MaxCut QAOA in Jasp
+===================
 
 In this tutorial, we will explain step-by-step how to build a custom QAOA application with Jasp.
 
@@ -9,6 +9,10 @@ In this tutorial, we will explain step-by-step how to build a custom QAOA applic
 First, let us recall the problem description for MaxCut:
 
 Given a Graph  :math:`G = (V,E)` find a bipartition $S$, $V\setminus S$ of the set of vertices $V$ such that the number of edges between $S$ and $V\setminus S$ is maximal.
+
+.. figure:: /_static/maxcut_jasp.png
+   :scale: 50%
+   :align: center
 
 Given a graph $G$ with $n$ nodes, such a bipartition can be encoded with a :ref:`QuantumVariable` with $n$ qubits: 
 we measure the $i$-th qubit in 0 if the node $i$ is in the set $S$, and 1 if the node $i$ is in the set $V\setminus S$.
@@ -35,8 +39,8 @@ First, we need to import the necessary libraries.
     from jax import jit, vmap
     import networkx as nx
 
-    from qrisp import QuantumFloat, h, rx, rzz
-    from qrisp.jasp import sample, minimize, jaspify, jrange
+    from qrisp import QuantumVariable, h, rx, rzz
+    from qrisp.jasp import sample, minimize, jaspify, jrange, make_jaspr
 
 
 **Step 2: Define the Function to Extract Boolean Digits**
@@ -77,7 +81,8 @@ This function will process an array of samples and compute the average cut using
         cut_computer = create_cut_computer(G)
 
         def post_processor(sample_array):
-            cut_values = vmap(cut_computer)(sample_array)  # Use vmap for automatic vectorization
+            # Use vmap for automatic vectorization
+            cut_values = vmap(cut_computer)(sample_array)  
             average_cut = jnp.mean(cut_values)  # Directly compute average
             return average_cut
 
@@ -96,7 +101,7 @@ Now we can create a graph and use our functions to compute the average cut.
     # Create the post processor function
     post_processor = create_sample_array_post_processor(G)
 
-    # Sample input array (e.g., representing different cuts)
+    # Sample input array representing different cuts
     sample_array = jnp.array([0b0001, 0b0010, 0b0100, 0b1000])  # Example binary representations
 
     # Compute the average cut
@@ -127,7 +132,6 @@ First, we will define the the cost operator and mixer.
 
         return apply_cost_operator
 
-    apply_cost_operator = create_cost_operator(G)
 
     def apply_mixer(qv, beta):
         rx(beta, qv)
@@ -136,17 +140,23 @@ Next, we define the QAOA ansatz that creates a QuantumVariable, brings it into u
 
 ::
 
-    def ansatz(theta, p):
-        qv = QuantumFloat(G.number_of_nodes())
+    def create_ansatz(G):
 
-        # Uniform superposition
-        h(qv)
+        apply_cost_operator = create_cost_operator(G)
 
-        for i in jrange(p):
-            apply_cost_operator(qv, theta[i])
-            apply_mixer(qv, theta[p+i])
-        
-        return qv
+        def ansatz(theta, p):
+            qv = QuantumVariable(G.number_of_nodes())
+
+            # Prepare uniform superposition
+            h(qv)
+
+            for i in jrange(p):
+                apply_cost_operator(qv, theta[i])
+                apply_mixer(qv, theta[p+i])
+
+            return qv
+    
+        return ansatz
 
 **Step 7: Defining the Objective Function**
 
@@ -154,21 +164,36 @@ The objective function samples from the parametrized QAOA ansatz and computes th
 
 :: 
 
-    def objective(theta, p):
+    def create_objective(G):
 
-        res_sample = sample(ansatz, shots=1000)(theta ,p)
+        ansatz = create_ansatz(G)
+        post_processor = create_sample_array_post_processor(G)
 
-        value = post_processor(res_sample)
-        return value
+        def objective(theta, p):
 
-**Step 8: Using minimization**
+            res_sample = sample(ansatz, shots=1000)(theta ,p)
 
-We define the main function for finding the optimal parameter values using the JAX-traceable :ref:`minimize <optimization_tools>` routine.
+            value = post_processor(res_sample)
+
+            return value
+    
+        return objective
+
+**Step 8: Using a JAX-traceable Optimization Routine**
+
+We define the qaoa function for finding the optimal parameter values using the JAX-traceable :ref:`minimize <optimization_tools>` routine.
 It returns an array of optimal parameters and the average cost value for the optimal solution.
 
 ::
 
-    def main():
+    def qaoa():
+
+        # Create a sample graph
+        G = nx.Graph()
+        G.add_edges_from([(0, 1), (1, 2), (2, 0), (1, 3)])
+
+        ansatz = create_ansatz(G)
+        objective = create_objective(G)
 
         # Number of layers
         p = 3
@@ -177,22 +202,26 @@ It returns an array of optimal parameters and the average cost value for the opt
         x0 = jnp.array([0.5]*2*p)
 
         result = minimize(objective,x0,(p,))
-        return result.x, result.fun
 
-**Step 9: Run**
+        # Sample from ansatz state for optimal parameters
+        samples = sample(ansatz, shots = 10)(result.x,p)
+
+        return samples
+
+**Step 9: Run the QAOA**
 
 Finally, the jaspify method allows for running Jasp-traceable functions using the integrated Qrisp simulator.
 For hybird algorithms like QAOA and VQE that rely on calculating expectation values based on sampling, the ``terminal_sampling`` feature significatly speeds up the simulation: samples are drawn from the state vector instead of performing repeated simulation and measurement of the quantum circuits.
 
 ::
 
-    jaspify(main, terminal_sampling=True)()
+    jaspify(qaoa, terminal_sampling=True)()
 
 
 You can also create the :ref:`jaspr` object and compile to `QIR <https://www.qir-alliance.org>`_ using `Catalyst <https://docs.pennylane.ai/projects/catalyst/en/stable/index.html>`_.
 
 ::
 
-    jaspr = make_jaspr(main)()
+    jaspr = make_jaspr(qaoa)()
     qir_str = jaspr.to_qir()
 

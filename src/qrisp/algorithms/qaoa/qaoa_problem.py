@@ -60,7 +60,7 @@ class QAOAProblem:
         
         from qrisp import QuantumVariable
         
-        res = maxcut_instance.run(lambda : QuantumVariable(5),
+        res = maxcut_instance.run(QuantumVariable(5),
                                   depth = 4, 
                                   max_iter = 25)
         
@@ -677,7 +677,7 @@ class QAOAProblem:
             Specifies the way the initial optimization parameters are chosen. Available are ``random`` and ``tqa``. The default is ``random``: 
             The parameters are initialized uniformly at random in the interval $[0,\pi/2]$.
             For ``tqa``, the parameters are chosen based on the `Trotterized Quantum Annealing <https://quantum-journal.org/papers/q-2021-07-01-491/>`_ protocol.
-            If ``tqa`` is chosen, and no ``init_function`` for the :ref:`QAOAProblem` is specified, the $\ket{-}^n$ state is prepared (the ground state for the X mixer).#
+            If ``tqa`` is chosen, and no ``init_function`` for the :ref:`QAOAProblem` is specified, the $\ket{-}^n$ state is prepared (the ground state for the X mixer).
         init_point : ndarray, shape (n,), optional
             Specifies the initial optimization parameters.
         optimizer : str, optional
