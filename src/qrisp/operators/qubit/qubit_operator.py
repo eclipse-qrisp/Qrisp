@@ -1839,11 +1839,11 @@ class QubitOperator(Hamiltonian):
             Available are ``commuting`` (groups such that all QubitTerms mutually commute) and ``commuting_qw`` (groups such that all QubitTerms mutually commute qubit-wise).
             The default is ``commuting_qw``.
         forward_evolution : bool, optional
-            If set to False $U(t)^\dagger = e^{itH}$ will be executed (usefull for quantum phase estimation). The default is True.
+            If set to False $U(t)^\dagger = e^{itH}$ will be executed (usefull for quantum phase estimation). The default is ``True``.
 
         Returns
         -------
-        U : function 
+        callable 
             A Python function that implements the first order Suzuki-Trotter formula.
             Given a Hamiltonian $H=H_1+\dotsb +H_m$ the unitary evolution $e^{-itH}$ is 
             approximated by 
@@ -1851,6 +1851,7 @@ class QubitOperator(Hamiltonian):
             .. math::
 
                 e^{-itH}\approx U(t,N)=\left(e^{-iH_1t/N}\dotsb e^{-iH_mt/N}\right)^N
+
             for the first order Trotterization, and for the second order
             
             .. math::
@@ -1859,7 +1860,7 @@ class QubitOperator(Hamiltonian):
             
             This function receives the following arguments:
 
-            * qarg : QuantumVariable 
+            * qarg : :ref:`QuantumVariable` 
                 The quantum argument.
             * t : float, optional
                 The evolution time $t$. The default is 1.
