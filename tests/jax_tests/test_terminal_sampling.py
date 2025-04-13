@@ -56,3 +56,20 @@ def test_terminal_sampling():
     for i in range(3):
         for j in range(3):
             assert main(i, j) == {(0.0, 0.0, False): 0.5, (2**i, 2**j, True): 0.5}
+            
+    def ansatz(theta):
+
+        qv = QuantumFloat(2)
+        rx(theta[0],qv)
+        return qv
+
+    @terminal_sampling
+    def main():
+
+        x0 = jnp.array([0.5])
+
+        qf = ansatz(x0)
+
+        return qf
+
+    main()
