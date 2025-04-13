@@ -1597,7 +1597,7 @@ class QubitOperator(Hamiltonian):
         self,
         state_prep,
         precision = 0.01,
-        diagonalisation_method = "commuting",
+        diagonalisation_method = "commuting_qw",
         backend = None,
         compile = True,
         compilation_kwargs = {},
@@ -1633,7 +1633,7 @@ class QubitOperator(Hamiltonian):
             Specifies the method for grouping and diagonalizing the :ref:`QubitOperator`. 
             Available are ``commuting_qw``, i.e., the operator is grouped based on qubit-wise commutativity of terms, 
             and ``commuting``, i.e., the operator is grouped based on commutativity of terms. 
-            The default is ``commuting``.
+            The default is ``commuting_qw``.
         backend : :ref:`BackendClient`, optional
             The backend on which to evaluate the quantum circuit. The default can be
             specified in the file default_backend.py.
