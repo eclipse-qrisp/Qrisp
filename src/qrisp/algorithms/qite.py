@@ -98,9 +98,12 @@ def QITE(qarg, U_0, exp_H, s, k, method='GC'):
         M = nx.maximal_matching(G)
         U_0 = create_heisenberg_init_function(M)
 
-        qv = QuantumVariable(N)
-        U_0(qv)
-        E_0 = H.get_measurement(qv)
+        def state_prep():
+            qv = QuantumVariable(N)
+            U_0(qv)
+            return qv
+
+        E_0 = H.expectation_value(state_prep)()
         print(E_0)
 
     For the function ``exp_H`` that performs forward evolution $e^{-itH}$, we use the :meth:`trotterization <qrisp.operators.qubit.QubitOperator.trotterization>` method with 5 Trotter steps:
@@ -128,13 +131,18 @@ def QITE(qarg, U_0, exp_H, s, k, method='GC'):
         for k in range(1,steps+1):
 
             # Perform k steps of QITE
-            qv = QuantumVariable(N)
-            QITE(qv, U_0, exp_H, optimal_s, k)
+            def state_prep():
+                qv = QuantumVariable(N)
+                QITE(qv, U_0, exp_H, optimal_s, k)
+                return qv
+
+            qv = state_prep()
             qc = qv.qs.compile()
 
             # Find optimal evolution time 
             # Use "precompliled_qc" keyword argument to avoid repeated compilation of the QITE circuit
-            energies = [H.get_measurement(qv,subs_dic={theta:s_},precompiled_qc=qc,diagonalisation_method='commuting') for s_ in s_values]
+            energies = [H.expectation_value(state_prep, diagonalisation_method='commuting', subs_dic={theta:s_}, precompiled_qc=qc)() for s_ in s_values]
+    
             index = np.argmin(energies)
             s_min = s_values[index]
 

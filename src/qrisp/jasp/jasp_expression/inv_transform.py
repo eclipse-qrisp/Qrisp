@@ -73,10 +73,13 @@ def invert_eqn(eqn):
         
         branches = params["branches"]
         
-        params["branches"] = (ClosedJaxpr((branches[0].jaxpr).inverse(),
-                                           branches[0].consts),
-                              ClosedJaxpr((branches[1].jaxpr).inverse(),
-                                           branches[1].consts))
+        new_branch_list = []
+        
+        for i in range(len(branches)):
+            new_branch_list.append(ClosedJaxpr((branches[i].jaxpr).inverse(),
+                                               branches[i].consts))
+        
+        params["branches"] = tuple(new_branch_list)
         
         primitive = eqn.primitive
         

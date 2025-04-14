@@ -17,6 +17,7 @@
 """
 
 from itertools import product
+import warnings
 
 import sympy as sp
 import numpy as np
@@ -28,7 +29,7 @@ from qrisp.operators.qubit.qubit_term import QubitTerm
 from qrisp.operators.qubit.measurement import get_measurement
 from qrisp.operators.qubit.jasp_measurement import get_jasp_measurement
 from qrisp.operators.qubit.commutativity_tools import construct_change_of_basis
-from qrisp import cx, cz, h, s, sx_dg, IterationEnvironment, conjugate, merge
+from qrisp import cx, cz, h, s, sx_dg, IterationEnvironment, conjugate, merge, invert
 
 from qrisp.jasp import check_for_tracing_mode, jrange
 
@@ -545,78 +546,6 @@ class QubitOperator(Hamiltonian):
         return QubitOperator(new_terms_dict)
     
     @classmethod
-    def from_matrix(self, matrix):
-        r"""
-        Represents a matrix as an operator
-            
-        .. math::
-
-            O=\sum_i\alpha_i\bigotimes_{j=0}^{n-1}O_{ij}
-
-        where $O_{ij}\in\{A,C,P_0,P_1\}$.
-
-        Parameters
-        ----------
-        matrix : numpy.ndarray or scipy.sparse.csr_matrix
-            The matrix.
-
-        Returns
-        -------
-        QubitOperator
-            The operator represented by the matrix.
-
-
-        Examples
-        --------
-
-        ::
-
-            from scipy.sparse import csr_matrix
-            from qrisp.operators import QubitOperator
-
-            sparse_matrix = csr_matrix([[0, 5, 0, 1],
-                                        [5, 0, 0, 0],
-                                        [0, 0, 0, 2],
-                                        [1, 0, 2, 0]])
-
-            O = QubitOperator.from_matrix(sparse_matrix)
-            print(O)
-            # Yields: A_0*A_1 + C_0*C_1 + 5*P^0_0*A_1 + 5*P^0_0*C_1 + 2*P^1_0*A_1 + 2*P^1_0*C_1
-
-        """
-        from scipy.sparse import csr_matrix
-        from numpy import ndarray
-        import numpy as np
-
-        OPERATOR_TABLE = {(0,0):"P0",(0,1):"A",(1,0):"C",(1,1):"P1"}
-
-        if isinstance(matrix,ndarray):
-            new_matrix = csr_matrix(matrix)
-        elif isinstance(matrix,csr_matrix):
-            new_matrix = matrix.copy()
-        else:
-            raise Exception("Cannot construct QubitOperator from type " + str(type(matrix)))
-        
-        M, N = new_matrix.shape
-        n = max(int(np.ceil(np.log2(M))),int(np.ceil(np.log2(N))))
-
-        new_matrix.eliminate_zeros()
-    
-        rows, cols = new_matrix.nonzero()
-        values = new_matrix.data
-
-        O = QubitOperator({})
-        for row, col, value in zip(rows, cols, values):
-            factor_dict = {}
-            for k in range(n):
-                i = (row >> k) & 1
-                j = (col >> k) & 1
-                factor_dict[n-k-1]=OPERATOR_TABLE[(i,j)]
-
-            O.terms_dict[QubitTerm(factor_dict)] = value
-        return O
-    
-    @classmethod
     def from_numpy_array(cls, numpy_array, threshold = np.inf):
         
         from qrisp.operators import X, Y, Z
@@ -646,7 +575,6 @@ class QubitOperator(Hamiltonian):
             H += (coefficient/2**(n)) * temp_H
             
         return H
-
 
     @classmethod
     def from_matrix(self, matrix):
@@ -1576,6 +1504,12 @@ class QubitOperator(Hamiltonian):
         measurement_data=None # measurement settings
     ):
         r"""
+
+        .. warning::
+
+            This method will no longer be supported in a later release of Qrisp. Instead please migrate to :meth:`expectation_value <qrisp.operators.qubit.QubitOperator.expectation_value>`.
+
+            
         This method returns the expected value of a Hamiltonian for the state 
         of a quantum argument. Note that this method measures the **hermitized**
         version of the operator:
@@ -1644,6 +1578,9 @@ class QubitOperator(Hamiltonian):
             #Yields 0.0011251406425802912
 
         """
+
+        warnings.warn("DeprecationWarning: This method will no longer be supported in a later release of Qrisp. Instead please migrate to .expectation_value.")
+
         return get_measurement(self, 
                                 qarg, 
                                 precision=precision, 
@@ -1660,71 +1597,120 @@ class QubitOperator(Hamiltonian):
         self,
         state_prep,
         precision = 0.01,
-        diagonalisation_method = "commuting",
+        diagonalisation_method = "commuting_qw",
+        backend = None,
+        compile = True,
+        compilation_kwargs = {},
+        subs_dic = {},
+        precompiled_qc = None,
+        measurement_data = None # measurement settings        
         ):
         r"""
-        This method returns the expected value of a Hamiltonian for the state 
-        of a quantum argument. Note that this method measures the **hermitized**
-        version of the operator:
+        The ``expectation value`` function allows to estimate the expectation value of a Hamiltonian for a state that is specified by a preparation procedure.
+        This preparation procedure can be supplied via a Python function that returns a :ref:`QuantumVariable`.
+
+        Note that this method measures the **hermitized** version of the operator:
             
         .. math::
             
             H = (O + O^\dagger)/2
 
+        .. note::
+
+            When used with Jasp, only ``state_prep``, ``precision`` and ``diagonalisation_method`` are relevant parameters. Additional parameters are ignored.
 
         Parameters
         ----------
         state_prep : callable
             A function returning a QuantumVariable. 
-            The expectation of the Hamiltonian for the state from this QuantumVariable will be measured. 
+            The expectation of the Hamiltonian for the state of this QuantumVariable will be measured. 
             The state preparation function can only take classical values as arguments. 
             This is because a quantum value would need to be copied for each sampling iteration, which is prohibited by the no-cloning theorem.
         precision : float, optional
             The precision with which the expectation of the Hamiltonian is to be evaluated.
             The default is 0.01. The number of shots scales quadratically with the inverse precision.
         diagonalisation_method : str, optional
-            Specifies the method for grouping and diagonalizing the QubitOperator. 
+            Specifies the method for grouping and diagonalizing the :ref:`QubitOperator`. 
             Available are ``commuting_qw``, i.e., the operator is grouped based on qubit-wise commutativity of terms, 
-            and ``commuting``, i.e., the operator is grouped based on commutativity of terms.
-            The default is ``commuting``.
+            and ``commuting``, i.e., the operator is grouped based on commutativity of terms. 
+            The default is ``commuting_qw``.
+        backend : :ref:`BackendClient`, optional
+            The backend on which to evaluate the quantum circuit. The default can be
+            specified in the file default_backend.py.
+        compile : bool, optional
+            Boolean indicating if the .compile method of the underlying QuantumSession
+            should be called before. The default is ``True``.
+        compilation_kwargs  : dict, optional
+            Keyword arguments for the compile method. For more details check
+            :meth:`QuantumSession.compile <qrisp.QuantumSession.compile>`. The default
+            is ``{}``.
+        subs_dic : dict, optional
+            A dictionary of Sympy symbols and floats to specify parameters in the case
+            of a circuit with unspecified, :ref:`abstract parameters<QuantumCircuit>`.
+            The default is ``{}``.
+        precompiled_qc : QuantumCircuit, optional
+            A precompiled quantum circuit.
+        measurement_data : QubitOperatorMeasurement
+            Cached data to accelerate the measurement procedure. Automatically generated by default.
 
         Returns
         -------
         callable
-            A classical, Jax traceable function returning The expectation value of the Hamiltonian for the prepared quantum state.
+            A function returning an array containing the expectaion value.
 
         Examples
         --------
 
         We define a Hamiltonian, and measure its expectation value for the state of a :ref:`QuantumFloat`.
 
+        We prepare the state
+
+        .. math::
+
+            \ket{\psi_{\theta}} = (\cos(\theta)\ket{0}+\sin(\theta)\ket{1})^{\otimes 2}
+
         ::
             
             from qrisp import *
             from qrisp.operators import X,Y,Z
+            import numpy as np
 
-            def state_prep():
+            def state_prep(theta):
                 qv = QuantumFloat(2)
-                h(qv)
+
+                ry(theta,qv)
+    
                 return qv
+
+        And compute the expectation value of the Hamiltonion $H=Z_0Z_1$ for the state $\ket{\psi_{\theta}}$
+
+        ::
 
             H = Z(0)*Z(1)
 
-            H.expectation_value(state_prep)()
-            # Yields: -0.0021252656582072538
+            ev_function = H.expectation_value(state_prep)
+            
+            print(ev_function(np.pi/2))
+            # Yields: 0.010126265783222899
 
-        We can also use this method in :ref:`Jasp`:
-
+        Similiarly, expectation values can be calculated with Jasp
+            
         ::
 
             @jaspify(terminal_sampling=True)
             def main():
-                return H.expectation_value(state_prep)()
+            
+                H = Z(0)*Z(1)
 
-            main()
-            # Yields: Array(0.02062758, dtype=float64)
+                ev_function = H.expectation_value(state_prep)
+
+                return ev_function(np.pi/2)
+
+            print(main())
+            # Yields: 0.010126265783222899
 
         """
+        from qrisp import QuantumVariable
 
         def return_function(*args):
 
@@ -1735,12 +1721,22 @@ class QubitOperator(Hamiltonian):
                                         precision = precision, 
                                         diagonalisation_method = diagonalisation_method)
             else:
+                
+                if precompiled_qc is not None:
+                    qarg = QuantumVariable(self.find_minimal_qubit_amount())
+                else:
+                    qarg = state_prep(*args)
 
-                qarg = state_prep(*args)
                 return get_measurement(self, 
                                         qarg, 
-                                        precision=precision, 
-                                        diagonalisation_method=diagonalisation_method)
+                                        precision = precision, 
+                                        diagonalisation_method = diagonalisation_method,
+                                        backend = backend, 
+                                        compile = compile, 
+                                        compilation_kwargs = compilation_kwargs, 
+                                        subs_dic = subs_dic,
+                                        precompiled_qc = precompiled_qc, 
+                                        measurement_data = measurement_data)
             
         return return_function
 
@@ -1748,7 +1744,7 @@ class QubitOperator(Hamiltonian):
     # Trotterization
     #
 
-    def trotterization(self, method='commuting_qw', forward_evolution = True):
+    def trotterization(self, order=1, method='commuting_qw', forward_evolution = True):
         r"""
         .. _ham_sim:
         
@@ -1762,16 +1758,19 @@ class QubitOperator(Hamiltonian):
 
         Parameters
         ----------
+        order : int, optional
+            The order of Trotter-Suzuki formula.
+            Available are `1` and `2`, corresponding to the first and second order formulae.
         method : str, optional
             The method for grouping the QubitTerms. 
             Available are ``commuting`` (groups such that all QubitTerms mutually commute) and ``commuting_qw`` (groups such that all QubitTerms mutually commute qubit-wise).
             The default is ``commuting_qw``.
         forward_evolution : bool, optional
-            If set to False $U(t)^\dagger = e^{itH}$ will be executed (usefull for quantum phase estimation). The default is True.
+            If set to False $U(t)^\dagger = e^{itH}$ will be executed (usefull for quantum phase estimation). The default is ``True``.
 
         Returns
         -------
-        U : function 
+        callable 
             A Python function that implements the first order Suzuki-Trotter formula.
             Given a Hamiltonian $H=H_1+\dotsb +H_m$ the unitary evolution $e^{-itH}$ is 
             approximated by 
@@ -1780,9 +1779,15 @@ class QubitOperator(Hamiltonian):
 
                 e^{-itH}\approx U(t,N)=\left(e^{-iH_1t/N}\dotsb e^{-iH_mt/N}\right)^N
 
+            for the first order Trotterization, and for the second order
+            
+            .. math::
+
+                e^{-itH} \approx U_2(t, N) = \left( e^{-iH_1 \frac{t}{2N}} e^{-iH_2 \frac{t}{2N}} \dotsb e^{-iH_m \frac{t}{N}} \dotsb e^{-iH_2 \frac{t}{2N}} e^{-iH_1 \frac{t}{2N}} \right)^N.
+            
             This function receives the following arguments:
 
-            * qarg : QuantumVariable 
+            * qarg : :ref:`QuantumVariable` 
                 The quantum argument.
             * t : float, optional
                 The evolution time $t$. The default is 1.
@@ -1851,7 +1856,7 @@ class QubitOperator(Hamiltonian):
                         for intersect_group in intersect_groups:
                             for term,coeff in intersect_group.terms_dict.items():
                                 term.simulate(-coeff*t/steps*(-1)**int(forward_evolution), qarg)
-
+            
         def U(qarg, t=1, steps=1, iter=1):
             if check_for_tracing_mode():
                 for i in jrange(iter*steps):
@@ -1859,7 +1864,12 @@ class QubitOperator(Hamiltonian):
             else:
                 merge([qarg])
                 with IterationEnvironment(qarg.qs, iter*steps):
-                    trotter_step(qarg, t, steps)
+                    if order == 1:
+                        trotter_step(qarg, t, steps)
+                    elif order == 2:
+                        trotter_step(qarg, t, steps*2)
+                        with invert():
+                            trotter_step(qarg, -t, steps*2)
 
         return U
 

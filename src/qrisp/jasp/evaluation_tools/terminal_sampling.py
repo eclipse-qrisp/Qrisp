@@ -67,7 +67,7 @@ def terminal_sampling(func = None, shots = 0):
     
     ::
         
-        from qrisp import QuantumFloat, QuantumBool, h
+        from qrisp import QuantumFloat, QuantumBool, h, cx
         from qrisp.jasp import terminal_sampling
 
         @terminal_sampling(shots = 1000)

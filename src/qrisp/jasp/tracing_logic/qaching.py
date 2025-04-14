@@ -268,7 +268,7 @@ def qache_helper(func, jax_kwargs):
     # Wrap in jax.jit
     ammended_function = jax.jit(ammended_function, **jax_kwargs)
     
-    from qrisp.core.quantum_variable import flatten_qv
+    from qrisp.jasp.tracing_logic import flatten_qv
     
     # We now prepare the return function
     def return_function(*args, **kwargs):

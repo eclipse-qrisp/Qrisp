@@ -22,7 +22,7 @@ from sympy import lambdify, symbols
 
 from jax import make_jaxpr, jit
 from jax.core import ClosedJaxpr
-from jax.lax import fori_loop, cond, while_loop
+from jax.lax import fori_loop, cond, while_loop, switch
 from jax._src.linear_util import wrap_init
 import jax.numpy as jnp
 
@@ -445,22 +445,32 @@ def process_while(eqn, context_dic):
     insert_outvalues(eqn, context_dic, unflattened_outvalues)
 
 def process_cond(eqn, context_dic):
+
+    branch_list = []
     
-    false_jaxpr = ensure_conversion(eqn.params["branches"][0].jaxpr)
-    true_jaxpr = ensure_conversion(eqn.params["branches"][1].jaxpr)
+    for i in range(len(eqn.params["branches"])):
+        branch_list.append(ensure_conversion(eqn.params["branches"][i].jaxpr))
     
     invalues = extract_invalues(eqn, context_dic)
+    
+    if isinstance(eqn.invars[-1].aval, AbstractQuantumCircuit):
+        
+        if len(branch_list) > 2:
+            raise Exception("Converting cond primitive with more than 2 branches to Catalyst is currently not supported.")
 
-    # Contrary to the jax cond primitive, the catalyst cond primitive
-    # wants a bool    
-    invalues[0] = jnp.asarray(invalues[0], bool)
-    
-    flattened_invalues = flatten_signature(invalues, eqn.invars)
-    
-    outvalues = cond_p.bind(*flattened_invalues, branch_jaxprs = (true_jaxpr, false_jaxpr), nimplicit_outputs = 0)
-    
-    unflattened_outvalues = unflatten_signature(outvalues, eqn.outvars)
-    
+        # Contrary to the jax cond primitive, the catalyst cond primitive
+        # wants a bool    
+        invalues[0] = jnp.asarray(invalues[0], bool)
+        
+        flattened_invalues = flatten_signature(invalues, eqn.invars)
+        
+        outvalues = cond_p.bind(*flattened_invalues, branch_jaxprs = branch_list[::-1], nimplicit_outputs = 0)
+        
+        unflattened_outvalues = unflatten_signature(outvalues, eqn.outvars)
+    else:
+        
+        unflattened_outvalues = eqn.primitive.bind(*invalues, branches = branch_list, linear = False)
+        
     insert_outvalues(eqn, context_dic, unflattened_outvalues)
 
 @lru_cache(maxsize = int(1E5))

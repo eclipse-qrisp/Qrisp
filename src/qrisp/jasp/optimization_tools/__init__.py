@@ -16,9 +16,5 @@
 ********************************************************************************/
 """
 
-from qrisp.jasp.tracing_logic.dynamic_qubit_array import *
-from qrisp.jasp.tracing_logic.tracing_quantum_session import*
-from qrisp.jasp.tracing_logic.qaching import *
-from qrisp.jasp.tracing_logic.quantum_kernel import *
-from qrisp.jasp.tracing_logic.qv_flattening import *
-
+from qrisp.jasp.optimization_tools.optimize import *
+from qrisp.jasp.optimization_tools.spsa import *

@@ -17,6 +17,7 @@
 """
 
 import numpy as np
+import warnings
 
 from qrisp.operators import Hamiltonian
 from qrisp.operators.fermionic.fermionic_term import FermionicTerm
@@ -664,6 +665,12 @@ class FermionicOperator(Hamiltonian):
         **measurement_kwargs
     ):
         r"""
+
+        .. warning::
+
+            This method will no longer be supported in a later release of Qrisp. Instead please migrate to :meth:`expectation_value <qrisp.operators.fermionic.FermionicOperator.expectation_value>`.
+
+
         This method returns the expected value of a Hamiltonian for the state 
         of a quantum argument. Note that this method measures the **hermitized**
         version of the operator:
@@ -676,9 +683,9 @@ class FermionicOperator(Hamiltonian):
         ----------
         qarg : :ref:`QuantumVariable` or list[Qubit]
             The quantum argument to evaluate the Hamiltonian on.
-        mapping_type : str
-            The strategy on how to map the FermionicOperator to a QubitOperator. Default is ``jordan_wigner``
-        measurement_kwargs : dict
+        mapping_type : str, optional
+            The strategy on how to map the FermionicOperator to a QubitOperator. Default is ``jordan_wigner``.
+        measurement_kwargs : dict, optional
             The keyword arguments of :meth:`QubitOperator.get_measurement`.
 
         Raises
@@ -705,14 +712,106 @@ class FermionicOperator(Hamiltonian):
         -0.007968127490039834
 
         """
+
+        warnings.warn("DeprecationWarning: This method will no longer be supported in a later release of Qrisp. Instead please migrate to .expectation_value.")
+
         qubit_operator = self.to_qubit_operator(mapping_type)
         return qubit_operator.get_measurement(qarg, **measurement_kwargs)
+    
+
+    def expectation_value(
+        self,
+        state_prep,
+        mapping_type = "jordan_wigner",
+        **measurement_kwargs
+        ):
+        r"""
+        The ``expectation value`` function allows to estimate the expectation value of a Hamiltonian for a state that is specified by a preparation procedure.
+        This preparation procedure can be supplied via a Python function that returns a :ref:`QuantumVariable`.
+
+        Note that this method measures the **hermitized** version of the operator:
+            
+        .. math::
+            
+            H = (O + O^\dagger)/2
+
+
+        Parameters
+        ----------
+        state_prep : callable
+            A function returning a QuantumVariable. 
+            The expectation of the Hamiltonian for the state of this QuantumVariable will be measured. 
+            The state preparation function can only take classical values as arguments. 
+            This is because a quantum value would need to be copied for each sampling iteration, which is prohibited by the no-cloning theorem.
+        mapping_type : str, optional
+            The strategy on how to map the FermionicOperator to a QubitOperator. Default is ``jordan_wigner``.
+        measurement_kwargs : dict, optional
+            The keyword arguments of :meth:`QubitOperator.expectation_value <qrisp.operators.qubit.QubitOperator.expectation_value>`.
+
+        Returns
+        -------
+        callable
+            A function returning an array containing the expectaion value.
+
+        Examples
+        --------
+
+        We define a Fermionic Hamiltonian, and measure its expectation value for the state of a :ref:`QuantumFloat`.
+
+        We prepare the state
+
+        .. math::
+
+            \ket{\psi_{\theta}} = (\cos(\theta)\ket{0}+\sin(\theta)\ket{1})^{\otimes 2}
+
+        ::
+            
+            from qrisp import *
+            from qrisp.operators import a,c
+            import numpy as np
+
+            def state_prep(theta):
+                qv = QuantumFloat(2)
+
+                ry(theta,qv)
+    
+                return qv
+
+        And compute the expectation value of the Hamiltonion $H=a_0^{\dagger}a_1+a_1^{\dagger}a_0$ for the state $\ket{\psi_{\theta}}$
+
+        ::
+
+            H = c(0)*a(1) + c(1)*a(0)
+
+            ev_function = H.expectation_value(state_prep)
+            
+            print(ev_function(np.pi/2))
+            # Yields: 0.5027499999999724
+
+        Similiarly, expectation values can be calculated with Jasp
+
+        ::
+
+            @jaspify(terminal_sampling=True)
+            def main():
+            
+                H = c(0)*a(1) + c(1)*a(0)
+
+                ev_function = H.expectation_value(state_prep)
+
+                return ev_function(np.pi/2)
+
+            print(main())
+            # Yields: 0.5027499999999724
+
+        """
+        qubit_operator = self.to_qubit_operator(mapping_type)
+        return qubit_operator.expectation_value(state_prep, **measurement_kwargs)
         
     #
     # Trotterization
     #
     
-
     def trotterization(self, forward_evolution = True):
         r"""
         Returns a function for performing Hamiltonian simulation, i.e., approximately implementing the unitary operator $U(t) = e^{-itH}$ via Trotterization.
