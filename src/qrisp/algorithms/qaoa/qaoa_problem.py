@@ -17,13 +17,12 @@
 """
 
 import time
-import warnings
 
 import numpy as np
 from scipy.optimize import minimize
 from sympy import Symbol
 
-from qrisp import QuantumArray, h, x, parallelize_qc
+from qrisp import QuantumArray, h, x
 from qrisp.algorithms.qaoa.qaoa_benchmark_data import QAOABenchmark
 
 import jax
@@ -712,9 +711,9 @@ class QAOAProblem:
                                             cl_cost_function=create_max_indep_set_cl_cost_function(G),
                                             init_function=max_indep_set_init_function)
 
-            # train the circuit with the problem instance 
-            qarg_prep = lambda : QuantumVariable(G.number_of_nodes())
-            training_func = qaoa_instance.train_function(qarg_prep, depth=5)
+            # create a blueprint-qv to train the circuit with the problem instance 
+            qarg = QuantumVariable(G.number_of_nodes())
+            training_func = qaoa_instance.train_function(qarg, depth=5)
 
             # apply the trained function to a new qv 
             qarg_trained = QuantumVariable(G.number_of_nodes())
@@ -835,7 +834,7 @@ class QAOAProblem:
 
             max_cut_instance = maxcut_problem(G)
 
-            benchmark_data = max_cut_instance.benchmark(qarg = QuantumVariable(5),
+            benchmark_data = max_cut_instance.benchmark(QuantumVariable(5),
                                        depth_range = [3,4,5],
                                        shot_range = [5000, 10000],
                                        iter_range = [25, 50],
