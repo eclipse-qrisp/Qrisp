@@ -246,7 +246,7 @@ def stimulate(func = None):
     return return_function
 
 
-def simulate_jaspr(jaspr, *args, terminal_sampling = False, simulator = "qrisp"):
+def simulate_jaspr(jaspr, *args, terminal_sampling = False, simulator = "qrisp", return_gate_counts = False):
     
     from qrisp.alg_primitives.mcx_algs.circuit_library import gidney_qc
     
@@ -327,6 +327,9 @@ def simulate_jaspr(jaspr, *args, terminal_sampling = False, simulator = "qrisp")
     
     with fast_append(3):
         res = eval_jaxpr(jaspr, eqn_evaluator = eqn_evaluator)(*(jaspr.consts + args))
+    
+    if return_gate_counts:
+        return res[-1].gate_counts
     
     if len(jaspr.outvars) == 2:
         return res[0]

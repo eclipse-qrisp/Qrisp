@@ -39,6 +39,7 @@ import jax.numpy as jnp
 
 from qrisp.jasp.primitives import OperationPrimitive
 from qrisp.jasp.interpreter_tools import make_profiling_eqn_evaluator, eval_jaxpr
+from qrisp.jasp.evaluation_tools.jaspification import simulate_jaspr
 
 def count_ops(meas_behavior):
     """
@@ -46,6 +47,26 @@ def count_ops(meas_behavior):
     This decorator compiles the given Jasp-compatible function into a classical
     function computing the amount of each gates required. The decorated function
     will return a dictionary containing the operation counts.
+    
+    For many algorithms including classical feedback, the result of the 
+    measurements can heavily influence the required resources. To reflect this,
+    users can specify the behavior of measurements during the computation of 
+    resources. The following strategies are available:
+        
+    * ``"0"`` - computes the resource as if measurements always return 0
+    * ``"1"`` - computes the resource as if measurements always return 1
+    * *callable* - allows the user to specify a random number generator (see examples)
+    
+    For more details on how the *callable* option can be used, consult the
+    examples section.
+    
+    Finally it is also possible to call the Qrisp simulator to determine
+    measurement behavior by providing ``sim``. This is of course much less 
+    scalable but in particular for algorithms involving repeat-until-success 
+    components, a necessary evil.
+    
+    Note that the ``sim`` option might return non-deterministic results, while
+    the other methods do.
     
     .. warning::
         
@@ -57,9 +78,7 @@ def count_ops(meas_behavior):
     meas_behavior : str or callable
         A string or callable indicating the behavior of the ressource computation
         when measurements are performed. Available are
-        * ``"0"`` - computes the resource as if measurements always return 0
-        * ``"1"`` - computes the resource as if measurements always return 1
-        * callable - allows the user to specify a random number generator (see examples)
+    
         
     Returns
     -------
@@ -93,6 +112,55 @@ def count_ops(meas_behavior):
     Note that even though the second computation contains more than 800 million gates, 
     determining the resources takes less than 200ms, highlighting the scalability
     features of the Jasp infrastructure.
+    
+    **Modifying the measurement behavior via a random number generator**
+    
+    To specify the behavior, we specify an RNG function (for more details on
+    what that means please check the `Jax documentation <https://docs.jax.dev/en/latest/jax.random.html>`_.
+    This RNG takes as input a "key" and returns a boolean value.
+    In this case, the return value will be uniformly distributed among True and False.
+    
+    ::
+        
+        
+        from jax import random
+        import jax.numpy as jnp
+        from qrisp import QuantumFloat, measure, control, count_ops, x
+        
+        # Returns a uniformly distributed boolean
+        def meas_behavior(key):
+            return jnp.bool(random.randint(key, (1,), 0,1)[0])
+        
+        @count_ops(meas_behavior = meas_behavior)
+        def main(i):
+            
+            qv = QuantumFloat(2)
+            
+            meas_res = measure(qv)
+            
+            with control(meas_res == i):
+                x(qv)
+            
+            return measure(qv)
+        
+    This script executes two measurements and based on the measurement outcome
+    executes two X gates. We can now execute this resource computation with 
+    different values of ``i`` to see, which measurements return ``True`` with
+    our given random-number generator.
+    
+    ::
+        
+        print(main(0))
+        # Yields: {'measure': 4, 'x': 2}
+        print(main(1))
+        # Yields: {'measure': 4}
+        print(main(2))
+        # Yields: {'measure': 4}
+        print(main(3))
+        # Yields: {'measure': 4}
+        
+    From this we conclude that our RNG returned 0 for both of the initial 
+    measurements.
     """
     
     def count_ops_decorator(function):
@@ -132,6 +200,8 @@ def profile_jaspr(jaspr, meas_behavior = "0"):
             meas_behavior = always_zero
         elif meas_behavior == "1":
             meas_behavior = always_one
+        elif not meas_behavior == "sim":
+            raise Exception(f"Don't know how to compute required resources via method {meas_behavior}")
 
     if callable(meas_behavior):    
         def profiler(*args):
@@ -155,6 +225,10 @@ def profile_jaspr(jaspr, meas_behavior = "0"):
                     res_dic[k] = int(profiling_array[profiling_dic[k]])
                 
             return res_dic
+    
+    else:
+        def profiler(*args):
+            return simulate_jaspr(jaspr, *args, return_gate_counts = True)
 
     return profiler
 

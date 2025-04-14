@@ -37,6 +37,7 @@ class BufferedQuantumState:
         self.simulator = simulator
         self.qubit_to_index_dict = {}
         self.qubit_counter = 0
+        self.gate_counts = {}
     
     def add_qubit(self):
         if self.simulator == "qrisp":
@@ -48,6 +49,11 @@ class BufferedQuantumState:
     
     def append(self, op, qubits):
         self.buffer_qc.append(op, qubits)
+        try:
+            if op.name != "qb_alloc" and op.name != "qb_dealloc":
+                self.gate_counts[op.name] += 1
+        except KeyError:
+            self.gate_counts[op.name] = 1
             
     def apply_buffer(self):
         
