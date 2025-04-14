@@ -66,5 +66,5 @@ Finally, we visualize the most likely solution.
             edge_color=['#6929C4' if edge[0] in most_likely and edge[1] in most_likely else '#D3D3D3' for edge in G.edges()])
 
 .. image:: ./maxClique.png
-  :scale: 80%
+  :scale: 60%
   :align: center

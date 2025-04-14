@@ -76,6 +76,6 @@ Finally, we visualize the most likely solution.
             pos = nx.bipartite_layout(G, [node for node in G.nodes() if most_likely[node]=='0']))
 
 .. image:: ./maxCut.png
-  :scale: 80%
+  :scale: 60%
   :align: center
 

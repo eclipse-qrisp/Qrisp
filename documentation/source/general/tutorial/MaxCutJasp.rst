@@ -11,7 +11,7 @@ First, let us recall the problem description for MaxCut:
 Given a Graph  :math:`G = (V,E)` find a bipartition $S$, $V\setminus S$ of the set of vertices $V$ such that the number of edges between $S$ and $V\setminus S$ is maximal.
 
 .. figure:: /_static/maxcut_jasp.png
-   :scale: 50%
+   :scale: 60%
    :align: center
 
 Given a graph $G$ with $n$ nodes, such a bipartition can be encoded with a :ref:`QuantumVariable` with $n$ qubits: 

@@ -83,6 +83,6 @@ Finally, we visualize the most likely solution.
             edge_color='#D3D3D3')
 
 .. image:: ./mKCS.png
-  :scale: 80%
+  :scale: 60%
   :align: center
 
