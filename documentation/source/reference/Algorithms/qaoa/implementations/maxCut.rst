@@ -45,7 +45,7 @@ Example implementation
     from qrisp.qaoa import QAOAProblem, RX_mixer, create_maxcut_cl_cost_function, create_maxcut_cost_operator
     import networkx as nx
 
-    G = nx.erdos_renyi_graph(6, 0.7, seed =  133)
+    G = nx.erdos_renyi_graph(6, 0.7, seed = 133)
     qarg = QuantumVariable(G.number_of_nodes())
 
     qaoa_maxcut = QAOAProblem(cost_operator=create_maxcut_cost_operator(G),
