@@ -584,7 +584,7 @@ class QAOAProblem:
 
         Returns
         -------
-        opt_res : dict
+        dict or jax.Array
             The optimal result after running QAOA problem for a specific problem instance. It contains the measurement results after applying the optimal QAOA circuit to the quantum argument.
         """
 
@@ -882,13 +882,6 @@ class QAOAProblem:
             for s in shot_range:
                 for it in iter_range:
                     for k in range(repetitions):
-                        
-                        #if isinstance(qarg, QuantumArray):
-                        #    qarg_dupl = QuantumArray(qtype = qarg.qtype, shape = qarg.shape)
-                        #    mes_qubits = sum([qv.reg for qv in qarg_dupl.flatten()], [])
-                        #else:
-                        #    qarg_dupl = qarg.duplicate()
-                        #    mes_qubits = list(qarg_dupl)
                             
                         start_time = time.time()
                         
