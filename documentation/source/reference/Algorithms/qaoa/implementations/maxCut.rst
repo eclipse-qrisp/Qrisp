@@ -70,12 +70,12 @@ Finally, we visualize the most likely solution.
 ::
 
     most_likely = max_five[0][0]
-    nx.draw(G, with_labels = True,
-            node_color=['#FFCCCB' if most_likely[node]=='0' else '#ADD8E6' for node in G.nodes()],
+    nx.draw(G, with_labels = True, font_color='white', node_size=1000, font_size=22,
+            node_color=['#6929C4' if most_likely[node]=='0' else '#20306f' for node in G.nodes()],
             edge_color='#D3D3D3',
             pos = nx.bipartite_layout(G, [node for node in G.nodes() if most_likely[node]=='0']))
 
 .. image:: ./maxCut.png
-  :scale: 100%
+  :scale: 80%
   :align: center
 
