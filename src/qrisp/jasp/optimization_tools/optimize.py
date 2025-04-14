@@ -97,4 +97,4 @@ def minimize(fun, x0, args=(), method='SPSA', options={}):
     if method=='SPSA':
         return spsa(fun, x0, args, **options)
     else:
-        raise Exception(f'Optimization method {method} is not available.')
+        raise Exception(f'Optimization method {method} is not available in tracing mode.')

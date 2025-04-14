@@ -17,7 +17,6 @@
 """
 
 import time
-import warnings
 
 import numpy as np
 from scipy.optimize import minimize
@@ -72,7 +71,7 @@ class VQEProblem:
 
         vqe = electronic_structure_problem(mol)
 
-        energy = vqe.run(lambda : QuantumVariable(4), depth=1, max_iter=50)
+        energy = vqe.run(QuantumVariable(4), depth=1, max_iter=50)
         print(energy)
         #Yields -1.8461290172512965
 
@@ -106,12 +105,12 @@ class VQEProblem:
 
         vqe = VQEProblem(hamiltonian = H,
                          ansatz_function = ansatz,
-                         num_params=4,
-                         callback=True)
+                         num_params = 4,
+                         callback = True)
 
-        energy = vqe.run(lambda : QuantumVariable(4),
+        energy = vqe.run(QuantumVariable(4),
                       depth = 1,
-                      max_iter=50)
+                      max_iter = 50)
         print(energy)
         # Yields -1.864179046
     
@@ -162,37 +161,31 @@ class VQEProblem:
 
         Parameters
         ----------
-        init_function : function
+        init_function : callable
             The initial state preparation function for the specific VQE problem instance.
         """
         self.init_function = init_function
 
 
-    def compile_circuit(self, qarg_prep, depth):
+    def compile_circuit(self, qarg, depth):
         """
         Compiles the circuit that is evaluated by the :meth:`run <qrisp.vqe.VQEProblem.run>` method.
 
         Parameters
         ----------
-        qarg_prep : callable
-            A function returning a :ref:`QuantumVariable` to which the VQE circuit is applied.
+        qarg : :ref:`QuantumVariable`
+            The argument to which the VQE circuit is applied.
         depth : int
             The amount of VQE layers.
 
         Returns
         -------
-        compiled_qc : QuantumCircuit
-            The parametrized, compiled QuantumCircuit without measurements.
+        compiled_qc : :ref:`QuantumCircuit`
+            The parametrized, compiled quantum circuit without measurements.
         list[sympy.Symbol]
             A list of the parameters that appear in ``compiled_qc``.
 
         """
-
-        # qarg_prep can a QuantumVariable (DEPRECATED) or a callable returning a QuantumVariable
-        if callable(qarg_prep):
-            qarg = qarg_prep()
-        else:
-            qarg = qarg_prep
         
         temp = list(qarg.qs.data)
         
@@ -215,14 +208,15 @@ class VQEProblem:
         return compiled_qc, theta
 
 
-    def optimization_routine(self, qarg_prep, depth, mes_kwargs, init_type, init_point, optimizer, options, measurement_data=None): 
+    def optimization_routine(self, qarg_prep, depth, mes_kwargs, init_type, init_point, optimizer, options, measurement_data): 
         """
         Wrapper subroutine for the optimization method used in QAOA. The initial values are set and the optimization via ``COBYLA`` is conducted here.
 
         Parameters
         ----------
-        qarg_prep : callable
-            A function returning a :ref:`QuantumVariable` to which the VQE circuit is applied. 
+        qarg : :ref:`QuantumVariable` or callable
+            The argument to which the VQE circuit is applied, 
+            or a function returning a :ref:`QuantumVariable` to which the VQE circuit is applied. 
         depth : int
             The amount of VQE layers.
         mes_kwargs : dict
@@ -321,11 +315,11 @@ class VQEProblem:
 
                 return expectation
             
-
+        # Initialization for optimization parameters
         if init_point is None:
-            # Set initial random values for optimization parameters 
+           
             if init_type=='random':
-
+                # Random optimization parameters 
                 if check_for_tracing_mode():
                     key = jax.random.key(11)
                     init_point = jax.random.uniform(key=key, shape=(self.num_params*depth,))*jnp.pi/2
@@ -334,15 +328,11 @@ class VQEProblem:
 
             else:
                 raise Exception(f'Parameter initialization method {init_type} is not available.')
-
+            
 
         def state_prep(theta):
 
-            # qarg_prep can a QuantumVariable (DEPRECATED) or a callable returning a QuantumVariable
-            if callable(qarg_prep):
-                qarg = qarg_prep()
-            else:
-                qarg = qarg_prep
+            qarg = qarg_prep()
 
             # Prepare the initial state, the default is the \ket{0} state
             if self.init_function is not None:
@@ -366,7 +356,7 @@ class VQEProblem:
         
         else:
 
-            compiled_qc, symbols = self.compile_circuit(qarg_prep, depth)
+            compiled_qc, symbols = self.compile_circuit(qarg_prep(), depth)
 
             res_sample = minimize(optimization_wrapper,
                                     init_point, 
@@ -377,14 +367,15 @@ class VQEProblem:
             return res_sample.x, res_sample.fun
 
 
-    def run(self, qarg_prep, depth, mes_kwargs={}, max_iter=50, init_type="random", init_point=None, optimizer=None, options={}):
+    def run(self, qarg, depth, mes_kwargs = {}, max_iter = 50, init_type = "random", init_point = None, optimizer = "COBYLA", options = {}):
         """
         Run VQE for the specific problem instance.
         
         Parameters
         ----------
-        qarg_prep : callable
-            A function returning a :ref:`QuantumVariable` to which the VQE circuit is applied. 
+        qarg : :ref:`QuantumVariable` or callable
+            The argument to which the VQE circuit is applied, 
+            or a function returning a :ref:`QuantumVariable` to which the VQE circuit is applied. 
         depth : int
             The amount of VQE ansatz layers.
         mes_kwargs : dict, optional
@@ -402,7 +393,7 @@ class VQEProblem:
             Specifies the `SciPy optimization routine <https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html>`_.
             Available are, e.g., ``COBYLA``, ``COBYQA``, ``Nelder-Mead``. The Default is ``COBYLA``.    
             In tracing mode (i.e. Jasp) Jax-traceable :ref:`optimization routines <optimization_tools>` must be utilized.
-            Available are ``SPSA``. The Default is ``SPSA``. 
+            Available are ``SPSA``. 
         options : dict
             A dictionary of solver options.
 
@@ -413,9 +404,14 @@ class VQEProblem:
 
         """
 
-        if not callable(qarg_prep):
-            warnings.warn("DeprecationWarning: Providing a QuantumVariable as first argument will no longer be supported in a later release of Qrisp. Instead a callable creating a QuantumVariable must be provided.")
+        if callable(qarg):
+            qarg_prep = qarg
+        else:
+            template = qarg.template()
+            def qarg_prep():
+                return template.construct()
 
+        # Set default options
         if not "precision" in mes_kwargs:
             mes_kwargs["precision"] = 0.01
 
@@ -425,18 +421,12 @@ class VQEProblem:
         options["maxiter"] = max_iter
 
         if check_for_tracing_mode():
-            
-            if optimizer is None:
-                optimizer = "SPSA"
 
             measurement_data = None
 
         else: 
 
-            if optimizer is None:
-                optimizer = "COBYLA"
-
-            measurement_data = QubitOperatorMeasurement(self.hamiltonian, diagonalisation_method=mes_kwargs["diagonalisation_method"])
+            measurement_data = QubitOperatorMeasurement(self.hamiltonian, diagonalisation_method = mes_kwargs["diagonalisation_method"])
 
         
         opt_theta, opt_res = self.optimization_routine(qarg_prep,
@@ -446,20 +436,21 @@ class VQEProblem:
                                                     init_point, 
                                                     optimizer,
                                                     options,
-                                                    measurement_data=measurement_data)
+                                                    measurement_data = measurement_data)
     
         return opt_res
     
 
-    def train_function(self, qarg_prep, depth, mes_kwargs={}, max_iter=50, init_type="random", init_point=None, optimizer=None, options={}):
+    def train_function(self, qarg, depth, mes_kwargs = {}, max_iter = 50, init_type = "random", init_point = None, optimizer = "COBYLA", options = {}):
         """
         This function allows for training of a circuit with a given instance of a ``VQEProblem``. It will then return a function that can be applied to a :ref:`QuantumVariable`,
         such that it prepares the ground state of the problem Hamiltonian. The function therefore applies a circuit for the problem instance with optimized parameters.
         
         Parameters
         ----------
-        qarg_prep : callable
-            A function returning a :ref:`QuantumVariable` to which the VQE circuit is applied. 
+        qarg : :ref:`QuantumVariable` or callable
+            The argument to which the VQE circuit is applied, 
+            or a function returning a :ref:`QuantumVariable` to which the VQE circuit is applied. 
         depth : int
             The amount of VQE ansatz layers.
         mes_kwargs : dict, optional
@@ -477,7 +468,7 @@ class VQEProblem:
             Specifies the `SciPy optimization routine <https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html>`_.
             Available are, e.g., ``COBYLA``, ``COBYQA``, ``Nelder-Mead``. The Default is ``COBYLA``.    
             In tracing mode (i.e. Jasp) Jax-traceable :ref:`optimization routines <optimization_tools>` must be utilized.
-            The Default is ``SPSA``. 
+            Available are ``SPSA``. 
         options : dict
             A dictionary of solver options.
 
@@ -489,9 +480,14 @@ class VQEProblem:
 
         """
 
-        if not callable(qarg_prep):
-            warnings.warn("DeprecationWarning: Providing a QuantumVariable as first argument will no longer be supported in a later release of Qrisp. Instead a callable creating a QuantumVariable must be provided.")
-
+        if callable(qarg):
+            qarg_prep = qarg
+        else:
+            template = qarg.template()
+            def qarg_prep():
+                return template.construct()
+        
+        # Set default options
         if not "precision" in mes_kwargs:
             mes_kwargs["precision"] = 0.01
 
@@ -501,18 +497,12 @@ class VQEProblem:
         options["maxiter"] = max_iter
 
         if check_for_tracing_mode():
-            
-            if optimizer is None:
-                optimizer = "SPSA"
 
             measurement_data = None
 
         else: 
 
-            if optimizer is None:
-                optimizer = "COBYLA"
-
-            measurement_data = QubitOperatorMeasurement(self.hamiltonian, diagonalisation_method=mes_kwargs["diagonalisation_method"])
+            measurement_data = QubitOperatorMeasurement(self.hamiltonian, diagonalisation_method = mes_kwargs["diagonalisation_method"])
 
         
         opt_theta, opt_res = self.optimization_routine(qarg_prep,
@@ -522,7 +512,7 @@ class VQEProblem:
                                                     init_point, 
                                                     optimizer,
                                                     options,
-                                                    measurement_data=measurement_data)
+                                                    measurement_data = measurement_data)
             
         def circuit_generator(qarg):
                 
@@ -535,14 +525,15 @@ class VQEProblem:
         return circuit_generator
             
 
-    def benchmark(self, qarg_prep, depth_range, precision_range, iter_range, optimal_energy, repetitions=1, mes_kwargs={}, init_type="random", optimizer=None, options={}):
+    def benchmark(self, qarg, depth_range, precision_range, iter_range, optimal_energy, repetitions = 1, mes_kwargs = {}, init_type = "random", optimizer = "COBYLA", options = {}):
         """
         This method enables convenient data collection regarding performance of the implementation.
 
         Parameters
         ----------
-        qarg_prep : callable
-            A function returning a :ref:`QuantumVariable` to which the VQE circuit is applied. 
+        qarg : :ref:`QuantumVariable` or callable
+            The argument to which the VQE circuit is applied, 
+            or a function returning a :ref:`QuantumVariable` to which the VQE circuit is applied. 
         depth_range : list[int]
             A list of integers indicating, which depth parameters should be explored. Depth means the amount of VQE ansatz layers.
         precision_range : list[float]
@@ -587,7 +578,7 @@ class VQEProblem:
             vqe = heisenberg_problem(G,1,0)
             H = create_heisenberg_hamiltonian(G,1,0)
 
-            benchmark_data = vqe.benchmark(lambda : QuantumVariable(5),
+            benchmark_data = vqe.benchmark(QuantumVariable(5),
                                 depth_range = [1,2,3],
                                 precision_range = [0.02,0.01],
                                 iter_range = [25,50],
@@ -607,10 +598,14 @@ class VQEProblem:
         you drawing conclusions from the collected data. Make sure to check them out!
 
         """
+
+        if callable(qarg):
+            qarg_prep = qarg
+        else:
+            template = qarg.template()
+            def qarg_prep():
+                return template.construct()
     
-        if not callable(qarg_prep):
-            warnings.warn("DeprecationWarning: Providing a QuantumVariable as first argument will no longer be supported in a later release of Qrisp. Instead a callable creating a QuantumVariable must be provided.")
-        
         data_dict = {"layer_depth" : [],
                      "circuit_depth" : [],
                      "qubit_amount" : [],
@@ -630,11 +625,11 @@ class VQEProblem:
                         temp_mes_kwargs = dict(mes_kwargs)
                         temp_mes_kwargs["precision"] = s
 
-                        energy = self.run(qarg_prep, depth = p, max_iter = it, mes_kwargs = temp_mes_kwargs, init_type=init_type, optimizer=optimizer, options=options)
+                        energy = self.run(qarg_prep, depth = p, max_iter = it, mes_kwargs = temp_mes_kwargs, init_type = init_type, optimizer = optimizer, options = options)
 
                         final_time = time.time() - start_time
                     
-                        compiled_qc, _ = self.compile_circuit(qarg_prep, depth=p)
+                        compiled_qc, _ = self.compile_circuit(qarg_prep(), depth = p)
                         
                         data_dict["layer_depth"].append(p)
                         data_dict["circuit_depth"].append(compiled_qc.depth())
