@@ -22,6 +22,7 @@ import numpy as np
 
 from qrisp.circuit import Clbit, QuantumCircuit, Qubit, QubitAlloc, QubitDealloc, Instruction, Operation
 from qrisp.core.session_merging_tools import multi_session_merge
+from qrisp.core.quantum_variable import QuantumVariable
 from qrisp.misc import get_depth_dic
 
 
@@ -213,6 +214,10 @@ class QuantumSession(QuantumCircuit):
 
         # Register in the list of active quantum variable
         self.qv_list.append(qv)
+        
+        QuantumVariable.live_qvs.append(weakref.ref(qv))
+        qv.creation_time = int(QuantumVariable.creation_counter[0])
+        QuantumVariable.creation_counter += 1
 
     def get_qv(self, key):
         for qv in self.qv_list:
