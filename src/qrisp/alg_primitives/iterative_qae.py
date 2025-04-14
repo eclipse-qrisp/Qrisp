@@ -35,8 +35,9 @@ def IQAE(qargs, state_function, eps, alpha, mes_kwargs={}):
 
     Parameters
     ----------
-    qargs : list[QuantumVariabe]
-        The list of QuantumVariables which represent the state on which the quantum amplitude estimation is performed.
+    qargs : list[:ref:`QuantumVariable`] or callable
+        A list of QuantumVariables which represent the state on which the quantum amplitude estimation is performed, 
+        or a function preparing a list of QuantumVariables.
         The last variable in the list must be of type :ref:`QuantumBool`.
     state_function : callable
         A Python function preparing the state :math:`\ket{\Psi}`.
@@ -103,9 +104,17 @@ def IQAE(qargs, state_function, eps, alpha, mes_kwargs={}):
 
     """
 
-    def init_function():
-        qargs_ = [qv.duplicate() for qv in qargs]
-        return qargs_
+    if callable(qargs):
+
+        init_function = qargs
+
+    else:
+
+        templates = [qv.template() for qv in qargs]
+
+        def init_function():
+            qargs_ = [temp.construct() for temp in templates]
+            return qargs_
 
     # The oracle tagging the good states
     def oracle_function(*args):  
