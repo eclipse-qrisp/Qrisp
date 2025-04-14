@@ -73,10 +73,13 @@ def invert_eqn(eqn):
         
         branches = params["branches"]
         
-        params["branches"] = (ClosedJaxpr((branches[0].jaxpr).inverse(),
-                                           branches[0].consts),
-                              ClosedJaxpr((branches[1].jaxpr).inverse(),
-                                           branches[1].consts))
+        new_branch_list = []
+        
+        for i in range(len(branches)):
+            new_branch_list.append(ClosedJaxpr((branches[i].jaxpr).inverse(),
+                                               branches[i].consts))
+        
+        params["branches"] = tuple(new_branch_list)
         
         primitive = eqn.primitive
         
@@ -123,7 +126,7 @@ def invert_jaspr(jaspr):
     # and the Operation equations to the back.
     
     for eqn in jaspr.eqns:
-        if isinstance(eqn.primitive, OperationPrimitive) or ((eqn.primitive.name in ["pjit", "while", "cond"]) and isinstance(eqn.outvars[0].aval, AbstractQuantumCircuit)):
+        if isinstance(eqn.primitive, OperationPrimitive) or ((eqn.primitive.name in ["pjit", "while", "cond"]) and len(eqn.invars) and isinstance(eqn.invars[-1].aval, AbstractQuantumCircuit)):
             # Insert the inverted equation at the front
             op_eqs.insert(0, invert_eqn(eqn))
         elif eqn.primitive.name == "jasp.measure":
@@ -179,12 +182,12 @@ def invert_jaspr(jaspr):
         
     if len(deletions):
         first_deletion = copy_jaxpr_eqn(deletions[0])
-        first_deletion.invars[0] = last_abs_qc
-        last_abs_qc = deletions[-1].outvars[0]
+        first_deletion.invars[-1] = last_abs_qc
+        last_abs_qc = deletions[-1].outvars[-1]
     
     res = Jaspr(constvars = jaspr.constvars, 
                  invars = list(jaspr.invars), 
-                 outvars = [last_abs_qc] + jaspr.outvars[1:], 
+                 outvars =  jaspr.outvars[:-1] + [last_abs_qc], 
                  eqns = non_op_eqs + op_eqs + deletions)
     
     
@@ -213,7 +216,7 @@ def invert_loop_body(jaxpr):
     # Find the incrementation equation. For this we identify the equation,
     # which updates the loop index
     
-    loop_index = jaxpr.jaxpr.outvars[-2]
+    loop_index = jaxpr.jaxpr.outvars[1]
     for i in range(len(new_eqn_list))[::-1]:
         if loop_index == new_eqn_list[i].outvars[0]:
             break
@@ -225,7 +228,7 @@ def invert_loop_body(jaxpr):
         new_primitive = sub_p
     else:
         new_primitive = add_p
-    
+        
     try:
         if increment_eqn.invars[1].val != 1:
             raise
@@ -265,9 +268,9 @@ def invert_loop_eqn(eqn):
 
     def cond_fun(val):
         if cond_jaxpr.eqns[0].primitive.name == "ge":
-            return val[-2] <= val[-1]
+            return val[1] <= val[0]
         else:
-            return val[-2] >= val[-1]
+            return val[1] >= val[0]
 
     # Create the new equation by tracing the while loop
     def tracing_function(*args):
@@ -277,10 +280,10 @@ def invert_loop_eqn(eqn):
     new_eqn = jaxpr.eqns[0]
     
     # The new invars should have initial loop index at loop treshold switched.
-    # The loop initialization is located at invars[-2] and the treshold at invars[-1]
+    # The loop initialization is located at invars[1] and the treshold at invars[0]
     invars = eqn.invars
     new_invars = list(invars)
-    new_invars[-1], new_invars[-2] = new_invars[-2], new_invars[-1]
+    new_invars[1], new_invars[0] = new_invars[0], new_invars[1]
 
     # Create the Equation    
     res = JaxprEqn(primitive = new_eqn.primitive,

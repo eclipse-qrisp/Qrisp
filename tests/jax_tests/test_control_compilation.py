@@ -43,7 +43,6 @@ def test_control_compilation():
         assert jaspr(i) == (i == 7)
         
     ###############
-    
     @custom_control
     def swap(qv, qb, ctrl = None):
         

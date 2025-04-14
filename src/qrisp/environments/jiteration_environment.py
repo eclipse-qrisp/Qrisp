@@ -120,16 +120,16 @@ def iteration_env_evaluator(eqn, context_dic):
     # of the incrementation equation.
     increment_eq = iter_1_jaspr.eqns[-1]
     arg_pos = iter_1_jaspr.invars.index(increment_eq.invars[0])
-    # Move the loop index to the last position in both the jaspr and the equation
-    iter_1_jaspr.invars.append(iter_1_jaspr.invars.pop(arg_pos))
-    iteration_1_eqn.invars.append(iteration_1_eqn.invars.pop(arg_pos))
+    # Move the loop index to the second position in both the jaspr and the equation
+    iter_1_jaspr.invars.insert(0, iter_1_jaspr.invars.pop(arg_pos))
+    iteration_1_eqn.invars.insert(0, iteration_1_eqn.invars.pop(arg_pos))
 
     # The same for the jaspr of the second iteration
     increment_eq = iter_2_jaspr.eqns[-1]
     arg_pos = iter_2_jaspr.invars.index(increment_eq.invars[0])
-    # Move the loop index to the last position in both the jaspr and the equation
-    iter_2_jaspr.invars.append(iter_2_jaspr.invars.pop(arg_pos))
-    iteration_2_eqn.invars.append(iteration_2_eqn.invars.pop(arg_pos))
+    # Move the loop index to the second position in both the jaspr and the equation
+    iter_2_jaspr.invars.insert(0, iter_2_jaspr.invars.pop(arg_pos))
+    iteration_2_eqn.invars.insert(0, iteration_2_eqn.invars.pop(arg_pos))
     
     # Move the loop threshold variable to the last position
     # The loop threshold is demarked as the variable that gets incremented
@@ -137,14 +137,14 @@ def iteration_env_evaluator(eqn, context_dic):
     
     demark_eq = iter_1_jaspr.eqns[0]
     arg_pos = iter_1_jaspr.invars.index(demark_eq.invars[0])
-    iter_1_jaspr.invars.append(iter_1_jaspr.invars.pop(arg_pos))
-    iteration_1_eqn.invars.append(iteration_1_eqn.invars.pop(arg_pos))
+    iter_1_jaspr.invars.insert(0, iter_1_jaspr.invars.pop(arg_pos))
+    iteration_1_eqn.invars.insert(0, iteration_1_eqn.invars.pop(arg_pos))
 
     # Same for second iteration
     demark_eq = iter_2_jaspr.eqns[0]
     arg_pos = iter_2_jaspr.invars.index(demark_eq.invars[0])
-    iter_2_jaspr.invars.append(iter_2_jaspr.invars.pop(arg_pos))
-    iteration_2_eqn.invars.append(iteration_2_eqn.invars.pop(arg_pos))
+    iter_2_jaspr.invars.insert(0, iter_2_jaspr.invars.pop(arg_pos))
+    iteration_2_eqn.invars.insert(0, iteration_2_eqn.invars.pop(arg_pos))
     
     # For the jaspr of both iterations we now have the situation that 
     # the loop threshold is the argument at the last position and the loop
@@ -215,10 +215,10 @@ def iteration_env_evaluator(eqn, context_dic):
         # Return the appropriate values (with the cancelation threshold).
         return tuple(return_values)
     
-    # The condition function should compare whether the loop index (second last position)
-    # is smaller than the loop cancelation threshold (last position)
+    # The condition function should compare whether the loop index (first position)
+    # is smaller than the loop cancelation threshold (second position)
     def cond_fun(val):
-        return val[-2] <= val[-1]
+        return val[1] <= val[0]
     
     # We now prepare the "init_val" keyword of the loop.
     
@@ -231,8 +231,7 @@ def iteration_env_evaluator(eqn, context_dic):
     
     # Finally, we insert the result values that receive and update 
     # into the context dic
-    
-    context_dic[iteration_2_eqn.outvars[0]] = res[0]
+    context_dic[iteration_2_eqn.outvars[-1]] = res[-1]
     return
     # print(iteration_2_eqn)
     # print(update_rules)

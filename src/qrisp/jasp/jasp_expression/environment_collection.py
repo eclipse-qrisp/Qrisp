@@ -75,13 +75,14 @@ def collect_environments(jaxpr):
             
             new_params = dict(eqn.params)
             
-            false_collected_jaspr = collect_environments(eqn.params["branches"][0].jaxpr)
-            true_collected_jaspr = collect_environments(eqn.params["branches"][1].jaxpr)
+            branch_list = []
             
-            false_collected_jaspr = ClosedJaxpr(false_collected_jaspr, eqn.params["branches"][0].consts)
-            true_collected_jaspr = ClosedJaxpr(true_collected_jaspr, eqn.params["branches"][1].consts)
+            for i in range(len(eqn.params["branches"])):
+                collected_branch_jaxpr = collect_environments(eqn.params["branches"][i].jaxpr)
+                collected_branch_jaxpr = ClosedJaxpr(collected_branch_jaxpr, eqn.params["branches"][i].consts)
+                branch_list.append(collected_branch_jaxpr)
             
-            new_params["branches"] = (false_collected_jaspr, true_collected_jaspr)
+            new_params["branches"] = tuple(branch_list)
             
             eqn = JaxprEqn(params = new_params,
                                     primitive = eqn.primitive,
@@ -131,16 +132,16 @@ def collect_environments(jaxpr):
             
             # Create the Jaxpr
             environment_body_jaspr = Jaspr(constvars = [],
-                                           invars = enter_eq.outvars + invars,
-                                           outvars = eqn.invars[:1] + outvars,
+                                           invars =  invars + enter_eq.outvars,
+                                           outvars =  outvars + eqn.invars[-1:],
                                            eqns = environment_body_eqn_list)
             
             # Create the Equation
             eqn = JaxprEqn(
                            params = {"type" : eqn.params["type"], "jaspr" : environment_body_jaspr},
                            primitive = eqn.primitive,
-                           invars = enter_eq.invars + invars,
-                           outvars = eqn.outvars[:1] + outvars,
+                           invars =  enter_eq.invars[:-1] + invars + enter_eq.invars[-1:],
+                           outvars =  outvars + eqn.outvars[-1:],
                            effects = eqn.effects,
                            source_info = eqn.source_info,)
             

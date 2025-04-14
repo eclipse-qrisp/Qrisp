@@ -60,11 +60,15 @@ def eval_jaxpr(jaxpr,
     """
     
     if isinstance(jaxpr, ClosedJaxpr):
+        consts = list(jaxpr.consts)
         jaxpr = jaxpr.jaxpr
+    else:
+        consts = []
     
     def jaxpr_evaluator(*args):
         
-        temp_var_list = jaxpr.invars + jaxpr.constvars
+        args = consts + list(args)
+        temp_var_list = jaxpr.constvars + jaxpr.invars
         
         if len(temp_var_list) != len(args):
             raise Exception("Tried to evaluate jaxpr with insufficient arguments")
@@ -96,7 +100,12 @@ def reinterpret(jaxpr, eqn_evaluator = exec_eqn):
         
   
     res = make_jaxpr(eval_jaxpr(inter_jaxpr,
-                                eqn_evaluator = eqn_evaluator))(*[var.aval for var in jaxpr.invars + jaxpr.constvars]).jaxpr
+                                eqn_evaluator = eqn_evaluator))(*[var.aval for var in jaxpr.constvars + jaxpr.invars]).jaxpr
+    
+    res.constvars.extend(res.invars[:len(inter_jaxpr.constvars)])
+    temp = list(res.invars[len(inter_jaxpr.constvars):])
+    res.invars.clear()
+    res.invars.extend(temp)
     
     if isinstance(jaxpr, ClosedJaxpr):
         res = ClosedJaxpr(res, jaxpr.consts)    

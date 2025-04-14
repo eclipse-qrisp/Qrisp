@@ -105,7 +105,7 @@ def test_qache():
     
     # We perform a simulation with the above interpreter
     from qrisp.jasp.evaluation_tools import BufferedQuantumState
-    args = [BufferedQuantumState(), 5]
+    args = [5, BufferedQuantumState()]
     eval_jaxpr(jaspr, eqn_evaluator = eqn_evaluator)(*args)
 
 

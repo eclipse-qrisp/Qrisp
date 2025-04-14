@@ -22,7 +22,7 @@ import numpy as np
 
 from jax import make_jaxpr, jit, debug
 from jax.core import ClosedJaxpr, Literal
-from jax.lax import fori_loop, cond, while_loop
+from jax.lax import fori_loop, cond, while_loop, switch
 import jax.numpy as jnp
 
 from qrisp.circuit import ControlledOperation
@@ -74,9 +74,9 @@ def process_create_qubits(invars, outvars, context_dic):
     
     # The first invar of the create_qubits primitive is an AbstractQuantumCircuit
     # which is represented by an AbstractQreg and an integer
-    qreg, free_qubits = context_dic[invars[0]]
+    qreg, free_qubits = context_dic[invars[1]]
     
-    size = context_dic[invars[1]]
+    size = context_dic[invars[0]]
     
     # We create the new QubitArray representation by putting the appropriate tuple
     # in the context_dic
@@ -84,9 +84,9 @@ def process_create_qubits(invars, outvars, context_dic):
     reg_qubits = Jlist()
     
     def loop_body(i, val_tuple):
-        free_qubits, reg_qubits = val_tuple
+        reg_qubits, free_qubits = val_tuple
         reg_qubits.append(free_qubits.pop())
-        return free_qubits, reg_qubits
+        return reg_qubits, free_qubits
     
     @jit
     def make_tracer(x):
@@ -94,13 +94,13 @@ def process_create_qubits(invars, outvars, context_dic):
     
     size = make_tracer(size)
     
-    free_qubits, reg_qubits = fori_loop(0, size, loop_body, (free_qubits, reg_qubits))
+    reg_qubits, free_qubits = fori_loop(0, size, loop_body, (reg_qubits, free_qubits))
     
-    context_dic[outvars[1]] = reg_qubits
+    context_dic[outvars[0]] = reg_qubits
     
     # Furthermore we create the updated AbstractQuantumCircuit representation.
     # The new stack size is the old stask size + the size of the QubitArray
-    context_dic[outvars[0]] = (qreg, free_qubits)
+    context_dic[outvars[1]] = (qreg, free_qubits)
     
 
 
@@ -156,31 +156,31 @@ def process_get_size(invars, outvars, context_dic):
 def process_op(op_prim, invars, outvars, context_dic):
     
     # B
-    bit_array = context_dic[invars[0]][0]
+    bit_array = context_dic[invars[-1]][0]
     
     op = op_prim.op
     # For that we find all the integers (ie. positions) of the participating
     # qubits in the AbstractQreg
     qb_pos = []
     for i in range(op.num_qubits):
-        qb_pos.append(context_dic[invars[i+1+len(op.params)]])
+        qb_pos.append(context_dic[invars[i]])
         
     if op.name == "x":
         ctrl_state = ""
     elif isinstance(op, ControlledOperation) and op.base_operation.name in ["x", "y", "z"]:
         if op.base_operation.name in ["z", "rz", "t", "s", "t_dg", "s_dg", "p"]:
-            context_dic[outvars[0]] = context_dic[invars[0]]
+            context_dic[outvars[-1]] = context_dic[invars[-1]]
             return
         ctrl_state = op.ctrl_state
     elif op.name in ["z", "rz", "t", "s", "t_dg", "s_dg", "p"]:
-        context_dic[outvars[0]] = context_dic[invars[0]]
+        context_dic[outvars[-1]] = context_dic[invars[-1]]
         return
     else:
         raise Exception(f"Classical function simulator can't process gate {op.name}")
     
     bit_array = cl_multi_cx(bit_array, ctrl_state, qb_pos)
     
-    context_dic[outvars[0]] = (bit_array, context_dic[invars[0]][1])
+    context_dic[outvars[-1]] = (bit_array, context_dic[invars[-1]][1])
 
 
 def cl_multi_cx(bit_array, ctrl_state, bit_pos):
@@ -198,33 +198,34 @@ def cl_multi_cx(bit_array, ctrl_state, bit_pos):
     return bit_array
 
 def process_measurement(invars, outvars, context_dic):
+    
     # This function treats measurement primitives
     
     # Retrieve the catalyst register tracer
-    bit_array = context_dic[invars[0]][0]
+    bit_array = context_dic[invars[-1]][0]
     
     # We differentiate between the cases that the measurement is performed on a 
     # singular Qubit (returns a bool) or a QubitArray (returns an integer)
     
     # This case treats the QubitArray situation
-    if isinstance(invars[1].aval, AbstractQubitArray):
+    if isinstance(invars[0].aval, AbstractQubitArray):
         
         # Retrieve the start and the endpoint indices of the QubitArray
-        qubit_reg = context_dic[invars[1]]
+        qubit_reg = context_dic[invars[0]]
+        
         
         # The multi measurement logic is outsourced into a dedicated function
         bit_array, meas_res = exec_multi_measurement(bit_array, qubit_reg)
     
     # The singular Qubit case
     else:
-        
         # Get the boolean value of the Qubit
-        meas_res = get_bit_array(bit_array, context_dic[invars[1]])
+        meas_res = get_bit_array(bit_array, context_dic[invars[0]])
         # meas_res = bit_array[context_dic[invars[1]]]
     
     # Insert the result values into the context dict
-    context_dic[outvars[0]] = (bit_array, context_dic[invars[0]][1])
-    context_dic[outvars[1]] = meas_res
+    context_dic[outvars[1]] = (bit_array, context_dic[invars[1]][1])
+    context_dic[outvars[0]] = meas_res
         
         
 def exec_multi_measurement(bit_array, qubit_reg):
@@ -261,10 +262,10 @@ def process_while(eqn, context_dic):
     
     invalues = extract_invalues(eqn, context_dic)
     
-    if isinstance(body_jaxpr.jaxpr.invars[0].aval, AbstractQuantumCircuit):
-        body_jaxpr = jaspr_to_cl_func_jaxpr(body_jaxpr.jaxpr, invalues[0][0].shape[0]*64)
-    if isinstance(cond_jaxpr.jaxpr.invars[0].aval, AbstractQuantumCircuit):
-        cond_jaxpr = jaspr_to_cl_func_jaxpr(cond_jaxpr.jaxpr, invalues[0][0].shape[0]*64)
+    if isinstance(body_jaxpr.jaxpr.invars[-1].aval, AbstractQuantumCircuit):
+        body_jaxpr = jaspr_to_cl_func_jaxpr(body_jaxpr.jaxpr, invalues[-1][0].shape[0]*64)
+    if isinstance(cond_jaxpr.jaxpr.invars[-1].aval, AbstractQuantumCircuit):
+        cond_jaxpr = jaspr_to_cl_func_jaxpr(cond_jaxpr.jaxpr, invalues[-1][0].shape[0]*64)
         
     def body_fun(args):
         return tuple(eval_jaxpr(body_jaxpr)(*args))
@@ -283,8 +284,6 @@ def process_while(eqn, context_dic):
             
     outvalues = while_loop(cond_fun, body_fun, tuple(flattened_invalues))
     unflattened_outvalues = unflatten_signature(outvalues, eqn.outvars)
-
-            
     
     insert_outvalues(eqn, context_dic, unflattened_outvalues)
 
@@ -292,24 +291,19 @@ def process_cond(eqn, context_dic):
     
     invalues = extract_invalues(eqn, context_dic)
     
-    false_jaxpr = ensure_conversion(eqn.params["branches"][0].jaxpr, invalues[1:])
-    true_jaxpr = ensure_conversion(eqn.params["branches"][1].jaxpr, invalues[1:])
+    branch_list = []
     
-
-    def true_fun(*args):
-        return eval_jaxpr(true_jaxpr)(*args)
-    
-    def false_fun(*args):
-        return eval_jaxpr(false_jaxpr)(*args)
+    for i in range(len(eqn.params["branches"])):
+        converted_jaxpr = ensure_conversion(eqn.params["branches"][i].jaxpr, invalues[1:])
+        branch_list.append(eval_jaxpr(converted_jaxpr))
     
     flattened_invalues = flatten_signature(invalues, eqn.invars)
-    outvalues = cond(flattened_invalues[0], true_fun, false_fun, *flattened_invalues[1:])
+    outvalues = switch(flattened_invalues[0], branch_list, *flattened_invalues[1:])
     
     if isinstance(outvalues, tuple):
         unflattened_outvalues = unflatten_signature(outvalues, eqn.outvars)
     else:
         unflattened_outvalues = (outvalues,)
-    
     
     insert_outvalues(eqn, context_dic, unflattened_outvalues)
 
@@ -336,7 +330,7 @@ def process_pjit(eqn, context_dic):
     invalues = extract_invalues(eqn, context_dic)
     
     if eqn.params["name"] in ["gidney_mcx", "gidney_mcx_inv"]:
-        unflattened_outvalues = [(cl_multi_cx(invalues[0][0], "11", invalues[1:]),invalues[0][1])]
+        unflattened_outvalues = [(cl_multi_cx(invalues[-1][0], "11", invalues[:-1]),invalues[-1][1])]
     
     else:
         flattened_invalues = []
@@ -350,7 +344,7 @@ def process_pjit(eqn, context_dic):
         jaxpr = eqn.params["jaxpr"]
 
         if isinstance(jaxpr.jaxpr, Jaspr):
-            bit_array_padding = invalues[0][0].shape[0]*64
+            bit_array_padding = invalues[-1][0].shape[0]*64
         else:
             bit_array_padding = 0
                 
@@ -367,9 +361,9 @@ def process_pjit(eqn, context_dic):
 def process_delete_qubits(eqn, context_dic):
     invalues = extract_invalues(eqn, context_dic)
     
-    bit_array = invalues[0][0]
-    free_qubits = invalues[0][1]
-    qubit_reg = invalues[1]
+    bit_array = invalues[-1][0]
+    free_qubits = invalues[-1][1]
+    qubit_reg = invalues[0]
     
     def true_fun():
         debug.print("WARNING: Faulty uncomputation found during simulation.")
@@ -377,18 +371,18 @@ def process_delete_qubits(eqn, context_dic):
         return
     
     def loop_body(i, value_tuple):
-        bit_array, free_qubits, qubit_reg = value_tuple
+        qubit_reg, bit_array, free_qubits  = value_tuple
         
         qubit = qubit_reg.pop()
         cond(get_bit_array(bit_array, qubit), true_fun, false_fun)
         free_qubits.append(qubit)
         
-        return bit_array, free_qubits, qubit_reg
+        return qubit_reg, bit_array, free_qubits
     
-    bit_array, free_qubits, qubit_reg = fori_loop(0, 
+    qubit_reg, bit_array, free_qubits = fori_loop(0, 
                                                   qubit_reg.counter, 
                                                   loop_body, 
-                                                  (bit_array, free_qubits, qubit_reg))
+                                                  (qubit_reg, bit_array, free_qubits))
     
     outvalues = (bit_array, free_qubits)
     
@@ -399,13 +393,13 @@ def process_reset(eqn, context_dic):
     
     invalues = extract_invalues(eqn, context_dic)
     
-    bit_array = invalues[0][0]
+    bit_array = invalues[-1][0]
     
     
-    if isinstance(eqn.invars[1].aval, AbstractQubitArray):
+    if isinstance(eqn.invars[0].aval, AbstractQubitArray):
         
-        start = invalues[1][0]
-        stop = start + invalues[1][1]
+        start = invalues[0][0]
+        stop = start + invalues[0][1]
         
         def loop_body(i, bit_array):
             bit_array = conditional_bit_flip_bit_array(bit_array, i, get_bit_array(bit_array, i))
@@ -415,9 +409,9 @@ def process_reset(eqn, context_dic):
         
     else:
         
-        bit_array = conditional_bit_flip_bit_array(bit_array, invalues[1], get_bit_array(bit_array, invalues[1]))
+        bit_array = conditional_bit_flip_bit_array(bit_array, invalues[0], get_bit_array(bit_array, invalues[0]))
     
-    outvalues = (bit_array, invalues[0][1])
+    outvalues = (bit_array, invalues[-1][1])
     insert_outvalues(eqn, context_dic, outvalues)
     
     

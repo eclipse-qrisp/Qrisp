@@ -61,26 +61,29 @@ In their paper, Hadfield and his colleagues give us some really useful examples 
 
    * - PROBLEM INSTANCE
      - MIXER TYPE
-     - 
-   * - :ref:`MaxCut <MaxCutQAOA>`
+     - IMPLEMENTED IN QRISP
+   * - :ref:`MaxCut <maxCutQAOA>`
      - X mixer
      -    ✅
-   * - Max-$\ell$-SAT
+   * - :ref:`Max-$\\ell$-SAT <maxsatQAOA>`
      - X mixer
      -    ✅
-   * - :ref:`QUBO (NEW since 0.4!) <QUBOQAOA>`
+   * - :ref:`E3Lin2 <eThrLinTwoQAOA>`
+     - X mixer
+     -    ✅
+   * - :ref:`QUBO <QUBOQAOA>`
      - X mixer
      -    ✅ 
-   * - MaxIndependentSet
+   * - :ref:`MaxIndependentSet <maxIndepSetQAOA>`
      - Controlled X mixer
      -    ✅
-   * - MaxClique
+   * - :ref:`MaxClique <maxCliqueQAOA>`
      - Controlled X mixer
      -    ✅
-   * - MaxSetPacking
+   * - :ref:`MaxSetPacking <maxSetPackingQAOA>`
      - Controlled X mixer
      -    ✅
-   * - MinSetCover
+   * - :ref:`MinSetCover <minSetCoverQAOA>`
      - Controlled X mixer
      -    ✅
    * - :ref:`Max-$\\kappa$-Colorable Subgraph <MkCSQAOA>`
@@ -98,6 +101,6 @@ Our QAOA journey doesn’t stop here. In the next tutorials we’re going to tac
    Theoretical
    MaxCut
    MkCS
-   ConstrainedMixers
    QUBO
+   ConstrainedMixers
    PortfolioRebalancing

@@ -233,23 +233,17 @@ def custom_control(*func, **cusc_kwargs):
             
             if not jit_eqn.params["jaxpr"].jaxpr.ctrl_jaspr:
                 # Trace the controlled version
-                new_kwargs = dict(kwargs)
+                
+                def ammended_func(*ammended_args, **kwargs):
+                    new_kwargs = dict(kwargs)
+                    new_kwargs["ctrl"] = ammended_args[0]
+                    args = ammended_args[1:]
+                    return func(*args, **new_kwargs)
+                
                 ctrl_aval = AbstractQubit()
-                new_kwargs["ctrl"] = ctrl_aval
+                ammended_args = [ctrl_aval] + list(args)
                 
-                
-                from qrisp.jasp import TracingQuantumSession
-                abs_qs = TracingQuantumSession.get_instance()
-                
-                controlled_jaspr = make_jaspr(func, **cusc_kwargs)(*args, **new_kwargs)
-                
-                # Find the variable that contains the control qubit
-                for i, invar in enumerate(controlled_jaspr.invars):
-                    if invar.aval is ctrl_aval:
-                        break
-                
-                # Move it to the place after the QuantumCircuit argument
-                controlled_jaspr.invars.insert(1, controlled_jaspr.invars.pop(i))
+                controlled_jaspr = make_jaspr(ammended_func, **cusc_kwargs)(*ammended_args, **kwargs)
                 
                 # Store controlled version
                 jit_eqn.params["jaxpr"].jaxpr.ctrl_jaspr = controlled_jaspr

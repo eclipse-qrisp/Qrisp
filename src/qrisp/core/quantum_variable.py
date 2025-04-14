@@ -22,6 +22,7 @@ import weakref
 
 import matplotlib.pyplot as plt
 import numpy as np
+from jax import tree_util
 
 from qrisp.core.compilation import qompiler
 
@@ -332,6 +333,7 @@ class QuantumVariable:
         self.creation_counter += 1
         
         try:
+            from qrisp.jasp.tracing_logic import flatten_qv, unflatten_qv
             # Register as a PyTree with JAX
             tree_util.register_pytree_node(type(self), flatten_qv, unflatten_qv)
         except ValueError:
@@ -456,6 +458,7 @@ class QuantumVariable:
 
         """
         
+        from qrisp.jasp import TracingQuantumSession
         if not isinstance(self.qs, TracingQuantumSession) and self.is_deleted():
             return
 
@@ -627,7 +630,7 @@ class QuantumVariable:
         return bin_rep(i, self.size)[::-1]
     
     def jdecoder(self, i):
-        raise Exception(f"jdecoder for type {type(self)} not implemented")
+        return i
 
     def encoder(self, value):
         """
@@ -1497,6 +1500,10 @@ class QuantumVariable:
     
     def measure(self):
         return self.jdecoder(self.reg.measure())
+    
+    def template(self):
+        from qrisp.jasp.tracing_logic import QuantumVariableTemplate
+        return QuantumVariableTemplate(self)
 
 def plot_histogram(outcome_labels, counts, filename=None):
     res_list = []
@@ -1516,49 +1523,3 @@ def plot_histogram(outcome_labels, counts, filename=None):
         plt.savefig(filename, dpi=400, bbox_inches="tight")
     else:
         plt.show()
-
-
-from jax import tree_util
-import jax.numpy as jnp
-from qrisp.jasp.tracing_logic import TracingQuantumSession, DynamicQubitArray
-
-# This class hides the QuantumVariable object from jax to transfer it via the
-# the aux_data feature
-class QuantumVariableIdentityContainer:
-    def __init__(self, qv):
-        self.qv = qv
-    def __hash__(self):
-        return 0
-    def __eq__(self, other):
-        return True
-
-def flatten_qv(qv):
-    # return the tracers and auxiliary data (structure of the object)
-    children = [qv.reg.tracer]
-    for traced_attribute in qv.traced_attributes:
-        attr = getattr(qv, traced_attribute)
-        if isinstance(attr, bool):
-            attr = jnp.array(attr, jnp.dtype("bool"))
-        elif isinstance(attr, int):
-            attr = jnp.array(attr, jnp.dtype("int64"))
-        elif isinstance(attr, float):
-            attr = jnp.array(attr, jnp.dtype("float64"))
-        children.append(attr)
-    
-    return tuple(children), QuantumVariableIdentityContainer(qv)
-
-def unflatten_qv(aux_data, children):
-    # The unflattening procedure creates a copy of the QuantumVariable object
-    # and updates the traced attributes. When calling this procedure,
-    # the user has to make sure that the result of this function is
-    # registered in a QuantumSession.
-    
-    qv_container = aux_data
-    reg = DynamicQubitArray(children[0])
-    qv = copy.copy(qv_container.qv)
-    qv.reg = reg
-    qv.qs = None
-    
-    for i in range(len(qv.traced_attributes)):
-        setattr(qv, qv.traced_attributes[i], children[i+1])
-    return qv

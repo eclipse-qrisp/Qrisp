@@ -259,7 +259,7 @@ def simulate_jaspr(jaspr, *args, terminal_sampling = False, simulator = "qrisp")
     elif not simulator == "qrisp":
         raise Exception(f"Don't know simulator {simulator}")
     
-    args = [BufferedQuantumState(simulator)] + list(tree_flatten(args)[0])
+    args =  list(tree_flatten(args)[0]) + [BufferedQuantumState(simulator)]
             
     def eqn_evaluator(eqn, context_dic):
         
@@ -298,7 +298,7 @@ def simulate_jaspr(jaspr, *args, terminal_sampling = False, simulator = "qrisp")
                 # such a function.
                 if is_executable[0]:
                     try:
-                        outvalues = compiled_function(*(invalues + jaxpr.consts))
+                        outvalues = compiled_function(*(jaxpr.consts + invalues))
                         if len(jaxpr.jaxpr.outvars) > 1:
                             insert_outvalues(eqn, context_dic, outvalues)
                         else:
@@ -311,8 +311,8 @@ def simulate_jaspr(jaspr, *args, terminal_sampling = False, simulator = "qrisp")
             # the hybrid version prevents the simulator from fusing gates, which
             # slows down the simulation
             if eqn.params["name"] == "gidney_mcx_inv":
-                invalues[0].append(gidney_qc.inverse().to_gate(), invalues[1:])
-                outvalues = [invalues[0]]
+                invalues[-1].append(gidney_qc.inverse().to_gate(), invalues[:-1])
+                outvalues = [invalues[-1]]
             else:
                 outvalues = eval_jaxpr(eqn.params["jaxpr"], eqn_evaluator = eqn_evaluator)(*invalues)
             if not isinstance(outvalues, (list, tuple)):
@@ -326,12 +326,12 @@ def simulate_jaspr(jaspr, *args, terminal_sampling = False, simulator = "qrisp")
             return True
     
     with fast_append(3):
-        res = eval_jaxpr(jaspr, eqn_evaluator = eqn_evaluator)(*(args + jaspr.consts))
+        res = eval_jaxpr(jaspr, eqn_evaluator = eqn_evaluator)(*(jaspr.consts + args))
     
     if len(jaspr.outvars) == 2:
-        return res[1]
+        return res[0]
     else:
-        return res[1:]
+        return res[:-1]
     
 @lru_cache(maxsize = int(1E5))
 def compile_cl_func(jaxpr, function_name):

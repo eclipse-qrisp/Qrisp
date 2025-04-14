@@ -215,7 +215,10 @@ def qache_helper(func, jax_kwargs):
     
     # This function performs the input function but also has the AbstractQuantumCircuit
     # in the signature.
-    def ammended_function(abs_qc, *args, **kwargs):
+    def ammended_function(*ammended_args, **kwargs):
+        
+        abs_qc = ammended_args[-1]
+        args = ammended_args[:-1]
         
         # Set the given AbstractQuantumCircuit as the 
         # one carried by the tracing QuantumSession
@@ -258,25 +261,14 @@ def qache_helper(func, jax_kwargs):
         
         new_abs_qc = abs_qs.abs_qc
         # Return the result and the result AbstractQuantumCircuit.
-        return new_abs_qc, res
+        return res, new_abs_qc
 
-    # Since we are calling the "ammended function", where the first parameter
-    # is the AbstractQuantumCircuit, we need to move the static_argnums indicator.
-    if "static_argnums" in jax_kwargs:
-        jax_kwargs = dict(jax_kwargs)
-        if isinstance(jax_kwargs["static_argnums"], list):
-            jax_kwargs["static_argnums"] = list(jax_kwargs["static_argnums"])
-            for i in range(len(jax_kwargs["static_argnums"])):
-                jax_kwargs["static_argnums"][i] += 1
-        else:
-            jax_kwargs["static_argnums"] += 1
-    
     # Modify the name of the ammended function to reflect the input
     ammended_function.__name__ = func.__name__
     # Wrap in jax.jit
     ammended_function = jax.jit(ammended_function, **jax_kwargs)
     
-    from qrisp.core.quantum_variable import flatten_qv
+    from qrisp.jasp.tracing_logic import flatten_qv
     
     # We now prepare the return function
     def return_function(*args, **kwargs):
@@ -303,8 +295,9 @@ def qache_helper(func, jax_kwargs):
         #         args[i] = jnp.array(args[i], dtype = jnp.complex)
         
         # Excecute the function
+        ammended_args = list(args) + [abs_qs.abs_qc]
         try:
-            abs_qc_new, res = ammended_function(abs_qs.abs_qc, *args, **kwargs)
+            res, abs_qc_new = ammended_function(*ammended_args, **kwargs)
         except Exception as e:
             abs_qs.conclude_tracing()
             raise e
@@ -316,15 +309,15 @@ def qache_helper(func, jax_kwargs):
         eqn = jax._src.core.thread_local_state.trace_state.trace_stack.dynamic.jaxpr_stack[0].eqns[-1]
         jaxpr = eqn.params["jaxpr"].jaxpr
         
-        if not isinstance(eqn.invars[0].aval, AbstractQuantumCircuit):
+        if not isinstance(eqn.invars[-1].aval, AbstractQuantumCircuit):
             for i in range(len(eqn.invars)):
                 if isinstance(eqn.invars[i].aval, AbstractQuantumCircuit):
-                    eqn.invars[0], eqn.invars[i] = eqn.invars[i], eqn.invars[0]
+                    eqn.invars[-1], eqn.invars[i] = eqn.invars[i], eqn.invars[-1]
                     break
-        if not isinstance(jaxpr.invars[0].aval, AbstractQuantumCircuit):
+        if not isinstance(jaxpr.invars[-1].aval, AbstractQuantumCircuit):
             for i in range(len(jaxpr.invars)):
                 if isinstance(jaxpr.invars[i].aval, AbstractQuantumCircuit):
-                    jaxpr.invars[0], jaxpr.invars[i] = jaxpr.invars[i], jaxpr.invars[0]
+                    jaxpr.invars[-1], jaxpr.invars[i] = jaxpr.invars[i], jaxpr.invars[-1]
                     break
         
         eqn.params["jaxpr"] = jax.core.ClosedJaxpr(Jaspr.from_cache(jaxpr), eqn.params["jaxpr"].consts)
