@@ -16,7 +16,7 @@
 ********************************************************************************/
 """
 
-from qrisp import QuantumVariable, h, barrier, rz, rx , cx, QuantumArray, xxyy, p, invert, conjugate, mcp, auto_uncompute, control
+from qrisp import QuantumVariable, h, barrier, rz, ry, rx , cx, QuantumArray, xxyy, p, invert, conjugate, mcp, auto_uncompute, control
 from qrisp.jasp import jrange
 
 def RX_mixer(qv, beta):
@@ -27,7 +27,7 @@ def RX_mixer(qv, beta):
 
     Parameters
     ----------
-    qv : QuantumVariable
+    qv : :ref:`QuantumVariable`
         The quantum variable to which the RX gate is applied.
     beta : float or sympy.Symbol
         The phase shift value for the RX gate.
@@ -36,9 +36,26 @@ def RX_mixer(qv, beta):
     rx(2 * beta, qv)
 
 
+def RY_mixer(qv, beta):
+    """
+    Applies an RY gate to each qubit in ``qv``.
+
+    The RY gate is a single-qubit rotation about the x-axis. It is used as a mixer in QAOA to drive transitions between different states.
+
+    Parameters
+    ----------
+    qv : :ref:`QuantumVariable`
+        The quantum variable to which the RY gate is applied.
+    beta : float or sympy.Symbol
+        The phase shift value for the RY gate.
+
+    """
+    ry(2 * beta, qv)
+
+
 def XY_mixer(qv, beta):
     """
-    Applies multiple XX+YY gates to ``qv`` such that each qubit has interacted with it's neighbour at least once.
+    Applies multiple XX+YY gates to ``qv`` such that each qubit has interacted with its neighbour at least once.
 
     The XX+YY gate is a two-qubit gate that performs rotations around the XY plane. It is used as a mixer in QAOA to drive transitions between different states.
     
@@ -46,7 +63,7 @@ def XY_mixer(qv, beta):
 
     Parameters
     ----------
-    qv : QuantumVariable
+    qv : :ref:`QuantumVariable`
         The quantum variable to which the XY gate is applied.
     beta : float or sympy.Symbol
         The phase shift value for the XY gate.
@@ -79,7 +96,7 @@ def RZ_mixer(qv, beta):
 
     Parameters
     ----------
-    qv : QuantumVariable
+    qv : :ref:`QuantumVariable`
         The quantum variable to which the RZ gate is applied.
     beta : float or sympy.Symbol
         The phase shift value for the RZ gate.
@@ -94,7 +111,7 @@ def grover_mixer(qv, beta):
 
     Parameters
     ----------
-    qv : QuantumVariable
+    qv : :ref:`QuantumVariable`
         The QuantumVariable to be mixed.
     beta : float or sympy.Symbol
         The mixing parameter.
