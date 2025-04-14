@@ -91,7 +91,13 @@ class BufferedQuantumState:
         
         self.buffer_qc = self.buffer_qc.clearcopy()
     
-    def measure(self, qubit):
+    def measure(self, qubit, track_measurement = True):
+        if track_measurement:
+            try:
+                self.gate_counts["measure"] += 1
+            except KeyError:
+                self.gate_counts["measure"] = 1
+        
         self.apply_buffer()
         if self.simulator == "qrisp":
             meas_res, self.quantum_state = self.quantum_state.measure(self.qubit_to_index_dict[qubit[0]], keep_res = True)
@@ -104,7 +110,7 @@ class BufferedQuantumState:
         if qubit[0] not in self.qubit_to_index_dict:
             return
         
-        meas_res = self.measure(qubit)
+        meas_res = self.measure(qubit, track_measurement = False)
         if meas_res:
             self.buffer_qc.append(XGate(), qubit)
             
@@ -118,6 +124,11 @@ class BufferedQuantumState:
         return res
     
     def multi_measure(self, qubits, shots):
+        try:
+            self.gate_counts["measure"] += len(qubits)
+        except KeyError:
+            self.gate_counts["measure"] = len(qubits)
+        
         self.apply_buffer()
         qubit_indices = [self.qubit_to_index_dict[qb] for qb in qubits]
         mes_ints, probs = self.quantum_state.multi_measure(qubit_indices)

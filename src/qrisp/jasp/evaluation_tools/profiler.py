@@ -146,7 +146,8 @@ def count_ops(meas_behavior):
     This script executes two measurements and based on the measurement outcome
     executes two X gates. We can now execute this resource computation with 
     different values of ``i`` to see, which measurements return ``True`` with
-    our given random-number generator.
+    our given random-number generator (recall that this way of specifying the
+    measurement behavior is fully deterministic).
     
     ::
         
@@ -161,6 +162,32 @@ def count_ops(meas_behavior):
         
     From this we conclude that our RNG returned 0 for both of the initial 
     measurements.
+    
+    For some algorithms (such as :ref:`RUS`) sampling the measurement result 
+    from a simple distribution won't cut it because the required ressource can 
+    be heavily influenced by measurement outcomes. For this matter it is also
+    possible to perform a full simulation. Note that this simulation is no
+    longer deterministic.
+    
+    ::
+        
+        @count_ops(meas_behavior = "sim")
+        def main(i):
+            
+            qv = QuantumFloat(2)
+            
+            meas_res = measure(qv)
+            
+            with control(meas_res == i):
+                x(qv)
+            
+            return measure(qv)
+    
+        print(main(0))
+        {'measure': 4, 'x': 2}
+        print(main(1))
+        {'measure': 4}
+        
     """
     
     def count_ops_decorator(function):
