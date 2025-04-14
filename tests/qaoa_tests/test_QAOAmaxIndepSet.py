@@ -25,7 +25,7 @@ import itertools
 
 def test_QAOAmaxIndepSet():
 
-    G = nx.erdos_renyi_graph(9, 0.5, seed =  133)
+    G = nx.erdos_renyi_graph(9, 0.5, seed = 133)
 
     qarg = QuantumVariable(G.number_of_nodes())
 

@@ -24,7 +24,7 @@ import networkx as nx
 
 def test_QAOAmaxClique():
 
-    G = nx.erdos_renyi_graph(9, 0.7, seed =  133)
+    G = nx.erdos_renyi_graph(9, 0.7, seed = 133)
     G_complement = nx.complement(G)
 
     qarg = QuantumVariable(G.number_of_nodes())
