@@ -92,3 +92,53 @@ def test_catalyst_interface():
             prepare(qv, statevector_array)
             return measure(qv)
         assert jaspify(main)() == qjit(main)()
+        
+    ## Test fuse primitive
+    
+    @qjit
+    def main():
+        
+        a = QuantumFloat(3)
+        b = QuantumFloat(3)
+        a[:] = 7
+        b[:] = 7
+        
+        return measure(a.reg + b.reg)
+
+    assert main() == 63
+        
+    @qjit
+    def main():
+        
+        a = QuantumFloat(3)
+        b = QuantumFloat(3)
+        a[:] = 7
+        b[:] = 7
+        
+        return measure(a.reg + b[0])
+
+    assert main() == 15
+    
+    @qjit
+    def main():
+        
+        a = QuantumFloat(3)
+        b = QuantumFloat(3)
+        a[:] = 7
+        b[:] = 7
+        
+        return measure(a[0] + b.reg)
+
+    assert main() == 15
+    
+    @qjit
+    def main():
+        
+        a = QuantumFloat(3)
+        b = QuantumFloat(3)
+        a[:] = 7
+        b[:] = 7
+        
+        return measure(a[0] + b[0])
+
+    assert main() == 3

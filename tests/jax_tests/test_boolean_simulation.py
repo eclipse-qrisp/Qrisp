@@ -75,3 +75,53 @@ def test_boolean_simulation():
 
 
     assert main() == (3,4)
+    
+    ## Test qubit array fusion
+    
+    @boolean_simulation
+    def main():
+        
+        a = QuantumFloat(3)
+        b = QuantumFloat(3)
+        a[:] = 7
+        b[:] = 7
+        
+        return measure(a.reg + b.reg)
+    
+    assert main() == 63
+        
+    @boolean_simulation
+    def main():
+        
+        a = QuantumFloat(3)
+        b = QuantumFloat(3)
+        a[:] = 7
+        b[:] = 7
+        
+        return measure(a.reg + b[0])
+    
+    assert main() == 15
+    
+    @boolean_simulation
+    def main():
+        
+        a = QuantumFloat(3)
+        b = QuantumFloat(3)
+        a[:] = 7
+        b[:] = 7
+        
+        return measure(a[0] + b.reg)
+    
+    assert main() == 15
+    
+    @boolean_simulation
+    def main():
+        
+        a = QuantumFloat(3)
+        b = QuantumFloat(3)
+        a[:] = 7
+        b[:] = 7
+        
+        return measure(a[0] + b[0])
+    
+    assert main() == 3
