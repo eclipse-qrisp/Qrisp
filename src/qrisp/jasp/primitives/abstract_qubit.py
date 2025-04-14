@@ -30,6 +30,12 @@ class AbstractQubit(AbstractValue):
         if not isinstance(other, AbstractQubit):
             return False
         return isinstance(other, AbstractQubit)
+    
+    def _add(self, a, b):
+        from qrisp.jasp import fuse_qb_array, DynamicQubitArray
+        if isinstance(b, DynamicQubitArray):
+            b = b.tracer
+        return fuse_qb_array(a, b)
 
 raise_to_shaped_mappings[AbstractQubit] = lambda aval, _: aval
 
