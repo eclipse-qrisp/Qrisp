@@ -14,7 +14,7 @@ Given a Graph  :math:`G = (V,E)` find a bipartition $S$, $V\setminus S$ of the s
    :scale: 60%
    :align: center
 
-Given a graph $G$ with $n$ nodes, such a bipartition can be encoded with a :ref:`QuantumVariable` with $n$ qubits: 
+For a graph $G$ with $n$ nodes, such a bipartition can be encoded with a :ref:`QuantumVariable` with $n$ qubits: 
 we measure the $i$-th qubit in 0 if the node $i$ is in the set $S$, and 1 if the node $i$ is in the set $V\setminus S$.
 The cut value is the number of edges $e=(i,j)$ in $G$ such that $i\in S$ and $j\in V\setminus S$.
 
@@ -211,7 +211,7 @@ It returns an array of optimal parameters and the average cost value for the opt
 **Step 9: Run the QAOA**
 
 Finally, the jaspify method allows for running Jasp-traceable functions using the integrated Qrisp simulator.
-For hybird algorithms like QAOA and VQE that rely on calculating expectation values based on sampling, the ``terminal_sampling`` feature significatly speeds up the simulation: samples are drawn from the state vector instead of performing repeated simulation and measurement of the quantum circuits.
+For hybrid algorithms like QAOA and VQE that rely on calculating expectation values based on sampling, the ``terminal_sampling`` feature significantly speeds up the simulation: samples are drawn from the state vector instead of performing repeated simulation and measurement of the quantum circuits.
 
 ::
 
