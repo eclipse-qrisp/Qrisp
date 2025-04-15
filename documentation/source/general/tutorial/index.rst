@@ -27,7 +27,7 @@ To gradually qrispify your programming game you will start with the basics and g
 
 - :ref:`How to think in Jasp <jasp_tutorial>` explains how this **new compilation pipeline** accelerates quantum algorithm compilation, and allows for **real-time computations**.
 
-- :ref:`MaxCut QAOA in Jasp <MaxCutJaspQAOA>` details how to build an efficient custom QAOA implementation in Jasp using a Jasp-traceable objective function.
+- :ref:`Building a QAOA implementation in Jasp <MaxCutJaspQAOA>` details how to build an efficient custom QAOA implementation in Jasp using a Jasp-traceable objective function for the example of the MaxCut problem.
 
 Along the way, we'll introduce you to important concepts and techniques that you'll need to know in order to write highly efficient algorithms in Qrisp.
 We encourage you to follow along with the examples and try out the code for yourself. Don't worry if you make mistakes or don't understand something right away - programming is a process of learning and experimentation, and it takes time to become proficient.

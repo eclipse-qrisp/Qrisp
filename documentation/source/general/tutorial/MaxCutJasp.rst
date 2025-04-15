@@ -1,9 +1,9 @@
 .. _MaxCutJaspQAOA:
 
-MaxCut QAOA in Jasp
-===================
+Building a QAOA implementation in Jasp
+======================================
 
-In this tutorial, we will explain step-by-step how to build a custom QAOA application with Jasp.
+In this tutorial, we will explain step-by-step how to build a custom QAOA implementation in Jasp for the example of the MaxCut problem.
 
 
 First, let us recall the problem description for MaxCut:
