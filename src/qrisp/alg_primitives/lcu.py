@@ -17,48 +17,12 @@
 """
 
 from qrisp import *
+from qrisp.jasp import *
+import jax.numpy as jnp
+import numpy as np
 
-@RUS(static_argnums=[1, 2, 3]) 
-def LCU(state_prep, unitaries, num_qubits, num_unitaries=None):
-    """
-    Implements the Linear Combination of Unitaries (LCU) protocol 
-    https://arxiv.org/abs/1202.5822 utilizing the RUS (Repeat-Until-Success) 
-    Jasp feature. This function constructs and executes the LCU protocol using 
-    the provided state preparation function and unitaries, facilitating the
-    implementation of linear combination of unitary operations on a QuantumVariable.
-
-    The terminal_sampling decorator is utilized to evaluate the LCU.
-
-    Parameters
-    ----------
-    state_prep : callable
-        Quantum circuit preparing the initial state for LCU. 
-    unitaries : list of tuple of callables, or callable
-        Either a list or tuple of unitary functions, or a callable that returns a
-        unitary function given an index. Specifies the unitary operations to combine. 
-        Each unitary should be a callable acting on a QuantumVariable of size num_qubits.
-    num_qubits : int
-        Number of qubits required for the target QuantumVariable that unitaries
-        act upon.
-    num_unitaries : int, optional
-        The number of unitaries. Must be specified if ``unitaries`` is a callable 
-        function. If ``unitaries`` is a list or tuple, ``num_unitaries`` defaults 
-        to ``len(unitaries)``.
-
-    Returns
-    -------
-    success_bool : bool
-        ``True`` if the LCU protocol succeeds (the measurement of the ancilla qubits yields zero); ``False`` otherwise.
-    qv : :ref:`QuantumVariable`
-        The quantum variable after the application of the LCU protocol.
-
-    Raises
-    ------
-    ValueError
-        If ``num_unitaries`` is not specified when ``unitaries`` is a callable function.
-    TypeError
-        If ``unitaries`` is neither a list, tuple, nor a callable function.
-    """
+def inner_LCU(state_prep, unitaries, num_qubits, num_unitaries=None):
+    
     qv = QuantumFloat(num_qubits)
 
     if isinstance(unitaries, (list, tuple)):
@@ -74,21 +38,55 @@ def LCU(state_prep, unitaries, num_qubits, num_unitaries=None):
         raise TypeError("unitaries must be a list/tuple or a callable function")
     
     # Specify the QunatumVariable that indicates which case to execute
-    n = int(np.ceil(np.log2(len(unitaries))))
+    n = jnp.int64(jnp.ceil(jnp.log2(num_unitaries)))
     case_indicator = QuantumFloat(n)
-    
-    # Turn into a list of qubits
-    case_indicator_qubits = [case_indicator[i] for i in range(n)]
     
     # LCU protocol with conjugate preparation
     with conjugate(state_prep)(case_indicator):
-        # SELECT
-        for i in range(num_unitaries):
-            with control(case_indicator_qubits, ctrl_state=i):
-                unitary = unitary_func(i)
-                unitary(qv)  # Apply i-th unitary from unitary list
+        for i in jrange(num_unitaries):
+            qb = QuantumBool()
+            with conjugate(mcx)(case_indicator, qb, ctrl_state=i):
+                with control(qb):
+                    unitary_func(i)(qv)
+        
+    return case_indicator, qv
+
+@RUS(static_argnums=[1, 2, 3]) 
+def LCU(state_prep, unitaries, num_qubits, num_unitaries=None):
+    
+    if isinstance(unitaries, (list, tuple)):
+        num_unitaries = len(unitaries)
+        unitary_func = lambda i: unitaries[i]
+
+    elif callable(unitaries):
+        if num_unitaries is None:
+            raise ValueError("num_unitaries must be specified for dynamic unitaries")
+        unitary_func = unitaries
+    
+    else:
+        raise TypeError("unitaries must be a list/tuple or a callable function")
+    
+    case_indicator, qv = inner_LCU(state_prep, unitary_func, num_qubits, num_unitaries)
     
     # Success condition
     success_bool = (measure(case_indicator) == 0)
-    
     return success_bool, qv
+
+def view_LCU(state_prep, unitaries, num_qubits, num_unitaries=None):
+    
+    if isinstance(unitaries, (list, tuple)):
+        num_unitaries = len(unitaries)
+        unitary_func = lambda index: unitaries[index]
+
+    elif callable(unitaries):
+        if num_unitaries is None:
+            raise ValueError("num_unitaries must be specified for dynamic unitaries")
+        unitary_func = unitaries
+
+    else:
+        raise TypeError("unitaries must be list/tuple, or callable")
+    
+    jaspr = make_jaspr(inner_LCU)(state_prep, unitary_func, num_qubits, num_unitaries)
+    
+    # Convert Jaspr to quantum circuit and return the circuit
+    return jaspr.to_qc(num_qubits, num_unitaries)[-1]
