@@ -51,3 +51,26 @@ def test_qswitch():
     # Simulate
     assert multi_measurement([case, operand]) == {(0, 2): 0.25, (1, 3): 0.25, (2, 1): 0.25, (3, 1): 0.125, (3, 3): 0.125}
     # Yields {(0, 2): 0.25, (1, 3): 0.25, (2, 1): 0.25, (3, 1): 0.125, (3, 3): 0.125}
+
+
+def test_qswitch_tree():
+
+    # Some sample case functions
+    def f0(x): x += 1
+    def f1(x): inpl_mult(x, 3, treat_overflow = False)
+    def f2(x): pass
+    def f3(x): h(x[1])
+    case_function_list = [f0, f1, f2, f3]
+    
+    # Create operand and case variable
+    operand = QuantumFloat(4)
+    operand[:] = 1
+    case = QuantumFloat(2)
+    h(case)
+    
+    # Execute switch_case function
+    qswitch(operand, case, case_function_list, "tree")
+    
+    # Simulate
+    assert multi_measurement([case, operand]) == {(0, 2): 0.25, (1, 3): 0.25, (2, 1): 0.25, (3, 1): 0.125, (3, 3): 0.125}
+    # Yields {(0, 2): 0.25, (1, 3): 0.25, (2, 1): 0.25, (3, 1): 0.125, (3, 3): 0.125} 

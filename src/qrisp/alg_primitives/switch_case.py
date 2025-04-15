@@ -16,10 +16,10 @@
 ********************************************************************************/
 """
 
-from qrisp.core.gate_application_functions import h
+from qrisp.core.gate_application_functions import h, x
 from qrisp.alg_primitives.qft import QFT
 from qrisp.core import QuantumArray
-from qrisp.qtypes import QuantumBool
+from qrisp.qtypes import QuantumBool, QuantumVariable
 from qrisp.environments import conjugate, control
 from qrisp.alg_primitives import demux
 
@@ -38,9 +38,10 @@ def qswitch(operand, case, case_function_list, method = "sequential"):
     case_function_list : list[callable]
         A list of functions, performing some in-place operation on ``operand``.
     method : str, optional
-        The compilation method. Available are ``parallel`` and ``sequential``. 
+        The compilation method. Available are ``parallel``, ``sequential``, and ``tree``. 
         ``parallel`` is exponentially fast but requires more temporary qubits.
-        The default is "sequential".
+        ``tree`` is based on the balanced binary tree in
+        <https://arxiv.org/pdf/2407.17966v1>. The default is "sequential".
 
     Examples
     --------
@@ -101,6 +102,57 @@ def qswitch(operand, case, case_function_list, method = "sequential"):
         
         enable[0].flip()
         enable.delete()
+
+    elif method == "tree":
+        n = case.size
+        cfl = case_function_list.copy()
+        anc = QuantumVariable(n+1)
+        x(anc[0])
+
+        def bounce(d: int):
+            with control(anc[d-1]):
+                x(anc[d])
+            with control(anc[d]):
+                x(anc[d+1])
+            with control(anc[d-1]):
+                with control(case[n-1-d]):
+                    x(anc[d+1])
+
+        def down(d: int):
+            with control(anc[d]):
+                x(case[n-1-d])
+                with control(case[n-1-d]):
+                    x(anc[d+1])
+                x(case[n-1-d])
+
+        def up(d: int):
+            with control(anc[d]):
+                with control(case[n-1-d]):
+                    x(anc[d+1])
+
+        def leaf(d: int, A, B):
+            with control(anc[d+1]):
+                A(operand)
+            with control(anc[d]):
+                x(anc[d+1])
+            with control(anc[d+1]):
+                B(operand)
+
+        down(0)
+        stack = [(down, 1), (bounce, 1), (up, 1)]
+        while stack:
+            op, depth = stack.pop(0)
+            op(depth)
+            if op == down or op == bounce:
+                if depth + 1 >= n:
+                    A = cfl.pop(0)
+                    B = cfl.pop(0)
+                    stack.insert(0, (lambda x: leaf(x, A, B), depth))
+                else:
+                    stack.insert(0, (up, depth + 1))
+                    stack.insert(0, (bounce, depth + 1))
+                    stack.insert(0, (down, depth + 1))
+        up(0)
     
     else:
         raise Exception("Don't know compile method {method} for switch-case structure.")
