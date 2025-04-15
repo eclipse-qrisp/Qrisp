@@ -118,7 +118,7 @@ Setting up the QAOA
 
 For additional details, we refer to the :ref:`MaxCutQAOA` tutorial.
 
-**Step 6: Defining the QAOA ansatz**
+**Step 6: Define the QAOA ansatz**
 
 First, we will define the the cost operator and mixer.
 
@@ -158,7 +158,7 @@ Next, we define the QAOA ansatz that creates a QuantumVariable, brings it into u
     
         return ansatz
 
-**Step 7: Defining the Objective Function**
+**Step 7: Define the Objective Function**
 
 The objective function samples from the parametrized QAOA ansatz and computes the average cut value.
 
@@ -179,7 +179,7 @@ The objective function samples from the parametrized QAOA ansatz and computes th
     
         return objective
 
-**Step 8: Using a JAX-traceable Optimization Routine**
+**Step 8: Use a JAX-traceable Optimization Routine**
 
 We define the qaoa function for finding the optimal parameter values using the JAX-traceable :ref:`minimize <optimization_tools>` routine.
 It returns an array of optimal parameters and the average cost value for the optimal solution.
