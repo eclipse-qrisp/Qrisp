@@ -420,7 +420,7 @@ class QuantumFloat(QuantumVariable):
         elif isinstance(other, int):
             bit_shift = 0
             while not other % 2:
-                other = other.exp_shift(1)
+                other = other >> 1
                 bit_shift += 1
 
             if self.signed or other < 0:
