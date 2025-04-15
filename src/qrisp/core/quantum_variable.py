@@ -328,9 +328,6 @@ class QuantumVariable:
         # This attribute tracks the created QuantumVariables for the
         # auto_uncompute decorator
         # We use weak references as some qrisp modules rely on reference counting
-        QuantumVariable.live_qvs.append(weakref.ref(self))
-        self.creation_time = int(self.creation_counter[0])
-        self.creation_counter += 1
         
         try:
             from qrisp.jasp.tracing_logic import flatten_qv, unflatten_qv
@@ -575,13 +572,6 @@ class QuantumVariable:
 
         duplicate.qs = new_qs
 
-        # This attribute tracks the created QuantumVariables for the
-        # auto_uncompute decorator
-        # We use weak references as some qrisp modules rely on reference counting
-        QuantumVariable.live_qvs.append(weakref.ref(duplicate))
-        duplicate.creation_time = int(self.creation_counter[0])
-        duplicate.creation_counter += 1
-
         if qs is not None and isinstance(qs, QuantumSession):
             merge(qs, new_qs)
 
@@ -630,7 +620,7 @@ class QuantumVariable:
         return bin_rep(i, self.size)[::-1]
     
     def jdecoder(self, i):
-        raise Exception(f"jdecoder for type {type(self)} not implemented")
+        return i
 
     def encoder(self, value):
         """

@@ -142,14 +142,14 @@ def make_profiling_eqn_evaluator(profiling_dic):
             
         elif eqn.primitive.name == "cond":
             
-            # Reinterpret both branches
-            false_fun = eval_jaxpr(eqn.params["branches"][0], 
-                                   eqn_evaluator = profiling_eqn_evaluator)
+            # Reinterpret branches
+            branch_list = []
             
-            true_fun = eval_jaxpr(eqn.params["branches"][1], 
-                                   eqn_evaluator = profiling_eqn_evaluator)
+            for i in range(len(eqn.params["branches"])):
+                branch_list.append(eval_jaxpr(eqn.params["branches"][i], 
+                                       eqn_evaluator = profiling_eqn_evaluator))
             
-            outvalues = jax.lax.cond(invalues[0], true_fun, false_fun, *invalues[1:])
+            outvalues = jax.lax.switch(invalues[0], branch_list, *invalues[1:])
             
             if not isinstance(outvalues, (list, tuple)):
                 outvalues = (outvalues, )

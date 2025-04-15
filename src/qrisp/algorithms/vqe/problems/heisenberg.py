@@ -326,7 +326,7 @@ def heisenberg_problem(G, J, B, ansatz_type="per hamiltonian"):
 
         vqe = heisenberg_problem(G,1,1)
         vqe.set_callback()
-        energy = vqe.run(lambda : QuantumVariable(G.number_of_nodes()),depth=2,max_iter=50)
+        energy = vqe.run(QuantumVariable(G.number_of_nodes()),depth=2,max_iter=50)
         print(energy)
         # Yields -8.0
     

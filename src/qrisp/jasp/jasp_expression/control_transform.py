@@ -171,19 +171,16 @@ def control_eqn(eqn, ctrl_qubit_var):
         
         new_params = dict(eqn.params)
         
-        false_jaxpr = new_params["branches"][0].jaxpr
-        true_jaxpr = new_params["branches"][1].jaxpr
-        
-        if isinstance(false_jaxpr.invars[-1].aval, AbstractQuantumCircuit) and isinstance(false_jaxpr.outvars[-1].aval, AbstractQuantumCircuit):
-            ctrl_false_jaxpr = control_jaspr(Jaspr(false_jaxpr))
-            ctrl_true_jaxpr = control_jaspr(Jaspr(true_jaxpr))
+        if isinstance(eqn.invars[-1].aval, AbstractQuantumCircuit) and isinstance(eqn.outvars[-1].aval, AbstractQuantumCircuit):
+            branch_list = []    
+            for i in range(len(new_params["branches"])):
+                controlled_branch_jaxpr = control_jaspr(Jaspr(new_params["branches"][i].jaxpr))
+                controlled_branch_jaxpr = ClosedJaxpr(controlled_branch_jaxpr, new_params["branches"][i].consts)
+                branch_list.append(controlled_branch_jaxpr)
         else:
             return eqn
         
-        ctrl_false_jaxpr = ClosedJaxpr(ctrl_false_jaxpr, new_params["branches"][0].consts)
-        ctrl_true_jaxpr = ClosedJaxpr(ctrl_true_jaxpr, new_params["branches"][1].consts)
-        
-        new_params["branches"] = (ctrl_false_jaxpr, ctrl_true_jaxpr)
+        new_params["branches"] = tuple(branch_list)
         
         temp = JaxprEqn(primitive = eqn.primitive,
                         invars = [eqn.invars[0], ctrl_qubit_var] + eqn.invars[1:],

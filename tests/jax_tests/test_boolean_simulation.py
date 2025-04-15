@@ -18,6 +18,8 @@
 
 from qrisp import QuantumFloat, measure
 from qrisp.jasp import boolean_simulation, jrange
+from jax import lax
+import jax.numpy as jnp
 
 def test_boolean_simulation():
     
@@ -41,3 +43,85 @@ def test_boolean_simulation():
     for i in range(5):
         for j in range(5):
             assert main(i, j) == 150*i*j
+            
+    # Test multi switch
+    
+    @boolean_simulation
+    def main():
+
+        def case0(x):
+            return x + 1
+
+        def case1(x):
+            return x + 2
+
+        def case2(x):
+            return x + 3
+        
+        def case3(x):
+            return x + 4
+
+        def compute(index, x):
+            return lax.switch(index, [case0, case1, case2, case3], x)
+
+
+        qf = QuantumFloat(2)
+        qf[:] = 3
+        ind = jnp.int8(measure(qf))
+
+        res = compute(ind,jnp.int32(0))
+
+        return ind, res
+
+
+    assert main() == (3,4)
+    
+    ## Test qubit array fusion
+    
+    @boolean_simulation
+    def main():
+        
+        a = QuantumFloat(3)
+        b = QuantumFloat(3)
+        a[:] = 7
+        b[:] = 7
+        
+        return measure(a.reg + b.reg)
+    
+    assert main() == 63
+        
+    @boolean_simulation
+    def main():
+        
+        a = QuantumFloat(3)
+        b = QuantumFloat(3)
+        a[:] = 7
+        b[:] = 7
+        
+        return measure(a.reg + b[0])
+    
+    assert main() == 15
+    
+    @boolean_simulation
+    def main():
+        
+        a = QuantumFloat(3)
+        b = QuantumFloat(3)
+        a[:] = 7
+        b[:] = 7
+        
+        return measure(a[0] + b.reg)
+    
+    assert main() == 15
+    
+    @boolean_simulation
+    def main():
+        
+        a = QuantumFloat(3)
+        b = QuantumFloat(3)
+        a[:] = 7
+        b[:] = 7
+        
+        return measure(a[0] + b[0])
+    
+    assert main() == 3

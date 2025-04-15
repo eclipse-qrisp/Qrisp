@@ -22,7 +22,7 @@ from sympy import lambdify, symbols
 
 from jax import make_jaxpr, jit
 from jax.core import ClosedJaxpr
-from jax.lax import fori_loop, cond, while_loop
+from jax.lax import fori_loop, cond, while_loop, switch
 from jax._src.linear_util import wrap_init
 import jax.numpy as jnp
 
@@ -186,23 +186,18 @@ def process_fuse(eqn, context_dic):
     
     invalues = extract_invalues(eqn, context_dic)
     
-    res_qubits = Jlist()
-    
-    def loop_body(i, val_tuple):
-        res_qubits, source_qubits = val_tuple
-        res_qubits.append(source_qubits[i])
-        return res_qubits, source_qubits
-    
-    res_qubits, source_qubits = fori_loop(0, 
-                                          invalues[0].counter, 
-                                          loop_body, 
-                                          (res_qubits, invalues[0]))
-    
-    res_qubits, source_qubits = fori_loop(0, 
-                                       invalues[1].counter, 
-                                       loop_body, 
-                                       (res_qubits, invalues[1]))
-
+    if isinstance(eqn.invars[0].aval, AbstractQubit) and isinstance(eqn.invars[1].aval, AbstractQubit):
+        res_qubits = Jlist(invalues)
+    elif isinstance(eqn.invars[0].aval, AbstractQubitArray) and isinstance(eqn.invars[1].aval, AbstractQubit):
+        res_qubits = invalues[0].copy()
+        res_qubits.append(invalues[1])
+    elif isinstance(eqn.invars[0].aval, AbstractQubit) and isinstance(eqn.invars[1].aval, AbstractQubitArray):
+        res_qubits = invalues[1].copy()
+        res_qubits.prepend(invalues[0])
+    else:
+        res_qubits = invalues[0].copy()
+        res_qubits.extend(invalues[1])
+        
     insert_outvalues(eqn, context_dic, res_qubits)
 
 def process_get_qubit(invars, outvars, context_dic):
@@ -445,22 +440,32 @@ def process_while(eqn, context_dic):
     insert_outvalues(eqn, context_dic, unflattened_outvalues)
 
 def process_cond(eqn, context_dic):
+
+    branch_list = []
     
-    false_jaxpr = ensure_conversion(eqn.params["branches"][0].jaxpr)
-    true_jaxpr = ensure_conversion(eqn.params["branches"][1].jaxpr)
+    for i in range(len(eqn.params["branches"])):
+        branch_list.append(ensure_conversion(eqn.params["branches"][i].jaxpr))
     
     invalues = extract_invalues(eqn, context_dic)
+    
+    if isinstance(eqn.invars[-1].aval, AbstractQuantumCircuit):
+        
+        if len(branch_list) > 2:
+            raise Exception("Converting cond primitive with more than 2 branches to Catalyst is currently not supported.")
 
-    # Contrary to the jax cond primitive, the catalyst cond primitive
-    # wants a bool    
-    invalues[0] = jnp.asarray(invalues[0], bool)
-    
-    flattened_invalues = flatten_signature(invalues, eqn.invars)
-    
-    outvalues = cond_p.bind(*flattened_invalues, branch_jaxprs = (true_jaxpr, false_jaxpr), nimplicit_outputs = 0)
-    
-    unflattened_outvalues = unflatten_signature(outvalues, eqn.outvars)
-    
+        # Contrary to the jax cond primitive, the catalyst cond primitive
+        # wants a bool    
+        invalues[0] = jnp.asarray(invalues[0], bool)
+        
+        flattened_invalues = flatten_signature(invalues, eqn.invars)
+        
+        outvalues = cond_p.bind(*flattened_invalues, branch_jaxprs = branch_list[::-1], nimplicit_outputs = 0)
+        
+        unflattened_outvalues = unflatten_signature(outvalues, eqn.outvars)
+    else:
+        
+        unflattened_outvalues = eqn.primitive.bind(*invalues, branches = branch_list, linear = False)
+        
     insert_outvalues(eqn, context_dic, unflattened_outvalues)
 
 @lru_cache(maxsize = int(1E5))

@@ -16,6 +16,8 @@
 ********************************************************************************/
 """
 
+import copy
+
 import jax
 import jax.numpy as jnp
 
@@ -47,7 +49,7 @@ class Jlist:
                 idx = jnp.arange(min(n, jax_array.size), dtype = jnp.int64)
         
                 # Use JAX's index_update to fill the array
-                jax_array = jax_array.at[idx].set(jnp.array(init_val[:jax_array.size], dtype = jnp.int64), indices_are_sorted = True)
+                jax_array = jax_array.at[idx].set(jnp.array(init_val[:jax_array.size], dtype = jnp.int64), indices_are_sorted = True, unique_indices = True)
         
         return jax_array, jnp.array(min(n, self.max_size), dtype = jnp.int64)
 
@@ -61,7 +63,17 @@ class Jlist:
         new_counter = jnp.minimum(self.counter + 1, self.array.shape[0])
         return new_array, new_counter
 
-    
+    def prepend(self, value):
+        self.array, self.counter = self._prepend(value)
+        return self
+
+    @jax.jit
+    def _prepend(self, value):
+        new_array = jnp.roll(self.array, 1)
+        new_array = new_array.at[0].set(value)
+        new_counter = jnp.minimum(self.counter + 1, self.array.shape[0])
+        return new_array, new_counter
+
     def pop(self):
         self.counter, value = self._pop()
         return value
@@ -72,7 +84,6 @@ class Jlist:
         value = self.array[new_counter]
         return new_counter, value
 
-    
     def extend(self, values):
         self.array, self.counter = self._extend(self.array, self.counter, values)
         return self
@@ -137,6 +148,9 @@ class Jlist:
 
     def __len__(self):
         return int(self.counter)
+    
+    def copy(self):
+        return copy.copy(self)
 
     def flatten(self):
         """
