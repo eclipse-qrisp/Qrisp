@@ -673,7 +673,6 @@ class QubitOperator(Hamiltonian):
         """
 
         import scipy.sparse as sp
-        from scipy.sparse import kron as sp_kron, csr_matrix
 
         operator_matrices = {
             "I": sp.csr_matrix([[1, 0], [0, 1]], dtype=complex),
@@ -689,7 +688,7 @@ class QubitOperator(Hamiltonian):
         def recursive_kron(keys,term_dict):
             if len(keys)==1:
                 return operator_matrices[term_dict.get(keys[0],"I")]
-            return sp_kron(operator_matrices[term_dict.get(keys.pop(0),"I")],recursive_kron(keys,term_dict), format="csr")
+            return sp.kron(operator_matrices[term_dict.get(keys.pop(0),"I")],recursive_kron(keys,term_dict), format="csr")
 
         term_dicts = []
         coeffs = []
