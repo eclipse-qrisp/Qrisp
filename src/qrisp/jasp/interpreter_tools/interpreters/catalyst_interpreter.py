@@ -326,8 +326,7 @@ def exec_qrisp_op(op, catalyst_qbs, param_dict):
                                op = catalyst_name, 
                                qubits_len = op.num_qubits,
                                adjoint = invert,
-                               ctrl_len = 0,
-                               ctrl_value_len = 0)
+                               ctrl_len = 0)
         return res_qbs
 
 
