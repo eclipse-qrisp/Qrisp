@@ -140,7 +140,7 @@ def jaspr_to_catalyst_qjit(jaspr, function_name = "jaspr_function"):
     if isinstance(temp, tuple):
         raise Exception("Please upgrade to pennylane-catalyst>=0.11.0")
     jit_object.mlir_module = temp
-    jit_object.compiled_function = jit_object.compile()
+    jit_object.compiled_function, _ = jit_object.compile()
     return jit_object
 
 def jaspr_to_qir(jaspr):
