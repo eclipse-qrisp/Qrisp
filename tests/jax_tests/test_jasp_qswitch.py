@@ -81,3 +81,34 @@ def test_jasp_qswitch_case_function():
     for i in [2,3,4,5]:
         assert np.round(meas_res[i],2) == 0.25
     
+
+def test_jasp_qswitch_case_hamiltonian_simulation():
+    from qrisp import QuantumFloat, h, qswitch, terminal_sampling
+    import numpy as np
+    from qrisp.operators import X,Y,Z
+
+    H1 = Z(0)*Z(1)
+    H2 = Y(0)+Y(1)
+    
+    # Some sample case functions
+    def f0(x): H1.trotterization()(x)
+    def f1(x): H2.trotterization()(x, t=np.pi/4)
+    case_function_list = [f0, f1]
+    
+    @terminal_sampling
+    def main():
+        # Create operand and case variable
+        operand = QuantumFloat(2)
+        case = QuantumFloat(1)
+        h(case)
+
+        # Execute switch_case function
+        qswitch(operand, case, case_function_list)
+
+        return case, operand
+    
+    meas_res = main()
+    
+    assert np.round(meas_res[0,0],2) == 0.5
+    for i in [0,1,2,3]:
+        assert np.round(meas_res[1,i],3) == 0.125
