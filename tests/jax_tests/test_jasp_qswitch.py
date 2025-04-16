@@ -16,7 +16,7 @@
 ********************************************************************************/
 """
 
-def test_jasp_qswitch():
+def test_jasp_qswitch_case_list():
     from qrisp import QuantumFloat, h, qswitch, terminal_sampling
     import numpy as np
     
@@ -37,6 +37,41 @@ def test_jasp_qswitch():
 
         # Execute switch_case function
         qswitch(operand, case, case_function_list)
+
+        return operand
+    
+    meas_res = main()
+    # {2.0: 0.25, 3.0: 0.25, 4.0: 0.25, 5.0: 0.25}
+    
+    for i in [2,3,4,5]:
+        assert np.round(meas_res[i],2) == 0.25
+
+
+def test_jasp_qswitch_case_function():
+    from qrisp import QuantumFloat, h, qswitch, terminal_sampling, control
+    import numpy as np
+    
+    # Some sample case function 
+    def case_function(i, x):
+        with control(i == 0):
+            x += 1
+        with control(i == 1):
+            x += 2
+        with control(i == 2):
+            x += 3
+        with control(i == 3):
+            x += 4
+    
+    @terminal_sampling
+    def main():
+        # Create operand and case variable
+        operand = QuantumFloat(4)
+        operand[:] = 1
+        case = QuantumFloat(2)
+        h(case)
+
+        # Execute switch_case function
+        qswitch(operand, case, case_function)
 
         return operand
     
