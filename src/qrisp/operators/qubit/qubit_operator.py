@@ -673,30 +673,23 @@ class QubitOperator(Hamiltonian):
         """
 
         import scipy.sparse as sp
-        from scipy.sparse import kron as TP, csr_matrix
+        from scipy.sparse import kron as sp_kron, csr_matrix
 
-        def get_matrix(P):
-            if P=="I":
-                return csr_matrix([[1,0],[0,1]])
-            if P=="X":
-                return csr_matrix([[0,1],[1,0]])
-            if P=="Y":
-                return csr_matrix([[0,-1j],[1j,0]])
-            if P == "Z":
-                return csr_matrix([[1,0],[0,-1]])
-            if P == "A":
-                return csr_matrix([[0,1],[0,0]])
-            if P == "C":
-                return csr_matrix([[0,0],[1,0]])
-            if P == "P0":
-                return csr_matrix([[1,0],[0,0]])
-            if P == "P1":
-                return csr_matrix([[0,0],[0,1]])
-
-        def recursive_TP(keys,term_dict):
+        operator_matrices = {
+            "I": sp.csr_matrix([[1, 0], [0, 1]], dtype=complex),
+            "X": sp.csr_matrix([[0, 1], [1, 0]], dtype=complex),
+            "Y": sp.csr_matrix([[0, -1j], [1j, 0]], dtype=complex),
+            "Z": sp.csr_matrix([[1, 0], [0, -1]], dtype=complex),
+            "A": sp.csr_matrix([[0, 1], [0, 0]], dtype=complex),
+            "C": sp.csr_matrix([[0, 0], [1, 0]], dtype=complex),
+            "P0": sp.csr_matrix([[1, 0], [0, 0]], dtype=complex),
+            "P1": sp.csr_matrix([[0, 0], [0, 1]], dtype=complex),
+        }
+        
+        def recursive_kron(keys,term_dict):
             if len(keys)==1:
-                return get_matrix(term_dict.get(keys[0],"I"))
-            return TP(get_matrix(term_dict.get(keys.pop(0),"I")),recursive_TP(keys,term_dict))
+                return operator_matrices[term_dict.get(keys[0],"I")]
+            return sp_kron(operator_matrices[term_dict.get(keys.pop(0),"I")],recursive_kron(keys,term_dict), format="csr")
 
         term_dicts = []
         coeffs = []
@@ -723,15 +716,11 @@ class QubitOperator(Hamiltonian):
             raise Exception("Tried to construct matrix with insufficient factor_amount")
 
         keys = list(range(factor_amount))
-        
-        dim = len(keys)
 
-        m = len(coeffs)
-        M = sp.csr_matrix((2**dim, 2**dim))
-        for k in range(m):
-            M += complex(coeffs[k])*recursive_TP(keys.copy(),term_dicts[k])
-        # res = ((M + M.transpose().conjugate())/2)
-        # res.sum_duplicates()
+        M = sp.csr_matrix((2**factor_amount, 2**factor_amount))
+        for k,coeff in enumerate(coeffs):
+            M += complex(coeff)*recursive_kron(keys.copy(),term_dicts[k])
+
         return M
     
     def to_array(self, factor_amount=None):
