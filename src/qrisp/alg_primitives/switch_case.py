@@ -16,12 +16,12 @@
 ********************************************************************************/
 """
 
-from qrisp.core.gate_application_functions import h
-from qrisp.alg_primitives.qft import QFT
 from qrisp.core import QuantumArray
 from qrisp.qtypes import QuantumBool
 from qrisp.environments import conjugate, control
 from qrisp.alg_primitives import demux
+from qrisp.core.gate_application_functions import mcx
+from qrisp.jasp import check_for_tracing_mode
 
 def qswitch(operand, case, case_function_list, method = "sequential"):
     """
@@ -74,12 +74,34 @@ def qswitch(operand, case, case_function_list, method = "sequential"):
     
     
     if method == "sequential":
+
+        if check_for_tracing_mode():
+
+            control_qbl = QuantumBool()
+
+            def conjugator(case, control_qbl):
+                mcx(case,
+                    control_qbl,
+                    method='baluaca',
+                    ctrl_state=i)
+
+            for i in range(len(case_function_list)):
+                with conjugate(conjugator)(case, control_qbl):
+                    with control(control_qbl):
+                        case_function_list[i](operand)
+
+            control_qbl.delete()
+
+        else:
     
-        for i in range(len(case_function_list)):
-            with i == case:
-                case_function_list[i](operand)
+            for i in range(len(case_function_list)):
+                with i == case:
+                    case_function_list[i](operand)
         
     elif method == "parallel":
+
+        if check_for_tracing_mode():
+            raise Exception("Compile method {method} for switch-case structure not available in Jasp mode.")
         
         # Idea: Use demux function to move operand and enabling bool into QuantumArray
         # to execute cases in parallel.
