@@ -90,7 +90,7 @@ def diffuser(input_object, phase=np.pi, state_function=None, reflection_indices=
     if isinstance(input_object, QuantumArray):
         input_object = [qv for qv in input_object.flatten()]
 
-    if isinstance(input_object,list) and reflection_indices is None:
+    if isinstance(input_object, (list,tuple)) and reflection_indices is None:
         reflection_indices = [i for i in range(len(input_object))]  
 
     if state_function is not None:
@@ -105,7 +105,7 @@ def diffuser(input_object, phase=np.pi, state_function=None, reflection_indices=
             def inv_state_function(args):
                 h(args)
 
-    if isinstance(input_object, list):
+    if isinstance(input_object, (list,tuple)):
         with conjugate(inv_state_function)(input_object):
             if check_for_tracing_mode():
                 tag_state(
