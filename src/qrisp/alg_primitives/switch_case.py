@@ -22,7 +22,6 @@ from qrisp.environments import conjugate, control
 from qrisp.alg_primitives import demux
 from qrisp.core.gate_application_functions import mcx
 from qrisp.jasp import check_for_tracing_mode, jrange
-from jax.lax import switch
 
 def qswitch(operand, case, case_function_list, method = "sequential"):
     """
@@ -87,14 +86,8 @@ def qswitch(operand, case, case_function_list, method = "sequential"):
 
             control_qbl = QuantumBool()
 
-            def conjugator(case, control_qbl):
-                mcx(case,
-                    control_qbl,
-                    method='baluaca',
-                    ctrl_state=i)
-
             for i in xrange(case_amount):
-                with conjugate(conjugator)(case, control_qbl):
+                with conjugate(mcx)(case, control_qbl, ctrl_state=i):
                     with control(control_qbl):
                         if callable(case_function_list):
                             case_function_list(i, operand)
