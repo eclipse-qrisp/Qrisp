@@ -100,7 +100,7 @@ def inner_LCU(state_prep, unitaries, num_qubits, num_unitaries=None):
 
     # LCU protocol with conjugate preparation
     with conjugate(state_prep)(case_indicator):
-        for i in jrange(num_unitaries):
+        for i in range(num_unitaries):
             qb = QuantumBool()
             with conjugate(mcx)(case_indicator, qb, ctrl_state=i):
                 with control(qb):
@@ -168,9 +168,7 @@ def LCU(state_prep, unitaries, num_qubits, num_unitaries=None):
     else:
         raise TypeError("unitaries must be a list/tuple or a callable function")
 
-    case_indicator, qv = inner_LCU(
-        state_prep, unitary_func, num_qubits, num_unitaries
-    )
+    case_indicator, qv = inner_LCU(state_prep, unitary_func, num_qubits, num_unitaries)
 
     # Success condition
     success_bool = measure(case_indicator) == 0
@@ -224,9 +222,7 @@ def view_LCU(state_prep, unitaries, num_qubits, num_unitaries=None):
     else:
         raise TypeError("unitaries must be list/tuple, or callable")
 
-    jaspr = make_jaspr(inner_LCU)(
-        state_prep, unitary_func, num_qubits, num_unitaries
-    )
+    jaspr = make_jaspr(inner_LCU)(state_prep, unitary_func, num_qubits, num_unitaries)
 
     # Convert Jaspr to quantum circuit and return the circuit
     return jaspr.to_qc(num_qubits, num_unitaries)[-1]
