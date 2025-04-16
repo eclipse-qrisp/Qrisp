@@ -88,10 +88,7 @@ class QAOAProblem:
         self.cost_operator = cost_operator
         self.mixer = mixer
         self.cl_cost_function = cl_cost_function
-        
         self.init_function = init_function
-        self.cl_post_processor = None
-        self.init_type = 'random'
 
         # parameters for callback
         self.callback = callback
@@ -145,7 +142,7 @@ class QAOAProblem:
         return  jnp.concatenate((gamma,beta)) 
     
 
-    def compile_circuit(self, qarg, depth):
+    def compile_circuit(self, qarg, depth, init_type = "random"):
         """
         Compiles the circuit that is evaluated by the :meth:`run <qrisp.qaoa.QAOAProblem.run>` method.
 
@@ -155,6 +152,11 @@ class QAOAProblem:
             The argument to which the QAOA circuit is applied.
         depth : int
             The amount of QAOA layers.
+        init_type : string, optional
+            Specifies the way the initial optimization parameters are chosen. Available are ``random`` and ``tqa``. The default is ``random``: 
+            The parameters are initialized uniformly at random in the interval $[0,\pi/2]$.
+            For ``tqa``, the parameters are chosen based on the `Trotterized Quantum Annealing <https://quantum-journal.org/papers/q-2021-07-01-491/>`_ protocol.
+            If ``tqa`` is chosen, and no ``init_function`` for the :ref:`QAOAProblem` is specified, the $\ket{-}^n$ state is prepared (the ground state for the X mixer).
 
         Returns
         -------
@@ -268,7 +270,7 @@ class QAOAProblem:
         # Prepare initial state - if no init_function is specified, prepare uniform superposition
         if self.init_function is not None:
             self.init_function(qarg)
-        elif self.init_type=='tqa': # Prepare the ground state (eigenvalue -1) of the X mixer
+        elif init_type=='tqa': # Prepare the ground state (eigenvalue -1) of the X mixer
             x(qarg)
             h(qarg)
         else:
@@ -505,13 +507,13 @@ class QAOAProblem:
         else:
 
             qarg = qarg_prep()
-            compiled_qc, symbols = self.compile_circuit(qarg, depth)
+            compiled_qc, symbols = self.compile_circuit(qarg, depth, init_type)
         
 
         # Initialization for optimization parameters
         if init_point is None:
             
-            if self.init_type=='random':
+            if init_type=='random':
                 # Random initialization
                 if check_for_tracing_mode():
                     key = jax.random.key(11)
@@ -519,7 +521,7 @@ class QAOAProblem:
                 else:
                     init_point = np.random.rand(2 * depth) * np.pi/2
 
-            elif self.init_type=='tqa':
+            elif init_type=='tqa':
                 # TQA initialization
                 if check_for_tracing_mode():
                     init_point = tqa_angles(depth, state_prep, mes_kwargs)
@@ -601,7 +603,6 @@ class QAOAProblem:
                 def qarg_prep():
                     return template.construct()
 
-        self.init_type = init_type
         # Set default options
         options["maxiter"] = max_iter
 
@@ -627,7 +628,7 @@ class QAOAProblem:
             # Prepare initial state - if no init_function is specified, prepare uniform superposition
             if self.init_function is not None:
                 self.init_function(qarg)
-            elif self.init_type=='tqa': # Prepare the ground state (eigenvalue -1) of the X mixer
+            elif init_type=='tqa': # Prepare the ground state (eigenvalue -1) of the X mixer
                 x(qarg)
                 h(qarg)
             else:
@@ -744,7 +745,6 @@ class QAOAProblem:
                 def qarg_prep():
                     return template.construct()
 
-        self.init_type = init_type
         # Set default options
         options["maxiter"] = max_iter
 
@@ -763,7 +763,7 @@ class QAOAProblem:
             # Prepare initial state - if no init_function is specified, prepare uniform superposition
             if self.init_function is not None:
                 self.init_function(qarg_gen)
-            elif self.init_type=='tqa': # Prepare the ground state (eigenvalue -1) of the X mixer
+            elif init_type=='tqa': # Prepare the ground state (eigenvalue -1) of the X mixer
                 x(qarg_gen)
                 h(qarg_gen)
             else:
