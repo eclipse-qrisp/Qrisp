@@ -76,7 +76,7 @@ Example implementation
    qaoa_max_indep_set = QAOAProblem(cost_operator=create_maxsat_cost_operator(problem),
                                     mixer=RX_mixer,
                                     cl_cost_function=create_maxsat_cl_cost_function(problem))
-   results = qaoa_max_indep_set.run(qarg=qarg, depth=5)
+   results = qaoa_max_indep_set.run(qarg, depth=5)
 
 That's it! Feel free to experiment with the ``init_type='tqa'`` option in the :meth:`.run <qrisp.qaoa.QAOAProblem.run>` method for improved performance.
 In the following, we print the 5 most likely solutions together with their cost values.

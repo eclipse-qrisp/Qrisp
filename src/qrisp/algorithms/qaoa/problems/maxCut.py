@@ -18,10 +18,10 @@
 
 from qrisp import *
 import numpy as np
-from scipy.optimize import minimize
-from sympy import Symbol
-import itertools
+import jax.numpy as jnp
+
 from numba import njit, prange
+from jax import jit, vmap
 
 def maxcut_obj(x, G):
     return maxcut_obj_jitted(int(x[::-1], 2), list(G.edges()))
@@ -36,6 +36,7 @@ def maxcut_obj_jitted(x, edge_list):
         # if x[i] != x[j]:                          
             cut -= 1
     return cut
+
 
 @njit(parallel = True, cache = True)
 def maxcut_energy(outcome_array, count_array, edge_list):
@@ -87,6 +88,35 @@ def create_maxcut_cl_cost_function(G):
     return cl_cost_function
 
 
+@jit
+def extract_boolean_digit(integer, digit):
+    return (integer >> digit) & 1
+
+
+def create_cut_computer(G):
+    edge_list = jnp.array(G.edges()) 
+
+    @jit
+    def cut_computer(x):
+        x_uint = jnp.uint32(x)
+        bools = extract_boolean_digit(x_uint, edge_list[:, 0]) != extract_boolean_digit(x_uint, edge_list[:, 1])
+        cut = jnp.sum(bools)  # Count the number of edges crossing the cut
+        return -cut
+
+    return cut_computer
+
+
+def create_maxcut_sample_array_post_processor(G):
+    cut_computer = create_cut_computer(G)
+
+    def post_processor(sample_array):
+        cut_values = vmap(cut_computer)(sample_array)  # Use vmap for automatic vectorization
+        average_cut = jnp.mean(cut_values)  
+        return average_cut
+
+    return post_processor
+
+
 def create_maxcut_cost_operator(G):
     r"""
     Creates the cost operator for an instance of the maximum cut problem for a given graph ``G``.
@@ -105,11 +135,12 @@ def create_maxcut_cost_operator(G):
     """
     def maxcut_cost_operator(qv, gamma):
         
-        if len(G) != len(qv):
-            raise Exception(f"Tried to call MaxCut cost Operator for graph of size {len(G)} on argument of invalid size {len(qv)}")
+        if not check_for_tracing_mode():
+            if len(G) != len(qv):
+                raise Exception(f"Tried to call MaxCut cost Operator for graph of size {len(G)} on argument of invalid size {len(qv)}")
         
         for pair in list(G.edges()):
-            rzz(2*gamma, qv[pair[0]], qv[pair[1]])
+            rzz(2 * gamma, qv[pair[0]], qv[pair[1]])
             # cx(qv[pair[0]], qv[pair[1]])
             # rz(2 * gamma, qv[pair[1]])
             # cx(qv[pair[0]], qv[pair[1]])

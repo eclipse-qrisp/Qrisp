@@ -66,7 +66,7 @@ Example implementation
     qarg = QuantumArray(qtype=QuantumVariable(1), shape=len(Q))
 
     QUBO_instance = QUBO_problem(Q)
-    res = QUBO_instance.run(qarg=qarg, depth=1, max_iter=50)
+    res = QUBO_instance.run(qarg, depth=1, max_iter=50)
 
 That's it! In the following, we print the 5 best solutions together with their cost values.
 

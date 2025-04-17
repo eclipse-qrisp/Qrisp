@@ -48,7 +48,7 @@ Example implementation
 
     G = nx.Graph()
     G.add_edges_from([[0,1],[0,4],[1,2],[1,3],[1,4],[2,3],[3,4]])
-    color_list = ["red", "blue", "yellow", "green"]
+    color_list = ["red", "blue", "orange", "green"]
 
     qarg = QuantumArray(qtype = QuantumColor(color_list, one_hot_enc=True), shape = G.number_of_nodes())
     #qarg = QuantumArray(qtype = QuantumColor(color_list, one_hot_enc=False), shape = G.number_of_nodes()) # use one_hot_enc=False for binary encoding
@@ -60,7 +60,7 @@ Example implementation
     init_state = [random.choice(color_list) for _ in range(len(G))]
     qaoa_coloring.set_init_function(lambda x : x.encode(init_state))
 
-    result = qaoa_coloring.run(qarg=qarg, depth=3, max_iter=50)
+    result = qaoa_coloring.run(qarg, depth=3, max_iter=50)
 
 That's it! In the following, we print the 5 most likely solutions together with their cost values.
 
@@ -78,10 +78,11 @@ Finally, we visualize the most likely solution.
 ::
 
     best_of_five = min([(cl_cost({item[0]:1}),item[0]) for item in max_five], key=itemgetter(0))[1]
-    nx.draw(G, with_labels=True,
-            node_color=[best_of_five[node] for node in G.nodes()])
+    nx.draw(G, with_labels=True, font_color='white', node_size=1000, font_size=22,
+            node_color=[best_of_five[node] for node in G.nodes()],
+            edge_color='#D3D3D3')
 
 .. image:: ./mKCS.png
-  :scale: 100%
+  :scale: 60%
   :align: center
 

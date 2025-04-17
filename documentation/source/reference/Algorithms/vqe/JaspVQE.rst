@@ -1,13 +1,13 @@
 .. _JaspVQE:
 
-How to use VQE with Jasp
-========================
+How to use VQE in Jasp
+======================
 
 In :ref:`How to think in Jasp <jasp_tutorial>` we learned how Jasp allows to future proof Qrisp code for practically relevant problems.
 For variational quantum algorithms like QAOA and VQE, hybrid quantum-classical workflows can be seamlessly compliled, optimized and executed.
 
 We again use the example of calculating the ground state energy of the $H_2$ molecule with VQE.
-Running this example with Jasp is as easy as wrapping the code in a ``main`` function:
+Running this example in Jasp is as easy as wrapping the code in a ``main`` function:
 
 ::
     
@@ -28,7 +28,7 @@ Running this example with Jasp is as easy as wrapping the code in a ``main`` fun
         return energy
 
 The :ref:`jaspify <jaspify>` method allows for running Jasp-traceable functions using the integrated Qrisp simulator. 
-For hybird algorithms like QAOA and VQE that rely on calculating expectation values based on sampling, the ``terminal_sampling`` feature significatly 
+For hybrid algorithms like QAOA and VQE that rely on calculating expectation values based on sampling, the ``terminal_sampling`` feature significantly 
 speeds up the simulation: samples are drawn from the state vector instead of performing repeated simulation and measurement of the quantum circuits.
 
 ::
