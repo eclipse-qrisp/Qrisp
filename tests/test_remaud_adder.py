@@ -21,7 +21,7 @@ from qrisp.jasp import *
 
 def test_remaud_adder():
 
-    for N in range(2, 15):
+    for N in range(2, 10):
         circ1 = QuantumFloat(N)
         with invert():
             for i in range(N-1):

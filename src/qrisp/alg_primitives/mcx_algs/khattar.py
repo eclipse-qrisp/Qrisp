@@ -234,7 +234,7 @@ def khattar_mcp(phi, ctrls, ctrl_state):
                 gidney_CCCZ(ctrls, target)
                 h(target[0])
                 
-                p(phi, target[0])           # Use a conjugation environment also here? Maybe yes
+                p(phi, target[0])
 
                 h(target[0])
                 gidney_CCCZ(ctrls, target)
