@@ -23,5 +23,5 @@ import numpy as xp
 # import cupy as xp
 
 float_tresh = 1e-5
-cutoff_ratio = 5e-4
+cutoff_ratio = 5e-10
 sparsification_rate = 0.1
