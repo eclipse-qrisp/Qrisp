@@ -21,7 +21,7 @@ import itertools
 
 from qrisp import *
 from qrisp.jasp import *
-
+from qrisp.vqe.problems.electronic_structure import *
 
 
 def test_catalyst_interface():
