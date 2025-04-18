@@ -136,8 +136,11 @@ def jaspr_to_catalyst_qjit(jaspr, function_name = "jaspr_function"):
     jit_object = catalyst.QJIT(catalyst_function, catalyst.CompileOptions())
     jit_object.jaxpr = make_jaxpr(catalyst_function)(*[invar.aval for invar in jaspr.invars[:-1]])
     jit_object.workspace = jit_object._get_workspace()
-    jit_object.mlir_module, jit_object.mlir = jit_object.generate_ir()
-    jit_object.compiled_function, jit_object.qir = jit_object.compile()
+    temp = jit_object.generate_ir()
+    if isinstance(temp, tuple):
+        raise Exception("Please upgrade to pennylane-catalyst>=0.11.0")
+    jit_object.mlir_module = temp
+    jit_object.compiled_function, _ = jit_object.compile()
     return jit_object
 
 def jaspr_to_qir(jaspr):

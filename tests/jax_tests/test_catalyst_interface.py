@@ -142,3 +142,21 @@ def test_catalyst_interface():
         return measure(a[0] + b[0])
 
     assert main() == 3
+
+    # Test for https://github.com/eclipse-qrisp/Qrisp/issues/180    
+    from pyscf import gto
+    @make_jaspr
+    def main():
+    
+        mol = gto.M(
+            atom = '''H 0 0 0; H 0 0 0.74''',
+            basis = 'sto-3g')
+    
+        vqe = electronic_structure_problem(mol)
+    
+        energy = vqe.run(lambda : QuantumFloat(4), depth=1, max_iter=100, optimizer="SPSA")
+    
+        return energy
+    
+    jaspr = main()
+    qir_str = jaspr.to_qir()
