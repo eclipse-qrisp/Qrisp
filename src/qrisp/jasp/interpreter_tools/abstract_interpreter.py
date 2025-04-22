@@ -59,9 +59,13 @@ def eval_jaxpr(jaxpr,
 
     """
     
+    from qrisp.jasp import Jaspr
+    
     if isinstance(jaxpr, ClosedJaxpr):
         consts = list(jaxpr.consts)
         jaxpr = jaxpr.jaxpr
+    elif isinstance(jaxpr, Jaspr):
+        consts = list(jaxpr.consts)
     else:
         consts = []
     

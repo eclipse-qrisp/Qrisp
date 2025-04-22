@@ -69,3 +69,13 @@ class Qubit:
 
     def __eq__(self, other):
         return self.hash_value == other.hash_value
+    
+    def __add__(self, other):
+        if not isinstance(other, list):
+            raise Exception(f"Tried to add Qubit to type {type(other)} (only list ist possible)")
+        return [self] + other
+    
+    def __radd__(self, other):
+        if not isinstance(other, list):
+            raise Exception(f"Tried to add Qubit to type {type(other)} (only list ist possible)")
+        return other + [self]

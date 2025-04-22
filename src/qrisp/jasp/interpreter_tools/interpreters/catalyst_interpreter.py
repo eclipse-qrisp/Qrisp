@@ -322,11 +322,13 @@ def exec_qrisp_op(op, catalyst_qbs, param_dict):
 
         catalyst_name = op_name_translation_dic[op_name]        
         
-        res_qbs = qinst_p.bind(*(catalyst_qbs+param_list), 
-                               op = catalyst_name, 
+        res_qbs = qinst_p.bind(*(catalyst_qbs+param_list),
+                               op = catalyst_name,
                                qubits_len = op.num_qubits,
-                               adjoint = invert,
-                               ctrl_len = 0)
+                               params_len = len(param_list),
+                               ctrl_len = 0,
+                               adjoint = invert,)
+
         return res_qbs
 
 
