@@ -22,12 +22,3 @@ Contents
    inner_LCU
    LCU
    view_LCU
-
-Function Details
-----------------
-
-.. autofunction:: inner_LCU
-
-.. autofunction:: LCU
-
-.. autofunction:: view_LCU

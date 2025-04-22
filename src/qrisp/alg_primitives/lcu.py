@@ -40,7 +40,7 @@ def inner_LCU(state_prep, unitaries, num_qubits, num_unitaries=None):
     - **SELECT**: Applies the unitary $U_i$ to the target register, controlled on the ancilla register being in state $|i\rangle$. $\mathrm{SELECT}|i\rangle|\psi\rangle=|i\rangle U_i|\psi\rangle$.
     - **PREPARE**$^\dagger$: Uncomputes the ancilla.
 
-    **Note**: The LCU protocol is deemed successful only if the ancilla register is measured in the $|0\rangle$ state, which occurs with a probability proportional to $\frac{|\alpha|_1^2}{\lambda^2} $. This function does not perform the measurement; it returns the ancilla register and the transformed target register.
+    **Note**: The LCU protocol is deemed successful only if the ancilla register is measured in the $|0\rangle$ state, which occurs with a probability proportional to $\frac{|\alpha|_1^2}{\lambda^2}$. This function does not perform the measurement; it returns the ancilla register and the transformed target register.
 
     For a complete implementation of LCU with the Repeat-Until-Success protocol, see :func:`LCU`.
 
