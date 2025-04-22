@@ -16,27 +16,33 @@
 ********************************************************************************/
 """
 
-from jax.core import AbstractValue, Primitive, raise_to_shaped_mappings
-
-class AbstractQubit(AbstractValue):
+def test_jasp_qswitch():
+    from qrisp import QuantumFloat, h, qswitch, terminal_sampling
+    import numpy as np
     
-    def __repr__(self):
-        return "Qubit"
+    # Some sample case functions
+    def f0(x): x += 1
+    def f1(x): x += 2
+    def f2(x): x += 3
+    def f3(x): x += 4 
+    case_function_list = [f0, f1, f2, f3]
     
-    def __hash__(self):
-        return hash(type(self))
+    @terminal_sampling
+    def main():
+        # Create operand and case variable
+        operand = QuantumFloat(4)
+        operand[:] = 1
+        case = QuantumFloat(2)
+        h(case)
+
+        # Execute switch_case function
+        qswitch(operand, case, case_function_list)
+
+        return operand
     
-    def __eq__(self, other):
-        if not isinstance(other, AbstractQubit):
-            return False
-        return isinstance(other, AbstractQubit)
+    meas_res = main()
+    # {2.0: 0.25, 3.0: 0.25, 4.0: 0.25, 5.0: 0.25}
     
-    def _add(self, a, b):
-        from qrisp.jasp import fuse_qb_array, DynamicQubitArray
-        if isinstance(b, DynamicQubitArray):
-            b = b.tracer
-        return fuse_qb_array(a, b)
-
-raise_to_shaped_mappings[AbstractQubit] = lambda aval, _: aval
-
-
+    for i in [2,3,4,5]:
+        assert np.round(meas_res[i],2) == 0.25
+    

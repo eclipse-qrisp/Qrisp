@@ -48,7 +48,9 @@ class DynamicQubitArray:
         return get_size(self.tracer)
     
     def __add__(self, other):
-        return DynamicQubitArray(fuse_qb_array(self.tracer, other.tracer))
+        if isinstance(other, DynamicQubitArray):
+            other = other.tracer
+        return DynamicQubitArray(fuse_qb_array(self.tracer, other))
     
     @property
     def reg(self):

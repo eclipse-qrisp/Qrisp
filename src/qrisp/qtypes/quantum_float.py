@@ -438,7 +438,7 @@ class QuantumFloat(QuantumVariable):
 
             polynomial_encoder([self], output_qf, other * sp.Symbol("x"))
 
-            output_qf << bit_shift
+            output_qf.exp_shift(bit_shift)
 
             return output_qf
         else:

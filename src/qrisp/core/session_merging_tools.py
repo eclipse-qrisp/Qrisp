@@ -178,6 +178,9 @@ def merge_sessions_inner(qs_0, qs_1, merge_env_stack_=True):
     qs_0.qubits.extend(qs_1.qubits)
     qs_0.clbits.extend(qs_1.clbits)
 
+    for i in range(len(qs_0.clbits)):
+        qs_0.clbits[i].identifier = f"clbit_{i}"
+
     qs_0.data.extend(qs_1.data)
 
     object.__setattr__(qs_1, "data", qs_0.data)

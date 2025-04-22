@@ -358,8 +358,11 @@ class Jaspr(Jaxpr):
                     context_dic[eqn.outvars[0]] = context_dic[eqn.invars[0]]
                     return
             return True
-          
+        
         ammended_args = list(args) + [QuantumCircuit()] + jaspr.consts
+        if len(ammended_args) != len(jaspr.invars):
+            raise Exception("Supplied invalid number of arguments to Jaspr.to_qc (please exclude any static arguments, in particular callables)")
+        
         res = eval_jaxpr(jaspr, eqn_evaluator = eqn_evaluator)(*(ammended_args))
         
         return res

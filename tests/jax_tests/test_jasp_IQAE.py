@@ -16,27 +16,32 @@
 ********************************************************************************/
 """
 
-from jax.core import AbstractValue, Primitive, raise_to_shaped_mappings
 
-class AbstractQubit(AbstractValue):
-    
-    def __repr__(self):
-        return "Qubit"
-    
-    def __hash__(self):
-        return hash(type(self))
-    
-    def __eq__(self, other):
-        if not isinstance(other, AbstractQubit):
-            return False
-        return isinstance(other, AbstractQubit)
-    
-    def _add(self, a, b):
-        from qrisp.jasp import fuse_qb_array, DynamicQubitArray
-        if isinstance(b, DynamicQubitArray):
-            b = b.tracer
-        return fuse_qb_array(a, b)
+def test_jasp_IQAE_integration():
+    from qrisp import QuantumFloat, QuantumBool, control, z, h, ry, IQAE, jrange, jaspify
+    import numpy as np
 
-raise_to_shaped_mappings[AbstractQubit] = lambda aval, _: aval
+    # We compute the integral of f(x)=(sin(x))^2 from 0 to 1
+    def state_function(inp, tar):
+        h(inp) # Distribution
+    
+        N = 2**inp.size
+        for k in jrange(inp.size):
+            with control(inp[k]):
+                ry(2**(k+1)/N,tar)
+
+    n = 6 # 2^n sampling points for integration
+    inp = QuantumFloat(n,-n)
+    tar = QuantumBool()
+    input_list = [inp, tar]
+
+    eps = 0.01
+    alpha = 0.01
+
+    @jaspify(terminal_sampling=True)
+    def main():
+        return IQAE(input_list, state_function, eps=eps, alpha=alpha)
+
+    assert np.abs(main()-0.26716231971793425)<0.01
 
 

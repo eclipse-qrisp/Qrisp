@@ -186,23 +186,18 @@ def process_fuse(eqn, context_dic):
     
     invalues = extract_invalues(eqn, context_dic)
     
-    res_qubits = Jlist()
-    
-    def loop_body(i, val_tuple):
-        res_qubits, source_qubits = val_tuple
-        res_qubits.append(source_qubits[i])
-        return res_qubits, source_qubits
-    
-    res_qubits, source_qubits = fori_loop(0, 
-                                          invalues[0].counter, 
-                                          loop_body, 
-                                          (res_qubits, invalues[0]))
-    
-    res_qubits, source_qubits = fori_loop(0, 
-                                       invalues[1].counter, 
-                                       loop_body, 
-                                       (res_qubits, invalues[1]))
-
+    if isinstance(eqn.invars[0].aval, AbstractQubit) and isinstance(eqn.invars[1].aval, AbstractQubit):
+        res_qubits = Jlist(invalues)
+    elif isinstance(eqn.invars[0].aval, AbstractQubitArray) and isinstance(eqn.invars[1].aval, AbstractQubit):
+        res_qubits = invalues[0].copy()
+        res_qubits.append(invalues[1])
+    elif isinstance(eqn.invars[0].aval, AbstractQubit) and isinstance(eqn.invars[1].aval, AbstractQubitArray):
+        res_qubits = invalues[1].copy()
+        res_qubits.prepend(invalues[0])
+    else:
+        res_qubits = invalues[0].copy()
+        res_qubits.extend(invalues[1])
+        
     insert_outvalues(eqn, context_dic, res_qubits)
 
 def process_get_qubit(invars, outvars, context_dic):
@@ -327,12 +322,13 @@ def exec_qrisp_op(op, catalyst_qbs, param_dict):
 
         catalyst_name = op_name_translation_dic[op_name]        
         
-        res_qbs = qinst_p.bind(*(catalyst_qbs+param_list), 
-                               op = catalyst_name, 
+        res_qbs = qinst_p.bind(*(catalyst_qbs+param_list),
+                               op = catalyst_name,
                                qubits_len = op.num_qubits,
-                               adjoint = invert,
+                               params_len = len(param_list),
                                ctrl_len = 0,
-                               ctrl_value_len = 0)
+                               adjoint = invert,)
+
         return res_qbs
 
 
