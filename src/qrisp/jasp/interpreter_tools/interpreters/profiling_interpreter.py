@@ -61,10 +61,16 @@ def make_profiling_eqn_evaluator(profiling_dic, meas_behavior):
                 
                 counting_array = invalues[-1]
                 
-                op_name = eqn.primitive.op.name
-                    
-                counting_index = profiling_dic[op_name]
-                counting_array = counting_array.at[counting_index].add(1)
+                op = eqn.primitive.op
+                
+                if op.definition:
+                    op_counts = op.definition.transpile().count_ops()
+                else:
+                    op_counts = {op.name : 1}
+                
+                for op_name, count in op_counts.items():
+                    counting_index = profiling_dic[op_name]
+                    counting_array = counting_array.at[counting_index].add(count)
                 
                 insert_outvalues(eqn, context_dic, counting_array)
                 

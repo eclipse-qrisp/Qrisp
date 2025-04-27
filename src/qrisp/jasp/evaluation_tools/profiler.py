@@ -269,8 +269,15 @@ def get_profiling_array_computer(jaspr, meas_behavior):
     # Filter out the non OperationPrimitives and fill them in a dictionary
     profiling_dic = {}
     for i in range(len(primitives)):
-        if isinstance(primitives[i], OperationPrimitive) and not primitives[i].op.name in profiling_dic:
-            profiling_dic[primitives[i].op.name] = len(profiling_dic) - 1
+        if isinstance(primitives[i], OperationPrimitive):
+            op = primitives[i].op
+            if op.definition:
+                op_names = list(op.definition.transpile().count_ops().keys())
+            else:
+                op_names = [op.name]
+            for name in op_names:
+                if not name in profiling_dic:
+                    profiling_dic[name] = len(profiling_dic) - 1
         elif primitives[i].name == "jasp.measure" and not "measure" in profiling_dic:
             profiling_dic["measure"] = len(profiling_dic) - 1
     
