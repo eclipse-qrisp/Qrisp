@@ -16,10 +16,13 @@
 ********************************************************************************/
 """
 
+import weakref
+
 import jax
 
 from qrisp.jasp.primitives import create_qubits, delete_qubits_p, OperationPrimitive
 from qrisp.jasp.tracing_logic.dynamic_qubit_array import DynamicQubitArray
+from qrisp.core.quantum_variable import QuantumVariable
 
 from sympy import symbols
 
@@ -131,6 +134,10 @@ class TracingQuantumSession:
             qv.reg = dynamic_qubit_array
         self.qv_list.append(qv)
         qv.qs = self
+        
+        QuantumVariable.live_qvs.append(weakref.ref(qv))
+        qv.creation_time = int(QuantumVariable.creation_counter[0])
+        QuantumVariable.creation_counter += 1
         
     def delete_qv(self, qv, verify=False):
         

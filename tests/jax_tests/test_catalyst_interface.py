@@ -21,7 +21,7 @@ import itertools
 
 from qrisp import *
 from qrisp.jasp import *
-
+from qrisp.vqe.problems.electronic_structure import *
 
 
 def test_catalyst_interface():
@@ -92,3 +92,71 @@ def test_catalyst_interface():
             prepare(qv, statevector_array)
             return measure(qv)
         assert jaspify(main)() == qjit(main)()
+        
+    ## Test fuse primitive
+    
+    @qjit
+    def main():
+        
+        a = QuantumFloat(3)
+        b = QuantumFloat(3)
+        a[:] = 7
+        b[:] = 7
+        
+        return measure(a.reg + b.reg)
+
+    assert main() == 63
+        
+    @qjit
+    def main():
+        
+        a = QuantumFloat(3)
+        b = QuantumFloat(3)
+        a[:] = 7
+        b[:] = 7
+        
+        return measure(a.reg + b[0])
+
+    assert main() == 15
+    
+    @qjit
+    def main():
+        
+        a = QuantumFloat(3)
+        b = QuantumFloat(3)
+        a[:] = 7
+        b[:] = 7
+        
+        return measure(a[0] + b.reg)
+
+    assert main() == 15
+    
+    @qjit
+    def main():
+        
+        a = QuantumFloat(3)
+        b = QuantumFloat(3)
+        a[:] = 7
+        b[:] = 7
+        
+        return measure(a[0] + b[0])
+
+    assert main() == 3
+
+    # Test for https://github.com/eclipse-qrisp/Qrisp/issues/180    
+    from pyscf import gto
+    @make_jaspr
+    def main():
+    
+        mol = gto.M(
+            atom = '''H 0 0 0; H 0 0 0.74''',
+            basis = 'sto-3g')
+    
+        vqe = electronic_structure_problem(mol)
+    
+        energy = vqe.run(lambda : QuantumFloat(4), depth=1, max_iter=100, optimizer="SPSA")
+    
+        return energy
+    
+    jaspr = main()
+    qir_str = jaspr.to_qir()

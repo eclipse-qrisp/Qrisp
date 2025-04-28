@@ -326,7 +326,7 @@ def simulate_jaspr(jaspr, *args, terminal_sampling = False, simulator = "qrisp",
             return True
     
     with fast_append(3):
-        res = eval_jaxpr(jaspr, eqn_evaluator = eqn_evaluator)(*(jaspr.consts + args))
+        res = eval_jaxpr(jaspr, eqn_evaluator = eqn_evaluator)(*(args))
     
     if return_gate_counts:
         return res[-1].gate_counts

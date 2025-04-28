@@ -546,78 +546,6 @@ class QubitOperator(Hamiltonian):
         return QubitOperator(new_terms_dict)
     
     @classmethod
-    def from_matrix(self, matrix):
-        r"""
-        Represents a matrix as an operator
-            
-        .. math::
-
-            O=\sum_i\alpha_i\bigotimes_{j=0}^{n-1}O_{ij}
-
-        where $O_{ij}\in\{A,C,P_0,P_1\}$.
-
-        Parameters
-        ----------
-        matrix : numpy.ndarray or scipy.sparse.csr_matrix
-            The matrix.
-
-        Returns
-        -------
-        QubitOperator
-            The operator represented by the matrix.
-
-
-        Examples
-        --------
-
-        ::
-
-            from scipy.sparse import csr_matrix
-            from qrisp.operators import QubitOperator
-
-            sparse_matrix = csr_matrix([[0, 5, 0, 1],
-                                        [5, 0, 0, 0],
-                                        [0, 0, 0, 2],
-                                        [1, 0, 2, 0]])
-
-            O = QubitOperator.from_matrix(sparse_matrix)
-            print(O)
-            # Yields: A_0*A_1 + C_0*C_1 + 5*P^0_0*A_1 + 5*P^0_0*C_1 + 2*P^1_0*A_1 + 2*P^1_0*C_1
-
-        """
-        from scipy.sparse import csr_matrix
-        from numpy import ndarray
-        import numpy as np
-
-        OPERATOR_TABLE = {(0,0):"P0",(0,1):"A",(1,0):"C",(1,1):"P1"}
-
-        if isinstance(matrix,ndarray):
-            new_matrix = csr_matrix(matrix)
-        elif isinstance(matrix,csr_matrix):
-            new_matrix = matrix.copy()
-        else:
-            raise Exception("Cannot construct QubitOperator from type " + str(type(matrix)))
-        
-        M, N = new_matrix.shape
-        n = max(int(np.ceil(np.log2(M))),int(np.ceil(np.log2(N))))
-
-        new_matrix.eliminate_zeros()
-    
-        rows, cols = new_matrix.nonzero()
-        values = new_matrix.data
-
-        O = QubitOperator({})
-        for row, col, value in zip(rows, cols, values):
-            factor_dict = {}
-            for k in range(n):
-                i = (row >> k) & 1
-                j = (col >> k) & 1
-                factor_dict[n-k-1]=OPERATOR_TABLE[(i,j)]
-
-            O.terms_dict[QubitTerm(factor_dict)] = value
-        return O
-    
-    @classmethod
     def from_numpy_array(cls, numpy_array, threshold = np.inf):
         
         from qrisp.operators import X, Y, Z
@@ -647,7 +575,6 @@ class QubitOperator(Hamiltonian):
             H += (coefficient/2**(n)) * temp_H
             
         return H
-
 
     @classmethod
     def from_matrix(self, matrix):
@@ -746,30 +673,22 @@ class QubitOperator(Hamiltonian):
         """
 
         import scipy.sparse as sp
-        from scipy.sparse import kron as TP, csr_matrix
 
-        def get_matrix(P):
-            if P=="I":
-                return csr_matrix([[1,0],[0,1]])
-            if P=="X":
-                return csr_matrix([[0,1],[1,0]])
-            if P=="Y":
-                return csr_matrix([[0,-1j],[1j,0]])
-            if P == "Z":
-                return csr_matrix([[1,0],[0,-1]])
-            if P == "A":
-                return csr_matrix([[0,1],[0,0]])
-            if P == "C":
-                return csr_matrix([[0,0],[1,0]])
-            if P == "P0":
-                return csr_matrix([[1,0],[0,0]])
-            if P == "P1":
-                return csr_matrix([[0,0],[0,1]])
-
-        def recursive_TP(keys,term_dict):
+        operator_matrices = {
+            "I": sp.csr_matrix([[1, 0], [0, 1]], dtype=complex),
+            "X": sp.csr_matrix([[0, 1], [1, 0]], dtype=complex),
+            "Y": sp.csr_matrix([[0, -1j], [1j, 0]], dtype=complex),
+            "Z": sp.csr_matrix([[1, 0], [0, -1]], dtype=complex),
+            "A": sp.csr_matrix([[0, 1], [0, 0]], dtype=complex),
+            "C": sp.csr_matrix([[0, 0], [1, 0]], dtype=complex),
+            "P0": sp.csr_matrix([[1, 0], [0, 0]], dtype=complex),
+            "P1": sp.csr_matrix([[0, 0], [0, 1]], dtype=complex),
+        }
+        
+        def recursive_kron(keys,term_dict):
             if len(keys)==1:
-                return get_matrix(term_dict.get(keys[0],"I"))
-            return TP(get_matrix(term_dict.get(keys.pop(0),"I")),recursive_TP(keys,term_dict))
+                return operator_matrices[term_dict.get(keys[0],"I")]
+            return sp.kron(operator_matrices[term_dict.get(keys.pop(0),"I")],recursive_kron(keys,term_dict), format="csr")
 
         term_dicts = []
         coeffs = []
@@ -796,15 +715,11 @@ class QubitOperator(Hamiltonian):
             raise Exception("Tried to construct matrix with insufficient factor_amount")
 
         keys = list(range(factor_amount))
-        
-        dim = len(keys)
 
-        m = len(coeffs)
-        M = sp.csr_matrix((2**dim, 2**dim))
-        for k in range(m):
-            M += complex(coeffs[k])*recursive_TP(keys.copy(),term_dicts[k])
-        # res = ((M + M.transpose().conjugate())/2)
-        # res.sum_duplicates()
+        M = sp.csr_matrix((2**factor_amount, 2**factor_amount))
+        for k,coeff in enumerate(coeffs):
+            M += complex(coeff)*recursive_kron(keys.copy(),term_dicts[k])
+
         return M
     
     def to_array(self, factor_amount=None):
@@ -1670,7 +1585,7 @@ class QubitOperator(Hamiltonian):
         self,
         state_prep,
         precision = 0.01,
-        diagonalisation_method = "commuting",
+        diagonalisation_method = "commuting_qw",
         backend = None,
         compile = True,
         compilation_kwargs = {},
@@ -1706,7 +1621,7 @@ class QubitOperator(Hamiltonian):
             Specifies the method for grouping and diagonalizing the :ref:`QubitOperator`. 
             Available are ``commuting_qw``, i.e., the operator is grouped based on qubit-wise commutativity of terms, 
             and ``commuting``, i.e., the operator is grouped based on commutativity of terms. 
-            The default is ``commuting``.
+            The default is ``commuting_qw``.
         backend : :ref:`BackendClient`, optional
             The backend on which to evaluate the quantum circuit. The default can be
             specified in the file default_backend.py.
@@ -1839,11 +1754,11 @@ class QubitOperator(Hamiltonian):
             Available are ``commuting`` (groups such that all QubitTerms mutually commute) and ``commuting_qw`` (groups such that all QubitTerms mutually commute qubit-wise).
             The default is ``commuting_qw``.
         forward_evolution : bool, optional
-            If set to False $U(t)^\dagger = e^{itH}$ will be executed (usefull for quantum phase estimation). The default is True.
+            If set to False $U(t)^\dagger = e^{itH}$ will be executed (usefull for quantum phase estimation). The default is ``True``.
 
         Returns
         -------
-        U : function 
+        callable 
             A Python function that implements the first order Suzuki-Trotter formula.
             Given a Hamiltonian $H=H_1+\dotsb +H_m$ the unitary evolution $e^{-itH}$ is 
             approximated by 
@@ -1851,6 +1766,7 @@ class QubitOperator(Hamiltonian):
             .. math::
 
                 e^{-itH}\approx U(t,N)=\left(e^{-iH_1t/N}\dotsb e^{-iH_mt/N}\right)^N
+
             for the first order Trotterization, and for the second order
             
             .. math::
@@ -1859,7 +1775,7 @@ class QubitOperator(Hamiltonian):
             
             This function receives the following arguments:
 
-            * qarg : QuantumVariable 
+            * qarg : :ref:`QuantumVariable` 
                 The quantum argument.
             * t : float, optional
                 The evolution time $t$. The default is 1.
