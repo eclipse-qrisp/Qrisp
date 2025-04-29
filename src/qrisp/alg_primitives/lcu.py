@@ -28,8 +28,8 @@ def inner_LCU(state_prep, unitaries, num_qubits, num_unitaries=None):
     Repeat-Until-Success (RUS) protocol. The LCU method is a foundational quantum algorithmic
     primitive that enables the application of a non-unitary operator $A$, expressed as a weighted
     sum of unitaries $U_i$ as $A=\sum_i\alpha_i U_i$, to a quantum state, by embedding $A$ into a larger unitary circuit. This is
-    central to quantum algorithms for Hamiltonian simulation, Linear Combination of Hamiltonian Simulation (LCHS), Quantum Linear Systems (e.g. HHL algorithm), Quantum Signal
-    Processing (QSP), and Quantum Singular Value Transformation (QSVT).
+    central to quantum algorithms for `Hamiltonian simulation <https://www.taylorfrancis.com/chapters/edit/10.1201/9780429500459-11/simulating-physics-computers-richard-feynman>`_, `Linear Combination of Hamiltonian Simulation (LCHS) <https://journals.aps.org/prl/pdf/10.1103/PhysRevLett.131.150603>`_, Quantum Linear Systems (e.g. `HHL algorithm <https://pennylane.ai/qml/demos/linear_equations_hhl_qrisp_catalyst>`_), `Quantum Signal
+    Processing (QSP) <https://journals.aps.org/prxquantum/abstract/10.1103/PRXQuantum.5.020368>`_, and `Quantum Singular Value Transformation (QSVT) <https://dl.acm.org/doi/abs/10.1145/3313276.3316366>`_.
 
     This function implements the prepare-select-unprepare structure, also known as block encoding:
 
@@ -44,7 +44,7 @@ def inner_LCU(state_prep, unitaries, num_qubits, num_unitaries=None):
 
     For a complete implementation of LCU with the Repeat-Until-Success protocol, see :func:`LCU`.
 
-    For more details on the LCU protocol, refer to [Childs and Wiebe, 2012](https://arxiv.org/abs/1202.5822).
+    For more details on the LCU protocol, refer to `Childs and Wiebe (2012) <https://arxiv.org/abs/1202.5822>`_, or `related seminars provided by Nathan Wiebe <https://www.youtube.com/watch?v=irMKrOIrHP4>`_.
 
     Parameters
     ----------
@@ -109,7 +109,6 @@ def inner_LCU(state_prep, unitaries, num_qubits, num_unitaries=None):
     return case_indicator, qv
 
 
-@RUS(static_argnums=[1, 2, 3])
 def LCU(state_prep, unitaries, num_qubits, num_unitaries=None):
     r"""
     Full implementation of the Linear Combination of Unitaries (LCU) algorithmic primitive using the
@@ -120,7 +119,9 @@ def LCU(state_prep, unitaries, num_qubits, num_unitaries=None):
     mechanism, which repeatedly applies the LCU operation until the ancilla register is measured in the $|0\rangle$ state, indicating a successful implementation. The LCU algorithm enables the implementation of linear combinations of unitary operations
     on a quantum variable by probabilistically projecting onto the desired transformation. The terminal_sampling decorator is utilized to evaluate the LCU.
 
-    For more details on the LCU primitive, refer to [Childs and Wiebe (2012)](https://arxiv.org/abs/1202.5822).
+    For more details on the LCU primitive, refer to `Childs and Wiebe (2012) <https://arxiv.org/abs/1202.5822>`_. 
+    
+    For more information on the inner workings of this LCU implementation, see :func:`inner_LCU`.
 
     Parameters
     ----------
@@ -174,6 +175,10 @@ def LCU(state_prep, unitaries, num_qubits, num_unitaries=None):
     success_bool = measure(case_indicator) == 0
     return success_bool, qv
 
+# Apply the RUS decorator with the workaround in order to show in documentation
+temp_docstring = LCU.__doc__
+LCU = RUS(static_argnums=[1, 2, 3])(LCU)
+LCU.__doc__ = temp_docstring
 
 def view_LCU(state_prep, unitaries, num_qubits, num_unitaries=None):
     r"""
