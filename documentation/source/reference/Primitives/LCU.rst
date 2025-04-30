@@ -3,7 +3,30 @@
 Linear Combination of Unitaries (LCU)
 =====================================
 
-The Linear Combination of Unitaries (LCU) algorithm is a foundational quantum algorithmic primitive that enables the implementation of non-unitary operators by expressing them as a weighted sum of unitaries. This approach is central to quantum algorithms for `Hamiltonian simulation <https://www.taylorfrancis.com/chapters/edit/10.1201/9780429500459-11/simulating-physics-computers-richard-feynman>`_, `Linear Combination of Hamiltonian Simulation (LCHS) <https://journals.aps.org/prl/pdf/10.1103/PhysRevLett.131.150603>`_, Quantum Linear Systems (e.g. `HHL algorithm <https://pennylane.ai/qml/demos/linear_equations_hhl_qrisp_catalyst>`_), `Quantum Signal Processing (QSP) <https://journals.aps.org/prxquantum/abstract/10.1103/PRXQuantum.5.020368>`_, and `Quantum Singular Value Transformation (QSVT) <https://dl.acm.org/doi/abs/10.1145/3313276.3316366>`_.
+The LCU method is a foundational quantum algorithmic
+primitive that enables the application of a non-unitary operator $A$, expressed as a weighted
+sum of unitaries $U_i$ as $A=\sum_i\alpha_i U_i$, to a quantum state, by embedding $A$ into a larger unitary circuit. 
+
+This is
+central to quantum algorithms for `Hamiltonian simulation <https://www.taylorfrancis.com/chapters/edit/10.1201/9780429500459-11/simulating-physics-computers-richard-feynman>`_, `Linear Combination of Hamiltonian Simulation (LCHS) <https://journals.aps.org/prl/pdf/10.1103/PhysRevLett.131.150603>`_, Quantum Linear Systems (e.g. `HHL algorithm <https://pennylane.ai/qml/demos/linear_equations_hhl_qrisp_catalyst>`_), `Quantum Signal
+Processing (QSP) <https://journals.aps.org/prxquantum/abstract/10.1103/PRXQuantum.5.020368>`_, and `Quantum Singular Value Transformation (QSVT) <https://dl.acm.org/doi/abs/10.1145/3313276.3316366>`_.
+
+This function implements the prepare-select-unprepare structure, also known as block encoding:
+
+.. math::
+   \mathrm{LCU} = \mathrm{PREPARE}^\dagger \cdot \mathrm{SELECT} \cdot \mathrm{PREPARE}
+
+- **PREPARE**: Prepares an ancilla register in a superposition encoding the normalized coefficients $\alpha_i$ of the target operator $\mathrm{PREPARE}|0\rangle=\sum_i\sqrt{\frac{\alpha_i}{\lambda}}|i\rangle$.
+- **SELECT**: Applies the unitary $U_i$ to the target register, controlled on the ancilla register being in state $|i\rangle$. $\mathrm{SELECT}|i\rangle|\psi\rangle=|i\rangle U_i|\psi\rangle$.
+- **PREPARE$^{\\dagger}$**: Uncomputes the ancilla.
+
+.. note::
+
+   The LCU protocol is deemed successful only if the ancilla register is measured in the :math:`|0\rangle` state, which occurs with a probability proportional to :math:`\frac{|\alpha|_1^2}{\lambda^2}`. This function does not perform the measurement; it returns the ancilla register and the transformed target register.
+
+For a complete implementation of LCU with the Repeat-Until-Success protocol, see :func:`LCU`.
+
+For more details on the LCU protocol, refer to `Childs and Wiebe (2012) <https://arxiv.org/abs/1202.5822>`_, or `related seminars provided by Nathan Wiebe <https://www.youtube.com/watch?v=irMKrOIrHP4>`_. He's a cool guy, but **do not** call the SELECT unitary the ``qswitch``, or else he will perform the Touch of Death (in reference to the movie `The Men Who Stare at Goats <https://en.wikipedia.org/wiki/The_Men_Who_Stare_at_Goats_(film)>`_). While on the topic, refer to :ref:qswitch for more information about the qswitch implementation in Qrisp.
 
 This module provides the following implementations:
 
