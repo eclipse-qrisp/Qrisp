@@ -115,7 +115,7 @@ def LCU(state_prep, unitaries, num_qubits, num_unitaries=None):
     Repeat-Until-Success (RUS) protocol.
 
     This function constructs and executes the LCU protocol using the provided state preparation function
-    and unitaries. It utilizes the `@RUS` decorator from Jasp to handle the repeat-until-success
+    and unitaries. It utilizes the :func:`qrisp.rus` decorator from Jasp to handle the repeat-until-success
     mechanism, which repeatedly applies the LCU operation until the ancilla register is measured in the $|0\rangle$ state, indicating a successful implementation. The LCU algorithm enables the implementation of linear combinations of unitary operations
     on a quantum variable by probabilistically projecting onto the desired transformation. The terminal_sampling decorator is utilized to evaluate the LCU.
 
