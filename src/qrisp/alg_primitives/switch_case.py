@@ -21,7 +21,7 @@ from qrisp.qtypes import QuantumBool
 from qrisp.environments import conjugate, control
 from qrisp.alg_primitives import demux
 from qrisp.core.gate_application_functions import mcx
-from qrisp.jasp import check_for_tracing_mode
+from qrisp.jasp import check_for_tracing_mode, jrange
 
 def qswitch(operand, case, case_function_list, method = "sequential"):
     """
@@ -31,12 +31,13 @@ def qswitch(operand, case, case_function_list, method = "sequential"):
 
     Parameters
     ----------
-    operand : QuantumVariable
+    operand : :ref:`QuantumVariable`
         The quantum argument on which to execute the case function.
-    case : QuantumFloat
+    case : :ref:`QuantumFloat`
         A QuantumFloat specifying which case function should be executed.
-    case_function_list : list[callable]
-        A list of functions, performing some in-place operation on ``operand``.
+    case_function_list : list[callable] or callable
+        A list of functions, performing some in-place operation on ``operand``, or 
+        a function ``case_function(i, operand)`` performing some in-place operation on ``operand`` depending on a nonnegative integer index ``i`` specifying the case.
     method : str, optional
         The compilation method. Available are ``parallel`` and ``sequential``. 
         ``parallel`` is exponentially fast but requires more temporary qubits.
@@ -71,32 +72,38 @@ def qswitch(operand, case, case_function_list, method = "sequential"):
     {(0, 2): 0.25, (1, 3): 0.25, (2, 1): 0.25, (3, 1): 0.125, (3, 3): 0.125}
 
     """
-    
-    
+
+    if callable(case_function_list):
+        case_amount = 2**case.size
+        xrange = jrange
+    else:
+        case_amount = len(case_function_list)
+        xrange = range
+
     if method == "sequential":
 
         if check_for_tracing_mode():
 
             control_qbl = QuantumBool()
 
-            def conjugator(case, control_qbl):
-                mcx(case,
-                    control_qbl,
-                    method='baluaca',
-                    ctrl_state=i)
-
-            for i in range(len(case_function_list)):
-                with conjugate(conjugator)(case, control_qbl):
+            for i in xrange(case_amount):
+                with conjugate(mcx)(case, control_qbl, ctrl_state=i):
                     with control(control_qbl):
-                        case_function_list[i](operand)
+                        if callable(case_function_list):
+                            case_function_list(i, operand)
+                        else:
+                            case_function_list[i](operand)
 
             control_qbl.delete()
 
         else:
     
-            for i in range(len(case_function_list)):
+            for i in range(case_amount):
                 with i == case:
-                    case_function_list[i](operand)
+                    if callable(case_function_list):
+                        case_function_list(i, operand)
+                    else:
+                        case_function_list[i](operand)
         
     elif method == "parallel":
 
@@ -105,7 +112,6 @@ def qswitch(operand, case, case_function_list, method = "sequential"):
         
         # Idea: Use demux function to move operand and enabling bool into QuantumArray
         # to execute cases in parallel.
-        case_amount = len(case_function_list)
     
         # This QuantumArray acts as an addressable QRAM via the demux function
         enable = QuantumArray(qtype = QuantumBool(), shape = (case_amount,))
@@ -117,7 +123,10 @@ def qswitch(operand, case, case_function_list, method = "sequential"):
             with conjugate(demux)(enable[0], case, enable, parallelize_qc = True):
                 for i in range(case_amount):
                     with control(enable[i]):
-                        case_function_list[i](qa[i])
+                        if callable(case_function_list):
+                            case_function_list(i, qa[i])
+                        else:
+                            case_function_list[i](qa[i])
                         
         qa.delete()
         
