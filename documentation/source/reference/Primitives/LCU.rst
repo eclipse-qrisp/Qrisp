@@ -24,15 +24,14 @@ This function implements the prepare-select-unprepare structure, also known as b
 
    The LCU protocol is deemed successful only if the ancilla register is measured in the :math:`|0\rangle` state, which occurs with a probability proportional to :math:`\frac{|\alpha|_1^2}{\lambda^2}`. This function does not perform the measurement; it returns the ancilla register and the transformed target register.
 
+The success probability depends on the LCU coefficients and the initial state's properties. Said success probability can be further improved using Oblibious Amplitude Amplification, which applies a series of reflections and controlled operations to amplify the $\ket{0}$ ancilla component without prior knowledge of the initial state. For implementation details in Qrisp, see :func:`qrisp.amplitude_amplification`
+
 For a complete implementation of LCU with the Repeat-Until-Success protocol, see :func:`qrisp.LCU`.
 
-For more details on the LCU protocol, refer to `Childs and Wiebe (2012) <https://arxiv.org/abs/1202.5822>`_, or `related seminars provided by Nathan Wiebe <https://www.youtube.com/watch?v=irMKrOIrHP4>`_. He's a cool guy, but **do not** call the SELECT unitary the ``qswitch``, or else he will perform the Touch of Death (in reference to the movie `The Men Who Stare at Goats <https://en.wikipedia.org/wiki/The_Men_Who_Stare_at_Goats_(film)>`_). While on the topic, refer to :func:`qrisp.qswitch` for more information about how the SELECT operator is implementated in Qrisp (as :func:`qrisp.qswitch`).
+For more details on the LCU protocol, refer to `Childs and Wiebe (2012) <https://arxiv.org/abs/1202.5822>`_, or `related seminars provided by Nathan Wiebe <https://www.youtube.com/watch?v=irMKrOIrHP4>`_. 
 
-This module provides the following implementations:
-
-- **inner_LCU**: The core implementation of the LCU protocol without the Repeat-Until-Success (RUS) protocol.
-- **LCU**: The full implementation of the LCU algorithm using the RUS protocol.
-- **view_LCU**: A utility function to generate and return the quantum circuit for visualization.
+.. tip::
+   Nathan's a cool guy, but **do not** call the SELECT unitary a *qswitch* in his presence, or else he might perform the Touch of Death (in reference to the movie The Men Who Stare at Goats). While on the topic, refer to :func:`qrisp.qswitch` for more information about how the SELECT operator is implemented efficiently in Qrisp (as :func:`qrisp.qswitch`).
 
 .. currentmodule:: qrisp
 

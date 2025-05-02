@@ -40,7 +40,9 @@ def inner_LCU(state_prep, unitaries, num_qubits, num_unitaries=None):
     - **SELECT**: Applies the unitary $U_i$ to the target register, controlled on the ancilla register being in state $|i\rangle$. $\mathrm{SELECT}|i\rangle|\psi\rangle=|i\rangle U_i|\psi\rangle$.
     - **PREPARE**$^\dagger$: Uncomputes the ancilla.
 
-    **Note**: The LCU protocol is deemed successful only if the ancilla register is measured in the $|0\rangle$ state, which occurs with a probability proportional to $\frac{|\alpha|_1^2}{\lambda^2}$. This function does not perform the measurement; it returns the ancilla register and the transformed target register.
+    .. note::
+
+        The LCU protocol is deemed successful only if the ancilla register is measured in the :math:`|0\rangle` state, which occurs with a probability proportional to :math:`\frac{|\alpha|_1^2}{\lambda^2}`. This function does not perform the measurement; it returns the ancilla register and the transformed target register.
 
     For a complete implementation of LCU with the Repeat-Until-Success protocol, see :func:`LCU`.
 
@@ -61,9 +63,9 @@ def inner_LCU(state_prep, unitaries, num_qubits, num_unitaries=None):
 
     Returns
     -------
-    tuple of (QuantumVariable, QuantumVariable)
-          - **case_indicator** (*QuantumVariable*): Ancilla register encoding which unitary was selected.
-          - **qv** (*QuantumVariable*): Target quantum register after the LCU operation.
+    tuple of (:ref:`QuantumVariable`, :ref:`QuantumVariable`)
+          - **case_indicator**: Ancilla register encoding which unitary was selected.
+          - **qv**: Target quantum register after the LCU operation.
 
     Raises
     ------
@@ -115,7 +117,7 @@ def LCU(state_prep, unitaries, num_qubits, num_unitaries=None):
     Repeat-Until-Success (RUS) protocol.
 
     This function constructs and executes the LCU protocol using the provided state preparation function
-    and unitaries. It utilizes the :func:`qrisp.rus` decorator from Jasp to handle the repeat-until-success
+    and unitaries. It utilizes the :func:`qrisp.jasp.RUS` decorator from Jasp to handle the repeat-until-success
     mechanism, which repeatedly applies the LCU operation until the ancilla register is measured in the $|0\rangle$ state, indicating a successful implementation. The LCU algorithm enables the implementation of linear combinations of unitary operations
     on a quantum variable by probabilistically projecting onto the desired transformation. The terminal_sampling decorator is utilized to evaluate the LCU.
 
