@@ -59,7 +59,7 @@ def make_profiling_eqn_evaluator(profiling_dic, meas_behavior):
             # via the Jax-given .at method.            
             if isinstance(eqn.primitive, OperationPrimitive):
                 
-                counting_array = invalues[-1]
+                counting_array = list(invalues[-1])
                 
                 op = eqn.primitive.op
                 
@@ -70,14 +70,14 @@ def make_profiling_eqn_evaluator(profiling_dic, meas_behavior):
                 
                 for op_name, count in op_counts.items():
                     counting_index = profiling_dic[op_name]
-                    counting_array = counting_array.at[counting_index].add(count)
+                    counting_array[counting_index] += count
                 
                 insert_outvalues(eqn, context_dic, counting_array)
                 
             elif eqn.primitive.name == "jasp.measure":
                 
                 counting_index = profiling_dic["measure"]
-                counting_array = invalues[-1]
+                counting_array = list(invalues[-1])
                 
                 meas_number = counting_array[counting_index]
                 
@@ -93,12 +93,12 @@ def make_profiling_eqn_evaluator(profiling_dic, meas_behavior):
                         return acc
                     
                     meas_res = jax.lax.fori_loop(0, invalues[0], rng_body, jnp.int64(0))
-                    counting_array = counting_array.at[counting_index].add(invalues[0])
+                    counting_array[counting_index] += invalues[0]
                 else:
                     meas_res = meas_behavior(key(meas_number))
                     if not isinstance(meas_res, bool) and not meas_res.dtype == jnp.bool:
                         raise Exception(f"Tried to profil Jaspr with a measurement behavior not returning a boolean (got {meas_res.dtype}) instead")
-                    counting_array = counting_array.at[counting_index].add(1)
+                    counting_array[counting_index] += 1
                 
                 # The measurement returns always 0
                 insert_outvalues(eqn, context_dic, [meas_res, counting_array])
@@ -171,7 +171,7 @@ def make_profiling_eqn_evaluator(profiling_dic, meas_behavior):
             
             outvalues = jax.lax.switch(invalues[0], branch_list, *invalues[1:])
             
-            if not isinstance(outvalues, (list, tuple)):
+            if len(eqn.outvars) == 1:
                 outvalues = (outvalues, )
             
             insert_outvalues(eqn, context_dic, outvalues)
@@ -198,7 +198,7 @@ def make_profiling_eqn_evaluator(profiling_dic, meas_behavior):
             
             outvalues = profiler(*invalues)
             
-            if not isinstance(outvalues, (list, tuple)):
+            if len(eqn.outvars) == 1:
                 outvalues = (outvalues, )
             
             insert_outvalues(eqn, context_dic, outvalues)

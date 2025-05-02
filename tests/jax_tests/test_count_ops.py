@@ -16,6 +16,8 @@
 ********************************************************************************/
 """
 
+from jax import random
+
 from qrisp import *
 from qrisp.jasp import *
 

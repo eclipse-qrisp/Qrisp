@@ -287,8 +287,7 @@ def get_profiling_array_computer(jaspr, meas_behavior):
         
         profiling_eqn_evaluator = make_profiling_eqn_evaluator(profiling_dic, meas_behavior)
         
-        args = list(args)
-        args = args + [jnp.zeros(len(profiling_dic), dtype = "int64")]
+        args = args + ([0]*len(profiling_dic),)
         
         res = eval_jaxpr(jaspr, eqn_evaluator = profiling_eqn_evaluator)(*args)
         
