@@ -18,7 +18,7 @@
 
 import jax
 
-from qrisp.jasp.primitives import quantum_kernel_p, AbstractQubit, AbstractQubitArray
+from qrisp.jasp.primitives import create_quantum_kernel_p, consume_quantum_kernel_p, AbstractQubit, AbstractQubitArray
 from qrisp.jasp.tracing_logic import TracingQuantumSession, qache
 
 def quantum_kernel(func):
@@ -124,7 +124,7 @@ def quantum_kernel(func):
         
         qs = TracingQuantumSession.get_instance()
         
-        qs.start_tracing(quantum_kernel_p.bind())
+        qs.start_tracing(create_quantum_kernel_p.bind())
         
         try:
             res = func(*args, **kwargs)
@@ -143,7 +143,10 @@ def quantum_kernel(func):
         
         eqn.params["jaxpr"] = jax.core.ClosedJaxpr(flattened_jaspr, eqn.params["jaxpr"].consts)
         
-        qs.conclude_tracing()
+        abs_qc = qs.conclude_tracing()
+        
+        consume_quantum_kernel_p.bind(abs_qc)
+        
         
         return res
     

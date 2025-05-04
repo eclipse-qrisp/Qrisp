@@ -118,7 +118,7 @@ def make_profiling_eqn_evaluator(profiling_dic):
                 # Trivial behavior: return the last argument (the counting array).
                 insert_outvalues(eqn, context_dic, invalues[-1])
                 
-            elif eqn.primitive.name == "jasp.quantum_kernel":
+            elif eqn.primitive.name == "jasp.create_quantum_kernel":
                 raise Exception("Tried to perform resource estimation on a function calling calling a kernelized function")
             else:
                 raise Exception(f"Don't know how to perform resource estimation with quantum primitive {eqn.primitive}")

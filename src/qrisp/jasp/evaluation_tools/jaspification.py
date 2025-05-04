@@ -320,8 +320,10 @@ def simulate_jaspr(jaspr, *args, terminal_sampling = False, simulator = "qrisp")
             insert_outvalues(eqn, context_dic, outvalues)
             
             
-        elif eqn.primitive.name == "jasp.quantum_kernel":
+        elif eqn.primitive.name == "jasp.create_quantum_kernel":
             insert_outvalues(eqn, context_dic, BufferedQuantumState(simulator))
+        elif eqn.primitive.name == "jasp.consume_quantum_kernel":
+            pass
         else:
             return True
     
