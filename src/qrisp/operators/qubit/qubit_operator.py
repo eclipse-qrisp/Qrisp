@@ -1820,7 +1820,7 @@ class QubitOperator(Hamiltonian):
         
         """
         O = self.hermitize().eliminate_ladder_conjugates()
-        commuting_groups = O.group_up(lambda a, b: a.commute(b))
+        commuting_groups = O.group_up(lambda a, b: a.commute_pauli(b))
         
         if method=='commuting_qw':
             def trotter_step(qarg, t, steps):
@@ -1833,17 +1833,20 @@ class QubitOperator(Hamiltonian):
                             for intersect_group in intersect_groups:
                                 for term,coeff in intersect_group.terms_dict.items():
                                     coeff = jnp.real(coeff)
-                                    
                                     term.simulate(-coeff*t/steps*(-1)**int(forward_evolution), qarg)
         
         if method=='commuting':
             def trotter_step(qarg, t, steps):
                 for com_group in commuting_groups:
-                    with conjugate(com_group.change_of_basis)(qarg,method="commuting") as diagonal_operator:
-                        intersect_groups = diagonal_operator.group_up(lambda a, b: not a.intersect(b))
-                        for intersect_group in intersect_groups:
-                            for term,coeff in intersect_group.terms_dict.items():
-                                term.simulate(-coeff*t/steps*(-1)**int(forward_evolution), qarg)
+                    qw_groups= com_group.group_up(lambda a,b : a.ladders_agree(b))
+                    for qw_group in qw_groups:
+
+                        with conjugate(com_group.change_of_basis)(qarg,method="commuting") as diagonal_operator:
+                            intersect_groups = diagonal_operator.group_up(lambda a, b: not a.intersect(b))
+                            for intersect_group in intersect_groups:
+                                for term,coeff in intersect_group.terms_dict.items():
+                                    coeff = jnp.real(coeff)
+                                    term.simulate(-coeff*t/steps*(-1)**int(forward_evolution), qarg)
             
         def U(qarg, t=1, steps=1, iter=1):
             if check_for_tracing_mode():
