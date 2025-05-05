@@ -18,7 +18,7 @@
 
 
 import numpy as np
-from qrisp import QuantumArray, QuantumVariable, QuantumFloat, gate_wrap, gphase, h, mcx, mcp, mcz, p, x, z, merge, recursive_qs_search, conjugate, invert, control
+from qrisp import QuantumArray, QuantumVariable, QuantumFloat, gate_wrap, gphase, h, mcx, mcp, mcz, p, x, z, merge, recursive_qs_search, conjugate, invert, control, IterationEnvironment
 from qrisp.jasp import check_for_tracing_mode, jrange
 
 # Applies the grover diffuser onto the (list of) quantum variable input_object
@@ -461,21 +461,32 @@ def grovers_alg(
         [h(qv) for qv in qv_list]
     else:
         h(qv_list)
+
+
+    if check_for_tracing_mode():
+
+        for i in jrange(iterations):
+            if exact:
+                oracle_function(qv_list, phase=phi, **kwargs)
+                diffuser(qv_list, phase=phi)
+            else:
+                oracle_function(qv_list, **kwargs)
+                diffuser(qv_list)
     
-    if not check_for_tracing_mode():
+    else:
+
         merge(qv_list)
         qs = recursive_qs_search(qv_list)[0]
         qv_amount = len(qs.qv_list)
 
-    for i in jrange(iterations):
-        if exact:
-            oracle_function(qv_list, phase=phi, **kwargs)
-            diffuser(qv_list, phase=phi)
-        else:
-            oracle_function(qv_list, **kwargs)
-            diffuser(qv_list)
+        with IterationEnvironment(qs, iterations):
+            if exact:
+                oracle_function(qv_list, phase=phi, **kwargs)
+                diffuser(qv_list, phase=phi)
+            else:
+                oracle_function(qv_list, **kwargs)
+                diffuser(qv_list)
 
-    if not check_for_tracing_mode():       
         if qv_amount != len(qs.qv_list):
             raise Exception("Applied oracle introducing new QuantumVariables without uncomputing/deleting")
 
