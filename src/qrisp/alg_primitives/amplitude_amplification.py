@@ -107,6 +107,7 @@ def amplitude_amplification(args, state_function, oracle_function, kwargs_oracle
     else:
         merge(args)
         qs = recursive_qs_search(args)[0]
-        with IterationEnvironment(qs, iter):
-            oracle_function(*args, **kwargs_oracle)
-            diffuser(args, state_function=state_function, reflection_indices=reflection_indices)
+        if iter>0:
+            with IterationEnvironment(qs, iter):
+                oracle_function(*args, **kwargs_oracle)
+                diffuser(args, state_function=state_function, reflection_indices=reflection_indices)
