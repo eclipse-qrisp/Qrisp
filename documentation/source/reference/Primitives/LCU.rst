@@ -24,13 +24,13 @@ This function implements the prepare-select-unprepare structure, also known as b
 
    The LCU protocol is deemed successful only if the ancilla register is measured in the :math:`|0\rangle` state, which occurs with a probability proportional to :math:`\frac{|\alpha|_1^2}{\lambda^2}`. This function does not perform the measurement; it returns the ancilla register and the transformed target register.
 
-The success probability depends on the LCU coefficients and the initial state's properties. Said success probability can be further improved using Oblibious Amplitude Amplification, which applies a series of reflections and controlled operations to amplify the $\ket{0}$ ancilla component without prior knowledge of the initial state. For implementation details in Qrisp, see :func:`qrisp.amplitude_amplification`
+The success probability depends on the LCU coefficients and the initial state's properties. Said success probability can be further improved using `Oblibious Amplitude Amplification <https://arxiv.org/pdf/1312.1414>`_, which applies a series of reflections and controlled operations to amplify the $\ket{0}$ ancilla component without prior knowledge of the initial state. For implementation details in Qrisp, see :func:`qrisp.amplitude_amplification`
 
 For a complete implementation of LCU with the Repeat-Until-Success protocol, see :func:`qrisp.LCU`.
 
 For more details on the LCU protocol, refer to `Childs and Wiebe (2012) <https://arxiv.org/abs/1202.5822>`_, or `related seminars provided by Nathan Wiebe <https://www.youtube.com/watch?v=irMKrOIrHP4>`_. 
 
-.. tip::
+.. caution::
    Nathan's a cool guy, but **do not** call the SELECT unitary a *qswitch* in his presence, or else he might perform the Touch of Death (in reference to the movie The Men Who Stare at Goats). While on the topic, refer to :func:`qrisp.qswitch` for more information about how the SELECT operator is implemented efficiently in Qrisp (as :func:`qrisp.qswitch`).
 
 .. currentmodule:: qrisp

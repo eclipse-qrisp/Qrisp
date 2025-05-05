@@ -36,12 +36,12 @@ In theory, the HHL algorithm can be described as follows:
   $$ \\ket{\\Psi_1} = \\ket{b} = \\sum_i \\beta_i\\ket{u_i}$$
 
 * Step 2: Applying :ref:`quantum phase estimation <QPE>` with respect to the Hamiltonian evolution $U=e^{itA}$ yields the state 
-  $$ \\ket{\\Psi_2} = \\sum_i \\beta_i\\ket{u_i}\\ket{\\lambda_jt/2\\pi} = \\sum_i \\beta_i\\ket{u_i}\\ket{\\widetilde{\\lambda_i}} $$ 
-  To simplify notation, we write $\widetilde{\lambda}_i=\lambda_jt/2\pi$.
+  $$ \\ket{\\Psi_2} = \\sum_i \\beta_i\\ket{u_i}\\ket{\\lambda_it/2\\pi} = \\sum_i \\beta_i\\ket{u_i}\\ket{\\widetilde{\\lambda}_i} $$ 
+  To simplify notation, we write $\widetilde{\lambda}_i=\lambda_it/2\pi$.
   
 
 * Step 3: Performing the inversion of the eigenvalues $\widetilde{\lambda}_i\rightarrow\widetilde{\lambda}_i^{-1}$ yields the state
-  $$ \\ket{\\Psi_3} = \\sum_i \\beta_i\\ket{u_i}\\ket{\\widetilde{\\lambda_i}}\\ket{\\widetilde{\\lambda_i^{-1}}} $$
+  $$ \\ket{\\Psi_3} = \\sum_i \\beta_i\\ket{u_i}\\ket{\\widetilde{\\lambda}_i}\\ket{\\widetilde{\\lambda}_i^{-1}} $$
 
 * Step 4: The amplitudes are multiplied by the inverse eigenvalues $\widetilde{\lambda}_i^{-1}$ to obtain the state
   $$ \\ket{\\Psi_4} = \\sum_i \\lambda_i^{-1}\\beta_i\\ket{u_i}\\ket{\\widetilde{\\lambda}_i}\\ket{\\widetilde{\\lambda}_i^{-1}} $$
@@ -77,9 +77,9 @@ As a fist step, we define a function ``fake_inversion`` that performs the invers
 
         return res
 
-                                             
-Essentially, the controlled-NOT operations in the loop reverse the positions of the bits in input variable and place them in the result variable in the opposite order. 
-For example, for $\lambda=2^{-3}$, which is $0.001$ in binary, the function would produce $\lambda^{-1}=2^3$, which in binary is 1000.
+.. note::                                     
+    Essentially, the controlled-NOT operations in the loop reverse the positions of the bits in input variable and place them in the result variable in the opposite order. 
+    For example, for $\lambda=2^{-3}$, which is $0.001$ in binary, the function would produce $\lambda^{-1}=2^3$, which in binary is 1000.
 
 Let's see if it works as intended!
 
@@ -95,21 +95,21 @@ Let's see if it works as intended!
 Next, we define the function ``HHL_encoding`` that performs **Steps 1-4** and prepares the state $\ket{\Psi_4}$.
 But, how do get the values $\widetilde{\lambda}^{-1}_i$ into the amplitudes of the states, i.e. how do we go from $\ket{\Psi_3}$ to $\ket{\Psi_4}$?
 
-Recently, efficient methods for black-box quantum state preparation that avoid arithmetic were proposed, see `Sanders et al. <https://arxiv.org/pdf/1807.03206>`_, `Wang et al. <https://arxiv.org/pdf/2012.11056>`_ In this demo, we use a routine proposed in the latter reference which is based on a comparison between integers. This is implemented via the aforementioned comparisons of QuantumFloats.
+Recently, efficient methods for black-box quantum state preparation that avoid arithmetic were proposed, see `Bausch <https://quantum-journal.org/papers/q-2022-08-04-773/#>`_, `Sanders et al. <https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.122.020502>`_ In this demo, we use a routine proposed in the latter reference which is based on a comparison between integers. This is implemented via the aforementioned comparisons of QuantumFloats.
 
 To simplify the notation, we write $y^{(i)}=\widetilde{\lambda}^{-1}_i$. Recall that the values $y^{(i)}$ represent unsigned integers between $0$ and $2^n-1$. 
 
 Starting from the state
-$$ \\ket{\\Psi_3} = \\sum_i \\beta_i\\ket{u_i}\\ket{\\widetilde{\\lambda_i}}\\ket{y^{(i)}}_{\\text{res}} $$
+$$ \\ket{\\Psi_3} = \\sum_i \\beta_i\\ket{u_i}\\ket{\\widetilde{\\lambda}_i}\\ket{y^{(i)}}_{\\text{res}} $$
 
 we prepare a uniform superposition of $2^n$ states in a ``case_indicator`` QuantumFloat.
-$$ \\ket{\\Psi_3'} = \\sum_i \\beta_i\\ket{u_i}\\ket{\\widetilde{\\lambda_i}}\\ket{y^{(i)}}_{\\text{res}}\\otimes\\frac{1}{\\sqrt{2^n}}\\sum_{x=0}^{2^n-1}\\ket{x}_{\\text{case}} $$
+$$ \\ket{\\Psi_3'} = \\sum_i \\beta_i\\ket{u_i}\\ket{\\widetilde{\\lambda}_i}\\ket{y^{(i)}}_{\\text{res}}\\otimes\\frac{1}{\\sqrt{2^n}}\\sum_{x=0}^{2^n-1}\\ket{x}_{\\text{case}} $$
 
 Next we calculate the comparison $a\geq b$ between the ``res`` and the ``case_indicator`` into a QuantumBool ``qbl``.
-$$ \\ket{\\Psi_3''} = \\sum_i \\beta_i\\ket{u_i}\\ket{\\widetilde{\\lambda_i}}\\ket{y^{(i)}}_{\\text{res}}\\otimes\\frac{1}{\\sqrt{2^n}}\\left(\\sum_{x=0}^{y^{(i)}-1}\\ket{x}_{\\text{case}}\\ket{0}_{\\text{qbl}} + \\sum_{x=y^{(i)}}^{2^n-1}\\ket{x}_{\\text{case}}\\ket{1}_{\\text{qbl}}\\right) $$
+$$ \\ket{\\Psi_3''} = \\sum_i \\beta_i\\ket{u_i}\\ket{\\widetilde{\\lambda}_i}\\ket{y^{(i)}}_{\\text{res}}\\otimes\\frac{1}{\\sqrt{2^n}}\\left(\\sum_{x=0}^{y^{(i)}-1}\\ket{x}_{\\text{case}}\\ket{0}_{\\text{qbl}} + \\sum_{x=y^{(i)}}^{2^n-1}\\ket{x}_{\\text{case}}\\ket{1}_{\\text{qbl}}\\right) $$
 
 Finally, the ``case_indicator`` is unprepared with $n$ Hadamards and we obtain the state
-$$ \\ket{\\Psi_3'''} = \\sum_i \\dfrac{y^{(i)}}{2^n}\\beta_i\\ket{u_i}\\ket{\\widetilde{\\lambda_i}}\\ket{y^{(i)}}_{\\text{res}}\\ket{0}_{\\text{case}}\\ket{0}_{\\text{qbl}} + \\ket{\\Phi} $$
+$$ \\ket{\\Psi_3'''} = \\sum_i \\dfrac{y^{(i)}}{2^n}\\beta_i\\ket{u_i}\\ket{\\widetilde{\\lambda}_i}\\ket{y^{(i)}}_{\\text{res}}\\ket{0}_{\\text{case}}\\ket{0}_{\\text{qbl}} + \\ket{\\Phi} $$
 
 where $\ket{\Phi}$ is an orthogonal state with the last variables not in $\ket{0}_{\text{case}}\ket{0}_{\text{qbl}}$.
 
@@ -160,17 +160,17 @@ that was initialized in state $\ket{b}$, in the target state $\ket{x}$.
 
     def HHL(b, hamiltonian_evolution, n, precision):
 
-    qf, qpe_res, inv_res = HHL_encoding(b, hamiltonian_evolution, n, precision)
-    
-    with invert():
-        QPE(qf, hamiltonian_evolution, target=qpe_res)
-        fake_inversion(qpe_res, res=inv_res)
+        qf, qpe_res, inv_res = HHL_encoding(b, hamiltonian_evolution, n, precision)
+        
+        with invert():
+            QPE(qf, hamiltonian_evolution, target=qpe_res)
+            fake_inversion(qpe_res, res=inv_res)
 
-    # Reverse the endianness for compatibility with Hamiltonian simulation.
-    for i in jrange(qf.size//2):
-        swap(qf[i],qf[n-i-1])
-    
-    return qf
+        # Reverse the endianness for compatibility with Hamiltonian simulation.
+        for i in jrange(qf.size//2):
+            swap(qf[i],qf[n-i-1])
+        
+        return qf
 
 
 Applying HHL to solve systems of linear equations
