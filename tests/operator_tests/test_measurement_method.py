@@ -85,6 +85,16 @@ def test_measurement_method(sample_size=100, seed=42, exhaustive = False):
 
     h(qv[0])
     
+
+    # Perform test for issue #165
+    qv = QuantumVariable(4)
+    x(qv[0])
+    x(qv[1])
+
+    H = A(0)*C(1)*C(2)*A(3) + P1(0)*P1(2) + P1(1)*P1(3)
+
+    assert H.get_measurement(qv,diagonalisation_method='commuting') == 0
+    assert H.get_measurement(qv,diagonalisation_method='commuting_qw') == 0
     
     
     
