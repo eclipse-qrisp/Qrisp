@@ -174,7 +174,7 @@ class QubitOperatorMeasurement:
                 self.groups.extend(group.group_up(lambda a, b : a.ladders_agree(b) or not a.ladders_intersect(b)))
                 
         else:
-            raise Exception("Unknown diagonalisation method: {method}.")
+            raise Exception(f"Unknown diagonalisation method: {diagonalisation_method}.")
     
         self.stds = []
         self.change_of_basis_gates = []
