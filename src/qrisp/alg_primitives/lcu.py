@@ -85,6 +85,7 @@ def inner_LCU(state_prep, unitaries, num_qubits, num_unitaries=None):
     if isinstance(unitaries, (list, tuple)):
         num_unitaries = len(unitaries)
         unitary_func = lambda index: unitaries[index]
+        xrange = range
 
     elif callable(unitaries):
         if num_unitaries is None:
@@ -92,6 +93,7 @@ def inner_LCU(state_prep, unitaries, num_qubits, num_unitaries=None):
                 "num_unitaries must be specified for dynamic unitaries"
             )
         unitary_func = unitaries
+        xrange = jrange
 
     else:
         raise TypeError("unitaries must be a list/tuple or a callable function")
@@ -102,7 +104,7 @@ def inner_LCU(state_prep, unitaries, num_qubits, num_unitaries=None):
 
     # LCU protocol with conjugate preparation
     with conjugate(state_prep)(case_indicator):
-        for i in range(num_unitaries):
+        for i in xrange(num_unitaries):
             qb = QuantumBool()
             with conjugate(mcx)(case_indicator, qb, ctrl_state=i):
                 with control(qb):
