@@ -424,28 +424,23 @@ def grovers_alg(
             * (N / winner_state_amount) ** 0.5
         )
 
+        def body_fun(state):
+            iterations, tmp = state
+            return iterations+1, jnp.sin(jnp.pi / (4 * (iterations - 1) + 6)) * (N / winner_state_amount) ** 0.5
+        
+        def cond_fun(state):
+            iterations, tmp = state
+            return tmp > 1
+        
+        state = (iterations, tmp)
+
         if check_for_tracing_mode():
-
             from jax.lax import while_loop
-
-            def body_fun(state):
-                iterations, tmp, winner_state_amount = state
-                return iterations+1, jnp.sin(jnp.pi / (4 * (iterations - 1) + 6)) * (N / winner_state_amount) ** 0.5, winner_state_amount
-            
-            def cond_fun(state):
-                iterations, tmp, winner_state_amount = state
-                return tmp > 1
-
-            iterations, tmp, winner_state_amount = while_loop(cond_fun, body_fun, (iterations, tmp, winner_state_amount))
-
+            iterations, tmp = while_loop(cond_fun, body_fun, state)
         else:
-
-            while tmp > 1:
-                iterations += 1
-                tmp = (
-                    jnp.sin(jnp.pi / (4 * (iterations - 1) + 6))
-                    * (N / winner_state_amount) ** 0.5
-                )
+            while cond_fun(state):
+                state = body_fun(state)
+            iterations, tmp = state
 
         phi = 2 * jnp.arcsin(
             jnp.sin(jnp.pi / (4 * (iterations - 1) + 6))
@@ -461,7 +456,6 @@ def grovers_alg(
         [h(qv) for qv in qv_list]
     else:
         h(qv_list)
-
 
     if check_for_tracing_mode():
 
