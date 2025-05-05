@@ -36,7 +36,26 @@ def test_jasp_qswitch_case_list():
         h(case)
 
         # Execute switch_case function
-        qswitch(operand, case, case_function_list)
+        qswitch(operand, case, case_function_list, "sequential")
+
+        return operand
+    
+    meas_res = main()
+    # {2.0: 0.25, 3.0: 0.25, 4.0: 0.25, 5.0: 0.25}
+    
+    for i in [2,3,4,5]:
+        assert np.round(meas_res[i],2) == 0.25
+
+    @terminal_sampling
+    def main():
+        # Create operand and case variable
+        operand = QuantumFloat(4)
+        operand[:] = 1
+        case = QuantumFloat(2)
+        h(case)
+
+        # Execute switch_case function
+        qswitch(operand, case, case_function_list, "tree")
 
         return operand
     
@@ -71,7 +90,26 @@ def test_jasp_qswitch_case_function():
         h(case)
 
         # Execute switch_case function
-        qswitch(operand, case, case_function)
+        qswitch(operand, case, case_function, "sequential")
+
+        return operand
+    
+    meas_res = main()
+    # {2.0: 0.25, 3.0: 0.25, 4.0: 0.25, 5.0: 0.25}
+    
+    for i in [2,3,4,5]:
+        assert np.round(meas_res[i],2) == 0.25
+
+    @terminal_sampling
+    def main():
+        # Create operand and case variable
+        operand = QuantumFloat(4)
+        operand[:] = 1
+        case = QuantumFloat(2)
+        h(case)
+
+        # Execute switch_case function
+        qswitch(operand, case, case_function, "tree")
 
         return operand
     
