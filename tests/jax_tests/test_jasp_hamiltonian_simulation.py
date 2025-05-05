@@ -22,7 +22,6 @@ from qrisp.jasp import terminal_sampling
 
 def test_jasp_hamiltonian_simulation():
     
-    
     def test_hamiltonian(H):
         
         def main():
@@ -48,3 +47,38 @@ def test_jasp_hamiltonian_simulation():
     test_hamiltonian(H)
     H = a(0)*c(2)*a(3)*a(4) + c(0)*a(1)*a(3)*c(2)
     test_hamiltonian(H)
+
+
+from pyscf import gto
+from qrisp import *
+from qrisp.operators import FermionicOperator
+import numpy as np
+
+def test_jasp_qubit_hamiltonian_simulation():
+
+    # Finding the gound state energy of the Hydrogen molecule with QPE
+    @terminal_sampling
+    def main():
+
+        mol = gto.M(
+        atom = '''H 0 0 0; H 0 0 0.74''',
+        basis = 'sto-3g')
+
+        H = FermionicOperator.from_pyscf(mol).to_qubit_operator()
+
+        U = H.trotterization(forward_evolution=False, method='commuting')
+
+        qv = QuantumFloat(H.find_minimal_qubit_amount())
+        [x(qv[i]) for i in range(2)] # Prepare Hartree-Fock state, H2 molecule has 2 electrons
+
+        qpe_res = QPE(qv,U,precision=6,kwargs={"steps":3})
+        return qpe_res
+
+    meas_res = main()
+    
+    phi = list(meas_res.keys())[0]
+    E = 2*np.pi*(phi-1)
+    success_probability = meas_res[phi]
+
+    assert np.abs(E-(-1.865)) < 1e-3
+    assert success_probability > 0.9
