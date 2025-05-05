@@ -11,6 +11,7 @@ Qrisp comes with a variety of predefined mixers to tackle various types of probl
    :toctree: generated/
    
    RX_mixer
+   RY_mixer
    RZ_mixer
    XY_mixer
    grover_mixer

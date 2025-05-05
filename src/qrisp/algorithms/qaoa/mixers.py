@@ -16,11 +16,8 @@
 ********************************************************************************/
 """
 
-import numpy as np
-from scipy.optimize import minimize
-from sympy import Symbol
-
-from qrisp import QuantumVariable, h, barrier, rz, rx , cx, QuantumArray, xxyy, p, invert, conjugate, mcp, auto_uncompute, control
+from qrisp import QuantumVariable, h, barrier, rz, ry, rx , cx, QuantumArray, xxyy, p, invert, conjugate, mcp, auto_uncompute, control
+from qrisp.jasp import jrange
 
 def RX_mixer(qv, beta):
     """
@@ -30,24 +27,35 @@ def RX_mixer(qv, beta):
 
     Parameters
     ----------
-    qv : QuantumVariable
+    qv : :ref:`QuantumVariable`
         The quantum variable to which the RX gate is applied.
     beta : float or sympy.Symbol
         The phase shift value for the RX gate.
 
-    Returns
-    -------
-    qv : QuantumVariable
-        The quantum variable after applying the RX gate.
     """
-    for i in range(qv.size):
-        rx(2 * beta, qv[i])
-    return qv
+    rx(2 * beta, qv)
+
+
+def RY_mixer(qv, beta):
+    """
+    Applies an RY gate to each qubit in ``qv``.
+
+    The RY gate is a single-qubit rotation about the x-axis. It is used as a mixer in QAOA to drive transitions between different states.
+
+    Parameters
+    ----------
+    qv : :ref:`QuantumVariable`
+        The quantum variable to which the RY gate is applied.
+    beta : float or sympy.Symbol
+        The phase shift value for the RY gate.
+
+    """
+    ry(2 * beta, qv)
 
 
 def XY_mixer(qv, beta):
     """
-    Applies multiple XX+YY gates to ``qv`` such that each qubit has interacted with it's neighbour at least once.
+    Applies multiple XX+YY gates to ``qv`` such that each qubit has interacted with its neighbour at least once.
 
     The XX+YY gate is a two-qubit gate that performs rotations around the XY plane. It is used as a mixer in QAOA to drive transitions between different states.
     
@@ -55,31 +63,25 @@ def XY_mixer(qv, beta):
 
     Parameters
     ----------
-    qv : QuantumVariable
+    qv : :ref:`QuantumVariable`
         The quantum variable to which the XY gate is applied.
     beta : float or sympy.Symbol
         The phase shift value for the XY gate.
 
-    Returns
-    -------
-    qv : QuantumVariable
-        The quantum variable after applying the XY gate.
     """
     N = qv.size
     
-    for i in range(0, N//2):
+    for i in jrange(0, N//2):
         q1 = qv[2*i]
         q2 = qv[2*i+1]
         xxyy(4*beta, 0, q1, q2)
     
-    for i in range(0, (N-2+N%2)//2):
+    for i in jrange(0, (N-2+N%2)//2):
         q1 = qv[2*i+1]
         q2 = qv[2*i+2]
         xxyy(4*beta, 0, q1, q2)
         
     xxyy(4*beta, 0, qv[N-1], qv[0])
-
-    return qv
 
 
 def apply_XY_mixer(quantumcolor_array, beta):
@@ -94,13 +96,14 @@ def RZ_mixer(qv, beta):
 
     Parameters
     ----------
-    qv : QuantumVariable
+    qv : :ref:`QuantumVariable`
         The quantum variable to which the RZ gate is applied.
     beta : float or sympy.Symbol
         The phase shift value for the RZ gate.
 
     """
     rz(-beta, qv)
+ 
     
 def grover_mixer(qv, beta):
     """
@@ -108,17 +111,16 @@ def grover_mixer(qv, beta):
 
     Parameters
     ----------
-    qv : QuantumVariable
+    qv : :ref:`QuantumVariable`
         The QuantumVariable to be mixed.
     beta : float or sympy.Symbol
         The mixing parameter.
 
     """
-    
-    
     from qrisp.grover import diffuser
     diffuser(qv, phase = beta)
     
+
 def constrained_mixer_gen(constraint_oracle, winner_state_amount):
     r"""
     Generates a customized mixer function that leaves arbitrary constraints intact. 
