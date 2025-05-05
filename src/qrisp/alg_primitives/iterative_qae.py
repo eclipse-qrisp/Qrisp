@@ -16,7 +16,7 @@
 ********************************************************************************/
 """
 
-from qrisp import z
+from qrisp import z, control
 from qrisp.alg_primitives.qae import amplitude_amplification 
 from qrisp.jasp import check_for_tracing_mode, expectation_value
 from jax.lax import while_loop
@@ -208,7 +208,8 @@ def quantum_step(k, N, init_function, state_function, oracle_function, mes_kwarg
     def state_prep(k):
         qargs = init_function()
         state_function(*qargs)
-        amplitude_amplification(qargs, state_function, oracle_function, iter = k)
+        with control(k>0):
+            amplitude_amplification(qargs, state_function, oracle_function, iter = k)
         return qargs[-1]
 
     if check_for_tracing_mode():
