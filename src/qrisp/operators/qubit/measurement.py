@@ -164,14 +164,18 @@ class QubitOperatorMeasurement:
             # the ladder terms either need to completely agree or completely disagree
             for group in temp_groups:
                 self.groups.extend(group.group_up(lambda a, b : a.ladders_agree(b) or not a.ladders_intersect(b)))
-        else:
+
+        elif diagonalisation_method=="commuting":
             temp_groups = hamiltonian.group_up(lambda a, b: a.commute_pauli(b))
             self.groups = []
             # In order for the change of basis function (below) to work properly,
             # the ladder terms either need to completely agree or completely disagree
             for group in temp_groups:
                 self.groups.extend(group.group_up(lambda a, b : a.ladders_agree(b) or not a.ladders_intersect(b)))
-        
+                
+        else:
+            raise Exception("Unknown diagonalisation method: {method}.")
+    
         self.stds = []
         self.change_of_basis_gates = []
         self.measurement_operators = []
