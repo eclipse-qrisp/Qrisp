@@ -54,7 +54,7 @@ from qrisp import *
 from qrisp.operators import FermionicOperator
 import numpy as np
 
-def test_jasp_qubit_hamiltonian_simulation():
+def test_jasp_hamiltonian_simulation_H2():
 
     # Finding the gound state energy of the Hydrogen molecule with QPE
     @terminal_sampling
