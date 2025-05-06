@@ -41,9 +41,9 @@ def qswitch(operand, case, case_function_list, method = "sequential"):
         A list of functions, performing some in-place operation on ``operand``, or 
         a function ``case_function(i, operand)`` performing some in-place operation on ``operand`` depending on a nonnegative integer index ``i`` specifying the case.
     method : str, optional
-        The compilation method. Available are ``parallel`` and ``sequential``. 
-        ``parallel`` is exponentially fast but requires more temporary qubits.
-        The default is "sequential".
+        The compilation method. Available are ``sequential``, ``parallel`` and ``tree``. 
+        ``parallel`` is exponentially fast but requires more temporary qubits. ``tree`` uses `balanced binaray trees <https://arxiv.org/pdf/2407.17966v1>`_.
+        The default is ``sequential``.
 
     Examples
     --------
@@ -124,6 +124,7 @@ def qswitch(operand, case, case_function_list, method = "sequential"):
         enable[0].flip()
         enable.delete()
 
+    # Uses balanced binaray trees https://arxiv.org/pdf/2407.17966v1
     elif method == "tree":
         n = case.size
 
@@ -201,7 +202,7 @@ def qswitch(operand, case, case_function_list, method = "sequential"):
                         case_function_list[i+1](oper)
 
         else:
-            raise TypeError("Argument 'case_fun' must be a list or a callable(i, x)")
+            raise TypeError("Argument 'case_function_list' must be a list or a callable(i, x)")
 
         def body_fun(pos, val):
             anc, ca, oper = val
