@@ -7,65 +7,73 @@ Tutorials
 
     .. grid-item-card::
         :shadow: none
-        
+
+        .. image:: ../../_static/qrisp_logo.png
+            :align: center
+            :target: ./tutorial/tutorial.html
+
         .. raw:: html
 
-            <a href="./reference/Algorithms/QuantumBacktrackingTree.html">
-            <div class="example-img-plot-overlay">
-            <p class="sd-card-text">Solve backtracking problems by leveraging quantum walks</p>
-            </div>
+            <div style="text-align: center;">
+            <a href="./general/tutorial/tutorial.html">
+            Getting familiar with Qrisp
             </a>
+            </div>
 
-    
-        .. image:: ../../_static/backtracking.svg
-            
     .. grid-item-card::
         :shadow: none
-            
-    
-        .. raw:: html
-            
-            <a href="./general/tutorial/Jasp.html">
-            <div class="example-img-plot-overlay">
-            <p class="sd-card-text">Exert hybrid real-time algorithm control with Catalyst and Jasp</p>
-            </div>
-            </a>
-            
-        .. image:: ../../_static/hybrid_realtime.png
-            :width: 180
+
+        .. image:: ../../_static/tsp.svg
             :align: center
+            :target: ./tutorial/TSP.html
+
+        `Solving the Traveling Salesman Problem <./tutorial/TSP.html>`_
 
 
 .. grid:: 1 1 2 2
 
+    .. grid-item-card::
+        :shadow: none
+
+        .. image:: ../../_static/backtracking.svg
+            :align: center
+            :target: ./reference/Algorithms/QuantumBacktrackingTree.html
+
+        `Solving Sudoku using Quantum Backtracking <./reference/Algorithms/QuantumBacktrackingTree.html>`_
+            
+
+    .. grid-item-card::
+        :shadow: none
+
+        .. image:: ../../_static/hybrid_realtime.png
+            :width: 180
+            :align: center
+            :target: ./general/tutorial/Jasp.html
+
+        `Exert hybrid real-time algorithm control with Catalyst and Jasp <./general/tutorial/Jasp.html>`_
+
+
+.. grid:: 1 1 2 2
             
     .. grid-item-card::
         :shadow: none
-    
-        .. raw:: html
 
-            <a href="./general/tutorial/H2.html">
-            <div class="example-img-plot-overlay">
-            <p class="sd-card-text">Simulate the quantum dynamics of molecules using chemistry data</code></p>
-            </div>
-            </a>
-
-    
         .. image:: ../../_static/hydrogen.png
+            :align: center
+            :target: ./tutorial/H2.html
+
+        `Simulate the quantum dynamics of molecules using chemistry data <./tutorial/Shor.html>`_
+
 
     .. grid-item-card::
         :shadow: none
-    
-        .. raw:: html
 
-            <a href="./tutorial/Shor.html">
-            <div class="example-img-plot-overlay">
-            <p class="sd-card-text">Factor integers using abitrary quantum adders with Shor's algorithm</p>
-            </div>
-            </a>
-
-    
         .. image:: ../../_static/period_finding.svg
+            :align: center
+            :target: ./tutorial/Shor.html
+
+        `Factor integers using abitrary quantum adders with Shor's algorithm <./tutorial/Shor.html>`_
+
 
 Welcome to the tutorial of Qrisp! This page will help you get started by providing step-by-step instructions and examples. Whether you're a beginner or an experienced quantum programmer, these tutorials provide a helping hand exploring the fundamentals of the framework and make you familiar with its syntax and features.
 
