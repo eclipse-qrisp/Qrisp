@@ -5,7 +5,7 @@ Hamiltonian Dynamics of the Ising Model
 
 .. currentmodule:: qrisp
 
-In this example, we study Hamiltonian Dynamics of the Transverse Field Ising Model (TFIM). The model is defined by the Hamiltonian
+In this example, we simulate Hamiltonian Dynamics of the Transverse Field Ising Model (TFIM). The model is defined by the Hamiltonian
 
 $$ H = -J\\sum_{(i,j)\\in E}Z_iZ_j + B\\sum_{i\\in V}X_i $$
 
