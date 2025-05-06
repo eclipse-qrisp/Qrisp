@@ -16,12 +16,14 @@
 ********************************************************************************/
 """
 
-from qrisp.core import QuantumArray
+from qrisp.core import QuantumArray, QuantumVariable, x
 from qrisp.qtypes import QuantumBool
 from qrisp.environments import conjugate, control
 from qrisp.alg_primitives import demux
 from qrisp.core.gate_application_functions import mcx
-from qrisp.jasp import check_for_tracing_mode, jrange
+from qrisp.jasp import check_for_tracing_mode, jrange, q_fori_loop, q_cond
+import numpy as np
+import jax.numpy as jnp
 
 def qswitch(operand, case, case_function_list, method = "sequential"):
     """
@@ -39,9 +41,9 @@ def qswitch(operand, case, case_function_list, method = "sequential"):
         A list of functions, performing some in-place operation on ``operand``, or 
         a function ``case_function(i, operand)`` performing some in-place operation on ``operand`` depending on a nonnegative integer index ``i`` specifying the case.
     method : str, optional
-        The compilation method. Available are ``parallel`` and ``sequential``. 
-        ``parallel`` is exponentially fast but requires more temporary qubits.
-        The default is "sequential".
+        The compilation method. Available are ``sequential``, ``parallel`` and ``tree``. 
+        ``parallel`` is exponentially fast but requires more temporary qubits. ``tree`` uses `balanced binaray trees <https://arxiv.org/pdf/2407.17966v1>`_.
+        The default is ``sequential``.
 
     Examples
     --------
@@ -82,33 +84,22 @@ def qswitch(operand, case, case_function_list, method = "sequential"):
 
     if method == "sequential":
 
-        if check_for_tracing_mode():
+        control_qbl = QuantumBool()
 
-            control_qbl = QuantumBool()
-
-            for i in xrange(case_amount):
-                with conjugate(mcx)(case, control_qbl, ctrl_state=i):
-                    with control(control_qbl):
-                        if callable(case_function_list):
-                            case_function_list(i, operand)
-                        else:
-                            case_function_list[i](operand)
-
-            control_qbl.delete()
-
-        else:
-    
-            for i in range(case_amount):
-                with i == case:
+        for i in xrange(case_amount):
+            with conjugate(mcx)(case, control_qbl, ctrl_state=i):
+                with control(control_qbl):
                     if callable(case_function_list):
                         case_function_list(i, operand)
                     else:
                         case_function_list[i](operand)
+
+        control_qbl.delete()
         
     elif method == "parallel":
 
         if check_for_tracing_mode():
-            raise Exception("Compile method {method} for switch-case structure not available in Jasp mode.")
+            raise Exception(f"Compile method {method} for switch-case structure not available in tracing mode.")
         
         # Idea: Use demux function to move operand and enabling bool into QuantumArray
         # to execute cases in parallel.
@@ -132,6 +123,119 @@ def qswitch(operand, case, case_function_list, method = "sequential"):
         
         enable[0].flip()
         enable.delete()
+
+    # Uses balanced binaray trees https://arxiv.org/pdf/2407.17966v1
+    elif method == "tree":
+        n = case.size
+
+        def bounce(d: int, anc, ca, oper):
+            with control(anc[d-1]):
+                x(anc[d])
+            with control(anc[d]):
+                x(anc[d+1])
+            with control(anc[d-1]):
+                with control(ca[n-1-d]):
+                    x(anc[d+1])
+
+        def down(d: int, anc, ca, oper):
+            with control(anc[d]):
+                x(ca[n-1-d])
+                with control(ca[n-1-d]):
+                    x(anc[d+1])
+                x(ca[n-1-d])
+
+        def up(d: int, anc, ca, oper):
+            with control(anc[d]):
+                with control(ca[n-1-d]):
+                    x(anc[d+1])
+
+        # Jasp mode
+        if check_for_tracing_mode():
+            xrange = jrange
+            x_fori_loop = q_fori_loop
+            def bitwise_count_diff(a, b): return jnp.bitwise_count(jnp.bitwise_xor(a, b))
+
+        # Normal mode
+        else:
+            xrange = range
+
+            def x_fori_loop(lower, upper, body_fun, init_val):
+                val = init_val
+                for i in range(lower, upper):
+                    val = body_fun(i, val)
+                return val
+
+            def bitwise_count_diff(a, b): return np.bitwise_count(np.bitwise_xor(a, b))
+
+        # Function mode
+        if callable(case_function_list):
+            def leaf(d: int, anc, ca, oper, i):
+                with control(anc[d+1]):
+                    case_function_list(i, oper)
+                with control(anc[d]):
+                    x(anc[d+1])
+                with control(anc[d+1]):
+                    case_function_list(i+1, oper)
+
+        # List mode
+        elif isinstance(case_function_list, list):
+            if check_for_tracing_mode():
+                def leaf(d: int, anc, ca, oper, i):
+                    def apply_leaf(A, B):
+                        with control(anc[d+1]):
+                            A(oper)
+                        with control(anc[d]):
+                            x(anc[d+1])
+                        with control(anc[d+1]):
+                            B(oper)
+                    for j in range(0, len(case_function_list), 2):
+                        q_cond(j == i, apply_leaf, lambda a,
+                               b: None, case_function_list[j], case_function_list[j+1])
+
+            else:
+                def leaf(d: int, anc, ca, oper, i):
+                    with control(anc[d+1]):
+                        case_function_list[i](oper)
+                    with control(anc[d]):
+                        x(anc[d+1])
+                    with control(anc[d+1]):
+                        case_function_list[i+1](oper)
+
+        else:
+            raise TypeError("Argument 'case_function_list' must be a list or a callable(i, x)")
+
+        def body_fun(pos, val):
+            anc, ca, oper = val
+
+            # Apply leaf
+            leaf(n-1, anc, ca, oper, 2*pos)
+
+            # Jump to next leaf
+            q = bitwise_count_diff(pos, pos+1)
+            for j in xrange(0, q-1, 1):
+                up(n - j - 1, anc, ca, oper)
+            bounce(n - q, anc, ca, oper)
+            for j in xrange(0, q-1, 1):
+                down(n - (q-1) + j, anc, ca, oper)
+
+            return anc, ca, oper
+
+        anc = QuantumVariable(n+1)
+        x(anc[0])
+
+        # Go to first node
+        for j in xrange(0, n, 1):
+            down(j, anc, case, operand)
+
+        # Perform leafs and jumps
+        anc, case, operand = x_fori_loop(0, 2**(n-1) - 1, body_fun, (anc, case, operand))
+
+        # Perfrom last leaf
+        leaf(n-1, anc, case, operand, 2**n - 2)
+
+        # Go back from last node
+        for j in xrange(0, n, 1):
+            up(n - j - 1, anc, case, operand)
     
     else:
-        raise Exception("Don't know compile method {method} for switch-case structure.")
+        raise Exception(f"Don't know compile method {method} for switch-case structure.")
