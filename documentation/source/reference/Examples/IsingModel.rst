@@ -1,21 +1,21 @@
 .. _IsingModel:
 
-Transverse Field Ising Model
-============================
+Hamiltonian Dynamics of the Ising Model
+=======================================
 
 .. currentmodule:: qrisp
 
-In this example, we study Hamiltonian dynamics of the transverse field Ising model defined by the Hamiltonian
+In this example, we study Hamiltonian Dynamics of the Transverse Field Ising Model (TFIM). The model is defined by the Hamiltonian
 
 $$ H = -J\\sum_{(i,j)\\in E}Z_iZ_j + B\\sum_{i\\in V}X_i $$
 
-for a lattice graph $G=(V,E)$ and real parameters $J, B$. We investigate the total magnetization 
+for a lattice graph $G=(V,E)$ and real parameters $J, B$. We investigate the total **magnetization** 
 
 $$ M = \\sum_{i\\in V}Z_i $$
 
 of the system of qubits as it evolves under the Hamiltonian.
 
-Here, we consider an Ising chain.
+Here, we consider an Ising chain:
 
 ::
 
@@ -31,7 +31,7 @@ Here, we consider an Ising chain.
 
     G = generate_chain_graph(6)
 
-We implement methods for creating the Ising Hamiltonian and the total magnetization observable for a given graph.
+First, we implement methods for creating the Ising Hamiltonian and the total magnetization observable for a given graph.
 
 ::
 
@@ -76,15 +76,15 @@ Finally, we visualize the results. As expected, the total magnetization decrease
 ::
 
     import matplotlib.pyplot as plt
-    plt.scatter(T_values, M_values, color='#6929C4', marker="o", linestyle='solid', s=10, label='Magnetization')
-    plt.xlabel("Time", fontsize=15, color="#444444")
-    plt.ylabel("Magnetization", fontsize=15, color="#444444")
-    plt.legend(fontsize=12, labelcolor="#444444")
+    plt.scatter(T_values, M_values, color='#6929C4', marker="o", linestyle="solid", s=20, label=r"Ising chain")
+    plt.xlabel(r"Evolution time $T$", fontsize=15, color="#444444")
+    plt.ylabel(r"Magnetization $\langle M \rangle$", fontsize=15, color="#444444")
+    plt.legend(fontsize=15, labelcolor="#444444")
     plt.tick_params(axis='both', labelsize=12)
     plt.grid()
     plt.show()
 
 .. figure:: /_static/Ising_chain_N=6.png
-   :alt: Ising chain
+   :alt: Magnetization for Ising chain
    :align: center
 
