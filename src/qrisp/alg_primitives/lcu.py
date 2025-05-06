@@ -18,6 +18,7 @@
 
 from qrisp import *
 from qrisp.jasp import *
+from qrisp.alg_primitives.switch_case import qswitch
 import jax.numpy as jnp
 import numpy as np
 
