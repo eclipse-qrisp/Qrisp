@@ -50,19 +50,23 @@ def qswitch(operand, case, case_function_list, method = "sequential"):
     
     We create some sample functions:
 
-    >>> from qrisp import *
-    >>> def f0(x): x += 1
-    >>> def f1(x): inpl_mult(x, 3, treat_overflow = False)
-    >>> def f2(x): pass
-    >>> def f3(x): h(x[1])
-    >>> case_function_list = [f0, f1, f2, f3]
+    ::
+
+        from qrisp import *
+        def f0(x): x += 1
+        def f1(x): inpl_mult(x, 3, treat_overflow = False)
+        def f2(x): pass
+        def f3(x): h(x[1])
+        case_function_list = [f0, f1, f2, f3]
 
     Create operand and case variable
     
-    >>> operand = QuantumFloat(4)
-    >>> operand[:] = 1
-    >>> case = QuantumFloat(2)
-    >>> h(case)
+    ::
+
+        operand = QuantumFloat(4)
+        operand[:] = 1
+        case = QuantumFloat(2)
+        h(case)
 
     Execute switch_case function
     
