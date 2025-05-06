@@ -90,9 +90,13 @@ def ladder1_synth_jax(n):
     Additionally, we avoid variable updates between iterations by using bit shifts, noting that N//2 is equivalent to N>>1.
     """
 
+    
     qf = QuantumFloat(n)
     N = jlen(qf)
-
+    
+    # with control(N == 1):
+    #     raise ValueError("The number of qubits should be greater than or equal to 2.")
+    
     # Add the first layer of gates
     for i in jrange(1, (N + 1) // 2 - 1):
         cx(qf[2 * i - 1], qf[2 * i])
