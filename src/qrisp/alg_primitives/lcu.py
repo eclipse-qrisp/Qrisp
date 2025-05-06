@@ -19,11 +19,13 @@
 from qrisp import *
 from qrisp.jasp import *
 from qrisp.alg_primitives.switch_case import qswitch
+from qrisp.algorithms.grover.grover_tools import tag_state
+from qrisp.alg_primitives.amplitude_amplification import amplitude_amplification
 import jax.numpy as jnp
 import numpy as np
 
 
-def inner_LCU(state_prep, unitaries, num_qubits, num_unitaries=None):
+def inner_LCU(state_prep, unitaries, num_qubits, num_unitaries=None, OAA=False):
     r"""
     Core implementation of the Linear Combination of Unitaries (LCU) protocol without
     Repeat-Until-Success (RUS) protocol. The LCU method is a foundational quantum algorithmic
@@ -88,13 +90,22 @@ def inner_LCU(state_prep, unitaries, num_qubits, num_unitaries=None):
     case_indicator = QuantumFloat(n)
 
     # LCU protocol with conjugate preparation
-    with conjugate(state_prep)(case_indicator):
-        qswitch(qv, case_indicator, unitaries)
+    def LCU_state_prep(case_indicator, qv):
+        with conjugate(state_prep)(case_indicator):
+            qswitch(qv, case_indicator, unitaries)
+
+    def oracle_func(case_indicator, qv):
+        tag_state({case_indicator : 0})
+
+    LCU_state_prep = LCU_state_prep(case_indicator, qv)
+
+    if OAA is True:
+        amplitude_amplification([case_indicator, qv], LCU_state_prep, oracle_func, reflection_indices=[0])
 
     return case_indicator, qv
 
 
-def LCU(state_prep, unitaries, num_qubits, num_unitaries=None):
+def LCU(state_prep, unitaries, num_qubits, num_unitaries=None, OAA=False):
     r"""
     Full implementation of the Linear Combination of Unitaries (LCU) algorithmic primitive using the
     Repeat-Until-Success (RUS) protocol.
@@ -141,7 +152,7 @@ def LCU(state_prep, unitaries, num_qubits, num_unitaries=None):
 
     """
 
-    case_indicator, qv = inner_LCU(state_prep, unitaries, num_qubits, num_unitaries)
+    case_indicator, qv = inner_LCU(state_prep, unitaries, num_qubits, num_unitaries, OAA)
 
     # Success condition
     success_bool = measure(case_indicator) == 0
@@ -149,10 +160,10 @@ def LCU(state_prep, unitaries, num_qubits, num_unitaries=None):
 
 # Apply the RUS decorator with the workaround in order to show in documentation
 temp_docstring = LCU.__doc__
-LCU = RUS(static_argnums=[1, 2, 3])(LCU)
+LCU = RUS(static_argnums=[1, 2, 3, 4])(LCU)
 LCU.__doc__ = temp_docstring
 
-def view_LCU(state_prep, unitaries, num_qubits, num_unitaries=None):
+def view_LCU(state_prep, unitaries, num_qubits, num_unitaries=None, OAA=False):
     r"""
     Generate and return the quantum circuit for the LCU algorithm without utilizing
     the Repeat-Until-Success (RUS) protocol.
@@ -186,7 +197,7 @@ def view_LCU(state_prep, unitaries, num_qubits, num_unitaries=None):
 
     """
 
-    jaspr = make_jaspr(inner_LCU)(state_prep, unitaries, num_qubits, num_unitaries)
+    jaspr = make_jaspr(inner_LCU)(state_prep, unitaries, num_qubits, num_unitaries, OAA)
 
     # Convert Jaspr to quantum circuit and return the circuit
-    return jaspr.to_qc(num_qubits, num_unitaries)[-1]
+    return jaspr.to_qc(num_qubits, num_unitaries, OAA)[-1]
