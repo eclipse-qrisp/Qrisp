@@ -85,6 +85,9 @@ def inner_LCU(state_prep, unitaries, num_qubits, num_unitaries=None, OAA=False):
 
     qv = QuantumFloat(num_qubits)
 
+    if not callable(unitaries):
+        num_unitaries = len(unitaries)
+
     # Specify the QunatumVariable that indicates which case to execute
     n = jnp.int64(jnp.ceil(jnp.log2(num_unitaries)))
     case_indicator = QuantumFloat(n)
@@ -103,7 +106,6 @@ def inner_LCU(state_prep, unitaries, num_qubits, num_unitaries=None, OAA=False):
         amplitude_amplification([case_indicator, qv], LCU_state_prep, oracle_func, reflection_indices=[0])
 
     return case_indicator, qv
-
 
 def LCU(state_prep, unitaries, num_qubits, num_unitaries=None, OAA=False):
     r"""
