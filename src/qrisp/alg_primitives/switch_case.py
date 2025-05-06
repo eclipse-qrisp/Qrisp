@@ -84,33 +84,22 @@ def qswitch(operand, case, case_function_list, method = "sequential"):
 
     if method == "sequential":
 
-        if check_for_tracing_mode():
+        control_qbl = QuantumBool()
 
-            control_qbl = QuantumBool()
-
-            for i in xrange(case_amount):
-                with conjugate(mcx)(case, control_qbl, ctrl_state=i):
-                    with control(control_qbl):
-                        if callable(case_function_list):
-                            case_function_list(i, operand)
-                        else:
-                            case_function_list[i](operand)
-
-            control_qbl.delete()
-
-        else:
-    
-            for i in range(case_amount):
-                with i == case:
+        for i in xrange(case_amount):
+            with conjugate(mcx)(case, control_qbl, ctrl_state=i):
+                with control(control_qbl):
                     if callable(case_function_list):
                         case_function_list(i, operand)
                     else:
                         case_function_list[i](operand)
+
+        control_qbl.delete()
         
     elif method == "parallel":
 
         if check_for_tracing_mode():
-            raise Exception("Compile method {method} for switch-case structure not available in Jasp mode.")
+            raise Exception(f"Compile method {method} for switch-case structure not available in tracing mode.")
         
         # Idea: Use demux function to move operand and enabling bool into QuantumArray
         # to execute cases in parallel.
@@ -248,4 +237,4 @@ def qswitch(operand, case, case_function_list, method = "sequential"):
             up(n - j - 1, anc, case, operand)
     
     else:
-        raise Exception("Don't know compile method {method} for switch-case structure.")
+        raise Exception(f"Don't know compile method {method} for switch-case structure.")
