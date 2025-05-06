@@ -82,33 +82,13 @@ def inner_LCU(state_prep, unitaries, num_qubits, num_unitaries=None):
 
     qv = QuantumFloat(num_qubits)
 
-    if isinstance(unitaries, (list, tuple)):
-        num_unitaries = len(unitaries)
-        unitary_func = lambda index: unitaries[index]
-        xrange = range
-
-    elif callable(unitaries):
-        if num_unitaries is None:
-            raise ValueError(
-                "num_unitaries must be specified for dynamic unitaries"
-            )
-        unitary_func = unitaries
-        xrange = jrange
-
-    else:
-        raise TypeError("unitaries must be a list/tuple or a callable function")
-
     # Specify the QunatumVariable that indicates which case to execute
     n = jnp.int64(jnp.ceil(jnp.log2(num_unitaries)))
     case_indicator = QuantumFloat(n)
 
     # LCU protocol with conjugate preparation
     with conjugate(state_prep)(case_indicator):
-        for i in xrange(num_unitaries):
-            qb = QuantumBool()
-            with conjugate(mcx)(case_indicator, qb, ctrl_state=i):
-                with control(qb):
-                    unitary_func(i)(qv)
+        qswitch(qv, case_indicator, unitaries)
 
     return case_indicator, qv
 
@@ -159,21 +139,8 @@ def LCU(state_prep, unitaries, num_qubits, num_unitaries=None):
     view_LCU : Generates the quantum circuit for visualization.
 
     """
-    if isinstance(unitaries, (list, tuple)):
-        num_unitaries = len(unitaries)
-        unitary_func = lambda i: unitaries[i]
 
-    elif callable(unitaries):
-        if num_unitaries is None:
-            raise ValueError(
-                "num_unitaries must be specified for dynamic unitaries"
-            )
-        unitary_func = unitaries
-
-    else:
-        raise TypeError("unitaries must be a list/tuple or a callable function")
-
-    case_indicator, qv = inner_LCU(state_prep, unitary_func, num_qubits, num_unitaries)
+    case_indicator, qv = inner_LCU(state_prep, unitaries, num_qubits, num_unitaries)
 
     # Success condition
     success_bool = measure(case_indicator) == 0
@@ -217,21 +184,8 @@ def view_LCU(state_prep, unitaries, num_qubits, num_unitaries=None):
     LCU : Full LCU implementation using the RUS protocol.
 
     """
-    if isinstance(unitaries, (list, tuple)):
-        num_unitaries = len(unitaries)
-        unitary_func = lambda index: unitaries[index]
 
-    elif callable(unitaries):
-        if num_unitaries is None:
-            raise ValueError(
-                "num_unitaries must be specified for dynamic unitaries"
-            )
-        unitary_func = unitaries
-
-    else:
-        raise TypeError("unitaries must be list/tuple, or callable")
-
-    jaspr = make_jaspr(inner_LCU)(state_prep, unitary_func, num_qubits, num_unitaries)
+    jaspr = make_jaspr(inner_LCU)(state_prep, unitaries, num_qubits, num_unitaries)
 
     # Convert Jaspr to quantum circuit and return the circuit
     return jaspr.to_qc(num_qubits, num_unitaries)[-1]
