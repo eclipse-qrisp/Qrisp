@@ -40,7 +40,7 @@ Welcome to the tutorial of Qrisp! This page will help you get started by providi
 
         .. image:: ../../_static/tsp.svg
             :align: center
-            :target: ./tutorial/TSP.html
+            :target: ./TSP.html
 
         .. dropdown:: :fa:`eye me-1` Abstract
             :color: primary
@@ -59,7 +59,7 @@ Welcome to the tutorial of Qrisp! This page will help you get started by providi
 
         .. image:: ../../_static/backtracking.svg
             :align: center
-            :target: ./reference/Algorithms/QuantumBacktrackingTree.html
+            :target: ./Sudoku.html
 
         .. dropdown:: :fa:`eye me-1` Abstract
             :color: primary
@@ -76,7 +76,7 @@ Welcome to the tutorial of Qrisp! This page will help you get started by providi
         .. image:: ../../_static/hybrid_realtime.png
             :width: 180
             :align: center
-            :target: ./general/tutorial/Jasp.html
+            :target: ./Jasp.html
 
         .. dropdown:: :fa:`eye me-1` Abstract
             :color: primary
@@ -95,7 +95,7 @@ Welcome to the tutorial of Qrisp! This page will help you get started by providi
 
         .. image:: ../../_static/hydrogen.png
             :align: center
-            :target: ./tutorial/H2.html
+            :target: ./H2.html
 
         .. dropdown:: :fa:`eye me-1` Abstract
             :color: primary
@@ -112,7 +112,7 @@ Welcome to the tutorial of Qrisp! This page will help you get started by providi
 
         .. image:: ../../_static/period_finding.svg
             :align: center
-            :target: ./tutorial/Shor.html
+            :target: ./Shor.html
 
         .. dropdown:: :fa:`eye me-1` Abstract
             :color: primary
@@ -131,7 +131,7 @@ Welcome to the tutorial of Qrisp! This page will help you get started by providi
 
         .. image:: ../../_static/qmci.svg
             :align: center
-            :target: ./tutorial/QMCItutorial.html
+            :target: ./QMCItutorial.html
 
         .. dropdown:: :fa:`eye me-1` Abstract
             :color: primary
@@ -147,7 +147,7 @@ Welcome to the tutorial of Qrisp! This page will help you get started by providi
 
         .. image:: ../../_static/maxcut_jasp.png
             :align: center
-            :target: ./tutorial/Shor.html
+            :target: ./QAOAtutorial/index.html
 
         .. dropdown:: :fa:`eye me-1` Abstract
             :color: primary
@@ -191,7 +191,7 @@ By the end of this tutorial, you'll have a solid foundation of our high-level fr
    :hidden:
    
    tutorial
-   Quantum Alternating Operator Ansatz/index
+   QAOAtutorial/index
    QIROtutorial
    TSP
    QMCItutorial
