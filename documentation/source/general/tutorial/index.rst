@@ -8,9 +8,17 @@ Tutorial
     .. grid-item-card::
         :shadow: none
 
-        .. image:: ../../_static/qrisp_logo.png
-            :align: center
-            :target: ./tutorial/tutorial.html
+        .. math::
+            
+            \definecolor{qrispblue}{RGB}{32, 48, 111}
+            \definecolor{textgray}{RGB}{68, 68, 68}
+            
+            \Large
+            \textcolor{textgray}{
+            \begin{align}
+            \frac{\ket{\texttt{hello}} + e^{i \textcolor{red}{\phi}} \ket{\texttt{world}}}{\sqrt{2}}
+            \end{align}
+            }
 
         .. raw:: html
 
