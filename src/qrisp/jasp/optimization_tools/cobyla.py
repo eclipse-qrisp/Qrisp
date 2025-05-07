@@ -20,15 +20,17 @@ import jax
 import jax.numpy as jnp
 from jax.scipy.optimize import OptimizeResults
 
-# https://www.jhuapl.edu/SPSA/PDF-SPSA/Spall_An_Overview.PDF
-# Conditions: alpha <= 1; 1/6 <= gamma <= 1/2; 2*(alpha-gamma) > 1
+# https://link.springer.com/chapter/10.1007/978-94-015-8330-5_4
+# Constrains not included in this implementation
+# Changes are not noted in the code, to establish callback functionality
+
 def cobyla(fun, x0, 
            args, 
            maxiter=50,
            cons=[], rhobeg=1.0, rhoend=1e-6,seed=3):
     r"""
     
-    Minimize a scalar function of one or more variables using the `Constrained Optimization By Linear Approximation (COBYLA) algorithm`_.
+    Minimize a scalar function of one or more variables using the Constrained Optimization By Linear Approximation (COBYLA) algorithm.
 
     
 
@@ -67,7 +69,6 @@ def cobyla(fun, x0,
         best = jnp.argmin(f)
         worst = jnp.argmax(f)
         
-        # Calculate the centroid of the simplex excluding the worst point
         # Calculate the centroid of the simplex excluding the worst point
         mask = jnp.arange(n + 1) != worst
         centroid = jnp.sum(sim * mask[:, None], axis=0) / n
