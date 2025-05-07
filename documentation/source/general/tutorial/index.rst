@@ -45,7 +45,7 @@ Tutorial
         .. dropdown:: :fa:`eye me-1` Abstract
             :color: primary
 
-            You will set up a **superposition** of all routes, **evaluate** route distance, and create a **Grover's oracle** to eventually evaluate it.
+            You will set up a **superposition** of all routes, evaluate route distance, and create a **Grover's oracle** to eventually evaluate it.
 
 
 .. grid:: 1 1 2 2
@@ -77,7 +77,7 @@ Tutorial
         .. dropdown:: :fa:`eye me-1` Abstract
             :color: primary
 
-            You will learn how this **new compilation pipeline** accelerates quantum algorithm compilation, and allows for **real-time computations**.
+            You will learn how this new compilation pipeline accelerates quantum algorithm compilation, and allows for **real-time computations**.
 
 
 .. grid:: 1 1 2 2
@@ -109,7 +109,7 @@ Tutorial
         .. dropdown:: :fa:`eye me-1` Abstract
             :color: primary
 
-            This tutorial will guide you through our state-of-the-art implementation of  **Shor's algorithm**, allowing you to factor numbers and fiddle around encrypting and decrypting hidden messages.
+            This tutorial will guide you through our state-of-the-art implementation of Shor's algorithm, allowing you to factor numbers and fiddle around encrypting and decrypting hidden messages.
 
 
 .. grid:: 1 1 2 2
@@ -126,7 +126,7 @@ Tutorial
         .. dropdown:: :fa:`eye me-1` Abstract
             :color: primary
 
-            This tutorial will show you how to numerically calculate integrals with **Quantum Monte Carlo methods**, using **Iterative Quantum Amplitude Estimation**.
+            This tutorial will show you how to numerically calculate integrals with Quantum Monte Carlo methods, using Iterative Quantum Amplitude Estimation.
 
     .. grid-item-card::
         :shadow: none
