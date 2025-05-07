@@ -36,61 +36,6 @@ Welcome to the tutorial of Qrisp! This page will help you get started by providi
 
         .. raw:: html
 
-            <h4 style="font-weight: bold;">Solving the Traveling Salesman Problem</h4>
-
-        .. image:: ../../_static/tsp.svg
-            :align: center
-            :target: ./TSP.html
-
-        .. dropdown:: :fa:`eye me-1` Abstract
-            :color: primary
-
-            You will set up a **superposition** of all routes, evaluate route distance, and create a **Grover's oracle** to eventually evaluate it.
-
-
-.. grid:: 1 1 2 2
-
-    .. grid-item-card::
-        :shadow: none
-
-        .. raw:: html
-
-            <h4 style="font-weight: bold;">Solving Sudoku using Quantum Backtracking</h4>
-
-        .. image:: ../../_static/backtracking.svg
-            :align: center
-            :target: ./Sudoku.html
-
-        .. dropdown:: :fa:`eye me-1` Abstract
-            :color: primary
-
-            You will learn how to efficiently implement the Sudoku problem specific quantum oracles, and how to use the general **Quantum Backtracking** implementation within Qrisp.
-
-    .. grid-item-card::
-        :shadow: none
-
-        .. raw:: html
-
-            <h4 style="font-weight: bold;">Hybrid real-time algorithm control with Catalyst and Jasp</h4>
-
-        .. image:: ../../_static/hybrid_realtime.png
-            :width: 180
-            :align: center
-            :target: ./Jasp.html
-
-        .. dropdown:: :fa:`eye me-1` Abstract
-            :color: primary
-
-            You will learn how this new compilation pipeline accelerates quantum algorithm compilation, and allows for **real-time computations**.
-
-
-.. grid:: 1 1 2 2
-            
-    .. grid-item-card::
-        :shadow: none
-
-        .. raw:: html
-
             <h4 style="font-weight: bold;">Simulate the dynamics of the $H_2$ molecule</h4>
 
         .. image:: ../../_static/hydrogen.png
@@ -102,6 +47,25 @@ Welcome to the tutorial of Qrisp! This page will help you get started by providi
 
             This tutorial will show you how to leverage Qrisp’s advanced capabilities to perform **molecular simulations** on quantum computers.
 
+
+.. grid:: 1 1 2 2
+
+    .. grid-item-card::
+        :shadow: none
+
+        .. raw:: html
+
+            <h4 style="font-weight: bold;">Hybrid real-time algorithm conrol with Jasp</h4>
+
+        .. image:: ../../_static/hybrid_realtime.png
+            :width: 180
+            :align: center
+            :target: ./Jasp.html
+
+        .. dropdown:: :fa:`eye me-1` Abstract
+            :color: primary
+
+            You will learn how this new compilation pipeline accelerates quantum algorithm compilation, and allows for hybrid **real-time computations**.
 
     .. grid-item-card::
         :shadow: none
@@ -121,22 +85,65 @@ Welcome to the tutorial of Qrisp! This page will help you get started by providi
 
 
 .. grid:: 1 1 2 2
+
+    .. grid-item-card::
+        :shadow: none
+
+        .. raw:: html
+
+            <h4 style="font-weight: bold;">Solving systems of linear equations via HHL</h4>
+
+        .. math::
+            
+            \definecolor{qrispblue}{RGB}{32, 48, 111}
+            \definecolor{textgray}{RGB}{68, 68, 68}
+            
+            \Large
+            \textcolor{textgray}{
+            \begin{align}
+            A \ket{\textcolor{red}{x}} = \ket{b}
+            \end{align}
+            }
+
+        .. dropdown:: :fa:`eye me-1` Abstract
+            :color: primary
+
+            The Harrow-Hassidim-Lloyd (HHL) quantum algorithm offers an exponential speed-up over classical methods for solving linear system problems $Ax=b$ for certain sparse matrices $A$.
             
     .. grid-item-card::
         :shadow: none
 
         .. raw:: html
 
-            <h4 style="font-weight: bold;">Calculating integrals with Quantum Monte Carlo Integration</h4>
+            <h4 style="font-weight: bold;">Solving Sudoku using Quantum Backtracking</h4>
 
-        .. image:: ../../_static/qmci.svg
+        .. image:: ../../_static/backtracking.svg
             :align: center
-            :target: ./QMCItutorial.html
+            :target: ./Sudoku.html
 
         .. dropdown:: :fa:`eye me-1` Abstract
             :color: primary
 
-            This tutorial will show you how to numerically calculate integrals with Quantum Monte Carlo methods, using Iterative Quantum Amplitude Estimation.
+            You will learn how to efficiently implement the Sudoku problem specific quantum oracles, and how to use the general **Quantum Backtracking** implementation within Qrisp.
+
+
+.. grid:: 1 1 2 2
+            
+    .. grid-item-card::
+        :shadow: none
+
+        .. raw:: html
+
+            <h4 style="font-weight: bold;">Solving the Traveling Salesman Problem</h4>
+
+        .. image:: ../../_static/tsp.svg
+            :align: center
+            :target: ./TSP.html
+
+        .. dropdown:: :fa:`eye me-1` Abstract
+            :color: primary
+
+            You will set up a **superposition** of all routes, evaluate route distance, and create a **Grover's oracle** to eventually evaluate it.
 
     .. grid-item-card::
         :shadow: none
@@ -153,6 +160,41 @@ Welcome to the tutorial of Qrisp! This page will help you get started by providi
             :color: primary
 
             This tutorial will break down the **theory** behind this promising algorithm before implementing it for the **MaxCut** problem, the **graph coloring** problem, as well as providing a new **constrained mixer type** letting you reduce the search space! We also include tutorials on how to solve **QUBO problems** and **portfolio rebalancing** with QAOA. Disclaimer: the tutorial might or might not involve **crayons**.
+
+
+.. grid:: 1 1 2 2
+
+    .. grid-item-card::
+        :shadow: none
+
+        .. raw:: html
+
+            <h4 style="font-weight: bold;">Quantum-Informed Recursive Optimization</h4>
+
+        .. image:: ../../_static/maxIndepSet.png
+            :align: center
+            :target: ./QIROtutorial.html
+
+        .. dropdown:: :fa:`eye me-1` Abstract
+            :color: primary
+
+            Learn about a variational algorithm, that aims to adjust the given problem after each round of optimization. This tutorial will show you how to apply the theory to implement the algorithm and solve a **Maximal Independent Set** problem with it!
+
+    .. grid-item-card::
+        :shadow: none
+
+        .. raw:: html
+
+            <h4 style="font-weight: bold;">Quantum Monte Carlo Integration</h4>
+
+        .. image:: ../../_static/qmci.svg
+            :align: center
+            :target: ./QMCItutorial.html
+
+        .. dropdown:: :fa:`eye me-1` Abstract
+            :color: primary
+
+            This tutorial will show you how to numerically calculate integrals with Quantum Monte Carlo Integration using Iterative Quantum Amplitude Estimation.
 
 
 Welcome to the tutorial of Qrisp! This page will help you get started by providing step-by-step instructions and examples. Whether you're a beginner or an experienced quantum programmer, these tutorials provide a helping hand exploring the fundamentals of the framework and make you familiar with its syntax and features.
