@@ -1,7 +1,7 @@
 .. _tutorial:
 
-Tutorials
----------
+Tutorial
+========
 
 .. grid:: 1 1 2 2
 
@@ -20,6 +20,11 @@ Tutorials
             </a>
             </div>
 
+        .. dropdown:: :fa:`eye me-1` Abstract
+            :color: primary
+
+            Hello
+
     .. grid-item-card::
         :shadow: none
 
@@ -28,6 +33,11 @@ Tutorials
             :target: ./tutorial/TSP.html
 
         `Solving the Traveling Salesman Problem <./tutorial/TSP.html>`_
+
+        .. dropdown:: :fa:`eye me-1` Abstract
+            :color: primary
+
+            Hello
 
 
 .. grid:: 1 1 2 2
@@ -40,7 +50,11 @@ Tutorials
             :target: ./reference/Algorithms/QuantumBacktrackingTree.html
 
         `Solving Sudoku using Quantum Backtracking <./reference/Algorithms/QuantumBacktrackingTree.html>`_
-            
+
+        .. dropdown:: :fa:`eye me-1` Abstract
+            :color: primary
+
+            Hello
 
     .. grid-item-card::
         :shadow: none
@@ -51,6 +65,11 @@ Tutorials
             :target: ./general/tutorial/Jasp.html
 
         `Exert hybrid real-time algorithm control with Catalyst and Jasp <./general/tutorial/Jasp.html>`_
+
+        .. dropdown:: :fa:`eye me-1` Abstract
+            :color: primary
+
+            Hello
 
 
 .. grid:: 1 1 2 2
@@ -64,6 +83,10 @@ Tutorials
 
         `Simulate the quantum dynamics of molecules using chemistry data <./tutorial/Shor.html>`_
 
+        .. dropdown:: :fa:`eye me-1` Abstract
+            :color: primary
+
+            Hello
 
     .. grid-item-card::
         :shadow: none
@@ -73,6 +96,42 @@ Tutorials
             :target: ./tutorial/Shor.html
 
         `Factor integers using abitrary quantum adders with Shor's algorithm <./tutorial/Shor.html>`_
+
+        .. dropdown:: :fa:`eye me-1` Abstract
+            :color: primary
+
+            Hello
+
+
+.. grid:: 1 1 2 2
+            
+    .. grid-item-card::
+        :shadow: none
+
+        .. image:: ../../_static/qmci.svg
+            :align: center
+            :target: ./tutorial/QMCItutorial.html
+
+        `Numerically calculating integrals with Quantum Monte Carlo Integration <./tutorial/QMCItutorial.html>`_
+
+        .. dropdown:: :fa:`eye me-1` Abstract
+            :color: primary
+
+            Hello
+
+    .. grid-item-card::
+        :shadow: none
+
+        .. image:: ../../_static/maxcut_jasp.png
+            :align: center
+            :target: ./tutorial/Shor.html
+
+        `Solving combinatorial optimization problems with QAOA <./tutorial/Shor.html>`_
+
+        .. dropdown:: :fa:`eye me-1` Abstract
+            :color: primary
+
+            Hello
 
 
 Welcome to the tutorial of Qrisp! This page will help you get started by providing step-by-step instructions and examples. Whether you're a beginner or an experienced quantum programmer, these tutorials provide a helping hand exploring the fundamentals of the framework and make you familiar with its syntax and features.

@@ -12,4 +12,4 @@ Simply execute:
    pip install qrisp
 
 
-Visit our :ref:`Tutorial` page to get started with building your first algorithms!
+Visit our :ref:`tutorial` page to get started with building your first algorithms!
