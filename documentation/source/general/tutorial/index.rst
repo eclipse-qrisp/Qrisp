@@ -3,10 +3,16 @@
 Tutorial
 ========
 
+Welcome to the tutorial of Qrisp! This page will help you get started by providing step-by-step instructions and examples. Whether you're a beginner or an experienced quantum programmer, these tutorials provide a helping hand exploring the fundamentals of the framework and make you familiar with its syntax and features.
+
 .. grid:: 1 1 2 2
 
     .. grid-item-card::
         :shadow: none
+
+        .. raw:: html
+
+            <h4 style="font-weight: bold;">Getting familiar with Qrisp</h4>
 
         .. math::
             
@@ -20,14 +26,6 @@ Tutorial
             \end{align}
             }
 
-        .. raw:: html
-
-            <div style="text-align: center;">
-            <a href="./general/tutorial/tutorial.html">
-            Getting familiar with Qrisp
-            </a>
-            </div>
-
         .. dropdown:: :fa:`eye me-1` Abstract
             :color: primary
 
@@ -36,11 +34,13 @@ Tutorial
     .. grid-item-card::
         :shadow: none
 
+        .. raw:: html
+
+            <h4 style="font-weight: bold;">Solving the Traveling Salesman Problem</h4>
+
         .. image:: ../../_static/tsp.svg
             :align: center
             :target: ./tutorial/TSP.html
-
-        `Solving the Traveling Salesman Problem <./tutorial/TSP.html>`_
 
         .. dropdown:: :fa:`eye me-1` Abstract
             :color: primary
@@ -53,11 +53,13 @@ Tutorial
     .. grid-item-card::
         :shadow: none
 
+        .. raw:: html
+
+            <h4 style="font-weight: bold;">Solving Sudoku using Quantum Backtracking</h4>
+
         .. image:: ../../_static/backtracking.svg
             :align: center
             :target: ./reference/Algorithms/QuantumBacktrackingTree.html
-
-        `Solving Sudoku using Quantum Backtracking <./reference/Algorithms/QuantumBacktrackingTree.html>`_
 
         .. dropdown:: :fa:`eye me-1` Abstract
             :color: primary
@@ -67,12 +69,14 @@ Tutorial
     .. grid-item-card::
         :shadow: none
 
+        .. raw:: html
+
+            <h4 style="font-weight: bold;">Hybrid real-time algorithm control with Catalyst and Jasp</h4>
+
         .. image:: ../../_static/hybrid_realtime.png
             :width: 180
             :align: center
             :target: ./general/tutorial/Jasp.html
-
-        `Exert hybrid real-time algorithm control with Catalyst and Jasp <./general/tutorial/Jasp.html>`_
 
         .. dropdown:: :fa:`eye me-1` Abstract
             :color: primary
@@ -85,11 +89,13 @@ Tutorial
     .. grid-item-card::
         :shadow: none
 
+        .. raw:: html
+
+            <h4 style="font-weight: bold;">Simulate the dynamics of the $H_2$ molecule</h4>
+
         .. image:: ../../_static/hydrogen.png
             :align: center
             :target: ./tutorial/H2.html
-
-        `Simulate the quantum dynamics of molecules using chemistry data <./tutorial/Shor.html>`_
 
         .. dropdown:: :fa:`eye me-1` Abstract
             :color: primary
@@ -100,11 +106,13 @@ Tutorial
     .. grid-item-card::
         :shadow: none
 
+        .. raw:: html
+
+            <h4 style="font-weight: bold;">Factoring integers using Shor's algorithm</h4>
+
         .. image:: ../../_static/period_finding.svg
             :align: center
             :target: ./tutorial/Shor.html
-
-        `Factor integers using abitrary quantum adders with Shor's algorithm <./tutorial/Shor.html>`_
 
         .. dropdown:: :fa:`eye me-1` Abstract
             :color: primary
@@ -117,11 +125,13 @@ Tutorial
     .. grid-item-card::
         :shadow: none
 
+        .. raw:: html
+
+            <h4 style="font-weight: bold;">Calculating integrals with Quantum Monte Carlo Integration</h4>
+
         .. image:: ../../_static/qmci.svg
             :align: center
             :target: ./tutorial/QMCItutorial.html
-
-        `Numerically calculating integrals with Quantum Monte Carlo Integration <./tutorial/QMCItutorial.html>`_
 
         .. dropdown:: :fa:`eye me-1` Abstract
             :color: primary
@@ -131,11 +141,13 @@ Tutorial
     .. grid-item-card::
         :shadow: none
 
+        .. raw:: html
+
+            <h4 style="font-weight: bold;">Solving combinatorial optimization problems with QAOA</h4>
+
         .. image:: ../../_static/maxcut_jasp.png
             :align: center
             :target: ./tutorial/Shor.html
-
-        `Solving combinatorial optimization problems with QAOA <./tutorial/Shor.html>`_
 
         .. dropdown:: :fa:`eye me-1` Abstract
             :color: primary
