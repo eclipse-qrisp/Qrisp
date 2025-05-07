@@ -23,7 +23,7 @@ Tutorial
         .. dropdown:: :fa:`eye me-1` Abstract
             :color: primary
 
-            Hello
+            You will, well, get familiar with Qrisp. After being stimulated to replace thinking with quantum cirtuits with thinking with **QuantumVariables**, you'll learn to solve a quadratic equation using **Grover's algorithm** and get acquainted with **Quantum Phase Estimation**.
 
     .. grid-item-card::
         :shadow: none
@@ -37,7 +37,7 @@ Tutorial
         .. dropdown:: :fa:`eye me-1` Abstract
             :color: primary
 
-            Hello
+            You will set up a **superposition** of all routes, **evaluate** route distance, and create a **Grover's oracle** to eventually evaluate it.
 
 
 .. grid:: 1 1 2 2
@@ -54,7 +54,7 @@ Tutorial
         .. dropdown:: :fa:`eye me-1` Abstract
             :color: primary
 
-            Hello
+            You will learn how to efficiently implement the Sudoku problem specific quantum oracles, and how to use the general **Quantum Backtracking** implementation within Qrisp.
 
     .. grid-item-card::
         :shadow: none
@@ -69,7 +69,7 @@ Tutorial
         .. dropdown:: :fa:`eye me-1` Abstract
             :color: primary
 
-            Hello
+            You will learn how this **new compilation pipeline** accelerates quantum algorithm compilation, and allows for **real-time computations**.
 
 
 .. grid:: 1 1 2 2
@@ -86,7 +86,8 @@ Tutorial
         .. dropdown:: :fa:`eye me-1` Abstract
             :color: primary
 
-            Hello
+            This tutorial will show you how to leverage Qrisp’s advanced capabilities to perform **molecular simulations** on quantum computers.
+
 
     .. grid-item-card::
         :shadow: none
@@ -100,7 +101,7 @@ Tutorial
         .. dropdown:: :fa:`eye me-1` Abstract
             :color: primary
 
-            Hello
+            This tutorial will guide you through our state-of-the-art implementation of  **Shor's algorithm**, allowing you to factor numbers and fiddle around encrypting and decrypting hidden messages.
 
 
 .. grid:: 1 1 2 2
@@ -117,7 +118,7 @@ Tutorial
         .. dropdown:: :fa:`eye me-1` Abstract
             :color: primary
 
-            Hello
+            This tutorial will show you how to numerically calculate integrals with **Quantum Monte Carlo methods**, using **Iterative Quantum Amplitude Estimation**.
 
     .. grid-item-card::
         :shadow: none
@@ -131,7 +132,7 @@ Tutorial
         .. dropdown:: :fa:`eye me-1` Abstract
             :color: primary
 
-            Hello
+            This tutorial will break down the **theory** behind this promising algorithm before implementing it for the **MaxCut** problem, the **graph coloring** problem, as well as providing a new **constrained mixer type** letting you reduce the search space! We also include tutorials on how to solve **QUBO problems** and **portfolio rebalancing** with QAOA. Disclaimer: the tutorial might or might not involve **crayons**.
 
 
 Welcome to the tutorial of Qrisp! This page will help you get started by providing step-by-step instructions and examples. Whether you're a beginner or an experienced quantum programmer, these tutorials provide a helping hand exploring the fundamentals of the framework and make you familiar with its syntax and features.
