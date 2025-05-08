@@ -32,7 +32,7 @@ from qrisp.jasp import check_for_tracing_mode, q_fori_loop, jrange, create_qubit
 
 class QuantumArray:
     """
-    This class allows the convenient management of multiple QuantumVariables of one
+    This class allows the convenient management of multiple :ref:`QuantumVariables <QuantumVariable>` of one
     type. Inspired by the well known
     `numpy ndarray <https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html>`_, the
     QuantumArray supports many convenient array manipulation methods. Similar to the
@@ -104,7 +104,7 @@ class QuantumArray:
     **Quantum indexing**
 
     QuantumArrays can be dereferenced by :ref:`QuantumFloats <QuantumFloat>`. This
-    returns a :ref:`QuantumEnvironment` in which the corresponding entry is avaliable as
+    returns a :ref:`QuantumEnvironment <QuantumEnvironment>` in which the corresponding entry is avaliable as
     a QuantumVariable. ::
 
         from qrisp import QuantumBool, QuantumArray, QuantumFloat, h, x, multi_measurement
