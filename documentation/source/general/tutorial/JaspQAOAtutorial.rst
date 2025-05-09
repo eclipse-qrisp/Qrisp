@@ -1,4 +1,4 @@
-.. _MaxCutJaspQAOA:
+.. _JaspQAOAtutorial:
 
 Building a QAOA implementation in Jasp
 ======================================

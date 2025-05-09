@@ -1,5 +1,5 @@
-Solving the Traveling Salesman Problem (TSP)
-============================================
+Solving the Traveling Salesman Problem
+======================================
 .. _tsp:
 
 While the previous examples contained a complexity, that could in principle still be managed with a low level QuantumCircuit creation framework, our next problem contains much more conceptual complexity. We believe that this example clearly displays the neccessity of a higher-level language like Qrisp in order to tackle problems of similar or even higher complexity.
