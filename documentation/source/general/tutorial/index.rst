@@ -138,17 +138,9 @@ Welcome to the tutorial of Qrisp! This page will help you get started by providi
 
             <h4 style="font-weight: bold; margin-top: 0;">Solving systems of linear equations via HHL</h4>
 
-        .. math::
-            
-            \definecolor{qrispblue}{RGB}{32, 48, 111}
-            \definecolor{textgray}{RGB}{68, 68, 68}
-            
-            \Large
-            \textcolor{textgray}{
-            \begin{align}
-            A \ket{\textcolor{red}{x}} = \ket{b}
-            \end{align}
-            }
+        .. image:: ../../_static/HHL.png
+            :align: center
+            :target: ./tutorial.html
 
         .. raw:: html
             
@@ -264,7 +256,7 @@ Welcome to the tutorial of Qrisp! This page will help you get started by providi
 
             <h4 style="font-weight: bold; margin-top: 0;">Solving combinatorial optimization problems with QAOA</h4>
 
-        .. image:: ../../_static/maxcut_jasp.png
+        .. image:: ../../_static/maxcut_tutorial.png
             :align: center
             :target: ./QAOAtutorial/index.html
 
@@ -358,7 +350,7 @@ Welcome to the tutorial of Qrisp! This page will help you get started by providi
         .. raw:: html
             
             <p style="margin-top: 5px;"></p>
-            
+
         .. dropdown:: :fa:`eye me-1` Description
             :color: primary
 
