@@ -15,6 +15,8 @@ This submodule of Qrisp provides a collection of commonly used buildings blocks 
      - estimating the eigenvalues of a unitary operator
    * - :ref:`Quantum Amplitude Amplification <AA>`
      - enhancing amplitude of a target state
+   * - :ref:`Linear Combination of Unitaries <LCU>`
+     - implements the prepare-select-unprepare structure (block encoding) for linear combinations of unitaries; used in Hamiltonian simulation (QSP, QSVT, LCHS)  
    * - :ref:`Quantum Amplitude Estimation <QAE>`
      - estimating the amplitude of a target state
    * - :ref:`Iterative Quantum Amplitude Estimation <IQAE>`
@@ -50,6 +52,7 @@ We encourage you to explore these algorithms, delve into their documentation, an
    QFT
    QPE
    amplitude_amplification
+   LCU
    QAE
    IQAE
    IQPE

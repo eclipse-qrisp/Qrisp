@@ -25,6 +25,8 @@ To gradually qrispify your programming game you will start with the basics and g
 
 - :ref:`Fault-Tolerant compilation of Shor's algorithm <ft_compilation_shor>` delves into the realm of **compiling for fault-tolerant quantum devices**, exploring the specialized techniques and considerations that set this stage apart from the compilation challenges encountered in NISQ environments. At the end you will also optimize the implementation of Shor's from the tutorial above.
 
+- :ref:`Solving linear system problems with HHL <HHL_tutorial>` introduces the Harrow-Hassidim-Lloyd (HHL) quantum algorithm, which offers exponential speed-up for certain sparse matrices in solving linear system problems $Ax=b$. The tutorial demonstrates hybrid quantum-classical workflows using the Catalyst framework and highlights how Qrisp and Catalyst work together for implementing advanced quantum algorithms.
+
 - :ref:`How to think in Jasp <jasp_tutorial>` explains how this **new compilation pipeline** accelerates quantum algorithm compilation, and allows for **real-time computations**.
 
 - :ref:`Building a QAOA implementation in Jasp <MaxCutJaspQAOA>` details how to build an efficient custom QAOA implementation in Jasp using a Jasp-traceable objective function for the example of the MaxCut problem.
@@ -47,6 +49,7 @@ By the end of this tutorial, you'll have a solid foundation of our high-level fr
    H2
    Shor
    FT_compilation
+   HHL
    Jasp
    MaxCutJasp
    
