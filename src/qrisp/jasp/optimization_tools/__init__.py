@@ -18,3 +18,4 @@
 
 from qrisp.jasp.optimization_tools.optimize import *
 from qrisp.jasp.optimization_tools.spsa import *
+from qrisp.jasp.optimization_tools.cobyla import *

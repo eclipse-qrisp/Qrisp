@@ -17,6 +17,7 @@
 """
 
 from qrisp.jasp.optimization_tools.spsa import spsa
+from qrisp.jasp.optimization_tools.cobyla import cobyla
 
 def minimize(fun, x0, args=(), method='SPSA', options={}):
     r"""
@@ -37,7 +38,7 @@ def minimize(fun, x0, args=(), method='SPSA', options={}):
     args : tuple
         Extra arguments passed to the objective function.
     method : str, optional
-        The solver type. Currently only ``SPSA`` is supported.
+        The solver type. Supported are ``SPSA`` and ``COBYLA``.
     options : dict, optional
         A dictionary of solver options. All methods accept the following generic options:
 
@@ -96,5 +97,7 @@ def minimize(fun, x0, args=(), method='SPSA', options={}):
 
     if method=='SPSA':
         return spsa(fun, x0, args, **options)
+    elif method=='COBYLA':
+        return cobyla(fun, x0, args, **options)
     else:
         raise Exception(f'Optimization method {method} is not available in tracing mode.')
