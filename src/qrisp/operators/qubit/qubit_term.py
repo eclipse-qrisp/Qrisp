@@ -562,6 +562,33 @@ class QubitTerm:
                 return len(self.commutator(other).terms_dict) == 0
                 
         return sign_flip == 1
+    
+    def commute_pauli(self, other):
+        """
+        Checks if the Pauli factors of two QubitTerms commute and the ladder factors commute qubit-wise.
+
+        """
+        a = self.factor_dict
+        b = other.factor_dict
+
+        keys = set()
+        keys.update(set(a.keys()))
+        keys.update(set(b.keys()))
+
+        sign_flip = 1
+        
+        for key in keys:
+            factor_a = PAULI_TABLE[a.get(key, "I"), b.get(key, "I")]
+            factor_b = PAULI_TABLE[b.get(key, "I"), a.get(key, "I")]
+
+            if not factor_a == factor_b:
+                if factor_a[0] in ["I","X","Y","Z"] and factor_b[0] in ["I","X","Y","Z"]:
+                    if factor_a[1] == -factor_b[1]:
+                        sign_flip *= -1
+                else:
+                    return False
+                
+        return sign_flip == 1
 
     def commute_qw(self, other):
         """

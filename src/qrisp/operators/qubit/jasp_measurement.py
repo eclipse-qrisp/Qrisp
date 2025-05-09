@@ -75,8 +75,17 @@ def get_jasp_measurement(
         # the ladder terms either need to completely agree or completely disagree
         for group in temp_groups:
             groups.extend(group.group_up(lambda a, b : a.ladders_agree(b) or not a.ladders_intersect(b)))
+
+    elif diagonalisation_method=="commuting":
+        temp_groups = hamiltonian.group_up(lambda a, b: a.commute_pauli(b))
+        groups = []
+        # In order for the change of basis function (below) to work properly,
+        # the ladder terms either need to completely agree or completely disagree
+        for group in temp_groups:
+            groups.extend(group.group_up(lambda a, b : a.ladders_agree(b) or not a.ladders_intersect(b)))
+
     else:
-        groups = hamiltonian.group_up(lambda a, b: a.commute(b))    
+        raise Exception(f"Unknown diagonalisation method: {diagonalisation_method}.")
 
     samples = []
     meas_ops = []
