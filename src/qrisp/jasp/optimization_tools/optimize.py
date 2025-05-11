@@ -27,6 +27,7 @@ def minimize(fun, x0, args=(), method='SPSA', options={}):
     The API for this function matches SciPy with some minor deviations.
 
     * Various optional arguments in the SciPy interface have not yet been implemented.
+    * ``maxiter`` defines the maximum number of iterations to perform and not the maximum number of function evaluations.
     
     Parameters
     ----------
