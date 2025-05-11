@@ -393,7 +393,7 @@ class VQEProblem:
             Specifies the `SciPy optimization routine <https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html>`_.
             Available are, e.g., ``COBYLA``, ``COBYQA``, ``Nelder-Mead``. The Default is ``COBYLA``.    
             In tracing mode (i.e. Jasp) Jax-traceable :ref:`optimization routines <optimization_tools>` must be utilized.
-            Available are ``SPSA``. 
+            Available are ``COBYLA``, ``SPSA``.
         options : dict
             A dictionary of solver options.
 
@@ -468,7 +468,7 @@ class VQEProblem:
             Specifies the `SciPy optimization routine <https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html>`_.
             Available are, e.g., ``COBYLA``, ``COBYQA``, ``Nelder-Mead``. The Default is ``COBYLA``.    
             In tracing mode (i.e. Jasp) Jax-traceable :ref:`optimization routines <optimization_tools>` must be utilized.
-            Available are ``SPSA``. 
+            Available are ``COBYLA``, ``SPSA``.
         options : dict
             A dictionary of solver options.
 

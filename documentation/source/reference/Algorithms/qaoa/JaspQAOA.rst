@@ -3,7 +3,7 @@
 How to use QAOA in Jasp
 =======================
 
-In :ref:`How to think in Jasp <jasp_tutorial>` we learned how Jasp allows to future proof Qrisp code for practically relevant problems.
+In :ref:`How to think in Jasp <jasp_tutorial>` we learned how Jasp allows to future-proof Qrisp code for practically relevant problems.
 For variational quantum algorithms like QAOA and VQE, hybrid quantum-classical workflows can be seamlessly compliled, optimized and executed.
 
 We demonstrate how to use QAOA in Jasp for MaxCut problem:
@@ -25,7 +25,6 @@ Apart from this, running :ref:`QAOA for MaxCut <maxCutQAOAdoc>` in Jasp is as ea
     from qrisp.qaoa import QAOAProblem, RX_mixer, create_maxcut_cost_operator, create_maxcut_sample_array_post_processor
     import networkx as nx
 
-    @jaspify(terminal_sampling=True)
     def main():
 
         G = nx.erdos_renyi_graph(6, 0.7, seed = 133)
