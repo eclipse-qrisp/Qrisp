@@ -36,9 +36,9 @@ def cobyla(fun, x0,
         maxiter : int
             Maximum number of iterations to perform. Each iteration requires several function evaluations. 
         rhobeg : float
-            Scaling parameter for gradient estimation.
+            Initial simplex size. Determines how far from the initial guess the algorithm first explores.
         rhoend : float
-            Scaling exponent for gradient estimation, defines endpoint of gradient estimation.
+            Ending simplex size. When the simplex contracts to around this scale, the algorithm terminates.
           
     Returns
     -------
