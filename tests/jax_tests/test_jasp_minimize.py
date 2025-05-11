@@ -36,10 +36,24 @@ def test_jasp_minimize():
 
         x0 = jnp.array([1.0])
 
-        return minimize(objective,x0,args=(state_prep,))
+        return minimize(objective,x0,args=(state_prep,),method='SPSA')
 
     results = main()
     print(results.x)
     print(results.fun)
     assert np.round(results.x,1)==0
+    assert np.round(results.fun,1)==0
+
+    
+    @jaspify(terminal_sampling=True)
+    def main():
+
+        x0 = jnp.array([1.0])
+
+        return minimize(objective,x0,args=(state_prep,),method='COBYLA')
+
+    results = main()
+    print(results.x)
+    print(results.fun)
+    assert np.round(results.x,1)<0.5
     assert np.round(results.fun,1)==0
