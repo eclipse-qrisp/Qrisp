@@ -25,7 +25,7 @@ import jax.numpy as jnp
 import numpy as np
 
 
-def inner_LCU(state_prep, unitaries, num_qubits, num_unitaries=None, OAA=False):
+def inner_LCU(operand_prep, state_prep, unitaries, num_unitaries=None, OAA=False):
     r"""
     Core implementation of the Linear Combination of Unitaries (LCU) protocol without
     Repeat-Until-Success (RUS) protocol. The LCU method is a foundational quantum algorithmic
@@ -39,8 +39,18 @@ def inner_LCU(state_prep, unitaries, num_qubits, num_unitaries=None, OAA=False):
     .. math::
         \mathrm{LCU} = \mathrm{PREPARE}^\dagger \cdot \mathrm{SELECT} \cdot \mathrm{PREPARE}
 
-    - **PREPARE**: Prepares an ancilla register in a superposition encoding the normalized coefficients $\alpha_i$ of the target operator $\mathrm{PREPARE}|0\rangle=\sum_i\sqrt{\frac{\alpha_i}{\lambda}}|i\rangle$.
-    - **SELECT**: Applies the unitary $U_i$ to the target register, controlled on the ancilla register being in state $|i\rangle$. $\mathrm{SELECT}|i\rangle|\psi\rangle=|i\rangle U_i|\psi\rangle$.
+    - **PREPARE**: Prepares an ancilla register in a superposition encoding the normalized coefficients $\alpha_i$ of the target operator 
+    
+    .. math ::
+    
+        \mathrm{PREPARE}|0\rangle=\sum_i\sqrt{\frac{\alpha_i}{\lambda}}|i\rangle
+
+    - **SELECT**: Applies the unitary $U_i$ to the input state $\ket{\psi}$, controlled on the ancilla register being in state $|i\rangle$. 
+    
+    .. math :: 
+    
+        \mathrm{SELECT}|i\rangle|\psi\rangle=|i\rangle U_i|\psi\rangle
+        
     - **PREPARE**$^\dagger$: Uncomputes the ancilla.
 
     .. note::
@@ -53,22 +63,29 @@ def inner_LCU(state_prep, unitaries, num_qubits, num_unitaries=None, OAA=False):
 
     Parameters
     ----------
+    operand_prep : callable
+        A function preparing the input state $\ket{\psi}$. This function must return a :ref:`QuantumVariable` (the ``operand``).
     state_prep : callable
-        Function that prepares the ancilla register in the coefficient superposition. Must accept a :ref:`QuantumVariable` and apply the appropriate quantum gates.
-    unitaries : list/tuple or callable
+        A function preparing the coefficient state from the $\ket{0}$ state.
+        This function receives a :ref:`QuantumFloat` with $\lceil\log_2m\rceil$ qubits for $m$ unitiaries $U_0,\dotsc,U_{m-1}$ as argument and applies
+
+        .. math ::
+
+            \text{PREPARE}\ket{0} = \sum_i\sqrt{\frac{\alpha_i}{\lambda}}\ket{i}
+
+    unitaries : list/tuple[callable] or callable
         Either:
-          - A list or tuple of unitary functions, each acting on a :class:`QuantumVariable`, or
-          - A callable that accepts an integer index and returns the corresponding unitary function.
-    num_qubits : int
-        Number of qubits for the target :ref:`QuantumFloat`.
+          - A list or tuple of functions performing some in-place operation on ``operand``, or 
+          - A function ``unitaries(i, operand)`` performing some in-place operation on ``operand`` depending on a nonnegative integer index ``i`` specifying the case.
+
     num_unitaries : int, optional
-        Required if ``unitaries`` is a callable. Specifies the number of unitary terms in the sum.
+        Required when ``unitaries`` is a callable to specify the number of unitaries.
 
     Returns
     -------
-    tuple of (:ref:`QuantumVariable`, :ref:`QuantumVariable`)
+    tuple(:ref:`QuantumFloat`, :ref:`QuantumVariable`)
           - **case_indicator**: Ancilla register encoding which unitary was selected.
-          - **qv**: Target quantum register after the LCU operation.
+          - **operand**: Target quantum register after the LCU operation.
 
     Raises
     ------
@@ -81,9 +98,73 @@ def inner_LCU(state_prep, unitaries, num_qubits, num_unitaries=None, OAA=False):
     --------
     LCU : Full LCU implementation using the RUS protocol.
     view_LCU : Generates the quantum circuit for visualization.
+
+    Examples
+    --------
+
+    As a **first example**, we apply the non-unitary operator $A$ to the operand $\ket{\psi}=\ket{1}$ where
+
+    .. math::
+
+        A = \begin{pmatrix}1 & 1\\ 1 & 1\end{pmatrix} = \begin{pmatrix}1 & 0\\ 0 & 1\end{pmatrix} + \begin{pmatrix}1 & 1\\ 1 & 1\end{pmatrix} = I + X
+    
+    That is,
+
+    .. math:: A = \alpha_0U_0 + \alpha_1U_1
+
+    where $\alpha_0=\alpha_1=1$, and $U_0=I$, $U_1=X$.
+
+    Accordingly, we define the unitaries
+
+    ::
+
+        from qrisp import *
+
+        def U0(operand):
+            pass
+
+        def U1(operand):
+            x(operand)
+
+        unitaries = [U0, U1]
+
+    and the ``state_prep`` function implementing 
+    
+    .. math ::
+    
+        \text{PREPARE}\ket{0} = \frac{1}{\sqrt{2}}\left(\ket{0}+\ket{1}\right)
+
+    ::
+
+        def state_prep(case):
+            h(case)
+
+    Next, we define the ``operand_prep`` function preparing the state $\ket{\psi}=\ket{1}$
+
+    ::
+
+        def operand_prep():
+            operand = QuantumVariable(1)
+            x(operand)
+            return operand
+
+    Finally, we apply ``inner_LCU``
+
+    >>> case_indicator, operand = inner_LCU(operand_prep, state_prep, unitaries)
+    >>> operand.qs.statevector()
+
+    As result we obtain the state 
+
+    .. math ::
+
+        \frac12((\ket{0}+\ket{1})\ket{0}_{\text{case}} - \frac12(\ket{0}-\ket{1})\ket{1}_{\text{case}}
+
+    If we now measure the ``case_indicator`` in the state $\ket{0}$, the operand will be in state $\frac{1}{\sqrt{2}}(\ket{0}+\ket{1})$
+    implementing (up to rescaling) the non-unitary operator $A$ acting on the input state $\ket{\psi}=\ket{1}$.
+
     """
 
-    qv = QuantumFloat(num_qubits)
+    operand = operand_prep()
 
     if not callable(unitaries):
         num_unitaries = len(unitaries)
@@ -93,21 +174,22 @@ def inner_LCU(state_prep, unitaries, num_qubits, num_unitaries=None, OAA=False):
     case_indicator = QuantumFloat(n)
 
     # LCU protocol with conjugate preparation
-    def LCU_state_prep(case_indicator, qv):
+    def LCU_state_prep(case_indicator, operand):
         with conjugate(state_prep)(case_indicator):
-            qswitch(qv, case_indicator, unitaries)
+            qswitch(operand, case_indicator, unitaries)
 
-    def oracle_func(case_indicator, qv):
-        tag_state({case_indicator : 0})
+    #def oracle_func(case_indicator, operand):
+    #    tag_state({case_indicator : 0})
 
-    LCU_state_prep = LCU_state_prep(case_indicator, qv)
+    LCU_state_prep(case_indicator, operand)
 
-    if OAA is True:
-        amplitude_amplification([case_indicator, qv], LCU_state_prep, oracle_func, reflection_indices=[0])
+    #if OAA is True:
+    #    amplitude_amplification([case_indicator, operand], LCU_state_prep, oracle_func, reflection_indices=[0])
 
-    return case_indicator, qv
+    return case_indicator, operand
 
-def LCU(state_prep, unitaries, num_qubits, num_unitaries=None, OAA=False):
+
+def LCU(operand_prep, state_prep, unitaries, num_unitaries=None, OAA=False):
     r"""
     Full implementation of the Linear Combination of Unitaries (LCU) algorithmic primitive using the
     Repeat-Until-Success (RUS) protocol.
@@ -123,16 +205,23 @@ def LCU(state_prep, unitaries, num_qubits, num_unitaries=None, OAA=False):
 
     Parameters
     ----------
+    operand_prep : callable
+        A function preparing the input state $\ket{\psi}$. This function must return a :ref:`QuantumVariable` (the ``operand``).
     state_prep : callable
-        Quantum circuit function preparing the coefficient state.
-    unitaries : list/tuple or callable
+        A function preparing the coefficient state from the $\ket{0}$ state. 
+        This function receives a :ref:`QuantumFloat` with $\lceil\log_2m\rceil$ qubits for $m$ unitiaries $U_0,\dotsc,U_{m-1}$ as argument and applies
+
+        .. math ::
+
+            \text{PREPARE}\ket{0} = \sum_i\sqrt{\frac{\alpha_i}{\lambda}}\ket{i}
+
+    unitaries : list/tuple[callable] or callable
         Either:
-          - A list or tuple of pre-defined unitary operations, each acting on a :class:`QuantumVariable`, or
-          - A callable function that accepts an integer index and returns a unitary function.
-    num_qubits : int
-        Number of qubits for the target quantum register.
+          - A list or tuple of functions performing some in-place operation on ``operand``, or 
+          - A function ``unitaries(i, operand)`` performing some in-place operation on ``operand`` depending on a nonnegative integer index ``i`` specifying the case.
+
     num_unitaries : int, optional
-        Required when ``unitaries`` is a callable to specify the number of unitary terms.
+        Required when ``unitaries`` is a callable to specify the number of unitaries.
 
     Returns
     -------
@@ -152,9 +241,146 @@ def LCU(state_prep, unitaries, num_qubits, num_unitaries=None, OAA=False):
     inner_LCU : Core LCU implementation without RUS.
     view_LCU : Generates the quantum circuit for visualization.
 
+    Examples
+    --------
+
+    As a **first example**, we apply the non-unitary operator $A$ to the operand $\ket{\psi}=\ket{1}$ where
+
+    .. math::
+
+        A = \begin{pmatrix}1 & 1\\ 1 & 1\end{pmatrix} = \begin{pmatrix}1 & 0\\ 0 & 1\end{pmatrix} + \begin{pmatrix}1 & 1\\ 1 & 1\end{pmatrix} = I + X
+    
+    This is,
+
+    .. math:: A = \alpha_0U_0 + \alpha_1U_1
+
+    where $\alpha_0=\alpha_1=1$, and $U_0=I$, $U_1=X$.
+
+    Accordingly, we define the unitaries
+
+    ::
+
+        from qrisp import *
+
+        def U0(operand):
+            pass
+
+        def U1(operand):
+            x(operand)
+
+        unitaries = [U0, U1]
+
+    and the ``state_prep`` function implementing 
+    
+    .. math ::
+    
+        \text{PREPARE}\ket{0} = \frac{1}{\sqrt{2}}\left(\ket{0}+\ket{1}\right)
+
+    ::
+
+        def state_prep(case):
+            h(case)
+
+    Next, we define the ``operand_prep`` function preparing the state $\ket{\psi}=\ket{1}$
+
+    ::
+
+        def operand_prep():
+            operand = QuantumVariable(1)
+            x(operand)
+            return operand
+
+    Finally, we apply LCU
+    
+    ::
+
+        @terminal_sampling
+        def main():
+            
+            qv = LCU(operand_prep, state_prep, unitaries)
+            return qv
+
+    and simulate
+
+    >>> main()
+    {0: 0.5, 1: 0.5}
+
+
+    As a **second example**, we apply the operator
+
+    .. math::
+
+        \cos(H) = \frac{e^{iH}+e^{-iH}}{2}
+
+    for some :ref:`Hermitian operator <operators>` $H$ to the input state $\ket{\psi}=\ket{0}$.
+
+    First, we define an operator $H$ and unitaries performing the Hamiltonian evolutions $e^{iH}$ and $e^{-iH}$.
+    (In this case, Trotterization will perform Hamiltonian evolution exactly since the individual terms commute.)
+
+    ::
+
+        from qrisp import *
+        from qrisp.operators import X,Y,Z
+
+        H = Z(0)*Z(1) + X(0)*X(1)
+
+        def U0(operand):
+            H.trotterization(forward_evolution=False)(operand)
+
+        def U1(operand):
+            H.trotterization(forward_evolution=True)(operand)
+
+        unitaries = [U0, U1]
+
+    Next, we define the ``state_prep`` and ``operand_prep`` functions
+
+    ::
+
+        def state_prep(case):
+            h(case)
+
+        def operand_prep():
+            operand = QuantumVariable(2)
+            return operand
+
+    Finally, we apply LCU
+
+    ::
+
+        @terminal_sampling
+        def main():
+
+            qv = LCU(operand_prep, state_prep, unitaries)
+            return qv
+
+    and simulate
+
+    >>> main()
+    {3: 0.85471756539818, 0: 0.14528243460182003}
+
+    Let's compare to the classically calculated result:
+
+    >>> A = H.to_array()
+    >>> from scipy.linalg import cosm
+    >>> print(cosm(A))
+    [[ 0.29192658+0.j  0.        +0.j  0.        +0.j -0.70807342+0.j]
+    [ 0.        +0.j  0.29192658+0.j  0.70807342+0.j  0.        +0.j]
+    [ 0.        +0.j  0.70807342+0.j  0.29192658+0.j  0.        +0.j]
+    [-0.70807342+0.j  0.        +0.j  0.        +0.j  0.29192658+0.j]]
+
+    That is, starting in state $\ket{\psi}=\ket{0}=(1,0,0,0)$, we obtain
+
+    >>> result = cosm(A)@(np.array([1,0,0,0]).transpose())
+    >>> result = result/np.linalg.norm(result) # normalise
+    >>> result = result**2 # compute measurement probabilities
+    >>> print(result)
+    [0.1452825+0.j 0.       +0.j 0.       +0.j 0.8547175-0.j]
+
+    which are exactly the probabilities we obsered in the quantum simulation!
+
     """
 
-    case_indicator, qv = inner_LCU(state_prep, unitaries, num_qubits, num_unitaries, OAA)
+    case_indicator, qv = inner_LCU(operand_prep, state_prep, unitaries, num_unitaries, OAA)
 
     # Success condition
     success_bool = measure(case_indicator) == 0
@@ -162,10 +388,11 @@ def LCU(state_prep, unitaries, num_qubits, num_unitaries=None, OAA=False):
 
 # Apply the RUS decorator with the workaround in order to show in documentation
 temp_docstring = LCU.__doc__
-LCU = RUS(static_argnums=[1, 2, 3, 4])(LCU)
+LCU = RUS(static_argnums=[3, 4])(LCU)
 LCU.__doc__ = temp_docstring
 
-def view_LCU(state_prep, unitaries, num_qubits, num_unitaries=None, OAA=False):
+
+def view_LCU(operand_prep, state_prep, unitaries, num_qubits, num_unitaries=None, OAA=False):
     r"""
     Generate and return the quantum circuit for the LCU algorithm without utilizing
     the Repeat-Until-Success (RUS) protocol.
@@ -199,7 +426,7 @@ def view_LCU(state_prep, unitaries, num_qubits, num_unitaries=None, OAA=False):
 
     """
 
-    jaspr = make_jaspr(inner_LCU)(state_prep, unitaries, num_qubits, num_unitaries, OAA)
+    jaspr = make_jaspr(inner_LCU)(operand_prep, state_prep, unitaries, num_qubits, num_unitaries, OAA)
 
     # Convert Jaspr to quantum circuit and return the circuit
-    return jaspr.to_qc(num_qubits, num_unitaries, OAA)[-1]
+    return jaspr.to_qc(num_qubits, num_unitaries)[-1]
