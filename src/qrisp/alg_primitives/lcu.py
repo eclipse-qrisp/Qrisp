@@ -16,8 +16,8 @@
 ********************************************************************************/
 """
 
-from qrisp import *
-from qrisp.jasp import *
+from qrisp import QuantumFloat, conjugate, measure
+from qrisp.jasp import make_jaspr, RUS
 from qrisp.alg_primitives.switch_case import qswitch
 from qrisp.algorithms.grover.grover_tools import tag_state
 from qrisp.alg_primitives.amplitude_amplification import amplitude_amplification

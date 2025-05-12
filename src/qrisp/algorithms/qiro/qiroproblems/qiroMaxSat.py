@@ -19,7 +19,7 @@
 # just write a replacement_routine and throw out not relevant sets
 
 from qrisp import rz, x, cx
-from qrisp import app_sb_phase_polynomial
+from qrisp.alg_primitives import app_sb_phase_polynomial
 
 import numpy as np
 import math
