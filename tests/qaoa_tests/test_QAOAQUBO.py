@@ -48,7 +48,7 @@ def test_QUBO():
         ]
     )
     
-    qarg = QuantumArray(qtype = QuantumVariable(1), shape = len(Q2))
+    qarg_prep = QuantumArray(qtype = QuantumVariable(1), shape = len(Q2))
     QUBO_instance = QUBO_problem(Q2)
     res = QUBO_instance.run(qarg, depth=1, mes_kwargs={"backend" : def_backend, "shots" : 100000}, max_iter = 50)
     best_cost2, res_str = max([(QUBO_obj(bitstring, Q2), bitstring) for bitstring in list(res.keys())], key=itemgetter(0))
