@@ -580,7 +580,7 @@ class QAOAProblem:
             Specifies the `SciPy optimization routine <https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html>`_.
             Available are, e.g., ``COBYLA``, ``COBYQA``, ``Nelder-Mead``. The Default is ``COBYLA``.    
             In tracing mode (i.e. Jasp) Jax-traceable :ref:`optimization routines <optimization_tools>` must be utilized.
-            Available are ``SPSA``.
+            Available are ``COBYLA``, ``SPSA``.
         options : dict
             A dictionary of solver options.
 
@@ -684,7 +684,7 @@ class QAOAProblem:
             Specifies the `SciPy optimization routine <https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html>`_.
             Available are, e.g., ``COBYLA``, ``COBYQA``, ``Nelder-Mead``. The Default is ``COBYLA``.    
             In tracing mode (i.e. Jasp) Jax-traceable :ref:`optimization routines <optimization_tools>` must be utilized.
-            Available are ``SPSA``.
+            Available are ``COBYLA``, ``SPSA``.
         options : dict
             A dictionary of solver options.
         
@@ -806,9 +806,7 @@ class QAOAProblem:
             If ``tqa`` is chosen, and no ``init_function`` for the :ref:`QAOAProblem` is specified, the $\ket{-}^n$ state is prepared (the ground state for the X mixer).
         optimizer : str, optional
             Specifies the `SciPy optimization routine <https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html>`_.
-            Available are, e.g., ``COBYLA``, ``COBYQA``, ``Nelder-Mead``. The Default is ``COBYLA``.    
-            In tracing mode (i.e. Jasp) Jax-traceable :ref:`optimization routines <optimization_tools>` must be utilized.
-            Available are ``SPSA``.
+            Available are, e.g., ``COBYLA``, ``COBYQA``, ``Nelder-Mead``. The Default is ``COBYLA``.
         options : dict
             A dictionary of solver options.
 

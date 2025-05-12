@@ -25,7 +25,7 @@ from qrisp.jasp import check_for_tracing_mode, jrange, q_fori_loop, q_cond
 import numpy as np
 import jax.numpy as jnp
 
-def qswitch(operand, case, case_function_list, method = "sequential"):
+def qswitch(operand, case, case_function, method = "sequential"):
     """
     Executes a switch - case statement distinguishing between a list of
     given in-place functions.
@@ -34,10 +34,10 @@ def qswitch(operand, case, case_function_list, method = "sequential"):
     Parameters
     ----------
     operand : :ref:`QuantumVariable`
-        The quantum argument on which to execute the case function.
+        The argument on which the case function operates.
     case : :ref:`QuantumFloat`
-        A QuantumFloat specifying which case function should be executed.
-    case_function_list : list[callable] or callable
+        The index specifying which case should be executed.
+    case_function : list[callable] or callable
         A list of functions, performing some in-place operation on ``operand``, or 
         a function ``case_function(i, operand)`` performing some in-place operation on ``operand`` depending on a nonnegative integer index ``i`` specifying the case.
     method : str, optional
@@ -48,38 +48,64 @@ def qswitch(operand, case, case_function_list, method = "sequential"):
     Examples
     --------
     
+    First, we consider the case where ``case_function`` is a **list of functions**:
+     
     We create some sample functions:
 
-    >>> from qrisp import *
-    >>> def f0(x): x += 1
-    >>> def f1(x): inpl_mult(x, 3, treat_overflow = False)
-    >>> def f2(x): pass
-    >>> def f3(x): h(x[1])
-    >>> case_function_list = [f0, f1, f2, f3]
+    ::
 
-    Create operand and case variable
+        from qrisp import *
+
+        def f0(x): x += 1
+        def f1(x): inpl_mult(x, 3, treat_overflow = False)
+        def f2(x): pass
+        def f3(x): h(x[1])
+        case_function_list = [f0, f1, f2, f3]
+
+    Create operand and case variable:
     
-    >>> operand = QuantumFloat(4)
-    >>> operand[:] = 1
-    >>> case = QuantumFloat(2)
-    >>> h(case)
+    ::
 
-    Execute switch_case function
+        operand = QuantumFloat(4)
+        operand[:] = 1
+        case = QuantumFloat(2)
+        h(case)
+
+    Execute switch - case function:
     
     >>> qswitch(operand, case, case_function_list)
     
-    Simulate
+    Simulate:
     
     >>> print(multi_measurement([case, operand]))
     {(0, 2): 0.25, (1, 3): 0.25, (2, 1): 0.25, (3, 1): 0.125, (3, 3): 0.125}
 
+    
+    Second, we consider the case where ``case_function`` is a **function**:
+
+    ::
+
+        def case_function(i, qv):
+            x(qv[i])
+            
+        operand = QuantumFloat(4)
+        case = QuantumFloat(2)
+        h(case)  
+
+        qswitch(operand, case, case_function)
+
+    Simulate:
+
+    >>> print(multi_measurement([case, operand]))
+    {(0, 1): 0.25, (1, 2): 0.25, (2, 4): 0.25, (3, 8): 0.25}  
+
     """
 
-    if callable(case_function_list):
+    if callable(case_function):
         case_amount = 2**case.size
         xrange = jrange
     else:
-        case_amount = len(case_function_list)
+        case_amount = len(case_function)
         xrange = range
 
     if method == "sequential":
@@ -89,10 +115,10 @@ def qswitch(operand, case, case_function_list, method = "sequential"):
         for i in xrange(case_amount):
             with conjugate(mcx)(case, control_qbl, ctrl_state=i):
                 with control(control_qbl):
-                    if callable(case_function_list):
-                        case_function_list(i, operand)
+                    if callable(case_function):
+                        case_function(i, operand)
                     else:
-                        case_function_list[i](operand)
+                        case_function[i](operand)
 
         control_qbl.delete()
         
@@ -114,10 +140,10 @@ def qswitch(operand, case, case_function_list, method = "sequential"):
             with conjugate(demux)(enable[0], case, enable, parallelize_qc = True):
                 for i in range(case_amount):
                     with control(enable[i]):
-                        if callable(case_function_list):
-                            case_function_list(i, qa[i])
+                        if callable(case_function):
+                            case_function(i, qa[i])
                         else:
-                            case_function_list[i](qa[i])
+                            case_function[i](qa[i])
                         
         qa.delete()
         
@@ -168,17 +194,17 @@ def qswitch(operand, case, case_function_list, method = "sequential"):
             def bitwise_count_diff(a, b): return np.bitwise_count(np.bitwise_xor(a, b))
 
         # Function mode
-        if callable(case_function_list):
+        if callable(case_function):
             def leaf(d: int, anc, ca, oper, i):
                 with control(anc[d+1]):
-                    case_function_list(i, oper)
+                    case_function(i, oper)
                 with control(anc[d]):
                     x(anc[d+1])
                 with control(anc[d+1]):
-                    case_function_list(i+1, oper)
+                    case_function(i+1, oper)
 
         # List mode
-        elif isinstance(case_function_list, list):
+        elif isinstance(case_function, list):
             if check_for_tracing_mode():
                 def leaf(d: int, anc, ca, oper, i):
                     def apply_leaf(A, B):
@@ -188,21 +214,21 @@ def qswitch(operand, case, case_function_list, method = "sequential"):
                             x(anc[d+1])
                         with control(anc[d+1]):
                             B(oper)
-                    for j in range(0, len(case_function_list), 2):
+                    for j in range(0, len(case_function), 2):
                         q_cond(j == i, apply_leaf, lambda a,
-                               b: None, case_function_list[j], case_function_list[j+1])
+                               b: None, case_function[j], case_function[j+1])
 
             else:
                 def leaf(d: int, anc, ca, oper, i):
                     with control(anc[d+1]):
-                        case_function_list[i](oper)
+                        case_function[i](oper)
                     with control(anc[d]):
                         x(anc[d+1])
                     with control(anc[d+1]):
-                        case_function_list[i+1](oper)
+                        case_function[i+1](oper)
 
         else:
-            raise TypeError("Argument 'case_function_list' must be a list or a callable(i, x)")
+            raise TypeError("Argument 'case_function' must be a list or a callable(i, x)")
 
         def body_fun(pos, val):
             anc, ca, oper = val
