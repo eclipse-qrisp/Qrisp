@@ -25,7 +25,7 @@ import jax.numpy as jnp
 import numpy as np
 
 
-def inner_LCU(operand_prep, state_prep, unitaries, num_unitaries=None, OAA=False):
+def inner_LCU(operand_prep, state_prep, unitaries, num_unitaries=None):
     r"""
     Core implementation of the Linear Combination of Unitaries (LCU) protocol without
     Repeat-Until-Success (RUS) protocol. The LCU method is a foundational quantum algorithmic
@@ -39,23 +39,24 @@ def inner_LCU(operand_prep, state_prep, unitaries, num_unitaries=None, OAA=False
     .. math::
         \mathrm{LCU} = \mathrm{PREPARE}^\dagger \cdot \mathrm{SELECT} \cdot \mathrm{PREPARE}
 
-    - **PREPARE**: Prepares an ancilla register in a superposition encoding the normalized coefficients $\alpha_i$ of the target operator 
-    
+    - **PREPARE**: Prepares an ancilla quantum variable in a superposition encoding the normalized coefficients $\alpha_i\geq0$ of the target operator 
+
     .. math ::
     
-        \mathrm{PREPARE}|0\rangle=\sum_i\sqrt{\frac{\alpha_i}{\lambda}}|i\rangle
+            \mathrm{PREPARE}|0\rangle=\sum_i\sqrt{\frac{\alpha_i}{\lambda}}|i\rangle
 
-    - **SELECT**: Applies the unitary $U_i$ to the input state $\ket{\psi}$, controlled on the ancilla register being in state $|i\rangle$. 
+    - **SELECT**: Applies the unitary $U_i$ to the input state $\ket{\psi}$, controlled on the ancilla variable being in state $|i\rangle$. 
     
     .. math :: 
     
         \mathrm{SELECT}|i\rangle|\psi\rangle=|i\rangle U_i|\psi\rangle
         
-    - **PREPARE**$^\dagger$: Uncomputes the ancilla.
+    - **PREPARE**$^\dagger$: Applies the inverse prepartion to the ancilla.
 
     .. note::
 
-        The LCU protocol is deemed successful only if the ancilla register is measured in the :math:`|0\rangle` state, which occurs with a probability proportional to :math:`\frac{|\alpha|_1^2}{\lambda^2}`. This function does not perform the measurement; it returns the ancilla register and the transformed target register.
+        The LCU protocol is deemed successful only if the ancilla variable is measured in the $\ket{0}$ state, which occurs with a probability proportional to :math:`\frac{\langle\psi|A^{\dagger}A|\psi\rangle}{\lambda^2}` where $\lambda=\sum_i\alpha_i$. 
+        This function does not perform the measurement; it returns the ancilla variable and the transformed target variable.
 
     For a complete implementation of LCU with the Repeat-Until-Success protocol, see :func:`LCU`.
 
@@ -79,13 +80,13 @@ def inner_LCU(operand_prep, state_prep, unitaries, num_unitaries=None, OAA=False
           - A function ``unitaries(i, operand)`` performing some in-place operation on ``operand`` depending on a nonnegative integer index ``i`` specifying the case.
 
     num_unitaries : int, optional
-        Required when ``unitaries`` is a callable to specify the number of unitaries.
+        Required when ``unitaries`` is a callable to specify the number $m$ of unitaries.
 
     Returns
     -------
     tuple(:ref:`QuantumFloat`, :ref:`QuantumVariable`)
-          - **case_indicator**: Ancilla register encoding which unitary was selected.
-          - **operand**: Target quantum register after the LCU operation.
+          - **case_indicator** : Ancilla variable encoding which unitary was selected.
+          - **operand** : Target quantum variable after the LCU operation.
 
     Raises
     ------
@@ -189,7 +190,7 @@ def inner_LCU(operand_prep, state_prep, unitaries, num_unitaries=None, OAA=False
     return case_indicator, operand
 
 
-def LCU(operand_prep, state_prep, unitaries, num_unitaries=None, OAA=False):
+def LCU(operand_prep, state_prep, unitaries, num_unitaries=None):
     r"""
     Full implementation of the Linear Combination of Unitaries (LCU) algorithmic primitive using the
     Repeat-Until-Success (RUS) protocol.
@@ -221,13 +222,12 @@ def LCU(operand_prep, state_prep, unitaries, num_unitaries=None, OAA=False):
           - A function ``unitaries(i, operand)`` performing some in-place operation on ``operand`` depending on a nonnegative integer index ``i`` specifying the case.
 
     num_unitaries : int, optional
-        Required when ``unitaries`` is a callable to specify the number of unitaries.
+        Required when ``unitaries`` is a callable to specify the number $m$ of unitaries.
 
     Returns
     -------
-    tuple (:ref:`QuantumBool`, :ref:`QuantumFloat`)
-        - success_bool : Indicator of whether the protocol was successful (always `True` due to RUS).
-        - qv : Output state after successful application of LCU to the initial state.
+    :ref:`QuantumVariable`
+        A variable representing the output state $A\ket{\psi}$ after successful application of LCU to the input state $\ket{\psi}$.
 
     Raises
     ------
@@ -380,7 +380,7 @@ def LCU(operand_prep, state_prep, unitaries, num_unitaries=None, OAA=False):
 
     """
 
-    case_indicator, qv = inner_LCU(operand_prep, state_prep, unitaries, num_unitaries, OAA)
+    case_indicator, qv = inner_LCU(operand_prep, state_prep, unitaries, num_unitaries)
 
     # Success condition
     success_bool = measure(case_indicator) == 0
@@ -392,7 +392,7 @@ LCU = RUS(static_argnums=[3, 4])(LCU)
 LCU.__doc__ = temp_docstring
 
 
-def view_LCU(operand_prep, state_prep, unitaries, num_qubits, num_unitaries=None, OAA=False):
+def view_LCU(operand_prep, state_prep, unitaries, num_unitaries=None, OAA=False):
     r"""
     Generate and return the quantum circuit for the LCU algorithm without utilizing
     the Repeat-Until-Success (RUS) protocol.
@@ -403,16 +403,23 @@ def view_LCU(operand_prep, state_prep, unitaries, num_qubits, num_unitaries=None
 
     Parameters
     ----------
+    operand_prep : callable
+        A function preparing the input state $\ket{\psi}$. This function must return a :ref:`QuantumVariable` (the ``operand``).
     state_prep : callable
-        State preparation function for LCU coefficients.
-    unitaries : list/tuple or callable
+        A function preparing the coefficient state from the $\ket{0}$ state. 
+        This function receives a :ref:`QuantumFloat` with $\lceil\log_2m\rceil$ qubits for $m$ unitiaries $U_0,\dotsc,U_{m-1}$ as argument and applies
+
+        .. math ::
+
+            \text{PREPARE}\ket{0} = \sum_i\sqrt{\frac{\alpha_i}{\lambda}}\ket{i}
+
+    unitaries : list/tuple[callable] or callable
         Either:
-        - A list or tuple of unitary operations to visualize, or
-        - A callable that accepts an integer index and returns a unitary
-    num_qubits : int
-        Number of qubits for the target quantum register.
+          - A list or tuple of functions performing some in-place operation on ``operand``, or 
+          - A function ``unitaries(i, operand)`` performing some in-place operation on ``operand`` depending on a nonnegative integer index ``i`` specifying the case.
+
     num_unitaries : int, optional
-        Required when using callable-based unitaries to specify the number of unitary terms.
+        Required when ``unitaries`` is a callable to specify the number $m$ of unitaries.
 
     Returns
     -------
@@ -426,7 +433,7 @@ def view_LCU(operand_prep, state_prep, unitaries, num_qubits, num_unitaries=None
 
     """
 
-    jaspr = make_jaspr(inner_LCU)(operand_prep, state_prep, unitaries, num_qubits, num_unitaries, OAA)
+    jaspr = make_jaspr(inner_LCU)(operand_prep, state_prep, unitaries, num_unitaries)
 
     # Convert Jaspr to quantum circuit and return the circuit
-    return jaspr.to_qc(num_qubits, num_unitaries)[-1]
+    return jaspr.to_qc(num_unitaries)[-1]
