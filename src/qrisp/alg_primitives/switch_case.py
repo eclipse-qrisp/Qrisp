@@ -254,7 +254,7 @@ def qswitch(operand, case, case_function, method = "sequential"):
             down(j, anc, case, operand)
 
         # Perform leafs and jumps
-        anc, case, operand = x_fori_loop(0, 2**(n-1) - 1, body_fun, (anc, case, operand))
+        anc_, case, operand = x_fori_loop(0, 2**(n-1) - 1, body_fun, (anc, case, operand))
 
         # Perfrom last leaf
         leaf(n-1, anc, case, operand, 2**n - 2)
@@ -262,6 +262,8 @@ def qswitch(operand, case, case_function, method = "sequential"):
         # Go back from last node
         for j in xrange(0, n, 1):
             up(n - j - 1, anc, case, operand)
+
+        anc.delete()
     
     else:
         raise Exception(f"Don't know compile method {method} for switch-case structure.")
