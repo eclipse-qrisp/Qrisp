@@ -52,6 +52,8 @@ def spsa(fun, x0, args, maxiter=50, a=2.0, c=0.1, alpha=0.702, gamma=0.201, seed
 
     Parameters
     ----------
+        maxiter : int
+            Maximum number of iterations to perform. Each iteration requires 2 function evaluations. 
         a : float
             Scaling parameter for update rule.
         alpha : float
@@ -100,4 +102,4 @@ def spsa(fun, x0, args, maxiter=50, a=2.0, c=0.1, alpha=0.702, gamma=0.201, seed
     x, rng = fori_loop(0, make_tracer(maxiter), body_fun, (x0, rng))
     fx = fun(x, *args)
 
-    return OptimizeResults(x, True, 0, fx, None, None, 2*maxiter+1, maxiter, maxiter)
+    return OptimizeResults(x, True, 0, fx, None, None, 2*maxiter+1, 0, maxiter)
