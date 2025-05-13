@@ -166,7 +166,7 @@ Welcome to the tutorial of Qrisp! This page will help you get started by providi
 
             <h4 style="font-weight: bold; margin-top: 0;">Fault-Tolerant compilation</h4>
 
-        .. image:: ../../_static/period_finding.svg
+        .. image:: ../../_static/torus.png
             :align: center
             :target: ./FT_compilation.html
 

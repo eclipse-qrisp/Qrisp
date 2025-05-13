@@ -47,6 +47,6 @@ plt.grid()
 plt.gca().spines['top'].set_visible(False)
 plt.gca().spines['right'].set_visible(False)
 
-#plt.tight_layout()
-#plt.show()
+plt.tight_layout()
+plt.show()
 #plt.savefig("qmci.svg", format = "svg", dpi = 80, bbox_inches = "tight")
