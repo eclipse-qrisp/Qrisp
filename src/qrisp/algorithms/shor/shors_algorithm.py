@@ -21,7 +21,8 @@ from sympy import continued_fraction_convergents, continued_fraction_iterator, R
 
 from qrisp.interface import QiskitBackend
 from qrisp.alg_primitives.arithmetic.modular_arithmetic import find_optimal_m, modinv
-from qrisp import QuantumModulus, QuantumFloat, h, control, QFT
+from qrisp.alg_primitives import QFT
+from qrisp import QuantumModulus, QuantumFloat, h, control
 
 depths = []
 cnot_count = []

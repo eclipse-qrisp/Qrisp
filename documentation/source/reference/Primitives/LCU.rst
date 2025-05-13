@@ -16,13 +16,22 @@ This function implements the prepare-select-unprepare structure, also known as b
 .. math::
    \mathrm{LCU} = \mathrm{PREPARE}^\dagger \cdot \mathrm{SELECT} \cdot \mathrm{PREPARE}
 
-- **PREPARE**: Prepares an ancilla register in a superposition encoding the normalized coefficients $\alpha_i$ of the target operator $\mathrm{PREPARE}|0\rangle=\sum_i\sqrt{\frac{\alpha_i}{\lambda}}|i\rangle$.
-- **SELECT**: Applies the unitary $U_i$ to the target register, controlled on the ancilla register being in state $|i\rangle$. $\mathrm{SELECT}|i\rangle|\psi\rangle=|i\rangle U_i|\psi\rangle$.
-- **PREPARE$^{\\dagger}$**: Uncomputes the ancilla.
+- **PREPARE**: Prepares an ancilla variable in a superposition encoding the normalized coefficients $\alpha_i$ of the target operator
+
+.. math::
+   \mathrm{PREPARE}|0\rangle=\sum_i\sqrt{\frac{\alpha_i}{\lambda}}|i\rangle
+
+- **SELECT**: Applies the unitary $U_i$ to the target variable, controlled on the ancilla variable being in state $|i\rangle$. 
+
+.. math::
+   \mathrm{SELECT}|i\rangle|\psi\rangle=|i\rangle U_i|\psi\rangle
+
+- **PREPARE$^{\\dagger}$**: Applies the inverse prepartion to the ancilla.
 
 .. note::
 
-   The LCU protocol is deemed successful only if the ancilla register is measured in the :math:`|0\rangle` state, which occurs with a probability proportional to :math:`\frac{|\alpha|_1^2}{\lambda^2}`. This function does not perform the measurement; it returns the ancilla register and the transformed target register.
+   The LCU protocol is deemed successful only if the ancilla variable is measured in the :math:`|0\rangle` state, which occurs with a probability proportional to :math:`\frac{\langle\psi|A^{\dagger}A|\psi\rangle}{\lambda^2}` where $\lambda=\sum_i\alpha_i$.  
+   This function does not perform the measurement; it returns the ancilla variable and the transformed target variable.
 
 The success probability depends on the LCU coefficients and the initial state's properties. Said success probability can be further improved using `Oblibious Amplitude Amplification <https://arxiv.org/pdf/1312.1414>`_, which applies a series of reflections and controlled operations to amplify the $\ket{0}$ ancilla component without prior knowledge of the initial state. For implementation details in Qrisp, see :func:`qrisp.amplitude_amplification`
 
