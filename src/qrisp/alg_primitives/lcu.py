@@ -388,7 +388,7 @@ def LCU(operand_prep, state_prep, unitaries, num_unitaries=None):
 
 # Apply the RUS decorator with the workaround in order to show in documentation
 temp_docstring = LCU.__doc__
-LCU = RUS(static_argnums=[3, 4])(LCU)
+LCU = RUS(static_argnums=[3])(LCU)
 LCU.__doc__ = temp_docstring
 
 
