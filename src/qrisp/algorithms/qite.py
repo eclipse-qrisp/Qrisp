@@ -216,7 +216,12 @@ def QITE(qarg, U_0, exp_H, s, k, method='GC'):
                 exp_H(qarg, -phi*s_)
 
     else:
+
         def int_to_base(n, base = 3, max_digits = 10):
+            """
+            Get the array representation of an integer `n` with base `base`.
+            The array has length `max_digits` and the least significant digit is at index `0`.
+            """
 
             def cond_fun(state):
                 n, digits, i = state
@@ -232,57 +237,54 @@ def QITE(qarg, U_0, exp_H, s, k, method='GC'):
             _, digits, _ = lax.while_loop(cond_fun, body_fun, (n, init_digits, 0))
             return digits
 
+        # Define basic operations
         def U_0_dag(q_arg):
             with invert(): U_0(q_arg)
 
-        def exp_H_dag(q_arg, time):
-            with invert(): exp_H(q_arg, time) 
-
         def exp_00(q_arg, time):
             mcp(time, q_arg, ctrl_state=0)
-
-        def exp_00_dag(q_arg, time):
-            with invert(): exp_00(q_arg, time)
 
         if method == "GC":
 
             def body_fun(i, val):
                 qarg = val
 
-                o_pos = int_to_base(i, 3)
-                n_pos = int_to_base(i+1, 3)
-                q = jnp.count_nonzero(n_pos != o_pos)
+                # Obtain old and new position
+                old_pos = int_to_base(i, 3)
+                new_pos = int_to_base(i+1, 3)
+                # Obtain largest changed index + 1
+                num_changes = jnp.count_nonzero(new_pos != old_pos)
 
-                inv_mode_l = jnp.equal(jnp.count_nonzero(o_pos == 1) % 2, 0)
-                inv_mode_u = inv_mode_l
-                inv_mode_b = jnp.logical_xor(inv_mode_u, o_pos[q-1] == 1)
-                inv_mode_d = jnp.equal(jnp.count_nonzero(n_pos == 1) % 2, 0)
+                # Compute which operations must be inverted
+                inv_mode_leaf = jnp.equal(jnp.count_nonzero(old_pos == 1) % 2, 0)
+                inv_mode_up = inv_mode_leaf
+                inv_mode_bounce = jnp.logical_xor(inv_mode_up, old_pos[num_changes-1] == 1)
+                inv_mode_down = jnp.equal(jnp.count_nonzero(new_pos == 1) % 2, 0)
 
                 # Apply U_0
-                q_cond(inv_mode_l, U_0, U_0_dag, qarg) 
+                q_cond(inv_mode_leaf, U_0, U_0_dag, qarg) 
 
-                # Go up
-                time = q_fori_loop(0, q-1, lambda j, time: time + jnp.sqrt(s[j]), 0)
-                #time = 1
-                q_cond(inv_mode_u, exp_H, lambda a,b:None, qarg, -time)
+                # Go up the branch
+                time = q_fori_loop(0, num_changes-1, lambda j, time: time + jnp.sqrt(s[j]), 0)
+                q_cond(inv_mode_up, exp_H, lambda a,b:None, qarg, -time)
 
-                # Bounce
-                q_cond(jnp.logical_and(o_pos[q-1] == 0, inv_mode_b), exp_H, lambda a,b:None, qarg, jnp.sqrt(s[q-1]))
-                q_cond(jnp.logical_and(o_pos[q-1] == 1, inv_mode_b), exp_00, lambda a,b:None, qarg, jnp.sqrt(s[q-1]))
-                q_cond(jnp.logical_and(o_pos[q-1] == 0, jnp.logical_not(inv_mode_b)), exp_00_dag, lambda a,b:None, qarg, jnp.sqrt(s[q-1]))
-                q_cond(jnp.logical_and(o_pos[q-1] == 1, jnp.logical_not(inv_mode_b)), exp_H_dag, lambda a,b:None, qarg, jnp.sqrt(s[q-1]))
+                # Bounce to next branch
+                q_cond(jnp.logical_and(old_pos[num_changes-1] == 0, inv_mode_bounce), exp_H, lambda a,b:None, qarg, jnp.sqrt(s[num_changes-1]))
+                q_cond(jnp.logical_and(old_pos[num_changes-1] == 1, inv_mode_bounce), exp_00, lambda a,b:None, qarg, jnp.sqrt(s[num_changes-1]))
+                q_cond(jnp.logical_and(old_pos[num_changes-1] == 0, jnp.logical_not(inv_mode_bounce)), exp_00, lambda a,b:None, qarg, -jnp.sqrt(s[num_changes-1]))
+                q_cond(jnp.logical_and(old_pos[num_changes-1] == 1, jnp.logical_not(inv_mode_bounce)), exp_H, lambda a,b:None, qarg, -jnp.sqrt(s[num_changes-1]))
 
-                # Go down
-                q_cond(inv_mode_d, lambda a,b:None, exp_H_dag, qarg, -time)
+                # Go down to leaf
+                q_cond(inv_mode_down, lambda a,b:None, exp_H, qarg, time)
 
                 return qarg
 
-            # Iterate all leafs
+            # Iterate all leafs except last
             q_fori_loop(0, 3**k - 1, body_fun, qarg)
 
             # Do last leaf
             U_0(qarg)
-            time = jnp.sum(jnp.sqrt(s))
+            time = lax.fori_loop(0, k, lambda j, time: time + jnp.sqrt(s[j]), 0)
             exp_H(qarg, -time)
 
         if method == "HOPF":
@@ -292,46 +294,45 @@ def QITE(qarg, U_0, exp_H, s, k, method='GC'):
             def body_fun(i, val):
                 qarg = val
 
-                o_pos = int_to_base(i, 5)
-                n_pos = int_to_base(i+1, 5)
-                q = jnp.count_nonzero(n_pos != o_pos)
+                # Obtain old and new position
+                old_pos = int_to_base(i, 5)
+                new_pos = int_to_base(i+1, 5)
+                # Obtain largest changed index + 1
+                num_changes = jnp.count_nonzero(new_pos != old_pos)
 
-                inv_mode_l = ((jnp.count_nonzero(o_pos == 1) + jnp.count_nonzero(o_pos == 3)) % 2 == 0)
-                inv_mode_u = inv_mode_l
-                inv_mode_b = jnp.logical_xor(inv_mode_u, jnp.logical_or(o_pos[q-1] == 1, o_pos[q-1] == 3))
-                inv_mode_d = ((jnp.count_nonzero(n_pos == 1) + jnp.count_nonzero(n_pos == 3)) % 2 == 0)
+                # Compute which operations must be inverted
+                inv_mode_leaf = ((jnp.count_nonzero(old_pos == 1) + jnp.count_nonzero(old_pos == 3)) % 2 == 0)
+                inv_mode_up = inv_mode_leaf
+                inv_mode_bounce = jnp.logical_xor(inv_mode_up, jnp.logical_or(old_pos[num_changes-1] == 1, old_pos[num_changes-1] == 3))
+                inv_mode_down = ((jnp.count_nonzero(new_pos == 1) + jnp.count_nonzero(new_pos == 3)) % 2 == 0)
 
                 # Apply U_0
-                q_cond(inv_mode_l, U_0, U_0_dag, qarg) 
+                q_cond(inv_mode_leaf, U_0, U_0_dag, qarg) 
 
-                # Go up
-                time = -q_fori_loop(0, q-1, lambda j, time: time + jnp.sqrt(s[j]), 0)*phi
-                q_cond(inv_mode_u, exp_H, lambda a,b:None, qarg, time)
+                # Go up the branch
+                time = q_fori_loop(0, num_changes-1, lambda j, time: time + jnp.sqrt(s[j]), 0)*phi
+                q_cond(inv_mode_up, exp_H, lambda a,b:None, qarg, -time)
 
-                # Bounce
-                q_cond(jnp.logical_and(o_pos[q-1] == 0, inv_mode_b), exp_H, lambda a,b:None, qarg, -(1-phi)*jnp.sqrt(s[q-1]))
-                q_cond(jnp.logical_and(o_pos[q-1] == 1, inv_mode_b), exp_00, lambda a,b:None, qarg, -(1+phi)*jnp.sqrt(s[q-1]))
-                q_cond(jnp.logical_and(o_pos[q-1] == 2, inv_mode_b), exp_H, lambda a,b:None, qarg, jnp.sqrt(s[q-1]))
-                q_cond(jnp.logical_and(o_pos[q-1] == 3, inv_mode_b), exp_00, lambda a,b:None, qarg, phi*jnp.sqrt(s[q-1]))
+                # Bounce to next branch
+                q_cond(jnp.logical_and(old_pos[num_changes-1] == 0, inv_mode_bounce), exp_H, lambda a,b:None, qarg, -(1-phi)*jnp.sqrt(s[num_changes-1]))
+                q_cond(jnp.logical_and(old_pos[num_changes-1] == 1, inv_mode_bounce), exp_00, lambda a,b:None, qarg, -(1+phi)*jnp.sqrt(s[num_changes-1]))
+                q_cond(jnp.logical_and(old_pos[num_changes-1] == 2, inv_mode_bounce), exp_H, lambda a,b:None, qarg, jnp.sqrt(s[num_changes-1]))
+                q_cond(jnp.logical_and(old_pos[num_changes-1] == 3, inv_mode_bounce), exp_00, lambda a,b:None, qarg, phi*jnp.sqrt(s[num_changes-1]))
 
-                q_cond(jnp.logical_and(o_pos[q-1] == 3, jnp.logical_not(inv_mode_b)), exp_H_dag, lambda a,b:None, qarg, -(1-phi)*jnp.sqrt(s[q-1]))
-                q_cond(jnp.logical_and(o_pos[q-1] == 2, jnp.logical_not(inv_mode_b)), exp_00_dag, lambda a,b:None, qarg, -(1+phi)*jnp.sqrt(s[q-1]))
-                q_cond(jnp.logical_and(o_pos[q-1] == 1, jnp.logical_not(inv_mode_b)), exp_H_dag, lambda a,b:None, qarg, jnp.sqrt(s[q-1]))
-                q_cond(jnp.logical_and(o_pos[q-1] == 0, jnp.logical_not(inv_mode_b)), exp_00_dag, lambda a,b:None, qarg, phi*jnp.sqrt(s[q-1]))
+                q_cond(jnp.logical_and(old_pos[num_changes-1] == 3, jnp.logical_not(inv_mode_bounce)), exp_H, lambda a,b:None, qarg, (1-phi)*jnp.sqrt(s[num_changes-1]))
+                q_cond(jnp.logical_and(old_pos[num_changes-1] == 2, jnp.logical_not(inv_mode_bounce)), exp_00, lambda a,b:None, qarg, (1+phi)*jnp.sqrt(s[num_changes-1]))
+                q_cond(jnp.logical_and(old_pos[num_changes-1] == 1, jnp.logical_not(inv_mode_bounce)), exp_H, lambda a,b:None, qarg, -jnp.sqrt(s[num_changes-1]))
+                q_cond(jnp.logical_and(old_pos[num_changes-1] == 0, jnp.logical_not(inv_mode_bounce)), exp_00, lambda a,b:None, qarg, -phi*jnp.sqrt(s[num_changes-1]))
 
-                # Go down
-                q_cond(inv_mode_d, lambda a,b:None, exp_H_dag, qarg, time)
+                # Go down to leaf
+                q_cond(inv_mode_down, lambda a,b:None, exp_H, qarg, time)
 
                 return qarg
 
-            # Iterate all leafs
-            if check_for_tracing_mode():
-                q_fori_loop(0, 5**k - 1, body_fun, qarg)
-            else:
-                for i in range(5**k-1):
-                    qarg = body_fun(i, qarg)
+            # Iterate all leafs except last
+            q_fori_loop(0, 5**k - 1, body_fun, qarg)
 
             # Do last leaf
             U_0(qarg)
-            time = -phi*jnp.sum(jnp.sqrt(s))
+            time = -phi*lax.fori_loop(0, k, lambda j, time: time + jnp.sqrt(s[j]), 0)
             exp_H(qarg, time)
