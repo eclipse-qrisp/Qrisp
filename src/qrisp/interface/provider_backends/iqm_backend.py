@@ -20,7 +20,7 @@ import qiskit
 
 from qrisp.interface import VirtualBackend
 
-def IQMBackend(api_token, device_instance):
+def IQMBackend(api_token, device_instance, port=None):
     """
     This function instantiates an IQMBackend based on VirtualBackend
     using Qiskit and Qiskit-on-IQM.
@@ -33,6 +33,8 @@ def IQMBackend(api_token, device_instance):
     device_instance : str
         The device instance of the IQM backend such as "garnet".
         For an up-to-date list, see the IQM Resonance website.
+    port : int, optional
+        The port to listen. The default is None.
 
     Examples
     --------
@@ -103,4 +105,4 @@ def IQMBackend(api_token, device_instance):
 
         return new_counts
 
-    return VirtualBackend(run_func_iqm)
+    return VirtualBackend(run_func_iqm, port=port)

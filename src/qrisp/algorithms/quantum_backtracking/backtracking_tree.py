@@ -22,10 +22,11 @@ import numpy as np
 import networkx as nx
 from sympy.physics.quantum import Ket, OrthogonalKet
 
-from qrisp import (QuantumFloat, QuantumBool, QuantumArray, mcz, cx, h, ry, swap, QFT,
-                   auto_uncompute, invert, control, IterationEnvironment, bin_rep,
-                   cyclic_shift, multi_measurement, increment, xxyy, p, QuantumVariable, cz,
-                   mcx, z, x, RYGate, HGate, s, t, s_dg, t_dg)
+from qrisp.alg_primitives import QFT
+from qrisp import (QuantumFloat, QuantumBool, QuantumArray, mcz, cx, h, ry, swap,
+                    auto_uncompute, invert, control, IterationEnvironment, bin_rep,
+                    multi_measurement, xxyy, p, QuantumVariable, cz,
+                    mcx, z, x, RYGate, HGate, s, t, s_dg, t_dg)
 
 """
 As specified in the paper (https://arxiv.org/abs/1509.02374), the key challenge

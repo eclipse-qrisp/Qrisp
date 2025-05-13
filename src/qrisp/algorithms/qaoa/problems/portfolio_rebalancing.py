@@ -1,26 +1,42 @@
+"""
+\********************************************************************************
+* Copyright (c) 2024 the Qrisp authors
+*
+* This program and the accompanying materials are made available under the
+* terms of the Eclipse Public License 2.0 which is available at
+* http://www.eclipse.org/legal/epl-2.0.
+*
+* This Source Code may also be made available under the following Secondary
+* Licenses when the conditions for such availability set forth in the Eclipse
+* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+* with the GNU Classpath Exception which is
+* available at https://www.gnu.org/software/classpath/license.html.
+*
+* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+********************************************************************************/
+"""
+
 import math 
 from qrisp import cx, RYGate, ry, x, rzz, rz
 import numpy as np 
 
 
-
 def portfolio_cost_operator(problem):
     """
-    | Quantum cost operator  for the discrete portfolio rebalancing problem, as described in https://arxiv.org/pdf/1911.05296.pdf.
+    | Quantum cost operator for the discrete portfolio rebalancing problem, as described in https://arxiv.org/pdf/1911.05296.pdf.
     | It is depended on the problem instance, including the old portfolio positions, the normalized covariance matrix, the normalized asset returns and trading costs. See example implementation for formatting. 
 
     Parameters
     ----------
-    problem : List
+    problem : list
         A list containing a the relevant data for the problem instance.
 
     Returns
     -------
-    portfolio_cost_op: function
-        A callable function to be applied to a QuantumArray for solving the problem instance.
+    portfolio_cost_op : function
+        A function to be applied to a QuantumArray for solving the problem instance.
 
     """
-
 
     old_pos = problem[0]
     risk_return = problem[1] 
@@ -71,7 +87,7 @@ def portfolio_cost_operator(problem):
 def portfolio_cl_cost_function(problem):
     """
     | Classical cost function for the discrete portfolio rebalancing problem, as described in https://arxiv.org/pdf/1911.05296.pdf.
-    |It is depended on the problem instance, including the old portfolio positions, the normalized covariance matrix, the normalized asset returns and trading costs. See example implementation for formatting. 
+    | It is depended on the problem instance, including the old portfolio positions, the normalized covariance matrix, the normalized asset returns and trading costs. See example implementation for formatting. 
 
     Parameters
     ----------
@@ -81,7 +97,7 @@ def portfolio_cl_cost_function(problem):
     Returns
     -------
     cl_cost_function : function
-        A callable function to calculate the cost value of the problem solution.
+        A function to calculate the cost value of the problem solution.
 
     """
 
@@ -116,9 +132,6 @@ def portfolio_cl_cost_function(problem):
     return cl_cost_function
 
 
-
-
-
 def portfolio_init(lots):
     """
     | Initial state for the discrete portfolio rebalancing problem, as described in https://arxiv.org/abs/1904.07358.
@@ -126,13 +139,13 @@ def portfolio_init(lots):
 
     Parameters
     ----------
-    lots : Int
-        The number of lots in the initial portfolio position
+    lots : int
+        The number of lots in the initial portfolio position.
 
     Returns
     -------
-    state_prep: function
-        A callable function to be applied to a QuantumArray to receive the initial state for the problem.
+    state_prep : function
+        A function to be applied to a QuantumArray to receive the initial state for the problem.
 
     """
 

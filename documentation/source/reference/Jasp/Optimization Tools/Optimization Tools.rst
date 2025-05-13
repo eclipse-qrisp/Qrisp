@@ -6,6 +6,7 @@ Optimization Tools
 .. toctree::
    :hidden:
    
+   COBYLA
    SPSA
    
 

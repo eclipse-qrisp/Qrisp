@@ -13,9 +13,10 @@ Methods
    :toctree: generated/
    
    QuantumArray.delete
+   QuantumArray.duplicate
+   QuantumArray.encode
    QuantumArray.get_measurement
    QuantumArray.most_likely
-   QuantumArray.duplicate
 
 Array Restructuring
 -------------------
@@ -28,9 +29,13 @@ Array Restructuring
 .. autosummary::
    :toctree: generated/
 
-   QuantumArray.reshape
-   QuantumArray.transpose
+   QuantumArray.concatenate
    QuantumArray.flatten
    QuantumArray.ravel
+   QuantumArray.reshape
    QuantumArray.swapaxes
-   QuantumArray.concatenate
+   QuantumArray.transpose
+   
+   
+   
+   
