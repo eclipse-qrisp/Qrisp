@@ -20,7 +20,7 @@ import qiskit
 
 from qrisp.interface import VirtualBackend
 
-def IQMBackend(api_token, device_instance):
+def IQMBackend(api_token, device_instance, port=None):
     """
     This function instantiates an IQMBackend based on VirtualBackend
     using Qiskit and Qiskit-on-IQM.
@@ -103,4 +103,4 @@ def IQMBackend(api_token, device_instance):
 
         return new_counts
 
-    return VirtualBackend(run_func_iqm)
+    return VirtualBackend(run_func_iqm, port=port)
