@@ -140,7 +140,7 @@ Welcome to the tutorial of Qrisp! This page will help you get started by providi
 
         .. image:: ../../_static/HHL.png
             :align: center
-            :target: ./tutorial.html
+            :target: ./HHL.html
 
         .. raw:: html
             
@@ -150,6 +150,7 @@ Welcome to the tutorial of Qrisp! This page will help you get started by providi
             :color: primary
 
             The Harrow-Hassidim-Lloyd (HHL) quantum algorithm offers an exponential speed-up over classical methods for solving linear system problems $Ax=b$ for certain sparse matrices $A$.
+            The tutorial demonstrates hybrid quantum-classical workflows using the Catalyst framework and highlights how Qrisp and Catalyst work together for implementing and compiling advanced quantum algorithms.
 
         .. raw:: html
 
@@ -373,6 +374,7 @@ By the end of this tutorial, you'll have a solid foundation of our high-level fr
    tutorial
    H2
    Jasp
+   HHL
    Shor
    FT_compilation
    TSP
