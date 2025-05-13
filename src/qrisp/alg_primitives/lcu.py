@@ -19,8 +19,8 @@
 from qrisp import QuantumFloat, conjugate, measure
 from qrisp.jasp import make_jaspr, RUS
 from qrisp.alg_primitives.switch_case import qswitch
-from qrisp.algorithms.grover.grover_tools import tag_state
-from qrisp.alg_primitives.amplitude_amplification import amplitude_amplification
+#from qrisp.algorithms.grover.grover_tools import tag_state
+#from qrisp.alg_primitives.amplitude_amplification import amplitude_amplification
 import jax.numpy as jnp
 import numpy as np
 
@@ -168,7 +168,12 @@ def inner_LCU(operand_prep, state_prep, unitaries, num_unitaries=None):
     operand = operand_prep()
 
     if not callable(unitaries):
+        if not isinstance(unitaries,(list,tuple)):
+            raise TypeError("unitaries must be callable or list/tuple[callable].")
         num_unitaries = len(unitaries)
+    else:
+        if num_unitaries==None:
+            raise ValueError("The number of unitiaries must be specified if unitaries is callable.")
 
     # Specify the QunatumVariable that indicates which case to execute
     n = jnp.int64(jnp.ceil(jnp.log2(num_unitaries)))
@@ -184,8 +189,7 @@ def inner_LCU(operand_prep, state_prep, unitaries, num_unitaries=None):
 
     LCU_state_prep(case_indicator, operand)
 
-    #if OAA is True:
-    #    amplitude_amplification([case_indicator, operand], LCU_state_prep, oracle_func, reflection_indices=[0])
+    #amplitude_amplification([case_indicator, operand], LCU_state_prep, oracle_func, reflection_indices=[0])
 
     return case_indicator, operand
 
@@ -392,7 +396,7 @@ LCU = RUS(static_argnums=[3])(LCU)
 LCU.__doc__ = temp_docstring
 
 
-def view_LCU(operand_prep, state_prep, unitaries, num_unitaries=None, OAA=False):
+def view_LCU(operand_prep, state_prep, unitaries, num_unitaries=None):
     r"""
     Generate and return the quantum circuit for the LCU algorithm without utilizing
     the Repeat-Until-Success (RUS) protocol.
