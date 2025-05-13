@@ -1,4 +1,4 @@
-.. _MaxCutJaspQAOA:
+.. _JaspQAOAtutorial:
 
 Building a QAOA implementation in Jasp
 ======================================
@@ -10,7 +10,7 @@ First, let us recall the problem description for MaxCut:
 
 Given a Graph  :math:`G = (V,E)` find a bipartition $S$, $V\setminus S$ of the set of vertices $V$ such that the number of edges between $S$ and $V\setminus S$ is maximal.
 
-.. figure:: /_static/maxcut_jasp.png
+.. figure:: /_static/maxcut_tutorial.png
    :scale: 60%
    :align: center
 

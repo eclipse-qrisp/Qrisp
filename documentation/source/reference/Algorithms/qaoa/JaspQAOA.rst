@@ -15,7 +15,7 @@ The cut value is the number of edges $e=(i,j)$ in $G$ such that $i\in S$ and $j\
 In Jasp, varibales are decoded to integers (i.e. jax.numpy.int) and not to binrary strings. In this case, the binary representation of an integer encodes a bipartition of the graph $G$.
 Therefore, repeated sampling from a QuantumVariable in a superposition state will result in an array of integers representing bipartitions of the graph $G$. 
 Within QAOA, we require a post processing function to compute the average cut value for an array of samples. 
-More details on how to build an efficient post processing function are provided in the :ref:`MaxCutJaspQAOA` tutorial. 
+More details on how to build an efficient post processing function are provided in the :ref:`JaspQAOAtutorial` tutorial. 
 
 Apart from this, running :ref:`QAOA for MaxCut <maxCutQAOAdoc>` in Jasp is as easy as wrapping the code in a ``main`` function:
 

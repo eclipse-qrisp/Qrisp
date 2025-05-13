@@ -8,8 +8,8 @@
 
 .. _QAOA101:
 
-QAOA implementation and QAOAProblem
-===================================
+Solving combinatorial optimization problems with QAOA
+=====================================================
 
 Welcome to our :ref:`Quantum Approximate Optimization Algorithm (QAOA) <QAOA>` module! This module equips you with the essential theoretical fundamentals of QAOA, a promising algorithm for tackling combinatorial optimization problems. We’ll highlight why qrisp is the ideal framework for implementing QAOA, thanks to its unique features.
 
