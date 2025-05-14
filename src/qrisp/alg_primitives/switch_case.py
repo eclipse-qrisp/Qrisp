@@ -25,7 +25,7 @@ from qrisp.jasp import check_for_tracing_mode, jrange, q_fori_loop, q_cond
 import numpy as np
 import jax.numpy as jnp
 
-def qswitch(operand, case, case_function, method = "sequential"):
+def qswitch(operand, case, case_function, method = "tree"):
     """
     Executes a switch - case statement distinguishing between a list of
     given in-place functions.
@@ -106,6 +106,12 @@ def qswitch(operand, case, case_function, method = "sequential"):
         xrange = jrange
     else:
         case_amount = len(case_function)
+
+        # Extend case_function list by identity such that its size is 2*n (necessary for tree qswitch)
+        def identity(operand):
+            pass
+        case_function.extend([identity]* ( (1 << ((case_amount - 1).bit_length())) - case_amount ))
+
         xrange = range
 
     if method == "sequential":
