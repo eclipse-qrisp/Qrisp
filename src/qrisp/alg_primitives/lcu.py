@@ -74,9 +74,9 @@ def inner_LCU(operand_prep, state_prep, unitaries, num_unitaries=None):
 
             \text{PREPARE}\ket{0} = \sum_i\sqrt{\frac{\alpha_i}{\lambda}}\ket{i}
 
-    unitaries : list/tuple[callable] or callable
+    unitaries : list[callable] or callable
         Either:
-          - A list or tuple of functions performing some in-place operation on ``operand``, or 
+          - A list of functions performing some in-place operation on ``operand``, or 
           - A function ``unitaries(i, operand)`` performing some in-place operation on ``operand`` depending on a nonnegative integer index ``i`` specifying the case.
 
     num_unitaries : int, optional
@@ -91,7 +91,7 @@ def inner_LCU(operand_prep, state_prep, unitaries, num_unitaries=None):
     Raises
     ------
     TypeError
-        If ``unitaries`` is not a list/tuple or a callable.
+        If ``unitaries`` is not a list or a callable.
     ValueError
         If ``num_unitaries`` is not specified when ``unitaries`` is a callable.
 
@@ -168,7 +168,7 @@ def inner_LCU(operand_prep, state_prep, unitaries, num_unitaries=None):
     operand = operand_prep()
 
     if not callable(unitaries):
-        if not isinstance(unitaries,(list,tuple)):
+        if not isinstance(unitaries,list):
             raise TypeError("unitaries must be callable or list/tuple[callable].")
         num_unitaries = len(unitaries)
     else:
@@ -220,9 +220,9 @@ def LCU(operand_prep, state_prep, unitaries, num_unitaries=None):
 
             \text{PREPARE}\ket{0} = \sum_i\sqrt{\frac{\alpha_i}{\lambda}}\ket{i}
 
-    unitaries : list/tuple[callable] or callable
+    unitaries : list[callable] or callable
         Either:
-          - A list or tuple of functions performing some in-place operation on ``operand``, or 
+          - A list of functions performing some in-place operation on ``operand``, or 
           - A function ``unitaries(i, operand)`` performing some in-place operation on ``operand`` depending on a nonnegative integer index ``i`` specifying the case.
 
     num_unitaries : int, optional
@@ -236,7 +236,7 @@ def LCU(operand_prep, state_prep, unitaries, num_unitaries=None):
     Raises
     ------
     TypeError
-        If ``unitaries`` is not a list, tuple, or callable.
+        If ``unitaries`` is not a list or callable.
     ValueError
         If ``num_unitaries`` is not specified when ``unitaries`` is a callable.
 
@@ -417,9 +417,9 @@ def view_LCU(operand_prep, state_prep, unitaries, num_unitaries=None):
 
             \text{PREPARE}\ket{0} = \sum_i\sqrt{\frac{\alpha_i}{\lambda}}\ket{i}
 
-    unitaries : list/tuple[callable] or callable
+    unitaries : list[callable] or callable
         Either:
-          - A list or tuple of functions performing some in-place operation on ``operand``, or 
+          - A list of functions performing some in-place operation on ``operand``, or 
           - A function ``unitaries(i, operand)`` performing some in-place operation on ``operand`` depending on a nonnegative integer index ``i`` specifying the case.
 
     num_unitaries : int, optional
