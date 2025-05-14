@@ -109,20 +109,38 @@
 
 .. grid:: 1 1 2 2
 
+
     .. grid-item-card::
         :shadow: none
-        
+            
+    
         .. raw:: html
-
-            <a href="./reference/Algorithms/QuantumBacktrackingTree.html">
+            
+            <a href="./reference/Core/generated/qrisp.QuantumSession.statevector.html">
             <div class="example-img-plot-overlay">
-            <p class="sd-card-text">Solve backtracking problems by leveraging quantum walks</p>
+            <p class="sd-card-text">Explore parametrized algorithms with symbolic statevector simulation</p>
             </div>
             </a>
-
-    
-        .. image:: ./_static/backtracking.svg
+            <div class="frontpage-equation">
             
+            
+        .. math::
+            
+            \definecolor{qrispblue}{RGB}{32, 48, 111}
+            \definecolor{textgray}{RGB}{68, 68, 68}
+            
+            \Large
+            \textcolor{textgray}{
+            \begin{align}
+            \frac{\ket{\texttt{hello}} + e^{i \textcolor{red}{\phi}} \ket{\texttt{world}}}{\sqrt{2}}
+            \end{align}
+            }
+            
+        .. raw:: html
+            
+            </div>
+            
+
     .. grid-item-card::
         :shadow: none
             
@@ -170,6 +188,38 @@
 
     
         .. image:: ./_static/period_finding.svg
+
+
+.. grid:: 1 1 2 2
+
+            
+    .. grid-item-card::
+        :shadow: none
+        
+        .. raw:: html
+
+            <a href="./reference/Algorithms/QuantumBacktrackingTree.html">
+            <div class="example-img-plot-overlay">
+            <p class="sd-card-text">Solve backtracking problems by leveraging quantum walks</p>
+            </div>
+            </a>
+
+    
+        .. image:: ./_static/backtracking.svg
+
+    .. grid-item-card::
+        :shadow: none
+    
+        .. raw:: html
+
+            <a href="./reference/Algorithms/Shor.html">
+            <div class="example-img-plot-overlay">
+            <p class="sd-card-text">Realize LCU and LCHS using block encodings</p>
+            </div>
+            </a>
+
+    
+        .. image:: ./_static/LCU.png
 
 
 .. raw:: html
