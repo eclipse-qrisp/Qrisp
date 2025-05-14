@@ -212,7 +212,7 @@
     
         .. raw:: html
 
-            <a href="./reference/Algorithms/Shor.html">
+            <a href="./reference/Primitives/LCU.html">
             <div class="example-img-plot-overlay">
             <p class="sd-card-text">Realize LCU and LCHS using block encodings</p>
             </div>
