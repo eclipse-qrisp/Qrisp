@@ -263,6 +263,7 @@ def qswitch(operand, case, case_function, method = "sequential"):
         for j in xrange(0, n, 1):
             up(n - j - 1, anc, case, operand)
 
+        x(anc[0])
         anc.delete()
     
     else:
