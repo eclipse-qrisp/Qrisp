@@ -25,7 +25,7 @@ from qrisp.jasp import check_for_tracing_mode, jrange, q_fori_loop, q_cond
 import numpy as np
 import jax.numpy as jnp
 
-def qswitch(operand, case, case_function, method = "tree"):
+def qswitch(operand, case, case_function, method = "sequential"):
     """
     Executes a switch - case statement distinguishing between a list of
     given in-place functions.

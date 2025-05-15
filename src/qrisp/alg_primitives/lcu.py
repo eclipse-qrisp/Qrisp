@@ -19,13 +19,12 @@
 from qrisp import QuantumFloat, conjugate, measure
 from qrisp.jasp import make_jaspr, RUS
 from qrisp.alg_primitives.switch_case import qswitch
-#from qrisp.algorithms.grover.grover_tools import tag_state
-#from qrisp.alg_primitives.amplitude_amplification import amplitude_amplification
-import jax.numpy as jnp
+from qrisp.algorithms.grover.grover_tools import tag_state
+from qrisp.alg_primitives.amplitude_amplification import amplitude_amplification
 import numpy as np
 
 
-def inner_LCU(operand_prep, state_prep, unitaries, num_unitaries=None):
+def inner_LCU(operand_prep, state_prep, unitaries, num_unitaries=None, oaa_iter=0):
     r"""
     Core implementation of the Linear Combination of Unitaries (LCU) protocol without
     Repeat-Until-Success (RUS) protocol. The LCU method is a foundational quantum algorithmic
@@ -81,6 +80,8 @@ def inner_LCU(operand_prep, state_prep, unitaries, num_unitaries=None):
 
     num_unitaries : int, optional
         Required when ``unitaries`` is a callable to specify the number $m$ of unitaries.
+    oaa_iter : int, optional
+        The number of iterations of oblivious amplitude amplification to perform. The default is 0.
 
     Returns
     -------
@@ -169,14 +170,14 @@ def inner_LCU(operand_prep, state_prep, unitaries, num_unitaries=None):
 
     if not callable(unitaries):
         if not isinstance(unitaries,list):
-            raise TypeError("unitaries must be callable or list/tuple[callable].")
+            raise TypeError("unitaries must be callable or list[callable].")
         num_unitaries = len(unitaries)
     else:
         if num_unitaries==None:
             raise ValueError("The number of unitiaries must be specified if unitaries is callable.")
 
     # Specify the QunatumVariable that indicates which case to execute
-    n = jnp.int64(jnp.ceil(jnp.log2(num_unitaries)))
+    n = np.int64(np.ceil(np.log2(num_unitaries)))
     case_indicator = QuantumFloat(n)
 
     # LCU protocol with conjugate preparation
@@ -184,17 +185,18 @@ def inner_LCU(operand_prep, state_prep, unitaries, num_unitaries=None):
         with conjugate(state_prep)(case_indicator):
             qswitch(operand, case_indicator, unitaries)
 
-    #def oracle_func(case_indicator, operand):
-    #    tag_state({case_indicator : 0})
+    def oracle_func(case_indicator, operand):
+        tag_state({case_indicator : 0})
 
     LCU_state_prep(case_indicator, operand)
 
-    #amplitude_amplification([case_indicator, operand], LCU_state_prep, oracle_func, reflection_indices=[0])
+    if oaa_iter>0:
+        amplitude_amplification([case_indicator, operand], LCU_state_prep, oracle_func, reflection_indices=[0], iter=oaa_iter)
 
     return case_indicator, operand
 
 
-def LCU(operand_prep, state_prep, unitaries, num_unitaries=None):
+def LCU(operand_prep, state_prep, unitaries, num_unitaries=None, oaa_iter=0):
     r"""
     Full implementation of the Linear Combination of Unitaries (LCU) algorithmic primitive using the
     Repeat-Until-Success (RUS) protocol.
@@ -227,6 +229,8 @@ def LCU(operand_prep, state_prep, unitaries, num_unitaries=None):
 
     num_unitaries : int, optional
         Required when ``unitaries`` is a callable to specify the number $m$ of unitaries.
+    oaa_iter : int, optional
+        The number of iterations of oblivious amplitude amplification to perform. The default is 0.
 
     Returns
     -------
@@ -384,7 +388,7 @@ def LCU(operand_prep, state_prep, unitaries, num_unitaries=None):
 
     """
 
-    case_indicator, qv = inner_LCU(operand_prep, state_prep, unitaries, num_unitaries)
+    case_indicator, qv = inner_LCU(operand_prep, state_prep, unitaries, num_unitaries, oaa_iter)
 
     # Success condition
     success_bool = measure(case_indicator) == 0
@@ -392,7 +396,7 @@ def LCU(operand_prep, state_prep, unitaries, num_unitaries=None):
 
 # Apply the RUS decorator with the workaround in order to show in documentation
 temp_docstring = LCU.__doc__
-LCU = RUS(static_argnums=[3])(LCU)
+LCU = RUS(static_argnums=[3,4])(LCU)
 LCU.__doc__ = temp_docstring
 
 
@@ -435,9 +439,61 @@ def view_LCU(operand_prep, state_prep, unitaries, num_unitaries=None):
     inner_LCU : Core LCU implementation.
     LCU : Full LCU implementation using the RUS protocol.
 
+    Examples
+    --------
+
+    ::
+
+        from qrisp import *
+
+        def U0(operand):
+        y(operand)
+
+        def U1(operand):
+            x(operand)
+
+        unitaries = [U0, U1]
+
+        def state_prep(case):
+            h(case)
+
+        def operand_prep():
+            operand = QuantumVariable(1)
+            y(operand)
+            return operand
+
+        qc = view_LCU(operand_prep, state_prep, unitaries)
+
+    >>> print(qc)
+            ┌───┐                     ┌───┐                        »
+    qb_287: ┤ Y ├─────────────────────┤ Y ├────────────────────────»
+            ├───┤┌───────────────────┐└─┬─┘┌──────────────────────┐»
+    qb_288: ┤ H ├┤0                  ├──┼──┤0                     ├»
+            └───┘│  jasp_balauca_mcx │  │  │  jasp_balauca_mcx_dg │»
+    qb_289: ─────┤1                  ├──■──┤1                     ├»
+                 └───────────────────┘     └──────────────────────┘»
+    «                             ┌───┐                             
+    «qb_287: ─────────────────────┤ X ├─────────────────────────────
+    «        ┌───────────────────┐└─┬─┘┌──────────────────────┐┌───┐
+    «qb_288: ┤0                  ├──┼──┤0                     ├┤ H ├
+    «        │  jasp_balauca_mcx │  │  │  jasp_balauca_mcx_dg │└───┘
+    «qb_289: ┤1                  ├──■──┤1                     ├─────
+    «        └───────────────────┘     └──────────────────────┘     
+
+    We can see that the operand and case variables are prepared, the unitaries for the two cases (i.e., X and Y) are executed, and the inverse preparation (H gate) of the case variable is applied.
+    The inner workings of the circuit can be further analyzed by calling ``qc.transpile(level: int)``.
+
     """
+
+    if not callable(unitaries):
+        if not isinstance(unitaries,list):
+            raise TypeError("unitaries must be callable or list[callable].")
+        num_unitaries = len(unitaries)
+    else:
+        if num_unitaries==None:
+            raise ValueError("The number of unitiaries must be specified if unitaries is callable.")
 
     jaspr = make_jaspr(inner_LCU)(operand_prep, state_prep, unitaries, num_unitaries)
 
     # Convert Jaspr to quantum circuit and return the circuit
-    return jaspr.to_qc(num_unitaries)[-1]
+    return jaspr.to_qc(num_unitaries)[-1].transpile(3)

@@ -33,7 +33,8 @@ This function implements the prepare-select-unprepare structure, also known as b
    The LCU protocol is deemed successful only if the ancilla variable is measured in the :math:`|0\rangle` state, which occurs with a probability proportional to :math:`\frac{\langle\psi|A^{\dagger}A|\psi\rangle}{\lambda^2}` where $\lambda=\sum_i\alpha_i$.  
    This function does not perform the measurement; it returns the ancilla variable and the transformed target variable.
 
-The success probability depends on the LCU coefficients and the initial state's properties. Said success probability can be further improved using `Oblibious Amplitude Amplification <https://arxiv.org/pdf/1312.1414>`_, which applies a series of reflections and controlled operations to amplify the $\ket{0}$ ancilla component without prior knowledge of the initial state. For implementation details in Qrisp, see :func:`qrisp.amplitude_amplification`
+The success probability depends on the LCU coefficients and the initial state's properties. Said success probability can be further improved using `Oblibious Amplitude Amplification <https://arxiv.org/pdf/1312.1414>`_, which applies a series of reflections and controlled operations to amplify the $\ket{0}$ ancilla component without prior knowledge of the initial state. 
+For implementation details in Qrisp, see :func:`qrisp.amplitude_amplification`. Within the LCU implementation this is included as an experimental feature.
 
 For a complete implementation of LCU with the Repeat-Until-Success protocol, see :func:`qrisp.LCU`.
 
