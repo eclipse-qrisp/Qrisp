@@ -18,7 +18,8 @@
 
 import setuptools
 
-REQUIREMENTS = ["qiskit>=0.44.0",
+REQUIREMENTS = ["sympy<=1.13",
+                "qiskit>=0.44.0",
                 "matplotlib>=3.5.1",
                 "scipy>=1.10.0",
                 "numba",
