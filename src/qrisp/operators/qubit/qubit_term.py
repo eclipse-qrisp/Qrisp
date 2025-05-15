@@ -200,7 +200,11 @@ class QubitTerm:
                 qubit_op = QubitOperator({self : coeff})
                 with conjugate(qubit_op.change_of_basis)(qv) as diagonal_op:
                     for diagonal_term, coeff in diagonal_op.terms_dict.items():
-                        diagonal_term.simulate(coeff, qv)
+                        if ctrl is None:
+                            diagonal_term.simulate(coeff, qv)
+                        else:
+                            with control(ctrl):
+                                diagonal_term.simulate(coeff, qv)
                 return        
         
         qs = find_qs(qv)

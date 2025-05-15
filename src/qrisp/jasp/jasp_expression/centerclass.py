@@ -502,9 +502,9 @@ class Jaspr(Jaxpr):
         qs.abs_qc = new_abs_qc
         return res
     
-    def count_ops(self, *args):
+    def count_ops(self, *args, meas_behavior = "1"):
         from qrisp.jasp.evaluation_tools import profile_jaspr
-        return profile_jaspr(self)(*args)
+        return profile_jaspr(self, meas_behavior)(*args)
     
     def embedd(self, *args, name = None, inline = False):
         from qrisp.jasp import TracingQuantumSession
