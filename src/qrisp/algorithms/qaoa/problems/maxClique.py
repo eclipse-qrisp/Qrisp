@@ -16,8 +16,11 @@
 ********************************************************************************/
 """
 
-
-from qrisp.algorithms.qaoa.problems.maxIndepSet import create_max_indep_set_cl_cost_function, create_max_indep_set_mixer, max_indep_set_init_function
+from qrisp.algorithms.qaoa.problems.maxIndepSet import (
+    create_max_indep_set_cl_cost_function,
+    create_max_indep_set_mixer,
+    max_indep_set_init_function,
+)
 import networkx as nx
 import itertools
 
@@ -42,18 +45,18 @@ def create_max_clique_cl_cost_function(G):
         cost = 0
         for state, prob in res_dic.items():
             temp = True
-            indices = [index for index, value in enumerate(state) if value == '1']
+            indices = [index for index, value in enumerate(state) if value == "1"]
             combinations = list(itertools.combinations(indices, 2))
             for combination in combinations:
                 if combination not in G.edges():
                     temp = False
                     break
-            if temp: 
-                cost += -len(indices)*prob
+            if temp:
+                cost += -len(indices) * prob
 
         return cost
 
-    return cl_cost_function 
+    return cl_cost_function
 
 
 def max_clique_problem(G):
@@ -71,13 +74,14 @@ def max_clique_problem(G):
     :ref:`QAOAProblem`
         A QAOA problem instance for MaxClique for a given graph ``G``.
 
-    """        
+    """
     from qrisp.qaoa import QAOAProblem, RZ_mixer
 
     G_complement = nx.complement(G)
 
-    return QAOAProblem(cost_operator=RZ_mixer,
-                        mixer=create_max_indep_set_mixer(G_complement),
-                        cl_cost_function=create_max_indep_set_cl_cost_function(G_complement),
-                        init_function=max_indep_set_init_function)
-    
+    return QAOAProblem(
+        cost_operator=RZ_mixer,
+        mixer=create_max_indep_set_mixer(G_complement),
+        cl_cost_function=create_max_indep_set_cl_cost_function(G_complement),
+        init_function=max_indep_set_init_function,
+    )

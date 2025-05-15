@@ -19,6 +19,7 @@
 from jax.tree_util import tree_flatten, tree_unflatten
 from qrisp.jasp.jasp_expression import make_jaspr
 
+
 def qjit(function):
     """
     Decorator to leverage the jasp + Catalyst infrastructure to compile the given
@@ -33,15 +34,15 @@ def qjit(function):
     -------
     callable
         A function executing the compiled code.
-        
+
     Examples
     --------
-    
+
     We write a simple function using the QuantumFloat quantum type and execute
     via ``qjit``:
-        
+
     ::
-        
+
         from qrisp import *
         from qrisp.jasp import qjit
 
@@ -53,10 +54,10 @@ def qjit(function):
                 h(qv[0])
             meas_res = measure(qv)
             return meas_res + 3
-            
-    
+
+
     We execute the function a couple of times to demonstrate the randomness
-    
+
     >>> test_fun(4)
     [array(5.25, dtype=float64)]
     >>> test_fun(5)
@@ -65,19 +66,20 @@ def qjit(function):
     [array(7.25, dtype=float64)]
 
     """
-    
-    
+
     def jitted_function(*args):
-        
+
         if not hasattr(function, "jaspr_dict"):
             function.jaspr_dict = {}
-        
+
         args = list(args)
-        
+
         signature = tuple([type(arg) for arg in args])
         if not signature in function.jaspr_dict:
             function.jaspr_dict[signature] = make_jaspr(function)(*args)
-        
-        return function.jaspr_dict[signature].qjit(*args, function_name = function.__name__)
-    
+
+        return function.jaspr_dict[signature].qjit(
+            *args, function_name=function.__name__
+        )
+
     return jitted_function

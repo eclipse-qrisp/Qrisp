@@ -196,13 +196,14 @@ def merge_sessions_inner(qs_0, qs_1, merge_env_stack_=True):
     for qv in qs_1.deleted_qv_list:
         # Patch quantum session attribute
         qv.qs = qs_0
-        
+
     qs_0.deleted_qv_list.extend(qs_1.deleted_qv_list)
 
     reorder_quantum_variables(qs_0)
 
-
-    qs_0.will_be_uncomputed = bool(qs_0.will_be_uncomputed) or bool(qs_1.will_be_uncomputed)
+    qs_0.will_be_uncomputed = bool(qs_0.will_be_uncomputed) or bool(
+        qs_1.will_be_uncomputed
+    )
     # Add variables to the uncomputation stack
     qs_0.uncomp_stack.extend(qs_1.uncomp_stack)
 
@@ -388,7 +389,7 @@ def recursive_qv_search(input):
 
     if isinstance(input, QuantumVariable):
         return [input]
-    
+
     if hasattr(input, "__iter__"):
         iterable = True
     elif hasattr(input, "__dict__") and not isinstance(input, QuantumVariable):
@@ -409,6 +410,7 @@ def recursive_qv_search(input):
 
     return result
 
+
 def recursive_qa_search(input):
     if isinstance(input, str):
         return []
@@ -416,7 +418,7 @@ def recursive_qa_search(input):
 
     if isinstance(input, QuantumArray):
         return [input]
-    
+
     if hasattr(input, "__iter__"):
         iterable = True
     elif hasattr(input, "__dict__") and not isinstance(input, QuantumArray):
@@ -436,7 +438,6 @@ def recursive_qa_search(input):
                 result += recursive_qa_search(input[i])
 
     return result
-
 
 
 def merge(*args):

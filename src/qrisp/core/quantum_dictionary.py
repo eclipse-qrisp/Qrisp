@@ -196,6 +196,7 @@ class QuantumDictionary(dict):
 
         """
         from qrisp.alg_primitives.logic_synthesis import TruthTable
+
         qv_list = recursive_qv_search(key)
         if not len(qv_list):
             return dict.__getitem__(self, key)

@@ -21,7 +21,15 @@ import numpy as np
 from qrisp.core import p, h, cp, cx, x, s, swap
 from qrisp.jasp import qache, jrange, check_for_tracing_mode
 
-def QFT_inner(qv, exec_swap=True, qiskit_endian=True, inplace_mult=1, use_gms=False, inpl_adder = None):
+
+def QFT_inner(
+    qv,
+    exec_swap=True,
+    qiskit_endian=True,
+    inplace_mult=1,
+    use_gms=False,
+    inpl_adder=None,
+):
     from qrisp.misc import is_inv
 
     qv = list(qv)
@@ -46,86 +54,85 @@ def QFT_inner(qv, exec_swap=True, qiskit_endian=True, inplace_mult=1, use_gms=Fa
             "during Fourier-Transform"
         )
 
-
     if inpl_adder is None:
         accumulated_phases = np.zeros(n)
         for i in range(n):
             if accumulated_phases[i] and not use_gms:
                 p(accumulated_phases[i], qv[i])
                 accumulated_phases[i] = 0
-            
+
             h(qv[i])
-    
+
             if i == n - 1:
                 break
-    
+
             with env():
                 for k in range(n - i - 1):
                     # cp(inplace_mult * 2 * np.pi / 2 ** (k + 2), qv[k + i + 1], qv[i])
-                    
+
                     if use_gms:
-                        cp(inplace_mult * 2 * np.pi / 2 ** (k + 2), qv[i], qv[k + i + 1])
+                        cp(
+                            inplace_mult * 2 * np.pi / 2 ** (k + 2),
+                            qv[i],
+                            qv[k + i + 1],
+                        )
                     else:
                         phase = inplace_mult * 2 * np.pi / 2 ** (k + 2)
-                        
+
                         # cx(qv[k + i + 1], qv[i])
                         # p(-phase/2, qv[i])
                         # cx(qv[k + i + 1], qv[i])
-                        
-                        
+
                         cx(qv[i], qv[k + i + 1])
-                        p(-phase/2, qv[k + i + 1])
+                        p(-phase / 2, qv[k + i + 1])
                         cx(qv[i], qv[k + i + 1])
-                        
-                        
-                        accumulated_phases[i] += phase/2
-                        accumulated_phases[k + i + 1] += phase/2
-        
-        
-                    
+
+                        accumulated_phases[i] += phase / 2
+                        accumulated_phases[k + i + 1] += phase / 2
+
         for i in range(n):
             if accumulated_phases[i] and not use_gms:
                 p(accumulated_phases[i], qv[i])
                 accumulated_phases[i] = 0
-                
+
     else:
-        
+
         from qrisp import QuantumFloat, conjugate
-        reservoir = QuantumFloat(n+1)
-        
+
+        reservoir = QuantumFloat(n + 1)
+
         def prepare_reservoir(reservoir):
             n = len(reservoir)
             h(reservoir)
             for i in range(n):
-                p(np.pi*2**(i-n+1), reservoir[i])
-        
-        
+                p(np.pi * 2 ** (i - n + 1), reservoir[i])
+
         with conjugate(prepare_reservoir)(reservoir):
 
             for i in range(n):
-                
+
                 h(qv[i])
-        
+
                 if i == n - 1:
                     break
-        
+
                 phase_qubits = []
                 for k in range(n - i - 1):
                     cx(qv[i], qv[k + i + 1])
                     phase_qubits.append(qv[k + i + 1])
-                
-                inpl_adder(phase_qubits[::-1], reservoir[-len(phase_qubits)-2:])
-                    
+
+                inpl_adder(phase_qubits[::-1], reservoir[-len(phase_qubits) - 2 :])
+
                 for k in range(n - i - 1):
                     cx(qv[i], qv[k + i + 1])
-                
+
                 x(reservoir)
-                inpl_adder(phase_qubits[::-1], reservoir[-len(phase_qubits)-2:])
+                inpl_adder(phase_qubits[::-1], reservoir[-len(phase_qubits) - 2 :])
                 x(reservoir)
-            
+
             s(qv)
-            inpl_adder(qv, reservoir[-n-1:])
-        
+            inpl_adder(qv, reservoir[-n - 1 :])
+
         reservoir.delete()
 
     if exec_swap:
@@ -135,9 +142,14 @@ def QFT_inner(qv, exec_swap=True, qiskit_endian=True, inplace_mult=1, use_gms=Fa
     return qv
 
 
-
 def QFT(
-    qv, inv=False, exec_swap=True, qiskit_endian=True, inplace_mult=1, use_gms=False, inpl_adder=None
+    qv,
+    inv=False,
+    exec_swap=True,
+    qiskit_endian=True,
+    inplace_mult=1,
+    use_gms=False,
+    inpl_adder=None,
 ):
     """
     Performs the quantum fourier transform on the input.
@@ -161,12 +173,13 @@ def QFT(
         If set to True, the QFT will be compiled using only GMS gates as entangling
         gates. The default is False.
     inpl_adder : callable, optional
-        Uses an adder and a reservoir state to perform the QFT. Read more about 
+        Uses an adder and a reservoir state to perform the QFT. Read more about
         it :ref:`here <adder_based_qft>`. The default is None
 
 
     """
     from qrisp import gate_wrap, invert
+
     name = "QFT"
     if not exec_swap:
         name += " no swap"
@@ -186,7 +199,7 @@ def QFT(
                     qiskit_endian=qiskit_endian,
                     inplace_mult=inplace_mult,
                     use_gms=use_gms,
-                    inpl_adder=inpl_adder
+                    inpl_adder=inpl_adder,
                 )
 
     else:
@@ -199,26 +212,26 @@ def QFT(
                 qiskit_endian=qiskit_endian,
                 inplace_mult=inplace_mult,
                 use_gms=use_gms,
-                inpl_adder=inpl_adder
+                inpl_adder=inpl_adder,
             )
 
     return qv
 
-@qache(static_argnums = [1])
+
+@qache(static_argnums=[1])
 def jasp_qft(qv, exec_swap):
-    
     """Performs qft on the first n qubits in circuit (without swaps)"""
     if isinstance(qv, list):
         n = len(qv)
     else:
         n = qv.size
-    
+
     for i in jrange(n):
         # pass
-        h(qv[n - 1- i])
-        for k in jrange(n - i-1):
-            cp(2. * np.pi / pow(2., (k + 2)), qv[n - 1 - (k + i + 1)], qv[n - 1 -i])
-    
+        h(qv[n - 1 - i])
+        for k in jrange(n - i - 1):
+            cp(2.0 * np.pi / pow(2.0, (k + 2)), qv[n - 1 - (k + i + 1)], qv[n - 1 - i])
+
     if exec_swap:
-        for i in jrange(n//2):
-            swap(qv[i], qv[n-i-1])
+        for i in jrange(n // 2):
+            swap(qv[i], qv[n - i - 1])

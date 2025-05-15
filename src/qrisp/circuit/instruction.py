@@ -53,9 +53,9 @@ class Instruction:
     >>> qc.run()
     {'1': 10000}
     >>> print(qc.transpile())
-    
+
     ::
-    
+
               ┌───┐
         qb_0: ┤ X ├──■─────
               └───┘┌─┴─┐┌─┐

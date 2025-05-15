@@ -17,7 +17,7 @@
 """
 
 from qrisp import z, control
-from qrisp.alg_primitives.qae import amplitude_amplification 
+from qrisp.alg_primitives.qae import amplitude_amplification
 from qrisp.jasp import check_for_tracing_mode, expectation_value
 from jax.lax import while_loop
 
@@ -36,7 +36,7 @@ def IQAE(qargs, state_function, eps, alpha, mes_kwargs={}):
     Parameters
     ----------
     qargs : list[:ref:`QuantumVariable`] or callable
-        A list of QuantumVariables which represent the state on which the quantum amplitude estimation is performed, 
+        A list of QuantumVariables which represent the state on which the quantum amplitude estimation is performed,
         or a function preparing a list of QuantumVariables.
         The last variable in the list must be of type :ref:`QuantumBool`.
     state_function : callable
@@ -52,10 +52,10 @@ def IQAE(qargs, state_function, eps, alpha, mes_kwargs={}):
     Returns
     -------
     a : float
-        An estimate $\hat{a}$ of $a$ such that 
-        
+        An estimate $\hat{a}$ of $a$ such that
+
     .. math::
-        
+
         \mathbb P\{|\hat{a}-a|<\epsilon\}\geq 1-\alpha
 
     Examples
@@ -76,7 +76,7 @@ def IQAE(qargs, state_function, eps, alpha, mes_kwargs={}):
         from qrisp import QuantumFloat, QuantumBool, control, z, h, ry, IQAE
         import numpy as np
 
-        n = 6 
+        n = 6
         inp = QuantumFloat(n,-n)
         tar = QuantumBool()
         input_list = [inp, tar]
@@ -99,7 +99,7 @@ def IQAE(qargs, state_function, eps, alpha, mes_kwargs={}):
 
         a = IQAE(input_list, state_function, eps=0.01, alpha=0.01)
 
-    >>> a 
+    >>> a
     0.26782038552705856
 
     """
@@ -117,7 +117,7 @@ def IQAE(qargs, state_function, eps, alpha, mes_kwargs={}):
             return qargs_
 
     # The oracle tagging the good states
-    def oracle_function(*args):  
+    def oracle_function(*args):
         tar = args[-1]
         z(tar)
 
@@ -126,20 +126,22 @@ def IQAE(qargs, state_function, eps, alpha, mes_kwargs={}):
     else:
         import numpy as jnp
 
-    E = 1/2 * jnp.pow(jnp.sin(jnp.pi * 3/14), 2) -  1/2 * pow(jnp.sin(jnp.pi * 1/6), 2) 
-    F = 1/2 * jnp.arcsin(jnp.sqrt(2 * E))
-    
-    C = 4/ (6*F + jnp.pi)
-    break_cond =  2 * eps + 1
+    E = 1 / 2 * jnp.pow(jnp.sin(jnp.pi * 3 / 14), 2) - 1 / 2 * pow(
+        jnp.sin(jnp.pi * 1 / 6), 2
+    )
+    F = 1 / 2 * jnp.arcsin(jnp.sqrt(2 * E))
+
+    C = 4 / (6 * F + jnp.pi)
+    break_cond = 2 * eps + 1
 
     K_i = 1
     m_i = 0
 
     theta_b = 0
     theta_sh = 0
-    
-    L_arr = jnp.array([3,3,3,5,5,5,5,5,7,7,7,7,7,7,7])
-    m_arr = jnp.array([0,1,2,0,1,2,3,4,0,1,2,3,4,5,6])
+
+    L_arr = jnp.array([3, 3, 3, 5, 5, 5, 5, 5, 7, 7, 7, 7, 7, 7, 7])
+    m_arr = jnp.array([0, 1, 2, 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 5, 6])
 
     def cond_fun(state):
         L_arr, m_arr, break_cond, alpha, eps, m_i, K_i, theta_b, theta_sh = state
@@ -148,41 +150,49 @@ def IQAE(qargs, state_function, eps, alpha, mes_kwargs={}):
     def body_fun(state):
         L_arr, m_arr, break_cond, alpha, eps, m_i, K_i, theta_b, theta_sh = state
 
-        alp_i = C * alpha * eps * K_i 
-        N_i = jnp.int64(jnp.ceil(1/(2 * jnp.pow(E, 2) ) * jnp.log(2/alp_i) ) )
+        alp_i = C * alpha * eps * K_i
+        N_i = jnp.int64(jnp.ceil(1 / (2 * jnp.pow(E, 2)) * jnp.log(2 / alp_i)))
 
         # Perform quantum step
-        A_i  = quantum_step( jnp.int64((K_i -1 )/2) , N_i, init_function, state_function, 
-                            oracle_function, mes_kwargs ) 
-        
+        A_i = quantum_step(
+            jnp.int64((K_i - 1) / 2),
+            N_i,
+            init_function,
+            state_function,
+            oracle_function,
+            mes_kwargs,
+        )
+
         # Compute new thetas
         theta_b, theta_sh = compute_thetas(m_i, K_i, A_i, E)
 
         # Compute new L_i
-        L_new, m_new = compute_Li(L_arr, m_arr, m_i , K_i, theta_b, theta_sh)
+        L_new, m_new = compute_Li(L_arr, m_arr, m_i, K_i, theta_b, theta_sh)
         m_i = m_new
         K_i = L_new * K_i
 
-        break_cond = jnp.float64(jnp.abs( theta_b - theta_sh ))
+        break_cond = jnp.float64(jnp.abs(theta_b - theta_sh))
 
         return L_arr, m_arr, break_cond, alpha, eps, m_i, K_i, theta_b, theta_sh
-    
+
     state = (L_arr, m_arr, break_cond, alpha, eps, m_i, K_i, theta_b, theta_sh)
 
     if check_for_tracing_mode():
-        L_arr, m_arr, break_cond, alpha, eps, m_i, K_i, theta_b, theta_sh = while_loop(cond_fun, body_fun, state)
+        L_arr, m_arr, break_cond, alpha, eps, m_i, K_i, theta_b, theta_sh = while_loop(
+            cond_fun, body_fun, state
+        )
     else:
         while cond_fun(state):
             state = body_fun(state)
         L_arr, m_arr, break_cond, alpha, eps, m_i, K_i, theta_b, theta_sh = state
-    
-    final_res = jnp.sin((theta_b+theta_sh)/2)**2
+
+    final_res = jnp.sin((theta_b + theta_sh) / 2) ** 2
     return final_res
 
 
 def quantum_step(k, N, init_function, state_function, oracle_function, mes_kwargs):
     """
-    Performs the quantum step, i.e., Quantum Amplitude Amplification, 
+    Performs the quantum step, i.e., Quantum Amplitude Amplification,
     in accordance to `Accelerated Quantum Amplitude Estimation without QFT <https://arxiv.org/abs/2407.16795>`_
 
     Parameters
@@ -208,24 +218,24 @@ def quantum_step(k, N, init_function, state_function, oracle_function, mes_kwarg
     def state_prep(k):
         qargs = init_function()
         state_function(*qargs)
-        amplitude_amplification(qargs, state_function, oracle_function, iter = k)
+        amplitude_amplification(qargs, state_function, oracle_function, iter=k)
         return qargs[-1]
 
     if check_for_tracing_mode():
-        a_i = expectation_value(state_prep, shots = N)(k)
+        a_i = expectation_value(state_prep, shots=N)(k)
     else:
         mes_kwargs["shots"] = N
         res_dict = state_prep(k).get_measurement(**mes_kwargs)
         a_i = res_dict.get(True, 0)
 
-    return a_i 
+    return a_i
 
 
-def compute_thetas(m_i, K_i, A_i, E): 
+def compute_thetas(m_i, K_i, A_i, E):
     """
-    Helper function to compute the angles for the next iteration. 
+    Helper function to compute the angles for the next iteration.
     See `the original paper <https://arxiv.org/abs/2407.16795>`_ , Algorithm 1.
-    
+
     Parameters
     ----------
     m_i : int
@@ -242,22 +252,28 @@ def compute_thetas(m_i, K_i, A_i, E):
         import jax.numpy as jnp
     else:
         import numpy as jnp
-    
+
     b_max = jnp.max(jnp.array([A_i - E, 0]))
     sh_min = jnp.min(jnp.array([A_i + E, 1]))
-    
-    theta_b = ( (m_i + m_i%2)*jnp.pi/2 + jnp.pow(-1,m_i%2)*jnp.arcsin(jnp.sqrt(b_max)) )/K_i
-    theta_sh = ( (m_i + m_i%2)*jnp.pi/2 + jnp.pow(-1,m_i%2)*jnp.arcsin(jnp.sqrt(sh_min)) )/K_i
-    
-    #assert np.round( np.pow( np.sin(K_i * theta_b),2) , 8 )  == np.round(b_max, 8)
-    #assert np.round( np.pow( np.sin(K_i * theta_sh),2), 8 )  == np.round(sh_min, 8)
+
+    theta_b = (
+        (m_i + m_i % 2) * jnp.pi / 2
+        + jnp.pow(-1, m_i % 2) * jnp.arcsin(jnp.sqrt(b_max))
+    ) / K_i
+    theta_sh = (
+        (m_i + m_i % 2) * jnp.pi / 2
+        + jnp.pow(-1, m_i % 2) * jnp.arcsin(jnp.sqrt(sh_min))
+    ) / K_i
+
+    # assert np.round( np.pow( np.sin(K_i * theta_b),2) , 8 )  == np.round(b_max, 8)
+    # assert np.round( np.pow( np.sin(K_i * theta_sh),2), 8 )  == np.round(sh_min, 8)
 
     return theta_b, theta_sh
 
 
-def compute_Li(L_arr, m_arr, m_i , K_i, theta_b, theta_sh):
+def compute_Li(L_arr, m_arr, m_i, K_i, theta_b, theta_sh):
     """
-    Helper function to compute further values for the next iteration. 
+    Helper function to compute further values for the next iteration.
     See `the original paper <https://arxiv.org/abs/2407.16795>`_ , Algorithm 1.
 
     Parameters
@@ -280,12 +296,17 @@ def compute_Li(L_arr, m_arr, m_i , K_i, theta_b, theta_sh):
     first_arr = L_arr * K_i * theta_b
     second_arr = L_arr * K_i * theta_sh
 
-    lower_arr = (L_arr*m_i + m_arr) * jnp.pi/2
-    upper_arr = lower_arr + jnp.pi/2
+    lower_arr = (L_arr * m_i + m_arr) * jnp.pi / 2
+    upper_arr = lower_arr + jnp.pi / 2
 
-    index = jnp.argmax((first_arr >= lower_arr) & (first_arr <= upper_arr) & (second_arr >= lower_arr) & (second_arr <= upper_arr))
+    index = jnp.argmax(
+        (first_arr >= lower_arr)
+        & (first_arr <= upper_arr)
+        & (second_arr >= lower_arr)
+        & (second_arr <= upper_arr)
+    )
 
     L_new = L_arr[index]
-    m_new = L_new*m_i + m_arr[index]
+    m_new = L_new * m_i + m_arr[index]
 
     return L_new, m_new

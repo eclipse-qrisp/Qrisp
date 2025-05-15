@@ -21,11 +21,12 @@ import numpy as np
 from numba import njit
 import psutil
 
+
 def optimize_allocations(qc):
     from qrisp.permeability import PermeabilityGraph, TerminatorNode
 
     # G = dag_from_qc(qc, remove_init_nodes=True)
-    G = PermeabilityGraph(qc, remove_artificials = True)
+    G = PermeabilityGraph(qc, remove_artificials=True)
     qc_new = qc.clearcopy()
 
     dealloc_identifier = lambda x: x.op.name == "qb_dealloc"
@@ -40,43 +41,49 @@ def optimize_allocations(qc):
     # a sorting index. This induces a valid topological ordering because of [proof]
     def sub_sort(dag):
         nodes = list(dag.nodes())
+
         def sort_key(x):
             if isinstance(x, TerminatorNode):
                 return 0
             else:
                 return x.qc_index
-        nodes.sort(key = sort_key)
+
+        nodes.sort(key=sort_key)
         return nodes
 
-    for n in topological_sort(G, prefer=dealloc_identifier, delay=alloc_identifer, sub_sort = sub_sort):
+    for n in topological_sort(
+        G, prefer=dealloc_identifier, delay=alloc_identifer, sub_sort=sub_sort
+    ):
         if n.instr:
             qc_new.append(n.instr)
 
-    #The above algorithm does not move allocation gates to their latest possible
-    #position (only compared to other deallocation gates)    
-    #We therefore manually move the allocation gates to the position right
-    #before the first actual instruction on that qubit.
+    # The above algorithm does not move allocation gates to their latest possible
+    # position (only compared to other deallocation gates)
+    # We therefore manually move the allocation gates to the position right
+    # before the first actual instruction on that qubit.
     new_data = []
     delayed_qubit_alloc_dic = {}
-    
+
     for i in range(len(qc_new.data)):
         instr = qc_new.data[i]
-        
+
         if instr.op.name == "qb_alloc":
             delayed_qubit_alloc_dic[instr.qubits[0]] = instr
         else:
             # We sort the qubits in order to prevent non-deterministic compilation behavior
-            alloc_qubits = list(set(delayed_qubit_alloc_dic.keys()).intersection(instr.qubits))
-            alloc_qubits.sort(key = lambda x : hash(x))
+            alloc_qubits = list(
+                set(delayed_qubit_alloc_dic.keys()).intersection(instr.qubits)
+            )
+            alloc_qubits.sort(key=lambda x: hash(x))
             for qb in alloc_qubits:
                 new_data.append(delayed_qubit_alloc_dic[qb])
                 del delayed_qubit_alloc_dic[qb]
-            
+
             new_data.append(instr)
-    
+
     for instr in delayed_qubit_alloc_dic.values():
         new_data.append(instr)
-    
+
     qc_new.data = new_data
 
     return qc_new
@@ -133,7 +140,7 @@ def topological_sort(G, prefer=None, delay=None, sub_sort=nx.topological_sort):
     prefered_nodes = []
 
     node_list = list(G.nodes())
-    
+
     for i in range(len(node_list)):
         n = node_list[i]
         if n.instr is None:
@@ -142,98 +149,106 @@ def topological_sort(G, prefer=None, delay=None, sub_sort=nx.topological_sort):
             prefered_nodes.append(i)
         elif delay(n.instr):
             delay_nodes.append(i)
-            
+
     if len(prefered_nodes) == 0:
         return node_list
-    
+
     sprs_mat = nx.to_scipy_sparse_array(G, format="csr")
-    
+
     res = toposort_helper(
-                    sprs_mat.indptr.astype(np.int32),
-                    sprs_mat.indices.astype(np.int32),
-                    len(G),
-                    np.array(delay_nodes, dtype = np.int32), 
-                    np.array(prefered_nodes, dtype = np.int32))
-    
+        sprs_mat.indptr.astype(np.int32),
+        sprs_mat.indices.astype(np.int32),
+        len(G),
+        np.array(delay_nodes, dtype=np.int32),
+        np.array(prefered_nodes, dtype=np.int32),
+    )
+
     return [node_list[i] for i in res]
+
 
 memory = psutil.virtual_memory().total
 
+
 def toposort_helper(indptr, indices, node_amount, delay_nodes, prefered_nodes):
-    
-    if memory/4 < node_amount**2:
-        return toposort_helper_sparse(indptr, indices, node_amount, delay_nodes, prefered_nodes)
+
+    if memory / 4 < node_amount**2:
+        return toposort_helper_sparse(
+            indptr, indices, node_amount, delay_nodes, prefered_nodes
+        )
     else:
-        return toposort_helper_dense(indptr, indices, node_amount, delay_nodes, prefered_nodes)
+        return toposort_helper_dense(
+            indptr, indices, node_amount, delay_nodes, prefered_nodes
+        )
 
 
-@njit(cache = True)
+@njit(cache=True)
 def toposort_helper_dense(indptr, indices, node_amount, delay_nodes, prefered_nodes):
     # This array returns a graph that reflects all ancestor relations
     # i.e. ancestor_graph[42] is True at all ancestors of node 42
     ancestor_graph = compute_all_ancestors_dense(indptr, indices, node_amount)
-    
+
     n = prefered_nodes.size
     m = delay_nodes.size
-    
+
     # This array will contain the ancestor relations between the
     # prefered/delay nodes
-    dependency_matrix = np.zeros((n, m), dtype = np.int8)
+    dependency_matrix = np.zeros((n, m), dtype=np.int8)
 
-    # Fill with information from ancestor_graph    
+    # Fill with information from ancestor_graph
     for i in range(n):
         for j in range(m):
             if ancestor_graph[prefered_nodes[i], delay_nodes[j]]:
                 dependency_matrix[i, j] = 1
 
     # This array will contain the result
-    res = np.zeros(node_amount, dtype = np.int32)
-    
+    res = np.zeros(node_amount, dtype=np.int32)
+
     # This array array tracks which nodes have not yet been processed.
     # It is initialized to all True because no nodes have been processed yet.
-    remaining_nodes = np.ones(node_amount, dtype = np.int8)
-    
+    remaining_nodes = np.ones(node_amount, dtype=np.int8)
+
     # This integer will contain the amount of nodes that have been processed
     node_counter = 0
-    
+
     if m != 0:
         for i in range(n):
             # For each prefer nodes we compute how many delay nodes are required.
-            required_delay_nodes = np.sum(dependency_matrix, axis = 1)
-            
+            required_delay_nodes = np.sum(dependency_matrix, axis=1)
+
             # We determine the prefer node that requires the least delay nodes
             min_node_index = np.argmin(required_delay_nodes)
             prefer_node = prefered_nodes[min_node_index]
-            
-            # We determine the ancestor nodes of this node that have 
+
+            # We determine the ancestor nodes of this node that have
             # not been processed yet
-            to_be_processed = ancestor_graph[prefer_node,:] & remaining_nodes
-            
+            to_be_processed = ancestor_graph[prefer_node, :] & remaining_nodes
+
             ancestor_indices = np.nonzero(to_be_processed)[0]
-            
+
             # We insert the nodes in the result array.
             # We can assume that order of the nodes induces by their numbering
             # is already a topological ordering. Therefore inserting them in
             # order is also a topological sub sort.
-            res[node_counter:node_counter+len(ancestor_indices)] = ancestor_indices
+            res[node_counter : node_counter + len(ancestor_indices)] = ancestor_indices
             node_counter += len(ancestor_indices)
-            
+
             # Mark the nodes as processed
             remaining_nodes[ancestor_indices] = 0
-            
-            
+
             # Update the depedency matrix: All delay nodes that have been processed
             # don't need to be considered again for all following iterations,
             # we therefore remove them from the other columns
-            dependency_matrix = np.clip(dependency_matrix - dependency_matrix[min_node_index, :], 0, 1)
-            
+            dependency_matrix = np.clip(
+                dependency_matrix - dependency_matrix[min_node_index, :], 0, 1
+            )
+
             # Finaly we set all nodes in the processed column to 1 so this column
             # is not processed again.
             dependency_matrix[min_node_index, :] = 1
 
     # Insert the remaining nodes
     res[node_counter:] = np.nonzero(remaining_nodes)[0]
-    
+
     # return the result
     return res
 
@@ -242,147 +257,152 @@ def toposort_helper_dense(indptr, indices, node_amount, delay_nodes, prefered_no
 def compute_all_ancestors_dense(indptr, indices, node_amount):
     # Initialize ancestor sets for all nodes
     ancestors = np.zeros((node_amount, node_amount), dtype=np.bool_)
-    
+
     # Topological sort
     in_degree = np.zeros(node_amount, dtype=np.int64)
     for i in range(node_amount):
-        for j in range(indptr[i], indptr[i+1]):
+        for j in range(indptr[i], indptr[i + 1]):
             in_degree[indices[j]] += 1
-    
+
     queue = [i for i in range(node_amount) if in_degree[i] == 0]
-    
+
     while queue:
         node = queue.pop(0)
         ancestors[node, node] = True  # A node is its own ancestor
-        
-        for i in range(indptr[node], indptr[node+1]):
+
+        for i in range(indptr[node], indptr[node + 1]):
             child = indices[i]
             # Add current node and its ancestors to child's ancestors
             ancestors[child, :] |= ancestors[node, :]
             in_degree[child] -= 1
             if in_degree[child] == 0:
                 queue.append(child)
-    
+
     return ancestors
+
 
 @njit(cache=True)
 def compute_all_ancestors_sparse(indptr, indices, node_amount, prefered_nodes):
     # Initialize ancestor sets for all nodes using a list of sets
-    ancestors = [np.zeros(1, dtype = np.int8) for i in np.arange(node_amount, dtype = np.int32)]
-    
+    ancestors = [
+        np.zeros(1, dtype=np.int8) for i in np.arange(node_amount, dtype=np.int32)
+    ]
+
     # Topological sort
     in_degree = np.zeros(node_amount, dtype=np.int64)
-    
+
     for i in range(node_amount):
-        for j in range(indptr[i], indptr[i+1]):
+        for j in range(indptr[i], indptr[i + 1]):
             in_degree[indices[j]] += 1
 
     queue = []
     for i in range(node_amount):
         if in_degree[i] == 0:
             queue.append(i)
-            ancestors[i] = np.zeros(node_amount, dtype = np.int8)
+            ancestors[i] = np.zeros(node_amount, dtype=np.int8)
             ancestors[i][i] = 1
-    
-    
-    keep_result = np.zeros(node_amount, dtype = np.int32)
-    
+
+    keep_result = np.zeros(node_amount, dtype=np.int32)
+
     for i in range(len(prefered_nodes)):
         keep_result[prefered_nodes[i]] = 1
-    
+
     while queue:
         node = queue.pop(0)
-        
+
         curr_anc = ancestors[node]
-        
-        for i in range(indptr[node], indptr[node+1]):
+
+        for i in range(indptr[node], indptr[node + 1]):
             child = indices[i]
             if len(ancestors[child]) != node_amount:
-                ancestors[child] = np.zeros(node_amount, dtype = np.int8)
+                ancestors[child] = np.zeros(node_amount, dtype=np.int8)
                 ancestors[child][child] = 1
-            
+
             in_degree[child] -= 1
             if in_degree[child] == 0:
                 queue.append(child)
-        
-        for i in range(indptr[node], indptr[node+1]):
+
+        for i in range(indptr[node], indptr[node + 1]):
             child = indices[i]
             # Add current node and its ancestors to child's ancestors
             ancestors[child] = curr_anc | ancestors[child]
-        
+
         # Delete the non-needed values
         if not keep_result[node]:
-            ancestors[node] = np.zeros(1, dtype = np.int8)
-    
+            ancestors[node] = np.zeros(1, dtype=np.int8)
+
     return ancestors
 
 
-@njit(cache = True)
+@njit(cache=True)
 def toposort_helper_sparse(indptr, indices, node_amount, delay_nodes, prefered_nodes):
     # This array returns a graph that reflects all ancestor relations
     # i.e. ancestor_graph[42] is True at all ancestors of node 42
-    ancestor_graph = compute_all_ancestors_sparse(indptr, indices, node_amount, prefered_nodes)
-    
+    ancestor_graph = compute_all_ancestors_sparse(
+        indptr, indices, node_amount, prefered_nodes
+    )
+
     n = prefered_nodes.size
     m = delay_nodes.size
-    
+
     # This array will contain the ancestor relations between the
     # prefered/delay nodes
-    dependency_matrix = np.zeros((n, m), dtype = np.int8)
+    dependency_matrix = np.zeros((n, m), dtype=np.int8)
 
-    # Fill with information from ancestor_graph    
+    # Fill with information from ancestor_graph
     for i in range(n):
         for j in range(m):
             if ancestor_graph[prefered_nodes[i]][delay_nodes[j]]:
                 dependency_matrix[i, j] = 1
 
     # This array will contain the result
-    res = np.zeros(node_amount, dtype = np.int32)
-    
+    res = np.zeros(node_amount, dtype=np.int32)
+
     # This array array tracks which nodes have not yet been processed.
     # It is initialized to all True because no nodes have been processed yet.
-    remaining_nodes = np.ones(node_amount, dtype = np.int8)
-    
+    remaining_nodes = np.ones(node_amount, dtype=np.int8)
+
     # This integer will contain the amount of nodes that have been processed
     node_counter = 0
-    
+
     if m != 0:
         for i in range(n):
             # For each prefer nodes we compute how many delay nodes are required.
-            required_delay_nodes = np.sum(dependency_matrix, axis = 1)
-            
+            required_delay_nodes = np.sum(dependency_matrix, axis=1)
+
             # We determine the prefer node that requires the least delay nodes
             min_node_index = np.argmin(required_delay_nodes)
             prefer_node = prefered_nodes[min_node_index]
-            
-            # We determine the ancestor nodes of this node that have 
+
+            # We determine the ancestor nodes of this node that have
             # not been processed yet
             to_be_processed = ancestor_graph[prefer_node] & remaining_nodes
-            
+
             ancestor_indices = np.nonzero(to_be_processed)[0]
-            
+
             # We insert the nodes in the result array.
             # We can assume that order of the nodes induces by their numbering
             # is already a topological ordering. Therefore inserting them in
             # order is also a topological sub sort.
-            res[node_counter:node_counter+len(ancestor_indices)] = ancestor_indices
+            res[node_counter : node_counter + len(ancestor_indices)] = ancestor_indices
             node_counter += len(ancestor_indices)
-            
+
             # Mark the nodes as processed
             remaining_nodes[ancestor_indices] = 0
-            
-            
+
             # Update the depedency matrix: All delay nodes that have been processed
             # don't need to be considered again for all following iterations,
             # we therefore remove them from the other columns
-            dependency_matrix = np.clip(dependency_matrix - dependency_matrix[min_node_index, :], 0, 1)
-            
+            dependency_matrix = np.clip(
+                dependency_matrix - dependency_matrix[min_node_index, :], 0, 1
+            )
+
             # Finaly we set all nodes in the processed column to 1 so this column
             # is not processed again.
             dependency_matrix[min_node_index, :] = 1
 
     # Insert the remaining nodes
     res[node_counter:] = np.nonzero(remaining_nodes)[0]
-    
+
     # return the result
     return res

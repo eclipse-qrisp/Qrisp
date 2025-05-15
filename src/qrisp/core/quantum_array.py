@@ -27,7 +27,14 @@ import jax
 from qrisp.circuit import transpile
 from qrisp.core import QuantumVariable, qompiler, QuantumSession, merge
 from qrisp.misc import bin_rep
-from qrisp.jasp import check_for_tracing_mode, q_fori_loop, jrange, create_qubits, DynamicQubitArray, TracingQuantumSession
+from qrisp.jasp import (
+    check_for_tracing_mode,
+    q_fori_loop,
+    jrange,
+    create_qubits,
+    DynamicQubitArray,
+    TracingQuantumSession,
+)
 
 
 class QuantumArray:
@@ -162,44 +169,48 @@ class QuantumArray:
     {OutcomeArray([[3., 6.],
                    [1., 4.]]): 1.0}
     """
-    
-    def __init__(self, qtype, shape, qs = None):
-        
+
+    def __init__(self, qtype, shape, qs=None):
+
         if isinstance(shape, int):
             shape = (shape,)
         size = 1
         for s in shape:
             if not isinstance(s, int):
-                raise Exception(f"Tried to create QuantumArray with non-integer tuple {shape}")
+                raise Exception(
+                    f"Tried to create QuantumArray with non-integer tuple {shape}"
+                )
             size *= s
 
         # The idea to implement this class with compatibility to dynamic features
         # (such as dynamic index support) is rooted in two core attributes:
-            
+
         # 1. An integer jax array containing adresses
         # 2. A dynamic qubit array containig ALL qubits of the array
-        
+
         # Many of the important properties (such as shape, size etc.) are derived
         # from the index array. Therefore manipulating these things can be achieved
         # by manipulating the index array.
-        
+
         # If the user requests to retrieve a QuantumVariable from the QuantumArray,
-        # the (dynamic) position of the corresponding qubits is retrieved from 
+        # the (dynamic) position of the corresponding qubits is retrieved from
         # the index array and from this a QuantumVariable is built up.
         # More on that in the __getitem__ method.
-        
+
         self.ind_array = jnp.arange(size)
         self.ind_array = self.ind_array.reshape(shape)
         self.qtype = qtype
-        
+
         if check_for_tracing_mode():
-            
+
             if isinstance(qtype.reg, list):
-                raise Exception("Tried to create QuantumArray with qtype defined outside of tracing context")
-            
+                raise Exception(
+                    "Tried to create QuantumArray with qtype defined outside of tracing context"
+                )
+
             qs = qtype.qs
             self.qs = qs
-            qb_array_tracer, qs.abs_qc = create_qubits(size*qtype.size, qs.abs_qc)
+            qb_array_tracer, qs.abs_qc = create_qubits(size * qtype.size, qs.abs_qc)
             self.qb_array = DynamicQubitArray(qb_array_tracer)
             self.qtype_size = qtype.size
         else:
@@ -209,22 +220,24 @@ class QuantumArray:
                 self.qs = qs
             self.qv_list = []
             for i in range(size):
-                self.qv_list.append(qtype.duplicate(name=self.qtype.name + "*", qs=self.qs))
-    
+                self.qv_list.append(
+                    qtype.duplicate(name=self.qtype.name + "*", qs=self.qs)
+                )
+
     @property
     def shape(self):
         return self.ind_array.shape
-    
+
     @property
     def size(self):
         return self.ind_array.size
-    
+
     @property
     def ndim(self):
         return self.ind_array.ndim
-        
+
     def __getitem__(self, key):
-        
+
         from qrisp.environments import conjugate
 
         # These cases represent the quantum indexing features
@@ -236,16 +249,16 @@ class QuantumArray:
             if all(isinstance(index, QuantumVariable) for index in key):
                 merge([self.qs, key[0].qs])
                 return conjugate(manipulate_array)(self, key)
-        
+
         # If the key is not a tuple, convert to make further processing easier
         if not isinstance(key, tuple):
             key = (key,)
-        
+
         # Retrieve the index address
         # This can either be an integer or an array slice, depending on what
         # the type of key is
         sliced_ind_array = self.ind_array[key]
-        
+
         if len(sliced_ind_array.shape):
             # If the sliced_ind_array has a non trivial shape,
             # the result will be a QuantumArray (instead of a QuantumVariable).
@@ -260,24 +273,26 @@ class QuantumArray:
             index = sliced_ind_array
             if check_for_tracing_mode():
                 # To construct the resulting QuantumVariable we copy the qtype
-                # variable and update the qv.reg attribute.                
+                # variable and update the qv.reg attribute.
                 qv = copy.copy(self.qtype)
                 s = self.qtype_size
-                qv.reg = self.qb_array[index*s:(index+1)*s]
+                qv.reg = self.qb_array[index * s : (index + 1) * s]
                 qv.qs = self.qs
                 return qv
             else:
                 for i in range(len(key)):
                     if key[i] >= self.shape[i]:
-                        raise Exception(f"Index {key} out of bounds for QuantumArray with shape {self.shape}")
+                        raise Exception(
+                            f"Index {key} out of bounds for QuantumArray with shape {self.shape}"
+                        )
                 return self.qv_list[index]
-    
+
     def __setitem__(self, key, value):
         if isinstance(value, QuantumVariable):
             return
         sliced_array = self[key]
         sliced_array.encode(value)
-    
+
     def encode(self, value):
         """
         The encode method allows to quickly bring a QuantumArray in a desired
@@ -319,32 +334,36 @@ class QuantumArray:
                        [1, 1, 0, 0],
                        [1, 1, 0, 0]]): 1.0}
         """
-        
+
         if isinstance(value, list):
-            value = np.array(value, dtype = "object")
-        
+            value = np.array(value, dtype="object")
+
         if not value.shape == self.shape:
-            raise Exception("Tried to initialize a QuantumArray with incompatible shape")
-        
+            raise Exception(
+                "Tried to initialize a QuantumArray with incompatible shape"
+            )
+
         flattened_value_array = value.flatten()
         flat_self = self.flatten()
-        
-        if check_for_tracing_mode() and isinstance(flattened_value_array, (np.ndarray, list)):
+
+        if check_for_tracing_mode() and isinstance(
+            flattened_value_array, (np.ndarray, list)
+        ):
             flattened_value_array = jnp.array(flattened_value_array)
-        
+
         for i in jrange(self.size):
             flat_self[i][:] = flattened_value_array[i]
-    
+
     def reshape(self, *args):
         """
-        Adjusts the shape of the QuantumArray with similar semantics as 
+        Adjusts the shape of the QuantumArray with similar semantics as
         `numpy.ndarray.reshape <https://numpy.org/doc/stable/reference/generated/numpy.ndarray.reshape.html>`_.
 
         .. note::
-            
-            This method never allocates additional qubits and instead returns a 
+
+            This method never allocates additional qubits and instead returns a
             `"view" <https://numpy.org/doc/2.2/user/basics.copies.html>`_,
-            
+
         Parameters
         ----------
         shape : tuple
@@ -354,41 +373,41 @@ class QuantumArray:
         -------
         res : QuantumArray
             The reshaped QuantumArray.
-            
+
         Examples
         --------
-        
+
         We create a 1-dimensional QuantumArray with $2**n$ entries and reshape it into
         a n dimensional QuantumArray with 2 entries per dimension.
-        
+
         ::
-            
+
             from qrisp import QuantumArray, QuantumFloat
             import numpy as np
-            
+
             n = 3
             qtype = QuantumFloat(n)
             qa = QuantumArray(qtype = qtype, shape = 2**n)
             qa[:] = np.arange(2**n)
-            
+
             print(qa)
             # Yields:
             # {OutcomeArray([0, 1, 2, 3, 4, 5, 6, 7]): 1.0}
-            
-        
+
+
         We can now reshape:
-        
+
         ::
-            
+
             reshaped_qa = qa.reshape(tuple(n*[2]))
             print(reshaped_qa)
-            
+
             # Yields:
             # {OutcomeArray([[[0, 1],
             #                 [2, 3]],
             #                [[4, 5],
             #                 [6, 7]]]): 1.0}
-            
+
         """
         if isinstance(args[0], (tuple, list)):
             shape = args[0]
@@ -397,15 +416,15 @@ class QuantumArray:
         res = copy.copy(self)
         res.ind_array = self.ind_array.reshape(shape)
         return res
-    
+
     def flatten(self):
         """
-        Flattens the QuantumArray with similar semantics as 
+        Flattens the QuantumArray with similar semantics as
         `numpy.ndarray.flatten <https://numpy.org/doc/stable/reference/generated/numpy.ndarray.flatten.html>`_.
 
         .. note::
-            
-            This method never allocates additional qubits and instead returns a 
+
+            This method never allocates additional qubits and instead returns a
             `"view" <https://numpy.org/doc/2.2/user/basics.copies.html>`_,
 
         Returns
@@ -414,17 +433,17 @@ class QuantumArray:
             The flattened QuantumArray.
 
         """
-        
+
         return self.reshape(self.size)
-    
+
     def ravel(self):
         """
-        Ravels the QuantumArray with similar semantics as 
+        Ravels the QuantumArray with similar semantics as
         `numpy.ndarray.ravel <https://numpy.org/doc/stable/reference/generated/numpy.ravel.html>`_.
 
         .. note::
-            
-            This method never allocates additional qubits and instead returns a 
+
+            This method never allocates additional qubits and instead returns a
             `"view" <https://numpy.org/doc/2.2/user/basics.copies.html>`_,
 
         Returns
@@ -433,17 +452,17 @@ class QuantumArray:
             The raveled QuantumArray.
 
         """
-        
+
         return self.flatten()
-    
+
     def transpose(self, *axes):
         """
-        Reverses the axes of the QuantumArray with similar semantics as 
+        Reverses the axes of the QuantumArray with similar semantics as
         `numpy.ndarray.transpose <https://numpy.org/doc/stable/reference/generated/numpy.ndarray.transpose.html>`_.
 
         .. note::
-            
-            This method never allocates additional qubits and instead returns a 
+
+            This method never allocates additional qubits and instead returns a
             `"view" <https://numpy.org/doc/2.2/user/basics.copies.html>`_.
 
         Parameters
@@ -462,17 +481,17 @@ class QuantumArray:
         res = copy.copy(self)
         res.ind_array = self.ind_array.transpose(*axes)
         return res
-    
+
     def swapaxes(self, axis_1, axis_2):
         """
-        Swaps the axes of the QuantumArray with similar semantics as 
+        Swaps the axes of the QuantumArray with similar semantics as
         `numpy.ndarray.swapaxes <https://numpy.org/doc/stable/reference/generated/numpy.ndarray.swapaxes.html>`_.
-        
+
         .. note::
-            
-            This method never allocates additional qubits and instead returns a 
+
+            This method never allocates additional qubits and instead returns a
             `"view" <https://numpy.org/doc/2.2/user/basics.copies.html>`_:
-        
+
         Parameters
         ----------
         axis_1 : int
@@ -489,8 +508,8 @@ class QuantumArray:
         res = copy.copy(self)
         res.ind_array = self.ind_array.swapaxes(axis_1, axis_2)
         return res
-    
-    def delete(self, verify = False):
+
+    def delete(self, verify=False):
         r"""
         Performs the :meth:`delete <qrisp.QuantumVariable.delete>` method on all
         QuantumVariables in this array.
@@ -506,30 +525,28 @@ class QuantumArray:
             self.qs.clear_qubits(self.qb_array)
         else:
             for i in range(self.size):
-                self.qv_list[i].delete(verify = verify)
-        
+                self.qv_list[i].delete(verify=verify)
+
     def measure(self):
         from qrisp import measure
-        
+
         dtype = self.qtype.decoder(jnp.zeros(1)[0]).dtype
-        
-        meas_res = jnp.zeros(self.size, dtype = dtype)
-        
+
+        meas_res = jnp.zeros(self.size, dtype=dtype)
+
         flattened_qa = self.flatten()
-        
-        
+
         def body_fun(i, val):
             meas_res, flattened_qa = val
             meas_res = meas_res.at[i].set(measure(flattened_qa[i]))
             return (meas_res, flattened_qa)
-        
-        meas_res, flattened_qa = q_fori_loop(0, 
-                                             flattened_qa.size, 
-                                             body_fun,
-                                             (meas_res, flattened_qa))
-        
+
+        meas_res, flattened_qa = q_fori_loop(
+            0, flattened_qa.size, body_fun, (meas_res, flattened_qa)
+        )
+
         return meas_res.reshape(self.shape)
-    
+
     # Retrieves a measurement of the arrays state
     # Returns a list of tuples of the type (array, count)
     # ie. [(array([1,1,0]), 232), (array([1,1,3]), 115), ...]
@@ -594,14 +611,15 @@ class QuantumArray:
         """
 
         if check_for_tracing_mode():
-            raise Exception("Tried to get_measurement from QuantumArray in tracing mode")
+            raise Exception(
+                "Tried to get_measurement from QuantumArray in tracing mode"
+            )
 
         for qv in self.flatten():
             if qv.is_deleted():
                 raise Exception(
                     "Tried to measure QuantumArray containing deleted QuantumVariables"
                 )
-
 
         if backend is None:
             if self.qs.backend is None:
@@ -643,7 +661,7 @@ class QuantumArray:
             qc = circuit_preprocessor(qc)
 
         from qrisp.misc import get_measurement_from_qc
-        
+
         counts = get_measurement_from_qc(qc, qubits, backend, shots)
 
         # Insert outcome labels (if available and hashable)
@@ -661,7 +679,7 @@ class QuantumArray:
         counts = {key: counts[key] for key in sorted_key_list}
 
         return counts
-    
+
     def decoder(self, code_int):
         """
         The decoder method specifies how a QuantumArray turns the outcomes of
@@ -718,16 +736,16 @@ class QuantumArray:
                 res[i] = self.qtype.decoder(int(bin_string[i * n : (i + 1) * n], 2))
 
         return OutcomeArray(res.reshape(self.shape))
-    
+
     def __len__(self):
         return len(self.ind_array)
-    
+
     def __str__(self):
         if not check_for_tracing_mode():
             return str(self.get_measurement())
         else:
             return "<QuantumArray[" + str(self.shape)[1:-1] + "]>"
-        
+
     def __matmul__(self, other):
         from qrisp import QuantumFloat
 
@@ -743,29 +761,29 @@ class QuantumArray:
                 return semi_classic_matmul(self, other)
 
         raise Exception("Matrix multiplication for non-float types not implemented")
-        
+
     def __rmatmul__(self, other):
         from qrisp import QuantumFloat
 
         if isinstance(self.qtype, QuantumFloat):
             return (self.transpose() @ other.transpose()).transpose()
-        
+
     def __iter__(self):
         return QuantumArrayIterator(self.flatten())
-    
+
     def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
         if ufunc is np.matmul:
             return inputs[1].__rmatmul__(inputs[0])
         return NotImplemented
-    
-    def concatenate(self, other, axis = 0):
+
+    def concatenate(self, other, axis=0):
         """
         Concatenates two QuantumArrays along an axis with similar semantics as
         `numpy.concatenate <https://numpy.org/doc/stable/reference/generated/numpy.concatenate.html>`_.
-        
+
         .. note::
-            
-            This method never allocates additional qubits and instead returns a 
+
+            This method never allocates additional qubits and instead returns a
             `"view" <https://numpy.org/doc/2.2/user/basics.copies.html>`_.
 
         Parameters
@@ -786,30 +804,34 @@ class QuantumArray:
             The concatenated QuantumArray.
 
         """
-        
+
         if not self.qtype is other.qtype:
-            raise Exception("Tried to concatenate two QuantumArrays with non-identical qtype")
-        
+            raise Exception(
+                "Tried to concatenate two QuantumArrays with non-identical qtype"
+            )
+
         res = copy.copy(self)
-        
+
         ind_array_other_shifted = other.ind_array + self.size
-        
-        concat_ind_array = jnp.concatenate((self.ind_array, ind_array_other_shifted), axis = axis)
-        
+
+        concat_ind_array = jnp.concatenate(
+            (self.ind_array, ind_array_other_shifted), axis=axis
+        )
+
         res.ind_array = concat_ind_array
-        
+
         if check_for_tracing_mode():
             res.qb_array = self.qb_array + other.qb_array
         else:
             merge([self.qs, other.qs])
             res.qv_list = self.qv_list + other.qv_list
-        
+
         return res
-    
+
     def duplicate(self, init=False, qs=None):
         """
         This method returns a fresh QuantumArray, with equal ``qtype`` and shape.
-    
+
         Parameters
         ----------
         init : bool, optional
@@ -818,19 +840,19 @@ class QuantumArray:
         qs : QuantumSession, optional
             The QuantumSession where the duplicate should be registered. By default,
             the duplicate will be registered in a new QuantumSession.
-    
+
         Returns
         -------
         res : QuantumArray
             The duplicated array.
-    
+
         Examples
         --------
-    
+
         We duplicate a QuantumArray consisting of QuantumFloats with and without
         initiation.
-    
-    
+
+
         >>> from qrisp import QuantumArray, QuantumFloat
         >>> qtype = QuantumFloat(4)
         >>> q_array_0 = QuantumArray(qtype, (2,2))
@@ -842,46 +864,51 @@ class QuantumArray:
         >>> print(q_array_1)
         {OutcomeArray([[0, 0],
                        [0, 0]]): 1.0}
-    
+
         Note that no values have been carried over:
-    
+
         >>> q_array_2 = q_array_0.duplicate(init = True)
         >>> print(q_array_2)
         {OutcomeArray([[1, 1],
                        [1, 1]]): 1.0}
-    
+
         Now the values have been carried over. Note that this does NOT copy the state.
         For more information on this check the documentation of the
         :meth:`init_from <qrisp.QuantumVariable.init_from>` method of QuantumVariable.
         """
-    
+
         res = copy.copy(self)
-    
+
         if check_for_tracing_mode():
             qs = self.qs
-            qb_array_tracer, qs.abs_qc = create_qubits(self.size*self.qtype_size, qs.abs_qc)
+            qb_array_tracer, qs.abs_qc = create_qubits(
+                self.size * self.qtype_size, qs.abs_qc
+            )
             res.qb_array = DynamicQubitArray(qb_array_tracer)
-            
+
             if init:
                 from qrisp import cx
-                for i in jrange(self.size*self.qtype_size):
+
+                for i in jrange(self.size * self.qtype_size):
                     cx(self.qb_array[i], res.qb_array[i])
-            
+
         else:
-                
+
             if qs is None:
                 res.qs = QuantumSession()
             else:
                 res.qs = qs
-                
+
             res.qv_list = []
             for i in range(self.size):
-                res.qv_list.append(self.qv_list[i].duplicate(name= self.qtype.name + "*", 
-                                                         qs= res.qs, 
-                                                         init = init))
-            
+                res.qv_list.append(
+                    self.qv_list[i].duplicate(
+                        name=self.qtype.name + "*", qs=res.qs, init=init
+                    )
+                )
+
         return res
-    
+
     def most_likely(self, **meas_kwargs):
         """
         Performs a measurement and returns the most likely outcome.
@@ -904,15 +931,14 @@ class QuantumArray:
         """
         meas_res = self.get_measurement(**meas_kwargs)
         return list(meas_res.keys())[0]
-        
 
 
 class QuantumArrayIterator:
-    
+
     def __init__(self, qa):
         self.qa = qa
         self.counter = -1
-    
+
     def __next__(self):
         self.counter += 1
         if self.counter >= self.qa.size:
@@ -921,41 +947,43 @@ class QuantumArrayIterator:
 
 
 def flatten_qa(qa):
-    
+
     children = []
-    
+
     qtype_children, qtype_aux_values = jax.tree.flatten(qa.qtype)
-    
+
     children.append(qa.qtype_size)
     children.append(qa.ind_array)
     children.append(qa.qb_array)
     children.extend(qtype_children)
-    
+
     aux_values = [qtype_aux_values]
-    
+
     return tuple(children), tuple(aux_values)
 
+
 def unflatten_qa(aux_data, children):
-    
+
     qtype_children = children[3:]
     qtype_aux_values = aux_data[0]
-    
+
     qtype = jax.tree.unflatten(qtype_aux_values, qtype_children)
-    
+
     qa_dummy = object.__new__(QuantumArray)
-    
+
     qtype_size = children[0]
     ind_array = children[1]
-    qb_array  = children[2]
-    
+    qb_array = children[2]
+
     qa_dummy.qtype_size = qtype_size
     qa_dummy.qtype = qtype
     qa_dummy.ind_array = ind_array
     qa_dummy.qb_array = qb_array
     qa_dummy.qs = TracingQuantumSession.get_instance()
-    
+
     return qa_dummy
-    
+
+
 jax.tree_util.register_pytree_node(QuantumArray, flatten_qa, unflatten_qa)
 
 

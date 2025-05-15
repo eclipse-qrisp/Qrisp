@@ -16,7 +16,6 @@
 ********************************************************************************/
 """
 
-
 import numpy as np
 
 from qrisp.core.quantum_array import QuantumArray
@@ -84,16 +83,13 @@ class QuantumString(QuantumArray):
 
     """
 
-    def __init__(self, size, qs = None, nisq_char = True):
+    def __init__(self, size, qs=None, nisq_char=True):
         if nisq_char:
             qtype = nisq_init_quantum_char
         else:
             qtype = init_quantum_char
-            
-        QuantumArray.__init__(self, 
-                              qtype = qtype, 
-                              shape = size, 
-                              qs=qs)
+
+        QuantumArray.__init__(self, qtype=qtype, shape=size, qs=qs)
 
     def get_measurement(self, **kwargs):
         mes_result = QuantumArray.get_measurement(self, **kwargs)
@@ -113,9 +109,9 @@ class QuantumString(QuantumArray):
             res_str += res_array[i]
 
         return res_str
-    
+
     def encode(self, encoding_str):
-        encoding_array = np.array(list(encoding_str), dtype = "object")
+        encoding_array = np.array(list(encoding_str), dtype="object")
         QuantumArray.encode(self, encoding_array)
 
     def __setitem__(self, key, value):
@@ -124,13 +120,13 @@ class QuantumString(QuantumArray):
             return
 
         QuantumArray.__setitem__(self, key, [ch for ch in value])
-        
+
     @classmethod
     def quantize_string(cls, string):
         res = QuantumString(len(string))
         res[:] = string
         return res
-    
+
     def __add__(self, other):
         return self.concatenate(other)
 

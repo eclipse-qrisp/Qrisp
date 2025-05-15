@@ -20,6 +20,7 @@ import qiskit
 
 from qrisp.interface import VirtualBackend
 
+
 def IQMBackend(api_token, device_instance, port=None):
     """
     This function instantiates an IQMBackend based on VirtualBackend
@@ -83,7 +84,6 @@ def IQMBackend(api_token, device_instance, port=None):
         raise ImportError(
             "Please install qiskit-iqm to use the IQMBackend. You can do this by running `pip install qrisp[iqm]`."
         )
-
 
     def run_func_iqm(qasm_str, shots=None, token=""):
         if shots is None:

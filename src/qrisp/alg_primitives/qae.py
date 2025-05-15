@@ -19,7 +19,10 @@
 from qrisp.alg_primitives.qpe import QPE
 from qrisp.alg_primitives.amplitude_amplification import amplitude_amplification
 
-def QAE(args, state_function, oracle_function, kwargs_oracle={}, precision=None, target=None):
+
+def QAE(
+    args, state_function, oracle_function, kwargs_oracle={}, precision=None, target=None
+):
     r"""
     This method implements the canonical quantum amplitude estimation (QAE) algorithm by `Brassard et al. <https://arxiv.org/abs/quant-ph/0005055>`_.
 
@@ -52,10 +55,10 @@ def QAE(args, state_function, oracle_function, kwargs_oracle={}, precision=None,
 
     Returns
     -------
-    
+
     res : QuantumFloat
         A QuantumFloat encoding the angle :math:`\theta` as a fraction of :math:`\pi`,
-        such that :math:`\tilde{a}=\sin^2(\theta)` is an estimate for :math:`a`. 
+        such that :math:`\tilde{a}=\sin^2(\theta)` is an estimate for :math:`a`.
 
         More precisely, we have :math:`\theta=\pi\frac{y}{M}` for :math:`y\in\{0,\dotsc,M-1\}` and :math:`M=2^{\text{precision}}`.
         After measurement, the estimate :math:`\tilde{a}=\sin^2(\theta)` satisfies
@@ -71,7 +74,7 @@ def QAE(args, state_function, oracle_function, kwargs_oracle={}, precision=None,
 
     We define a function that prepares the state :math:`\ket{\Psi}=\cos(\frac{\pi}{8})\ket{0}+\sin(\frac{\pi}{8})\ket{1}`
     and an oracle that tags the good state :math:`\ket{1}`. In this case, we have :math:`a=\sin^2(\frac{\pi}{8})`.
-     
+
     ::
 
         from qrisp import z, ry, QuantumBool, QAE
@@ -80,7 +83,7 @@ def QAE(args, state_function, oracle_function, kwargs_oracle={}, precision=None,
         def state_function(qb):
             ry(np.pi/4,qb)
 
-        def oracle_function(qb):   
+        def oracle_function(qb):
             z(qb)
 
         qb = QuantumBool()
@@ -94,11 +97,11 @@ def QAE(args, state_function, oracle_function, kwargs_oracle={}, precision=None,
     Therefore, we obtain the estimate $\tilde{a}=\sin^2(\frac{\pi}{8})$ or $\tilde{a}=\sin^2(\frac{7\pi}{8})$.
     In this case, both results coincide with the exact value $a$.
 
-    
+
     **Numerical integration**
 
-    
-    Here, we demonstarate how to use QAE for numerical integration. 
+
+    Here, we demonstarate how to use QAE for numerical integration.
 
     Consider a continuous function $f\colon[0,1]\rightarrow[0,1]$. We wish to evaluate
 
@@ -113,7 +116,7 @@ def QAE(args, state_function, oracle_function, kwargs_oracle={}, precision=None,
         from qrisp import QuantumFloat, QuantumBool, control, z, h, ry, QAE
         import numpy as np
 
-        n = 6 
+        n = 6
         inp = QuantumFloat(n,-n)
         tar = QuantumBool()
         input_list = [inp, tar]
@@ -123,7 +126,7 @@ def QAE(args, state_function, oracle_function, kwargs_oracle={}, precision=None,
     .. math::
 
         \ket{0}\ket{0}\rightarrow\frac{1}{\sqrt{N}}\sum\limits_{x=0}^{N-1}\ket{x}\left(\sqrt{1-f(x/N)}\ket{0}+\sqrt{f(x/N)}\ket{1}\right).
-    
+
     Then the probability of measuring $1$ in the target state ``tar`` is
 
     .. math::
@@ -145,7 +148,7 @@ def QAE(args, state_function, oracle_function, kwargs_oracle={}, precision=None,
 
         def state_function(inp, tar):
             h(inp)
-    
+
             N = 2**inp.size
             for k in range(inp.size):
                 with control(inp[k]):
@@ -168,7 +171,17 @@ def QAE(args, state_function, oracle_function, kwargs_oracle={}, precision=None,
     """
 
     state_function(*args)
-    res = QPE(args, amplitude_amplification, precision, target, iter_spec=True,
-                kwargs={'state_function':state_function, 'oracle_function':oracle_function, 'kwargs_oracle':kwargs_oracle})
-  
+    res = QPE(
+        args,
+        amplitude_amplification,
+        precision,
+        target,
+        iter_spec=True,
+        kwargs={
+            "state_function": state_function,
+            "oracle_function": oracle_function,
+            "kwargs_oracle": kwargs_oracle,
+        },
+    )
+
     return res

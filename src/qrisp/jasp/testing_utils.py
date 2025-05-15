@@ -22,48 +22,43 @@ from qrisp.jasp import flatten_environments, flatten_pjit, eval_jaxpr, make_jasp
 
 
 def jasp_function_test(func):
-    
+
     def testing_function(*args):
-        
+
         qv = func(*args)
         from qrisp.core import QuantumVariable
+
         qv.__class__ = QuantumVariable
-        
+
         old_counts_dic = qv.get_measurement()
-        
+
         jaspr = make_jaspr(func)(*args)
-        
+
         qv_qubits, qc = jaspr.to_qc(*args)
-        
+
         clbit_list = []
         for qb in qv_qubits:
             clbit_list.append(qc.measure(qb))
-            
-        counts = qc.run(shots = None)
-        
+
+        counts = qc.run(shots=None)
+
         # Remove other measurements outcomes from counts dic
         new_counts_dic = {}
         for key in counts.keys():
             # Remove possible whitespaces
             new_key = key.replace(" ", "")
             # Remove other measurements
-            new_key = new_key[:len(clbit_list)][::-1]
+            new_key = new_key[: len(clbit_list)][::-1]
 
             # new_key = int(new_key, base=2)
             try:
                 new_counts_dic[new_key] += counts[key]
             except KeyError:
                 new_counts_dic[new_key] = counts[key]
-        
+
         for k in old_counts_dic.keys():
-            if abs(old_counts_dic[k] - new_counts_dic[k]) > 1E-4:
+            if abs(old_counts_dic[k] - new_counts_dic[k]) > 1e-4:
                 return False
         return True
-        
+
     return testing_function
-        
-            
-            
-        
-        
-        

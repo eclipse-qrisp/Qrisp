@@ -16,40 +16,45 @@
 ********************************************************************************/
 """
 
-
 # This file implements the circuits described in https://arxiv.org/abs/2412.07372
 # and computes some performance metrics
 from qrisp import *
+
 coin_0 = QuantumBool()
 qv = QuantumFloat(5)
 
-def walk_operator(data, coin, inpl_adder = fourier_adder):
+
+def walk_operator(data, coin, inpl_adder=fourier_adder):
 
     inpl_adder(-1, data)
-    
+
     with control(coin):
         inpl_adder(2, data)
 
+
 walk_operator(qv, coin_0)
-# This is the circuit described on page 6    
+# This is the circuit described on page 6
 qc = qv.qs.compile()
 print("Walk Operator: ")
 print("CNOT count: ", qc.cnot_count())
 print("Qubits: ", qc.num_qubits())
-# Walk Operator: 
-#CNOT count:  30
+# Walk Operator:
+# CNOT count:  30
 # Qubits:  6
+
 
 # This is the circuit described on page 8
 def controlled_reflection(data, ctrl_qb):
-    
+
     h(ctrl_qb)
     h(data[0])
-    mcx([ctrl_qb] + data[:-1], data[-1], method = "balauca", ctrl_state = 0)
+    mcx([ctrl_qb] + data[:-1], data[-1], method="balauca", ctrl_state=0)
     h(data[0])
     h(ctrl_qb)
 
+
 import time
+
 t0 = time.time()
 qv = QuantumFloat(200)
 coin_0 = QuantumBool()
@@ -57,7 +62,7 @@ coin_1 = QuantumBool()
 walk_operator(qv, coin_0)
 controlled_reflection(qv, coin_1)
 
-qc = qv.qs.compile(cancel_qfts = False)
+qc = qv.qs.compile(cancel_qfts=False)
 print(t0 - time.time())
 print("QSVT circuit:")
 print("CNOT count: ", qc.cnot_count())

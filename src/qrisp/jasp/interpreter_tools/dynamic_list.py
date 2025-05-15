@@ -21,37 +21,42 @@ import copy
 import jax
 import jax.numpy as jnp
 
+
 @jax.tree_util.register_pytree_node_class
 class Jlist:
-    
+
     fill_value = 0
-    
-    def __init__(self, init_val = None, max_size = int(2**10)):
+
+    def __init__(self, init_val=None, max_size=int(2**10)):
         self.max_size = max_size
         self.array, self.counter = self._create_dynamic_array(init_val)
 
     def _create_dynamic_array(self, init_val):
-        jax_array = jnp.zeros(self.max_size, dtype = jnp.int64)
-        
+        jax_array = jnp.zeros(self.max_size, dtype=jnp.int64)
+
         n = 0
-        
+
         if init_val is not None:
-            
+
             if isinstance(init_val, list):
                 n = len(init_val)
             else:
                 n = init_val.size
-            
+
             if n == self.max_size:
                 jax_array = init_val
             else:
                 # Create an index array for updating
-                idx = jnp.arange(min(n, jax_array.size), dtype = jnp.int64)
-        
+                idx = jnp.arange(min(n, jax_array.size), dtype=jnp.int64)
+
                 # Use JAX's index_update to fill the array
-                jax_array = jax_array.at[idx].set(jnp.array(init_val[:jax_array.size], dtype = jnp.int64), indices_are_sorted = True, unique_indices = True)
-        
-        return jax_array, jnp.array(min(n, self.max_size), dtype = jnp.int64)
+                jax_array = jax_array.at[idx].set(
+                    jnp.array(init_val[: jax_array.size], dtype=jnp.int64),
+                    indices_are_sorted=True,
+                    unique_indices=True,
+                )
+
+        return jax_array, jnp.array(min(n, self.max_size), dtype=jnp.int64)
 
     def append(self, value):
         self.array, self.counter = self._append(value)
@@ -109,33 +114,35 @@ class Jlist:
 
     def __getitem__(self, key):
         if isinstance(key, slice):
-            
+
             if key.start is None:
                 start = 0
             else:
                 start = jnp.maximum(key.start, 0)
-                
+
             if key.stop is None:
                 stop = self.counter
             else:
                 stop = jnp.minimum(key.stop, self.counter)
-                
+
             length = stop - start
-            
+
             def body_fun(i, state):
                 new_array, old_array = state
-                new_array = new_array.at[i].set(old_array[i+start])
+                new_array = new_array.at[i].set(old_array[i + start])
                 return new_array, old_array
 
-            new_array = jnp.zeros(self.max_size, dtype = jnp.int64)
-            
-            new_array, _ = jax.lax.fori_loop(0, length, body_fun, (new_array, self.array))
-            
+            new_array = jnp.zeros(self.max_size, dtype=jnp.int64)
+
+            new_array, _ = jax.lax.fori_loop(
+                0, length, body_fun, (new_array, self.array)
+            )
+
             res = Jlist.__new__(Jlist)
             res.array = new_array
             res.counter = length
             res.max_size = self.max_size
-            
+
             return res
         else:
             return self.array[key]
@@ -148,7 +155,7 @@ class Jlist:
 
     def __len__(self):
         return int(self.counter)
-    
+
     def copy(self):
         return copy.copy(self)
 

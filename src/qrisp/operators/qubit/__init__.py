@@ -20,6 +20,7 @@
 
 from qrisp.operators.qubit.operator_factors import *
 from qrisp.operators.qubit.bound_qubit_operator import *
-#from qrisp.operators.qubit.pauli_measurement import *
+
+# from qrisp.operators.qubit.pauli_measurement import *
 from qrisp.operators.qubit.operator_factors import *
 from qrisp.operators.qubit.commutativity_tools import *

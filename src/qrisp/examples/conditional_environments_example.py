@@ -27,7 +27,7 @@ from qrisp import (
     cx,
     h,
     mcx,
-    multi_measurement
+    multi_measurement,
 )
 
 

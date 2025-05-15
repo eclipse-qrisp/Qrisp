@@ -34,9 +34,9 @@ BUGS:
 
 
 def create_qml_instruction(op):
-    import pennylane as qml 
+    import pennylane as qml
 
-    #create basic, straight forward instructions
+    # create basic, straight forward instructions
     if op.name == "rxx":
         qml_ins = qml.IsingXX
     elif op.name == "ryy":
@@ -45,7 +45,7 @@ def create_qml_instruction(op):
         qml_ins = qml.IsingZZ
 
     elif op.name == "p":
-        qml_ins =  qml.RZ
+        qml_ins = qml.RZ
     elif op.name == "rx":
         qml_ins = qml.RX
     elif op.name == "ry":
@@ -53,7 +53,7 @@ def create_qml_instruction(op):
     elif op.name == "rz":
         qml_ins = qml.RZ
     elif op.name == "u1":
-        qml_ins = qml.U1  
+        qml_ins = qml.U1
 
     elif op.name == "u3":
         qml_ins = qml.U3
@@ -69,26 +69,28 @@ def create_qml_instruction(op):
         qml_ins = qml.PauliY
     elif op.name == "z":
         qml_ins = qml.PauliZ
-    elif op.name == "s" or  op.name =="s_dg":
+    elif op.name == "s" or op.name == "s_dg":
         qml_ins = qml.S
-    elif op.name == "t" or op.name =="t_dg":
+    elif op.name == "t" or op.name == "t_dg":
         qml_ins = qml.T
     elif op.name == "sx" or op.name == "sx_dg":
         qml_ins = qml.SX
 
-    #complex gate, with subcircuit definition we create a representative subcircuit
+    # complex gate, with subcircuit definition we create a representative subcircuit
     elif op.definition:
-        circ = qml_converter(op.definition , circ = True)
+        circ = qml_converter(op.definition, circ=True)
         return circ
     else:
         Exception("Cannot convert")
     return qml_ins
 
+
 import sympy
 
-def qml_converter(qc,circ= False):
-    
-    def circuit(*args, wires = None):
+
+def qml_converter(qc, circ=False):
+
+    def circuit(*args, wires=None):
 
         circFlag = False
 
@@ -100,14 +102,13 @@ def qml_converter(qc,circ= False):
         else:
             for i in range(len(qc.qubits)):
                 qbit_dic[qc.qubits[i].identifier] = wires[i]
-                
-            
-        #save measurements
+
+        # save measurements
         measurelist = []
         symbols = list(qc.abstract_params)
 
         for index in range(len(qc.data)):
-            
+
             op = qc.data[index].op
             params = list(op.params)
             for i in range(len(params)):
@@ -116,33 +117,32 @@ def qml_converter(qc,circ= False):
 
             qubit_list = [qbit_dic[qubit.identifier] for qubit in qc.data[index].qubits]
             op_qubits = qc.data[index].qubits
-            
 
             if op.name in ["qb_alloc", "qb_dealloc"]:
                 continue
 
             if op.name == "measure":
                 ### below: possible implementation for nested circuit measurments
-                #if circ == True:
+                # if circ == True:
                 #   Exception("Measurements in nested circuits not supported (yet)")
                 measurelist.append(*qubit_list)
                 continue
 
             ###### BugCatcher + special gates ######
-            if op.name in ["sx", "sx_dg" , "id","t","t_dg","s","s_dg"]:
-                #bugged -> params empty
+            if op.name in ["sx", "sx_dg", "id", "t", "t_dg", "s", "s_dg"]:
+                # bugged -> params empty
                 params = []
             if op.name == "xxyy":
-                # deffed as RXXYY with angle pi 
+                # deffed as RXXYY with angle pi
                 params = [np.pi]
 
             if op.name == "cx":
-                    # maybe adjustment necessary here
-                    if hasattr(op, "ctrl_state"):
-                        qml_ins = qml.CNOT([qubit_list[0], qubit_list[1]])
-                    else:
-                        qml_ins = qml.CNOT([qubit_list[0], qubit_list[1]])
-            
+                # maybe adjustment necessary here
+                if hasattr(op, "ctrl_state"):
+                    qml_ins = qml.CNOT([qubit_list[0], qubit_list[1]])
+                else:
+                    qml_ins = qml.CNOT([qubit_list[0], qubit_list[1]])
+
             elif op.name == "cy":
                 if hasattr(op, "ctrl_state"):
                     qml_ins = qml.CY([qubit_list[0], qubit_list[1]])
@@ -154,55 +154,63 @@ def qml_converter(qc,circ= False):
                     qml_ins = qml.CZ([qubit_list[0], qubit_list[1]])
                 else:
                     qml_ins = qml.CZ([qubit_list[0], qubit_list[1]])
-            
+
             elif op.name == "cp":
                 if hasattr(op, "ctrl_state"):
-                    qml_ins = qml.ControlledPhaseShift(*params, [qubit_list[0], qubit_list[1]])
+                    qml_ins = qml.ControlledPhaseShift(
+                        *params, [qubit_list[0], qubit_list[1]]
+                    )
                 else:
-                    qml_ins = qml.ControlledPhaseShift(*params, [qubit_list[0], qubit_list[1]])
+                    qml_ins = qml.ControlledPhaseShift(
+                        *params, [qubit_list[0], qubit_list[1]]
+                    )
 
             # return the controlled instruction or the nested circuit
             elif isinstance(op, ControlledOperation):
-                qml_trafo = create_qml_instruction(op)
-                if isinstance( qml_trafo  , types.FunctionType):
-                    circFlag = True
-                    wire_map = dict()
-                    for i in range(len(op_qubits)):
-                        #wire_map[i] = op_qubits[i].identifier
-                        wire_map[op.definition.qubits[i].identifier]  = op_qubits[i].identifier 
-                    mapped_quantum_function = qml.map_wires(qml_trafo, wire_map)
-                    qml_ins = qml.ctrl(mapped_quantum_function, control= op.ctrl_state[::-1])
-                else:
-                    qml_ins = qml.ctrl(qml_trafo, control= op.ctrl_state[::-1])
-
-            # return the instruction or the nested circuit
-            else: 
                 qml_trafo = create_qml_instruction(op)
                 if isinstance(qml_trafo, types.FunctionType):
                     circFlag = True
                     wire_map = dict()
                     for i in range(len(op_qubits)):
-                        #map the wires as given for the nested circuit
-                        wire_map[op.definition.qubits[i].identifier]  = op_qubits[i].identifier 
+                        # wire_map[i] = op_qubits[i].identifier
+                        wire_map[op.definition.qubits[i].identifier] = op_qubits[
+                            i
+                        ].identifier
+                    mapped_quantum_function = qml.map_wires(qml_trafo, wire_map)
+                    qml_ins = qml.ctrl(
+                        mapped_quantum_function, control=op.ctrl_state[::-1]
+                    )
+                else:
+                    qml_ins = qml.ctrl(qml_trafo, control=op.ctrl_state[::-1])
+
+            # return the instruction or the nested circuit
+            else:
+                qml_trafo = create_qml_instruction(op)
+                if isinstance(qml_trafo, types.FunctionType):
+                    circFlag = True
+                    wire_map = dict()
+                    for i in range(len(op_qubits)):
+                        # map the wires as given for the nested circuit
+                        wire_map[op.definition.qubits[i].identifier] = op_qubits[
+                            i
+                        ].identifier
                     mapped_quantum_function = qml.map_wires(qml_trafo, wire_map)
 
                 else:
                     if "_dg" in op.name:
-                        qml_ins = qml.adjoint(qml_trafo( *params, wires = qubit_list))
+                        qml_ins = qml.adjoint(qml_trafo(*params, wires=qubit_list))
                     else:
-                        qml_ins = qml_trafo( *params, wires = qubit_list)
-            
+                        qml_ins = qml_trafo(*params, wires=qubit_list)
 
             if not isinstance(circ, bool):
                 circ()
             elif not circFlag:
                 qml_ins
-            else: 
+            else:
                 mapped_quantum_function()
-        
-        #add measurements at the end, i.e. return a count object
+
+        # add measurements at the end, i.e. return a count object
         if len(measurelist):
             return qml.counts(wires=measurelist)
-
 
     return circuit

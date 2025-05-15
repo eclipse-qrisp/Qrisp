@@ -19,4 +19,3 @@
 # -*- coding: utf-8 -*-
 
 from qrisp.algorithms.quantum_backtracking.backtracking_tree import *
-

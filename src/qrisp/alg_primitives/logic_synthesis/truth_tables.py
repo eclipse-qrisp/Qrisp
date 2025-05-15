@@ -16,12 +16,12 @@
 ********************************************************************************/
 """
 
-
 import numpy as np
 import sympy as sp
 
 from qrisp.misc import int_as_array
 from qrisp.circuit import Operation, QuantumCircuit
+
 
 # Class to describe truth tables
 # Can be intialized with a list of bitstrings, or a numpy array with 1 and 0s or a
@@ -36,7 +36,9 @@ class TruthTable:
             init_str = ""
 
             self.expr = expr
-            from qrisp.alg_primitives.arithmetic.poly_tools import get_ordered_symbol_list
+            from qrisp.alg_primitives.arithmetic.poly_tools import (
+                get_ordered_symbol_list,
+            )
 
             # Retrieve a list of symbols in a given expression
             # Reverse to get the correct endian convention for qiskit
@@ -181,18 +183,24 @@ class TruthTable:
 
         # Use gray synthesis to synthesize truth table
         if method == "gray":
-            from qrisp.alg_primitives.logic_synthesis.gray_synthesis import gray_logic_synth
+            from qrisp.alg_primitives.logic_synthesis.gray_synthesis import (
+                gray_logic_synth,
+            )
 
             gray_logic_synth(input_var, output_var, self, phase_tolerant=False)
 
         # Use phase tolerant gray synthesis to synthesize truth table
         elif method == "gray_pt":
-            from qrisp.alg_primitives.logic_synthesis.gray_synthesis import gray_logic_synth
+            from qrisp.alg_primitives.logic_synthesis.gray_synthesis import (
+                gray_logic_synth,
+            )
 
             gray_logic_synth(input_var, output_var, self, phase_tolerant=True)
 
         elif method == "gray_pt_inv":
-            from qrisp.alg_primitives.logic_synthesis.gray_synthesis import gray_logic_synth
+            from qrisp.alg_primitives.logic_synthesis.gray_synthesis import (
+                gray_logic_synth,
+            )
             from qrisp.misc import quantum_invert
 
             quantum_invert(
@@ -433,13 +441,12 @@ class LogicSynthGate(Operation):
         qc = QuantumCircuit(init_op.num_qubits)
         qc.append(init_op, qc.qubits)
         self.logic_synth_method = phase_tolerant
-        
-        Operation.__init__(self, "logic_synth", 
-                           num_qubits = len(qc.qubits), 
-                           definition = qc
-                           )
 
-        self.permeability = {i : i < self.tt.bit_amount for i in range(self.num_qubits)}        
+        Operation.__init__(
+            self, "logic_synth", num_qubits=len(qc.qubits), definition=qc
+        )
+
+        self.permeability = {i: i < self.tt.bit_amount for i in range(self.num_qubits)}
         self.is_qfree = True
 
     def inverse(self):

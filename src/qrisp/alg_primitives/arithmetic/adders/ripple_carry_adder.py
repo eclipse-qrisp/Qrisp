@@ -16,7 +16,6 @@
 ********************************************************************************/
 """
 
-
 import numpy as np
 
 from qrisp import QuantumCircuit
@@ -71,7 +70,7 @@ def cuccaro_procedure(qs, qubit_list_1, qubit_list_2, output_qubit=None, carry_i
         )
 
     from qrisp.core import QuantumVariable
-    
+
     if carry_in is None:
         # Request ancilla Qubit
         ancilla = QuantumVariable(1)
@@ -93,7 +92,7 @@ def cuccaro_procedure(qs, qubit_list_1, qubit_list_2, output_qubit=None, carry_i
     # Calculate output qbit
     if output_qubit:
         qs.cx(qbits[2], output_qubit)
-    
+
     # Perform UMA iterations
     for i in range(iterations - 1, -1, -1):
         qbits = [slot_1_qbs[i], slot_2_qbs[i], slot_3_qbs[i]]

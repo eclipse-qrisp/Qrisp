@@ -16,7 +16,6 @@
 ********************************************************************************/
 """
 
-
 import numpy as np
 import sympy as sp
 from sympy.logic.utilities.dimacs import load

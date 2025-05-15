@@ -16,7 +16,6 @@
 ********************************************************************************/
 """
 
-
 from qrisp.circuit import QuantumCircuit, QubitAlloc, QubitDealloc, XGate
 from qrisp.environments import QuantumEnvironment
 
@@ -59,9 +58,9 @@ class GateWrapEnvironment(QuantumEnvironment):
 
 
     >>> print(qv.qs)
-    
+
     ::
-    
+
         QuantumCircuit:
         --------------
               ┌──────────┐
@@ -80,9 +79,9 @@ class GateWrapEnvironment(QuantumEnvironment):
 
     >>> instruction = gwe.instruction
     >>> print(instruction.op.definition)
-    
+
     ::
-    
+
                ┌───┐
         qb_41: ┤ X ├
                ├───┤
@@ -104,9 +103,9 @@ class GateWrapEnvironment(QuantumEnvironment):
         example_function(qv)
 
     >>> print(qv.qs)
-    
+
     ::
-    
+
         QuantumCircuit:
         --------------
               ┌──────────┐┌───────────────────┐
@@ -175,9 +174,6 @@ class GateWrapEnvironment(QuantumEnvironment):
                 except ValueError:
                     pass
                 continue
-                    
-                
-                
 
             qc.append(
                 instr.op,

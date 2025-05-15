@@ -85,20 +85,22 @@ def IQPE(args, U, precision, iter_spec=False, ctrl_method=None, kwargs={}):
     Array(0.375, dtype=float64)
 
     """
+
     def iqpe_iteration(i, val):
         theta, args = val
         iqpe_aux = QuantumFloat(1)
         h(iqpe_aux)
         if iter_spec:
             with control(iqpe_aux[0], ctrl_method=ctrl_method):
-                U(args, iter=2**(precision-i), **kwargs)
+                U(args, iter=2 ** (precision - i), **kwargs)
         else:
             with control(iqpe_aux[0], ctrl_method=ctrl_method):
-                for _ in jrange(2**(precision-i)):
+                for _ in jrange(2 ** (precision - i)):
                     U(args, **kwargs)
-        rz(-np.pi*theta, iqpe_aux)
+        rz(-np.pi * theta, iqpe_aux)
         h(iqpe_aux)
         r = measure(iqpe_aux)
         iqpe_aux.delete()
-        return (theta + r)/2, args
+        return (theta + r) / 2, args
+
     return q_fori_loop(0, precision, iqpe_iteration, (0, args))[0]

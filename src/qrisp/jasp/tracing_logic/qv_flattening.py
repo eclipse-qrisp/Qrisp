@@ -19,7 +19,11 @@
 import copy
 from jax import tree_util
 import jax.numpy as jnp
-from qrisp.jasp.tracing_logic import TracingQuantumSession, DynamicQubitArray, check_for_tracing_mode
+from qrisp.jasp.tracing_logic import (
+    TracingQuantumSession,
+    DynamicQubitArray,
+    check_for_tracing_mode,
+)
 
 
 # This class has two purposes
@@ -29,6 +33,7 @@ from qrisp.jasp.tracing_logic import TracingQuantumSession, DynamicQubitArray, c
 # for reconstruction. For this matter, the QuantumVariableTemplate keeps a
 # copy of the type and reconstructs it when unflattening.
 
+
 # 2. The second usecase is for passing quantum type information to kernelized
 # functions.
 # This is a problem because passing the QuantumVariable itself to .duplicate
@@ -37,42 +42,46 @@ from qrisp.jasp.tracing_logic import TracingQuantumSession, DynamicQubitArray, c
 # The QuantumVariable template doesn't carry the register information (only the
 # size) and can therefore be passed around like a classical value.
 class QuantumVariableTemplate:
-    
-    def __init__(self, qv, size_tracked = True):
+
+    def __init__(self, qv, size_tracked=True):
         self.duplication_counter = 0
         self.qv = copy.copy(qv)
         self.qv.reg = None
         self.size_tracked = size_tracked
         self.qv_size = None
-        if size_tracked:        
+        if size_tracked:
             self.qv_size = qv.size
-        
-    def construct(self, reg = None):
+
+    def construct(self, reg=None):
         res = copy.copy(self.qv)
         res.name = self.qv.name + "duplicate_" + str(self.duplication_counter)
         self.duplication_counter += 1
-        
+
         if check_for_tracing_mode():
             qs = TracingQuantumSession.get_instance()
         else:
             from qrisp import QuantumSession
+
             qs = QuantumSession()
-        
+
         res.qs = qs
         if reg is None:
             if not self.size_tracked:
-                raise Exception("Tried to construct QuantumVariable from template lacking a size specification")
-            
+                raise Exception(
+                    "Tried to construct QuantumVariable from template lacking a size specification"
+                )
+
             qs.register_qv(res, self.qv_size)
         else:
             res.reg = reg
         return res
-    
+
     def __hash__(self):
         return hash(type(self.qv))
-    
+
     def __eq__(self, other):
         return type(self.qv) == type(other.qv)
+
 
 def flatten_qv(qv):
     # return the tracers and auxiliary data (structure of the object)
@@ -86,25 +95,27 @@ def flatten_qv(qv):
         elif isinstance(attr, float):
             attr = jnp.array(attr, jnp.dtype("float64"))
         children.append(attr)
-    
+
     return tuple(children), QuantumVariableTemplate(qv, False)
+
 
 def unflatten_qv(aux_data, children):
     # The unflattening procedure creates a copy of the QuantumVariable object
     # and updates the traced attributes. When calling this procedure,
     # the user has to make sure that the result of this function is
     # registered in a QuantumSession.
-    
+
     qv_container = aux_data
     reg = DynamicQubitArray(children[0])
     qv = qv_container.construct(reg)
     # qv = copy.copy(qv_container.qv)
     # qv.reg = reg
     qv.qs = None
-    
+
     for i in range(len(qv.traced_attributes)):
-        setattr(qv, qv.traced_attributes[i], children[i+1])
+        setattr(qv, qv.traced_attributes[i], children[i + 1])
     return qv
+
 
 def flatten_template(tmpl):
     children = []
@@ -118,23 +129,25 @@ def flatten_template(tmpl):
         elif isinstance(attr, float):
             attr = jnp.array(attr, jnp.dtype("float64"))
         children.append(attr)
-        
+
     if tmpl.size_tracked:
         children.append(tmpl.qv_size)
-    
+
     return tuple(children), tmpl
+
 
 def unflatten_template(aux_data, children):
     res = copy.copy(aux_data)
     res.qv = copy.copy(res.qv)
     for i in range(len(res.qv.traced_attributes)):
         setattr(res.qv, res.qv.traced_attributes[i], children[i])
-        
+
     if res.size_tracked:
         res.qv_size = children[-1]
-        
+
     return res
-    
-    
-tree_util.register_pytree_node(QuantumVariableTemplate, flatten_template, unflatten_template)
-    
+
+
+tree_util.register_pytree_node(
+    QuantumVariableTemplate, flatten_template, unflatten_template
+)

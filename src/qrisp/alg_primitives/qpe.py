@@ -147,4 +147,3 @@ def QPE(
     QFT(qpe_res, inv=True)
 
     return qpe_res
-

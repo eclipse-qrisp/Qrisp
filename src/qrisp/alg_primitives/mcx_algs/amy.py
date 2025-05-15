@@ -18,27 +18,28 @@
 
 from qrisp.alg_primitives.mcx_algs.circuit_library import amy_toffoli_qc
 
-#Implementation of the depth 2 Toffoli found in https://arxiv.org/pdf/1206.0758.pdf
-def amy_toffoli(ctrl, target, ctrl_state = "11"):
+
+# Implementation of the depth 2 Toffoli found in https://arxiv.org/pdf/1206.0758.pdf
+def amy_toffoli(ctrl, target, ctrl_state="11"):
     from qrisp import QuantumCircuit, QuantumVariable
-    
+
     qc = QuantumCircuit(4)
-    
-    for i in [0,1]:
+
+    for i in [0, 1]:
         if ctrl_state[i] == "0":
             qc.x(i)
-    
+
     qc.append(amy_toffoli_qc.to_gate("amy_qc"), qc.qubits)
-    
-    for i in [0,1]:
+
+    for i in [0, 1]:
         if ctrl_state[i] == "0":
             qc.x(i)
-    
+
     amy_anc = QuantumVariable(1)
-    
-    amy_gate = qc.to_gate(name = "amy_toffoli")
-    amy_gate.permeability = {0 : True, 1 : True, 2 : False, 3 : False}
+
+    amy_gate = qc.to_gate(name="amy_toffoli")
+    amy_gate.permeability = {0: True, 1: True, 2: False, 3: False}
     amy_gate.is_qfree = True
-    
+
     amy_anc.qs.append(amy_gate, list(ctrl) + list(target) + list(amy_anc))
     amy_anc.delete()

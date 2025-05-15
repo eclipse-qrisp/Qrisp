@@ -15,6 +15,7 @@
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************/
 """
+
 from qrisp.operators.hamiltonian import Hamiltonian
 from qrisp.operators.qubit.bound_qubit_term import BoundQubitTerm
 from qrisp.operators.qubit.measurement import get_measurement
@@ -28,16 +29,17 @@ threshold = 1e-9
 # BoundQubitOperator
 #
 
+
 class BoundQubitOperator(Hamiltonian):
     r"""
     This class provides an efficient implementation of Pauli Hamiltonians acting on QuantumVariables, i.e.,
     Hamiltonians of the form
 
     .. math::
-        
-        H=\sum\limits_{j}\alpha_jP_j 
-            
-    where $P_j=\prod_i\sigma_i^j$ is a Pauli product, 
+
+        H=\sum\limits_{j}\alpha_jP_j
+
+    where $P_j=\prod_i\sigma_i^j$ is a Pauli product,
     and $\sigma_i^j\in\{I,X,Y,Z\}$ is the Pauli operator acting on qubit $i$.
 
     Parameters
@@ -54,7 +56,7 @@ class BoundQubitOperator(Hamiltonian):
 
         from qrisp import QuantumVariable
         from qrisp.operators import BoundQubitOperator, X,Y,Z
-        
+
         qv = QuantumVariable(2)
         H = 1+2*X(qv[0])+3*X(qv[0])*Y(qv[1])
 
@@ -68,7 +70,7 @@ class BoundQubitOperator(Hamiltonian):
 
     def len(self):
         return len(self.terms_dict)
-    
+
     #
     # Printing
     #
@@ -77,12 +79,12 @@ class BoundQubitOperator(Hamiltonian):
         # Convert the sympy expression to LaTeX and return it
         expr = self.to_expr()
         return f"${sp.latex(expr)}$"
-    
+
     def __str__(self):
         # Convert the sympy expression to a string and return it
         expr = self.to_expr()
         return str(expr)
-    
+
     def to_expr(self):
         """
         Returns a SymPy expression representing the operator.
@@ -93,10 +95,10 @@ class BoundQubitOperator(Hamiltonian):
             A SymPy expression representing the operator.
 
         """
-        
-        expr = 0  
-        for pauli,coeff in self.terms_dict.items():
-            expr += coeff*pauli.to_expr()
+
+        expr = 0
+        for pauli, coeff in self.terms_dict.items():
+            expr += coeff * pauli.to_expr()
         return expr
 
     #
@@ -104,18 +106,28 @@ class BoundQubitOperator(Hamiltonian):
     #
 
     def __pow__(self, e):
-        if self.len()==1:
-            if isinstance(e, int) and e>=0:
-                if e%2==0:
-                    return BoundQubitOperator({BoundQubitTerm():1})
+        if self.len() == 1:
+            if isinstance(e, int) and e >= 0:
+                if e % 2 == 0:
+                    return BoundQubitOperator({BoundQubitTerm(): 1})
                 else:
                     return self
             else:
-                raise TypeError("Unsupported operand type(s) for ** or pow(): "+str(type(self))+" and "+str(type(e)))
+                raise TypeError(
+                    "Unsupported operand type(s) for ** or pow(): "
+                    + str(type(self))
+                    + " and "
+                    + str(type(e))
+                )
         else:
-            raise TypeError("Unsupported operand type(s) for ** or pow(): "+str(type(self))+" and "+str(type(e)))
+            raise TypeError(
+                "Unsupported operand type(s) for ** or pow(): "
+                + str(type(self))
+                + " and "
+                + str(type(e))
+            )
 
-    def __add__(self,other):
+    def __add__(self, other):
         """
         Returns the sum of the operator self and other.
 
@@ -131,27 +143,27 @@ class BoundQubitOperator(Hamiltonian):
 
         """
 
-        if isinstance(other,(int,float,complex)):
-            other = BoundQubitOperator({BoundQubitTerm():other})
-        if not isinstance(other,BoundQubitOperator):
-            raise TypeError("Cannot add BoundQubitOperator and "+str(type(other)))
+        if isinstance(other, (int, float, complex)):
+            other = BoundQubitOperator({BoundQubitTerm(): other})
+        if not isinstance(other, BoundQubitOperator):
+            raise TypeError("Cannot add BoundQubitOperator and " + str(type(other)))
 
         res_terms_dict = {}
 
-        for pauli,coeff in self.terms_dict.items():
-            res_terms_dict[pauli] = res_terms_dict.get(pauli,0)+coeff
-            if abs(res_terms_dict[pauli])<threshold:
+        for pauli, coeff in self.terms_dict.items():
+            res_terms_dict[pauli] = res_terms_dict.get(pauli, 0) + coeff
+            if abs(res_terms_dict[pauli]) < threshold:
                 del res_terms_dict[pauli]
-    
-        for pauli,coeff in other.terms_dict.items():
-            res_terms_dict[pauli] = res_terms_dict.get(pauli,0)+coeff
-            if abs(res_terms_dict[pauli])<threshold:
+
+        for pauli, coeff in other.terms_dict.items():
+            res_terms_dict[pauli] = res_terms_dict.get(pauli, 0) + coeff
+            if abs(res_terms_dict[pauli]) < threshold:
                 del res_terms_dict[pauli]
-        
+
         result = BoundQubitOperator(res_terms_dict)
         return result
-    
-    def __sub__(self,other):
+
+    def __sub__(self, other):
         """
         Returns the difference of the operator self and other.
 
@@ -167,27 +179,29 @@ class BoundQubitOperator(Hamiltonian):
 
         """
 
-        if isinstance(other,(int,float,complex)):
-            other = BoundQubitOperator({BoundQubitTerm():other})
-        if not isinstance(other,BoundQubitOperator):
-            raise TypeError("Cannot substract BoundQubitOperator and "+str(type(other)))
+        if isinstance(other, (int, float, complex)):
+            other = BoundQubitOperator({BoundQubitTerm(): other})
+        if not isinstance(other, BoundQubitOperator):
+            raise TypeError(
+                "Cannot substract BoundQubitOperator and " + str(type(other))
+            )
 
         res_terms_dict = {}
 
-        for pauli,coeff in self.terms_dict.items():
-            res_terms_dict[pauli] = res_terms_dict.get(pauli,0)+coeff
-            if abs(res_terms_dict[pauli])<threshold:
+        for pauli, coeff in self.terms_dict.items():
+            res_terms_dict[pauli] = res_terms_dict.get(pauli, 0) + coeff
+            if abs(res_terms_dict[pauli]) < threshold:
                 del res_terms_dict[pauli]
-    
-        for pauli,coeff in other.terms_dict.items():
-            res_terms_dict[pauli] = res_terms_dict.get(pauli,0)-coeff
-            if abs(res_terms_dict[pauli])<threshold:
+
+        for pauli, coeff in other.terms_dict.items():
+            res_terms_dict[pauli] = res_terms_dict.get(pauli, 0) - coeff
+            if abs(res_terms_dict[pauli]) < threshold:
                 del res_terms_dict[pauli]
-        
+
         result = BoundQubitOperator(res_terms_dict)
         return result
 
-    def __rsub__(self,other):
+    def __rsub__(self, other):
         """
         Returns the difference of the operator other and self.
 
@@ -203,27 +217,29 @@ class BoundQubitOperator(Hamiltonian):
 
         """
 
-        if isinstance(other,(int,float,complex)):
-            other = BoundQubitOperator({BoundQubitTerm():other})
-        if not isinstance(other,BoundQubitOperator):
-            raise TypeError("Cannot substract BoundQubitOperator and "+str(type(other)))
+        if isinstance(other, (int, float, complex)):
+            other = BoundQubitOperator({BoundQubitTerm(): other})
+        if not isinstance(other, BoundQubitOperator):
+            raise TypeError(
+                "Cannot substract BoundQubitOperator and " + str(type(other))
+            )
 
         res_terms_dict = {}
 
-        for pauli,coeff in self.terms_dict.items():
-            res_terms_dict[pauli] = res_terms_dict.get(pauli,0)-coeff
-            if abs(res_terms_dict[pauli])<threshold:
+        for pauli, coeff in self.terms_dict.items():
+            res_terms_dict[pauli] = res_terms_dict.get(pauli, 0) - coeff
+            if abs(res_terms_dict[pauli]) < threshold:
                 del res_terms_dict[pauli]
-    
-        for pauli,coeff in other.terms_dict.items():
-            res_terms_dict[pauli] = res_terms_dict.get(pauli,0)+coeff
-            if abs(res_terms_dict[pauli])<threshold:
+
+        for pauli, coeff in other.terms_dict.items():
+            res_terms_dict[pauli] = res_terms_dict.get(pauli, 0) + coeff
+            if abs(res_terms_dict[pauli]) < threshold:
                 del res_terms_dict[pauli]
-        
+
         result = BoundQubitOperator(res_terms_dict)
         return result
-    
-    def __mul__(self,other):
+
+    def __mul__(self, other):
         """
         Returns the product of the operator self and other.
 
@@ -239,17 +255,21 @@ class BoundQubitOperator(Hamiltonian):
 
         """
 
-        if isinstance(other,(int,float,complex)):
-            other = BoundQubitOperator({BoundQubitTerm():other})
-        if not isinstance(other,BoundQubitOperator):
-            raise TypeError("Cannot multipliy BoundQubitOperator and "+str(type(other)))
+        if isinstance(other, (int, float, complex)):
+            other = BoundQubitOperator({BoundQubitTerm(): other})
+        if not isinstance(other, BoundQubitOperator):
+            raise TypeError(
+                "Cannot multipliy BoundQubitOperator and " + str(type(other))
+            )
 
         res_terms_dict = {}
 
         for pauli1, coeff1 in self.terms_dict.items():
             for pauli2, coeff2 in other.terms_dict.items():
-                curr_pauli, curr_coeff = pauli1*pauli2
-                res_terms_dict[curr_pauli] = res_terms_dict.get(curr_pauli,0) + curr_coeff*coeff1*coeff2
+                curr_pauli, curr_coeff = pauli1 * pauli2
+                res_terms_dict[curr_pauli] = (
+                    res_terms_dict.get(curr_pauli, 0) + curr_coeff * coeff1 * coeff2
+                )
 
         result = BoundQubitOperator(res_terms_dict)
         return result
@@ -261,7 +281,7 @@ class BoundQubitOperator(Hamiltonian):
     # Inplace arithmetic
     #
 
-    def __iadd__(self,other):
+    def __iadd__(self, other):
         """
         Adds other to the operator self.
 
@@ -272,19 +292,21 @@ class BoundQubitOperator(Hamiltonian):
 
         """
 
-        if isinstance(other,(int,float,complex)):
-            self.terms_dict[BoundQubitTerm()] = self.terms_dict.get(BoundQubitTerm(),0)+other
+        if isinstance(other, (int, float, complex)):
+            self.terms_dict[BoundQubitTerm()] = (
+                self.terms_dict.get(BoundQubitTerm(), 0) + other
+            )
             return self
-        if not isinstance(other,BoundQubitOperator):
-            raise TypeError("Cannot add BoundQubitOperator and "+str(type(other)))
+        if not isinstance(other, BoundQubitOperator):
+            raise TypeError("Cannot add BoundQubitOperator and " + str(type(other)))
 
-        for pauli,coeff in other.terms_dict.items():
-            self.terms_dict[pauli] = self.terms_dict.get(pauli,0)+coeff
-            if abs(self.terms_dict[pauli])<threshold:
-                del self.terms_dict[pauli]       
-        return self         
+        for pauli, coeff in other.terms_dict.items():
+            self.terms_dict[pauli] = self.terms_dict.get(pauli, 0) + coeff
+            if abs(self.terms_dict[pauli]) < threshold:
+                del self.terms_dict[pauli]
+        return self
 
-    def __isub__(self,other):
+    def __isub__(self, other):
         """
         Substracts other from the operator self.
 
@@ -295,19 +317,21 @@ class BoundQubitOperator(Hamiltonian):
 
         """
 
-        if isinstance(other,(int,float,complex)):
-            self.terms_dict[BoundQubitTerm()] = self.terms_dict.get(BoundQubitTerm(),0)-other
+        if isinstance(other, (int, float, complex)):
+            self.terms_dict[BoundQubitTerm()] = (
+                self.terms_dict.get(BoundQubitTerm(), 0) - other
+            )
             return self
-        if not isinstance(other,BoundQubitOperator):
-            raise TypeError("Cannot add BoundQubitOperator and "+str(type(other)))
+        if not isinstance(other, BoundQubitOperator):
+            raise TypeError("Cannot add BoundQubitOperator and " + str(type(other)))
 
-        for pauli,coeff in other.terms_dict.items():
-            self.terms_dict[pauli] = self.terms_dict.get(pauli,0)-coeff
-            if abs(self.terms_dict[pauli])<threshold:
-                del self.terms_dict[pauli]  
+        for pauli, coeff in other.terms_dict.items():
+            self.terms_dict[pauli] = self.terms_dict.get(pauli, 0) - coeff
+            if abs(self.terms_dict[pauli]) < threshold:
+                del self.terms_dict[pauli]
         return self
-    
-    def __imul__(self,other):
+
+    def __imul__(self, other):
         """
         Multiplys other to the operator self.
 
@@ -318,24 +342,28 @@ class BoundQubitOperator(Hamiltonian):
 
         """
 
-        if isinstance(other,(int,float,complex)):
-            #other = BoundQubitOperator({BoundQubitTerm():other})
+        if isinstance(other, (int, float, complex)):
+            # other = BoundQubitOperator({BoundQubitTerm():other})
             for term in self.terms_dict:
                 self.terms_dict[term] *= other
             return self
 
-        if not isinstance(other,BoundQubitOperator):
-            raise TypeError("Cannot multipliy BoundQubitOperator and "+str(type(other)))
+        if not isinstance(other, BoundQubitOperator):
+            raise TypeError(
+                "Cannot multipliy BoundQubitOperator and " + str(type(other))
+            )
 
         res_terms_dict = {}
 
         for pauli1, coeff1 in self.terms_dict.items():
             for pauli2, coeff2 in other.terms_dict.items():
-                curr_pauli, curr_coeff = pauli1*pauli2
-                res_terms_dict[curr_pauli] = res_terms_dict.get(curr_pauli,0) + curr_coeff*coeff1*coeff2
+                curr_pauli, curr_coeff = pauli1 * pauli2
+                res_terms_dict[curr_pauli] = (
+                    res_terms_dict.get(curr_pauli, 0) + curr_coeff * coeff1 * coeff2
+                )
 
-        self.terms_dict = res_terms_dict  
-        return self  
+        self.terms_dict = res_terms_dict
+        return self
 
     #
     # Substitution
@@ -343,7 +371,7 @@ class BoundQubitOperator(Hamiltonian):
 
     def subs(self, subs_dict):
         """
-        
+
         Parameters
         ----------
         subs_dict : dict
@@ -353,23 +381,25 @@ class BoundQubitOperator(Hamiltonian):
         -------
         result : BoundQubitOperator
             The resulting BoundQubitOperator.
-        
+
         """
 
         res_terms_dict = {}
 
         for pauli, coeff in self.terms_dict.items():
             curr_pauli, curr_coeff = pauli.subs(subs_dict)
-            res_terms_dict[curr_pauli] = res_terms_dict.get(curr_pauli,0) + curr_coeff*coeff
+            res_terms_dict[curr_pauli] = (
+                res_terms_dict.get(curr_pauli, 0) + curr_coeff * coeff
+            )
 
         result = BoundQubitOperator(res_terms_dict)
         return result
-    
+
     #
     # Miscellaneous
     #
 
-    def apply_threshold(self,threshold):
+    def apply_threshold(self, threshold):
         """
         Removes all Pauli terms with coefficient absolute value below the specified threshold.
 
@@ -381,8 +411,8 @@ class BoundQubitOperator(Hamiltonian):
         """
 
         delete_list = []
-        for pauli,coeff in self.terms_dict.items():
-            if abs(coeff)<threshold:
+        for pauli, coeff in self.terms_dict.items():
+            if abs(coeff) < threshold:
                 delete_list.append(pauli)
         for pauli in delete_list:
             del self.terms_dict[pauli]
@@ -390,7 +420,7 @@ class BoundQubitOperator(Hamiltonian):
     def to_sparse_matrix(self):
         """
         Returns a matrix representing the operator.
-    
+
         Returns
         -------
         M : scipy.sparse.csr_matrix
@@ -401,31 +431,34 @@ class BoundQubitOperator(Hamiltonian):
         import scipy.sparse as sp
         from scipy.sparse import kron as TP, csr_matrix
 
-        I = csr_matrix([[1,0],[0,1]])
+        I = csr_matrix([[1, 0], [0, 1]])
 
         def get_matrix(P):
-            if P=="I":
-                return csr_matrix([[1,0],[0,1]])
-            if P=="X":
-                return csr_matrix([[0,1],[1,0]])
-            if P=="Y":
-                return csr_matrix([[0,-1j],[1j,0]])
+            if P == "I":
+                return csr_matrix([[1, 0], [0, 1]])
+            if P == "X":
+                return csr_matrix([[0, 1], [1, 0]])
+            if P == "Y":
+                return csr_matrix([[0, -1j], [1j, 0]])
             else:
-                return csr_matrix([[1,0],[0,-1]])
+                return csr_matrix([[1, 0], [0, -1]])
 
-        def recursive_TP(keys,factor_dict):
-            if len(keys)==1:
-                return get_matrix(factor_dict.get(keys[0],"I"))
-            return TP(get_matrix(factor_dict.get(keys.pop(0),"I")),recursive_TP(keys,factor_dict))
+        def recursive_TP(keys, factor_dict):
+            if len(keys) == 1:
+                return get_matrix(factor_dict.get(keys[0], "I"))
+            return TP(
+                get_matrix(factor_dict.get(keys.pop(0), "I")),
+                recursive_TP(keys, factor_dict),
+            )
 
         factor_dicts = []
         coeffs = []
 
         keys = set()
-        for pauli,coeff in self.terms_dict.items():
+        for pauli, coeff in self.terms_dict.items():
             curr_dict = pauli.factor_dict
             keys.update(set(curr_dict.keys()))
-            factor_dicts.append(curr_dict)    
+            factor_dicts.append(curr_dict)
             coeffs.append(coeff)
 
         keys = set()
@@ -437,18 +470,18 @@ class BoundQubitOperator(Hamiltonian):
         m = len(coeffs)
         M = sp.csr_matrix((2**dim, 2**dim))
         for k in range(m):
-            M += complex(coeffs[k])*recursive_TP(keys.copy(),factor_dicts[k])
+            M += complex(coeffs[k]) * recursive_TP(keys.copy(), factor_dicts[k])
 
         return M
 
     def ground_state_energy(self):
         """
         Calculates the ground state energy (i.e., the minimum eigenvalue) of the operator classically.
-    
+
         Returns
         -------
         E : float
-            The ground state energy. 
+            The ground state energy.
 
         """
 
@@ -456,13 +489,13 @@ class BoundQubitOperator(Hamiltonian):
 
         M = self.to_sparse_matrix()
         # Compute the smallest eigenvalue
-        eigenvalues, _ = eigsh(M, k=1, which='SA')  # 'SA' stands for smallest algebraic
+        eigenvalues, _ = eigsh(M, k=1, which="SA")  # 'SA' stands for smallest algebraic
         E = eigenvalues[0]
 
         return E
-    
+
     #
-    # Partitions 
+    # Partitions
     #
 
     # Commutativity: Partitions the BoundQubitOperator into BoundQubitOperators with pairwise commuting BoundQubitTerms
@@ -480,28 +513,30 @@ class BoundQubitOperator(Hamiltonian):
         -------
         groups : list[QubitOperator]
             The partition of the Hamiltonian.
-        
+
         """
 
-        groups = [] # Groups of commuting BoundQubitTerms 
+        groups = []  # Groups of commuting BoundQubitTerms
 
         # Sorted insertion heuristic https://quantum-journal.org/papers/q-2021-01-20-385/pdf/
-        sorted_terms = sorted(self.terms_dict.items(), key=lambda item: abs(item[1]), reverse=True)
+        sorted_terms = sorted(
+            self.terms_dict.items(), key=lambda item: abs(item[1]), reverse=True
+        )
 
-        for pauli,coeff in sorted_terms:
+        for pauli, coeff in sorted_terms:
 
             commute_bool = False
             if len(groups) > 0:
                 for group in groups:
-                    for pauli_,coeff_ in group.terms_dict.items():
+                    for pauli_, coeff_ in group.terms_dict.items():
                         commute_bool = pauli_.commute(pauli)
                         if not commute_bool:
                             break
                     if commute_bool:
-                        group.terms_dict[pauli]=coeff
+                        group.terms_dict[pauli] = coeff
                         break
-            if len(groups)==0 or not commute_bool: 
-                groups.append(BoundQubitOperator({pauli:coeff}))
+            if len(groups) == 0 or not commute_bool:
+                groups.append(BoundQubitOperator({pauli: coeff}))
 
         return groups
 
@@ -520,35 +555,37 @@ class BoundQubitOperator(Hamiltonian):
         -------
         groups : list[BoundQubitOperator]
             The partition of the Hamiltonian.
-        
+
         """
 
-        groups = [] # Groups of qubit-wise commuting BoundQubitTerms
-        bases = [] # Bases as BoundQubitTerms
+        groups = []  # Groups of qubit-wise commuting BoundQubitTerms
+        bases = []  # Bases as BoundQubitTerms
 
         # Sorted insertion heuristic https://quantum-journal.org/papers/q-2021-01-20-385/pdf/
-        sorted_terms = sorted(self.terms_dict.items(), key=lambda item: abs(item[1]), reverse=True)
+        sorted_terms = sorted(
+            self.terms_dict.items(), key=lambda item: abs(item[1]), reverse=True
+        )
 
-        for pauli,coeff in sorted_terms:
+        for pauli, coeff in sorted_terms:
 
             commute_bool = False
-            if len(groups)>0:
+            if len(groups) > 0:
                 n = len(groups)
                 for i in range(n):
                     commute_bool = bases[i].commute_qw(pauli)
                     if commute_bool:
                         bases[i].update(pauli.factor_dict)
-                        groups[i].terms_dict[pauli]=coeff
+                        groups[i].terms_dict[pauli] = coeff
                         break
-            if len(groups)==0 or not commute_bool:
-                groups.append(BoundQubitOperator({pauli:coeff}))
+            if len(groups) == 0 or not commute_bool:
+                groups.append(BoundQubitOperator({pauli: coeff}))
                 bases.append(pauli.copy())
 
         if show_bases:
             return groups, bases
         else:
             return groups
-    
+
     #
     # Measurement settings
     #
@@ -563,7 +600,7 @@ class BoundQubitOperator(Hamiltonian):
         compilation_kwargs={},
         subs_dic={},
         precompiled_qc=None,
-        measurement_data=None # measurement settings
+        measurement_data=None,  # measurement settings
     ):
         r"""
         This method returns the expected value of a Hamiltonian for the state of a quantum argument.
@@ -579,7 +616,7 @@ class BoundQubitOperator(Hamiltonian):
             The backend on which to evaluate the quantum circuit. The default can be
             specified in the file default_backend.py.
         shots : integer, optional
-            The maximum amount of shots to evaluate the expectation of the Hamiltonian. 
+            The maximum amount of shots to evaluate the expectation of the Hamiltonian.
             The default is 1000000.
         compile : bool, optional
             Boolean indicating if the .compile method of the underlying QuantumSession
@@ -597,7 +634,7 @@ class BoundQubitOperator(Hamiltonian):
             after compilation and parameter substitution. The default is None.
         precompiled_qc : QuantumCircuit, optional
             A precompiled quantum circuit.
-            
+
         Raises
         ------
         Exception
@@ -640,45 +677,47 @@ class BoundQubitOperator(Hamiltonian):
             #Yields 1.0
 
         """
-        
+
         unbound_operator, qarg = self.unbind()
-        
-        return unbound_operator.get_measurement(qarg,
-                                                precision=precision, 
-                                                backend=backend, 
-                                                compile=compile, 
-                                                compilation_kwargs=compilation_kwargs, 
-                                                subs_dic=subs_dic,
-                                                precompiled_qc=precompiled_qc, 
-                                                measurement_data=measurement_data)
+
+        return unbound_operator.get_measurement(
+            qarg,
+            precision=precision,
+            backend=backend,
+            compile=compile,
+            compilation_kwargs=compilation_kwargs,
+            subs_dic=subs_dic,
+            precompiled_qc=precompiled_qc,
+            measurement_data=measurement_data,
+        )
 
     def unbind(self):
         from qrisp.operators import QubitTerm, QubitOperator
-        
+
         participating_qubits = []
         for term, coeff in self.terms_dict.items():
             for qb in term.factor_dict.keys():
                 if qb not in participating_qubits:
                     participating_qubits.append(qb)
-        
-        index_inv = {participating_qubits[i] : i for i in range(len(participating_qubits))}
-        
+
+        index_inv = {
+            participating_qubits[i]: i for i in range(len(participating_qubits))
+        }
+
         unbound_operator = 0
-        
+
         for term, coeff in self.terms_dict.items():
             new_term_factor_dict = {}
             for qb, factor in term.factor_dict.items():
                 new_term_factor_dict[index_inv[qb]] = factor
-            
+
             unbound_operator += QubitOperator({QubitTerm(new_term_factor_dict): coeff})
-        
+
         return unbound_operator, participating_qubits
-        
-    
+
     #
     # Trotterization
     #
-    
 
     def trotterization(self):
         r"""
@@ -686,33 +725,33 @@ class BoundQubitOperator(Hamiltonian):
 
         Returns
         -------
-        U : function 
+        U : function
             A Python function that implements the first order Suzuki-Trotter formula.
-            Given a Hamiltonian $H=H_1+\dotsb +H_m$ the unitary evolution $e^{itH}$ is 
-            approximated by 
-            
+            Given a Hamiltonian $H=H_1+\dotsb +H_m$ the unitary evolution $e^{itH}$ is
+            approximated by
+
             .. math::
 
                 e^{itH}\approx U_1(t,N)=\left(e^{iH_1t/N}\dotsb e^{iH_mt/N}\right)^N
 
             This function receives the following arguments:
 
-            * qarg : QuantumVariable 
+            * qarg : QuantumVariable
                 The quantum argument.
             * t : float, optional
                 The evolution time $t$. The default is 1.
             * steps : int, optional
                 The number of Trotter steps $N$. The default is 1.
-            * iter : int, optional 
+            * iter : int, optional
                 The number of iterations the unitary $U_1(t,N)$ is applied. The default is 1.
-        
+
         """
 
         def change_of_basis(factor_dict):
             for qubit, axis in factor_dict.items():
-                if axis=="X":
+                if axis == "X":
                     h(qubit)
-                if axis=="Y":
+                if axis == "Y":
                     sx(qubit)
 
         groups, bases = self.commuting_qw_groups(show_bases=True)
@@ -720,19 +759,19 @@ class BoundQubitOperator(Hamiltonian):
         def trotter_step(qarg, t, steps):
 
             # qubit to apply gphase for identity term
-            if isinstance(qarg,list):
+            if isinstance(qarg, list):
                 qubit = qarg[0][0]
             else:
                 qubit = qarg[0]
 
-            for index,basis in enumerate(bases):
+            for index, basis in enumerate(bases):
                 with conjugate(change_of_basis)(basis.factor_dict):
-                    for term,coeff in groups[index].terms_dict.items():
-                        term.simulate(coeff*t/steps, qubit)
+                    for term, coeff in groups[index].terms_dict.items():
+                        term.simulate(coeff * t / steps, qubit)
 
         def U(qarg, t=1, steps=1, iter=1):
             merge([qarg])
-            with IterationEnvironment(qarg.qs, iter*steps):
+            with IterationEnvironment(qarg.qs, iter * steps):
                 trotter_step(qarg, t, steps)
 
         return U

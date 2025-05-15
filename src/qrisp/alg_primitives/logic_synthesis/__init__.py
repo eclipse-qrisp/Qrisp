@@ -19,4 +19,3 @@
 from qrisp.alg_primitives.logic_synthesis.truth_tables import *
 from qrisp.alg_primitives.logic_synthesis.gray_synthesis import *
 from qrisp.alg_primitives.logic_synthesis.pprm_synthesis import *
-

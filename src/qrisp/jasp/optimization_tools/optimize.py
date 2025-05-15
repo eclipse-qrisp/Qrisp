@@ -19,7 +19,8 @@
 from qrisp.jasp.optimization_tools.spsa import spsa
 from qrisp.jasp.optimization_tools.cobyla import cobyla
 
-def minimize(fun, x0, args=(), method='SPSA', options={}):
+
+def minimize(fun, x0, args=(), method="SPSA", options={}):
     r"""
 
     Minimization of scalar functions of one ore more variables via gradient-free solvers.
@@ -28,7 +29,7 @@ def minimize(fun, x0, args=(), method='SPSA', options={}):
 
     * Various optional arguments in the SciPy interface have not yet been implemented.
     * ``maxiter`` defines the maximum number of iterations to perform and not the maximum number of function evaluations.
-    
+
     Parameters
     ----------
     fun : callable
@@ -43,11 +44,11 @@ def minimize(fun, x0, args=(), method='SPSA', options={}):
     options : dict, optional
         A dictionary of solver options. All methods accept the following generic options:
 
-        * maxiter : int 
+        * maxiter : int
             Maximum number of iterations to perform. Depending on the method each iteration may use several function evaluations.
 
     Returns
-    ------- 
+    -------
     results
         An `OptimizeResults <https://docs.jax.dev/en/latest/_autosummary/jax.scipy.optimize.OptimizeResults.html#jax.scipy.optimize.OptimizeResults>`_ object.
 
@@ -55,14 +56,14 @@ def minimize(fun, x0, args=(), method='SPSA', options={}):
     Examples
     --------
 
-    We prepare the state 
+    We prepare the state
 
     .. math::
 
         \ket{\psi_{\theta}} = \cos(\theta)\ket{0} + \sin(\theta)\ket{1}
 
     ::
-    
+
         from qrisp import QuantumFloat, ry
         from qrisp.jasp import expectation_value, minimize, jaspify
         import jax.numpy as jnp
@@ -72,16 +73,16 @@ def minimize(fun, x0, args=(), method='SPSA', options={}):
             ry(theta[0], qv)
             return qv
 
-    Next, we define the objective function calculating the expectation value from the prepared state  
+    Next, we define the objective function calculating the expectation value from the prepared state
 
     ::
-        
+
         def objective(theta, state_prep):
             return expectation_value(state_prep, shots=100)(theta)
 
     Finally, we use ``optimize`` to find the optimal choice of the parameter $\theta_0$ that minimizes the objective function
-            
-    ::    
+
+    ::
 
         @jaspify(terminal_sampling=True)
         def main():
@@ -93,12 +94,14 @@ def minimize(fun, x0, args=(), method='SPSA', options={}):
         results = main()
         print(results.x)
         print(results.fun)
-    
+
     """
 
-    if method=='SPSA':
+    if method == "SPSA":
         return spsa(fun, x0, args, **options)
-    elif method=='COBYLA':
+    elif method == "COBYLA":
         return cobyla(fun, x0, args, **options)
     else:
-        raise Exception(f'Optimization method {method} is not available in tracing mode.')
+        raise Exception(
+            f"Optimization method {method} is not available in tracing mode."
+        )

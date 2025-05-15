@@ -18,6 +18,7 @@
 
 from qrisp.interface.virtual_backend import VirtualBackend
 
+
 class QiskitBackend(VirtualBackend):
     """
     This class instantiates a VirtualBackend using a Qiskit backend.
@@ -59,6 +60,7 @@ class QiskitBackend(VirtualBackend):
                 backend = AerSimulator()
             except ImportError:
                 import qiskit_aer as Aer
+
                 backend = Aer.AerSimulator()
 
         # Create the run method
@@ -102,10 +104,15 @@ class QiskitBackend(VirtualBackend):
 
         super().__init__(run, port=port)
 
+
 def VirtualQiskitBackend(*args, **kwargs):
     import warnings
-    warnings.warn("VirtualQiskitBackend will be deprecated in a future release of Qrisp. Use QiskitBackend instead.")
+
+    warnings.warn(
+        "VirtualQiskitBackend will be deprecated in a future release of Qrisp. Use QiskitBackend instead."
+    )
     return QiskitBackend(*args, **kwargs)
+
 
 class QiskitRuntimeBackend(VirtualBackend):
     """

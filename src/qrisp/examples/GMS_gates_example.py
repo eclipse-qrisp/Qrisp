@@ -16,7 +16,6 @@
 ********************************************************************************/
 """
 
-
 import numpy as np
 
 from qrisp import QuantumVariable, cp, transpile, x, h
@@ -31,9 +30,7 @@ target = QuantumVariable(n)
 
 
 h(ctrl)
-ctrl.qs.append(
-    gms_multi_cx_fan_out(n, use_uniform=True), list(target) + [ctrl]
-)
+ctrl.qs.append(gms_multi_cx_fan_out(n, use_uniform=True), list(target) + [ctrl])
 
 print(target.qs.statevector())
 

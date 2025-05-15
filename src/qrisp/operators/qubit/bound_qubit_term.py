@@ -17,26 +17,41 @@
 """
 
 from qrisp import gphase, rz, cx, conjugate, lifted
-from qrisp.operators.qubit.visualization import X_,Y_,Z_
+from qrisp.operators.qubit.visualization import X_, Y_, Z_
 
-PAULI_TABLE = {("I","I"):("I",1),("I","X"):("X",1),("I","Y"):("Y",1),("I","Z"):("Z",1),
-            ("X","I"):("X",1),("X","X"):("I",1),("X","Y"):("Z",1j),("X","Z"):("Y",-1j),
-            ("Y","I"):("Y",1),("Y","X"):("Z",-1j),("Y","Y"):("I",1),("Y","Z"):("X",1j),
-            ("Z","I"):("Z",1),("Z","X"):("Y",1j),("Z","Y"):("X",-1j),("Z","Z"):("I",1)}
+PAULI_TABLE = {
+    ("I", "I"): ("I", 1),
+    ("I", "X"): ("X", 1),
+    ("I", "Y"): ("Y", 1),
+    ("I", "Z"): ("Z", 1),
+    ("X", "I"): ("X", 1),
+    ("X", "X"): ("I", 1),
+    ("X", "Y"): ("Z", 1j),
+    ("X", "Z"): ("Y", -1j),
+    ("Y", "I"): ("Y", 1),
+    ("Y", "X"): ("Z", -1j),
+    ("Y", "Y"): ("I", 1),
+    ("Y", "Z"): ("X", 1j),
+    ("Z", "I"): ("Z", 1),
+    ("Z", "X"): ("Y", 1j),
+    ("Z", "Y"): ("X", -1j),
+    ("Z", "Z"): ("I", 1),
+}
 
 #
 # BoundQubitTerm
 #
 
+
 class BoundQubitTerm:
-    r"""
-    
-    """
+    r""" """
 
     def __init__(self, factor_dict={}):
         self.factor_dict = factor_dict
-        
-        self.hash_value = hash(tuple(sorted(factor_dict.items(), key = lambda x : hash(x))))
+
+        self.hash_value = hash(
+            tuple(sorted(factor_dict.items(), key=lambda x: hash(x)))
+        )
 
     def update(self, update_dict):
         self.factor_dict.update(update_dict)
@@ -47,17 +62,17 @@ class BoundQubitTerm:
 
     def __eq__(self, other):
         return self.hash_value == other.hash_value
-    
+
     def copy(self):
         return BoundQubitTerm(self.factor_dict.copy())
-    
+
     def is_identity(self):
-        return len(self.factor_dict)==0
-    
+        return len(self.factor_dict) == 0
+
     #
     # Simulation
     #
-    
+
     # Assume that the operator is diagonal after change of basis
     # Implements exp(i*coeff*\prod_j Z_j) where the product goes over all qubits j in self.factor_dict
     @lifted
@@ -65,15 +80,15 @@ class BoundQubitTerm:
 
         def parity(qubits):
             n = len(qubits)
-            for i in range(n-1):
-                cx(qubits[i],qubits[i+1])
+            for i in range(n - 1):
+                cx(qubits[i], qubits[i + 1])
 
         if not self.is_identity():
             qubits = list(self.factor_dict.keys())
             with conjugate(parity)(qubits):
-                rz(-2*coeff,qubits[-1])
+                rz(-2 * coeff, qubits[-1])
         else:
-            gphase(coeff,qubit)
+            gphase(coeff, qubit)
 
     #
     # Printing
@@ -83,7 +98,7 @@ class BoundQubitTerm:
         # Convert the sympy expression to a string and return it
         expr = self.to_expr()
         return str(expr)
-    
+
     def __repr__(self):
         return str(self)
 
@@ -99,18 +114,18 @@ class BoundQubitTerm:
         """
 
         def to_spin(P, index):
-            if P=="I":
+            if P == "I":
                 return 1
-            if P=="X":
+            if P == "X":
                 return X_(index)
-            if P=="Y":
+            if P == "Y":
                 return Y_(index)
             else:
                 return Z_(index)
-        
+
         expr = 1
-        for index,P in self.factor_dict.items():
-            expr *= to_spin(P,"("+str(index)+")")
+        for index, P in self.factor_dict.items():
+            expr *= to_spin(P, "(" + str(index) + ")")
 
         return expr
 
@@ -119,31 +134,36 @@ class BoundQubitTerm:
     #
 
     def __pow__(self, e):
-        if isinstance(e, int) and e>=0:
-            if e%2==0:
-                return BoundQubitTerm({():1})
+        if isinstance(e, int) and e >= 0:
+            if e % 2 == 0:
+                return BoundQubitTerm({(): 1})
             else:
                 return self
         else:
-            raise TypeError("Unsupported operand type(s) for ** or pow(): "+str(type(self))+" and "+str(type(e)))
+            raise TypeError(
+                "Unsupported operand type(s) for ** or pow(): "
+                + str(type(self))
+                + " and "
+                + str(type(e))
+            )
 
     def __mul__(self, other):
-        result_factor_dict={}
+        result_factor_dict = {}
         result_coeff = 1
         a = self.factor_dict
         b = other.factor_dict
 
         keys = set(a.keys()) | set(b.keys())
         for key in keys:
-            pauli, coeff = PAULI_TABLE[a.get(key,"I"),b.get(key,"I")]
-            if pauli!="I":
-                result_factor_dict[key]=pauli
+            pauli, coeff = PAULI_TABLE[a.get(key, "I"), b.get(key, "I")]
+            if pauli != "I":
+                result_factor_dict[key] = pauli
                 result_coeff *= coeff
         return BoundQubitTerm(result_factor_dict), result_coeff
 
     def subs(self, subs_dict):
         """
-        
+
         Parameters
         ----------
         subs_dict : dict
@@ -155,9 +175,9 @@ class BoundQubitTerm:
             The resulting BoundQubitTerm.
         result_coeff : int, float, complex
             The resulting coefficient.
-        
+
         """
-        result_factor_dict=self.factor_dict.copy()
+        result_factor_dict = self.factor_dict.copy()
         result_coeff = 1
 
         for key, value in subs_dict.items():
@@ -166,7 +186,7 @@ class BoundQubitTerm:
                 result_coeff *= value
 
         return BoundQubitTerm(result_factor_dict), result_coeff
-        
+
     #
     # Commutativity checks
     #
@@ -187,7 +207,11 @@ class BoundQubitTerm:
         commute = True
 
         for key in keys:
-            if a.get(key,"I")!="I" and b.get(key,"I")!="I" and a.get(key,"I")!=b.get(key,"I"):
+            if (
+                a.get(key, "I") != "I"
+                and b.get(key, "I") != "I"
+                and a.get(key, "I") != b.get(key, "I")
+            ):
                 commute = not commute
         return commute
 
@@ -204,6 +228,10 @@ class BoundQubitTerm:
         keys.update(set(b.keys()))
 
         for key in keys:
-            if a.get(key,"I")!="I" and b.get(key,"I")!="I" and a.get(key,"I")!=b.get(key,"I"):
+            if (
+                a.get(key, "I") != "I"
+                and b.get(key, "I") != "I"
+                and a.get(key, "I") != b.get(key, "I")
+            ):
                 return False
         return True

@@ -16,7 +16,6 @@
 ********************************************************************************/
 """
 
-
 import numpy as np
 from qrisp.circuit import Operation
 
@@ -298,7 +297,9 @@ def GXX_converter(qs):
     # This is because every entry with the same row / column represents a phase gate
     # where the qubit in question participated
     for i in range(n):
-        qc_res.p((sum(phase_matrix[i, :]) + sum(phase_matrix[:, i])) / 2, qc_res.qubits[i])
+        qc_res.p(
+            (sum(phase_matrix[i, :]) + sum(phase_matrix[:, i])) / 2, qc_res.qubits[i]
+        )
         phase_matrix[i, i] = 0
 
     # Prepary Chi list for GXX gate

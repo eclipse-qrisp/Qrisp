@@ -30,7 +30,7 @@ def pprm_synth(input_var, output_var, tt, qb_nr, phase_tolerant=False):
     qs = input_var.qs
     output_qubit = output_var.reg[qb_nr]
     qs.id(output_qubit)
-    
+
     expr = synth_poly(tt, column=qb_nr)
     # print(expr)
     args = expr_to_list(expr)
@@ -76,7 +76,8 @@ def pprm_synth(input_var, output_var, tt, qb_nr, phase_tolerant=False):
             if isinstance(args[element][0], sp.core.numbers.One):
                 qs.x(output_qubit)
 
-@gate_wrap(is_qfree = True, permeability = [0])
+
+@gate_wrap(is_qfree=True, permeability=[0])
 def pprm(input_var, output_var, tt, phase_tolerant=False):
     for column in range(tt.shape[1]):
         pprm_synth(input_var, output_var, tt, column, phase_tolerant)

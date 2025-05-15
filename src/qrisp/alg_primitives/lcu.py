@@ -38,23 +38,23 @@ def inner_LCU(operand_prep, state_prep, unitaries, num_unitaries=None, oaa_iter=
     .. math::
         \mathrm{LCU} = \mathrm{PREPARE}^\dagger \cdot \mathrm{SELECT} \cdot \mathrm{PREPARE}
 
-    - **PREPARE**: Prepares an ancilla quantum variable in a superposition encoding the normalized coefficients $\alpha_i\geq0$ of the target operator 
+    - **PREPARE**: Prepares an ancilla quantum variable in a superposition encoding the normalized coefficients $\alpha_i\geq0$ of the target operator
 
     .. math ::
-    
+
             \mathrm{PREPARE}|0\rangle=\sum_i\sqrt{\frac{\alpha_i}{\lambda}}|i\rangle
 
-    - **SELECT**: Applies the unitary $U_i$ to the input state $\ket{\psi}$, controlled on the ancilla variable being in state $|i\rangle$. 
-    
-    .. math :: 
-    
+    - **SELECT**: Applies the unitary $U_i$ to the input state $\ket{\psi}$, controlled on the ancilla variable being in state $|i\rangle$.
+
+    .. math ::
+
         \mathrm{SELECT}|i\rangle|\psi\rangle=|i\rangle U_i|\psi\rangle
-        
+
     - **PREPARE**$^\dagger$: Applies the inverse prepartion to the ancilla.
 
     .. note::
 
-        The LCU protocol is deemed successful only if the ancilla variable is measured in the $\ket{0}$ state, which occurs with a probability proportional to :math:`\frac{\langle\psi|A^{\dagger}A|\psi\rangle}{\lambda^2}` where $\lambda=\sum_i\alpha_i$. 
+        The LCU protocol is deemed successful only if the ancilla variable is measured in the $\ket{0}$ state, which occurs with a probability proportional to :math:`\frac{\langle\psi|A^{\dagger}A|\psi\rangle}{\lambda^2}` where $\lambda=\sum_i\alpha_i$.
         This function does not perform the measurement; it returns the ancilla variable and the transformed target variable.
 
     For a complete implementation of LCU with the Repeat-Until-Success protocol, see :func:`LCU`.
@@ -75,7 +75,7 @@ def inner_LCU(operand_prep, state_prep, unitaries, num_unitaries=None, oaa_iter=
 
     unitaries : list[callable] or callable
         Either:
-          - A list of functions performing some in-place operation on ``operand``, or 
+          - A list of functions performing some in-place operation on ``operand``, or
           - A function ``unitaries(i, operand)`` performing some in-place operation on ``operand`` depending on a nonnegative integer index ``i`` specifying the case.
 
     num_unitaries : int, optional
@@ -109,7 +109,7 @@ def inner_LCU(operand_prep, state_prep, unitaries, num_unitaries=None, oaa_iter=
     .. math::
 
         A = \begin{pmatrix}1 & 1\\ 1 & 1\end{pmatrix} = \begin{pmatrix}1 & 0\\ 0 & 1\end{pmatrix} + \begin{pmatrix}1 & 1\\ 1 & 1\end{pmatrix} = I + X
-    
+
     That is,
 
     .. math:: A = \alpha_0U_0 + \alpha_1U_1
@@ -130,10 +130,10 @@ def inner_LCU(operand_prep, state_prep, unitaries, num_unitaries=None, oaa_iter=
 
         unitaries = [U0, U1]
 
-    and the ``state_prep`` function implementing 
-    
+    and the ``state_prep`` function implementing
+
     .. math ::
-    
+
         \text{PREPARE}\ket{0} = \frac{1}{\sqrt{2}}\left(\ket{0}+\ket{1}\right)
 
     ::
@@ -155,7 +155,7 @@ def inner_LCU(operand_prep, state_prep, unitaries, num_unitaries=None, oaa_iter=
     >>> case_indicator, operand = inner_LCU(operand_prep, state_prep, unitaries)
     >>> operand.qs.statevector()
 
-    As result we obtain the state 
+    As result we obtain the state
 
     .. math ::
 
@@ -169,12 +169,14 @@ def inner_LCU(operand_prep, state_prep, unitaries, num_unitaries=None, oaa_iter=
     operand = operand_prep()
 
     if not callable(unitaries):
-        if not isinstance(unitaries,list):
+        if not isinstance(unitaries, list):
             raise TypeError("unitaries must be callable or list[callable].")
         num_unitaries = len(unitaries)
     else:
-        if num_unitaries==None:
-            raise ValueError("The number of unitiaries must be specified if unitaries is callable.")
+        if num_unitaries == None:
+            raise ValueError(
+                "The number of unitiaries must be specified if unitaries is callable."
+            )
 
     # Specify the QunatumVariable that indicates which case to execute
     n = np.int64(np.ceil(np.log2(num_unitaries)))
@@ -186,12 +188,18 @@ def inner_LCU(operand_prep, state_prep, unitaries, num_unitaries=None, oaa_iter=
             qswitch(operand, case_indicator, unitaries)
 
     def oracle_func(case_indicator, operand):
-        tag_state({case_indicator : 0})
+        tag_state({case_indicator: 0})
 
     LCU_state_prep(case_indicator, operand)
 
-    if oaa_iter>0:
-        amplitude_amplification([case_indicator, operand], LCU_state_prep, oracle_func, reflection_indices=[0], iter=oaa_iter)
+    if oaa_iter > 0:
+        amplitude_amplification(
+            [case_indicator, operand],
+            LCU_state_prep,
+            oracle_func,
+            reflection_indices=[0],
+            iter=oaa_iter,
+        )
 
     return case_indicator, operand
 
@@ -206,8 +214,8 @@ def LCU(operand_prep, state_prep, unitaries, num_unitaries=None, oaa_iter=0):
     mechanism, which repeatedly applies the LCU operation until the ancilla register is measured in the $|0\rangle$ state, indicating a successful implementation. The LCU algorithm enables the implementation of linear combinations of unitary operations
     on a quantum variable by probabilistically projecting onto the desired transformation. The terminal_sampling decorator is utilized to evaluate the LCU.
 
-    For more details on the LCU primitive, refer to `Childs and Wiebe (2012) <https://arxiv.org/abs/1202.5822>`_. 
-    
+    For more details on the LCU primitive, refer to `Childs and Wiebe (2012) <https://arxiv.org/abs/1202.5822>`_.
+
     For more information on the inner workings of this LCU implementation, see :func:`inner_LCU`.
 
     Parameters
@@ -215,7 +223,7 @@ def LCU(operand_prep, state_prep, unitaries, num_unitaries=None, oaa_iter=0):
     operand_prep : callable
         A function preparing the input state $\ket{\psi}$. This function must return a :ref:`QuantumVariable` (the ``operand``).
     state_prep : callable
-        A function preparing the coefficient state from the $\ket{0}$ state. 
+        A function preparing the coefficient state from the $\ket{0}$ state.
         This function receives a :ref:`QuantumFloat` with $\lceil\log_2m\rceil$ qubits for $m$ unitiaries $U_0,\dotsc,U_{m-1}$ as argument and applies
 
         .. math ::
@@ -224,7 +232,7 @@ def LCU(operand_prep, state_prep, unitaries, num_unitaries=None, oaa_iter=0):
 
     unitaries : list[callable] or callable
         Either:
-          - A list of functions performing some in-place operation on ``operand``, or 
+          - A list of functions performing some in-place operation on ``operand``, or
           - A function ``unitaries(i, operand)`` performing some in-place operation on ``operand`` depending on a nonnegative integer index ``i`` specifying the case.
 
     num_unitaries : int, optional
@@ -257,7 +265,7 @@ def LCU(operand_prep, state_prep, unitaries, num_unitaries=None, oaa_iter=0):
     .. math::
 
         A = \begin{pmatrix}1 & 1\\ 1 & 1\end{pmatrix} = \begin{pmatrix}1 & 0\\ 0 & 1\end{pmatrix} + \begin{pmatrix}1 & 1\\ 1 & 1\end{pmatrix} = I + X
-    
+
     This is,
 
     .. math:: A = \alpha_0U_0 + \alpha_1U_1
@@ -278,10 +286,10 @@ def LCU(operand_prep, state_prep, unitaries, num_unitaries=None, oaa_iter=0):
 
         unitaries = [U0, U1]
 
-    and the ``state_prep`` function implementing 
-    
+    and the ``state_prep`` function implementing
+
     .. math ::
-    
+
         \text{PREPARE}\ket{0} = \frac{1}{\sqrt{2}}\left(\ket{0}+\ket{1}\right)
 
     ::
@@ -299,12 +307,12 @@ def LCU(operand_prep, state_prep, unitaries, num_unitaries=None, oaa_iter=0):
             return operand
 
     Finally, we apply LCU
-    
+
     ::
 
         @terminal_sampling
         def main():
-            
+
             qv = LCU(operand_prep, state_prep, unitaries)
             return qv
 
@@ -388,15 +396,18 @@ def LCU(operand_prep, state_prep, unitaries, num_unitaries=None, oaa_iter=0):
 
     """
 
-    case_indicator, qv = inner_LCU(operand_prep, state_prep, unitaries, num_unitaries, oaa_iter)
+    case_indicator, qv = inner_LCU(
+        operand_prep, state_prep, unitaries, num_unitaries, oaa_iter
+    )
 
     # Success condition
     success_bool = measure(case_indicator) == 0
     return success_bool, qv
 
+
 # Apply the RUS decorator with the workaround in order to show in documentation
 temp_docstring = LCU.__doc__
-LCU = RUS(static_argnums=[3,4])(LCU)
+LCU = RUS(static_argnums=[3, 4])(LCU)
 LCU.__doc__ = temp_docstring
 
 
@@ -414,7 +425,7 @@ def view_LCU(operand_prep, state_prep, unitaries, num_unitaries=None):
     operand_prep : callable
         A function preparing the input state $\ket{\psi}$. This function must return a :ref:`QuantumVariable` (the ``operand``).
     state_prep : callable
-        A function preparing the coefficient state from the $\ket{0}$ state. 
+        A function preparing the coefficient state from the $\ket{0}$ state.
         This function receives a :ref:`QuantumFloat` with $\lceil\log_2m\rceil$ qubits for $m$ unitiaries $U_0,\dotsc,U_{m-1}$ as argument and applies
 
         .. math ::
@@ -423,7 +434,7 @@ def view_LCU(operand_prep, state_prep, unitaries, num_unitaries=None):
 
     unitaries : list[callable] or callable
         Either:
-          - A list of functions performing some in-place operation on ``operand``, or 
+          - A list of functions performing some in-place operation on ``operand``, or
           - A function ``unitaries(i, operand)`` performing some in-place operation on ``operand`` depending on a nonnegative integer index ``i`` specifying the case.
 
     num_unitaries : int, optional
@@ -472,13 +483,13 @@ def view_LCU(operand_prep, state_prep, unitaries, num_unitaries=None):
             └───┘│  jasp_balauca_mcx │  │  │  jasp_balauca_mcx_dg │»
     qb_289: ─────┤1                  ├──■──┤1                     ├»
                  └───────────────────┘     └──────────────────────┘»
-    «                             ┌───┐                             
+    «                             ┌───┐
     «qb_287: ─────────────────────┤ X ├─────────────────────────────
     «        ┌───────────────────┐└─┬─┘┌──────────────────────┐┌───┐
     «qb_288: ┤0                  ├──┼──┤0                     ├┤ H ├
     «        │  jasp_balauca_mcx │  │  │  jasp_balauca_mcx_dg │└───┘
     «qb_289: ┤1                  ├──■──┤1                     ├─────
-    «        └───────────────────┘     └──────────────────────┘     
+    «        └───────────────────┘     └──────────────────────┘
 
     We can see that the operand and case variables are prepared, the unitaries for the two cases (i.e., X and Y) are executed, and the inverse preparation (H gate) of the case variable is applied.
     The inner workings of the circuit can be further analyzed by calling ``qc.transpile(level: int)``.
@@ -486,12 +497,14 @@ def view_LCU(operand_prep, state_prep, unitaries, num_unitaries=None):
     """
 
     if not callable(unitaries):
-        if not isinstance(unitaries,list):
+        if not isinstance(unitaries, list):
             raise TypeError("unitaries must be callable or list[callable].")
         num_unitaries = len(unitaries)
     else:
-        if num_unitaries==None:
-            raise ValueError("The number of unitiaries must be specified if unitaries is callable.")
+        if num_unitaries == None:
+            raise ValueError(
+                "The number of unitiaries must be specified if unitaries is callable."
+            )
 
     jaspr = make_jaspr(inner_LCU)(operand_prep, state_prep, unitaries, num_unitaries)
 

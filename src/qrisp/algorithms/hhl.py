@@ -18,6 +18,7 @@
 
 from qrisp.alg_primitives.qpe import QPE
 
+
 def HHL(qv, hamiltonian_evolution, ev_inversion, precision):
     """
     Evaluates the HHL algorithm.

@@ -16,7 +16,6 @@
 ********************************************************************************/
 """
 
-
 import numpy as np
 
 from qrisp import QuantumVariable, QFT, cp, h, p, x

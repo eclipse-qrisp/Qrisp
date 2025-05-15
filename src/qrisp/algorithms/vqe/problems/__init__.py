@@ -18,4 +18,3 @@
 
 from qrisp.algorithms.vqe.problems.electronic_structure import *
 from qrisp.algorithms.vqe.problems.heisenberg import *
-

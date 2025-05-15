@@ -16,7 +16,6 @@
 ********************************************************************************/
 """
 
-
 import numpy as np
 from qrisp import QuantumCircuit, QuantumVariable
 from qiskit import Aer
@@ -43,6 +42,7 @@ print(qc)
 
 # %%
 # Create VirtualBackend
+
 
 def sample_run_func(qc, shots=None, token=""):
     if shots is None:

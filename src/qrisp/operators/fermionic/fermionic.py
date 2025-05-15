@@ -20,24 +20,16 @@ from qrisp.circuit.qubit import Qubit
 from qrisp.operators.fermionic.fermionic_operator import FermionicOperator
 from qrisp.operators.fermionic.fermionic_term import FermionicTerm
 
+
 def a(arg):
-    if isinstance(arg,int):
-        return FermionicOperator({FermionicTerm([(arg,False)]):1})
+    if isinstance(arg, int):
+        return FermionicOperator({FermionicTerm([(arg, False)]): 1})
     else:
-        raise Exception("Cannot initialize operator from type "+str(type(arg)))
+        raise Exception("Cannot initialize operator from type " + str(type(arg)))
+
 
 def c(arg):
-    if isinstance(arg,int):
-        return FermionicOperator({FermionicTerm([(arg,True)]):1})
+    if isinstance(arg, int):
+        return FermionicOperator({FermionicTerm([(arg, True)]): 1})
     else:
-        raise Exception("Cannot initialize operator from type "+str(type(arg)))
-
-
-    
-
-
-
-
-
-
-
+        raise Exception("Cannot initialize operator from type " + str(type(arg)))

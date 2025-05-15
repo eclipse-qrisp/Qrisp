@@ -17,14 +17,19 @@
 """
 
 from qrisp.circuit import QuantumCircuit
-from qrisp.alg_primitives.mcx_algs.circuit_library import maslov_qc, toffoli_qc, margolus_qc
+from qrisp.alg_primitives.mcx_algs.circuit_library import (
+    maslov_qc,
+    toffoli_qc,
+    margolus_qc,
+)
 from qrisp.misc.utility import bin_rep
+
 
 # Ancilla supported multi controlled X gates from https://arxiv.org/pdf/1508.03273.pdf
 def maslov_mcx(n, ctrl_state=-1):
     if not isinstance(ctrl_state, str):
         if ctrl_state == -1:
-            ctrl_state += 2 ** n
+            ctrl_state += 2**n
         ctrl_state = bin_rep(ctrl_state, n)
 
     res = QuantumCircuit(n + 1)

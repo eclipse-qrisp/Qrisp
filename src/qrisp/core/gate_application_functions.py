@@ -158,7 +158,7 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
             - More efficient but introduce extra phases that need to be uncomputed by performing the inverse of this gate on the same inputs. For more information on phase tolerance, check `this paper <https://iopscience.iop.org/article/10.1088/2058-9565/acaf9d/meta>`__.
         *   - ``balauca``
             - Method based on this `paper <https://www.iccs-meeting.org/archive/iccs2022/papers/133530169.pdf>`__ with logarithmic depth but requires many ancilla qubits.
-    	*   - ``khattar``
+        *   - ``khattar``
             - Method based on this `paper <https://arxiv.org/abs/2407.17966>`_, implements the n-controlled x with 2n − 3 Toffoli and linear depth using 1 clean ancilla. The case n=3 implements this `paper <https://arxiv.org/abs/2106.11513>`__.
         *   - ``maslov``
             - Documented `here <https://arxiv.org/abs/1508.03273>`_, requires less ancilla qubits but is only available for 4 or less control qubits.
@@ -474,7 +474,7 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
         jones_toffoli,
         jasp_gidney_mcx,
         jasp_gidney_mcx_inv,
-        khattar_mcx
+        khattar_mcx,
     )
     from qrisp.core import QuantumVariable
     from qrisp.qtypes import QuantumBool
@@ -524,7 +524,9 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
             )
     else:
         qubits_0 = controls
-        if isinstance(qubits_0, (QuantumVariable, DynamicQubitArray)) and method not in ['balauca', 'khattar']:
+        if isinstance(
+            qubits_0, (QuantumVariable, DynamicQubitArray)
+        ) and method not in ["balauca", "khattar"]:
             method = "balauca"
         qubits_1 = [target]
     from qrisp.alg_primitives.mcx_algs import (
@@ -533,7 +535,7 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
         hybrid_mcx,
         maslov_mcx,
         yong_mcx,
-        jasp_balauca_mcx, #Merge the import
+        jasp_balauca_mcx,  # Merge the import
     )
 
     if method in ["gray", "gray_pt", "gray_pt_inv"]:
@@ -618,11 +620,11 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
         #     return mcx(qubits_0, qubits_1, method = "balauca", ctrl_state = ctrl_state) # noqa:501
         gate = std_ops.MCXGate(len(qubits_0), ctrl_state, method="auto")
         append_operation(gate, qubits_0 + qubits_1)
-        
+
     elif method == "khattar":
-        #if check_for_tracing_mode():
+        # if check_for_tracing_mode():
         khattar_mcx(qubits_0, qubits_1, ctrl_state)
-        #else:
+        # else:
         #    balauca_mcx(qubits_0, qubits_1, ctrl_state=ctrl_state) # PLACEHOLDER
 
     else:
@@ -759,7 +761,8 @@ def mcp(phi, qubits, method="auto", ctrl_state=-1):
         )
 
         temp.delete()
-    n = jlen(qubits) 
+
+    n = jlen(qubits)
     if not check_for_tracing_mode():
         if not isinstance(ctrl_state, str):
             if ctrl_state == -1:
@@ -797,11 +800,11 @@ def mcp(phi, qubits, method="auto", ctrl_state=-1):
         else:
             balauca_mcp(phi, qubits, ctrl_state=ctrl_state)
         return qubits
-    
+
     elif method == "khattar":
         khattar_mcp(phi, qubits, ctrl_state=ctrl_state)
         # return qubits   #is it needed? maybe for static case
-        
+
     elif method == "auto":
         with control(n < 4):
             mcp(phi, qubits, method="gray", ctrl_state=ctrl_state)

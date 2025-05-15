@@ -16,7 +16,6 @@
 ********************************************************************************/
 """
 
-
 from qrisp.environments.quantum_environments import QuantumEnvironment
 from qrisp.misc.GMS_tools import GXX_converter
 
@@ -80,9 +79,9 @@ class GMSEnvironment(QuantumEnvironment):
     >>> qf[:] = 13
     >>> QFT(qf, use_gms = True)
     >>> print(qf.qs)
-    
+
     ::
-    
+
         QuantumCircuit:
         --------------
               ┌───┐┌───┐┌─────────────────────┐                                 »

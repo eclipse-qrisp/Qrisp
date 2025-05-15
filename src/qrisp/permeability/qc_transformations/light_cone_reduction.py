@@ -15,9 +15,11 @@
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************/
 """
+
 import networkx as nx
 
 from qrisp.permeability.qc_transformations.memory_management import topological_sort
+
 # This function reorders the circuit such that the intended measurements can be executed
 # as early as possible. Additionally, any instructions that are not needed for the
 # intended measurements are removed
@@ -39,30 +41,31 @@ def lightcone_reduction(qc, intended_measurements):
 
     # Generate dag representation
     from qrisp.permeability import PermeabilityGraph, TerminatorNode
-    
-    G = PermeabilityGraph(qc, remove_artificials = True)
+
+    G = PermeabilityGraph(qc, remove_artificials=True)
 
     # Create result qc
     qc_new = qc.clearcopy()
-    
+
     # Define prefered instructions
     measure_identifier = (
         lambda x: x.op.name == "measure" and x.qubits[0] in intended_measurements
     )
-    
+
     def sub_sort(dag):
         nodes = list(dag.nodes())
+
         def sort_key(x):
             if isinstance(x, TerminatorNode):
                 return 0
             else:
                 return x.qc_index
-        
-        nodes.sort(key = sort_key)
+
+        nodes.sort(key=sort_key)
         return nodes
 
     # Perform topological sort
-    for n in topological_sort(G, prefer=measure_identifier, sub_sort = sub_sort):
+    for n in topological_sort(G, prefer=measure_identifier, sub_sort=sub_sort):
         if n.instr:
             qc_new.append(n.instr)
 
@@ -75,7 +78,7 @@ def lightcone_reduction(qc, intended_measurements):
 
     redundant_qc.data = qc_new.data[i + 1 :]
 
-    G = PermeabilityGraph(redundant_qc, remove_artificials = True)
+    G = PermeabilityGraph(redundant_qc, remove_artificials=True)
 
     # #Now we need to make sure we don't remove deallocation gates from the data
     # #because this would inflate the qubit count of the compiled circuit
@@ -87,10 +90,10 @@ def lightcone_reduction(qc, intended_measurements):
     for node in G.nodes():
         if node.instr is None:
             continue
-        
+
         if node.instr.op.name == "qb_dealloc":
             ancs = nx.ancestors(G, node)
-            
+
             redundant_qc.data.remove(node.instr)
             # print(f"removed {node.instr}")
             for pred in ancs:
@@ -98,7 +101,6 @@ def lightcone_reduction(qc, intended_measurements):
                     redundant_qc.data.remove(pred.instr)
                 except ValueError:
                     pass
-            
 
     redundant_instructions = redundant_qc.data
 
@@ -115,4 +117,3 @@ def lightcone_reduction(qc, intended_measurements):
         i += 1
 
     return qc_new
-

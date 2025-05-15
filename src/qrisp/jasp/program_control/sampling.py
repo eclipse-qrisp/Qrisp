@@ -47,26 +47,26 @@ from qrisp.jasp.tracing_logic import quantum_kernel, check_for_tracing_mode
 # eqn.params["name"] attribute and executes the custom logic.
 
 
-def sample(state_prep = None, shots = 0, post_processor = None):
+def sample(state_prep=None, shots=0, post_processor=None):
     r"""
     The ``sample`` function allows to take samples from a state that is specified
     by a preparation procedure. This preparation procedure can be supplied via
     a Python function that returns one or more :ref:`QuantumVariables <QuantumVariable>`.
-    
-    The samples are returned in the form of a 
+
+    The samples are returned in the form of a
     `Jax Array <https://jax.readthedocs.io/en/latest/_autosummary/jax.Array.html>`_
     which is shaped according to the ``shots`` parameter. Because of this, shots
     can only be a **static integer** (no dynamic values!). If you want to sample
     with a dynamic shot amount, look into :ref:`expectation_value`.
-    
-    
+
+
     Parameters
     ----------
     state_prep : callable
-        A function returning one or more :ref:`QuantumVariables <QuantumVariable>`. 
+        A function returning one or more :ref:`QuantumVariables <QuantumVariable>`.
         The state from this QuantumVariables will be sampled.
         The state preparation function can only take classical values as arguments.
-        This is because a quantum value would need to be copied for each sampling 
+        This is because a quantum value would need to be copied for each sampling
         iteration, which is prohibited by the no-cloning theorem.
     shots : int
         The amounts of samples to take.
@@ -83,20 +83,20 @@ def sample(state_prep = None, shots = 0, post_processor = None):
     Returns
     -------
     callable
-        A classical, Jax traceable function returning a jax array containing 
+        A classical, Jax traceable function returning a jax array containing
         the measurement results of each shot.
 
     Examples
     --------
-    
+
     We prepare the state
-    
+
     .. math::
-        
+
         \ket{\psi} = \frac{1}{\sqrt{2}} \left(\ket{0}\ket{0}\ket{\text{True}} + \ket{k}\ket{k}\ket{\text{True}})\right)
-    
+
     ::
-        
+
         from qrisp import *
         from qrisp.jasp import *
 
@@ -104,31 +104,31 @@ def sample(state_prep = None, shots = 0, post_processor = None):
         def state_prep(k):
             a = QuantumFloat(4)
             b = QuantumFloat(4)
-            
+
             qbl = QuantumBool()
             h(qbl)
-            
+
             with control(qbl[0]):
                 a[:] = k
-                
+
             cx(a, b)
-            
+
             return a, b
 
     And subsequently sample from the QuantumFloats:
-        
+
     ::
-        
+
         @jaspify
         def main(k):
-            
-            sampling_function = sample(state_prep, 
+
+            sampling_function = sample(state_prep,
                                        shots = 10)
-            
+
             return sampling_function(k)
 
         print(main(3))
-        
+
         # Yields
         # [[3. 3.]
         #  [0. 0.]
@@ -141,21 +141,21 @@ def sample(state_prep = None, shots = 0, post_processor = None):
         #  [0. 0.]
         #  [0. 0.]]
 
-    To demonstrate the post processing feature, we write a simple post 
+    To demonstrate the post processing feature, we write a simple post
     processing function:
-        
+
     ::
-        
+
         def post_processor(x, y):
             return 2*x + y//2
-        
+
         @jaspify
         def main(k):
-            
-            sampling_function = sample(state_prep, 
+
+            sampling_function = sample(state_prep,
                                        shots = 10,
                                        post_processor = post_processor)
-            
+
             return sampling_function(k)
 
         print(main(4))
@@ -163,30 +163,35 @@ def sample(state_prep = None, shots = 0, post_processor = None):
         # [10. 10.  0.  0.  0.  0.  0.  0. 10. 10.]
 
     """
-    
+
     from qrisp.jasp import qache
     from qrisp.core import QuantumVariable, measure
-    
+
     if isinstance(state_prep, int):
         shots = state_prep
         state_prep = None
-    
+
     if state_prep is None:
-        return lambda x : sample(x, shots, post_processor = post_processor)
-    
+        return lambda x: sample(x, shots, post_processor=post_processor)
+
     if post_processor is None:
+
         def identity(*args):
             if len(args) == 1:
                 return args[0]
             return args
-        
+
         post_processor = identity
-    
+
     if isinstance(shots, jax.core.Tracer):
-        raise Exception("Tried to sample with dynamic shots value (static integer required)")
+        raise Exception(
+            "Tried to sample with dynamic shots value (static integer required)"
+        )
     elif not isinstance(shots, int):
-        raise Exception(f"Tried to sample with shots value of non-integer type {type(shots)}")
-    
+        raise Exception(
+            f"Tried to sample with shots value of non-integer type {type(shots)}"
+        )
+
     # Qache the user function
     @qache
     def user_func(*args):
@@ -194,30 +199,34 @@ def sample(state_prep = None, shots = 0, post_processor = None):
 
     # This function evaluates the sampling process
     @jax.jit
-    def sampling_eval_function(*args, tracerized_shots = 0):
-        
+    def sampling_eval_function(*args, tracerized_shots=0):
+
         for arg in args:
             if isinstance(arg, QuantumVariable):
-                raise Exception("Tried to sample from state preparation function taking a quantum value")
-        
-        # We now construct a loop to collect the samples by 
+                raise Exception(
+                    "Tried to sample from state preparation function taking a quantum value"
+                )
+
+        # We now construct a loop to collect the samples by
         # inserting the postprocessed measurement result into an array.
         # The following function is the loop body, which is kernelized.
         @quantum_kernel
         def sampling_body_func(i, args):
-            
+
             acc = args[0]
-            
+
             # Evaluate the user function
             qv_tuple = user_func(*args[1:])
-            
+
             if not isinstance(qv_tuple, tuple):
                 qv_tuple = (qv_tuple,)
-            
+
             for qv in qv_tuple:
                 if not isinstance(qv, QuantumVariable):
-                    raise Exception("Tried to sample from function not returning a QuantumVariable")
-            
+                    raise Exception(
+                        "Tried to sample from function not returning a QuantumVariable"
+                    )
+
             # Trace the DynamicQubitArray measurements
             # Since we execute the measurements on the .reg attribute, no decoding
             # is applied. The decoding happens in sampling_helper_2
@@ -227,62 +236,71 @@ def sample(state_prep = None, shots = 0, post_processor = None):
                 for reg in args:
                     res_list.append(measure(reg))
                 return tuple(res_list)
-            
+
             measurement_ints = sampling_helper_1(*[qv.reg for qv in qv_tuple])
-            
+
             # Trace the decoding
             @jax.jit
             def sampling_helper_2(acc, i, *meas_ints):
                 decoded_values = []
                 for j in range(len(qv_tuple)):
                     decoded_values.append(qv_tuple[j].jdecoder(meas_ints[j]))
-            
+
                 if len(qv_tuple) > 1:
                     decoded_values = post_processor(*decoded_values)
                 else:
                     decoded_values = post_processor(*decoded_values)
-                
+
                 if isinstance(decoded_values, tuple):
                     # Save the return amount (for more details check the comment of the)
                     # initialization command of return_amount
                     return_amount.append(len(decoded_values))
                     if len(acc.shape) == 1:
                         raise AuxException()
-                    
+
                 # Insert into the accumulating array
                 acc = acc.at[i].set(decoded_values)
-                
+
                 return acc
-            
+
             acc = sampling_helper_2(acc, i, *measurement_ints)
-            
+
             return (acc, *args[1:])
-        
+
         # This list captures the amount of return values. The strategy here is
         # to initially assume only one QuantumVariable is returned, which is then
         # added to the expectation value accumulator. If more than one is returned,
         # the amount is saved in this list and an exception is raised, which
         # subsequently causes another call but this time with the correct accumulator
         # dimension.
-        
+
         return_amount = []
-        
+
         try:
-            loop_res = jax.lax.fori_loop(0, tracerized_shots, sampling_body_func, (jnp.zeros(shots), *args))
+            loop_res = jax.lax.fori_loop(
+                0, tracerized_shots, sampling_body_func, (jnp.zeros(shots), *args)
+            )
             return loop_res[0]
         except AuxException:
-            loop_res = jax.lax.fori_loop(0, tracerized_shots, sampling_body_func, (jnp.zeros((shots, return_amount[0])), *args))
+            loop_res = jax.lax.fori_loop(
+                0,
+                tracerized_shots,
+                sampling_body_func,
+                (jnp.zeros((shots, return_amount[0])), *args),
+            )
             return loop_res[0]
-    
+
     from qrisp.jasp import terminal_sampling
+
     def return_function(*args):
-        
+
         if check_for_tracing_mode():
-            return sampling_eval_function(*args, tracerized_shots = shots)
+            return sampling_eval_function(*args, tracerized_shots=shots)
         else:
             return terminal_sampling(state_prep, shots)(*args)
-    
+
     return return_function
+
 
 class AuxException(Exception):
     pass

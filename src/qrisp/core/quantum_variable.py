@@ -16,7 +16,6 @@
 ********************************************************************************/
 """
 
-
 import copy
 import weakref
 
@@ -25,6 +24,7 @@ import numpy as np
 from jax import tree_util
 
 from qrisp.core.compilation import qompiler
+
 
 class QuantumVariable:
     """
@@ -239,8 +239,10 @@ class QuantumVariable:
         if check_for_tracing_mode():
             self.qs = TracingQuantumSession.get_instance()
             if self.qs is None:
-                raise Exception("Tried to trace Qrisp code using make_jaxpr (use make_jaspr instead)")
-            
+                raise Exception(
+                    "Tried to trace Qrisp code using make_jaxpr (use make_jaspr instead)"
+                )
+
             self.qubit_cache = {}
         else:
             if qs is not None:
@@ -252,7 +254,7 @@ class QuantumVariable:
 
         self.user_given_name = False
         self.reg = None
-        
+
         # If name is given, register variable in session manager
         if name is not None:
             self.user_given_name = True
@@ -300,7 +302,7 @@ class QuantumVariable:
 
                     # name = self.get_unique_name(python_var_name)
                     name = python_var_name
-                    
+
                     name_found = False
                     i = 0
                     while True:
@@ -328,17 +330,18 @@ class QuantumVariable:
         # This attribute tracks the created QuantumVariables for the
         # auto_uncompute decorator
         # We use weak references as some qrisp modules rely on reference counting
-        
+
         try:
             from qrisp.jasp.tracing_logic import flatten_qv, unflatten_qv
+
             # Register as a PyTree with JAX
             tree_util.register_pytree_node(type(self), flatten_qv, unflatten_qv)
         except ValueError:
             pass
-        
+
         # Specify the traced attributes (None for base type QuantumVariable)
         self.traced_attributes = []
-        
+
     def __or__(self, other):
         from qrisp import mcx, x, cx
 
@@ -385,18 +388,18 @@ class QuantumVariable:
             cx(other[i], and_res[i])
 
         return and_res
-    
+
     def __lshift__(self, other):
         if not callable(other):
             raise Exception("Tried to inject QuantumVariable into non-callable")
-        
+
         from qrisp.misc.utility import redirect_qfunction
-        
+
         def return_function(*args, **kwargs):
-            return redirect_qfunction(other)(*args, target = self, **kwargs)
-        
+            return redirect_qfunction(other)(*args, target=self, **kwargs)
+
         return return_function
-        
+
     def delete(self, verify=False, recompute=False):
         r"""
         This method is for deleting a QuantumVariable and thus freeing up and resetting
@@ -454,8 +457,9 @@ class QuantumVariable:
         Exception: Tried to perform operation x on unallocated qubit qv_1.0.
 
         """
-        
+
         from qrisp.jasp import TracingQuantumSession
+
         if not isinstance(self.qs, TracingQuantumSession) and self.is_deleted():
             return
 
@@ -520,7 +524,7 @@ class QuantumVariable:
         4
 
         """
-        
+
         from qrisp.core import QuantumSession
         from qrisp.jasp import check_for_tracing_mode, TracingQuantumSession
 
@@ -528,15 +532,14 @@ class QuantumVariable:
             new_qs = TracingQuantumSession.get_instance()
         else:
             new_qs = QuantumSession()
-            
+
         duplicate = copy.copy(self)
-        
+
         if qubits is not None:
             duplicate.reg = qubits
             size = None
         else:
             size = self.size
-        
 
         # Register duplicate variable in session
 
@@ -618,7 +621,7 @@ class QuantumVariable:
         from qrisp.misc import bin_rep
 
         return bin_rep(i, self.size)[::-1]
-    
+
     def jdecoder(self, i):
         return i
 
@@ -705,11 +708,13 @@ class QuantumVariable:
 
         from qrisp.misc import check_if_fresh, int_encoder
         from qrisp.jasp import TracingQuantumSession
-        
+
         if not isinstance(self.qs, TracingQuantumSession):
             if not permit_dirtyness:
                 if not check_if_fresh(self.reg, self.qs):
-                    raise Exception("Tried to initialize qubits which are not fresh anymore.")
+                    raise Exception(
+                        "Tried to initialize qubits which are not fresh anymore."
+                    )
 
         int_encoder(self, self.encoder(value))
 
@@ -1067,7 +1072,7 @@ class QuantumVariable:
 
         # Return dictionary of measurement results
         return counts
-    
+
     def most_likely(self, **kwargs):
         """
         Performs a measurement and returns the most likely outcome.
@@ -1094,9 +1099,10 @@ class QuantumVariable:
 
     def __getitem__(self, key):
         return self.reg[key]
-        
+
     def __str__(self):
         from qrisp.jasp import check_for_tracing_mode
+
         if check_for_tracing_mode():
             return self.__repr__()
         else:
@@ -1117,7 +1123,7 @@ class QuantumVariable:
 
     def __len__(self):
         return self.size
-    
+
     @property
     def size(self):
         if isinstance(self.reg, list):
@@ -1354,10 +1360,12 @@ class QuantumVariable:
                 break
 
         return name
-    
+
     def __iter__(self):
         if not isinstance(self.reg, list):
-            raise Exception("Tried to perform a static iteration on a dynamic QuantumVariable")
+            raise Exception(
+                "Tried to perform a static iteration on a dynamic QuantumVariable"
+            )
         else:
             return self.reg.__iter__()
 
@@ -1484,16 +1492,18 @@ class QuantumVariable:
         from qrisp.misc import custom_qv
 
         return custom_qv(label_list, decoder=decoder, qs=qs, name=name)
-    
+
     def ensure_reg(self):
         return self.reg
-    
+
     def measure(self):
         return self.jdecoder(self.reg.measure())
-    
+
     def template(self):
         from qrisp.jasp.tracing_logic import QuantumVariableTemplate
+
         return QuantumVariableTemplate(self)
+
 
 def plot_histogram(outcome_labels, counts, filename=None):
     res_list = []

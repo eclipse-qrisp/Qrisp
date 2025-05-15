@@ -16,7 +16,6 @@
 ********************************************************************************/
 """
 
-
 import time
 from math import factorial
 from itertools import permutations
@@ -256,6 +255,7 @@ def create_perm_specifiers(city_amount, init_seq=None):
 
 
 # Create function that evaluates if a certain permutation is below a certain distance
+
 
 # First implement distance function
 @as_hamiltonian

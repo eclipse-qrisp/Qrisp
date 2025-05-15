@@ -16,9 +16,9 @@
 ********************************************************************************/
 """
 
-
 from qrisp.core import h
 from qrisp.alg_primitives import QPE
+
 
 def quantum_counting(qv, oracle, precision):
     """
@@ -79,7 +79,7 @@ def quantum_counting(qv, oracle, precision):
     if check_for_tracing_mode():
         mes_res = measure(res)
         import jax.numpy as jnp
-    else: 
+    else:
         mes_res = list(res.get_measurement().keys())[0]
         import numpy as jnp
 
@@ -89,5 +89,3 @@ def quantum_counting(qv, oracle, precision):
     M = N * jnp.sin(theta) ** 2
 
     return M
-
-

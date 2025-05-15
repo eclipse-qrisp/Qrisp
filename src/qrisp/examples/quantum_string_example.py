@@ -16,7 +16,6 @@
 ********************************************************************************/
 """
 
-
 from qrisp import QuantumChar, QuantumString
 
 q_str = QuantumString()

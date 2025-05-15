@@ -15,8 +15,9 @@
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************/
 """
-    
+
 from abc import ABC, abstractmethod
+
 
 class Hamiltonian(ABC):
     r"""
@@ -25,12 +26,12 @@ class Hamiltonian(ABC):
     For example, Hamiltonians of the form
 
     .. math::
-        
+
         H=\sum\limits_{j}\alpha_jP_j,
-            
+
     where each $P_j=\prod_i\sigma_i^j$ is a Pauli product,
     and $\sigma_i^j\in\{I,X,Y,Z\}$ is the Pauli operator acting on qubit $i$,
-    are specified in terms of Pauli ``X``, ``Y``, ``Z`` operators. 
+    are specified in terms of Pauli ``X``, ``Y``, ``Z`` operators.
 
     Examples
     --------
@@ -38,8 +39,8 @@ class Hamiltonian(ABC):
     We define a Hamiltonian:
 
     ::
-    
-        from qrisp.operators.qubit import X,Y,Z           
+
+        from qrisp.operators.qubit import X,Y,Z
         H = X(0)*X(1)+Y(0)*Y(1)+Z(0)*Z(1)+0.5*Z(0)+0.5*Z(1)
         H
 
@@ -54,7 +55,7 @@ class Hamiltonian(ABC):
         res = H.get_measurement(qv)
         print(res)
         #Yields 2.0
-    
+
     """
 
     def __init__(self):
@@ -66,9 +67,7 @@ class Hamiltonian(ABC):
 
     @abstractmethod
     def _repr_latex_(self):
-        """
-
-        """
+        """ """
         pass
 
     @abstractmethod
@@ -83,7 +82,7 @@ class Hamiltonian(ABC):
 
         """
         pass
-    
+
     @abstractmethod
     def __add__(self, other):
         """
@@ -183,7 +182,7 @@ class Hamiltonian(ABC):
         pass
 
     @abstractmethod
-    def __imul__(self,other):
+    def __imul__(self, other):
         """
         Multiplys other to the operator self.
 
@@ -191,7 +190,7 @@ class Hamiltonian(ABC):
         ----------
         other : int, float, complex or PauliOperator
             A scalar or a Hamiltonian to multiply with the operator self.
-        
+
         """
         pass
 
@@ -212,11 +211,11 @@ class Hamiltonian(ABC):
     def ground_state_energy(self):
         """
         Calculates the ground state energy (i.e., the minimum eigenvalue) of the Hamiltonian classically.
-    
+
         Returns
         -------
         E : float
-            The ground state energy. 
+            The ground state energy.
 
         """
         pass
@@ -233,7 +232,7 @@ class Hamiltonian(ABC):
         subs_dic={},
         circuit_preprocessor=None,
         precompiled_qc=None,
-        _measurement=None # measurement settings
+        _measurement=None,  # measurement settings
     ):
         r"""
         This method returns the expected value of a Hamiltonian for the state of a quantum argument.
@@ -249,7 +248,7 @@ class Hamiltonian(ABC):
             The backend on which to evaluate the quantum circuit. The default can be
             specified in the file default_backend.py.
         shots : integer, optional
-            The maximum amount of shots to evaluate the expectation of the Hamiltonian. 
+            The maximum amount of shots to evaluate the expectation of the Hamiltonian.
             The default is 1000000.
         compile : bool, optional
             Boolean indicating if the .compile method of the underlying QuantumSession
@@ -308,6 +307,3 @@ class Hamiltonian(ABC):
 
         """
         pass
-
-    
-    

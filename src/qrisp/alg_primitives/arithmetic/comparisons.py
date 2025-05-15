@@ -16,7 +16,6 @@
 ********************************************************************************/
 """
 
-
 from qrisp.misc.utility import lifted
 from qrisp.environments import adaptive_condition, conjugate
 
@@ -117,6 +116,7 @@ def less_than_gate(a, b):
 
     return res_gate
 
+
 @lifted
 def less_than(a, b):
     from qrisp import QuantumBool, QuantumFloat, QuantumVariable, x
@@ -124,12 +124,12 @@ def less_than(a, b):
     if isinstance(a, QuantumFloat) and isinstance(b, QuantumFloat):
         lt_gate = less_than_gate(a, b)
 
-        lt_qbl = QuantumBool(qs = a.qs, name = "lt_qbl*")
+        lt_qbl = QuantumBool(qs=a.qs, name="lt_qbl*")
 
         anc_amount = lt_gate.num_qubits - a.size - b.size - 1
 
         if anc_amount:
-            lt_ancilla = QuantumVariable(anc_amount, qs = a.qs, name = "lt_ancilla*")
+            lt_ancilla = QuantumVariable(anc_amount, qs=a.qs, name="lt_ancilla*")
             ancillae = lt_ancilla.reg
         else:
             ancillae = []
@@ -159,12 +159,12 @@ def less_than(a, b):
 
         lt_gate = less_than_gate(a, b)
 
-        lt_qbl = QuantumBool(qs = a.qs, name = "lt_qbl*")
+        lt_qbl = QuantumBool(qs=a.qs, name="lt_qbl*")
 
         anc_amount = lt_gate.num_qubits - a.size - 1
 
         if anc_amount:
-            lt_ancilla = QuantumVariable(anc_amount, qs = a.qs, name = "lt_ancilla*")
+            lt_ancilla = QuantumVariable(anc_amount, qs=a.qs, name="lt_ancilla*")
             ancillae = lt_ancilla.reg
         else:
             ancillae = []
@@ -199,7 +199,7 @@ def less_than(a, b):
 def equal(qf_0, qf_1):
     from qrisp import QuantumBool, QuantumFloat, cx, mcx
 
-    eq_qbl = QuantumBool(qs = qf_0.qs, name = "eq_qbl*")
+    eq_qbl = QuantumBool(qs=qf_0.qs, name="eq_qbl*")
 
     if isinstance(qf_1, QuantumFloat):
         if qf_1.signed and not qf_0.signed:

@@ -23,10 +23,35 @@ import networkx as nx
 from sympy.physics.quantum import Ket, OrthogonalKet
 
 from qrisp.alg_primitives import QFT
-from qrisp import (QuantumFloat, QuantumBool, QuantumArray, mcz, cx, h, ry, swap,
-                    auto_uncompute, invert, control, IterationEnvironment, bin_rep,
-                    multi_measurement, xxyy, p, QuantumVariable, cz,
-                    mcx, z, x, RYGate, HGate, s, t, s_dg, t_dg)
+from qrisp import (
+    QuantumFloat,
+    QuantumBool,
+    QuantumArray,
+    mcz,
+    cx,
+    h,
+    ry,
+    swap,
+    auto_uncompute,
+    invert,
+    control,
+    IterationEnvironment,
+    bin_rep,
+    multi_measurement,
+    xxyy,
+    p,
+    QuantumVariable,
+    cz,
+    mcx,
+    z,
+    x,
+    RYGate,
+    HGate,
+    s,
+    t,
+    s_dg,
+    t_dg,
+)
 
 """
 As specified in the paper (https://arxiv.org/abs/1509.02374), the key challenge
@@ -567,7 +592,9 @@ class QuantumBacktrackingTree:
             
     """
 
-    def __init__(self, max_depth, branch_qv, accept, reject, subspace_optimization = False):
+    def __init__(
+        self, max_depth, branch_qv, accept, reject, subspace_optimization=False
+    ):
 
         self.max_depth = max_depth
 
@@ -575,13 +602,13 @@ class QuantumBacktrackingTree:
 
         self.branch_qa = QuantumArray(qtype=branch_qv, shape=max_depth)
 
-        self.h = OHQInt(max_depth+1, name="h*", qs=self.branch_qa.qs)
+        self.h = OHQInt(max_depth + 1, name="h*", qs=self.branch_qa.qs)
 
         self.qs = self.h.qs
 
         self.accept_function = accept
         self.reject_function = reject
-        
+
         self.subspace_optimization = subspace_optimization
 
     def accept(self):
@@ -591,7 +618,7 @@ class QuantumBacktrackingTree:
         return self.reject_function(self)
 
     @auto_uncompute
-    def qstep_diffuser(self, even, ctrl=[], min_height_assumption = 0):
+    def qstep_diffuser(self, even, ctrl=[], min_height_assumption=0):
         """
         Performs the operators :math:`R_A` or :math:`R_B`. For more information on these operators check `the paper <https://arxiv.org/abs/1509.02374>`_.
 
@@ -600,7 +627,7 @@ class QuantumBacktrackingTree:
         even : bool
             Depending on the parameter, the diffuser acts on the subspaces $\mathcal H_x=\{\ket{x}\}\cup\{\ket{y}\,|\,x\\rightarrow y\}$ where $x$ has odd (``even=False``) or even (``even=True``) height.
             Note that "even" refers to the parity of the ``h`` attribute instead of the distance from the root.
-            If the ``max_depth`` of the tree is odd, and ``even=False`` then $R_A$ (otherwise $R_B$) is performed, and vice verse if the ``max_depth`` is even. 
+            If the ``max_depth`` of the tree is odd, and ``even=False`` then $R_A$ (otherwise $R_B$) is performed, and vice verse if the ``max_depth`` is even.
 
         ctrl : List[Qubit], optional
             A list of qubits that allows performant controlling. The default is [].
@@ -644,7 +671,7 @@ class QuantumBacktrackingTree:
 
         # Perform U_x^(-1)
         with invert():
-            psi_prep(self, even=even, min_height_assumption = min_height_assumption)
+            psi_prep(self, even=even, min_height_assumption=min_height_assumption)
 
         # We now perform the operation
         # 1 - (1+(-1)**accept(x))*|x><x|
@@ -657,8 +684,6 @@ class QuantumBacktrackingTree:
         #   as this would imply controlling EVERY gate. Instead we can just
         #   control the mcz gate.
 
-        
-        
         # Prepare control state specificator
         ctrl_state = ""
         mcz_list = []
@@ -668,13 +693,12 @@ class QuantumBacktrackingTree:
         # oddity of h, because if h(x) is odd, then h(y) is not.
 
         oddity_qbl = QuantumBool()
-        
-        for i in range(self.max_depth+1):
+
+        for i in range(self.max_depth + 1):
             if i < min_height_assumption:
                 continue
-            if bool(i%2) != even:
+            if bool(i % 2) != even:
                 cx(self.h[i], oddity_qbl)
-                
 
         ctrl_state += "1"
         mcz_list.append(oddity_qbl)
@@ -684,50 +708,47 @@ class QuantumBacktrackingTree:
         mcz_list.append(accept_value)
         ctrl_state += "0"
 
-
-    	# Add additional control qubits
+        # Add additional control qubits
         mcz_list += ctrl
-        ctrl_state += "1"*len(ctrl)
-        
+        ctrl_state += "1" * len(ctrl)
+
         # Perform mcz gate
         mcz(mcz_list, ctrl_state=ctrl_state)
-        
-        
+
         # We now perform the phase-flip on the child states.
         # For more details why this yields the correct behavior please consult
         # the text at the beginning of this file.
-        
+
         # For this we first have to perform the lifting operation.
         # Lifting means, that the child states |y> are mapped to their parent.
-        
+
         # The first step to achieve this is to swap the branch information
         # into a temporary container. This way the branching information is 0.
 
         # Check if |x> is root.
-        
-        
+
         # This
-        if self.max_depth%2 == even:
-            cx(self.h[self.max_depth],oddity_qbl)
-        
+        if self.max_depth % 2 == even:
+            cx(self.h[self.max_depth], oddity_qbl)
+
         # Instead of this
-        
+
         # is_root = QuantumBool()
         # cx(self.h[self.max_depth],is_root)
-        
+
         temporary_container = self.branch_qa.qtype.duplicate()
 
         for i in range(self.max_depth):
             if i < min_height_assumption or self.subspace_optimization:
                 continue
-            if bool(i%2) == even:
-                with control(self.h[i], ctrl_method = "gray_pt"):
+            if bool(i % 2) == even:
+                with control(self.h[i], ctrl_method="gray_pt"):
                     swap(temporary_container, self.branch_qa[i])
-        
+
         # The second step is to increment h. Due to the one-hot encoding of h,
         # we can do this for free with a compiler swap.
         self.h.reg.insert(0, self.h.reg.pop(-1))
-        
+
         # Determine reject value
         reject_value = self.reject_function(self)
         mcz_list = [reject_value]
@@ -741,33 +762,32 @@ class QuantumBacktrackingTree:
         # Check if |x> is root. Otherwise, if the reject funtions returns "True" on the lift of the root a wrong phase (-1) may be applied to the root.
         # mcz_list.append(is_root)
         # ctrl_state += "0"
-        
 
         # Add extra controls
         mcz_list += ctrl
-        ctrl_state += "1"*len(ctrl)
-        
-        #Perform MCZ gate
-        mcz(mcz_list, ctrl_state = ctrl_state)
-        
-        #Reverse compiler swap
+        ctrl_state += "1" * len(ctrl)
+
+        # Perform MCZ gate
+        mcz(mcz_list, ctrl_state=ctrl_state)
+
+        # Reverse compiler swap
         self.h.reg.append(self.h.reg.pop(0))
 
-        #Reintroduce branching information
+        # Reintroduce branching information
         for i in range(self.max_depth):
             if i < min_height_assumption or self.subspace_optimization:
                 continue
-            if bool(i%2) == even:
-                with control(self.h[i], ctrl_method = "gray_pt_inv"):
+            if bool(i % 2) == even:
+                with control(self.h[i], ctrl_method="gray_pt_inv"):
                     swap(temporary_container, self.branch_qa[i])
 
-        #Delete temporary container.
+        # Delete temporary container.
         temporary_container.delete()
-        
-        # Perform U_x
-        psi_prep(self, even=even, min_height_assumption = min_height_assumption)
 
-    def quantum_step(self, ctrl=[], min_height_assumption = 0):
+        # Perform U_x
+        psi_prep(self, even=even, min_height_assumption=min_height_assumption)
+
+    def quantum_step(self, ctrl=[], min_height_assumption=0):
         """
         Performs the quantum step operator $R_BR_A$.
         For more information check the :meth:`diffuser method <qrisp.quantum_backtracking.QuantumBacktrackingTree.qstep_diffuser>`.
@@ -778,8 +798,16 @@ class QuantumBacktrackingTree:
             A list of qubits, the step operator should be controlled on. The default is [].
         """
 
-        self.qstep_diffuser(even=not self.max_depth % 2, ctrl=ctrl, min_height_assumption = min_height_assumption)
-        self.qstep_diffuser(even=self.max_depth % 2, ctrl=ctrl, min_height_assumption = min_height_assumption - 1)
+        self.qstep_diffuser(
+            even=not self.max_depth % 2,
+            ctrl=ctrl,
+            min_height_assumption=min_height_assumption,
+        )
+        self.qstep_diffuser(
+            even=self.max_depth % 2,
+            ctrl=ctrl,
+            min_height_assumption=min_height_assumption - 1,
+        )
 
     def estimate_phase(self, precision):
         r"""
@@ -814,22 +842,24 @@ class QuantumBacktrackingTree:
 
         """
 
-        qpe_res = QuantumFloat(precision, -precision, qs = self.qs)
+        qpe_res = QuantumFloat(precision, -precision, qs=self.qs)
 
         h(qpe_res)
-        
+
         from qrisp import check_if_fresh
-        
+
         if check_if_fresh(self.h.reg[:-1], self.qs):
             height_tracker = int(self.max_depth) + 1
         else:
             height_tracker = -1
-            
+
         for i in range(qpe_res.size):
-            
+
             if height_tracker >= 0 and False:
                 for j in range(2**i):
-                    self.quantum_step(ctrl=[qpe_res[i]], min_height_assumption = height_tracker)
+                    self.quantum_step(
+                        ctrl=[qpe_res[i]], min_height_assumption=height_tracker
+                    )
                     height_tracker -= 2
             else:
                 with IterationEnvironment(self.qs, 2**i, precompile=True):
@@ -838,7 +868,6 @@ class QuantumBacktrackingTree:
         QFT(qpe_res, inv=True)
 
         return qpe_res
-
 
     def init_phi(self, path):
         r"""
@@ -895,17 +924,17 @@ class QuantumBacktrackingTree:
         """
 
         h_state = {}
-        h_state[self.max_depth] = (self.max_depth)**0.5
+        h_state[self.max_depth] = (self.max_depth) ** 0.5
 
-        for i in range(1, len(path)+1):
-            h_state[self.max_depth - i] = (-1)**(i)
+        for i in range(1, len(path) + 1):
+            h_state[self.max_depth - i] = (-1) ** (i)
 
         self.h[:] = h_state
 
-        for i in range(1, len(path)+1):
+        for i in range(1, len(path) + 1):
             with self.h == self.max_depth - i:
                 for j in range(i):
-                    self.branch_qa[-j-1].encode(path[j], permit_dirtyness=True)
+                    self.branch_qa[-j - 1].encode(path[j], permit_dirtyness=True)
 
     def init_node(self, path):
         """
@@ -943,7 +972,7 @@ class QuantumBacktrackingTree:
 
         self.h[:] = self.max_depth - len(path)
         if len(path):
-            self.branch_qa[-len(path):] = path[::-1]
+            self.branch_qa[-len(path) :] = path[::-1]
 
     def subtree(self, new_root):
         """
@@ -1071,8 +1100,9 @@ class QuantumBacktrackingTree:
 
         """
 
-        return find_solution(self, precision, cl_accept, measurement_kwargs=measurement_kwargs)
-
+        return find_solution(
+            self, precision, cl_accept, measurement_kwargs=measurement_kwargs
+        )
 
     def path_decoder(self, h, branch_qa):
         """
@@ -1126,12 +1156,8 @@ class QuantumBacktrackingTree:
 
         """
 
-
         l = self.max_depth - h
         return list(branch_qa[::-1][:l])
-
-
-
 
     def statevector_graph(self, return_root=False):
         r"""
@@ -1195,24 +1221,26 @@ class QuantumBacktrackingTree:
 
         last_layer = [root]
 
-
         for i in range(self.max_depth):
 
             next_layer = []
 
             for parent_node in last_layer:
 
-                for j in range(2**self.branch_qa[0].size):
+                for j in range(2 ** self.branch_qa[0].size):
 
-                    child_node_path = list(parent_node.path) + [self.branch_qa[0].decoder(j)]
+                    child_node_path = list(parent_node.path) + [
+                        self.branch_qa[0].decoder(j)
+                    ]
 
                     child_node = QBTNode(self, child_node_path)
 
                     child_node.amplitude = sv_function(child_node.sv_specifier())
 
                     res_graph.add_node(child_node)
-                    res_graph.add_edge(parent_node, child_node,
-                                       label=child_node_path[-1])
+                    res_graph.add_edge(
+                        parent_node, child_node, label=child_node_path[-1]
+                    )
 
                     next_layer.append(child_node)
 
@@ -1275,42 +1303,41 @@ class QuantumBacktrackingTree:
 
         """
 
-        G, root = self.statevector_graph(return_root = True)
+        G, root = self.statevector_graph(return_root=True)
 
         def tree_layout(G, node, depth, theta_parent, res_dic={}):
 
             r = depth + 1
-            delta_theta = 2*np.pi/self.degree**(depth+1)
-            theta_start = theta_parent - 2*np.pi/self.degree**(depth)/4
+            delta_theta = 2 * np.pi / self.degree ** (depth + 1)
+            theta_start = theta_parent - 2 * np.pi / self.degree ** (depth) / 4
 
             children = list(G.neighbors(node))
 
             for i in range(len(children)):
 
-                theta = theta_start + i*delta_theta
+                theta = theta_start + i * delta_theta
 
-                res_dic[children[i]] = (r*np.sin(theta), r*np.cos(theta))
+                res_dic[children[i]] = (r * np.sin(theta), r * np.cos(theta))
 
-                tree_layout(G, children[i], depth+1, theta, res_dic)
+                tree_layout(G, children[i], depth + 1, theta, res_dic)
 
             return res_dic
 
-
-        pos= tree_layout(G, root, 0, 0)
-        pos[root]= (0, 0)
+        pos = tree_layout(G, root, 0, 0)
+        pos[root] = (0, 0)
 
         import colorsys
-        def complex_to_color(cnumber):
 
+        def complex_to_color(cnumber):
 
             angle = np.angle(cnumber)
             radius = np.abs(cnumber)
 
             # Normalize the angle to the range [0, 2*pi)
-            angle= (angle + np.pi*5/2) % (2 * np.pi)
+            angle = (angle + np.pi * 5 / 2) % (2 * np.pi)
 
             # Map the angle to the hue component of the color
-            hue = angle / (2*np.pi)
+            hue = angle / (2 * np.pi)
 
             # Map the radius to the saturation and value components of the color
             saturation = 1
@@ -1322,14 +1349,13 @@ class QuantumBacktrackingTree:
 
             from scipy.special import expit
 
-            intensity = expit((radius-0.2)*10)
-
+            intensity = expit((radius - 0.2) * 10)
 
             # Convert the RGB components to hexadecimal format
-            hex_color = '#{:02x}{:02x}{:02x}'.format(
-                int(rgb_color[0] * 255*intensity),
-                int(rgb_color[1] * 255*intensity),
-                int(rgb_color[2] * 255*intensity)
+            hex_color = "#{:02x}{:02x}{:02x}".format(
+                int(rgb_color[0] * 255 * intensity),
+                int(rgb_color[1] * 255 * intensity),
+                int(rgb_color[2] * 255 * intensity),
             )
 
             return hex_color
@@ -1339,8 +1365,7 @@ class QuantumBacktrackingTree:
         nx.draw(G, pos)
         nx.draw_networkx_nodes(G, pos, node_color=colors)
 
-        edge_labels = dict([((n1, n2), l)
-                            for n1, n2, l in G.edges(data="label")])
+        edge_labels = dict([((n1, n2), l) for n1, n2, l in G.edges(data="label")])
 
         nx.draw_networkx_edge_labels(G, pos=pos, edge_labels=edge_labels)
 
@@ -1423,7 +1448,7 @@ class QuantumBacktrackingTree:
 
         """
 
-        sv_function = self.qs.statevector("function", decimals = 10)
+        sv_function = self.qs.statevector("function", decimals=10)
 
         # Internal qvs are the quantum variables that specify a backtrackingtree node
         # internal_qvs = [self.h, self.branch_workspace] + list(self.branch_qa)
@@ -1470,9 +1495,11 @@ class QuantumBacktrackingTree:
             path = self.path_decoder(internal_label_const[0], internal_label_const[1:])
             # print(path)
 
-
             # Create a label dic for the sv_function
-            internal_label_dic= {internal_qvs[i]: internal_label_const[i] for i in range(len(internal_qvs))}
+            internal_label_dic = {
+                internal_qvs[i]: internal_label_const[i]
+                for i in range(len(internal_qvs))
+            }
 
             # If there are no external qvs, we can simply call the sv_function
             # with the label dic
@@ -1480,7 +1507,7 @@ class QuantumBacktrackingTree:
 
                 amplitude = sv_function(internal_label_dic, 5)
 
-                if abs(amplitude) < 1E-5:
+                if abs(amplitude) < 1e-5:
                     continue
 
                 # print(res_state)
@@ -1489,16 +1516,17 @@ class QuantumBacktrackingTree:
 
                 # print(res_state)
 
-
             # If there are external qvs we do a similar procedure to go through
             # all label constellations
             else:
 
                 for external_label_const in external_label_product:
 
-
                     # Set up the external label dic
-                    external_label_dic= {external_qvs[i]: external_label_const[i] for i in range(len(external_qvs))}
+                    external_label_dic = {
+                        external_qvs[i]: external_label_const[i]
+                        for i in range(len(external_qvs))
+                    }
 
                     # Integrate the internal label dic
                     external_label_dic.update(internal_label_dic)
@@ -1506,7 +1534,7 @@ class QuantumBacktrackingTree:
                     # Retrieve the amplitude
                     amplitude = sv_function(external_label_dic)
 
-                    if abs(amplitude) < 1E-5:
+                    if abs(amplitude) < 1e-5:
                         continue
 
                     external_ket_expr = 1
@@ -1515,8 +1543,9 @@ class QuantumBacktrackingTree:
                         external_ket_expr *= OrthogonalKet(label)
 
                     # Add the corresponding state
-                    res_state += amplitude * \
-                        OrthogonalKet(str(path)) * external_ket_expr
+                    res_state += (
+                        amplitude * OrthogonalKet(str(path)) * external_ket_expr
+                    )
 
         return res_state
 
@@ -1533,7 +1562,7 @@ class OHQInt(QuantumVariable):
         # [0,0,0,1][0,0,1,0]
 
         # [0,0,0,0][1,0,0,1]
-        is_power_of_two = ((i & (i-1) == 0) and i != 0)
+        is_power_of_two = (i & (i - 1) == 0) and i != 0
 
         if is_power_of_two:
             return int(np.log2(i))
@@ -1553,8 +1582,7 @@ class OHQInt(QuantumVariable):
             return eq_qbl
 
         else:
-            raise Exception(
-                f"Comparison with type {type(other)} not implemented")
+            raise Exception(f"Comparison with type {type(other)} not implemented")
 
     __hash__ = QuantumVariable.__hash__
 
@@ -1564,7 +1592,6 @@ class OHQInt(QuantumVariable):
         for i in range(self.size):
             if not i % 2:
                 cx(self[i], is_even)
-
 
         return is_even
 
@@ -1576,27 +1603,23 @@ class OHQInt(QuantumVariable):
                 cx(self[i], is_odd)
 
         return is_odd
-    
+
     def __lt__(self, other):
-        
+
         if isinstance(other, int):
             less_than = QuantumBool()
             for i in range(self.size):
                 if i < other:
                     cx(self[i], less_than)
             return less_than
-        
+
         else:
             raise Exception(f"Comparison for type {type(other)} not implemented")
-
 
 
 def fan_in(control, target):
     for qb in control:
         cx(control, target)
-
-
-
 
 
 """
@@ -1621,54 +1644,56 @@ Otherwise c = d_x**0.5
 Where d_x is the degree of the node.
 
 """
-def psi_prep(x, even=True, min_height_assumption = 0):
+
+
+def psi_prep(x, even=True, min_height_assumption=0):
 
     # Determine c
     c = x.degree**0.5
 
     # The step |h> -> 1/N(|h> + c*|h-1>) will be performed by a ry gate
-    phase = np.arctan(c)*2
-    root_phase = np.arctan((c*np.sqrt(x.max_depth)))*2
+    phase = np.arctan(c) * 2
+    root_phase = np.arctan((c * np.sqrt(x.max_depth))) * 2
 
     rev_branch_qa = x.branch_qa
     # N = x.max_depth+1
     N = x.max_depth
-    
+
     # To achieve the first step, we use a circuit, that performs a similar function
     # as a parametrized swap. That means:
     # |00> ==> |00>
     # |01> ==> sin(theta)*|01> + cos(theta)*|10>
     # |10> ==> cos(theta)*|10> + sin(theta)*|01>
     # |11> ==> |11>
-    
-    #This way we can "move" the 1 of the one hot encoding up and down.
-    
+
+    # This way we can "move" the 1 of the one hot encoding up and down.
+
     # After we moved the one, we apply an H-gate controlled on the target of the
     # moevement, to set up the super position in the branch_qa
 
     # Furthermore we also need to make sure that non-algorithmic states stay
     # invariant under the U_x (otherwise they will also get tagged in qstep_diffuser).
-    
+
     # We achieve this by controlling the parameterized swap on the QuantumVariable
     # which would be set to super position by the controlled H-gate.
     # This QuantumVariable represents the branch information of the child states
     # of H_x = <{|y> | |x> -> |y>} U {|x>} >.
     # If it is in a non-zero state but the height variable indicates the parent
     # state, the state is invariant.
-    
-    if bool(N % 2) != even:
-        c_iswap_reduced(root_phase, rev_branch_qa[N-1], x.h[N-1], x.h[N])
-        x.qs.append(ch_gate, [x.h[N-1], rev_branch_qa[N-1]])
 
-    for i in range(int(even), N-1, 2):
+    if bool(N % 2) != even:
+        c_iswap_reduced(root_phase, rev_branch_qa[N - 1], x.h[N - 1], x.h[N])
+        x.qs.append(ch_gate, [x.h[N - 1], rev_branch_qa[N - 1]])
+
+    for i in range(int(even), N - 1, 2):
         if i + 1 < min_height_assumption:
             continue
-        c_iswap_reduced(phase, rev_branch_qa[i], x.h[i], x.h[i+1])
+        c_iswap_reduced(phase, rev_branch_qa[i], x.h[i], x.h[i + 1])
         x.qs.append(ch_gate, [x.h[i], rev_branch_qa[i]])
-    
-    
+
 
 ch_gate = HGate().control()
+
 
 # This circuit is a slightly modified (and controlled) version of the XXPlusYY gate
 # https://qiskit.org/documentation/stubs/qiskit.circuit.library.XXPlusYYGate.html
@@ -1676,44 +1701,45 @@ def c_iswap(phi, ctrl, target_1, target_0):
     h(target_1)
     cx(target_1, target_0)
     x(ctrl)
-    ctrl.qs().append(RYGate(-phi/2).control(), [ctrl, target_0])
-    ctrl.qs().append(RYGate(-phi/2).control(), [ctrl, target_1])
+    ctrl.qs().append(RYGate(-phi / 2).control(), [ctrl, target_0])
+    ctrl.qs().append(RYGate(-phi / 2).control(), [ctrl, target_1])
     x(ctrl)
     cx(target_1, target_0)
     h(target_1)
+
 
 # This circuit performs a similar function as the previous one but has a different
 # behavior on |11> and also requires less resources.
 # Since the |11> behavior is irrelevant we can also use this circuit.
 
+
 def c_iswap_reduced(phi, ctrl, target_0, target_1):
-    
-    phi = -phi/4 + np.pi/4
+
+    phi = -phi / 4 + np.pi / 4
     h(target_1)
     cx(target_1, target_0)
     x(ctrl)
     ry(phi, target_0)
     ry(phi, target_1)
-    
-    #Usually we would now execute two controlled H-gates
-    #If there are multiple controls, we'd have to perform
-    #the corresponding mcx gate twice (to have two multi controlled H gates)
-    
+
+    # Usually we would now execute two controlled H-gates
+    # If there are multiple controls, we'd have to perform
+    # the corresponding mcx gate twice (to have two multi controlled H gates)
+
     # ctrl.qs().append(ch_gate, [ctrl, target_0])
     # ctrl.qs().append(ch_gate, [ctrl, target_1])
-    
-    #Two prevent this situation we execute a circuit with the same semantics but
-    #only a single mcx gate
-    
-    #--------------------------
-    
-    #These one qubit gates make sure that the cx gates are acting as a controlled    
-    #H-Gate 
+
+    # Two prevent this situation we execute a circuit with the same semantics but
+    # only a single mcx gate
+
+    # --------------------------
+
+    # These one qubit gates make sure that the cx gates are acting as a controlled
+    # H-Gate
     s([target_0, target_1])
     h([target_0, target_1])
     t([target_0, target_1])
-    
-    
+
     if len(ctrl) == 1:
         cx(ctrl, target_0)
         cx(ctrl, target_1)
@@ -1721,18 +1747,17 @@ def c_iswap_reduced(phi, ctrl, target_0, target_1):
         cx(target_0, target_1)
         mcx(ctrl, target_0)
         cx(target_0, target_1)
-    
+
     t_dg([target_0, target_1])
     h([target_0, target_1])
     s_dg([target_0, target_1])
-    
-    #----------------------------
+
+    # ----------------------------
     ry(-phi, target_0)
     ry(-phi, target_1)
     x(ctrl)
     cx(target_1, target_0)
     h(target_1)
-
 
 
 class Subtree(QuantumBacktrackingTree):
@@ -1741,15 +1766,17 @@ class Subtree(QuantumBacktrackingTree):
 
         if len(root_path) > parent_tree.max_depth:
             raise Exception(
-                "Tried to initialise subtree with root path longer than maximum depth")
+                "Tried to initialise subtree with root path longer than maximum depth"
+            )
 
-        QuantumBacktrackingTree.__init__(self,
-                                         parent_tree.max_depth,
-                                         parent_tree.branch_qa[0],
-                                         parent_tree.accept_function,
-                                         parent_tree.reject_function,
-                                         parent_tree.subspace_optimization
-                                         )
+        QuantumBacktrackingTree.__init__(
+            self,
+            parent_tree.max_depth,
+            parent_tree.branch_qa[0],
+            parent_tree.accept_function,
+            parent_tree.reject_function,
+            parent_tree.subspace_optimization,
+        )
 
         self.max_depth = parent_tree.max_depth - len(root_path)
 
@@ -1763,15 +1790,15 @@ class Subtree(QuantumBacktrackingTree):
         path = self.root_path + path
 
         if len(path):
-            self.branch_qa[-len(path):] = path[::-1]
+            self.branch_qa[-len(path) :] = path[::-1]
 
     def init_phi(self, path):
 
         h_state = {}
-        h_state[self.max_depth] = (self.max_depth)**0.5
+        h_state[self.max_depth] = (self.max_depth) ** 0.5
 
-        for i in range(1, len(path)+1):
-            h_state[self.max_depth - i] = (-1)**(i)
+        for i in range(1, len(path) + 1):
+            h_state[self.max_depth - i] = (-1) ** (i)
 
         self.h[:] = h_state
 
@@ -1781,29 +1808,29 @@ class Subtree(QuantumBacktrackingTree):
             for k in range(len(self.root_path)):
                 rev_branch_qa[k][:] = self.root_path[k]
 
-        for i in range(1, len(path)+1):
+        for i in range(1, len(path) + 1):
             with self.h == self.max_depth - i:
                 for j in range(i):
-                    rev_branch_qa[j].encode(
-                        path[j], permit_dirtyness=True)
+                    rev_branch_qa[j].encode(path[j], permit_dirtyness=True)
 
                 for k in range(len(self.root_path)):
-                    rev_branch_qa[k+i][:] = self.root_path[k]
+                    rev_branch_qa[k + i][:] = self.root_path[k]
 
     def subtree(self, path):
         return self.original_tree.subtree(path)
 
 
-
-def find_solution(tree, precision, cl_accept=None, traversed_nodes=None, measurement_kwargs={}):
+def find_solution(
+    tree, precision, cl_accept=None, traversed_nodes=None, measurement_kwargs={}
+):
     # The idea of this function is to use the quantum algorithm to check wether
     # a the subtree of a given node contains a solution and then recursively call
     # this function on that subtree.
 
-
     # If there is no classical accept function given, we create a copy of the original
     # tree and evaluate the quantum accept function on that node via the simulator
     if cl_accept is None:
+
         def cl_accept(path):
             if isinstance(tree, Subtree):
                 copied_tree = tree.original_tree.copy()
@@ -1813,7 +1840,6 @@ def find_solution(tree, precision, cl_accept=None, traversed_nodes=None, measure
             accept_qbl = copied_tree.accept()
             mes_res = accept_qbl.get_measurement()
             return mes_res == {True: 1}
-
 
     # The first step is to check wether the current root is a solution
     if isinstance(tree, Subtree):
@@ -1838,7 +1864,7 @@ def find_solution(tree, precision, cl_accept=None, traversed_nodes=None, measure
 
     # Retrieve the measurement results
     mes_res = multi_measurement([qpe_res, tree.h, tree.branch_qa], **measurement_kwargs)
-    
+
     # We will first check wether there is a solution
     # The s variable will contain the probability to measure
     # the qpe_res == 0 branch.
@@ -1861,8 +1887,8 @@ def find_solution(tree, precision, cl_accept=None, traversed_nodes=None, measure
     # If the probability is between 0.25 and 0.375, the qpe needs more precision
     if s <= 0.375:
         raise Exception(
-            "Executed find solution method of quantum backtracking algorithm with insufficient precision")
-
+            "Executed find solution method of quantum backtracking algorithm with insufficient precision"
+        )
 
     # To find the next node to check we will use a heuristic.
     # After measurement of the 0 branch, the tree is collapsed to a state which
@@ -1876,22 +1902,28 @@ def find_solution(tree, precision, cl_accept=None, traversed_nodes=None, measure
     # Sort for the value of tree.h
     new_branches.sort(key=lambda x: x[1])
     for b in new_branches:
-        
+
         # Get the path to the new node
         if isinstance(tree, Subtree):
-            new_path=tree.original_tree.path_decoder(b[1], b[2])
+            new_path = tree.original_tree.path_decoder(b[1], b[2])
         else:
-            new_path=tree.path_decoder(b[1], b[2])
+            new_path = tree.path_decoder(b[1], b[2])
 
-        # Continue if new_path was already explored 
-        if tuple(new_path) in traversed_nodes or tuple(new_path)==tuple(path):
-            continue 
+        # Continue if new_path was already explored
+        if tuple(new_path) in traversed_nodes or tuple(new_path) == tuple(path):
+            continue
 
         # Generate the subtree
-        subtree=tree.subtree(new_path)
+        subtree = tree.subtree(new_path)
 
         # Recursive call
-        solution=find_solution(subtree, precision, cl_accept, traversed_nodes, measurement_kwargs=measurement_kwargs)
+        solution = find_solution(
+            subtree,
+            precision,
+            cl_accept,
+            traversed_nodes,
+            measurement_kwargs=measurement_kwargs,
+        )
 
         # Leave loop if solution was found
         if solution is not None:
@@ -1901,42 +1933,47 @@ def find_solution(tree, precision, cl_accept=None, traversed_nodes=None, measure
 
     else:
         raise Exception(
-            "Executed find solution method of quantum backtracking algorithm with insufficient precision")
+            "Executed find solution method of quantum backtracking algorithm with insufficient precision"
+        )
 
     return solution
-
 
 
 class QBTNode:
 
     def __init__(self, tree, path, amplitude=None):
 
-        self.h=tree.max_depth - len(path)
-        self.path=path
-        self.tree=tree
-        self.amplitude=amplitude
+        self.h = tree.max_depth - len(path)
+        self.path = path
+        self.tree = tree
+        self.amplitude = amplitude
 
     def __hash__(self):
         return hash(str(self.path))
 
     def sv_specifier(self):
-        amplitude_state_specifyer={
-            self.tree.h: self.tree.max_depth - len(self.path)}
+        amplitude_state_specifyer = {self.tree.h: self.tree.max_depth - len(self.path)}
 
-        path=list(self.path)
+        path = list(self.path)
         if isinstance(self.tree, Subtree):
-            path=self.tree.root_path + path
+            path = self.tree.root_path + path
 
         for k in range(len(self.tree.branch_qa)):
             if k < len(path):
-                amplitude_state_specifyer[self.tree.branch_qa[-1-k]]=path[k]
+                amplitude_state_specifyer[self.tree.branch_qa[-1 - k]] = path[k]
             else:
-                amplitude_state_specifyer[self.tree.branch_qa[-1-k]]=0
+                amplitude_state_specifyer[self.tree.branch_qa[-1 - k]] = 0
 
         return amplitude_state_specifyer
 
     def __str__(self):
-        return "QBTNode(path = " + str(self.path) + ", amplitude = " + str(self.amplitude) + ")"
+        return (
+            "QBTNode(path = "
+            + str(self.path)
+            + ", amplitude = "
+            + str(self.amplitude)
+            + ")"
+        )
 
     def __repr__(self):
         return str(self)

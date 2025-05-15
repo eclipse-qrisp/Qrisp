@@ -19,7 +19,8 @@
 from functools import lru_cache
 from jax.core import ClosedJaxpr, JaxprEqn, Literal
 
-@lru_cache(maxsize = int(1E5))
+
+@lru_cache(maxsize=int(1e5))
 def collect_environments(jaxpr):
     """
     This function turns Jaxpr that contain QuantumEnvironment primitive in enter/exit
@@ -37,133 +38,157 @@ def collect_environments(jaxpr):
         A Jaxpr with QuantumEnvironments in collected form.
 
     """
-    
+
     # We iterate through the list of equations, appending the equations to
     # the new list containing the processed equations.
 
     # Once we hit an exit primitive, we collect the Equations between the enter
-    # and exit primitive.    
+    # and exit primitive.
     eqn_list = list(jaxpr.eqns)
     new_eqn_list = []
-    
+
     from qrisp.jasp import Jaspr
-    
+
     if isinstance(jaxpr, Jaspr) and jaxpr.envs_flattened:
         return jaxpr
-    
+
     while len(eqn_list) != 0:
-        
+
         eqn = eqn_list.pop(0)
-        
+
         if eqn.primitive.name == "pjit":
-            
+
             new_params = dict(eqn.params)
-            
+
             collected_jaspr = collect_environments(eqn.params["jaxpr"].jaxpr)
-            
-            new_params["jaxpr"] = ClosedJaxpr(collected_jaspr,
-                                              eqn.params["jaxpr"].consts)
-            
-            eqn = JaxprEqn(params = new_params,
-                                    primitive = eqn.primitive,
-                                    invars = list(eqn.invars),
-                                    outvars = list(eqn.outvars),
-                                    effects = eqn.effects,
-                                    source_info = eqn.source_info,)
-            
+
+            new_params["jaxpr"] = ClosedJaxpr(
+                collected_jaspr, eqn.params["jaxpr"].consts
+            )
+
+            eqn = JaxprEqn(
+                params=new_params,
+                primitive=eqn.primitive,
+                invars=list(eqn.invars),
+                outvars=list(eqn.outvars),
+                effects=eqn.effects,
+                source_info=eqn.source_info,
+            )
+
         if eqn.primitive.name == "cond":
-            
+
             new_params = dict(eqn.params)
-            
+
             branch_list = []
-            
+
             for i in range(len(eqn.params["branches"])):
-                collected_branch_jaxpr = collect_environments(eqn.params["branches"][i].jaxpr)
-                collected_branch_jaxpr = ClosedJaxpr(collected_branch_jaxpr, eqn.params["branches"][i].consts)
+                collected_branch_jaxpr = collect_environments(
+                    eqn.params["branches"][i].jaxpr
+                )
+                collected_branch_jaxpr = ClosedJaxpr(
+                    collected_branch_jaxpr, eqn.params["branches"][i].consts
+                )
                 branch_list.append(collected_branch_jaxpr)
-            
+
             new_params["branches"] = tuple(branch_list)
-            
-            eqn = JaxprEqn(params = new_params,
-                                    primitive = eqn.primitive,
-                                    invars = list(eqn.invars),
-                                    outvars = list(eqn.outvars),
-                                    effects = eqn.effects,
-                                    source_info = eqn.source_info,)
-            
+
+            eqn = JaxprEqn(
+                params=new_params,
+                primitive=eqn.primitive,
+                invars=list(eqn.invars),
+                outvars=list(eqn.outvars),
+                effects=eqn.effects,
+                source_info=eqn.source_info,
+            )
+
         if eqn.primitive.name == "while":
-            
+
             new_params = dict(eqn.params)
-            
+
             body_collected_jaspr = collect_environments(eqn.params["body_jaxpr"].jaxpr)
-            
-            new_params["body_jaxpr"] = ClosedJaxpr(body_collected_jaspr, eqn.params["body_jaxpr"].consts)
-            
-            eqn = JaxprEqn(params = new_params,
-                                    primitive = eqn.primitive,
-                                    invars = list(eqn.invars),
-                                    outvars = list(eqn.outvars),
-                                    effects = eqn.effects,
-                                    source_info = eqn.source_info,)
+
+            new_params["body_jaxpr"] = ClosedJaxpr(
+                body_collected_jaspr, eqn.params["body_jaxpr"].consts
+            )
+
+            eqn = JaxprEqn(
+                params=new_params,
+                primitive=eqn.primitive,
+                invars=list(eqn.invars),
+                outvars=list(eqn.outvars),
+                effects=eqn.effects,
+                source_info=eqn.source_info,
+            )
 
         # If an exit primitive is found, start the collecting mechanism.
         if eqn.primitive.name == "jasp.q_env" and "exit" in eqn.params.values():
-            
-            # Find the position of the enter primitive.            
+
+            # Find the position of the enter primitive.
             for i in range(len(new_eqn_list))[::-1]:
                 enter_eq = new_eqn_list[i]
-                if enter_eq.primitive.name == "jasp.q_env" and "enter" in enter_eq.params.values():
+                if (
+                    enter_eq.primitive.name == "jasp.q_env"
+                    and "enter" in enter_eq.params.values()
+                ):
                     break
             else:
                 raise
-            
+
             # Set an alias for the equations marked as the body
-            environment_body_eqn_list = new_eqn_list[i+1:]
-            
-            # Remove the AbstractQuantumCircuit variable and prepend it.            
+            environment_body_eqn_list = new_eqn_list[i + 1 :]
+
+            # Remove the AbstractQuantumCircuit variable and prepend it.
             invars = find_invars(environment_body_eqn_list)
             try:
                 invars.remove(enter_eq.outvars[0])
             except ValueError:
                 pass
-            
+
             # Same for the outvars
-            outvars = find_outvars(environment_body_eqn_list, eqn_list, [var for var in jaxpr.outvars if not isinstance(var, Literal)])
-            
+            outvars = find_outvars(
+                environment_body_eqn_list,
+                eqn_list,
+                [var for var in jaxpr.outvars if not isinstance(var, Literal)],
+            )
+
             # Create the Jaxpr
-            environment_body_jaspr = Jaspr(constvars = [],
-                                           invars =  invars + enter_eq.outvars,
-                                           outvars =  outvars + eqn.invars[-1:],
-                                           eqns = environment_body_eqn_list)
-            
+            environment_body_jaspr = Jaspr(
+                constvars=[],
+                invars=invars + enter_eq.outvars,
+                outvars=outvars + eqn.invars[-1:],
+                eqns=environment_body_eqn_list,
+            )
+
             # Create the Equation
             eqn = JaxprEqn(
-                           params = {"type" : eqn.params["type"], "jaspr" : environment_body_jaspr},
-                           primitive = eqn.primitive,
-                           invars =  enter_eq.invars[:-1] + invars + enter_eq.invars[-1:],
-                           outvars =  outvars + eqn.outvars[-1:],
-                           effects = eqn.effects,
-                           source_info = eqn.source_info,)
-            
+                params={"type": eqn.params["type"], "jaspr": environment_body_jaspr},
+                primitive=eqn.primitive,
+                invars=enter_eq.invars[:-1] + invars + enter_eq.invars[-1:],
+                outvars=outvars + eqn.outvars[-1:],
+                effects=eqn.effects,
+                source_info=eqn.source_info,
+            )
+
             # Remove the collected equations from the new_eqn_list
             new_eqn_list = new_eqn_list[:i]
-        
+
         # Append the equation
         new_eqn_list.append(eqn)
-    
+
     if isinstance(jaxpr, Jaspr):
         res = jaxpr.update_eqns(new_eqn_list)
         if jaxpr.ctrl_jaspr is not None:
             res.ctrl_jaspr = jaxpr.ctrl_jaspr
         return res
     else:
-    # Return the transformed equation
-        return type(jaxpr)(constvars = jaxpr.constvars, 
-                     invars = jaxpr.invars,
-                     outvars = jaxpr.outvars,
-                     eqns = new_eqn_list)
-        
-    
+        # Return the transformed equation
+        return type(jaxpr)(
+            constvars=jaxpr.constvars,
+            invars=jaxpr.invars,
+            outvars=jaxpr.outvars,
+            eqns=new_eqn_list,
+        )
+
 
 def find_invars(eqn_list):
     """
@@ -181,14 +206,14 @@ def find_invars(eqn_list):
         The list of variables that would have to be defined previously.
 
     """
-    
+
     # This dictionary keeps track of the variables that have been defined
     # by the given equations
     defined_vars = {}
-    
+
     # This list keeps track of the variables that have not been defined
     invars = []
-    
+
     # Iterate through the list of equations and find the variables that are
     # defined nowhere
     for eqn in eqn_list:
@@ -197,15 +222,16 @@ def find_invars(eqn_list):
                 continue
             if var not in defined_vars:
                 invars.append(var)
-        
+
         for var in eqn.outvars:
             defined_vars[var] = None
-    
+
     return list(dict.fromkeys(invars))
+
 
 def find_outvars(body_eqn_list, script_remainder_eqn_list, return_vars):
     """
-    This function takes the equations of a function and some "follow-up" 
+    This function takes the equations of a function and some "follow-up"
     instructions and infers which variables need to be returned by the function.
 
     Parameters
@@ -221,20 +247,19 @@ def find_outvars(body_eqn_list, script_remainder_eqn_list, return_vars):
         A list of variables that would have to be returned by the function.
 
     """
-    
+
     # This list will contain all variables produced by the function
     outvars = []
-    
+
     # Fill the list
     for eqn in body_eqn_list:
         outvars.extend(eqn.outvars)
-    
+
     # Remove the duplicates
     outvars = list(set(outvars))
-    
+
     # Find which variables are required for executing the follow-up
     required_remainder_vars = find_invars(script_remainder_eqn_list)
-    
+
     # The result is the intersection between both sets of variables
     return list(set(outvars).intersection(required_remainder_vars + return_vars))
-                

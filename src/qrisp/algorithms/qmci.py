@@ -19,6 +19,7 @@
 from qrisp.alg_primitives import IQAE
 from qrisp import h, cx, x, z, auto_uncompute, QuantumBool, control
 
+
 def uniform(*args):
     for arg in args:
         h(arg)
@@ -40,7 +41,7 @@ def QMCI(qargs, function, distribution=None, mes_kwargs={}):
     qargs : list[:ref:`QuantumFloat`]
         The quantum variables representing the $x$-axes (the variables on which the given ``function`` acts), and a quantum variable representing the $y$-axis.
     function : function
-        A Python function which takes :ref:`QuantumFloats <QuantumFloat>` as inputs, 
+        A Python function which takes :ref:`QuantumFloats <QuantumFloat>` as inputs,
         and returns a :ref:`QuantumFloat` containing the values of the integrand.
     distribution : function, optional
         A Python function which takes :ref:`QuantumFloats <QuantumFloat>` as inputs and applies the distribution over which to integrate.
@@ -84,20 +85,20 @@ def QMCI(qargs, function, distribution=None, mes_kwargs={}):
     A detailed explanation of QMCI and its implementation in Qrisp can be found in the :ref:`QMCI tutorial <QMCItutorial>`.
 
     """
-    if distribution==None:
+    if distribution == None:
         distribution = uniform
 
-    #dupl_args = [arg.duplicate() for arg in qargs]
-    #dupl_res_qf = function(*dupl_args)
-    #qargs.append(dupl_res_qf.duplicate())
+    # dupl_args = [arg.duplicate() for arg in qargs]
+    # dupl_res_qf = function(*dupl_args)
+    # qargs.append(dupl_res_qf.duplicate())
 
-    #for arg in dupl_args:
+    # for arg in dupl_args:
     #    arg.delete()
-    #dupl_res_qf.delete()
+    # dupl_res_qf.delete()
 
-    V0=1
+    V0 = 1
     for arg in qargs:
-        V0 *= 2**(arg.size+arg.exponent)
+        V0 *= 2 ** (arg.size + arg.exponent)
 
     qargs.append(QuantumBool())
 
@@ -110,11 +111,10 @@ def QMCI(qargs, function, distribution=None, mes_kwargs={}):
         distribution(*qf_x)
         h(qf_y)
 
-        with(qf_y < function(*qf_x)):
+        with qf_y < function(*qf_x):
             x(tar)
 
-    a = IQAE(qargs, state_function, eps=0.01, alpha=0.01, mes_kwargs=mes_kwargs)   
+    a = IQAE(qargs, state_function, eps=0.01, alpha=0.01, mes_kwargs=mes_kwargs)
 
-    V = V0*a
+    V = V0 * a
     return V
-

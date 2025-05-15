@@ -16,11 +16,17 @@
 ********************************************************************************/
 """
 
-
 import numpy as np
 
-from qrisp import QuantumArray, QuantumFloat, QuantumBool, multi_measurement, \
-    tensordot, dot, h
+from qrisp import (
+    QuantumArray,
+    QuantumFloat,
+    QuantumBool,
+    multi_measurement,
+    tensordot,
+    dot,
+    h,
+)
 
 # Quantum-Quantum matrix multiplication
 qf = QuantumFloat(3, 0, signed=False)

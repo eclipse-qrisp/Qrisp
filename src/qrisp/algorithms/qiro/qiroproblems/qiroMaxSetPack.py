@@ -19,29 +19,34 @@
 from itertools import combinations
 import networkx as nx
 
+
 def transform_max_set_pack_to_mis(problem):
     """
-   Transforms a Maximum Set Packing problem instance into a Maximum Independent Set (MIS) problem instance.
+    Transforms a Maximum Set Packing problem instance into a Maximum Independent Set (MIS) problem instance.
 
-    Parameters
-    ----------
-    problem : list[set]
-        A list of sets specifying the problem.
+     Parameters
+     ----------
+     problem : list[set]
+         A list of sets specifying the problem.
 
-    Returns
-    -------
-    G : nx.Graph
-        The corresponding graph to be solved by an MIS implementation.
+     Returns
+     -------
+     G : nx.Graph
+         The corresponding graph to be solved by an MIS implementation.
 
 
     """
+
     def non_empty_intersection(problem):
-        return [(i, j) for (i, s1), (j, s2) in combinations(enumerate(problem), 2) if s1.intersection(s2)]
+        return [
+            (i, j)
+            for (i, s1), (j, s2) in combinations(enumerate(problem), 2)
+            if s1.intersection(s2)
+        ]
 
     # create constraint graph
     G = nx.Graph()
     G.add_nodes_from(range(len(problem)))
     G.add_edges_from(non_empty_intersection(problem))
 
-    return G 
-
+    return G

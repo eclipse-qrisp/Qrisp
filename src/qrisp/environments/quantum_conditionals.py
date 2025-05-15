@@ -30,6 +30,7 @@ from qrisp.misc import (
 )
 from qrisp.circuit import fast_append
 
+
 def quantum_condition(function):
     def q_env_generator(*args, **kwargs):
         return ConditionEnvironment(function, args, kwargs=kwargs)
@@ -162,9 +163,9 @@ class ConditionEnvironment(QuantumEnvironment):
     >>> q_ch_1 = QuantumChar()
     >>> res_bool = quantum_eq(q_ch_0, q_ch_1)
     >>> print(q_ch_0.qs)
-    
+
     ::
-    
+
         QuantumCircuit:
         --------------
          q_ch_0.0: ──■─────────────────────────────────────────────────────────
@@ -307,12 +308,12 @@ class ConditionEnvironment(QuantumEnvironment):
 
     def __init__(self, cond_eval_function, args, kwargs={}):
         # The function which evaluates the condition - should return a QuantumBool
-        
+
         def save_cond_eval(*args, **kwargs):
             with fast_append(0):
                 res = cond_eval_function(*args, **kwargs)
             return res
-        
+
         self.cond_eval_function = save_cond_eval
 
         # Save the arguments on which the function should be evaluated
@@ -344,7 +345,11 @@ class ConditionEnvironment(QuantumEnvironment):
         return self.qbool
 
     def __exit__(self, exception_type, exception_value, traceback):
-        from qrisp.environments import ControlEnvironment, InversionEnvironment, ConjugationEnvironment
+        from qrisp.environments import (
+            ControlEnvironment,
+            InversionEnvironment,
+            ConjugationEnvironment,
+        )
 
         # We determine the parent condition environment
         self.parent_cond_env = None
@@ -355,17 +360,18 @@ class ConditionEnvironment(QuantumEnvironment):
             if isinstance(env, (ConditionEnvironment, ControlEnvironment)):
                 self.parent_cond_env = env
                 break
-            if not isinstance(env, (InversionEnvironment, 
-                                    ConjugationEnvironment)):
-                
+            if not isinstance(env, (InversionEnvironment, ConjugationEnvironment)):
+
                 if not type(env) == QuantumEnvironment:
                     break
-            
 
     # Compile method
     def compile(self):
         from qrisp.qtypes.quantum_bool import QuantumBool
-        from qrisp.environments.control_environment import ControlEnvironment, convert_to_custom_control
+        from qrisp.environments.control_environment import (
+            ControlEnvironment,
+            convert_to_custom_control,
+        )
 
         # Create the quantum variable where the condition truth value should be saved
         # Incase we have a parent environment we create two qubits because
@@ -497,14 +503,17 @@ class ConditionEnvironment(QuantumEnvironment):
                     continue
 
                 if self.condition_truth_value in instruction.qubits:
-                    self.env_qs.append(convert_to_custom_control(instruction, self.condition_truth_value))
+                    self.env_qs.append(
+                        convert_to_custom_control(
+                            instruction, self.condition_truth_value
+                        )
+                    )
                     continue
-                    
+
                 else:
                     # Create controlled instruction
-                    instruction.op = instruction.op.control(
-                        num_ctrl_qubits=1)
-    
+                    instruction.op = instruction.op.control(num_ctrl_qubits=1)
+
                     # Add condition truth value qubit to the instruction qubit list
                     instruction.qubits = [self.condition_truth_value] + list(
                         instruction.qubits
@@ -562,7 +571,7 @@ class ConditionEnvironment(QuantumEnvironment):
                 if isinstance(self.env_qs.data[-1], QuantumEnvironment):
                     env = self.env_qs.data.pop(-1)
                     env.compile()
-                
+
                 cond_eval_bool.delete()
 
 
@@ -602,7 +611,12 @@ def adaptive_condition(cond_eval_function):
 
         uncomputed_function = auto_uncompute(cond_eval_function)
 
-        if calling_line.split(" ")[0] == "with" and "&" not in calling_line and "|" not in calling_line and "~" not in calling_line:
+        if (
+            calling_line.split(" ")[0] == "with"
+            and "&" not in calling_line
+            and "|" not in calling_line
+            and "~" not in calling_line
+        ):
             return quantum_condition(uncomputed_function)(*args, **kwargs)
         else:
             return uncomputed_function(*args, **kwargs)
@@ -611,10 +625,10 @@ def adaptive_condition(cond_eval_function):
 
 
 @adaptive_condition
-def q_eq(input_0, input_1, invert = False):
+def q_eq(input_0, input_1, invert=False):
     from qrisp import mcx, cx, conjugate, QuantumBool
 
-    res = QuantumBool(name="eq_cond*", qs = input_0[0].qs())
+    res = QuantumBool(name="eq_cond*", qs=input_0[0].qs())
 
     if isinstance(input_1, QuantumVariable):
         if input_0.size != input_1.size:
@@ -623,22 +637,19 @@ def q_eq(input_0, input_1, invert = False):
                 "for QuantumVariables of differing size"
             )
 
-        
         def multi_cx(input_0, input_1):
             for i in range(len(input_0)):
                 cx(input_0[i], input_1[i])
-        
+
         with conjugate(multi_cx)(input_0, input_1):
             mcx(input_1, res, ctrl_state=0)
-        
-
 
     else:
         label_int = input_0.encoder(input_1)
 
         mcx(input_0, res, ctrl_state=label_int)
-    
+
     if invert:
         res.flip()
-    
+
     return res

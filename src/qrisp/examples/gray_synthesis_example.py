@@ -16,7 +16,6 @@
 ********************************************************************************/
 """
 
-
 # This example displays the logic synthesis capabilities of Qrisp
 # The user-interface for this feautre is the QuantumDictionary
 

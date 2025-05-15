@@ -9,6 +9,7 @@
 * SPDX-License-Identifier: EPL-2.0
 **********************************************************************/
 """
+
 import numpy as np
 from numpy.linalg import norm
 import time

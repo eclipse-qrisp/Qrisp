@@ -18,25 +18,26 @@
 
 from jax.core import AbstractValue, Primitive, raise_to_shaped_mappings
 
+
 class AbstractQubit(AbstractValue):
-    
+
     def __repr__(self):
         return "Qubit"
-    
+
     def __hash__(self):
         return hash(type(self))
-    
+
     def __eq__(self, other):
         if not isinstance(other, AbstractQubit):
             return False
         return isinstance(other, AbstractQubit)
-    
+
     def _add(self, a, b):
         from qrisp.jasp import fuse_qb_array, DynamicQubitArray
+
         if isinstance(b, DynamicQubitArray):
             b = b.tracer
         return fuse_qb_array(a, b)
 
+
 raise_to_shaped_mappings[AbstractQubit] = lambda aval, _: aval
-
-

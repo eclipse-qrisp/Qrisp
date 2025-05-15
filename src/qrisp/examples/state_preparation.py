@@ -16,7 +16,6 @@
 ********************************************************************************/
 """
 
-
 from qrisp import QuantumFloat
 
 qf = QuantumFloat(4, -2, signed=True)

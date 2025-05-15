@@ -16,10 +16,29 @@
 ********************************************************************************/
 """
 
-
 import numpy as np
-from qrisp import QuantumArray, QuantumVariable, QuantumFloat, gate_wrap, gphase, h, mcx, mcp, mcz, p, x, z, merge, recursive_qs_search, conjugate, invert, control, IterationEnvironment
+from qrisp import (
+    QuantumArray,
+    QuantumVariable,
+    QuantumFloat,
+    gate_wrap,
+    gphase,
+    h,
+    mcx,
+    mcp,
+    mcz,
+    p,
+    x,
+    z,
+    merge,
+    recursive_qs_search,
+    conjugate,
+    invert,
+    control,
+    IterationEnvironment,
+)
 from qrisp.jasp import check_for_tracing_mode, jrange
+
 
 # Applies the grover diffuser onto the (list of) quantum variable input_object
 def diffuser(input_object, phase=np.pi, state_function=None, reflection_indices=None):
@@ -34,7 +53,7 @@ def diffuser(input_object, phase=np.pi, state_function=None, reflection_indices=
         Specifies the phase shift. The default is $\pi$, i.e. a
         multi-controlled Z gate.
     state_function : function, optional
-        A Python function preparing the initial state. 
+        A Python function preparing the initial state.
         By default, the function prepares the uniform superposition state.
     refection_indices : list[int], optional
         A list indicating with respect to which variables the reflection is performed.
@@ -50,7 +69,7 @@ def diffuser(input_object, phase=np.pi, state_function=None, reflection_indices=
     >>> q_ch_list = [QuantumChar(), QuantumChar(), QuantumChar()]
     >>> diffuser(q_ch_list)
     >>> print(q_ch_list[0].qs)
-    
+
     ::
 
                   ┌────────────┐
@@ -84,47 +103,55 @@ def diffuser(input_object, phase=np.pi, state_function=None, reflection_indices=
                   │            │
         q_ch_2.4: ┤14          ├
                   └────────────┘
-                  
+
     """
-    
+
     if isinstance(input_object, QuantumArray):
         input_object = [qv for qv in input_object.flatten()]
 
-    if isinstance(input_object, (list,tuple)) and reflection_indices is None:
-        reflection_indices = [i for i in range(len(input_object))]  
+    if isinstance(input_object, (list, tuple)) and reflection_indices is None:
+        reflection_indices = [i for i in range(len(input_object))]
 
     if state_function is not None:
+
         def inv_state_function(args):
             with invert():
                 state_function(*args)
+
     else:
-        if isinstance(input_object,list):
+        if isinstance(input_object, list):
+
             def inv_state_function(args):
                 [h(qv) for qv in args]
+
         else:
+
             def inv_state_function(args):
                 h(args)
 
-    if isinstance(input_object, (list,tuple)):
+    if isinstance(input_object, (list, tuple)):
         with conjugate(inv_state_function)(input_object):
             if check_for_tracing_mode():
+                tag_state({input_object[i]: 0 for i in reflection_indices}, phase=phase)
+            else:
                 tag_state(
-                    {input_object[i]: 0 for i in reflection_indices}, phase=phase
+                    {
+                        input_object[i]: "0" * input_object[i].size
+                        for i in reflection_indices
+                    },
+                    binary_values=True,
+                    phase=phase,
                 )
-            else: 
-                tag_state(
-                    {input_object[i]: "0" * input_object[i].size for i in reflection_indices}, binary_values=True, phase=phase
-                )    
         gphase(np.pi, input_object[0][0])
     else:
         with conjugate(inv_state_function)(input_object):
             if check_for_tracing_mode():
-                tag_state(    
-                    {input_object: 0}, phase=phase
-                )
+                tag_state({input_object: 0}, phase=phase)
             else:
-                tag_state(    
-                    {input_object: input_object.size * "0"}, binary_values=True, phase=phase
+                tag_state(
+                    {input_object: input_object.size * "0"},
+                    binary_values=True,
+                    phase=phase,
                 )
         gphase(np.pi, input_object[0])
 
@@ -172,42 +199,33 @@ def tag_state(tag_specificator, binary_values=False, phase=np.pi):
 
         states = [qv.encoder(tag_specificator[qv]) for qv in qv_list]
 
-        def conjugator(qv_list,temp_qf):
+        def conjugator(qv_list, temp_qf):
             for i in range(len(qv_list)):
-                mcx(qv_list[i], 
-                    temp_qf[i], 
-                    method = "balauca", 
-                    ctrl_state = states[i])
+                mcx(qv_list[i], temp_qf[i], method="balauca", ctrl_state=states[i])
 
-        m = len(qv_list)                
+        m = len(qv_list)
         temp_qf = QuantumFloat(m)
 
-        if m==1:
-            with conjugate(conjugator)(qv_list,temp_qf): 
+        if m == 1:
+            with conjugate(conjugator)(qv_list, temp_qf):
                 with control(phase == np.pi):
                     z(temp_qf)
                 with control(phase != np.pi):
                     p(phase, temp_qf)
-            
+
         else:
-            with conjugate(conjugator)(qv_list,temp_qf):  
+            with conjugate(conjugator)(qv_list, temp_qf):
                 with control(phase == np.pi):
                     h(temp_qf[-1])
 
-                    mcx(temp_qf[:m-1],
-                        temp_qf[-1],     
-                        method= "balauca",
-                        ctrl_state=-1)
+                    mcx(temp_qf[: m - 1], temp_qf[-1], method="balauca", ctrl_state=-1)
 
                     h(temp_qf[-1])
                 with control(phase != np.pi):
-                    mcp(phase, 
-                        temp_qf, 
-                        method= "balauca",
-                        ctrl_state=-1)
-                    
+                    mcp(phase, temp_qf, method="balauca", ctrl_state=-1)
+
         temp_qf.delete()
-    
+
     else:
 
         states = [tag_specificator[qv] for qv in qv_list]
@@ -222,7 +240,9 @@ def tag_state(tag_specificator, binary_values=False, phase=np.pi):
             if binary_values:
                 bit_string += states[i][::-1]
             else:
-                bit_string += bin_rep(qv_list[i].encoder(states[i]), qv_list[i].size)[::-1]
+                bit_string += bin_rep(qv_list[i].encoder(states[i]), qv_list[i].size)[
+                    ::-1
+                ]
 
         qubit_list = sum([list(qv.reg) for qv in qv_list], [])
         state = bit_string
@@ -272,10 +292,10 @@ def grovers_alg(
         ``winner_state_amount`` has to be supplied and the oracle has to support the
         keyword argument ``phase`` which specifies how much the winner states are
         phaseshifted (in standard Grover this would be $\pi$).
-        
+
     Raises
     ------
-    
+
     Exception
         Applied oracle introducing new QuantumVariables without uncomputing/deleting
 
@@ -426,16 +446,21 @@ def grovers_alg(
 
         def body_fun(state):
             iterations, tmp = state
-            return iterations+1, jnp.sin(jnp.pi / (4 * (iterations - 1) + 6)) * (N / winner_state_amount) ** 0.5
-        
+            return (
+                iterations + 1,
+                jnp.sin(jnp.pi / (4 * (iterations - 1) + 6))
+                * (N / winner_state_amount) ** 0.5,
+            )
+
         def cond_fun(state):
             iterations, tmp = state
             return tmp > 1
-        
+
         state = (iterations, tmp)
 
         if check_for_tracing_mode():
             from jax.lax import while_loop
+
             iterations, tmp = while_loop(cond_fun, body_fun, state)
         else:
             while cond_fun(state):
@@ -452,7 +477,7 @@ def grovers_alg(
             iterations = jnp.pi / 4 * jnp.sqrt(N / winner_state_amount)
             iterations = jnp.int64(jnp.round(iterations))
 
-    if isinstance(qv_list,(list,QuantumArray)):
+    if isinstance(qv_list, (list, QuantumArray)):
         [h(qv) for qv in qv_list]
     else:
         h(qv_list)
@@ -466,7 +491,7 @@ def grovers_alg(
             else:
                 oracle_function(qv_list, **kwargs)
                 diffuser(qv_list)
-    
+
     else:
 
         merge(qv_list)
@@ -482,7 +507,9 @@ def grovers_alg(
                 diffuser(qv_list)
 
         if qv_amount != len(qs.qv_list):
-            raise Exception("Applied oracle introducing new QuantumVariables without uncomputing/deleting")
+            raise Exception(
+                "Applied oracle introducing new QuantumVariables without uncomputing/deleting"
+            )
 
 
 # Workaround to keep the docstring but still gatewrap

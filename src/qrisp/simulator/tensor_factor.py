@@ -26,13 +26,11 @@ from qrisp.simulator.numerics_config import float_tresh, xp
 # Class to describe TensorFactors
 
 
-
-
 class TensorFactor:
-    
-    index_init = xp.zeros(1, dtype = xp.int64)
-    data_init = xp.ones(1, dtype = xp.complex64)
-    
+
+    index_init = xp.zeros(1, dtype=xp.int64)
+    data_init = xp.ones(1, dtype=xp.complex64)
+
     def __init__(self, qubits, init_tensor_array=None):
         # This list contains a list of integers, which describe the current permutation
         # of qubit indices inside this TensorFactor, i.e. swapping two elements of this
@@ -45,12 +43,14 @@ class TensorFactor:
         self.n = len(qubits)
 
         if init_tensor_array is None:
-            
-            self.tensor_array = SparseBiArray((self.index_init, self.data_init), shape = (2**self.n,))
+
+            self.tensor_array = SparseBiArray(
+                (self.index_init, self.data_init), shape=(2**self.n,)
+            )
 
         else:
             self.tensor_array = init_tensor_array
-            
+
             if not isinstance(init_tensor_array, BiArray):
                 self.tensor_array = SparseBiArray(self.tensor_array)
 
@@ -75,11 +75,11 @@ class TensorFactor:
         import numpy as np
 
         if matrix.size >= 2**6 and matrix.dtype != np.dtype("O"):
-                matrix = matrix * (np.abs(matrix) > float_tresh)
+            matrix = matrix * (np.abs(matrix) > float_tresh)
 
         # Convert matrix to BiArray
         matrix = DenseBiArray(matrix)
-        
+
         # Swap the qubits which the matrix is supposed to be applied on to the front
         for i in range(len(qubits)):
             qubit_index = self.qubits.index(qubits[i])
@@ -176,85 +176,101 @@ class TensorFactor:
             if sorted_qubit_list[i] == self.qubits[i]:
                 continue
             self.swap(i, self.qubits.index(sorted_qubit_list[i]))
-            
-    def multi_measure(self, mes_qubits, return_res_tf = True):
-        
+
+    def multi_measure(self, mes_qubits, return_res_tf=True):
+
         for i in range(len(mes_qubits)):
             # Swap the index that is supposed to be measured to the front
             index = self.qubits.index(mes_qubits[i])
             self.swap(i, index)
-        
+
         # Split the array - the lower half corresponds to the state with outcome 0,
         # the upper half to 1
-        new_bi_arrays, p_list, outcome_index_list = self.tensor_array.multi_measure(list(range(len(mes_qubits))), return_new_arrays = return_res_tf)
+        new_bi_arrays, p_list, outcome_index_list = self.tensor_array.multi_measure(
+            list(range(len(mes_qubits))), return_new_arrays=return_res_tf
+        )
 
-        p_list = xp.array(p_list)/xp.sum(p_list)
-        
-        new_qubit_list = list(self.qubits[len(mes_qubits):])
-        
+        p_list = xp.array(p_list) / xp.sum(p_list)
+
+        new_qubit_list = list(self.qubits[len(mes_qubits) :])
+
         if return_res_tf:
             tf_list = []
             for i in range(len(p_list)):
-                
-                new_bi_arrays[i].data *= 1/p_list[i]**0.5
+
+                new_bi_arrays[i].data *= 1 / p_list[i] ** 0.5
                 tf_list.append(TensorFactor(list(new_qubit_list), new_bi_arrays[i]))
         else:
-            tf_list = len(p_list)*[None]
-        
+            tf_list = len(p_list) * [None]
+
         return p_list, tf_list, outcome_index_list
-    
-    def disentangle(self, qubit, warning = False):
+
+    def disentangle(self, qubit, warning=False):
         if len(self.qubits) == 1:
             return self, self
-        
+
         # Swap the index that is supposed to be measured to the front
         index = self.qubits.index(qubit)
         self.swap(0, index)
-            
-        
+
         # Split the array - the lower half corresponds to the state with outcome 0,
         # the upper half to 1
-        new_bi_arrays, p_list, outcome_index_list = self.tensor_array.multi_measure([0], return_new_arrays = True)
-        
+        new_bi_arrays, p_list, outcome_index_list = self.tensor_array.multi_measure(
+            [0], return_new_arrays=True
+        )
+
         new_qubits = list(self.qubits)
         new_qubits.remove(qubit)
-        
+
         if len(outcome_index_list) == 1:
-            temp = xp.zeros(2, dtype = self.tensor_array.data.dtype)
+            temp = xp.zeros(2, dtype=self.tensor_array.data.dtype)
             if outcome_index_list[0] == 1:
                 if warning:
-                    print("\r" + 85*" " + "\rWARNING: Faulty uncomputation found during simulation.")
+                    print(
+                        "\r"
+                        + 85 * " "
+                        + "\rWARNING: Faulty uncomputation found during simulation."
+                    )
                 temp[1] = 1
             else:
                 temp[0] = 1
-            
-            new_bi_arrays[0].data *= 1/p_list[0]**0.5
+
+            new_bi_arrays[0].data *= 1 / p_list[0] ** 0.5
             # print("disentangling successfull")
-            return TensorFactor([qubit], temp), TensorFactor(new_qubits, new_bi_arrays[0])
-        
+            return TensorFactor([qubit], temp), TensorFactor(
+                new_qubits, new_bi_arrays[0]
+            )
+
         if not new_bi_arrays[0].exclude_linear_indpendence(new_bi_arrays[1]):
             if warning:
-                print("\r" + 85*" " + "\rWARNING: Faulty uncomputation found during simulation.")
+                print(
+                    "\r"
+                    + 85 * " "
+                    + "\rWARNING: Faulty uncomputation found during simulation."
+                )
             return self, self
-        
+
         vdot_value = new_bi_arrays[0].vdot(new_bi_arrays[1])
-        
-        
-        if xp.abs(xp.abs(vdot_value) - (p_list[0]*p_list[1])**0.5) > 1E-7:
+
+        if xp.abs(xp.abs(vdot_value) - (p_list[0] * p_list[1]) ** 0.5) > 1e-7:
             if warning:
-                print("\r" + 85*" " + "\rWARNING: Faulty uncomputation found during simulation.")
+                print(
+                    "\r"
+                    + 85 * " "
+                    + "\rWARNING: Faulty uncomputation found during simulation."
+                )
             # print("disentangling failed")
             # print(vdot_value)
             # print(xp.abs(xp.abs(vdot_value) - (p_list[0]*p_list[1])**0.5))
             return self, self
-        temp = xp.zeros(2, dtype = self.tensor_array.data.dtype)
-        temp[0] = (p_list[0])**0.5
-        temp[1] = (p_list[1])**0.5*vdot_value/xp.abs(vdot_value)
-        
-        new_bi_arrays[0].data *= 1/p_list[0]**0.5
+        temp = xp.zeros(2, dtype=self.tensor_array.data.dtype)
+        temp[0] = (p_list[0]) ** 0.5
+        temp[1] = (p_list[1]) ** 0.5 * vdot_value / xp.abs(vdot_value)
+
+        new_bi_arrays[0].data *= 1 / p_list[0] ** 0.5
         # print("disentangling successfull")
         return TensorFactor([qubit], temp), TensorFactor(new_qubits, new_bi_arrays[0])
-    
+
 
 # This function allow entangling more than two TensorFactors.
 # Since we are free to choose a contraction order, we pick one

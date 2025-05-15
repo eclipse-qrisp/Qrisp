@@ -123,6 +123,7 @@ print(bob.run(bob_qc))
 # This example displays quantum key distribution using the BB84 protocoll
 # https://en.wikipedia.org/wiki/BB84
 
+
 def gen_random_bitstring(size):
     res = np.zeros(size)
     for i in range(size):

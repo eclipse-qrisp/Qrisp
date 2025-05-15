@@ -15,10 +15,13 @@
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************/
 """
+
 import numpy as np
 from jax.core import AbstractValue, Primitive, raise_to_shaped_mappings
 
 qubit_hash = np.zeros(1)
+
+
 class Qubit:
     """
     This class describes qubits. Qubits are created by supplying the identifier string.
@@ -39,18 +42,26 @@ class Qubit:
     >>> qc.add_qubit(qb)
     >>> qc.x(qb)
     >>> print(qc)
-    
+
     ::
-    
+
                   ┌───┐
         alphonse: ┤ X ├
                   └───┘
 
 
     """
-    
-    __slots__ = ["hash_value", "qs", "identifier", "allocated",  "recompute", "lock", "perm_lock"]
-    
+
+    __slots__ = [
+        "hash_value",
+        "qs",
+        "identifier",
+        "allocated",
+        "recompute",
+        "lock",
+        "perm_lock",
+    ]
+
     def __init__(self, identifier):
         self.identifier = identifier
         self.hash_value = int(qubit_hash[0])
@@ -69,13 +80,17 @@ class Qubit:
 
     def __eq__(self, other):
         return self.hash_value == other.hash_value
-    
+
     def __add__(self, other):
         if not isinstance(other, list):
-            raise Exception(f"Tried to add Qubit to type {type(other)} (only list ist possible)")
+            raise Exception(
+                f"Tried to add Qubit to type {type(other)} (only list ist possible)"
+            )
         return [self] + other
-    
+
     def __radd__(self, other):
         if not isinstance(other, list):
-            raise Exception(f"Tried to add Qubit to type {type(other)} (only list ist possible)")
+            raise Exception(
+                f"Tried to add Qubit to type {type(other)} (only list ist possible)"
+            )
         return other + [self]
