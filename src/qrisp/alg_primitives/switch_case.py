@@ -25,7 +25,7 @@ from qrisp.jasp import check_for_tracing_mode, jrange, q_fori_loop, q_cond
 import numpy as np
 import jax.numpy as jnp
 
-def qswitch(operand, case, case_function, method = "sequential"):
+def qswitch(operand, case, case_function, method = "auto"):
     """
     Executes a switch - case statement distinguishing between a list of
     given in-place functions.
@@ -41,9 +41,9 @@ def qswitch(operand, case, case_function, method = "sequential"):
         A list of functions, performing some in-place operation on ``operand``, or 
         a function ``case_function(i, operand)`` performing some in-place operation on ``operand`` depending on a nonnegative integer index ``i`` specifying the case.
     method : str, optional
-        The compilation method. Available are ``sequential``, ``parallel`` and ``tree``. 
+        The compilation method. Available are ``sequential``, ``parallel``, ``tree`` and ``auto``. 
         ``parallel`` is exponentially fast but requires more temporary qubits. ``tree`` uses `balanced binaray trees <https://arxiv.org/pdf/2407.17966v1>`_.
-        The default is ``sequential``.
+        The default is ``auto``.
 
     Examples
     --------
@@ -104,6 +104,9 @@ def qswitch(operand, case, case_function, method = "sequential"):
     if callable(case_function):
         case_amount = 2**case.size
         xrange = jrange
+        if method == "auto":
+            method = "tree"
+
     else:
         case_amount = len(case_function)
 
@@ -113,6 +116,11 @@ def qswitch(operand, case, case_function, method = "sequential"):
         case_function.extend([identity]* ( (1 << ((case_amount - 1).bit_length())) - case_amount ))
 
         xrange = range
+        if method == "auto":
+            if case_amount <= 4:
+                method = "sequential"
+            else:
+                method = "tree"
 
     if method == "sequential":
 
