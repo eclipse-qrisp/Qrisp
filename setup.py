@@ -18,7 +18,9 @@
 
 import setuptools
 
-REQUIREMENTS = ["sympy<=1.13",
+REQUIREMENTS = [
+                "numpy>=2.0",
+                "sympy<=1.13",
                 "qiskit>=0.44.0",
                 "matplotlib>=3.5.1",
                 "scipy>=1.10.0",
