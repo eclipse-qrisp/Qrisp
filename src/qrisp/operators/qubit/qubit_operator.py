@@ -1848,7 +1848,12 @@ class QubitOperator(Hamiltonian):
         def U(qarg, t=1, steps=1, iter=1):
             if check_for_tracing_mode():
                 for i in jrange(iter*steps):
-                    trotter_step(qarg, t, steps)
+                    if order == 1:
+                        trotter_step(qarg, t, steps)
+                    elif order == 2:
+                        trotter_step(qarg, t, steps*2)
+                        with invert():
+                            trotter_step(qarg, -t, steps*2)
             else:
                 merge([qarg])
                 with IterationEnvironment(qarg.qs, iter*steps):

@@ -25,14 +25,15 @@ import itertools
 
 def test_QAOAmaxIndepSet():
 
-    G = nx.erdos_renyi_graph(9, 0.5, seed =  133)
+    G = nx.erdos_renyi_graph(9, 0.5, seed = 133)
+
     qarg = QuantumVariable(G.number_of_nodes())
 
     qaoa_max_indep_set = QAOAProblem(cost_operator=RZ_mixer,
                                     mixer=create_max_indep_set_mixer(G),
                                     cl_cost_function=create_max_indep_set_cl_cost_function(G),
                                     init_function=max_indep_set_init_function)
-    results = qaoa_max_indep_set.run(qarg=qarg, depth=5)
+    results = qaoa_max_indep_set.run(qarg, depth=5)
 
     cl_cost = create_max_indep_set_cl_cost_function(G)
 
