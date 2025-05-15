@@ -187,7 +187,7 @@ def multi_controlled_u3_circ(u3_gate, control_amount, ctrl_state, method=None):
         # To perform the controlled x gate, we can use the phase tolerant algorithm
         
         if control_amount == 2:
-            from qrisp.misc.multi_cx import gray_pt_mcx
+            from qrisp.alg_primitives import gray_pt_mcx
             mcx_gate = gray_pt_mcx(2, "11")
         else:
             mcx_gate = XGate().control(control_amount, method = "gray_pt")
