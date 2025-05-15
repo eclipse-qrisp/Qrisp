@@ -24,7 +24,7 @@ The :ref:`quantum switch <qswitch>` is a core component of the LCU protocol and 
 Dynamic QAOA/VQE and gradient free dynamic optimization
 -------------------------------------------------------
 
-QAOA and VQE are among the most popular hybrid algorithms. The established way of running these is to set up a feedback loop that alternates between a quantum computer and a Python instance performing the classical optimization. While suitable for prototypical implementations, this architecture brings a considerable overhead because (a) entering and running the Python interpreter is slow and (b) using IP networks for connectivity introduces extra latency. For this reason we made the algorithms compatible with Jasp, implying the whole workflow is now compiled into one big QIR expression. Read more about this :ref:`here <JaspQAOA>`.
+QAOA and VQE are among the most popular hybrid algorithms. The established way of running these is to set up a feedback loop that alternates between a quantum computer and a Python instance performing the classical optimization. While suitable for prototypical implementations, this architecture brings a considerable overhead because (a) entering and running the Python interpreter is slow and (b) using IP networks for connectivity introduces extra latency. For this reason we made the algorithms compatible with Jasp, implying the whole workflow is now compiled into one big QIR expression. Read more about this :ref:`here <JaspQAOA>`. We also added JASP-compatability for the gradient-free **COBYLA** Optimizer. It will now be the Default Option for the :ref:`jasp.minimize <optimization_tools>` optimization Routine.
 
 .. image:: optimization_loop.png
     :align: center
