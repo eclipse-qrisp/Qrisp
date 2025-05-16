@@ -193,6 +193,7 @@ class ClControlEnvironment(QuantumEnvironment):
                 for i in range(len(self.ctrl_bls)):
                     ctrl_bl = self.ctrl_bls[i]
                     if (ctrl_bl ^ (self.ctrl_state >> i)) & 1:
+                        self.env_qs.data = []
                         static_error_appeared = True
                         exception_type = None
                         exception_value = None

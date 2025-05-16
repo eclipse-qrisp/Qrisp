@@ -157,7 +157,12 @@ class ConjugationEnvironment(QuantumEnvironment):
         merge(recursive_qs_search(self.args) + [self.env_qs])
 
         qv_set_before = set(self.env_qs.qv_list)
-        res = self.conjugation_function(*self.args, **self.kwargs)
+        
+        try:
+            res = self.conjugation_function(*self.args, **self.kwargs)
+        except Exception as e:
+            QuantumEnvironment.__exit__(self, type(e), e, "")
+            raise e
 
         temp_data = list(self.env_qs.data)
         self.env_qs.data = []
@@ -170,10 +175,20 @@ class ConjugationEnvironment(QuantumEnvironment):
             else:
                 self.env_qs.append(instr)
 
-        if qv_set_before != set(self.env_qs.qv_list):
-            raise Exception(
-                f"Tried to create/destroy QuantumVariables {qv_set_before.symmetric_difference(set(self.env_qs.qv_list))} within a conjugation"
-            )
+        creation_dic = {}
+        for i in range(len(self.env_qs.data)):
+            instr = self.env_qs.data[i]
+            if instr.op.name == "qb_alloc":
+                creation_dic[instr.qubits[0]] = 1
+            elif instr.op.name == "qb_dealloc":
+                if instr.qubits[0] not in creation_dic:
+                    raise Exception(f"Tried to destroy qubit {instr.qubits[0]} within a conjugator.")
+                else:
+                    creation_dic[instr.qubits[0]] -=1
+                    
+        for k, v in creation_dic.items():
+            if v != 0:
+                raise Exception(f"Tried to create qubit {k} within a conjugator.")
 
         self.conjugation_circ = self.env_qs.copy()
 
@@ -184,7 +199,7 @@ class ConjugationEnvironment(QuantumEnvironment):
     def __exit__(self, exception_type, exception_value, traceback):
 
         if exception_value:
-            raise exception_value
+            QuantumEnvironment.__exit__(self, exception_type, exception_value, traceback)
 
         if not check_for_tracing_mode():
             conjugation_center_data = list(self.env_qs.data)
