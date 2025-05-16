@@ -191,9 +191,9 @@ def QITE(qarg, U_0, exp_H, s, k, method='GC'):
                 with conjugate(conjugator)(qarg):
                     if isinstance(qarg,QuantumArray):
                         qubits = sum([qv.reg for qv in qarg.flatten()],[])
-                        mcp(t_, qubits, ctrl_state=0)
+                        mcp(t_, qubits, ctrl_state=0, method="khattar")
                     else:
-                        mcp(t_, qarg, ctrl_state=0)
+                        mcp(t_, qarg, ctrl_state=0, method="khattar")
 
             if method=='GC':
 
