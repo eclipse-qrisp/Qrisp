@@ -136,46 +136,46 @@ def create_heisenberg_ansatz(G, J, B, M, C, ansatz_type="per hamiltonian"):
 
     # per hamiltonian
     def ansatz(qv, theta):
-        # apply H_0
-        for i, j in M:
-            heis(theta[0], qv[i], qv[j])
-
         # apply H
         rz(B * theta[1], qv)
 
-        for edges in C:
+        for edges in reversed(C):
             for i, j in edges:
                 heis(J * theta[1], qv[i], qv[j])
 
-    # per edge color
-    def ansatz_per_edge_color(qv, theta):
         # apply H_0
         for i, j in M:
             heis(theta[0], qv[i], qv[j])
 
+    # per edge color
+    def ansatz_per_edge_color(qv, theta):
         # apply H
         rz(B * theta[1], qv)
 
         count = 0
-        for edges in C:
+        for edges in reversed(C):
             for i, j in edges:
                 heis(J * theta[2 + count], qv[i], qv[j])
             count += 1
 
-    # per edge
-    def ansatz_per_edge(qv, theta):
         # apply H_0
         for i, j in M:
             heis(theta[0], qv[i], qv[j])
 
+    # per edge
+    def ansatz_per_edge(qv, theta):
         # apply H
         rz(B * theta[1], qv)
 
         count = 0
-        for edges in C:
+        for edges in reversed(C):
             for i, j in edges:
                 heis(J * theta[2 + count], qv[i], qv[j])
                 count += 1
+
+        # apply H_0
+        for i, j in M:
+            heis(theta[0], qv[i], qv[j])
 
     if ansatz_type == "per edge color":
         return ansatz_per_edge_color
