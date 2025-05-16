@@ -1,5 +1,5 @@
 """
-\********************************************************************************
+********************************************************************************
 * Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -13,7 +13,7 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 from qrisp.jasp.primitives.quantum_primitive import *
@@ -22,4 +22,3 @@ from qrisp.jasp.primitives.abstract_quantum_register import *
 from qrisp.jasp.primitives.abstract_quantum_circuit import *
 from qrisp.jasp.primitives.measurement_primitive import *
 from qrisp.jasp.primitives.operation_primitive import *
-

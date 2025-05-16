@@ -1,5 +1,5 @@
 """
-\********************************************************************************
+********************************************************************************
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -13,7 +13,7 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 from qrisp import QuantumVariable, QuantumBool, x, mcx
@@ -36,24 +36,31 @@ def create_min_set_cover_mixer(sets, universe):
     Returns
     -------
     function
-        A Python function receiving a :ref:`QuantumVariable` and real parameter $\beta$. 
+        A Python function receiving a :ref:`QuantumVariable` and real parameter $\beta$.
         This function performs the application of the mixer associated to the problem instance.
 
     """
 
-    membership_dict = {element: [i for i, subset in enumerate(sets) if element in subset] for element in universe}
+    membership_dict = {
+        element: [i for i, subset in enumerate(sets) if element in subset]
+        for element in universe
+    }
 
-    def predicate(qv,i):
+    def predicate(qv, i):
         anc = QuantumVariable(len(sets[i]))
         x(anc)
-        for anc_index, element in enumerate(sets[i]):    
+        for anc_index, element in enumerate(sets[i]):
             other_sets = [item for item in membership_dict[element] if item != i]
-            mcx([qv[set_index] for set_index in other_sets],anc[anc_index],ctrl_state="0"*len(other_sets))
+            mcx(
+                [qv[set_index] for set_index in other_sets],
+                anc[anc_index],
+                ctrl_state="0" * len(other_sets),
+            )
         qbl = QuantumBool()
-        mcx(anc,qbl)
+        mcx(anc, qbl)
         return qbl
-    
-    controlled_RX_mixer=controlled_RX_mixer_gen(predicate)
+
+    controlled_RX_mixer = controlled_RX_mixer_gen(predicate)
 
     return controlled_RX_mixer
 
@@ -79,27 +86,27 @@ def create_min_set_cover_cl_cost_function(sets, universe):
     def cl_cost_function(res_dic):
         cost = 0
         for state, prob in res_dic.items():
-            indices = [index for index, value in enumerate(state) if value == '1']
+            indices = [index for index, value in enumerate(state) if value == "1"]
             solution_sets = [sets[index] for index in indices]
-            if len(solution_sets)>0 and set.union(*solution_sets)==universe:
-                cost += len(indices)*prob
+            if len(solution_sets) > 0 and set.union(*solution_sets) == universe:
+                cost += len(indices) * prob
             else:
                 cost += len(sets)
 
         return cost
 
-    return cl_cost_function 
+    return cl_cost_function
 
 
 def min_set_cover_init_function(qv):
     r"""
     Prepares the initial state $\ket{1}^{\otimes n}$.
-    
+
     Parameters
     ----------
     qv : :ref:`QuantumVariable`
         The quantum argument.
-    
+
     """
     x(qv)
 
@@ -121,11 +128,12 @@ def min_set_cover_problem(sets, universe):
     :ref:`QAOAProblem`
         A QAOA problem instance for MinSetCover for given ``sets`` and ``universe``.
 
-    """        
+    """
     from qrisp.qaoa import QAOAProblem, RZ_mixer
-    
-    return QAOAProblem(cost_operator=RZ_mixer,
-                        mixer= create_min_set_cover_mixer(sets, universe),
-                        cl_cost_function=create_min_set_cover_cl_cost_function(sets, universe),
-                        init_function=min_set_cover_init_function)
 
+    return QAOAProblem(
+        cost_operator=RZ_mixer,
+        mixer=create_min_set_cover_mixer(sets, universe),
+        cl_cost_function=create_min_set_cover_cl_cost_function(sets, universe),
+        init_function=min_set_cover_init_function,
+    )

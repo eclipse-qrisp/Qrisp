@@ -1,5 +1,5 @@
 """
-\********************************************************************************
+********************************************************************************
 * Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -13,12 +13,14 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 import setuptools
 
-REQUIREMENTS = ["sympy<=1.13",
+REQUIREMENTS = [
+                "numpy>=2.0",
+                "sympy<=1.13",
                 "qiskit>=0.44.0",
                 "matplotlib>=3.5.1",
                 "scipy>=1.10.0",

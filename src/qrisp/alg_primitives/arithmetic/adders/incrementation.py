@@ -1,5 +1,5 @@
 """
-\********************************************************************************
+********************************************************************************
 * Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -13,9 +13,8 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
-
 
 from qrisp.core import QuantumVariable
 from qrisp.core.gate_application_functions import x, cx, mcx
@@ -203,36 +202,36 @@ def increment_arbitrary_constant_qubit_list(qs, qubit_list, c):
 
     incr_ancilla.delete()
     incr_carry_ancilla.delete()
-    
 
-# This function performs the linear depth incrementation described in 
+
+# This function performs the linear depth incrementation described in
 # https://algassert.com/circuits/2015/06/12/Constructing-Large-Increment-Gates.html
 # This function also needs a linear amount of ancilla qubits.
-def lin_incr(a, c_in = None, c_out = None):
-    
+def lin_incr(a, c_in=None, c_out=None):
+
     if c_out is not None:
         a = list(a) + [c_out]
-    
+
     if len(a) == 1:
-        cx(c_in,a[0])
-        return
-    
-    incr_anc = QuantumVariable(len(a)-1, name = "incr_anc*", qs = a[0].qs())
-    
-    if c_in is not None:
-        mcx([c_in, a[0]], incr_anc[0], method = "gidney")
-    
-    for i in range(len(a)-2):
-        mcx([incr_anc[i], a[i+1]], incr_anc[i+1], method = "gidney")
-        
-    cx(incr_anc[-1], a[-1])
-    
-    for i in range(len(a)-2)[::-1]:
-        mcx([incr_anc[i], a[i+1]], incr_anc[i+1], method = "gidney_inv")
-        cx(incr_anc[i], a[i+1])
-    
-    if c_in is not None:
-        mcx([c_in, a[0]], incr_anc[0], method = "gidney_inv")
         cx(c_in, a[0])
-        
+        return
+
+    incr_anc = QuantumVariable(len(a) - 1, name="incr_anc*", qs=a[0].qs())
+
+    if c_in is not None:
+        mcx([c_in, a[0]], incr_anc[0], method="gidney")
+
+    for i in range(len(a) - 2):
+        mcx([incr_anc[i], a[i + 1]], incr_anc[i + 1], method="gidney")
+
+    cx(incr_anc[-1], a[-1])
+
+    for i in range(len(a) - 2)[::-1]:
+        mcx([incr_anc[i], a[i + 1]], incr_anc[i + 1], method="gidney_inv")
+        cx(incr_anc[i], a[i + 1])
+
+    if c_in is not None:
+        mcx([c_in, a[0]], incr_anc[0], method="gidney_inv")
+        cx(c_in, a[0])
+
     incr_anc.delete()

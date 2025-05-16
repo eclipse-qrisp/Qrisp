@@ -1,5 +1,5 @@
 """
-\********************************************************************************
+********************************************************************************
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -13,7 +13,7 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 #
@@ -24,39 +24,40 @@ from sympy import Symbol
 
 #
 # Pauli symbols (only used for visualization, i.e., LateX printing with SymPy)
-#  
+#
+
 
 class X_(Symbol):
 
-    __slots__ = ("axis","index")
+    __slots__ = ("axis", "index")
 
     def __new__(cls, index):
-        obj = Symbol.__new__(cls, "%s(%s)" %("X",index), commutative=False, hermitian=True)
+        obj = Symbol.__new__(
+            cls, "%s(%s)" % ("X", index), commutative=False, hermitian=True
+        )
         obj.index = index
         return obj
+
 
 class Y_(Symbol):
 
-    __slots__ = ("axis","index")
+    __slots__ = ("axis", "index")
 
     def __new__(cls, index):
-        obj = Symbol.__new__(cls, "%s(%s)" %("Y",index), commutative=False, hermitian=True)
+        obj = Symbol.__new__(
+            cls, "%s(%s)" % ("Y", index), commutative=False, hermitian=True
+        )
         obj.index = index
         return obj
-       
+
+
 class Z_(Symbol):
 
-    __slots__ = ("axis","index")
+    __slots__ = ("axis", "index")
 
     def __new__(cls, index):
-        obj = Symbol.__new__(cls, "%s(%s)" %("Z",index), commutative=False, hermitian=True)
+        obj = Symbol.__new__(
+            cls, "%s(%s)" % ("Z", index), commutative=False, hermitian=True
+        )
         obj.index = index
         return obj
-    
-
-
-
-
-
-
-

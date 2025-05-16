@@ -1,5 +1,5 @@
 """
-\********************************************************************************
+********************************************************************************
 * Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -13,12 +13,12 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
-
 
 import numpy as np
 from qrisp.circuit import fast_append
+
 
 def auto_uncompute(*args, recompute=False):
     if len(args):
@@ -55,10 +55,10 @@ def auto_uncompute_inner(function):
             return function(*args, **kwargs)
 
         qs = qs_list[0]
-        
+
         # Determine quantum variables to uncompute
         initial_qvs = set([hash(qv()) for qv in QuantumVariable.live_qvs])
-        
+
         # Execute function
         result = function(*args, **kwargs)
 
@@ -67,7 +67,7 @@ def auto_uncompute_inner(function):
         result_vars = set([hash(qv) for qv in recursive_qv_search(result)])
 
         uncomp_vars = []
-        
+
         for qv in qs.qv_list:
             if not hash(qv) in initial_qvs.union(result_vars):
                 uncomp_vars.append(qv)
@@ -90,10 +90,10 @@ def uncompute(qs, uncomp_vars, recompute=False):
 
     if len(uncomp_vars) == 0:
         return
-    
+
     temp_data = list(qs.data)
     qs.data = []
-    
+
     with fast_append(3):
         for i in range(len(temp_data)):
             if isinstance(temp_data[i], QuantumEnvironment):
@@ -101,16 +101,15 @@ def uncompute(qs, uncomp_vars, recompute=False):
                 env.compile()
             else:
                 qs.append(temp_data[i])
-                    
-            
+
     uncomp_vars = list(set(uncomp_vars).intersection(qs.qv_list))
     qubits_to_uncompute = sum([qv.reg for qv in uncomp_vars], [])
-    
+
     if len(qubits_to_uncompute) == 0:
         for qv in uncomp_vars:
             qv.delete()
         return
-    
+
     alloc_gates_remaining = list(qubits_to_uncompute)
 
     for i in range(len(qs.data)):
@@ -147,7 +146,6 @@ def uncompute(qs, uncomp_vars, recompute=False):
 
     qs.data = uncomputed_qc.data
 
-
     for qv in uncomp_vars:
         # if recompute:
         # for qb in qv:
@@ -159,4 +157,3 @@ def uncompute(qs, uncomp_vars, recompute=False):
         # Therefore we remove the deallocation gates
         for i in range(len(qv)):
             qv.qs.data.pop(-1)
-

@@ -1,5 +1,5 @@
 """
-\********************************************************************************
+********************************************************************************
 * Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -13,12 +13,13 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 import qiskit
 
 from qrisp.interface import VirtualBackend
+
 
 def IQMBackend(api_token, device_instance, port=None):
     """
@@ -83,7 +84,6 @@ def IQMBackend(api_token, device_instance, port=None):
         raise ImportError(
             "Please install qiskit-iqm to use the IQMBackend. You can do this by running `pip install qrisp[iqm]`."
         )
-
 
     def run_func_iqm(qasm_str, shots=None, token=""):
         if shots is None:

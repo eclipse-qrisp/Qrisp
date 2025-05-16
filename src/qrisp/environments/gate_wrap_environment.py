@@ -1,5 +1,5 @@
 """
-\********************************************************************************
+********************************************************************************
 * Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -13,9 +13,8 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
-
 
 from qrisp.circuit import QuantumCircuit, QubitAlloc, QubitDealloc, XGate
 from qrisp.environments import QuantumEnvironment
@@ -59,9 +58,9 @@ class GateWrapEnvironment(QuantumEnvironment):
 
 
     >>> print(qv.qs)
-    
+
     ::
-    
+
         QuantumCircuit:
         --------------
               ┌──────────┐
@@ -80,9 +79,9 @@ class GateWrapEnvironment(QuantumEnvironment):
 
     >>> instruction = gwe.instruction
     >>> print(instruction.op.definition)
-    
+
     ::
-    
+
                ┌───┐
         qb_41: ┤ X ├
                ├───┤
@@ -104,9 +103,9 @@ class GateWrapEnvironment(QuantumEnvironment):
         example_function(qv)
 
     >>> print(qv.qs)
-    
+
     ::
-    
+
         QuantumCircuit:
         --------------
               ┌──────────┐┌───────────────────┐
@@ -175,9 +174,6 @@ class GateWrapEnvironment(QuantumEnvironment):
                 except ValueError:
                     pass
                 continue
-                    
-                
-                
 
             qc.append(
                 instr.op,

@@ -1,5 +1,5 @@
 """
-\********************************************************************************
+********************************************************************************
 * Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -13,14 +13,14 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 from jax.core import Primitive
+
 
 # Wrapper to identify Qrisp primitives
 class QuantumPrimitive(Primitive):
     def __init__(self, name):
         Primitive.__init__(self, "jasp." + name)
         self.qrisp_name = name
-

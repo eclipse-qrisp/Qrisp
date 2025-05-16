@@ -1,5 +1,5 @@
 """
-\********************************************************************************
+********************************************************************************
 * Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -13,7 +13,7 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 from qrisp.operators import *
@@ -49,12 +49,17 @@ def test_jasp_hamiltonian_simulation():
     test_hamiltonian(H)
 
 
-from pyscf import gto
+
 from qrisp import *
 from qrisp.operators import FermionicOperator
 import numpy as np
 
 def test_jasp_hamiltonian_simulation_H2():
+    
+    try:
+        from pyscf import gto
+    except ImportError:
+        return
 
     # Finding the gound state energy of the Hydrogen molecule with QPE
     @terminal_sampling

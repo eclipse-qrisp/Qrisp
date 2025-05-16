@@ -1,5 +1,5 @@
 """
-\********************************************************************************
+********************************************************************************
 * Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -13,7 +13,7 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 from qrisp.alg_primitives.mcx_algs.multi_cx import *
@@ -27,6 +27,7 @@ from qrisp.alg_primitives.mcx_algs.jones import *
 from qrisp.alg_primitives.mcx_algs.maslov import *
 from qrisp.alg_primitives.mcx_algs.yong import *
 from qrisp.alg_primitives.mcx_algs.khattar import *
+
 
 # Interface function to quickly change between different implementations of
 # multi controlled not gates
@@ -44,15 +45,10 @@ def multi_cx(n, method=None):
 
     elif method in ["gray", "auto", None]:
         return gray_multi_cx(n)
-    
+
     elif method == "gidney":
         return GidneyLogicalAND()
     elif method == "gidney_inv":
-        return GidneyLogicalAND(inv = True)
+        return GidneyLogicalAND(inv=True)
     else:
         raise Exception('method "' + method + '" not implemented')
-
-
-
-
-

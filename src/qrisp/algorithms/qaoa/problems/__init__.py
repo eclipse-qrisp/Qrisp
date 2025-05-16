@@ -1,5 +1,5 @@
 """
-\********************************************************************************
+********************************************************************************
 * Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -13,18 +13,16 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
-
 
 from qrisp.algorithms.qaoa.problems.maxCut import *
 from qrisp.algorithms.qaoa.problems.maxKColorableSubgraph import *
 from qrisp.algorithms.qaoa.problems.QUBO import *
 
-from qrisp.algorithms.qaoa.problems.maxSat import * 
+from qrisp.algorithms.qaoa.problems.maxSat import *
 from qrisp.algorithms.qaoa.problems.eThrLinTwo import *
 from qrisp.algorithms.qaoa.problems.maxIndepSet import *
 from qrisp.algorithms.qaoa.problems.maxClique import *
 from qrisp.algorithms.qaoa.problems.maxSetPacking import *
-from qrisp.algorithms.qaoa.problems.minSetCover import * 
-
+from qrisp.algorithms.qaoa.problems.minSetCover import *

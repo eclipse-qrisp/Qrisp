@@ -1,5 +1,5 @@
 """
-\********************************************************************************
+********************************************************************************
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -13,11 +13,11 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
-
 from qrisp import x, rx, rz, auto_uncompute, control
+
 
 def qiro_rx_mixer(problem_updated):
     """
@@ -38,7 +38,7 @@ def qiro_rx_mixer(problem_updated):
     """
 
     solutions = problem_updated[1]
-    exclusions =  problem_updated[2]
+    exclusions = problem_updated[2]
     union = solutions + exclusions
 
     def RX_mixer(qv, beta):
@@ -46,7 +46,9 @@ def qiro_rx_mixer(problem_updated):
         for i in range(len(qv)):
             if not i in union:
                 rx(2 * beta, qv[i])
+
     return RX_mixer
+
 
 def qiro_rz_mixer(problem_updated):
     """
@@ -62,7 +64,7 @@ def qiro_rz_mixer(problem_updated):
     """
 
     solutions = problem_updated[1]
-    exclusions =  problem_updated[2]
+    exclusions = problem_updated[2]
     union = solutions + exclusions
 
     def RZ_mixer(qv, beta):
@@ -70,6 +72,7 @@ def qiro_rz_mixer(problem_updated):
         for i in range(len(qv)):
             if not i in union:
                 rz(2 * beta, qv[i])
+
     return RZ_mixer
 
 
@@ -82,9 +85,9 @@ def qiro_controlled_RX_mixer_gen(predicate, union):
     predicate : function
         A function receiving a ``QuantumVariable`` and an index $i$.
         This function returns a ``QuantumBool`` indicating if the predicate is satisfied for ``qv[i]``,
-        that is, if the element ``qv[i]`` should be swapped in. 
+        that is, if the element ``qv[i]`` should be swapped in.
     union : List
-        List of Qubits which were found to be positively or negatively correlated, i.e. they should not be mixed again.  
+        List of Qubits which were found to be positively or negatively correlated, i.e. they should not be mixed again.
 
 
     Returns
@@ -96,7 +99,7 @@ def qiro_controlled_RX_mixer_gen(predicate, union):
     Examples
     --------
 
-    We define the predicate function for the :ref:`MaxIndepSet <maxIndepSetQAOA>` problem. It returns ``True`` for the index (node) $i$ if 
+    We define the predicate function for the :ref:`MaxIndepSet <maxIndepSetQAOA>` problem. It returns ``True`` for the index (node) $i$ if
     all neighbors $j$ of the node $i$ in the graph $G$ are not selected, and ``False`` otherwise.
 
     ::
@@ -105,7 +108,7 @@ def qiro_controlled_RX_mixer_gen(predicate, union):
         import networkx as nx
 
         G = nx.Graph()
-        G.add_edges_from([(0, 1), (1, 2), (2, 0)])  
+        G.add_edges_from([(0, 1), (1, 2), (2, 0)])
         neighbors_dict = {node: list(G.adj[node]) for node in G.nodes()}
 
         def predicate(qv,i):
@@ -131,13 +134,13 @@ def qiro_controlled_RX_mixer_gen(predicate, union):
         m = qv.size
         for i in range(m):
             if i not in union:
-                with control(predicate(qv,i)):
-                    rx(beta,qv[i])
+                with control(predicate(qv, i)):
+                    rx(beta, qv[i])
 
     return controlled_RX_mixer
 
 
-def qiro_init_function(solutions = [], exclusions = []):
+def qiro_init_function(solutions=[], exclusions=[]):
     """
     State initialization function for QIRO algorithm. Works analogously to the normal initialization function, but respects solutions and exclusions that have been found in the QIRO reduction steps.
 
@@ -155,12 +158,15 @@ def qiro_init_function(solutions = [], exclusions = []):
 
     """
     union = solutions + exclusions
+
     def init_state(qv):
         from qrisp import h
-        #for i in problem.nodes:
+
+        # for i in problem.nodes:
         for i in range(len(qv)):
             if not i in union:
                 h(qv[i])
         for i in solutions:
             x(qv[i])
+
     return init_state

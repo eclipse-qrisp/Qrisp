@@ -1,5 +1,5 @@
 """
-\********************************************************************************
+********************************************************************************
 * Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -13,14 +13,20 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 import numpy as np
 import sympy as sp
 
 from qrisp.misc import array_as_int, gate_wrap, int_as_array
-from qrisp.circuit import QuantumCircuit, Operation, PTControlledOperation, ControlledOperation, fast_append
+from qrisp.circuit import (
+    QuantumCircuit,
+    Operation,
+    PTControlledOperation,
+    ControlledOperation,
+    fast_append,
+)
 
 use_gray_code = False
 try:
@@ -327,15 +333,17 @@ compiled_gates = {}
 compiled_pt_gates = {}
 
 import time
-def gray_synth_qc(target_phases, phase_tolerant=False, flip_bit_order = False):
+
+
+def gray_synth_qc(target_phases, phase_tolerant=False, flip_bit_order=False):
     start_time = time.time()
     bit_amount = int(np.log2(len(target_phases)))
 
     if not flip_bit_order:
         target_phases = np.array(target_phases)
-        target_phases = target_phases.reshape(bit_amount*[2])
-        for i in range(bit_amount//2):
-            target_phases = np.swapaxes(target_phases, i, bit_amount-i-1)
+        target_phases = target_phases.reshape(bit_amount * [2])
+        for i in range(bit_amount // 2):
+            target_phases = np.swapaxes(target_phases, i, bit_amount - i - 1)
         target_phases = target_phases.reshape(2**bit_amount)
 
     target_phases_id = str(list(target_phases))
@@ -347,8 +355,6 @@ def gray_synth_qc(target_phases, phase_tolerant=False, flip_bit_order = False):
         if target_phases_id in compiled_pt_gates:
             temp = compiled_pt_gates[target_phases_id]
             return temp
-
-    
 
     qc = QuantumCircuit(bit_amount)
 
@@ -381,16 +387,16 @@ def gray_synth_qc(target_phases, phase_tolerant=False, flip_bit_order = False):
                 # state of the output qubit. As these phase shifts dont act on the output
                 # qubit they do not change the phase difference and can therefore be ignored
                 break
-    
+
             # Set some aliases to keep the code readable
             operation_qubit = qb_list[cnot_list[i][1]]
             control_qubit = qb_list[cnot_list[i][0]]
-    
+
             # Apply CNOT gate
             if cnot_list[i][0] != cnot_list[i][1]:
                 control_qubit = qb_list[cnot_list[i][0]]
                 qc.cx(control_qubit, operation_qubit)
-    
+
             # Apply phase shifts
             if phase_shifts[p_op_seq[i]] == 0:
                 continue
@@ -406,11 +412,13 @@ def gray_synth_qc(target_phases, phase_tolerant=False, flip_bit_order = False):
             pass
 
     if not phase_tolerant and not flip_bit_order and len(qc.qubits) < 9:
-        definition_reversed_bit = gray_synth_qc(target_phases, phase_tolerant, flip_bit_order = True)
+        definition_reversed_bit = gray_synth_qc(
+            target_phases, phase_tolerant, flip_bit_order=True
+        )
         if qc.depth() > definition_reversed_bit.depth():
             definition_reversed_bit.qubits.reverse()
-            qc = definition_reversed_bit    
-    
+            qc = definition_reversed_bit
+
     if not phase_tolerant:
         compiled_gates[target_phases_id] = qc
     else:
@@ -420,25 +428,29 @@ def gray_synth_qc(target_phases, phase_tolerant=False, flip_bit_order = False):
 
 
 class GraySynthGate(Operation):
-    
-    def __init__(self, target_phases, phase_tolerant = False):
-        
+
+    def __init__(self, target_phases, phase_tolerant=False):
+
         definition = gray_synth_qc(target_phases, phase_tolerant)
-        
-        Operation.__init__(self, num_qubits = len(definition.qubits), 
-                           definition = definition, 
-                           name = "gray_synth_gate")
-        
+
+        Operation.__init__(
+            self,
+            num_qubits=len(definition.qubits),
+            definition=definition,
+            name="gray_synth_gate",
+        )
+
         self.target_phases = target_phases
         self.phase_tolerant = phase_tolerant
-        
+
         self.abstract_params = set()
         for i in range(len(target_phases)):
             if isinstance(target_phases[i], sp.Expr):
-                self.abstract_params = self.abstract_params.union(target_phases[i].free_symbols)
-        
+                self.abstract_params = self.abstract_params.union(
+                    target_phases[i].free_symbols
+                )
+
     def control(self, num_ctrl_qubits=1, ctrl_state=-1, method=None):
-        
 
         ctrl_state = int(ctrl_state, 2)
 
@@ -451,29 +463,33 @@ class GraySynthGate(Operation):
                 target_phases_new += list(self.target_phases)
 
         tmp = GraySynthGate(target_phases_new, phase_tolerant="pt" in str(method))
-        
+
         if "pt" in str(method):
-            res = PTControlledOperation(self,
-                                        num_ctrl_qubits=num_ctrl_qubits, 
-                                        ctrl_state=ctrl_state, 
-                                        method=method)
+            res = PTControlledOperation(
+                self,
+                num_ctrl_qubits=num_ctrl_qubits,
+                ctrl_state=ctrl_state,
+                method=method,
+            )
         else:
-            res = ControlledOperation(self,
-                                      num_ctrl_qubits=num_ctrl_qubits, 
-                                      ctrl_state=ctrl_state, 
-                                      method=method)
-        
+            res = ControlledOperation(
+                self,
+                num_ctrl_qubits=num_ctrl_qubits,
+                ctrl_state=ctrl_state,
+                method=method,
+            )
+
         res.definition = tmp.definition
-            
+
         return res
-    
+
     def inverse(self):
         res = GraySynthGate(self.target_phases, self.phase_tolerant)
         res.definition = res.definition.inverse()
         res.target_phases = [-x for x in self.target_phases]
         return res
-        
-        
+
+
 # Function apply gray synthesis to quantum variable qv
 
 
@@ -528,13 +544,13 @@ def gray_logic_synth_single_qb(input_var, output_var, qb_nr, tt, phase_tolerant=
     # get phase 0 and the states with a 1 in the input qubit get a phases of pi
     # if the truth table says 1 or a phase of 0 otherwise
     target_phases = np.array(tt.shape[0] * [0] + list(tt.n_rep[:, 0])) * np.pi
-    
+
     bit_amount = int(np.log2(len(target_phases)))
-    
+
     target_phases = np.array(target_phases)
-    target_phases = target_phases.reshape(bit_amount*[2])
-    for i in range(bit_amount//2):
-        target_phases = np.swapaxes(target_phases, i, bit_amount-i-1)
+    target_phases = target_phases.reshape(bit_amount * [2])
+    for i in range(bit_amount // 2):
+        target_phases = np.swapaxes(target_phases, i, bit_amount - i - 1)
     target_phases = target_phases.reshape(2**bit_amount)
 
     # Apply h gate to the output qubit in order to get logic states from phases
@@ -564,17 +580,14 @@ def gray_logic_synth(input_var, output_var, tt, phase_tolerant=False, lin_solve=
             "output variable does not contain enough qubits to encode truth table"
         )
 
-
     if len(output_var) == 1:
         gray_logic_synth_single_qb(
             input_var, output_var, 0, tt.sub_table(0), phase_tolerant=False
         )
         return
-        
-        
+
     input_var_dupl = input_var.duplicate()
     output_var_dupl = output_var.duplicate(qs=input_var_dupl.qs)
-
 
     residual_phases = np.zeros(tt.shape[0])
 
@@ -603,7 +616,6 @@ def gray_logic_synth(input_var, output_var, tt, phase_tolerant=False, lin_solve=
     qc.data.extend(input_var_dupl.qs.data)
 
     input_var.qs.append(qc.to_gate(), input_var.reg + output_var.reg)
-
 
 
 # This function uses it's single qubit version iteratively to synthesize

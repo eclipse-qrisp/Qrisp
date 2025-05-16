@@ -1,5 +1,5 @@
 """
-\********************************************************************************
+********************************************************************************
 * Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -13,7 +13,7 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 from jax.lax import fori_loop, while_loop, cond
@@ -21,17 +21,18 @@ import jax
 
 from qrisp.jasp.tracing_logic import TracingQuantumSession, check_for_tracing_mode
 from qrisp.jasp.primitives import AbstractQuantumCircuit
-    
+
+
 def q_while_loop(cond_fun, body_fun, init_val):
     """
-    Jasp compatible version of 
+    Jasp compatible version of
     `jax.lax.while_loop <https://jax.readthedocs.io/en/latest/_autosummary/jax.lax.while_loop.html#jax.lax.while_loop>`_
     The parameters and semantics are the same as for the Jax version.
-    
+
     In particular the following loop is performed
-    
+
     ::
-        
+
         def q_while_loop(cond_fun, body_fun, init_val):
             val = init_val
             while cond_fun(val):
@@ -41,7 +42,7 @@ def q_while_loop(cond_fun, body_fun, init_val):
     Parameters
     ----------
     cond_fun : callable
-        A function that evaluates the condition of the while loop. Must not 
+        A function that evaluates the condition of the while loop. Must not
         contain any quantum operations.
     body_fun : callable
         A function describing the body of the loop.
@@ -57,92 +58,99 @@ def q_while_loop(cond_fun, body_fun, init_val):
     -------
     val
         The result of ``body_fun`` after the last iteration.
-        
+
     Examples
     --------
-    
+
     We write a dynamic loop that collects measurement values of a quantum
     qubits into an accumulator. Note that the accumulator variable is a carry
     value implying the loop could not be implemented using :ref:`jrange`.
-    
-        
+
+
     ::
-        
+
         from qrisp import *
         from qrisp.jasp import *
-        
+
         @jaspify
         def main(k):
-            
+
             qf = QuantumFloat(6)
-            
+
             def body_fun(val):
                 i, acc, qf = val
                 x(qf[i])
                 acc += measure(qf[i])
                 i += 1
                 return i, acc, qf
-            
+
             def cond_fun(val):
                 return val[0] < 5
-            
+
             i, acc, qf = q_while_loop(cond_fun, body_fun, (0, 0, qf))
-            
+
             return acc, measure(qf)
-        
+
         print(main(6))
         # Yields
         # (Array(5, dtype=int64), Array(31., dtype=float64))
 
-    """    
-    
+    """
+
     if not check_for_tracing_mode():
         return while_loop(cond_fun, body_fun, init_val)
-        
-    
+
     def new_cond_fun(val):
         temp_qc = qs.abs_qc
         res = cond_fun(val[0])
         if not qs.abs_qc is temp_qc:
-            raise Exception("Tried to modify quantum state during while condition evaluation")
+            raise Exception(
+                "Tried to modify quantum state during while condition evaluation"
+            )
         return res
-    
+
     def new_body_fun(val):
         qs.start_tracing(val[1])
         res = body_fun(val[0])
         abs_qc = qs.conclude_tracing()
         return (res, abs_qc)
-    
+
     qs = TracingQuantumSession.get_instance()
     abs_qc = qs.abs_qc
-    
+
     new_init_val = (init_val, abs_qc)
     while_res = while_loop(new_cond_fun, new_body_fun, new_init_val)
-    
-    eqn = jax._src.core.thread_local_state.trace_state.trace_stack.dynamic.jaxpr_stack[0].eqns[-1]
+
+    eqn = jax._src.core.thread_local_state.trace_state.trace_stack.dynamic.jaxpr_stack[
+        0
+    ].eqns[-1]
     body_jaxpr = eqn.params["body_jaxpr"].jaxpr
-    
+
     if not isinstance(body_jaxpr.invars[-1].aval, AbstractQuantumCircuit):
-        raise Exception("Found implicit variable import in q_while. Please make sure all used variables are part of the body signature.")
-    
+        raise Exception(
+            "Found implicit variable import in q_while. Please make sure all used variables are part of the body signature."
+        )
+
     from qrisp import Jaspr
-    
-    eqn.params["body_jaxpr"] = jax.core.ClosedJaxpr(Jaspr.from_cache(body_jaxpr), eqn.params["body_jaxpr"].consts)
-    
+
+    eqn.params["body_jaxpr"] = jax.core.ClosedJaxpr(
+        Jaspr.from_cache(body_jaxpr), eqn.params["body_jaxpr"].consts
+    )
+
     qs.abs_qc = while_res[1]
     return while_res[0]
 
 
 def q_fori_loop(lower, upper, body_fun, init_val):
     """
-    Jasp compatible version of 
+    Jasp compatible version of
     `jax.lax.fori_loop <https://jax.readthedocs.io/en/latest/_autosummary/jax.lax.fori_loop.html#jax.lax.fori_loop>`_
     The parameters and semantics are the same as for the Jax version.
-    
+
     In particular the following loop is performed
-    
+
     ::
-        
+
         def q_fori_loop(lower, upper, body_fun, init_val):
             val = init_val
             for i in range(lower, upper):
@@ -167,25 +175,25 @@ def q_fori_loop(lower, upper, body_fun, init_val):
 
     Examples
     --------
-    
+
     We write a dynamic loop that collects measurement values of a quantum
     qubits into an accumulator:
-        
+
     ::
-        
+
         @jaspify
         def main(k):
-            
+
             qf = QuantumFloat(6)
-            
+
             def body_fun(i, val):
                 acc, qf = val
                 x(qf[i])
                 acc += measure(qf[i])
                 return acc, qf
-            
+
             acc, qf = q_fori_loop(0, k, body_fun, (0, qf))
-            
+
             return acc, measure(qf)
 
         print(main(k))
@@ -193,36 +201,36 @@ def q_fori_loop(lower, upper, body_fun, init_val):
         # (Array(5, dtype=int64), Array(31., dtype=float64))
 
     """
-    
+
     def new_body_fun(val):
         body_val = val[0]
         i = val[1]
         return (body_fun(i, body_val), i + 1, val[2])
-    
+
     def new_cond_fun(val):
         i = val[1]
         upper = val[2]
         return i < upper
-    
+
     return q_while_loop(new_cond_fun, new_body_fun, (init_val, lower, upper))[0]
 
 
 def q_cond(pred, true_fun, false_fun, *operands):
     r"""
-    Jasp compatible version of 
+    Jasp compatible version of
     `jax.lax.cond <https://jax.readthedocs.io/en/latest/_autosummary/jax.lax.cond.html#jax.lax.cond>`_
     The parameters and semantics are the same as for the Jax version.
-    
+
     Performs the following semantics:
-        
+
     ::
-        
+
         def q_cond(pred, true_fun, false_fun, *operands):
             if pred:
                 return true_fun(*operands)
             else:
                 return false_fun(*operands)
-    
+
 
     Parameters
     ----------
@@ -239,45 +247,45 @@ def q_cond(pred, true_fun, false_fun, *operands):
     -------
     object
         The return value of the respective function.
-        
+
     Examples
     --------
 
     We write a script that brings a :ref:`QuantumBool` into superpostion and
-    subsequently measures it. If the measurement result is ``False`` we flip 
+    subsequently measures it. If the measurement result is ``False`` we flip
     it such that in the end, the bool will always be in the $\ket{\text{True}}$
     state.
 
     ::
-    
+
         from qrisp import *
         from qrisp.jasp import *
-    
+
         @jaspify
         def main():
-            
+
             def false_fun(qbl):
                 qbl.flip()
                 return qbl
-            
+
             def true_fun(qbl):
                 return qbl
-            
+
             qbl = QuantumBool()
             h(qbl)
             pred = measure(qbl)
-            
-            qbl = q_cond(pred, 
-                         true_fun, 
-                         false_fun, 
+
+            qbl = q_cond(pred,
+                         true_fun,
+                         false_fun,
                          qbl)
-            
+
             return measure(qbl)
-    
+
         print(main())
         # Yields:
         # True
-    
+
     """
 
     def new_true_fun(*operands):
@@ -285,33 +293,43 @@ def q_cond(pred, true_fun, false_fun, *operands):
         res = true_fun(*operands[0])
         abs_qc = qs.conclude_tracing()
         return (res, abs_qc)
-    
+
     def new_false_fun(*operands):
         qs.start_tracing(operands[1])
         res = false_fun(*operands[0])
         abs_qc = qs.conclude_tracing()
         return (res, abs_qc)
-    
+
     qs = TracingQuantumSession.get_instance()
     abs_qc = qs.abs_qc
-    
+
     new_operands = (operands, abs_qc)
-    
+
     cond_res = cond(pred, new_true_fun, new_false_fun, *new_operands)
-    
-    eqn = jax._src.core.thread_local_state.trace_state.trace_stack.dynamic.jaxpr_stack[0].eqns[-1]
-    
+
+    eqn = jax._src.core.thread_local_state.trace_state.trace_stack.dynamic.jaxpr_stack[
+        0
+    ].eqns[-1]
+
     false_jaxpr = eqn.params["branches"][0].jaxpr
     true_jaxpr = eqn.params["branches"][1].jaxpr
-    
+
     if not isinstance(false_jaxpr.invars[-1].aval, AbstractQuantumCircuit):
-        raise Exception("Found implicit variable import in q_cond. Please make sure all used variables are part of the body signature.")
-    
+        raise Exception(
+            "Found implicit variable import in q_cond. Please make sure all used variables are part of the body signature."
+        )
+
     from qrisp.jasp import Jaspr
-    
-    eqn.params["branches"] = (jax.core.ClosedJaxpr(Jaspr.from_cache(false_jaxpr), eqn.params["branches"][0].consts),
-                              jax.core.ClosedJaxpr(Jaspr.from_cache(true_jaxpr), eqn.params["branches"][1].consts))
-    
+
+    eqn.params["branches"] = (
+        jax.core.ClosedJaxpr(
+            Jaspr.from_cache(false_jaxpr), eqn.params["branches"][0].consts
+        ),
+        jax.core.ClosedJaxpr(
+            Jaspr.from_cache(true_jaxpr), eqn.params["branches"][1].consts
+        ),
+    )
+
     qs.abs_qc = cond_res[-1]
-    
+
     return cond_res[0]

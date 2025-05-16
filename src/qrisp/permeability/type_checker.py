@@ -1,5 +1,5 @@
 """
-\********************************************************************************
+********************************************************************************
 * Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -13,7 +13,7 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 import numpy as np
@@ -84,7 +84,7 @@ def is_permeable(gate, qubit_indices):
     for par in gate.params:
         if isinstance(par, sp.Expr):
             return False
-    
+
     # Create qubit order
     qubit_order = []
     for i in range(gate.num_qubits):

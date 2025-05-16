@@ -1,5 +1,5 @@
 """
-\********************************************************************************
+********************************************************************************
 * Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -13,14 +13,20 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 import numpy as np
 
 from qrisp import QuantumSession, QuantumVariable, QuantumCircuit
 
-from qrisp.alg_primitives.mcx_algs.circuit_library import reduced_margolus_qc, margolus_qc, maslov_qc, reduced_maslov_qc
+from qrisp.alg_primitives.mcx_algs.circuit_library import (
+    reduced_margolus_qc,
+    margolus_qc,
+    maslov_qc,
+    reduced_maslov_qc,
+)
+
 
 # Function to synthesize a phase tolerant multi controlled X gate
 def pt_multi_cx(n, reduced=False):
@@ -47,6 +53,7 @@ def pt_multi_cx(n, reduced=False):
         output_qv = QuantumVariable(1, qs=input_qv.qs)
 
         from qrisp import TruthTable
+
         tt = TruthTable([(2 ** (n) - 1) * "0" + "1"])
 
         tt.q_synth(input_qv, output_qv, method="gray_pt")
@@ -55,13 +62,15 @@ def pt_multi_cx(n, reduced=False):
 
     return res.to_gate(f"pt{n}cx")
 
+
 def gray_pt_mcx(n, ctrl_state):
     input_qv = QuantumVariable(n)
     output_qv = QuantumVariable(1, qs=input_qv.qs)
 
-    tt_str = 2 ** n * ["0"]
+    tt_str = 2**n * ["0"]
     tt_str[int(ctrl_state[::-1], 2)] = "1"
     from qrisp import TruthTable
+
     tt = TruthTable([tt_str])
 
     tt.q_synth(input_qv, output_qv, method="gray_pt")

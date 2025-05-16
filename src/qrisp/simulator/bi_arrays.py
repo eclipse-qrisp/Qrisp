@@ -1,5 +1,5 @@
 """
-\********************************************************************************
+********************************************************************************
 * Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -13,7 +13,7 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 import threading
@@ -27,7 +27,11 @@ from scipy.sparse import (
 )
 
 import qrisp.simulator.bi_array_helper as hlp
-from qrisp.simulator.numerics_config import float_tresh, sparsification_rate, cutoff_ratio
+from qrisp.simulator.numerics_config import (
+    float_tresh,
+    sparsification_rate,
+    cutoff_ratio,
+)
 
 try:
     # sparse_dot_mkl seems to be only faster in situations, where the shape of the
@@ -49,6 +53,7 @@ except:
     # print("Failed to import mkl sparse matrix multiplication. Install:
     # with conda install -c conda-forge sparse_dot_mkl. Using scipy algorithm.")
     sparse_matrix_mult = lambda a, b: (a @ b).tocoo()
+
 
 def sparse_matrix_mult(a, b):
     return hlp.sparse_matrix_mult(a, b)
@@ -233,7 +238,7 @@ class SparseBiArray(BiArray):
         except:
             size = int(self.size)
             log_size = 0
-            while not size%2:
+            while not size % 2:
                 log_size += 1
                 size = size >> 1
         self.index_bit_permutation = list(range(log_size))
@@ -243,10 +248,10 @@ class SparseBiArray(BiArray):
         # If the contraction counter is above the threshold, we sum the duplicates and
         # eliminate the zeros.
         # if False:
-            # if contraction_counter > self.contraction_counter_threshold:
-            # self.sum_duplicates()
-            # self.eliminate_zeros()
-            # self.contraction_counter = 0
+        # if contraction_counter > self.contraction_counter_threshold:
+        # self.sum_duplicates()
+        # self.eliminate_zeros()
+        # self.contraction_counter = 0
 
     # Method for copying
     def copy(self):
@@ -382,7 +387,7 @@ class SparseBiArray(BiArray):
         except:
             size = int(self.size)
             log_size = 0
-            while not size%2:
+            while not size % 2:
                 log_size += 1
                 size = size >> 1
         if self.index_bit_permutation == list(range(log_size)):
@@ -420,7 +425,7 @@ class SparseBiArray(BiArray):
 
         # Retrieve coordinates
         row, col = hlp.get_coordinates(self.nz_indices, shape)
-        
+
         # Create sparse matrix
         if not transpose:
             res = coo_array((self.data, (row, col)), shape=shape)
@@ -635,75 +640,76 @@ class SparseBiArray(BiArray):
         # Return result
         return lower_half, upper_half
 
-    def multi_measure(self, indices, return_new_arrays = True):
-        
+    def multi_measure(self, indices, return_new_arrays=True):
+
         # print(np.log2(self.size))
         # sprs = self.build_sr_matrix(
         #     [2 ** (len(indices)), self.size // 2 ** len(indices)]
         # ).tocsr()
-        
-        sprs = self.build_sr_matrix([2 ** (len(indices)), self.size // 2 ** len(indices)])
-        
-        sprs.row, sprs.col, sprs.data = hlp.sort_indices_jitted(sprs.row, sprs.col, sprs.data, sprs.shape[1])
+
+        sprs = self.build_sr_matrix(
+            [2 ** (len(indices)), self.size // 2 ** len(indices)]
+        )
+
+        sprs.row, sprs.col, sprs.data = hlp.sort_indices_jitted(
+            sprs.row, sprs.col, sprs.data, sprs.shape[1]
+        )
         unique_markers = hlp.find_unique_markers(sprs.row)
-        
-        
+
         p_list = []
         outcome_index_list = []
         new_bi_arrays = []
-        
-        
-        
-        for i in range(len(unique_markers)-1):
-            temp_data = sprs.data[unique_markers[i]:unique_markers[i+1]]
-            
+
+        for i in range(len(unique_markers) - 1):
+            temp_data = sprs.data[unique_markers[i] : unique_markers[i + 1]]
+
             p = np.abs(np.vdot(temp_data, temp_data))
-            
+
             if p < float_tresh:
                 continue
-            
+
             p_list.append(p)
             outcome_index_list.append(sprs.row[unique_markers[i]])
-            
+
             if return_new_arrays:
-                
-                new_bi_array = SparseBiArray((sprs.col[unique_markers[i]:unique_markers[i+1]],temp_data),
-                                            shape = (self.size // 2 ** len(indices),))
-                
+
+                new_bi_array = SparseBiArray(
+                    (sprs.col[unique_markers[i] : unique_markers[i + 1]], temp_data),
+                    shape=(self.size // 2 ** len(indices),),
+                )
+
                 new_bi_arrays.append(new_bi_array)
-            
+
             else:
                 new_bi_arrays.append(None)
-                
-        
+
         return new_bi_arrays, p_list, outcome_index_list
-    
+
     # Should return a cheap guess whether two inputs are linearly independent
     def exclude_linear_indpendence(self, other):
-        
-        if not 0.5 < len(self.data)/len(other.data) < 2:
+
+        if not 0.5 < len(self.data) / len(other.data) < 2:
             return False
         return True
-        
-        
+
     # Calculate the squared norm, ie. the sesquilinear scalar product of self with
     # itself
     def squared_norm(self):
         return np.abs(np.vdot(self.data, self.data))
-    
+
     def vdot(self, other):
         self.apply_swaps()
         other.apply_swaps()
-        
-        sparse_array_self = self.build_sr_matrix(shape = (1, self.size))
-        sparse_array_other = other.build_sr_matrix(shape = (other.size, 1))
-        
+
+        sparse_array_self = self.build_sr_matrix(shape=(1, self.size))
+        sparse_array_other = other.build_sr_matrix(shape=(other.size, 1))
+
         sparse_array_self.data = np.conjugate(sparse_array_self.data)
-        
+
         return sparse_matrix_mult(sparse_array_self, sparse_array_other).todense()[0]
-        
+
         return sparse_array_self.conjugate().dot(sparse_array_other).todense()[0]
-        
+
         # return sparse_array_self.conjugate().dot(sparse_array_other).todense()[0]
 
     # Return self as a DenseBiArray
@@ -1020,7 +1026,7 @@ class DenseBiArray(BiArray):
 
         # Prepare "unfinished" result
         res = DenseBiArray(
-            np.array([self.data.ravel()[0] * other.data.ravel()[0]], dtype = dtype),
+            np.array([self.data.ravel()[0] * other.data.ravel()[0]], dtype=dtype),
             sparsity=res_sparsity,
             shape=res_shape,
         )
@@ -1044,15 +1050,14 @@ class DenseBiArray(BiArray):
             self.swapaxes(0, 1)
             self.reshape(original_shape_self)
             other.reshape(original_shape_other)
-            
+
             if np.random.random(1)[0] < sparsification_rate and res.size > 2**14:
                 temp = np.abs(res.data.ravel())
                 max_abs = np.max(temp)
-                filter_arr = temp > max_abs*cutoff_ratio
+                filter_arr = temp > max_abs * cutoff_ratio
                 res.data = res.data * filter_arr
                 res.data = res.data.reshape(res_shape)
-                res.sparsity = np.sum(filter_arr)/res.size
-            
+                res.sparsity = np.sum(filter_arr) / res.size
 
         if res.size > multithreading_threshold:
             # Start the wrapper
@@ -1073,7 +1078,7 @@ class DenseBiArray(BiArray):
             self.data[: self.size // 2].copy(), self.sparsity
         ), DenseBiArray(self.data[self.size // 2 :].copy(), sparsity=self.sparsity)
 
-    def multi_measure(self, indices, return_new_arrays = True):
+    def multi_measure(self, indices, return_new_arrays=True):
         original_shape = tuple(self.shape)
         # self.reshape([2 ** (len(indices)), self.size // 2 ** len(indices)])
         self.reshape(self.size)
@@ -1081,19 +1086,24 @@ class DenseBiArray(BiArray):
         np_array = self.to_array()
 
         if len(indices) > 10:
-            new_arrays, p_list, outcome_index_list = hlp.dense_measurement_brute(np_array, len(indices), 0)
+            new_arrays, p_list, outcome_index_list = hlp.dense_measurement_brute(
+                np_array, len(indices), 0
+            )
         else:
-            new_arrays, p_list, outcome_index_list = hlp.dense_measurement_smart(np_array, len(indices), 0)
-            
-            
+            new_arrays, p_list, outcome_index_list = hlp.dense_measurement_smart(
+                np_array, len(indices), 0
+            )
+
         new_bi_arrays = []
-        
+
         if return_new_arrays:
             for i in range(len(new_arrays)):
-                new_bi_arrays.append(DenseBiArray(new_arrays[i], sparsity = self.sparsity))
+                new_bi_arrays.append(
+                    DenseBiArray(new_arrays[i], sparsity=self.sparsity)
+                )
         else:
-            new_bi_arrays = len(p_list)*[None]
-            
+            new_bi_arrays = len(p_list) * [None]
+
         self.reshape(original_shape)
 
         return new_bi_arrays, p_list, outcome_index_list
@@ -1102,12 +1112,12 @@ class DenseBiArray(BiArray):
     def squared_norm(self):
         self.apply_swaps()
         return np.abs(np.vdot(self.data, self.data))
-    
+
     def vdot(self, other):
         self.apply_swaps()
         other.apply_swaps()
         return np.vdot(self.data, other.data)
-    
+
     # Should return a cheap guess whether two inputs are linearly independent
     def exclude_linear_indpendence(self, other):
         return True

@@ -1,5 +1,5 @@
 """
-\********************************************************************************
+********************************************************************************
 * Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -13,9 +13,8 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
-
 
 from qrisp import QuantumFloat, h, qRange
 import time
@@ -38,6 +37,6 @@ for i in qRange(n):
 start_time = time.time()
 print(qf)  # Yields {10.0: 0.5, 15.0: 0.5}
 
-print("Excpected outcomes:", [(n-1) * (n) / 2 for n in n_results.keys()])
+print("Excpected outcomes:", [(n - 1) * (n) / 2 for n in n_results.keys()])
 # Yields n*(n+1)/2 as expected
 print(start_time - time.time())
