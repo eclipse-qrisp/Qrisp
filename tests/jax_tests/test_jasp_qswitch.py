@@ -118,7 +118,110 @@ def test_jasp_qswitch_case_function():
     
     for i in [2,3,4,5]:
         assert np.round(meas_res[i],2) == 0.25
+
+
+def test_jasp_qswitch_case_list_cutoff():
+    from qrisp import QuantumFloat, h, qswitch, terminal_sampling
+    import numpy as np
     
+    # Some sample case functions
+    def f0(x): x += 1
+    def f1(x): x += 2
+    def f2(x): x += 3
+    case_function_list = [f0, f1, f2]
+    
+    @terminal_sampling
+    def main():
+        # Create operand and case variable
+        operand = QuantumFloat(4)
+        operand[:] = 1
+        case = QuantumFloat(2)
+        h(case)
+
+        # Execute switch_case function
+        qswitch(operand, case, case_function_list, "sequential")
+
+        return operand
+    
+    meas_res = main()
+    # {2.0: 0.25, 3.0: 0.25, 4.0: 0.25, 1.0: 0.25}
+    
+    for i in [2,3,4,1]:
+        assert np.round(meas_res[i],2) == 0.25
+
+    @terminal_sampling
+    def main():
+        # Create operand and case variable
+        operand = QuantumFloat(4)
+        operand[:] = 1
+        case = QuantumFloat(2)
+        h(case)
+
+        # Execute switch_case function
+        qswitch(operand, case, case_function_list, "tree")
+
+        return operand
+    
+    meas_res = main()
+    # {2.0: 0.25, 3.0: 0.25, 4.0: 0.25, 1.0: 0.25}
+    
+    for i in [2,3,4,1]:
+        assert np.round(meas_res[i],2) == 0.25
+    
+
+def test_jasp_qswitch_case_function_cutoff():
+    from qrisp import QuantumFloat, h, qswitch, terminal_sampling, control
+    import numpy as np
+    
+    # Some sample case function 
+    def case_function(i, x):
+        with control(i == 0):
+            x += 1
+        with control(i == 1):
+            x += 2
+        with control(i == 2):
+            x += 3
+        with control(i == 3):
+            x += 4
+    
+    @terminal_sampling
+    def main():
+        # Create operand and case variable
+        operand = QuantumFloat(4)
+        operand[:] = 1
+        case = QuantumFloat(2)
+        h(case)
+
+        # Execute switch_case function
+        qswitch(operand, case, case_function, "sequential", number=3)
+
+        return operand
+    
+    meas_res = main()
+    # {2.0: 0.25, 3.0: 0.25, 4.0: 0.25, 1.0: 0.25}
+    
+    for i in [2,3,4,1]:
+        assert np.round(meas_res[i],2) == 0.25
+
+    @terminal_sampling
+    def main():
+        # Create operand and case variable
+        operand = QuantumFloat(4)
+        operand[:] = 1
+        case = QuantumFloat(2)
+        h(case)
+
+        # Execute switch_case function
+        qswitch(operand, case, case_function, "tree", number=3)
+
+        return operand
+    
+    meas_res = main()
+    # {2.0: 0.25, 3.0: 0.25, 4.0: 0.25, 1.0: 0.25}
+    
+    for i in [2,3,4,1]:
+        assert np.round(meas_res[i],2) == 0.25
+
 
 def test_jasp_qswitch_case_hamiltonian_simulation():
     from qrisp import QuantumFloat, h, qswitch, terminal_sampling
