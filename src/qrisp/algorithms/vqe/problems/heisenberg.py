@@ -31,7 +31,7 @@ def greedy_edge_coloring(G, E=None):
     G : nx.Graph
         The graph defining the lattice.
     E : list, optional
-        A list of edges not to be considered for the first color.
+        A list of edges not to be considered.
     
     Returns
     -------
@@ -49,7 +49,7 @@ def greedy_edge_coloring(G, E=None):
         M = nx.maximal_matching(G)
         edge_coloring.append(M)
         G.remove_edges_from(M)
-        G.add_edges_from(E)
+        #G.add_edges_from(E)
 
     while G.number_of_edges()>0:
         M = nx.maximal_matching(G)
