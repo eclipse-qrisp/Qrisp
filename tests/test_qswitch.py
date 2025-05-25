@@ -137,11 +137,11 @@ def test_qswitch_case_list_cutoff():
          lambda arg: case_function_list(4,arg)]
 
     # Execute switch_case function
-    for mode, r in zip([1,4, "auto"], [1,4,5]):
+    for mode, r in zip([1,4, None], [1,4,5]):
         operand = QuantumFloat(4)
         case = QuantumFloat(4)
         h(case)
-        qswitch(operand, case, l, method = "tree", number=mode)
+        qswitch(operand, case, l, method = "tree", case_amount=mode)
         res = multi_measurement([case, operand])
 
         for i in range(16):
@@ -162,7 +162,7 @@ def test_qswitch_case_function_cutoff():
         operand = QuantumFloat(4)
         case = QuantumFloat(4)
         h(case)
-        qswitch(operand, case, case_function_list, method = "tree", number=r)
+        qswitch(operand, case, case_function_list, method = "tree", case_amount=r)
         res = multi_measurement([case, operand])
 
         for i in range(16):

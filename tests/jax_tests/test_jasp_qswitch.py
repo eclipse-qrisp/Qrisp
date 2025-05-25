@@ -193,7 +193,7 @@ def test_jasp_qswitch_case_function_cutoff():
         h(case)
 
         # Execute switch_case function
-        qswitch(operand, case, case_function, "sequential", number=3)
+        qswitch(operand, case, case_function, "sequential", case_amount=3)
 
         return operand
     
@@ -212,7 +212,7 @@ def test_jasp_qswitch_case_function_cutoff():
         h(case)
 
         # Execute switch_case function
-        qswitch(operand, case, case_function, "tree", number=3)
+        qswitch(operand, case, case_function, "tree", case_amount=3)
 
         return operand
     
