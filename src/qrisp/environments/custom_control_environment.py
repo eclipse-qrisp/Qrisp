@@ -151,7 +151,13 @@ def custom_control(*func, **cusc_kwargs):
     # The controlled version is then stored in the params attribute
 
     # Qache the function (in non-traced mode, this has no effect)
-    func = qache(func, **cusc_kwargs)
+    new_static_argnames = list(cusc_kwargs.get("static_argnames", []))
+    new_static_argnames.append("inv")
+    
+    qache_kwargs = dict(cusc_kwargs)
+    qache_kwargs["static_argnames"] = new_static_argnames
+    
+    func = qache(func, **qache_kwargs)
 
     def adaptive_control_function(*args, **kwargs):
 
@@ -249,19 +255,29 @@ def custom_control(*func, **cusc_kwargs):
             if not jit_eqn.params["jaxpr"].jaxpr.ctrl_jaspr:
                 # Trace the controlled version
 
+                if "inv" in kwargs:
+                    custom_inversion = True
+                    custom_inv_value = kwargs["inv"]
+                    del kwargs["inv"]
+                else:
+                    custom_inversion = False
+
                 def ammended_func(*ammended_args, **kwargs):
                     new_kwargs = dict(kwargs)
                     new_kwargs["ctrl"] = ammended_args[0]
                     args = ammended_args[1:]
-                    return func(*args, **new_kwargs)
+                    if custom_inversion:
+                        return func(*args, inv = custom_inv_value, **new_kwargs)
+                    else:
+                        return func(*args, **new_kwargs)
 
                 ctrl_aval = AbstractQubit()
                 ammended_args = [ctrl_aval] + list(args)
-
+                
                 controlled_jaspr = make_jaspr(ammended_func, **cusc_kwargs)(
                     *ammended_args, **kwargs
                 )
-
+                
                 # Store controlled version
                 jit_eqn.params["jaxpr"].jaxpr.ctrl_jaspr = controlled_jaspr
 

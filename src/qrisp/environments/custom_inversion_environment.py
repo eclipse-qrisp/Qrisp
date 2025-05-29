@@ -152,7 +152,6 @@ def custom_inversion(*func, **cusi_kwargs):
 
     # Qache the function (in non-traced mode, this has no effect)
     new_static_argnames = list(cusi_kwargs.get("static_argnames", []))
-    
     new_static_argnames.append("inv")
     cusi_kwargs["static_argnames"] = new_static_argnames
     
@@ -177,7 +176,7 @@ def custom_inversion(*func, **cusi_kwargs):
                     args[i] = jnp.array(args[i], dtype=jnp.complex64)
 
             # Call the (qached) function
-            res = qached_func(*args, **kwargs)
+            res = qached_func(*args, inv = False, **kwargs)
 
             # Retrieve the pjit equation
             jit_eqn = jax._src.core.thread_local_state.trace_state.trace_stack.dynamic.jaxpr_stack[
@@ -191,13 +190,12 @@ def custom_inversion(*func, **cusi_kwargs):
 
                 def ammended_func(*args, **kwargs):
                     new_kwargs = dict(kwargs)
-                    new_kwargs["inv"] = True
-                    return func(*args, **new_kwargs)
+                    return func(*args, inv = True, **new_kwargs)
 
                 inverted_jaspr = make_jaspr(ammended_func)(
                     *args, **kwargs
                 )
-
+                
                 # Store controlled version
                 jit_eqn.params["jaxpr"].jaxpr.inv_jaspr = inverted_jaspr
                 inverted_jaspr.inv_jaspr = jit_eqn.params["jaxpr"].jaxpr

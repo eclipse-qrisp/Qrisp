@@ -19,7 +19,7 @@
 from qrisp import *
 from qrisp.jasp import *
 
-def test_custom_control():
+def test_custom_inverse():
     
     @custom_inversion
     def c_inv_function(qbl, inv = False):
@@ -53,6 +53,93 @@ def test_custom_control():
 
     assert main() == False
     
+    @custom_control
+    @custom_inversion
+    def c_inv_control_function(qf, inv = False, ctrl = None):
+        
+        if inv and ctrl is None:
+            qf[:] = 1
+        if not inv and ctrl is not None:
+            qf[:] = 2
+        if inv and ctrl is not None:
+            qf[:] = 3
+        if not inv and ctrl is None:
+            qf[:] = 4
+
+    @jaspify
+    def main(j):
+        
+        qbl = QuantumBool()
+        qf = QuantumFloat(4)
+        
+        for i in range(8):
+            
+            if i&1:
+                env_0 = invert()
+            else:
+                env_0 = QuantumEnvironment()
+                
+            if i&2:
+                env_1 = control(qbl)
+            else:
+                env_1 = QuantumEnvironment()
+                
+            if i&4:
+                env_0, env_1 = env_1, env_0
+            
+            with control(j == i):
+                with env_0:
+                    with env_1:
+                        c_inv_control_function(qf)
+        
+        return measure(qf)
+
+    for i in range(8):
+        assert main(i)%4 == i%4
+        
+    @custom_inversion
+    @custom_control
+    def c_inv_control_function(qf, inv = False, ctrl = None):
+        
+        if inv and ctrl is None:
+            qf[:] = 1
+        if not inv and ctrl is not None:
+            qf[:] = 2
+        if inv and ctrl is not None:
+            qf[:] = 3
+        if not inv and ctrl is None:
+            qf[:] = 4
+
+    @jaspify
+    def main(j):
+        
+        qbl = QuantumBool()
+        qf = QuantumFloat(4)
+        
+        for i in range(8):
+            
+            if i&1:
+                env_0 = invert()
+            else:
+                env_0 = QuantumEnvironment()
+                
+            if i&2:
+                env_1 = control(qbl)
+            else:
+                env_1 = QuantumEnvironment()
+                
+            if i&4:
+                env_0, env_1 = env_1, env_0
+            
+            with control(j == i):
+                with env_0:
+                    with env_1:
+                        c_inv_control_function(qf)
+        
+        return measure(qf)
+
+    for i in range(8):
+        assert main(i)%4 == i%4
     
     
 

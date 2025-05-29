@@ -473,6 +473,7 @@ class Jaspr(Jaxpr):
                 res.inv_jaspr = self.inv_jaspr.flatten_environments()
             else:
                 res.inv_jaspr = self.inv_jaspr
+            res.inv_jaspr.inv_jaspr = res
         return res
 
     def __call__(self, *args):
@@ -1212,8 +1213,8 @@ def make_jaspr(fun, garbage_collection="auto", flatten_envs=True, **jax_kwargs):
         # Note that we add the abs_qc keyword as the tracing quantum circuit
         def ammended_function(*args, **kwargs):
 
-            abs_qc = args[-1]
-            args = args[:-1]
+            abs_qc = kwargs[10*"~"]
+            del kwargs[10*"~"]
 
             qs.start_tracing(abs_qc, garbage_collection)
 
@@ -1240,8 +1241,10 @@ def make_jaspr(fun, garbage_collection="auto", flatten_envs=True, **jax_kwargs):
             return res, res_qc
 
         try:
+            ammended_kwargs = dict(kwargs)
+            ammended_kwargs[10*"~"] = AbstractQuantumCircuit()
             closed_jaxpr = make_jaxpr(ammended_function, **jax_kwargs)(
-                *(list(args) + [AbstractQuantumCircuit()]), **kwargs
+                *args, **ammended_kwargs
             )
         except UnexpectedTracerError as e:
             if "intermediate value with type QuantumCircuit" in str(e):
@@ -1249,7 +1252,7 @@ def make_jaspr(fun, garbage_collection="auto", flatten_envs=True, **jax_kwargs):
                     """Lost track of QuantumCircuit during tracing. This might have been caused by a missing quantum_kernel decorator. Please visit https://www.qrisp.eu/reference/Jasp/Quantum%20Kernel.html for more details"""
                 )
             raise e
-
+            
         jaxpr = closed_jaxpr.jaxpr
 
         # Collect the environments
