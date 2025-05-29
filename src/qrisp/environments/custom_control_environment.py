@@ -151,6 +151,8 @@ def custom_control(*func, **cusc_kwargs):
     # The controlled version is then stored in the params attribute
 
     # Qache the function (in non-traced mode, this has no effect)
+    
+    # Make sure the inv keyword argument is treated as a static argument
     new_static_argnames = list(cusc_kwargs.get("static_argnames", []))
     new_static_argnames.append("inv")
     
@@ -255,6 +257,8 @@ def custom_control(*func, **cusc_kwargs):
             if not jit_eqn.params["jaxpr"].jaxpr.ctrl_jaspr:
                 # Trace the controlled version
 
+                # Make sure the inv keyword argument is treated as a static argument
+                # (this is important for the interaction with custom_inverse)
                 if "inv" in kwargs:
                     custom_inversion = True
                     custom_inv_value = kwargs["inv"]

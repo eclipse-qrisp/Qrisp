@@ -151,6 +151,8 @@ def custom_inversion(*func, **cusi_kwargs):
     # The controlled version is then stored in the params attribute
 
     # Qache the function (in non-traced mode, this has no effect)
+    
+    # Make sure the inv keyword argument is treated as a static argument
     new_static_argnames = list(cusi_kwargs.get("static_argnames", []))
     new_static_argnames.append("inv")
     cusi_kwargs["static_argnames"] = new_static_argnames
