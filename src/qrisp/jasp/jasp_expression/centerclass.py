@@ -122,12 +122,13 @@ class Jaspr(Jaxpr):
         "isqfree",
         "hashvalue",
         "ctrl_jaspr",
+        "inv_jaspr",
         "envs_flattened",
         "consts",
     )
 
     def __init__(
-        self, *args, permeability=None, isqfree=None, ctrl_jaspr=None, **kwargs
+        self, *args, permeability=None, isqfree=None, ctrl_jaspr=None, inv_jaspr=None, **kwargs
     ):
 
         if len(args) == 1:
@@ -162,6 +163,7 @@ class Jaspr(Jaxpr):
 
         self.isqfree = isqfree
         self.ctrl_jaspr = ctrl_jaspr
+        self.inv_jaspr = inv_jaspr
         self.envs_flattened = False
         self.consts = []
 
@@ -466,6 +468,11 @@ class Jaspr(Jaxpr):
         res = flatten_environments(self)
         if self.ctrl_jaspr is not None:
             res.ctrl_jaspr = self.ctrl_jaspr.flatten_environments()
+        if self.inv_jaspr is not None:
+            if not self.inv_jaspr.envs_flattened:
+                res.inv_jaspr = self.inv_jaspr.flatten_environments()
+            else:
+                res.inv_jaspr = self.inv_jaspr
         return res
 
     def __call__(self, *args):
