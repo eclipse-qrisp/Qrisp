@@ -1,5 +1,5 @@
 """
-\********************************************************************************
+********************************************************************************
 * Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -13,9 +13,8 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
-
 
 import copy
 
@@ -96,7 +95,9 @@ class Operation:
             definition = init_op.definition
 
         elif not isinstance(name, str):
-            raise Exception("Tried to create a Operation with name of type({type(name)} (required is str)")
+            raise Exception(
+                "Tried to create a Operation with name of type({type(name)} (required is str)"
+            )
 
         # Name of the operation - this is how the backend behind the interface will
         # identify the operation
@@ -122,7 +123,6 @@ class Operation:
         else:
             self.definition = None
             self.abstract_params = set()
-
 
         # Find abstract parameters (ie. sympy expressions and log them)
         for par in params:
@@ -207,7 +207,8 @@ class Operation:
 
         if self.name == "barrier":
             from qrisp.simulator.unitary_management import np_dtype
-            return np.eye(2**self.num_qubits, dtype = np_dtype)
+
+            return np.eye(2**self.num_qubits, dtype=np_dtype)
 
         # Check if the unitary is already available
         if hasattr(self, "unitary"):
@@ -265,12 +266,11 @@ class Operation:
         # Check if a definition is available and invert it, if so
         if self.definition is not None:
             inverse_circ = self.definition.inverse()
-            
+
             if self.name[-3:] == "_dg":
                 res = inverse_circ.to_op(name=self.name[:-3])
             else:
                 res = inverse_circ.to_op(name=self.name + "_dg")
-                
 
         elif self.name == "qb_alloc":
             from qrisp.circuit import QubitDealloc
@@ -331,9 +331,9 @@ class Operation:
         >>> qc = QuantumCircuit(4)
         >>> qc.append(mcrx_gate, qc.qubits)
         >>> print(qc)
-        
+
         ::
-        
+
             qb_4: ─────■─────
                        │
             qb_5: ─────■─────
@@ -351,15 +351,17 @@ class Operation:
 
         if self.num_clbits != 0:
             raise AttributeError("Tried to control non-unitary operation")
-            
+
         res_num_ctrl_qubits = num_ctrl_qubits
-        
+
         if isinstance(self, PTControlledOperation):
             res_num_ctrl_qubits += len(self.controls)
-        
+
         # Check if the method is phase tolerant
-        if (method.find("pt") != -1 or method.find("gidney") != -1) and res_num_ctrl_qubits != 1:
-            
+        if (
+            method.find("pt") != -1 or method.find("gidney") != -1
+        ) and res_num_ctrl_qubits != 1:
+
             return PTControlledOperation(
                 self, num_ctrl_qubits, ctrl_state=ctrl_state, method=method
             )
@@ -407,22 +409,20 @@ class Operation:
         >>> bound_p_gate.params
         [1.5]
         """
-        
-        
+
         new_params = []
         repl_args = [subs_dic[symb] for symb in self.abstract_params]
-        
+
         if not hasattr(self, "lambdified_params"):
             self.lambdified_params = []
             args = list(self.abstract_params)
             for par in self.params:
-                self.lambdified_params.append(lambdify(args, par, modules = "numpy"))
-                
-            
+                self.lambdified_params.append(lambdify(args, par, modules="numpy"))
+
         for l_par in self.lambdified_params:
-            
+
             new_params.append(l_par(*repl_args))
-        
+
         res = self.copy()
         res.params = new_params
 
@@ -430,12 +430,13 @@ class Operation:
             res.definition = res.definition.bind_parameters(subs_dic)
 
         return res
-    
+
     def c_if(self, num_control=1, ctrl_state=-1):
         if ctrl_state == -1:
             ctrl_state = 2**num_control - 1
 
         return ClControlledOperation(self, num_control, ctrl_state)
+
 
 # Class to describe 1-Qubit gates as unitaries of the form U(theta, phi, lam) =
 # = exp(-1j*phi/2*sigma_z) exp(-1j*theta/2*sigma_y) exp(-1j*lam/2*sigma_z)
@@ -443,7 +444,7 @@ class Operation:
 # for more information
 class U3Gate(Operation):
     def __init__(self, theta, phi, lam, name="u3", global_phase=0):
-        
+
         # Initialize Operation instance
         super().__init__(
             name=name,
@@ -452,10 +453,12 @@ class U3Gate(Operation):
             definition=None,
             params=[theta, phi, lam],
         )
-        
+
         if isinstance(global_phase, Expr):
             if len(global_phase.free_symbols):
-                self.abstract_params = self.abstract_params.union(global_phase.free_symbols)
+                self.abstract_params = self.abstract_params.union(
+                    global_phase.free_symbols
+                )
             else:
                 global_phase = float(global_phase)
         self.global_phase = global_phase
@@ -538,28 +541,35 @@ class U3Gate(Operation):
 
             # Generate unitary
 
-            self.unitary = u3matrix(self.theta, self.phi, self.lam, self.global_phase, use_sympy = bool(len(self.abstract_params)))
+            self.unitary = u3matrix(
+                self.theta,
+                self.phi,
+                self.lam,
+                self.global_phase,
+                use_sympy=bool(len(self.abstract_params)),
+            )
 
             return self.get_unitary(decimals)
 
     def bind_parameters(self, subs_dic):
-        
+
         new_params = []
         repl_args = [subs_dic[symb] for symb in self.abstract_params]
-        
+
         if not hasattr(self, "lambdified_params"):
             self.lambdified_params = []
             args = list(self.abstract_params)
             for par in [self.theta, self.phi, self.lam, self.global_phase]:
-                self.lambdified_params.append(lambdify(args, par, modules = "numpy"))
-                
-            
+                self.lambdified_params.append(lambdify(args, par, modules="numpy"))
+
         for l_par in self.lambdified_params:
-            
+
             new_params.append(l_par(*repl_args))
-        
-        return U3Gate(new_params[0], new_params[1], new_params[2], self.name, new_params[3])
-        
+
+        return U3Gate(
+            new_params[0], new_params[1], new_params[2], self.name, new_params[3]
+        )
+
         # return U3Gate(
         #     adaptive_substitution(self.theta, subs_dic),
         #     adaptive_substitution(self.phi, subs_dic),
@@ -569,16 +579,15 @@ class U3Gate(Operation):
         # )
 
 
-
-
 pi = float(np.pi)
+
 
 # This class is special for pauli gates. In principle, we could also use the U3Gate
 # class, but this could lead to unneccessary floating point errors
 class PauliGate(U3Gate):
     def __init__(self, name):
         from qrisp.simulator.unitary_management import pauli_x, pauli_y, pauli_z
-        
+
         if name == "x":
             super().__init__(pi, 0, pi)
             self.unitary = pauli_x
@@ -619,14 +628,15 @@ class PauliGate(U3Gate):
 # [0, D_1,0, 0]
 # [0, 0, D_2, 0]
 # [0, 0, 0, U]
-#Where U is the operation to be controlled and D_i are diagonal operators
+# Where U is the operation to be controlled and D_i are diagonal operators
 
-#For a regular controlled gate, all D_i have to be identity matrices.
+# For a regular controlled gate, all D_i have to be identity matrices.
 
-#Phase tolerant controlled operations are usally more efficient than their controlled equivalent.
+# Phase tolerant controlled operations are usally more efficient than their controlled equivalent.
 
-#In many cases, they can replace the controlled version without changing the semantics,
-#because the phases introduced by the D_i are uncomputed at some later point.
+
+# In many cases, they can replace the controlled version without changing the semantics,
+# because the phases introduced by the D_i are uncomputed at some later point.
 class PTControlledOperation(Operation):
     def __init__(self, base_operation, num_ctrl_qubits=1, ctrl_state=-1, method="auto"):
         # Object which describes the method. Can be a string lr a callable function
@@ -718,19 +728,13 @@ class PTControlledOperation(Operation):
             and self.ctrl_state == "1"
         ):
             if base_operation.name == "x":
-                super().__init__(
-                    name="cx", num_qubits=2, num_clbits=0, params=[]
-                )
+                super().__init__(name="cx", num_qubits=2, num_clbits=0, params=[])
                 self.permeability = {0: True, 1: False}
             elif base_operation.name == "y":
-                super().__init__(
-                    name="cy", num_qubits=2, num_clbits=0, params=[]
-                )
+                super().__init__(name="cy", num_qubits=2, num_clbits=0, params=[])
                 self.permeability = {0: True, 1: False}
             elif base_operation.name == "z":
-                super().__init__(
-                    name="cz", num_qubits=2, num_clbits=0, params=[]
-                )
+                super().__init__(name="cz", num_qubits=2, num_clbits=0, params=[])
                 self.permeability = {0: True, 1: True}
 
             self.is_qfree = True
@@ -823,6 +827,7 @@ class PTControlledOperation(Operation):
 
     def bind_parameters(self, subs_dic):
         from copy import copy
+
         res = copy(self)
         if not isinstance(self.definition, type(None)):
             res.definition = self.definition.bind_parameters(subs_dic)
@@ -878,48 +883,52 @@ class ControlledOperation(PTControlledOperation):
             self.unitary = controlled_unitary(self)
             return self.get_unitary(decimals)
 
+
 class ClControlledOperation(Operation):
-    
-    def __init__(self, base_op, num_control = 1, ctrl_state = -1):
-        
+
+    def __init__(self, base_op, num_control=1, ctrl_state=-1):
+
         if ctrl_state == -1:
-            ctrl_state = num_control*"1"
-        
+            ctrl_state = num_control * "1"
+
         if isinstance(ctrl_state, int):
             from qrisp.misc import bin_rep
+
             ctrl_state = bin_rep(ctrl_state, num_control)[::-1]
-        
-        
+
         self.base_op = base_op
         self.num_control = num_control
         self.ctrl_state = ctrl_state
-        
+
         if base_op.definition:
-            
+
             from qrisp import QuantumCircuit, Clbit
+
             definition = QuantumCircuit()
             definition.qubits = list(base_op.definition.qubits)
             for _ in range(num_control):
                 definition.add_clbit()
-            
+
             cl_control_bits = list(definition.clbits)
             definition.clbits = cl_control_bits + list(base_op.definition.clbits)
-            
+
             for instr in base_op.definition.data:
-                definition.append(instr.op.c_if(num_control, ctrl_state), instr.qubits, cl_control_bits + instr.clbits)
-                
+                definition.append(
+                    instr.op.c_if(num_control, ctrl_state),
+                    instr.qubits,
+                    cl_control_bits + instr.clbits,
+                )
+
         else:
             definition = None
-            
-        
-        Operation.__init__(self, 
-                           name = "c_if_" + base_op.name, 
-                           num_qubits = base_op.num_qubits,
-                           num_clbits = base_op.num_clbits + num_control,
-                           params = list(base_op.params),
-                           definition = definition)
-        
+
+        Operation.__init__(
+            self,
+            name="c_if_" + base_op.name,
+            num_qubits=base_op.num_qubits,
+            num_clbits=base_op.num_clbits + num_control,
+            params=list(base_op.params),
+            definition=definition,
+        )
+
         self.permeability = dict(base_op.permeability)
-        
-        
-        

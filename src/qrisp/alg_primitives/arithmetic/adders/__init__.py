@@ -1,5 +1,5 @@
 """
-\********************************************************************************
+********************************************************************************
 * Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -13,7 +13,7 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 from qrisp.alg_primitives.arithmetic.adders.adder_tools import *
@@ -23,4 +23,3 @@ from qrisp.alg_primitives.arithmetic.adders.fourier_adder import *
 from qrisp.alg_primitives.arithmetic.adders.cuccaro import *
 from qrisp.alg_primitives.arithmetic.adders.ripple_carry_adder import *
 from qrisp.alg_primitives.arithmetic.adders.incrementation import *
-from qrisp.alg_primitives.arithmetic.adders.remaud import *

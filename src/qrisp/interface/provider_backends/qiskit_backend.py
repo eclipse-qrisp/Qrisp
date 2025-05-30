@@ -1,5 +1,5 @@
 """
-\********************************************************************************
+********************************************************************************
 * Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -13,10 +13,11 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 from qrisp.interface.virtual_backend import VirtualBackend
+
 
 class QiskitBackend(VirtualBackend):
     """
@@ -59,6 +60,7 @@ class QiskitBackend(VirtualBackend):
                 backend = AerSimulator()
             except ImportError:
                 import qiskit_aer as Aer
+
                 backend = Aer.AerSimulator()
 
         # Create the run method
@@ -102,10 +104,15 @@ class QiskitBackend(VirtualBackend):
 
         super().__init__(run, port=port)
 
+
 def VirtualQiskitBackend(*args, **kwargs):
     import warnings
-    warnings.warn("VirtualQiskitBackend will be deprecated in a future release of Qrisp. Use QiskitBackend instead.")
+
+    warnings.warn(
+        "VirtualQiskitBackend will be deprecated in a future release of Qrisp. Use QiskitBackend instead."
+    )
     return QiskitBackend(*args, **kwargs)
+
 
 class QiskitRuntimeBackend(VirtualBackend):
     """

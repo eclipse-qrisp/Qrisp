@@ -1,5 +1,5 @@
 """
-\********************************************************************************
+********************************************************************************
 * Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -13,23 +13,24 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
-
 
 from qrisp import *
 
-@auto_uncompute    
+
+@auto_uncompute
 def reject(tree):
-    exclude_init = (tree.h < tree.max_depth -1 )
-    alternation_condition = (tree.branch_qa[0] == tree.branch_qa[1])
+    exclude_init = tree.h < tree.max_depth - 1
+    alternation_condition = tree.branch_qa[0] == tree.branch_qa[1]
 
     return exclude_init & alternation_condition
 
-@auto_uncompute    
+
+@auto_uncompute
 def accept(tree):
-    height_condition = (tree.h == tree.max_depth - 3)
-    path_condition = (tree.branch_qa[0] == 0)
+    height_condition = tree.h == tree.max_depth - 3
+    path_condition = tree.branch_qa[0] == 0
     path_condition = path_condition & (tree.branch_qa[1] == 0)
     path_condition = path_condition & (tree.branch_qa[2] == 1)
 
@@ -38,57 +39,59 @@ def accept(tree):
 
 from qrisp.quantum_backtracking import QuantumBacktrackingTree
 
-tree = QuantumBacktrackingTree(max_depth = 3,
-                               branch_qv = QuantumFloat(1),
-                               accept = accept,
-                               reject = reject)
+tree = QuantumBacktrackingTree(
+    max_depth=3, branch_qv=QuantumFloat(1), accept=accept, reject=reject
+)
 
 tree.init_node([])
 
 
 print(tree.statevector())
 import matplotlib.pyplot as plt
+
 tree.visualize_statevector()
 plt.show()
 
 
-qpe_res = tree.estimate_phase(precision = 4)
+qpe_res = tree.estimate_phase(precision=4)
 
 
 mes_res = qpe_res.get_measurement()
 print(mes_res[0])
 
+
 def reject(tree):
     return QuantumBool()
 
-tree = QuantumBacktrackingTree(max_depth = 3,
-                               branch_qv = QuantumFloat(1),
-                               accept = accept,
-                               reject = reject)
+
+tree = QuantumBacktrackingTree(
+    max_depth=3, branch_qv=QuantumFloat(1), accept=accept, reject=reject
+)
 
 tree.init_node([])
 
-qpe_res = tree.estimate_phase(precision = 4)
+qpe_res = tree.estimate_phase(precision=4)
 
 
-#%%
+# %%
 
 
-@auto_uncompute    
+@auto_uncompute
 def accept(tree):
-    height_condition = (tree.h == tree.max_depth - 3)
+    height_condition = tree.h == tree.max_depth - 3
     path_condition = QuantumBool()
     mcx(tree.branch_qa[:3], path_condition)
 
     return height_condition & path_condition
 
+
 def reject(tree):
     return QuantumBool()
 
-max_depth = 4
-tree = QuantumBacktrackingTree(max_depth,
-                                   branch_qv = QuantumFloat(1),
-                                   accept = accept,
-                                   reject = reject)
 
-tree.find_solution(precision = 5)
+max_depth = 4
+tree = QuantumBacktrackingTree(
+    max_depth, branch_qv=QuantumFloat(1), accept=accept, reject=reject
+)
+
+tree.find_solution(precision=5)

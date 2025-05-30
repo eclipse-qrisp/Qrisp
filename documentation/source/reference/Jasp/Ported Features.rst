@@ -47,15 +47,15 @@ Since Jasp is a fundamentally different compilation architecture, not all Qrisp 
    * - :ref:`Automatic Uncomputation <uncomputation>`
      -   	❌ 
    * - :ref:`QuantumArrays <QuantumArray>`
-     -   	❌ 
+     -   	✅ 
    * - :ref:`QAOA <QAOA>`
-     -   	❌ 
+     -   	✅ 
    * - :ref:`QIRO <QIRO>`
      -   	❌ 
    * - :ref:`VQE <VQE>`
      -    ✅
    * - :ref:`QITE <QITE>`
-     -    ❌
+     -    ✅
    * - :ref:`Quantum Backtracking <QuantumBacktrackingTree>`
      -    ❌
    * - :ref:`Operator measurement (Operators module) <Operators>`

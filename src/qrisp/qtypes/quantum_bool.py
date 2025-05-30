@@ -1,5 +1,5 @@
 """
-\********************************************************************************
+********************************************************************************
 * Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -13,7 +13,7 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 import sys
@@ -22,6 +22,7 @@ import jax.numpy as jnp
 from jax.core import Tracer
 
 from qrisp.core.quantum_variable import QuantumVariable
+
 
 class QuantumBool(QuantumVariable):
     """
@@ -94,9 +95,9 @@ class QuantumBool(QuantumVariable):
             q_bool_3.flip()
 
     >>> print(qf.qs)
-    
+
     ::
-    
+
         QuantumCircuit:
         --------------
                            ┌────────────┐     ┌───────────┐
@@ -132,7 +133,7 @@ class QuantumBool(QuantumVariable):
 
     def decoder(self, integer):
         if isinstance(integer, Tracer):
-            return jnp.array(integer, dtype = jnp.bool)
+            return jnp.array(integer, dtype=jnp.bool)
         else:
             return bool(integer)
 
@@ -182,17 +183,18 @@ class QuantumBool(QuantumVariable):
 
         x(self[0])
         return self
-    
+
     def __invert__(self):
         inverted_qbl = QuantumBool()
         from qrisp import cx
+
         cx(self, inverted_qbl)
         inverted_qbl.flip()
         return inverted_qbl
-        
 
     def __enter__(self):
         from qrisp.environments import control
+
         self.env = control(self[0])
         self.env.__enter__()
 
@@ -206,17 +208,18 @@ class QuantumBool(QuantumVariable):
         self.env.__exit__(a, b, c)
         if ref_count == 4:
             self.uncompute()
-            
+
     def __bool__(self):
-        raise Exception("Tried to convert QuantumBool to classical bool (probable due using the and + or keywords - try using & + | instead)")
-        
+        raise Exception(
+            "Tried to convert QuantumBool to classical bool (probable due using the and + or keywords - try using & + | instead)"
+        )
+
     def jdecoder(self, i):
-        return jnp.asarray(i, dtype = "bool")
-    
+        return jnp.asarray(i, dtype="bool")
+
     @property
     def size(self):
         return 1
-    
+
     def __len__(self):
         return 1
-        

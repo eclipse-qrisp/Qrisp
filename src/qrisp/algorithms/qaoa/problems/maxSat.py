@@ -1,5 +1,5 @@
 """
-\********************************************************************************
+********************************************************************************
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -13,10 +13,10 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
-from qrisp import app_sb_phase_polynomial
+from qrisp.alg_primitives import app_sb_phase_polynomial
 import sympy as sp
 import math
 
@@ -24,7 +24,7 @@ import math
 def create_maxsat_cost_polynomials(problem):
     """
     Creates a list of polynomials representing the cost function for each clause, and a list of symbols.
-    
+
     Parameters
     ----------
     problem : tuple(int, list[list[int]])
@@ -40,11 +40,14 @@ def create_maxsat_cost_polynomials(problem):
     """
 
     clauses = problem[1]
-    symbols = [sp.Symbol(f"x{i}") for i in range(1,problem[0]+1)]
+    symbols = [sp.Symbol(f"x{i}") for i in range(1, problem[0] + 1)]
     cost_polynomials = []
     for clause in clauses:
-        C = 1 - sp.prod((1-symbols[index-1]) if index>0 else symbols[-index-1] for index in clause)
-        
+        C = 1 - sp.prod(
+            (1 - symbols[index - 1]) if index > 0 else symbols[-index - 1]
+            for index in clause
+        )
+
         cost_polynomials.append(C)
 
     return cost_polynomials, symbols
@@ -67,21 +70,35 @@ def create_maxsat_cl_cost_function(problem):
     """
 
     clauses = problem[1]
+
     def cl_cost_function(res_dic):
         cost = 0
         for state, prob in res_dic.items():
             for clause in clauses:
-                cost += -(1-math.prod((1-int(state[index-1])) if index>0 else int(state[-index-1]) for index in clause))*prob
+                cost += (
+                    -(
+                        1
+                        - math.prod(
+                            (
+                                (1 - int(state[index - 1]))
+                                if index > 0
+                                else int(state[-index - 1])
+                            )
+                            for index in clause
+                        )
+                    )
+                    * prob
+                )
 
         return cost
 
-    return cl_cost_function 
+    return cl_cost_function
 
 
 def create_maxsat_cost_operator(problem):
     r"""
     Creates the cost operator for an instance of the maximum satisfiability problem.
-    For a given cost function 
+    For a given cost function
 
     .. math::
 
@@ -101,7 +118,7 @@ def create_maxsat_cost_operator(problem):
         This function performs the application of the cost operator.
 
     """
-   
+
     cost_polynomials, symbols = create_maxsat_cost_polynomials(problem)
 
     def cost_operator(qv, gamma):
@@ -126,9 +143,11 @@ def maxsat_problem(problem):
     :ref:`QAOAProblem`
         A QAOA problem instance for MaxSat for given a ``problem``.
 
-    """        
+    """
     from qrisp.qaoa import QAOAProblem, RX_mixer
 
-    return QAOAProblem(cost_operator=create_maxsat_cost_operator(problem),
-                        mixer=RX_mixer,
-                        cl_cost_function=create_maxsat_cl_cost_function(problem))
+    return QAOAProblem(
+        cost_operator=create_maxsat_cost_operator(problem),
+        mixer=RX_mixer,
+        cl_cost_function=create_maxsat_cl_cost_function(problem),
+    )

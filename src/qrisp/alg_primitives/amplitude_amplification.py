@@ -1,5 +1,5 @@
 """
-\********************************************************************************
+********************************************************************************
 * Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -13,10 +13,18 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
-def amplitude_amplification(args, state_function, oracle_function, kwargs_oracle={}, iter=1, reflection_indices=None):
+
+def amplitude_amplification(
+    args,
+    state_function,
+    oracle_function,
+    kwargs_oracle={},
+    iter=1,
+    reflection_indices=None,
+):
     r"""
     This method performs `quantum amplitude amplification <https://arxiv.org/abs/quant-ph/0005055>`_.
 
@@ -32,8 +40,8 @@ def amplitude_amplification(args, state_function, oracle_function, kwargs_oracle
 
         \mathcal Q^j\ket{\Psi}=\frac{1}{\sqrt{a}}\sin((2j+1)\theta_a)\ket{\Psi_1}+\frac{1}{\sqrt{1-a}}\cos((2j+1)\theta_a)\ket{\Psi_0}.
 
-    Therefore, after $m$ iterations the probability of measuring a good state is $\sin^2((2m+1)\theta_a)$. 
-    
+    Therefore, after $m$ iterations the probability of measuring a good state is $\sin^2((2m+1)\theta_a)$.
+
     Parameters
     ----------
 
@@ -61,7 +69,7 @@ def amplitude_amplification(args, state_function, oracle_function, kwargs_oracle
 
     We define a function that prepares the state :math:`\ket{\Psi}=\cos(\frac{\pi}{16})\ket{0}+\sin(\frac{\pi}{16})\ket{1}`
     and an oracle that tags the good state :math:`\ket{1}`. In this case, we have :math:`a=\sin^2(\frac{\pi}{16})\approx 0.19509`.
-     
+
     ::
 
         from qrisp import z, ry, QuantumBool, amplitude_amplification
@@ -70,9 +78,9 @@ def amplitude_amplification(args, state_function, oracle_function, kwargs_oracle
         def state_function(qb):
             ry(np.pi/8,qb)
 
-        def oracle_function(qb):   
+        def oracle_function(qb):
             z(qb)
-        
+
         qb = QuantumBool()
 
         state_function(qb)
@@ -84,11 +92,11 @@ def amplitude_amplification(args, state_function, oracle_function, kwargs_oracle
 
     >>> amplitude_amplification([qb], state_function, oracle_function)
     >>> qb.qs.statevector(decimals=5)
-    0.83147*|False> + 0.55557*|True> 
+    0.83147*|False> + 0.55557*|True>
 
     >>> amplitude_amplification([qb], state_function, oracle_function)
     >>> qb.qs.statevector(decimals=5)
-    0.55557*|False> + 0.83147*|True> 
+    0.55557*|False> + 0.83147*|True>
 
     >>> amplitude_amplification([qb], state_function, oracle_function)
     >>> qb.qs.statevector(decimals=5)
@@ -97,8 +105,25 @@ def amplitude_amplification(args, state_function, oracle_function, kwargs_oracle
     """
 
     from qrisp.grover import diffuser
-    from qrisp.jasp import jrange
+    from qrisp import merge, recursive_qs_search, IterationEnvironment
+    from qrisp.jasp import check_for_tracing_mode, jrange
 
-    for i in jrange(iter):
-        oracle_function(*args, **kwargs_oracle)
-        diffuser(args, state_function=state_function, reflection_indices=reflection_indices)
+    if check_for_tracing_mode():
+        for i in jrange(iter):
+            oracle_function(*args, **kwargs_oracle)
+            diffuser(
+                args,
+                state_function=state_function,
+                reflection_indices=reflection_indices,
+            )
+    else:
+        merge(args)
+        qs = recursive_qs_search(args)[0]
+        if iter > 0:
+            with IterationEnvironment(qs, iter):
+                oracle_function(*args, **kwargs_oracle)
+                diffuser(
+                    args,
+                    state_function=state_function,
+                    reflection_indices=reflection_indices,
+                )

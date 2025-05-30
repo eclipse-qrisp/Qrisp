@@ -1,5 +1,5 @@
 """
-\********************************************************************************
+********************************************************************************
 * Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -13,9 +13,8 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
-
 
 # Modification to Kahns algorithm to reduce the depth of general circuits by applying
 # trivial and non-trivial commutation relations based on the dag representation of
@@ -28,7 +27,7 @@ from numba import njit
 from qrisp.permeability import PermeabilityGraph, TerminatorNode
 
 # The following code aims to represent quantum circuits as an array of integers.
-# The idea is here that in a 6 qubit quantum circuit, a gate that is executed 
+# The idea is here that in a 6 qubit quantum circuit, a gate that is executed
 # on the qubits 1 and 3 is represented by the number 001010 = 5 (ie. the digits
 # with significance 2**1 and 2**3 are set to 1).
 # This construction might remove some of the information (ie. gate type or qubit order)
@@ -48,57 +47,60 @@ from qrisp.permeability import PermeabilityGraph, TerminatorNode
 
 
 # This function receives the indices of the qubits of a gate and turns them into
-# the list according to the above construction. The parameter k indicates 
+# the list according to the above construction. The parameter k indicates
 # how many integers the result should contain.
 def split_integer(digit_list, k):
-    
+
     digit_list.sort()
-    
+
     if k <= 0:
         raise ValueError("Parameter k must be greater than zero")
 
-    result = [0]*k
+    result = [0] * k
     i = 0
     for d in digit_list:
-        while d//64 > i:
+        while d // 64 > i:
             i += 1
-        result[i] |= (1<<(d%64))
-        if result[i] >= 1<<64:
+        result[i] |= 1 << (d % 64)
+        if result[i] >= 1 << 64:
             raise
-            
+
     return result
+
 
 # This function receives a list of qubits and a quantum circuit and turns it into
 # a list according to the above construction
 def qb_set_to_int(qubits, index_dict):
     qb_indices = [index_dict[qb] for qb in qubits]
-    return split_integer(qb_indices, int(np.ceil(len(index_dict)/64)))
+    return split_integer(qb_indices, int(np.ceil(len(index_dict) / 64)))
+
 
 # This function reverses the split_integer function (usefull for debugging)
 def reverse_split(split_int, num_qubits):
-    
+
     res = []
     for i in range(num_qubits):
-        if not i%64:
+        if not i % 64:
             current_partial_int = split_int.pop(0)
-        
-        if (current_partial_int) & (1<<(i%64)):
+
+        if (current_partial_int) & (1 << (i % 64)):
             res.append(i)
-            
+
     return res
+
 
 # This function performs the parallelization. As described above, the idea is to
 # build up the DAG from the quantum circuit and determine a linearization, which
 # is in-turn used to achieve a more optimal quantum circuit.
 # The linearization is performed using a modified version of Kahn's algorithm.
-# This modification is informed about the depth of the circuit because of the above 
+# This modification is informed about the depth of the circuit because of the above
 # constructions.
-def parallelize_qc(qc, depth_indicator = None):
+def parallelize_qc(qc, depth_indicator=None):
     if len(qc.data) <= 1:
         return qc.copy()
-    
+
     if depth_indicator is None:
-        depth_indicator = lambda x : 1
+        depth_indicator = lambda x: 1
 
     dag = PermeabilityGraph(qc, remove_artificials=True)
     # dag = dag_from_qc(qc, True)
@@ -106,17 +108,17 @@ def parallelize_qc(qc, depth_indicator = None):
     sprs_mat = nx.to_scipy_sparse_array(dag, format="csr")
 
     node_list = list(dag.nodes())
-    
+
     # This list will contain the participating qubits of each gate in the above
     # discussed representation
     qubit_ints = []
-    
+
     # This list will contain the depth of each gate, which can be specified via
     # the depth indicator function.
     depth_indicators = []
-    
-    index_dict = {qc.qubits[i] : i for i in range(len(qc.qubits))}
-    
+
+    index_dict = {qc.qubits[i]: i for i in range(len(qc.qubits))}
+
     for n in node_list:
         if not isinstance(n, TerminatorNode):
             qubit_ints.append(qb_set_to_int(n.instr.qubits, index_dict))
@@ -124,14 +126,17 @@ def parallelize_qc(qc, depth_indicator = None):
         else:
             qubit_ints.append(qb_set_to_int([n.qubit], index_dict))
             depth_indicators.append(0)
-            
-    
+
     # Convert to array
-    qubit_ints = np.array(qubit_ints, dtype = np.uint64)
+    qubit_ints = np.array(qubit_ints, dtype=np.uint64)
 
     # Execute topological sort
     res = depth_sensitive_topological_sort_jitted(
-        sprs_mat.indices, sprs_mat.indptr, qubit_ints, num_qubits=qc.num_qubits(), depth_indicators = np.array(depth_indicators)
+        sprs_mat.indices,
+        sprs_mat.indptr,
+        qubit_ints,
+        num_qubits=qc.num_qubits(),
+        depth_indicators=np.array(depth_indicators),
     )
 
     # Build new circuit
@@ -144,10 +149,11 @@ def parallelize_qc(qc, depth_indicator = None):
     return qc_new
 
 
-
 # Kahns Algorithm based on
 # https://www.geeksforgeeks.org/topological-sorting-indegree-based-solution/
-def depth_sensitive_topological_sort(indices, indptr, int_qc, num_qubits, depth_indicators):
+def depth_sensitive_topological_sort(
+    indices, indptr, int_qc, num_qubits, depth_indicators
+):
     # Create a vector to store indegrees of all
     # vertices. Initialize all indegrees as 0.
     n = len(indptr) - 1
@@ -190,14 +196,14 @@ def depth_sensitive_topological_sort(indices, indptr, int_qc, num_qubits, depth_
 
             depth_list = []
             for j in range(num_qubits):
-                if int(qubits[j//64]) & (1 << (j%64)):
+                if int(qubits[j // 64]) & (1 << (j % 64)):
                     depth_list.append(depths[j])
-            
+
             # If multiple gates have the same max depth, the faster ones should
             # be executed first, because they might block other gates
             depth_array = np.array(depth_list)
-            node_costs[i] = np.max(depth_array) + depth_indicators[node]/10**8
-            
+            node_costs[i] = np.max(depth_array) + depth_indicators[node] / 10**8
+
             # Multiple possible heuristics
             # node_costs[i] = np.max(depth_array) + depth_indicators[node]/10**8 - np.min(depth_array)/10**12
             # node_costs[i] = np.sum((np.max(depth_array) + depth_indicators[node]) - depth_array)/num_qubits
@@ -206,9 +212,11 @@ def depth_sensitive_topological_sort(indices, indptr, int_qc, num_qubits, depth_
             # node_costs[i] = depth_indicators[node]/1E8 + np.sum((np.max(depth_array) + depth_indicators[node]) - depth_array)*len(depth_list)
             a = 10
             b = 1
-            
-            node_costs[i] = depth_indicators[node]*a*max_time + b*np.sum((np.max(depth_array) + depth_indicators[node]) - depth_array)
-            
+
+            node_costs[i] = depth_indicators[node] * a * max_time + b * np.sum(
+                (np.max(depth_array) + depth_indicators[node]) - depth_array
+            )
+
         u = queue.pop(np.argmin(node_costs))
 
         top_order[cnt] = u
@@ -217,12 +225,12 @@ def depth_sensitive_topological_sort(indices, indptr, int_qc, num_qubits, depth_
         max_depth = 0
 
         for i in range(num_qubits):
-            if int_qc[u, i//64] & 1 << (i%64):
+            if int_qc[u, i // 64] & 1 << (i % 64):
                 if depths[i] > max_depth:
                     max_depth = depths[i]
 
         for i in range(num_qubits):
-            if int_qc[u, i//64] & 1 << (i%64):
+            if int_qc[u, i // 64] & 1 << (i % 64):
                 depths[i] = max_depth + depth_indicators[u]
 
         # Update in degree array

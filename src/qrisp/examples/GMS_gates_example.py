@@ -1,5 +1,5 @@
 """
-\********************************************************************************
+********************************************************************************
 * Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -13,9 +13,8 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
-
 
 import numpy as np
 
@@ -31,9 +30,7 @@ target = QuantumVariable(n)
 
 
 h(ctrl)
-ctrl.qs.append(
-    gms_multi_cx_fan_out(n, use_uniform=True), list(target) + [ctrl]
-)
+ctrl.qs.append(gms_multi_cx_fan_out(n, use_uniform=True), list(target) + [ctrl])
 
 print(target.qs.statevector())
 

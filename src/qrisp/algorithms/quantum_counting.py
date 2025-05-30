@@ -1,5 +1,5 @@
 """
-\********************************************************************************
+********************************************************************************
 * Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -13,12 +13,12 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
-
 
 from qrisp.core import h
 from qrisp.alg_primitives import QPE
+
 
 def quantum_counting(qv, oracle, precision):
     """
@@ -79,7 +79,7 @@ def quantum_counting(qv, oracle, precision):
     if check_for_tracing_mode():
         mes_res = measure(res)
         import jax.numpy as jnp
-    else: 
+    else:
         mes_res = list(res.get_measurement().keys())[0]
         import numpy as jnp
 
@@ -89,5 +89,3 @@ def quantum_counting(qv, oracle, precision):
     M = N * jnp.sin(theta) ** 2
 
     return M
-
-
