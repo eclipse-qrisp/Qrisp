@@ -66,3 +66,4 @@ def flatten_function(arg):
 
 
 tree_util.register_pytree_node(types.FunctionType, flatten_function, unflatten_function)
+tree_util.register_pytree_node(str, flatten_function, unflatten_function)

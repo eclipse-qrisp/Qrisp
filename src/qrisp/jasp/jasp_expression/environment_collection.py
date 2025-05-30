@@ -179,6 +179,8 @@ def collect_environments(jaxpr):
         res = jaxpr.update_eqns(new_eqn_list)
         if jaxpr.ctrl_jaspr is not None:
             res.ctrl_jaspr = jaxpr.ctrl_jaspr
+        if jaxpr.inv_jaspr is not None:
+            res.inv_jaspr = jaxpr.inv_jaspr
         return res
     else:
         # Return the transformed equation
