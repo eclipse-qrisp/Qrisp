@@ -62,7 +62,7 @@ def ctrl_state_conjugator(ctrls, ctrl_state):
 def gidney_CCCZ(ctrls, target):
     """
     Implements a CCCZ gate using the Gidney 
-    method described in https://arxiv.org/abs/2106.11513 using only 6 T gazes.
+    method described in https://arxiv.org/abs/2106.11513 using only 6 T gates.
     Args:
         ctrls (list): A list of control qubits. It is expected to contain three qubits.
         target (list): A list containing the target qubit. It is expected to contain one qubit.
@@ -179,30 +179,57 @@ def khattar_mcx(ctrls, target, ctrl_state):
 
     with conjugate(ctrl_state_conjugator)(ctrls, ctrl_state):
 
-        with control(N == 1):
-            cx(ctrls[0], target[0])
+        if isinstance(ctrls, list):
+            if N == 1:
+                cx(ctrls[0], target[0])
 
-        with control(N == 2):
-            mcx([ctrls[0], ctrls[1]], target[0])
+            if N == 2:
+                mcx([ctrls[0], ctrls[1]], target[0])
 
-        with control(N == 3):
-            if check_for_tracing_mode():
-                #Conjugating with H to transform the CCCZ into a CCCX
-                h(target[0])
-                gidney_CCCZ(ctrls, target)
-                h(target[0])
-            else:
-                mcx(ctrls, target[0], method="balauca")  # CHANGE
+            if N == 3:
+                if check_for_tracing_mode():
+                    #Conjugating with H to transform the CCCZ into a CCCX
+                    h(target[0])
+                    gidney_CCCZ(ctrls, target)
+                    h(target[0])
+                else:
+                    mcx(ctrls, target[0], method="balauca")  # CHANGE
 
-        with control(N == 4):
-            cca_4ctrls(ctrls, target)
+            if N == 4:
+                cca_4ctrls(ctrls, target)
 
-        with control(N > 4):
-            khattar_anc = QuantumFloat(1)
-            with conjugate(cca_mcx)(ctrls, target, khattar_anc):
-                # STEP 3
-                mcx([khattar_anc[0], ctrls[0]], target[0])
-            khattar_anc.delete()
+            if N > 4:
+                khattar_anc = QuantumFloat(1)
+                with conjugate(cca_mcx)(ctrls, target, khattar_anc):
+                    # STEP 3
+                    mcx([khattar_anc[0], ctrls[0]], target[0])
+                khattar_anc.delete()
+
+        else:
+            with control(N == 1):
+                cx(ctrls[0], target[0])
+
+            with control(N == 2):
+                mcx([ctrls[0], ctrls[1]], target[0])
+
+            with control(N == 3):
+                if check_for_tracing_mode():
+                    #Conjugating with H to transform the CCCZ into a CCCX
+                    h(target[0])
+                    gidney_CCCZ(ctrls, target)
+                    h(target[0])
+                else:
+                    mcx(ctrls, target[0], method="balauca")  # CHANGE
+
+            with control(N == 4):
+                cca_4ctrls(ctrls, target)
+
+            with control(N > 4):
+                khattar_anc = QuantumFloat(1)
+                with conjugate(cca_mcx)(ctrls, target, khattar_anc):
+                    # STEP 3
+                    mcx([khattar_anc[0], ctrls[0]], target[0])
+                khattar_anc.delete()
 
 
 @qache
