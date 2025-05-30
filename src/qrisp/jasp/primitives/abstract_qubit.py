@@ -37,7 +37,7 @@ class AbstractQubit(AbstractValue):
 
         if isinstance(b, DynamicQubitArray):
             b = b.tracer
-        return fuse_qb_array(a, b)
+        return DynamicQubitArray(fuse_qb_array(a, b))
 
 
 raise_to_shaped_mappings[AbstractQubit] = lambda aval, _: aval
