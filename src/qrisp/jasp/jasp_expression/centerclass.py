@@ -30,6 +30,7 @@ from qrisp.jasp import (
     pjit_to_gate,
     flatten_environments,
     cond_to_cl_control,
+    extract_invalues
 )
 from qrisp.jasp.primitives import AbstractQuantumCircuit
 
@@ -384,7 +385,20 @@ class Jaspr(Jaxpr):
                 ):
                     context_dic[eqn.outvars[0]] = context_dic[eqn.invars[0]]
                     return
-            return True
+                return True
+            else:
+                
+                invalues = extract_invalues(eqn, context_dic)
+                for val in invalues:
+                    if isinstance(val, list):
+                        if isinstance(val[0], Clbit):
+                            break
+                    elif isinstance(val, Clbit):
+                        break
+                else:
+                    return True
+                
+            raise Exception(f"Tried to convert Jaspr involving real-time computation primitive {eqn.primitive.name} to QuantumCircuit")
 
         ammended_args = list(args) + [QuantumCircuit()] + jaspr.consts
         if len(ammended_args) != len(jaspr.invars):
