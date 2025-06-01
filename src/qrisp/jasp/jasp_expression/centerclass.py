@@ -398,7 +398,7 @@ class Jaspr(Jaxpr):
                 else:
                     return True
                 
-            raise Exception(f"Tried to convert Jaspr involving real-time computation primitive {eqn.primitive.name} to QuantumCircuit")
+            raise Exception(f"Tried to convert Jaspr involving real-time computation primitive `{eqn.primitive.name}` to QuantumCircuit")
 
         ammended_args = list(args) + [QuantumCircuit()] + jaspr.consts
         if len(ammended_args) != len(jaspr.invars):
