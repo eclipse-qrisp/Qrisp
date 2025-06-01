@@ -102,20 +102,24 @@ def convert_to_qiskit(qc, transpile=False):
         elif isinstance(op, ClControlledOperation):
             q_reg = QuantumRegister(op.num_qubits)
 
-            base_qiskit_ins = create_qiskit_instruction(op.base_op, params)
-
             # In Qiskit 1.3, the c_if interface was deprecated
             try:
                 from qiskit.circuit import IfElseOp
-
-                body_qc = QuantumCircuit(q_reg)
-                body_qc.append(base_qiskit_ins, q_reg)
+    
+                qregs = [qiskit_qc.qregs[qc.qubits.index(qb)] for qb in qc.data[i].qubits]
+                body_qc = QuantumCircuit(*qregs)
+                if op.base_op.definition:
+                    body_qc = body_qc.compose(op.base_op.definition.to_qiskit())
+                else:
+                    base_qiskit_ins = create_qiskit_instruction(op.base_op, params)
+                    body_qc.append(base_qiskit_ins, qubit_list)
                 qiskit_ins = IfElseOp((clbit_list[0], 1), true_body=body_qc)
                 clbit_list = []
             except ImportError:
+                base_qiskit_ins = create_qiskit_instruction(op.base_op, params)
                 cl_reg = ClassicalRegister(op.num_clbits)
                 temp_qc = QuantumCircuit(q_reg, cl_reg)
-                qiskit_ins = qiskit_ins.c_if(cl_reg, int(op.ctrl_state[::-1], 2))
+                qiskit_ins = base_qiskit_ins.c_if(cl_reg, int(op.ctrl_state[::-1], 2))
                 temp_qc.append(qiskit_ins, q_reg)
                 qiskit_ins = temp_qc.to_instruction()
                 qiskit_ins.name = op.name

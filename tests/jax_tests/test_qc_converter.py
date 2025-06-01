@@ -101,4 +101,12 @@ def test_qc_converter():
 
     assert qasm_str.find("if (cb_0[0]) {") != -1
     
+    def main():
+        
+        qv = QuantumFloat(3)
+        qv += 4
+
+    jaspr = make_jaspr(main)()
+    str(jaspr.to_qc())
+    
     
