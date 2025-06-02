@@ -140,6 +140,32 @@ def test_custom_inverse():
 
     for i in range(8):
         assert main(i)%4 == i%4
+        
+    @custom_inversion
+    def inner_f(qv, inv = False):
+        if inv:
+            measure(qv[0])
+            x(qv[0])
+        else:
+            measure(qv[0])
+            z(qv[0])
+
+    def main():
+        
+        qv = QuantumBool()
+        qbl = QuantumBool()
+        qbl.flip()
+        
+        with control(qbl):
+            with QuantumEnvironment():
+                with conjugate(h)(qv):
+                    with invert():
+                        with conjugate(h)(qv):
+                            inner_f(qv)
+
+        return measure(qv)
+    jsp = make_jaspr(main)()
+    assert jsp() == True
     
     
 

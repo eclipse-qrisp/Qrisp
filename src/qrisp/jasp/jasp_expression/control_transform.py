@@ -42,7 +42,7 @@ class ControlledJaspr(Jaspr):
 
     __slots__ = ("base_jaspr", "ctrl_state")
 
-    def __init__(self, base_jaspr, ctrl_state):
+    def __init__(self, base_jaspr, ctrl_state, stop_recursion = False):
 
         self.base_jaspr = base_jaspr
         self.ctrl_state = str(ctrl_state)
@@ -55,6 +55,11 @@ class ControlledJaspr(Jaspr):
             )
 
         Jaspr.__init__(self, controlled_jaspr)
+        self.envs_flattened = True
+        
+        if self.base_jaspr.inv_jaspr and not stop_recursion:
+            self.inv_jaspr = ControlledJaspr(base_jaspr.inv_jaspr, ctrl_state, stop_recursion = True)
+        
 
     def control(self, num_ctrl, ctrl_state=-1):
 
