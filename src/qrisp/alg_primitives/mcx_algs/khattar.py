@@ -30,7 +30,7 @@ from qrisp.core.gate_application_functions import (
     measure,
 )
 from qrisp.qtypes import QuantumFloat
-from qrisp.environments import invert, control, conjugate
+from qrisp.environments import invert, control, conjugate, custom_inversion
 from qrisp.jasp import jlen, jrange, check_for_tracing_mode, qache
 
 # Move this one layer up
