@@ -30,7 +30,7 @@ from qrisp.core.gate_application_functions import (
     measure,
 )
 from qrisp.qtypes import QuantumFloat
-from qrisp.environments import invert, control, conjugate
+from qrisp.environments import invert, control, conjugate, custom_inversion
 from qrisp.jasp import jlen, jrange, check_for_tracing_mode, qache
 
 # Move this one layer up
@@ -58,8 +58,8 @@ def ctrl_state_conjugator(ctrls, ctrl_state):
         with control(~extract_boolean_digit(ctrl_state, i)):
             x(ctrls[i])
 
-
-def gidney_CCCZ(ctrls, target):
+@custom_inversion
+def gidney_CCCZ(ctrls, target, inv = False):
     gidney_anc = QuantumFloat(1)
 
     h(gidney_anc[0])
