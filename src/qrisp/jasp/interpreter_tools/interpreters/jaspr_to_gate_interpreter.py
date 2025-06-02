@@ -51,10 +51,15 @@ def pjit_to_gate(pjit_eqn, context_dic, eqn_evaluator):
     new_qc = res[-1]
     old_qc = invalues[-1]
 
-    # Append the wrapped old circuit to the new circuit
-    old_qc.append(
-        new_qc.to_op(name=pjit_eqn.params["name"]), new_qc.qubits, new_qc.clbits
-    )
+    for i in range(len(new_qc.data)):
+        if new_qc.data[i].op.num_clbits:
+            old_qc.extend(new_qc, translation_dic = {b : b for b in new_qc.qubits + new_qc.clbits})
+            break
+    else:
+        # Append the wrapped old circuit to the new circuit
+        old_qc.append(
+            new_qc.to_op(name=pjit_eqn.params["name"]), new_qc.qubits, new_qc.clbits
+        )
 
     res = list(res)
     res[-1] = old_qc
@@ -93,13 +98,13 @@ def cond_to_cl_control(eqn, context_dic, eqn_evaluator):
 
     if len(false_qc.data):
         old_qc.append(
-            false_qc.to_op().c_if(ctrl_state=0),
+            false_qc.to_op("false_body").c_if(ctrl_state=0),
             false_qc.qubits,
             [invalues[0]] + false_qc.clbits,
         )
     if len(true_qc.data):
         old_qc.append(
-            true_qc.to_op().c_if(ctrl_state=1),
+            true_qc.to_op("true_body").c_if(ctrl_state=1),
             true_qc.qubits,
             [invalues[0]] + true_qc.clbits,
         )
