@@ -216,10 +216,10 @@ def qache_helper(func, jax_kwargs):
 
     # This function performs the input function but also has the AbstractQuantumCircuit
     # in the signature.
-    def ammended_function(*ammended_args, **kwargs):
+    def ammended_function(*args, **kwargs):
 
-        abs_qc = ammended_args[-1]
-        args = ammended_args[:-1]
+        abs_qc = kwargs[10*"~"]
+        del kwargs[10*"~"]
 
         # Set the given AbstractQuantumCircuit as the
         # one carried by the tracing QuantumSession
@@ -297,9 +297,10 @@ def qache_helper(func, jax_kwargs):
         #         args[i] = jnp.array(args[i], dtype = jnp.complex)
 
         # Excecute the function
-        ammended_args = list(args) + [abs_qs.abs_qc]
+        ammended_kwargs = dict(kwargs)
+        ammended_kwargs[10*"~"] = abs_qs.abs_qc
         try:
-            res, abs_qc_new = ammended_function(*ammended_args, **kwargs)
+            res, abs_qc_new = ammended_function(*args, **ammended_kwargs)
         except Exception as e:
             abs_qs.conclude_tracing()
             raise e
