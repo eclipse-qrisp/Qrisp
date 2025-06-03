@@ -16,12 +16,23 @@
 ********************************************************************************
 """
 
-# -*- coding: utf-8 -*-
-
 import numpy as xp
+import os
 
-# import cupy as xp
+try:
+    float_tresh = os.environ["QRISP_SIMULATOR_FLOAT_TRESH"]
+except KeyError:
+    float_tresh = 1e-5
+float_tresh = xp.float32(float_tresh)
 
-float_tresh = 1e-5
-cutoff_ratio = 5e-4
-sparsification_rate = 0.1
+try:
+    cutoff_ratio = os.environ["QRISP_SIMULATOR_CUTOFF_RATIO"]
+except KeyError:
+    cutoff_ratio = 2e-4
+cutoff_ratio = xp.float32(cutoff_ratio)
+
+try:
+    sparsification_rate = os.environ["QRISP_SIMULATOR_SPARSIFICATION_RATE"]
+except KeyError:
+    sparsification_rate = 0.4
+sparsification_rate = xp.float32(sparsification_rate)
