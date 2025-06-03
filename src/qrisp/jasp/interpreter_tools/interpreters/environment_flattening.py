@@ -54,7 +54,7 @@ def flatten_environments(jaspr):
     """
     from qrisp.jasp import Jaspr
 
-    if not (
+    if (len(jaspr.invars) == 0 or len(jaspr.outvars) == 0) or not (
         isinstance(jaspr.invars[-1].aval, AbstractQuantumCircuit)
         and isinstance(jaspr.outvars[-1].aval, AbstractQuantumCircuit)
     ):
