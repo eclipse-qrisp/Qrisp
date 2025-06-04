@@ -1930,3 +1930,27 @@ class QubitOperator(Hamiltonian):
                             trotter_step(qarg, -t, steps * 2)
 
         return U
+
+    #
+    # LCU
+    #
+
+    def get_unitaries(self):
+        """
+        
+        Returns
+        -------
+        list[callable]
+            A list of functions performing the Pauli unitaries on a :ref:`QuantumVaraible` ``operand`` for the terms in the Hamiltonian.
+        numpy.ndarray
+            An array of coefficents for the terms in the Hamiltonian.
+        
+        """
+        unitaries = []
+        coefficients = []
+
+        for term, coeff in self.terms_dict.items():
+            unitaries.append(term.get_unitary())
+            coefficients.append(coeff)
+
+        return unitaries, np.array(coefficients, dtype=complex)
