@@ -17,6 +17,8 @@
 """
 
 from functools import lru_cache
+
+import numpy as np
 from jax.core import ClosedJaxpr, JaxprEqn, Literal
 
 
@@ -51,7 +53,7 @@ def collect_environments(jaxpr):
 
     if isinstance(jaxpr, Jaspr) and jaxpr.envs_flattened:
         return jaxpr
-
+    
     while len(eqn_list) != 0:
 
         eqn = eqn_list.pop(0)
@@ -138,7 +140,9 @@ def collect_environments(jaxpr):
             environment_body_eqn_list = new_eqn_list[i + 1 :]
 
             # Remove the AbstractQuantumCircuit variable and prepend it.
+            # invars = find_invars(environment_body_eqn_list)
             invars = find_invars(environment_body_eqn_list)
+            
             try:
                 invars.remove(enter_eq.outvars[0])
             except ValueError:
@@ -174,7 +178,7 @@ def collect_environments(jaxpr):
 
         # Append the equation
         new_eqn_list.append(eqn)
-
+        
     if isinstance(jaxpr, Jaspr):
         res = jaxpr.update_eqns(new_eqn_list)
         if jaxpr.ctrl_jaspr is not None:
@@ -229,6 +233,58 @@ def find_invars(eqn_list):
             defined_vars[var] = None
 
     return list(dict.fromkeys(invars))
+
+def find_invars(eqn_list):
+    
+    ind_to_var_dic = {}
+    var_to_ind_dic = {}
+    invar_indices = []
+    outvar_indices = []
+    
+    for eqn in eqn_list:
+        for var in eqn.invars:
+            try:
+                invar_indices.append(var_to_ind_dic[var])
+            except KeyError:
+                var_to_ind_dic[var] = len(var_to_ind_dic)
+                ind_to_var_dic[var_to_ind_dic[var]] = var
+                invar_indices.append(var_to_ind_dic[var])
+            except TypeError:
+                continue
+        for var in eqn.outvars:
+            try:
+                outvar_indices.append(var_to_ind_dic[var])
+            except KeyError:
+                var_to_ind_dic[var] = len(var_to_ind_dic)
+                ind_to_var_dic[var_to_ind_dic[var]] = var
+                outvar_indices.append(var_to_ind_dic[var])
+            except TypeError:
+                continue
+    
+    invar_index_list = jitted_kernel(invar_indices, outvar_indices)
+    
+    res = []
+    
+    for i in range(len(invar_index_list)):
+        res.append(ind_to_var_dic[invar_index_list[i]])
+    
+    res.sort(key = lambda x : var_to_ind_dic[x])
+    
+    return res
+
+def jitted_kernel(invar_indices, outvar_indices):
+    
+    max_var = max(invar_indices + outvar_indices, default = -1)
+    
+    if max_var == -1:
+        return []
+    
+    invar_array = np.zeros(max_var+1, dtype = np.bool)
+    invar_array[invar_indices] = 1
+    invar_array[outvar_indices] = 0
+    res = np.nonzero(invar_array)[0]
+    
+    return res            
 
 
 def find_outvars(body_eqn_list, script_remainder_eqn_list, return_vars):
