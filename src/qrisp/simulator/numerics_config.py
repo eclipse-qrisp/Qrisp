@@ -20,10 +20,10 @@ import numpy as xp
 import os
 
 try:
-    float_tresh = os.environ["QRISP_SIMULATOR_FLOAT_TRESH"]
+    float_thresh = os.environ["QRISP_SIMULATOR_FLOAT_THRESH"]
 except KeyError:
-    float_tresh = 1e-5
-float_tresh = xp.float32(float_tresh)
+    float_thresh = 1e-5
+float_thresh = xp.float32(float_thresh)
 
 try:
     cutoff_ratio = os.environ["QRISP_SIMULATOR_CUTOFF_RATIO"]

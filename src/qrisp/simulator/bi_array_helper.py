@@ -369,11 +369,11 @@ def dense_measurement_brute(input_array, mes_amount, outcome_index, cutoff_ratio
 
 
 @njit(nogil=True, cache=True)
-def dense_measurement_smart(input_array, mes_amount, outcome_index, float_tresh):
+def dense_measurement_smart(input_array, mes_amount, outcome_index, float_thresh):
 
     p = np.abs(np.vdot(input_array, input_array))
 
-    if p < float_tresh:
+    if p < float_thresh:
         return [input_array], [p], [-1]
 
     if mes_amount == 0:
@@ -385,7 +385,7 @@ def dense_measurement_smart(input_array, mes_amount, outcome_index, float_tresh)
     outcome_index_list = []
 
     a, b, c = dense_measurement_smart(
-        input_array[: N // 2], mes_amount - 1, outcome_index, float_tresh
+        input_array[: N // 2], mes_amount - 1, outcome_index, float_thresh
     )
 
     if c[0] != -1:
@@ -394,7 +394,7 @@ def dense_measurement_smart(input_array, mes_amount, outcome_index, float_tresh)
         outcome_index_list.extend(c)
 
     a, b, c = dense_measurement_smart(
-        input_array[N // 2 :], mes_amount - 1, outcome_index + 2 ** (mes_amount - 1), float_tresh
+        input_array[N // 2 :], mes_amount - 1, outcome_index + 2 ** (mes_amount - 1), float_thresh
     )
 
     if c[0] != -1:

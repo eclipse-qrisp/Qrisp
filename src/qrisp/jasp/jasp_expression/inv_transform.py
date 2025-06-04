@@ -123,9 +123,6 @@ def invert_jaspr(jaspr):
     jaspr = jaspr.flatten_environments()
     # We separate the equations into classes where one executes Operations and
     # the one that doesn't execute Operations
-    if jaspr.inv_jaspr is not None:
-        return jaspr.inv_jaspr
-    
     op_eqs = []
     non_op_eqs = []
     deletions = []
@@ -306,8 +303,8 @@ def invert_loop_eqn(eqn):
     jaxpr = make_jaxpr(tracing_function)(*[var.aval for var in eqn.invars])
     new_eqn = jaxpr.eqns[0]
 
-    # The new invars should have initial loop index at loop treshold switched.
-    # The loop initialization is located at invars[1] and the treshold at invars[0]
+    # The new invars should have initial loop index at loop threshold switched.
+    # The loop initialization is located at invars[1] and the threshold at invars[0]
     invars = eqn.invars
     new_invars = list(invars)
     new_invars[1], new_invars[0] = new_invars[0], new_invars[1]
