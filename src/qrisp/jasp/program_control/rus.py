@@ -281,27 +281,16 @@ def RUS(*trial_function, **jit_kwargs):
 
         abs_qs = TracingQuantumSession.get_instance()
 
+        qached_function = qache(trial_function, **jit_kwargs)
+
         initial_gc_mode = abs_qs.gc_mode
 
         abs_qs.gc_mode = "auto"
         # Execute the function
-        first_iter_res = qache(trial_function, **jit_kwargs)(*trial_args)
+        first_iter_res = qached_function(*trial_args)
 
         abs_qs.gc_mode = initial_gc_mode
-
-        # Extract the jaspr
-        eqn = jax._src.core.thread_local_state.trace_state.trace_stack.dynamic.jaxpr_stack[
-            0
-        ].eqns[
-            -1
-        ]
-        ammended_trial_func_jaspr = eqn.params["jaxpr"].jaxpr
-
-        from qrisp.jasp import collect_environments
-
-        ammended_trial_func_jaspr = collect_environments(ammended_trial_func_jaspr)
-        ammended_trial_func_jaspr = ammended_trial_func_jaspr.flatten_environments()
-
+        
         # Filter out the static arguments
         if "static_argnums" in jit_kwargs:
             static_argnums = jit_kwargs["static_argnums"]
@@ -309,24 +298,21 @@ def RUS(*trial_function, **jit_kwargs):
                 static_argnums = [static_argnums]
         else:
             static_argnums = []
-
+        
         if "static_argnames" in jit_kwargs:
             argname_list = inspect.getfullargspec(trial_function)
             for i in range(len(argname_list)):
                 if argname_list[i] in jit_kwargs["static_argnames"]:
                     static_argnums.append(i)
-
-        new_trial_args = []
-
+        
+        dynamic_args = []
+        
         for i in range(len(trial_args)):
             if i not in static_argnums:
-                new_trial_args.append(trial_args[i])
-
-        trial_args = new_trial_args
-
-        # Flatten the arguments and the res values
-        arg_vals, arg_tree_def = jax.tree.flatten(trial_args)
-        res_vals, res_tree_def = jax.tree.flatten(first_iter_res)
+                dynamic_args.append(trial_args[i])
+        
+        from qrisp.jasp import q_while_loop, q_cond
+        from qrisp.core import QuantumVariable, recursive_qv_search, reset
 
         # Next we construct the body of the loop
         # In order to work with the while_loop interface from jax
@@ -338,32 +324,41 @@ def RUS(*trial_function, **jit_kwargs):
         # The first argument is an AbstractQuantumCircuit
         # The next section are the results from the previous iteration
         # And the final section are trial function arguments
+        
 
-        combined_args = tuple(list(arg_vals) + list(res_vals) + [abs_qs.abs_qc])
+        combined_args = tuple(list(dynamic_args) + list(first_iter_res))
 
-        n_res_vals = len(res_vals)
-        n_arg_vals = len(arg_vals)
+        n_arg_vals = len(dynamic_args)
 
         def body_fun(args):
             # We now need to deallocate the AbstractQubitArrays from the previous
             # iteration since they are no longer needed.
-            res_qv_vals = args[-n_res_vals - 1 : -1]
+            
+            abs_qs = TracingQuantumSession.get_instance()
+            
+            qv_list = recursive_qv_search(args[n_arg_vals:])
+            
+            for qv in qv_list:
+                abs_qs.register_qv(qv, None)
+                reset(qv)
+                qv.delete()
 
-            abs_qc = args[-1]
-            for res_val in res_qv_vals:
-                if isinstance(res_val.aval, AbstractQubitArray):
-                    abs_qc = reset_p.bind(res_val, abs_qc)
-                    abs_qc = delete_qubits_p.bind(res_val, abs_qc)
-
-            # Next we evaluate the trial function by evaluating the corresponding jaspr
-            # Prepare the arguments tuple
-            trial_args = list(args[:n_arg_vals]) + [abs_qc]
-
-            # Evaluate the function
-            trial_res = ammended_trial_func_jaspr.eval(*trial_args)
-
-            # Return the results
-            return tuple(list(trial_args)[:-1] + list(trial_res)[:-1] + [trial_res[-1]])
+            dynamic_args = list(args[:n_arg_vals])
+            
+            new_trial_args = []
+            
+            for i in range(len(trial_args)):
+                if i not in static_argnums:
+                    new_trial_args.append(dynamic_args.pop(0))
+                else:
+                    new_trial_args.append(trial_args[i])
+            
+            abs_qs.gc_mode = "auto"
+            trial_res = qached_function(*new_trial_args)
+            abs_qs.gc_mode = initial_gc_mode
+            
+            combined_args = tuple(list(args[:n_arg_vals]) + list(trial_res))
+            return combined_args
 
         def cond_fun(val):
             # The loop cancelation index is located at the second position of the
@@ -380,28 +375,19 @@ def RUS(*trial_function, **jit_kwargs):
 
         def false_fun(combined_args):
             # Here is the while_loop
-            return while_loop(cond_fun, body_fun, init_val=combined_args)
+            return q_while_loop(cond_fun, body_fun, init_val=combined_args)
 
         # Evaluate everything
-        combined_res = cond(first_iter_res[0], true_fun, false_fun, combined_args)
-
-        # Update the AbstractQuantumCircuit
-        abs_qs.abs_qc = combined_res[-1]
-
-        # Extract the results of the trial function
-        flat_trial_function_res = combined_res[n_arg_vals : n_arg_vals + n_res_vals]
-
-        # The results are however still "flattened" i.e. if the trial function
-        # returned a QuantumVariable, they show up as a AbstractQubitArray.
-
-        # We call the unflattening function with the auxiliary results values of the
-        # first iteration and the traced values of the loop.
-        trial_function_res = jax.tree.unflatten(res_tree_def, flat_trial_function_res)
+        combined_res = q_cond(first_iter_res[0], true_fun, false_fun, combined_args)
+        
+        res = combined_res[n_arg_vals:]
+        
+        abs_qs = TracingQuantumSession.get_instance()
 
         # Return the results
         if len(first_iter_res) == 2:
-            return trial_function_res[1]
+            return res[1]
         else:
-            return trial_function_res[1:]
+            return res[1:]
 
     return return_function
