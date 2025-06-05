@@ -475,9 +475,16 @@ class VarTracker:
             
         res = []
         
+        # Convert from integers to variables
         for i in range(len(invar_index_list)):
             res.append(self.int_to_var_dic[invar_index_list[i]])
         
+        # For some jaxpr transformations, it is important that the order of invars
+        # returned by this function is according to the order of appearance in the
+        # body.
+        
+        # We therefore create a dictionary that indicates the index of the first
+        # usage as an invar and sort according to this dictionary.
         sorting_dic = {self.eqn_invar_list[i] : i for i in range(len(self.eqn_invar_list))[::-1]}
         
         res.sort(key = lambda x : sorting_dic[self.var_to_int_dic[x]])
@@ -486,11 +493,11 @@ class VarTracker:
         
         
 def find_invar_kernel(invar_indices, outvar_indices):
+    # executes the algorithm described in the docstring of VarTracker
     
     max_invar = np.max(invar_indices)
     max_outvar = np.max(outvar_indices)
     max_var = max(max_invar, max_outvar)
-    
     
     if max_var == -1:
         return np.zeros(0, dtype = np.int64)
@@ -503,6 +510,3 @@ def find_invar_kernel(invar_indices, outvar_indices):
     return res            
 
 jitted_find_invar_kernel = njit(find_invar_kernel)        
-        
-        
-        
