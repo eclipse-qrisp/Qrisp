@@ -242,18 +242,23 @@ class QubitTerm:
     from qrisp.jasp import qache
 
     @qache
-    def jasp_simulate(self, qv):
+    def jasp_simulate(self, coeff, qv):
         #indices = jax.tree.leaves(self)
         #print(indices)
+        leaves = jax.tree.leaves(self)
+        
 
-        rz(1,qv[0])
+        n = (len(leaves)-1)//2 # Number of factors
+        indices = leaves[:n]
+        #for i in range(n):
+        #    rz(1,qv[leaves[i]])
 
-        #def flip_anchor_qubit(qv, anchor_index, Z_indices):
-        #        for i in Z_indices:
-        #            cx(qv[i], qv[anchor_index])
+        def flip_anchor_qubit(qv, anchor_index, Z_indices):
+                for i in Z_indices:
+                    cx(qv[i], qv[anchor_index])
 
-        #with conjugate(flip_anchor_qubit)(qv, indices[-1],indices[:-1]):
-        #    rz(coeff, qv[indices[-1]])
+        with conjugate(flip_anchor_qubit)(qv, indices[-1],indices[:-1]):
+            rz(coeff, qv[indices[-1]])
 
 
 
