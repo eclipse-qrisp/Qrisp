@@ -793,15 +793,14 @@ def flatten_qubit_term(term):
     keys = tuple(term.factor_dict.keys())
     vals = tuple(term.factor_dict.values())
     hash = term.hash_value
-    leaves = (keys, hash)
-    aux_data = vals
+    leaves = (keys, vals, hash)
+    aux_data = None
     return leaves, aux_data
 
 
 # Function to unflatten QubitTermfrom leaves and auxiliary data
 def unflatten_qubit_term(aux_data, leaves):
-    keys, hash = leaves
-    vals = aux_data
+    keys, vals, hash = leaves
     terms_dict = dict(zip(keys, vals))
     return QubitTerm(terms_dict, hash)
 
