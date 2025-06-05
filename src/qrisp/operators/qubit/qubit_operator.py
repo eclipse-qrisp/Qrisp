@@ -1881,6 +1881,8 @@ class QubitOperator(Hamiltonian):
                             for intersect_group in intersect_groups:
                                 for term, coeff in intersect_group.terms_dict.items():
                                     coeff = jnp.real(coeff)
+                                    print(term)
+                                    print(term.hash_value)
                                     term.jasp_simulate(qarg)
                                     #term.simulate(
                                     #    -coeff
