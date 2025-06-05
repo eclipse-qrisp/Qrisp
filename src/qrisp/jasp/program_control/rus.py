@@ -273,23 +273,29 @@ def RUS(*trial_function, **jit_kwargs):
     else:
         trial_function = trial_function[0]
 
-    # The idea for implementing this feature is to execute the function once
+    # The idea for implementing this feature is to execute the function once qached
     # to collect the output QuantumVariable object.
-    # Subsequently a jaspr in extracted, which is looped over until the condition is met
+    # From the infered output signature the q_while_loop is constructed
 
     def return_function(*trial_args):
+        
+        from qrisp.jasp import q_while_loop, q_cond
+        from qrisp.core import recursive_qv_search, reset
+
 
         abs_qs = TracingQuantumSession.get_instance()
 
-        qached_function = qache(trial_function, **jit_kwargs)
-
         initial_gc_mode = abs_qs.gc_mode
-
+        
+        # Set the garbage collection mode to temporarily auto to collect 
+        # any ancillas that have not been deleted.
         abs_qs.gc_mode = "auto"
         # Execute the function
+        qached_function = qache(trial_function, **jit_kwargs)
         first_iter_res = qached_function(*trial_args)
 
         abs_qs.gc_mode = initial_gc_mode
+        
         
         # Filter out the static arguments
         if "static_argnums" in jit_kwargs:
@@ -305,61 +311,60 @@ def RUS(*trial_function, **jit_kwargs):
                 if argname_list[i] in jit_kwargs["static_argnames"]:
                     static_argnums.append(i)
         
+        
         dynamic_args = []
         
         for i in range(len(trial_args)):
             if i not in static_argnums:
                 dynamic_args.append(trial_args[i])
-        
-        from qrisp.jasp import q_while_loop, q_cond
-        from qrisp.core import QuantumVariable, recursive_qv_search, reset
 
+        n_arg_vals = len(dynamic_args)        
+        
         # Next we construct the body of the loop
-        # In order to work with the while_loop interface from jax
-        # this function receives a tuple of arguments and also returns
-        # a tuple.
-
-        # This tuple contains several sections of argument types:
-
-        # The first argument is an AbstractQuantumCircuit
-        # The next section are the results from the previous iteration
-        # And the final section are trial function arguments
-        
+        # The q_while_loop receives a tuple of arguments and 
+        # also returns a tuple with the same signature.
+        # We therefore combine the results of the first iteration with
+        # the arguments to execute the loop.
 
         combined_args = tuple(list(dynamic_args) + list(first_iter_res))
 
-        n_arg_vals = len(dynamic_args)
-
+        # This is the body function of the while loop
         def body_fun(args):
-            # We now need to deallocate the AbstractQubitArrays from the previous
-            # iteration since they are no longer needed.
+            
+            # The first step is to reset and delete the results
+            # from the previous iteration
+            qv_results = recursive_qv_search(args[n_arg_vals:])
             
             abs_qs = TracingQuantumSession.get_instance()
-            
-            qv_list = recursive_qv_search(args[n_arg_vals:])
-            
-            for qv in qv_list:
+            for qv in qv_results:
                 abs_qs.register_qv(qv, None)
                 reset(qv)
                 qv.delete()
 
+            
+            # We now construct the arguments for the function call of
+            # the current iteration.
+            # For this, we combine the dynamic arguments with the static
+            # arguments.
             dynamic_args = list(args[:n_arg_vals])
             
             new_trial_args = []
-            
             for i in range(len(trial_args)):
                 if i not in static_argnums:
                     new_trial_args.append(dynamic_args.pop(0))
                 else:
                     new_trial_args.append(trial_args[i])
-            
+
+            # Set the garbage collection mode to auto and call the function            
             abs_qs.gc_mode = "auto"
             trial_res = qached_function(*new_trial_args)
             abs_qs.gc_mode = initial_gc_mode
             
+            # Update the tuple with initial args and the new results
             combined_args = tuple(list(args[:n_arg_vals]) + list(trial_res))
             return combined_args
 
+        # This is the loop cancelation condition
         def cond_fun(val):
             # The loop cancelation index is located at the second position of the
             # return value tuple
@@ -368,11 +373,11 @@ def RUS(*trial_function, **jit_kwargs):
         # We now evaluate the loop
 
         # If the first iteration was already successful, we simply return the results
-        # To realize this behavior we use a cond primitive
-
+        # To realize this behavior we use a q_cond primitive
         def true_fun(combined_args):
             return combined_args
 
+        # If the first iteration was not successfull, we start the loop
         def false_fun(combined_args):
             # Here is the while_loop
             return q_while_loop(cond_fun, body_fun, init_val=combined_args)
@@ -380,14 +385,10 @@ def RUS(*trial_function, **jit_kwargs):
         # Evaluate everything
         combined_res = q_cond(first_iter_res[0], true_fun, false_fun, combined_args)
         
-        res = combined_res[n_arg_vals:]
-        
-        abs_qs = TracingQuantumSession.get_instance()
-
         # Return the results
         if len(first_iter_res) == 2:
-            return res[1]
+            return combined_res[n_arg_vals+1]
         else:
-            return res[1:]
+            return combined_res[n_arg_vals+1:]
 
     return return_function
