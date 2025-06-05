@@ -1881,13 +1881,14 @@ class QubitOperator(Hamiltonian):
                             for intersect_group in intersect_groups:
                                 for term, coeff in intersect_group.terms_dict.items():
                                     coeff = jnp.real(coeff)
-                                    term.simulate(
-                                        -coeff
-                                        * t
-                                        / steps
-                                        * (-1) ** int(forward_evolution),
-                                        qarg,
-                                    )
+                                    term.jasp_simulate(qarg)
+                                    #term.simulate(
+                                    #    -coeff
+                                    #    * t
+                                    #    / steps
+                                    #    * (-1) ** int(forward_evolution),
+                                    #    qarg,
+                                    #)
 
         if method == "commuting":
 
@@ -1937,14 +1938,17 @@ class QubitOperator(Hamiltonian):
 
 # Function to flatten QubitOperator
 def flatten_qubit_operator(operator):
-    leaves = tuple(operator.terms_dict.values())
-    aux_data = tuple(operator.terms_dict.keys())
+    keys = tuple(operator.terms_dict.keys())
+    vals = tuple(operator.terms_dict.values())
+    leaves = (keys, vals)
+    aux_data = None
     return leaves, aux_data
 
 
 # Function to unflatten QubitOperator from leaves and auxiliary data
 def unflatten_qubit_operator(aux_data, leaves):
-    terms_dict = dict(zip(aux_data, leaves))
+    keys, vals = leaves
+    terms_dict = dict(zip(keys, vals))
     return QubitOperator(terms_dict)
 
 

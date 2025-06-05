@@ -22,6 +22,9 @@ from qrisp.operators.qubit.visualization import X_, Y_, Z_
 from sympy import Symbol
 import numpy as np
 
+import jax
+from jax import tree_util
+
 PAULI_TABLE = {
     ("I", "I"): ("I", 1),
     ("I", "X"): ("X", 1),
@@ -97,10 +100,13 @@ PAULI_TABLE = {
 class QubitTerm:
     r""" """
 
-    def __init__(self, factor_dict={}):
+    def __init__(self, factor_dict={}, hash_value=None):
         self.factor_dict = dict(factor_dict)
 
-        self.hash_value = hash(tuple(sorted(factor_dict.items(), key=lambda x: x[0])))
+        if hash_value is not None:
+            self.hash_value = hash_value
+        else:
+            self.hash_value = hash(tuple(sorted(factor_dict.items(), key=lambda x: x[0])))
 
     def update(self, update_dict):
         self.factor_dict.update(update_dict)
@@ -233,6 +239,24 @@ class QubitTerm:
     #
     # Simulation
     #
+    from qrisp.jasp import qache
+
+    @qache
+    def jasp_simulate(self, qv):
+        #indices = jax.tree.leaves(self)
+        #print(indices)
+
+        rz(1,qv[0])
+
+        #def flip_anchor_qubit(qv, anchor_index, Z_indices):
+        #        for i in Z_indices:
+        #            cx(qv[i], qv[anchor_index])
+
+        #with conjugate(flip_anchor_qubit)(qv, indices[-1],indices[:-1]):
+        #    rz(coeff, qv[indices[-1]])
+
+
+
     @custom_control(static_argnums=0)
     def simulate(self, coeff, qv, ctrl=None):
 
@@ -762,3 +786,25 @@ class QubitTerm:
             factor[0] for factor in other.factor_dict.items() if factor[1] in ["A", "C"]
         ]
         return len(set(ladder_indices_self).intersection(ladder_indices_other)) != 0
+
+
+# Function to flatten QubitTerm
+def flatten_qubit_term(term):
+    keys = tuple(term.factor_dict.keys())
+    vals = tuple(term.factor_dict.values())
+    hash = term.hash_value
+    leaves = keys
+    aux_data = (vals, hash)
+    return leaves, aux_data
+
+
+# Function to unflatten QubitTermfrom leaves and auxiliary data
+def unflatten_qubit_term(aux_data, leaves):
+    keys = leaves
+    vals, hash = aux_data
+    terms_dict = dict(zip(keys, vals))
+    return QubitTerm(terms_dict, hash)
+
+
+# Register QubitTerm as a PyTree node
+tree_util.register_pytree_node(QubitTerm, flatten_qubit_term, unflatten_qubit_term)
