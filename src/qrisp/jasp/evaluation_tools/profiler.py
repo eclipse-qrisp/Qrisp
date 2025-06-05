@@ -34,6 +34,8 @@ This file implements the interfaces to evaluating the transformed Jaspr.
 
 from functools import lru_cache
 
+import numpy as np
+
 import jax
 import jax.numpy as jnp
 
@@ -249,12 +251,12 @@ def profile_jaspr(jaspr, meas_behavior="0"):
             profiling_array_computer, profiling_dic = get_profiling_array_computer(
                 jaspr, meas_behavior
             )
-
+            
             # Compute the profiling array
             if len(jaspr.outvars) > 1:
-                profiling_array = profiling_array_computer(*args)[-1]
+                profiling_array = profiling_array_computer(*args)[-1][0]
             else:
-                profiling_array = profiling_array_computer(*args)
+                profiling_array = profiling_array_computer(*args)[0]
 
             # Transform to a dictionary containing gate counts
             res_dic = {}
@@ -294,17 +296,30 @@ def get_profiling_array_computer(jaspr, meas_behavior):
         elif primitives[i].name == "jasp.measure" and not "measure" in profiling_dic:
             profiling_dic["measure"] = len(profiling_dic) - 1
 
+    profiling_eqn_evaluator = make_profiling_eqn_evaluator(
+        profiling_dic, meas_behavior
+    )
+    
+    evaluator = jax.jit(eval_jaxpr(jaspr, eqn_evaluator=profiling_eqn_evaluator))
+
     # This function calls the profiling interpeter to evaluate the gate counts
-    @jax.jit
     def profiling_array_computer(*args):
 
-        profiling_eqn_evaluator = make_profiling_eqn_evaluator(
-            profiling_dic, meas_behavior
-        )
+        # The XLA compiler showed some scalability problems in compile time.
+        # Through a process involving a lot of blood and sweat
+        # we reverse engineered what to do to improve these problems
+        # 1. represent the integers that count the gates as a list
+        # of integers (instead of an array)
+        # 2. Avoid telling the compiler that it is constants that
+        # are being added. To do this, we supply a list of the first
+        # few integers as arguments, which will be used to do the
+        # incrementation (i.e. CZ_count += 1). It therefore doesn't
+        # look like a constant is being added but a variable
+        final_arg = ([0] * len(profiling_dic), list(range(1, 6)))
+        
+        args = list(args) + [final_arg]
 
-        args = args + ([0] * len(profiling_dic),)
-
-        res = eval_jaxpr(jaspr, eqn_evaluator=profiling_eqn_evaluator)(*args)
+        res = evaluator(*args)
 
         return res
 
