@@ -634,7 +634,7 @@ class QubitOperator(Hamiltonian):
         from numpy import ndarray
         import numpy as np
 
-        OPERATOR_TABLE = {(0, 0): "P0", (0, 1): "A", (1, 0): "C", (1, 1): "P1"}
+        OPERATOR_TABLE = {(0, 0): 6, (0, 1): 4, (1, 0): 5, (1, 1): 7}
 
         if isinstance(matrix, ndarray):
             new_matrix = csr_matrix(matrix)
@@ -691,21 +691,21 @@ class QubitOperator(Hamiltonian):
         import scipy.sparse as sp
 
         operator_matrices = {
-            "I": sp.csr_matrix([[1, 0], [0, 1]], dtype=complex),
-            "X": sp.csr_matrix([[0, 1], [1, 0]], dtype=complex),
-            "Y": sp.csr_matrix([[0, -1j], [1j, 0]], dtype=complex),
-            "Z": sp.csr_matrix([[1, 0], [0, -1]], dtype=complex),
-            "A": sp.csr_matrix([[0, 1], [0, 0]], dtype=complex),
-            "C": sp.csr_matrix([[0, 0], [1, 0]], dtype=complex),
-            "P0": sp.csr_matrix([[1, 0], [0, 0]], dtype=complex),
-            "P1": sp.csr_matrix([[0, 0], [0, 1]], dtype=complex),
+            0: sp.csr_matrix([[1, 0], [0, 1]], dtype=complex),
+            1: sp.csr_matrix([[0, 1], [1, 0]], dtype=complex),
+            2: sp.csr_matrix([[0, -1j], [1j, 0]], dtype=complex),
+            3: sp.csr_matrix([[1, 0], [0, -1]], dtype=complex),
+            4: sp.csr_matrix([[0, 1], [0, 0]], dtype=complex),
+            5: sp.csr_matrix([[0, 0], [1, 0]], dtype=complex),
+            6: sp.csr_matrix([[1, 0], [0, 0]], dtype=complex),
+            7: sp.csr_matrix([[0, 0], [0, 1]], dtype=complex),
         }
 
         def recursive_kron(keys, term_dict):
             if len(keys) == 1:
-                return operator_matrices[term_dict.get(keys[0], "I")]
+                return operator_matrices[term_dict.get(keys[0], 0)]
             return sp.kron(
-                operator_matrices[term_dict.get(keys.pop(0), "I")],
+                operator_matrices[term_dict.get(keys.pop(0), 0)],
                 recursive_kron(keys, term_dict),
                 format="csr",
             )
@@ -851,7 +851,7 @@ class QubitOperator(Hamiltonian):
         new_terms_dict = {}
         for term, coeff in self.terms_dict.items():
             for factor in term.factor_dict.values():
-                if factor in ["A", "C"]:
+                if factor in [4, 5]:
                     break
             else:
                 new_terms_dict[term] = coeff
@@ -983,7 +983,7 @@ class QubitOperator(Hamiltonian):
 
                     for term in term_group:
                         for index, factor in term.factor_dict.items():
-                            if factor in ["X", "Y", "Z"]:
+                            if factor in [1, 2, 3]:
                                 factor_dict[index] = factor
 
                     bases.append(QubitTerm(factor_dict))
@@ -1142,12 +1142,12 @@ class QubitOperator(Hamiltonian):
                     # (otherwise there is a violation of qubit-wise commutativity)
                     if j in basis_dict:
                         if basis_dict[j] != factor_dict[j]:
-                            assert basis_dict[j] in ["Z", "P0", "P1"]
-                        new_factor_dict[j] = "Z"
+                            assert basis_dict[j] in [3, 6, 7]
+                        new_factor_dict[j] = 3
                         continue
 
                     # We treat ladder operators in the next section
-                    if factor_dict[j] not in ["X", "Y", "Z"]:
+                    if factor_dict[j] not in [1, 2, 3]:
                         continue
 
                     # Update the basis dict
@@ -1155,13 +1155,13 @@ class QubitOperator(Hamiltonian):
 
                     # Append the appropriate basis-change gate
                     if qarg is not None:
-                        if factor_dict[j] == "X":
+                        if factor_dict[j] == 1:
                             h(qarg[j])
 
-                        if factor_dict[j] == "Y":
+                        if factor_dict[j] == 2:
                             sx_dg(qarg[j])
 
-                    new_factor_dict[j] = "Z"
+                    new_factor_dict[j] = 3
 
         if method == "commuting":
 
@@ -1252,7 +1252,7 @@ class QubitOperator(Hamiltonian):
                     n2 = sum((z_vector @ A) * z_vector % 2)
 
                     new_factor_dict = {
-                        qb_indices[perm[i]]: "Z" for i in range(m) if z_vector[i] == 1
+                        qb_indices[perm[i]]: 3 for i in range(m) if z_vector[i] == 1
                     }
                     new_factor_dicts.append(new_factor_dict)
 
@@ -1269,7 +1269,7 @@ class QubitOperator(Hamiltonian):
 
             # Next we treat the ladder operators
             ladder_operators = [
-                base for base in term.factor_dict.items() if base[1] in ["A", "C"]
+                base for base in term.factor_dict.items() if base[1] in [4, 5]
             ]
             ladder_operators.sort(key=lambda x: x[0])
 
@@ -1278,7 +1278,7 @@ class QubitOperator(Hamiltonian):
                 # The anchor factor is the "last" ladder operator.
                 # This is the qubit where the H gate will be executed.
                 anchor_factor = ladder_operators[-1]
-                new_factor_dict[ladder_operators[-1][0]] = "Z"
+                new_factor_dict[ladder_operators[-1][0]] = 3
 
                 ladder_indices = set(
                     ladder_factor[0] for ladder_factor in ladder_operators
@@ -1287,16 +1287,16 @@ class QubitOperator(Hamiltonian):
                 # Perform the cnot gates
                 for j in range(len(ladder_operators) - 1):
 
-                    if anchor_factor[1] == "C":
-                        if ladder_operators[j][1] == "A":
-                            new_factor_dict[ladder_operators[j][0]] = "P1"
+                    if anchor_factor[1] == 5:
+                        if ladder_operators[j][1] == 4:
+                            new_factor_dict[ladder_operators[j][0]] = 7
                         else:
-                            new_factor_dict[ladder_operators[j][0]] = "P0"
+                            new_factor_dict[ladder_operators[j][0]] = 6
                     else:
-                        if ladder_operators[j][1] == "A":
-                            new_factor_dict[ladder_operators[j][0]] = "P0"
+                        if ladder_operators[j][1] == 4:
+                            new_factor_dict[ladder_operators[j][0]] = 6
                         else:
-                            new_factor_dict[ladder_operators[j][0]] = "P1"
+                            new_factor_dict[ladder_operators[j][0]] = 7
 
                 for ind_set in processed_ladder_index_sets:
                     if ind_set.intersection(ladder_indices):
@@ -1320,7 +1320,7 @@ class QubitOperator(Hamiltonian):
                 prefactor *= 0.5
 
             for k, v in term.factor_dict.items():
-                if v in ["P0", "P1"]:
+                if v in [6, 7]:
                     new_factor_dict[k] = v
 
             new_term = QubitTerm(new_factor_dict)
@@ -1425,21 +1425,21 @@ class QubitOperator(Hamiltonian):
                     continue
 
                 # We treat ladder operators in the next section
-                if factor_dict[j] not in ["X", "Y", "Z"]:
+                if factor_dict[j] not in [1, 2, 3]:
                     continue
 
                 # Update the basis dict
                 basis_dict[j] = factor_dict[j]
 
                 # Append the appropriate basis-change gate
-                if factor_dict[j] == "X":
+                if factor_dict[j] == 1:
                     qc.h(j)
-                if factor_dict[j] == "Y":
+                if factor_dict[j] == 2:
                     qc.sx(j)
 
             # Next we treat the ladder operators
             ladder_operators = [
-                base for base in term.factor_dict.items() if base[1] in ["A", "C"]
+                base for base in term.factor_dict.items() if base[1] in [4, 5]
             ]
 
             if len(ladder_operators):
@@ -1449,7 +1449,7 @@ class QubitOperator(Hamiltonian):
                 anchor_factor = ladder_operators[-1]
 
                 # Flip the anchor qubit if the ladder operator is an annihilator
-                if anchor_factor[1] == "C":
+                if anchor_factor[1] == 5:
                     qc.x(anchor_factor[0])
 
                 # Perform the cnot gates
@@ -1457,7 +1457,7 @@ class QubitOperator(Hamiltonian):
                     qc.cx(anchor_factor[0], ladder_operators[j][0])
 
                 # Flip the anchor qubit back
-                if anchor_factor[1] == "C":
+                if anchor_factor[1] == 5:
                     qc.x(anchor_factor[0])
 
                 # Execute the H-gate

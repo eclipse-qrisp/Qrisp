@@ -26,70 +26,70 @@ import jax
 from jax import tree_util
 
 PAULI_TABLE = {
-    ("I", "I"): ("I", 1),
-    ("I", "X"): ("X", 1),
-    ("I", "Y"): ("Y", 1),
-    ("I", "Z"): ("Z", 1),
-    ("I", "A"): ("A", 1),
-    ("I", "C"): ("C", 1),
-    ("I", "P0"): ("P0", 1),
-    ("I", "P1"): ("P1", 1),
-    ("X", "I"): ("X", 1),
-    ("X", "X"): ("I", 1),
-    ("X", "Y"): ("Z", 1j),
-    ("X", "Z"): ("Y", (-0 - 1j)),
-    ("X", "A"): ("P1", 1),
-    ("X", "C"): ("P0", 1),
-    ("X", "P0"): ("C", 1),
-    ("X", "P1"): ("A", 1),
-    ("Y", "I"): ("Y", 1),
-    ("Y", "X"): ("Z", (-0 - 1j)),
-    ("Y", "Y"): ("I", 1),
-    ("Y", "Z"): ("X", 1j),
-    ("Y", "A"): ("P1", 1j),
-    ("Y", "C"): ("P0", (-0 - 1j)),
-    ("Y", "P0"): ("C", 1j),
-    ("Y", "P1"): ("A", (-0 - 1j)),
-    ("Z", "I"): ("Z", 1),
-    ("Z", "X"): ("Y", 1j),
-    ("Z", "Y"): ("X", (-0 - 1j)),
-    ("Z", "Z"): ("I", 1),
-    ("Z", "A"): ("A", 1),
-    ("Z", "C"): ("C", -1),
-    ("Z", "P0"): ("P0", 1),
-    ("Z", "P1"): ("P1", -1),
-    ("A", "I"): ("A", 1),
-    ("A", "X"): ("P0", 1),
-    ("A", "Y"): ("P0", 1j),
-    ("A", "Z"): ("A", -1),
-    ("A", "A"): ("I", 0),
-    ("A", "C"): ("P0", 1),
-    ("A", "P0"): ("I", 0),
-    ("A", "P1"): ("A", 1),
-    ("C", "I"): ("C", 1),
-    ("C", "X"): ("P1", 1),
-    ("C", "Y"): ("P1", (-0 - 1j)),
-    ("C", "Z"): ("C", 1),
-    ("C", "A"): ("P1", 1),
-    ("C", "C"): ("I", 0),
-    ("C", "P0"): ("C", 1),
-    ("C", "P1"): ("I", 0),
-    ("P0", "I"): ("P0", 1),
-    ("P0", "X"): ("A", 1),
-    ("P0", "Y"): ("A", (-0 - 1j)),
-    ("P0", "Z"): ("P0", 1),
-    ("P0", "A"): ("A", 1),
-    ("P0", "C"): ("I", 0),
-    ("P0", "P0"): ("P0", 1),
-    ("P0", "P1"): ("I", 0),
-    ("P1", "I"): ("P1", 1),
-    ("P1", "X"): ("C", 1),
-    ("P1", "Y"): ("C", 1j),
-    ("P1", "Z"): ("P1", -1),
-    ("P1", "A"): ("I", 0),
-    ("P1", "C"): ("C", 1),
-    ("P1", "P0"): ("I", 0),
-    ("P1", "P1"): ("P1", 1),
+    (0, 0): (0, 1),
+    (0, 1): (1, 1),
+    (0, 2): (2, 1),
+    (0, 3): (3, 1),
+    (0, 4): (4, 1),
+    (0, 5): (5, 1),
+    (0, 6): (6, 1),
+    (0, 7): (7, 1),
+    (1, 0): (1, 1),
+    (1, 1): (0, 1),
+    (1, 2): (3, 1j),
+    (1, 3): (2, (-0 - 1j)),
+    (1, 4): (7, 1),
+    (1, 5): (6, 1),
+    (1, 6): (5, 1),
+    (1, 7): (4, 1),
+    (2, 0): (2, 1),
+    (2, 1): (3, (-0 - 1j)),
+    (2, 2): (0, 1),
+    (2, 3): (1, 1j),
+    (2, 4): (7, 1j),
+    (2, 5): (6, (-0 - 1j)),
+    (2, 6): (5, 1j),
+    (2, 7): (4, (-0 - 1j)),
+    (3, 0): (3, 1),
+    (3, 1): (2, 1j),
+    (3, 2): (1, (-0 - 1j)),
+    (3, 3): (0, 1),
+    (3, 4): (4, 1),
+    (3, 5): (5, -1),
+    (3, 6): (6, 1),
+    (3, 7): (7, -1),
+    (4, 0): (4, 1),
+    (4, 1): (6, 1),
+    (4, 2): (6, 1j),
+    (4, 3): (4, -1),
+    (4, 4): (0, 0),
+    (4, 5): (6, 1),
+    (4, 6): (0, 0),
+    (4, 7): (4, 1),
+    (5, 0): (5, 1),
+    (5, 1): (7, 1),
+    (5, 2): (7, (-0 - 1j)),
+    (5, 3): (5, 1),
+    (5, 4): (7, 1),
+    (5, 5): (0, 0),
+    (5, 6): (5, 1),
+    (5, 7): (0, 0),
+    (6, 0): (6, 1),
+    (6, 1): (4, 1),
+    (6, 2): (4, (-0 - 1j)),
+    (6, 3): (6, 1),
+    (6, 4): (4, 1),
+    (6, 5): (0, 0),
+    (6, 6): (6, 1),
+    (6, 7): (0, 0),
+    (7, 0): (7, 1),
+    (7, 1): (5, 1),
+    (7, 2): (5, 1j),
+    (7, 3): (7, -1),
+    (7, 4): (0, 0),
+    (7, 5): (5, 1),
+    (7, 6): (0, 0),
+    (7, 7): (7, 1),
 }
 
 #
@@ -128,12 +128,12 @@ class QubitTerm:
         x_vector = np.zeros(n, dtype=int)
         z_vector = np.zeros(n, dtype=int)
         for index in range(n):
-            curr_factor = self.factor_dict.get(index, "I")
-            if curr_factor == "X":
+            curr_factor = self.factor_dict.get(index, 0)
+            if curr_factor == 1:
                 x_vector[index] = 1
-            elif curr_factor == "Z":
+            elif curr_factor == 3:
                 z_vector[index] = 1
-            elif curr_factor == "Y":
+            elif curr_factor == 2:
                 x_vector[index] = 1
                 z_vector[index] = 1
 
@@ -168,19 +168,19 @@ class QubitTerm:
             bit = 1 << i
 
             # Go through the cases and update the appropriate integers
-            if factor_dict[i] in ["X", "Y", "Z"]:
+            if factor_dict[i] in [1, 2, 3]:
                 z_int |= bit
                 continue
-            elif factor_dict[i] == "C":
+            elif factor_dict[i] == 5:
                 ctrl_int |= bit
                 last_ladder_factor = bit
                 pass
-            elif factor_dict[i] == "A":
+            elif factor_dict[i] == 4:
                 last_ladder_factor = bit
                 pass
-            elif factor_dict[i] == "P0":
+            elif factor_dict[i] == 6:
                 pass
-            elif factor_dict[i] == "P1":
+            elif factor_dict[i] == 7:
                 ctrl_int |= bit
                 pass
             else:
@@ -207,19 +207,19 @@ class QubitTerm:
         res = 1
 
         for i, factor in self.factor_dict.items():
-            if factor == "X":
+            if factor == 1:
                 res *= X(i)
-            elif factor == "Y":
+            elif factor == 2:
                 res *= Y(i)
-            elif factor == "Z":
+            elif factor == 3:
                 res *= Z(i)
-            elif factor == "A":
+            elif factor == 4:
                 res *= (X(i) + 1j * Y(i)) * 0.5
-            elif factor == "C":
+            elif factor == 5:
                 res *= (X(i) - 1j * Y(i)) * 0.5
-            elif factor == "P0":
+            elif factor == 6:
                 res *= (Z(i) + 1) * 0.5
-            elif factor == "P1":
+            elif factor == 7:
                 res *= (Z(i) - 1) * (-0.5)
 
         return res
@@ -227,12 +227,12 @@ class QubitTerm:
     def adjoint(self):
         new_factor_dict = {}
         for i, factor in self.factor_dict.items():
-            if factor in ["X", "Y", "Z", "P0", "P1"]:
+            if factor in [1, 2, 3, 6, 7]:
                 new_factor_dict[i] = factor
-            elif factor == "A":
-                new_factor_dict[i] = "C"
-            elif factor == "C":
-                new_factor_dict[i] = "A"
+            elif factor == 4:
+                new_factor_dict[i] = 5
+            elif factor == 5:
+                new_factor_dict[i] = 4
 
         return QubitTerm(new_factor_dict)
 
@@ -285,7 +285,7 @@ class QubitTerm:
         # Operator diagonal. Please refer to the comments in QubitOperator.change_of_basis
         # to learn how this works.
         for factor in self.factor_dict.values():
-            if factor not in ["I", "Z", "P0", "P1"]:
+            if factor not in [0, 3, 6, 7]:
                 qubit_op = QubitOperator({self: coeff})
                 with conjugate(qubit_op.change_of_basis)(qv) as diagonal_op:
                     for diagonal_term, coeff in diagonal_op.terms_dict.items():
@@ -313,12 +313,12 @@ class QubitTerm:
 
         factor_dict = self.factor_dict
         for i in factor_dict.keys():
-            if factor_dict[i] == "Z":
+            if factor_dict[i] == 3:
                 Z_indices.append(i)
-            elif factor_dict[i] == "P0":
+            elif factor_dict[i] == 6:
                 projector_indices.append(i)
                 projector_state.append(False)
-            elif factor_dict[i] == "P1":
+            elif factor_dict[i] == 7:
                 projector_indices.append(i)
                 projector_state.append(True)
 
@@ -551,21 +551,21 @@ class QubitTerm:
         """
 
         def to_spin(P, index):
-            if P == "I":
+            if P == 0:
                 return 1
-            if P == "X":
+            if P == 1:
                 return X_(index)
-            if P == "Y":
+            if P == 2:
                 return Y_(index)
-            if P == "Z":
+            if P == 3:
                 return Z_(index)
-            if P == "A":
+            if P == 4:
                 return Symbol("A(" + str(index) + ")", commutative=False)
-            if P == "C":
+            if P == 5:
                 return Symbol("C(" + str(index) + ")", commutative=False)
-            if P == "P0":
+            if P == 6:
                 return Symbol("P0(" + str(index) + ")", commutative=False)
-            if P == "P1":
+            if P == 7:
                 return Symbol("P1(" + str(index) + ")", commutative=False)
 
         expr = 1
@@ -602,10 +602,10 @@ class QubitTerm:
 
         keys = set(a.keys()) | set(b.keys())
         for key in keys:
-            factor, coeff = PAULI_TABLE[a.get(key, "I"), b.get(key, "I")]
+            factor, coeff = PAULI_TABLE[a.get(key, 0), b.get(key, 0)]
             if coeff == 0:
                 return QubitTerm({}), 0
-            if factor != "I":
+            if factor != 0:
                 result_factor_dict[key] = factor
                 result_coeff *= coeff
         return QubitTerm(result_factor_dict), result_coeff
@@ -665,8 +665,8 @@ class QubitTerm:
         sign_flip = 1
 
         for key in keys:
-            factor_a = PAULI_TABLE[a.get(key, "I"), b.get(key, "I")]
-            factor_b = PAULI_TABLE[b.get(key, "I"), a.get(key, "I")]
+            factor_a = PAULI_TABLE[a.get(key, 0), b.get(key, 0)]
+            factor_b = PAULI_TABLE[b.get(key, 0), a.get(key, 0)]
 
             if factor_a[1] == 0 and factor_b[1] == 0:
                 return True
@@ -696,15 +696,15 @@ class QubitTerm:
         sign_flip = 1
 
         for key in keys:
-            factor_a = PAULI_TABLE[a.get(key, "I"), b.get(key, "I")]
-            factor_b = PAULI_TABLE[b.get(key, "I"), a.get(key, "I")]
+            factor_a = PAULI_TABLE[a.get(key, 0), b.get(key, 0)]
+            factor_b = PAULI_TABLE[b.get(key, 0), a.get(key, 0)]
 
             if not factor_a == factor_b:
-                if factor_a[0] in ["I", "X", "Y", "Z"] and factor_b[0] in [
-                    "I",
-                    "X",
-                    "Y",
-                    "Z",
+                if factor_a[0] in [0, 1, 2, 3] and factor_b[0] in [
+                    0,
+                    1,
+                    2,
+                    3,
                 ]:
                     if factor_a[1] == -factor_b[1]:
                         sign_flip *= -1
@@ -727,8 +727,8 @@ class QubitTerm:
 
         for key in keys:
             if (
-                not PAULI_TABLE[a.get(key, "I"), b.get(key, "I")]
-                == PAULI_TABLE[b.get(key, "I"), a.get(key, "I")]
+                not PAULI_TABLE[a.get(key, 0), b.get(key, 0)]
+                == PAULI_TABLE[b.get(key, 0), a.get(key, 0)]
             ):
                 return False
         return True
@@ -758,10 +758,10 @@ class QubitTerm:
 
         """
         ladder_indices_self = [
-            factor[0] for factor in self.factor_dict.items() if factor[1] in ["A", "C"]
+            factor[0] for factor in self.factor_dict.items() if factor[1] in [4, 5]
         ]
         ladder_indices_other = [
-            factor[0] for factor in other.factor_dict.items() if factor[1] in ["A", "C"]
+            factor[0] for factor in other.factor_dict.items() if factor[1] in [4, 5]
         ]
         return set(ladder_indices_self) == set(ladder_indices_other)
 
@@ -780,10 +780,10 @@ class QubitTerm:
 
         """
         ladder_indices_self = [
-            factor[0] for factor in self.factor_dict.items() if factor[1] in ["A", "C"]
+            factor[0] for factor in self.factor_dict.items() if factor[1] in [4, 5]
         ]
         ladder_indices_other = [
-            factor[0] for factor in other.factor_dict.items() if factor[1] in ["A", "C"]
+            factor[0] for factor in other.factor_dict.items() if factor[1] in [4, 5]
         ]
         return len(set(ladder_indices_self).intersection(ladder_indices_other)) != 0
 

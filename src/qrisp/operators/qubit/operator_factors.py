@@ -25,42 +25,42 @@ from qrisp.operators.qubit.bound_qubit_term import BoundQubitTerm
 
 def X(arg):
     if isinstance(arg, int):
-        return QubitOperator({QubitTerm({arg: "X"}): 1})
+        return QubitOperator({QubitTerm({arg: 1}): 1})
     elif isinstance(arg, Qubit):
-        return BoundQubitOperator({BoundQubitTerm({arg: "X"}): 1})
+        return BoundQubitOperator({BoundQubitTerm({arg: 1}): 1})
     else:
         raise Exception("Cannot initialize operator from type " + str(type(arg)))
 
 
 def Y(arg):
     if isinstance(arg, int):
-        return QubitOperator({QubitTerm({arg: "Y"}): 1})
+        return QubitOperator({QubitTerm({arg: 2}): 1})
     elif isinstance(arg, Qubit):
-        return BoundQubitOperator({BoundQubitTerm({arg: "Y"}): 1})
+        return BoundQubitOperator({BoundQubitTerm({arg: 2}): 1})
     else:
         raise Exception("Cannot initialize operator from type " + str(type(arg)))
 
 
 def Z(arg):
     if isinstance(arg, int):
-        return QubitOperator({QubitTerm({arg: "Z"}): 1})
+        return QubitOperator({QubitTerm({arg: 3}): 1})
     elif isinstance(arg, Qubit):
-        return BoundQubitOperator({BoundQubitTerm({arg: "Z"}): 1})
+        return BoundQubitOperator({BoundQubitTerm({arg: 3}): 1})
     else:
         raise Exception("Cannot initialize operator from type " + str(type(arg)))
 
 
 def A(arg):
-    return QubitOperator({QubitTerm({arg: "A"}): 1})
+    return QubitOperator({QubitTerm({arg: 4}): 1})
 
 
 def C(arg):
-    return QubitOperator({QubitTerm({arg: "C"}): 1})
+    return QubitOperator({QubitTerm({arg: 5}): 1})
 
 
 def P0(arg):
-    return QubitOperator({QubitTerm({arg: "P0"}): 1})
+    return QubitOperator({QubitTerm({arg: 6}): 1})
 
 
 def P1(arg):
-    return QubitOperator({QubitTerm({arg: "P1"}): 1})
+    return QubitOperator({QubitTerm({arg: 7}): 1})
