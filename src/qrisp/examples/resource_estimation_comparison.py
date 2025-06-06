@@ -55,6 +55,12 @@ import time
 t0 = time.time()
 count_ops_qrisp(2)
 print("Just-in-time compilation time: ", t0 - time.time())
+#%%
+
+t0 = time.time()
+count_ops_qrisp(40)
+t1 = time.time()-t0
+print(t1)
 
 #%%
 # --- Benchmarking ---
@@ -134,3 +140,4 @@ plt.title('Resource Efficiency and Computation Speed \n vs. Beryllium hydride QP
 plt.tight_layout()
 # plt.savefig("resource_computation_comparison.png", dpi = 300)
 plt.show()
+
