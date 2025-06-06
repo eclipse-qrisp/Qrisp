@@ -58,8 +58,8 @@ def ctrl_state_conjugator(ctrls, ctrl_state):
         with control(~extract_boolean_digit(ctrl_state, i)):
             x(ctrls[i])
 
-
-def gidney_CCCZ(ctrls, target):
+@custom_inversion
+def gidney_CCCZ(ctrls, target, inv=False):
     """
     Implements a CCCZ gate using the Gidney 
     method described in https://arxiv.org/abs/2106.11513 using only 6 T gates.
