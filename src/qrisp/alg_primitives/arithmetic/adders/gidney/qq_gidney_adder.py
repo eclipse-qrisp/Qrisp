@@ -26,8 +26,8 @@ from qrisp.core.gate_application_functions import mcx, cx
 @custom_control
 def qq_gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
 
-    if len(a) != len(b):
-        raise Exception("Tried to call Gidney adder with inputs of unequal length")
+    #if len(a) != len(b):
+    #    raise Exception("Tried to call Gidney adder with inputs of unequal length")
 
     if c_out is not None:
         # Convert to qubit if neccessary
