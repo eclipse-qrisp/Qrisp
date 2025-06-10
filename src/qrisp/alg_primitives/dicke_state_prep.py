@@ -34,7 +34,8 @@ def comb(N, k):
 
 def dicke_state(qv,k):
     """
-    Dicke State initialization of a QuantumVariable, based on the deterministic alogrithm in https://arxiv.org/abs/1904.07358. 
+    Dicke State initialization of a QuantumVariable, based on the deterministic alogrithm in `Deterministic Preparation of Dicke States (2019)
+    <https://arxiv.org/abs/1904.07358>`_. 
 
     This algorithm creates an equal superposition of Dicke states for a given Hamming weight. The initial input QuantumVariable has to be within this subspace.
     Works in JASP and non-JASP mode, see
@@ -84,7 +85,8 @@ def dicke_state(qv,k):
 def split_cycle_shift(qv, highIndex, lowIndex):
     """
 
-    Helper function for Dicke State initialization of a QuantumVariable, based on the deterministic alogrithm in https://arxiv.org/abs/1904.07358. 
+    Helper function for Dicke State initialization of a QuantumVariable, based on the deterministic alogrithm in `Deterministic Preparation of Dicke States (2019)
+    <https://arxiv.org/abs/1904.07358>`_. 
     
     Parameters
     ----------
@@ -124,7 +126,7 @@ def split_cycle_shift(qv, highIndex, lowIndex):
 
 def dicke_divide_and_conquer(qv, k):
     """
-    Dicke State initialization of a QuantumVariable, based on the deterministic alogrithm in < A Divide-and-Conquer Approach to Dicke State preparation https://arxiv.org/abs/1904.07358>_ . 
+    Dicke State initialization of a QuantumVariable, based on the deterministic alogrithm in `A Divide-and-Conquer Approach to Dicke State preparation (2021) <https://arxiv.org/abs/2112.12435>`_. 
     This algorithm creates an equal superposition of states for a given Hamming weight. The QuantumVariable has to be in the ``0``-State.
     Works in JASP and non-JASP mode, see
     
@@ -221,7 +223,7 @@ def dicke_divide_and_conquer(qv, k):
 def collective_hamming_measurement(qf, n):
     """
     Implementation of a collective Hamming weight measurement, based on `Shallow Quantum Circuit Implementation of
-    Symmetric Functions with Limited Ancillary Qubits <https://arxiv.org/pdf/2404.06052>`_ . 
+    Symmetric Functions with Limited Ancillary Qubits <https://arxiv.org/pdf/2404.06052>`_. 
 
     Parameters
     ----------
@@ -255,8 +257,8 @@ def collective_hamming_measurement(qf, n):
 
 def iterative_dicke_state_sampling(qf, m_t):
     """
-    Implementation of a Dicke state preparation routine, based on `Efficient preparation of Dicke states
-    <https://arxiv.org/pdf/2411.03428>`_ . 
+    Implementation of a Dicke state preparation routine, based on `Efficient preparation of Dicke states (2024)
+    <https://arxiv.org/pdf/2411.03428>`_. 
     This algorithm creates an equal superposition of states for a given Hamming weight. The QuantumVariable has to be in the ``0``-State, other inputs have not been investigated.
     Intended to be used in JASP-mode. 
 
@@ -271,6 +273,23 @@ def iterative_dicke_state_sampling(qf, m_t):
     -------
     qf1: QuantumFloat
         The QuantumFloat which is prepared as a Dicke state.
+
+    Examples
+    --------
+
+    We initiate a QuantumVariable with 7 qubits from this create the Dicke state with Hamming weight 3 in JASP mode.
+
+    ::
+
+        @terminal_sampling
+        def main():
+                
+            n = 7
+            k = 3
+            qv_iter = QuantumFloat(n)
+            qv_iter = iterative_dicke_state_sampling(qv_iter,k)
+
+            return qv_iter
 
     """
     

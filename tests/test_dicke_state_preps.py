@@ -34,6 +34,10 @@ expect_ampl = 1/expect_num_res
 
 
 def test_dicke_state_preps_dnq(k):
+    n = 7
+    k_rand = randint(1,3)
+    expect_num_res = scipy.special.binom(n,k_rand)
+    expect_ampl = 1/expect_num_res
 
     # dicke_divide_and_conquer - NON-JASP
     n = 7
@@ -50,6 +54,11 @@ def test_dicke_state_preps_dnq(k):
 
 
 def test_dicke_state_preps_dnq_jasp(k):
+
+    n = 7
+    k_rand = randint(1,3)
+    expect_num_res = scipy.special.binom(n,k_rand)
+    expect_ampl = 1/expect_num_res
 
     # dicke_divide_and_conquer - JASP
     @terminal_sampling
@@ -71,6 +80,11 @@ def test_dicke_state_preps_dnq_jasp(k):
 
 
 def test_dicke_state_preps_iterative(k):
+
+    n = 7
+    k_rand = randint(1,3)
+    expect_num_res = scipy.special.binom(n,k_rand)
+    expect_ampl = 1/expect_num_res
     
     # iterative_dicke_state_sampling - JASP
     @terminal_sampling
