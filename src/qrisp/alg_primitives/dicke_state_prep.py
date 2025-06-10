@@ -16,9 +16,9 @@
 ********************************************************************************
 """
 
-
-from qrisp import QuantumFloat, QFT, rz, cx, x, ry, control, invert, h, measure
-from qrisp.jasp import jrange, check_for_tracing_mode, q_while_loop
+from qrisp import  cx,  x, ry,  control, invert, h, QuantumFloat, rz,  measure
+from qrisp.alg_primitives.qft import QFT
+from qrisp.jasp import jrange, terminal_sampling, check_for_tracing_mode, q_while_loop
 
 import jax
 from jax.scipy.special import gammaln
@@ -122,7 +122,7 @@ def split_cycle_shift(qv, highIndex, lowIndex):
 
 
 
-def dicke_divide_and_conquer_jasp(qv, k):
+def dicke_divide_and_conquer(qv, k):
     """
     Dicke State initialization of a QuantumVariable, based on the deterministic alogrithm in < A Divide-and-Conquer Approach to Dicke State preparation https://arxiv.org/abs/1904.07358>_ . 
     This algorithm creates an equal superposition of states for a given Hamming weight. The QuantumVariable has to be in the ``0``-State.
@@ -139,7 +139,7 @@ def dicke_divide_and_conquer_jasp(qv, k):
     Examples
     --------
 
-    We initiate a QuantumVariable with 7 qubits and create the Dicke state with Hamming weight 3 in JASP mode.
+    We initiate a QuantumVariable with 7 qubits from this create the Dicke state with Hamming weight 3 in JASP mode.
 
     ::
 
@@ -215,6 +215,7 @@ def dicke_divide_and_conquer_jasp(qv, k):
     dicke_state(qv[n-n_2a:], k)
     # barrier(qv)     
 
+    return qv
 
 
 def collective_hamming_measurement(qf, n):
@@ -270,24 +271,6 @@ def iterative_dicke_state_sampling(qf, m_t):
     -------
     qf1: QuantumFloat
         The QuantumFloat which is prepared as a Dicke state.
-
-    Examples
-    --------
-
-    We create the Dicke state with Hamming weight 2 in JASP mode.
-
-    ::
-
-        @terminal_sampling
-        def main():
-                
-            n=5
-            k=2
-            q_test = QuantumFloat(n)
-            
-            q_test = iterative_dicke_state_sampling(q_test,k)
-
-            return q_test
 
     """
     
