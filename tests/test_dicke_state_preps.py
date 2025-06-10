@@ -33,15 +33,15 @@ expect_num_res = scipy.special.binom(n,k_rand)
 expect_ampl = 1/expect_num_res
 
 
-def test_dicke_state_preps_dnq(k):
+def test_dicke_state_preps_dnq():
     n = 7
-    k_rand = randint(1,3)
-    expect_num_res = scipy.special.binom(n,k_rand)
+    k = 3
+    expect_num_res = scipy.special.binom(n,k = 3)
     expect_ampl = 1/expect_num_res
 
     # dicke_divide_and_conquer - NON-JASP
     n = 7
-    #k = randint(1,3)
+    k = 3
     qv = QuantumVariable(n)
     dicke_divide_and_conquer(qv, k)
     res_dnq = qv.get_measurement()
@@ -53,10 +53,10 @@ def test_dicke_state_preps_dnq(k):
 
 
 
-def test_dicke_state_preps_dnq_jasp(k):
+def test_dicke_state_preps_dnq_jasp():
 
     n = 7
-    k_rand = randint(1,3)
+    k_rand = 3
     expect_num_res = scipy.special.binom(n,k_rand)
     expect_ampl = 1/expect_num_res
 
@@ -65,7 +65,7 @@ def test_dicke_state_preps_dnq_jasp(k):
     def main():
             
         n = 7
-        #k = randint(1,3)
+        k = 3
         q_test = QuantumVariable(n)
         q_test = dicke_divide_and_conquer(q_test,k)
 
@@ -79,11 +79,11 @@ def test_dicke_state_preps_dnq_jasp(k):
 
 
 
-def test_dicke_state_preps_iterative(k):
+def test_dicke_state_preps_iterative():
 
     n = 7
-    k_rand = randint(1,3)
-    expect_num_res = scipy.special.binom(n,k_rand)
+    k = 3
+    expect_num_res = scipy.special.binom(n,k)
     expect_ampl = 1/expect_num_res
     
     # iterative_dicke_state_sampling - JASP
@@ -91,7 +91,7 @@ def test_dicke_state_preps_iterative(k):
     def main():
             
         n = 7
-        #k = randint(1,3)
+        k = 3
         qv_iter = QuantumFloat(n)
         qv_iter = iterative_dicke_state_sampling(qv_iter,k)
 
