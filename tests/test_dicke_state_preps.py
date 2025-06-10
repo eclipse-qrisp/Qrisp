@@ -36,7 +36,7 @@ expect_ampl = 1/expect_num_res
 def test_dicke_state_preps_dnq():
     n = 7
     k = 3
-    expect_num_res = scipy.special.binom(n,k = 3)
+    expect_num_res = scipy.special.binom(n,k)
     expect_ampl = 1/expect_num_res
 
     # dicke_divide_and_conquer - NON-JASP
