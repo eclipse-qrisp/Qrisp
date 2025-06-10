@@ -616,7 +616,16 @@ class QubitTerm:
     # Unitary
     #
 
-    def get_unitary(self):
+    def get_unitary(self, sign = False):
+        """
+        Returns the unitary for the term self. 
+
+        Parameters
+        ----------
+            sign : bool
+                A Boolean indicating whether a phase -1 must be applied. The default is False.
+        
+        """
         def unitary(operand):
             for i, factor in self.factor_dict.items():
                 if factor=="X":
@@ -625,10 +634,22 @@ class QubitTerm:
                     y(operand[i])
                 elif factor=="Z":
                     z(operand[i])
+
+            if sign:
+                gphase(np.pi, operand[0])
             
         return unitary
     
-    def apply_unitary(self, operand):
+    def apply_unitary(self, operand, sign = False):
+        """
+        Applies the unitary for the term self to the ``operand``. 
+
+        Parameters
+        ----------
+            sign : bool
+                A Boolean indicating whether a phase -1 must be applied. The default is False.
+        
+        """
         for i, factor in self.factor_dict.items():
             if factor=="X":
                 x(operand[i])
@@ -636,6 +657,9 @@ class QubitTerm:
                 y(operand[i])
             elif factor=="Z":
                 z(operand[i])
+
+        if sign:
+                gphase(np.pi, operand[0])
             
     #
     # Commutativity

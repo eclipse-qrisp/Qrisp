@@ -17,6 +17,7 @@ Methods
    QubitOperator.expectation_value
    QubitOperator.from_matrix
    QubitOperator.get_measurement
+   QubitOperator.get_unitaries
    QubitOperator.ground_state_energy
    QubitOperator.hermitize
    QubitOperator.to_array

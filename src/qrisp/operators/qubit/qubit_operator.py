@@ -1936,21 +1936,106 @@ class QubitOperator(Hamiltonian):
     #
 
     def get_unitaries(self):
-        """
+        r"""
+        Returns a list of unitiaries and the coefficients of the **Pauli representation** of the **hermitized** version of the operator $H=(O+O^{\dagger})/2$:
+
+        .. math::
+
+            H = \sum_{i=0}^{M-1}\alpha_iP_i
+
+        where $\alpha_i$ are real coefficients, $P_i$ are Pauli operators. Coefficients $\alpha_i$ are nonnegative and each Pauli carries a $\pm1$ sign (corressponding to a phase shift).
         
         Returns
         -------
         list[callable]
-            A list of functions performing the Pauli unitaries on a :ref:`QuantumVaraible` ``operand`` for the terms in the Hamiltonian.
+            A list of functions performing the Pauli unitaries on a :ref:`QuantumVariable` for the terms in the Pauli Hamiltonian.
         numpy.ndarray
-            An array of coefficents for the terms in the Hamiltonian.
+            An array of nonnegative coefficents for the terms in the Pauli Hamiltonian.
+
+        Examples
+        --------
+
+        Applying a Hamiltonian operator via Linear Conbination of Unitaries.
+
+        ::
+
+            from qrisp import QuantumVariable, barrier
+            from qrisp.operators import X,Y,Z
+
+            H = 2*X(0)*X(1)-Z(0)*Z(1)
+
+            unitaries, coeffs = H.get_unitaries()
+            print(coeffs)
+            # [2. 1.]
+
+        Note that all coefficients are nonnegative. The unitaries are $P_0=XX$, and $P_1=-ZZ$ where the minus sign is accounted for by a phase shift:
+
+        ::
+
+            qv = QuantumVariable(2)
+            unitaries[0](qv)
+            barrier(qv)
+            unitaries[1](qv)
         
+        >>> print(qv.qs)  
+        QuantumCircuit:
+        ---------------
+              ┌───┐ ░ ┌───┐┌────────┐
+        qv.0: ┤ X ├─░─┤ Z ├┤ gphase ├
+              ├───┤ ░ ├───┤└────────┘
+        qv.1: ┤ X ├─░─┤ Z ├──────────
+              └───┘ ░ └───┘          
+        Live QuantumVariables:
+        ----------------------
+        QuantumVariable qv
+
+        The Hamiltonian operator $H$ can be applied to a :ref:`QuantumVariable` using Qrisp's :ref:`LCU` implementation:
+
+        ::
+
+            from qrisp import *
+            import numpy as np
+
+            @terminal_sampling
+            def main():
+
+                H = 2*X(0)*X(1)-Z(0)*Z(1)
+
+                unitaries, coeffs = H.get_unitaries()
+
+                def operand_prep():
+                    return QuantumVariable(2)
+
+                def state_prep(case):
+                    prepare(case, np.sqrt(coeffs))
+
+                qv = LCU(operand_prep, state_prep, unitaries)
+                return qv
+
+            res_dict = main()
+
+        We convert the resulting measurement probabilities to amplitudes by applying the square root. 
+        Note that, minus signs of amplitudes cannot be recovered from measurement probabilities.
+
+        
+        ::
+        
+            for k, v in res_dict.items():
+                res_dict[k] = v**0.5
+
+            print(res_dict)
+            # Yields: {3: 0.8944272109919233, 0: 0.4472135555159407} 
+
         """
+        hamiltonian = self.hermitize()
+        hamiltonian = hamiltonian.to_pauli()
+
         unitaries = []
         coefficients = []
 
-        for term, coeff in self.terms_dict.items():
-            unitaries.append(term.get_unitary())
-            coefficients.append(coeff)
+        for term, coeff in hamiltonian.terms_dict.items():
+            coeff_ = np.real(coeff)
+            unitaries.append(term.get_unitary(sign = (coeff<0) ))    
+            coefficients.append(np.abs(coeff_))
 
-        return unitaries, np.array(coefficients, dtype=complex)
+        return unitaries, np.array(coefficients, dtype=float)
