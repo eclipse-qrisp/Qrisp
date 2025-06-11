@@ -5,13 +5,13 @@ Linear Combination of Unitaries (LCU) primitive and its applications
 
 If you’ve ever wondered how to bend the rules of quantum mechanics (without actually breaking them), you’re in the right place. This tutorial is your roadmap to the Linear Combination of Unitaries (LCU) protocol—a powerful tool that lets you simulate non-unitary operations by cleverly mixing unitaries, opening doors to advanced quantum algorithms and simulations.
 
-Here’s what you’ll discover as you journey through these pages:
+Here’s what you’ll discover as you journey through this tutorial:
 
-- We’ll start by demystifying the LCU protocol: why it’s needed, what problems it solves, and how it transforms the impossible into the executable. You’ll learn the core ideas behind representing complex quantum operations as sums of simpler, unitary building blocks.
+- We’ll start by demystifying the LCU protocol: why it’s needed and what problems it solves. You’ll learn the core ideas behind representing complex quantum operations as sums of simpler, unitary building blocks aka block encodings.
 
-- Next, we’ll roll up our sleeves and see how LCU comes alive in Qrisp. This section is hands-on: you’ll explore annotated code examples, understand the structure of Qrisp’s LCU implementation, and see how to prepare ancilla registers, orchestrate controlled unitaries, and interpret the results. Whether you’re a Qrisp novice or a seasoned quantum coder, you’ll pick up practical techniques for integrating LCU into your own projects.
+- Next, we’ll roll up our sleeves and see how LCU comes alive in Qrisp (Frankenstein intensifies). This section is hands-on: you’ll explore annotated code examples, understand the structure of Qrisp’s LCU implementation, and see how to prepare ancilla registers, orchestrate controlled unitaries, and interpret the results.
 
-- The adventure doesn’t stop at LCU! In our final section, we combine the strengths of Trotterization and LCU to unlock the Linear Combination of Hamiltonian Simulation (LCHS) protocol. Here, you’ll learn how to simulate functions of Hamiltonians—like $\cos(H)$.
+- We won't stop at just understanding LCU, but instead also use it as an algorithmic building block (primitive) to perform another algorithm. In our final section, we combine the strengths of Trotterization and LCU to unlock the Linear Combination of Hamiltonian Simulation (LCHS) protocol. Here, you’ll learn how to simulate functions of Hamiltonians—like $\cos(H)$.
 
 If all goes well (if not, let us know about which parts should be elaborated upon further), you'll be motivated to apply LCU and extend it to tackle `Quantum Signal
 Processing (QSP) <https://journals.aps.org/prxquantum/abstract/10.1103/PRXQuantum.5.020368>`_, and/or `Quantum Singular Value Transformation (QSVT) <https://dl.acm.org/doi/abs/10.1145/3313276.3316366>`_. Until the implementation in Qrisp, the proof to this is left for the reader (which is not a broad time-window).
