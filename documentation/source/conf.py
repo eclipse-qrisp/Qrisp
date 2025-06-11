@@ -64,7 +64,8 @@ extensions = [
               "sphinx_sitemap",
                "sphinx_copybutton",
                "sphinx_design",
-               "sphinx_thebe"
+               "sphinx_thebe",
+               "sphinxcontrib.youtube"
               #"nb2plots",
               ]
 
