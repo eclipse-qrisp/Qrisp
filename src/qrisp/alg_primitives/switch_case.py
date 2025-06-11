@@ -18,7 +18,7 @@
 
 from qrisp.core import QuantumArray, QuantumVariable, x
 from qrisp.qtypes import QuantumBool
-from qrisp.environments import conjugate, control
+from qrisp.environments import conjugate, control, custom_inversion, invert
 from qrisp.alg_primitives import demux
 from qrisp.core.gate_application_functions import mcx
 from qrisp.jasp import check_for_tracing_mode, jrange, q_fori_loop, q_cond
@@ -26,7 +26,7 @@ import numpy as np
 import jax.numpy as jnp
 
 
-def qswitch(operand, case, case_function, method="auto", case_amount=None):
+def qswitch(operand, case, case_function, method="auto", case_amount=None, inv = False):
     """
     Executes a switch - case statement distinguishing between a list of
     given in-place functions.
@@ -105,6 +105,14 @@ def qswitch(operand, case, case_function, method="auto", case_amount=None):
     {(0, 1): 0.25, (1, 2): 0.25, (2, 4): 0.25, (3, 8): 0.25}
 
     """
+    
+    def invert_inpl_function(func):
+        def return_func(*args, **kwargs):
+            with invert():
+                res = func(*args, **kwargs)
+            return res
+        return return_func
+    
 
     if callable(case_function):
         if case_amount == None:
@@ -114,6 +122,9 @@ def qswitch(operand, case, case_function, method="auto", case_amount=None):
         xrange = jrange
         if method == "auto":
             method = "tree"
+            
+        if inv:
+            case_function = invert_inpl_function(case_function)
 
     else:
         
@@ -126,9 +137,10 @@ def qswitch(operand, case, case_function, method="auto", case_amount=None):
         # def identity(operand):
         #     pass
 
-        # case_function.extend(
-        #     [identity] * ((1 << ((case_amount - 1).bit_length())) - case_amount)
-        # )
+
+        if inv:
+            case_function = [invert_inpl_function(func) for func in case_function]
+     
 
         xrange = range
         if method == "auto":
@@ -342,7 +354,7 @@ def qswitch(operand, case, case_function, method="auto", case_amount=None):
                 return None
 
             x_cond((diff >> j) & 1, lambda: bf(), lambda: None)
-            # The x cond applies:
+            # The cond applies:
             # if (diff >> j) & 1:
             #    with control(anc[n-j-1]):
             #        x(anc[n - j])
@@ -355,3 +367,7 @@ def qswitch(operand, case, case_function, method="auto", case_amount=None):
         raise Exception(
             f"Don't know compile method {method} for switch-case structure."
         )
+
+temp = qswitch.__doc__
+qswitch = custom_inversion(qswitch)
+qswitch.__doc__ = temp

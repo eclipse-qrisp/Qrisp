@@ -123,6 +123,9 @@ def invert_jaspr(jaspr):
     jaspr = jaspr.flatten_environments()
     # We separate the equations into classes where one executes Operations and
     # the one that doesn't execute Operations
+    if jaspr.inv_jaspr is not None:
+        return jaspr.inv_jaspr
+    
     op_eqs = []
     non_op_eqs = []
     deletions = []

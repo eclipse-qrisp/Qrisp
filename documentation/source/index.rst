@@ -521,7 +521,6 @@ Qrisp is an Eclipse open-source project developed mainly at `Fraunhofer FOKUS <h
    general/tutorial/index
    reference/index
    general/setup
-   general/thinq_qrisp/index
    general/papers/index
    general/changelog/index
    general/imprint

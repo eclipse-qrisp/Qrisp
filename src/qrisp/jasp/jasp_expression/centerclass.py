@@ -30,6 +30,7 @@ from qrisp.jasp import (
     pjit_to_gate,
     flatten_environments,
     cond_to_cl_control,
+    extract_invalues
 )
 from qrisp.jasp.primitives import AbstractQuantumCircuit
 
@@ -122,12 +123,13 @@ class Jaspr(Jaxpr):
         "isqfree",
         "hashvalue",
         "ctrl_jaspr",
+        "inv_jaspr",
         "envs_flattened",
         "consts",
     )
 
     def __init__(
-        self, *args, permeability=None, isqfree=None, ctrl_jaspr=None, **kwargs
+        self, *args, permeability=None, isqfree=None, ctrl_jaspr=None, inv_jaspr=None, **kwargs
     ):
 
         if len(args) == 1:
@@ -162,6 +164,7 @@ class Jaspr(Jaxpr):
 
         self.isqfree = isqfree
         self.ctrl_jaspr = ctrl_jaspr
+        self.inv_jaspr = inv_jaspr
         self.envs_flattened = False
         self.consts = []
 
@@ -384,7 +387,20 @@ class Jaspr(Jaxpr):
                 ):
                     context_dic[eqn.outvars[0]] = context_dic[eqn.invars[0]]
                     return
-            return True
+                return True
+            else:
+                
+                invalues = extract_invalues(eqn, context_dic)
+                for val in invalues:
+                    if isinstance(val, list):
+                        if isinstance(val[0], Clbit):
+                            break
+                    elif isinstance(val, Clbit):
+                        break
+                else:
+                    return True
+                
+            raise Exception(f"Tried to convert Jaspr involving real-time computation primitive `{eqn.primitive.name}` to QuantumCircuit")
 
         ammended_args = list(args) + [QuantumCircuit()] + jaspr.consts
         if len(ammended_args) != len(jaspr.invars):
@@ -466,6 +482,12 @@ class Jaspr(Jaxpr):
         res = flatten_environments(self)
         if self.ctrl_jaspr is not None:
             res.ctrl_jaspr = self.ctrl_jaspr.flatten_environments()
+        if self.inv_jaspr is not None:
+            if not self.inv_jaspr.envs_flattened:
+                res.inv_jaspr = self.inv_jaspr.flatten_environments()
+            else:
+                res.inv_jaspr = self.inv_jaspr
+            res.inv_jaspr.inv_jaspr = res
         return res
 
     def __call__(self, *args):
@@ -1205,8 +1227,8 @@ def make_jaspr(fun, garbage_collection="auto", flatten_envs=True, **jax_kwargs):
         # Note that we add the abs_qc keyword as the tracing quantum circuit
         def ammended_function(*args, **kwargs):
 
-            abs_qc = args[-1]
-            args = args[:-1]
+            abs_qc = kwargs[10*"~"]
+            del kwargs[10*"~"]
 
             qs.start_tracing(abs_qc, garbage_collection)
 
@@ -1233,8 +1255,10 @@ def make_jaspr(fun, garbage_collection="auto", flatten_envs=True, **jax_kwargs):
             return res, res_qc
 
         try:
+            ammended_kwargs = dict(kwargs)
+            ammended_kwargs[10*"~"] = AbstractQuantumCircuit()
             closed_jaxpr = make_jaxpr(ammended_function, **jax_kwargs)(
-                *(list(args) + [AbstractQuantumCircuit()]), **kwargs
+                *args, **ammended_kwargs
             )
         except UnexpectedTracerError as e:
             if "intermediate value with type QuantumCircuit" in str(e):
@@ -1242,7 +1266,7 @@ def make_jaspr(fun, garbage_collection="auto", flatten_envs=True, **jax_kwargs):
                     """Lost track of QuantumCircuit during tracing. This might have been caused by a missing quantum_kernel decorator. Please visit https://www.qrisp.eu/reference/Jasp/Quantum%20Kernel.html for more details"""
                 )
             raise e
-
+            
         jaxpr = closed_jaxpr.jaxpr
 
         # Collect the environments
