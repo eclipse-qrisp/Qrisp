@@ -315,10 +315,10 @@ def iterative_dicke_state_sampling(qf, m_t):
         ancillas =collective_hamming_measurement(qf1,j)
         m = measure(ancillas)
 
-        with invert():
-                (ancillas << collective_hamming_measurement)(qf1,j)
+        #with invert():
+                #(ancillas << collective_hamming_measurement)(qf1,j)
 
-        ancillas.delete()
+        #ancillas.delete()
 
         return m_t, qf1,theta ,j, m 
     
