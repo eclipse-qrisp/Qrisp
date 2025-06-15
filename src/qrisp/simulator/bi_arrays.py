@@ -1087,11 +1087,11 @@ class DenseBiArray(BiArray):
 
         if len(indices) > 10:
             new_arrays, p_list, outcome_index_list = hlp.dense_measurement_brute(
-                np_array, len(indices), 0
+                np_array, len(indices), 0, cutoff_ratio
             )
         else:
             new_arrays, p_list, outcome_index_list = hlp.dense_measurement_smart(
-                np_array, len(indices), 0
+                np_array, len(indices), 0, float_thresh
             )
 
         new_bi_arrays = []
