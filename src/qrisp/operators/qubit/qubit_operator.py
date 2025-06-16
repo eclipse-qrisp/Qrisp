@@ -1772,8 +1772,6 @@ class QubitOperator(Hamiltonian):
 
     def trotterization(self, order=1, method="commuting_qw", forward_evolution=True):
         r"""
-        .. _ham_sim:
-
         Returns a function for performing Hamiltonian simulation, i.e., approximately implementing the unitary operator $U(t) = e^{-itH}$ via Trotterization.
         Note that this method will always simulate the **hermitized** operator, i.e.
 
@@ -1937,7 +1935,13 @@ class QubitOperator(Hamiltonian):
 
     def unitaries(self):
         r"""
-        Returns unitiaries and coefficients for the Pauli representation of the hermitian part $H=(O+O^{\dagger})/2$ of the operator.
+        Returns unitiaries and coefficients for the Pauli representation of the operator.
+        Note that this method will always consider the **hermitized** operator, i.e.
+
+        .. math::
+
+            H = (O + O^\dagger)/2
+
         The Pauli representation reads
 
         .. math::

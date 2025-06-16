@@ -8,7 +8,7 @@ Welcome to the latest update of Qrisp, our quantum computing programming languag
 The Operators module
 --------------------
 
-This module allows you to describe operators that are not necessarily unitary or even hermitian. With these tools at hand you can effectively set up two of quantum's most important algorithms: :ref:`Hamiltonian simulation <ham_sim>` and the :ref:`VQE`.
+This module allows you to describe operators that are not necessarily unitary or even hermitian. With these tools at hand you can effectively set up two of quantum's most important algorithms: :meth:`Hamiltonian simulation <qrisp.operators.qubit.QubitOperator.trotterization>` and the :ref:`VQE`.
 
 For this purpose, Qrisp provides the following classes:
 
