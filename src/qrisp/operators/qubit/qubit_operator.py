@@ -808,7 +808,7 @@ class QubitOperator(Hamiltonian):
 
     def adjoint(self):
         """
-        Returns an the adjoint operator.
+        Returns the adjoint operator.
 
         Returns
         -------

@@ -14,7 +14,7 @@ HHL algorithm in theory
 
 Given an $N$-by-$N$ Hermitian matrix $A$ and an $N$-dimensional vector $b$, the Quantum Linear Systems Problem (QSLP) consists of preparing a quantum state $\ket{x}$ with amplitudes proportional to the solution $x$ of the linear system of equations $Ax=b$. 
 Thereby, it can exhibit an exponential speedup over classical methods for certain sparse matrices $A$. The HHL quantum algorithm and, more generally, quantum linear systems algorithms, hold significant promise for accelerating computations in fields that rely 
-heavily on solving linear systems of equations, such as `solving differential equations <https://arxiv.org/abs/2202.01054v4>`_, or acclerating machine learning.
+heavily on solving linear systems of equations, such as `solving differential equations <https://arxiv.org/abs/2202.01054v4>`_, or accelerating machine learning.
 
 In its eigenbasis, the matrix $A$ can be written as 
 $$ A = \\sum_i \\lambda_i\\ket{u_i}\\bra{u_i} $$
@@ -137,7 +137,7 @@ Hence, upon measuring the ``case_indicator`` in state $\ket{0}$ and the target `
         
         cancellation_bool = (measure(case_indicator) == 0) & (measure(qbl) == 0)
 
-        # The irst return value is a boolean. Additional return values are QuantumVaraibles.
+        # The first return value is a boolean. Additional return values are QuantumVariables.
         return cancellation_bool, qf, qpe_res, inv_res
 
       
