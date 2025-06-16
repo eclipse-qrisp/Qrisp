@@ -1998,7 +1998,8 @@ class QubitOperator(Hamiltonian):
 
         ::
 
-            from qrisp import *
+            from qrisp import QuantumVariable, LCU, prepare, terminal_sampling
+            from qrisp.operators import X, Y, Z
             import numpy as np
 
             @terminal_sampling
