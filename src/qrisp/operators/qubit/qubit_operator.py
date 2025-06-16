@@ -1935,15 +1935,16 @@ class QubitOperator(Hamiltonian):
     # LCU
     #
 
-    def get_unitaries(self):
+    def unitaries(self):
         r"""
-        Returns a list of unitiaries and the coefficients of the **Pauli representation** of the **hermitized** version of the operator $H=(O+O^{\dagger})/2$:
+        Returns unitiaries and coefficients for the Pauli representation of the hermitian part $H=(O+O^{\dagger})/2$ of the operator.
+        The Pauli representation reads
 
         .. math::
 
             H = \sum_{i=0}^{M-1}\alpha_iP_i
 
-        where $\alpha_i$ are real coefficients, $P_i$ are Pauli operators. Coefficients $\alpha_i$ are nonnegative and each Pauli carries a $\pm1$ sign (corressponding to a phase shift).
+        where $\alpha_i$ are real coefficients, $P_i\in\{I,X,Y,Z\}^{\otimes n}$ are Pauli operators. Coefficients $\alpha_i$ are nonnegative and each Pauli carries a $\pm1$ sign (corressponding to a phase shift).
         
         Returns
         -------
@@ -1955,7 +1956,7 @@ class QubitOperator(Hamiltonian):
         Examples
         --------
 
-        Applying a Hamiltonian operator via Linear Conbination of Unitaries.
+        Applying a Hamiltonian operator via Linear Combination of Unitaries.
 
         ::
 
@@ -1964,7 +1965,7 @@ class QubitOperator(Hamiltonian):
 
             H = 2*X(0)*X(1)-Z(0)*Z(1)
 
-            unitaries, coeffs = H.get_unitaries()
+            unitaries, coeffs = H.unitaries()
             print(coeffs)
             # [2. 1.]
 
@@ -2001,7 +2002,7 @@ class QubitOperator(Hamiltonian):
 
                 H = 2*X(0)*X(1)-Z(0)*Z(1)
 
-                unitaries, coeffs = H.get_unitaries()
+                unitaries, coeffs = H.unitaries()
 
                 def operand_prep():
                     return QuantumVariable(2)
@@ -2026,6 +2027,9 @@ class QubitOperator(Hamiltonian):
             print(res_dict)
             # Yields: {3: 0.8944272109919233, 0: 0.4472135555159407} 
 
+        Here, the unitary $P_0=XX$ acts as $\ket{0}\rightarrow\ket{3}$, the unitary $P_1=-ZZ$ acts as $\ket{0}\rightarrow -\ket{0}$, 
+        and the resulting state is $(2\ket{3}-\ket{0})/\sqrt{5}$.
+
         """
         hamiltonian = self.hermitize()
         hamiltonian = hamiltonian.to_pauli()
@@ -2035,7 +2039,7 @@ class QubitOperator(Hamiltonian):
 
         for term, coeff in hamiltonian.terms_dict.items():
             coeff_ = np.real(coeff)
-            unitaries.append(term.get_unitary(sign = (coeff<0) ))    
+            unitaries.append(term.unitary(sign = (coeff<0) ))    
             coefficients.append(np.abs(coeff_))
 
         return unitaries, np.array(coefficients, dtype=float)
