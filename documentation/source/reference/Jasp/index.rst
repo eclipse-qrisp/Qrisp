@@ -44,7 +44,7 @@ Ideally we want you to keep all your Qrisp code the same and simply enable the J
 What is Jax?
 ^^^^^^^^^^^^
 
-To understand how to fully leverage the Jasp module, you need a basic understanding of `Jax <https://jax.readthedocs.io/en/latest/notebooks/Common_Gotchas_in_JAX.html>`_. Jax is a framework developed by Google, which aims to address a similar set of problems as described above but in the context of machine learning. Essentially Jax makes Python code for ML applications run faster, by leveraging a mechanism called tracing. Tracing means that instead of executing a Python function with actual values, Jax sends so called Tracers through the function, which keep a "record" of what would have happened to the values. This record is a mini functional programming language called `Jaxpr <https://jax.readthedocs.io/en/latest/_tutorials/jaxpr.html>`_. Creating a Jaxprs can be achieved by calling the ``make_jaxpr`` function.
+To understand how to fully leverage the Jasp module, you need a basic understanding of `Jax <https://jax.readthedocs.io/en/latest/notebooks/Common_Gotchas_in_JAX.html>`_. Jax is a framework developed by Google, which aims to address a similar set of problems as described above but in the context of machine learning. Essentially Jax makes Python code for ML applications run faster, by leveraging a mechanism called tracing. Tracing means that instead of executing a Python function with actual values, Jax sends so called Tracers through the function, which keep a "record" of what would have happened to the values. This record is a mini functional programming language called `Jaxpr <https://docs.jax.dev/en/latest/jaxpr.html>`_. Creating a Jaxprs can be achieved by calling the ``make_jaxpr`` function.
 
 ::
 
@@ -69,7 +69,7 @@ This gives the output
     d:f32[3] = mul b c
     in (d,) }
 
-Jax not only allows us to represent (classical) computations in a more simplified and easier-to-process form but also provides a `matured ecosystem <https://www.educative.io/courses/intro-jax-deep-learning/awesome-jax-libraries>`_ of libraries. On top of that, Jax exposes the means to `create new primitives <https://jax.readthedocs.io/en/latest/notebooks/How_JAX_primitives_work.html>`_, which allows quantum developers to use the Jax infrastructure for their purposes.
+Jax not only allows us to represent (classical) computations in a more simplified and easier-to-process form but also provides a `matured ecosystem <https://www.educative.io/courses/intro-jax-deep-learning/awesome-jax-libraries>`_ of libraries. On top of that, Jax exposes the means to `create new primitives <https://docs.jax.dev/en/latest/jax-primitives.html>`_, which allows quantum developers to use the Jax infrastructure for their purposes.
 
 What is Jasp?
 ^^^^^^^^^^^^^
@@ -110,7 +110,7 @@ This will give you the following output:
         n:f32[] = mul m 0.5
       in (k, n) }
       
-Assuming you already have some `understanding of the Jaxpr language <https://jax.readthedocs.io/en/latest/_tutorials/jaxpr.html>`_ you see a function, that receives a ``QuantumCircuit`` and an integer, does some processing and then returns a ``QuantumCircuit`` and a float. Here you can see one of the defining features of jasprs: They always receive and return a ``QuantumCircuit`` within their signature.
+Assuming you already have some `understanding of the Jaxpr language <https://docs.jax.dev/en/latest/jaxpr.html>`_ you see a function, that receives a ``QuantumCircuit`` and an integer, does some processing and then returns a ``QuantumCircuit`` and a float. Here you can see one of the defining features of jasprs: They always receive and return a ``QuantumCircuit`` within their signature.
 
 Furthermore it is interesting to note, that you can already see some real-time computation happening there: The result of the measurement is an integer (compared to a `ClBit as in Qiskit <https://docs.quantum.ibm.com/api/qiskit/circuit#clbit>`_) and is decoded according to the decoder by multiplying with $0.5$. In subsequent parts of the program, this float could be processed by literally any other Jax component.
 
