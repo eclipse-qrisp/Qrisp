@@ -50,6 +50,12 @@ The LCU protocol works by embedding your non-unitary operator into a larger, uni
 
 - **PREPARE**$^\dagger$: Applies the inverse prepartion to the ancilla.
 
+Unitaries passed as static lists or dynamic functions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Qrisp's LCU functions support two ways to pass unitaries statically by providing unitaries as a list. Not to limit ourselves, we also allow passing unitaries as dynamic functions - this way we can pass trotterization unitaries elegantly.
+
+
 Success condition
 ^^^^^^^^^^^^^^^^^
 
@@ -91,15 +97,15 @@ At its core, the LCU protocol in Qrisp is realized by two key operations: prepar
 
     LCU_state_prep(case_indicator, operand)
 
-:func:`state_prep` ``(case_indicator)`` prepares the ancilla in a superposition reflecting the coefficients $\alpha_i$. :func:`qswitch` ``(operand, case_indicator, unitaries)`` applies the correct unitary $U_i$ controlled on the ancilla.
+``state_prep(case_indicator)`` prepares the ancilla in a superposition reflecting the coefficients $\alpha_i$. :func:`qrisp.qswitch` ``(operand, case_indicator, unitaries)`` applies the correct unitary $U_i$ controlled on the ancilla.
 
-The :func:`conjugate` ensures the inverse preparation (PREPARE $^\dagger$) is applied after SELECT, matching the block-encoding structure.
+The ``qrisp.conjugate`` ensures the inverse preparation (PREPARE $^\dagger$) is applied after SELECT, matching the block-encoding structure.
 
 Success condition and performing LCU with :func:`qrisp.LCU`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Wraps inner_LCU with a Repeat-Until-Success (RUS) protocol, repeatedly running the circuit until the ancilla is measured in the $\ket{0}$ state (the success condition described in theory). This matches the probabilistic nature of LCU’s success and automates the process for the user.
+Wraps inner_LCU with a :ref:`repeat-until-success (RUS) routine <RUS>` protocol, repeatedly running the circuit until the ancilla is measured in the $\ket{0}$ state (the success condition described in theory). This matches the probabilistic nature of LCU’s success and automates the process for the user.
 
-The LCU protocol is only "successful" if, after running the block-encoded circuit, the ancilla is measured in the $\ket{0}$ state. Qrisp's LCU function wraps inner_LCU with a :func:`RUS` (Repeat-Until-Success) protocol, automating this process.
+The LCU protocol is only "successful" if, after running the block-encoded circuit, the ancilla is measured in the $\ket{0}$ state. Qrisp's LCU function wraps inner_LCU with :ref:`RUS <RUS>`, automating this process.
 
 :: 
 
@@ -129,7 +135,7 @@ The probability of success in LCU can be low, especially for certain coefficient
         iter=oaa_iter,
     )
 
-:func:`amplitude_amplification` repeatedly applies the LCU block and a reflection (oracle) to amplify the amplitude of the $\ket{0}$ state. ``oaa_iter`` controls how many amplification iterations are performed. The oracle tags the success state, and the reflection boosts its amplitude, increasing the chance of success in fewer repetitions.
+:func:`qrisp.amplitude_amplification` repeatedly applies the LCU block and a reflection (oracle) to amplify the amplitude of the $\ket{0}$ state. ``oaa_iter`` controls how many amplification iterations are performed. The oracle tags the success state, and the reflection boosts its amplitude, increasing the chance of success in fewer repetitions.
 
 For more information on Oblivious Amplitude Amplification, here is Nathan Wiebe's seminar on this primitive:
 
@@ -146,7 +152,7 @@ For educational and debugging purposes, Qrisp provides :func:`qrisp.view_LCU`, w
     qc = jaspr.to_qc(num_unitaries)[-1].transpile(3)
     return qc
 
-``make_jaspr(inner_LCU)`` wraps the protocol for circuit extraction. ``to_qc`` converts the protocol to a quantum circuit object. ``.transpile(3)`` optimiyes and formats the circuit for visualiyation. Printing ``qc`` reveals the gate sequence showing PREPARE, qswitch, and PREPARE$^\dagger$ as described in theory.
+``make_jaspr(inner_LCU)`` wraps the protocol for circuit extraction. ``to_qc`` converts the protocol to a quantum circuit object. ``.transpile(3)`` optimizes and formats the circuit for visualiyation. Printing ``qc`` reveals the gate sequence showing PREPARE, qswitch, and PREPARE$^\dagger$ as described in theory.
 
 Trotterization + LCU = LCHS
 ---------------------------
