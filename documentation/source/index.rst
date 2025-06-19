@@ -459,4 +459,5 @@ Qrisp is an open-source project developed at `Fraunhofer FOKUS <https://www.foku
    general/setup
    general/changelog/index
    general/imprint
+   general/QC_basics/index
  
