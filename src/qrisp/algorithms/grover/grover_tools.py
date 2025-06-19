@@ -436,46 +436,16 @@ def grovers_alg(
         N = 2**qv_list.size
 
     if exact:
-        # Implementation for phase calculation for exact grovers alg as in
+        # Implementation for phase calculation for exact grovers algorithm as in
         # https://arxiv.org/pdf/quant-ph/0106071.pdf
-        iterations = 1
-        tmp = (
-            jnp.sin(jnp.pi / (4 * (iterations - 1) + 6))
-            * (N / winner_state_amount) ** 0.5
-        )
-
-        def body_fun(state):
-            iterations, tmp = state
-            return (
-                iterations + 1,
-                jnp.sin(jnp.pi / (4 * (iterations - 1) + 6))
-                * (N / winner_state_amount) ** 0.5,
-            )
-
-        def cond_fun(state):
-            iterations, tmp = state
-            return tmp > 1
-
-        state = (iterations, tmp)
-
-        if check_for_tracing_mode():
-            from jax.lax import while_loop
-
-            iterations, tmp = while_loop(cond_fun, body_fun, state)
-        else:
-            while cond_fun(state):
-                state = body_fun(state)
-            iterations, tmp = state
-
+        iterations = jnp.int64(jnp.floor(jnp.pi / (4 * jnp.arcsin(jnp.sqrt(winner_state_amount / N))))) + 1
         phi = 2 * jnp.arcsin(
             jnp.sin(jnp.pi / (4 * (iterations - 1) + 6))
-            * (N / winner_state_amount) ** 0.5
+            * jnp.sqrt(N / winner_state_amount)
         )
-
     else:
         if iterations == 0:
-            iterations = jnp.pi / 4 * jnp.sqrt(N / winner_state_amount)
-            iterations = jnp.int64(jnp.round(iterations))
+            iterations = jnp.int64(jnp.floor(jnp.pi / (4 * jnp.arcsin(jnp.sqrt(winner_state_amount / N)))))
 
     if isinstance(qv_list, (list, QuantumArray)):
         [h(qv) for qv in qv_list]
@@ -498,13 +468,14 @@ def grovers_alg(
         qs = recursive_qs_search(qv_list)[0]
         qv_amount = len(qs.qv_list)
 
-        with IterationEnvironment(qs, iterations):
-            if exact:
-                oracle_function(qv_list, phase=phi, **kwargs)
-                diffuser(qv_list, phase=phi)
-            else:
-                oracle_function(qv_list, **kwargs)
-                diffuser(qv_list)
+        if iterations > 0:
+            with IterationEnvironment(qs, iterations):
+                if exact:
+                    oracle_function(qv_list, phase=phi, **kwargs)
+                    diffuser(qv_list, phase=phi)
+                else:
+                    oracle_function(qv_list, **kwargs)
+                    diffuser(qv_list)
 
         if qv_amount != len(qs.qv_list):
             raise Exception(
