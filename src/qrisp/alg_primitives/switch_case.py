@@ -303,7 +303,7 @@ def qswitch(operand, case, case_function, method="auto", inv = False):
             down(j, anc, case, operand)
 
         # Perform leafs and jumps
-        anc_, case, operand = x_fori_loop(
+        anc_, _, _ = x_fori_loop(
             0, 2 ** (n - 1) - 1, body_fun, (anc, case, operand)
         )
 

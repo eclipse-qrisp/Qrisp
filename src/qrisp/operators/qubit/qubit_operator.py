@@ -808,7 +808,7 @@ class QubitOperator(Hamiltonian):
 
     def adjoint(self):
         """
-        Returns an the adjoint operator.
+        Returns the adjoint operator.
 
         Returns
         -------
@@ -1772,8 +1772,6 @@ class QubitOperator(Hamiltonian):
 
     def trotterization(self, order=1, method="commuting_qw", forward_evolution=True):
         r"""
-        .. _ham_sim:
-
         Returns a function for performing Hamiltonian simulation, i.e., approximately implementing the unitary operator $U(t) = e^{-itH}$ via Trotterization.
         Note that this method will always simulate the **hermitized** operator, i.e.
 
@@ -1930,3 +1928,123 @@ class QubitOperator(Hamiltonian):
                             trotter_step(qarg, -t, steps * 2)
 
         return U
+
+    #
+    # LCU
+    #
+
+    def unitaries(self):
+        r"""
+        Returns unitiaries and coefficients for the Pauli representation of the operator.
+        Note that this method will always consider the **hermitized** operator, i.e.
+
+        .. math::
+
+            H = (O + O^\dagger)/2
+
+        The Pauli representation reads
+
+        .. math::
+
+            H = \sum_{i=0}^{M-1}\alpha_iP_i
+
+        where $\alpha_i$ are real coefficients, $P_i\in\{I,X,Y,Z\}^{\otimes n}$ are Pauli operators. Coefficients $\alpha_i$ are nonnegative and each Pauli carries a $\pm1$ sign (corressponding to a phase shift).
+        
+        Returns
+        -------
+        list[callable]
+            A list of functions performing the Pauli unitaries on a :ref:`QuantumVariable` for the terms in the Pauli Hamiltonian.
+        numpy.ndarray
+            An array of nonnegative coefficents for the terms in the Pauli Hamiltonian.
+
+        Examples
+        --------
+
+        Applying a Hamiltonian operator via Linear Combination of Unitaries.
+
+        ::
+
+            from qrisp import QuantumVariable, barrier
+            from qrisp.operators import X,Y,Z
+
+            H = 2*X(0)*X(1)-Z(0)*Z(1)
+
+            unitaries, coeffs = H.unitaries()
+            print(coeffs)
+            # [2. 1.]
+
+        Note that all coefficients are nonnegative. The unitaries are $P_0=XX$, and $P_1=-ZZ$ where the minus sign is accounted for by a phase shift:
+
+        ::
+
+            qv = QuantumVariable(2)
+            unitaries[0](qv)
+            barrier(qv)
+            unitaries[1](qv)
+        
+        >>> print(qv.qs)  
+        QuantumCircuit:
+        ---------------
+              ┌───┐ ░ ┌───┐┌────────┐
+        qv.0: ┤ X ├─░─┤ Z ├┤ gphase ├
+              ├───┤ ░ ├───┤└────────┘
+        qv.1: ┤ X ├─░─┤ Z ├──────────
+              └───┘ ░ └───┘          
+        Live QuantumVariables:
+        ----------------------
+        QuantumVariable qv
+
+        The Hamiltonian operator $H$ can be applied to a :ref:`QuantumVariable` using Qrisp's :ref:`LCU` implementation:
+
+        ::
+
+            from qrisp import QuantumVariable, LCU, prepare, terminal_sampling
+            from qrisp.operators import X, Y, Z
+            import numpy as np
+
+            @terminal_sampling
+            def main():
+
+                H = 2*X(0)*X(1)-Z(0)*Z(1)
+
+                unitaries, coeffs = H.unitaries()
+
+                def operand_prep():
+                    return QuantumVariable(2)
+
+                def state_prep(case):
+                    prepare(case, np.sqrt(coeffs))
+
+                qv = LCU(operand_prep, state_prep, unitaries)
+                return qv
+
+            res_dict = main()
+
+        We convert the resulting measurement probabilities to amplitudes by applying the square root. 
+        Note that, minus signs of amplitudes cannot be recovered from measurement probabilities.
+
+        
+        ::
+        
+            for k, v in res_dict.items():
+                res_dict[k] = v**0.5
+
+            print(res_dict)
+            # Yields: {3: 0.8944272109919233, 0: 0.4472135555159407} 
+
+        Here, the unitary $P_0=XX$ acts as $\ket{0}\rightarrow\ket{3}$, the unitary $P_1=-ZZ$ acts as $\ket{0}\rightarrow -\ket{0}$, 
+        and the resulting state is $(2\ket{3}-\ket{0})/\sqrt{5}$.
+
+        """
+        hamiltonian = self.hermitize()
+        hamiltonian = hamiltonian.to_pauli()
+
+        unitaries = []
+        coefficients = []
+
+        for term, coeff in hamiltonian.terms_dict.items():
+            coeff_ = np.real(coeff)
+            unitaries.append(term.unitary(sign = (coeff<0) ))    
+            coefficients.append(np.abs(coeff_))
+
+        return unitaries, np.array(coefficients, dtype=float)
