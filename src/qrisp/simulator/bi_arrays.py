@@ -28,7 +28,7 @@ from scipy.sparse import (
 
 import qrisp.simulator.bi_array_helper as hlp
 from qrisp.simulator.numerics_config import (
-    float_tresh,
+    float_thresh,
     sparsification_rate,
     cutoff_ratio,
 )
@@ -665,7 +665,7 @@ class SparseBiArray(BiArray):
 
             p = np.abs(np.vdot(temp_data, temp_data))
 
-            if p < float_tresh:
+            if p < float_thresh:
                 continue
 
             p_list.append(p)
@@ -1087,11 +1087,11 @@ class DenseBiArray(BiArray):
 
         if len(indices) > 10:
             new_arrays, p_list, outcome_index_list = hlp.dense_measurement_brute(
-                np_array, len(indices), 0
+                np_array, len(indices), 0, cutoff_ratio
             )
         else:
             new_arrays, p_list, outcome_index_list = hlp.dense_measurement_smart(
-                np_array, len(indices), 0
+                np_array, len(indices), 0, float_thresh
             )
 
         new_bi_arrays = []
