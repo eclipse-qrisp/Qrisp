@@ -48,13 +48,7 @@ The LCU protocol works by embedding your non-unitary operator into a larger, uni
 
     \mathrm{SELECT}|i\rangle|\psi\rangle=|i\rangle U_i|\psi\rangle
 
-- **PREPARE**$^\dagger$: Applies the inverse prepartion to the ancilla.
-
-Unitaries passed as static lists or dynamic functions
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Qrisp's LCU functions support two ways to pass unitaries statically by providing unitaries as a list. Not to limit ourselves, we also allow passing unitaries as dynamic functions - this way we can pass trotterization unitaries elegantly.
-
+- **PREPARE** $^\dagger$: Applies the inverse prepartion to the ancilla.
 
 Success condition
 ^^^^^^^^^^^^^^^^^
@@ -140,6 +134,13 @@ The probability of success in LCU can be low, especially for certain coefficient
 For more information on Oblivious Amplitude Amplification, here is Nathan Wiebe's seminar on this primitive:
 
 .. youtube:: FmZcj7O4U2w
+
+Unitaries passed as static lists or dynamic functions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Qrisp's LCU functions support two ways to pass unitaries statically by providing unitaries as a list. Not to limit ourselves, we also allow passing unitaries as dynamic functions - this way we can pass trotterization unitaries elegantly.
+
+
 
 Underlying circuit (purely educational) with :func:`qrisp.view_LCU`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
