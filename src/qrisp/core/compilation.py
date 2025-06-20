@@ -34,6 +34,7 @@ from qrisp.circuit import (
     RZZGate,
     PGate,
     GPhaseGate,
+    ClControlledOperation
 )
 from qrisp.misc import get_depth_dic, retarget_instructions
 from qrisp.permeability import optimize_allocations, parallelize_qc, lightcone_reduction
@@ -783,7 +784,8 @@ def fuse_instructions(instr_a, instr_b, gphase_array):
 
     if len(instr_a.qubits) != len(instr_b.qubits):
         return None
-    
+    if isinstance(instr_a.op, ClControlledOperation) or isinstance(instr_b.op, ClControlledOperation):
+        return None
     
     symmetric_instruction = None
     if instr_a.op.name in ["cz", "swap", "cp", "rzz"]:
@@ -945,12 +947,17 @@ def fuse_operations(op_a, op_b, gphase_array):
 def cancel_inverses(qc):
     G = nx.DiGraph()
     qubit_dic = {}
+    clbit_dic = {}
     edge_dic = {}
 
     gphase_array = [0]
     for i in range(qc.num_qubits()):
         qubit_dic[qc.qubits[i]] = -i - 1
         G.add_node(-i - 1)
+        
+    for i in range(len(qc.clbits)):
+        clbit_dic[qc.clbits[i]] = -i-1
+        G.add_node(-qc.num_qubits() - i -1)
 
     data_list = list(qc.data)
     for i in range(len(data_list)):
@@ -969,6 +976,10 @@ def cancel_inverses(qc):
 
             edge_dic[(qubit_dic[qb], i)].append(qb)
             qubit_dic[qb] = i
+        
+        for cb in instr.clbits:
+            G.add_edge(clbit_dic[cb], i)
+            clbit_dic[cb] = i
 
         predecessors = list(predecessors)
 
