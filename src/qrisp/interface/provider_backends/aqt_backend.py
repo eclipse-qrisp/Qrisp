@@ -16,26 +16,22 @@
 ********************************************************************************
 """
 
+import qiskit
 from qrisp.interface.virtual_backend import VirtualBackend
 
-from qiskit import QuantumCircuit
-
-from qiskit_aqt_provider import AQTProvider
-from qiskit_aqt_provider.primitives import AQTSampler
 
 class AQTBackend(VirtualBackend):
     """
     This class instantiates a VirtualBackend using an AQT backend.
     This allows easy access to AQT backends through the qrisp interface.
 
-
     Parameters
     ----------
     backend : AQT backend object, optional
         An AQT backend object, which runs QuantumCircuits. The default is
-        provider.get_backend("offline_simulator_no_noise").
+        ``provider.get_backend("offline_simulator_no_noise")``.
     port : int, optional
-        The port to listen. The default is 8079.
+        The port to listen. The default is None.
 
     Examples
     --------
@@ -53,14 +49,21 @@ class AQTBackend(VirtualBackend):
     >>> res.get_measurement(backend = example_backend)
     {9: 1.0}
 
-
     """
+
+    try:
+        from qiskit_aqt_provider import AQTProvider
+        from qiskit_aqt_provider.primitives import AQTSampler
+    except ImportError:
+        raise ImportError(
+            "Please install qiskit-aqt-provider to use the AQTBackend. You can do this by running `pip install qiskit-aqt-provider`."
+        )
 
     def __init__(self, backend=None, port=None):
         if backend is None:
 
             # Select an execution backend.
-            # Any token (even invalid) gives access to the offline simulation backends.
+            # Any token (even invalid) gives access to the offline simulator backends.
             provider = AQTProvider("ACCESS_TOKEN")
             backend = provider.get_backend("offline_simulator_no_noise")
 
@@ -68,14 +71,13 @@ class AQTBackend(VirtualBackend):
         # Create the run method
         def run(qasm_str, shots=None, token=""):
             if shots is None:
-                shots = 100000
-            # Convert to qiskit
-            from qiskit import QuantumCircuit
+                shots = 1000
 
-            qiskit_qc = QuantumCircuit.from_qasm_str(qasm_str)
+            # Convert to qiskit
+            qiskit_qc = qiskit.QuantumCircuit.from_qasm_str(qasm_str)
 
             # Make circuit with one monolithic register
-            new_qiskit_qc = QuantumCircuit(len(qiskit_qc.qubits), len(qiskit_qc.clbits))
+            new_qiskit_qc = qiskit.QuantumCircuit(len(qiskit_qc.qubits), len(qiskit_qc.clbits))
             for instr in qiskit_qc:
                 new_qiskit_qc.append(
                     instr.operation,
@@ -103,8 +105,7 @@ class AQTBackend(VirtualBackend):
 
                 # transform to binary, fill to given length, and then reverse 
                 #new_key = bin(item)[2:].zfill(len_qc)[::-1] 
-                new_key2 = bin(item)[2:].zfill(len_qc) 
-                new_key = new_key2
+                new_key = bin(item)[2:].zfill(len_qc) 
                 result_dic.setdefault(new_key, quasi_dist[item])
 
             return result_dic
@@ -117,9 +118,9 @@ class AQTBackend(VirtualBackend):
 
         super().__init__(run, port=port)
 
-def VirtualAQTBackend(*args, **kwargs):
-    import warnings
-    warnings.warn("Hardware Backend and Access Token TBD")
-    return AQTBackend(*args, **kwargs)
+#def VirtualAQTBackend(*args, **kwargs):
+#    import warnings
+#    warnings.warn("Hardware Backend and Access Token TBD")
+#    return AQTBackend(*args, **kwargs)
 
 
