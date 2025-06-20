@@ -43,6 +43,7 @@ class AQTBackend(VirtualBackend):
     >>> from qiskit_aqt_provider import AQTProvider
     >>> provider = AQTProvider("ACCESS_TOKEN")
     >>> example_backend = AQTBackend(backend = provider.get_backend("offline_simulator_no_noise"))
+    >>> # qrisp_ibex = AQTBackend(backend = provider.get_backend(name = "ibex", workspace = "[YOUR_COMPANY_OR_PROJECT_NAME]"))
     >>> qf = QuantumFloat(4)
     >>> qf[:] = 3
     >>> res = qf*qf
@@ -51,22 +52,20 @@ class AQTBackend(VirtualBackend):
 
     """
 
-    try:
-        from qiskit_aqt_provider import AQTProvider
-        from qiskit_aqt_provider.primitives import AQTSampler
-    except ImportError:
-        raise ImportError(
-            "Please install qiskit-aqt-provider to use the AQTBackend. You can do this by running `pip install qiskit-aqt-provider`."
-        )
-
     def __init__(self, backend=None, port=None):
-        if backend is None:
 
-            # Select an execution backend.
+        try:
+            from qiskit_aqt_provider import AQTProvider
+            from qiskit_aqt_provider.primitives import AQTSampler
+        except ImportError:
+            raise ImportError(
+                "Please install qiskit-aqt-provider to use the AQTBackend. You can do this by running `pip install qiskit-aqt-provider`."
+            )
+
+        if backend is None:
             # Any token (even invalid) gives access to the offline simulator backends.
             provider = AQTProvider("ACCESS_TOKEN")
             backend = provider.get_backend("offline_simulator_no_noise")
-
 
         # Create the run method
         def run(qasm_str, shots=None, token=""):
@@ -86,6 +85,7 @@ class AQTBackend(VirtualBackend):
                 )
             
             # Instantiate a sampler on the execution backend.
+            #from qiskit_aqt_provider.primitives import AQTSampler
             sampler = AQTSampler(backend)
 
             # Optional: set the transpiler's optimization level.
@@ -117,10 +117,3 @@ class AQTBackend(VirtualBackend):
             name = backend.name()
 
         super().__init__(run, port=port)
-
-#def VirtualAQTBackend(*args, **kwargs):
-#    import warnings
-#    warnings.warn("Hardware Backend and Access Token TBD")
-#    return AQTBackend(*args, **kwargs)
-
-
