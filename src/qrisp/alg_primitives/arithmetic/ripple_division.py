@@ -1,6 +1,6 @@
 """
-\********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+********************************************************************************
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -13,7 +13,7 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 from qrisp.core.gate_application_functions import x
@@ -157,13 +157,9 @@ def q_int_div(numerator, divisor, adder="cuccaro", n=None, log_output=True):
 
         # Remove from remainder
         remainder_sign_bit = remainder.reg.pop(-1)
-        remainder.size -= 1
-        remainder.mshape[1] -= 1
 
         # Add to quotient at position 0
         quotient.reg.insert(0, remainder_sign_bit)
-        quotient.size += 1
-        quotient.mshape[1] += 1
 
         # This next instruction is a bit involved to understand
 

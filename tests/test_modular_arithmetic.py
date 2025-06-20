@@ -1,6 +1,6 @@
 """
-\********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+********************************************************************************
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -13,7 +13,7 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 
@@ -28,7 +28,7 @@ def test_modular_arithmetic():
     b = QuantumModulus(N)
 
     a[:] = 4
-    h(b)
+    b[:] = {i : 1 for i in range(N)}
     a += b
 
     mes_res = multi_measurement([a,b])
@@ -42,7 +42,7 @@ def test_modular_arithmetic():
     a = QuantumModulus(N)
     b = 12
 
-    h(a)
+    a[:] = {i : 1 for i in range(N)}
     temp = a.duplicate(init = True)
     a += b
 
@@ -60,7 +60,7 @@ def test_modular_arithmetic():
     b = QuantumModulus(N)
 
     a[:] = 4
-    h(b)
+    b[:] = {i : 1 for i in range(N)}
 
     a -= b
 
@@ -75,7 +75,7 @@ def test_modular_arithmetic():
     a = QuantumModulus(N)
     b = 12
 
-    h(a)
+    a[:] = {i : 1 for i in range(N)}
     temp = a.duplicate(init = True)
     a -= b
 
@@ -92,8 +92,8 @@ def test_modular_arithmetic():
     a = QuantumModulus(N)
     b = QuantumModulus(N)
 
-    h(a)
-    h(b)
+    a[:] = {i : 1 for i in range(N)}
+    b[:] = {i : 1 for i in range(N)}
 
     res = a + b
 
@@ -123,8 +123,8 @@ def test_modular_arithmetic():
     a = QuantumModulus(N)
     b = QuantumModulus(N)
 
-    h(a)
-    h(b)
+    a[:] = {i : 1 for i in range(N)}
+    b[:] = {i : 1 for i in range(N)}
 
     res = a - b
 
@@ -153,8 +153,8 @@ def test_modular_arithmetic():
     a = QuantumModulus(N)
     b = QuantumModulus(N)
 
-    h(a)
-    h(b)
+    a[:] = {i : 1 for i in range(N)}
+    b[:] = {i : 1 for i in range(N)}
 
     res = a*b
 
@@ -167,7 +167,7 @@ def test_modular_arithmetic():
 
     a = QuantumModulus(N)
 
-    h(a)
+    a[:] = {i : 1 for i in range(N)}
     b = 5
 
     res = a*b
@@ -185,7 +185,7 @@ def test_modular_arithmetic():
     
     for i in range(1, N):
         a = QuantumModulus(N)
-        h(a)
+        a[:] = {i : 1 for i in range(N)}
         b = a.duplicate()
         cx(a, b)
     
@@ -200,7 +200,7 @@ def test_modular_arithmetic():
             
     for i in range(1, N):
         a = QuantumModulus(N, inpl_adder = qcla)
-        h(a)
+        a[:] = {i : 1 for i in range(N)}
         b = a.duplicate()
         cx(a, b)
     
@@ -215,7 +215,7 @@ def test_modular_arithmetic():
 
     for i in range(1, N):
         a = QuantumModulus(N, inpl_adder = gidney_adder)
-        h(a)
+        a[:] = {i : 1 for i in range(N)}
         b = a.duplicate()
         cx(a, b)
         qbl = QuantumBool()
@@ -234,3 +234,19 @@ def test_modular_arithmetic():
                 assert (k[0]*i)%N == k[1]
             else:
                 assert k[0] == k[1]
+
+    # Test arbitrary adder out of place multiplication
+    
+    a = QuantumModulus(N, inpl_adder = gidney_adder)
+    b = QuantumModulus(N, inpl_adder = gidney_adder)
+
+
+    a[:] = {i : 1 for i in range(N)}
+    b[:] = {i : 1 for i in range(N)}
+
+    c = a*b
+
+    meas_res = multi_measurement([a, b, c])
+
+    for a, b, c in meas_res.keys():
+        assert (a*b)%N == c

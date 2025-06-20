@@ -1,6 +1,6 @@
 """
-\********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+********************************************************************************
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -13,14 +13,22 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 import numpy as np
 
 from qrisp.core import cx, swap
 
-def demux(input, ctrl_qv, output=None, ctrl_method=None, permit_mismatching_size=False, parallelize_qc = False):
+
+def demux(
+    input,
+    ctrl_qv,
+    output=None,
+    ctrl_method=None,
+    permit_mismatching_size=False,
+    parallelize_qc=False,
+):
     """
     This functions allows moving an input value into an iterable output, where the
     position is specified by a ``QuantumFloat``. Demux is short for demultiplexer and
@@ -161,39 +169,35 @@ def demux(input, ctrl_qv, output=None, ctrl_method=None, permit_mismatching_size
         return output
 
     if n > 1:
-        
+
         if parallelize_qc:
-            demux_ancilla = QuantumVariable(len(ctrl_qv)-1)
+            demux_ancilla = QuantumVariable(len(ctrl_qv) - 1)
             cx(ctrl_qv[:-1], demux_ancilla)
             ctrl_qubits = list(demux_ancilla)
         else:
             ctrl_qubits = ctrl_qv[:-1]
-            
-        
+
         demux(
             output[0],
             ctrl_qubits,
-            #ctrl_qv[:-1],
+            # ctrl_qv[:-1],
             output[: N // 2],
             ctrl_method=ctrl_method,
             permit_mismatching_size=permit_mismatching_size,
-            parallelize_qc=parallelize_qc
+            parallelize_qc=parallelize_qc,
         )
-        
-        
+
         demux(
             output[N // 2],
             ctrl_qv[:-1],
             output[N // 2 :],
             ctrl_method=ctrl_method,
             permit_mismatching_size=permit_mismatching_size,
-            parallelize_qc=parallelize_qc
+            parallelize_qc=parallelize_qc,
         )
         if parallelize_qc:
             cx(ctrl_qv[:-1], demux_ancilla)
             demux_ancilla.delete()
-        
-
 
     return output
 
@@ -222,13 +226,12 @@ def q_swap_into(q_array, index, qv):
     demux(q_array[0], index, q_array, ctrl_method="gray_pt")
 
 
-
-def cyclic_shift(iterable, shift_amount = 1):
+def cyclic_shift(iterable, shift_amount=1):
     r"""
-    Performs a cyclic shift of the values of an iterable with logarithmic depth. 
+    Performs a cyclic shift of the values of an iterable with logarithmic depth.
     The shifting amount can be specified.
 
-    
+
     Parameters
     ----------
     iterable : list[Qubit] or list[QuantumVariable] or QuantumArray
@@ -238,9 +241,9 @@ def cyclic_shift(iterable, shift_amount = 1):
 
     Examples
     --------
-    
+
     We create a QuantumArray, initiate a sequence of increments and perform a cyclic shift.
-    
+
     >>> from qrisp import QuantumFloat, QuantumArray, cyclic_shift
     >>> import numpy as np
     >>> qa = QuantumArray(QuantumFloat(3), 8)
@@ -248,10 +251,10 @@ def cyclic_shift(iterable, shift_amount = 1):
     >>> cyclic_shift(qa, shift_amount = 2)
     >>> print(qa)
     {OutcomeArray([6, 7, 0, 1, 2, 3, 4, 5]): 1.0}
-    
+
     We do something similar to demonstrate the shift by quantum values.
     For this we initiate a :ref:`QuantumFloat` in the superposition of 0, 1 and -3.
-    
+
     >>> shift_amount = QuantumFloat(3, signed = True)
     >>> shift_amount[:] = {0 : 3**-0.5, 1: 3**-0.5, -3 : 3**-0.5}
     >>> qa = QuantumArray(QuantumFloat(3), 8)
@@ -260,72 +263,72 @@ def cyclic_shift(iterable, shift_amount = 1):
     >>> print(qa)
     {OutcomeArray([0, 1, 2, 3, 4, 5, 6, 7]): 0.3333, OutcomeArray([7, 0, 1, 2, 3, 4, 5, 6]): 0.3333, OutcomeArray([3, 4, 5, 6, 7, 0, 1, 2]): 0.3333}
     """
-    
+
     from qrisp import QuantumFloat, control, QuantumBool, cx
-    
+
     if isinstance(shift_amount, QuantumFloat):
-        
+
         if shift_amount.mshape[0] < 0:
             raise Exception("Tried to quantum shift by non-integer QuantumFloat")
-        
+
         if shift_amount.signed:
             with control(shift_amount.sign()):
-                cyclic_shift(iterable, -2**(shift_amount.mshape[1]))
-            
+                cyclic_shift(iterable, -(2 ** (shift_amount.mshape[1])))
+
         for i in range(*shift_amount.mshape):
             with control(shift_amount.significant(i)):
                 cyclic_shift(iterable, 2**i)
-    
+
         return
-            
+
     N = len(iterable)
     n = int(np.floor(np.log2(N)))
-    
-    if N == 0 or not shift_amount%N:
+
+    if N == 0 or not shift_amount % N:
         return
     if shift_amount < 0:
         return cyclic_shift(iterable[::-1], -shift_amount)
 
     if shift_amount != 1:
-        
+
         perm = np.arange(N)
-        perm = (perm - shift_amount)%(N)
-        
+        perm = (perm - shift_amount) % (N)
+
         permute_iterable(iterable, perm)
         return
-    
-    singular_shift(iterable[:2**n])
-    singular_shift([iterable[0]] + list(iterable[2**n:]), use_saeedi = True)
-    
 
-def singular_shift(iterable, use_saeedi = False):
-    
+    singular_shift(iterable[: 2**n])
+    singular_shift([iterable[0]] + list(iterable[2**n :]), use_saeedi=True)
+
+
+def singular_shift(iterable, use_saeedi=False):
+
     N = len(iterable)
-    
-    if N in [0,1]:
+
+    if N in [0, 1]:
         return
-    
+
     if use_saeedi:
-        #Strategy from https://arxiv.org/abs/1304.7516
-        #Seems to perform worse when shifting by a quantum float
-        #But better when the shift length is not a power of 2
-        for i in range(N//2):
-            if (-i)%N == i+1 or i+1 >= N:
+        # Strategy from https://arxiv.org/abs/1304.7516
+        # Seems to perform worse when shifting by a quantum float
+        # But better when the shift length is not a power of 2
+        for i in range(N // 2):
+            if (-i) % N == i + 1 or i + 1 >= N:
                 continue
-            swap(iterable[-i], iterable[i+1])
-            
-        for i in range(N//2):
-            if (-i)%N == i+2 or i+2 >= N:
+            swap(iterable[-i], iterable[i + 1])
+
+        for i in range(N // 2):
+            if (-i) % N == i + 2 or i + 2 >= N:
                 continue
-            swap(iterable[-i], iterable[i+2])
-        
-    else:        
+            swap(iterable[-i], iterable[i + 2])
+
+    else:
         correction_indices = []
-        for i in range(len(iterable)//2):
-            swap_tuple = (2*i, 2*i+1)
+        for i in range(len(iterable) // 2):
+            swap_tuple = (2 * i, 2 * i + 1)
             swap(iterable[swap_tuple[0]], iterable[swap_tuple[1]])
             correction_indices.append(swap_tuple[0])
-            
+
         singular_shift([iterable[i] for i in correction_indices])
 
 
@@ -334,7 +337,7 @@ def to_cycles(perm):
     cycles = []
 
     while pi:
-        elem0 = next(iter(pi)) # arbitrary starting element
+        elem0 = next(iter(pi))  # arbitrary starting element
         this_elem = pi[elem0]
         next_item = pi[this_elem]
 
@@ -352,6 +355,7 @@ def to_cycles(perm):
 
     return cycles
 
+
 def permute_iterable(iterable, perm):
     """
     Applies an arbitrary permutation to an iterable with logarithmic depth.
@@ -365,9 +369,9 @@ def permute_iterable(iterable, perm):
 
     Examples
     --------
-    
+
     We create a QuantumArray containing increments and apply a specified permutation.
-    
+
     >>> from qrisp import QuantumFloat, QuantumArray, permute_iterable
     >>> import numpy as np
     >>> qa = QuantumArray(QuantumFloat(3), 8)
@@ -376,59 +380,59 @@ def permute_iterable(iterable, perm):
     >>> print(qa)
     {OutcomeArray([1, 0, 3, 7, 5, 2, 6, 4]): 1.0}
     >>> print(qa.qs)
-    
+
     ::
-    
+
         QuantumCircuit:
         --------------
           qa.0: ────────────X──────────────────────
-                            │                      
+                            │
           qa.1: ──────X─────┼──────────────────────
-                      │     │                      
+                      │     │
           qa.2: ──────┼──X──┼──────────────────────
-                ┌───┐ │  │  │                      
+                ┌───┐ │  │  │
         qa_1.0: ┤ X ├─┼──┼──X──────────────────────
-                └───┘ │  │                         
+                └───┘ │  │
         qa_1.1: ──────X──┼─────────────────────────
-                         │                         
+                         │
         qa_1.2: ─────────X─────────────────────────
-                                          
+
         qa_2.0: ───────────────────────────X───────
-                ┌───┐                      │       
+                ┌───┐                      │
         qa_2.1: ┤ X ├──────────────────────┼──X────
-                └───┘                      │  │    
+                └───┘                      │  │
         qa_2.2: ───────────────────────────┼──┼──X─
-                ┌───┐                      │  │  │ 
+                ┌───┐                      │  │  │
         qa_3.0: ┤ X ├──────────X───────────┼──┼──┼─
-                ├───┤          │           │  │  │ 
+                ├───┤          │           │  │  │
         qa_3.1: ┤ X ├──────────┼──X────────┼──┼──┼─
-                └───┘          │  │        │  │  │ 
+                └───┘          │  │        │  │  │
         qa_3.2: ───────────────┼──┼──X─────┼──┼──┼─
-                               │  │  │     │  │  │ 
+                               │  │  │     │  │  │
         qa_4.0: ──────X────────┼──┼──┼─────┼──┼──┼─
-                      │        │  │  │     │  │  │ 
+                      │        │  │  │     │  │  │
         qa_4.1: ──────┼──X─────┼──┼──┼─────┼──┼──┼─
-                ┌───┐ │  │     │  │  │     │  │  │ 
+                ┌───┐ │  │     │  │  │     │  │  │
         qa_4.2: ┤ X ├─┼──┼──X──┼──┼──┼─────┼──┼──┼─
-                ├───┤ │  │  │  │  │  │     │  │  │ 
+                ├───┤ │  │  │  │  │  │     │  │  │
         qa_5.0: ┤ X ├─X──┼──┼──┼──┼──┼──X──X──┼──┼─
-                └───┘    │  │  │  │  │  │     │  │ 
+                └───┘    │  │  │  │  │  │     │  │
         qa_5.1: ─────────X──┼──┼──┼──┼──┼──X──X──┼─
-                ┌───┐       │  │  │  │  │  │     │ 
+                ┌───┐       │  │  │  │  │  │     │
         qa_5.2: ┤ X ├───────X──┼──┼──┼──┼──┼──X──X─
-                └───┘          │  │  │  │  │  │    
+                └───┘          │  │  │  │  │  │
         qa_6.0: ───────────────┼──┼──┼──┼──┼──┼────
-                ┌───┐          │  │  │  │  │  │    
+                ┌───┐          │  │  │  │  │  │
         qa_6.1: ┤ X ├──────────┼──┼──┼──┼──┼──┼────
-                ├───┤          │  │  │  │  │  │    
+                ├───┤          │  │  │  │  │  │
         qa_6.2: ┤ X ├──────────┼──┼──┼──┼──┼──┼────
-                ├───┤          │  │  │  │  │  │    
+                ├───┤          │  │  │  │  │  │
         qa_7.0: ┤ X ├──────────X──┼──┼──X──┼──┼────
-                ├───┤             │  │     │  │    
+                ├───┤             │  │     │  │
         qa_7.1: ┤ X ├─────────────X──┼─────X──┼────
-                ├───┤                │        │    
+                ├───┤                │        │
         qa_7.2: ┤ X ├────────────────X────────X────
-                └───┘                              
+                └───┘
         Live QuantumVariables:
         ---------------------
         QuantumFloat qa
@@ -439,14 +443,14 @@ def permute_iterable(iterable, perm):
         QuantumFloat qa_5
         QuantumFloat qa_6
         QuantumFloat qa_7
-    
+
     """
-    
+
     from sympy.combinatorics import Permutation
-    
-    inv_perm = list(Permutation(perm)**-1)
-    
+
+    inv_perm = list(Permutation(perm) ** -1)
+
     cycles = to_cycles(inv_perm)
-    
+
     for c in cycles:
         cyclic_shift([iterable[i] for i in c], 1)

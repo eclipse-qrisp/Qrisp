@@ -109,37 +109,6 @@
 
 .. grid:: 1 1 2 2
 
-    .. grid-item-card::
-        :shadow: none
-        
-        .. raw:: html
-
-            <a href="./reference/Algorithms/QuantumBacktrackingTree.html">
-            <div class="example-img-plot-overlay">
-            <p class="sd-card-text">Solve backtracking problems by leveraging quantum walks</p>
-            </div>
-            </a>
-
-    
-        .. image:: ./_static/backtracking.svg
-            
-
-
-    .. grid-item-card::
-        :shadow: none
-    
-        .. raw:: html
-
-            <a href="./reference/Algorithms/Shor.html">
-            <div class="example-img-plot-overlay">
-            <p class="sd-card-text">Factor integers using abitrary quantum adders with Shor's algorithm</p>
-            </div>
-            </a>
-
-    
-        .. image:: ./_static/period_finding.svg
-
-.. grid:: 1 1 2 2
 
     .. grid-item-card::
         :shadow: none
@@ -174,17 +143,83 @@
 
     .. grid-item-card::
         :shadow: none
+            
+    
+        .. raw:: html
+            
+            <a href="./general/tutorial/Jasp.html">
+            <div class="example-img-plot-overlay">
+            <p class="sd-card-text">Exert hybrid real-time algorithm control with Catalyst and Jasp</p>
+            </div>
+            </a>
+            
+        .. image:: ./_static/hybrid_realtime.png
+            :width: 180
+            :align: center
+
+
+.. grid:: 1 1 2 2
+
+            
+    .. grid-item-card::
+        :shadow: none
     
         .. raw:: html
 
-            <a href="./general/tutorial/TSP.html">
+            <a href="./general/tutorial/H2.html">
             <div class="example-img-plot-overlay">
-            <p class="sd-card-text">Solve the traveling salesman problem using quantum search</code></p>
+            <p class="sd-card-text">Simulate the quantum dynamics of molecules using chemistry data</code></p>
             </div>
             </a>
 
     
-        .. image:: ./_static/tsp.svg
+        .. image:: ./_static/hydrogen.png
+
+    .. grid-item-card::
+        :shadow: none
+    
+        .. raw:: html
+
+            <a href="./reference/Algorithms/Shor.html">
+            <div class="example-img-plot-overlay">
+            <p class="sd-card-text">Factor integers using abitrary quantum adders with Shor's algorithm</p>
+            </div>
+            </a>
+
+    
+        .. image:: ./_static/period_finding.svg
+
+
+.. grid:: 1 1 2 2
+
+            
+    .. grid-item-card::
+        :shadow: none
+        
+        .. raw:: html
+
+            <a href="./reference/Algorithms/QuantumBacktrackingTree.html">
+            <div class="example-img-plot-overlay">
+            <p class="sd-card-text">Solve backtracking problems by leveraging quantum walks</p>
+            </div>
+            </a>
+
+    
+        .. image:: ./_static/backtracking.svg
+
+    .. grid-item-card::
+        :shadow: none
+    
+        .. raw:: html
+
+            <a href="./reference/Primitives/LCU.html">
+            <div class="example-img-plot-overlay">
+            <p class="sd-card-text">Realize LCU and LCHS using block encodings</p>
+            </div>
+            </a>
+
+    
+        .. image:: ./_static/LCU.png
 
 
 .. raw:: html
@@ -404,7 +439,7 @@ Who is behind Qrisp
     <div class="code-example-text">
     
 
-Qrisp is an open-source project developed at `Fraunhofer FOKUS <https://www.fokus.fraunhofer.de/en/>`_, an industrial research facility based in Berlin. It is publicly funded by the `German ministry of economic affairs <https://www.digitale-technologien.de/DT/Navigation/DE/ProgrammeProjekte/AktuelleTechnologieprogramme/Quanten_Computing/Projekte/Qompiler/qompiler.html>`_ and the European Union with the aim to enable commercial use of quantum computation. To achieve this, we aim to open this field of research to a broad audience of developers. Furthermore we are proud to announce that Qrisp will become a part of the `Eclipse foundation <https://www.eclipse.org/>`_!
+Qrisp is an Eclipse open-source project developed mainly at `Fraunhofer FOKUS <https://www.fokus.fraunhofer.de/en/>`_, an industrial research facility based in Berlin. It is publicly funded by the `German ministry of economic affairs <https://www.digitale-technologien.de/DT/Navigation/DE/ProgrammeProjekte/AktuelleTechnologieprogramme/Quanten_Computing/Projekte/Qompiler/qompiler.html>`_ and the European Union with the aim to enable commercial use of quantum computation. To achieve this, we aim to open this field of research to a broad audience of developers. Furthermore we are proud to announce that Qrisp will become a part of the `Eclipse foundation <https://www.eclipse.org/>`_!
 
 .. raw:: html
 
@@ -465,6 +500,15 @@ Qrisp is an open-source project developed at `Fraunhofer FOKUS <https://www.foku
         :class-card: sd-border-0
         :shadow: none
     
+        .. image:: ./_static/iqm_logo.jpg
+            :align: center
+            :width: 150
+            :class: no-scaled-link
+
+    .. grid-item-card::
+        :class-card: sd-border-0
+        :shadow: none
+    
         .. image:: ./_static/eu.png
             :align: center
             :width: 150
@@ -477,7 +521,6 @@ Qrisp is an open-source project developed at `Fraunhofer FOKUS <https://www.foku
    general/tutorial/index
    reference/index
    general/setup
-   general/thinq_qrisp/index
    general/papers/index
    general/changelog/index
    general/imprint

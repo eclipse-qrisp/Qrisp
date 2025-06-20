@@ -27,14 +27,19 @@ In this section, we provide a glimpse into the diverse range of applications tha
      - Exemplifies how to multiply quantum matrices using the :meth:`qrisp.dot` function.
    * - :ref:`QuantumModDivision`
      - Exhibits how the :meth:`qrisp.q_divmod` function can be utilize to perform division with remainder.
-   * - :ref:`QuantumTeleportation`
-     - An example on how to use Qrisps QuantumNetwork module to simulate a quantum teleportation.
    * - :ref:`EfficientTSP`
      - A more efficient version of the solution of the traveling salesman problem, that was presented in the :ref:`Tutorial`
    * - :ref:`ShorExample` 
      - Showcases the cryptographic implications of implementating Shor's algorithm and provides insight in how to easily use a custom adder.
-        
-
+   * - :ref:`MolecularPotentialEnergyCurve` 
+     - Calculating molecular potential energy curves with :ref:`VQE`.
+   * - :ref:`GroundStateEnergyQPE` 
+     - Calculating ground state energies with quantum phase estimation.                    
+   * - :ref:`IsingModel` 
+     - Hamiltonian simulation of a transverse field Ising model. 
+   * - :ref:`MaxCutQITE` 
+     - Solving MaxCut with :ref:`QITE`
+     
 .. toctree::
    :hidden:
    :maxdepth: 2
@@ -48,6 +53,9 @@ In this section, we provide a glimpse into the diverse range of applications tha
    Loops
    MatrixMultiplication
    QuantumModDivision
-   QuantumTeleportation
    EfficientTSP
    Shor
+   MolecularPotentialEnergyCurve
+   GroundStateEnergyQPE
+   IsingModel
+   MaxCutQITE

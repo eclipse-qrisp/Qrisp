@@ -1,6 +1,6 @@
 """
-\********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+********************************************************************************
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -13,7 +13,7 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 import numpy as np
@@ -343,13 +343,13 @@ def test_cq_qcla_adder():
     from qrisp import t_depth_indicator
     gate_speed = lambda x : t_depth_indicator(x, epsilon = 2**-10)
     qc = b.qs.compile(gate_speed = gate_speed, compile_mcm = True)
-    assert qc.t_depth() < 11
+    assert qc.t_depth() < 10
     
     qc = b.qs.compile(workspace = 10, gate_speed = gate_speed, compile_mcm = True)
-    assert qc.t_depth() < 7
+    assert qc.t_depth() < 6
     
     a = QuantumFloat(40)
     b = QuantumFloat(40)
     qcla(a, b)
     qc = b.qs.compile(workspace = 50, gate_speed = gate_speed, compile_mcm = True)
-    assert qc.t_depth() < 22
+    assert qc.t_depth() < 21

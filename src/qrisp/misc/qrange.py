@@ -1,6 +1,6 @@
 """
-\********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+********************************************************************************
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -13,9 +13,8 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
-
 
 # TO-DO implement all the concepts discussed in
 # https://stackoverflow.com/questions/30081275/why-is-1000000000000000-in-range1000000000000001-so-fast-in-python-3?rq=1
@@ -37,8 +36,9 @@ class qRange:
         self.max_index_qf = max_index_qf
 
     def __iter__(self):
-        
+
         from qrisp import control, perm_lock, x
+
         if self.create_index_qf:
             self.index_qf = self.max_index_qf.duplicate(
                 qs=self.max_index_qf.qs, name="index_qf"
@@ -63,9 +63,9 @@ class qRange:
         return self
 
     def __next__(self):
-        
+
         from qrisp import cx, perm_lock, perm_unlock, x
-        
+
         perm_unlock(self.index_qf)
         self.c_index += 1
 

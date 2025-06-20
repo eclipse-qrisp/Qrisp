@@ -1,6 +1,6 @@
 """
-\********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+********************************************************************************
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -13,15 +13,15 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
-
 
 import numpy as np
 import sympy as sp
 
 from qrisp.misc import int_as_array
 from qrisp.circuit import Operation, QuantumCircuit
+
 
 # Class to describe truth tables
 # Can be intialized with a list of bitstrings, or a numpy array with 1 and 0s or a
@@ -36,7 +36,9 @@ class TruthTable:
             init_str = ""
 
             self.expr = expr
-            from qrisp.alg_primitives.arithmetic.poly_tools import get_ordered_symbol_list
+            from qrisp.alg_primitives.arithmetic.poly_tools import (
+                get_ordered_symbol_list,
+            )
 
             # Retrieve a list of symbols in a given expression
             # Reverse to get the correct endian convention for qiskit
@@ -181,18 +183,24 @@ class TruthTable:
 
         # Use gray synthesis to synthesize truth table
         if method == "gray":
-            from qrisp.alg_primitives.logic_synthesis.gray_synthesis import gray_logic_synth
+            from qrisp.alg_primitives.logic_synthesis.gray_synthesis import (
+                gray_logic_synth,
+            )
 
             gray_logic_synth(input_var, output_var, self, phase_tolerant=False)
 
         # Use phase tolerant gray synthesis to synthesize truth table
         elif method == "gray_pt":
-            from qrisp.alg_primitives.logic_synthesis.gray_synthesis import gray_logic_synth
+            from qrisp.alg_primitives.logic_synthesis.gray_synthesis import (
+                gray_logic_synth,
+            )
 
             gray_logic_synth(input_var, output_var, self, phase_tolerant=True)
 
         elif method == "gray_pt_inv":
-            from qrisp.alg_primitives.logic_synthesis.gray_synthesis import gray_logic_synth
+            from qrisp.alg_primitives.logic_synthesis.gray_synthesis import (
+                gray_logic_synth,
+            )
             from qrisp.misc import quantum_invert
 
             quantum_invert(
@@ -339,25 +347,25 @@ def rw_spectrum(f):
     return np.dot(T(n), f)
 
 
-def C(f):
-    size = len(f)
+# def C(f):
+#     size = len(f)
 
-    if np.log2(size) != int(np.log2(size)):
-        raise Exception(
-            "The given function does not have the length to properly represent "
-            "a truth table"
-        )
+#     if np.log2(size) != int(np.log2(size)):
+#         raise Exception(
+#             "The given function does not have the length to properly represent "
+#             "a truth table"
+#         )
 
-    n = int(np.log2(size))
+#     n = int(np.log2(size))
 
-    rw_spec = rw_spectrum(f)
-    sum_ = 0
-    for i in range(size):
-        sum_ += sum(int_as_array(i, n)) * rw_spec[i] ** 2
+#     rw_spec = rw_spectrum(f)
+#     sum_ = 0
+#     for i in range(size):
+#         sum_ += sum(int_as_array(i, n)) * rw_spec[i] ** 2
 
-    sum_ = sum_ / 2 ** (n - 2)
+#     sum_ = sum_ / 2 ** (n - 2)
 
-    return 1 / 2 * (n * size - sum_)
+#     return 1 / 2 * (n * size - sum_)
 
 
 def NZ(f):
@@ -370,17 +378,17 @@ def NZ(f):
     return sum_
 
 
-def D(f):
-    size = len(f)
-    if np.log2(size) != int(np.log2(size)):
-        raise Exception(
-            "The given function does not have the length to properly represent "
-            "a truth table"
-        )
+# def D(f):
+#     size = len(f)
+#     if np.log2(size) != int(np.log2(size)):
+#         raise Exception(
+#             "The given function does not have the length to properly represent "
+#             "a truth table"
+#         )
 
-    n = int(np.log2(size))
+#     n = int(np.log2(size))
 
-    return int(n * 2 ** (n - 3) * NZ(f) + C(f))
+#     return int(n * 2 ** (n - 3) * NZ(f) + C(f))
 
 
 def synth_poly(truth_table, column=0, coeff=None):
@@ -433,13 +441,12 @@ class LogicSynthGate(Operation):
         qc = QuantumCircuit(init_op.num_qubits)
         qc.append(init_op, qc.qubits)
         self.logic_synth_method = phase_tolerant
-        
-        Operation.__init__(self, "logic_synth", 
-                           num_qubits = len(qc.qubits), 
-                           definition = qc
-                           )
 
-        self.permeability = {i : i < self.tt.bit_amount for i in range(self.num_qubits)}        
+        Operation.__init__(
+            self, "logic_synth", num_qubits=len(qc.qubits), definition=qc
+        )
+
+        self.permeability = {i: i < self.tt.bit_amount for i in range(self.num_qubits)}
         self.is_qfree = True
 
     def inverse(self):

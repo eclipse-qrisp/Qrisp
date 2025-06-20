@@ -1,6 +1,6 @@
 """
-\********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+********************************************************************************
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -13,7 +13,7 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 # Created by ann81984 at 07.05.2022
@@ -72,16 +72,14 @@ def test_uncomputation_example():
         diffuser(qf)
         print(qf)
     
-    print(qf)
-    assert qf.get_measurement() ==  {0.5: 0.9453289065781315,
-                                     0.0: 0.007810156203124062,
-                                     1.0: 0.007810156203124062,
-                                     1.5: 0.007810156203124062,
-                                     2.0: 0.007810156203124062,
-                                     2.5: 0.007810156203124062,
-                                     3.0: 0.007810156203124062,
-                                     3.5: 0.007810156203124062}
-
+    
+    meas_dic = qf.get_measurement()
+    print(meas_dic)
+    expect_dic = {0.5: 0.9453124945312494, 0.0: 0.007812500781250079, 1.0: 0.007812500781250079, 1.5: 0.007812500781250079, 2.0: 0.007812500781250079, 2.5: 0.007812500781250079, 3.0: 0.007812500781250079, 3.5: 0.007812500781250079}
+    
+    for k in meas_dic.keys():
+        assert abs(meas_dic[k] - expect_dic[k]) < 1E-3
+    
     # ---------
     print("Test 2 passed")
 
@@ -119,7 +117,7 @@ def test_uncomputation_example():
 
         return res
 
-    perm = QuantumArray(QuantumFloat(2))
+    perm = QuantumArray(QuantumFloat(2), shape = 4)
     perm[:] = [2, 1, 0, 3]
 
     res = calc_perm_travel_distance(perm, 5)

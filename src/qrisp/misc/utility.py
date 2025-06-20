@@ -1,6 +1,6 @@
 """
-\********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+********************************************************************************
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -13,14 +13,14 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
-
 
 import traceback
 
 import numpy as np
 import sympy
+from jax.lax import fori_loop, cond
 
 
 def bin_rep(n, bits):
@@ -38,15 +38,42 @@ def bin_rep(n, bits):
 
 
 def int_encoder(qv, encoding_number):
-    if encoding_number > 2 ** len(qv) - 1:
-        raise Exception("Not enough qubits to encode integer " + str(encoding_number))
 
-    binary_rep = bin_rep(encoding_number, len(qv))[::-1]
-    from qrisp import x
+    from qrisp import x, control
+    from qrisp.jasp import TracingQuantumSession, jrange, check_for_tracing_mode
 
-    for i in range(len(binary_rep)):
-        if int(binary_rep[i]):
-            x(qv[i])
+    if not check_for_tracing_mode():
+        if encoding_number > 2 ** len(qv) - 1:
+            raise Exception(
+                "Not enough qubits to encode integer " + str(encoding_number)
+            )
+
+        for i in range(len(qv)):
+            if (1 << i) & encoding_number:
+                x(qv[i])
+
+    else:
+
+        for i in jrange(qv.size):
+            with control(encoding_number & (1 << i)):
+                x(qv[i])
+
+        # def true_fun(qc, cond, qb):
+        #     tr_qs.abs_qc = qc
+        #     x(qb)
+        #     return tr_qs.abs_qc
+
+        # def false_fun(qc, cond, qb):
+        #     return qc
+
+        # def loop_fun(i, qc):
+        #     cond_bool = (1<<i) & encoding_number
+        #     qb = qv[i]
+        #     qc = cond(cond_bool, true_fun, false_fun, qc, cond_bool, qb)
+
+        #     return qc
+        # qc = fori_loop(0, qv.size, loop_fun, (tr_qs.abs_qc))
+        # tr_qs.abs_qc = qc
 
 
 # Calculates the binary expression of a given integer and returns it as an array of
@@ -359,9 +386,18 @@ def gate_wrap(*args, permeability=None, is_qfree=None, name=None, verify=False):
 def gate_wrap_inner(
     function, permeability=None, is_qfree=None, name=None, verify=False
 ):
+
+    qached_function = function
+
     def wrapped_function(
         *args, permeability=permeability, is_qfree=is_qfree, verify=verify, **kwargs
     ):
+
+        from qrisp.jasp import check_for_tracing_mode
+
+        if check_for_tracing_mode():
+            return qached_function(*args, **kwargs)
+
         wrapped_function.__name__ = function.__name__
         from qrisp.circuit import Qubit
         from qrisp.core import recursive_qs_search, recursive_qv_search
@@ -606,6 +642,11 @@ def gate_wrap_inner(
 
 def find_qs(args):
 
+    from qrisp.jasp import TracingQuantumSession, check_for_tracing_mode
+
+    if check_for_tracing_mode():
+        return TracingQuantumSession.get_instance()
+
     if hasattr(args, "qs"):
         return args.qs()
 
@@ -678,6 +719,10 @@ def multi_measurement(qv_list, shots=None, backend=None):
     {(3, 2, 5): 0.5, (3, 3, 6): 0.5}
 
     """
+    
+    from qrisp.jasp import check_for_tracing_mode
+    if check_for_tracing_mode():
+        raise Exception("Tried to call multi_measurement in Jasp mode. Please use terminal_sampling instead")
 
     if backend is None:
         if qv_list[0].qs.backend is None:
@@ -695,10 +740,18 @@ def multi_measurement(qv_list, shots=None, backend=None):
     merge(qv_list)
 
     # Copy circuit in order to prevent modification
-    from qrisp import QuantumArray, QuantumVariable, recursive_qv_search
+    from qrisp import (
+        QuantumArray,
+        QuantumVariable,
+        recursive_qv_search,
+        recursive_qa_search,
+    )
     from qrisp.core.compilation import qompiler
 
     temp = recursive_qv_search(qv_list)
+
+    for qa in recursive_qa_search(qv_list):
+        temp.extend(list(qa.flatten()))
 
     compiled_qc = qompiler(
         qv_list[0].qs, intended_measurements=sum([qv.reg for qv in temp], [])
@@ -729,6 +782,7 @@ def multi_measurement(qv_list, shots=None, backend=None):
     # noise_model = noise_model, shots = shots).result().get_counts()
     counts = backend.run(compiled_qc, shots)
     counts = {k: counts[k] for k in sorted(counts)}
+    shots = sum(counts.values())
 
     # Convert the labeling bistrings of counts into list of labels
     new_counts = {}
@@ -766,7 +820,9 @@ def multi_measurement(qv_list, shots=None, backend=None):
         array_state = tuple(counts_values)
         try:
             no_of_shots_executed = sum(counts.values())
-            new_counts[array_state] = counts[list(counts.keys())[i]] / no_of_shots_executed
+            new_counts[array_state] = (
+                counts[list(counts.keys())[i]] / no_of_shots_executed
+            )
         except TypeError:
             raise Exception(
                 "Tried to create measurement outcome dic for QuantumVariable "
@@ -1271,7 +1327,9 @@ def get_measurement_from_qc(qc, qubits, backend, shots=None):
 
     # Remove other measurements outcomes from counts dic
     new_counts_dic = {}
+
     no_of_shots_executed = 0
+
     for key in counts.keys():
         # Remove possible whitespaces
         new_key = key.replace(" ", "")
@@ -1288,8 +1346,8 @@ def get_measurement_from_qc(qc, qubits, backend, shots=None):
 
     counts = new_counts_dic
 
-    # Plot result (if needed)
-
+    if abs(1 - no_of_shots_executed) < 1e-3:
+        return counts
     # Normalize counts
     for key in counts.keys():
         counts[key] = counts[key] / abs(no_of_shots_executed)
@@ -1398,69 +1456,105 @@ def redirect_qfunction(function_to_redirect):
     """
     from qrisp import QuantumEnvironment, QuantumVariable, merge, QuantumArray
     import weakref
+    from qrisp.jasp import (
+        check_for_tracing_mode,
+        make_jaspr,
+        injection_transform,
+        TracingQuantumSession,
+        eval_jaxpr,
+    )
 
     def redirected_qfunction(*args, target=None, **kwargs):
 
-        merge(
-            [
-                arg
-                for arg in list(args) + [target]
-                if isinstance(arg, (QuantumVariable, QuantumArray))
-            ]
-        )
-        env = QuantumEnvironment()
-        env.manual_allocation_management = True
-        qs = target.qs
+        if check_for_tracing_mode():
+            jaspr = make_jaspr(function_to_redirect, garbage_collection="manual")(
+                *args, **kwargs
+            ).flatten_environments()
 
-        with env:
-            res = function_to_redirect(*args, **kwargs)
+            transformed_jaspr = injection_transform(jaspr, jaspr.outvars[0])
 
-            if not isinstance(res, QuantumVariable):
-                raise Exception("Given function did not return a QuantumVariable")
+            qs = TracingQuantumSession.get_instance()
+            abs_qc = qs.abs_qc
+            from jax.tree_util import tree_flatten
 
-            target = list(target)
+            flattened_args = []
 
-            if len(res) != len(target):
-                raise Exception(
-                    "Tried to redirect quantum function into QuantumVariable of "
-                    "differing size"
-                )
+            flattened_args.append(target.reg.tracer)
 
-            i = 0
-            res_is_new = False
-            while i < len(env.env_qs.data):
+            for arg in args:
+                flattened_args.extend(tree_flatten(arg)[0])
 
-                instr = env.env_qs.data[i]
+            flattened_args.append(abs_qc)
 
-                if isinstance(instr, QuantumEnvironment):
-                    pass
-                elif instr.op.name == "qb_alloc" and instr.qubits[0] in list(res):
-                    env.env_qs.data.pop(i)
-                    res_is_new = True
-                    continue
-                else:
-                    for qb in instr.qubits:
-                        qb.qs = weakref.ref(qs)
+            res = eval_jaxpr(transformed_jaspr, [])(*flattened_args)
 
-                i += 1
+            if len(transformed_jaspr.outvars) == 1:
+                qs.abs_qc = res
+            else:
+                qs.abs_qc = res[-1]
 
-            retarget_instructions(env.env_qs.data, list(res), target)
+        else:
 
-        if res_is_new:
-            # Remove all traces of res
-            res.delete()
+            merge(
+                [
+                    arg
+                    for arg in list(args) + [target]
+                    if isinstance(arg, (QuantumVariable, QuantumArray))
+                ]
+            )
+            env = QuantumEnvironment()
+            env.manual_allocation_management = True
+            qs = target.qs
 
-            for i in range(res.size):
-                res.qs.qubits.remove(res[i])
-                res.qs.data.pop(-1)
+            with env:
+                res = function_to_redirect(*args, **kwargs)
 
-            for i in range(len(res.qs.deleted_qv_list)):
-                qv = res.qs.deleted_qv_list[i]
-                if qv.name == res.name:
-                    res.qs.deleted_qv_list.pop(i)
-                    break
+                if not isinstance(res, QuantumVariable):
+                    raise Exception("Given function did not return a QuantumVariable")
 
-        return target
+                target = list(target)
+
+                if len(res) != len(target):
+                    raise Exception(
+                        "Tried to redirect quantum function into QuantumVariable of "
+                        "differing size"
+                    )
+
+                i = 0
+                res_is_new = False
+                while i < len(env.env_qs.data):
+
+                    instr = env.env_qs.data[i]
+
+                    if isinstance(instr, QuantumEnvironment):
+                        pass
+                    elif instr.op.name == "qb_alloc" and instr.qubits[0] in list(res):
+                        env.env_qs.data.pop(i)
+                        res_is_new = True
+                        continue
+                    else:
+                        for qb in instr.qubits:
+                            qb.qs = weakref.ref(qs)
+
+                    i += 1
+
+                retarget_instructions(env.env_qs.data, list(res), target)
+
+            if res_is_new:
+                # Remove all traces of res
+                res.delete()
+
+                for i in range(res.size):
+                    res.qs.qubits.remove(res[i])
+                    res.qs.data.pop(-1)
+
+                for i in range(len(res.qs.deleted_qv_list)):
+                    qv = res.qs.deleted_qv_list[i]
+                    if qv.name == res.name:
+                        res.qs.deleted_qv_list.pop(i)
+                        break
+
+            return target
 
     redirected_qfunction.__name__ = function_to_redirect.__name__
 
@@ -1644,12 +1738,8 @@ def trigify_amp(amplitude, nnz):
         sin,
     )
 
-    cos_expr = nsimplify(
-        float(np.arccos(np.abs(amplitude)) / np.pi), tolerance=10**-5
-    )
-    sin_expr = nsimplify(
-        float(np.arcsin(np.abs(amplitude)) / np.pi), tolerance=10**-5
-    )
+    cos_expr = nsimplify(float(np.arccos(np.abs(amplitude)) / np.pi), tolerance=10**-5)
+    sin_expr = nsimplify(float(np.arcsin(np.abs(amplitude)) / np.pi), tolerance=10**-5)
 
     # if count_ops(sin_expr) > count_ops(cos_expr):
     if len(latex(sin_expr)) > len(latex(cos_expr)):
@@ -1667,15 +1757,12 @@ def trigify_amp(amplitude, nnz):
             expr = "sin"
             temp = sin_expr
     else:
-        temp = (
-            nsimplify(np.abs(amplitude) * nnz**0.5, tolerance=10**-5) / nnz**0.5
-        )
+        temp = nsimplify(np.abs(amplitude) * nnz**0.5, tolerance=10**-5) / nnz**0.5
 
     # if count_ops(temp) > 4:
     if len(latex(temp)) > 20:
         temp = (
-            nsimplify(float(np.abs(amplitude) * nnz**0.5), tolerance=10**-5)
-            / nnz**0.5
+            nsimplify(float(np.abs(amplitude) * nnz**0.5), tolerance=10**-5) / nnz**0.5
         )
         if len(latex(temp)) > 20:
             abs = np.abs(amplitude)
@@ -1874,6 +1961,8 @@ def t_depth_indicator(op, epsilon):
         "s",
         "h",
         "s_dg",
+        "sx",
+        "sx_dg",
         "measure",
         "reset",
         "qb_alloc",

@@ -1,6 +1,6 @@
 """
-\********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+********************************************************************************
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -13,10 +13,11 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 from qrisp.interface.virtual_backend import VirtualBackend
+
 
 class QiskitBackend(VirtualBackend):
     """
@@ -28,19 +29,19 @@ class QiskitBackend(VirtualBackend):
     ----------
     backend : Qiskit backend object, optional
         A Qiskit backend object, which runs QuantumCircuits. The default is
-        Aer.get_backend('qasm_simulator').
+        ``AerSimulator()``.
     port : int, optional
         The port to listen. The default is 8079.
 
     Examples
     --------
 
-    We evaluate a QuantumFloat multiplication on the QASM-simulator.
+    We evaluate a :ref:`QuantumFloat` multiplication on the Aer simulator.
 
     >>> from qrisp import QuantumFloat
     >>> from qrisp.interface import QiskitBackend
-    >>> from qiskit import Aer
-    >>> example_backend = QiskitBackend(backend = Aer.get_backend('qasm_simulator'))
+    >>> from qiskit_aer import AerSimulator
+    >>> example_backend = QiskitBackend(backend = AerSimulator())
     >>> qf = QuantumFloat(4)
     >>> qf[:] = 3
     >>> res = qf*qf
@@ -54,13 +55,13 @@ class QiskitBackend(VirtualBackend):
         if backend is None:
 
             try:
-                from qiskit import Aer
+                from qiskit_aer import AerSimulator
 
-                backend = Aer.get_backend("qasm_simulator")
+                backend = AerSimulator()
             except ImportError:
-                from qiskit.providers.basic_provider import BasicProvider
+                import qiskit_aer as Aer
 
-                backend = BasicProvider().get_backend("basic_simulator")
+                backend = Aer.AerSimulator()
 
         # Create the run method
         def run(qasm_str, shots=None, token=""):
@@ -103,10 +104,15 @@ class QiskitBackend(VirtualBackend):
 
         super().__init__(run, port=port)
 
+
 def VirtualQiskitBackend(*args, **kwargs):
     import warnings
-    warnings.warn("VirtualQiskitBackend will be deprecated in a future release of Qrisp. Use QiskitBackend instead.")
+
+    warnings.warn(
+        "VirtualQiskitBackend will be deprecated in a future release of Qrisp. Use QiskitBackend instead."
+    )
     return QiskitBackend(*args, **kwargs)
+
 
 class QiskitRuntimeBackend(VirtualBackend):
     """

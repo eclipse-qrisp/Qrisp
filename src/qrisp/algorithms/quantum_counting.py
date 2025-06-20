@@ -1,6 +1,6 @@
 """
-\********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+********************************************************************************
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -13,13 +13,12 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
-
-import numpy as np
 
 from qrisp.core import h
 from qrisp.alg_primitives import QPE
+
 
 def quantum_counting(qv, oracle, precision):
     """
@@ -65,8 +64,9 @@ def quantum_counting(qv, oracle, precision):
 
     """
 
-    from qrisp import gate_wrap
+    from qrisp import gate_wrap, measure
     from qrisp.grover import diffuser
+    from qrisp.jasp import check_for_tracing_mode
 
     @gate_wrap
     def grover_operator(qv):
@@ -76,13 +76,16 @@ def quantum_counting(qv, oracle, precision):
     h(qv)
     res = QPE(qv, grover_operator, precision=precision)
 
-    mes_res = res.get_measurement()
+    if check_for_tracing_mode():
+        mes_res = measure(res)
+        import jax.numpy as jnp
+    else:
+        mes_res = list(res.get_measurement().keys())[0]
+        import numpy as jnp
 
-    theta = min(list(mes_res.keys())[:1]) * 2 * np.pi
+    theta = mes_res * jnp.pi
 
     N = 2**qv.size
-    M = N * np.sin(theta / 2) ** 2
+    M = N * jnp.sin(theta) ** 2
 
     return M
-
-

@@ -1,6 +1,6 @@
 """
-\********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+********************************************************************************
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -13,9 +13,8 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
-
 
 import numpy as np
 
@@ -84,11 +83,13 @@ class QuantumString(QuantumArray):
 
     """
 
-    def __new__(subtype, size=0, qs=None, nisq_char=True):
+    def __init__(self, size, qs=None, nisq_char=True):
         if nisq_char:
-            return QuantumArray.__new__(subtype, nisq_init_quantum_char, size, qs=qs)
+            qtype = nisq_init_quantum_char
         else:
-            return QuantumArray.__new__(subtype, init_quantum_char, size, qs=qs)
+            qtype = init_quantum_char
+
+        QuantumArray.__init__(self, qtype=qtype, shape=size, qs=qs)
 
     def get_measurement(self, **kwargs):
         mes_result = QuantumArray.get_measurement(self, **kwargs)
@@ -100,9 +101,6 @@ class QuantumString(QuantumArray):
 
         return return_dic
 
-    def __add__(self, other):
-        return np.concatenate((self, other)).view(QuantumString)
-
     def decoder(self, code_int):
         res_array = QuantumArray.decoder(self, code_int)
         res_str = ""
@@ -112,13 +110,9 @@ class QuantumString(QuantumArray):
 
         return res_str
 
-    def encoder(self, encoding_str):
-        encoding_array = np.zeros(len(encoding_str), dtype="object")
-
-        for i in range(len(encoding_array)):
-            encoding_array[i] = encoding_str[i]
-
-        return QuantumArray.encoder(self, encoding_array)
+    def encode(self, encoding_str):
+        encoding_array = np.array(list(encoding_str), dtype="object")
+        QuantumArray.encode(self, encoding_array)
 
     def __setitem__(self, key, value):
         if isinstance(key, int):
@@ -127,29 +121,21 @@ class QuantumString(QuantumArray):
 
         QuantumArray.__setitem__(self, key, [ch for ch in value])
 
-    def __iadd__(self, other):
-        from qrisp import merge
+    @classmethod
+    def quantize_string(cls, string):
+        res = QuantumString(len(string))
+        res[:] = string
+        return res
 
+    def __add__(self, other):
+        return self.concatenate(other)
+
+    def __iadd__(self, other):
         if isinstance(other, QuantumString):
-            self.resize((len(self) + len(other),), refcheck=False)
-            merge(self.qs, other.qs)
-            for i in range(len(other)):
-                np.ndarray.__setitem__(self, i + len(self) - len(other), other[i])
+            return self + other
 
         elif isinstance(other, str):
-            if self.shape_specified:
-                self.resize((len(self) + len(other),), refcheck=False)
-            else:
-                self.set_shape(len(other))
-            for i in range(len(other)):
-                np.ndarray.__setitem__(
-                    self, i + len(self) - len(other), self.qtype.duplicate(qs=self.qs)
-                )
-                self[i + len(self) - len(other)] = other[i]
+            return self + QuantumString.quantize_string(other)
 
-        elif isinstance(other, QuantumChar):
-            merge(self, other)
-            self.resize((len(self) + 1,), refcheck=False)
-            np.ndarray.__setitem__(self, len(self) - 1, other)
-
-        return self
+        else:
+            raise Exception(f"Don't know how to concatenate with type {type(other)}")

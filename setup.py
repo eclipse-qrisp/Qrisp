@@ -1,6 +1,6 @@
 """
-\********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+********************************************************************************
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -13,12 +13,15 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 import setuptools
 
-REQUIREMENTS = ["qiskit>=0.44.0",
+REQUIREMENTS = [
+                "numpy>=2.0",
+                "sympy<=1.13",
+                "qiskit>=0.44.0",
                 "matplotlib>=3.5.1",
                 "scipy>=1.10.0",
                 "numba",
@@ -28,7 +31,10 @@ REQUIREMENTS = ["qiskit>=0.44.0",
                 "flask",
                 "waitress",
                 "pyyaml",
-                "requests"]
+                "requests",
+                "psutil",
+                "jax==0.4.28",
+                "jaxlib==0.4.28"]
 
 
 with open("README.md", "r", encoding="utf-8") as fh:
@@ -36,7 +42,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="qrisp",
-    author="Raphael Seidel",
+    author="The Qrisp team",
     author_email="raphael.seidel@fokus.fraunhofer.de",
     description="Qrisp - A high level language for gate-based quantum computing",
     long_description=long_description,
@@ -53,5 +59,5 @@ setuptools.setup(
         'iqm': ['qiskit-iqm']
     },
     packages=setuptools.find_packages(where="src"),
-    python_requires=">=3.8",
+    python_requires=">=3.10",
 )

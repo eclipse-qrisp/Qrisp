@@ -1,6 +1,6 @@
 """
-\********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+********************************************************************************
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -13,16 +13,18 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
-
 
 import numpy as np
 import sympy as sp
 
 from qrisp.core.gate_application_functions import p, z
 from qrisp.core import QuantumArray
-from qrisp.alg_primitives.arithmetic.SBP_arithmetic import hybrid_mult, polynomial_encoder
+from qrisp.alg_primitives.arithmetic.SBP_arithmetic import (
+    hybrid_mult,
+    polynomial_encoder,
+)
 
 
 def q_matmul(
@@ -534,7 +536,10 @@ def inplace_matrix_app(vector, matrix):
     # In order to enter the reorder values in the QuantumArray, we need to use the
     # setitem method of ndarray because setitem for QuantumArray
     # is overloaded with initialization
-    np.ndarray.__setitem__(vector, slice(None, None, None), qv_reordering_array)
+    from qrisp import permute_iterable
+
+    permute_iterable(vector, eliminated_variables)
+    # np.ndarray.__setitem__(vector, slice(None, None, None), qv_reordering_array)
 
 
 def auto_matmul_wrapper(a, b, out=None):
@@ -759,7 +764,7 @@ def tensordot(a, b, axes):
         axes_b = [axes_b]
         nb = 1
 
-    a, b = np.asanyarray(a), np.asanyarray(b)
+    # a, b = np.asanyarray(a), np.asanyarray(b)
     as_ = a.shape
     nda = a.ndim
     bs = b.shape

@@ -1,6 +1,6 @@
 """
-\********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+********************************************************************************
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -13,18 +13,23 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 from qrisp.circuit import QuantumCircuit
-from qrisp.alg_primitives.mcx_algs.circuit_library import maslov_qc, toffoli_qc, margolus_qc
+from qrisp.alg_primitives.mcx_algs.circuit_library import (
+    maslov_qc,
+    toffoli_qc,
+    margolus_qc,
+)
 from qrisp.misc.utility import bin_rep
+
 
 # Ancilla supported multi controlled X gates from https://arxiv.org/pdf/1508.03273.pdf
 def maslov_mcx(n, ctrl_state=-1):
     if not isinstance(ctrl_state, str):
         if ctrl_state == -1:
-            ctrl_state += 2 ** n
+            ctrl_state += 2**n
         ctrl_state = bin_rep(ctrl_state, n)
 
     res = QuantumCircuit(n + 1)

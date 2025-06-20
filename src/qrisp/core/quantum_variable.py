@@ -1,6 +1,6 @@
 """
-\********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+********************************************************************************
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -13,15 +13,15 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
-
 
 import copy
 import weakref
 
 import matplotlib.pyplot as plt
 import numpy as np
+from jax import tree_util
 
 from qrisp.core.compilation import qompiler
 
@@ -232,22 +232,29 @@ class QuantumVariable:
 
         """
 
-        if size < 0:
-            raise Exception(
-                f"Tried to create QuantumVariable with invalid qubit amount {size}"
-            )
-
         # Store quantum session
-        from qrisp.core import QuantumSession, merge_sessions
+        from qrisp.core import QuantumSession
+        from qrisp.jasp import check_for_tracing_mode, TracingQuantumSession
 
-        if qs is not None:
-            self.qs = qs
+        if check_for_tracing_mode():
+            self.qs = TracingQuantumSession.get_instance()
+            if self.qs is None:
+                raise Exception(
+                    "Tried to trace Qrisp code using make_jaxpr (use make_jaspr instead)"
+                )
+
+            self.qubit_cache = {}
         else:
-            self.qs = QuantumSession()
+            if qs is not None:
+                self.qs = qs
+            else:
+                self.qs = QuantumSession()
 
-        self.size = int(size)
+        # self.size = size
 
         self.user_given_name = False
+        self.reg = None
+
         # If name is given, register variable in session manager
         if name is not None:
             self.user_given_name = True
@@ -258,14 +265,14 @@ class QuantumVariable:
 
                 try:
                     self.name = name
-                    self.qs.register_qv(self)
+                    self.qs.register_qv(self, size)
 
                 except RuntimeError:
                     i = int(self.creation_counter)
                     while True:
                         try:
                             self.name = name + "_" + str(i)
-                            self.qs.register_qv(self)
+                            self.qs.register_qv(self, size)
                         except RuntimeError:
                             i += 1
                             continue
@@ -273,7 +280,7 @@ class QuantumVariable:
 
             else:
                 self.name = name
-                self.qs.register_qv(self)
+                self.qs.register_qv(self, size)
 
         # Otherwise try to infer from code inspection
         else:
@@ -296,16 +303,24 @@ class QuantumVariable:
                     # name = self.get_unique_name(python_var_name)
                     name = python_var_name
 
-                    self.name = name
-                    self.qs.register_qv(self)
-                    name_found = True
+                    name_found = False
+                    i = 0
+                    while True:
+                        try:
+                            self.name = name
+                            self.qs.register_qv(self, size)
+                            name_found = True
+                            break
+                        except RuntimeError:
+                            name = python_var_name + "_" + str(i)
+                            i += 1
 
             # If this didn't work, generate a generic, unique name
             if not name_found:
                 while True:
                     try:
                         self.name = self.get_unique_name()
-                        self.qs.register_qv(self)
+                        self.qs.register_qv(self, size)
                         break
                     except RuntimeError:
                         pass
@@ -315,9 +330,17 @@ class QuantumVariable:
         # This attribute tracks the created QuantumVariables for the
         # auto_uncompute decorator
         # We use weak references as some qrisp modules rely on reference counting
-        QuantumVariable.live_qvs.append(weakref.ref(self))
-        self.creation_time = int(self.creation_counter[0])
-        self.creation_counter += 1
+
+        try:
+            from qrisp.jasp.tracing_logic import flatten_qv, unflatten_qv
+
+            # Register as a PyTree with JAX
+            tree_util.register_pytree_node(type(self), flatten_qv, unflatten_qv)
+        except ValueError:
+            pass
+
+        # Specify the traced attributes (None for base type QuantumVariable)
+        self.traced_attributes = []
 
     def __or__(self, other):
         from qrisp import mcx, x, cx
@@ -365,6 +388,17 @@ class QuantumVariable:
             cx(other[i], and_res[i])
 
         return and_res
+
+    def __lshift__(self, other):
+        if not callable(other):
+            raise Exception("Tried to inject QuantumVariable into non-callable")
+
+        from qrisp.misc.utility import redirect_qfunction
+
+        def return_function(*args, **kwargs):
+            return redirect_qfunction(other)(*args, target=self, **kwargs)
+
+        return return_function
 
     def delete(self, verify=False, recompute=False):
         r"""
@@ -424,7 +458,9 @@ class QuantumVariable:
 
         """
 
-        if self.is_deleted():
+        from qrisp.jasp import TracingQuantumSession
+
+        if not isinstance(self.qs, TracingQuantumSession) and self.is_deleted():
             return
 
         self.qs.delete_qv(self, verify)
@@ -452,7 +488,7 @@ class QuantumVariable:
         else:
             return False
 
-    def duplicate(self, name=None, qs=None, init=False):
+    def duplicate(self, name=None, qs=None, init=False, qubits=None):
         r"""
         Duplicates the QuantumVariable in the sense that a new QuantumVariable is
         created with same type and parameters but initialized in the $\ket{0}$ state.
@@ -489,13 +525,23 @@ class QuantumVariable:
 
         """
 
+        from qrisp.core import QuantumSession
+        from qrisp.jasp import check_for_tracing_mode, TracingQuantumSession
+
+        if check_for_tracing_mode():
+            new_qs = TracingQuantumSession.get_instance()
+        else:
+            new_qs = QuantumSession()
+
         duplicate = copy.copy(self)
 
-        from qrisp.core import QuantumSession
+        if qubits is not None:
+            duplicate.reg = qubits
+            size = None
+        else:
+            size = self.size
 
-        new_qs = QuantumSession()
-
-        # Register duplicate variable in session manager
+        # Register duplicate variable in session
 
         if name is not None:
 
@@ -506,22 +552,22 @@ class QuantumVariable:
                 duplicate.user_given_name = True
 
             duplicate.name = name
-            new_qs.register_qv(duplicate)
+            new_qs.register_qv(duplicate, size)
 
         else:
             duplicate.user_given_name = False
 
             try:
                 duplicate.name = self.name + "_dupl"
-                new_qs.register_qv(duplicate)
-            except NameError:
+                new_qs.register_qv(duplicate, size)
+            except RuntimeError:
                 i = 0
                 while True:
                     try:
                         duplicate.name = self.name + "_dupl" + str(i)
-                        new_qs.register_qv(duplicate)
+                        new_qs.register_qv(duplicate, size)
                         break
-                    except NameError:
+                    except RuntimeError:
                         pass
                     i += 1
 
@@ -529,14 +575,7 @@ class QuantumVariable:
 
         duplicate.qs = new_qs
 
-        # This attribute tracks the created QuantumVariables for the
-        # auto_uncompute decorator
-        # We use weak references as some qrisp modules rely on reference counting
-        QuantumVariable.live_qvs.append(weakref.ref(duplicate))
-        duplicate.creation_time = int(self.creation_counter[0])
-        duplicate.creation_counter += 1
-
-        if qs is not None:
+        if qs is not None and isinstance(qs, QuantumSession):
             merge(qs, new_qs)
 
         if init:
@@ -582,6 +621,9 @@ class QuantumVariable:
         from qrisp.misc import bin_rep
 
         return bin_rep(i, self.size)[::-1]
+
+    def jdecoder(self, i):
+        return i
 
     def encoder(self, value):
         """
@@ -665,12 +707,14 @@ class QuantumVariable:
         """
 
         from qrisp.misc import check_if_fresh, int_encoder
+        from qrisp.jasp import TracingQuantumSession
 
-        if not permit_dirtyness:
-            if not check_if_fresh(self.reg, self.qs):
-                raise Exception(
-                    "Tried to initialize qubits which are not fresh anymore."
-                )
+        if not isinstance(self.qs, TracingQuantumSession):
+            if not permit_dirtyness:
+                if not check_if_fresh(self.reg, self.qs):
+                    raise Exception(
+                        "Tried to initialize qubits which are not fresh anymore."
+                    )
 
         int_encoder(self, self.encoder(value))
 
@@ -800,7 +844,6 @@ class QuantumVariable:
                 + str(self.size)
             )
             self.reg.insert(position + i, insertion_qubits[i])
-            self.size += 1
 
     def reduce(self, qubits, verify=False):
         r"""
@@ -860,7 +903,6 @@ class QuantumVariable:
 
         self.qs.clear_qubits(qubits, verify)
         # Adjust variable size
-        self.size -= len(qubits)
 
     def get_measurement(
         self,
@@ -1059,7 +1101,12 @@ class QuantumVariable:
         return self.reg[key]
 
     def __str__(self):
-        return str(self.get_measurement())
+        from qrisp.jasp import check_for_tracing_mode
+
+        if check_for_tracing_mode():
+            return self.__repr__()
+        else:
+            return str(self.get_measurement())
 
     def __repr__(self):
         return "<" + str(type(self)).split(".")[-1][:-2] + " '" + self.name + "'>"
@@ -1076,6 +1123,13 @@ class QuantumVariable:
 
     def __len__(self):
         return self.size
+
+    @property
+    def size(self):
+        if isinstance(self.reg, list):
+            return len(self.reg)
+        else:
+            return self.reg.size
 
     # Overload equality operator to use python syntax for if environments?
     # Not sure if the possible user confusion is worth it
@@ -1307,6 +1361,14 @@ class QuantumVariable:
 
         return name
 
+    def __iter__(self):
+        if not isinstance(self.reg, list):
+            raise Exception(
+                "Tried to perform a static iteration on a dynamic QuantumVariable"
+            )
+        else:
+            return self.reg.__iter__()
+
     def init_from(self, other):
         r"""
         Method to initiate a QuantumVariable based on the state of another. This method
@@ -1430,6 +1492,17 @@ class QuantumVariable:
         from qrisp.misc import custom_qv
 
         return custom_qv(label_list, decoder=decoder, qs=qs, name=name)
+
+    def ensure_reg(self):
+        return self.reg
+
+    def measure(self):
+        return self.jdecoder(self.reg.measure())
+
+    def template(self):
+        from qrisp.jasp.tracing_logic import QuantumVariableTemplate
+
+        return QuantumVariableTemplate(self)
 
 
 def plot_histogram(outcome_labels, counts, filename=None):

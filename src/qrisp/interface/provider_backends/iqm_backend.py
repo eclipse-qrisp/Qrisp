@@ -1,6 +1,6 @@
 """
-\********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+********************************************************************************
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -13,14 +13,15 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 import qiskit
 
 from qrisp.interface import VirtualBackend
 
-def IQMBackend(api_token, device_instance):
+
+def IQMBackend(api_token, device_instance, port=None):
     """
     This function instantiates an IQMBackend based on VirtualBackend
     using Qiskit and Qiskit-on-IQM.
@@ -33,6 +34,8 @@ def IQMBackend(api_token, device_instance):
     device_instance : str
         The device instance of the IQM backend such as "garnet".
         For an up-to-date list, see the IQM Resonance website.
+    port : int, optional
+        The port to listen. The default is None.
 
     Examples
     --------
@@ -82,7 +85,6 @@ def IQMBackend(api_token, device_instance):
             "Please install qiskit-iqm to use the IQMBackend. You can do this by running `pip install qrisp[iqm]`."
         )
 
-
     def run_func_iqm(qasm_str, shots=None, token=""):
         if shots is None:
             shots = 1000
@@ -103,4 +105,4 @@ def IQMBackend(api_token, device_instance):
 
         return new_counts
 
-    return VirtualBackend(run_func_iqm)
+    return VirtualBackend(run_func_iqm, port=port)

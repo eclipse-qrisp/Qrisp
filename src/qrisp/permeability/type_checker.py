@@ -1,6 +1,6 @@
 """
-\********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+********************************************************************************
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -13,10 +13,11 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 import numpy as np
+import sympy as sp
 
 # Checks if a gate is permeable on a set of qubits
 # Permeable means that the gate has the form
@@ -79,6 +80,10 @@ def is_permeable(gate, qubit_indices):
                 gate.permeability[i] = True
 
             return True
+
+    for par in gate.params:
+        if isinstance(par, sp.Expr):
+            return False
 
     # Create qubit order
     qubit_order = []

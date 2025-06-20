@@ -1,6 +1,6 @@
 """
-\********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+********************************************************************************
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -13,7 +13,7 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 # -*- coding: utf-8 -*-
@@ -31,34 +31,35 @@ np_dtype = np.complex64
 id_matrix = np.eye(2, dtype=np_dtype)
 
 pauli_x = np.asarray([[0, 1], [1, 0]], dtype=np_dtype)
-pauli_y = (np.asarray([[0, 0], [0, 0]], dtype = np_dtype) + 1j * np.asarray([[0, -1], [1, 0]])).astype(np_dtype)
+pauli_y = (
+    np.asarray([[0, 0], [0, 0]], dtype=np_dtype) + 1j * np.asarray([[0, -1], [1, 0]])
+).astype(np_dtype)
 pauli_z = np.asarray([[1, 0], [0, -1]], dtype=np_dtype)
 from sympy.core.expr import Expr
 import numpy
 import sympy
 
+
 # Function which returns the unitary of a u3 gate
-def u3matrix(theta, phi, lam, global_phase, use_sympy = False):
+def u3matrix(theta, phi, lam, global_phase, use_sympy=False):
     if not use_sympy:
         module = numpy
         I = 1j
         res = numpy.empty(shape=(2, 2), dtype=np_dtype)
-        exp_gphase = module.exp(I * global_phase, dtype = np_dtype)
+        exp_gphase = module.exp(I * global_phase, dtype=np_dtype)
     else:
         module = sympy
         I = sympy.I
         res = numpy.empty(shape=(2, 2), dtype=numpy.dtype("O"))
-        
+
         exp_gphase = module.exp(I * global_phase)
-    
-    
-    
+
     # for par in [theta, phi, lam, global_phase]:
     #     if isinstance(par, Expr):
     #         res = module.zeros(shape=(2, 2), dtype="object")
     #         import sympy as module
 
-    #         
+    #
     #         break
 
     res[0, 0] = module.cos(theta / 2)
@@ -66,7 +67,7 @@ def u3matrix(theta, phi, lam, global_phase, use_sympy = False):
     res[1, 0] = module.exp(I * phi) * module.sin(theta / 2)
     res[1, 1] = module.exp(I * (phi + lam)) * module.cos(theta / 2)
 
-    return res*exp_gphase
+    return res * exp_gphase
 
 
 # Efficient function to generate the unitary of a controlled gate
@@ -75,15 +76,18 @@ def controlled_unitary(controlled_gate):
     try:
         temp = controlled_gate.base_operation.unitary_array
     except AttributeError:
-        temp = (
-            controlled_gate.base_operation.unitary_array
-        ) = controlled_gate.base_operation.get_unitary()
+        temp = controlled_gate.base_operation.unitary_array = (
+            controlled_gate.base_operation.get_unitary()
+        )
 
     n = controlled_gate.num_qubits
     res = np.eye(2**n, dtype=temp.dtype)
     control_state = int(controlled_gate.ctrl_state, 2)
-    
-    res[(control_state)*(2**m) : (control_state+1)*(2**m), (control_state)*(2**m) : (control_state+1)*(2**m)] = temp
+
+    res[
+        (control_state) * (2**m) : (control_state + 1) * (2**m),
+        (control_state) * (2**m) : (control_state + 1) * (2**m),
+    ] = temp
 
     controlled_gate.unitary = res
 
@@ -119,13 +123,13 @@ def calc_embedded_unitary(gate, n, destination_qubits):
     if isinstance(gate, ControlledOperation):
         gate_array = controlled_unitary(gate)
         gate.unitary = gate_array
-    
+
     elif gate.definition is not None:
-        
+
         gate_array = __calc_circuit_unitary(gate.definition)
         gate.unitary = gate_array
     else:
-        
+
         gate_array = gate.get_unitary()
 
     # Numpy arrays are only fast on a low scale than BiArrays. Therefore,  we generate
@@ -230,8 +234,8 @@ def generate_id_kron(input_tensor, n):
             input_tensor = SparseBiArray(input_tensor)
 
     k = int(np.log2(input_tensor.shape[0]))
-    
-    data = np.ones(2 ** (n - k), dtype = input_tensor.data.dtype)
+
+    data = np.ones(2 ** (n - k), dtype=input_tensor.data.dtype)
 
     nz_indices = np.arange(2 ** (n - k)).astype(np.int64)
     nz_indices = nz_indices * 2 ** (n - k) + nz_indices
@@ -294,7 +298,7 @@ def __calc_circuit_unitary(qc):
 
     # If the circuit is empty, return the identity matrix
     if len(qc.data) == 0:
-        return np.eye(2**n, dtype = np_dtype)
+        return np.eye(2**n, dtype=np_dtype)
 
     # If the circuit contains only a single insturction,
     # calculate this instructions unitary and embedd it

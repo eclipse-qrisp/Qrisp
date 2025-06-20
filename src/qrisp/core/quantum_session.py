@@ -1,6 +1,6 @@
 """
-\********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+********************************************************************************
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -13,15 +13,24 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 import weakref
 
 import numpy as np
 
-from qrisp.circuit import Clbit, QuantumCircuit, Qubit, QubitAlloc, QubitDealloc, Instruction, Operation
+from qrisp.circuit import (
+    Clbit,
+    QuantumCircuit,
+    Qubit,
+    QubitAlloc,
+    QubitDealloc,
+    Instruction,
+    Operation,
+)
 from qrisp.core.session_merging_tools import multi_session_merge
+from qrisp.core.quantum_variable import QuantumVariable
 from qrisp.misc import get_depth_dic
 
 
@@ -54,9 +63,9 @@ class QuantumSession(QuantumCircuit):
     QuantumSessions can be visualized by calling ``print`` on them.
 
     >>> print(qv.qs)
-    
+
     ::
-    
+
         QuantumCircuit:
         --------------
         qv.0: ──■────■──
@@ -64,7 +73,7 @@ class QuantumSession(QuantumCircuit):
         qv.1: ┤ X ├┤ X ├
               └───┘└───┘
         qv.2: ──────────
-        
+
         Live QuantumVariables:
         ---------------------
         QuantumVariable qv
@@ -139,15 +148,15 @@ class QuantumSession(QuantumCircuit):
         Examples
         --------
 
-        We create a QuantumSession with the QASM simulator as default backend and
+        We create a QuantumSession with the Aer simulator as default backend and
         register a QuantumFloat in it:
 
-        >>> from qiskit import Aer
-        >>> qasm_sim = Aer.get_backend("qasm_simulator")
+        >>> from qiskit_aer import AerSimulator
+        >>> aer_sim = AerSimulator()
         >>> from qrisp.interface import QiskitBackend
-        >>> vrtl_qasm_sim = QiskitBackend(qasm_sim)
+        >>> vrtl_aer_sim = QiskitBackend(aer_sim)
         >>> from qrisp import QuantumSession, QuantumFloat
-        >>> qs = QuantumSession(vrtl_qasm_sim)
+        >>> qs = QuantumSession(vrtl_aer_sim)
         >>> qf = QuantumFloat(4, qs = qs)
 
 
@@ -176,7 +185,7 @@ class QuantumSession(QuantumCircuit):
         self.uncomp_stack = []
 
         self.qs_tracker.append(weakref.ref(self))
-        
+
         self.will_be_uncomputed = False
 
         # This list will contain the QuantumSessions which have been merged into this
@@ -184,7 +193,7 @@ class QuantumSession(QuantumCircuit):
         # when this session is merged into another session.
         self.shadow_sessions = []
 
-    def register_qv(self, qv):
+    def register_qv(self, qv, size):
         """
         Method to register QuantumVariables
 
@@ -208,14 +217,15 @@ class QuantumSession(QuantumCircuit):
                 "Variable name " + str(qv.name) + " already exists in quantum session"
             )
 
-        # Determine amount of required qubits
-        req_qubits = qv.size
-
         # Hand qubits to quantum variable
-        qv.reg = self.request_qubits(req_qubits, name=qv.name)
+        qv.reg = self.request_qubits(size, name=qv.name)
 
         # Register in the list of active quantum variable
         self.qv_list.append(qv)
+
+        QuantumVariable.live_qvs.append(weakref.ref(qv))
+        qv.creation_time = int(QuantumVariable.creation_counter[0])
+        QuantumVariable.creation_counter += 1
 
     def get_qv(self, key):
         for qv in self.qv_list:
@@ -314,20 +324,18 @@ class QuantumSession(QuantumCircuit):
         if not len(self.env_stack):
             pass
             # self.reset(qubits)
-            
+
         if not set(qubits).issubset(set(self.qubits)):
             raise Exception(
                 "Tried to free up qubits not registered in this quantum session"
             )
-            
 
         if verify:
-            
-            
+
             if len(self.env_stack):
                 verification_qc = self.copy()
             else:
-                
+
                 # In the case the qubits have been uncomputed automatically,
                 # the uncomputation algorithm already appended the deallocation
                 # instructions. In order to compile the QuantumSession without
@@ -346,12 +354,12 @@ class QuantumSession(QuantumCircuit):
                             break
                     else:
                         break
-                
+
                 verification_qc = self.compile()
-                
+
                 for instr in deallocation_instructions:
                     self.data.append(instr)
-            
+
             for qb in qubits:
                 clbit = verification_qc.add_clbit()
                 verification_qc.measure(qb, clbit)
@@ -362,12 +370,9 @@ class QuantumSession(QuantumCircuit):
             for key in res.keys():
                 if key[: len(qubits)] != len(qubits) * "0":
                     raise Exception("Tried to delete qubits not in |0> state")
-                    
+
         for qb in qubits:
             self.append(QubitDealloc(), [qb])
-            
-
-
 
     # Procedure to free up space for quantum variables not used anymore
     def delete_qv(self, qv, verify=False):
@@ -436,17 +441,15 @@ class QuantumSession(QuantumCircuit):
 
     def __eq__(self, other):
         return id(self.data) == id(other.data)
-    
-    def append(self, operation_or_instruction, qubits=[], clbits=[]):
+
+    def append(self, operation_or_instruction, qubits=[], clbits=[], param_tracers=[]):
         # Check the type of the instruction/operation
-        
-        
+
         if issubclass(operation_or_instruction.__class__, Instruction):
             instruction = operation_or_instruction
             self.append(instruction.op, instruction.qubits, instruction.clbits)
             return
-        
-        
+
         elif issubclass(operation_or_instruction.__class__, Operation):
             operation = operation_or_instruction
 
@@ -456,18 +459,18 @@ class QuantumSession(QuantumCircuit):
                 + str(type(operation_or_instruction))
                 + " which is neither Instruction nor Operation"
             )
-        
+
         if operation.name == "qb_alloc":
             qubits[0].allocated = True
-        
+
         if self.xla_mode >= 3:
-            
+
             self.data.append(Instruction(operation, qubits, clbits))
-            
+
             if operation.name == "qb_dealloc":
                 qubits[0].allocated = False
             return
-        
+
         # Convert arguments (possibly integers) to list
         # The logic here is that the list structure gets preserved ie.
         # [[0, 1] ,2] ==> [[qubit_0, qubit_1], qubit_2]
@@ -493,7 +496,6 @@ class QuantumSession(QuantumCircuit):
 
         if operation.name not in ["qb_alloc", "barrier"]:
             check_alloc(qubits)
-
 
         # We now need to merge the sessions and treat their differing environment
         # levels. The idea here is that if a quantum session A is not identical to the
@@ -543,7 +545,6 @@ class QuantumSession(QuantumCircuit):
         # print([qb.identifier for qb in self.qubits])
         super().append(operation, qubits, clbits)
 
-        
         if operation.name == "qb_dealloc":
             qubits[0].allocated = False
 
@@ -614,7 +615,7 @@ class QuantumSession(QuantumCircuit):
         This encoded the state
 
         .. math::
-            
+
             \ket{\psi} = \ket{\text{qf_0}} \ket{\text{qf_1}}
             = \frac{1}{\sqrt{2}}  \ket{2} (\ket{0.5} - i \ket{3.5})
 
@@ -717,8 +718,10 @@ class QuantumSession(QuantumCircuit):
         """
 
         if len(self.env_stack):
-            raise Exception("Tried to evaluate statevector within open QuantumEnvironments")
-            
+            raise Exception(
+                "Tried to evaluate statevector within open QuantumEnvironments"
+            )
+
         from qrisp import get_statevector_function, get_sympy_state
 
         if return_type == "array":
@@ -768,7 +771,7 @@ class QuantumSession(QuantumCircuit):
         cancel_qfts=True,
         disable_uncomputation=True,
         compile_mcm=False,
-        gate_speed = None
+        gate_speed=None,
     ):
         r"""
         Method to compile the QuantumSession into a :ref:`QuantumCircuit`. The compiler
@@ -783,21 +786,21 @@ class QuantumSession(QuantumCircuit):
         makes use of as much of the currently available clean and dirty ancillae.
         This feature will never allocate additional qubits on its own. If required,
         it can be supplied with additional space using the ``workspace`` keyword.
-    
+
         Another important feature of this function is gate speed aware compilation.
         Gate speed here means the amount of time each basis gate requires in a
         physical execution of the QuantumCircuit.
         For NISQ era devices, CNOT gates are a bottleneck, whereas
         FT era devices are expected to be bottlenecked by T-gates. While these are
         two important examples, more backend specific gate-speed specifications
-        are possible. The Qrisp compiler can leverage several non-trivial 
-        commutation relations to reorder circuits such that the run-time is 
-        optimal. To tell the compiler, the time that is required for each gate, 
-        the ``gate_speed`` keyword argument exists. This argument should be a 
+        are possible. The Qrisp compiler can leverage several non-trivial
+        commutation relations to reorder circuits such that the run-time is
+        optimal. To tell the compiler, the time that is required for each gate,
+        the ``gate_speed`` keyword argument exists. This argument should be a
         function of :ref:`Operation` objects, that returns a float indicating
         the gate speed. For an example of such a function, check out
         :meth:`T-depth <qrisp.t_depth_indicator>`. For further details, check the examples.
-        
+
 
         The .compile method is called by default, when executing the
         :meth:`get_measurement <qrisp.QuantumVariable.get_measurement>` method of
@@ -828,10 +831,10 @@ class QuantumSession(QuantumCircuit):
         gate_speed : function, optional
             Enables the compiler to create circuits that are aware of differences
             in gate speed. For NISQ era devices, CNOT gates are a bottleneck, whereas
-            FT era devices are expected to be bottlenecked by 
+            FT era devices are expected to be bottlenecked by
         compile_mcm : function, optional
             If set to ``True``, any instance of mcx gates with method either ``jones``
-            or ``gidney`` will be compiled to use a mid-circuit measurement. If 
+            or ``gidney`` will be compiled to use a mid-circuit measurement. If
             set to ``False``, a functionally equivalent (but less efficient version)
             will be used without a mid-circuit measurement. For more information
             see :meth:`qrisp.mcx` The default is ``False``.
@@ -845,7 +848,7 @@ class QuantumSession(QuantumCircuit):
         --------
 
         .. _workspace:
-            
+
         **Workspace**
 
         We calculate a product of 2 :ref:`QuantumFloats <QuantumFloat>` using the
@@ -890,9 +893,9 @@ class QuantumSession(QuantumCircuit):
         >>> target = QuantumVariable(1)
         >>> mcx(ctrl, target)
         >>> print(ctrl.qs)
-        
+
         ::
-        
+
             QuantumCircuit:
             --------------
               ctrl.0: ──■──
@@ -916,9 +919,9 @@ class QuantumSession(QuantumCircuit):
         >>> compiled_qc.depth()
         50
         >>> print(compiled_qc)
-        
+
         ::
-        
+
                 ctrl.0: ──■──
                           │
                 ctrl.1: ──■──
@@ -938,9 +941,9 @@ class QuantumSession(QuantumCircuit):
         >>> compiled_qc.depth()
         22
         >>> print(compiled_qc)
-        
+
         ::
-        
+
                          ┌────────┐               ┌────────┐
                  ctrl.0: ┤0       ├───────────────┤0       ├──────────
                          │        │               │        │
@@ -965,9 +968,9 @@ class QuantumSession(QuantumCircuit):
         >>> qv = QuantumVariable(2)
         >>> cx(target[0], qv)
         >>> print(ctrl.qs.compile())
-        
+
         ::
-        
+
                       ┌────────┐               ┌────────┐
               ctrl.0: ┤0       ├───────────────┤0       ├────────────────────
                       │        │               │        │
@@ -1000,9 +1003,9 @@ class QuantumSession(QuantumCircuit):
         >>> cx(target[0], qv)
         >>> mcx(ctrl, target)
         >>> print(ctrl.qs.compile())
-        
+
         ::
-        
+
               ctrl.0: ────────────────────────────────────■──────────────────────────»
                                      ┌─────────────────┐  │  ┌─────────────────┐     »
               ctrl.1: ───────────────┤1                ├──┼──┤1                ├─────»
@@ -1040,32 +1043,32 @@ class QuantumSession(QuantumCircuit):
         .. _gate_speed_aware_comp:
 
         **Gate speed aware compilation**
-            
+
         Next to the mentioned features, the ``compile`` method performs a variety
         of techniques of reordering the gate sequence (without changing the semantics, of course)
         to reduce the overall depth. Some of these techniques allow for a consideration
         of the gate speed, which enables a unique compilation workflow for each backend.
-        
+
         The gate speed of the backend can be specified as a function of :ref:`Operation`
         objects:
-            
+
         ::
-            
+
             def mock_gate_speed_0(op):
-                
+
                 if op.name == "x":
                     return 1
                 if op.name == "y":
                     return 10
                 else:
                     return 0
-                
-        This function describes a backend where the X-gate requires 1 time unit 
+
+        This function describes a backend where the X-gate requires 1 time unit
         (for instance nanoseconds), the Y-gate requires 10 time units
         and every other gate can be executed instantaneusly.
-        
+
         We can now observe how this influences the compilation:
-            
+
         >>> from qrisp import QuantumVariable, x, y, cx
         >>> qv = QuantumVariable(3)
         >>> y(qv[0])
@@ -1076,77 +1079,77 @@ class QuantumSession(QuantumCircuit):
         >>> print(qv.qs)
         QuantumCircuit:
         ---------------
-              ┌───┐┌───┐┌───┐     
+              ┌───┐┌───┐┌───┐
         qv.0: ┤ Y ├┤ X ├┤ X ├─────
               ├───┤└─┬─┘├───┤┌───┐
         qv.1: ┤ X ├──┼──┤ X ├┤ Y ├
               └───┘  │  └─┬─┘└───┘
         qv.2: ───────■────■───────
-        <BLANKLINE>                                                    
+        <BLANKLINE>
         Live QuantumVariables:
         ----------------------
         QuantumVariable qv
-        
+
         Because the CNOT gate on ``qv.1`` has to wait for the other CNOT gate
         (which takes a lot of time because of the costly y gate), the second y gate
         can only be executed delayed, making the total runtime of this circuit 20
         time units.
-        
-        We can verify this using the ``depth_indicator`` keyword of the 
+
+        We can verify this using the ``depth_indicator`` keyword of the
         :meth:`depth <qrisp.QuantumCircuit.depth>` method:
-            
+
         >>> qv.qs.depth(depth_indicator = mock_gate_speed_0)
         20
-        
+
         Call the compile method, which automatically fixes the problem
-        
+
         >>> qc_fixed_0 = qv.qs.compile(gate_speed = mock_gate_speed_0)
         >>> print(qc_fixed_0)
               ┌───┐          ┌───┐┌───┐
         qv.0: ┤ Y ├──────────┤ X ├┤ X ├
               ├───┤┌───┐┌───┐└─┬─┘└───┘
         qv.1: ┤ X ├┤ X ├┤ Y ├──┼───────
-              └───┘└─┬─┘└───┘  │       
+              └───┘└─┬─┘└───┘  │
         qv.2: ───────■─────────■───────
-                                         
+
         We see that the order of the CNOT gates has been switched (which doesn't
         change the semantics) such that now ``qv.1`` no longer has to wait for
         the costly y gate.
-        
+
         >>> qc_fixed_0.depth(depth_indicator = mock_gate_speed_0)
         11
-        
+
         To see that the compilation function did not do this randomly, we can also
         create another ``gate_speed`` function.
-        
+
         ::
-            
+
             def mock_gate_speed_1(op):
-                
+
                 if op.name == "x":
                     return 10
                 elif op.name == "y":
                     return 1
                 else:
                     return 0
-                
-        
+
+
         >>> qc_fixed_1 = qv.qs.compile(gate_speed = mock_gate_speed_1)
         >>> print(qc_fixed_1)
-              ┌───┐┌───┐┌───┐     
+              ┌───┐┌───┐┌───┐
         qv.0: ┤ Y ├┤ X ├┤ X ├─────
               ├───┤└─┬─┘├───┤┌───┐
         qv.1: ┤ X ├──┼──┤ X ├┤ Y ├
               └───┘  │  └─┬─┘└───┘
         qv.2: ───────■────■───────
-        
+
         Now the CNOT gate on ``qv.0`` is executed first, giving again a total depth
         of 11
-        
+
         >>> qc_fixed_1.depth(depth_indicator = mock_gate_speed_1)
 
-        Qrisp has the two most important depth indicators in-built: 
-        :meth:`CNOT-depth <qrisp.cnot_depth_indicator>` (NISQ) and 
+        Qrisp has the two most important depth indicators in-built:
+        :meth:`CNOT-depth <qrisp.cnot_depth_indicator>` (NISQ) and
         :meth:`T-depth <qrisp.t_depth_indicator>` (FT).
 
         **Fully automized uncomputation**
@@ -1173,9 +1176,9 @@ class QuantumSession(QuantumCircuit):
         >>> c = QuantumBool()
         >>> res = triple_AND(a,b,c)
         >>> print(res.qs)
-        
+
         ::
-        
+
             QuantumCircuit:
             --------------
                  a.0: ──■───────
@@ -1199,9 +1202,9 @@ class QuantumSession(QuantumCircuit):
         We now compile with the corresponding keyword argument:
 
         >>> print(a.qs.compile(disable_uncomputation = False))
-        
+
         ::
-        
+
                          ┌────────┐     ┌────────┐
                     a.0: ┤0       ├─────┤0       ├
                          │        │     │        │
@@ -1227,7 +1230,7 @@ class QuantumSession(QuantumCircuit):
             intended_measurements=intended_measurements,
             cancel_qfts=cancel_qfts,
             compile_mcm=compile_mcm,
-            gate_speed = gate_speed
+            gate_speed=gate_speed,
         )
 
     def __del__(self):

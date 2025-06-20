@@ -1,6 +1,6 @@
 """
-\********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+********************************************************************************
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -13,7 +13,7 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 # Created by ann81984 at 06.05.2022
@@ -69,10 +69,10 @@ def test_matrix_multiplication_example():
     test_0 = np.round(np.random.rand(3, 4) * 5)
     test_1 = np.round(np.random.rand(4, 2) * 5)
 
-    q_array = QuantumArray(qtype=qtype)
+    q_array = QuantumArray(qtype=qtype, shape = test_1.shape)
 
     q_array[:] = test_1
 
-    test_0 @ q_array
+    (test_0 @ q_array)
 
     # test = semi_classic_matrix_multiplication(test_0, q_array)
