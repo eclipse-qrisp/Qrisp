@@ -16,12 +16,9 @@
 ********************************************************************************
 """
 
-import qiskit
-
 from qrisp.interface import VirtualBackend
 
-
-def IQMBackend(api_token, device_instance, port=None):
+def IQMBackend(api_token, device_instance, compilation_options = None):
     """
     This function instantiates an IQMBackend based on VirtualBackend
     using Qiskit and Qiskit-on-IQM.
@@ -34,8 +31,8 @@ def IQMBackend(api_token, device_instance, port=None):
     device_instance : str
         The device instance of the IQM backend such as "garnet".
         For an up-to-date list, see the IQM Resonance website.
-    port : int, optional
-        The port to listen. The default is None.
+    compilation_options: `CircuitCompilationOptions <https://docs.meetiqm.com/iqm-client/api/iqm.iqm_client.models.CircuitCompilationOptions.html>`.
+        An object to specify several options regarding pulse-level compilation.
 
     Examples
     --------
@@ -79,25 +76,41 @@ def IQMBackend(api_token, device_instance, port=None):
         )
 
     try:
-        from iqm.qiskit_iqm import IQMProvider, transpile_to_IQM
+        from iqm.iqm_client.iqm_client import IQMClient
+        from iqm.iqm_client import CircuitCompilationOptions
+        from iqm.qiskit_iqm.iqm_provider import IQMBackend
+        from iqm.qiskit_iqm import transpile_to_IQM
     except ImportError:
         raise ImportError(
             "Please install qiskit-iqm to use the IQMBackend. You can do this by running `pip install qrisp[iqm]`."
         )
 
+    server_url = "https://cocos.resonance.meetiqm.com/" + device_instance
+    client = IQMClient(url = server_url, token = api_token)
+    backend = IQMBackend(client)
+    
+    if compilation_options is None:
+        compilation_options = CircuitCompilationOptions()
+
     def run_func_iqm(qasm_str, shots=None, token=""):
         if shots is None:
             shots = 1000
-        server_url = "https://cocos.resonance.meetiqm.com/" + device_instance
+        
+        from qiskit import QuantumCircuit
+        
+        qiskit_qc = QuantumCircuit.from_qasm_str(qasm_str)
+        qiskit_qc = transpile_to_IQM(qiskit_qc, backend)
+        
+        iqm_qc = backend.serialize_circuit(qiskit_qc)
 
-        backend = IQMProvider(server_url, token=api_token).get_backend()
-        qc = qiskit.QuantumCircuit.from_qasm_str(qasm_str)
-        qc_transpiled = transpile_to_IQM(qc, backend)
+        UUID = client.submit_circuits([iqm_qc], options = compilation_options, shots = shots)
+        
+        client.wait_for_results(UUID)
+        answer = client.get_run_counts(UUID)
+        
+        counts = answer.counts_batch[0].counts
 
-        job = backend.run(qc_transpiled, shots=shots)
         import re
-
-        counts = job.result().get_counts()
         new_counts = {}
         for key in counts.keys():
             counts_string = re.sub(r"\W", "", key)
