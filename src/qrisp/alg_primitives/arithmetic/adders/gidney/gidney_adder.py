@@ -1,5 +1,5 @@
 """
-\********************************************************************************
+********************************************************************************
 * Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -13,7 +13,7 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 import jax.numpy as jnp
@@ -27,15 +27,15 @@ from qrisp.core import QuantumVariable
 from qrisp.jasp import check_for_tracing_mode, DynamicQubitArray
 
 
-def gidney_adder(a, b, c_in = None, c_out = None):
+def gidney_adder(a, b, c_in=None, c_out=None):
     """
     In-place adder function based on `this paper <https://arxiv.org/abs/1709.06648>`__
     performs the addition
-    
+
     ::
-        
+
         b += a
-    
+
 
     Parameters
     ----------
@@ -50,9 +50,9 @@ def gidney_adder(a, b, c_in = None, c_out = None):
 
     Examples
     --------
-    
+
     We add two integers:
-        
+
     >>> from qrisp import QuantumFloat, gidney_adder
     >>> a = QuantumFloat(4)
     >>> b = QuantumFloat(4)
@@ -64,17 +64,22 @@ def gidney_adder(a, b, c_in = None, c_out = None):
 
     """
     if check_for_tracing_mode():
-        from qrisp.alg_primitives.arithmetic.jasp_arithmetic import jasp_qq_gidney_adder, jasp_cq_gidney_adder
+        from qrisp.alg_primitives.arithmetic.jasp_arithmetic import (
+            jasp_qq_gidney_adder,
+            jasp_cq_gidney_adder,
+        )
+
         if isinstance(a, (QuantumVariable, DynamicQubitArray)):
             return jasp_qq_gidney_adder(a, b)
         else:
-            return jasp_cq_gidney_adder(jnp.array(a, dtype = "int32"), b)
-    
+            return jasp_cq_gidney_adder(jnp.array(a, dtype="int32"), b)
+
     if isinstance(a, (int, str)):
-        return custom_control(cq_gidney_adder)(a, b, c_in = c_in, c_out = c_out)
+        return custom_control(cq_gidney_adder)(a, b, c_in=c_in, c_out=c_out)
     else:
-        return qq_gidney_adder(a, b, c_in = c_in, c_out = c_out)
-        
+        return qq_gidney_adder(a, b, c_in=c_in, c_out=c_out)
+
+
 temp = gidney_adder.__doc__
-gidney_adder = ammend_inpl_adder(gidney_adder, ammend_cl_int = False)
+gidney_adder = ammend_inpl_adder(gidney_adder, ammend_cl_int=False)
 gidney_adder.__doc__ = temp

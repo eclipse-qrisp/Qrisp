@@ -1,5 +1,5 @@
 """
-\********************************************************************************
+********************************************************************************
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -13,7 +13,7 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 from qrisp import QuantumVariable, QuantumFloat
@@ -33,7 +33,7 @@ def test_vqe_heisenberg():
 
     results = []
     for i in range(5):
-        res = vqe.run(lambda : QuantumVariable(G.number_of_nodes()),
+        res = vqe.run(QuantumVariable(G.number_of_nodes()),
                 depth=2,
                 max_iter=50)
         results.append(res)
@@ -53,9 +53,7 @@ def test_jasp_vqe_heisenberg():
 
         results = jnp.array([0.0]*5)
         for i in range(5):
-            res = vqe.run(lambda : QuantumFloat(G.number_of_nodes()),
-                    depth=1,
-                    max_iter=50)
+            res = vqe.run(QuantumFloat(G.number_of_nodes()), depth=1, max_iter=50, optimizer="SPSA")
             results = results.at[i].set(res)
 
         return results

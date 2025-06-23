@@ -1,5 +1,5 @@
 """
-\********************************************************************************
+********************************************************************************
 * Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -13,7 +13,7 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 from qrisp import QuantumVariable, QuantumArray
@@ -48,7 +48,7 @@ def test_QUBO():
         ]
     )
     
-    qarg = QuantumArray(qtype = QuantumVariable(1), shape = len(Q2))
+    qarg_prep = QuantumArray(qtype = QuantumVariable(1), shape = len(Q2))
     QUBO_instance = QUBO_problem(Q2)
     res = QUBO_instance.run(qarg, depth=1, mes_kwargs={"backend" : def_backend, "shots" : 100000}, max_iter = 50)
     best_cost2, res_str = max([(QUBO_obj(bitstring, Q2), bitstring) for bitstring in list(res.keys())], key=itemgetter(0))

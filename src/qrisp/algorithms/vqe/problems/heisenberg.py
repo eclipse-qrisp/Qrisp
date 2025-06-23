@@ -1,5 +1,5 @@
 """
-\********************************************************************************
+********************************************************************************
 * Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -13,10 +13,10 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
-from qrisp.operators.qubit import X,Y,Z
+from qrisp.operators.qubit import X, Y, Z
 from qrisp.core import x, h, cx, cp, gphase, rz
 from qrisp.environments import conjugate
 import networkx as nx
@@ -32,7 +32,7 @@ def greedy_edge_coloring(G, E=None):
         The graph defining the lattice.
     E : list, optional
         A list of edges not to be considered for the first color.
-    
+
     Returns
     -------
     edge_coloring : list
@@ -44,37 +44,41 @@ def greedy_edge_coloring(G, E=None):
 
     G = G.copy()
 
-    if E is not None and G.number_of_edges()>1:
+    if E is not None and G.number_of_edges() > 1:
         G.remove_edges_from(E)
         M = nx.maximal_matching(G)
         edge_coloring.append(M)
         G.remove_edges_from(M)
         G.add_edges_from(E)
 
-    while G.number_of_edges()>0:
+    while G.number_of_edges() > 0:
         M = nx.maximal_matching(G)
         edge_coloring.append(M)
         G.remove_edges_from(M)
-    
+
     return edge_coloring
 
+
 # sing gate corresponding to the singlet state $\ket{10}-\ket{01} of two qubits
-def sing(a,b):
+def sing(a, b):
     x(a)
     h(a)
     x(b)
-    cx(a,b)
+    cx(a, b)
+
 
 # change of basis
-def conjugator(a,b):
-    cx(a,b)
+def conjugator(a, b):
+    cx(a, b)
     h(a)
 
+
 #  heis gate corresponding to the unitary exp(-i*theta*(XX+YY+ZZ))
-def heis(theta,a,b):
-    with conjugate(conjugator)(a,b):
-        cp(theta,a,b)
-        gphase(-theta/2,a)
+def heis(theta, a, b):
+    with conjugate(conjugator)(a, b):
+        cp(theta, a, b)
+        gphase(-theta / 2, a)
+
 
 def create_heisenberg_hamiltonian(G, J, B):
     """
@@ -96,7 +100,9 @@ def create_heisenberg_hamiltonian(G, J, B):
 
     """
 
-    H = sum(J*(X(i)*X(j)+Y(i)*Y(j)+Z(i)*Z(j)) for (i,j) in G.edges()) + sum(B*Z(i) for i in G.nodes)
+    H = sum(
+        J * (X(i) * X(j) + Y(i) * Y(j) + Z(i) * Z(j)) for (i, j) in G.edges()
+    ) + sum(B * Z(i) for i in G.nodes)
     return H
 
 
@@ -123,57 +129,57 @@ def create_heisenberg_ansatz(G, J, B, M, C, ansatz_type="per hamiltonian"):
     Returns
     -------
 
-    ansatz : function 
+    ansatz : function
         A function that can be applied to a :ref:`QuantumVariable` and a list of parameters.
-    
+
     """
 
     # per hamiltonian
-    def ansatz(qv,theta):
-        # apply H_0
-        for (i,j) in M:
-            heis(theta[0],qv[i],qv[j])
-        
+    def ansatz(qv, theta):
         # apply H
-        rz(B*theta[1],qv)
+        rz(B * theta[1], qv)
 
-        for edges in C:
-            for (i,j) in edges:
-                heis(J*theta[1],qv[i],qv[j])
+        for edges in reversed(C):
+            for i, j in edges:
+                heis(J * theta[1], qv[i], qv[j])
 
-    #per edge color
-    def ansatz_per_edge_color(qv,theta):
         # apply H_0
-        for (i,j) in M:
-            heis(theta[0],qv[i],qv[j])
-        
+        for i, j in M:
+            heis(theta[0], qv[i], qv[j])
+
+    # per edge color
+    def ansatz_per_edge_color(qv, theta):
         # apply H
-        rz(B*theta[1],qv)
+        rz(B * theta[1], qv)
 
         count = 0
-        for edges in C:
-            for (i,j) in edges:
-                heis(J*theta[2+count],qv[i],qv[j])
+        for edges in reversed(C):
+            for i, j in edges:
+                heis(J * theta[2 + count], qv[i], qv[j])
             count += 1
 
-    #per edge
-    def ansatz_per_edge(qv,theta):
         # apply H_0
-        for (i,j) in M:
-            heis(theta[0],qv[i],qv[j])
-        
+        for i, j in M:
+            heis(theta[0], qv[i], qv[j])
+
+    # per edge
+    def ansatz_per_edge(qv, theta):
         # apply H
-        rz(B*theta[1],qv)
+        rz(B * theta[1], qv)
 
         count = 0
-        for edges in C:
-            for (i,j) in edges:
-                heis(J*theta[2+count],qv[i],qv[j])
+        for edges in reversed(C):
+            for i, j in edges:
+                heis(J * theta[2 + count], qv[i], qv[j])
                 count += 1
 
-    if ansatz_type=="per edge color":
+        # apply H_0
+        for i, j in M:
+            heis(theta[0], qv[i], qv[j])
+
+    if ansatz_type == "per edge color":
         return ansatz_per_edge_color
-    if ansatz_type=="per edge":
+    if ansatz_type == "per edge":
         return ansatz_per_edge
     return ansatz
 
@@ -189,7 +195,7 @@ def create_heisenberg_init_function(M):
 
     Returns
     -------
-    init_function : function 
+    init_function : function
         A function that can be applied to a :ref:`QuantumVariable`.
 
     """
@@ -197,8 +203,8 @@ def create_heisenberg_init_function(M):
     def init_function(qv):
 
         # tensor product of singlet states
-        for (i,j) in M:
-            sing(qv[i],qv[j])
+        for i, j in M:
+            sing(qv[i], qv[j])
 
     return init_function
 
@@ -326,7 +332,7 @@ def heisenberg_problem(G, J, B, ansatz_type="per hamiltonian"):
 
         vqe = heisenberg_problem(G,1,1)
         vqe.set_callback()
-        energy = vqe.run(lambda : QuantumVariable(G.number_of_nodes()),depth=2,max_iter=50)
+        energy = vqe.run(QuantumVariable(G.number_of_nodes()),depth=2,max_iter=50)
         print(energy)
         # Yields -8.0
     
@@ -338,15 +344,20 @@ def heisenberg_problem(G, J, B, ansatz_type="per hamiltonian"):
         :scale: 80%
         :align: center  
 
-    """        
+    """
     from qrisp.vqe import VQEProblem
 
     M = nx.maximal_matching(G)
-    C = greedy_edge_coloring(G,M)
+    C = greedy_edge_coloring(G, M)
     num_params = 2
-    if ansatz_type=="per edge color":
-        num_params = 2+len(C)
-    if ansatz_type=="per edge":
-        num_params = 2+G.number_of_edges()
+    if ansatz_type == "per edge color":
+        num_params = 2 + len(C)
+    if ansatz_type == "per edge":
+        num_params = 2 + G.number_of_edges()
 
-    return VQEProblem(create_heisenberg_hamiltonian(G,J,B), create_heisenberg_ansatz(G,J,B,M,C, ansatz_type=ansatz_type), num_params=num_params, init_function=create_heisenberg_init_function(M))
+    return VQEProblem(
+        create_heisenberg_hamiltonian(G, J, B),
+        create_heisenberg_ansatz(G, J, B, M, C, ansatz_type=ansatz_type),
+        num_params=num_params,
+        init_function=create_heisenberg_init_function(M),
+    )

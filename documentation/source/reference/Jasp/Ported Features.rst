@@ -24,6 +24,8 @@ Since Jasp is a fundamentally different compilation architecture, not all Qrisp 
      -    ✅
    * - :ref:`Quantum Amplitude Estimation <QAE>`
      -    ✅ 
+   * - :ref:`Iterative Quantum Amplitude Estimation <IQAE>`
+     -    ✅ 
    * - :ref:`Grover tools <grover_tools>`
      -    ✅
    * - :ref:`Grover's algorithm <grovers_alg>`
@@ -31,6 +33,8 @@ Since Jasp is a fundamentally different compilation architecture, not all Qrisp 
    * - :ref:`Quantum Counting <QCounting>`
      -    ✅
    * - :ref:`Hamiltonian Simulation (Operators module) <Operators>`
+     -    ✅ 
+   * - :ref:`Quantum Switch Case <qswitch>`
      -    ✅ 
    * - :ref:`Quantum function injection <injection>`
      -    ✅ 
@@ -43,16 +47,16 @@ Since Jasp is a fundamentally different compilation architecture, not all Qrisp 
    * - :ref:`Automatic Uncomputation <uncomputation>`
      -   	❌ 
    * - :ref:`QuantumArrays <QuantumArray>`
-     -   	❌ 
+     -   	✅ 
    * - :ref:`QAOA <QAOA>`
-     -   	❌ 
+     -   	✅ 
    * - :ref:`QIRO <QIRO>`
      -   	❌ 
    * - :ref:`VQE <VQE>`
      -    ✅
    * - :ref:`QITE <QITE>`
-     -    ❌
-   * - :ref:`Quantumn Backtracking <QuantumBacktrackingTree>`
+     -    ✅
+   * - :ref:`Quantum Backtracking <QuantumBacktrackingTree>`
      -    ❌
    * - :ref:`Operator measurement (Operators module) <Operators>`
      -    ✅

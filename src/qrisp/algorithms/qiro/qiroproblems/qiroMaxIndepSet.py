@@ -1,5 +1,5 @@
 """
-\********************************************************************************
+********************************************************************************
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -13,7 +13,7 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 from qrisp import rz, rzz, x
@@ -27,7 +27,7 @@ from qrisp.algorithms.qaoa import controlled_RX_mixer_gen
 
 def create_max_indep_replacement_routine(res, problem_updated):
     """
-    Creates a replacement routine for the problem structure, i.e., defines the replacement rules. 
+    Creates a replacement routine for the problem structure, i.e., defines the replacement rules.
     See the `original paper <https://journals.aps.org/prxquantum/abstract/10.1103/PRXQuantum.5.020327>`_ for a description of the update rules.
 
     Parameters
@@ -35,8 +35,8 @@ def create_max_indep_replacement_routine(res, problem_updated):
     res : dict
         Result dictionary of QAOA optimization procedure.
     problem_updated : List
-        Updates that happened during the QIRO routine. Consits of the updated problem, a list of Qubits which were found to be positively correlated, i.e. part of the problem solution, 
-        and a list Qubits which were found to be negatively correlated, i.e. they contradict solution qubits in accordance with the update rules.  
+        Updates that happened during the QIRO routine. Consits of the updated problem, a list of Qubits which were found to be positively correlated, i.e. part of the problem solution,
+        and a list Qubits which were found to be negatively correlated, i.e. they contradict solution qubits in accordance with the update rules.
 
     Returns
     -------
@@ -48,21 +48,21 @@ def create_max_indep_replacement_routine(res, problem_updated):
         The sign of the correlation.
     exclusions : list
         Updated set of exclusions for the problem.
-        
+
     """
     graph = problem_updated[0]
     solutions = problem_updated[1]
-    exclusions =  problem_updated[2]
+    exclusions = problem_updated[2]
 
     # for multi qubit correlations
     orig_edges = [list(item) for item in graph.edges()]
 
     # for single qubit correlations
     orig_nodes = list(graph.nodes())
-    
-    max_item, sign = find_max(orig_nodes, orig_edges , res, solutions)
+
+    max_item, sign = find_max(orig_nodes, orig_edges, res, solutions)
     if max_item == None:
-        return graph, solutions, 0 ,exclusions
+        return graph, solutions, 0, exclusions
 
     # create a copy of the graph
     new_graph = copy.copy(graph)
@@ -90,10 +90,13 @@ def create_max_indep_replacement_routine(res, problem_updated):
             exclusions += list(max_item)
 
         elif sign < 0:
-            # remove all nodes connected to both nodes 
-            intersect = list(set( list(graph.adj[max_item[0]].keys()) ) & set( list(graph.adj[max_item[0]].keys()) ))
+            # remove all nodes connected to both nodes
+            intersect = list(
+                set(list(graph.adj[max_item[0]].keys()))
+                & set(list(graph.adj[max_item[0]].keys()))
+            )
             new_graph.remove_nodes_from(intersect)
-            exclusions += intersect 
+            exclusions += intersect
 
     return new_graph, solutions, sign, exclusions
 
@@ -106,9 +109,9 @@ def create_max_indep_cost_operator_reduced(problem_updated):
     Parameters
     ----------
     problem_updated : List
-        Updates that happened during the QIRO routine. Consits of the updated problem, a list of Qubits which were found to be positively correlated, i.e. part of the problem solution, 
-        and a list Qubits which were found to be negatively correlated, i.e. they contradict solution qubits in accordance with the update rules.  
-    
+        Updates that happened during the QIRO routine. Consits of the updated problem, a list of Qubits which were found to be positively correlated, i.e. part of the problem solution,
+        and a list Qubits which were found to be negatively correlated, i.e. they contradict solution qubits in accordance with the update rules.
+
     Returns
     -------
     cost_operator : function
@@ -121,8 +124,8 @@ def create_max_indep_cost_operator_reduced(problem_updated):
 
     def cost_operator(qv, gamma):
         for pair in list(problem.edges()):
-            #cx(qv[pair[0]], qv[pair[1]])
-            rzz(3*gamma, qv[pair[0]], qv[pair[1]])
+            # cx(qv[pair[0]], qv[pair[1]])
+            rzz(3 * gamma, qv[pair[0]], qv[pair[1]])
             rz(-gamma, qv[pair[0]])
             rz(-gamma, qv[pair[1]])
         for i in problem.nodes():
@@ -130,7 +133,6 @@ def create_max_indep_cost_operator_reduced(problem_updated):
                 rz(gamma, qv[i])
 
     return cost_operator
-
 
 
 def create_max_indep_controlled_mixer_reduced(problem_updated):
@@ -142,49 +144,54 @@ def create_max_indep_controlled_mixer_reduced(problem_updated):
     Parameters
     ----------
     problem_updated : List
-        Updates that happened during the QIRO routine. Consits of the updated problem, a list of Qubits which were found to be positively correlated, i.e. part of the problem solution, 
-        and a list Qubits which were found to be negatively correlated, i.e. they contradict solution qubits in accordance with the update rules.  
+        Updates that happened during the QIRO routine. Consits of the updated problem, a list of Qubits which were found to be positively correlated, i.e. part of the problem solution,
+        and a list Qubits which were found to be negatively correlated, i.e. they contradict solution qubits in accordance with the update rules.
 
     Returns
     -------
     controlled_RX_mixer : function
-        A Python function receiving a :ref:`QuantumVariable` and real parameter $\beta$. 
+        A Python function receiving a :ref:`QuantumVariable` and real parameter $\beta$.
         This function performs the application of the mixer associated to the graph ``G``.
 
     """
 
     problem = problem_updated[0]
     solutions = problem_updated[1]
-    exclusions =  problem_updated[2]
+    exclusions = problem_updated[2]
     neighbors_dict = {node: list(problem.adj[node]) for node in problem.nodes()}
 
-    def qiro_predicate(qv,i):
+    def qiro_predicate(qv, i):
         qbl = QuantumBool()
-        if len(neighbors_dict[i])==0:
+        if len(neighbors_dict[i]) == 0:
             x(qbl)
         else:
-            mcx([qv[j] for j in neighbors_dict[i]],qbl,ctrl_state='0'*len(neighbors_dict[i]))
+            mcx(
+                [qv[j] for j in neighbors_dict[i]],
+                qbl,
+                ctrl_state="0" * len(neighbors_dict[i]),
+            )
         return qbl
 
-    controlled_RX_mixer=qiro_controlled_RX_mixer_gen(qiro_predicate, solutions+exclusions)
+    controlled_RX_mixer = qiro_controlled_RX_mixer_gen(
+        qiro_predicate, solutions + exclusions
+    )
 
     return controlled_RX_mixer
 
 
-
-
-def qiro_max_indep_set_init_function(solutions =[], exclusions = []):
+def qiro_max_indep_set_init_function(solutions=[], exclusions=[]):
     r"""
     To be used for the controlled mixer approach of QIRO MIS. Only flips qubits which we found to be a part of the problem soultion.
-    
+
     Parameters
     ----------
     solutions : List
         List of Qubits which were found to be positively correlated, i.e. part of the problem solution
     exclusions : List
-        List Qubits which were found to be negatively correlated, i.e. they contradict solution qubits in accordance with the update rules.  
-    
+        List Qubits which were found to be negatively correlated, i.e. they contradict solution qubits in accordance with the update rules.
+
     """
+
     def init_function(qv):
         for i in range(len(qv)):
             if i in solutions:

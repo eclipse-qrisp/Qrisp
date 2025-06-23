@@ -1,5 +1,5 @@
 """
-\********************************************************************************
+********************************************************************************
 * Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -13,26 +13,28 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
+
 import numpy as np
 
 from qrisp.circuit.quantum_circuit import QuantumCircuit
 
+
 class CompilationAccelerator:
-    
-    def __init__(self, xla_mode = 2):
+
+    def __init__(self, xla_mode=2):
         self.xla_mode = xla_mode
-    
+
     def __enter__(self):
-        
+
         self.original_xla_mode = QuantumCircuit.xla_mode
-        
+
         QuantumCircuit.xla_mode = self.xla_mode
 
-
     def __exit__(self, exception_type, exception_value, traceback):
-        
+
         QuantumCircuit.xla_mode = self.original_xla_mode
+
 
 fast_append = CompilationAccelerator

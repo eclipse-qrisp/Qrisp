@@ -1,5 +1,5 @@
 """
-\********************************************************************************
+********************************************************************************
 * Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -13,11 +13,11 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 from jax import make_jaxpr
-from qrisp import QuantumVariable, cx, QuantumCircuit, QuantumFloat, x, rz, measure, control
+from qrisp import QuantumVariable, cx, QuantumCircuit, QuantumFloat, x, rz, measure, control, QuantumBool
 from qrisp.jasp import qache, flatten_pjit, make_jaspr
 
 def test_qc_converter():
@@ -100,5 +100,29 @@ def test_qc_converter():
     qasm_str = qrisp_qc.to_qasm3()
 
     assert qasm_str.find("if (cb_0[0]) {") != -1
+    
+    def main():
+        
+        qv = QuantumFloat(3)
+        qv += 4
+
+    jaspr = make_jaspr(main)()
+    str(jaspr.to_qc())
+    
+    def main():
+        
+        qv = QuantumFloat(5)
+        qbl = QuantumBool()
+        with control(qbl):
+            qv += 4
+        
+        return measure(qv) + 5
+        
+    jaspr = make_jaspr(main)()
+    
+    try:
+        qiskit_qc = jaspr.to_qc().run()
+    except Exception as e:
+        assert "real-time" in str(e)
     
     

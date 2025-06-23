@@ -47,14 +47,14 @@ Example implementation
     from qrisp.qaoa import QAOAProblem, RZ_mixer, create_max_indep_set_cl_cost_function, create_max_indep_set_mixer, max_indep_set_init_function
     import networkx as nx
 
-    G = nx.erdos_renyi_graph(9, 0.5, seed =  133)
+    G = nx.erdos_renyi_graph(9, 0.5, seed = 133)
     qarg = QuantumVariable(G.number_of_nodes())
 
     qaoa_max_indep_set = QAOAProblem(cost_operator=RZ_mixer, 
                                     mixer=create_max_indep_set_mixer(G), 
                                     cl_cost_function=create_max_indep_set_cl_cost_function(G), 
                                     init_function=max_indep_set_init_function)
-    results = qaoa_max_indep_set.run(qarg=qarg, depth=5)
+    results = qaoa_max_indep_set.run(qarg, depth=5)
 
 That's it! In the following, we print the 5 most likely solutions together with their cost values.
 
@@ -72,10 +72,10 @@ Finally, we visualize the most likely solution.
 ::
 
     most_likely = [index for index, value in enumerate(max_five[0][0]) if value == '1']
-    nx.draw(G, with_labels = True, 
-            node_color=['#FFCCCB' if node in most_likely else '#ADD8E6' for node in G.nodes()],
+    nx.draw(G, with_labels = True, font_color='white', node_size=1000, font_size=22,
+            node_color=['#6929C4' if node in most_likely else '#20306f' for node in G.nodes()],
             edge_color='#D3D3D3')
 
 .. image:: ./maxIndepSet.png
-  :scale: 100%
+  :scale: 60%
   :align: center

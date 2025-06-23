@@ -1,5 +1,5 @@
 """
-\********************************************************************************
+********************************************************************************
 * Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -13,9 +13,8 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
-
 
 # This file uses the gate constructor from operation.py to define
 # some standard operations
@@ -105,12 +104,12 @@ def RYGate(phi=0):
 
 
 def RZGate(phi=0):
-    res = U3Gate(0, phi, 0, name="rz", global_phase = -phi/2)
+    res = U3Gate(0, phi, 0, name="rz", global_phase=-phi / 2)
     return res
 
 
 def GPhaseGate(phi=0):
-    res = U3Gate(0, 0, 0, name="gphase", global_phase = phi)
+    res = U3Gate(0, 0, 0, name="gphase", global_phase=phi)
     return res
 
 
@@ -152,13 +151,11 @@ def RXXGate(phi=0):
     qc.h(qc.qubits[0])
     qc.h(qc.qubits[1])
 
-    res =  Operation(
-        name="rxx", num_qubits=2, num_clbits=0, params=[phi], definition=qc
-    )
-    
-    res.permeability = {0 : False, 1 : False}
+    res = Operation(name="rxx", num_qubits=2, num_clbits=0, params=[phi], definition=qc)
+
+    res.permeability = {0: False, 1: False}
     res.is_qfree = False
-    
+
     return res
 
 
@@ -170,40 +167,39 @@ def RZZGate(phi=0):
     qc.gphase(-phi / 2, qc.qubits[0])
     qc.p(phi, qc.qubits[1])
     qc.cx(qc.qubits[0], qc.qubits[1])
-    
-    res = Operation(
-        name="rzz", num_qubits=2, num_clbits=0, params=[phi], definition=qc
-    )
-    
-    res.permeability = {0 : True, 1 : True}
+
+    res = Operation(name="rzz", num_qubits=2, num_clbits=0, params=[phi], definition=qc)
+
+    res.permeability = {0: True, 1: True}
     res.is_qfree = True
 
     return res
+
 
 def XXYYGate(phi=0, beta=0):
     from qrisp.circuit.quantum_circuit import QuantumCircuit
 
     qc = QuantumCircuit(2)
-    
-    
+
     qc.rz(beta, qc.qubits[0])
-    qc.rz(-np.pi/2, qc.qubits[1])
+    qc.rz(-np.pi / 2, qc.qubits[1])
     qc.sx(qc.qubits[1])
-    qc.rz(np.pi/2, qc.qubits[1])
+    qc.rz(np.pi / 2, qc.qubits[1])
     qc.s(qc.qubits[0])
-    qc.cx(qc.qubits[1],qc.qubits[0])
-    qc.ry(-phi/2, qc.qubits[1])
-    qc.ry(-phi/2, qc.qubits[0])
-    qc.cx(qc.qubits[1],qc.qubits[0])
+    qc.cx(qc.qubits[1], qc.qubits[0])
+    qc.ry(-phi / 2, qc.qubits[1])
+    qc.ry(-phi / 2, qc.qubits[0])
+    qc.cx(qc.qubits[1], qc.qubits[0])
     qc.s_dg(qc.qubits[0])
-    qc.rz(-np.pi/2,qc.qubits[1])
+    qc.rz(-np.pi / 2, qc.qubits[1])
     qc.sx_dg(qc.qubits[1])
-    qc.rz(np.pi/2,qc.qubits[1])
-    qc.rz(-beta,qc.qubits[0])
+    qc.rz(np.pi / 2, qc.qubits[1])
+    qc.rz(-beta, qc.qubits[0])
 
     return Operation(
-        name="xxyy", num_qubits=2, num_clbits=0, params=[phi,beta], definition=qc
+        name="xxyy", num_qubits=2, num_clbits=0, params=[phi, beta], definition=qc
     )
+
 
 def Barrier(num_qubits=1):
     res = Operation(num_qubits=num_qubits, name="barrier")
@@ -222,10 +218,10 @@ def U1Gate(phi=0):
     res = RZGate(phi)
     res.name = "u1"
     res.params = [phi]
-    
-    res.permeability = {0 : True}
+
+    res.permeability = {0: True}
     res.is_qfree = True
-    
+
     return res
 
 
@@ -239,10 +235,10 @@ def SXGate():
     res = RXGate(np.pi / 2)
     res.name = "sx"
     res.params = []
-    
-    res.permeability = {0 : False}
+
+    res.permeability = {0: False}
     res.is_qfree = False
-    
+
     return res
 
 
@@ -250,10 +246,10 @@ def SXDGGate():
     res = RXGate(-np.pi / 2)
     res.name = "sx_dg"
     res.params = []
-    
-    res.permeability = {0 : False}
+
+    res.permeability = {0: False}
     res.is_qfree = False
-    
+
     return res
 
 
@@ -268,8 +264,8 @@ def SwapGate():
     res = temp_qc.to_gate(name="swap")
 
     res.inverse = types.MethodType(lambda self: self.copy(), res)
-    
-    res.permeability = {0 : False, 1 : False}
+
+    res.permeability = {0: False, 1: False}
     res.is_qfree = True
 
     return res

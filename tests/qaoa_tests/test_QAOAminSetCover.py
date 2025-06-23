@@ -1,5 +1,5 @@
 """
-\********************************************************************************
+********************************************************************************
 * Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -13,7 +13,7 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 
@@ -26,13 +26,14 @@ def test_QAOAminSetCover():
 
     sets = [{0,1,2,3},{1,5,6,4},{0,2,6,3,4,5},{3,4,0,1},{1,2,3,0},{1}]
     universe = set.union(*sets)
+
     qarg = QuantumVariable(len(sets))
 
     qaoa_min_set_cover = QAOAProblem(cost_operator=RZ_mixer, 
                                     mixer= create_min_set_cover_mixer(sets, universe), 
                                     cl_cost_function=create_min_set_cover_cl_cost_function(sets, universe),
                                     init_function=min_set_cover_init_function)
-    results = qaoa_min_set_cover.run(qarg=qarg, depth=5)
+    results = qaoa_min_set_cover.run(qarg, depth=5)
 
     cl_cost = create_min_set_cover_cl_cost_function(sets, universe)
 

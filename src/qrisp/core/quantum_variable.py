@@ -1,5 +1,5 @@
 """
-\********************************************************************************
+********************************************************************************
 * Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -13,17 +13,18 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
-
 
 import copy
 import weakref
 
 import matplotlib.pyplot as plt
 import numpy as np
+from jax import tree_util
 
 from qrisp.core.compilation import qompiler
+
 
 class QuantumVariable:
     """
@@ -238,8 +239,10 @@ class QuantumVariable:
         if check_for_tracing_mode():
             self.qs = TracingQuantumSession.get_instance()
             if self.qs is None:
-                raise Exception("Tried to trace Qrisp code using make_jaxpr (use make_jaspr instead)")
-            
+                raise Exception(
+                    "Tried to trace Qrisp code using make_jaxpr (use make_jaspr instead)"
+                )
+
             self.qubit_cache = {}
         else:
             if qs is not None:
@@ -251,7 +254,7 @@ class QuantumVariable:
 
         self.user_given_name = False
         self.reg = None
-        
+
         # If name is given, register variable in session manager
         if name is not None:
             self.user_given_name = True
@@ -299,7 +302,7 @@ class QuantumVariable:
 
                     # name = self.get_unique_name(python_var_name)
                     name = python_var_name
-                    
+
                     name_found = False
                     i = 0
                     while True:
@@ -327,19 +330,18 @@ class QuantumVariable:
         # This attribute tracks the created QuantumVariables for the
         # auto_uncompute decorator
         # We use weak references as some qrisp modules rely on reference counting
-        QuantumVariable.live_qvs.append(weakref.ref(self))
-        self.creation_time = int(self.creation_counter[0])
-        self.creation_counter += 1
-        
+
         try:
+            from qrisp.jasp.tracing_logic import flatten_qv, unflatten_qv
+
             # Register as a PyTree with JAX
             tree_util.register_pytree_node(type(self), flatten_qv, unflatten_qv)
         except ValueError:
             pass
-        
+
         # Specify the traced attributes (None for base type QuantumVariable)
         self.traced_attributes = []
-        
+
     def __or__(self, other):
         from qrisp import mcx, x, cx
 
@@ -386,18 +388,18 @@ class QuantumVariable:
             cx(other[i], and_res[i])
 
         return and_res
-    
+
     def __lshift__(self, other):
         if not callable(other):
             raise Exception("Tried to inject QuantumVariable into non-callable")
-        
+
         from qrisp.misc.utility import redirect_qfunction
-        
+
         def return_function(*args, **kwargs):
-            return redirect_qfunction(other)(*args, target = self, **kwargs)
-        
+            return redirect_qfunction(other)(*args, target=self, **kwargs)
+
         return return_function
-        
+
     def delete(self, verify=False, recompute=False):
         r"""
         This method is for deleting a QuantumVariable and thus freeing up and resetting
@@ -455,7 +457,9 @@ class QuantumVariable:
         Exception: Tried to perform operation x on unallocated qubit qv_1.0.
 
         """
-        
+
+        from qrisp.jasp import TracingQuantumSession
+
         if not isinstance(self.qs, TracingQuantumSession) and self.is_deleted():
             return
 
@@ -520,7 +524,7 @@ class QuantumVariable:
         4
 
         """
-        
+
         from qrisp.core import QuantumSession
         from qrisp.jasp import check_for_tracing_mode, TracingQuantumSession
 
@@ -528,15 +532,14 @@ class QuantumVariable:
             new_qs = TracingQuantumSession.get_instance()
         else:
             new_qs = QuantumSession()
-            
+
         duplicate = copy.copy(self)
-        
+
         if qubits is not None:
             duplicate.reg = qubits
             size = None
         else:
             size = self.size
-        
 
         # Register duplicate variable in session
 
@@ -571,13 +574,6 @@ class QuantumVariable:
         from qrisp import merge
 
         duplicate.qs = new_qs
-
-        # This attribute tracks the created QuantumVariables for the
-        # auto_uncompute decorator
-        # We use weak references as some qrisp modules rely on reference counting
-        QuantumVariable.live_qvs.append(weakref.ref(duplicate))
-        duplicate.creation_time = int(self.creation_counter[0])
-        duplicate.creation_counter += 1
 
         if qs is not None and isinstance(qs, QuantumSession):
             merge(qs, new_qs)
@@ -625,9 +621,9 @@ class QuantumVariable:
         from qrisp.misc import bin_rep
 
         return bin_rep(i, self.size)[::-1]
-    
+
     def jdecoder(self, i):
-        raise Exception(f"jdecoder for type {type(self)} not implemented")
+        return i
 
     def encoder(self, value):
         """
@@ -712,11 +708,13 @@ class QuantumVariable:
 
         from qrisp.misc import check_if_fresh, int_encoder
         from qrisp.jasp import TracingQuantumSession
-        
+
         if not isinstance(self.qs, TracingQuantumSession):
             if not permit_dirtyness:
                 if not check_if_fresh(self.reg, self.qs):
-                    raise Exception("Tried to initialize qubits which are not fresh anymore.")
+                    raise Exception(
+                        "Tried to initialize qubits which are not fresh anymore."
+                    )
 
         int_encoder(self, self.encoder(value))
 
@@ -1074,7 +1072,7 @@ class QuantumVariable:
 
         # Return dictionary of measurement results
         return counts
-    
+
     def most_likely(self, **kwargs):
         """
         Performs a measurement and returns the most likely outcome.
@@ -1101,9 +1099,10 @@ class QuantumVariable:
 
     def __getitem__(self, key):
         return self.reg[key]
-        
+
     def __str__(self):
         from qrisp.jasp import check_for_tracing_mode
+
         if check_for_tracing_mode():
             return self.__repr__()
         else:
@@ -1124,7 +1123,7 @@ class QuantumVariable:
 
     def __len__(self):
         return self.size
-    
+
     @property
     def size(self):
         if isinstance(self.reg, list):
@@ -1361,10 +1360,12 @@ class QuantumVariable:
                 break
 
         return name
-    
+
     def __iter__(self):
         if not isinstance(self.reg, list):
-            raise Exception("Tried to perform a static iteration on a dynamic QuantumVariable")
+            raise Exception(
+                "Tried to perform a static iteration on a dynamic QuantumVariable"
+            )
         else:
             return self.reg.__iter__()
 
@@ -1491,12 +1492,18 @@ class QuantumVariable:
         from qrisp.misc import custom_qv
 
         return custom_qv(label_list, decoder=decoder, qs=qs, name=name)
-    
+
     def ensure_reg(self):
         return self.reg
-    
+
     def measure(self):
         return self.jdecoder(self.reg.measure())
+
+    def template(self):
+        from qrisp.jasp.tracing_logic import QuantumVariableTemplate
+
+        return QuantumVariableTemplate(self)
+
 
 def plot_histogram(outcome_labels, counts, filename=None):
     res_list = []
@@ -1516,49 +1523,3 @@ def plot_histogram(outcome_labels, counts, filename=None):
         plt.savefig(filename, dpi=400, bbox_inches="tight")
     else:
         plt.show()
-
-
-from jax import tree_util
-import jax.numpy as jnp
-from qrisp.jasp.tracing_logic import TracingQuantumSession, DynamicQubitArray
-
-# This class hides the QuantumVariable object from jax to transfer it via the
-# the aux_data feature
-class QuantumVariableIdentityContainer:
-    def __init__(self, qv):
-        self.qv = qv
-    def __hash__(self):
-        return 0
-    def __eq__(self, other):
-        return True
-
-def flatten_qv(qv):
-    # return the tracers and auxiliary data (structure of the object)
-    children = [qv.reg.tracer]
-    for traced_attribute in qv.traced_attributes:
-        attr = getattr(qv, traced_attribute)
-        if isinstance(attr, bool):
-            attr = jnp.array(attr, jnp.dtype("bool"))
-        elif isinstance(attr, int):
-            attr = jnp.array(attr, jnp.dtype("int64"))
-        elif isinstance(attr, float):
-            attr = jnp.array(attr, jnp.dtype("float64"))
-        children.append(attr)
-    
-    return tuple(children), QuantumVariableIdentityContainer(qv)
-
-def unflatten_qv(aux_data, children):
-    # The unflattening procedure creates a copy of the QuantumVariable object
-    # and updates the traced attributes. When calling this procedure,
-    # the user has to make sure that the result of this function is
-    # registered in a QuantumSession.
-    
-    qv_container = aux_data
-    reg = DynamicQubitArray(children[0])
-    qv = copy.copy(qv_container.qv)
-    qv.reg = reg
-    qv.qs = None
-    
-    for i in range(len(qv.traced_attributes)):
-        setattr(qv, qv.traced_attributes[i], children[i+1])
-    return qv

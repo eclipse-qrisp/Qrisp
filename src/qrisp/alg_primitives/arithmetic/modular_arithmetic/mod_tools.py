@@ -1,5 +1,5 @@
 """
-\********************************************************************************
+********************************************************************************
 * Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -13,20 +13,21 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 
 def montgomery_decoder(y, R, N):
     if 0 < R < 1:
         R = modinv(R**-1, N)
-    return (y*modinv(R, N))%N
+    return (y * modinv(R, N)) % N
+
 
 def montgomery_encoder(y, R, N):
     if 0 < R < 1:
         R = modinv(R**-1, N)
-    return (int(y)%N*int(R)%N)%N
-    
+    return (int(y) % N * int(R) % N) % N
+
 
 def egcd(a, b):
     if a == 0:
@@ -35,10 +36,10 @@ def egcd(a, b):
         g, y, x = egcd(b % a, a)
         return (g, x - (b // a) * y, y)
 
+
 def modinv(a, m):
     g, x, y = egcd(a, m)
     if g != 1:
         raise Exception("modular inverse does not exist")
     else:
         return x % m
-    

@@ -1,5 +1,5 @@
 """
-\********************************************************************************
+********************************************************************************
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -13,7 +13,7 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 import random
@@ -85,6 +85,16 @@ def test_measurement_method(sample_size=100, seed=42, exhaustive = False):
 
     h(qv[0])
     
+
+    # Perform test for issue #165
+    qv = QuantumVariable(4)
+    x(qv[0])
+    x(qv[1])
+
+    H = A(0)*C(1)*C(2)*A(3) + P1(0)*P1(2) + P1(1)*P1(3)
+
+    assert H.get_measurement(qv,diagonalisation_method='commuting') == 0
+    assert H.get_measurement(qv,diagonalisation_method='commuting_qw') == 0
     
     
     

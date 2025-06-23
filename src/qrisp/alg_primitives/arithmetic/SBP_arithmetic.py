@@ -1,5 +1,5 @@
 """
-\********************************************************************************
+********************************************************************************
 * Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -13,9 +13,8 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
-
 
 import numpy as np
 import sympy as sp
@@ -26,7 +25,22 @@ from qrisp.alg_primitives.arithmetic.poly_tools import (
     filter_pow,
     get_ordered_symbol_list,
 )
-from qrisp.core import QuantumArray, QuantumVariable, cp, cx, cz, h, mcx, p, z, rz, rzz, crz, mcp, gphase
+from qrisp.core import (
+    QuantumArray,
+    QuantumVariable,
+    cp,
+    cx,
+    cz,
+    h,
+    mcx,
+    p,
+    z,
+    rz,
+    rzz,
+    crz,
+    mcp,
+    gphase,
+)
 from qrisp.misc import gate_wrap, lifted
 from qrisp.circuit import XGate
 
@@ -81,7 +95,7 @@ def multi_controlled_U_g(
             toffoli_method = "gms"
         else:
             toffoli_method = "gray_pt"
-        
+
         # Apply multi-controlled x gate
         mcx(control_qb_list, ancilla[0], method=toffoli_method)
 
@@ -90,8 +104,14 @@ def multi_controlled_U_g(
     # Either use regular phase gates or use GMS gates
     # GMS gates are ion-trap native gates, that allow the entanglement
     # of multiple qubits within a single laser pulse
-    
-    from qrisp.environments import QuantumEnvironment, control, GMSEnvironment, custom_control
+
+    from qrisp.environments import (
+        QuantumEnvironment,
+        control,
+        GMSEnvironment,
+        custom_control,
+    )
+
     if use_gms:
         # GMSEnvironment is an environment that allows programming
         # with regular phase gates but converts everything programmed
@@ -105,10 +125,9 @@ def multi_controlled_U_g(
 
     # Enter environment
     env.manual_allocation_management = True
-    
-    
+
     @custom_control
-    def crz_helper(rot_angle, a, b, ctrl = None, use_gms = False):
+    def crz_helper(rot_angle, a, b, ctrl=None, use_gms=False):
         if ctrl is None and not use_gms:
             cx(a, b)
             p(-rot_angle / 2, b)
@@ -121,8 +140,7 @@ def multi_controlled_U_g(
             cp(-rot_angle / 2, ctrl, b)
             cx(a, b)
             cp(rot_angle / 2, ctrl, b)
-            
-    
+
     with env:
         phase_accumulator = 0
         cz_counter = 0
@@ -143,16 +161,16 @@ def multi_controlled_U_g(
                 if False:
                     # if np.round(abs(rot_angle) - np.pi, pi_mult_round_threshold) == 0:
                     # cz(ancilla[0], output_qf.reg[i])
-                    
+
                     z(output_qf.reg[i])
                     cz_counter += 1
 
                     phase_accumulator += rot_angle / 2
                 # Otherwise execute cp gate
                 else:
-                    crz_helper(rot_angle, ancilla[0], output_qf[i], use_gms = use_gms)
+                    crz_helper(rot_angle, ancilla[0], output_qf[i], use_gms=use_gms)
                     phase_accumulator += rot_angle / 2
-        
+
         p(phase_accumulator - np.pi * cz_counter / 2, ancilla[0])
 
     # Uncompute boolean multiplication
@@ -208,7 +226,6 @@ def sb_polynomial_encoder(
     monomial_list = expr_to_list(poly)
 
     from qrisp import QFT, conjugate, QuantumEnvironment
-    
 
     if inplace_mult == 1:
         env = conjugate(QFT)(
@@ -231,17 +248,17 @@ def sb_polynomial_encoder(
     with env:
         # The list of qubits contained in the variables of input_var_list
         input_qubits = sum([list(var.reg) for var in input_qf_list], [])
-    
+
         control_qubit_list = []
         y_list = []
-    
+
         # Iterate through the monomials
         for monom in monomial_list:
             # Prepare the two variables coeff (which is the coefficient of the monomial)
             # And the list of variables which appear in the monomial
-    
+
             # For this, go through the cases which can appear
-    
+
             # This describes the case where there is only a single term in the monomial
             # Either a constant or a variable
             if len(monom) == 1:
@@ -251,7 +268,7 @@ def sb_polynomial_encoder(
                 else:
                     coeff = float(monom[0])
                     variables = []
-    
+
             # This describes the case where there is multiple terms in the monomial
             elif not isinstance(monom[0], sp.core.symbol.Symbol):
                 coeff = monom[0]
@@ -259,61 +276,61 @@ def sb_polynomial_encoder(
             else:
                 coeff = 1
                 variables = list(monom)
-    
+
             # Check if the coefficient is an integer (up to float errors)
             if abs(int(np.round(float(coeff))) - coeff) > 1e-14:
                 pass
                 # raise Exception("Tried to encode sb-polynomial
                 # with non-integer coefficient")
-    
+
             # Append coefficient to y_list
             y_list.append(int(np.round(float(coeff))))
-    
+
             # Prepare the qubits on which the U_g should be controlled
             control_qubit_numbers = [symbol_list.index(var) for var in variables]
-    
+
             control_qubits = [input_qubits[nr] for nr in control_qubit_numbers]
-    
+
             control_qubits = list(set(control_qubits))
-    
+
             control_qubits.sort(key=lambda x: x.identifier)
-    
+
             control_qubit_list.append(control_qubits)
-    
+
         # Now we apply the multi controlled U_g gate
         # Here the order in which they are applied makes a huge difference
         # In order to determine, which U_g to apply next, we evaluate a cost function
         # (which we determined through trial and error)
         # and choose the U_g with the lowest cost
-    
+
         # Note that for this feature to yield an improvement, the quantum session requires
         # multiple free ancilla qubits to work on
         def delay_cost(depth_array):
             return max(depth_array)
-    
+
         def find_best_monomial(control_qubit_list, depth_dic):
             delay_cost_list = []
-    
+
             for i in range(len(control_qubit_list)):
                 depth_array = np.array([depth_dic[qb] for qb in control_qubit_list[i]])
-    
+
                 delay_cost_list.append(delay_cost(depth_array))
-    
+
             return np.argmin(delay_cost_list)
-    
+
         # Iterate through the list of U_g gates
         while control_qubit_list:
             # TO-DO fix depth calculation inside environment
             # Update depth_dic (contains the depth of each qubit)
             # depth_dic = output_qf.qs.get_depth_dic()
-    
+
             # Determine best U_g
             # monomial_index = find_best_monomial(control_qubit_list, depth_dic)
             monomial_index = 0
             # Find control qubits and their coefficient
             control_qubits = control_qubit_list.pop(monomial_index)
             y = y_list.pop(monomial_index)
-    
+
             # Apply (controlled) U_g
             if len(control_qubits):
                 multi_controlled_U_g(output_qf, control_qubits, y, use_gms=use_gms)
@@ -357,7 +374,7 @@ def sbp_mult(factor_1_qf, factor_2_qf, output_qf=None):
     We multiply two QuantumFloats:
 
     ::
-    
+
         from qrisp import QuantumFloat, sbp_mult
         qf_0 = QuantumFloat(3)
         qf_1 = QuantumFloat(3)
@@ -415,7 +432,7 @@ def sbp_add(summand_1_qf, summand_2_qf, output_qf=None):
     We add two QuantumFloats:
 
     ::
-    
+
         from qrisp import QuantumFloat, sbp_add
         qf_0 = QuantumFloat(3)
         qf_1 = QuantumFloat(3)
@@ -473,7 +490,7 @@ def sbp_sub(summand_1_qf, summand_2_qf, output_qf=None):
     We add two QuantumFloats:
 
     ::
-    
+
         from qrisp import QuantumFloat, sbp_sub
         qf_0 = QuantumFloat(3)
         qf_1 = QuantumFloat(3)
@@ -547,7 +564,7 @@ def polynomial_encoder(qf_list, output_qf, poly, encoding_dic=None, inplace_mult
 
 
     ::
-    
+
         from sympy import Symbol
         x = Symbol("x")
         y = Symbol("y")
@@ -704,7 +721,7 @@ def hybrid_mult(
     We multiply two QuantumFloat with eachother and an additional classical factor
 
     ::
-    
+
         from qrisp import QuantumFloat, hybrid_mult
         qf_0 = QuantumFloat(3)
         qf_1 = QuantumFloat(3)
@@ -714,7 +731,7 @@ def hybrid_mult(
         print(qf_res)
 
 
-    ::  
+    ::
 
         # Yields: {24: 1.0}
 
@@ -1010,7 +1027,7 @@ def inpl_mult(qf, mult_int, treat_overflow=True):
     We create a QuantumFloat, bring it to superposition and perform an inplace multiplication.
 
     ::
-    
+
         from qrisp import QuantumFloat, h, inpl_mult
         a = QuantumFloat(5, signed = True)
         h(a[0])
@@ -1018,7 +1035,7 @@ def inpl_mult(qf, mult_int, treat_overflow=True):
         print(a)
 
 
-    ::   
+    ::
 
         # Yields: {0: 0.25, 1: 0.25, -32: 0.25, -31: 0.25}
 
@@ -1042,20 +1059,22 @@ def inpl_mult(qf, mult_int, treat_overflow=True):
         )
 
     bit_shift = 0
-    
+
     if int(mult_int) != mult_int:
-        
+
         c = abs(mult_int)
-        
+
         for i in range(32):
-            if int(2**i*c) == 2**i*c:
+            if int(2**i * c) == 2**i * c:
                 break
         else:
-            raise Exception("Tried to inplace multiply with number of to much precision")
-        
+            raise Exception(
+                "Tried to inplace multiply with number of to much precision"
+            )
+
         bit_shift = -i
-        mult_int = 2**i*mult_int
-        
+        mult_int = 2**i * mult_int
+
     else:
         while not mult_int % 2:
             bit_shift += 1
@@ -1071,56 +1090,57 @@ def inpl_mult(qf, mult_int, treat_overflow=True):
         from qrisp.alg_primitives.arithmetic.SBP_arithmetic import QFT_inpl_mult
 
         QFT_inpl_mult(qf, inplace_mult=mult_int)
-    
-    quantum_bit_shift(qf, bit_shift, treat_overflow)
-    
-    if treat_overflow and bit_shift<0 and qf.signed:
-        cx(qf[-1], qf[bit_shift-1:-1])
-    
 
-    
-def quantum_bit_shift(qf, bit_shift, treat_overflow = True):
-    
+    quantum_bit_shift(qf, bit_shift, treat_overflow)
+
+    if treat_overflow and bit_shift < 0 and qf.signed:
+        cx(qf[-1], qf[bit_shift - 1 : -1])
+
+
+def quantum_bit_shift(qf, bit_shift, treat_overflow=True):
+
     from qrisp import cyclic_shift, control, QuantumFloat
-    
+
     if isinstance(bit_shift, QuantumFloat):
-        
+
         if bit_shift.signed or qf.signed:
-            raise Exception("Quantum-quantum bitshifting is currently only supported for unsigned arguments")
-        
+            raise Exception(
+                "Quantum-quantum bitshifting is currently only supported for unsigned arguments"
+            )
+
         for i in range(*bit_shift.mshape):
             with control(bit_shift.significant(i)):
                 quantum_bit_shift(qf, 2**i)
-        
+
         return
-    
+
     if treat_overflow:
-        
+
         if bit_shift > 0:
-            
+
             if qf.signed:
-                qf.extend(bit_shift, position=qf.size-1)
+                qf.extend(bit_shift, position=qf.size - 1)
             else:
                 qf.extend(bit_shift, position=qf.size)
-                
+
         else:
             qf.extend(abs(bit_shift), position=0)
             qf.exp_shift(bit_shift)
-            
+
     if qf.signed:
         cyclic_shift(qf[:-1], bit_shift)
     else:
         cyclic_shift(qf, bit_shift)
-                
 
-#@lifted
+
+# @lifted
 def app_sb_phase_polynomial(qv_list, poly, symbol_list=None, t=1):
     """
     Applies a phase function specified by a `semi-Boolean polynomial <https://ieeexplore.ieee.org/document/9815035>`_ acting on a list of QuantumVariables.
     That is, this method implements the transformation
 
     .. math::
-    
+
         \ket{y_1}\dotsb\ket{y_n}\\rightarrow e^{itP(y_1,\dotsc,y_n)}\ket{y_1}\dotsb\ket{y_n}
 
     where :math:`\ket{y_1},\dotsc,\ket{y_n}` are QuantumVariables and :math:`P(y_1,\dotsc,y_n)=P(y_{1,1},\dotsc,y_{1,m_1},\dotsc,y_{n,1}\dotsc,y_{n,m_n})` is a semi-Boolean polynomial in variables
@@ -1133,7 +1153,7 @@ def app_sb_phase_polynomial(qv_list, poly, symbol_list=None, t=1):
     poly : SymPy expression
         The semi-Boolean polynomial to evaluate.
     symbol_list : list, optional
-        An ordered list of SymPy symbols associated to the qubits of the QuantumVariables of ``qv_list``. 
+        An ordered list of SymPy symbols associated to the qubits of the QuantumVariables of ``qv_list``.
         For each QuantumVariable in ``qv_list`` a number of symbols according to its size is required.
         By default, the symbols of the polynomial
         will be ordered alphabetically and then matched to the order in ``qv_list``.
@@ -1174,7 +1194,7 @@ def app_sb_phase_polynomial(qv_list, poly, symbol_list=None, t=1):
 
     if isinstance(qv_list, QuantumArray):
         qv_list = list(qv_list.flatten())
-    
+
     # As the polynomial has only boolean variables,
     # powers can be ignored since x**k = x for x in GF(2)
     poly = filter_pow(poly.expand()).expand()
@@ -1190,13 +1210,13 @@ def app_sb_phase_polynomial(qv_list, poly, symbol_list=None, t=1):
 
     # The list of qubits contained in the variables of input_var_list
     input_qubits = sum([list(var.reg) for var in qv_list], [])
-    
+
     # Monomials in list form
     monomial_list = expr_to_list(poly)
 
     control_qubit_list = []
     y_list = []
-    
+
     # Iterate through the monomials
     for monom in monomial_list:
         # Prepare coeff (coefficient of the monomial) and variables (list of variables from symbol_list in the monomial)
@@ -1207,24 +1227,24 @@ def app_sb_phase_polynomial(qv_list, poly, symbol_list=None, t=1):
             if isinstance(term, sp.core.symbol.Symbol) and term in symbol_list:
                 variables.append(term)
             elif isinstance(term, sp.core.symbol.Symbol):
-                coeff = coeff*term
+                coeff = coeff * term
             else:
-                coeff = coeff*float(term)
-    
+                coeff = coeff * float(term)
+
         # Append coefficient to y_list
         y_list.append(coeff)
-    
+
         # Prepare the qubits on which the phase gate should be controlled
         control_qubit_numbers = [symbol_list.index(var) for var in variables]
 
         control_qubits = [input_qubits[nr] for nr in control_qubit_numbers]
-    
+
         control_qubits = list(set(control_qubits))
-    
+
         control_qubits.sort(key=lambda x: x.identifier)
-    
+
         control_qubit_list.append(control_qubits)
-    
+
     # Now we apply the multi controlled phase gates
     # Iterate through the list of phase gates
     while control_qubit_list:
@@ -1232,22 +1252,22 @@ def app_sb_phase_polynomial(qv_list, poly, symbol_list=None, t=1):
         # Find control qubits and their coefficient
         control_qubits = control_qubit_list.pop(monomial_index)
         y = y_list.pop(monomial_index)
-    
+
         # Apply (controlled) phase gate
         if len(control_qubits):
-            mcp(y*t,control_qubits)
+            mcp(y * t, control_qubits)
         else:
-            gphase(y*t,input_qubits[0])
+            gphase(y * t, input_qubits[0])
 
 
-#@lifted
+# @lifted
 def app_phase_polynomial(qf_list, poly, symbol_list=None, t=1):
     """
-    Applies a phase function specified by a polynomial acting on a list of QuantumFloats. 
+    Applies a phase function specified by a polynomial acting on a list of QuantumFloats.
     That is, this method implements the transformation
 
     .. math::
-    
+
         \ket{y_1}\dotsb\ket{y_n}\\rightarrow e^{itP(y_1,\dotsc,y_n)}\ket{y_1}\dotsb\ket{y_n}
 
     where :math:`\ket{y_1},\dotsc,\ket{y_n}` are QuantumFloats and :math:`P(y_1,\dotsc,y_n)` is a polynomial in variables
@@ -1255,7 +1275,7 @@ def app_phase_polynomial(qf_list, poly, symbol_list=None, t=1):
 
     Parameters
     ----------
-    qf_list : list[QuantumFloat] or QuantumArray[QuantumFloat] 
+    qf_list : list[QuantumFloat] or QuantumArray[QuantumFloat]
         The list of QuantumFloats to evaluate the polynomial on.
     poly : SymPy expression
         The polynomial to evaluate.
@@ -1278,7 +1298,7 @@ def app_phase_polynomial(qf_list, poly, symbol_list=None, t=1):
     We apply the phase function specified by the polynomial :math:`P(x,y) = \pi x + \pi xy` on two QuantumFloats:
 
     ::
-    
+
         import sympy as sp
         import numpy as np
         from qrisp import QuantumFloat, h, app_phase_polynomial
@@ -1298,7 +1318,7 @@ def app_phase_polynomial(qf_list, poly, symbol_list=None, t=1):
     >>> print(qf1.qs.statevector())
     sqrt(2)*(|0>*|0.5> - I*|1>*|0.5>)/2
 
-    
+
     We apply the phase function specified by the polynomial :math:`P(x) = 1 - 0.9x^2 + x^3` on a QuantumFloat:
 
     ::
@@ -1322,10 +1342,10 @@ def app_phase_polynomial(qf_list, poly, symbol_list=None, t=1):
 
         sv_function = qf.qs.statevector("function")
 
-    This function receives a dictionary of QuantumVariables specifiying the desired label constellation and returns its complex amplitude. 
-    We calculate the phases corresponding to the complex amplitudes, and compare the results with the values of the function $P(x)$. 
+    This function receives a dictionary of QuantumVariables specifiying the desired label constellation and returns its complex amplitude.
+    We calculate the phases corresponding to the complex amplitudes, and compare the results with the values of the function $P(x)$.
 
-    ::  
+    ::
 
         qf_values = np.array([qf.decoder(i) for i in range(2 ** qf.size)])
         sv_phase_array = np.angle([sv_function({qf : i}) for i in qf_values])
@@ -1370,12 +1390,16 @@ def app_phase_polynomial(qf_list, poly, symbol_list=None, t=1):
     for qf in qf_list:
         if qf.signed:
             # We do not use modular arithmetic.
-            sb_poly_list.append(qf.sb_poly()-2**(qf.msize+2+qf.exponent)*sp.symbols(str(hash(qf)) + "_" + str(qf.msize)))
+            sb_poly_list.append(
+                qf.sb_poly()
+                - 2 ** (qf.msize + 2 + qf.exponent)
+                * sp.symbols(str(hash(qf)) + "_" + str(qf.msize))
+            )
         else:
             sb_poly_list.append(qf.sb_poly())
 
         temp_var_list = list(sp.symbols(str(hash(qf)) + "_" + "0:" + str(qf.size)))
-        new_symbol_list += temp_var_list    
+        new_symbol_list += temp_var_list
 
     repl_dic = {symbol_list[i]: sb_poly_list[i] for i in range(len(qf_list))}
     # Substitute semi-Boolean polynomials
@@ -1387,18 +1411,22 @@ def app_phase_polynomial(qf_list, poly, symbol_list=None, t=1):
     # Apply sb phase polynomial
     app_sb_phase_polynomial(qf_list, sb_polynomial, symbol_list=new_symbol_list, t=t)
 
-        
+
 # Workaround to keep the docstring but still gatewrap
 
 temp = app_sb_phase_polynomial.__doc__
 
-app_sb_phase_polynomial = gate_wrap(permeability="args", is_qfree=True)(app_sb_phase_polynomial)
+app_sb_phase_polynomial = gate_wrap(permeability="args", is_qfree=True)(
+    app_sb_phase_polynomial
+)
 
 app_sb_phase_polynomial.__doc__ = temp
 
 
 temp = app_phase_polynomial.__doc__
 
-app_phase_polynomial = gate_wrap(permeability="args", is_qfree=True)(app_phase_polynomial)
+app_phase_polynomial = gate_wrap(permeability="args", is_qfree=True)(
+    app_phase_polynomial
+)
 
 app_phase_polynomial.__doc__ = temp

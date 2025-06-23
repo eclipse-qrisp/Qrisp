@@ -1,5 +1,5 @@
 """
-\********************************************************************************
+********************************************************************************
 * Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -13,14 +13,15 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 import numpy as np
 from numpy.linalg import solve
 from scipy.linalg import expm
 from qrisp import QuantumVariable, HHL, control, multi_measurement, ry, x
-#, QuantumCircuit
+
+# , QuantumCircuit
 # from qiskit.extensions import UnitaryGate
 
 

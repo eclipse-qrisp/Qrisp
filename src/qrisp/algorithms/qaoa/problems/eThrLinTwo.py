@@ -1,5 +1,5 @@
 """
-\********************************************************************************
+********************************************************************************
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -13,7 +13,7 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 from qrisp import cx, rz, conjugate
@@ -21,8 +21,8 @@ from qrisp import cx, rz, conjugate
 
 def parity(qarg, indices):
     n = len(indices)
-    for i in range(n-1):
-        cx(qarg[indices[i]],qarg[indices[i+1]])
+    for i in range(n - 1):
+        cx(qarg[indices[i]], qarg[indices[i + 1]])
 
 
 def create_e3lin2_cost_operator(clauses):
@@ -42,7 +42,7 @@ def create_e3lin2_cost_operator(clauses):
     Returns
     -------
     function
-        A Python function receiving a ``QuantumVariable`` and real parameter $\beta$. 
+        A Python function receiving a ``QuantumVariable`` and real parameter $\beta$.
         This function performs the application of the mixer associated to the graph $G$.
 
     """
@@ -50,7 +50,7 @@ def create_e3lin2_cost_operator(clauses):
     def cost_operator(qv, gamma):
         for clause in clauses:
             with conjugate(parity)(qv, clause[:3]):
-                rz((-1)**clause[3]*gamma,qv[clause[2]])
+                rz((-1) ** clause[3] * gamma, qv[clause[2]])
 
     return cost_operator
 
@@ -74,13 +74,13 @@ def create_e3lin2_cl_cost_function(clauses):
     def cl_cost_function(res_dic):
         cost = 0
         for state, prob in res_dic.items():
-               for clause in clauses:
-                   if sum(int(state[clause[k]]) for k in range(3)) % 2 == clause[3]:
-                       cost -= prob
-        
+            for clause in clauses:
+                if sum(int(state[clause[k]]) for k in range(3)) % 2 == clause[3]:
+                    cost -= prob
+
         return cost
 
-    return cl_cost_function 
+    return cl_cost_function
 
 
 def e3lin2_problem(clauses):
@@ -98,10 +98,11 @@ def e3lin2_problem(clauses):
     :ref:`QAOAProblem`
         A QAOA problem instance for E3Lin2 for given ``clauses``.
 
-    """        
+    """
     from qrisp.qaoa import QAOAProblem, RX_mixer
 
-    return QAOAProblem(cost_operator=create_e3lin2_cost_operator(clauses),
-                        mixer=RX_mixer,
-                        cl_cost_function=create_e3lin2_cl_cost_function(clauses))
-
+    return QAOAProblem(
+        cost_operator=create_e3lin2_cost_operator(clauses),
+        mixer=RX_mixer,
+        cl_cost_function=create_e3lin2_cl_cost_function(clauses),
+    )

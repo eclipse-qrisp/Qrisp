@@ -1,5 +1,5 @@
 """
-\********************************************************************************
+********************************************************************************
 * Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -13,7 +13,7 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 def test_jasp_minimize():
@@ -36,10 +36,24 @@ def test_jasp_minimize():
 
         x0 = jnp.array([1.0])
 
-        return minimize(objective,x0,args=(state_prep,))
+        return minimize(objective,x0,args=(state_prep,),method='SPSA')
 
     results = main()
     print(results.x)
     print(results.fun)
     assert np.round(results.x,1)==0
+    assert np.round(results.fun,1)==0
+
+    
+    @jaspify(terminal_sampling=True)
+    def main():
+
+        x0 = jnp.array([1.0])
+
+        return minimize(objective,x0,args=(state_prep,),method='COBYLA')
+
+    results = main()
+    print(results.x)
+    print(results.fun)
+    assert np.round(results.x,1)<0.5
     assert np.round(results.fun,1)==0

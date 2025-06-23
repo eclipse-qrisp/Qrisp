@@ -1,5 +1,5 @@
 """
-\********************************************************************************
+********************************************************************************
 * Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -13,7 +13,7 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 from qrisp import QuantumCircuit
@@ -59,6 +59,7 @@ def UMA_gate(mode=2):
 # Performs inplace addition on qv2, ie.
 # qv1 += qv2
 
+
 # TO-DO make this less circuity and more qrispy
 def cuccaro_procedure(qs, qubit_list_1, qubit_list_2, output_qubit=None, carry_in=None):
     if len(qubit_list_1) != len(qubit_list_2):
@@ -69,7 +70,7 @@ def cuccaro_procedure(qs, qubit_list_1, qubit_list_2, output_qubit=None, carry_i
         )
 
     from qrisp.core import QuantumVariable
-    
+
     if carry_in is None:
         # Request ancilla Qubit
         ancilla = QuantumVariable(1)
@@ -91,7 +92,7 @@ def cuccaro_procedure(qs, qubit_list_1, qubit_list_2, output_qubit=None, carry_i
     # Calculate output qbit
     if output_qubit:
         qs.cx(qbits[2], output_qubit)
-    
+
     # Perform UMA iterations
     for i in range(iterations - 1, -1, -1):
         qbits = [slot_1_qbs[i], slot_2_qbs[i], slot_3_qbs[i]]
@@ -102,15 +103,16 @@ def cuccaro_procedure(qs, qubit_list_1, qubit_list_2, output_qubit=None, carry_i
         # Detete ancilla
         ancilla.delete()
 
+
 def cuccaro_adder(a, b, c_in=None, c_out=None):
     """
     In-place adder function based on `this paper <https://arxiv.org/abs/quant-ph/0410184>`__
     Performs the addition
-    
+
     ::
-        
+
         b += a
-    
+
 
     Parameters
     ----------
@@ -125,9 +127,9 @@ def cuccaro_adder(a, b, c_in=None, c_out=None):
 
     Examples
     --------
-    
+
     We add two integers:
-        
+
     >>> from qrisp import QuantumFloat, cuccaro_adder
     >>> a = QuantumFloat(4)
     >>> b = QuantumFloat(4)
@@ -141,7 +143,7 @@ def cuccaro_adder(a, b, c_in=None, c_out=None):
 
     cuccaro_procedure(b[0].qs(), a, b, carry_in=c_in, output_qubit=c_out)
 
-    
+
 temp = cuccaro_adder.__doc__
 cuccaro_adder = ammend_inpl_adder(cuccaro_adder)
 cuccaro_adder.__doc__ = temp

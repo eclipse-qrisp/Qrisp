@@ -54,7 +54,7 @@ Example implementation
    qaoa_e3lin2 = QAOAProblem(cost_operator=create_e3lin2_cost_operator(clauses),
                               mixer=RX_mixer,
                               cl_cost_function=create_e3lin2_cl_cost_function(clauses))
-   results = qaoa_e3lin2.run(qarg=qarg, depth=5)
+   results = qaoa_e3lin2.run(qarg, depth=5)
 
 That's it! Feel free to experiment with the ``init_type='tqa'`` option in the :meth:`.run <qrisp.qaoa.QAOAProblem.run>` method for improved performance.
 In the following, we print the 5 most likely solutions together with their cost values.

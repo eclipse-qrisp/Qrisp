@@ -1,5 +1,5 @@
 """
-\********************************************************************************
+********************************************************************************
 * Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -13,17 +13,18 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 from qrisp import QuantumFloat
 import numpy as np
 
+
 def prepare(qv, target_array, reversed=False):
     r"""
-    This method performs quantum state preparation. Given a vector $b=(b_0,\dotsc,b_{N-1})$, the function acts as 
+    This method performs quantum state preparation. Given a vector $b=(b_0,\dotsc,b_{N-1})$, the function acts as
 
-    .. math:: 
+    .. math::
 
         \ket{0} \rightarrow \sum_{i=0}^{N-1}b_i\ket{i}
 
@@ -61,13 +62,15 @@ def prepare(qv, target_array, reversed=False):
 
     """
 
-    from qiskit.circuit.library.data_preparation.state_preparation import StatePreparation
+    from qiskit.circuit.library.data_preparation.state_preparation import (
+        StatePreparation,
+    )
 
     n = len(target_array)
     m = int(np.ceil(np.log2(n)))
 
     # Fill target_array with zeros
-    if not (n & (1 << m)): 
+    if not (n & (1 << m)):
         target_array = np.concatenate((target_array, np.zeros((1 << m) - n)))
 
     target_array = target_array / np.vdot(target_array, target_array) ** 0.5
@@ -95,6 +98,6 @@ def prepare(qv, target_array, reversed=False):
     init_gate.name = "state_init"
 
     if reversed:
-        qv.qs.append(init_gate, [qv[m-1-i] for i in range(m)])
+        qv.qs.append(init_gate, [qv[m - 1 - i] for i in range(m)])
     else:
         qv.qs.append(init_gate, [qv[i] for i in range(m)])

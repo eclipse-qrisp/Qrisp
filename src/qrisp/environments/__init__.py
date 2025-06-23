@@ -1,5 +1,5 @@
 """
-\********************************************************************************
+********************************************************************************
 * Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -13,9 +13,8 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
-
 
 from qrisp.environments.quantum_environments import *
 from qrisp.environments.quantum_inversion import *
@@ -27,5 +26,5 @@ from qrisp.environments.conjugation_environment import *
 from qrisp.environments.GMS_environment import *
 from qrisp.environments.iteration_environment import *
 from qrisp.environments.custom_control_environment import *
+from qrisp.environments.custom_inversion_environment import *
 from qrisp.environments.jiteration_environment import *
-

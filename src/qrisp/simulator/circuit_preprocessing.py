@@ -1,5 +1,5 @@
 """
-\********************************************************************************
+********************************************************************************
 * Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -13,7 +13,7 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 # -*- coding: utf-8 -*-
@@ -24,7 +24,16 @@ import threading
 import numpy as np
 from numba import njit
 
-from qrisp.circuit import Instruction, QuantumCircuit, transpile, Reset, ClControlledOperation, CXGate, Operation, Measurement
+from qrisp.circuit import (
+    Instruction,
+    QuantumCircuit,
+    transpile,
+    Reset,
+    ClControlledOperation,
+    CXGate,
+    Operation,
+    Measurement,
+)
 from qrisp.permeability.type_checker import is_permeable
 
 memory_bandwidth_penalty = 2
@@ -48,7 +57,7 @@ class GroupedInstruction:
 
             for i in range(len(indices)):
                 qubit_set |= int_qc.data[indices[i]]
-            
+
             qubit_set = int_to_qb_set(int(qubit_set), int_qc.source)
         else:
             qubit_set = set(qubits)
@@ -158,7 +167,7 @@ def group_qc(qc):
 def find_group(int_qc, max_recursion_depth):
     if int_qc.source.num_qubits() < 63:
         int_qc.data = np.array(int_qc.data, dtype=np.int64)
-    
+
     grouping_options = find_grouping_options(int_qc, [], max_recursion_depth)
 
     int_qc.data = list(int_qc.data)
@@ -217,7 +226,9 @@ def find_grouping_options(
     for i in range(len(expansion_options)):
         # Calculate the hash of the proposed set of qubits
         # proposed_set = sum([hash(qb) for qb in qubits + [expansion_options[i]]])
-        proposed_set = qubits | qb_set_to_int([expansion_options[i]], int_qc.qb_to_index)
+        proposed_set = qubits | qb_set_to_int(
+            [expansion_options[i]], int_qc.qb_to_index
+        )
         # proposed_set = qubits.union(BinaryQubitSet([expansion_options[i]], qc.source))
 
         # If this set has not been checked yet, add to the options
@@ -369,19 +380,18 @@ disentangler.definition = QuantumCircuit(1)
 disentangler.permeability = {0: False}
 disentangler.warning = False
 
-def Disentangler(warning = False):
+
+def Disentangler(warning=False):
     disentangler = Operation("disentangle", num_qubits=1)
     disentangler.definition = QuantumCircuit(1)
     disentangler.permeability = {0: False}
     disentangler.warning = warning
     return disentangler
-    
 
 
 def insert_disentangling(qc):
     # This function checks for permeability on a given qubit
     from qrisp.permeability import is_permeable
-
 
     # After all the operations have been performed on a qubit,
     # it can be reset without changing the statistics
@@ -495,7 +505,7 @@ def count_measurements_and_treat_alloc(qc, insert_reset=True):
         elif instr.op.name == "qb_dealloc":
             qc.data.pop(i)
             if insert_reset:
-                qc.data.insert(i, Instruction(Disentangler(True), qubits = instr.qubits))
+                qc.data.insert(i, Instruction(Disentangler(True), qubits=instr.qubits))
             else:
                 continue
 
@@ -695,10 +705,10 @@ def int_to_qb_set(integer, qc):
 class IntegerCircuit:
     def __init__(self, qc):
         self.source = qc
-        self.qb_to_index = {qc.qubits[i] : i for i in range(len(qc.qubits))}
+        self.qb_to_index = {qc.qubits[i]: i for i in range(len(qc.qubits))}
         self.data = qc_to_int_list(qc, self.qb_to_index)
         self.n = len(qc.qubits)
-    
+
 
 def average_group_size(qc):
     average_group_size = 0
@@ -711,70 +721,78 @@ def average_group_size(qc):
 
     return average_group_size / len(qc.data)
 
+
 def extract_measurements(qc):
-        
+
     qubits = list(qc.qubits)
     clbits = list(qc.clbits)
     mes_list = []
     data = []
     mes_dic = {}
     for instr in qc.data[::-1]:
-        
-        if instr.op.name == "measure" and instr.qubits[0] in qubits and instr.clbits[0] in clbits:
+
+        if (
+            instr.op.name == "measure"
+            and instr.qubits[0] in qubits
+            and instr.clbits[0] in clbits
+        ):
             mes_list.append(instr)
         else:
             data.append(instr)
-        
+
         for qb in instr.qubits:
             try:
                 qubits.remove(qb)
             except:
                 pass
-        
+
         for cb in instr.clbits:
             try:
                 clbits.remove(cb)
             except:
                 pass
-    
-    
+
     new_qc = qc.clearcopy()
-    
+
     new_qc.data = data[::-1]
-    
+
     return new_qc, mes_list
 
 
 def insert_multiverse_measurements(qc):
-    
+
     new_data = []
     new_measurements = []
-    
+
     cb_to_qb_dic = {}
-    
+
     data = list(qc.data)
     while data:
-    # for i in range(len(qc.data)):
-        
+        # for i in range(len(qc.data)):
+
         instr = data.pop(0)
         # instr = qc.data[i]
         if instr.op.name == "measure":
             meas_qubit = instr.qubits[0]
             meas_clbit = instr.clbits[0]
-            
+
             next_instr_is_reset = False
             for j in range(len(data)):
                 if meas_qubit in data[j].qubits:
-                    
+
                     if data[j].op.name == "reset":
                         next_instr_is_reset = True
                         data.pop(j)
                         break
-                    elif not is_permeable(data[j].op, [data[j].qubits.index(meas_qubit)]):
+                    elif not is_permeable(
+                        data[j].op, [data[j].qubits.index(meas_qubit)]
+                    ):
                         break
-                if meas_clbit in data[j].clbits and not isinstance(data[j], ClControlledOperation):
-                        break
-                
+                if meas_clbit in data[j].clbits and not isinstance(
+                    data[j], ClControlledOperation
+                ):
+                    break
+
                 # This treats the case that two measurements with the same outcome are performed
                 # in this case we break the loop to make the first measurement appear as a
                 # separate qubit.
@@ -784,45 +802,45 @@ def insert_multiverse_measurements(qc):
                 new_data.append(Instruction(disentangler, [meas_qubit]))
                 new_measurements.append((instr.qubits[0], instr.clbits[0]))
                 continue
-            
+
             qb = qc.add_qubit()
             new_data.append(Instruction(CXGate(), instr.qubits + [qb]))
-            
+
             if next_instr_is_reset:
                 new_data.append(Instruction(CXGate(), [qb] + instr.qubits))
                 new_data.append(Instruction(disentangler, [meas_qubit]))
-            
+
             cb_to_qb_dic[instr.clbits[0]] = qb
-            
+
             mes_instr = instr.copy()
             mes_instr.qubits = [qb]
-            
+
         elif instr.op.name == "reset":
-            
+
             meas_qubit = instr.qubits[0]
-            new_data.append(Instruction(Disentangler(warning = False), [meas_qubit]))
-            
+            new_data.append(Instruction(Disentangler(warning=False), [meas_qubit]))
+
             for j in range(len(data)):
                 if meas_qubit in data[j].qubits:
                     if not is_permeable(data[j].op, [data[j].qubits.index(meas_qubit)]):
                         break
             else:
                 continue
-            
+
             qb = qc.add_qubit()
             new_data.append(Instruction(CXGate(), instr.qubits + [qb]))
             new_data.append(Instruction(CXGate(), [qb] + instr.qubits))
             new_data.append(Instruction(Disentangler(), [qb]))
-        
+
         elif isinstance(instr.op, ClControlledOperation):
-            
+
             new_qubits = []
             ctrl_state = instr.op.ctrl_state
             control_qubits = []
             for j in range(len(instr.clbits)):
-                
+
                 cb = instr.clbits[j]
-                
+
                 if cb not in cb_to_qb_dic:
                     if ctrl_state[j] == "1":
                         break
@@ -833,34 +851,39 @@ def insert_multiverse_measurements(qc):
                 else:
                     control_qubits.append(cb_to_qb_dic[cb])
             else:
-                new_data.append(Instruction(instr.op.base_op.control(len(control_qubits), 
-                                                                     ctrl_state = ctrl_state), 
-                                            control_qubits + instr.qubits))
-            
+                new_data.append(
+                    Instruction(
+                        instr.op.base_op.control(
+                            len(control_qubits), ctrl_state=ctrl_state
+                        ),
+                        control_qubits + instr.qubits,
+                    )
+                )
+
             for qb in control_qubits:
                 new_data.append(Instruction(disentangler, [qb]))
-        
+
         else:
             new_data.append(instr)
-        
-    
+
     for cb, qb in cb_to_qb_dic.items():
         new_measurements.append((qb, cb))
-        
+
     new_measurements = list(set(new_measurements))
     measurements = []
-    
+
     for qb, cb in new_measurements:
         measurements.append(Instruction(Measurement(), [qb], [cb]))
     qc.data = new_data
-    
+
     return qc, measurements
-            
+
 
 # Wrapping function for all preproccessing operations
 def circuit_preprocessor(qc):
-    
+
     from qrisp.simulator import reorder_circuit
+
     if len(qc.data) == 0:
         return qc.copy()
 
@@ -868,5 +891,5 @@ def circuit_preprocessor(qc):
     if len(qc.qubits) > 45:
         qc = insert_disentangling(qc)
     qc = group_qc(qc)
-    
+
     return reorder_circuit(qc, ["measure", "reset", "disentangle"])

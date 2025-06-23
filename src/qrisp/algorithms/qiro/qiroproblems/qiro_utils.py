@@ -1,5 +1,5 @@
 """
-\********************************************************************************
+********************************************************************************
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -13,10 +13,11 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 import numpy as np
+
 
 def find_max(single_cor, double_cor, res, solutions):
     """
@@ -31,7 +32,7 @@ def find_max(single_cor, double_cor, res, solutions):
     res : dict
         Result dictionary of QAOA optimization procedure.
     solutions : List
-        Qubits which were found to be positivel correlated, i.e., part of the problem solution.  
+        Qubits which were found to be positivel correlated, i.e., part of the problem solution.
 
     Returns
     -------
@@ -51,23 +52,27 @@ def find_max(single_cor, double_cor, res, solutions):
 
         # calc correlation expectation
         for key, val in res.items():
-            summe += val * pow(-1, int(key[int(abs(item2[0]))])) * pow(-1, int(key[int(abs(item2[1]))]))
+            summe += (
+                val
+                * pow(-1, int(key[int(abs(item2[0]))]))
+                * pow(-1, int(key[int(abs(item2[1]))]))
+            )
 
-        #find max
+        # find max
         if abs(summe) > abs(max):
             max, max_item = summe, item2
             sign = np.sign(summe)
-        
+
     for node in single_cor:
         if node in solutions:
             continue
         summe = 0
 
         for key, val in res.items():
-            summe += val * pow(-1, int(key[int(node)])) 
-            
+            summe += val * pow(-1, int(key[int(node)]))
+
         if abs(summe) > abs(max):
             max, max_item = summe, node
             sign = np.sign(summe)
-        
+
     return max_item, sign
