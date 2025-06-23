@@ -2013,6 +2013,10 @@ class QuantumCircuit:
         if phi == 0:
             return
         self.append(ops.RZGate(phi), [qubits])
+        
+    def r(self, phi, theta, qubits):
+        self.append(ops.RGate(phi, theta), [qubits])
+        
 
     def cp(self, phi, qubits_0, qubits_1):
         """

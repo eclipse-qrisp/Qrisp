@@ -108,6 +108,10 @@ def RZGate(phi=0):
     res = U3Gate(0, phi, 0, name="rz", global_phase = -phi/2)
     return res
 
+def RGate(theta=0, phi=0):
+    res = U3Gate(-theta, phi, -phi, name = "r", global_phase = 0)
+    res.params = [theta, phi]
+    return res
 
 def GPhaseGate(phi=0):
     res = U3Gate(0, 0, 0, name="gphase", global_phase = phi)
@@ -323,4 +327,5 @@ op_list = [
     SwapGate,
     U1Gate,
     IDGate,
+    RGate,
 ]
