@@ -80,13 +80,13 @@ def test_montgomery_jasp_cq():
     X = 29
     y = 21
     N = 31
-    n = 5
+    n = 10
 
     @jaspify
     def test_cq_ft():
         qy = QuantumFloat(n)
         qy[:] = y
-        m = compute_aux_radix_exponent(N, n)
+        m = compute_aux_radix_exponent(N, qy.size)
         res = cq_montgomery_multiply(X, qy, N, m, jasp_fourier_adder)
         return measure(res)
     
@@ -102,6 +102,61 @@ def test_montgomery_jasp_cq():
     
     assert test_cq_ft() == (X*y*modinv(2**m, N))%N
     assert test_cq_g() == (X*y*modinv(2**m, N))%N
+
+
+def test_montgomery_jasp_cq_inplace():
+    from qrisp import jaspify, QuantumFloat, modinv, jasp_fourier_adder, gidney_adder, measure
+    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import cq_montgomery_multiply_inplace, compute_aux_radix_exponent
+
+    X = 29
+    y = 21
+    N = 31
+    n = 5
+
+    @jaspify
+    def test_cq_ft():
+        qy = QuantumFloat(n)
+        qy[:] = y
+        m = compute_aux_radix_exponent(N, qy.size)
+        cq_montgomery_multiply_inplace(X, qy, N, m, jasp_fourier_adder)
+        return measure(qy)
+    
+    @jaspify
+    def test_cq_g():
+        qy = QuantumFloat(n)
+        qy[:] = y
+        m = compute_aux_radix_exponent(N, n)
+        cq_montgomery_multiply_inplace(X, qy, N, m, gidney_adder)
+        return measure(qy)
+    
+    m = compute_aux_radix_exponent(N, n)
+    
+    assert test_cq_ft() == (X*y*modinv(2**m, N))%N
+    assert test_cq_g() == (X*y*modinv(2**m, N))%N
+
+def test_montgomery_jasp_cq_inplace_bi():
+    from qrisp import jaspify, QuantumFloat, modinv, jasp_fourier_adder, gidney_adder, measure, BigInteger
+    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import cq_montgomery_multiply_inplace_bi, compute_aux_radix_exponent
+    import jax.numpy as jnp
+
+    X_int = 29
+    y = 21
+    N_int = 31
+    n = 5
+    
+    @jaspify
+    def test_cq_g():
+        qy = QuantumFloat(n)
+        qy[:] = y
+        X = BigInteger.from_int(X_int, 1)
+        N = BigInteger.from_int(N_int, 1)
+        m = (jnp.ceil(jnp.log2(N()))).astype(jnp.int64)
+        cq_montgomery_multiply_inplace_bi(X, qy, N, m, gidney_adder)
+        return measure(qy)
+    
+    m = compute_aux_radix_exponent(N_int, n)
+    
+    assert test_cq_g() == (X_int*y*modinv(2**m, N_int))%N_int
 
 def test_montgomery_not_jasp_cq():
     from qrisp import QuantumFloat, modinv, gidney_adder, multi_measurement
@@ -122,3 +177,4 @@ def test_montgomery_not_jasp_cq():
     m = compute_aux_radix_exponent(N, n)
     
     assert test_cq_g()[((X*y*modinv(2**m, N))%N,)] == 1.0
+    assert test_cq_g() == (X*y*modinv(2**m, N))%N
