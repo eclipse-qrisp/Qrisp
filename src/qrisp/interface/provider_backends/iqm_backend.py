@@ -118,4 +118,4 @@ def IQMBackend(api_token, device_instance, compilation_options = None):
 
         return new_counts
 
-    return VirtualBackend(run_func_iqm, port=port)
+    return VirtualBackend(run_func_iqm)
