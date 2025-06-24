@@ -913,14 +913,14 @@ def ry(phi, qubits):
 
 def rz(phi, qubits):
     """
-    Applies an RY gate.
+    Applies an RZ gate.
 
     Parameters
     ----------
     phi : float or sympy.Symbol
         The angle parameter.
     qubits : Qubit or list[Qubit] or QuantumVariable
-        The Qubit to perform the RY gate on.
+        The Qubit to perform the RZ gate on.
 
     """
 
@@ -936,7 +936,7 @@ def rz(phi, qubits):
 
 def crz(phi, qubits_0, qubits_1):
     """
-    Applies controled RZ gate
+    Applies controlled RZ gate
 
     Parameters
     ----------
