@@ -913,14 +913,14 @@ def ry(phi, qubits):
 
 def rz(phi, qubits):
     """
-    Applies an RY gate.
+    Applies an RZ gate.
 
     Parameters
     ----------
     phi : float or sympy.Symbol
         The angle parameter.
     qubits : Qubit or list[Qubit] or QuantumVariable
-        The Qubit to perform the RY gate on.
+        The Qubit to perform the RZ gate on.
 
     """
 
@@ -936,7 +936,7 @@ def rz(phi, qubits):
 
 def crz(phi, qubits_0, qubits_1):
     """
-    Applies controled RZ gate
+    Applies controlled RZ gate
 
     Parameters
     ----------
@@ -1097,8 +1097,6 @@ def rzz(phi, qubits_0, qubits_1):
     ----------
     phi : float or sympy.Symbol
         The phase to apply.
-    beta : float or sympy.Symbol
-        The other angle parameter.
     qubits_0 : Qubit or list[Qubit] or QuantumVariable
         The first argument to perform the RZZ gate one.
     qubits_1 : Qubit or list[Qubit] or QuantumVariable
@@ -1122,8 +1120,6 @@ def rxx(phi, qubits_0, qubits_1):
     ----------
     phi : float or sympy.Symbol
         The phase to apply.
-    beta : float or sympy.Symbol
-        The other angle parameter.
     qubits_0 : Qubit or list[Qubit] or QuantumVariable
         The first argument to perform the RXX gate one.
     qubits_1 : Qubit or list[Qubit] or QuantumVariable
@@ -1134,10 +1130,8 @@ def rxx(phi, qubits_0, qubits_1):
         rxx_gate = std_ops.RXXGate(sympy.Symbol("alpha"))
         append_operation(rxx_gate, [qubits_0, qubits_1], param_tracers=[phi])
     else:
-        rxx_gate = std_ops.RZZGate(phi)
+        rxx_gate = std_ops.RXXGate(phi)
         append_operation(rxx_gate, [qubits_0, qubits_1])
-
-    append_operation(rxx_gate, [qubits_0, qubits_1])
     return qubits_0, qubits_1
 
 
