@@ -251,6 +251,8 @@ def create_qiskit_instruction(op, params=[]):
         qiskit_ins = qsk_gates.TGate().inverse()
     elif op.name == "u3":
         qiskit_ins = qsk_gates.U3Gate(*params)
+    elif op.name == "r":
+        qiskit_ins = qsk_gates.RGate(*params)
     elif op.name == "id":
         qiskit_ins = qsk_gates.IGate()
     elif op.name == "reset":
