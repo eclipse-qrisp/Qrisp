@@ -23,4 +23,5 @@ Methods
    QubitOperator.to_sparse_matrix
    QubitOperator.to_pauli
    QubitOperator.trotterization
+   QubitOperator.unitaries
    

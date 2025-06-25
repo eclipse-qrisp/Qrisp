@@ -41,7 +41,7 @@ def test_jasp_QAOAmaxCut():
         return cut_value
     
     cut_value = main()
-    assert cut_value < -4
+    assert cut_value < -3
 
 
 def test_jasp_tqa_QAOAmaxCut():

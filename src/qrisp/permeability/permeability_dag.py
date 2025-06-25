@@ -499,7 +499,7 @@ def dag_from_qc(dag, qc, remove_artificials=False):
             continue
 
         # This treats the case of a general Instruction
-        elif instr.op.name != "qb_dealloc":
+        elif instr.op.name != "qb_dealloc" and "c_if" not in instr.op.name:
             node = InstructionNode(instr)
 
             # Get the permeability dictionary with the appropriate function
@@ -601,6 +601,11 @@ def dag_from_qc(dag, qc, remove_artificials=False):
 
             # The value layer of the node is the highest value layer of all qubits
             node.value_layer = max([value_layer[qb] for qb in instr.qubits])
+            
+        for clbit in instr.clbits:
+            if clbit in recent_node_dic:
+                dag.add_edge(recent_node_dic[clbit], node, edge_type = "anti_dependency")
+            recent_node_dic[clbit] = node
 
     # Save the original_qc
     dag.original_qc = qc
