@@ -19,7 +19,7 @@
 # -*- coding: utf-8 -*-
 
 from qrisp.simulator.bi_arrays import DenseBiArray, SparseBiArray, tensordot, BiArray
-from qrisp.simulator.numerics_config import float_tresh, xp
+from qrisp.simulator.numerics_config import float_thresh, xp
 
 # tensordot = xp.tensordot
 
@@ -75,7 +75,7 @@ class TensorFactor:
         import numpy as np
 
         if matrix.size >= 2**6 and matrix.dtype != np.dtype("O"):
-            matrix = matrix * (np.abs(matrix) > float_tresh)
+            matrix = matrix * (np.abs(matrix) > float_thresh)
 
         # Convert matrix to BiArray
         matrix = DenseBiArray(matrix)
@@ -140,7 +140,7 @@ class TensorFactor:
         new_qubit_list.pop(0)
 
         # This treats the case that both measurement probabilities are non-zero
-        if p_0 > float_tresh and p_1 > float_tresh:
+        if p_0 > float_thresh and p_1 > float_thresh:
             # Normalize the new statevector arrays
             normalization = 1 / (p_0**0.5)
             lower_half.data *= normalization
@@ -155,7 +155,7 @@ class TensorFactor:
             tensor_factor_1 = TensorFactor(list(new_qubit_list), upper_half)
 
         # This treats the cases that one of the outcomes has 0 probability
-        elif p_0 < float_tresh:
+        elif p_0 < float_thresh:
             p_0 = 0
             p_1 = 1
             tensor_factor_0 = None

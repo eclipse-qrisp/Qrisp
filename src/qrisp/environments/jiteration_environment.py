@@ -220,7 +220,7 @@ def iteration_env_evaluator(eqn, context_dic):
     # We now prepare the "init_val" keyword of the loop.
 
     # For that we extract the invalues for the first iteration
-    # Note that the treshold is given as the last argument
+    # Note that the threshold is given as the last argument
     init_val = [context_dic[x] for x in iteration_1_eqn.invars]
 
     # And evaluate the loop primitive.

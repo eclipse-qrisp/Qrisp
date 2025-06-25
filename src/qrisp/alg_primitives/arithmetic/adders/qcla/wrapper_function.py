@@ -73,7 +73,7 @@ def qcla(a, b, radix_base=2, radix_exponent=1, t_depth_reduction=True, ctrl=None
     radix_base : integer, optional
         The radix of the Brent-Kung tree. The default is 2.
     radix_exponent : integer, optional
-        The cancellation treshold for the Brent-Kung recursion. The adder-Radix is then
+        The cancellation threshold for the Brent-Kung recursion. The adder-Radix is then
         $R = r^k$. The default is 1.
     t_depth_reduction : bool, optional
         A compilation option that reduces T-depth but in turn weakens CNOT depth
