@@ -499,7 +499,7 @@ def dag_from_qc(dag, qc, remove_artificials=False):
             continue
 
         # This treats the case of a general Instruction
-        elif instr.op.name != "qb_dealloc":
+        elif instr.op.name != "qb_dealloc" and "c_if" not in instr.op.name:
             node = InstructionNode(instr)
 
             # Get the permeability dictionary with the appropriate function
