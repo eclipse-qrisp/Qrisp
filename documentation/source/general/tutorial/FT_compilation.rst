@@ -21,7 +21,7 @@ The first thing you need to know is how to *measure* these quantities for your Q
 
 For the T-gate count this is relatively similar to the way it is done for the NISQ case. To demonstrate, we compile a :ref:`QuantumCircuit` and measure the T-count.
 
->>> from qrisp import QuantumVariable, x, cx, t, rz
+>>> from qrisp import QuantumVariable, QuantumBool, x, cx, t, rz
 >>> a = QuantumVariable(2)
 >>> b = QuantumVariable(2)
 >>> x(a[0])
@@ -122,7 +122,7 @@ Another important important leverage Qrisp offers for fault-tolerant compilation
 
 >>> from qrisp import mcx
 >>> ctrl = QuantumVariable(2)
->>> target = QuantumVariable(1)
+>>> target = QuantumBool()
 >>> mcx(ctrl, target)
 >>> ctrl.qs.compile().t_depth()
 4
@@ -130,7 +130,7 @@ Another important important leverage Qrisp offers for fault-tolerant compilation
 With the ``jones`` method this is reduced significantly:
 
 >>> ctrl = QuantumVariable(2)
->>> target = QuantumVariable(1)
+>>> target = QuantumBool()
 >>> mcx(ctrl, target, method = "jones")
 >>> ctrl.qs.compile(compile_mcm = True).t_depth()
 1
@@ -143,7 +143,7 @@ but the uncomputation part has a T-depth of 0! Basically this implies **another*
 In Qrisp, you can perform the computation as you normally would.
 
 >>> ctrl = QuantumVariable(2)
->>> target = QuantumVariable(1)
+>>> target = QuantumBool()
 >>> mcx(ctrl, target, method = "gidney")
 
 To call the uncomputation part, you can use the :meth:`uncompute <qrisp.QuantumVariable.uncompute>` method or call it within an :ref:`InversionEnvironment`.
@@ -161,7 +161,7 @@ Note that the T-depth yields 2 here, but the delay in many applications will sti
 >>> ctrl = QuantumVariable(2)
 >>> t(ctrl)
 >>> t(ctrl)
->>> target = QuantumVariable(1)
+>>> target = QuantumBool()
 >>> mcx(ctrl, target, method = "gidney")
 >>> print(ctrl.qs.compile(compile_mcm = True).transpile())
           ┌───┐┌───┐          ┌───┐┌─────┐       ┌───┐               
