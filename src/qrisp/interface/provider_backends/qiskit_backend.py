@@ -94,8 +94,6 @@ class QiskitBackend(VirtualBackend):
                 counts_string = re.sub(r"\W", "", key)
                 result_dic[counts_string] = qiskit_result[key]
 
-            print(result_dic)
-
             return result_dic
 
         # Call VirtualBackend constructor
