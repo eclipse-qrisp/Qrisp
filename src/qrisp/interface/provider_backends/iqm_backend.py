@@ -45,7 +45,7 @@ def IQMBackend(api_token, device_instance, compilation_options = None):
     >>> a = QuantumFloat(2)
     >>> a[:] = 2
     >>> b = a*a
-    >>> b.get_measurement(backend = qrisp_garnet, shots=1000)
+    >>> b.get_measurement(backend = qrisp_garnet, shots = 1000)
     {4: 0.548,
      5: 0.082,
      0: 0.063,
@@ -72,7 +72,7 @@ def IQMBackend(api_token, device_instance, compilation_options = None):
 
     if not isinstance(device_instance, str):
         raise TypeError(
-            "Please provide a device_instance as a string. You can retrieve a list of available devices id on the IQM Resonance website."
+            "Please provide a device_instance as a string. You can retrieve a list of available devices on the IQM Resonance website."
         )
 
     try:

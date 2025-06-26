@@ -27,30 +27,47 @@ class AQTBackend(VirtualBackend):
 
     Parameters
     ----------
-    backend : AQT backend object, optional
-        An AQT backend object, which runs QuantumCircuits. The default is
-        ``provider.get_backend("offline_simulator_no_noise")``.
+    api_token : str
+        An API token for `AQT ARNICA <https://www.aqt.eu/products/arnica/>`_.
+    device_instance : str
+        The device instance of the AQT backend such as "ibex" or "simulator_noise".
+        For an up-to-date list, see the AQT ARNICA website.
+    workspace : str 
+        The workspace for a company or project.
 
     Examples
     --------
 
-    We evaluate a QuantumFloat multiplication on the noiseless offline-simulator.
+    We evaluate a QuantumFloat multiplication on the 12-qubit AQT IBEX.
 
     >>> from qrisp import QuantumFloat
     >>> from qrisp.interface import AQTBackend
-    >>> from qiskit_aqt_provider import AQTProvider
-    >>> provider = AQTProvider("ACCESS_TOKEN")
-    >>> example_backend = AQTBackend(backend = provider.get_backend("offline_simulator_no_noise"))
-    >>> # qrisp_ibex = AQTBackend(backend = provider.get_backend(name = "ibex", workspace = "[YOUR_COMPANY_OR_PROJECT_NAME]"))
-    >>> qf = QuantumFloat(4)
-    >>> qf[:] = 3
-    >>> res = qf*qf
-    >>> res.get_measurement(backend = example_backend)
-    {9: 1.0}
+    >>> # qrisp_ibex = AQTBackend(api_token="YOUR_AQT_ARNICA_TOKEN", device_instance = "simulator_noise", workspace="aqt_simulators")
+    >>> qrisp_ibex = AQTBackend(api_token="YOUR_AQT_ARNICA_TOKEN", device_instance = "ibex", workspace="YOUR_COMPANY_OR_PROJECT_NAME")
+    >>> a = QuantumFloat(2)
+    >>> a[:] = 2
+    >>> b = a*a
+    >>> a.get_measurement(backend = qrisp_ibex, shots = 100)
+    {4: 1.0}
 
     """
 
-    def __init__(self, backend=None):
+    def __init__(self, api_token, device_instance, workspace):
+
+        if not isinstance(api_token, str):
+            raise TypeError(
+                "api_token must be a string. You can create an API token on the AQT ARNICA website."
+            )
+        
+        if not isinstance(workspace, str):
+            raise TypeError(
+                "workspace must be a string."
+            )
+
+        if not isinstance(device_instance, str):
+            raise TypeError(
+                "Please provide a device_instance as a string. You can retrieve a list of available devices on the AQT ARNICA website."
+            )
 
         try:
             from qiskit_aqt_provider import AQTProvider
@@ -59,11 +76,14 @@ class AQTBackend(VirtualBackend):
             raise ImportError(
                 "Please install qiskit-aqt-provider to use the AQTBackend. You can do this by running `pip install qiskit-aqt-provider`."
             )
+        
+        provider = AQTProvider(api_token)
+        backend = provider.get_backend(name = device_instance, workspace=workspace)
 
-        if backend is None:
+        #if backend is None:
             # Any token (even invalid) gives access to the offline simulator backends.
-            provider = AQTProvider("ACCESS_TOKEN")
-            backend = provider.get_backend("offline_simulator_no_noise")
+        #    provider = AQTProvider("ACCESS_TOKEN")
+        #    backend = provider.get_backend("offline_simulator_no_noise")
 
         # Create the run method
         def run(qasm_str, shots=None, token=""):
