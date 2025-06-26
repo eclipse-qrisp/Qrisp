@@ -54,9 +54,18 @@ def int_encoder(qv, encoding_number):
 
     else:
 
-        for i in jrange(qv.size):
-            with control(encoding_number & (1 << i)):
-                x(qv[i])
+        from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
+                BigInteger
+            )
+        
+        if isinstance(encoding_number, BigInteger):
+            for i in jrange(qv.size):
+                with control(encoding_number.get_bit(i)):
+                    x(qv[i])
+        else:
+            for i in jrange(qv.size):
+                with control(encoding_number & (1 << i)):
+                    x(qv[i])
 
         # def true_fun(qc, cond, qb):
         #     tr_qs.abs_qc = qc

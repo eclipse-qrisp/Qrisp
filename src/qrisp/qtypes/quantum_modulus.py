@@ -18,6 +18,7 @@
 
 import numpy as np
 
+from qrisp import check_for_tracing_mode
 from qrisp.qtypes.quantum_float import QuantumFloat
 from qrisp.misc import gate_wrap
 from qrisp.core import QuantumVariable
@@ -171,22 +172,50 @@ class QuantumModulus(QuantumFloat):
 
     def __init__(self, modulus, inpl_adder=None, qs=None):
 
-        self.m = int(np.ceil(np.log2(modulus)))
+        if check_for_tracing_mode():
+            from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import compute_aux_radix_exponent
+            
+            from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
+                BigInteger
+            )
+            self.modulus = modulus
+            if isinstance(modulus, BigInteger):
+                self.m = modulus.digits.shape[0]*32
+            else:
+                self.m = compute_aux_radix_exponent(modulus, 0)
 
-        self.modulus = modulus
+            QuantumFloat.__init__(self, msize=self.m, qs=qs)
+            if inpl_adder is None:
+                from qrisp.alg_primitives.arithmetic import gidney_adder
+                inpl_adder = gidney_adder
 
-        QuantumFloat.__init__(self, msize=self.m, qs=qs)
+        else:
+            self.modulus = modulus
+            self.m = int(np.ceil(np.log2(modulus)))
 
-        if inpl_adder is None:
-            from qrisp.alg_primitives.arithmetic import fourier_adder
+            QuantumFloat.__init__(self, msize=self.m, qs=qs)
 
-            inpl_adder = fourier_adder
+            if inpl_adder is None:
+                from qrisp.alg_primitives.arithmetic import fourier_adder
 
-        self.inpl_adder = inpl_adder
+                inpl_adder = fourier_adder
 
-        self.m = 0
+            self.inpl_adder = inpl_adder
+
+            self.m = 0
 
     def decoder(self, i):
+        if check_for_tracing_mode():
+            from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
+                BigInteger, bi_montgomery_decode
+            )
+
+            if isinstance(i, BigInteger):
+                n = i.digits.shape[0]
+                R = BigInteger.from_int(1, n) << self.m
+                return bi_montgomery_decode(i, R, self.modulus)
+
+        
 
         from qrisp.alg_primitives.arithmetic.modular_arithmetic import (
             montgomery_decoder,
@@ -197,19 +226,33 @@ class QuantumModulus(QuantumFloat):
         return montgomery_decoder(i, 2**self.m, self.modulus)
 
     def encoder(self, i):
-        if i >= self.modulus:
-            raise Exception(
-                "Tried to encode a number into QuantumModulus, which is greator or equal to the modulus"
+        if check_for_tracing_mode():
+        
+            from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
+                BigInteger, bi_montgomery_encode
             )
-        if i < 0:
-            raise Exception("Tried to encode a negative number into QuantumModulus")
+
+            if isinstance(i, BigInteger):
+                n = i.digits.shape[0]
+                R = BigInteger.from_int(1, n) << self.m
+
+                return bi_montgomery_encode(i, R, self.modulus)
+        
+        else:
+
+            if i >= self.modulus:
+                raise Exception(
+                    "Tried to encode a number into QuantumModulus, which is greator or equal to the modulus"
+                )
+            if i < 0:
+                raise Exception("Tried to encode a negative number into QuantumModulus")
 
         from qrisp.alg_primitives.arithmetic.modular_arithmetic import (
             montgomery_encoder,
         )
 
-        if i >= self.modulus:  # or (np.gcd(i, self.modulus) != 1 and i != 0):
-            return np.nan
+        # if i >= self.modulus:  # or (np.gcd(i, self.modulus) != 1 and i != 0):
+        #     return np.nan
 
         return montgomery_encoder(i, 2**self.m, self.modulus)
 
