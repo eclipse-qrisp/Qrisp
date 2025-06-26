@@ -47,7 +47,7 @@ class AQTBackend(VirtualBackend):
     >>> a = QuantumFloat(2)
     >>> a[:] = 2
     >>> b = a*a
-    >>> a.get_measurement(backend = qrisp_ibex, shots = 100)
+    >>> b.get_measurement(backend = qrisp_ibex, shots = 100)
     {4: 1.0}
 
     """
@@ -118,12 +118,8 @@ class AQTBackend(VirtualBackend):
             # Format to fit the qrisp result format
             result_dic = {}
 
-            len_qc = len(new_qiskit_qc.qubits) # number of qubits
             for item in list(quasi_dist.keys()):
-
-                # transform to binary, fill to given length, and then reverse 
-                #new_key = bin(item)[2:].zfill(len_qc)[::-1] 
-                new_key = bin(item)[2:].zfill(len_qc) 
+                new_key = bin(item)[2:]
                 result_dic.setdefault(new_key, quasi_dist[item])
 
             return result_dic
