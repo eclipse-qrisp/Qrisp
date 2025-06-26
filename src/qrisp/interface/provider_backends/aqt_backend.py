@@ -25,6 +25,7 @@ class AQTBackend(VirtualBackend):
     This class instantiates a VirtualBackend using an AQT backend.
     This allows easy access to AQT backends through the qrisp interface.
 
+    
     Parameters
     ----------
     api_token : str
@@ -38,7 +39,7 @@ class AQTBackend(VirtualBackend):
     Examples
     --------
 
-    We evaluate a QuantumFloat multiplication on the 12-qubit AQT IBEX.
+    We evaluate a :ref:`QuantumFloat` multiplication on the 12-qubit AQT IBEX.
 
     >>> from qrisp import QuantumFloat
     >>> from qrisp.interface import AQTBackend
@@ -48,7 +49,20 @@ class AQTBackend(VirtualBackend):
     >>> a[:] = 2
     >>> b = a*a
     >>> b.get_measurement(backend = qrisp_ibex, shots = 100)
-    {4: 1.0}
+    {4: 0.49,
+    8: 0.11,
+    2: 0.08,
+    0: 0.06,
+    14: 0.06,
+    5: 0.04,
+    12: 0.04,
+    13: 0.03,
+    3: 0.02,
+    10: 0.02,
+    15: 0.02,
+    6: 0.01,
+    7: 0.01,
+    11: 0.01}
 
     """
 
@@ -88,7 +102,7 @@ class AQTBackend(VirtualBackend):
         # Create the run method
         def run(qasm_str, shots=None, token=""):
             if shots is None:
-                shots = 1000
+                shots = 100
 
             # Convert to qiskit
             qiskit_qc = qiskit.QuantumCircuit.from_qasm_str(qasm_str)

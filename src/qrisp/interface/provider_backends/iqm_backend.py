@@ -31,13 +31,13 @@ def IQMBackend(api_token, device_instance, compilation_options = None):
     device_instance : str
         The device instance of the IQM backend such as "garnet".
         For an up-to-date list, see the IQM Resonance website.
-    compilation_options: `CircuitCompilationOptions <https://docs.meetiqm.com/iqm-client/api/iqm.iqm_client.models.CircuitCompilationOptions.html>`.
+    compilation_options: `CircuitCompilationOptions <https://docs.meetiqm.com/iqm-client/api/iqm.iqm_client.models.CircuitCompilationOptions.html>`_.
         An object to specify several options regarding pulse-level compilation.
 
     Examples
     --------
 
-    We evaluate a QuantumFloat multiplication on the 20-qubit IQM Garnet.
+    We evaluate a :ref:`QuantumFloat` multiplication on the 20-qubit IQM Garnet.
 
     >>> from qrisp.interface import IQMBackend
     >>> qrisp_garnet = IQMBackend(api_token = "YOUR_IQM_RESONANCE_TOKEN", device_instance = "garnet")
