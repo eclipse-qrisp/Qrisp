@@ -30,8 +30,6 @@ class AQTBackend(VirtualBackend):
     backend : AQT backend object, optional
         An AQT backend object, which runs QuantumCircuits. The default is
         ``provider.get_backend("offline_simulator_no_noise")``.
-    port : int, optional
-        The port to listen. The default is None.
 
     Examples
     --------
@@ -52,7 +50,7 @@ class AQTBackend(VirtualBackend):
 
     """
 
-    def __init__(self, backend=None, port=None):
+    def __init__(self, backend=None):
 
         try:
             from qiskit_aqt_provider import AQTProvider
@@ -116,4 +114,4 @@ class AQTBackend(VirtualBackend):
         else:
             name = backend.name()
 
-        super().__init__(run, port=port)
+        super().__init__(run)
