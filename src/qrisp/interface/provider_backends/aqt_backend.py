@@ -22,10 +22,10 @@ from qrisp.interface.virtual_backend import VirtualBackend
 
 class AQTBackend(VirtualBackend):
     """
-    This class instantiates a VirtualBackend using an AQT backend.
+    This class instantiates an AQTBackend based on :ref:`VirtualBackend` using Qiskit.
     This allows easy access to AQT backends through the qrisp interface.
 
-    
+
     Parameters
     ----------
     api_token : str
@@ -92,12 +92,7 @@ class AQTBackend(VirtualBackend):
             )
         
         provider = AQTProvider(api_token)
-        backend = provider.get_backend(name = device_instance, workspace=workspace)
-
-        #if backend is None:
-            # Any token (even invalid) gives access to the offline simulator backends.
-        #    provider = AQTProvider("ACCESS_TOKEN")
-        #    backend = provider.get_backend("offline_simulator_no_noise")
+        backend = provider.get_backend(name = device_instance, workspace = workspace)
 
         # Create the run method
         def run(qasm_str, shots=None, token=""):
@@ -117,7 +112,6 @@ class AQTBackend(VirtualBackend):
                 )
             
             # Instantiate a sampler on the execution backend.
-            #from qiskit_aqt_provider.primitives import AQTSampler
             sampler = AQTSampler(backend)
 
             # Optional: set the transpiler's optimization level.

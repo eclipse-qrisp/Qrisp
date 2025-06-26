@@ -20,7 +20,7 @@ from qrisp.interface import VirtualBackend
 
 def IQMBackend(api_token, device_instance, compilation_options = None):
     """
-    This function instantiates an IQMBackend based on VirtualBackend
+    This function instantiates an IQMBackend based on :ref:`VirtualBackend`
     using Qiskit and Qiskit-on-IQM.
 
 
