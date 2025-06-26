@@ -22,7 +22,7 @@ from qrisp.interface.virtual_backend import VirtualBackend
 
 class AQTBackend(VirtualBackend):
     """
-    This class instantiates an AQTBackend based on :ref:`VirtualBackend` using Qiskit.
+    This class instantiates a :ref:`VirtualBackend` using an AQT backend. 
     This allows easy access to AQT backends through the qrisp interface.
 
 
