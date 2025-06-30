@@ -375,6 +375,7 @@ By the end of this tutorial, you'll have a solid foundation of our high-level fr
    H2
    Jasp
    HHL
+   LCU
    Shor
    FT_compilation
    TSP
