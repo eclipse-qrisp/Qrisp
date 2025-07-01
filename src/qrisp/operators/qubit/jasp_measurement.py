@@ -127,11 +127,11 @@ def get_jasp_measurement(
         temp_meas_ops = []
         temp_coeff = []
         for term, coeff in meas_op.terms_dict.items():
-            temp_meas_ops.append(term.serialize())
-            temp_coeff.append(coeff)
+            temp_meas_ops.append(jnp.array(term.serialize(), dtype=jnp.int64))
+            temp_coeff.append(jnp.real(coeff))
 
-        meas_coeffs.append(temp_coeff)
-        meas_ops.append(temp_meas_ops)
+        meas_coeffs.append(jnp.array(temp_coeff, dtype=jnp.float64))
+        meas_ops.append(jnp.array(temp_meas_ops))
 
     expectation = jasp_evaluate_expectation_jitted(samples, meas_ops, meas_coeffs)
     return expectation
@@ -144,27 +144,11 @@ def jasp_evaluate_expectation_jitted(samples, operators, coefficients):
 
     """
 
-    def body_fun(i, val):
-        expectation, N, op, samples, coefficient = val
-        expectation += (
-            1
-            / N
-            * jasp_evaluate_observable_jitted(op, samples[i])
-            * jnp.real(coefficient)
-        )
-        return expectation, N, op, samples, coefficient
-
     expectation = 0
 
-    for index1, ops in enumerate(operators):
-        for index2, op in enumerate(ops):
-            N = len(samples[index1])
-            expectation, _, _, _, _ = fori_loop(
-                0,
-                N,
-                body_fun,
-                (expectation, N, op, samples[index1], coefficients[index1][index2]),
-            )
+    # Evaluate and sum intermediate results for each measurement setting
+    for index, ops in enumerate(operators):
+        expectation += sum_over_observables_and_samples(ops, samples[index], coefficients[index])
 
     return expectation
 
@@ -177,27 +161,13 @@ def jasp_evaluate_observable_jitted(observable: tuple, x: int):
 
     # The observable is given as tuple, containing four integers.
     # To understand the meaning of these integers check QubitTerm.serialize.
-
+    #print(observable)
     # Unwrap the tuple
     z_int, AND_bits, AND_ctrl_state, contains_ladder = observable
 
     # Compute whether the sign should be sign flipped based on the Z operators
     sign_flip_int = z_int & x
-    sign_flip = 0
-
-    def cond_fun(state):
-        sign_flip_int, sign_flip = state
-        return sign_flip_int > 0
-
-    def body_fun(state):
-        sign_flip_int, sign_flip = state
-        sign_flip += sign_flip_int & 1
-        sign_flip_int >>= 1
-        return sign_flip_int, sign_flip
-
-    sign_flip_int, sign_flip = while_loop(
-        cond_fun, body_fun, (sign_flip_int, sign_flip)
-    )
+    sign_flip = jax.lax.population_count(sign_flip_int)
 
     # If there is a ladder operator in the term, we need to half the energy
     # because we want to measure (|110><110| - |111><111|)/2
@@ -210,6 +180,25 @@ def jasp_evaluate_observable_jitted(observable: tuple, x: int):
     # If all bits are in the 0 state the AND is true.
     return (
         prefactor
-        * (-1) ** sign_flip
+        * jnp.where(sign_flip % 2 == 0, 1, -1)
         * jnp.int64((AND_bits == 0) | (corrected_x & AND_bits == 0))
     )
+
+
+@jax.jit
+def sum_over_observables_and_samples(observables, x_values, coefficients):
+    
+    def body_fun(i, val):
+        sum_val = val
+        obs = observables[i]
+        c = coefficients[i]
+        results = jax.vmap(jasp_evaluate_observable_jitted, in_axes=(None, 0))(obs, x_values)
+        return sum_val + c * jnp.sum(results)
+
+    total_sum = jax.lax.fori_loop(
+        0,
+        observables.shape[0],
+        body_fun,
+        jnp.float64(0),
+    )
+    return total_sum
