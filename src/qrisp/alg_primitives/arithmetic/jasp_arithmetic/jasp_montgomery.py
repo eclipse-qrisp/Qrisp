@@ -16,25 +16,28 @@
 ********************************************************************************
 """
 
+from typing import Union
 from qrisp.alg_primitives.arithmetic.adders.gidney import gidney_adder
 from qrisp.qtypes import QuantumFloat
 from qrisp.jasp import jrange, check_for_tracing_mode
-from qrisp.environments import control, invert
-from qrisp.alg_primitives.arithmetic.modular_arithmetic.mod_tools import modinv
-from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger, bi_modinv
-from qrisp.core import swap, cx
+from qrisp.environments import control, invert, custom_control
+# from qrisp.alg_primitives.arithmetic.modular_arithmetic.mod_tools import modinv
+# from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger, bi_modinv
+from .jasp_bigintiger import BigInteger
+from .jasp_mod_tools import *
+from qrisp.core import swap, cx, x
 import jax.numpy as jnp
 import jax
 import numpy as np
 
-def compute_aux_radix_exponent(modulos, n):
+def compute_aux_radix_exponent(modulus, n=0):
     """
     Compute the exponent of the auxiliary radix for the montgomery reduction.
 
     Parameters
     ----------
-    modulos : int
-        The original modulos
+    modulus : int
+        The original modulus
     n : int
         The qubit size of the QuantumFloat
         
@@ -44,16 +47,13 @@ def compute_aux_radix_exponent(modulos, n):
 
     """
     #if check_for_tracing_mode():
-    #    return (jnp.ceil(jnp.log2((modulos - 1) ** 2) + 1) - n).astype(jnp.int64)
+    #    return (jnp.ceil(jnp.log2((modulus - 1) ** 2) + 1) - n).astype(jnp.int64)
     #else:
-    #    return int(np.ceil(np.log2((modulos - 1) ** 2) + 1) - n)
+    #    return int(np.ceil(np.log2((modulus - 1) ** 2) + 1) - n)
 
-    if check_for_tracing_mode():
-        return (jnp.ceil(jnp.log2(modulos))).astype(jnp.int64)
-    else:
-        return int(np.ceil(np.log2(modulos)))
+    return smallest_power_of_two(modulus)
 
-def q_montgomery_reduction(qf: QuantumFloat, N: int, m: int, inpl_adder=gidney_adder):
+def q_montgomery_reduction(qf: QuantumFloat, N: Union[int, BigInteger], m: int, inpl_adder=gidney_adder):
     """
     Perform the montgomery reduction of a QuantumFloat in-place
 
@@ -66,7 +66,7 @@ def q_montgomery_reduction(qf: QuantumFloat, N: int, m: int, inpl_adder=gidney_a
     qf : QuantumFloat
         The QuantumFloat of which to compute the montgomery reduction.
     N : int
-        Original modulos of the montgomery reduction.
+        Original modulus of the montgomery reduction.
     m : int
         Exponent $m$ of the auxiliary radix $R=2^m$, see ``compute_aux_radix_exponent``.
     inpl_adder : Callable
@@ -88,53 +88,7 @@ def q_montgomery_reduction(qf: QuantumFloat, N: int, m: int, inpl_adder=gidney_a
     #Estimation stage
     for j in xrange(m):
         with control(qf[j]):
-            inpl_adder(-(N-1)//2, qf[j+1:])
-
-
-    #Correction stage
-    with control(qf[-1]):
-        inpl_adder(N, qf[m:-1])
-    
-    for i in xrange(get_size(qf)-m-+1):
-        swap(qf[-1-i], qf[-1-i-1])
-    cx(qf[m+1], qf[m])
-
-def q_montgomery_reduction_bi(qf: QuantumFloat, N: BigInteger, m: int, inpl_adder=gidney_adder):
-    """
-    Perform the montgomery reduction of a QuantumFloat in-place
-
-    ::
-
-        qf = qf*2**(-m) mod N
-
-    Parameters
-    ----------
-    qf : QuantumFloat
-        The QuantumFloat of which to compute the montgomery reduction.
-    N : int
-        Original modulos of the montgomery reduction.
-    m : int
-        Exponent $m$ of the auxiliary radix $R=2^m$, see ``compute_aux_radix_exponent``.
-    inpl_adder : Callable
-        In-place adder to use during computation, defaults to ``gidney_adder``.
-        
-    """
-      
-    if check_for_tracing_mode():
-        xrange = jrange
-        get_size = lambda arg: arg.size
-    else:
-        xrange = range
-        def get_size(arg) -> int:
-            if isinstance(arg, list):
-                return len(arg)
-            else:
-                return arg.size
-
-    #Estimation stage
-    for j in xrange(m):
-        with control(qf[j]):
-            with invert():
+            with invert(): #TODO: No invertt
                 inpl_adder((N-1) >> 1, qf[j+1:])
 
 
@@ -146,125 +100,10 @@ def q_montgomery_reduction_bi(qf: QuantumFloat, N: BigInteger, m: int, inpl_adde
         swap(qf[-1-i], qf[-1-i-1])
     cx(qf[m+1], qf[m])
 
-def cq_montgomery_multiply_inplace_bi(X: BigInteger, y: QuantumFloat, N: BigInteger, m: int, inpl_adder=gidney_adder):
-    """
-    Perform the montgomery product of an integer and a QuantumFloat in-place
-
-    ::
-
-        X*y*2**(-m) mod N
-
-    Parameters
-    ----------
-    X : int
-        Integer factor of the montgomery product.
-    y : QuantumFloat
-        Quantum factor of the montgomery product.
-    N : int
-        Original modulos of the montgomery reduction.
-    m : int
-        Exponent $m$ of the auxiliary radix $R=2^m$, see ``compute_aux_radix_exponent``.
-    inpl_adder : Callable
-        In-place adder to use during computation
-    """
-
-    if check_for_tracing_mode():
-        xrange = jrange
-        get_size = lambda arg: arg.size
-    else:
-        xrange = range
-        def get_size(arg) -> int:
-            if isinstance(arg, list):
-                return len(arg)
-            else:
-                return arg.size
-    n = get_size(y)
-    res = QuantumFloat(n)
-    aux = QuantumFloat(m+1)
-    wqf = aux[:] + res[:]
-
-
-    # Multiplication
-
-    @jax.jit
-    def compute_val(X, j, N):
-        return (X << j)%N
-    
-    for i in xrange(n):
-        j = n - i - 1
-        with control(y[j]):
-            #inpl_adder((2**j*X)%N, wqf)
-            #inpl_adder((X << j)%N, wqf)
-            inpl_adder(compute_val(X, j, N), wqf)
-
-    # Reduction
-    q_montgomery_reduction_bi(wqf, N, m, inpl_adder=inpl_adder)
-
-    # Uncomputation
-
-    @jax.jit
-    def compute_val(N, m):
-        return bi_modinv(N, BigInteger.from_int(1, N.digits.shape[0]) << m+1)
-    N1 = compute_val(N, m)
-
-    @jax.jit
-    def compute_val(X, j, N, N1):
-        return ((X << j)%N)*N1
-
-    for i in xrange(n):
-        j = n - i - 1
-        with control(y[j]):
-            #inpl_adder(-((2**j*X)%N)*N1, aux[:])
-            with invert():
-                #inpl_adder(((X << j)%N)*N1, aux[:])
-                inpl_adder(compute_val(X, j, N, N1), aux[:])
-
-
-    # Swap res and y and multiply with X^{-1}
-    for i in xrange(n):
-        swap(y[i], res[i])
-
-    # Inverse multiplication with inverse of X
-    @jax.jit
-    def compute_val(X, N):
-        return (bi_modinv(X, N))
-    X1 = compute_val(X, N)
-
-
-    with invert():
-        
-        @jax.jit
-        def compute_val(X1, j, N):
-            return (X1 << j)%N
-        # Multiplication
-        for i in xrange(n):
-            j = n - i - 1
-            with control(y[j]):
-                #inpl_adder((X1 << j)%N, wqf)
-                inpl_adder(compute_val(X1, j, N), wqf)
-    
-        # Reduction
-        q_montgomery_reduction_bi(wqf, N, m, inpl_adder=inpl_adder)
-    
-        @jax.jit
-        def compute_val(X1, j, N, N1):
-            return ((X1 << j)%N)*N1
-
-        # Uncomputation
-        for i in xrange(n):
-            j = n - i - 1
-            with control(y[j]):
-                #inpl_adder(-((2**j*X1)%N)*N1, aux[:])
-                with invert():
-                    #inpl_adder(((X1 << j)%N)*N1, aux[:])
-                    inpl_adder(compute_val(X1, j, N, N1), aux[:])
-    
-    aux.delete()
-    res.delete()
-
 
     
-def cq_montgomery_multiply(X: int, y: QuantumFloat, N: int, m: int, inpl_adder=gidney_adder):
+def cq_montgomery_multiply(X: Union[int, BigInteger], y: QuantumFloat, N: Union[int, BigInteger], m: int, inpl_adder=gidney_adder,
+                           x_is_montgomery: bool = True, res = None):
     """
     Perform the montgomery product of an integer and a QuantumFloat
 
@@ -274,22 +113,41 @@ def cq_montgomery_multiply(X: int, y: QuantumFloat, N: int, m: int, inpl_adder=g
 
     Parameters
     ----------
-    X : int
+    X : Union[int, BigInteger]
         Integer factor of the montgomery product.
     y : QuantumFloat
         Quantum factor of the montgomery product.
-    N : int
-        Original modulos of the montgomery reduction.
+    N : Union[int, BigInteger]
+        Original modulus of the montgomery reduction.
     m : int
         Exponent $m$ of the auxiliary radix $R=2^m$, see ``compute_aux_radix_exponent``.
     inpl_adder : Callable
         In-place adder to use during computation
+    x_is_montgomery: bool
+        If the classical input X is already in montgomery form. Defaults to True.
         
     Returns
     ----------
     QuantumFloat
         The mongomery product of the inputs.
     """
+
+    X_type = isinstance(X, BigInteger)
+    N_type = isinstance(N, BigInteger)
+    if (X_type or N_type) and not (X_type and N_type):
+        raise ValueError("Both inputs must be BigInteger or none of them!")
+    
+    if X_type:
+        def get_N1(X, N, m):
+            R = BigInteger.from_int(1, X.digits.shape[0]) << m
+            if not x_is_montgomery:
+                X = montgomery_encoder(X, R, N)
+            return modinv(N, R << 1)
+        N1 = get_N1(X, N, m)
+    else:
+        if not x_is_montgomery:
+            X = montgomery_encoder(X, 2**m, N)
+        N1 = modinv(N, 2**(m+1))
 
     if check_for_tracing_mode():
         xrange = jrange
@@ -302,7 +160,8 @@ def cq_montgomery_multiply(X: int, y: QuantumFloat, N: int, m: int, inpl_adder=g
             else:
                 return arg.size
     n = get_size(y)
-    res = QuantumFloat(n)
+    if res is None:
+        res = QuantumFloat(n)
     aux = QuantumFloat(m+1)
     wqf = aux[:] + res[:]
 
@@ -311,24 +170,24 @@ def cq_montgomery_multiply(X: int, y: QuantumFloat, N: int, m: int, inpl_adder=g
     for i in xrange(n):
         j = n - i - 1
         with control(y[j]):
-            inpl_adder((2**j*X)%N, wqf)
+            inpl_adder((X << j)%N, wqf)
 
     # Reduction
     q_montgomery_reduction(wqf, N, m, inpl_adder=inpl_adder)
 
-    # Uncomputation
-    N1 = modinv(N, 2**(m+1))
-
     for i in xrange(n):
         j = n - i - 1
         with control(y[j]):
-            inpl_adder(-((2**j*X)%N)*N1, aux[:])
+            with invert():
+                inpl_adder(((X << j)%N)*N1, aux[:])
 
     aux.delete()
 
     return res
 
-def cq_montgomery_multiply_inplace(X: int, y: QuantumFloat, N: int, m: int, inpl_adder=gidney_adder):
+@custom_control
+def cq_montgomery_multiply_inplace(X: int, y: QuantumFloat, N: int, m: int, inpl_adder=gidney_adder,
+                                   x_is_montgomery: bool = False, ctrl = None):
     """
     Perform the montgomery product of an integer and a QuantumFloat in-place
 
@@ -343,72 +202,69 @@ def cq_montgomery_multiply_inplace(X: int, y: QuantumFloat, N: int, m: int, inpl
     y : QuantumFloat
         Quantum factor of the montgomery product.
     N : int
-        Original modulos of the montgomery reduction.
+        Original modulus of the montgomery reduction.
     m : int
         Exponent $m$ of the auxiliary radix $R=2^m$, see ``compute_aux_radix_exponent``.
     inpl_adder : Callable
         In-place adder to use during computation
+    x_is_montgomery: bool
+        If the classical input X is already in montgomery form. Defaults to True.
     """
 
-    if check_for_tracing_mode():
-        xrange = jrange
-        get_size = lambda arg: arg.size
+    X_type = isinstance(X, BigInteger)
+    N_type = isinstance(N, BigInteger)
+    if (X_type or N_type) and not (X_type and N_type):
+        raise ValueError("Both inputs must be BigInteger or none of them!")
+
+    tmp = QuantumFloat(y.size)
+
+    if ctrl is not None:
+        x(ctrl)
+        with control(ctrl): #TODO: Add invert=True
+            for i in jrange(y.size):
+                swap(tmp[i], y[i])
+        x(ctrl)
+
+
+    cq_montgomery_multiply(X, y, N, m, inpl_adder, x_is_montgomery, tmp)
+    
+    if x_is_montgomery:
+        if X_type:
+            @jax.jit
+            def get_X1(X, N):
+                R = BigInteger(1, X.digits.shape[0]) << m
+                X = montgomery_decoder(X, R, N)
+                return modinv(X, N)
+            X1 = get_X1(X, N)
+        else:
+            X = montgomery_decoder(X, 1 << m, N)
+            X1 = modinv(X, N)
     else:
-        xrange = range
-        def get_size(arg) -> int:
-            if isinstance(arg, list):
-                return len(arg)
-            else:
-                return arg.size
-    n = get_size(y)
-    res = QuantumFloat(n)
-    aux = QuantumFloat(m+1)
-    wqf = aux[:] + res[:]
+        @jax.jit
+        def get_X1(X, N):
+            return modinv(X, N)
+        X1 = get_X1(X, N)
 
-
-    # Multiplication
-    for i in xrange(n):
-        j = n - i - 1
-        with control(y[j]):
-            inpl_adder((2**j*X)%N, wqf)
-
-    # Reduction
-    q_montgomery_reduction(wqf, N, m, inpl_adder=inpl_adder)
-
-    # Uncomputation
-    N1 = modinv(N, 2**(m+1))
-
-    for i in xrange(n):
-        j = n - i - 1
-        with control(y[j]):
-            inpl_adder(-((2**j*X)%N)*N1, aux[:])
-
-
-    # Swap res and y and multiply with X^{-1}
-    for i in xrange(n):
-        swap(y[i], res[i])
-
-    # Inverse multiplication with inverse of X
-    X1 = (modinv(X, N))
+    if ctrl is not None:
+        x(ctrl)
+        with control(ctrl): #TODO: Add invert=True
+            for i in jrange(y.size):
+                swap(tmp[i], y[i])
+        x(ctrl)
 
     with invert():
-        # Multiplication
-        for i in xrange(n):
-            j = n - i - 1
-            with control(y[j]):
-                inpl_adder((2**j*X1)%N, wqf)
-    
-        # Reduction
-        q_montgomery_reduction(wqf, N, m, inpl_adder=inpl_adder)
-    
-        # Uncomputation
-        for i in xrange(n):
-            j = n - i - 1
-            with control(y[j]):
-                inpl_adder(-((2**j*X1)%N)*N1, aux[:])
-    
-    aux.delete()
-    res.delete()
+        cq_montgomery_multiply(X1, tmp, N, m, inpl_adder, False, y)
+
+    if ctrl is not None:
+        with control(ctrl, invert=False):
+            for i in jrange(y.size):
+                swap(tmp[i], y[i])
+    else:
+        for i in jrange(y.size):
+            swap(tmp[i], y[i])
+
+    tmp.delete()
+
 
 def qq_montgomery_multiply(x: QuantumFloat, y: QuantumFloat, N: int, m: int, inpl_adder=gidney_adder):
     """
@@ -425,7 +281,7 @@ def qq_montgomery_multiply(x: QuantumFloat, y: QuantumFloat, N: int, m: int, inp
     y : QuantumFloat
         Second factor of the montgomery product.
     N : int
-        Original modulos of the montgomery reduction.
+        Original modulus of the montgomery reduction.
     m : int
         Exponent $m$ of the auxiliary radix $R=2^m$, see ``compute_aux_radix_exponent``.
     inpl_adder : Callable
@@ -484,12 +340,12 @@ def montgomery_product(x, y, N, m, inpl_adder=gidney_adder):
 
     Parameters
     ----------
-    x : QuantumFloat or QuantumModulos or integer
+    x : QuantumFloat or Quantummodulus or integer
         First factor of the montgomery product.
-    y : QuantumFloat or QuantumModulos or integer
+    y : QuantumFloat or Quantummodulus or integer
         Second factor of the montgomery product.
     N : int
-        Original modulos of the montgomery reduction.
+        Original modulus of the montgomery reduction.
     m : int
         Exponent $m$ of the auxiliary radix $R=2^m$, see ``compute_aux_radix_exponent``.
     inpl_adder : Callable

@@ -22,6 +22,7 @@ from qrisp import check_for_tracing_mode
 from qrisp.qtypes.quantum_float import QuantumFloat
 from qrisp.misc import gate_wrap
 from qrisp.core import QuantumVariable
+import jax
 
 
 def comparison_wrapper(func):
@@ -180,14 +181,23 @@ class QuantumModulus(QuantumFloat):
             )
             self.modulus = modulus
             if isinstance(modulus, BigInteger):
-                self.m = modulus.digits.shape[0]*32
+                self.biginteger_mode = True
+                @jax.jit
+                def compute(v):
+                    return compute_aux_radix_exponent(v)
+                aux = compute(modulus)#compute_aux_radix_exponent(modulus)#modulus.digits.shape[0]*32
             else:
-                self.m = compute_aux_radix_exponent(modulus, 0)
+                self.biginteger_mode = False
+                aux = compute_aux_radix_exponent(modulus)
 
-            QuantumFloat.__init__(self, msize=self.m, qs=qs)
+            QuantumFloat.__init__(self, msize=aux, qs=qs)
             if inpl_adder is None:
                 from qrisp.alg_primitives.arithmetic import gidney_adder
                 inpl_adder = gidney_adder
+
+            self.inpl_adder = inpl_adder
+
+            self.m = 0
 
         else:
             self.modulus = modulus
@@ -207,14 +217,17 @@ class QuantumModulus(QuantumFloat):
     def decoder(self, i):
         if check_for_tracing_mode():
             from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
-                BigInteger, bi_montgomery_decode
+                BigInteger
             )
 
             if isinstance(i, BigInteger):
                 n = i.digits.shape[0]
                 R = BigInteger.from_int(1, n) << self.m
-                return bi_montgomery_decode(i, R, self.modulus)
-
+                #return bi_montgomery_decode(i, R, self.modulus)
+            
+            else:
+                from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import montgomery_decoder
+                return montgomery_decoder(i, 2**self.m, self.modulus)
         
 
         from qrisp.alg_primitives.arithmetic.modular_arithmetic import (
@@ -224,19 +237,26 @@ class QuantumModulus(QuantumFloat):
         if i >= self.modulus:  # or (np.gcd(i, self.modulus) != 1 and i != 0):
             return np.nan
         return montgomery_decoder(i, 2**self.m, self.modulus)
+    
+    def jdecoder(self, i):
+        from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import montgomery_decoder
+        return montgomery_decoder(i, 2**self.m, self.modulus)
+    
+    def measure(self):
+        return self.jdecoder(self.reg.measure())
 
     def encoder(self, i):
         if check_for_tracing_mode():
         
             from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
-                BigInteger, bi_montgomery_encode
+                BigInteger
             )
-
-            if isinstance(i, BigInteger):
-                n = i.digits.shape[0]
-                R = BigInteger.from_int(1, n) << self.m
-
-                return bi_montgomery_encode(i, R, self.modulus)
+            from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import montgomery_encoder
+            if self.biginteger_mode:
+                from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
+                return montgomery_encoder(i, BigInteger.from_int(1, i.digits.shape[0]) << self.m, self.modulus)
+            else:
+                return montgomery_encoder(i, 1 << self.m, self.modulus)
         
         else:
 
@@ -256,8 +276,8 @@ class QuantumModulus(QuantumFloat):
 
         return montgomery_encoder(i, 2**self.m, self.modulus)
 
-    def encode(self, i):
-        QuantumVariable.encode(self, self.encoder(i))
+    #def encode(self, i):
+    #    QuantumVariable.encode(self, self.encoder(i))
 
     @gate_wrap(permeability="args", is_qfree=True)
     def __mul__(self, other):
@@ -279,24 +299,42 @@ class QuantumModulus(QuantumFloat):
 
     @gate_wrap(permeability=[1], is_qfree=True)
     def __imul__(self, other):
-        if isinstance(other, int):
+        if check_for_tracing_mode():
 
-            from qrisp.alg_primitives.arithmetic.modular_arithmetic import (
-                qft_semi_cl_inpl_mult,
-                semi_cl_inpl_mult,
+            from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import (
+                cq_montgomery_multiply_inplace
+            )
+            from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import (
+                best_montgomery_shift
             )
 
-            from qrisp.alg_primitives.arithmetic.adders import fourier_adder
+            @jax.jit
+            def get_shift(other, modulus):
+                return best_montgomery_shift(other, modulus)
+            shift = get_shift(other, self.modulus)
 
-            if self.inpl_adder is fourier_adder:
+            cq_montgomery_multiply_inplace(other, self, self.modulus, shift, self.inpl_adder)
+            return self
 
-                return qft_semi_cl_inpl_mult(self, other % self.modulus)
-            else:
-                return semi_cl_inpl_mult(self, other % self.modulus)
         else:
-            raise Exception(
-                "Quantum modular multiplication with type {type(other)} not implemented"
-            )
+            if isinstance(other, int):
+
+                from qrisp.alg_primitives.arithmetic.modular_arithmetic import (
+                    qft_semi_cl_inpl_mult,
+                    semi_cl_inpl_mult,
+                )
+
+                from qrisp.alg_primitives.arithmetic.adders import fourier_adder
+
+                if self.inpl_adder is fourier_adder:
+
+                    return qft_semi_cl_inpl_mult(self, other % self.modulus)
+                else:
+                    return semi_cl_inpl_mult(self, other % self.modulus)
+            else:
+                raise Exception(
+                    "Quantum modular multiplication with type {type(other)} not implemented"
+                )
 
     @gate_wrap(permeability="args", is_qfree=True)
     def __add__(self, other):

@@ -232,8 +232,6 @@ class BigInteger:
         return lax.fori_loop(shift, self.digits.shape[0]*32, body_fun, BigInteger(jnp.zeros_like(self.digits)))
     
     
-            
-    
     def __mod__(self, other: "BigInteger"):
         if not isinstance(other, BigInteger):
             other = BigInteger.from_int(other, self.digits.shape[0])
@@ -279,6 +277,10 @@ class BigInteger:
         ds = jnp.copy(self.digits)
         ds = ds.at[pos].set(ds[pos] ^ (1 << pos_in))
         return BigInteger(ds)
+    
+    def bit_size(self):
+        pos_i = lax.while_loop(lambda i: jnp.logical_and(i < self.digits.shape[0] - 1, self.digits[i] == 0), lambda i: i+1, 0)
+        return 32*pos_i + (jnp.ceil(jnp.log2(self.digits[pos_i]))).astype(jnp.int64)
 
     
 def bi_modinv(a,m):
@@ -336,8 +338,8 @@ def bi_extended_euclidean(a, b):
     # old_r is gcd, old_s and old_t are the Bezout coefficients
     return old_r, old_s, old_t
 
-def bi_montgomery_encode(x, R, modulos):
-    return (x * R) % modulos
+def bi_montgomery_encode(x, R, modulus):
+    return (x * R) % modulus
 
-def bi_montgomery_decode(x_mon, R, modulos):
-    return (x_mon * bi_modinv(R, modulos)) % modulos
+def bi_montgomery_decode(x_mon, R, modulus):
+    return (x_mon * bi_modinv(R, modulus)) % modulus

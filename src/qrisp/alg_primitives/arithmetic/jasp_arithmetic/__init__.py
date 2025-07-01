@@ -39,7 +39,6 @@ from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import (
     qq_montgomery_multiply,
     cq_montgomery_multiply,
     cq_montgomery_multiply_inplace,
-    cq_montgomery_multiply_inplace_bi,
     montgomery_product
 )
 from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
