@@ -133,7 +133,7 @@ def test_measurement_method(sample_size=100, seed=42, exhaustive = False):
     # Set up batched backend
     bb = BatchedBackend(run_func_batch)
 
-    ev = H.expectation_value(lambda : c, backend = bb)()
+    ev = H.expectation_value(lambda : f, backend = bb)()
     
     
     
