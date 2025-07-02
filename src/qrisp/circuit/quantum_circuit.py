@@ -206,7 +206,6 @@ class QuantumCircuit:
     qubit_index_counter = np.zeros(1, dtype=int)
     clbit_index_counter = np.zeros(1, dtype=int)
     xla_mode = 0
-    lock_acceleration = False
 
     def __init__(self, num_qubits=0, num_clbits=0, name=None):
         object.__setattr__(self, "data", [])
