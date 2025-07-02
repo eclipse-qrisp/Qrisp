@@ -148,7 +148,7 @@ def jasp_evaluate_expectation_jitted(samples, operators, coefficients):
 
     # Evaluate and sum intermediate results for each measurement setting
     for index, ops in enumerate(operators):
-        expectation += sum_over_observables_and_samples(ops, samples[index], coefficients[index])
+        expectation += sum_over_observables_and_samples(ops, samples[index], coefficients[index]) / len(samples[index])
 
     return expectation
 
