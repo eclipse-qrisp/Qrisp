@@ -104,7 +104,7 @@ class BatchedBackend(VirtualBackend):
 
         results = []
         def eval_measurement(qv):
-            results.append(H.expectation_value(lambda : qv, backend = bb)())
+            results.append(qv.get_measurement(backend = bb))
 
         thread_0 = threading.Thread(target = eval_measurement, args = (c,))
         thread_1 = threading.Thread(target = eval_measurement, args = (f,))

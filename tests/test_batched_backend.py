@@ -60,9 +60,6 @@ def test_batched_backend():
     f = d + e
     
     
-    from qrisp.operators import Z
-    H = Z(0)*Z(1)*Z(2)*Z(3)
-    
     # Set up batched backend
     bb = BatchedBackend(run_func_batch)
     
@@ -71,7 +68,7 @@ def test_batched_backend():
     
     results = []
     def eval_measurement(qv):
-        results.append(H.expectation_value(lambda : qv, backend = bb)())
+        results.append(qv.get_measurement(backend = bb))
     
     thread_0 = threading.Thread(target = eval_measurement, args = (c,))
     thread_1 = threading.Thread(target = eval_measurement, args = (f,))
@@ -90,7 +87,8 @@ def test_batched_backend():
     thread_1.join()
     
     # Inspect the results
-    assert sum(results) == 0
+    assert {3 : 1.0} in results
+    assert {4 : 1.0} in results
     
     
     
