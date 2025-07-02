@@ -54,22 +54,20 @@ class BatchedBackend(VirtualBackend):
     on the Qrisp simulator.
     
     ::
+        
         from qrisp import *
         from qrisp.interface import BatchedBackend
         
         def run_func_batch(batch):
-            \"\"\"
-            Parameters
-            ----------
-            batch : list[tuple[QuantumCircuit, int]]
-                The circuit and shot batch indicating the backend queries.
+            # Parameters
+            # ----------
+            # batch : list[tuple[QuantumCircuit, int]]
+            #     The circuit and shot batch indicating the backend queries.
         
-            Returns
-            -------
-            results : list[dict[string, int]]
-                The list of results.
-        
-            \"\"\"
+            # Returns
+            # -------
+            # results : list[dict[string, int]]
+            #     The list of results.
             
             results = []
             for i in range(len(batch)):
