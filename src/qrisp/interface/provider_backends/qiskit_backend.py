@@ -159,8 +159,8 @@ class QiskitRuntimeBackend(VirtualBackend):
         else:
             backend = service.backend(backend)
 
-        session = Session(service, backend)
-        sampler = Sampler(session=session)
+        self.session = Session(backend)
+        sampler = Sampler(self.session)
 
         # Create the run method
         def run(qasm_str, shots=None, token=""):
