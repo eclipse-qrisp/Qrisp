@@ -150,6 +150,19 @@ def test_qswitch_case_list_cutoff():
             else:
                 assert res[(i,i)] == 0.0625
 
+    for mode, r in zip([1,4, None], [1,4,5]):
+        operand = QuantumFloat(3)
+        case = QuantumFloat(3)
+        h(case)
+        qswitch(operand, case, case_function_list, method = "parallel", case_amount=r)
+        res = multi_measurement([case, operand])
+
+        for i in range(8):
+            if r <= i:
+                assert res[(i,0)] == 0.0625*2
+            else:
+                assert res[(i,i)] == 0.0625*2
+
 def test_qswitch_case_function_cutoff(): 
         
     def case_function_list(i, arg):
@@ -170,3 +183,16 @@ def test_qswitch_case_function_cutoff():
                 assert res[(i,0)] == 0.0625
             else:
                 assert res[(i,i)] == 0.0625
+
+    for r in [3,5,6]:
+        operand = QuantumFloat(3)
+        case = QuantumFloat(3)
+        h(case)
+        qswitch(operand, case, case_function_list, method = "parallel", case_amount=r)
+        res = multi_measurement([case, operand])
+
+        for i in range(8):
+            if r <= i:
+                assert res[(i,0)] == 0.0625*2
+            else:
+                assert res[(i,i)] == 0.0625*2

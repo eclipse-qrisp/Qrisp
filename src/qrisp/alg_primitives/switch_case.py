@@ -116,9 +116,7 @@ def qswitch(operand, case, case_function, method="auto", case_amount=None, inv =
 
     if callable(case_function):
         if case_amount == None:
-            case_amount_int = 2**case.size
-        else:
-            case_amount_int = case_amount
+            case_amount = 2**case.size
         xrange = jrange
         if method == "auto":
             method = "tree"
@@ -129,22 +127,14 @@ def qswitch(operand, case, case_function, method="auto", case_amount=None, inv =
     else:
         
         if case_amount == None:
-            case_amount_int = len(case_function)
-        else:
-            case_amount_int = case_amount
-
-        # Extend case_function list by identity such that its size is 2*n (necessary for tree qswitch)
-        # def identity(operand):
-        #     pass
-
+            case_amount = len(case_function)
 
         if inv:
             case_function = [invert_inpl_function(func) for func in case_function]
-     
 
         xrange = range
         if method == "auto":
-            if case_amount_int <= 4:
+            if case_amount <= 4:
                 method = "sequential"
             else:
                 method = "tree"
@@ -153,7 +143,7 @@ def qswitch(operand, case, case_function, method="auto", case_amount=None, inv =
 
         control_qbl = QuantumBool()
 
-        for i in xrange(case_amount_int):
+        for i in xrange(case_amount):
             with conjugate(mcx)(case, control_qbl, ctrl_state=i):
                 with control(control_qbl):
                     if callable(case_function):
@@ -174,16 +164,22 @@ def qswitch(operand, case, case_function, method="auto", case_amount=None, inv =
         # to execute cases in parallel.
 
         # This QuantumArray acts as an addressable QRAM via the demux function
-        enable = QuantumArray(qtype=QuantumBool(), shape=(case_amount_int,))
+
+        if case_amount != 2**case.size:
+            import warnings
+            warnings.warn("Warning: Additional qubit overhead because case amount is smaller than case QuantumVariable!")
+
+        enable = QuantumArray(qtype=QuantumBool(), shape=(2**case.size,))
         enable[0].flip()
 
-        qa = QuantumArray(qtype=operand, shape=((case_amount_int,)))
+        qa = QuantumArray(qtype=operand, shape=((2**case.size,)))
 
         with conjugate(demux)(operand, case, qa, parallelize_qc=True):
             with conjugate(demux)(enable[0], case, enable, parallelize_qc=True):
-                for i in range(case_amount_int):
+                for i in range(case_amount):
                     with control(enable[i]):
                         if callable(case_function):
+
                             case_function(i, qa[i])
                         else:
                             case_function[i](qa[i])
@@ -303,7 +299,7 @@ def qswitch(operand, case, case_function, method="auto", case_amount=None, inv =
             
             def last_leaf(d: int, anc, ca, oper, i):
                 with control(anc[d + 1]):
-                    case_function[case_amount_int-1](oper)
+                    case_function[case_amount-1](oper)
 
         else:
             raise TypeError(
@@ -335,16 +331,16 @@ def qswitch(operand, case, case_function, method="auto", case_amount=None, inv =
 
         # Perform leafs and jumps
         anc_, case, operand = x_fori_loop(
-            0, -(-case_amount_int // 2) - 1, body_fun, (anc, case, operand)
+            0, -(-case_amount // 2) - 1, body_fun, (anc, case, operand)
         )
 
         # Perfrom last leaf
-        x_cond(case_amount_int % 2 == 0,
-               lambda: leaf(n - 1, anc, case, operand, case_amount_int - 2),
-               lambda: last_leaf(n - 1, anc, case, operand, case_amount_int - 1))
+        x_cond(case_amount % 2 == 0,
+               lambda: leaf(n - 1, anc, case, operand, case_amount - 2),
+               lambda: last_leaf(n - 1, anc, case, operand, case_amount - 1))
 
         # Go back from last node
-        diff = 2**n - case_amount_int
+        diff = 2**n - case_amount
         for j in xrange(0, n, 1):
             up(n - j - 1, anc, case, operand)
 
