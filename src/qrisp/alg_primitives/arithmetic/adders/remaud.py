@@ -173,7 +173,7 @@ def ladder2_synth_jax(x, y, method="khattar"):
         # CL
         mcx(
             x[X_prime_func((N >> (k + 1)) - 2, k, N >> k)]
-            + y.reg[
+            + y[
                 X_prime_func((N >> (k + 1)) - 2, k, N >> k) : X_prime_func(
                     (N >> (k + 1)) - 1, k, N >> k
                 )
@@ -196,7 +196,7 @@ def ladder2_synth_jax(x, y, method="khattar"):
     with control(N >> (max_iterations - 1) == 2):
         mcx(
             x[X_prime_func(0, max_iterations - 2, N >> (max_iterations - 2))]
-            + y.reg[
+            + y[
                 X_prime_func(
                     0, max_iterations - 2, N >> (max_iterations - 2)
                 ) : X_prime_func(1, max_iterations - 2, N >> (max_iterations - 2))
@@ -210,7 +210,7 @@ def ladder2_synth_jax(x, y, method="khattar"):
             # CR
             mcx(
                 x[X_prime_func(0, k, N >> k)]
-                + y.reg[X_prime_func(0, k, N >> k) : X_prime_func(1, k, N >> k)],
+                + y[X_prime_func(0, k, N >> k) : X_prime_func(1, k, N >> k)],
                 x[X_prime_func(1, k, N >> k)],
                 method=method,
             )
