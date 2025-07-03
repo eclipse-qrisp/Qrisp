@@ -25,7 +25,7 @@ from jax.core import ClosedJaxpr, Literal
 from jax.lax import fori_loop, cond, while_loop, switch
 import jax.numpy as jnp
 
-from qrisp.circuit import ControlledOperation
+from qrisp.circuit import PTControlledOperation
 from qrisp.jasp import (
     QuantumPrimitive,
     OperationPrimitive,
@@ -180,10 +180,11 @@ def process_op(op_prim, invars, outvars, context_dic):
 
     if op.name == "x":
         ctrl_state = ""
-    elif isinstance(op, ControlledOperation) and op.base_operation.name in [
+    elif isinstance(op, PTControlledOperation) and op.base_operation.name in [
         "x",
         "y",
         "z",
+        "pt2cx"
     ]:
         if op.base_operation.name in ["z", "rz", "t", "s", "t_dg", "s_dg", "p"]:
             context_dic[outvars[-1]] = context_dic[invars[-1]]
@@ -318,6 +319,7 @@ def process_cond(eqn, context_dic):
     branch_list = []
 
     for i in range(len(eqn.params["branches"])):
+        
         converted_jaxpr = ensure_conversion(
             eqn.params["branches"][i].jaxpr, invalues[1:]
         )
@@ -356,12 +358,16 @@ def get_traced_fun(jaxpr, bit_array_size):
 def process_pjit(eqn, context_dic):
 
     invalues = extract_invalues(eqn, context_dic)
-
+    
     if eqn.params["name"] in ["gidney_mcx", "gidney_mcx_inv"]:
         unflattened_outvalues = [
             (cl_multi_cx(invalues[-1][0], "11", invalues[:-1]), invalues[-1][1])
         ]
-
+    elif eqn.params["name"] in ["gidney_CCCX", "gidney_CCCX_dg"]:
+        controls = [invalues[0][i] for i in range(3)]
+        unflattened_outvalues = [
+            (cl_multi_cx(invalues[-1][0], "111",  controls + [invalues[1]]), invalues[-1][1])
+        ]
     else:
         flattened_invalues = []
         for value in invalues:
