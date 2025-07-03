@@ -155,9 +155,9 @@ class QiskitRuntimeBackend(VirtualBackend):
 
         service = QiskitRuntimeService(channel="ibm_quantum", token=token)
         if backend is None:
-            backend = service.get_backend("ibmq_qasm_simulator")
+            backend = service.least_busy()
         else:
-            backend = service.get_backend(backend)
+            backend = service.backend(backend)
 
         session = Session(service, backend)
         sampler = Sampler(session=session)
