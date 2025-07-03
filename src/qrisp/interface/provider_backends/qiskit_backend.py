@@ -176,7 +176,7 @@ class QiskitRuntimeBackend(VirtualBackend):
             qiskit_qc = transpile(qiskit_qc, backend=backend)
             # Run Circuit with the Sampler Primitive
             qiskit_result = (
-                sampler.run(qiskit_qc, shots=shots)
+                sampler.run([qiskit_qc], shots=shots)
                 .result()
                 .quasi_dists[0]
                 .binary_probabilities()
