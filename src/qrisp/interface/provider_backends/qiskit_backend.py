@@ -151,7 +151,7 @@ class QiskitRuntimeBackend(VirtualBackend):
     """
 
     def __init__(self, backend=None, port=8079, token=""):
-        from qiskit_ibm_runtime import QiskitRuntimeService, Sampler, Session, Estimator
+        from qiskit_ibm_runtime import QiskitRuntimeService, Sampler, Session
 
         service = QiskitRuntimeService(channel="ibm_quantum_platform", token=token)
         if backend is None:
