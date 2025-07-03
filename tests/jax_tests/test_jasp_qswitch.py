@@ -253,3 +253,32 @@ def test_jasp_qswitch_case_hamiltonian_simulation():
     assert np.round(meas_res[0,0],2) == 0.5
     for i in [0,1,2,3]:
         assert np.round(meas_res[1,i],3) == 0.125
+        
+def test_jasp_qswitch_inversion():
+    
+    from qrisp import QuantumFloat, qswitch, jaspify, measure
+    import jax.numpy as jnp
+    from jax import jit
+    
+    @jit
+    def extract_boolean_digit(integer, digit):
+        return (integer >> digit) & 1
+
+    def fake_inversion(qf, precision, res_qf=None):
+        if res_qf is None:
+            res_qf = QuantumFloat(2*precision+1,-precision)
+        def case_function(i, operand):
+            curr = 2**(2*precision)//(jnp.maximum(i,1))
+            operand[:] = curr/2**(2*precision)
+        qswitch(res_qf, qf, case_function)
+        return res_qf
+
+    @jaspify
+    def main():
+        
+        qf = QuantumFloat(5)
+        qf[:] = 5
+        inv = fake_inversion(qf, 5)
+        return measure(inv)
+        
+    assert main() == 0.1875

@@ -16,23 +16,38 @@
 ********************************************************************************
 """
 
-import numpy as xp
-import os
+from qrisp import QuantumVariable, LCU, prepare, terminal_sampling
+from qrisp.operators import X, Y, Z
+import numpy as np
 
-try:
-    float_thresh = os.environ["QRISP_SIMULATOR_FLOAT_THRESH"]
-except KeyError:
-    float_thresh = 1e-5
-float_thresh = xp.float32(float_thresh)
+def test_operators_LCU():
 
-try:
-    cutoff_ratio = os.environ["QRISP_SIMULATOR_CUTOFF_RATIO"]
-except KeyError:
-    cutoff_ratio = 2e-4
-cutoff_ratio = xp.float32(cutoff_ratio)
+    @terminal_sampling
+    def main():
 
-try:
-    sparsification_rate = os.environ["QRISP_SIMULATOR_SPARSIFICATION_RATE"]
-except KeyError:
-    sparsification_rate = 0.4
-sparsification_rate = xp.float32(sparsification_rate)
+        H = 2*X(0)*X(1)-Z(0)*Z(1)
+
+        unitaries, coeffs = H.unitaries()
+
+        def operand_prep():
+            return QuantumVariable(2)
+
+        def state_prep(case):
+            prepare(case, np.sqrt(coeffs))
+
+        qv = LCU(operand_prep, state_prep, unitaries)
+        return qv
+
+    res_dict = main()
+
+    for k, v in res_dict.items():
+        res_dict[k] = v**0.5
+    for k, v in res_dict.items():
+        res_dict[k] = v/res_dict[0]     
+
+    # print(res_dict)
+    # {3: 2.0000002235174685, 0: 1.0}
+
+    assert(np.abs(res_dict[0]-1)) < 1e-4
+    assert(np.abs(res_dict[3]-2)) < 1e-4
+
