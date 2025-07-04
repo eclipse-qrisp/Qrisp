@@ -151,16 +151,16 @@ class QiskitRuntimeBackend(VirtualBackend):
     """
 
     def __init__(self, backend=None, port=8079, token=""):
-        from qiskit_ibm_runtime import QiskitRuntimeService, Sampler, Session, Estimator
+        from qiskit_ibm_runtime import QiskitRuntimeService, Sampler, Session
 
-        service = QiskitRuntimeService(channel="ibm_quantum", token=token)
+        service = QiskitRuntimeService(channel="ibm_quantum_platform", token=token)
         if backend is None:
-            backend = service.get_backend("ibmq_qasm_simulator")
+            backend = service.least_busy()
         else:
-            backend = service.get_backend(backend)
+            backend = service.backend(backend)
 
-        session = Session(service, backend)
-        sampler = Sampler(session=session)
+        self.session = Session(backend)
+        sampler = Sampler(self.session)
 
         # Create the run method
         def run(qasm_str, shots=None, token=""):
@@ -176,7 +176,7 @@ class QiskitRuntimeBackend(VirtualBackend):
             qiskit_qc = transpile(qiskit_qc, backend=backend)
             # Run Circuit with the Sampler Primitive
             qiskit_result = (
-                sampler.run(qiskit_qc, shots=shots)
+                sampler.run([qiskit_qc], shots=shots)
                 .result()
                 .quasi_dists[0]
                 .binary_probabilities()
