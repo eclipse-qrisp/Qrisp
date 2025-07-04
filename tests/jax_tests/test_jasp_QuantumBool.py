@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2024 the Qrisp authors
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -16,6 +16,20 @@
 ********************************************************************************
 """
 
-# -*- coding: utf-8 -*-
-from qrisp.operators.qubit.qubit_operator import *
-from qrisp.operators.qubit.operator_factors import *
+def test_jasp_QuantumBool():
+
+    from qrisp import QuantumBool, measure
+    from qrisp.jasp import jaspify
+
+    @jaspify
+    def main(i,j):
+        a = QuantumBool()
+        a[:] = i
+        b = QuantumBool()
+        b[:] = j
+    
+        return measure(a), measure(b)
+
+    res = main(True, False)
+    assert res[0] == True
+    assert res[1] == False

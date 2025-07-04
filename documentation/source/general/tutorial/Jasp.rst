@@ -64,7 +64,7 @@ Ideally we want you to keep all your Qrisp code the same and simply enable the J
 What is Jax?
 ^^^^^^^^^^^^
 
-To understand how to fully leverage the Jasp module, you need a basic understanding of `Jax <https://jax.readthedocs.io/en/latest/notebooks/thinking_in_jax.html>`_. Jax is a framework developed by Google, which aims to address a similar set of problems as described above but in the context of machine learning. Essentially Jax makes Python code for ML applications run faster, by leveraging a mechanism called tracing. Tracing means that instead of executing a Python function with actual values, Jax sends so called Tracers through the function, which keep a "record" of what would have happened to the values. This record is a mini functional programming language called `Jaxpr <https://jax.readthedocs.io/en/latest/_tutorials/jaxpr.html>`_. Creating a Jaxprs can be achieved by calling the ``make_jaxpr`` function.
+To understand how to fully leverage the Jasp module, you need a basic understanding of `Jax <https://jax.readthedocs.io/en/latest/notebooks/thinking_in_jax.html>`_. Jax is a framework developed by Google, which aims to address a similar set of problems as described above but in the context of machine learning. Essentially Jax makes Python code for ML applications run faster, by leveraging a mechanism called tracing. Tracing means that instead of executing a Python function with actual values, Jax sends so called Tracers through the function, which keep a "record" of what would have happened to the values. This record is a mini functional programming language called `Jaxpr <https://docs.jax.dev/en/latest/jaxpr.html>`_. Creating a Jaxprs can be achieved by calling the ``make_jaxpr`` function.
 
 ::
 
@@ -215,7 +215,7 @@ If a cached function is called with a different type (classical or quantum) the 
 
     def main():
         qf = QuantumFloat(5)
-        qbl = QuantumBool(5)
+        qbl = QuantumBool()
 
         inner_function(qf)
         inner_function(qf)
@@ -233,7 +233,7 @@ If a cached function is called with a different type (classical or quantum) the 
 
 We see 2 seconds now because the ``inner_function`` has been traced twice: Once for the :ref:`QuantumFloat` and once for the :ref:`QuantumBool`.
 
-Another important concept are dynamic values. Dynamic values are values that are only known at runtime (i.e. when the program is actually executed). This could be because the value is coming from a quantum measurement. Every QuantumVariable and it's ``.size`` attribute are dynamic. Furthermore classical values can also be dynamic. For classical values, we can use the Python native ``isinstance`` check for the ``jax.core.Tracer`` class, whether a variable is dynamic. Note that even though ``QuantumVariables`` behave dynamic, they are not tracers themselves.
+Another important concept are dynamic values. Dynamic values are values that are only known at runtime (i.e. when the program is actually executed). This could be because the value is coming from a quantum measurement. Every QuantumVariable and its ``.size`` attribute are dynamic. Furthermore classical values can also be dynamic. For classical values, we can use the Python native ``isinstance`` check for the ``jax.core.Tracer`` class, whether a variable is dynamic. Note that even though ``QuantumVariables`` behave dynamic, they are not tracers themselves.
 ::
     
     from jax.core import Tracer

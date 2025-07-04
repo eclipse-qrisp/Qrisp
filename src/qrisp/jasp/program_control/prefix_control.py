@@ -19,6 +19,7 @@
 from jax.lax import fori_loop, while_loop, cond
 import jax
 
+from qrisp.core import recursive_qv_search, recursive_qa_search
 from qrisp.jasp.tracing_logic import TracingQuantumSession, check_for_tracing_mode
 from qrisp.jasp.primitives import AbstractQuantumCircuit
 
@@ -111,6 +112,11 @@ def q_while_loop(cond_fun, body_fun, init_val):
 
     def new_body_fun(val):
         qs.start_tracing(val[1])
+        # The QuantumVariables from the arguments went through a flatten/unflattening cycle.
+        # The unflattening creates a new QuantumVariable object, that is however not yet
+        # registered in any QuantumSession. We register these in the current QuantumSession.
+        for qv in recursive_qv_search(val[0]):
+            qs.register_qv(qv, None)
         res = body_fun(val[0])
         abs_qc = qs.conclude_tracing()
         return (res, abs_qc)
@@ -290,12 +296,16 @@ def q_cond(pred, true_fun, false_fun, *operands):
 
     def new_true_fun(*operands):
         qs.start_tracing(operands[1])
+        for qv in recursive_qv_search(operands[0]):
+            qs.register_qv(qv, None)
         res = true_fun(*operands[0])
         abs_qc = qs.conclude_tracing()
         return (res, abs_qc)
 
     def new_false_fun(*operands):
         qs.start_tracing(operands[1])
+        for qv in recursive_qv_search(operands[0]):
+            qs.register_qv(qv, None)
         res = false_fun(*operands[0])
         abs_qc = qs.conclude_tracing()
         return (res, abs_qc)

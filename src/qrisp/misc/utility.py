@@ -719,6 +719,10 @@ def multi_measurement(qv_list, shots=None, backend=None):
     {(3, 2, 5): 0.5, (3, 3, 6): 0.5}
 
     """
+    
+    from qrisp.jasp import check_for_tracing_mode
+    if check_for_tracing_mode():
+        raise Exception("Tried to call multi_measurement in Jasp mode. Please use terminal_sampling instead")
 
     if backend is None:
         if qv_list[0].qs.backend is None:

@@ -2321,6 +2321,9 @@ class QuantumCircuit:
 
         """
         self.append(ops.u3Gate(theta, phi, lam), [qubits])
+        
+    def r(self, phi, theta, qubits):
+        self.append(ops.RGate(phi, theta), [qubits])
 
     def unitary(self, unitary_array, qubits):
         """

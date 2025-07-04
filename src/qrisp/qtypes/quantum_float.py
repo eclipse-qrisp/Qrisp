@@ -18,6 +18,7 @@
 
 import numpy as np
 import sympy as sp
+import jax.numpy as jnp
 
 from qrisp.core import QuantumVariable, cx
 from qrisp.misc import gate_wrap
@@ -26,7 +27,7 @@ from qrisp.jasp import check_for_tracing_mode
 
 
 def signed_int_iso_2(x, n):
-    return x % (int(1) << (n))
+    return jnp.int64(x) & ((int(1) << jnp.minimum(n, 63))-1)
 
 
 def signed_int_iso(x, n):

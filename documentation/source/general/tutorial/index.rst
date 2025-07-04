@@ -76,7 +76,7 @@ Welcome to the tutorial of Qrisp! This page will help you get started by providi
 
         .. raw:: html
 
-            <h4 style="font-weight: bold; margin-top: 0;">Hybrid real-time algorithm conrol with Jasp</h4>
+            <h4 style="font-weight: bold; margin-top: 0;">Hybrid real-time algorithm control with Jasp</h4>
 
         .. image:: ../../_static/hybrid_realtime.png
             :width: 180

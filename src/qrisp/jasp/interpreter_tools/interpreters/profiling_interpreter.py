@@ -35,6 +35,8 @@ This file implements the interfaces to evaluating the transformed Jaspr.
 
 from functools import lru_cache
 
+import numpy as np
+
 from qrisp.jasp.interpreter_tools.abstract_interpreter import (
     insert_outvalues,
     extract_invalues,
@@ -51,12 +53,13 @@ import jax.numpy as jnp
 from jax.random import key
 
 
+
 # This functions takes a "profiling dic", i.e. a dictionary of the form {str : int}
 # indicating what kinds of quantum gates can appear in a Jaspr.
 # It returns an equation evaluator, which increments a counter in an array for
 # each quantum operation.
 def make_profiling_eqn_evaluator(profiling_dic, meas_behavior):
-
+    
     def profiling_eqn_evaluator(eqn, context_dic):
 
         invalues = extract_invalues(eqn, context_dic)
@@ -68,7 +71,8 @@ def make_profiling_eqn_evaluator(profiling_dic, meas_behavior):
             # via the Jax-given .at method.
             if isinstance(eqn.primitive, OperationPrimitive):
 
-                counting_array = list(invalues[-1])
+                counting_array = list(invalues[-1][0])
+                incrementation_constants = invalues[-1][1]
 
                 op = eqn.primitive.op
 
@@ -79,14 +83,31 @@ def make_profiling_eqn_evaluator(profiling_dic, meas_behavior):
 
                 for op_name, count in op_counts.items():
                     counting_index = profiling_dic[op_name]
-                    counting_array[counting_index] += count
+                    
+                    # It seems like at this point we can just
+                    # naively increment the Jax tracer but
+                    # unfortunately the XLA compiler really 
+                    # doesn't like constants. (Compile time blows up)
+                    # We therefore jump through a lot of hoops
+                    # to make it look like we are adding variables.
+                    # This is done by supplying a list of tracers
+                    # that will contain the numbers from 1 to n.
+                    # Here is the next problem: If n is very large
+                    # this also slows down the compilation because
+                    # each function call has to have n+ arguments.
+                    # We therefore perform the following loop:
+                    while count:
+                        incrementor = min(count, len(incrementation_constants))
+                        count -= incrementor
+                        counting_array[counting_index] += incrementation_constants[incrementor-1]
 
-                insert_outvalues(eqn, context_dic, counting_array)
+                insert_outvalues(eqn, context_dic, (counting_array, incrementation_constants))
 
             elif eqn.primitive.name == "jasp.measure":
 
                 counting_index = profiling_dic["measure"]
-                counting_array = list(invalues[-1])
+                counting_array = list(invalues[-1][0])
+                incrementation_constants = invalues[-1][1]
 
                 meas_number = counting_array[counting_index]
 
@@ -117,10 +138,10 @@ def make_profiling_eqn_evaluator(profiling_dic, meas_behavior):
                         raise Exception(
                             f"Tried to profil Jaspr with a measurement behavior not returning a boolean (got {meas_res.dtype}) instead"
                         )
-                    counting_array[counting_index] += 1
+                        
+                    counting_array[counting_index] += incrementation_constants[1]
 
-                # The measurement returns always 0
-                insert_outvalues(eqn, context_dic, [meas_res, counting_array])
+                insert_outvalues(eqn, context_dic, [meas_res, (counting_array, incrementation_constants)])
 
             # Since we don't need to track to which qubits a certain operation
             # is applied, we can implement a really simple behavior for most
@@ -246,8 +267,15 @@ def get_compiled_profiler(jaxpr, zipped_profiling_dic, meas_behavior):
 
     profiling_eqn_evaluator = make_profiling_eqn_evaluator(profiling_dic, meas_behavior)
 
-    @jax.jit
+    jitted_profiler = jax.jit(eval_jaxpr(jaxpr, eqn_evaluator=profiling_eqn_evaluator))
+    
+    call_counter = np.zeros(1)
+    
     def profiler(*args):
-        return eval_jaxpr(jaxpr, eqn_evaluator=profiling_eqn_evaluator)(*args)
+        if call_counter[0] < 3 or len(jaxpr.eqns) < 20:
+            call_counter[0] += 1
+            return eval_jaxpr(jaxpr, eqn_evaluator=profiling_eqn_evaluator)(*args)
+        else:
+            return jitted_profiler(*args)
 
     return profiler
