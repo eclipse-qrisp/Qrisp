@@ -77,6 +77,9 @@ def q_montgomery_reduction(qf: QuantumFloat, N: Union[int, BigInteger], m: int, 
     if check_for_tracing_mode():
         xrange = jrange
         get_size = lambda arg: arg.size
+        @jax.jit
+        def compute_val(N):
+            return (N-1) >> 1
     else:
         xrange = range
         def get_size(arg) -> int:
@@ -84,12 +87,14 @@ def q_montgomery_reduction(qf: QuantumFloat, N: Union[int, BigInteger], m: int, 
                 return len(arg)
             else:
                 return arg.size
+        def compute_val(N):
+            return (N-1) >> 1
 
     #Estimation stage
     for j in xrange(m):
         with control(qf[j]):
-            with invert(): #TODO: No invertt
-                inpl_adder((N-1) >> 1, qf[j+1:])
+            with invert():
+                inpl_adder(compute_val(N), qf[j+1:])
 
 
     #Correction stage
@@ -138,12 +143,13 @@ def cq_montgomery_multiply(X: Union[int, BigInteger], y: QuantumFloat, N: Union[
         raise ValueError("Both inputs must be BigInteger or none of them!")
     
     if X_type:
+        @jax.jit
         def get_N1(X, N, m):
             R = BigInteger.from_int(1, X.digits.shape[0]) << m
             if not x_is_montgomery:
                 X = montgomery_encoder(X, R, N)
-            return modinv(N, R << 1)
-        N1 = get_N1(X, N, m)
+            return modinv(N, R << 1), X
+        N1, X = get_N1(X, N, m)
     else:
         if not x_is_montgomery:
             X = montgomery_encoder(X, 2**m, N)
@@ -152,6 +158,12 @@ def cq_montgomery_multiply(X: Union[int, BigInteger], y: QuantumFloat, N: Union[
     if check_for_tracing_mode():
         xrange = jrange
         get_size = lambda arg: arg.size
+        @jax.jit
+        def compute_val0(X, j, N):
+            return (X << j)%N
+        @jax.jit
+        def compute_val1(X, j, N, N1):
+            return ((X << j)%N)*N1
     else:
         xrange = range
         def get_size(arg) -> int:
@@ -159,18 +171,21 @@ def cq_montgomery_multiply(X: Union[int, BigInteger], y: QuantumFloat, N: Union[
                 return len(arg)
             else:
                 return arg.size
+        def compute_val0(X, j, N):
+            return (X << j)%N
+        def compute_val1(X, j, N, N1):
+            return ((X << j)%N)*N1
     n = get_size(y)
     if res is None:
         res = QuantumFloat(n)
     aux = QuantumFloat(m+1)
     wqf = aux[:] + res[:]
 
-
     # Multiplication
     for i in xrange(n):
         j = n - i - 1
         with control(y[j]):
-            inpl_adder((X << j)%N, wqf)
+            inpl_adder(compute_val0(X, j, N), wqf)
 
     # Reduction
     q_montgomery_reduction(wqf, N, m, inpl_adder=inpl_adder)
@@ -179,7 +194,7 @@ def cq_montgomery_multiply(X: Union[int, BigInteger], y: QuantumFloat, N: Union[
         j = n - i - 1
         with control(y[j]):
             with invert():
-                inpl_adder(((X << j)%N)*N1, aux[:])
+                inpl_adder(compute_val1(X, j, N, N1), aux[:])
 
     aux.delete()
 
@@ -232,7 +247,7 @@ def cq_montgomery_multiply_inplace(X: int, y: QuantumFloat, N: int, m: int, inpl
         if X_type:
             @jax.jit
             def get_X1(X, N):
-                R = BigInteger(1, X.digits.shape[0]) << m
+                R = BigInteger.from_int(1, X.digits.shape[0]) << m
                 X = montgomery_decoder(X, R, N)
                 return modinv(X, N)
             X1 = get_X1(X, N)

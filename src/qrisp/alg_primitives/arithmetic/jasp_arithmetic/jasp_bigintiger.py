@@ -56,7 +56,7 @@ class BigInteger:
     def from_int(n: int, size=2):
         def body_fun(i, args):
             digits, num = args
-            digits = digits.at[i].set(num % BASE)
+            digits = digits.at[i].set(jnp.uint32(num % BASE))
             num //= BASE
             return digits, num
         digits, _ = lax.fori_loop(0, size, body_fun, (jnp.zeros(size, dtype=DTYPE), n))
@@ -86,7 +86,7 @@ class BigInteger:
             s = jnp.uint64(a[i]) + jnp.uint64(b[i]) + carry
             digit = jnp.uint32(s % BASE)
             new_carry = jnp.uint64(s // BASE)
-            result = result.at[i].set(digit)
+            result = result.at[i].set(jnp.uint32(digit))
             return new_carry, result
 
         carry, result = lax.fori_loop(0, a.shape[0], add_step, (carry, result))
@@ -104,7 +104,7 @@ class BigInteger:
             s, new_carry = lax.cond(jnp.uint64(a[i]) >= jnp.uint64(b[i]) + carry,
                                     lambda: (jnp.uint32(a[i] - b[i] - carry), 0),
                                     lambda: (jnp.uint32(jnp.uint64(a[i]) + jnp.uint64(BASE) - jnp.uint64(b[i]) - carry) , 1))
-            result = result.at[i].set(s)
+            result = result.at[i].set(jnp.uint32(s))
             return new_carry, result
 
         carry, result = lax.fori_loop(0, a.shape[0], add_step, (0, result))
@@ -275,7 +275,7 @@ class BigInteger:
         pos = i//32
         pos_in = i%32
         ds = jnp.copy(self.digits)
-        ds = ds.at[pos].set(ds[pos] ^ (1 << pos_in))
+        ds = ds.at[pos].set(jnp.uint32(ds[pos] ^ (1 << pos_in)))
         return BigInteger(ds)
     
     def bit_size(self):
@@ -283,26 +283,31 @@ class BigInteger:
         return 32*pos_i + (jnp.ceil(jnp.log2(self.digits[pos_i]))).astype(jnp.int64)
 
     
-def bi_modinv(a,m):
+def bi_modinv(a: BigInteger, m: BigInteger) -> BigInteger:
     n = a.digits.shape[0]
     bi0 = BigInteger.from_int(0, n)
     bi1 = BigInteger.from_int(1, n)
+    
+    t, new_t = bi0, bi1
+    r, new_r = m, a
 
-    def cf(val):
-        t, new_t, r, new_r = val
-        return jnp.logical_not(new_r == bi0)
+    def cond(state):
+        _, new_t, r, new_r = state
+        return new_r != 0
 
-    def bf(val):
-        t, new_t, r, new_r = val
+    def body(state):
+        t, new_t, r, new_r = state
         quotient = r // new_r
-        t, new_t = new_t, t - quotient * new_t
-        r, new_r = new_r, r - quotient * new_r
-        return t, new_t, r, new_r
 
-    t, new_t, r, new_r = lax.while_loop(cf, bf, (bi0, bi1, m, a))
+        # Unsigned arithmetic with wraparound simulated modulo behavior
+        t_updated = (t + m - (quotient * new_t) % m) % m
+        r_updated = r - quotient * new_r
 
-    # Ensure result is in [0, MOD)
-    return lax.cond(t < 0, lambda: t + m, lambda: t)
+        return new_t, t_updated, new_r, r_updated
+
+    final_t, _, final_r, _ = lax.while_loop(cond, body, (t, new_t, r, new_r))
+
+    return final_t
 
 
 def bi_extended_euclidean(a, b):

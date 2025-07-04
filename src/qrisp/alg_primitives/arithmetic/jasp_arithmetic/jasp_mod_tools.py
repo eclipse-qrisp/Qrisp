@@ -1,5 +1,5 @@
 from qrisp import check_for_tracing_mode
-from .jasp_bigintiger import BigInteger
+from .jasp_bigintiger import BigInteger, bi_modinv
 import jax.numpy as jnp
 import numpy as np
 import jax.lax as lax
@@ -64,13 +64,12 @@ def modinv(a, m):
         return t, new_t, r, new_r
     
     if isinstance(a, BigInteger):
-        n = a.digits.shape[0]
-        t, new_t, r, new_r = loop(cf, bf, (BigInteger.from_int(0, n), BigInteger.from_int(1, n), m, a))
-        return t#lax.cond(t < 0, t + m, t)
+        return bi_modinv(a, m)
     else:
         t, new_t, r, new_r = loop(cf, bf, (0, 1, m, a))
     # Ensure result is in [0, MOD)
         return where(t < 0, t + m, t)
+
 
 def smallest_power_of_two(n):
     if check_for_tracing_mode():

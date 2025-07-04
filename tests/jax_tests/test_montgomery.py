@@ -136,7 +136,7 @@ def test_montgomery_jasp_cq_inplace():
 
 def test_montgomery_jasp_cq_inplace_bi():
     from qrisp import jaspify, QuantumFloat, modinv, jasp_fourier_adder, gidney_adder, measure, BigInteger
-    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import cq_montgomery_multiply_inplace_bi, compute_aux_radix_exponent
+    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import cq_montgomery_multiply_inplace, compute_aux_radix_exponent
     import jax.numpy as jnp
 
     X_int = 29
@@ -151,30 +151,73 @@ def test_montgomery_jasp_cq_inplace_bi():
         X = BigInteger.from_int(X_int, 1)
         N = BigInteger.from_int(N_int, 1)
         m = (jnp.ceil(jnp.log2(N()))).astype(jnp.int64)
-        cq_montgomery_multiply_inplace_bi(X, qy, N, m, gidney_adder)
+        cq_montgomery_multiply_inplace(X, qy, N, m, gidney_adder)
         return measure(qy)
     
     m = compute_aux_radix_exponent(N_int, n)
     
-    assert test_cq_g() == (X_int*y*modinv(2**m, N_int))%N_int
+    assert test_cq_g() == (X_int*y*(2**m%N_int))%N_int
 
-def test_montgomery_not_jasp_cq():
-    from qrisp import QuantumFloat, modinv, gidney_adder, multi_measurement
-    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import cq_montgomery_multiply, compute_aux_radix_exponent
+def test_montgomery_find_order():
+    import numpy as np
+    import jax
+    from qrisp import terminal_sampling, QuantumModulus, QuantumFloat, jrange, control, jasp_fourier_adder, QFT, h, x, fourier_adder, BigInteger
+    
+    def find_order(a, N):
+        qg = QuantumModulus(N, inpl_adder=fourier_adder)
+        qg[:] = 1
+        qpe_res = QuantumFloat(2*qg.size + 1, exponent = -(2*qg.size + 1))
+        h(qpe_res)
+        for i in range(len(qpe_res)):
+            with control(qpe_res[i]):
+                qg *= a
+                a = (a*a)%N
+        QFT(qpe_res, inv = True)
+        return qpe_res.get_measurement()
 
-    X = 29
-    y = 21
-    N = 31
-    n = 5
+    dict_norm = find_order(4, 13)
     
-    def test_cq_g():
-        qy = QuantumFloat(n)
-        qy[:] = y
-        m = compute_aux_radix_exponent(N, n)
-        res = cq_montgomery_multiply(X, qy, N, m, gidney_adder)
-        return multi_measurement([res])
     
-    m = compute_aux_radix_exponent(N, n)
-    
-    assert test_cq_g()[((X*y*modinv(2**m, N))%N,)] == 1.0
-    assert test_cq_g() == (X*y*modinv(2**m, N))%N
+    @terminal_sampling
+    def find_order(a, N):
+        qg = QuantumModulus(N, inpl_adder=jasp_fourier_adder)
+        qg[:] = 1
+        qpe_res = QuantumFloat(2*qg.size + 1, exponent = -(2*qg.size + 1))
+        h(qpe_res)
+        for i in jrange(qpe_res.size):
+            with control(qpe_res[i]):
+                qg *= a
+            a = (a*a)%N
+        QFT(qpe_res, inv = True)
+        return qpe_res
+
+    dict_jasp = find_order(4, 13)
+
+    @jax.jit
+    def modular_square(a, N):
+        return (a*a)%N
+
+    @terminal_sampling
+    def find_order(a, N):
+        qg = QuantumModulus(N, inpl_adder=jasp_fourier_adder)
+        x(qg[0])
+        qpe_res = QuantumFloat(2*qg.size + 1, exponent = -(2*qg.size + 1))
+        h(qpe_res)
+        for i in jrange(qpe_res.size):
+            with control(qpe_res[i]):
+                qg *= a
+            a = modular_square(a, N)
+        QFT(qpe_res, inv = True)
+        return qpe_res
+
+    dict_bim = find_order(BigInteger.from_int_python(4, 1), BigInteger.from_int(13, 1))
+
+
+    def check_dict_equality(a, b):
+        for key in a.keys():
+            if not np.allclose(a[key], b.get(key, -1), rtol=0.001, atol=0.001):
+                return False
+        return True
+
+    assert check_dict_equality(dict_jasp, dict_norm)
+    assert check_dict_equality(dict_jasp, dict_bim)

@@ -181,13 +181,11 @@ class QuantumModulus(QuantumFloat):
             )
             self.modulus = modulus
             if isinstance(modulus, BigInteger):
-                self.biginteger_mode = True
                 @jax.jit
                 def compute(v):
                     return compute_aux_radix_exponent(v)
                 aux = compute(modulus)#compute_aux_radix_exponent(modulus)#modulus.digits.shape[0]*32
             else:
-                self.biginteger_mode = False
                 aux = compute_aux_radix_exponent(modulus)
 
             QuantumFloat.__init__(self, msize=aux, qs=qs)
@@ -252,8 +250,7 @@ class QuantumModulus(QuantumFloat):
                 BigInteger
             )
             from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import montgomery_encoder
-            if self.biginteger_mode:
-                from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
+            if isinstance(i, BigInteger):
                 return montgomery_encoder(i, BigInteger.from_int(1, i.digits.shape[0]) << self.m, self.modulus)
             else:
                 return montgomery_encoder(i, 1 << self.m, self.modulus)

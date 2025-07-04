@@ -44,7 +44,6 @@ from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import (
 from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
     BigInteger,
     bi_modinv,
-    bi_extended_euclidean, 
     bi_montgomery_encode,
     bi_montgomery_decode
 )
