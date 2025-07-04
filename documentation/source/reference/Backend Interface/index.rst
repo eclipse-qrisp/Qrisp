@@ -8,6 +8,7 @@ Backend Interface
    BackendServer
    BackendClient
    VirtualBackend
+   BatchedBackend
    DockerSimulators
    QiskitBackend
    IQMBackend
