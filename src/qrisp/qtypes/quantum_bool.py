@@ -132,7 +132,7 @@ class QuantumBool(QuantumVariable):
         self.qfloat_comparison = False
 
     def encoder(self, value):
-        if isinstance(value, (bool)):
+        if isinstance(value, (int,bool)):
             return int(value)
         else:
             return value.astype(int)
