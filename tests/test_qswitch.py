@@ -16,7 +16,7 @@
 ********************************************************************************
 """
 
-from qrisp import inpl_mult, h, QuantumFloat, qswitch, multi_measurement
+from qrisp import inpl_mult, h, QuantumFloat, qswitch, multi_measurement, x
 def test_qswitch_case_list():
 
     # Some sample case functions
@@ -120,3 +120,79 @@ def test_qswitch_case_function():
     # Simulate
     assert multi_measurement([case, operand]) == {(0, 2): 0.25, (1, 3): 0.25, (2, 1): 0.25, (3, 1): 0.125, (3, 3): 0.125}
     # Yields {(0, 2): 0.25, (1, 3): 0.25, (2, 1): 0.25, (3, 1): 0.125, (3, 3): 0.125}
+
+
+
+def test_qswitch_case_list_cutoff(): 
+        
+    def case_function_list(i, arg):
+        for j, b in enumerate(bin(i)[:1:-1]):
+            if b== "1":
+                x(arg[j])
+
+    l = [lambda arg: case_function_list(0,arg),
+         lambda arg: case_function_list(1,arg),
+         lambda arg: case_function_list(2,arg),
+         lambda arg: case_function_list(3,arg),
+         lambda arg: case_function_list(4,arg)]
+
+    # Execute switch_case function
+    for mode, r in zip([1,4, None], [1,4,5]):
+        operand = QuantumFloat(4)
+        case = QuantumFloat(4)
+        h(case)
+        qswitch(operand, case, l, method = "tree", case_amount=mode)
+        res = multi_measurement([case, operand])
+
+        for i in range(16):
+            if r <= i:
+                assert res[(i,0)] == 0.0625
+            else:
+                assert res[(i,i)] == 0.0625
+
+    for mode, r in zip([1,4, None], [1,4,5]):
+        operand = QuantumFloat(3)
+        case = QuantumFloat(3)
+        h(case)
+        qswitch(operand, case, case_function_list, method = "parallel", case_amount=r)
+        res = multi_measurement([case, operand])
+
+        for i in range(8):
+            if r <= i:
+                assert res[(i,0)] == 0.0625*2
+            else:
+                assert res[(i,i)] == 0.0625*2
+
+def test_qswitch_case_function_cutoff(): 
+        
+    def case_function_list(i, arg):
+        for j, b in enumerate(bin(i)[:1:-1]):
+            if b== "1":
+                x(arg[j])
+
+    # Execute switch_case function
+    for r in [4,7,8]:
+        operand = QuantumFloat(4)
+        case = QuantumFloat(4)
+        h(case)
+        qswitch(operand, case, case_function_list, method = "tree", case_amount=r)
+        res = multi_measurement([case, operand])
+
+        for i in range(16):
+            if r <= i:
+                assert res[(i,0)] == 0.0625
+            else:
+                assert res[(i,i)] == 0.0625
+
+    for r in [3,5,6]:
+        operand = QuantumFloat(3)
+        case = QuantumFloat(3)
+        h(case)
+        qswitch(operand, case, case_function_list, method = "parallel", case_amount=r)
+        res = multi_measurement([case, operand])
+
+        for i in range(8):
+            if r <= i:
+                assert res[(i,0)] == 0.0625*2
+            else:
+                assert res[(i,i)] == 0.0625*2
