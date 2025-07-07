@@ -16,8 +16,11 @@
 ********************************************************************************
 """
 
-from qrisp.interface import VirtualBackend
 import time
+import threading
+
+from qrisp.interface import VirtualBackend
+
 
 class BatchedBackend(VirtualBackend):
     """
@@ -36,6 +39,12 @@ class BatchedBackend(VirtualBackend):
     until a individual backend call is required. This backend call is then saved
     until the batch is complete. The batch can then be sent through the ``.dispatch``
     method, which resumes each thread to execute the post-processing logic.
+    
+    .. note::
+        
+        Calling the ``.run`` method of a BatchedBackend from the
+        main thread will automatically dispatch all queries
+        (including the query set up by the main thread).
     
     
     Parameters
@@ -142,13 +151,33 @@ class BatchedBackend(VirtualBackend):
         
         self.batch.append((qc, shots))
         
+        if threading.current_thread() is threading.main_thread():
+            
+            dispatching_thread = threading.Thread(target = self.dispatch)
+            dispatching_thread.start()
+        
         while not self.results_available:
             time.sleep(0.01)
         result = self.results[id(qc)]
         del self.results[id(qc)]
+        
+        if threading.current_thread() is threading.main_thread():
+            dispatching_thread.join()
+        
         return result
 
     def dispatch(self, min_calls = 0):
+        """
+        This method dispatches all collected queries and 
+        subsequently resumes their threads.
+
+        Parameters
+        ----------
+        min_calls : int, optional
+            If specified, the dispatch will be delayed until that
+            many queries have been collected. The default is 0.
+
+        """
         
         while len(self.batch) < min_calls:
             time.sleep(0.01)
