@@ -2280,13 +2280,13 @@ def batched_measurement(variables, batched_backend, shots=None):
 
     import threading
 
-    results = []
-    def eval_measurement(qv):
-        results.append(qv.get_measurement(backend = batched_backend, shots = shots))
+    results = [0]*len(variables)
+    def eval_measurement(qv, i):
+        results[i] = qv.get_measurement(backend = batched_backend, shots = shots)
 
     threads = []
-    for var in variables:
-        thread = threading.Thread(target = eval_measurement, args = (var,))
+    for i, var in enumerate(variables):
+        thread = threading.Thread(target = eval_measurement, args = (var, i, ))
         threads.append(thread)
 
     # Start the threads
