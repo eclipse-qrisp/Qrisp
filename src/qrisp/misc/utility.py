@@ -2208,3 +2208,51 @@ def inpl_adder_test(inpl_adder):
                         assert (
                             b == a
                         ), f"Controlled classical-quantum addition behaviour was incorrect; an operation was performed without the control qubit in |1> state. Faulty input sizes: {i}"
+
+
+def batched_measurement(variables, batched_backend, shots=None):
+    """
+    This functions facilitates the measurement of multiple QuantumVariables with a BatchedBackend.
+
+    Parameters
+    ----------
+    variables : list[QuantumVariable]
+        A list of QuantumVariables.
+    batched_backend : BatchedBackend
+        The backend to evaluate the compiled QuantumCircuits on. 
+    shots : int, optional
+        The amount of shots to perform. The default is given by the backend used.
+        
+    Returns
+    -------
+    results : list[dict]
+        The list of results.
+    
+    """
+
+    import threading
+
+    results = []
+    def eval_measurement(qv):
+        results.append(qv.get_measurement(backend = batched_backend, shots = shots))
+
+    threads = []
+    for var in variables:
+        thread = threading.Thread(target = eval_measurement, args = (var,))
+        threads.append(thread)
+
+    # Start the threads
+    for thread in threads:
+        thread.start()
+
+    # Call the dispatch routine
+    # The min_calls keyword will make it wait 
+    # until the batch has a size of number of variables
+    batched_backend.dispatch(min_calls = len(variables))
+
+    # Wait for the threads to join
+    for thread in threads:
+        thread.join()
+
+    # Inspect the results
+    return results
