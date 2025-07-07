@@ -137,6 +137,11 @@ class BatchedBackend(VirtualBackend):
     
         # Inspect the results
         print(results)
+
+    This is automated by the :meth:`batched_measurement <qrisp.batched_measurement>`:
+
+    >>> batched_measurement([c,f], batched_backend=bb)
+    [{3: 1.0}, {5: 1.0}]
     
     """
     

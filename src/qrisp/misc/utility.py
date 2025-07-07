@@ -2212,7 +2212,7 @@ def inpl_adder_test(inpl_adder):
 
 def batched_measurement(variables, batched_backend, shots=None):
     """
-    This functions facilitates the measurement of multiple QuantumVariables with a BatchedBackend.
+    This functions facilitates the measurement of multiple :ref:`QuantumVariables <QuantumVariable>` with a :ref:`BatchedBackend`.
 
     Parameters
     ----------
@@ -2227,6 +2227,54 @@ def batched_measurement(variables, batched_backend, shots=None):
     -------
     results : list[dict]
         The list of results.
+
+    Examples
+    --------
+
+    We set up a BatchedBackend, which sequentially executes the QuantumCircuits
+    on the Qrisp simulator.
+
+    ::
+
+        from qrisp import *
+        from qrisp.interface import BatchedBackend
+
+        def run_func_batch(batch):
+            # Parameters
+            # ----------
+            # batch : list[tuple[QuantumCircuit, int]]
+            #     The circuit and shot batch indicating the backend queries.
+
+            # Returns
+            # -------
+            # results : list[dict[string, int]]
+            #     The list of results.
+
+            results = []
+            for i in range(len(batch)):
+                qc = batch[i][0]
+                shots = batch[i][1]
+            results.append(qc.run(shots = shots))
+
+            return results
+
+        # Set up batched backend
+        bb = BatchedBackend(run_func_batch)
+
+        a = QuantumFloat(4)
+        b = QuantumFloat(3)
+        a[:] = 1
+        b[:] = 2
+        c = a + b
+
+        d = QuantumFloat(4)
+        e = QuantumFloat(3)
+        d[:] = 2
+        e[:] = 3
+        f = d + e
+
+        batched_measurement([c,f], batched_backend=bb)
+        # Yields: [{3: 1.0}, {5: 1.0}]
     
     """
 
