@@ -2210,15 +2210,15 @@ def inpl_adder_test(inpl_adder):
                         ), f"Controlled classical-quantum addition behaviour was incorrect; an operation was performed without the control qubit in |1> state. Faulty input sizes: {i}"
 
 
-def batched_measurement(variables, batched_backend, shots=None):
+def batched_measurement(variables, backend, shots=None):
     """
     This functions facilitates the measurement of multiple :ref:`QuantumVariables <QuantumVariable>` with a :ref:`BatchedBackend`.
 
     Parameters
     ----------
-    variables : list[QuantumVariable]
+    variables : list[:ref:`QuantumVariable`]
         A list of QuantumVariables.
-    batched_backend : BatchedBackend
+    backend : :ref:`BatchedBackend`
         The backend to evaluate the compiled QuantumCircuits on. 
     shots : int, optional
         The amount of shots to perform. The default is given by the backend used.
@@ -2254,7 +2254,7 @@ def batched_measurement(variables, batched_backend, shots=None):
             for i in range(len(batch)):
                 qc = batch[i][0]
                 shots = batch[i][1]
-            results.append(qc.run(shots = shots))
+                results.append(qc.run(shots = shots))
 
             return results
 
@@ -2273,7 +2273,7 @@ def batched_measurement(variables, batched_backend, shots=None):
         e[:] = 3
         f = d + e
 
-        batched_measurement([c,f], batched_backend=bb)
+        batched_measurement([c,f], backend=bb)
         # Yields: [{3: 1.0}, {5: 1.0}]
     
     """
@@ -2282,7 +2282,7 @@ def batched_measurement(variables, batched_backend, shots=None):
 
     results = [0]*len(variables)
     def eval_measurement(qv, i):
-        results[i] = qv.get_measurement(backend = batched_backend, shots = shots)
+        results[i] = qv.get_measurement(backend = backend, shots = shots)
 
     threads = []
     for i, var in enumerate(variables):
@@ -2296,7 +2296,7 @@ def batched_measurement(variables, batched_backend, shots=None):
     # Call the dispatch routine
     # The min_calls keyword will make it wait 
     # until the batch has a size of number of variables
-    batched_backend.dispatch(min_calls = len(variables))
+    backend.dispatch(min_calls = len(variables))
 
     # Wait for the threads to join
     for thread in threads:
