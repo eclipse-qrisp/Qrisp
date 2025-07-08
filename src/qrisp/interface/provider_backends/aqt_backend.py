@@ -18,9 +18,10 @@
 
 import qiskit
 from qrisp.interface.virtual_backend import VirtualBackend
+from qrisp.interface import BatchedBackend
 
 
-class AQTBackend(VirtualBackend):
+class AQTBackend(BatchedBackend):
     """
     This class instantiates a :ref:`VirtualBackend` using an AQT backend. 
     This allows easy access to AQT backends through the qrisp interface.
@@ -94,23 +95,29 @@ class AQTBackend(VirtualBackend):
         provider = AQTProvider(api_token)
         backend = provider.get_backend(name = device_instance, workspace = workspace)
 
-        # Create the run method
-        def run(qasm_str, shots=None, token=""):
-            if shots is None:
-                shots = 100
+        def run_batch_aqt(batch):
+        
+            circuit_batch = []
+            shot_batch = []
+            for qc, shots in batch:
+                qiskit_qc = qc.to_qiskit()
 
-            # Convert to qiskit
-            qiskit_qc = qiskit.QuantumCircuit.from_qasm_str(qasm_str)
+                # Make circuit with one monolithic register
+                new_qiskit_qc = qiskit.QuantumCircuit(len(qiskit_qc.qubits), len(qiskit_qc.clbits))
+                for instr in qiskit_qc:
+                    new_qiskit_qc.append(
+                        instr.operation,
+                        [qiskit_qc.qubits.index(qb) for qb in instr.qubits],
+                        [qiskit_qc.clbits.index(cb) for cb in instr.clbits],
+                    )
 
-            # Make circuit with one monolithic register
-            new_qiskit_qc = qiskit.QuantumCircuit(len(qiskit_qc.qubits), len(qiskit_qc.clbits))
-            for instr in qiskit_qc:
-                new_qiskit_qc.append(
-                    instr.operation,
-                    [qiskit_qc.qubits.index(qb) for qb in instr.qubits],
-                    [qiskit_qc.clbits.index(cb) for cb in instr.clbits],
-                )
+                circuit_batch.append(new_qiskit_qc)
+
+                if shots is None:
+                    shots = 100
             
+                shot_batch.append(shots)
+
             # Instantiate a sampler on the execution backend.
             sampler = AQTSampler(backend)
 
@@ -119,23 +126,25 @@ class AQTBackend(VirtualBackend):
             sampler.set_transpile_options(optimization_level=3)
 
             # Sample the circuit on the execution backend.
-            result = sampler.run(new_qiskit_qc, shots=shots).result()
+            results = sampler.run(circuit_batch, shots = max(shot_batch)).result()
 
-            quasi_dist = result.quasi_dists[0]
-           
-            # Format to fit the qrisp result format
-            result_dic = {}
+            quasi_dist_batch = []
+            for i in range(len(batch)):
+                quasi_dist = results.quasi_dists[i]
 
-            for item in list(quasi_dist.keys()):
-                new_key = bin(item)[2:]
-                result_dic.setdefault(new_key, quasi_dist[item])
+                new_quasi_dist = {}
+                for item in list(quasi_dist.keys()):
+                    new_key = bin(item)[2:]
+                    new_quasi_dist.setdefault(new_key, quasi_dist[item])
 
-            return result_dic
+                quasi_dist_batch.append(new_quasi_dist)
+    
+            return quasi_dist_batch
 
-        # Call VirtualBackend constructor
+        # Call BatchedBackend constructor
         if isinstance(backend.name, str):
             name = backend.name
         else:
             name = backend.name()
 
-        super().__init__(run)
+        super().__init__(run_batch_aqt)
