@@ -99,6 +99,7 @@ class AQTBackend(BatchedBackend):
         
             circuit_batch = []
             shot_batch = []
+            cl_bits_batch = []
             for qc, shots in batch:
                 qiskit_qc = qc.to_qiskit()
 
@@ -112,6 +113,7 @@ class AQTBackend(BatchedBackend):
                     )
 
                 circuit_batch.append(new_qiskit_qc)
+                cl_bits_batch.append(len(qiskit_qc.clbits))
 
                 if shots is None:
                     shots = 100
@@ -131,10 +133,11 @@ class AQTBackend(BatchedBackend):
             quasi_dist_batch = []
             for i in range(len(batch)):
                 quasi_dist = results.quasi_dists[i]
+                cl_bits = cl_bits_batch[i]
 
                 new_quasi_dist = {}
                 for item in list(quasi_dist.keys()):
-                    new_key = bin(item)[2:]
+                    new_key = bin(item)[2:].zfill(cl_bits)
                     new_quasi_dist.setdefault(new_key, quasi_dist[item])
 
                 quasi_dist_batch.append(new_quasi_dist)
