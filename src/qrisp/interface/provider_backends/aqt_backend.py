@@ -17,11 +17,10 @@
 """
 
 import qiskit
-from qrisp.interface.virtual_backend import VirtualBackend
-from qrisp.interface import BatchedBackend
+from qrisp.interface import VirtualBackend, BatchedBackend
 
 
-class AQTBackend(VirtualBackend):
+class AQTBackend(BatchedBackend):
     """
     This class instantiates a :ref:`VirtualBackend` using an AQT backend. 
     This allows easy access to AQT backends through the qrisp interface.
@@ -95,6 +94,7 @@ class AQTBackend(VirtualBackend):
         provider = AQTProvider(api_token)
         backend = provider.get_backend(name = device_instance, workspace = workspace)
 
+        """
         def run(qasm_str, shots=None, token=""):
             if shots is None:
                 shots = 100
@@ -131,17 +131,16 @@ class AQTBackend(VirtualBackend):
                 result_dic.setdefault(new_key, quasi_dist[item])
 
             return result_dic
-        
-        # Does not work properly (Implausible results for entanglement witness example). Likely a bug in the AQTSampler: 
-        # Sometimes all results from a batch correspond to just one of the circuits.
         """
+
         def run_batch_aqt(batch):
         
             circuit_batch = []
             shot_batch = []
             cl_bits_batch = []
             for qc, shots in batch:
-                qiskit_qc = qc.to_qiskit()
+                # Sometimes wrong results without transpilation 
+                qiskit_qc = qc.transpile(3).to_qiskit()
 
                 # Make circuit with one monolithic register
                 new_qiskit_qc = qiskit.QuantumCircuit(len(qiskit_qc.qubits), len(qiskit_qc.clbits))
@@ -183,7 +182,6 @@ class AQTBackend(VirtualBackend):
                 quasi_dist_batch.append(new_quasi_dist)
     
             return quasi_dist_batch
-        """
 
         # Call BatchedBackend constructor
         if isinstance(backend.name, str):
@@ -191,4 +189,4 @@ class AQTBackend(VirtualBackend):
         else:
             name = backend.name()
 
-        super().__init__(run)
+        super().__init__(run_batch_aqt)
