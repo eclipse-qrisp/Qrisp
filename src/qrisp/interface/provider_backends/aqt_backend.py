@@ -21,7 +21,7 @@ from qrisp.interface.virtual_backend import VirtualBackend
 from qrisp.interface import BatchedBackend
 
 
-class AQTBackend(BatchedBackend):
+class AQTBackend(VirtualBackend):
     """
     This class instantiates a :ref:`VirtualBackend` using an AQT backend. 
     This allows easy access to AQT backends through the qrisp interface.
@@ -95,6 +95,46 @@ class AQTBackend(BatchedBackend):
         provider = AQTProvider(api_token)
         backend = provider.get_backend(name = device_instance, workspace = workspace)
 
+        def run(qasm_str, shots=None, token=""):
+            if shots is None:
+                shots = 100
+
+            # Convert to qiskit
+            qiskit_qc = qiskit.QuantumCircuit.from_qasm_str(qasm_str)
+
+            # Make circuit with one monolithic register
+            new_qiskit_qc = qiskit.QuantumCircuit(len(qiskit_qc.qubits), len(qiskit_qc.clbits))
+            for instr in qiskit_qc:
+                new_qiskit_qc.append(
+                    instr.operation,
+                    [qiskit_qc.qubits.index(qb) for qb in instr.qubits],
+                    [qiskit_qc.clbits.index(cb) for cb in instr.clbits],
+                )
+            
+            # Instantiate a sampler on the execution backend.
+            sampler = AQTSampler(backend)
+
+            # Optional: set the transpiler's optimization level.
+            # Optimization level 3 typically provides the best results.
+            sampler.set_transpile_options(optimization_level=3)
+
+            # Sample the circuit on the execution backend.
+            result = sampler.run(new_qiskit_qc, shots=shots).result()
+
+            quasi_dist = result.quasi_dists[0]
+            
+            # Format to fit the qrisp result format
+            result_dic = {}
+
+            for item in list(quasi_dist.keys()):
+                new_key = bin(item)[2:].zfill(len(qiskit_qc.clbits))
+                result_dic.setdefault(new_key, quasi_dist[item])
+
+            return result_dic
+        
+        # Does not work properly (Implausible results for entanglement witness example). Likely a bug in the AQTSampler: 
+        # Sometimes all results from a batch correspond to just one of the circuits.
+        """
         def run_batch_aqt(batch):
         
             circuit_batch = []
@@ -143,6 +183,7 @@ class AQTBackend(BatchedBackend):
                 quasi_dist_batch.append(new_quasi_dist)
     
             return quasi_dist_batch
+        """
 
         # Call BatchedBackend constructor
         if isinstance(backend.name, str):
@@ -150,4 +191,4 @@ class AQTBackend(BatchedBackend):
         else:
             name = backend.name()
 
-        super().__init__(run_batch_aqt)
+        super().__init__(run)
