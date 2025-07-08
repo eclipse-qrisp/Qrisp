@@ -383,6 +383,7 @@ By the end of this tutorial, you'll have a solid foundation of our high-level fr
    JaspQAOAtutorial
    QIROtutorial
    QMCItutorial
+   DickeStatestutorial
 
 
    
