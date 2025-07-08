@@ -119,7 +119,7 @@ class AQTBackend(VirtualBackend):
             sampler.set_transpile_options(optimization_level=3)
 
             # Sample the circuit on the execution backend.
-            result = sampler.run(new_qiskit_qc).result()
+            result = sampler.run(new_qiskit_qc, shots=shots).result()
 
             quasi_dist = result.quasi_dists[0]
            
