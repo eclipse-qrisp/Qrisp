@@ -205,9 +205,9 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
 
     We apply a 3-contolled X gate
 
-    >>> from qrisp import QuantumVariable, mcx
+    >>> from qrisp import QuantumVariable, mcx, QuantumBool
     >>> control = QuantumVariable(3)
-    >>> target = QuantumVariable(1)
+    >>> target = QuantumBool()
     >>> mcx(control, target, method = "gray")
     >>> print(control.qs)
 
@@ -226,17 +226,17 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
         Live QuantumVariables:
         ---------------------
         QuantumVariable control
-        QuantumVariable target
+        QuantumBool target
 
     We compare different performance indicators. ::
 
-        from qrisp import QuantumVariable, mcx
+        from qrisp import QuantumVariable, mcx, QuantumBool
 
         def benchmark_mcx(n, methods):
             for method in methods:
 
                 controls = QuantumVariable(n)
-                target = QuantumVariable(1)
+                target = QuantumBool()
 
                 mcx(controls, target, method = method)
 
@@ -319,7 +319,7 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
 
     >>> from qrisp import QuantumVariable, mcx
     >>> control = QuantumVariable(2)
-    >>> target = QuantumVariable(1)
+    >>> target = QuantumBool()
     >>> mcx(control, target, method = "jones")
     >>> print(control.qs)
     QuantumCircuit:
@@ -338,7 +338,7 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
     Live QuantumVariables:
     ----------------------
     QuantumVariable control
-    QuantumVariable target
+    QuantumBool target
 
     We see that there is no classical bit and therefore also no measurement.
     The statevector can still be accessed:
@@ -388,7 +388,7 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
     the respective partner if called to invert:
 
     >>> control = QuantumVariable(2)
-    >>> target = QuantumVariable(1)
+    >>> target = QuantumBool()
     >>> mcx(control, target, method = "gidney")
     >>> print(control.qs)
     QuantumCircuit:
@@ -403,7 +403,7 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
     Live QuantumVariables:
     ----------------------
     QuantumVariable control
-    QuantumVariable target
+    QuantumBool target
 
     This even works in conjunction with the :ref:`uncomputation module <Uncomputation>`:
 
@@ -443,7 +443,7 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
         from qrisp import invert
 
         control = QuantumVariable(2)
-        target = QuantumVariable(1)
+        target = QuantumBool()
 
         with invert():
             mcx(control, target, method = "gidney")
@@ -462,7 +462,7 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
     Live QuantumVariables:
     ----------------------
     QuantumVariable control
-    QuantumVariable target
+    QuantumBool target
 
 
     """

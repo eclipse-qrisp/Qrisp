@@ -22,8 +22,8 @@
 # of SparseBiArray manipulation
 
 import numpy as np
-from numba import uint64, uint32, int64, int32, njit, prange, vectorize
-from qrisp.simulator.numerics_config import float_tresh, cutoff_ratio
+from numba import uint64, uint32, int64, njit, prange, vectorize
+from qrisp.simulator.numerics_config import cutoff_ratio
 from scipy.sparse import coo_array
 
 
@@ -335,7 +335,7 @@ def bi_array_moveaxis(data_array, index_perm, f_index_array):
 
 
 @njit(parallel=True, cache=True)
-def dense_measurement_brute(input_array, mes_amount, outcome_index):
+def dense_measurement_brute(input_array, mes_amount, outcome_index, cutoff_ratio):
 
     n = int(np.log2(len(input_array)))
     mes_amount = int(mes_amount)
@@ -369,11 +369,11 @@ def dense_measurement_brute(input_array, mes_amount, outcome_index):
 
 
 @njit(nogil=True, cache=True)
-def dense_measurement_smart(input_array, mes_amount, outcome_index):
+def dense_measurement_smart(input_array, mes_amount, outcome_index, float_thresh):
 
     p = np.abs(np.vdot(input_array, input_array))
 
-    if p < float_tresh:
+    if p < float_thresh:
         return [input_array], [p], [-1]
 
     if mes_amount == 0:
@@ -385,7 +385,7 @@ def dense_measurement_smart(input_array, mes_amount, outcome_index):
     outcome_index_list = []
 
     a, b, c = dense_measurement_smart(
-        input_array[: N // 2], mes_amount - 1, outcome_index
+        input_array[: N // 2], mes_amount - 1, outcome_index, float_thresh
     )
 
     if c[0] != -1:
@@ -394,7 +394,7 @@ def dense_measurement_smart(input_array, mes_amount, outcome_index):
         outcome_index_list.extend(c)
 
     a, b, c = dense_measurement_smart(
-        input_array[N // 2 :], mes_amount - 1, outcome_index + 2 ** (mes_amount - 1)
+        input_array[N // 2 :], mes_amount - 1, outcome_index + 2 ** (mes_amount - 1), float_thresh
     )
 
     if c[0] != -1:
@@ -424,7 +424,7 @@ def sort_indices_jitted(row, col, data, shape_1):
 
 
 def coo_sparse_matrix_mult_inner(
-    A_row, A_col, A_data, B_row, B_col, B_data, A_shape, B_shape
+    A_row, A_col, A_data, B_row, B_col, B_data, A_shape, B_shape, cutoff_ratio
 ):
     """
     This function describes a novel sparse matrix multiplication algorithm operating
@@ -524,7 +524,7 @@ def coo_sparse_matrix_mult_inner(
 
     abs_R = np.abs(R)
     max_abs = np.max(R.ravel())
-
+    
     I, J = np.nonzero(abs_R > (cutoff_ratio * max_abs))
 
     res_row = A_row[unique_marker_a[I]]
@@ -593,13 +593,13 @@ def find_agreements(a, b):
 def coo_sparse_matrix_mult(A, B):
     if A.shape[0] < B.shape[1]:
         new_row, new_col, new_data = coo_sparse_matrix_mult_inner(
-            A.row, A.col, A.data, B.row, B.col, B.data, A.shape, B.shape
+            A.row, A.col, A.data, B.row, B.col, B.data, A.shape, B.shape, cutoff_ratio
         )
 
     else:
 
         new_col, new_row, new_data = coo_sparse_matrix_mult_inner(
-            B.col, B.row, B.data, A.col, A.row, A.data, B.shape[::-1], A.shape[::-1]
+            B.col, B.row, B.data, A.col, A.row, A.data, B.shape[::-1], A.shape[::-1], cutoff_ratio
         )
 
     if len(new_data) == 0:

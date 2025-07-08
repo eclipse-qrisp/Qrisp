@@ -215,7 +215,7 @@ If a cached function is called with a different type (classical or quantum) the 
 
     def main():
         qf = QuantumFloat(5)
-        qbl = QuantumBool(5)
+        qbl = QuantumBool()
 
         inner_function(qf)
         inner_function(qf)
@@ -233,7 +233,7 @@ If a cached function is called with a different type (classical or quantum) the 
 
 We see 2 seconds now because the ``inner_function`` has been traced twice: Once for the :ref:`QuantumFloat` and once for the :ref:`QuantumBool`.
 
-Another important concept are dynamic values. Dynamic values are values that are only known at runtime (i.e. when the program is actually executed). This could be because the value is coming from a quantum measurement. Every QuantumVariable and it's ``.size`` attribute are dynamic. Furthermore classical values can also be dynamic. For classical values, we can use the Python native ``isinstance`` check for the ``jax.core.Tracer`` class, whether a variable is dynamic. Note that even though ``QuantumVariables`` behave dynamic, they are not tracers themselves.
+Another important concept are dynamic values. Dynamic values are values that are only known at runtime (i.e. when the program is actually executed). This could be because the value is coming from a quantum measurement. Every QuantumVariable and its ``.size`` attribute are dynamic. Furthermore classical values can also be dynamic. For classical values, we can use the Python native ``isinstance`` check for the ``jax.core.Tracer`` class, whether a variable is dynamic. Note that even though ``QuantumVariables`` behave dynamic, they are not tracers themselves.
 ::
     
     from jax.core import Tracer

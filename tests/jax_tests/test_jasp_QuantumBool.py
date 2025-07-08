@@ -16,28 +16,20 @@
 ********************************************************************************
 """
 
-import numpy as np
-import threading
+def test_jasp_QuantumBool():
 
-from qrisp.circuit.quantum_circuit import QuantumCircuit
+    from qrisp import QuantumBool, measure
+    from qrisp.jasp import jaspify
 
+    @jaspify
+    def main(i,j):
+        a = QuantumBool()
+        a[:] = i
+        b = QuantumBool()
+        b[:] = j
+    
+        return measure(a), measure(b)
 
-class CompilationAccelerator:
-
-    def __init__(self, xla_mode=2):
-        self.xla_mode = xla_mode
-
-    def __enter__(self):
-
-        
-        self.original_xla_mode = QuantumCircuit.xla_mode
-
-        if threading.current_thread() is threading.main_thread():
-            QuantumCircuit.xla_mode = self.xla_mode
-
-    def __exit__(self, exception_type, exception_value, traceback):
-        if threading.current_thread() is threading.main_thread():
-            QuantumCircuit.xla_mode = self.original_xla_mode
-
-
-fast_append = CompilationAccelerator
+    res = main(True, False)
+    assert res[0] == True
+    assert res[1] == False

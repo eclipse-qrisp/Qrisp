@@ -205,7 +205,8 @@ def create_qiskit_instruction(op, params=[]):
         qiskit_ins = qsk_gates.RZZGate(*params)
     elif op.name == "ryy":
         qiskit_ins = qsk_gates.RYYGate(*params)
-
+    elif op.name == "swap":
+        qiskit_ins = qsk_gates.SwapGate()
     elif op.name == "measure":
         qiskit_ins = Measure()
     elif op.name == "barrier":

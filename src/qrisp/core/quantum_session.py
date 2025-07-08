@@ -890,7 +890,7 @@ class QuantumSession(QuantumCircuit):
 
         >>> from qrisp import QuantumVariable, mcx, cx
         >>> ctrl = QuantumVariable(4)
-        >>> target = QuantumVariable(1)
+        >>> target = QuantumBool()
         >>> mcx(ctrl, target)
         >>> print(ctrl.qs)
 
@@ -911,7 +911,7 @@ class QuantumSession(QuantumCircuit):
             Live QuantumVariables:
             ---------------------
             QuantumVariable ctrl
-            QuantumVariable target
+            QuantumBool target
 
         We can now call the ``.compile`` method
 
@@ -998,7 +998,7 @@ class QuantumSession(QuantumCircuit):
         ``mcx`` gate.
 
         >>> ctrl = QuantumVariable(4)
-        >>> target = QuantumVariable(1)
+        >>> target = QuantumBool()
         >>> qv = QuantumVariable(2)
         >>> cx(target[0], qv)
         >>> mcx(ctrl, target)

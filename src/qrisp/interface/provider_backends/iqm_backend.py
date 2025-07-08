@@ -16,7 +16,7 @@
 ********************************************************************************
 """
 
-from qrisp.interface import VirtualBackend
+from qrisp.interface import BatchedBackend
 
 def IQMBackend(api_token, device_instance, compilation_options = None):
     """
@@ -92,30 +92,39 @@ def IQMBackend(api_token, device_instance, compilation_options = None):
     if compilation_options is None:
         compilation_options = CircuitCompilationOptions()
 
-    def run_func_iqm(qasm_str, shots=None, token=""):
-        if shots is None:
-            shots = 1000
+    def run_batch_iqm(batch):
         
-        from qiskit import QuantumCircuit
+        circuit_batch = []
+        shot_batch = []
+        for qc, shots in batch:
+            qiskit_qc = qc.to_qiskit()
+            qiskit_qc = transpile_to_IQM(qiskit_qc, backend)
+            circuit_batch.append(backend.serialize_circuit(qiskit_qc))
+            if shots is None:
+                shots = 1000
+            
+            shot_batch.append(shots)
         
-        qiskit_qc = QuantumCircuit.from_qasm_str(qasm_str)
-        qiskit_qc = transpile_to_IQM(qiskit_qc, backend)
-        
-        iqm_qc = backend.serialize_circuit(qiskit_qc)
-
-        UUID = client.submit_circuits([iqm_qc], options = compilation_options, shots = shots)
+    
+        UUID = client.submit_circuits(circuit_batch, 
+                                      options = compilation_options, 
+                                      shots = max(shot_batch))
         
         client.wait_for_results(UUID)
         answer = client.get_run_counts(UUID)
-        
-        counts = answer.counts_batch[0].counts
-
         import re
-        new_counts = {}
-        for key in counts.keys():
-            counts_string = re.sub(r"\W", "", key)
-            new_counts[counts_string] = counts[key]
+        
+        counts_batch = []
+        for i in range(len(batch)):
+            counts = answer.counts_batch[i].counts
+        
+            new_counts = {}
+            for key in counts.keys():
+                counts_string = re.sub(r"\W", "", key)
+                new_counts[counts_string[::-1]] = counts[key]
+                
+            counts_batch.append(new_counts)
+    
+        return counts_batch
 
-        return new_counts
-
-    return VirtualBackend(run_func_iqm)
+    return BatchedBackend(run_batch_iqm)

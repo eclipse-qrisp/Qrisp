@@ -8,6 +8,7 @@ Utilities
    :toctree: generated/
 
    multi_measurement
+   batched_measurement
    gate_wrap
    custom_control
    lifted

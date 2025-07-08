@@ -2208,3 +2208,99 @@ def inpl_adder_test(inpl_adder):
                         assert (
                             b == a
                         ), f"Controlled classical-quantum addition behaviour was incorrect; an operation was performed without the control qubit in |1> state. Faulty input sizes: {i}"
+
+
+def batched_measurement(variables, batched_backend, shots=None):
+    """
+    This functions facilitates the measurement of multiple :ref:`QuantumVariables <QuantumVariable>` with a :ref:`BatchedBackend`.
+
+    Parameters
+    ----------
+    variables : list[QuantumVariable]
+        A list of QuantumVariables.
+    batched_backend : BatchedBackend
+        The backend to evaluate the compiled QuantumCircuits on. 
+    shots : int, optional
+        The amount of shots to perform. The default is given by the backend used.
+        
+    Returns
+    -------
+    results : list[dict]
+        The list of results.
+
+    Examples
+    --------
+
+    We set up a BatchedBackend, which sequentially executes the QuantumCircuits
+    on the Qrisp simulator.
+
+    ::
+
+        from qrisp import *
+        from qrisp.interface import BatchedBackend
+
+        def run_func_batch(batch):
+            # Parameters
+            # ----------
+            # batch : list[tuple[QuantumCircuit, int]]
+            #     The circuit and shot batch indicating the backend queries.
+
+            # Returns
+            # -------
+            # results : list[dict[string, int]]
+            #     The list of results.
+
+            results = []
+            for i in range(len(batch)):
+                qc = batch[i][0]
+                shots = batch[i][1]
+            results.append(qc.run(shots = shots))
+
+            return results
+
+        # Set up batched backend
+        bb = BatchedBackend(run_func_batch)
+
+        a = QuantumFloat(4)
+        b = QuantumFloat(3)
+        a[:] = 1
+        b[:] = 2
+        c = a + b
+
+        d = QuantumFloat(4)
+        e = QuantumFloat(3)
+        d[:] = 2
+        e[:] = 3
+        f = d + e
+
+        batched_measurement([c,f], batched_backend=bb)
+        # Yields: [{3: 1.0}, {5: 1.0}]
+    
+    """
+
+    import threading
+
+    results = [0]*len(variables)
+    def eval_measurement(qv, i):
+        results[i] = qv.get_measurement(backend = batched_backend, shots = shots)
+
+    threads = []
+    for i, var in enumerate(variables):
+        thread = threading.Thread(target = eval_measurement, args = (var, i, ))
+        threads.append(thread)
+
+    # Start the threads
+    for thread in threads:
+        thread.start()
+
+    # Call the dispatch routine
+    # The min_calls keyword will make it wait 
+    # until the batch has a size of number of variables
+    batched_backend.dispatch(min_calls = len(variables))
+
+    # Wait for the threads to join
+    for thread in threads:
+        thread.join()
+
+    # Inspect the results
+    return results
