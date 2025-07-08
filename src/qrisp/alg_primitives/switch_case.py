@@ -27,10 +27,15 @@ import jax.numpy as jnp
 
 
 def qswitch(operand, case, case_function, method="auto", case_amount=None, inv = False):
-    """
+    r"""
     Executes a switch - case statement distinguishing between a list of
     given in-place functions.
 
+    More precisely, the qswitch applies the unitary $U_i$ to the operand in state $\ket{\psi}$ given that the case variable is in state $\ket{i}$, i.e.,
+
+    .. math:: 
+
+        \text{qswitch}\ket{i}_{\text{case}}\ket{\psi}_{\text{operand}} = \ket{i}_{\text{case}}U_i\ket{\psi}_{\text{operand}}
 
     Parameters
     ----------
@@ -45,8 +50,8 @@ def qswitch(operand, case, case_function, method="auto", case_amount=None, inv =
         The compilation method. Available are ``sequential``, ``parallel``, ``tree`` and ``auto``.
         ``parallel`` is exponentially fast but requires more temporary qubits. ``tree`` uses `balanced binaray trees <https://arxiv.org/pdf/2407.17966v1>`_.
         The default is ``auto``.
-    case_amount : int or None
-        Number of cases. If set to ``None``, the number is inferred automatically:
+    case_amount : int, optional
+        The number of cases. By default the number is inferred automatically:
         - When ``case_function`` is a single function, the size of the case variable is used.
         - When ``case_function`` is a list of functions, the length of that list is used instead.
 
@@ -179,7 +184,6 @@ def qswitch(operand, case, case_function, method="auto", case_amount=None, inv =
                 for i in range(case_amount):
                     with control(enable[i]):
                         if callable(case_function):
-
                             case_function(i, qa[i])
                         else:
                             case_function[i](qa[i])
