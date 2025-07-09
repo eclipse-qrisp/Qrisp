@@ -24,7 +24,10 @@ As we will see in the next example, number 65 is easy to crack in terms of the p
 A tale of encryption and decryption
 -----------------------------------
 
-Imagine a scenario where two characters, Alice and Bob, are trying to exchange a secure message. They decide to use RSA encryption, a popular method that uses the product of two prime numbers as a key. In this case, they choose 5 and 13 as their private keys, and 7 as one of the public keys.
+Imagine a scenario where two characters, Alice and Bob, are trying to exchange a secure message. They decide to use RSA encryption, a popular method that uses the product of two prime numbers as part of the key. 
+Alice chooses two prime numbers $p=5$ and $q=13$ and calculates $N=p*q=5*13=65$. She then calculates Euler's totient $\phi(N)=(p-1)(q-1)=4*12=48$, and chooses a public exponent $e$ such that $1<e<\phi(n)$ and $\text{gcd}(e,\phi(n))=1$. 
+In this case, Alice chooses $e=7$. Next, she calculates the private exponent $d$ such that $d$ is the modular inverse of $e$ modulo $N$. She publishes the pair $(e,N)=(7,65)$ as the public key, and keeps the pair $(d,N)=(7,65)$ as the private key.
+In this case, they choose 5 and 13 as their private keys, and 7 as one of the public keys.
 ::
 
     from qrisp.shor import rsa_encrypt_string
