@@ -9,7 +9,7 @@ Here’s what you’ll discover as you journey through this tutorial:
 
 - We’ll start by demystifying the LCU protocol: why it’s needed and what problems it solves. You’ll learn the core ideas behind representing complex quantum operations as sums of simpler, unitary building blocks aka block encodings.
 
-- Next, we’ll roll up our sleeves and see how LCU comes alive in Qrisp (Frankenstein intensifies). This section is hands-on: you’ll explore annotated code examples, understand the structure of Qrisp’s LCU implementation, and see how to prepare ancilla registers, orchestrate controlled unitaries, and interpret the results.
+- Next, we’ll roll up our sleeves and see how LCU comes alive in Qrisp (Frankenstein intensifies). This section is hands-on: you’ll explore annotated code examples, understand the structure of Qrisp’s LCU implementation, and see how to prepare ancilla variables, orchestrate controlled unitaries, and interpret the results.
 
 - We won't stop at just understanding LCU, but instead also use it as an algorithmic building block (primitive) to perform another algorithm. In our final section, we combine the strengths of Trotterization and LCU to unlock the Linear Combination of Hamiltonian Simulation (LCHS) protocol. Here, you’ll learn how to simulate functions of Hamiltonians—like $\cos(H)$.
 
@@ -50,11 +50,13 @@ The LCU protocol works by embedding your non-unitary operator into a larger, uni
 
 - **PREPARE** $^\dagger$: Applies the inverse prepartion to the ancilla.
 
+.. image:: LCU.png
+
 Success condition
 ^^^^^^^^^^^^^^^^^
 
 The LCU protocol is deemed successful only if the ancilla variable is measured in the $\ket{0}$ state, which occurs with a probability proportional to :math:`\frac{\langle\psi|A^{\dagger}A|\psi\rangle}{\lambda^2}` where $\lambda=\sum_i\alpha_i$.
-This function does not perform the measurement; it returns the ancilla variable and the transformed target variable.
+The qrisp.inner_LCU does not perform the measurement; it returns the ancilla variable and the transformed target variable.
 
 The approach you’ve just studied was pioneered by Nathan Wiebe, whose contributions have fundamentally shaped the field of quantum algorithm design, particularly in Hamiltonian simulation and quantum linear systems.
 
@@ -78,11 +80,24 @@ At its core, the LCU protocol in Qrisp is realized by two key operations: prepar
 
 ::
 
+    def inner_LCU(operand_prep, state_prep, unitaries, num_unitaries=None, oaa_iter=0):
+
+        if not callable(unitaries):
+            if not isinstance(unitaries, list):
+                raise TypeError("unitaries must be callable or list[callable].")
+            num_unitaries = len(unitaries)
+        else:
+            if num_unitaries == None:
+                raise ValueError(
+                    "The number of unitiaries must be specified if unitaries is callable."
+            )
+
     # Prepare the operand (target quantum variable)
     operand = operand_prep()
 
     # Prepare the ancilla register (case indicator)
-    case_indicator = QuantumFloat(n)  # n = number of ancilla qubits needed
+    n = np.int64(np.ceil(np.log2(num_unitaries))) # n = number of ancilla qubits needed
+    case_indicator = QuantumFloat(n)  
 
     # 1. PREPARE + SELECT + PREPARE† (block encoding)
     def LCU_state_prep(case_indicator, operand):
