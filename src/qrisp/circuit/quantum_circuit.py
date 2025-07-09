@@ -343,7 +343,7 @@ class QuantumCircuit:
             #name = "circuit" + str(id(self))[:5]
             name = "circuit" + str(int(TO_GATE_COUNTER[0]))[:7].zfill(7)
 
-            TO_GATE_COUNTER += 1
+            TO_GATE_COUNTER[0] += 1
 
         definition = self.copy()
         i = 0
