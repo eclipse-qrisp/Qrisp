@@ -20,7 +20,7 @@ from qrisp.interface import BatchedBackend
 
 def IQMBackend(api_token, device_instance, compilation_options = None):
     """
-    This function instantiates an IQMBackend based on VirtualBackend
+    This function instantiates an IQMBackend based on :ref:`VirtualBackend`
     using Qiskit and Qiskit-on-IQM.
 
 
@@ -31,13 +31,13 @@ def IQMBackend(api_token, device_instance, compilation_options = None):
     device_instance : str
         The device instance of the IQM backend such as "garnet".
         For an up-to-date list, see the IQM Resonance website.
-    compilation_options: `CircuitCompilationOptions <https://docs.meetiqm.com/iqm-client/api/iqm.iqm_client.models.CircuitCompilationOptions.html>`.
+    compilation_options: `CircuitCompilationOptions <https://docs.meetiqm.com/iqm-client/api/iqm.iqm_client.models.CircuitCompilationOptions.html>`_.
         An object to specify several options regarding pulse-level compilation.
 
     Examples
     --------
 
-    We evaluate a QuantumFloat multiplication on the 20-qubit IQM Garnet.
+    We evaluate a :ref:`QuantumFloat` multiplication on the 20-qubit IQM Garnet.
 
     >>> from qrisp.interface import IQMBackend
     >>> qrisp_garnet = IQMBackend(api_token = "YOUR_IQM_RESONANCE_TOKEN", device_instance = "garnet")
@@ -45,7 +45,7 @@ def IQMBackend(api_token, device_instance, compilation_options = None):
     >>> a = QuantumFloat(2)
     >>> a[:] = 2
     >>> b = a*a
-    >>> b.get_measurement(backend = qrisp_garnet, shots=1000)
+    >>> b.get_measurement(backend = qrisp_garnet, shots = 1000)
     {4: 0.548,
      5: 0.082,
      0: 0.063,
@@ -72,7 +72,7 @@ def IQMBackend(api_token, device_instance, compilation_options = None):
 
     if not isinstance(device_instance, str):
         raise TypeError(
-            "Please provide a device_instance as a string. You can retrieve a list of available devices id on the IQM Resonance website."
+            "Please provide a device_instance as a string. You can retrieve a list of available devices on the IQM Resonance website."
         )
 
     try:

@@ -21,7 +21,7 @@ from qrisp.interface.virtual_backend import VirtualBackend
 
 class QiskitBackend(VirtualBackend):
     """
-    This class instantiates a VirtualBackend using a Qiskit backend.
+    This class instantiates a :ref:`VirtualBackend` using a Qiskit backend.
     This allows easy access to Qiskit backends through the qrisp interface.
 
 

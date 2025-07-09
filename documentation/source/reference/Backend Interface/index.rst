@@ -12,6 +12,7 @@ Backend Interface
    DockerSimulators
    QiskitBackend
    IQMBackend
+   AQTBackend
    QiskitRuntimeBackend
    
 The backend interface contains a minimal set of features that apply to every gate-based quantum computer.
@@ -84,7 +85,7 @@ This class is a wrapper for the VirtualBackend to quickly integrate Qiskit backe
    qiskit_backend = AerSimulator()
    vrtl_aer_sim = QiskitBackend(qiskit_backend)
 
-Naturally, this also works for non-simulator Qiskit backends.
+Naturally, this also works for non-simulator Qiskit backends (e.g. IBM quantum computers).
 
 
 :ref:`IQMBackend`
@@ -101,4 +102,21 @@ Devices available via IQM Resonance currently support up to 20 000 shots.
    qrisp_garnet = IQMBackend(
       api_token = "YOUR_IQM_RESONANCE_TOKEN", 
       device_instance = "garnet" # check the website for an up-to-date list of devices
+   )
+
+
+:ref:`AQTBackend`
+---------------------
+
+The AQTBackend class allows to run Qrisp programs on AQT quantum computers available via 
+`AQT Cloud <https://www.aqt.eu/products/arnica/>`_. 
+Devices available via AQT Cloud currently support up to 2000 shots. 
+
+::
+
+   from qrisp.interface import AQTBackend
+   qrisp_ibex = AQTBackend(
+      api_token="YOUR_AQT_ARNICA_TOKEN", 
+      device_instance = "ibex", 
+      workspace="YOUR_COMPANY_OR_PROJECT_NAME"
    )
