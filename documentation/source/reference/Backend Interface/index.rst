@@ -116,7 +116,7 @@ Devices available via AQT Cloud currently support up to 2000 shots.
 
    from qrisp.interface import AQTBackend
    qrisp_ibex = AQTBackend(
-      api_token="YOUR_AQT_ARNICA_TOKEN", 
+      api_token = "YOUR_AQT_ARNICA_TOKEN", 
       device_instance = "ibex", 
-      workspace="YOUR_COMPANY_OR_PROJECT_NAME"
+      workspace = "YOUR_COMPANY_OR_PROJECT_NAME"
    )

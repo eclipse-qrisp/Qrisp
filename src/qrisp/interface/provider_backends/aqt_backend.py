@@ -25,6 +25,7 @@ class AQTBackend(BatchedBackend):
     This class instantiates a :ref:`VirtualBackend` using an AQT backend. 
     This allows easy access to AQT backends through the qrisp interface.
 
+    Using this backend requires addtional dependencies: ``pip install qiskit-aqt-provider``. 
 
     Parameters
     ----------
@@ -43,8 +44,8 @@ class AQTBackend(BatchedBackend):
 
     >>> from qrisp import QuantumFloat
     >>> from qrisp.interface import AQTBackend
-    >>> # qrisp_ibex = AQTBackend(api_token="YOUR_AQT_ARNICA_TOKEN", device_instance = "simulator_noise", workspace="aqt_simulators")
-    >>> qrisp_ibex = AQTBackend(api_token="YOUR_AQT_ARNICA_TOKEN", device_instance = "ibex", workspace="YOUR_COMPANY_OR_PROJECT_NAME")
+    >>> # qrisp_ibex = AQTBackend(api_token = "YOUR_AQT_ARNICA_TOKEN", device_instance = "simulator_noise", workspace = "aqt_simulators")
+    >>> qrisp_ibex = AQTBackend(api_token = "YOUR_AQT_ARNICA_TOKEN", device_instance = "ibex", workspace = "YOUR_COMPANY_OR_PROJECT_NAME")
     >>> a = QuantumFloat(2)
     >>> a[:] = 2
     >>> b = a*a
