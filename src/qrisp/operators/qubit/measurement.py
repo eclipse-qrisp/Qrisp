@@ -17,12 +17,14 @@
 """
 
 import math
+import threading
 
 import numpy as np
 from numba import njit
 
 from qrisp.core import QuantumVariable, QuantumArray
 from qrisp.core.compilation import qompiler
+from qrisp.interface import BatchedBackend
 
 
 def get_measurement(
@@ -209,12 +211,12 @@ class QubitOperatorMeasurement:
 
         from qrisp.misc import get_measurement_from_qc
 
-        results = []
-        meas_ops = []
-        meas_coeffs = []
-
-        for i in range(len(self.measurement_operators)):
-
+        results = [0]*len(self.measurement_operators)
+        meas_coeffs = list(results)
+        meas_ops = list(results)
+        
+        def measurement_thread(i):
+            
             group = self.measurement_operators[i]
 
             shots = int(self.shots_list[i] / precision**2)
@@ -227,7 +229,7 @@ class QubitOperatorMeasurement:
             curr.append(self.change_of_basis_gates[i], qubits)
 
             res = get_measurement_from_qc(curr, list(qubit_list), backend, shots)
-            results.append(res)
+            results[i] = res
 
             temp_meas_ops = []
             temp_coeff = []
@@ -235,8 +237,25 @@ class QubitOperatorMeasurement:
                 temp_meas_ops.append(term.serialize())
                 temp_coeff.append(coeff)
 
-            meas_coeffs.append(temp_coeff)
-            meas_ops.append(temp_meas_ops)
+            meas_coeffs[i] = temp_coeff
+            meas_ops[i] = temp_meas_ops
+        
+        
+        threads = []
+        
+        for i in range(len(self.measurement_operators)):
+            
+            if isinstance(backend, BatchedBackend):
+                thread = threading.Thread(target = measurement_thread, args = (i,))
+                thread.start()
+                threads.append(thread)
+            else:
+                measurement_thread(i)
+        
+        if isinstance(backend, BatchedBackend):
+            backend.dispatch(min_calls = len(self.measurement_operators))
+            for thread in threads:
+                thread.join()
 
         samples = create_padded_array([list(res.keys()) for res in results]).astype(
             np.int64
