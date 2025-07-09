@@ -92,19 +92,33 @@ At its core, the LCU protocol in Qrisp is realized by two key operations: prepar
                     "The number of unitiaries must be specified if unitaries is callable."
             )
 
-    # Prepare the operand (target quantum variable)
-    operand = operand_prep()
+        # Prepare the operand (target quantum variable)
+        operand = operand_prep()
 
-    # Prepare the ancilla register (case indicator)
-    n = np.int64(np.ceil(np.log2(num_unitaries))) # n = number of ancilla qubits needed
-    case_indicator = QuantumFloat(n)  
+        # Prepare the ancilla register (case indicator)
+        n = np.int64(np.ceil(np.log2(num_unitaries))) # n = number of ancilla qubits needed
+        case_indicator = QuantumFloat(n)  
 
-    # 1. PREPARE + SELECT + PREPARE† (block encoding)
-    def LCU_state_prep(case_indicator, operand):
-        with conjugate(state_prep)(case_indicator):
-            qswitch(operand, case_indicator, unitaries)
+        # 1. PREPARE + SELECT + PREPARE† (block encoding)
+        def LCU_state_prep(case_indicator, operand):
+            with conjugate(state_prep)(case_indicator):
+                qswitch(operand, case_indicator, unitaries)
 
-    LCU_state_prep(case_indicator, operand)
+        def oracle_func(case_indicator, operand):
+        tag_state({case_indicator: 0})
+
+        LCU_state_prep(case_indicator, operand)
+
+        if oaa_iter > 0:
+            amplitude_amplification(
+                [case_indicator, operand],
+                LCU_state_prep,
+                oracle_func,
+                reflection_indices=[0],
+                iter=oaa_iter,
+            )
+
+        return case_indicator, operand
 
 ``state_prep(case_indicator)`` prepares the ancilla in a superposition reflecting the coefficients $\alpha_i$. :func:`qrisp.qswitch` ``(operand, case_indicator, unitaries)`` applies the correct unitary $U_i$ controlled on the ancilla.
 
