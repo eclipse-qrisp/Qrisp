@@ -24,11 +24,13 @@ As we will see in the next example, number 65 is easy to crack in terms of the p
 A tale of encryption and decryption
 -----------------------------------
 
-Imagine a scenario where two characters, Alice and Bob, are trying to exchange a secure message. They decide to use RSA encryption, a popular method that uses the product of two prime numbers as a key. In this case, they choose 5 and 13 as their private keys, and 7 as one of the public keys.
+Imagine a scenario where two characters, Alice and Bob, are trying to exchange a secure message. They decide to use RSA encryption, a popular method that uses the product of two prime numbers as part of the key. 
+Alice chooses two prime numbers $p=5$ and $q=13$ and calculates their product $N=65$. She then chooses the public exponent $e=11$ and calculates the private exponent $d=35$ following the `key generation protocol <https://www.geeksforgeeks.org/computer-networks/rsa-algorithm-cryptography/>`_.
+She publishes the pair $(e,N)=(11,65)$ as the public key, and keeps the pair $(d,N)=(35,65)$ as the private key.
 ::
 
     from qrisp.shor import rsa_encrypt_string
-    rsa_encrypt_string(p = 5, q = 13, e = 7, message = "Qrisp is awesome!")
+    rsa_encrypt_string(e = 11, N = 65 , message = "Qrisp is awesome!")
 
 Enter our detective, let's call him Gadget, who manages to intercept the encrypted message using his highly advanced encrypted-message-interceptor tool. He knows that Alice and Bob have used RSA encryption, but he doesn’t know the private keys they used. "Aaaargh, so close!", he thought.
 
@@ -37,10 +39,10 @@ Luckily for the future of his career as a detective, he remembered that he has r
 His console read:
 ::
 
-    intercepted_message = '01010000000101001010001100100110010010000101000010001101000010100011010101110011101000100100011100000100000100110111101000011000111110111111'
+    intercepted_message = '01010000000101011001000101000010100011111101111110001101000010100011010001011001110000100100111010000100001101100010000010100100111110100001'
 
     from qrisp.shor import rsa_decrypt_string
-    rsa_decrypt_string(e = 7, N = 65, ciphertext = intercepted_message)
+    rsa_decrypt_string(e = 11, N = 65, ciphertext = intercepted_message)
 
 He ran the command and simply smirked at the result and said "You've got that right, Alice and Bob... Well played!".
 
