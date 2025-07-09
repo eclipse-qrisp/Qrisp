@@ -169,6 +169,9 @@ def extract_constvalues(eqn, context_dic):
 def insert_outvalues(eqn, context_dic, outvalues):
 
     if eqn.primitive.multiple_results:
+        if len(outvalues) != len(eqn.outvars):
+            raise Exception("Tried to insert invalid amount of values into the Context Dictionary")
+        
         for i in range(len(eqn.outvars)):
             context_dic[eqn.outvars[i]] = outvalues[i]
     else:

@@ -38,15 +38,17 @@ from functools import lru_cache
 import numpy as np
 
 from qrisp.jasp.interpreter_tools.abstract_interpreter import (
-    insert_outvalues,
     extract_invalues,
     eval_jaxpr,
+    insert_outvalues
 )
+
 from qrisp.jasp.primitives import (
     QuantumPrimitive,
     OperationPrimitive,
     AbstractQubitArray,
 )
+
 
 import jax
 import jax.numpy as jnp
@@ -188,21 +190,33 @@ def make_profiling_eqn_evaluator(profiling_dic, meas_behavior):
                 )
 
         elif eqn.primitive.name == "while":
-
+            
+            overall_constant_amount= max(eqn.params["body_nconsts"], eqn.params["cond_nconsts"])
+            
             # Reinterpreted body and cond function
             def body_fun(val):
+                
+                constants = val[:eqn.params["body_nconsts"]]
+                carries = val[overall_constant_amount:]
+                
                 body_res = eval_jaxpr(
                     eqn.params["body_jaxpr"], eqn_evaluator=profiling_eqn_evaluator
-                )(*val)
-                return tuple(body_res)
+                )(*(constants + carries))
+                
+                return val[:overall_constant_amount] + tuple(body_res)
 
             def cond_fun(val):
+                
+                constants = val[:eqn.params["cond_nconsts"]]
+                carries = val[overall_constant_amount:]
+                
                 res = eval_jaxpr(
                     eqn.params["cond_jaxpr"], eqn_evaluator=profiling_eqn_evaluator
-                )(*val)
+                )(*(constants + carries))
+                
                 return res
 
-            outvalues = jax.lax.while_loop(cond_fun, body_fun, tuple(invalues))
+            outvalues = jax.lax.while_loop(cond_fun, body_fun, tuple(invalues))[overall_constant_amount:]
 
             insert_outvalues(eqn, context_dic, outvalues)
 
