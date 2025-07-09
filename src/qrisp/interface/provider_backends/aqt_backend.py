@@ -140,7 +140,7 @@ class AQTBackend(BatchedBackend):
             cl_bits_batch = []
             for qc, shots in batch:
                 # Sometimes wrong results without transpilation 
-                qiskit_qc = qc.transpile(3).to_qiskit()
+                qiskit_qc = qc.transpile().to_qiskit()
 
                 # Make circuit with one monolithic register
                 new_qiskit_qc = qiskit.QuantumCircuit(len(qiskit_qc.qubits), len(qiskit_qc.clbits))
