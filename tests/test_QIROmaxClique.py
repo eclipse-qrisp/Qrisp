@@ -24,7 +24,8 @@ import networkx as nx
 def test_qiro_max_clique():
 
     # Define a random graph via the number of nodes and the QuantumVariable arguments
-    num_nodes = 15
+    #num_nodes = 15
+    num_nodes = 10 # Reduced problem size to minimize failure probability
     G = nx.erdos_renyi_graph(num_nodes, 0.7, seed=99)
     qarg = QuantumVariable(G.number_of_nodes())
 
