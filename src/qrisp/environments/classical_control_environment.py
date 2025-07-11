@@ -244,24 +244,30 @@ class ClControlEnvironment(QuantumEnvironment):
         if self.invert:
             cond_bl = ~cond_bl
 
+        @jax.jit       
         def identity_fun(*args):
             return args[-1]
-
+        
         true_fun = identity_fun
         false_fun = identity_fun
-
+        
         res_abs_qc = cond(cond_bl, true_fun, false_fun, *env_vars)
-
+        
         insert_outvalues(eqn, context_dic, [res_abs_qc])
-
+        
         traced_eqn = get_last_equation()
-
+        
         branch_0 = traced_eqn.params["branches"][0]
+        branch_0.jaxpr.eqns.pop(0)
+        branch_0.jaxpr.outvars[-1] = branch_0.jaxpr.invars[-1]
+        
         branch_1 = traced_eqn.params["branches"][1]
-
+        
         from qrisp.jasp import Jaspr
-
-        traced_eqn.params["branches"] = (
-            ClosedJaxpr(Jaspr.from_cache(branch_0.jaxpr), branch_0.consts),
-            ClosedJaxpr(body_jaspr, branch_1.consts),
-        )
+        
+        traced_eqn.params["branches"] = (jax.extend.core.ClosedJaxpr(Jaspr.from_cache(branch_0.jaxpr),
+                                                                     branch_0.consts),
+                                         jax.extend.core.ClosedJaxpr(body_jaspr,
+                                                                     branch_1.consts))
+        
+        
