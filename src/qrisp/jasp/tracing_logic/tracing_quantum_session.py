@@ -194,10 +194,10 @@ tracing_qs_singleton = TracingQuantumSession()
 
 
 def check_for_tracing_mode():
-    return hasattr(
-        jax._src.core.thread_local_state.trace_state.trace_stack.dynamic, "jaxpr_stack"
-    )
+    return hasattr(jax._src.core.trace_ctx.trace, "frame")
 
+def get_last_equation():
+    return jax._src.core.trace_ctx.trace.frame.eqns[-1]
 
 def check_live(tracer):
     if tracer is None:

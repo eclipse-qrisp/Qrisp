@@ -17,10 +17,12 @@
 """
 
 from jax.lax import cond
+from jax.extend.core import ClosedJaxpr
 import jax
 
+
 from qrisp.environments import QuantumEnvironment
-from qrisp.jasp import extract_invalues, insert_outvalues, check_for_tracing_mode
+from qrisp.jasp import extract_invalues, insert_outvalues, check_for_tracing_mode, get_last_equation
 
 
 class ClControlEnvironment(QuantumEnvironment):
@@ -252,11 +254,7 @@ class ClControlEnvironment(QuantumEnvironment):
 
         insert_outvalues(eqn, context_dic, [res_abs_qc])
 
-        traced_eqn = jax._src.core.thread_local_state.trace_state.trace_stack.dynamic.jaxpr_stack[
-            0
-        ].eqns[
-            -1
-        ]
+        traced_eqn = get_last_equation()
 
         branch_0 = traced_eqn.params["branches"][0]
         branch_1 = traced_eqn.params["branches"][1]
@@ -264,6 +262,6 @@ class ClControlEnvironment(QuantumEnvironment):
         from qrisp.jasp import Jaspr
 
         traced_eqn.params["branches"] = (
-            jax.core.ClosedJaxpr(Jaspr.from_cache(branch_0.jaxpr), branch_0.consts),
-            jax.core.ClosedJaxpr(body_jaspr, branch_1.consts),
+            ClosedJaxpr(Jaspr.from_cache(branch_0.jaxpr), branch_0.consts),
+            ClosedJaxpr(body_jaspr, branch_1.consts),
         )

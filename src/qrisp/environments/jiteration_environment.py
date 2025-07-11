@@ -17,7 +17,7 @@
 """
 
 from jax.lax import while_loop
-from jax.core import Literal
+from jax.extend.core import Literal
 
 from qrisp.environments import QuantumEnvironment
 

@@ -185,6 +185,7 @@ def collect_environments(jaxpr):
                 outvars=outvars + eqn.outvars[-1:],
                 effects=eqn.effects,
                 source_info=eqn.source_info,
+                ctx=eqn.ctx
             )
 
             # Remove the collected equations from the new_eqn_list

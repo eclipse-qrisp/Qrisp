@@ -141,8 +141,8 @@ class GidneyMCXJaspr(Jaspr):
             return gidney_mcx_inv_jaspr
 
 
-gidney_mcx_jaspr = GidneyMCXJaspr(False)
-gidney_mcx_inv_jaspr = GidneyMCXJaspr(True)
+# gidney_mcx_jaspr = GidneyMCXJaspr(False)
+# gidney_mcx_inv_jaspr = GidneyMCXJaspr(True)
 
 
 def jasp_gidney_mcx(a, b, c):

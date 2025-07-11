@@ -23,7 +23,7 @@ from qrisp.environments.custom_control_environment import custom_control
 from qrisp.circuit import Operation
 from qrisp.core.session_merging_tools import recursive_qs_search, merge
 from qrisp.misc import get_depth_dic
-from qrisp.jasp import check_for_tracing_mode, qache
+from qrisp.jasp import check_for_tracing_mode, qache, get_last_equation
 
 
 class ConjugationEnvironment(QuantumEnvironment):
@@ -273,11 +273,8 @@ class ConjugationEnvironment(QuantumEnvironment):
         res = jax.jit(flattened_jaspr.eval)(*args)
 
         # Retrieve the equation
-        jit_eqn = jax._src.core.thread_local_state.trace_state.trace_stack.dynamic.jaxpr_stack[
-            0
-        ].eqns[
-            -1
-        ]
+        jit_eqn = get_last_equation()
+        
         jit_eqn.params["jaxpr"] = jax.core.ClosedJaxpr(
             flattened_jaspr, jit_eqn.params["jaxpr"].consts
         )
@@ -428,11 +425,8 @@ class PJITEnvironment(QuantumEnvironment):
 
         res = jax.jit(flattened_jaspr.eval)(*args)
 
-        jit_eqn = jax._src.core.thread_local_state.trace_state.trace_stack.dynamic.jaxpr_stack[
-            0
-        ].eqns[
-            -1
-        ]
+        jit_eqn = get_last_equation()
+        
         jit_eqn.params["jaxpr"] = jax.core.ClosedJaxpr(
             Jaspr.from_cache(jit_eqn.params["jaxpr"].jaxpr),
             jit_eqn.params["jaxpr"].consts,
