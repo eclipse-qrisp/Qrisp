@@ -1,0 +1,225 @@
+"""
+********************************************************************************
+* Copyright (c) 2025 the Qrisp authors
+*
+* This program and the accompanying materials are made available under the
+* terms of the Eclipse Public License 2.0 which is available at
+* http://www.eclipse.org/legal/epl-2.0.
+*
+* This Source Code may also be made available under the following Secondary
+* Licenses when the conditions for such availability set forth in the Eclipse
+* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+* with the GNU Classpath Exception which is
+* available at https://www.gnu.org/software/classpath/license.html.
+*
+* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+********************************************************************************
+"""
+
+from qrisp import *
+
+def peres(a : Qubit, b : Qubit, c : Qubit):
+    mcx([a, b], c)
+    cx(a, b)
+
+def add(A: list[Qubit], B: list[Qubit]):
+    n = len(A)
+    # Step 1
+    for i in range(1, n, 1):
+        cx(B[i], A[i])
+        
+    # Step 2
+    for i in range(n-2, 0, -1):
+        cx(B[i], B[i+1])
+
+    # Step 3
+    for i in range(0, n-1, 1):
+        mcx([B[i], A[i]], B[i+1])
+
+    # Step 4
+    for i in range(n-1, -1, -1):
+        if(i == n - 1):
+            cx(B[i], A[i])
+        else:
+            peres(B[i], A[i], B[i+1])
+
+    # Step 5
+    for i in range(1, n-1, 1):
+        cx(B[i], B[i+1])
+
+    # Step 6
+    for i in range(1, n, 1):
+        cx(B[i], A[i])
+
+def control_add(z: Qubit, B: list[Qubit], A: list[Qubit]):
+    n = len(B)
+
+    # Step 1
+    for i in range(1, n):
+        cx(A[i], B[i])
+
+    # Step 2
+    for i in range(n - 2, 0, -1):
+        cx(A[i], A[i+1])
+
+    # Step 3
+    for i in range(0, n - 1):
+        mcx([B[i], A[i]], A[i+1])
+
+    # Step 4
+    mcx([z, A[n-1]], B[n-1])
+
+    # Step 5
+    for i in range(n-2, -1, -1):
+        mcx([B[i], A[i]], A[i+1])
+        mcx([z, A[i]], B[i])
+
+    # Step 6
+    for i in range(1, n-1):
+        cx(A[i], A[i+1])
+
+    # Step 7
+    for i in range(1, n):
+        cx(A[i], B[i])
+
+def control_add_sub(z: Qubit, A: list[Qubit], B: list[Qubit]):
+    for i in A:
+        cx(z, i)
+
+    add(A, B)
+
+    for i in A:
+        cx(z, i)
+
+def initial_subtraction(R : QuantumFloat, F : QuantumFloat, z : QuantumFloat):
+    n = R.size
+
+    # Step 1
+    x(R[n-2])
+
+    # Step 2
+    cx(R[n-2], R[n-1])
+
+    # Step 3
+    cx(R[n-1], F[1])
+
+    # Step 4
+    mcx([R[n-1]], z, ctrl_state=0)
+    
+    # Step 5
+    mcx([R[n-1]], F[2], ctrl_state=0)
+
+    # Step 6
+    control_add_sub(z, [R[n-4], R[n-3], R[n-2], R[n-1]], [F[0], F[1], F[2], F[3]])
+
+def conditional_addition_or_subtraction(R : QuantumFloat, F : QuantumFloat, z : QuantumFloat):
+    n = R.size
+
+    for i in range(2, n // 2):
+        # Step 1
+        mcx(z, F[1], ctrl_state=0)
+
+        # Step 2
+        cx(F[2], z)
+
+        # Step 3
+        cx(R[n-1], F[1])
+
+        # Step 4
+        mcx([R[n-1]], z, ctrl_state=0)
+
+        # Step 5
+        mcx([R[n-1]], F[i+1], ctrl_state=0)
+
+        # Step 6
+        for j in range(i + 1, 2, -1):
+            swap(F[j], F[j-1])
+
+        # Step 7
+        R_sum_qubits = [R[j] for j in range(n - 2 * i - 2, n)]
+        F_sum_qubits = [F[j] for j in range(0, 2 * i + 2)]
+        control_add_sub(z, R_sum_qubits, F_sum_qubits)
+
+def remainder_restoration(R : QuantumFloat, F : QuantumFloat, z : QuantumFloat):
+    n = R.size
+
+    # Step 1
+    mcx(z, F[1], ctrl_state=0)
+
+    # Step 2
+    cx(F[2], z)
+
+    # Step 3
+    mcx([R[n-1]], z, ctrl_state=0)
+
+    # Step 4
+    mcx([R[n-1]], F[n//2+1], ctrl_state=0)
+
+    # Step 5
+    x(z)
+
+    # Step 6
+    control_add(z, R, F)
+
+    # Step 7
+    x(z)
+
+    # Step 8
+    for j in range(n//2 + 1, 2, -1):
+        swap(F[j], F[j-1])
+
+    # Step 9
+    cx(F[2], z)
+
+def q_isqrt(R: QuantumFloat) -> QuantumFloat:
+    """
+    Computes the integer square root of a QuantumFloat R, as well as the remainder using algorithm `<https://arxiv.org/abs/1712.08254>`.
+    The input value R should be a positive binary value in 2's complement representation with even number of bits.
+
+    Parameters
+    ----------
+    R : QuantumFloat
+        Positive value in 2's complement representation with even number of bits which square root is to be computed.
+    
+    Returns
+    -------
+    res : QuantumFloat
+        The integer square root of R.
+    Also transforms input value R into the remainder.
+
+    Examples
+    --------
+    Calculate the integer square root of 131:
+    >>> from qrisp.isqrt import isqrt_alg
+    >>> R = QuantumFloat(10, 0) # 131 has 8 bits, but since msb is 1, we need to add 1 qubit, so its 2's complement and another 1 qubit, so it has even number of qubits.
+    >>> R[:] = 131
+    >>> res = isqrt_alg(R)
+    >>> print(res.get_measurement())
+    {11: 1.0}
+    >>> print(R.get_measurement())
+    {10: 1.0}
+    """
+    n = R.size
+
+    if n % 2 == 1:
+        raise ValueError("Input variable should have even number of qubits.")
+    
+    if not R.signed:
+        raise ValueError("Input variable should be signed.")
+
+    F = QuantumFloat(n, 0, name="F")
+    z = QuantumFloat(1, 0, name="z")
+
+    F[:] = 1
+    z[:] = 0
+
+    initial_subtraction(R, F, z)
+    conditional_addition_or_subtraction(R, F, z)
+    remainder_restoration(R, F, z)
+
+    x(F[0])
+    for i in range(2, n // 2 + 2):
+        swap(F[i], F[i - 2])
+
+    return F
+    
