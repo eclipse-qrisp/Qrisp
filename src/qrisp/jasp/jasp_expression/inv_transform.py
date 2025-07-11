@@ -23,7 +23,7 @@ from jax.extend.core import JaxprEqn, ClosedJaxpr
 from jax.lax import add_p, sub_p, while_loop
 
 from qrisp.jasp.primitives import AbstractQuantumCircuit, OperationPrimitive
-
+from qrisp.jasp.interpreter_tools import eval_jaxpr
 
 def copy_jaxpr_eqn(eqn):
     return JaxprEqn(
@@ -99,6 +99,7 @@ def invert_eqn(eqn):
         params=params,
         source_info=eqn.source_info,
         effects=eqn.effects,
+        ctx=eqn.ctx,
     )
 
 
@@ -266,6 +267,7 @@ def invert_loop_body(jaxpr):
         params=increment_eqn.params,
         source_info=increment_eqn.source_info,
         effects=increment_eqn.effects,
+        ctx=increment_eqn.ctx,
     )
     new_eqn_list[increment_eqn_index] = decrement_eqn
 
@@ -283,17 +285,27 @@ def invert_loop_body(jaxpr):
 # This function performs the above mentioned step 2 to treat the loop primitive
 def invert_loop_eqn(eqn):
 
+    overall_constant_amount= max(eqn.params["body_nconsts"], eqn.params["cond_nconsts"])    
+
     # Process the loop body
     body_jaxpr = eqn.params["body_jaxpr"]
     inv_loop_body = invert_loop_body(body_jaxpr)
 
     def body_fun(val):
-        return inv_loop_body.eval(*val)
-
+        
+        constants = val[:eqn.params["body_nconsts"]]
+        carries = val[overall_constant_amount:]
+        
+        body_res = eval_jaxpr(inv_loop_body)(*(constants + carries))
+        
+        return val[:overall_constant_amount] + tuple(body_res)
+        
     # Process the loop cancelation
     cond_jaxpr = eqn.params["cond_jaxpr"]
 
     def cond_fun(val):
+        val = val[overall_constant_amount:]
+        
         if cond_jaxpr.eqns[0].primitive.name == "ge":
             return val[1] <= val[0]
         else:
@@ -310,7 +322,7 @@ def invert_loop_eqn(eqn):
     # The loop initialization is located at invars[1] and the threshold at invars[0]
     invars = eqn.invars
     new_invars = list(invars)
-    new_invars[1], new_invars[0] = new_invars[0], new_invars[1]
+    new_invars[overall_constant_amount + 1], new_invars[overall_constant_amount] = new_invars[overall_constant_amount], new_invars[overall_constant_amount+1]
 
     # Create the Equation
     res = JaxprEqn(
@@ -320,6 +332,7 @@ def invert_loop_eqn(eqn):
         params=new_eqn.params,
         source_info=eqn.source_info,
         effects=eqn.effects,
+        ctx=new_eqn.ctx
     )
 
     return res

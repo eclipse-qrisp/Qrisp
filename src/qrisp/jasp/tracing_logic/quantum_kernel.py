@@ -19,7 +19,7 @@
 import jax
 
 from qrisp.jasp.primitives import quantum_kernel_p, AbstractQubit, AbstractQubitArray
-from qrisp.jasp.tracing_logic import TracingQuantumSession, qache
+from qrisp.jasp.tracing_logic import TracingQuantumSession, qache, get_last_equation
 
 
 def quantum_kernel(func):
@@ -133,11 +133,8 @@ def quantum_kernel(func):
             qs.conclude_tracing()
             raise e
 
-        eqn = jax._src.core.thread_local_state.trace_state.trace_stack.dynamic.jaxpr_stack[
-            0
-        ].eqns[
-            -1
-        ]
+        eqn = get_last_equation()
+        
         flattened_jaspr = Jaspr.from_cache(
             collect_environments(eqn.params["jaxpr"].jaxpr)
         ).flatten_environments()

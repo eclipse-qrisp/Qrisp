@@ -17,13 +17,14 @@
 """
 
 import jax
+from jax.extend.core import ClosedJaxpr
 
 from qrisp.environments import QuantumEnvironment, control
 from qrisp.environments.custom_control_environment import custom_control
 from qrisp.circuit import Operation
 from qrisp.core.session_merging_tools import recursive_qs_search, merge
 from qrisp.misc import get_depth_dic
-from qrisp.jasp import check_for_tracing_mode, qache, get_last_equation
+from qrisp.jasp import check_for_tracing_mode, get_last_equation
 
 
 class ConjugationEnvironment(QuantumEnvironment):
@@ -427,7 +428,7 @@ class PJITEnvironment(QuantumEnvironment):
 
         jit_eqn = get_last_equation()
         
-        jit_eqn.params["jaxpr"] = jax.core.ClosedJaxpr(
+        jit_eqn.params["jaxpr"] = ClosedJaxpr(
             Jaspr.from_cache(jit_eqn.params["jaxpr"].jaxpr),
             jit_eqn.params["jaxpr"].consts,
         )
