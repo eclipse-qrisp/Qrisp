@@ -17,7 +17,7 @@
 """
 
 import jax
-from jax.extend.core import ClosedJaxpr
+from jax.extend.core import ClosedJaxpr, JaxprEqn
 
 from qrisp.environments import QuantumEnvironment, control
 from qrisp.environments.custom_control_environment import custom_control
@@ -246,13 +246,14 @@ class ConjugationEnvironment(QuantumEnvironment):
         import jax
 
         def copy_jaxpr_eqn(jaxpr_eqn):
-            return jax.core.JaxprEqn(
+            return JaxprEqn(
                 invars=list(jaxpr_eqn.invars),
                 outvars=list(jaxpr_eqn.outvars),
                 params=dict(jaxpr_eqn.params),
                 primitive=jaxpr_eqn.primitive,
                 effects=jaxpr_eqn.effects,
                 source_info=jaxpr_eqn.source_info,
+                ctx=jaxpr_eqn.ctx,
             )
 
         controlled_eqn_list = list(controlled_flattened_jaspr.eqns)
@@ -276,7 +277,7 @@ class ConjugationEnvironment(QuantumEnvironment):
         # Retrieve the equation
         jit_eqn = get_last_equation()
         
-        jit_eqn.params["jaxpr"] = jax.core.ClosedJaxpr(
+        jit_eqn.params["jaxpr"] = ClosedJaxpr(
             flattened_jaspr, jit_eqn.params["jaxpr"].consts
         )
         jit_eqn.params["name"] = "conjugation_env"
