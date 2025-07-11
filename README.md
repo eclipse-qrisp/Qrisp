@@ -1,4 +1,4 @@
-<p align="center" width="100%"><img src="https://github.com/eclipse-qrisp/Qrisp/blob/main/logo/logo_with_contour.png" width=30% height=30%></p>
+<p align="center" width="100%"><img src="https://raw.githubusercontent.com/eclipse-qrisp/Qrisp/main/logo/logo_with_contour.png" width=30%></p>
 
 </h1><br>
 <div align="center">
