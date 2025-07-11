@@ -20,7 +20,7 @@ from functools import lru_cache
 
 import numpy as np
 
-from jax.core import JaxprEqn, ClosedJaxpr, Var, Jaxpr
+from jax.extend.core import JaxprEqn, ClosedJaxpr, Var, Jaxpr
 
 from qrisp.jasp.jasp_expression.centerclass import Jaspr
 from qrisp.jasp.primitives import AbstractQubit

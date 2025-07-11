@@ -17,7 +17,8 @@
 """
 
 import jax.numpy as jnp
-from jax.core import AbstractValue, Primitive, raise_to_shaped_mappings, ShapedArray
+from jax.core import AbstractValue, ShapedArray
+from jax.extend.core import Primitive
 from qrisp.jasp.primitives import QuantumPrimitive, AbstractQubit
 
 get_qubit_p = QuantumPrimitive("get_qubit")
@@ -73,9 +74,6 @@ def slice_qb_array(qb_array, start, stop):
 
 def fuse_qb_array(qb_array_0, qb_array_1):
     return fuse_p.bind(qb_array_0, qb_array_1)
-
-
-raise_to_shaped_mappings[AbstractQubitArray] = lambda aval, _: aval
 
 
 @get_qubit_p.def_abstract_eval

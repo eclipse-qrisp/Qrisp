@@ -20,7 +20,7 @@ from functools import lru_cache
 
 import numpy as np
 from numba import njit
-from jax.core import ClosedJaxpr, JaxprEqn, Literal
+from jax.extend.core import ClosedJaxpr, JaxprEqn, Literal
 
 
 @lru_cache(maxsize=int(1e5))

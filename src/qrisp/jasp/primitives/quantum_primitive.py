@@ -16,7 +16,7 @@
 ********************************************************************************
 """
 
-from jax.core import Primitive
+from jax.extend.core import Primitive
 
 
 # Wrapper to identify Qrisp primitives

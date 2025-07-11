@@ -21,7 +21,7 @@ from functools import lru_cache
 import numpy as np
 
 from jax import make_jaxpr, jit, debug
-from jax.core import ClosedJaxpr, Literal
+from jax.extend.core import ClosedJaxpr, Literal
 from jax.lax import fori_loop, cond, while_loop, switch
 import jax.numpy as jnp
 

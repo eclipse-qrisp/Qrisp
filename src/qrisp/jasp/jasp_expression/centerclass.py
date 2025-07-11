@@ -20,7 +20,7 @@ from functools import lru_cache
 
 import jax
 from jax import make_jaxpr
-from jax.core import Jaxpr, Literal
+from jax.extend.core import Jaxpr, Literal
 from jax.tree_util import tree_flatten, tree_unflatten
 from jax.errors import UnexpectedTracerError
 

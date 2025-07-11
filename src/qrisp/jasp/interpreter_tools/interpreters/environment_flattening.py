@@ -18,7 +18,7 @@
 
 from functools import lru_cache
 
-from jax.core import JaxprEqn, ClosedJaxpr
+from jax.extend.core import JaxprEqn, ClosedJaxpr
 
 from qrisp.jasp.interpreter_tools import exec_eqn, reinterpret
 from qrisp.jasp.primitives import AbstractQuantumCircuit
