@@ -5,7 +5,7 @@ Preparation of Dicke States
 
 In this tutorial we will show you different routines for the preparation of Dicke States and how to implement them in Qrisp! They are all JASP [REF] compatible, so you can seamlessly integrate them into your realtime computations as a subroutine. 
 
-The two main approaches we will look at are [REF, YU] and [REF Bärtschi], as well as the more efficient [REF SCS] implementation.   
+The two main approaches we will look at are `an efficient deterministic algorithm by Jeffery Yu et al. <https://arxiv.org/abs/2411.03428>`_ and `a deterministic algorithm by Bärtschi et al. <https://arxiv.org/abs/1904.07358>`_, as well as the  `more efficient version <https://arxiv.org/abs/2112.12435>`_ of the latter.   
 
 But before we jump into their preparation, let us first answer the questions: **What are Dicke states? And what do we use them for?**
 
@@ -17,7 +17,7 @@ Formally, Dicke states are defined as follows
 
 
 The preparation of Dicke states is an important and highly investigated topic in the field of quantum computation due to to their range of applications. 
-This ranges from error correction techniques in the ISD algorithm to optimization tasks solved with DQI or QAOA. 
+This ranges from error correction techniques in the ISD algorithm to optimization tasks solved with DQI or QAOA. [REF]
 Furthermore, these states are native to quantum optics systems due to their relation to spin systems, 
 and can be found quantum communication applications. 
 
@@ -25,7 +25,8 @@ Dicke states are characterized by there constant Hamming-weight. A Dicke state w
 
 .. math::
 
-    \ket{D_{k}^{n}} = \binom{n}{k}^{-\frac{1}{2}} \sum_{x \in \{ 0,1 \}^{n}}, \. \text{wt}(x) = k } \ket{x} 
+    \ket{D_{k}^{n}} = \binom{n}{k}^{-\frac{1}{2}} \sum_{x \in \{ 0,1 \}^{n},  \text{wt} ( x ) = k  } \ket{x}
+
 
 An example for this is the Dicke state :math:`\ket{D_{2}^{4}} = \frac{1}{\sqrt{6}} ( \ket{1100} + \ket{1010} + \ket{1001} +\ket{0110} + \ket{0101} + \ket{0011} )`, consisting of 4 qubits with Hamming-weight :math:`\text{wt}(x) =2`.  
 It can also be defined in direct relation to a spin system, see p.e. the related wikipedia article [REF].
@@ -39,7 +40,7 @@ After the short overview on their definition and applications lets now dive into
 Probablistic approach
 ---------------------
 
-The first algorithm we want to highlight here is `Efficient preparation of Dicke states (2024) <https://arxiv.org/abs/2411.03428>`_ by Jeffery Yu et al. from the University of Maryland. 
+The first algorithm we want to highlight here is `Efficient preparation of Dicke states (2024) <https://arxiv.org/abs/2411.03428>`_ by Jeffery Yu et al., from the University of Maryland. 
 The algorithm utilizes mid-circuit Hamming-weight measurements and feedback to prepare Dicke states, by incorporating  adaptively-chosen global rotations. It is furthermore motivated by its nativity to a cavity QED context, where both the mid-circuit measurement and rotations 
 are easily implemented in a physical system.
 
@@ -59,8 +60,8 @@ Implementation
 For the implementation we will resort back to circuit representation of the aforementioned components, namely the Hamming-weight measurements and the rotations around the Bloch sphere. 
 
 As explained in the paper, one of the facilitators for this algorithm is the collective Hamming-weight measurement, so let us start by creating that. 
-The paper `Shallow Quantum Circuit Implementation of Symmetric Functions with Limited Ancillary Qubits (2024) <https://arxiv.org/pdf/2404.06052>`_ gives a straight forward 
-scheme. We first create the necessary amount of ancilla qubits, and then apply the routine based on controlled rotations and an inverse Quantum Fourier transformation [REF].
+It is taken from a `paper on Shallow Quantum Circuits <https://arxiv.org/pdf/2404.06052>`_, gives a straight forward 
+scheme. We first create the necessary amount of ancilla qubits, and then apply the routine based on controlled rotations and an inverse `Quantum Fourier transformation <QFT>`.
 
 :: 
 
@@ -89,12 +90,12 @@ scheme. We first create the necessary amount of ancilla qubits, and then apply t
         return ancillas
 
 
-With that out of the way, lets get back to the implementation of Jeffery's algorithm. The implementation is a straight forward code version of the pseudo code provided.
-It is already jaspified [REF] and intended to be called with the ``@terminal_sampling`` decorator (or an adaption with makes use of the ``terminal_sampling`` simulator optimization).
+With that out of the way, lets get back to the implementation of Jeffery's algorithm, which emerges naturally from the pseudo code provided.
+It is already `jaspified <jasp_tutorial>` and intended to be called with the ``@terminal_sampling`` decorator (or an adaption with makes use of the ``terminal_sampling`` simulator optimization).
 
 To reiterate: the procedure performs iterative ``ry``-rotations, where the rotation angle is adaptively chosen based on the ``collective_hamming_measurement`` of previous iteration.
-We stop, once we measure the correct Hamming-weight. 
-In JASP-terms this is achieved by wrapping the "rotate-and-measure" procedure in a q_while_loop [REF]. This jaspified version of a quantum while-loop requires a condition function ``cond_fun`` with a ``bool`` (or ``QuantumBool``) return, and a body function ``body_fun``.
+We stop once we measure the correct Hamming-weight. 
+In JASP-terms this is achieved by wrapping the "rotate-and-measure" procedure in a `q_while_loop <q_while_loop>`. This jaspified version of a quantum while-loop requires a condition function ``cond_fun`` with a ``bool`` (or ``QuantumBool``) return, and a body function ``body_fun``.
 The ``cond_fun`` checks whether the "while" condition is still true, while the ``body_fun`` performs the iterative quantum operations.
 
 Let us investigate the ``body_fun`` first. We indeed see that we directly translate what Jeffery proposes into code. First we perform some arithmetic to find the updated rotation angle.
@@ -189,14 +190,14 @@ the basic components and how these unitaries are structed in terms of Qrisp code
 For an indepth explanation on how these unitaries emerge and their action on a quantum state, please refer to the original paper. 
 
 The aforementioned unitary is given by the function ``split_cycle_shift``, which receives a QuantumVariable ``qv`` on which it is a applied. 
-Additionally, two ``int``s ``highIndex`` and ``lowIndex`` indicate the preparation steps, as seen in original algorithm.
+Additionally, two integers  ``highIndex`` and ``lowIndex`` indicate the preparation steps, as seen in original algorithm.
 
 Some caveats: 
 
 This implementation is JASP ready. It therefore makes use the ``jrange`` iterator. In the paper, the iteration is conducted in reverse, i.e. from the lowest to the highest index. 
 In a normal ``range`` iterator you would just set ``step =-1`` for this behaviour, ``jrange`` does not allow for this. Instead we embed the whole construct in an ``invert()``-statement to reverse the loop.
 
-Additionally you may notice some logic checks using the ``ctrl_bool``s. This replaces ``if``-statement usage in JASP mode, so make good use of that when **jaspifying** your Qrisp code! 
+Additionally you may notice some logic checks using the ``ctrl_bool`` variables. This replaces ``if``-statement usage in JASP mode, so make good use of that when **jaspifying** your Qrisp code! 
 
 ::
 
@@ -277,10 +278,10 @@ More generally, a unitary :math:`U_{k}^{n}`, which creates a given Hamming-weigh
 
 Mathematically speaking this means, with :math:`n` being a given number of qubits, :math:`k` a given Hamming-weight, and any other :math:`l \leq k`. 
 
-[REF, fix math below --> cdot to tensor]
+
 .. math::
 
-    U_{k}^{n} \ket{0}^{n-k} \cdot \ket{1}^{k} = \ket{D_{k}^{n}} \text{ and } U_{k}^{n} \ket{0}^{n-l} \cdot \ket{1}^{l} = \ket{D_{l}^{n}}
+    U_{k}^{n} \ket{0}^{n-k} \otimes \ket{1}^{k} = \ket{D_{k}^{n}} \text{ and } U_{k}^{n} \ket{0}^{n-l} \cdot \ket{1}^{l} = \ket{D_{l}^{n}}
 
 
 This is particularly useful for creating superpositions of different Hamming-weight Dicke states (see for example the DQI algorithm [REF]). Consider the following example, where :math:`\alpha \in (0,1)` 
