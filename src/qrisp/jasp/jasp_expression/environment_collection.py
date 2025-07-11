@@ -83,6 +83,7 @@ def collect_environments(jaxpr):
                 outvars=list(eqn.outvars),
                 effects=eqn.effects,
                 source_info=eqn.source_info,
+                ctx=eqn.ctx
             )
 
         if eqn.primitive.name == "cond":

@@ -20,8 +20,8 @@ from functools import lru_cache
 
 import jax
 from jax import make_jaxpr
-from jax.extend.core import Jaxpr, Literal
-from jax.tree_util import tree_flatten, tree_unflatten
+from jax.extend.core import Jaxpr, Literal, ClosedJaxpr
+from jax.tree_util import tree_flatten
 from jax.errors import UnexpectedTracerError
 
 from qrisp.jasp.jasp_expression import invert_jaspr, collect_environments
@@ -571,7 +571,7 @@ class Jaspr(Jaxpr):
         return profile_jaspr(self, meas_behavior)(*args)
 
     def embedd(self, *args, name=None, inline=False):
-        from qrisp.jasp import TracingQuantumSession
+        from qrisp.jasp import TracingQuantumSession, get_last_equation
 
         qs = TracingQuantumSession.get_instance()
         abs_qc = qs.abs_qc
@@ -580,12 +580,9 @@ class Jaspr(Jaxpr):
         if not inline:
             res = jax.jit(eval_jaxpr(self))(*ammended_args)
 
-            eqn = jax._src.core.thread_local_state.trace_state.trace_stack.dynamic.jaxpr_stack[
-                0
-            ].eqns[
-                -1
-            ]
-            eqn.params["jaxpr"] = jax.core.ClosedJaxpr(self, eqn.params["jaxpr"].consts)
+            eqn = get_last_equation()
+            
+            eqn.params["jaxpr"] = ClosedJaxpr(self, eqn.params["jaxpr"].consts)
             if name is not None:
                 eqn.params["name"] = name
         else:

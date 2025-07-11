@@ -32,6 +32,7 @@ def copy_jaxpr_eqn(eqn):
         params=dict(eqn.params),
         source_info=eqn.source_info,
         effects=eqn.effects,
+        ctx=eqn.ctx,
     )
 
 

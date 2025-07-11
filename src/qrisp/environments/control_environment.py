@@ -18,6 +18,7 @@
 
 from jax.core import ShapedArray
 from jaxlib.xla_extension import ArrayImpl
+from jax.extend.core import ClosedJaxpr
 
 from qrisp.circuit import Qubit, QuantumCircuit, XGate
 from qrisp.core.session_merging_tools import merge, merge_sessions, multi_session_merge
@@ -403,7 +404,7 @@ class ControlEnvironment(QuantumEnvironment):
         # Retrieve the equation
         jit_eqn = get_last_equation()
         
-        jit_eqn.params["jaxpr"] = jax.core.ClosedJaxpr(
+        jit_eqn.params["jaxpr"] = ClosedJaxpr(
             controlled_jaspr, jit_eqn.params["jaxpr"].consts
         )
         jit_eqn.params["name"] = "ctrl_env"
