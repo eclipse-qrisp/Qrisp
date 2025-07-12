@@ -278,37 +278,44 @@ def process_while(eqn, context_dic):
 
     body_jaxpr = eqn.params["body_jaxpr"]
     cond_jaxpr = eqn.params["cond_jaxpr"]
+    overall_constant_amount= max(eqn.params["body_nconsts"], eqn.params["cond_nconsts"])
 
     invalues = extract_invalues(eqn, context_dic)
 
     if isinstance(body_jaxpr.jaxpr.invars[-1].aval, AbstractQuantumCircuit):
-        body_jaxpr = jaspr_to_cl_func_jaxpr(
+        converted_body_jaxpr = jaspr_to_cl_func_jaxpr(
             body_jaxpr.jaxpr, invalues[-1][0].shape[0] * 64
         )
     if isinstance(cond_jaxpr.jaxpr.invars[-1].aval, AbstractQuantumCircuit):
-        cond_jaxpr = jaspr_to_cl_func_jaxpr(
+        converted_cond_jaxpr = jaspr_to_cl_func_jaxpr(
             cond_jaxpr.jaxpr, invalues[-1][0].shape[0] * 64
         )
 
     def body_fun(args):
-        return tuple(eval_jaxpr(body_jaxpr)(*args))
+        
+        constants = args[:eqn.params["body_nconsts"]]
+        carries = args[overall_constant_amount:]
+        
+        flattened_invalues = flatten_signature(constants + carries, body_jaxpr.jaxpr.invars)
+        
+        body_res = eval_jaxpr(converted_body_jaxpr)(*(flattened_invalues))
+        
+        unflattened_body_outvalues = unflatten_signature(body_res, body_jaxpr.jaxpr.outvars)
+        
+        return list(args[:overall_constant_amount]) + list(unflattened_body_outvalues)
 
     def cond_fun(args):
-        return eval_jaxpr(cond_jaxpr)(*args)
+        
+        constants = args[:eqn.params["cond_nconsts"]]
+        carries = args[overall_constant_amount:]
+        
+        flattened_invalues = flatten_signature(constants + carries, cond_jaxpr.jaxpr.invars)
+        
+        return eval_jaxpr(converted_cond_jaxpr)(*flattened_invalues)
 
-    flattened_invalues = flatten_signature(invalues, eqn.invars)
-
-    # Make sure integers are properly converted to i32
-    # (under some circumstances jax seems to convert python ints
-    # to i64, which raises a typing error)
-    for i in range(len(flattened_invalues)):
-        if isinstance(flattened_invalues[i], int):
-            flattened_invalues[i] = jnp.asarray(flattened_invalues[i], dtype="int64")
-
-    outvalues = while_loop(cond_fun, body_fun, tuple(flattened_invalues))
-    unflattened_outvalues = unflatten_signature(outvalues, eqn.outvars)
-
-    insert_outvalues(eqn, context_dic, unflattened_outvalues)
+    outvalues = while_loop(cond_fun, body_fun, invalues)[eqn.params["body_nconsts"]:]
+    
+    insert_outvalues(eqn, context_dic, outvalues)
 
 
 def process_cond(eqn, context_dic):
