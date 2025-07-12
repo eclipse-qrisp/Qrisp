@@ -28,6 +28,10 @@ fuse_p = QuantumPrimitive("fuse")
 
 
 class AbstractQubitArray(AbstractValue):
+    
+    def __init__(self):
+        self.vma = None
+        AbstractValue.__init__(self)
 
     def __repr__(self):
         return "QubitArray"

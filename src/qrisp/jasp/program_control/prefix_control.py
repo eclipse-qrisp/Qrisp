@@ -17,10 +17,11 @@
 """
 
 from jax.lax import fori_loop, while_loop, cond
+from jax.extend.core import ClosedJaxpr
 import jax
 
 from qrisp.core import recursive_qv_search, recursive_qa_search
-from qrisp.jasp.tracing_logic import TracingQuantumSession, check_for_tracing_mode
+from qrisp.jasp.tracing_logic import TracingQuantumSession, check_for_tracing_mode, get_last_equation
 from qrisp.jasp.primitives import AbstractQuantumCircuit
 
 
@@ -127,9 +128,8 @@ def q_while_loop(cond_fun, body_fun, init_val):
     new_init_val = (init_val, abs_qc)
     while_res = while_loop(new_cond_fun, new_body_fun, new_init_val)
 
-    eqn = jax._src.core.thread_local_state.trace_state.trace_stack.dynamic.jaxpr_stack[
-        0
-    ].eqns[-1]
+    eqn = get_last_equation()
+    
     body_jaxpr = eqn.params["body_jaxpr"].jaxpr
 
     if not isinstance(body_jaxpr.invars[-1].aval, AbstractQuantumCircuit):
@@ -139,7 +139,7 @@ def q_while_loop(cond_fun, body_fun, init_val):
 
     from qrisp import Jaspr
 
-    eqn.params["body_jaxpr"] = jax.core.ClosedJaxpr(
+    eqn.params["body_jaxpr"] = ClosedJaxpr(
         Jaspr.from_cache(body_jaxpr), eqn.params["body_jaxpr"].consts
     )
 
@@ -317,9 +317,7 @@ def q_cond(pred, true_fun, false_fun, *operands):
 
     cond_res = cond(pred, new_true_fun, new_false_fun, *new_operands)
 
-    eqn = jax._src.core.thread_local_state.trace_state.trace_stack.dynamic.jaxpr_stack[
-        0
-    ].eqns[-1]
+    eqn = get_last_equation()
 
     false_jaxpr = eqn.params["branches"][0].jaxpr
     true_jaxpr = eqn.params["branches"][1].jaxpr
@@ -332,10 +330,10 @@ def q_cond(pred, true_fun, false_fun, *operands):
     from qrisp.jasp import Jaspr
 
     eqn.params["branches"] = (
-        jax.core.ClosedJaxpr(
+        ClosedJaxpr(
             Jaspr.from_cache(false_jaxpr), eqn.params["branches"][0].consts
         ),
-        jax.core.ClosedJaxpr(
+        ClosedJaxpr(
             Jaspr.from_cache(true_jaxpr), eqn.params["branches"][1].consts
         ),
     )

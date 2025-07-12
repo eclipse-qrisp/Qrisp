@@ -231,6 +231,7 @@ def control_eqn(eqn, ctrl_qubit_var):
             params=new_params,
             source_info=eqn.source_info,
             effects=eqn.effects,
+            ctx=eqn.ctx,
         )
         return temp
 
