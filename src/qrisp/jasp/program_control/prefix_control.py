@@ -322,8 +322,17 @@ def q_cond(pred, true_fun, false_fun, *operands):
 
     cond_res = cond(pred, new_true_fun, new_false_fun, *new_operands)
 
-    eqn = get_last_equation()
-
+    # There seem to be situations, where Jax performs some automatic type
+    # conversion after the cond call. This results in the cond equation
+    # not being the most recent equation.
+    # We therefore search for the last cond primitive.
+    i = 1
+    while True:
+        eqn = get_last_equation(-i)
+        if eqn.primitive.name == "cond":
+            break
+        i += 1
+        
     false_jaxpr = eqn.params["branches"][0].jaxpr
     true_jaxpr = eqn.params["branches"][1].jaxpr
 
