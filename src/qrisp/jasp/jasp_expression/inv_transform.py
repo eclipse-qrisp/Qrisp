@@ -239,7 +239,7 @@ def invert_loop_body(jaxpr):
     # Find the incrementation equation. For this we identify the equation,
     # which updates the loop index
 
-    loop_index = jaxpr.jaxpr.outvars[1]
+    loop_index = jaxpr.jaxpr.outvars[-3]
     for i in range(len(new_eqn_list))[::-1]:
         if loop_index == new_eqn_list[i].outvars[0]:
             break
@@ -286,8 +286,8 @@ def invert_loop_body(jaxpr):
 # This function performs the above mentioned step 2 to treat the loop primitive
 def invert_loop_eqn(eqn):
 
-    overall_constant_amount= max(eqn.params["body_nconsts"], eqn.params["cond_nconsts"])    
-
+    overall_constant_amount= max(eqn.params["body_nconsts"], eqn.params["cond_nconsts"])
+    
     # Process the loop body
     body_jaxpr = eqn.params["body_jaxpr"]
     inv_loop_body = invert_loop_body(body_jaxpr)
@@ -305,12 +305,11 @@ def invert_loop_eqn(eqn):
     cond_jaxpr = eqn.params["cond_jaxpr"]
 
     def cond_fun(val):
-        val = val[overall_constant_amount:]
         
         if cond_jaxpr.eqns[0].primitive.name == "ge":
-            return val[1] <= val[0]
+            return val[-3] <= val[-2]
         else:
-            return val[1] >= val[0]
+            return val[-3] >= val[-2]
 
     # Create the new equation by tracing the while loop
     def tracing_function(*args):
@@ -320,10 +319,10 @@ def invert_loop_eqn(eqn):
     new_eqn = jaxpr.eqns[0]
 
     # The new invars should have initial loop index at loop threshold switched.
-    # The loop initialization is located at invars[1] and the threshold at invars[0]
+    # The loop initialization is located at invars[-3] and the threshold at invars[-2]
     invars = eqn.invars
     new_invars = list(invars)
-    new_invars[overall_constant_amount + 1], new_invars[overall_constant_amount] = new_invars[overall_constant_amount], new_invars[overall_constant_amount+1]
+    new_invars[-2], new_invars[-3] = new_invars[-3], new_invars[-2]
 
     # Create the Equation
     res = JaxprEqn(

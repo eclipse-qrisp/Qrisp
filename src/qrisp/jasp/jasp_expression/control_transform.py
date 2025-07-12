@@ -140,6 +140,7 @@ def control_eqn(eqn, ctrl_qubit_var):
     elif eqn.primitive.name == "while":
 
         new_params = dict(eqn.params)
+        
         body_jaxpr = eqn.params["body_jaxpr"].jaxpr
         cond_jaxpr = eqn.params["cond_jaxpr"].jaxpr
 
@@ -153,20 +154,15 @@ def control_eqn(eqn, ctrl_qubit_var):
                 eqn.params["body_jaxpr"].consts,
             )
 
-            # Insert control value as output variable for the next iteration
-            new_params["body_jaxpr"].jaxpr.outvars.insert(
-                2, new_params["body_jaxpr"].jaxpr.invars[0]
-            )
-            new_params["body_jaxpr"].jaxpr.invars.insert(
-                2, new_params["body_jaxpr"].jaxpr.invars.pop(0)
-            )
+            new_params["body_nconsts"] += 1
 
         else:
             new_jaxpr = copy_jaxpr(new_params["body_jaxpr"].jaxpr)
-            new_jaxpr.invars.insert(2, ctrl_qubit_var)
             new_params["body_jaxpr"] = ClosedJaxpr(
                 new_jaxpr, eqn.params["body_jaxpr"].consts
             )
+            
+            new_params["body_nconsts"] += 1
 
         if isinstance(
             cond_jaxpr.invars[-1].aval, AbstractQuantumCircuit
@@ -176,32 +172,23 @@ def control_eqn(eqn, ctrl_qubit_var):
                 eqn.params["cond_jaxpr"].consts,
             )
 
-            new_params["cond_jaxpr"].jaxpr.outvars.insert(
-                2, new_params["cond_jaxpr"].jaxpr.invars[0]
-            )
-            new_params["cond_jaxpr"].jaxpr.invars.insert(
-                2, new_params["cond_jaxpr"].jaxpr.invars.pop(0)
-            )
-
         else:
             new_jaxpr = copy_jaxpr(new_params["cond_jaxpr"].jaxpr)
-            new_jaxpr.invars.insert(2, ctrl_qubit_var)
             new_params["cond_jaxpr"] = ClosedJaxpr(
                 new_jaxpr, eqn.params["cond_jaxpr"].consts
             )
-
-        output_control_var = Var(suffix=str(control_var_count[0]), aval=AbstractQubit())
+            
         control_var_count[0] += 1
         temp = JaxprEqn(
             primitive=eqn.primitive,
-            invars=eqn.invars[:2] + [ctrl_qubit_var] + eqn.invars[2:],
-            outvars=eqn.outvars[:2] + [output_control_var] + eqn.outvars[2:],
+            invars=[ctrl_qubit_var] +eqn.invars,
+            outvars=eqn.outvars,
             params=new_params,
             source_info=eqn.source_info,
             effects=eqn.effects,
             ctx=eqn.ctx,
         )
-
+        
         return temp
     elif eqn.primitive.name == "cond":
 
