@@ -124,19 +124,24 @@ def q_while_loop(cond_fun, body_fun, init_val):
 
     qs = TracingQuantumSession.get_instance()
     abs_qc = qs.abs_qc
-
     new_init_val = (init_val, abs_qc)
     while_res = while_loop(new_cond_fun, new_body_fun, new_init_val)
 
     eqn = get_last_equation()
     
     body_jaxpr = eqn.params["body_jaxpr"].jaxpr
-
-    if not isinstance(body_jaxpr.invars[-1].aval, AbstractQuantumCircuit):
-        raise Exception(
-            "Found implicit variable import in q_while. Please make sure all used variables are part of the body signature."
-        )
-
+    
+    # If the AbstractQuantumCircuit is part of the constants of the body,
+    # the body did not execute any quantum operations.
+    # We remove the AbstractQuantumCircuit from the body signature
+    # to make the loop purely classical.
+    for i in range(eqn.params["body_nconsts"]):
+        if isinstance(body_jaxpr.invars[i].aval, AbstractQuantumCircuit):
+            eqn.invars.pop(i)
+            body_jaxpr.invars.pop(i)
+            eqn.params["body_nconsts"] -= 1
+            return while_res[0]
+        
     from qrisp import Jaspr
 
     eqn.params["body_jaxpr"] = ClosedJaxpr(
