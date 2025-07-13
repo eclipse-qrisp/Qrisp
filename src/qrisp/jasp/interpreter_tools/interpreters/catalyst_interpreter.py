@@ -477,12 +477,18 @@ def process_while(eqn, context_dic):
 
     flattened_invalues = flatten_signature(invalues, eqn.invars)
 
+    k = eqn.params["body_nconsts"]
+    new_body_nconsts = len(flatten_signature(invalues[:k], eqn.invars[:k]))
+
+    k = eqn.params["cond_nconsts"]
+    new_cond_nconsts = len(flatten_signature(invalues[:k], eqn.invars[:k]))
+    
     outvalues = while_p.bind(
         *flattened_invalues,
         cond_jaxpr=cond_jaxpr,
         body_jaxpr=body_jaxpr,
-        cond_nconsts=eqn.params["cond_nconsts"],
-        body_nconsts=eqn.params["body_nconsts"],
+        cond_nconsts=new_cond_nconsts,
+        body_nconsts=new_body_nconsts,
         nimplicit=0,
         preserve_dimensions=True,
     )
@@ -552,7 +558,9 @@ def process_pjit(eqn, context_dic):
     jaxpr = eqn.params["jaxpr"]
     traced_fun = get_traced_fun(jaxpr.jaxpr)
 
-    outvalues = func_p.bind(wrap_init(traced_fun), *flattened_invalues, fn=traced_fun)
+    outvalues = func_p.bind(wrap_init(traced_fun, debug_info = eqn.params["jaxpr"].jaxpr.debug_info),
+                            *flattened_invalues, 
+                            fn=traced_fun,)
 
     outvalues = list(outvalues)
 
