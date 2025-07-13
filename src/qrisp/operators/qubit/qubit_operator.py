@@ -1116,6 +1116,9 @@ class QubitOperator(Hamiltonian):
             # violation with the requirement of qubit wise commutativity is detected.
             basis_dict = {}
 
+            x_list = []
+            y_list = []
+
             # We iterate through the terms and apply the appropriate basis transformation
             for term, coeff in self.terms_dict.items():
 
@@ -1153,12 +1156,27 @@ class QubitOperator(Hamiltonian):
                     # Append the appropriate basis-change gate
                     if qarg is not None:
                         if factor_dict[j] == "X":
-                            h(qarg[j])
+                            #h(qarg[j])
+                            x_list.append(j)
 
                         if factor_dict[j] == "Y":
-                            sx_dg(qarg[j])
+                            #sx_dg(qarg[j])
+                            y_list.append(j)
 
                     new_factor_dict[j] = "Z"
+
+            # Apply change of basis gates
+            if check_for_tracing_mode():
+                x_list = jnp.array(x_list)
+                y_list = jnp.array(y_list)
+
+            if len(x_list)>0:
+                for j in jrange(len(x_list)):
+                    h(qarg[x_list[j]])        
+
+            if len(y_list)>0:
+                for j in jrange(len(y_list)):
+                    sx_dg(qarg[y_list[j]])  
 
         if method == "commuting":
 
