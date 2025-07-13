@@ -21,7 +21,7 @@ from functools import lru_cache
 from sympy import lambdify, symbols
 
 from jax import make_jaxpr, jit
-from jax.core import ClosedJaxpr
+from jax.extend.core import ClosedJaxpr
 from jax.lax import fori_loop, cond, while_loop, switch
 from jax._src.linear_util import wrap_init
 import jax.numpy as jnp
@@ -29,7 +29,7 @@ import jax.numpy as jnp
 from catalyst.jax_primitives import (
     AbstractQreg,
     qinst_p,
-    qmeasure_p,
+    measure_p,
     qextract_p,
     qinsert_p,
     while_p,
@@ -405,7 +405,7 @@ def process_measurement(invars, outvars, context_dic):
         catalyst_qb_tracer = qextract_p.bind(catalyst_register_tracer, qb_pos)
 
         # Call the measurement primitive
-        meas_res, res_qb = qmeasure_p.bind(catalyst_qb_tracer)
+        meas_res, res_qb = measure_p.bind(catalyst_qb_tracer)
 
         # Reinsert the Qubit
         catalyst_register_tracer = qinsert_p.bind(
@@ -431,7 +431,7 @@ def exec_multi_measurement(catalyst_register, qubit_list):
 
         qb_index = static_qubit_array[i]
         qb = qextract_p.bind(reg, qb_index)
-        res_bl, res_qb = qmeasure_p.bind(qb)
+        res_bl, res_qb = measure_p.bind(qb)
         reg = qinsert_p.bind(reg, qb_index, res_qb)
         acc = acc + (jnp.asarray(1, dtype="int64") << i) * res_bl
         i += jnp.asarray(1, dtype="int64")
