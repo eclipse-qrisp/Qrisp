@@ -40,11 +40,13 @@ pip install qrisp
 Qrisp has been confirmed to work with Python version 3.10, 3.11 & 3.12.
 
 Qrisp is compatible with any QASM-capable quantum backend! If you want to work with IQM quantum computers as a backend, you need to install additional dependencies using
+
 ```bash
 pip install qrisp[iqm]
 ```
 
 ## Documentation
+
 The full documentation, alongside with many tutorials and examples, is available under [Qrisp Documentation](https://www.qrisp.eu/).
 
 ## Shor's Algorithm with Qrisp
@@ -75,6 +77,7 @@ To find out how this can be used to break encryption be sure to check the [tutor
 Qrisp offers much more than just factoring! More examples, like simulating molecules at the quantum level or how to solve the Travelling Salesman Problem, can be found [here](https://www.qrisp.eu/general/tutorial.html).
 
 ## Authors and Citation
+
 Qrisp was mainly devised and implemented by Raphael Seidel, supported by Sebastian Bock, Nikolay Tcholtchev, René Zander, Niklas Steinmann and Matic Petric.
 
 If you have comments, questions or love letters, feel free to reach out to us:
@@ -89,17 +92,16 @@ If you want to cite Qrisp in your work, please use:
 
 ```
 @misc{seidel2024qrisp,
-      title={Qrisp: A Framework for Compilable High-Level Programming of Gate-Based Quantum Computers}, 
+      title={Qrisp: A Framework for Compilable High-Level Programming of Gate-Based Quantum Computers},
       author={Raphael Seidel and Sebastian Bock and René Zander and Matic Petrič and Niklas Steinmann and Nikolay Tcholtchev and Manfred Hauswirth},
       year={2024},
       eprint={2406.14792},
       archivePrefix={arXiv},
       primaryClass={quant-ph},
-      url={https://arxiv.org/abs/2406.14792}, 
+      url={https://arxiv.org/abs/2406.14792},
 }
 ```
 
-
 ## License
-[Eclipse Public License 2.0](https://github.com/fraunhoferfokus/Qrisp/blob/main/LICENSE)
 
+[Eclipse Public License 2.0](https://github.com/eclipse-qrisp/Qrisp/blob/main/LICENSE)

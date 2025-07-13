@@ -1,12 +1,52 @@
 [build-system]
-requires = [
-    "setuptools>=42",
-    "wheel"
-]
+requires = ["setuptools>=42", "wheel"]
 build-backend = "setuptools.build_meta"
 
-[tool.isort]
-profile = "black"
+[project]
+name = "qrisp"
+version = "0.7.6"
+dynamic = ["dependencies", "optional-dependencies"]
+description = "Qrisp - A high level language for gate-based quantum computing"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Eclipse Public License 2.0 (EPL-2.0)",
+    "Operating System :: OS Independent",
+]
+requires-python = ">=3.10"
+readme = "README.md"
+license = {file = "LICENSE"}
+[[project.authors]]
+name = "The Qrisp team"
+email = "raphael.seidel@fokus.fraunhofer.de"
 
-[tool.pylint. messages_control]
-disable = ["import-error"]
+[project.urls]
+homepage = "https://www.qrisp.eu/"
+source = "https://github.com/eclipse-qrisp/Qrisp"
+issues = "https://github.com/eclipse-qrisp/Qrisp/issues"
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+select = [
+    # isort
+    "I",
+    # ruff
+    "RUF",
+    # pycodestyle
+    "E", "W",
+    # flake8-bugbear
+    "B",
+    # flake8-simplify
+    "SIM",
+]
+ignore = ["E203"]
+
+[tool.setuptools.dynamic.dependencies]
+file = "requirements/base.txt"
+
+[tool.setuptools.dynamic.optional-dependencies.dev]
+file = "requirements/dev.txt"
+
+[tool.setuptools.dynamic.optional-dependencies.iqm]
+file = "requirements/iqm.txt"
