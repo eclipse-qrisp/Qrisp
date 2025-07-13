@@ -25,6 +25,7 @@ import numpy as np
 import jax
 from jax import tree_util
 
+# I = 0, X = 1, Y = 2, Z = 3, A = 4, C = 5, P0 = 6, P1 = 7
 PAULI_TABLE = {
     (0, 0): (0, 1),
     (0, 1): (1, 1),
@@ -245,6 +246,8 @@ class QubitTerm:
     def jasp_simulate(self, coeff, qv):
         #indices = jax.tree.leaves(self)
         #print(indices)
+
+        # n indices, n factors, 1 hash
         leaves = jax.tree.leaves(self)
         
 
