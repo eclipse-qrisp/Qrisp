@@ -1251,18 +1251,11 @@ def make_jaspr(fun, garbage_collection="auto", flatten_envs=True, **jax_kwargs):
 
             return res, res_qc
 
-        try:
-            ammended_kwargs = dict(kwargs)
-            ammended_kwargs[10*"~"] = AbstractQuantumCircuit()
-            closed_jaxpr = make_jaxpr(ammended_function, **jax_kwargs)(
-                *args, **ammended_kwargs
-            )
-        except UnexpectedTracerError as e:
-            if "intermediate value with type QuantumCircuit" in str(e):
-                raise Exception(
-                    """Lost track of QuantumCircuit during tracing. This might have been caused by a missing quantum_kernel decorator. Please visit https://www.qrisp.eu/reference/Jasp/Quantum%20Kernel.html for more details"""
-                )
-            raise e
+        ammended_kwargs = dict(kwargs)
+        ammended_kwargs[10*"~"] = AbstractQuantumCircuit()
+        closed_jaxpr = make_jaxpr(ammended_function, **jax_kwargs)(
+            *args, **ammended_kwargs
+        )
             
         jaxpr = closed_jaxpr.jaxpr
 
