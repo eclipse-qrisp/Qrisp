@@ -35,6 +35,8 @@ from catalyst.jax_primitives import (
     while_p,
     cond_p,
     func_p,
+    qdealloc_p,
+    qalloc_p,
 )
 
 from qrisp.jasp import (
@@ -134,13 +136,12 @@ def catalyst_eqn_evaluator(eqn, context_dic):
             process_reset(eqn, context_dic)
         elif eqn.primitive.name == "jasp.fuse":
             process_fuse(eqn, context_dic)
-        elif eqn.primitive.name == "jasp.quantum_kernel":
-            from catalyst.jax_primitives import qalloc_p
-
+        elif eqn.primitive.name == "jasp.create_quantum_kernel":
             qreg = qalloc_p.bind(25)
-            insert_outvalues(
-                eqn, context_dic, (qreg, Jlist(jnp.arange(30)[::-1], max_size=30))
-            )
+            insert_outvalues(eqn, context_dic, (qreg, Jlist(jnp.arange(30)[::-1], max_size = 30)))
+        elif eqn.primitive.name == "jasp.consume_quantum_kernel":
+            invalues = extract_invalues(eqn, context_dic)
+            qdealloc_p.bind(invalues[0][0])
         else:
             raise Exception(
                 f"Don't know how to process QuantumPrimitive {eqn.primitive}"

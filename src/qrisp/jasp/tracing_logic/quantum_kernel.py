@@ -18,9 +18,8 @@
 
 from jax.extend.core import ClosedJaxpr
 
-from qrisp.jasp.primitives import quantum_kernel_p, AbstractQubit, AbstractQubitArray
+from qrisp.jasp.primitives import create_quantum_kernel_p, consume_quantum_kernel_p, AbstractQubit, AbstractQubitArray
 from qrisp.jasp.tracing_logic import TracingQuantumSession, qache, get_last_equation
-
 
 def quantum_kernel(func):
     """
@@ -124,9 +123,9 @@ def quantum_kernel(func):
         from qrisp.jasp.jasp_expression.centerclass import Jaspr, collect_environments
 
         qs = TracingQuantumSession.get_instance()
-
-        qs.start_tracing(quantum_kernel_p.bind(), gc_mode = "none")
-
+        
+        qs.start_tracing(create_quantum_kernel_p.bind())
+        
         try:
             res = func(*args, **kwargs)
         except Exception as e:
@@ -144,13 +143,13 @@ def quantum_kernel(func):
         for var in flattened_jaspr.outvars:
             if isinstance(var.aval, (AbstractQubitArray, AbstractQubit)):
                 raise Exception("Tried to construct quantum kernel with quantum output")
-
-        eqn.params["jaxpr"] = ClosedJaxpr(
-            flattened_jaspr, eqn.params["jaxpr"].consts
-        )
-
-        qs.conclude_tracing()
-
+        
+        eqn.params["jaxpr"] = ClosedJaxpr(flattened_jaspr, eqn.params["jaxpr"].consts)
+        
+        abs_qc = qs.conclude_tracing()
+        
+        consume_quantum_kernel_p.bind(abs_qc)
+        
         return res
 
     return return_function
