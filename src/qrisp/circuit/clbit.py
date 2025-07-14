@@ -46,7 +46,7 @@ class Clbit:
 
     def __init__(self, identifier):
         self.identifier = identifier
-        self.hash_value = int(self.clbit_hash[0])
+        self.hash_value = hash(("c",int(self.clbit_hash[0])))
         self.clbit_hash += 1
 
     def __str__(self):
