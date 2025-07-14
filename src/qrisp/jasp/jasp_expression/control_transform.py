@@ -336,7 +336,7 @@ def multi_control_jaspr(jaspr, num_ctrl, ctrl_state):
     controlled_jaspr.constvars.extend(controlled_jaspr.invars[-num_consts-1:-1])
 
     for i in range(num_consts):    
-        controlled_jaspr.invars.pop(-num_consts-1)
+        controlled_jaspr.invars.pop(-num_consts+i-1)
         
     controlled_jaspr.consts.clear()
     controlled_jaspr.consts.extend(jaspr.consts)
