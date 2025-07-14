@@ -1,0 +1,2 @@
+-c base.txt
+qiskit-iqm>=17.0,<18.0

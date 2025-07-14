@@ -1,0 +1,10 @@
+-c base.txt
+-c iqm.txt
+pytest
+pre-commit
+ruff
+pip-tools
+pennylane-catalyst
+qiskit-aer
+pyscf
+stim
