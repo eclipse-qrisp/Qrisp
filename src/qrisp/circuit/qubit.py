@@ -64,7 +64,7 @@ class Qubit:
 
     def __init__(self, identifier):
         self.identifier = identifier
-        self.hash_value = int(qubit_hash[0])
+        self.hash_value = hash(("q",int(qubit_hash[0])))
         qubit_hash[0] += 1
         self.lock = False
         self.perm_lock = False
