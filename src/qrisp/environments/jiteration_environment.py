@@ -18,6 +18,7 @@
 
 from jax.lax import while_loop
 from jax.core import Literal
+from jax.core import ShapedArray
 
 from qrisp.environments import QuantumEnvironment
 
@@ -178,7 +179,23 @@ def iteration_env_evaluator(eqn, context_dic):
         if iter_1_invar_hashes[i] not in iter_2_invar_hashes:
 
             # Find the index in the outvars of iteration 1
-            res_index = iter_1_outvar_hashes.index(iter_2_invar_hashes[i])
+            try:
+                res_index = iter_1_outvar_hashes.index(iter_2_invar_hashes[i])
+            except ValueError:
+                # If the iter 2 invar is not part of the iter 1 outvars
+                # and also not part of the iter 1 invars, it is most likely
+                # because the user loaded an array from a static list.
+                # Loading arrays from static lists is realized via adding
+                # a constant to the Jaxpr, which contains the list.
+                # Since the loop body is traced twice, this means to constants
+                # are added to the Jaxpr and therefore also two variables
+                # (even if they represent the same constant).
+                # In this case no update is required.
+                if isinstance(iteration_2_eqn.invars[i].aval, ShapedArray):
+                    update_rules.append(None)
+                    continue
+                
+                raise
             update_rules.append(res_index)
         else:
             # Otherwise append None
