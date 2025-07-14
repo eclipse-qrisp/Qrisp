@@ -325,10 +325,23 @@ def multi_control_jaspr(jaspr, num_ctrl, ctrl_state):
     ]
     control_var_count[0] += num_ctrl
     ctrl_avals = [x.aval for x in ctrl_vars]
-
-    return make_jaspr(exec_multi_controlled_jaspr(jaspr, num_ctrl, ctrl_state))(
+    
+    controlled_jaspr = make_jaspr(exec_multi_controlled_jaspr(jaspr, num_ctrl, ctrl_state))(
         *(ctrl_avals + [var.aval for var in jaspr.invars[:-1] + jaspr.constvars])
     )
+    
+    num_consts = len(jaspr.constvars)
+    
+    controlled_jaspr.constvars.clear()
+    controlled_jaspr.constvars.extend(controlled_jaspr.invars[-num_consts-1:-1])
+
+    for i in range(num_consts):    
+        controlled_jaspr.invars.pop(-num_consts-1)
+        
+    controlled_jaspr.consts.clear()
+    controlled_jaspr.consts.extend(jaspr.consts)
+
+    return controlled_jaspr
 
 
 def exec_multi_controlled_jaspr(jaspr, num_ctrls, ctrl_state):
