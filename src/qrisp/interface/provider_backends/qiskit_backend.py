@@ -163,23 +163,21 @@ class QiskitRuntimeBackend(VirtualBackend):
 
     Parameters
     ----------
-    backend : str, optional
-        A string associated to the name of a Qiskit Runtime Backend.
-        The default one is the "ibmq_qasm_simulator", but it also
-        possible to provide other ones like "simulator_statevector"
-        or real backends from the Qiskit Runtime.
-    port : int, optional
-        The port to listen. The default is 8079.
-    token : str
+    api_token : str
         The token is necessary to create correctly the Qiskit Runtime
         service and be able to run algorithms on their backends.
+    channel : str
+        The channel type. Available are `ibm_cloud` or `ibm_quantum_platform`.
+    backend : str, optional
+        A string associated to the name of a Qiskit Runtime backend.
+        By default, the least busy available backend is selected.
 
     Examples
     --------
 
     >>> from qrisp import QuantumFloat
     >>> from qrisp.interface import QiskitRuntimeBackend
-    >>> example_backend = QiskitRuntimeBackend(backend="simulator_statevector",token='YOUR_TOKEN')
+    >>> example_backend = QiskitRuntimeBackend(api_token = "YOUR_IBM_CLOUD_TOKEN", channel = "ibm_cloud", backend = "ibm_brisbane")
     >>> qf = QuantumFloat(4)
     >>> qf[:] = 3
     >>> res = qf*qf
@@ -190,11 +188,12 @@ class QiskitRuntimeBackend(VirtualBackend):
 
     """
 
-    def __init__(self, backend=None, port=8079, token=""):
+    #def __init__(self, backend=None, channel= token=""):
+    def __init__(self, api_token, channel="ibm_cloud", backend=None):
 
         from qiskit_ibm_runtime import QiskitRuntimeService, SamplerV2, Session
 
-        service = QiskitRuntimeService(channel="ibm_quantum_platform", token=token)
+        service = QiskitRuntimeService(channel=channel, token=api_token)
         if backend is None:
             backend = service.least_busy()
         else:
@@ -246,7 +245,7 @@ class QiskitRuntimeBackend(VirtualBackend):
 
             return result_dic  
 
-        super().__init__(run, port=port)
+        super().__init__(run)
 
     def close_session(self):
         """
