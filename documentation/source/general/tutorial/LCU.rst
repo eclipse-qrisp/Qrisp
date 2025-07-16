@@ -27,7 +27,7 @@ So, you want to perform operations that aren't strictly allowed by the quantum c
 Enter the Linear Combination of Unitaries (LCU) protocol—a foundational quantum algorithmic primitive that lets you implement a non-unitary operator $A$ by cleverly expressing it as a weighted sum of unitary operators: 
 
 .. math::
-    A=\sum_i\alpha_iU_i
+    A=\sum_ic_iU_i
 
 This is the quantum equivalent of ordering a custom pizza: you pick your favorite toppings (unitaries), assign them weights (coefficients), and hope the outcome is deliciously non-classical.
 
@@ -36,11 +36,11 @@ Core components
 
 The LCU protocol works by embedding your non-unitary operator into a larger, unitary quantum circuit. The magic happens in three acts, known as **block encoding**:
 
-- **PREPARE**: Prepares an ancilla quantum variable in a superposition encoding the normalized coefficients $\alpha_i\geq0$ of the target operator
+- **PREPARE**: Prepares an ancilla quantum variable in a superposition encoding the normalized coefficients $c_i\geq0$ of the target operator
 
 .. math ::
 
-        \mathrm{PREPARE}|0\rangle=\sum_i\sqrt{\frac{\alpha_i}{\lambda}}|i\rangle
+        \mathrm{PREPARE}|0\rangle=\sum_i\sqrt{\frac{c_i}{\lambda}}|i\rangle
 
 - **SELECT**: Applies the unitary $U_i$ to the input state $\ket{\psi}$, controlled on the ancilla variable being in state $|i\rangle$.
 
@@ -55,7 +55,7 @@ The LCU protocol works by embedding your non-unitary operator into a larger, uni
 Success condition
 ^^^^^^^^^^^^^^^^^
 
-The LCU protocol is deemed successful only if the ancilla variable is measured in the $\ket{0}$ state, which occurs with a probability proportional to :math:`\frac{\langle\psi|A^{\dagger}A|\psi\rangle}{\lambda^2}` where $\lambda=\sum_i\alpha_i$.
+The LCU protocol is deemed successful only if the ancilla variable is measured in the $\ket{0}$ state, which occurs with a probability proportional to :math:`\frac{\langle\psi|A^{\dagger}A|\psi\rangle}{\lambda^2}` where $\lambda=\sum_ic_i$.
 The :func:`qrisp.inner_LCU` does not perform the measurement; it returns the ancilla variable and the transformed target variable.
 
 The approach you’ve just studied was pioneered by Nathan Wiebe, whose contributions have fundamentally shaped the field of quantum algorithm design, particularly in Hamiltonian simulation and quantum linear systems.
@@ -123,7 +123,7 @@ In order to have this tutorial reproduceable, this is the entire :func:`qrisp.in
 
 Unpacking the code (which pack a hefty punch) becomes self explenatory because of the modularity that Qrisp offers through various modules. Let's unveil the concepts bit by bit.
 
-First we have to prepare the ancilla variables with ``state_prep(case_indicator)``. This step transforms the ancilla in a superposition reflecting the coefficients $\alpha_i$. 
+First we have to prepare the ancilla variables with ``state_prep(case_indicator)``. This step transforms the ancilla in a superposition reflecting the coefficients $c_i$. 
 
 We already learned about the SELECT operator in the theoretical overview. Here we put it in action using :func:`qrisp.qswitch` ``(operand, case_indicator, unitaries)``. This applies the correct unitary $U_i$ controlled on the ancilla.
 
