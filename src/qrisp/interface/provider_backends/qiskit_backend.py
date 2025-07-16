@@ -178,13 +178,28 @@ class QiskitRuntimeBackend(VirtualBackend):
     >>> from qrisp import QuantumFloat
     >>> from qrisp.interface import QiskitRuntimeBackend
     >>> example_backend = QiskitRuntimeBackend(api_token = "YOUR_IBM_CLOUD_TOKEN", channel = "ibm_cloud", backend = "ibm_brisbane")
-    >>> qf = QuantumFloat(4)
-    >>> qf[:] = 3
+    >>> qf = QuantumFloat(2)
+    >>> qf[:] = 2
     >>> res = qf*qf
-    >>> result=res.get_measurement(backend = example_backend)
+    >>> result = res.get_measurement(backend = example_backend)
     >>> print(result)
     >>> example_backend.close_session()
-    {9: 1.0}
+    {4: 0.6133,
+    8: 0.1126,
+    0: 0.0838,
+    12: 0.0798,
+    5: 0.0272,
+    6: 0.016,
+    9: 0.0125,
+    1: 0.0117,
+    13: 0.0081,
+    14: 0.0073,
+    3: 0.0071,
+    2: 0.0062,
+    10: 0.0051,
+    7: 0.0044,
+    11: 0.0035,
+    15: 0.0014}
 
     """
 
