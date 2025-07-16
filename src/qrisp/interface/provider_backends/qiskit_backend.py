@@ -48,10 +48,40 @@ class QiskitBackend(VirtualBackend):
     >>> res.get_measurement(backend = example_backend)
     {9: 1.0}
 
+    We evaluate a :ref:`QuantumFloat` multiplication on the FakeWashingtonV2 backend.
+
+    >>> from qrisp import QuantumFloat
+    >>> from qiskit_ibm_runtime.fake_provider import FakeWashingtonV2
+    >>> from qrisp.interface import QiskitBackend
+    >>> example_backend = QiskitBackend(backend = FakeWashingtonV2())
+    >>> qf = QuantumFloat(2)
+    >>> qf[:] = 2
+    >>> res = qf*qf
+    >>> res.get_measurement(backend = example_backend)
+    {4: 0.6962,
+    12: 0.0967,
+    0: 0.0607,
+    8: 0.0572,
+    6: 0.028,
+    2: 0.0128,
+    14: 0.0126,
+    5: 0.0103,
+    10: 0.0062,
+    3: 0.0057,
+    9: 0.0042,
+    13: 0.0037,
+    1: 0.0029,
+    7: 0.001,
+    15: 0.001,
+    11: 0.0008}
 
     """
 
     def __init__(self, backend=None, port=None):
+
+        from qiskit_ibm_runtime import SamplerV2
+        sampler = SamplerV2(backend)
+
         if backend is None:
 
             try:
@@ -66,7 +96,7 @@ class QiskitBackend(VirtualBackend):
         # Create the run method
         def run(qasm_str, shots=None, token=""):
             if shots is None:
-                shots = 100000
+                shots = 10000
             # Convert to qiskit
             from qiskit import QuantumCircuit
 
@@ -84,8 +114,18 @@ class QiskitBackend(VirtualBackend):
             from qiskit import transpile
 
             qiskit_qc = transpile(new_qiskit_qc, backend=backend)
-            # Run Circuit on the Qiskit backend
-            qiskit_result = backend.run(qiskit_qc, shots=shots).result().get_counts()
+
+            job = sampler.run([qiskit_qc], shots=shots)     
+
+            qiskit_result = (
+                job.result()[0].data.c.get_counts() 
+                # https://docs.quantum.ibm.com/migration-guides/v2-primitives
+            )
+
+            qiskit_result.update(
+                (key, round(value * shots)) for key, value in qiskit_result.items()
+            )
+
             # Remove the spaces in the qiskit result keys
             result_dic = {}
             import re
@@ -94,7 +134,7 @@ class QiskitBackend(VirtualBackend):
                 counts_string = re.sub(r"\W", "", key)
                 result_dic[counts_string] = qiskit_result[key]
 
-            return result_dic
+            return result_dic  
 
         # Call VirtualBackend constructor
         if isinstance(backend.name, str):
@@ -166,7 +206,7 @@ class QiskitRuntimeBackend(VirtualBackend):
         # Create the run method
         def run(qasm_str, shots=None, token=""):
             if shots is None:
-                shots = 100000
+                shots = 10000
             # Convert to qiskit
             from qiskit import QuantumCircuit
 
@@ -185,15 +225,12 @@ class QiskitRuntimeBackend(VirtualBackend):
 
             qiskit_qc = transpile(new_qiskit_qc, backend=backend)
 
-            job = sampler.run([qiskit_qc], shots=1000)     
-            print(job.result()[0].data.c.get_counts)
+            job = sampler.run([qiskit_qc], shots=shots)     
 
-            # notice qc in a list
             qiskit_result = (
                 job.result()[0].data.c.get_counts() 
                 # https://docs.quantum.ibm.com/migration-guides/v2-primitives
             )
-
             
             qiskit_result.update(
                 (key, round(value * shots)) for key, value in qiskit_result.items()
