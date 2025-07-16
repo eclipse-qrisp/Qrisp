@@ -144,23 +144,24 @@ class QiskitRuntimeBackend(VirtualBackend):
     >>> qf[:] = 3
     >>> res = qf*qf
     >>> result=res.get_measurement(backend = example_backend)
-    >>> print(results)
+    >>> print(result)
     >>> example_backend.close_session()
     {9: 1.0}
 
     """
 
     def __init__(self, backend=None, port=8079, token=""):
-        from qiskit_ibm_runtime import QiskitRuntimeService, Sampler, Session
+
+        from qiskit_ibm_runtime import QiskitRuntimeService, SamplerV2, Session
 
         service = QiskitRuntimeService(channel="ibm_quantum_platform", token=token)
         if backend is None:
             backend = service.least_busy()
         else:
             backend = service.backend(backend)
-
+            
         self.session = Session(backend)
-        sampler = Sampler(self.session)
+        sampler = SamplerV2(self.session)
 
         # Create the run method
         def run(qasm_str, shots=None, token=""):
@@ -171,16 +172,29 @@ class QiskitRuntimeBackend(VirtualBackend):
 
             qiskit_qc = QuantumCircuit.from_qasm_str(qasm_str)
 
+            # Make circuit with one monolithic register
+            new_qiskit_qc = QuantumCircuit(len(qiskit_qc.qubits), len(qiskit_qc.clbits))
+            for instr in qiskit_qc:
+                new_qiskit_qc.append(
+                    instr.operation,
+                    [qiskit_qc.qubits.index(qb) for qb in instr.qubits],
+                    [qiskit_qc.clbits.index(cb) for cb in instr.clbits],
+                )
+
             from qiskit import transpile
 
-            qiskit_qc = transpile(qiskit_qc, backend=backend)
-            # Run Circuit with the Sampler Primitive
+            qiskit_qc = transpile(new_qiskit_qc, backend=backend)
+
+            job = sampler.run([qiskit_qc], shots=1000)     
+            print(job.result()[0].data.c.get_counts)
+
+            # notice qc in a list
             qiskit_result = (
-                sampler.run([qiskit_qc], shots=shots)
-                .result()
-                .quasi_dists[0]
-                .binary_probabilities()
+                job.result()[0].data.c.get_counts() 
+                # https://docs.quantum.ibm.com/migration-guides/v2-primitives
             )
+
+            
             qiskit_result.update(
                 (key, round(value * shots)) for key, value in qiskit_result.items()
             )
@@ -193,7 +207,7 @@ class QiskitRuntimeBackend(VirtualBackend):
                 counts_string = re.sub(r"\W", "", key)
                 result_dic[counts_string] = qiskit_result[key]
 
-            return result_dic
+            return result_dic  
 
         super().__init__(run, port=port)
 
