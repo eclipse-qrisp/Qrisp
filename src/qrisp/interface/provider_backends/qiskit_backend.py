@@ -24,14 +24,13 @@ class QiskitBackend(VirtualBackend):
     This class instantiates a :ref:`VirtualBackend` using a Qiskit backend.
     This allows easy access to Qiskit backends through the qrisp interface.
 
-
     Parameters
     ----------
     backend : Qiskit backend object, optional
         A Qiskit backend object, which runs QuantumCircuits. The default is
         ``AerSimulator()``.
     port : int, optional
-        The port to listen. The default is 8079.
+        The port to listen. The default is None.
 
     Examples
     --------
@@ -79,11 +78,7 @@ class QiskitBackend(VirtualBackend):
 
     def __init__(self, backend=None, port=None):
 
-        from qiskit_ibm_runtime import SamplerV2
-        sampler = SamplerV2(backend)
-
         if backend is None:
-
             try:
                 from qiskit_aer import AerSimulator
 
@@ -92,6 +87,9 @@ class QiskitBackend(VirtualBackend):
                 import qiskit_aer as Aer
 
                 backend = Aer.AerSimulator()
+
+        from qiskit_ibm_runtime import SamplerV2
+        sampler = SamplerV2(backend)
 
         # Create the run method
         def run(qasm_str, shots=None, token=""):
@@ -166,8 +164,9 @@ class QiskitRuntimeBackend(VirtualBackend):
     api_token : str
         The token is necessary to create correctly the Qiskit Runtime
         service and be able to run algorithms on their backends.
-    channel : str
+    channel : str, optional
         The channel type. Available are `ibm_cloud` or `ibm_quantum_platform`.
+        The default is `ibm_cloud`.
     backend : str, optional
         A string associated to the name of a Qiskit Runtime backend.
         By default, the least busy available backend is selected.
