@@ -74,6 +74,20 @@ class QiskitBackend(VirtualBackend):
     15: 0.001,
     11: 0.0008}
 
+    We evaluate a :ref:`QuantumFloat` addition on a real IBM quantum backend.
+
+    >>> from qrisp import QuantumFloat
+    >>> from qrisp.interface import QiskitBackend
+    >>> from qiskit_ibm_runtime import QiskitRuntimeService
+    >>> service = QiskitRuntimeService(channel="ibm_cloud", token="YOUR_IBM_CLOUD_TOKEN")
+    >>> brisbane = service.backend("ibm_brisbane")
+    >>> qrisp_brisbane = QiskitBackend(backend)
+    >>> qf = QuantumFloat(2)
+    >>> qf[:] = 2
+    >>> qf+=1
+    >>> qf.get_measurement(backend = qrisp_brisbane)
+    {3: 0.919, 1: 0.044, 2: 0.021, 0: 0.016}
+
     """
 
     def __init__(self, backend=None, port=None):
