@@ -60,12 +60,14 @@ class Qubit:
         "recompute",
         "lock",
         "perm_lock",
+        "bit_type"
     ]
 
     def __init__(self, identifier):
         self.identifier = identifier
-        self.hash_value = hash(("q",int(qubit_hash[0])))
+        self.hash_value = int(qubit_hash[0])
         qubit_hash[0] += 1
+        self.bit_type = 0
         self.lock = False
         self.perm_lock = False
 
@@ -79,7 +81,7 @@ class Qubit:
         return self.hash_value
 
     def __eq__(self, other):
-        return self.hash_value == other.hash_value
+        return self.hash_value == other.hash_value and self.bit_type == other.bit_type
 
     def __add__(self, other):
         if not isinstance(other, list):
