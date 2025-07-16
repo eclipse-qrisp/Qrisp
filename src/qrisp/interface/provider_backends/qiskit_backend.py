@@ -94,7 +94,7 @@ class QiskitBackend(VirtualBackend):
         # Create the run method
         def run(qasm_str, shots=None, token=""):
             if shots is None:
-                shots = 10000
+                shots = 1000
             # Convert to qiskit
             from qiskit import QuantumCircuit
 
@@ -219,7 +219,7 @@ class QiskitRuntimeBackend(VirtualBackend):
         # Create the run method
         def run(qasm_str, shots=None, token=""):
             if shots is None:
-                shots = 10000
+                shots = 1000
             # Convert to qiskit
             from qiskit import QuantumCircuit
 
