@@ -27,12 +27,9 @@ def test_qiskit_backend_client():
 
     try:
         from qiskit_aer import AerSimulator
-
         backend = AerSimulator()
     except ImportError:
-        import qiskit_aer as Aer
-
-        backend = Aer.AerSimulator()
+        raise ImportError("Encountered ImportError when trying to import AerSimulator. Likely caused by incompatible qiskit and qiskit-aer versions.")
 
     # Create QuantumCricuit
     qc = QuantumCircuit()

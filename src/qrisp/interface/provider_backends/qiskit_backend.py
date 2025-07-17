@@ -95,14 +95,14 @@ class QiskitBackend(VirtualBackend):
         if backend is None:
             try:
                 from qiskit_aer import AerSimulator
-
                 backend = AerSimulator()
             except ImportError:
-                import qiskit_aer as Aer
+                raise ImportError("Encountered ImportError when trying to import AerSimulator. Likely caused by incompatible qiskit and qiskit-aer versions.")
 
-                backend = Aer.AerSimulator()
-
-        from qiskit_ibm_runtime import SamplerV2
+        try:
+            from qiskit_ibm_runtime import SamplerV2
+        except ImportError:
+            raise ImportError("Please install qiskit-ibm-runtime to use the QiskitBackend. You can do this by running `pip install qiskit-ibm-runtime`.")
         sampler = SamplerV2(backend)
 
         # Create the run method
@@ -184,6 +184,11 @@ class QiskitRuntimeBackend(VirtualBackend):
         The `execution mode <https://quantum.cloud.ibm.com/docs/en/guides/execution-modes>`_. Available are `job` and `session`.
         The default is `job`. 
 
+    Attributes
+    ----------
+    session : Session
+        The `Qiskit Runtime session <https://quantum.cloud.ibm.com/docs/en/api/qiskit-ibm-runtime/session>`_.
+
     Examples
     --------
 
@@ -215,10 +220,12 @@ class QiskitRuntimeBackend(VirtualBackend):
 
     """
 
-    #def __init__(self, backend=None, channel= token=""):
     def __init__(self, api_token, backend=None, channel="ibm_cloud", mode="job"):
 
-        from qiskit_ibm_runtime import QiskitRuntimeService, SamplerV2, Session
+        try:
+            from qiskit_ibm_runtime import QiskitRuntimeService, SamplerV2, Session
+        except ImportError:
+            raise ImportError("Please install qiskit-ibm-runtime to use the QiskitBackend. You can do this by running `pip install qiskit-ibm-runtime`.")
 
         service = QiskitRuntimeService(channel=channel, token=api_token)
         if backend is None:
@@ -232,7 +239,7 @@ class QiskitRuntimeBackend(VirtualBackend):
         elif mode == "job":
             sampler = SamplerV2(backend)
         else:
-            raise ValueError(f"Execution mode" + str(mode) + " not avialable.")
+            raise ValueError(f"Execution mode" + str(mode) + " not available.")
 
         # Create the run method
         def run(qasm_str, shots=None, token=""):
