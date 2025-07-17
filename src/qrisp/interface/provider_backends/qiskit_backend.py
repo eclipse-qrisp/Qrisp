@@ -178,11 +178,11 @@ class QiskitRuntimeBackend(VirtualBackend):
         A string associated to the name of a Qiskit Runtime backend.
         By default, the least busy available backend is selected.
     channel : str, optional
-        The channel type. Available are `ibm_cloud` or `ibm_quantum_platform`.
-        The default is `ibm_cloud`.
+        The channel type. Available are ``ibm_cloud`` or ``ibm_quantum_platform``.
+        The default is ``ibm_cloud``.
     mode : str, optional
-        The `execution mode <https://quantum.cloud.ibm.com/docs/en/guides/execution-modes>`_. Available are `job` and `session`.
-        The default is `job`. 
+        The `execution mode <https://quantum.cloud.ibm.com/docs/en/guides/execution-modes>`_. Available are ``job`` and ``session``.
+        The default is ``job``. 
 
     Attributes
     ----------
@@ -200,7 +200,7 @@ class QiskitRuntimeBackend(VirtualBackend):
     >>> res = qf*qf
     >>> result = res.get_measurement(backend = example_backend)
     >>> print(result)
-    >>> example_backend.close_session()
+    >>> # example_backend.close_session() # Use only when mode = "session"
     {4: 0.6133,
     8: 0.1126,
     0: 0.0838,
