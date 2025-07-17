@@ -180,6 +180,9 @@ class QiskitRuntimeBackend(VirtualBackend):
     backend : str, optional
         A string associated to the name of a Qiskit Runtime backend.
         By default, the least busy available backend is selected.
+    mode : str, optional
+        The `execution mode <https://quantum.cloud.ibm.com/docs/en/guides/execution-modes>`_. Available are `job` and `session`.
+        The default is `job`. 
 
     Examples
     --------
@@ -213,7 +216,7 @@ class QiskitRuntimeBackend(VirtualBackend):
     """
 
     #def __init__(self, backend=None, channel= token=""):
-    def __init__(self, api_token, channel="ibm_cloud", backend=None):
+    def __init__(self, api_token, channel="ibm_cloud", backend=None, mode="job"):
 
         from qiskit_ibm_runtime import QiskitRuntimeService, SamplerV2, Session
 
@@ -223,8 +226,13 @@ class QiskitRuntimeBackend(VirtualBackend):
         else:
             backend = service.backend(backend)
             
-        self.session = Session(backend)
-        sampler = SamplerV2(self.session)
+        if mode == "session":
+            self.session = Session(backend)
+            sampler = SamplerV2(self.session)
+        elif mode == "job":
+            sampler = SamplerV2(backend)
+        else:
+            raise ValueError(f"Execution mode" + str(mode) + " not avialable.")
 
         # Create the run method
         def run(qasm_str, shots=None, token=""):
