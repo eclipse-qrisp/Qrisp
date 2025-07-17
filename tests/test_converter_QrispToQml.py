@@ -28,7 +28,6 @@ from qrisp import QuantumVariable
 # create randomized qrisp circuit, convert to pennylane, measure outcomes and compare if they are equivalent.
 
 def randomized_ciruit_testing():
-    return
     import pennylane as qml 
 
     ############ create the randomized circuit
