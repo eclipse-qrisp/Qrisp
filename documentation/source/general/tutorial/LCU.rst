@@ -26,7 +26,7 @@ So, you want to perform operations that aren't strictly allowed by the quantum c
 Enter the Linear Combination of Unitaries (LCU) protocol—a foundational quantum algorithmic primitive that lets you implement a non-unitary operator $A$ by cleverly expressing it as a weighted sum of unitary operators: 
 
 .. math::
-    A=\sum_ic_i \,  U_i
+    A=\sum_ic_iU_i
 
 This is the quantum equivalent of ordering a custom pizza: you pick your favorite toppings (unitaries), assign them weights (coefficients), and hope the outcome is deliciously non-classical.
 
@@ -39,13 +39,13 @@ The LCU protocol works by embedding your non-unitary operator into a larger, uni
 
 .. math ::
 
-        \mathrm{PREPARE} \, |0\rangle=\sum_i\sqrt{\frac{c_i}{\lambda}} \, |i\rangle
+        \mathrm{PREPARE}|0\rangle=\sum_i\sqrt{\frac{c_i}{\lambda}}|i\rangle
 
 - **SELECT**: Applies the unitary $U_i$ to the input state $\ket{\psi}$, controlled on the ancilla variable being in state $|i\rangle$.
 
 .. math ::
 
-    \mathrm{SELECT} \, |i\rangle|\psi\rangle=|i\rangle U_i \, |\psi\rangle
+    \mathrm{SELECT}|i\rangle|\psi\rangle=|i\rangleU_i|\psi\rangle
 
 - **PREPARE** $^\dagger$: Applies the inverse prepartion to the ancilla.
 
@@ -134,7 +134,7 @@ First we have to prepare the ancilla variables with ``state_prep(case_indicator)
 
 We already learned about the SELECT operator in the theoretical overview. Here we put it in action using :func:`qrisp.qswitch` ``(operand, case_indicator, unitaries)``. This applies the correct unitary $U_i$ controlled on the ancilla.
 
-the ``qrisp.conjugate`` environment ensures the inverse preparation (PREPARE` $^\dagger$) is applied after SELECT, matching the block-encoding structure.
+the ``qrisp.conjugate`` environment ensures the inverse preparation (PREPARE$^\dagger$) is applied after SELECT, matching the block-encoding structure.
 
 The probability of success in LCU can be low, especially for certain coefficient choices. Qrisp allows you to boost this probability using oblivious amplitude amplification (OAA), which iteratively amplifies the "good" outcome. This is done by
 :func:`qrisp.amplitude_amplification`, which repeatedly applies the LCU block and a reflection (oracle) to amplify the amplitude of the $\ket{0}$ state. The ``oaa_iter`` keyword controls how many amplification iterations are performed. 
@@ -164,13 +164,7 @@ The LCU protocol is only "successful" if, after running the block-encoded circui
     @RUS
     def LCU(operand_prep, state_prep, unitaries, num_unitaries=None, oaa_iter=0):
 
-        case_indicator, qv = inner_LCU(
-                                    operand_prep, 
-                                    state_prep, 
-                                    unitaries, 
-                                    num_unitaries, 
-                                    oaa_iter
-                                    )
+        case_indicator, qv = inner_LCU(operand_prep, state_prep, unitaries, num_unitaries, oaa_iter)
 
         # Success condition
         success_bool = measure(case_indicator) == 0
