@@ -134,10 +134,6 @@ class QiskitBackend(VirtualBackend):
                 # https://docs.quantum.ibm.com/migration-guides/v2-primitives
             )
 
-            qiskit_result.update(
-                (key, round(value * shots)) for key, value in qiskit_result.items()
-            )
-
             # Remove the spaces in the qiskit result keys
             result_dic = {}
             import re
@@ -257,10 +253,6 @@ class QiskitRuntimeBackend(VirtualBackend):
             qiskit_result = (
                 job.result()[0].data.c.get_counts() 
                 # https://docs.quantum.ibm.com/migration-guides/v2-primitives
-            )
-            
-            qiskit_result.update(
-                (key, round(value * shots)) for key, value in qiskit_result.items()
             )
 
             # Remove the spaces in the qiskit result keys
