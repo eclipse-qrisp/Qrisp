@@ -22,7 +22,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install pytest
           pip install -e ./
-          pip install --extra-index-url https://test.pypi.org/simple/ --pre pennylane-catalyst
+          pip install --upgrade pennylane-catalyst
           pip install qiskit-aer
           pip install pyscf
           pip install qiskit-iqm
