@@ -383,7 +383,10 @@ By the end of this tutorial, you'll have a solid foundation of our high-level fr
    JaspQAOAtutorial
    QIROtutorial
    QMCItutorial
+   example_Shor.ipynb
 
+
+Download the notebook: :download:`example_Shor.ipynb <example_Shor.ipynb>`
 
    
    
