@@ -21,7 +21,7 @@ from functools import lru_cache
 from sympy import lambdify, symbols
 
 from jax import make_jaxpr, jit
-from jax.core import ClosedJaxpr
+from jax.extend.core import ClosedJaxpr
 from jax.lax import fori_loop, cond, while_loop, switch
 from jax._src.linear_util import wrap_init
 import jax.numpy as jnp
@@ -29,12 +29,14 @@ import jax.numpy as jnp
 from catalyst.jax_primitives import (
     AbstractQreg,
     qinst_p,
-    qmeasure_p,
+    measure_p,
     qextract_p,
     qinsert_p,
     while_p,
     cond_p,
     func_p,
+    qdealloc_p,
+    qalloc_p,
 )
 
 from qrisp.jasp import (
@@ -134,13 +136,12 @@ def catalyst_eqn_evaluator(eqn, context_dic):
             process_reset(eqn, context_dic)
         elif eqn.primitive.name == "jasp.fuse":
             process_fuse(eqn, context_dic)
-        elif eqn.primitive.name == "jasp.quantum_kernel":
-            from catalyst.jax_primitives import qalloc_p
-
+        elif eqn.primitive.name == "jasp.create_quantum_kernel":
             qreg = qalloc_p.bind(25)
-            insert_outvalues(
-                eqn, context_dic, (qreg, Jlist(jnp.arange(30)[::-1], max_size=30))
-            )
+            insert_outvalues(eqn, context_dic, (qreg, Jlist(jnp.arange(30)[::-1], max_size = 30)))
+        elif eqn.primitive.name == "jasp.consume_quantum_kernel":
+            invalues = extract_invalues(eqn, context_dic)
+            qdealloc_p.bind(invalues[0][0])
         else:
             raise Exception(
                 f"Don't know how to process QuantumPrimitive {eqn.primitive}"
@@ -405,7 +406,7 @@ def process_measurement(invars, outvars, context_dic):
         catalyst_qb_tracer = qextract_p.bind(catalyst_register_tracer, qb_pos)
 
         # Call the measurement primitive
-        meas_res, res_qb = qmeasure_p.bind(catalyst_qb_tracer)
+        meas_res, res_qb = measure_p.bind(catalyst_qb_tracer)
 
         # Reinsert the Qubit
         catalyst_register_tracer = qinsert_p.bind(
@@ -431,7 +432,7 @@ def exec_multi_measurement(catalyst_register, qubit_list):
 
         qb_index = static_qubit_array[i]
         qb = qextract_p.bind(reg, qb_index)
-        res_bl, res_qb = qmeasure_p.bind(qb)
+        res_bl, res_qb = measure_p.bind(qb)
         reg = qinsert_p.bind(reg, qb_index, res_qb)
         acc = acc + (jnp.asarray(1, dtype="int64") << i) * res_bl
         i += jnp.asarray(1, dtype="int64")
@@ -476,12 +477,18 @@ def process_while(eqn, context_dic):
 
     flattened_invalues = flatten_signature(invalues, eqn.invars)
 
+    k = eqn.params["body_nconsts"]
+    new_body_nconsts = len(flatten_signature(invalues[:k], eqn.invars[:k]))
+
+    k = eqn.params["cond_nconsts"]
+    new_cond_nconsts = len(flatten_signature(invalues[:k], eqn.invars[:k]))
+    
     outvalues = while_p.bind(
         *flattened_invalues,
         cond_jaxpr=cond_jaxpr,
         body_jaxpr=body_jaxpr,
-        cond_nconsts=eqn.params["cond_nconsts"],
-        body_nconsts=eqn.params["body_nconsts"],
+        cond_nconsts=new_cond_nconsts,
+        body_nconsts=new_body_nconsts,
         nimplicit=0,
         preserve_dimensions=True,
     )
@@ -551,7 +558,9 @@ def process_pjit(eqn, context_dic):
     jaxpr = eqn.params["jaxpr"]
     traced_fun = get_traced_fun(jaxpr.jaxpr)
 
-    outvalues = func_p.bind(wrap_init(traced_fun), *flattened_invalues, fn=traced_fun)
+    outvalues = func_p.bind(wrap_init(traced_fun, debug_info = eqn.params["jaxpr"].jaxpr.debug_info),
+                            *flattened_invalues, 
+                            fn=traced_fun,)
 
     outvalues = list(outvalues)
 

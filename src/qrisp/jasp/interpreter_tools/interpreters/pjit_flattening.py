@@ -16,7 +16,7 @@
 ********************************************************************************
 """
 
-from jax.core import ClosedJaxpr
+from jax.extend.core import ClosedJaxpr
 from jax import jit
 from qrisp.jasp.interpreter_tools import (
     eval_jaxpr,
