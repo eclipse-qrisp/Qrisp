@@ -16,7 +16,7 @@
 ********************************************************************************
 """
 
-from jax.core import AbstractValue, Primitive, raise_to_shaped_mappings
+from jax.core import AbstractValue
 
 
 class AbstractQubit(AbstractValue):
@@ -38,6 +38,3 @@ class AbstractQubit(AbstractValue):
         if isinstance(b, DynamicQubitArray):
             b = b.tracer
         return DynamicQubitArray(fuse_qb_array(a, b))
-
-
-raise_to_shaped_mappings[AbstractQubit] = lambda aval, _: aval

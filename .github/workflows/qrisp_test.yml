@@ -24,8 +24,6 @@ jobs:
           pip install -e ./
           pip install --upgrade pennylane-catalyst
           pip install qiskit-aer
-          pip install jax==0.4.28
-          pip install jaxlib==0.4.28
           pip install pyscf
           pip install qiskit-iqm
           pip install stim

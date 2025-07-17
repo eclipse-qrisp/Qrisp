@@ -17,10 +17,8 @@
 """
 
 import numpy as np
-from jax.core import AbstractValue, Primitive, raise_to_shaped_mappings
 
 qubit_hash = np.zeros(1)
-
 
 class Qubit:
     """

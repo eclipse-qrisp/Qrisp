@@ -92,6 +92,11 @@ class TracingQuantumSession:
         return temp
 
     def append(self, operation, qubits=[], clbits=[], param_tracers=[]):
+        
+        if not self.abs_qc._trace is jax.core.trace_ctx.trace:
+            raise Exception(
+                """Lost track of QuantumCircuit during tracing. This might have been caused by a missing quantum_kernel decorator or not using quantum prefix control (like q_fori_loop, q_cond). Please visit https://www.qrisp.eu/reference/Jasp/Quantum%20Kernel.html for more details"""
+            )
 
         if len(clbits):
             raise Exception(
@@ -135,13 +140,13 @@ class TracingQuantumSession:
         )
 
     def register_qv(self, qv, size):
-        # if qv.name in [temp_qv.name for temp_qv in self.qv_list + self.deleted_qv_list]:
-        #     raise RuntimeError(
-        #         "Variable name " + str(qv.name) + " already exists in quantum session"
-        #     )
+
+        if not self.abs_qc._trace is jax.core.trace_ctx.trace:
+            raise Exception(
+                """Lost track of QuantumCircuit during tracing. This might have been caused by a missing quantum_kernel decorator or not using quantum prefix control (like q_fori_loop, q_cond). Please visit https://www.qrisp.eu/reference/Jasp/Quantum%20Kernel.html for more details"""
+            )
 
         # Determine amount of required qubits
-
         if size is not None:
             qb_array_tracer, self.abs_qc = create_qubits(size, self.abs_qc)
             # Register in the list of active quantum variable
@@ -155,6 +160,11 @@ class TracingQuantumSession:
         QuantumVariable.creation_counter += 1
 
     def delete_qv(self, qv, verify=False):
+        
+        if not self.abs_qc._trace is jax.core.trace_ctx.trace:
+            raise Exception(
+                """Lost track of QuantumCircuit during tracing. This might have been caused by a missing quantum_kernel decorator or not using quantum prefix control (like q_fori_loop, q_cond). Please visit https://www.qrisp.eu/reference/Jasp/Quantum%20Kernel.html for more details"""
+            )
 
         if verify == True:
             raise Exception("Tried to verify deletion in tracing mode.")
@@ -194,10 +204,10 @@ tracing_qs_singleton = TracingQuantumSession()
 
 
 def check_for_tracing_mode():
-    return hasattr(
-        jax._src.core.thread_local_state.trace_state.trace_stack.dynamic, "jaxpr_stack"
-    )
+    return hasattr(jax._src.core.trace_ctx.trace, "frame")
 
+def get_last_equation(i = -1):
+    return jax._src.core.trace_ctx.trace.frame.eqns[i]
 
 def check_live(tracer):
     if tracer is None:

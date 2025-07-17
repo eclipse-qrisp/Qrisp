@@ -17,12 +17,12 @@
 """
 
 import jax
-import jax.numpy as jnp
+from jax.extend.core import ClosedJaxpr
 
 from qrisp.core import recursive_qv_search, recursive_qa_search
 
 from qrisp.jasp.primitives import AbstractQuantumCircuit
-from qrisp.jasp.tracing_logic import TracingQuantumSession, check_for_tracing_mode
+from qrisp.jasp.tracing_logic import TracingQuantumSession, check_for_tracing_mode, get_last_equation
 
 
 def qache(*func, **kwargs):
@@ -310,11 +310,8 @@ def qache_helper(func, jax_kwargs):
         # Convert the jaxpr from the traced equation in to a Jaspr
         from qrisp.jasp import Jaspr
 
-        eqn = jax._src.core.thread_local_state.trace_state.trace_stack.dynamic.jaxpr_stack[
-            0
-        ].eqns[
-            -1
-        ]
+        eqn = get_last_equation()
+        
         jaxpr = eqn.params["jaxpr"].jaxpr
 
         if not isinstance(eqn.invars[-1].aval, AbstractQuantumCircuit):
@@ -331,7 +328,7 @@ def qache_helper(func, jax_kwargs):
                     )
                     break
 
-        eqn.params["jaxpr"] = jax.core.ClosedJaxpr(
+        eqn.params["jaxpr"] = ClosedJaxpr(
             Jaspr.from_cache(jaxpr), eqn.params["jaxpr"].consts
         )
 

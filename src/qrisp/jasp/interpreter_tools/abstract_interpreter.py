@@ -16,7 +16,7 @@
 ********************************************************************************
 """
 
-from jax.core import ClosedJaxpr, Literal
+from jax.extend.core import ClosedJaxpr, Literal
 from jax import make_jaxpr
 import jax.numpy as jnp
 from qrisp.jasp import check_for_tracing_mode
