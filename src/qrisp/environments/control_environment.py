@@ -18,12 +18,13 @@
 
 from jax.core import ShapedArray
 from jaxlib.xla_extension import ArrayImpl
+from jax.extend.core import ClosedJaxpr
 
 from qrisp.circuit import Qubit, QuantumCircuit, XGate
 from qrisp.core.session_merging_tools import merge, merge_sessions, multi_session_merge
 from qrisp.environments import QuantumEnvironment, ClControlEnvironment
 from qrisp.misc import perm_lock, perm_unlock, bin_rep
-from qrisp.jasp import check_for_tracing_mode
+from qrisp.jasp import check_for_tracing_mode, get_last_equation
 from qrisp.core import mcx, p, rz, x
 
 
@@ -401,12 +402,9 @@ class ControlEnvironment(QuantumEnvironment):
         res = jax.jit(controlled_jaspr.eval)(*args)
 
         # Retrieve the equation
-        jit_eqn = jax._src.core.thread_local_state.trace_state.trace_stack.dynamic.jaxpr_stack[
-            0
-        ].eqns[
-            -1
-        ]
-        jit_eqn.params["jaxpr"] = jax.core.ClosedJaxpr(
+        jit_eqn = get_last_equation()
+        
+        jit_eqn.params["jaxpr"] = ClosedJaxpr(
             controlled_jaspr, jit_eqn.params["jaxpr"].consts
         )
         jit_eqn.params["name"] = "ctrl_env"

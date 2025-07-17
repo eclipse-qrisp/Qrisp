@@ -38,6 +38,7 @@ import numpy as np
 
 import jax
 import jax.numpy as jnp
+from jax.extend.core import ClosedJaxpr
 
 from qrisp.jasp.primitives import OperationPrimitive
 from qrisp.jasp.interpreter_tools import make_profiling_eqn_evaluator, eval_jaxpr
@@ -342,7 +343,7 @@ def get_primitives(jaxpr):
 
         # Handle call primitives (like cond/pjit)
         for param in eqn.params.values():
-            if isinstance(param, jax.core.ClosedJaxpr):
+            if isinstance(param, ClosedJaxpr):
                 primitives.update(get_primitives(param.jaxpr))
 
     return list(primitives)
