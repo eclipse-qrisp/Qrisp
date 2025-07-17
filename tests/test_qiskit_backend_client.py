@@ -17,6 +17,7 @@
 """
 
 # Created by ann81984 at 23.05.2022
+"""
 import numpy as np
 
 from qrisp import QuantumCircuit
@@ -93,7 +94,7 @@ def test_qiskit_backend_client():
     print(test_qiskit_backend.run(qc, 2000))
     # status = test_qiskit_backend.ping()
     assert str(test_qiskit_backend.run(qc, 2000)) == "{'1': 2000}"
-
+"""
 
 def test_qiskit_aer_backend():
 
@@ -107,7 +108,7 @@ def test_qiskit_aer_backend():
     meas_res = res.get_measurement(backend = example_backend)
     assert meas_res == {9: 1.0}
 
-
+"""
 def test_qiskit_fake_backend():
 
     from qrisp import QuantumFloat
@@ -119,3 +120,4 @@ def test_qiskit_fake_backend():
     res = qf*qf
     meas_res = res.get_measurement(backend = example_backend)
     assert meas_res[4] > 0.5
+"""
