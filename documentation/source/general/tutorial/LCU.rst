@@ -26,7 +26,7 @@ So, you want to perform operations that aren't strictly allowed by the quantum c
 Enter the Linear Combination of Unitaries (LCU) protocol—a foundational quantum algorithmic primitive that lets you implement a non-unitary operator $A$ by cleverly expressing it as a weighted sum of unitary operators: 
 
 .. math::
-    A=\sum_ic_iU_i
+    A=\sum_ic_i \,  U_i
 
 This is the quantum equivalent of ordering a custom pizza: you pick your favorite toppings (unitaries), assign them weights (coefficients), and hope the outcome is deliciously non-classical.
 
@@ -39,13 +39,13 @@ The LCU protocol works by embedding your non-unitary operator into a larger, uni
 
 .. math ::
 
-        \mathrm{PREPARE}|0\rangle=\sum_i\sqrt{\frac{c_i}{\lambda}}|i\rangle
+        \mathrm{PREPARE} \, |0\rangle=\sum_i\sqrt{\frac{c_i}{\lambda}} \, |i\rangle
 
 - **SELECT**: Applies the unitary $U_i$ to the input state $\ket{\psi}$, controlled on the ancilla variable being in state $|i\rangle$.
 
 .. math ::
 
-    \mathrm{SELECT}|i\rangle|\psi\rangle=|i\rangle U_i|\psi\rangle
+    \mathrm{SELECT} \, |i\rangle|\psi\rangle=|i\rangle U_i \, |\psi\rangle
 
 - **PREPARE** $^\dagger$: Applies the inverse prepartion to the ancilla.
 
@@ -71,7 +71,7 @@ With the theoretical foundation of the Linear Combination of Unitaries (LCU) pro
 Qrisp provides a collection of functions, three to be exact, that directly mirror the theoretical structure of LCU, allowing you to implement, visualize, and experiment with the protocol as described in the previous section:
 
 - :ref:`inner_LCU <inner_LCU_tut>`: implements the core LCU protocol (prepare-select/qswitch-unprepare) without the Repeat-Until_Success (RUS) protocol.
-- :ref:`LCU <LCU_func_tut>`: wraps inner_LCU with a repeat-until-success (RUS) routine protocol, repeatedly running the circuit until the ancilla is measured in the $\ket{0} state (the success condition described in theory).
+- :ref:`LCU <LCU_func_tut>`: wraps inner_LCU with a repeat-until-success (RUS) routine protocol, repeatedly running the circuit until the ancilla is measured in the :math:`\ket{0}` state (the success condition described in the theory).
 - :ref:`view_LCU <view_LCU_tut>`: constructs and returns the explicit quantum circuit corresponding to your LCU protocol.
 
 Let's take a closer look and disect the inner workings of these functions.
@@ -81,9 +81,9 @@ Let's take a closer look and disect the inner workings of these functions.
 Underlying protocol in two lines of code in :func:`qrisp.inner_LCU`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:func:`qrisp.inner_LCU` implements the core LCU protocol (prepare-select/qswitch-unprepare) without the Repeat-Until_Success (RUS) protocol validating the correct execution of the primitive.
+:func:`qrisp.inner_LCU` implements the core LCU protocol (prepare-select/qswitch-unprepare), without the Repeat-Until_Success (RUS) protocol validating the correct execution of the primitive.
 
-At its core, the LCU protocol in Qrisp is realized by two key operations: preparing the ancilla in the right superposition (encoding the coefficients) and applying the controlled unitaries. The function inner_LCU exposes this structure directly, without any success-checking or repetition logic.
+At its core, the LCU protocol in Qrisp is realized by two key operations: preparing the ancilla in the right superposition (encoding the coefficients) and applying the controlled unitaries. The function ``inner_LCU`` exposes this structure directly, without any success-checking or repetition logic.
 
 In order to have this tutorial reproduceable, this is the entire :func:`qrisp.inner_LCU`, as it is defined in the Qrisp repository:
 ::
@@ -128,13 +128,13 @@ In order to have this tutorial reproduceable, this is the entire :func:`qrisp.in
 
         return case_indicator, operand
 
-Unpacking the code (which pack a hefty punch) becomes self explenatory because of the modularity that Qrisp offers through various modules. Let's unveil the concepts bit by bit.
+Unpacking the code (which packs a hefty punch) becomes self explenatory because of the modularity that Qrisp offers through various modules. Let's unveil the concepts bit by bit.
 
 First we have to prepare the ancilla variables with ``state_prep(case_indicator)``. This step transforms the ancilla in a superposition reflecting the coefficients $c_i$. 
 
 We already learned about the SELECT operator in the theoretical overview. Here we put it in action using :func:`qrisp.qswitch` ``(operand, case_indicator, unitaries)``. This applies the correct unitary $U_i$ controlled on the ancilla.
 
-the ``qrisp.conjugate`` environment ensures the inverse preparation (PREPARE $^\dagger$) is applied after SELECT, matching the block-encoding structure.
+the ``qrisp.conjugate`` environment ensures the inverse preparation (PREPARE` $^\dagger$) is applied after SELECT, matching the block-encoding structure.
 
 The probability of success in LCU can be low, especially for certain coefficient choices. Qrisp allows you to boost this probability using oblivious amplitude amplification (OAA), which iteratively amplifies the "good" outcome. This is done by
 :func:`qrisp.amplitude_amplification`, which repeatedly applies the LCU block and a reflection (oracle) to amplify the amplitude of the $\ket{0}$ state. The ``oaa_iter`` keyword controls how many amplification iterations are performed. 
@@ -155,17 +155,22 @@ The oblivious amplitude amplification is then performed based on how many iterat
 
 Success condition with :func:`qrisp.LCU`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-:func:`qrisp.LCU` wraps inner_LCU with a :ref:`repeat-until-success (RUS) routine <RUS>` protocol, repeatedly running the circuit until the ancilla is measured in the $\ket{0}$ state (the success condition described in theory). This matches the probabilistic nature of LCU’s success and automates the process for the user.
+:func:`qrisp.LCU` wraps ``inner_LCU`` with a :ref:`repeat-until-success (RUS) routine <RUS>` protocol, repeatedly running the circuit until the ancilla is measured in the $\ket{0}$ state (the success condition described in theory). This matches the probabilistic nature of LCU’s success and automates the process for the user.
 
-The LCU protocol is only "successful" if, after running the block-encoded circuit, the ancilla is measured in the $\ket{0}$ state. Qrisp's LCU function wraps inner_LCU with :ref:`RUS <RUS>`, automating this process.
+The LCU protocol is only "successful" if, after running the block-encoded circuit, the ancilla is measured in the $\ket{0}$ state. Qrisp's ``LCU`` function wraps ``inner_LCU`` with :ref:`RUS <RUS>`, automating this process.
 
 :: 
 
     @RUS
     def LCU(operand_prep, state_prep, unitaries, num_unitaries=None, oaa_iter=0):
+
         case_indicator, qv = inner_LCU(
-        operand_prep, state_prep, unitaries, num_unitaries, oaa_iter
-        )
+                                    operand_prep, 
+                                    state_prep, 
+                                    unitaries, 
+                                    num_unitaries, 
+                                    oaa_iter
+                                    )
 
         # Success condition
         success_bool = measure(case_indicator) == 0
