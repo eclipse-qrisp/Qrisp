@@ -174,12 +174,12 @@ class QiskitRuntimeBackend(VirtualBackend):
     api_token : str
         The token is necessary to create correctly the Qiskit Runtime
         service and be able to run algorithms on their backends.
-    channel : str, optional
-        The channel type. Available are `ibm_cloud` or `ibm_quantum_platform`.
-        The default is `ibm_cloud`.
     backend : str, optional
         A string associated to the name of a Qiskit Runtime backend.
         By default, the least busy available backend is selected.
+    channel : str, optional
+        The channel type. Available are `ibm_cloud` or `ibm_quantum_platform`.
+        The default is `ibm_cloud`.
     mode : str, optional
         The `execution mode <https://quantum.cloud.ibm.com/docs/en/guides/execution-modes>`_. Available are `job` and `session`.
         The default is `job`. 
@@ -189,7 +189,7 @@ class QiskitRuntimeBackend(VirtualBackend):
 
     >>> from qrisp import QuantumFloat
     >>> from qrisp.interface import QiskitRuntimeBackend
-    >>> example_backend = QiskitRuntimeBackend(api_token = "YOUR_IBM_CLOUD_TOKEN", channel = "ibm_cloud", backend = "ibm_brisbane")
+    >>> example_backend = QiskitRuntimeBackend(api_token = "YOUR_IBM_CLOUD_TOKEN", backend = "ibm_brisbane", channel = "ibm_cloud")
     >>> qf = QuantumFloat(2)
     >>> qf[:] = 2
     >>> res = qf*qf
@@ -216,7 +216,7 @@ class QiskitRuntimeBackend(VirtualBackend):
     """
 
     #def __init__(self, backend=None, channel= token=""):
-    def __init__(self, api_token, channel="ibm_cloud", backend=None, mode="job"):
+    def __init__(self, api_token, backend=None, channel="ibm_cloud", mode="job"):
 
         from qiskit_ibm_runtime import QiskitRuntimeService, SamplerV2, Session
 
