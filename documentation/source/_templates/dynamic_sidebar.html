@@ -1,0 +1,12 @@
+
+<div class="download-link">
+       <h4>Download Notebook</h4>
+       <p>Aktueller Dokumentname: {{ docname }}</p>  <!-- Hier den aktuellen Dokumentnamen anzeigen -->
+       {% if "example_Shor" in docname %}
+           <a href="documentation/source/general/tutorial/example_Shor.ipynb" class="btn btn-primary">Download Tutorial 1</a>
+       {% elif "tutorial_2" in docname %}
+           <a href="documentation/source/general/tutorial/example_Shor.ipynb" class="btn btn-primary">Download Tutorial 2</a>
+       {% else %}
+           <p>No notebook available for this tutorial.</p>
+       {% endif %}
+   </div>

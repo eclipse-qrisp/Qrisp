@@ -136,7 +136,8 @@ html_sidebars = {
     "**": ["sidebar-nav-bs"],
     "index": [],
     "install": [],
-    "tutorial": [],
+    #"tutorial": [],
+    "tutorial/*": ["sidebar-nav-bs", "dynamic_sidebar.html"],  # Use for all tutorials
     "auto_examples/index": [],
 }
 
