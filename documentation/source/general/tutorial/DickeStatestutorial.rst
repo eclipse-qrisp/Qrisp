@@ -3,9 +3,9 @@
 Preparation of Dicke States
 ===========================
 
-In this tutorial we will show you different routines for the preparation of Dicke States and how to implement them in Qrisp! They are all :ref:`JASP <JASP>` compatible, so you can seamlessly integrate them into your realtime computations as a subroutine. 
+In this tutorial, we will show you different routines for the preparation of Dicke States and how to implement them in Qrisp! They are all :ref:`JASP <JASP>` compatible, so you can seamlessly integrate them into your realtime computations as a subroutine. 
 
-The two main approaches we will look at are `an efficient deterministic algorithm by Jeffery Yu et al. <https://arxiv.org/abs/2411.03428>`_ and `a deterministic algorithm by Bärtschi et al. <https://arxiv.org/abs/1904.07358>`_, as well as the  `more efficient version <https://arxiv.org/abs/2112.12435>`_ of the latter.   
+The two main approaches we will look at are `an efficient deterministic algorithm by Jeffery Yu et al. <https://arxiv.org/abs/2411.03428>`_, and `a deterministic algorithm by Bärtschi et al. <https://arxiv.org/abs/1904.07358>`_, as well as the  `more efficient version <https://arxiv.org/abs/2112.12435>`_ of the latter.   
 
 But before we jump into their preparation, let us first answer the questions: **What are Dicke states? And what do we use them for?**
 
@@ -13,13 +13,12 @@ But before we jump into their preparation, let us first answer the questions: **
 Definition and utility of Dicke States
 ======================================
 
-Formally, Dicke states are defined as follows
-
-
 The preparation of Dicke states is an important and highly investigated topic in the field of quantum computation due to to their range of applications. 
 This ranges from error correction techniques in the ISD algorithm to optimization tasks solved with DQI or QAOA. [REF]
 Furthermore, these states are native to quantum optics systems due to their relation to spin systems, 
 and can be found quantum communication applications. 
+
+Formally, Dicke states are defined as follows:
 
 Dicke states are characterized by there constant Hamming-weight. A Dicke state with :math:`n` qubits and Hamming-weight :math:`\text{wt}(x) =k` is defined as
 
@@ -35,13 +34,13 @@ It can also be defined in direct relation to a spin system, see p.e. the `relate
 Preparation algorithms
 ======================
 
-After the short overview on their definition and applications lets now dive into the established algorithms for Dicke state preparation! 
+After the short overview on their definition and applications, let's now dive into the established algorithms for Dicke state preparation! 
 
 Probablistic approach
 ---------------------
 
 The first algorithm we want to highlight here is `Efficient preparation of Dicke states (2024) <https://arxiv.org/abs/2411.03428>`_ by Jeffery Yu et al., from the University of Maryland. 
-The algorithm utilizes mid-circuit Hamming-weight measurements and feedback to prepare Dicke states, by incorporating  adaptively-chosen global rotations. It is furthermore motivated by its nativity to a cavity QED context, where both the mid-circuit measurement and rotations 
+The algorithm utilizes mid-circuit Hamming-weight measurements and feedback to prepare Dicke states by incorporating adaptively-chosen global rotations. It is further motivated by its nativity to a cavity QED context, where both the mid-circuit measurement and rotations 
 are easily implemented in a physical system.
 
 But as he knows best, we will let Jeffery explain it himself:
@@ -57,10 +56,10 @@ But as he knows best, we will let Jeffery explain it himself:
 Implementation 
 --------------
 
-For the implementation we will resort back to circuit representation of the aforementioned components, namely the Hamming-weight measurements and the rotations around the Bloch sphere. 
+For the implementation, we will resort back to circuit representation of the aforementioned components, namely the Hamming-weight measurements and the rotations around the Bloch sphere. 
 
 As explained in the paper, one of the facilitators for this algorithm is the collective Hamming-weight measurement, so let us start by creating that. 
-It is taken from a `paper on Shallow Quantum Circuits <https://arxiv.org/pdf/2404.06052>`_, gives a straight forward 
+It is taken from a `paper on Shallow Quantum Circuits <https://arxiv.org/pdf/2404.06052>`_ and gives a straight forward 
 scheme. We first create the necessary amount of ancilla qubits, and then apply the routine based on controlled rotations and an inverse :ref:`Quantum Fourier transformation <QFT>`.
 
 :: 
@@ -90,15 +89,15 @@ scheme. We first create the necessary amount of ancilla qubits, and then apply t
         return ancillas
 
 
-With that out of the way, lets get back to the implementation of Jeffery's algorithm, which emerges naturally from the pseudo code provided.
+With that out of the way, let's get back to the implementation of Jeffery's algorithm, which emerges naturally from the pseudocode provided.
 It is already :ref:`jaspified <JASP>` and intended to be called with the ``@terminal_sampling`` decorator (or an adaption with makes use of the :ref:`terminal_sampling` simulator optimization).
 
 To reiterate: the procedure performs iterative ``ry``-rotations, where the rotation angle is adaptively chosen based on the ``collective_hamming_measurement`` of previous iteration.
 We stop once we measure the correct Hamming-weight. 
-In *JASP*-terms this is achieved by wrapping the "rotate-and-measure" procedure in a :ref:`q_while_loop <q_while_loop>`. This jaspified version of a quantum while-loop requires a condition function ``cond_fun`` with a ``bool`` (or ``QuantumBool``) return, and a body function ``body_fun``.
+In *JASP*-terms, this is achieved by wrapping the "rotate-and-measure" procedure in a :ref:`q_while_loop <q_while_loop>`. This jaspified version of a quantum while-loop requires a condition function ``cond_fun`` with a ``bool`` (or ``QuantumBool``) return, and a body function ``body_fun``.
 The ``cond_fun`` checks whether the "while" condition is still true, while the ``body_fun`` performs the iterative quantum operations.
 
-Let us investigate the ``body_fun`` first. We indeed see that we directly translate what Jeffery proposes into code. First we perform some arithmetic to find the updated rotation angle.
+Let us investigate the ``body_fun`` first. We directly translate what Jeffery proposes into code. First, we perform some arithmetic to find the updated rotation angle.
 Then, we apply the corrected ``ry``-rotations. And finally, we perform the ``collective_hamming_measurement`` to gather information about our Hamming-weight overlap. 
 
 ::
@@ -124,7 +123,7 @@ Then, we apply the corrected ``ry``-rotations. And finally, we perform the ``col
 
 
 
-The ``cond_fun`` is very simple. All it does, is to check whether the result from the Hamming-weight measurement (described by ``val[-1]``) 
+The ``cond_fun`` is very simple. All it does is check whether the result from the Hamming-weight measurement (described by ``val[-1]``) 
 is equivalent to the one we are looking for (which is given by ``val[0]``). If yes, we stop the loop.
 
 ::
@@ -155,7 +154,7 @@ Putting it all together, the main function ``iterative_dicke_state_sampling`` re
         return qf1
 
 
-To give a final example, this what the code looks like to create the aforementioned :math:`\ket{D_{2}^{4}}` state looks like:
+To give a final example, this what the code looks like to create the aforementioned :math:`\ket{D_{2}^{4}}` state:
 
 ::
 
@@ -188,17 +187,17 @@ The second algorithm mentioned is a divide-and-conquer adaption based on the fir
 In it the authors make use of *split & cyclic shift* unitaries, which are then applied inductively in a cascade. In the following, we will show you how 
 the basic components are implemented and how these unitary calls are structed in terms of Qrisp code.
 
-For an indepth explanation on how these unitaries emerge and their action on a quantum state, please refer to the original paper. 
+For an in-depth explanation on how these unitaries emerge and their action on a quantum state, please refer to the original paper. 
 
 The aforementioned unitary is given by the function ``split_cycle_shift``, which receives a QuantumVariable ``qv``. 
-Additionally, two integers  ``highIndex`` and ``lowIndex`` indicate the preparation steps, as seen in original algorithm.
+Additionally, two integers,  ``highIndex`` and ``lowIndex``, indicate the preparation steps, as seen in original algorithm.
 
 Some caveats: 
 
 This implementation is *JASP* ready. It therefore makes use of the :ref:`jrange <jrange>` iterator. In the paper, the iteration is conducted in reverse, i.e. from the lowest to the highest index. 
-In a normal ``range`` iterator you would just set ``step =-1`` for this behaviour, ``jrange`` does not allow for this. Instead we embed the whole construct in an :ref:`InversionEnvironment <InversionEnvironment>` to reverse the loop.
+In a normal ``range`` iterator, you would just set ``step =-1`` for this behaviour; ``jrange`` does not allow for this. Instead, we embed the whole construct in an :ref:`InversionEnvironment <InversionEnvironment>` to reverse the loop.
 
-Additionally you may notice some logic checks using the ``ctrl_bool`` variables. This replaces ``if``-statement usage in *JASP* mode, so make good use of that when **jaspifying** your Qrisp code! 
+Additionally, you may notice some logic checks using the ``ctrl_bool`` variables. This replaces ``if``-statement usage in *JASP* mode, so make good use of that when **jaspifying** your Qrisp code! 
 
 ::
 
@@ -228,8 +227,8 @@ Additionally you may notice some logic checks using the ``ctrl_bool`` variables.
                     cx(qv[index -2], qv[highIndex-1]) 
 
 
-These *split & cyclic shift* unitaries are embedded in the main function **dicke_state**. It receives as inputs the QuantumVariable ``qv`` that we want to work on and an integer ``k`` which represents the desired Hamming-weight.
-Here we again invert the ``jrange`` operator to represent the logic of the original paper.
+These *split & cyclic shift* unitaries are embedded in the main function **dicke_state**. It receives as inputs the QuantumVariable ``qv`` that we want to work on and an integer ``k``, which represents the desired Hamming-weight.
+Here, we again invert the ``jrange`` operator to represent the logic of the original paper.
 
 
 ::
@@ -257,7 +256,7 @@ Correct Usage
 
 To run this code and properly generate the desired Dicke state, we have to make sure that the input state already has the desired Hamming-weight ``k`` in its trailing ``k`` qubits.
 
-So in other words, to receive :math:`\ket{D_{2}^{4}}` from calling ``dicke_state(qv,2)``, the ``qv`` has to in the :math:`\ket{0011}` state! 
+In other words, to receive :math:`\ket{D_{2}^{4}}` from calling ``dicke_state(qv,2)``, the ``qv`` has to in the :math:`\ket{0011}` state! 
 
 We can therefore execute the following code:
 
@@ -292,7 +291,7 @@ Consider the following example, where :math:`\alpha \in (0,1)`
 
     U_{2}^{4} ( \sqrt{\alpha} \, \ket{0011} + \sqrt{1- \alpha} \, \ket{0001}  ) = \sqrt{\alpha} \, \ket{D_{2}^{4}} + \sqrt{1-\alpha} \, \ket{D_{1}^{4}} 
 
-Accordingly we can execute the function from above on a QuantumVariable in superposition to receive the Dicke state in superposition!
+Accordingly, we can execute the function from above on a QuantumVariable in superposition to receive the Dicke state in superposition!
 
 
 ::
@@ -314,11 +313,11 @@ For the final algorithm in this tutorial let us investigate the `Divide-and-Conq
 
 The idea here is to divide the whole Dicke state preparation procedure as follows: 
 
-First we separate the set of qubits into two sets.
-Then a smart prepreparation is conducted, after which the ``dicke_state``-function is executed on each qubit set individually.
+First, we separate the set of qubits into two sets.
+Then, a smart prepreparation is conducted, after which the ``dicke_state``-function is executed on each qubit set individually.
 Finally, we fuse the qubit sets back together.
 
-The main difficulty lays in choosing the correct weighting of states for the preparation step. For an indepth explanation please refer to the original paper.
+The main difficulty lays in choosing the correct weighting of states for the preparation step. For an in-depth explanation please refer to the original paper.
 We will also make use of the function ``comb``, a `JAX compatible <https://docs.jax.dev/en/latest/index.html>`_ version of the binomial coeffient.
 
 ::
@@ -328,10 +327,10 @@ We will also make use of the function ``comb``, a `JAX compatible <https://docs.
         integ = jnp.uint16(jnp.round(jnp.exp(gammaln(N + 1) - gammaln(k + 1) - gammaln(N - k + 1))))
         return integ
 
-In the following we will keep it short. The ``dicke_divide_and_conquer`` function precomputes the correct weights, i.e. the ``ry``-gate angles to fan-out 
+In the following, we will keep it short. The ``dicke_divide_and_conquer`` function precomputes the correct weights, i.e. the ``ry``-gate angles to fan-out 
 the amplitude information, and then applies a ``cx``-cascade. 
-Afterwards we apply the ``dicke_state`` functions on the separted qubit set.
-For the explanation of the ``ry``-angle calculation we refer to the original paper. 
+Afterwards, we apply the ``dicke_state`` functions on the separted qubit set.
+For the explanation of the ``ry``-angle calculation, we refer to the original paper. 
 
 ::
 
@@ -378,7 +377,7 @@ For the explanation of the ``ry``-angle calculation we refer to the original pap
         dicke_state(qv[:n_1a], k)
         dicke_state(qv[n-n_2a:], k)
           
-Lets look at one final example on how to use this function with and without *Jaspification*.
+Let's look at one final example on how to use this function with and without *Jaspification*.
 We initiate a QuantumVariable with 7 qubits from this create the Dicke state with Hamming weight 3 with the ``terminal_sampling`` decorator.
 
 ::
