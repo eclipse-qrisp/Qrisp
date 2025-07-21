@@ -17,9 +17,8 @@
 """
 
 from qrisp.alg_primitives.arithmetic.isqrt import q_isqrt
-from qrisp import *
+from qrisp import QuantumFloat, multi_measurement
 import math
-import pytest
 
 def test_quantum_square_root():
     for a in range(6, 26):
@@ -27,9 +26,7 @@ def test_quantum_square_root():
         expected_remainder = a - expected_root**2
 
         n = math.ceil(math.log2(a + 1))
-        if(n % 2 == 0):
-            n += 1
-        R = QuantumFloat(n, signed=True)
+        R = QuantumFloat(n)
         R[:] = a
 
         F = q_isqrt(R)
@@ -41,19 +38,13 @@ def test_quantum_square_root():
         print("Remainder", r)
         assert f == expected_root and r == expected_remainder
 
-    R = QuantumFloat(4, signed=True)
-    R[:] = 15
-
-    print("Number of qubits:", R.size)
-    with pytest.raises(ValueError, match="Input variable should have even number of qubits."):
-        q_isqrt(R)
-
-    R = QuantumFloat(4, signed=False)
-    R[:] = 15
+    R = QuantumFloat(8)
+    R[:] = {131: 1, 81: 1}
+    F = q_isqrt(R)
     
-    print("Signed:", R.signed)
-    with pytest.raises(ValueError, match="Input variable should be signed."):
-        q_isqrt(R)
-
+    mes_res = multi_measurement([R, F])
     
+    expected_results = {(10, 11): 0.5, (0, 9): 0.5}
+    
+    assert mes_res == expected_results
 

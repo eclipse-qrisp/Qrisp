@@ -16,7 +16,9 @@
 ********************************************************************************
 """
 
-from qrisp import *
+from qrisp.circuit import Qubit
+from qrisp.qtypes import QuantumFloat
+from qrisp.core.gate_application_functions import x, cx, mcx, swap
 
 def peres(a : Qubit, b : Qubit, c : Qubit):
     mcx([a, b], c)
@@ -104,7 +106,7 @@ def initial_subtraction(R : QuantumFloat, F : QuantumFloat, z : QuantumFloat):
     cx(R[n-1], F[1])
 
     # Step 4
-    mcx([R[n-1]], z, ctrl_state=0)
+    mcx([R[n-1]], z[0], ctrl_state=0)
     
     # Step 5
     mcx([R[n-1]], F[2], ctrl_state=0)
@@ -126,7 +128,7 @@ def conditional_addition_or_subtraction(R : QuantumFloat, F : QuantumFloat, z : 
         cx(R[n-1], F[1])
 
         # Step 4
-        mcx([R[n-1]], z, ctrl_state=0)
+        mcx([R[n-1]], z[0], ctrl_state=0)
 
         # Step 5
         mcx([R[n-1]], F[i+1], ctrl_state=0)
@@ -150,7 +152,7 @@ def remainder_restoration(R : QuantumFloat, F : QuantumFloat, z : QuantumFloat):
     cx(F[2], z)
 
     # Step 3
-    mcx([R[n-1]], z, ctrl_state=0)
+    mcx([R[n-1]], z[0], ctrl_state=0)
 
     # Step 4
     mcx([R[n-1]], F[n//2+1], ctrl_state=0)
@@ -174,12 +176,11 @@ def remainder_restoration(R : QuantumFloat, F : QuantumFloat, z : QuantumFloat):
 def q_isqrt(R: QuantumFloat) -> QuantumFloat:
     """
     Computes the integer square root of a QuantumFloat R, as well as the remainder using algorithm `<https://arxiv.org/abs/1712.08254>`.
-    The input value R should be a positive binary value in 2's complement representation with even number of bits.
 
     Parameters
     ----------
     R : QuantumFloat
-        Positive value in 2's complement representation with even number of bits which square root is to be computed.
+        QuantumFloat value to compute the integer square root of.
     
     Returns
     -------
@@ -191,7 +192,7 @@ def q_isqrt(R: QuantumFloat) -> QuantumFloat:
     --------
     Calculate the integer square root of 131:
     >>> from qrisp.isqrt import isqrt_alg
-    >>> R = QuantumFloat(10, 0) # 131 has 8 bits, but since msb is 1, we need to add 1 qubit, so its 2's complement and another 1 qubit, so it has even number of qubits.
+    >>> R = QuantumFloat(8, 0)
     >>> R[:] = 131
     >>> res = isqrt_alg(R)
     >>> print(res.get_measurement())
@@ -201,11 +202,10 @@ def q_isqrt(R: QuantumFloat) -> QuantumFloat:
     """
     n = R.size
 
-    if n % 2 == 1:
-        raise ValueError("Input variable should have even number of qubits.")
-    
-    if not R.signed:
-        raise ValueError("Input variable should be signed.")
+    # To ensure that first qubit is 0 and total amount of qubits is even we extend the input variable
+    delta = 1 if n % 2 == 1 else 2
+    n += delta
+    R.extend(delta)
 
     F = QuantumFloat(n, 0, name="F")
     z = QuantumFloat(1, 0, name="z")
@@ -221,5 +221,7 @@ def q_isqrt(R: QuantumFloat) -> QuantumFloat:
     for i in range(2, n // 2 + 2):
         swap(F[i], F[i - 2])
 
+    R.reduce(R[-delta:])
+    F.reduce(F[-delta:])
+
     return F
-    
