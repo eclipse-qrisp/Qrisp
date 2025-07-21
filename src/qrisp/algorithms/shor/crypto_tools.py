@@ -22,18 +22,18 @@ from qrisp.alg_primitives.arithmetic.modular_arithmetic import modinv
 from qrisp.algorithms.shor import shors_alg
 
 
-def rsa_decrypt(ciphertext, e, N, backend=None):
+def rsa_decrypt(e, N, cipher_int, backend=None):
     """
     Decrypts an integer using factorization powered by Shor's algorithm.
 
     Parameters
     ----------
-    ciphertext : int
-        The integer to be decrypted.
     e : int
         Public key 1.
     N : int
         Public key 2.
+    cipher_int : int
+        The integer to decrypt.
     backend : :ref:`BackendClient`, optional
         The backend to execute the quantum algorithm. By default the Qrisp simulator will be used.
 
@@ -42,10 +42,13 @@ def rsa_decrypt(ciphertext, e, N, backend=None):
     plaintext : int
         The decrypted integer.
 
+    Examples
+    --------
+
     We decrypt the integer 2 using $N = 33$ and $e = 7$
 
     >>> from qrisp.shor import rsa_decrypt
-    >>> rsa_decrypt(2, 7, 33)
+    >>> rsa_decrypt(7, 33, 2)
     8
 
     """
@@ -67,22 +70,20 @@ def rsa_decrypt(ciphertext, e, N, backend=None):
     d = modinv(e, phi)
 
     # Decrypt the ciphertext
-    plaintext = pow(ciphertext, d, N)
+    plaintext = pow(cipher_int, d, N)
 
     return plaintext
 
 
-def rsa_encrypt(p, q, e, message_int):
+def rsa_encrypt(e, N, message_int):
     """
-    Encrypts an integer using the private keys $p$, $q$ and a public key $e$.
+    Encrypts an integer using a public key pair $(e,N)$.
 
     Parameters
     ----------
-    p : int
-        Private key 1.
-    q : int
-        Private key 1.
     e : int
+        Public key 1.
+    N : int
         Public key 2.
     message_int : int
         The integer to encrypt.
@@ -95,15 +96,12 @@ def rsa_encrypt(p, q, e, message_int):
     Examples
     --------
 
-    We encrypt the integer 8 using $p = 11$, $q = 3$ and $e = 7$
+    We encrypt the integer 8 using $N=33$ ($p = 11$, $q = 3$) and $e = 7$
 
     >>> from qrisp.shor import rsa_encrypt
-    >>> rsa_encrypt(p = 11, q = 3, e = 7, message_int = 8)
+    >>> rsa_encrypt(e = 7, N = 33, message_int = 8)
     2
     """
-    # Calculate the modulus
-    N = p * q
-
     # Convert the message to an integer
     # message_int = int.from_bytes(message.encode(), 'big')
 
@@ -113,18 +111,16 @@ def rsa_encrypt(p, q, e, message_int):
     return ciphertext
 
 
-def rsa_encrypt_string(p, q, e, message):
+def rsa_encrypt_string(e, N, message):
     """
     Encrypts an arbitrary Python string using RSA.
 
     Parameters
     ----------
-    p : int
-        Private key 1.
-    q : int
-        Private key 2.
     e : int
         Public key 1.
+    N : int
+        Public key 2.
     message : string
         The message to encrypt.
 
@@ -139,7 +135,7 @@ def rsa_encrypt_string(p, q, e, message):
     We encrypt a string containing an important message
 
     >>> from qrisp.shor import rsa_encrypt_string
-    >>> rsa_encrypt_string(p = 5, q = 13, e = 7, message = "Qrisp is awesome!")
+    >>> rsa_encrypt_string(e = 7, N = 65, message = "Qrisp is awesome!")
     '01010000000101001010001100100110010010000101000010001101000010100011010101110011101000100100011100000100000100110111101000011000111110111111'
 
     """
@@ -148,7 +144,7 @@ def rsa_encrypt_string(p, q, e, message):
         format(x, "b").zfill(7) for x in bytearray(message, "ascii")
     ).replace(" ", "")
 
-    chunksize = (p * q).bit_length() - 1
+    chunksize = N.bit_length() - 1
 
     chunks = [
         message_bitstring[i * chunksize : (i + 1) * chunksize][::-1].zfill(chunksize)[
@@ -161,7 +157,7 @@ def rsa_encrypt_string(p, q, e, message):
 
     for i in range(len(chunks)):
 
-        encrypted_int = rsa_encrypt(p, q, e, int(chunks[i], 2))
+        encrypted_int = rsa_encrypt(e, N, int(chunks[i], 2))
         ciphertext += bin(encrypted_int)[2:].zfill(chunksize + 1)
 
     return ciphertext

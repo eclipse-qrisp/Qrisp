@@ -20,7 +20,7 @@ from functools import lru_cache
 
 import numpy as np
 from numba import njit
-from jax.core import ClosedJaxpr, JaxprEqn, Literal
+from jax.extend.core import ClosedJaxpr, JaxprEqn, Literal
 
 
 @lru_cache(maxsize=int(1e5))
@@ -83,6 +83,7 @@ def collect_environments(jaxpr):
                 outvars=list(eqn.outvars),
                 effects=eqn.effects,
                 source_info=eqn.source_info,
+                ctx=eqn.ctx
             )
 
         if eqn.primitive.name == "cond":
@@ -109,6 +110,7 @@ def collect_environments(jaxpr):
                 outvars=list(eqn.outvars),
                 effects=eqn.effects,
                 source_info=eqn.source_info,
+                ctx=eqn.ctx,
             )
 
         if eqn.primitive.name == "while":
@@ -128,6 +130,7 @@ def collect_environments(jaxpr):
                 outvars=list(eqn.outvars),
                 effects=eqn.effects,
                 source_info=eqn.source_info,
+                ctx=eqn.ctx
             )
 
         # If an exit primitive is found, start the collecting mechanism.
@@ -185,6 +188,7 @@ def collect_environments(jaxpr):
                 outvars=outvars + eqn.outvars[-1:],
                 effects=eqn.effects,
                 source_info=eqn.source_info,
+                ctx=eqn.ctx
             )
 
             # Remove the collected equations from the new_eqn_list

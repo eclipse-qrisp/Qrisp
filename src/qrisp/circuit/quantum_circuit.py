@@ -31,6 +31,7 @@ from qrisp.circuit import Clbit, Instruction, Operation, Qubit
 # the list of classical bits (.clbits)
 # the list of instructions (.data)
 
+TO_GATE_COUNTER = np.zeros(1)
 
 class QuantumCircuit:
     """
@@ -339,7 +340,10 @@ class QuantumCircuit:
         """
 
         if name is None:
-            name = "circuit" + str(id(self))[:5]
+            #name = "circuit" + str(id(self))[:5]
+            name = "circuit" + str(int(TO_GATE_COUNTER[0]))[:7].zfill(7)
+
+            TO_GATE_COUNTER[0] += 1
 
         definition = self.copy()
         i = 0

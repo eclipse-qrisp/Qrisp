@@ -27,7 +27,7 @@ from qrisp.circuit import Operation, QuantumCircuit, Instruction
 from qrisp.environments.iteration_environment import IterationEnvironment
 from qrisp.core import merge
 
-from qrisp.jasp import check_for_tracing_mode, qache, AbstractQubit, make_jaspr
+from qrisp.jasp import check_for_tracing_mode, qache, AbstractQubit, make_jaspr, get_last_equation
 
 
 def custom_control(*func, **cusc_kwargs):
@@ -248,11 +248,7 @@ def custom_control(*func, **cusc_kwargs):
             res = func(*args, **kwargs)
 
             # Retrieve the pjit equation
-            jit_eqn = jax._src.core.thread_local_state.trace_state.trace_stack.dynamic.jaxpr_stack[
-                0
-            ].eqns[
-                -1
-            ]
+            jit_eqn = get_last_equation()
 
             if not jit_eqn.params["jaxpr"].jaxpr.ctrl_jaspr:
                 # Trace the controlled version

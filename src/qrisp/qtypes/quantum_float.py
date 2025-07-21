@@ -1118,13 +1118,9 @@ def create_output_qf(operands, op):
     if op == "add":
         signed = operands[0].signed or operands[1].signed
         exponent = min(operands[0].exponent, operands[1].exponent)
-
-        max_sig = int(
-            np.ceil(
-                np.log2(int(2 ** operands[0].mshape[1] + 2 ** operands[1].mshape[1]))
-            )
-        )
+        max_sig = max(operands[0].mshape[1], operands[1].mshape[1]) + 1
         msize = max_sig - exponent + 1
+        
         return QuantumFloat(
             msize, exponent, operands[0].qs, signed=signed, name="add_res*"
         )
@@ -1149,11 +1145,7 @@ def create_output_qf(operands, op):
 
     if op == "sub":
         exponent = min(operands[0].exponent, operands[1].exponent)
-        max_sig = int(
-            np.ceil(
-                np.log2(int(2 ** operands[0].mshape[1] + 2 ** operands[1].mshape[1]))
-            )
-        )
+        max_sig = max(operands[0].mshape[1], operands[1].mshape[1]) + 1
         msize = max_sig - exponent + 1
 
         return QuantumFloat(

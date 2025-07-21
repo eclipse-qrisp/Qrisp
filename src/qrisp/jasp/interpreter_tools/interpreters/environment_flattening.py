@@ -18,7 +18,7 @@
 
 from functools import lru_cache
 
-from jax.core import JaxprEqn, ClosedJaxpr
+from jax.extend.core import JaxprEqn, ClosedJaxpr
 
 from qrisp.jasp.interpreter_tools import exec_eqn, reinterpret
 from qrisp.jasp.primitives import AbstractQuantumCircuit
@@ -32,6 +32,7 @@ def copy_jaxpr_eqn(eqn):
         params=dict(eqn.params),
         source_info=eqn.source_info,
         effects=eqn.effects,
+        ctx=eqn.ctx,
     )
 
 

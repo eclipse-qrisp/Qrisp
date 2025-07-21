@@ -60,3 +60,13 @@ def test_IQMBackend_api_token_string_is_missing():
 def test_IQMBackend_device_instance_string_is_missing():
     with pytest.raises(TypeError):
         IQMBackend("mock_api_token", 123)
+        
+# Test that error is raised when server URL and device instance are passed at the same time
+def test_IQMBackend_server_url_and_device_instance_conflict():
+    with pytest.raises(ValueError):
+        IQMBackend("mock_api_token", "garnet", server_url="www.qrisp.eu") 
+        
+# Test that error is raised when server URL and device instance or not provided
+def test_IQMBackend_server_url_and_device_instance_not_provided():
+    with pytest.raises(ValueError):
+        IQMBackend("mock_api_token")

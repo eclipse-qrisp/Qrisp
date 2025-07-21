@@ -1,4 +1,4 @@
-<p align="center" width="100%"><img src="https://github.com/eclipse-qrisp/Qrisp/blob/main/logo/logo_with_contour.png" width=30% height=30%></p>
+<p align="center" width="100%"><img src="https://raw.githubusercontent.com/eclipse-qrisp/Qrisp/main/logo/logo_with_contour.png" width=30%></p>
 
 </h1><br>
 <div align="center">
@@ -39,7 +39,9 @@ pip install qrisp
 
 Qrisp has been confirmed to work with Python version 3.10, 3.11 & 3.12.
 
-Qrisp is compatible with any QASM-capable quantum backend! If you want to work with IQM quantum computers as a backend, you need to install additional dependencies using
+Qrisp is compatible with any QASM-capable quantum backend! In particular, it offers convenient interfaces for using IBM, IQM and AQT quantum computers, and any quantum backend provider is invited to reach out for a tight integration! 
+
+If you want to work with IQM quantum computers as a backend, you need to install additional dependencies using
 ```bash
 pip install qrisp[iqm]
 ```

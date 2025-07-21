@@ -16,11 +16,15 @@
 ********************************************************************************
 """
 
-from jax.core import AbstractValue, raise_to_shaped_mappings
+from jax.core import AbstractValue
 from qrisp.jasp.primitives import QuantumPrimitive, AbstractQubitArray
 
 
 class AbstractQuantumCircuit(AbstractValue):
+    
+    def __init__(self):
+        self.vma = None
+        AbstractValue.__init__(self)
 
     def __repr__(self):
         return "QuantumCircuit"
@@ -35,8 +39,6 @@ class AbstractQuantumCircuit(AbstractValue):
 def create_qubits(size, state):
     return create_qubits_p.bind(size, state)
 
-
-raise_to_shaped_mappings[AbstractQuantumCircuit] = lambda aval, _: aval
 
 # Register Creation
 create_qubits_p = QuantumPrimitive("create_qubits")
