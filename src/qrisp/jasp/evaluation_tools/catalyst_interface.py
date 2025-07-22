@@ -19,7 +19,7 @@
 from functools import lru_cache
 
 from jax import make_jaxpr
-from jax.extend.core import Literal
+from jax.extend.core import Literal, ClosedJaxpr
 import jax.numpy as jnp
 
 import pennylane as qml
@@ -78,7 +78,18 @@ def jaspr_to_catalyst_jaxpr(jaspr):
 
     # Translate the input args according to the above rules.
     args = []
-    for invar in jaspr.invars:
+    
+    # Handling the constants in this function requires some extra gymnastics
+    if isinstance(jaspr, ClosedJaxpr):
+        invars = list(jaspr.jaxpr.invars)
+        num_consts = 0
+        const_avals = []
+    else:
+        invars = list(jaspr.invars)
+        num_consts = len(jaspr.constvars)
+        const_avals = [var.aval for var in jaspr.constvars]
+    
+    for invar in invars:
         if isinstance(invar.aval, AbstractQuantumCircuit):
             # We initialize with the inverted list [... 3, 2, 1, 0] since the
             # pop method of the dynamic list always removes the last element
@@ -94,9 +105,24 @@ def jaspr_to_catalyst_jaxpr(jaspr):
                 args.append(jnp.asarray(invar.val, dtype="f32"))
         else:
             args.append(invar.aval)
-
+    
     # Call the Catalyst interpreter
-    return make_jaxpr(eval_jaxpr(jaspr, eqn_evaluator=catalyst_eqn_evaluator))(*args)
+    
+    res = make_jaxpr(eval_jaxpr(jaspr, eqn_evaluator=catalyst_eqn_evaluator))(*(const_avals + args))
+
+    # If the input was not a ClosedJaxpr, the constvars are stored as the first
+    # arguments of the invars. We therefore move the first invars to the constvars    
+    if num_consts:
+        res.jaxpr.constvars.clear()
+        res.jaxpr.constvars.extend(res.jaxpr.invars[:num_consts])
+    
+        for i in range(num_consts):
+            res.jaxpr.invars.pop(0)
+            
+        res.consts.clear()
+        res.consts.extend(jaspr.consts)
+        
+    return res
 
 
 def jaspr_to_catalyst_function(jaspr):

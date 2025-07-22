@@ -483,6 +483,10 @@ def process_while(eqn, context_dic):
     k = eqn.params["cond_nconsts"]
     new_cond_nconsts = len(flatten_signature(invalues[:k], eqn.invars[:k]))
     
+    
+    
+    
+    
     outvalues = while_p.bind(
         *flattened_invalues,
         cond_jaxpr=cond_jaxpr,
@@ -536,7 +540,9 @@ def process_cond(eqn, context_dic):
 
 
 @lru_cache(maxsize=int(1e5))
-def get_traced_fun(jaxpr):
+def get_traced_fun(container):
+    
+    jaxpr = container.closed_jaxpr
 
     catalyst_jaxpr = ensure_conversion(jaxpr)
 
@@ -544,9 +550,22 @@ def get_traced_fun(jaxpr):
 
     @jit
     def jitted_fun(*args):
-        return eval_jaxpr(catalyst_jaxpr.jaxpr, [], *args)
+        return eval_jaxpr(catalyst_jaxpr.jaxpr, catalyst_jaxpr.consts, *args)
 
     return jitted_fun
+
+# To make sure the call graph stays compressed, we need to fool the LRU cache
+# into ignoring the constants. This is because the constants are not hashable.
+# We therefore store the ClosedJaxpr in a Container class that identifies as
+# a non-closed Jaxpr. Therefore the LRU cache will trigger if the input call graph
+# was compressed because only one non-closed Jaxpr is available per function call
+class ClosedJaxprContainer:
+    def __init__(self, closed_jaxpr):
+        self.closed_jaxpr = closed_jaxpr
+    def __hash__(self):
+        return hash(self.closed_jaxpr.jaxpr)
+    def __eq__(self, other):
+        return self.closed_jaxpr.jaxpr == other.closed_jaxpr.jaxpr
 
 
 def process_pjit(eqn, context_dic):
@@ -556,10 +575,11 @@ def process_pjit(eqn, context_dic):
     flattened_invalues = flatten_signature(invalues, eqn.invars)
 
     jaxpr = eqn.params["jaxpr"]
-    traced_fun = get_traced_fun(jaxpr.jaxpr)
+    
+    traced_fun = get_traced_fun(ClosedJaxprContainer(jaxpr))
 
     outvalues = func_p.bind(wrap_init(traced_fun, debug_info = eqn.params["jaxpr"].jaxpr.debug_info),
-                            *flattened_invalues, 
+                            *(flattened_invalues), 
                             fn=traced_fun,)
 
     outvalues = list(outvalues)
@@ -620,7 +640,6 @@ def process_reset(eqn, context_dic):
 
 def ensure_conversion(jaxpr):
     from qrisp.jasp.evaluation_tools.catalyst_interface import jaspr_to_catalyst_jaxpr
-
     return jaspr_to_catalyst_jaxpr(jaxpr)
 
 
