@@ -32,7 +32,7 @@ class AQTBackend(BatchedBackend):
     api_token : str
         An API token for `AQT ARNICA <https://www.aqt.eu/products/arnica/>`_.
     device_instance : str
-        The device instance of the AQT backend such as "ibex" or "simulator_noise".
+        The device instance of the AQT backend such as ``ibex`` or ``simulator_noise``.
         For an up-to-date list, see the AQT ARNICA website.
     workspace : str 
         The workspace for a company or project.

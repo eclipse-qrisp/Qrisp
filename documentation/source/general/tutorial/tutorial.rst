@@ -107,16 +107,17 @@ Qrisp has full compatibility to Qiskit featuring convenient :meth:`importing <qr
 
 >>> qiskit_qc = qch.qs.compile().to_qiskit()
 
-It is also possible to run Qrisp code directly on IBM Q hardware using a :ref:`QiskitBackend`.
+It is also possible to run Qrisp code directly on IBM Quantum hardware using a :ref:`QiskitBackend`. 
+Check out the :ref:`IQMBackend` or :ref:`AQTBackend` to learn how to use other quantum hardware backends.
 
->>> from qiskit_ibm_provider import IBMProvider
->>> provider = IBMProvider(YOUR_APITOKEN)
->>> kolkata_qiskit = provider.get_backend("ibm_lagos")
->>> from qrisp import QiskitBackend
->>> kolkata_qrisp = QiskitBackend(kolkata_qiskit)
->>> results = qch.get_measurement(backend = kolkata_qrisp)
+>>> from qiskit_ibm_runtime import QiskitRuntimeService
+>>> service = QiskitRuntimeService(channel="ibm_cloud", token="YOUR_IBM_CLOUD_TOKEN")
+>>> brisbane_qiskit = service.backend("ibm_brisbane")
+>>> from qrisp.interface import QiskitBackend
+>>> brisbane_qrisp = QiskitBackend(brisbane_qiskit)
+>>> results = qch.get_measurement(backend = brisbane_qrisp)
 >>> print(results)
-{'e': 0.4544, 'f': 0.4492, 'g': 0.0269, 'h': 0.0261, 'm': 0.0173, 'n': 0.0142, 'a': 0.0037, 'b': 0.0035, 'u': 0.0012, 'v': 0.0012, 'p': 0.0008, 'o': 0.0006, 'd': 0.0002, 'j': 0.0002, 'x': 0.0002, 'c': 0.0001, 'i': 0.0001, '?': 0.0001}
+{'e': 0.484, 'f': 0.475, 'b': 0.012, 'u': 0.007, 'v': 0.007, 'a': 0.005, 'g': 0.005, 'm': 0.004, 'n': 0.001}
 
 And that's it - you're set with the basics and ready to build some algorithms!
 

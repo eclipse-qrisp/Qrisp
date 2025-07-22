@@ -29,7 +29,7 @@ def IQMBackend(api_token, device_instance = None, server_url = None, compilation
     api_token : str
         An API token retrieved from the IQM Resonance website or IQM backend.
     device_instance : str
-        The device instance of the IQM backend such as "garnet".
+        The device instance of the IQM backend such as ``garnet``.
         For an up-to-date list, see the IQM Resonance website.
         Required if server_url is not provided.
     server_url : str, optional
