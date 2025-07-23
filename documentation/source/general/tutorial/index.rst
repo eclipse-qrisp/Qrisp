@@ -374,11 +374,11 @@ By the end of this tutorial, you'll have a solid foundation of our high-level fr
    tutorial.ipynb
    H2.ipynb
    Jasp
-   HHL
+   HHL.ipynb
    Shor
    FT_compilation
-   TSP
-   Sudoku
+   TSP.ipynb
+   Sudoku.ipynb
    QAOAtutorial/index
    JaspQAOAtutorial
    QIROtutorial
