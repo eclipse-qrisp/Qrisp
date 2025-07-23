@@ -375,7 +375,7 @@ By the end of this tutorial, you'll have a solid foundation of our high-level fr
    H2.ipynb
    Jasp
    HHL.ipynb
-   Shor
+   Shor.ipynb
    FT_compilation
    TSP.ipynb
    Sudoku.ipynb

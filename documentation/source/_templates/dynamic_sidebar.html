@@ -3,16 +3,16 @@
 {% set is_notebook_page = false %}
 
 {% if pagename %}
-{% if 'general/tutorial/example_Shor' == pagename %}
-{% set is_notebook_page = true %}
-{% set notebook_path = 'general/tutorial/example_Shor.ipynb' %}
-{% elif pagename.endswith('.ipynb') or '.ipynb_' in pagename %}
-{% set is_notebook_page = true %}
-{% set notebook_path = '_sources/' + pagename %}
-{% if not notebook_path.endswith('.ipynb') %}
-{% set notebook_path = notebook_path + '.ipynb' %}
-{% endif %}
-{% endif %}
+    {% if 'general/tutorial/example_Shor' == pagename %}
+        {% set is_notebook_page = true %}
+        {% set notebook_path = 'general/tutorial/example_Shor.ipynb' %}
+        {% elif pagename.endswith('.ipynb') or '.ipynb_' in pagename %}
+            {% set is_notebook_page = true %}
+            {% set notebook_path = '_sources/' + pagename %}
+            {% if not notebook_path.endswith('.ipynb') %}
+                {% set notebook_path = notebook_path + '.ipynb' %}
+            {% endif %}
+    {% endif %}
 {% endif %}
 
 
