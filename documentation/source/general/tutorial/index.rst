@@ -373,10 +373,10 @@ By the end of this tutorial, you'll have a solid foundation of our high-level fr
    
    tutorial.ipynb
    H2.ipynb
-   Jasp
+   Jasp.ipynb
    HHL.ipynb
    Shor.ipynb
-   FT_compilation
+   FT_compilation.ipynb
    TSP.ipynb
    Sudoku.ipynb
    QAOAtutorial/index
