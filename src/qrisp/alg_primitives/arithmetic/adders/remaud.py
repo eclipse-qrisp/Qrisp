@@ -251,7 +251,7 @@ def remaud_adder(a, b, z):
         The value that should be added.
     b : QuantumVariable or list[Qubit]
         The value that should be modified in the in-place addition.
-    z : Qubit, optional
+    z : Qubit
         The carry value resulting from the overflow of the addition.
 
     Examples

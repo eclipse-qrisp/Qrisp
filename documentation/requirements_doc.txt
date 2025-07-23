@@ -1,0 +1,11 @@
+sphinx>=7.0
+sphinx-toolbox>=3.5.0
+nbsphinx
+myst-parser
+texext
+numpydoc
+sphinx-sitemap
+sphinx-copybutton
+sphinx-design
+sphinx-thebe
+pydata-sphinx-theme
