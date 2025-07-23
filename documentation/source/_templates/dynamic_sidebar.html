@@ -1,22 +1,24 @@
 {% block sidebar %}
 
 {% set is_notebook_page = false %}
+{% set notebook_path = '' %}
 
 {% if pagename %}
-    {% if 'general/tutorial/example_Shor' == pagename %}
+    {# Specific exclusions for pages that aren't notebooks but match patterns #}
+    {% if pagename == 'general/tutorial/QAOAtutorial/index' %}
+        {# This is not a notebook page #}
+        {% set is_notebook_page = false %}
+    {% elif pagename.startswith('general/tutorial') %}
         {% set is_notebook_page = true %}
-        {% set notebook_path = 'general/tutorial/example_Shor.ipynb' %}
-        {% elif pagename.endswith('.ipynb') or '.ipynb_' in pagename %}
-            {% set is_notebook_page = true %}
-            {% set notebook_path = '_sources/' + pagename %}
-            {% if not notebook_path.endswith('.ipynb') %}
-                {% set notebook_path = notebook_path + '.ipynb' %}
-            {% endif %}
+        {% set notebook_path = '../../' + pagename + '.ipynb' %}
+    {% elif pagename.endswith('.ipynb') or '.ipynb_' in pagename %}
+        {% set is_notebook_page = true %}
+        {% set notebook_path = '_sources/' + pagename %}
+        {% if not notebook_path.endswith('.ipynb') %}
+            {% set notebook_path = notebook_path + '.ipynb' %}
+        {% endif %}
     {% endif %}
 {% endif %}
-
-
-
 
 {% if is_notebook_page %}
 <div class="admonition note custom-box" style="text-align: center;">
@@ -24,7 +26,8 @@
         Run it locally.
     </p>
 
-    <a href="{{ pathto(notebook_path, 1) }}" target="_blank" class="thebelab-button thebe-launch-button">Download
+    {% set filename = notebook_path.split('/')[-1] %}
+    <a href="{{ notebook_path }}" download="{{ filename }}" target="_blank" class="thebelab-button thebe-launch-button">Download
         Jupyter Notebook</a>
 
 </div>
