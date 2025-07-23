@@ -380,7 +380,7 @@ By the end of this tutorial, you'll have a solid foundation of our high-level fr
    TSP.ipynb
    Sudoku.ipynb
    QAOAtutorial/index
-   JaspQAOAtutorial
+   JaspQAOAtutorial.ipynb
    QIROtutorial.ipynb
    QMCItutorial.ipynb
    example_Shor.ipynb
