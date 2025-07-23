@@ -39,7 +39,6 @@ def egcd(a, b):
     r, old_r, s, old_s, t, old_t = state
     return old_r, old_s, old_t
 
-
 def modinv(a, m):
     if check_for_tracing_mode():
         where = jnp.where
@@ -67,9 +66,8 @@ def modinv(a, m):
         return bi_modinv(a, m)
     else:
         t, new_t, r, new_r = loop(cf, bf, (0, 1, m, a))
-    # Ensure result is in [0, MOD)
+        # Ensure result is in [0, MOD)
         return where(t < 0, t + m, t)
-
 
 def smallest_power_of_two(n):
     if check_for_tracing_mode():

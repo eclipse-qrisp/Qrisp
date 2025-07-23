@@ -19,6 +19,7 @@
 
 import jax.numpy as jnp
 import jax.lax as lax
+import jax
 from dataclasses import dataclass
 from jax.tree_util import register_pytree_node_class
 
@@ -31,6 +32,7 @@ BASE_FL = float(BASE)
 class BigInteger:
     digits: jnp.ndarray  # Little-endian base-2^32
 
+    @jax.jit
     def __call__(self):
         r = lax.fori_loop(0, self.digits.shape[0], lambda i, val: jnp.float64(self.digits[i])*BASE_FL**jnp.float64(i) + val, 0.0)
         return r
@@ -72,7 +74,7 @@ class BigInteger:
         digits, _ = lax.fori_loop(0, size, body_fun, (jnp.zeros(size, dtype=DTYPE), n))
         return BigInteger(digits)
 
-
+    @jax.jit
     def __add__(self, other: "BigInteger") -> "BigInteger":
         n = self.digits.shape[0]
         if not isinstance(other, BigInteger):
@@ -92,6 +94,7 @@ class BigInteger:
         carry, result = lax.fori_loop(0, a.shape[0], add_step, (carry, result))
         return BigInteger(result)
     
+    @jax.jit
     def __sub__(self, other: "BigInteger") -> "BigInteger":
         n = self.digits.shape[0]
         if not isinstance(other, BigInteger):
@@ -111,6 +114,7 @@ class BigInteger:
 
         return BigInteger(result)
 
+    @jax.jit
     def __mul__(self, other: "BigInteger") -> "BigInteger":
         n = self.digits.shape[0]
         if not isinstance(other, BigInteger):
@@ -133,6 +137,7 @@ class BigInteger:
         result = lax.fori_loop(0, n, outer_loop, result)
         return BigInteger(result) 
     
+    @jax.jit
     def __pow__(self, other):
         def body_fun(i, bi):
             return bi * self
@@ -141,6 +146,7 @@ class BigInteger:
     def __repr__(self):
         return f"BigInteger(digits={self.digits.tolist()})"
     
+    @jax.jit
     def __lt__(self, other: "BigInteger"):
         n = self.digits.shape[0]
         if not isinstance(other, BigInteger):
@@ -169,6 +175,7 @@ class BigInteger:
         res = lax.cond(res == -5, lambda: 0, lambda: res)
         return jnp.bool(res)
 
+    @jax.jit
     def __eq__(self, other: "BigInteger"):
         n = self.digits.shape[0]
 
@@ -184,9 +191,11 @@ class BigInteger:
 
         return jnp.all(d0 == d1)
     
+    @jax.jit
     def __ne__(self, other):
         return jnp.logical_not(self == other)
     
+    @jax.jit
     def __le__(self, other: "BigInteger"):
         n = self.digits.shape[0]
         if not isinstance(other, BigInteger):
@@ -215,7 +224,7 @@ class BigInteger:
         res = lax.cond(res == -5, lambda: 1, lambda: res)
         return jnp.bool(res)
     
-    
+    @jax.jit
     def __lshift__(self, shift):
 
         def body_fun(i, x):
@@ -223,7 +232,7 @@ class BigInteger:
         
         return lax.fori_loop(0, self.digits.shape[0]*32 - shift, body_fun, BigInteger(jnp.zeros_like(self.digits)))
     
-
+    @jax.jit
     def __rshift__(self, shift):
 
         def body_fun(i, x):
@@ -231,19 +240,21 @@ class BigInteger:
         
         return lax.fori_loop(shift, self.digits.shape[0]*32, body_fun, BigInteger(jnp.zeros_like(self.digits)))
     
-    
+    @jax.jit
     def __mod__(self, other: "BigInteger"):
         if not isinstance(other, BigInteger):
             other = BigInteger.from_int(other, self.digits.shape[0])
         r, q = self.remainder_division(other)
         return r
     
+    @jax.jit
     def __floordiv__(self, other: "BigInteger"):
         if not isinstance(other, BigInteger):
             other = BigInteger.from_int(other, self.digits.shape[0])
         r, q = self.remainder_division(other)
         return q
     
+    @jax.jit
     def remainder_division(self, other: "BigInteger"): #TODO: Fails for very very big integers
         """ Return BigInteger r and q such that self = other*q + r with r < other. """
         n = self.digits.shape[0]
@@ -266,11 +277,13 @@ class BigInteger:
 
         return r, q
     
+    @jax.jit
     def get_bit(self, i: int):
         pos = i//32
         pos_in = i%32
         return (self.digits[pos] >> pos_in) & 1
     
+    @jax.jit
     def flip_bit(self, i: int):
         pos = i//32
         pos_in = i%32
@@ -278,11 +291,13 @@ class BigInteger:
         ds = ds.at[pos].set(jnp.uint32(ds[pos] ^ (1 << pos_in)))
         return BigInteger(ds)
     
+    @jax.jit
     def bit_size(self):
         pos_i = lax.while_loop(lambda i: jnp.logical_and(i < self.digits.shape[0] - 1, self.digits[i] == 0), lambda i: i+1, 0)
         return 32*pos_i + (jnp.ceil(jnp.log2(self.digits[pos_i]))).astype(jnp.int64)
 
     
+@jax.jit
 def bi_modinv(a: BigInteger, m: BigInteger) -> BigInteger:
     n = a.digits.shape[0]
     bi0 = BigInteger.from_int(0, n)
@@ -309,7 +324,7 @@ def bi_modinv(a: BigInteger, m: BigInteger) -> BigInteger:
 
     return final_t
 
-
+@jax.jit
 def bi_extended_euclidean(a, b):
     """
     Extended Euclidean Algorithm.
@@ -343,8 +358,10 @@ def bi_extended_euclidean(a, b):
     # old_r is gcd, old_s and old_t are the Bezout coefficients
     return old_r, old_s, old_t
 
+@jax.jit
 def bi_montgomery_encode(x, R, modulus):
     return (x * R) % modulus
 
+@jax.jit
 def bi_montgomery_decode(x_mon, R, modulus):
     return (x_mon * bi_modinv(R, modulus)) % modulus

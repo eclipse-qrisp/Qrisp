@@ -17,6 +17,7 @@
 """
 
 import numpy as np
+import jax.numpy as jnp
 
 from qrisp import check_for_tracing_mode
 from qrisp.qtypes.quantum_float import QuantumFloat
@@ -278,40 +279,66 @@ class QuantumModulus(QuantumFloat):
 
     @gate_wrap(permeability="args", is_qfree=True)
     def __mul__(self, other):
-        from qrisp.alg_primitives.arithmetic.modular_arithmetic import (
-            montgomery_mod_mul,
-            montgomery_mod_semi_mul,
-        )
-
-        if isinstance(other, QuantumModulus):
-            return montgomery_mod_mul(self, other)
-        elif isinstance(other, int):
-            return montgomery_mod_semi_mul(self, other)
-        else:
-            raise Exception(
-                "Quantum modular multiplication with type {type(other)} not implemented"
+        if check_for_tracing_mode():
+            from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import (
+                cq_montgomery_multiply, qq_montgomery_multiply, qq_montgomery_multiply_modulus
             )
+            from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import (
+                best_montgomery_shift
+            )
+
+            if isinstance(other, QuantumModulus):
+                if self.m != other.m:
+                    raise ValueError("Both QuantumModuli must have the same shift")
+                if self.modulus != other.modulus:
+                    raise ValueError("Both QuantumModuli must have the same modulus")
+                return qq_montgomery_multiply_modulus(self, other)
+
+            elif isinstance(other, (int, np.integer, jnp.integer)):
+                shift = best_montgomery_shift(other, self.modulus)
+                return cq_montgomery_multiply(other, self, self.modulus, shift)
+            else:
+                raise Exception(
+                    f"Quantum modular multiplication with type {type(other)} not implemented"
+                )
+
+
+        else:
+            from qrisp.alg_primitives.arithmetic.modular_arithmetic import (
+                montgomery_mod_mul,
+                montgomery_mod_semi_mul,
+            )
+
+            if isinstance(other, QuantumModulus):
+                return montgomery_mod_mul(self, other)
+            elif isinstance(other, (int, np.integer)):
+                return montgomery_mod_semi_mul(self, other)
+            else:
+                raise Exception(
+                    f"Quantum modular multiplication with type {type(other)} not implemented"
+                )
 
     __rmul__ = __mul__
 
     @gate_wrap(permeability=[1], is_qfree=True)
     def __imul__(self, other):
         if check_for_tracing_mode():
+            if isinstance(other, (int, np.integer, jnp.integer)):
+                from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import (
+                    cq_montgomery_multiply_inplace
+                )
+                from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import (
+                    best_montgomery_shift
+                )
 
-            from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import (
-                cq_montgomery_multiply_inplace
-            )
-            from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import (
-                best_montgomery_shift
-            )
+                shift = best_montgomery_shift(other, self.modulus)
 
-            @jax.jit
-            def get_shift(other, modulus):
-                return best_montgomery_shift(other, modulus)
-            shift = get_shift(other, self.modulus)
-
-            cq_montgomery_multiply_inplace(other, self, self.modulus, shift, self.inpl_adder)
-            return self
+                cq_montgomery_multiply_inplace(other, self, self.modulus, shift, self.inpl_adder)
+                return self
+            else: 
+                raise Exception(
+                    f"Quantum modular in-place multiplication with type {type(other)} not implemented"
+                )
 
         else:
             if isinstance(other, int):
@@ -330,7 +357,7 @@ class QuantumModulus(QuantumFloat):
                     return semi_cl_inpl_mult(self, other % self.modulus)
             else:
                 raise Exception(
-                    "Quantum modular multiplication with type {type(other)} not implemented"
+                    f"Quantum modular multiplication with type {type(other)} not implemented"
                 )
 
     @gate_wrap(permeability="args", is_qfree=True)

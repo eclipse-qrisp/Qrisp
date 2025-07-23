@@ -193,10 +193,6 @@ def test_montgomery_find_order():
 
     dict_jasp = find_order(4, 13)
 
-    @jax.jit
-    def modular_square(a, N):
-        return (a*a)%N
-
     @terminal_sampling
     def find_order(a, N):
         qg = QuantumModulus(N, inpl_adder=jasp_fourier_adder)
@@ -206,7 +202,7 @@ def test_montgomery_find_order():
         for i in jrange(qpe_res.size):
             with control(qpe_res[i]):
                 qg *= a
-            a = modular_square(a, N)
+            a = (a*a)%N
         QFT(qpe_res, inv = True)
         return qpe_res
 
