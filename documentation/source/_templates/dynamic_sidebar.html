@@ -5,7 +5,7 @@
 
 {% if pagename %}
     {# Specific exclusions for pages that aren't notebooks but match patterns #}
-    {% if pagename == 'general/tutorial/QAOAtutorial/index' %}
+    {% if pagename == 'general/tutorial/QAOAtutorial/index' or pagename == 'general/tutorial/QAOAtutorial/Theoretical' %}
         {# This is not a notebook page #}
         {% set is_notebook_page = false %}
     {% elif pagename.startswith('general/tutorial') %}
