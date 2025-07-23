@@ -381,12 +381,7 @@ By the end of this tutorial, you'll have a solid foundation of our high-level fr
    Sudoku.ipynb
    QAOAtutorial/index
    JaspQAOAtutorial
-   QIROtutorial
-   QMCItutorial
+   QIROtutorial.ipynb
+   QMCItutorial.ipynb
    example_Shor.ipynb
-
-
-Download the notebook: :download:`example_Shor.ipynb <example_Shor.ipynb>`
-
-   
    
