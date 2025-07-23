@@ -1,12 +1,33 @@
+{% block sidebar %}
 
-<div class="download-link">
-       <h4>Download Notebook</h4>
-       <p>Aktueller Dokumentname: {{ docname }}</p>  <!-- Hier den aktuellen Dokumentnamen anzeigen -->
-       {% if "example_Shor" in docname %}
-           <a href="documentation/source/general/tutorial/example_Shor.ipynb" class="btn btn-primary">Download Tutorial 1</a>
-       {% elif "tutorial_2" in docname %}
-           <a href="documentation/source/general/tutorial/example_Shor.ipynb" class="btn btn-primary">Download Tutorial 2</a>
-       {% else %}
-           <p>No notebook available for this tutorial.</p>
-       {% endif %}
-   </div>
+{% set is_notebook_page = false %}
+
+{% if pagename %}
+{% if 'general/tutorial/example_Shor' == pagename %}
+{% set is_notebook_page = true %}
+{% set notebook_path = 'general/tutorial/example_Shor.ipynb' %}
+{% elif pagename.endswith('.ipynb') or '.ipynb_' in pagename %}
+{% set is_notebook_page = true %}
+{% set notebook_path = '_sources/' + pagename %}
+{% if not notebook_path.endswith('.ipynb') %}
+{% set notebook_path = notebook_path + '.ipynb' %}
+{% endif %}
+{% endif %}
+{% endif %}
+
+
+
+
+{% if is_notebook_page %}
+<div class="admonition note custom-box" style="text-align: center;">
+    <p style="margin-top: 0.9em;">
+        Run it locally.
+    </p>
+
+    <a href="{{ pathto(notebook_path, 1) }}" target="_blank" class="thebelab-button thebe-launch-button">Download
+        Jupyter Notebook</a>
+
+</div>
+{% else %}
+{% endif %}
+{% endblock %}

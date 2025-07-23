@@ -371,8 +371,8 @@ By the end of this tutorial, you'll have a solid foundation of our high-level fr
    :maxdepth: 2
    :hidden:
    
-   tutorial
-   H2
+   tutorial.ipynb
+   H2.ipynb
    Jasp
    HHL
    Shor

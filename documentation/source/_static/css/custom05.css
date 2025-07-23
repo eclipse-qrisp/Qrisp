@@ -54,6 +54,15 @@ nav.bd-links li>a:hover {
     cursor: pointer;
     border-radius: 5px;
     font-size: 12px; /* Adjust font size for a smaller size */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    height: auto;
+}
+
+.thebelab-button:visited {
+    color: #fff !important;
 }
 
 .thebelab-button:hover {

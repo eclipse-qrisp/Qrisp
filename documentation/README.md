@@ -7,6 +7,15 @@ The documentation is build with sphinx. For further information I recommend the 
     pip install -U sphinx
     pip install sphinx_fontawesome
     pip install sphinx-toolbox
+    pip install nbsphinx
+
+# Running the documentation server for preview
+Using sphinx-autobuild package, you can run a local server to preview the documentation page.
+
+To run the live server, navigate to the documentation folder and use the following command:
+```bash
+    sphinx-autobuild source build/html --open-browser
+```
 
 # Setup page    
 Every page of the documentation website is designed in the related .rst file inside the source folder.\
