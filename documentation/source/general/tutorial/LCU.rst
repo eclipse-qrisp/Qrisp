@@ -5,7 +5,7 @@
 Linear Combination of Unitaries (LCU) primitive and its applications
 ====================================================================
 
-If you’ve ever wondered how to bend the rules of quantum mechanics (without actually breaking them), you’re in the right place. This tutorial is your roadmap to the Linear Combination of Unitaries (LCU) protocol—a powerful tool that lets you simulate non-unitary operations by cleverly mixing unitaries, opening doors to advanced quantum algorithms and simulations.
+If you’ve ever wondered how to bend the rules of quantum mechanics (without actually breaking them), you’re in the right place. This tutorial is your roadmap to the Linear Combination of Unitaries (LCU) protocol, which is a powerful tool that lets you simulate non-unitary operations by cleverly mixing unitaries, opening doors to advanced quantum algorithms and simulations.
 
 Here’s what you’ll discover as you journey through this tutorial:
 
@@ -13,7 +13,7 @@ Here’s what you’ll discover as you journey through this tutorial:
 
 - Next, we’ll roll up our sleeves and see how LCU comes alive in Qrisp (Frankenstein intensifies). This section is hands-on: you’ll explore annotated code examples, understand the structure of Qrisp’s LCU implementation, and see how to prepare ancilla variables, orchestrate controlled unitaries, and interpret the results.
 
-- We won't stop at just understanding LCU, but instead also use it as an algorithmic building block (primitive) to perform another algorithm. In our final section, we combine the strengths of Trotterization and LCU to unlock the Linear Combination of Hamiltonian Simulation (LCHS) protocol. Here, you’ll learn how to simulate functions of Hamiltonians—like $\cos(H)$.
+- We won't stop at just understanding LCU, but instead also use it as an algorithmic building block (primitive) to perform another algorithm. Then combine the strengths of Trotterization and LCU to unlock the Linear Combination of Hamiltonian Simulation (LCHS) protocol. Here, you’ll learn how to simulate functions of Hamiltonians with the example of $\cos(H)$.
 
 If all goes well (if not, let us know about which parts should be elaborated upon further), you'll be motivated to apply LCU and extend it to tackle `Quantum Signal
 Processing (QSP) <https://journals.aps.org/prxquantum/abstract/10.1103/PRXQuantum.5.020368>`_, and/or `Quantum Singular Value Transformation (QSVT) <https://dl.acm.org/doi/abs/10.1145/3313276.3316366>`_. Until the implementation in Qrisp, the proof to this is left for the reader (which is not a broad time-window).
@@ -49,7 +49,7 @@ The LCU protocol works by embedding your non-unitary operator into a larger, uni
 
     \mathrm{SELECT}|i\rangle|\psi\rangle=|i\rangleU_i|\psi\rangle
 
-- **PREPARE** $^\dagger$: Applies the inverse prepartion to the ancilla.
+- **PREPARE** $^\dagger$: Applies the conjugated/daggered prepartion unitary to the ancilla.
 
 .. image:: LCU.png
 
@@ -73,7 +73,7 @@ With the theoretical foundation of the Linear Combination of Unitaries (LCU) pro
 Qrisp provides a collection of functions, three to be exact, that directly mirror the theoretical structure of LCU, allowing you to implement, visualize, and experiment with the protocol as described in the previous section:
 
 - :ref:`inner_LCU <inner_LCU_tut>`: implements the core LCU protocol (prepare-select/qswitch-unprepare) without the Repeat-Until_Success (RUS) protocol.
-- :ref:`LCU <LCU_func_tut>`: wraps inner_LCU with a repeat-until-success (RUS) routine protocol, repeatedly running the circuit until the ancilla is measured in the :math:`\ket{0}` state (the success condition described in the theory).
+- :ref:`LCU <LCU_func_tut>`: wraps inner_LCU with a repeat-until-success (RUS) routine protocol, repeatedly running the circuit until the ancilla is measured in the :math:`\ket{0}` state (the success condition described in the theory section).
 - :ref:`view_LCU <view_LCU_tut>`: constructs and returns the explicit quantum circuit corresponding to your LCU protocol.
 
 Let's take a closer look and disect the inner workings of these functions.
@@ -132,15 +132,15 @@ In order to have this tutorial reproduceable, this is the entire :func:`inner_LC
 
 Unpacking the code (which packs a hefty punch) becomes self explenatory because of the modularity that Qrisp offers through various modules. Let's unveil the concepts bit by bit.
 
-First we have to prepare the ancilla variables with ``state_prep(case_indicator)``. This step transforms the ancilla in a superposition reflecting the coefficients $c_i$. 
+First we have to prepare the ancilla variables with ``state_prep(case_indicator)``. This step transforms the ancilla in a superposition reflecting the coefficients $c_i$ accordingly. 
 
 We already learned about the SELECT operator in the theoretical overview. Here we put it in action using :func:`qswitch` ``(operand, case_indicator, unitaries)``. This applies the correct unitary $U_i$ controlled on the ancilla.
 
 the ``conjugate`` environment ensures the inverse preparation (PREPARE$^\dagger$) is applied after SELECT, matching the block-encoding structure.
 
 The probability of success in LCU can be low, especially for certain coefficient choices. Qrisp allows you to boost this probability using oblivious amplitude amplification (OAA), which iteratively amplifies the "good" outcome. This is done by
-:func:`amplitude_amplification`, which repeatedly applies the LCU block and a reflection (oracle) to amplify the amplitude of the $\ket{0}$ state. The ``oaa_iter`` keyword controls how many amplification iterations are performed. 
-The oracle tags the success state, and the reflection boosts its amplitude, increasing the chance of success in fewer repetitions.
+:func:`amplitude_amplification`, which repeatedly applies the LCU block and a reflection to amplify the amplitude of the $\ket{0}$ state. The ``oaa_iter`` keyword controls how many amplification iterations are performed. 
+The oracle keyword tags the success state, and the reflection boosts its amplitude, increasing the chance of success in fewer repetitions.
 
 It is also possible to do too many iterations and therefore getting a lower probability of success, when we reflect beyond the ideal state.
 
