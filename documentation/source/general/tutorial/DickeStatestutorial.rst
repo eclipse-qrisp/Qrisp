@@ -1,5 +1,7 @@
 .. _DickeStatestutorial:
 
+.. currentmodule:: qrisp
+
 Preparation of Dicke States
 ===========================
 
@@ -14,7 +16,7 @@ Definition and utility of Dicke States
 ======================================
 
 The preparation of Dicke states is an important and highly investigated topic in the field of quantum computation due to to their range of applications. 
-This ranges from error correction techniques in the ISD algorithm to optimization tasks solved with DQI or QAOA. [REF]
+This ranges from error correction techniques in the ISD algorithm to optimization tasks solved with `DQI <https://arxiv.org/abs/2408.08292>` or `QAOA <https://arxiv.org/pdf/2207.10555>`. 
 Furthermore, these states are native to quantum optics systems due to their relation to spin systems, 
 and can be found quantum communication applications. 
 
@@ -35,6 +37,7 @@ Preparation algorithms
 ======================
 
 After the short overview on their definition and applications, let's now dive into the established algorithms for Dicke state preparation! 
+We will start with the probablistic which offers a cool physics-inspired solution! 
 
 Probablistic approach
 ---------------------
@@ -90,15 +93,15 @@ scheme. We first create the necessary amount of ancilla qubits, and then apply t
 
 
 With that out of the way, let's get back to the implementation of Jeffery's algorithm, which emerges naturally from the pseudocode provided.
-It is already :ref:`jaspified <JASP>` and intended to be called with the ``@terminal_sampling`` decorator (or an adaption with makes use of the :ref:`terminal_sampling` simulator optimization).
+It is already :ref:`jaspified <JASP>` and intended to be called with the :func:`@terminal_sampling` decorator (or an adaption with makes use of the :ref:`terminal_sampling` simulator optimization).
 
-To reiterate: the procedure performs iterative ``ry``-rotations, where the rotation angle is adaptively chosen based on the ``collective_hamming_measurement`` of previous iteration.
+To reiterate: the procedure performs iterative :func:`ry`-rotations, where the rotation angle is adaptively chosen based on the :func:`collective_hamming_measurement` of previous iteration.
 We stop once we measure the correct Hamming-weight. 
-In *JASP*-terms, this is achieved by wrapping the "rotate-and-measure" procedure in a :ref:`q_while_loop <q_while_loop>`. This jaspified version of a quantum while-loop requires a condition function ``cond_fun`` with a ``bool`` (or ``QuantumBool``) return, and a body function ``body_fun``.
+In *JASP*-terms, this is achieved by wrapping the "rotate-and-measure" procedure in a :ref:`q_while_loop <q_while_loop>`. This jaspified version of a quantum while-loop requires a condition function ``cond_fun`` with a ``bool`` (or :class:`QuantumBool`) return, and a body function ``body_fun``.
 The ``cond_fun`` checks whether the "while" condition is still true, while the ``body_fun`` performs the iterative quantum operations.
 
 Let us investigate the ``body_fun`` first. We directly translate what Jeffery proposes into code. First, we perform some arithmetic to find the updated rotation angle.
-Then, we apply the corrected ``ry``-rotations. And finally, we perform the ``collective_hamming_measurement`` to gather information about our Hamming-weight overlap. 
+Then, we apply the corrected :func:`ry`-rotations. And finally, we perform the :func:`collective_hamming_measurement` to gather information about our Hamming-weight overlap. 
 
 ::
 
@@ -131,7 +134,7 @@ is equivalent to the one we are looking for (which is given by ``val[0]``). If y
     def cond_fun(val):
         return val[0] != val[-1]
 
-Putting it all together, the main function ``iterative_dicke_state_sampling`` reduces to seven lines of code, with the ``q_while_loop`` being the central ingredient.
+Putting it all together, the main function ``iterative_dicke_state_sampling`` reduces to seven lines of code, with the :func:`q_while_loop` being the central ingredient.
 
 ::
 
@@ -189,13 +192,13 @@ the basic components are implemented and how these unitary calls are structed in
 
 For an in-depth explanation on how these unitaries emerge and their action on a quantum state, please refer to the original paper. 
 
-The aforementioned unitary is given by the function ``split_cycle_shift``, which receives a QuantumVariable ``qv``. 
+The aforementioned unitary is given by the function :func:`split_cycle_shift`, which receives a :class:`QuantumVariable` ``qv``. 
 Additionally, two integers,  ``highIndex`` and ``lowIndex``, indicate the preparation steps, as seen in original algorithm.
 
 Some caveats: 
 
 This implementation is *JASP* ready. It therefore makes use of the :ref:`jrange <jrange>` iterator. In the paper, the iteration is conducted in reverse, i.e. from the lowest to the highest index. 
-In a normal ``range`` iterator, you would just set ``step =-1`` for this behaviour; ``jrange`` does not allow for this. Instead, we embed the whole construct in an :ref:`InversionEnvironment <InversionEnvironment>` to reverse the loop.
+In a normal ``range`` iterator, you would just set ``step =-1`` for this behaviour; :func:`jrange` does not allow for this. Instead, we embed the whole construct in an :ref:`InversionEnvironment <InversionEnvironment>` to reverse the loop.
 
 Additionally, you may notice some logic checks using the ``ctrl_bool`` variables. This replaces ``if``-statement usage in *JASP* mode, so make good use of that when **jaspifying** your Qrisp code! 
 
@@ -227,8 +230,8 @@ Additionally, you may notice some logic checks using the ``ctrl_bool`` variables
                     cx(qv[index -2], qv[highIndex-1]) 
 
 
-These *split & cyclic shift* unitaries are embedded in the main function **dicke_state**. It receives as inputs the QuantumVariable ``qv`` that we want to work on and an integer ``k``, which represents the desired Hamming-weight.
-Here, we again invert the ``jrange`` operator to represent the logic of the original paper.
+These *split & cyclic shift* unitaries are embedded in the main function **dicke_state**. It receives as inputs the :class:`QuantumVariable` ``qv`` that we want to work on and an integer ``k``, which represents the desired Hamming-weight.
+Here, we again invert the :func:`jrange` operator to represent the logic of the original paper.
 
 
 ::
@@ -251,8 +254,8 @@ Here, we again invert the ``jrange`` operator to represent the logic of the orig
                 split_cycle_shift(qv, index, index-1, )
             #barrier(qv)
 
-Correct Usage
--------------
+How to use the :func:`dicke_state` function
+-------------------------------------------
 
 To run this code and properly generate the desired Dicke state, we have to make sure that the input state already has the desired Hamming-weight ``k`` in its trailing ``k`` qubits.
 
@@ -314,7 +317,7 @@ For the final algorithm in this tutorial let us investigate the `Divide-and-Conq
 The idea here is to divide the whole Dicke state preparation procedure as follows: 
 
 First, we separate the set of qubits into two sets.
-Then, a smart prepreparation is conducted, after which the ``dicke_state``-function is executed on each qubit set individually.
+Then, a smart prepreparation is conducted, after which the :func:`dicke_state`-function is executed on each qubit set individually.
 Finally, we fuse the qubit sets back together.
 
 The main difficulty lays in choosing the correct weighting of states for the preparation step. For an in-depth explanation please refer to the original paper.
@@ -327,10 +330,10 @@ We will also make use of the function ``comb``, a `JAX compatible <https://docs.
         integ = jnp.uint16(jnp.round(jnp.exp(gammaln(N + 1) - gammaln(k + 1) - gammaln(N - k + 1))))
         return integ
 
-In the following, we will keep it short. The ``dicke_divide_and_conquer`` function precomputes the correct weights, i.e. the ``ry``-gate angles to fan-out 
-the amplitude information, and then applies a ``cx``-cascade. 
+In the following, we will keep it short. The :func:`dicke_divide_and_conquer` function precomputes the correct weights, i.e. the :func:`ry`-gate angles to fan-out 
+the amplitude information, and then applies a :func:`cx`-cascade. 
 Afterwards, we apply the ``dicke_state`` functions on the separted qubit set.
-For the explanation of the ``ry``-angle calculation, we refer to the original paper. 
+For the explanation of the :func:`ry`-angle calculation, we refer to the original paper. 
 
 ::
 
@@ -378,7 +381,7 @@ For the explanation of the ``ry``-angle calculation, we refer to the original pa
         dicke_state(qv[n-n_2a:], k)
           
 Let's look at one final example on how to use this function with and without *Jaspification*.
-We initiate a QuantumVariable with 7 qubits from this create the Dicke state with Hamming weight 3 with the ``terminal_sampling`` decorator.
+We initiate a QuantumVariable with 7 qubits from this create the Dicke state with Hamming weight 3 with the :func:`terminal_sampling` decorator.
 
 ::
 
