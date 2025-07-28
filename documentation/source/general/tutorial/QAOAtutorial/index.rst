@@ -99,8 +99,8 @@ Our QAOA journey doesn’t stop here. In the next tutorials we’re going to tac
    :hidden:
    
    Theoretical
-   MaxCut
-   MkCS
-   QUBO
-   ConstrainedMixers
-   PortfolioRebalancing
+   MaxCut.ipynb
+   MkCS.ipynb
+   QUBO.ipynb
+   ConstrainedMixers.ipynb
+   PortfolioRebalancing.ipynb

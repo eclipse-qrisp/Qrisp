@@ -130,14 +130,14 @@ html_theme_options = {
     "search_bar_text": "Search the docs... ",
     # "navbar_align": "content",
     "pygment_light_style": "lovelace",
-    "secondary_sidebar_items": ["page-toc.html", "slack_link.html", "thebe_button.html"]
+    "secondary_sidebar_items": ["page-toc.html", "slack_link.html", "dynamic_sidebar.html", "thebe_button.html"]
 }
 html_sidebars = {
     "**": ["sidebar-nav-bs"],
     "index": [],
     "install": [],
     #"tutorial": [],
-    "tutorial/*": ["sidebar-nav-bs", "dynamic_sidebar.html"],  # Use for all tutorials
+    "tutorial/*": ["sidebar-nav-bs"],
     "auto_examples/index": [],
 }
 

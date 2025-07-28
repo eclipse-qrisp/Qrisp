@@ -45,7 +45,7 @@ nav.bd-links li>a:hover {
 }
 
 
-.thebelab-button {
+.sidebar-button {
     transition: background-color 0.3s ease;
     background: var(--pst-color-secondary);
     color: #fff;
@@ -54,9 +54,18 @@ nav.bd-links li>a:hover {
     cursor: pointer;
     border-radius: 5px;
     font-size: 12px; /* Adjust font size for a smaller size */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    height: auto;
 }
 
-.thebelab-button:hover {
+.sidebar-button:visited {
+    color: #fff !important;
+}
+
+.sidebar-button:hover {
     background-color: var(--pst-color-secondary);
 }
 
@@ -104,7 +113,7 @@ nav.bd-links li>a:hover {
 }
 
 /* run button */ 
-button.thebelab-button.thebelab-run-button::before {
+button.sidebar-button.thebelab-run-button::before {
   font-family: 'Font Awesome 5 Free'; /* Ensure Font Awesome is loaded */
   content: '▶'; /* Unicode for the "play" icon */
   margin-right: 5px; /* Add spacing between the icon and text */
@@ -124,7 +133,7 @@ button.thebelab-button.thebelab-run-button::before {
   font-size: 0.875em !important;
 }
 
-.thebe-launch-button {
+.sidebar-launch-button {
   height: 5em;
   font-size: 0.8em;
   border: 0px black solid;

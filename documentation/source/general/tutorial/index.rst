@@ -371,22 +371,16 @@ By the end of this tutorial, you'll have a solid foundation of our high-level fr
    :maxdepth: 2
    :hidden:
    
-   tutorial
-   H2
-   Jasp
-   HHL
-   Shor
-   FT_compilation
-   TSP
-   Sudoku
+   tutorial.ipynb
+   H2.ipynb
+   Jasp.ipynb
+   HHL.ipynb
+   Shor.ipynb
+   FT_compilation.ipynb
+   TSP.ipynb
+   Sudoku.ipynb
    QAOAtutorial/index
-   JaspQAOAtutorial
-   QIROtutorial
-   QMCItutorial
-   example_Shor.ipynb
-
-
-Download the notebook: :download:`example_Shor.ipynb <example_Shor.ipynb>`
-
-   
+   JaspQAOAtutorial.ipynb
+   QIROtutorial.ipynb
+   QMCItutorial.ipynb
    
