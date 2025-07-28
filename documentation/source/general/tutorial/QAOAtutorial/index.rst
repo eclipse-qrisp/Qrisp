@@ -90,7 +90,7 @@ In their paper, Hadfield and his colleagues give us some really useful examples 
      - XY mixer
      -    ✅ 
 
-Our QAOA journey doesn’t stop here. In the next tutorials we’re going to tackle two fascinating problems: :ref:`MaxCut <MaxCutQAOA>` and :ref:`Max-$\\kappa$-Colorable Subgraph <MkCSQAOA>`, showcasing multiple unique features of Qrisp, including the functionality of creating custom QuantumVariable types - get ready to add a splash of :red:`Q`:orange:`u`:yellow:`a`:green:`n`:blue:`t`:indigo:`u`:violet:`m`:red:`C`:orange:`o`:yellow:`l`:green:`o`:blue:`r` to your code.
+Our QAOA journey doesn’t stop here. In the next tutorials we’re going to tackle two fascinating problems: MaxCut and Max-$\\kappa$-Colorable Subgraph, showcasing multiple unique features of Qrisp, including the functionality of creating custom QuantumVariable types - get ready to add a splash of :red:`Q`:orange:`u`:yellow:`a`:green:`n`:blue:`t`:indigo:`u`:violet:`m`:red:`C`:orange:`o`:yellow:`l`:green:`o`:blue:`r` to your code.
 
 .. currentmodule:: qrisp
 

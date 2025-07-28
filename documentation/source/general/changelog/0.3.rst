@@ -14,11 +14,11 @@ The following is new in Qrisp 0.3 with regard to QAOA
 
 * The :ref:`QAOAProblem` class, which facilitates convenient problem formulation and evaluation.
 * The :ref:`QAOABenchmark` class, which allows you to investigate the performance of your implementations.
-* :ref:`Various tutorials <QAOA101>` that cover a lot of content. From :ref:`the very basics <TheoryQAOA>` to :ref:`scientific novelties <ConstrainedMixers>`.
+* Various :ref:`tutorials <tutorial>` that cover a lot of content about QAOA. From the very basics therory to scientific novelties like constrained mixers.
 * 7 different presolved problems from combinatorial optimization.
 * `Qiskit runtime services <https://qiskit.org/ecosystem/ibm-runtime/>`_ can now be used as a :ref:`Qrisp backend <QiskitRuntimeBackend>`.
 
-With the release of Qrisp 0.3 we also introduce a novel mixer architecture that can keep arbitrary constraints intact and has polynomial complexity! Read more about this exciting idea :ref:`here <ConstrainedMixers>`.
+With the release of Qrisp 0.3 we also introduce a novel mixer architecture that can keep arbitrary constraints intact and has polynomial complexity! Read more about this exciting idea in the QAOA :ref:`tutorial` about constrained mixers.
 
 Upgraded Backtracking 
 ----------------------

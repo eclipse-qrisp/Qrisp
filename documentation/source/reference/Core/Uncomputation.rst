@@ -352,7 +352,7 @@ Recomputation is a phenomenon that can happen if a function ``f`` that uncompute
     QuantumBool c
       
 We see that the uncomputation of ``u`` is awaited until the uncomputation of ``result`` finished, even though within the code, the :meth:`uncompute<qrisp.QuantumVariable.uncompute>` call of ``u`` came before the one of ``result``. In many situations this is a really efficient and helpfull feature of the algorithm, since there is less overhead in gates because ``u`` doesn't need to be recomputed.
-There are however situations, where this can yield to a :ref:`significant qubit overhead<tsp>`. To understand how this happens, consider the following simplified situation:
+There are however situations, where this can yield to a significant qubit overhead. To understand how this happens, consider the following simplified situation:
 
 ::
    

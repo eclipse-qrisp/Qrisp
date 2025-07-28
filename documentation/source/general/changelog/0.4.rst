@@ -12,7 +12,7 @@ With 0.4 we integrated the infrastructure to facilitate the implementation and c
 
 * The :ref:`QuantumModulus` quantum type, which allows you to utilize modular arithmetic in your algorithms with a minimal amount of knowledge of the `underlying circuits <https://arxiv.org/abs/1801.01081>`_. 
 * Furthermore, we implemented the :meth:`qcla <qrisp.qcla>` introduced by `Wang et al <https://arxiv.org/abs/2304.02921>`_. The previously mentioned arithmetic can be adapted to use this adder (or any other adder for that matter!).
-* We wrote a :ref:`tutorial for Shor's algorithm in Qrisp <shor_tutorial>` and created a dead simple :ref:`interface for factoring numbers <Shor>`.
+* We wrote a :ref:`tutorial` for Shor's algorithm in Qrisp and created a dead simple :ref:`interface for factoring numbers <Shor>`.
 * :ref:`Decrypt <crypto_tools>` your neighbors pizza delivery order to make them eat pineapples! 😈
 
 As we found out, implementations of Shor's algorithm that are able to return a QuantumCircuit in a finite amount of time are an extremely rare sight. After some searching, we could find some competitors for a benchmark:
@@ -59,7 +59,7 @@ We added the following algorithmic primitives to the Qrisp repertoire:
 QUBO optimization
 -----------------
 
-QUBO is short for Quadratic Unconstrained Binary Optimization and a problem type, which captures a `large class of optimization problems <https://arxiv.org/abs/1302.5843>`_. QUBO instances can now be :ref:`solved within the QAOA module <QUBOQAOA>`.
+QUBO is short for Quadratic Unconstrained Binary Optimization and a problem type, which captures a `large class of optimization problems <https://arxiv.org/abs/1302.5843>`_. QUBO instances can now be solved within the QAOA module.
 
 Simulator
 ---------
