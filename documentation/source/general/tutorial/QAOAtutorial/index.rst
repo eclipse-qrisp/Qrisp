@@ -101,6 +101,6 @@ Our QAOA journey doesn’t stop here. In the next tutorials we’re going to tac
    Theoretical
    MaxCut.ipynb
    MkCS.ipynb
-   QUBO.ipynb
    ConstrainedMixers.ipynb
+   QUBO.ipynb
    PortfolioRebalancing.ipynb
