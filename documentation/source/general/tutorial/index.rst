@@ -17,7 +17,9 @@ Welcome to the tutorial of Qrisp! This page will help you get started by providi
 
         .. raw:: html
 
-            <h4 style="font-weight: bold; margin-top: 0;">Getting familiar with Qrisp</h4>
+            <h4 style="font-weight: bold; margin-top: 0;">
+                <a href="./tutorial.html" style="text-decoration: none; color: inherit;">Getting familiar with Qrisp</a>
+            </h4>
 
         .. image:: ../../_static/hello_world.png
             :align: center
@@ -45,7 +47,9 @@ Welcome to the tutorial of Qrisp! This page will help you get started by providi
 
         .. raw:: html
 
-            <h4 style="font-weight: bold; margin-top: 0;">Simulate the dynamics of the $H_2$ molecule</h4>
+            <h4 style="font-weight: bold; margin-top: 0;">
+                <a href="./H2.html" style="text-decoration: none; color: inherit;">Simulate the dynamics of the $H_2$ molecule</a>
+            </h4>
 
         .. image:: ../../_static/hydrogen.png
             :align: center
@@ -76,7 +80,9 @@ Welcome to the tutorial of Qrisp! This page will help you get started by providi
 
         .. raw:: html
 
-            <h4 style="font-weight: bold; margin-top: 0;">Hybrid real-time algorithm control with Jasp</h4>
+            <h4 style="font-weight: bold; margin-top: 0;">
+                <a href="./Jasp.html" style="text-decoration: none; color: inherit;">Hybrid real-time algorithm control with Jasp</a>
+            </h4>
 
         .. image:: ../../_static/hybrid_realtime.png
             :width: 180
@@ -105,7 +111,9 @@ Welcome to the tutorial of Qrisp! This page will help you get started by providi
 
         .. raw:: html
 
-            <h4 style="font-weight: bold; margin-top: 0;">Factoring integers using Shor's algorithm</h4>
+            <h4 style="font-weight: bold; margin-top: 0;">
+                <a href="./Shor.html" style="text-decoration: none; color: inherit;">Factoring integers using Shor's algorithm</a>
+            </h4>
 
         .. image:: ../../_static/period_finding.svg
             :align: center
@@ -136,7 +144,9 @@ Welcome to the tutorial of Qrisp! This page will help you get started by providi
 
         .. raw:: html
 
-            <h4 style="font-weight: bold; margin-top: 0;">Solving systems of linear equations via HHL</h4>
+            <h4 style="font-weight: bold; margin-top: 0;">
+                <a href="./HHL.html" style="text-decoration: none; color: inherit;">Solving systems of linear equations via HHL</a>
+            </h4>
 
         .. image:: ../../_static/HHL.png
             :align: center
@@ -165,7 +175,9 @@ Welcome to the tutorial of Qrisp! This page will help you get started by providi
 
         .. raw:: html
 
-            <h4 style="font-weight: bold; margin-top: 0;">Fault-Tolerant compilation</h4>
+            <h4 style="font-weight: bold; margin-top: 0;">
+                <a href="./FT_compilation.html" style="text-decoration: none; color: inherit;">Fault-Tolerant compilation</a>
+            </h4>
 
         .. image:: ../../_static/torus.png
             :align: center
@@ -196,7 +208,9 @@ Welcome to the tutorial of Qrisp! This page will help you get started by providi
 
         .. raw:: html
 
-            <h4 style="font-weight: bold; margin-top: 0;">Solving the Traveling Salesman Problem</h4>
+            <h4 style="font-weight: bold; margin-top: 0;">
+                <a href="./TSP.html" style="text-decoration: none; color: inherit;">Solving the Traveling Salesman Problem</a>
+            </h4>
 
         .. image:: ../../_static/tsp.svg
             :align: center
@@ -224,7 +238,9 @@ Welcome to the tutorial of Qrisp! This page will help you get started by providi
 
         .. raw:: html
 
-            <h4 style="font-weight: bold; margin-top: 0;">Solving Sudoku using Quantum Backtracking</h4>
+            <h4 style="font-weight: bold; margin-top: 0;">
+                <a href="./Sudoku.html" style="text-decoration: none; color: inherit;">Solving Sudoku using Quantum Backtracking</a>
+            </h4>
 
         .. image:: ../../_static/backtracking.svg
             :align: center
@@ -255,7 +271,9 @@ Welcome to the tutorial of Qrisp! This page will help you get started by providi
 
         .. raw:: html
 
-            <h4 style="font-weight: bold; margin-top: 0;">Solving combinatorial optimization problems with QAOA</h4>
+            <h4 style="font-weight: bold; margin-top: 0;">
+                <a href="./QAOAtutorial/index.html" style="text-decoration: none; color: inherit;">Solving combinatorial optimization problems with QAOA</a>
+            </h4>
 
         .. image:: ../../_static/maxcut_tutorial.png
             :align: center
@@ -283,7 +301,9 @@ Welcome to the tutorial of Qrisp! This page will help you get started by providi
 
         .. raw:: html
 
-            <h4 style="font-weight: bold; margin-top: 0;">Building a QAOA implementation in Jasp</h4>
+            <h4 style="font-weight: bold; margin-top: 0;">
+                <a href="./JaspQAOAtutorial.html" style="text-decoration: none; color: inherit;">Building a QAOA implementation in Jasp</a>
+            </h4>
 
         .. image:: ../../_static/maxcut_jasp.png
             :align: center
@@ -314,7 +334,9 @@ Welcome to the tutorial of Qrisp! This page will help you get started by providi
 
         .. raw:: html
 
-            <h4 style="font-weight: bold; margin-top: 0;">Quantum-Informed Recursive Optimization</h4>
+            <h4 style="font-weight: bold; margin-top: 0;">
+                <a href="./QIROtutorial.html" style="text-decoration: none; color: inherit;">Quantum-Informed Recursive Optimization</a>
+            </h4>
 
         .. image:: ../../_static/maxIndepSet.png
             :align: center
@@ -342,7 +364,9 @@ Welcome to the tutorial of Qrisp! This page will help you get started by providi
 
         .. raw:: html
 
-            <h4 style="font-weight: bold; margin-top: 0;">Quantum Monte Carlo Integration</h4>
+            <h4 style="font-weight: bold; margin-top: 0;">
+                <a href="./QMCItutorial.html" style="text-decoration: none; color: inherit;">Quantum Monte Carlo Integration</a>
+            </h4>
 
         .. image:: ../../_static/qmci.svg
             :align: center
