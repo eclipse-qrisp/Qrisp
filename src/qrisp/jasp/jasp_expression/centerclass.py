@@ -125,7 +125,6 @@ class Jaspr(ClosedJaxpr):
         "ctrl_jaspr",
         "inv_jaspr",
         "envs_flattened",
-        "consts",
     )
 
     def __init__(
@@ -137,6 +136,7 @@ class Jaspr(ClosedJaxpr):
                 raise Exception(f"Tried to call the Jaspr constructor with two arguments and signature {type(args[0]), type(args[1])} (allowed is (Jaxpr, list))")
             kwargs["jaxpr"] = args[0]            
             kwargs["consts"] = args[1]
+            
         elif len(args) == 1:
             if not isinstance(args[0], ClosedJaxpr):
                 raise Exception(f"Tried to call the Jaspr constructor with one argument and signature {type(args[0])} (allowed is (ClosedJaxpr))")
@@ -158,9 +158,8 @@ class Jaspr(ClosedJaxpr):
                     raise Exception("Tried to create Jaspr with constvars but no constants")
                 consts = []
             
-            jaxpr = Jaxpr(**kwargs)
             ClosedJaxpr.__init__(self, 
-                                 jaxpr = jaxpr, 
+                                 jaxpr = Jaxpr(**kwargs), 
                                  consts = consts)
 
         self.hashvalue = id(self)
@@ -176,7 +175,6 @@ class Jaspr(ClosedJaxpr):
         self.ctrl_jaspr = ctrl_jaspr
         self.inv_jaspr = inv_jaspr
         self.envs_flattened = False
-        self.consts = []
 
         if not isinstance(self.invars[-1].aval, AbstractQuantumCircuit):
             raise Exception(
@@ -655,8 +653,8 @@ class Jaspr(ClosedJaxpr):
 
     @classmethod
     @lru_cache(maxsize=int(1e5))
-    def from_cache(cls, jaxpr):
-        return Jaspr(jaxpr=jaxpr.jaxpr, consts=jaxpr.consts)
+    def from_cache(cls, closed_jaxpr):
+        return Jaspr(jaxpr=closed_jaxpr.jaxpr, consts=closed_jaxpr.consts)
 
     def update_eqns(self, eqns):
         return Jaspr(
@@ -664,6 +662,7 @@ class Jaspr(ClosedJaxpr):
             invars=list(self.invars),
             outvars=list(self.outvars),
             eqns=list(eqns),
+            consts=list(self.consts)
         )
 
     def to_qir(self):

@@ -24,7 +24,7 @@ from jax.extend.core import ClosedJaxpr, JaxprEqn, Literal, Jaxpr
 
 
 @lru_cache(maxsize=int(1e5))
-def collect_environments(jaxpr):
+def collect_environments(closed_jaxpr):
     """
     This function turns Jaxpr that contain QuantumEnvironment primitive in enter/exit
     form into the collected form. Collected means that the QuantumEnvironments content
@@ -32,12 +32,12 @@ def collect_environments(jaxpr):
 
     Parameters
     ----------
-    jaxpr : jax.core.Jaxpr
+    closed_jaxpr : jax.extend.core.ClosedJaxpr
         The Jaxpr with QuantumEnvironment in enter/exit form.
 
     Returns
     -------
-    jax.core.Jaxpr
+    jax.extend.core.ClosedJaxpr
         A Jaxpr with QuantumEnvironments in collected form.
 
     """
@@ -47,7 +47,7 @@ def collect_environments(jaxpr):
 
     # Once we hit an exit primitive, we collect the Equations between the enter
     # and exit primitive.
-    eqn_list = list(jaxpr.eqns)
+    eqn_list = list(closed_jaxpr.jaxpr.eqns)
     new_eqn_list = []
     
     # An important part of collecting the quantum environments is determining
@@ -60,8 +60,8 @@ def collect_environments(jaxpr):
     
     from qrisp.jasp import Jaspr
 
-    if isinstance(jaxpr, Jaspr) and jaxpr.envs_flattened:
-        return jaxpr
+    if isinstance(closed_jaxpr, Jaspr) and closed_jaxpr.envs_flattened:
+        return closed_jaxpr
     
     for j in range(len(eqn_list)):
         eqn = eqn_list[j]
@@ -162,7 +162,7 @@ def collect_environments(jaxpr):
             outvars = find_outvars(
                 environment_body_eqn_list,
                 remaining_script_var_tracker,
-                [var for var in jaxpr.jaxpr.outvars if not isinstance(var, Literal)],
+                [var for var in closed_jaxpr.jaxpr.outvars if not isinstance(var, Literal)],
             )
 
             # Create the Jaxpr
@@ -193,24 +193,25 @@ def collect_environments(jaxpr):
         new_eqn_list.append(eqn)
         new_eqn_var_tracker.append(eqn)
         
-    if isinstance(jaxpr, Jaspr):
-        res = jaxpr.update_eqns(new_eqn_list)
-        if jaxpr.ctrl_jaspr is not None:
-            res.ctrl_jaspr = jaxpr.ctrl_jaspr
-        if jaxpr.inv_jaspr is not None:
-            res.inv_jaspr = jaxpr.inv_jaspr
+    if isinstance(closed_jaxpr, Jaspr):
+        res = closed_jaxpr.update_eqns(new_eqn_list)
+        
+        if closed_jaxpr.ctrl_jaspr is not None:
+            res.ctrl_jaspr = closed_jaxpr.ctrl_jaspr
+        if closed_jaxpr.inv_jaspr is not None:
+            res.inv_jaspr = closed_jaxpr.inv_jaspr
         return res
     else:
         # Return the transformed equation
         
         res_jaxpr = Jaxpr(
-            constvars=jaxpr.jaxpr.constvars,
-            invars=jaxpr.jaxpr.invars,
-            outvars=jaxpr.jaxpr.outvars,
+            constvars=closed_jaxpr.jaxpr.constvars,
+            invars=closed_jaxpr.jaxpr.invars,
+            outvars=closed_jaxpr.jaxpr.outvars,
             eqns=new_eqn_list,
         )
         
-        return ClosedJaxpr(res_jaxpr, jaxpr.consts)
+        return ClosedJaxpr(res_jaxpr, closed_jaxpr.consts)
 
 
 def find_outvars(body_eqn_list, script_remainder_var_tracker, return_vars):
