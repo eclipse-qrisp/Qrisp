@@ -118,11 +118,8 @@ def control_eqn(eqn, ctrl_qubit_var):
         new_params = dict(eqn.params)
 
         invars = list(eqn.invars)
-        if isinstance(eqn.params["jaxpr"].jaxpr, Jaspr):
-            new_params["jaxpr"] = ClosedJaxpr(
-                new_params["jaxpr"].jaxpr.control(1), eqn.params["jaxpr"].consts
-            )
-
+        if isinstance(eqn.params["jaxpr"], Jaspr):
+            new_params["jaxpr"] = new_params["jaxpr"].control(1)
             new_params["name"] = "c" + new_params["name"]
 
             invars = [ctrl_qubit_var] + eqn.invars
@@ -299,7 +296,7 @@ def multi_control_jaspr(jaspr, num_ctrl, ctrl_state):
 
     """
 
-    from qrisp.jasp import AbstractQubit, make_jaspr
+    from qrisp.jasp import make_jaspr
 
     ctrl_vars = [
         Var(suffix=str(control_var_count[0] + _), aval=AbstractQubit())

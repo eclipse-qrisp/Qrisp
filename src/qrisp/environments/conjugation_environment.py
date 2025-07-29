@@ -277,9 +277,8 @@ class ConjugationEnvironment(QuantumEnvironment):
         # Retrieve the equation
         jit_eqn = get_last_equation()
         
-        jit_eqn.params["jaxpr"] = ClosedJaxpr(
-            flattened_jaspr, jit_eqn.params["jaxpr"].consts
-        )
+        jit_eqn.params["jaxpr"] = flattened_jaspr
+        
         jit_eqn.params["name"] = "conjugation_env"
 
         if not isinstance(res, tuple):
