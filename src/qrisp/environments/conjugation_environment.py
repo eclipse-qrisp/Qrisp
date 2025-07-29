@@ -429,10 +429,7 @@ class PJITEnvironment(QuantumEnvironment):
 
         jit_eqn = get_last_equation()
         
-        jit_eqn.params["jaxpr"] = ClosedJaxpr(
-            Jaspr.from_cache(jit_eqn.params["jaxpr"].jaxpr),
-            jit_eqn.params["jaxpr"].consts,
-        )
+        jit_eqn.params["jaxpr"] = Jaspr.from_cache(jit_eqn.params["jaxpr"])
 
         if not isinstance(res, tuple):
             res = (res,)
