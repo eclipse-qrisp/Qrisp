@@ -138,7 +138,7 @@ def q_while_loop(cond_fun, body_fun, init_val):
     for i in range(eqn.params["body_nconsts"]):
         if isinstance(body_jaxpr.jaxpr.invars[i].aval, AbstractQuantumCircuit):
             eqn.invars.pop(i)
-            body_jaxpr.invars.pop(i)
+            body_jaxpr.jaxpr.invars.pop(i)
             eqn.params["body_nconsts"] -= 1
             return while_res[0]
         
@@ -334,7 +334,7 @@ def q_cond(pred, true_fun, false_fun, *operands):
     false_jaxpr = eqn.params["branches"][0]
     true_jaxpr = eqn.params["branches"][1]
 
-    if not isinstance(false_jaxpr.invars[-1].aval, AbstractQuantumCircuit):
+    if not isinstance(false_jaxpr.jaxpr.invars[-1].aval, AbstractQuantumCircuit):
         raise Exception(
             "Found implicit variable import in q_cond. Please make sure all used variables are part of the body signature."
         )

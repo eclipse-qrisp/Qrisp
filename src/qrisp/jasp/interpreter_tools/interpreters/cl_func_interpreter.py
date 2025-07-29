@@ -351,11 +351,9 @@ def get_traced_fun(jaxpr, bit_array_size):
     else:
         cl_func_jaxpr = jaxpr
 
-    cl_func_jaxpr = ClosedJaxpr(cl_func_jaxpr, [])
-
     @jit
     def jitted_fun(*args):
-        return eval_jaxpr(cl_func_jaxpr.jaxpr, [], *args)
+        return eval_jaxpr(cl_func_jaxpr.jaxpr, cl_func_jaxpr.consts, *args)
 
     return jitted_fun
 
@@ -379,12 +377,12 @@ def process_pjit(eqn, context_dic):
 
         jaxpr = eqn.params["jaxpr"]
 
-        if isinstance(jaxpr.jaxpr, Jaspr):
+        if isinstance(jaxpr, Jaspr):
             bit_array_padding = invalues[-1][0].shape[0] * 64
         else:
             bit_array_padding = 0
 
-        traced_fun = get_traced_fun(jaxpr.jaxpr, bit_array_padding)
+        traced_fun = get_traced_fun(jaxpr, bit_array_padding)
 
         flattened_invalues = flatten_signature(invalues, eqn.invars)
         outvalues = traced_fun(*flattened_invalues)
@@ -478,7 +476,7 @@ def jaspr_to_cl_func_jaxpr(jaspr, bit_array_padding):
 
     return make_jaxpr(eval_jaxpr(jaspr, eqn_evaluator=cl_func_eqn_evaluator))(
         *args
-    ).jaxpr
+    )
 
 
 def conditional_bit_flip_bit_array(bit_array, index, condition):
