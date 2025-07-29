@@ -129,14 +129,14 @@ def q_while_loop(cond_fun, body_fun, init_val):
 
     eqn = get_last_equation()
     
-    body_jaxpr = eqn.params["body_jaxpr"].jaxpr
+    body_jaxpr = eqn.params["body_jaxpr"]
     
     # If the AbstractQuantumCircuit is part of the constants of the body,
     # the body did not execute any quantum operations.
     # We remove the AbstractQuantumCircuit from the body signature
     # to make the loop purely classical.
     for i in range(eqn.params["body_nconsts"]):
-        if isinstance(body_jaxpr.invars[i].aval, AbstractQuantumCircuit):
+        if isinstance(body_jaxpr.jaxpr.invars[i].aval, AbstractQuantumCircuit):
             eqn.invars.pop(i)
             body_jaxpr.invars.pop(i)
             eqn.params["body_nconsts"] -= 1
@@ -144,9 +144,7 @@ def q_while_loop(cond_fun, body_fun, init_val):
         
     from qrisp import Jaspr
 
-    eqn.params["body_jaxpr"] = ClosedJaxpr(
-        Jaspr.from_cache(body_jaxpr), eqn.params["body_jaxpr"].consts
-    )
+    eqn.params["body_jaxpr"] = Jaspr.from_cache(body_jaxpr)
 
     qs.abs_qc = while_res[1]
     return while_res[0]
@@ -333,8 +331,8 @@ def q_cond(pred, true_fun, false_fun, *operands):
             break
         i += 1
         
-    false_jaxpr = eqn.params["branches"][0].jaxpr
-    true_jaxpr = eqn.params["branches"][1].jaxpr
+    false_jaxpr = eqn.params["branches"][0]
+    true_jaxpr = eqn.params["branches"][1]
 
     if not isinstance(false_jaxpr.invars[-1].aval, AbstractQuantumCircuit):
         raise Exception(
@@ -344,12 +342,8 @@ def q_cond(pred, true_fun, false_fun, *operands):
     from qrisp.jasp import Jaspr
 
     eqn.params["branches"] = (
-        ClosedJaxpr(
-            Jaspr.from_cache(false_jaxpr), eqn.params["branches"][0].consts
-        ),
-        ClosedJaxpr(
-            Jaspr.from_cache(true_jaxpr), eqn.params["branches"][1].consts
-        ),
+            Jaspr.from_cache(false_jaxpr),
+            Jaspr.from_cache(true_jaxpr)
     )
 
     qs.abs_qc = cond_res[-1]
