@@ -202,6 +202,9 @@ class Jaspr(ClosedJaxpr):
     def outvars(self):
         return self.jaxpr.outvars
     
+    @property
+    def debug_info(self):
+        return self.jaxpr.debug_info
 
     def __hash__(self):
         return self.hashvalue

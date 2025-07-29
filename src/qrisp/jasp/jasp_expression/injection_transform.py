@@ -111,7 +111,7 @@ def injection_transform(jaspr, qubit_array_outvar):
             if qubit_array_outvar in eqn.outvars:
 
                 # Retrieve the Jaspr to be transformed
-                sub_jaspr = eqn.params["jaxpr"].jaxpr
+                sub_jaspr = eqn.params["jaxpr"]
 
                 # Retrieve the QubitArray to be injected
                 sub_qubit_array_outvar = sub_jaspr.outvars[
@@ -122,9 +122,7 @@ def injection_transform(jaspr, qubit_array_outvar):
                 eqn = copy_jaxpr_eqn(eqn)
 
                 # Modify the copied equation
-                eqn.params["jaxpr"] = ClosedJaxpr(
-                    injection_transform(sub_jaspr, sub_qubit_array_outvar), []
-                )
+                eqn.params["jaxpr"] = injection_transform(sub_jaspr, sub_qubit_array_outvar)
                 eqn.invars.insert(0, qubit_array_outvar)
                 eqn.outvars.remove(qubit_array_outvar)
 
