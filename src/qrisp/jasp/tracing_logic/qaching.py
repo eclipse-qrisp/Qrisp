@@ -328,9 +328,7 @@ def qache_helper(func, jax_kwargs):
                     )
                     break
 
-        eqn.params["jaxpr"] = ClosedJaxpr(
-            Jaspr.from_cache(jaxpr), eqn.params["jaxpr"].consts
-        )
+        eqn.params["jaxpr"] = Jaspr.from_cache(eqn.params["jaxpr"])
 
         # Update the AbstractQuantumCircuit of the TracingQuantumSession
         abs_qs.abs_qc = abs_qc_new

@@ -20,7 +20,7 @@ from functools import lru_cache
 
 import numpy as np
 from numba import njit
-from jax.extend.core import ClosedJaxpr, JaxprEqn, Literal
+from jax.extend.core import ClosedJaxpr, JaxprEqn, Literal, Jaxpr
 
 
 @lru_cache(maxsize=int(1e5))
@@ -70,11 +70,9 @@ def collect_environments(jaxpr):
 
             new_params = dict(eqn.params)
 
-            collected_jaspr = collect_environments(eqn.params["jaxpr"].jaxpr)
+            collected_jaspr = collect_environments(eqn.params["jaxpr"])
 
-            new_params["jaxpr"] = ClosedJaxpr(
-                collected_jaspr, eqn.params["jaxpr"].consts
-            )
+            new_params["jaxpr"] = collected_jaspr
 
             eqn = JaxprEqn(
                 params=new_params,
@@ -94,10 +92,7 @@ def collect_environments(jaxpr):
 
             for i in range(len(eqn.params["branches"])):
                 collected_branch_jaxpr = collect_environments(
-                    eqn.params["branches"][i].jaxpr
-                )
-                collected_branch_jaxpr = ClosedJaxpr(
-                    collected_branch_jaxpr, eqn.params["branches"][i].consts
+                    eqn.params["branches"][i]
                 )
                 branch_list.append(collected_branch_jaxpr)
 
@@ -117,11 +112,9 @@ def collect_environments(jaxpr):
 
             new_params = dict(eqn.params)
 
-            body_collected_jaspr = collect_environments(eqn.params["body_jaxpr"].jaxpr)
+            body_collected_jaspr = collect_environments(eqn.params["body_jaxpr"])
 
-            new_params["body_jaxpr"] = ClosedJaxpr(
-                body_collected_jaspr, eqn.params["body_jaxpr"].consts
-            )
+            new_params["body_jaxpr"] = body_collected_jaspr
 
             eqn = JaxprEqn(
                 params=new_params,
@@ -169,7 +162,7 @@ def collect_environments(jaxpr):
             outvars = find_outvars(
                 environment_body_eqn_list,
                 remaining_script_var_tracker,
-                [var for var in jaxpr.outvars if not isinstance(var, Literal)],
+                [var for var in jaxpr.jaxpr.outvars if not isinstance(var, Literal)],
             )
 
             # Create the Jaxpr
@@ -209,12 +202,15 @@ def collect_environments(jaxpr):
         return res
     else:
         # Return the transformed equation
-        return type(jaxpr)(
-            constvars=jaxpr.constvars,
-            invars=jaxpr.invars,
-            outvars=jaxpr.outvars,
+        
+        res_jaxpr = Jaxpr(
+            constvars=jaxpr.jaxpr.constvars,
+            invars=jaxpr.jaxpr.invars,
+            outvars=jaxpr.jaxpr.outvars,
             eqns=new_eqn_list,
         )
+        
+        return ClosedJaxpr(res_jaxpr, jaxpr.consts)
 
 
 def find_outvars(body_eqn_list, script_remainder_var_tracker, return_vars):

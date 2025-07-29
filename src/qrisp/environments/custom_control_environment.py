@@ -250,7 +250,7 @@ def custom_control(*func, **cusc_kwargs):
             # Retrieve the pjit equation
             jit_eqn = get_last_equation()
 
-            if not jit_eqn.params["jaxpr"].jaxpr.ctrl_jaspr:
+            if not jit_eqn.params["jaxpr"].ctrl_jaspr:
                 # Trace the controlled version
 
                 # Make sure the inv keyword argument is treated as a static argument
@@ -279,7 +279,7 @@ def custom_control(*func, **cusc_kwargs):
                 )
                 
                 # Store controlled version
-                jit_eqn.params["jaxpr"].jaxpr.ctrl_jaspr = controlled_jaspr
+                jit_eqn.params["jaxpr"].ctrl_jaspr = controlled_jaspr
 
         return res
 

@@ -149,11 +149,7 @@ def control_eqn(eqn, ctrl_qubit_var):
         ) and isinstance(body_jaxpr.outvars[-1].aval, AbstractQuantumCircuit):
 
             # Generate controlled body jaxpr
-            new_params["body_jaxpr"] = ClosedJaxpr(
-                control_jaspr(Jaspr(eqn.params["body_jaxpr"].jaxpr)),
-                eqn.params["body_jaxpr"].consts,
-            )
-
+            new_params["body_jaxpr"] = control_jaspr(Jaspr(eqn.params["body_jaxpr"]))
             new_params["body_nconsts"] += 1
 
         else:
@@ -167,11 +163,8 @@ def control_eqn(eqn, ctrl_qubit_var):
         if isinstance(
             cond_jaxpr.invars[-1].aval, AbstractQuantumCircuit
         ) and isinstance(cond_jaxpr.outvars[-1].aval, AbstractQuantumCircuit):
-            new_params["cond_jaxpr"] = ClosedJaxpr(
-                control_jaspr(Jaspr(eqn.params["cond_jaxpr"].jaxpr)),
-                eqn.params["cond_jaxpr"].consts,
-            )
-
+            new_params["cond_jaxpr"] = control_jaspr(Jaspr(eqn.params["cond_jaxpr"]))
+            
         else:
             new_jaxpr = copy_jaxpr(new_params["cond_jaxpr"].jaxpr)
             new_params["cond_jaxpr"] = ClosedJaxpr(
@@ -200,10 +193,7 @@ def control_eqn(eqn, ctrl_qubit_var):
             branch_list = []
             for i in range(len(new_params["branches"])):
                 controlled_branch_jaxpr = control_jaspr(
-                    Jaspr(new_params["branches"][i].jaxpr)
-                )
-                controlled_branch_jaxpr = ClosedJaxpr(
-                    controlled_branch_jaxpr, new_params["branches"][i].consts
+                    Jaspr(new_params["branches"][i])
                 )
                 branch_list.append(controlled_branch_jaxpr)
         else:
@@ -284,6 +274,7 @@ def control_jaspr(jaspr):
         invars=[ctrl_qubit_var] + jaspr.invars,
         outvars=jaspr.outvars,
         eqns=new_eqns,
+        consts=jaspr.consts
     )
 
 
