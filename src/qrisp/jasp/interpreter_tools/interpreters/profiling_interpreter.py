@@ -255,7 +255,7 @@ def make_profiling_eqn_evaluator(profiling_dic, meas_behavior):
             zipped_profiling_dic = tuple(profiling_dic.items())
 
             profiler = get_compiled_profiler(
-                eqn.params["jaxpr"].jaxpr, zipped_profiling_dic, meas_behavior
+                eqn.params["jaxpr"], zipped_profiling_dic, meas_behavior
             )
 
             outvalues = profiler(*invalues)
