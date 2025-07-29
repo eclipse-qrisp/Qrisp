@@ -470,8 +470,8 @@ def exec_multi_measurement(catalyst_register, qubit_list):
 
 def process_while(eqn, context_dic):
 
-    body_jaxpr = ensure_conversion(eqn.params["body_jaxpr"].jaxpr)
-    cond_jaxpr = ensure_conversion(eqn.params["cond_jaxpr"].jaxpr)
+    body_jaxpr = ensure_conversion(eqn.params["body_jaxpr"])
+    cond_jaxpr = ensure_conversion(eqn.params["cond_jaxpr"])
 
     invalues = extract_invalues(eqn, context_dic)
 
@@ -504,7 +504,7 @@ def process_cond(eqn, context_dic):
     branch_list = []
 
     for i in range(len(eqn.params["branches"])):
-        branch_list.append(ensure_conversion(eqn.params["branches"][i].jaxpr))
+        branch_list.append(ensure_conversion(eqn.params["branches"][i]))
 
     invalues = extract_invalues(eqn, context_dic)
 
@@ -556,7 +556,7 @@ def process_pjit(eqn, context_dic):
     flattened_invalues = flatten_signature(invalues, eqn.invars)
 
     jaxpr = eqn.params["jaxpr"]
-    traced_fun = get_traced_fun(jaxpr.jaxpr)
+    traced_fun = get_traced_fun(jaxpr)
 
     outvalues = func_p.bind(wrap_init(traced_fun, debug_info = eqn.params["jaxpr"].jaxpr.debug_info),
                             *flattened_invalues, 
