@@ -677,7 +677,7 @@ class Jaspr(Jaxpr):
 
         Yields:
 
-        ::
+        .. code-block:: none
 
             ; ModuleID = 'LLVMDialectModule'
             source_filename = "LLVMDialectModule"
@@ -957,7 +957,7 @@ class Jaspr(Jaxpr):
             jaspr = make_jaspr(example_function)(2)
             print(jaspr.to_mlir())
 
-        ::
+        .. code-block:: none
 
                         module @jaspr_function {
               func.func public @jit_jaspr_function(%arg0: tensor<i64>) -> tensor<i32> attributes {llvm.emit_c_interface} {

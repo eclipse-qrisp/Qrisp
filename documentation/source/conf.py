@@ -68,6 +68,15 @@ extensions = [
               #"nb2plots",
               ]
 
+# Use Python for default highlighting:
+highlight_language = "python"
+
+# Use a preferred Pygments style (e.g., "sphinx" or "monokai"):
+pygments_style = "sphinx"
+
+# Recognize code cells as Python 3 for highlighting:
+nbsphinx_codecell_lexer = "ipython3"
+
 imgmath_latex_preamble = r'\usepackage{braket}\n\usepackage{xcolor}'
 
 thebe_config = {

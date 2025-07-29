@@ -47,7 +47,7 @@ class InversionEnvironment(QuantumEnvironment):
     {0: 1.0}
     >>> print(qf.qs)
 
-    ::
+    .. code-block:: none
 
         QuantumCircuit:
         --------------

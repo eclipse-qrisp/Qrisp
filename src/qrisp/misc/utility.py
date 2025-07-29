@@ -243,7 +243,7 @@ def gate_wrap(*args, permeability=None, is_qfree=None, name=None, verify=False):
 
     >>> print(a.qs)
 
-    ::
+    .. code-block:: none
 
         QuantumCircuit:
         --------------
@@ -267,7 +267,7 @@ def gate_wrap(*args, permeability=None, is_qfree=None, name=None, verify=False):
 
     >>> print(a.qs.transpile())
 
-    ::
+    .. code-block:: none
 
              ┌───┐                    ┌───┐
         b.0: ┤ X ├─────────────────■──┤ H ├──────────
@@ -306,7 +306,7 @@ def gate_wrap(*args, permeability=None, is_qfree=None, name=None, verify=False):
 
     >>> print(qv_0.qs)
 
-    ::
+    .. code-block:: none
 
         QuantumCircuit:
         --------------
@@ -327,7 +327,7 @@ def gate_wrap(*args, permeability=None, is_qfree=None, name=None, verify=False):
     >>> qv_1.uncompute()
     >>> print(qv_0.qs)
 
-    ::
+    .. code-block:: none
 
         QuantumCircuit:
         --------------
@@ -351,7 +351,7 @@ def gate_wrap(*args, permeability=None, is_qfree=None, name=None, verify=False):
     >>> res.uncompute()
     >>> print(qv_0.qs)
 
-    ::
+    .. code-block:: none
 
         QuantumCircuit:
         --------------
@@ -1435,7 +1435,7 @@ def redirect_qfunction(function_to_redirect):
 
     >>> print(a.qs)
 
-    ::
+    .. code-block:: none
 
         QuantumCircuit:
         --------------
@@ -1869,7 +1869,7 @@ def lifted(*args, verify=False):
 
     >>> print(res.qs)
 
-    ::
+    .. code-block:: none
 
         QuantumCircuit:
         --------------
@@ -1888,7 +1888,7 @@ def lifted(*args, verify=False):
     >>> res.uncompute()
     >>> print(res.qs)
 
-    ::
+    .. code-block:: none
 
         QuantumCircuit:
         --------------

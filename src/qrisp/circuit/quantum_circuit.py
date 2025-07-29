@@ -69,7 +69,7 @@ class QuantumCircuit:
     >>> print(qc_0)
 
 
-    ::
+    .. code-block:: none
 
         qb_0: ──■────■────■──
               ┌─┴─┐  │    │
@@ -92,7 +92,7 @@ class QuantumCircuit:
     >>> qc_1.append(qc_0.to_gate(), qc_1.qubits)
     >>> print(qc_1)
 
-    ::
+    .. code-block:: none
 
               ┌───┐┌──────────┐
         qb_4: ┤ H ├┤0         ├
@@ -109,7 +109,7 @@ class QuantumCircuit:
     >>> qc_1.measure(qc_1.qubits)
     >>> print(qc_1)
 
-    ::
+    .. code-block:: none
 
               ┌───┐┌──────────┐┌─┐
         qb_4: ┤ H ├┤0         ├┤M├─────────
@@ -140,7 +140,7 @@ class QuantumCircuit:
     >>> qc_2.cx(0, range(1,4))
     >>> print(qc_2)
 
-    ::
+    .. code-block:: none
 
         q_0: ──■────■────■──
              ┌─┴─┐  │    │
@@ -158,7 +158,7 @@ class QuantumCircuit:
     >>> qrisp_qc_2 = QuantumCircuit.from_qiskit(qc_2)
     >>> print(qrisp_qc_2)
 
-    ::
+    .. code-block:: none
 
          qb_8: ──■────■────■──
                ┌─┴─┐  │    │
@@ -192,7 +192,7 @@ class QuantumCircuit:
     >>> bound_qc = qc.bind_parameters(subs_dic)
     >>> print(bound_qc)
 
-    ::
+    .. code-block:: none
 
               ┌──────┐
         qb_0: ┤ P(0) ├
@@ -425,7 +425,7 @@ class QuantumCircuit:
         >>> extension_qc.cz(0, 3)
         >>> print(extension_qc)
 
-        ::
+        .. code-block:: none
 
             qb_0: ──■────■────■──
                   ┌─┴─┐  │    │
@@ -441,7 +441,7 @@ class QuantumCircuit:
         >>> qc_to_extend.extend(extension_qc, translation_dic)
         >>> print(qc_to_extend)
 
-        ::
+        .. code-block:: none
 
                             ┌───┐
             qb_4: ──────────┤ Z ├
@@ -586,7 +586,7 @@ class QuantumCircuit:
         >>> qc_0.cx(0,1)
         >>> print(qc_0)
 
-        ::
+        .. code-block:: none
 
                   ┌───┐
             qb_0: ┤ Z ├──■──
@@ -598,7 +598,7 @@ class QuantumCircuit:
         >>> qc_1.z(0)
         >>> print(qc_1)
 
-        ::
+        .. code-block:: none
 
                        ┌───┐
             qb_2: ──■──┤ Z ├
@@ -714,7 +714,7 @@ class QuantumCircuit:
         >>> qc.y(0)
         >>> print(qc.inverse())
 
-        ::
+        .. code-block:: none
 
                   ┌───┐┌─────────┐┌───┐
             qb_0: ┤ Y ├┤ P(-π/2) ├┤ X ├
@@ -861,7 +861,7 @@ class QuantumCircuit:
         >>> qc.mcx([0,1], 2)
         >>> print(qc)
 
-        ::
+        .. code-block:: none
 
             qb_0: ──■──
                     │
@@ -872,7 +872,7 @@ class QuantumCircuit:
 
         >>> print(qc.transpile(basis_gates = ["cx", "rz", "sx"]))
 
-        ::
+        .. code-block:: none
 
             global phase: 9π/8
                   ┌──────────┐                 ┌───┐┌─────────┐   ┌───┐   ┌──────────┐┌───┐»
@@ -990,7 +990,7 @@ class QuantumCircuit:
         >>> bound_qc = qc.bind_parameters(subs_dic)
         >>> print(bound_qc)
 
-        ::
+        .. code-block:: none
 
                   ┌──────┐
             qb_0: ┤ P(0) ├
@@ -1294,15 +1294,18 @@ class QuantumCircuit:
         >>> qc.cx(2,3)
         >>> qc.cx(1,0)
         >>> print(qc)
-                              ┌───┐
-        qb_59: ──■────────────┤ X ├─────
-               ┌─┴─┐┌───┐     └─┬─┘
-        qb_60: ┤ X ├┤ X ├──■────■───────
-               └───┘└───┘┌─┴─┐┌───┐
-        qb_61: ──────────┤ X ├┤ Y ├──■──
-                         └───┘└───┘┌─┴─┐
-        qb_62: ────────────────────┤ X ├
-                                   └───┘
+
+        .. code-block:: none
+
+                                  ┌───┐
+            qb_59: ──■────────────┤ X ├─────
+                   ┌─┴─┐┌───┐     └─┬─┘
+            qb_60: ┤ X ├┤ X ├──■────■───────
+                   └───┘└───┘┌─┴─┐┌───┐
+            qb_61: ──────────┤ X ├┤ Y ├──■──
+                             └───┘└───┘┌─┴─┐
+            qb_62: ────────────────────┤ X ├
+                                       └───┘
 
         >>> qc.cnot_depth()
         3
@@ -1367,7 +1370,7 @@ class QuantumCircuit:
         >>> qc.append(multi_h, [2*i for i in range(4)])
         >>> print(qc)
 
-        ::
+        .. code-block:: none
 
                    ┌──────────┐
              qb_4: ┤0         ├
@@ -1639,7 +1642,7 @@ class QuantumCircuit:
             The statevector array of the following circuit has the amplitude 1 at the
             index ``0010 = 2``
 
-            ::
+            .. code-block:: none
 
                 qb.0: ─────
 
@@ -1797,7 +1800,7 @@ class QuantumCircuit:
         >>> qc_2.cx(0, range(1,4))
         >>> print(qc_2)
 
-        ::
+        .. code-block:: none
 
             q_0: ──■────■────■──
                  ┌─┴─┐  │    │
@@ -1814,7 +1817,7 @@ class QuantumCircuit:
         >>> qrisp_qc_2 = QuantumCircuit.from_qiskit(qc_2)
         >>> print(qrisp_qc_2)
 
-        ::
+        .. code-block:: none
 
              qb_8: ──■────■────■──
                    ┌─┴─┐  │    │

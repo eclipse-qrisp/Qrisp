@@ -212,7 +212,7 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
     >>> mcx(control, target, method = "gray")
     >>> print(control.qs)
 
-    ::
+    .. code-block:: none
 
         QuantumCircuit:
         --------------
@@ -1278,7 +1278,7 @@ def barrier(qubits):
     >>> y(qv)
     >>> print(qv.qs)
 
-    ::
+    .. code-block:: none
 
         QuantumCircuit:
         --------------
