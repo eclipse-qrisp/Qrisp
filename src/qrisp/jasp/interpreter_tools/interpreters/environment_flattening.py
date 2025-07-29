@@ -166,7 +166,7 @@ def flatten_environments_in_cond_eqn(eqn, context_dic):
     branch_list = []
 
     for i in range(len(eqn.params["branches"])):
-        collected_branch_jaxpr = flatten_environments(eqn.params["branches"][i].jaxpr)
+        collected_branch_jaxpr = flatten_environments(eqn.params["branches"][i])
         branch_list.append(collected_branch_jaxpr)
 
     eqn.params["branches"] = tuple(branch_list)

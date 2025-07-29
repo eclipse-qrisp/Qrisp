@@ -606,7 +606,7 @@ class Jaspr(ClosedJaxpr):
 
             eqn = get_last_equation()
             
-            eqn.params["jaxpr"] = ClosedJaxpr(self, eqn.params["jaxpr"].consts)
+            eqn.params["jaxpr"] = self
             if name is not None:
                 eqn.params["name"] = name
         else:

@@ -56,9 +56,7 @@ def invert_eqn(eqn):
 
     if eqn.primitive.name == "pjit":
         params = dict(eqn.params)
-        params["jaxpr"] = ClosedJaxpr(
-            (eqn.params["jaxpr"].jaxpr).inverse(), eqn.params["jaxpr"].consts
-        )
+        params["jaxpr"] = eqn.params["jaxpr"].inverse()
 
         name = params["name"]
         if name[-3:] == "_dg":
@@ -82,7 +80,7 @@ def invert_eqn(eqn):
 
         for i in range(len(branches)):
             new_branch_list.append(
-                ClosedJaxpr((branches[i].jaxpr).inverse(), branches[i].consts)
+                branches[i].inverse()
             )
 
         params["branches"] = tuple(new_branch_list)
@@ -275,7 +273,7 @@ def invert_loop_body(jaxpr):
     # Create the new Jaspr
     from qrisp.jasp import Jaspr
 
-    new_jaspr = Jaspr(jaxpr.jaxpr).update_eqns(new_eqn_list)
+    new_jaspr = Jaspr(jaxpr).update_eqns(new_eqn_list)
 
     # Quantum inversion
     res_jaspr = new_jaspr.inverse()
