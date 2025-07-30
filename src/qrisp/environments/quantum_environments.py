@@ -78,7 +78,7 @@ class QuantumEnvironment(QuantumPrimitive):
 
     >>> print(qv.qs)
 
-    ::
+    .. code-block:: none
 
         QuantumCircuit:
         --------------
@@ -148,7 +148,7 @@ class QuantumEnvironment(QuantumPrimitive):
 
     >>> print(a.qs)
 
-    ::
+    .. code-block:: none
 
         QuantumCircuit:
         --------------
@@ -188,7 +188,7 @@ class QuantumEnvironment(QuantumPrimitive):
 
     Executing this snippet yields
 
-    ::
+    .. code-block:: none
 
         QuantumCircuit:
         --------------
@@ -304,7 +304,7 @@ class QuantumEnvironment(QuantumPrimitive):
 
     >>> print(qv.qs)
 
-    ::
+    .. code-block:: none
 
         QuantumCircuit:
         --------------

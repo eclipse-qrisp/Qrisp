@@ -74,7 +74,7 @@ Operation application methods
    >>> qc.x([0,1,2,3])
    >>> print(qc)
    
-   ::
+   .. code-block:: none
    
              ┌───┐┌───┐     ┌───┐┌───┐┌───┐
        qb_0: ┤ X ├┤ X ├─────┤ X ├┤ X ├┤ X ├

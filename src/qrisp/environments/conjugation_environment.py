@@ -115,7 +115,7 @@ class ConjugationEnvironment(QuantumEnvironment):
 
     >>> print(qf.qs.transpile(1))
 
-    ::
+    .. code-block:: none
 
         ctrl.0: ─────────■──────────■─────────■─────────■─────────■─────────────────
                 ┌──────┐ │P(3π/16)  │         │         │         │      ┌─────────┐

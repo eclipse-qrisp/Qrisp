@@ -174,7 +174,7 @@ def QFT(
         gates. The default is False.
     inpl_adder : callable, optional
         Uses an adder and a reservoir state to perform the QFT. Read more about
-        it :ref:`here <adder_based_qft>`. The default is None
+        it in the `tutorial on fault-tolerant compilation <https://www.qrisp.eu/general/tutorial/FT_compilation.html>`_. The default is None
 
 
     """

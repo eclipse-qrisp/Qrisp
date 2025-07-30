@@ -41,7 +41,7 @@ class Qubit:
     >>> qc.x(qb)
     >>> print(qc)
 
-    ::
+    .. code-block:: none
 
                   ┌───┐
         alphonse: ┤ X ├

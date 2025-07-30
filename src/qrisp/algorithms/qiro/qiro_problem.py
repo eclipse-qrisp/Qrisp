@@ -96,7 +96,7 @@ class QIROProblem(QAOAProblem):
         plt.show()
 
 
-    For an in-depth tutorial, make sure to check out :ref:`the QIRO tutorial <Qiro_tutorial>`!
+    For an in-depth tutorial, make sure to check out `the QIRO tutorial <https://www.qrisp.eu/general/tutorial/QIROtutorial.html>`_!
 
     Parameters
     ----------

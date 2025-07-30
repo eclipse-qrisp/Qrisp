@@ -33,7 +33,7 @@ Here, you can find condensed presentations of various QAOA implementations:
    * - PROBLEM INSTANCE
      - MIXER TYPE
      - IMPLEMENTED IN QRISP
-   * - :ref:`MaxCut <maxCutQAOAdoc>`
+   * - :ref:`MaxCut <maxCutQAOA>`
      - X mixer
      -    ✅
    * - :ref:`Max-$\\ell$-SAT <maxsatQAOA>`
@@ -42,7 +42,7 @@ Here, you can find condensed presentations of various QAOA implementations:
    * - :ref:`E3Lin2 <eThrLinTwoQAOA>`
      - X mixer
      -    ✅
-   * - :ref:`QUBO <QUBOQAOAdoc>`
+   * - :ref:`QUBO <QUBOQAOA>`
      - X mixer
      -    ✅ 
    * - :ref:`MaxIndependentSet <maxIndepSetQAOA>`
@@ -57,7 +57,7 @@ Here, you can find condensed presentations of various QAOA implementations:
    * - :ref:`MinSetCover <minSetCoverQAOA>`
      - Controlled X mixer
      -    ✅
-   * - :ref:`Max-$\\kappa$-Colorable Subgraph <MkCSQAOAdoc>`
+   * - :ref:`Max-$\\kappa$-Colorable Subgraph <MkCSQAOA>`
      - XY mixer
      -    ✅ 
 

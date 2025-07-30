@@ -764,7 +764,7 @@ class QuantumFloat(QuantumVariable):
         {8: 1.0}
         >>> print(a.qs)
 
-        ::
+        .. code-block:: none
 
             QuantumCircuit:
             --------------

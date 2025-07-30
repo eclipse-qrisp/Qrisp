@@ -97,7 +97,7 @@ def custom_inversion(*func, **cusi_kwargs):
         print(a.qs)
 
 
-    ::
+    .. code-block:: none
 
         QuantumCircuit:
         --------------
@@ -128,7 +128,7 @@ def custom_inversion(*func, **cusi_kwargs):
 
         print(a.qs.transpile(1))
 
-    ::
+    .. code-block:: none
 
                          ┌───┐
                a.0: ──■──┤ X ├──■──

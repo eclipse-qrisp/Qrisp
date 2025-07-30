@@ -164,7 +164,7 @@ class ConditionEnvironment(QuantumEnvironment):
     >>> res_bool = quantum_eq(q_ch_0, q_ch_1)
     >>> print(q_ch_0.qs)
 
-    ::
+    .. code-block:: none
 
         QuantumCircuit:
         --------------
