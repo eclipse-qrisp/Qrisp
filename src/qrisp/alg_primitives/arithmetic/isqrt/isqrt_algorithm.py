@@ -191,10 +191,10 @@ def q_isqrt(R: QuantumFloat) -> QuantumFloat:
     Examples
     --------
     Calculate the integer square root of 131:
-    >>> from qrisp.isqrt import isqrt_alg
+    >>> from qrisp import QuantumFloat, q_isqrt
     >>> R = QuantumFloat(8, 0)
     >>> R[:] = 131
-    >>> res = isqrt_alg(R)
+    >>> res = q_isqrt(R)
     >>> print(res.get_measurement())
     {11: 1.0}
     >>> print(R.get_measurement())
