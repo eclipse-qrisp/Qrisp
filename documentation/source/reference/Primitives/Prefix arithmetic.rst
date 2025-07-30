@@ -33,6 +33,7 @@ QuantumFloat processing
    q_divmod
    q_div
    qf_inversion
+   q_isqrt
    
 QuantumArray processing
 -----------------------

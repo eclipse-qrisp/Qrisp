@@ -175,7 +175,8 @@ def remainder_restoration(R : QuantumFloat, F : QuantumFloat, z : QuantumFloat):
 
 def q_isqrt(R: QuantumFloat) -> QuantumFloat:
     """
-    Computes the integer square root of a QuantumFloat R, as well as the remainder using algorithm `<https://arxiv.org/abs/1712.08254>`.
+    Computes the integer square root of a QuantumFloat, as well as the remainder using the `non-Restoring square root algorithm <https://arxiv.org/abs/1712.08254>`_.
+    Does not yield plausible output when applied to negative integers.
 
     Parameters
     ----------
@@ -184,31 +185,36 @@ def q_isqrt(R: QuantumFloat) -> QuantumFloat:
     
     Returns
     -------
-    res : QuantumFloat
+    QuantumFloat
         The integer square root of R.
     Also transforms input value R into the remainder.
 
     Examples
     --------
     Calculate the integer square root of 131:
+
     >>> from qrisp import QuantumFloat, q_isqrt
     >>> R = QuantumFloat(8, 0)
     >>> R[:] = 131
     >>> res = q_isqrt(R)
     >>> print(res.get_measurement())
-    {11: 1.0}
     >>> print(R.get_measurement())
+    {11: 1.0}
     {10: 1.0}
     """
     n = R.size
+    e = R.exponent
+
+    if e != 0:
+        raise Exception("Tried to compute integer square root for QuantumFloat with non-zero exponent")
 
     # To ensure that first qubit is 0 and total amount of qubits is even we extend the input variable
     delta = 1 if n % 2 == 1 else 2
     n += delta
     R.extend(delta)
 
-    F = QuantumFloat(n, 0, name="F")
-    z = QuantumFloat(1, 0, name="z")
+    F = QuantumFloat(n, 0)
+    z = QuantumFloat(1, 0)
 
     F[:] = 1
     z[:] = 0
@@ -223,5 +229,6 @@ def q_isqrt(R: QuantumFloat) -> QuantumFloat:
 
     R.reduce(R[-delta:])
     F.reduce(F[-delta:])
+    z.delete()
 
     return F
