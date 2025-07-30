@@ -35,7 +35,7 @@ from qrisp.jasp import (
 from qrisp.jasp.primitives import AbstractQuantumCircuit
 
 
-class Jaspr(Jaxpr):
+class Jaspr(ClosedJaxpr):
     """
     The ``Jaspr`` class enables an efficient representations of a wide variety
     of (hybrid) algorithms. For many applications, the representation is agnostic
@@ -45,7 +45,7 @@ class Jaspr(Jaxpr):
     `established, classical compilation infrastructure <https://mlir.llvm.org/>`_,
     implying state-of-the-art compilation speed can be reached.
 
-    As a subtype of ``jax.core.Jaxpr``, Jasprs are embedded into the well matured
+    As a subtype of ``jax.extend.core.ClosedJaxpr``, Jasprs are embedded into the well matured
     `Jax ecosystem <https://github.com/n2cholas/awesome-jax>`_,
     which facilitates the compilation of classical `real-time computation <https://arxiv.org/abs/2206.12950>`_
     using some of the most advanced libraries in the world such as
@@ -125,35 +125,44 @@ class Jaspr(Jaxpr):
         "ctrl_jaspr",
         "inv_jaspr",
         "envs_flattened",
-        "consts",
     )
 
     def __init__(
         self, *args, permeability=None, isqfree=None, ctrl_jaspr=None, inv_jaspr=None, **kwargs
     ):
 
-        if len(args) == 1:
-            kwargs["jaxpr"] = args[0]
+        if len(args) == 2:
+            if not isinstance(args[0], Jaxpr) or not isinstance(args[1], list):
+                raise Exception(f"Tried to call the Jaspr constructor with two arguments and signature {type(args[0]), type(args[1])} (allowed is (Jaxpr, list))")
+            kwargs["jaxpr"] = args[0]            
+            kwargs["consts"] = args[1]
+            
+        elif len(args) == 1:
+            if not isinstance(args[0], ClosedJaxpr):
+                raise Exception(f"Tried to call the Jaspr constructor with one argument and signature {type(args[0])} (allowed is (ClosedJaxpr))")
+            kwargs["jaxpr"] = args[0].jaxpr
+            kwargs["consts"] = args[0].consts
 
         if "jaxpr" in kwargs:
-            jaxpr = kwargs["jaxpr"]
 
-            self.hashvalue = hash(jaxpr)
-
-            Jaxpr.__init__(
-                self,
-                constvars=jaxpr.constvars,
-                invars=jaxpr.invars,
-                outvars=jaxpr.outvars,
-                eqns=jaxpr.eqns,
-                effects=jaxpr.effects,
-                debug_info=jaxpr.debug_info,
-            )
+            ClosedJaxpr.__init__(self,
+                                 kwargs["jaxpr"],
+                                 kwargs["consts"])
         else:
-            self.hashvalue = id(self)
+            
+            if "consts" in kwargs:
+                consts = kwargs["consts"]
+                del kwargs["consts"]
+            else:
+                if len(kwargs["constvars"]):
+                    raise Exception("Tried to create Jaspr with constvars but no constants")
+                consts = []
+            
+            ClosedJaxpr.__init__(self, 
+                                 jaxpr = Jaxpr(**kwargs), 
+                                 consts = consts)
 
-            Jaxpr.__init__(self, **kwargs)
-
+        self.hashvalue = id(self)
         self.permeability = {}
         if permeability is None:
             permeability = {}
@@ -166,7 +175,6 @@ class Jaspr(Jaxpr):
         self.ctrl_jaspr = ctrl_jaspr
         self.inv_jaspr = inv_jaspr
         self.envs_flattened = False
-        self.consts = []
 
         if not isinstance(self.invars[-1].aval, AbstractQuantumCircuit):
             raise Exception(
@@ -178,8 +186,27 @@ class Jaspr(Jaxpr):
                 f"Tried to create a Jaspr from data that doesn't have a QuantumCircuit the last entry of return type (got {type(self.outvars[-1].aval)} instead)"
             )
 
-    def __hash__(self):
+    @property
+    def constvars(self):
+        return self.jaxpr.constvars
+    
+    @property
+    def eqns(self):
+        return self.jaxpr.eqns
 
+    @property
+    def invars(self):
+        return self.jaxpr.invars
+
+    @property
+    def outvars(self):
+        return self.jaxpr.outvars
+    
+    @property
+    def debug_info(self):
+        return self.jaxpr.debug_info
+
+    def __hash__(self):
         return self.hashvalue
 
     def __eq__(self, other):
@@ -373,7 +400,7 @@ class Jaspr(Jaxpr):
 
         def eqn_evaluator(eqn, context_dic):
             if eqn.primitive.name == "pjit" and isinstance(
-                eqn.params["jaxpr"].jaxpr, Jaspr
+                eqn.params["jaxpr"], Jaspr
             ):
                 return pjit_to_gate(eqn, context_dic, eqn_evaluator)
             elif eqn.primitive.name == "cond":
@@ -582,7 +609,7 @@ class Jaspr(Jaxpr):
 
             eqn = get_last_equation()
             
-            eqn.params["jaxpr"] = ClosedJaxpr(self, eqn.params["jaxpr"].consts)
+            eqn.params["jaxpr"] = self
             if name is not None:
                 eqn.params["name"] = name
         else:
@@ -629,8 +656,8 @@ class Jaspr(Jaxpr):
 
     @classmethod
     @lru_cache(maxsize=int(1e5))
-    def from_cache(cls, jaxpr):
-        return Jaspr(jaxpr=jaxpr)
+    def from_cache(cls, closed_jaxpr):
+        return Jaspr(jaxpr=closed_jaxpr.jaxpr, consts=closed_jaxpr.consts)
 
     def update_eqns(self, eqns):
         return Jaspr(
@@ -638,6 +665,7 @@ class Jaspr(Jaxpr):
             invars=list(self.invars),
             outvars=list(self.outvars),
             eqns=list(eqns),
+            consts=list(self.consts)
         )
 
     def to_qir(self):
@@ -1204,10 +1232,7 @@ def make_jaspr(fun, garbage_collection="auto", flatten_envs=True, **jax_kwargs):
         AbstractQuantumCircuit,
         TracingQuantumSession,
         check_for_tracing_mode,
-        flatten_qv,
-        unflatten_qv,
     )
-    from qrisp.core.quantum_variable import QuantumVariable
     from qrisp.core import recursive_qv_search
 
     def jaspr_creator(*args, **kwargs):
@@ -1257,17 +1282,13 @@ def make_jaspr(fun, garbage_collection="auto", flatten_envs=True, **jax_kwargs):
             *args, **ammended_kwargs
         )
             
-        jaxpr = closed_jaxpr.jaxpr
-
         # Collect the environments
         # This means that the quantum environments no longer appear as
         # enter/exit primitives but as primitive that "call" a certain Jaspr.
-        res = Jaspr.from_cache(collect_environments(jaxpr))
+        res = Jaspr.from_cache(collect_environments(closed_jaxpr))
 
         if flatten_envs:
             res = res.flatten_environments()
-
-        res.consts = closed_jaxpr.consts
 
         return res
 
