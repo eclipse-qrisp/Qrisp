@@ -32,7 +32,7 @@ QIRO
 ----
 
 The :ref:`QIRO algorithm <QIRO>` introduced by J. Finzgar et. al. in `Quantum-Informed Recursive Optimization Algorithms (2023) <https://arxiv.org/abs/2308.13607>`_ has been implemented.
-The algorithm is based on updating the problem instance based on correlations, that are in turn established with a QAOA protocol. For further info have a look at our `tutorial on QIRO! <https://www.qrisp.eu/general/tutorial/QIROtutorial.html>`
+The algorithm is based on updating the problem instance based on correlations, that are in turn established with a QAOA protocol. For further info have a look at our `tutorial on QIRO <https://www.qrisp.eu/general/tutorial/QIROtutorial.html>`_!
 The central data structure of the QIRO module is the :ref:`QIROProblem` class.
 
 Compiler upgrades
