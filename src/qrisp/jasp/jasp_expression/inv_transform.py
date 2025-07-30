@@ -79,9 +79,7 @@ def invert_eqn(eqn):
         new_branch_list = []
 
         for i in range(len(branches)):
-            new_branch_list.append(
-                branches[i].inverse()
-            )
+            new_branch_list.append(branches[i].inverse())
 
         params["branches"] = tuple(new_branch_list)
 
@@ -237,7 +235,7 @@ def invert_loop_body(jaxpr):
     # Find the incrementation equation. For this we identify the equation,
     # which updates the loop index
 
-    loop_index = jaxpr.jaxpr.outvars[-3]
+    loop_index = jaxpr.jaxpr.outvars[-2]
     for i in range(len(new_eqn_list))[::-1]:
         if loop_index == new_eqn_list[i].outvars[0]:
             break
@@ -305,9 +303,9 @@ def invert_loop_eqn(eqn):
     def cond_fun(val):
         
         if cond_jaxpr.eqns[0].primitive.name == "ge":
-            return val[-3] <= val[-2]
+            return val[-2] <= val[-3]
         else:
-            return val[-3] >= val[-2]
+            return val[-2] >= val[-3]
 
     # Create the new equation by tracing the while loop
     def tracing_function(*args):

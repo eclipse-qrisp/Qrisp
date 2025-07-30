@@ -17,6 +17,7 @@
 """
 
 from qrisp import *
+import jax.numpy as jnp
 
 def test_jrange():
     
@@ -181,6 +182,21 @@ def test_jrange():
     jaspr = make_jaspr(test_function)()
 
     assert jaspr() == True
+    
+    
+    # Test constant embedding
+    @jaspify
+    def main():
+        
+        qv = QuantumVariable(5)
+        
+        for i in jrange(5):
+            a = jnp.array([0,1,2])
+            x(qv[a[0] + i])
+            
+        return measure(qv)
+
+    assert main() == 31
 
 
 def test_cl_control_env():

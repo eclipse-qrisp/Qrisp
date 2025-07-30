@@ -18,6 +18,7 @@
 
 from jax.lax import while_loop
 from jax.extend.core import Literal
+from jax.core import ShapedArray
 
 from qrisp.environments import QuantumEnvironment
 
@@ -120,16 +121,16 @@ def iteration_env_evaluator(eqn, context_dic):
     # of the incrementation equation.
     increment_eq = iter_1_jaspr.eqns[-1]
     arg_pos = iter_1_jaspr.invars.index(increment_eq.invars[0])
-    # Move the loop index to the last position in both the jaspr and the equation
-    iter_1_jaspr.invars.insert(-1, iter_1_jaspr.invars.pop(arg_pos))
-    iteration_1_eqn.invars.insert(-1, iteration_1_eqn.invars.pop(arg_pos))
+    # Move the loop index to the second position in both the jaspr and the equation
+    iter_1_jaspr.invars.insert(0, iter_1_jaspr.invars.pop(arg_pos))
+    iteration_1_eqn.invars.insert(0, iteration_1_eqn.invars.pop(arg_pos))
 
     # The same for the jaspr of the second iteration
     increment_eq = iter_2_jaspr.eqns[-1]
     arg_pos = iter_2_jaspr.invars.index(increment_eq.invars[0])
-    # Move the loop index to the last position in both the jaspr and the equation
-    iter_2_jaspr.invars.insert(-1, iter_2_jaspr.invars.pop(arg_pos))
-    iteration_2_eqn.invars.insert(-1, iteration_2_eqn.invars.pop(arg_pos))
+    # Move the loop index to the second position in both the jaspr and the equation
+    iter_2_jaspr.invars.insert(0, iter_2_jaspr.invars.pop(arg_pos))
+    iteration_2_eqn.invars.insert(0, iteration_2_eqn.invars.pop(arg_pos))
 
     # Move the loop threshold variable to the last position
     # The loop threshold is demarked as the variable that gets incremented
@@ -137,19 +138,18 @@ def iteration_env_evaluator(eqn, context_dic):
 
     demark_eq = iter_1_jaspr.eqns[0]
     arg_pos = iter_1_jaspr.invars.index(demark_eq.invars[0])
-    iter_1_jaspr.invars.insert(-1, iter_1_jaspr.invars.pop(arg_pos))
-    iteration_1_eqn.invars.insert(-1, iteration_1_eqn.invars.pop(arg_pos))
+    iter_1_jaspr.invars.insert(0, iter_1_jaspr.invars.pop(arg_pos))
+    iteration_1_eqn.invars.insert(0, iteration_1_eqn.invars.pop(arg_pos))
 
     # Same for second iteration
     demark_eq = iter_2_jaspr.eqns[0]
     arg_pos = iter_2_jaspr.invars.index(demark_eq.invars[0])
-    iter_2_jaspr.invars.insert(-1, iter_2_jaspr.invars.pop(arg_pos))
-    iteration_2_eqn.invars.insert(-1, iteration_2_eqn.invars.pop(arg_pos))
+    iter_2_jaspr.invars.insert(0, iter_2_jaspr.invars.pop(arg_pos))
+    iteration_2_eqn.invars.insert(0, iteration_2_eqn.invars.pop(arg_pos))
 
     # For the jaspr of both iterations we now have the situation that
-    # the loop threshold is the argument at the second last position and the loop
-    # index the argument at the second third last position.
-    # (the last position is the AbstractQuantumCircuit).
+    # the loop threshold is the argument at the last position and the loop
+    # index the argument at the second last position.
 
     # The way the environment jaspr is collected allows for permuted arguments,
     # ie. the first argument of the first iteration could be the the last argument
@@ -179,7 +179,23 @@ def iteration_env_evaluator(eqn, context_dic):
         if iter_1_invar_hashes[i] not in iter_2_invar_hashes:
 
             # Find the index in the outvars of iteration 1
-            res_index = iter_1_outvar_hashes.index(iter_2_invar_hashes[i])
+            try:
+                res_index = iter_1_outvar_hashes.index(iter_2_invar_hashes[i])
+            except ValueError:
+                # If the iter 2 invar is not part of the iter 1 outvars
+                # and also not part of the iter 1 invars, it is most likely
+                # because the user loaded an array from a static list.
+                # Loading arrays from static lists is realized via adding
+                # a constant to the Jaxpr, which contains the list.
+                # Since the loop body is traced twice, this means to constants
+                # are added to the Jaxpr and therefore also two variables
+                # (even if they represent the same constant).
+                # In this case no update is required.
+                if isinstance(iteration_2_eqn.invars[i].aval, ShapedArray):
+                    update_rules.append(None)
+                    continue
+                
+                raise
             update_rules.append(res_index)
         else:
             # Otherwise append None
@@ -209,14 +225,14 @@ def iteration_env_evaluator(eqn, context_dic):
                 return_values.append(val[i])
             else:
                 return_values.append(res[update_rules[i]])
-        
+
         # Return the appropriate values (with the cancelation threshold).
         return tuple(return_values)
 
-    # The condition function should compare whether the loop index (third last position)
-    # is smaller than the loop cancelation threshold (second last position)
+    # The condition function should compare whether the loop index (first position)
+    # is smaller than the loop cancelation threshold (second position)
     def cond_fun(val):
-        return val[-3] <= val[-2]
+        return val[1] <= val[0]
 
     # We now prepare the "init_val" keyword of the loop.
 
