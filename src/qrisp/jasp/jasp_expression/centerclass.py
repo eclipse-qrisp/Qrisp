@@ -45,7 +45,7 @@ class Jaspr(ClosedJaxpr):
     `established, classical compilation infrastructure <https://mlir.llvm.org/>`_,
     implying state-of-the-art compilation speed can be reached.
 
-    As a subtype of ``jax.core.Jaxpr``, Jasprs are embedded into the well matured
+    As a subtype of ``jax.extend.core.ClosedJaxpr``, Jasprs are embedded into the well matured
     `Jax ecosystem <https://github.com/n2cholas/awesome-jax>`_,
     which facilitates the compilation of classical `real-time computation <https://arxiv.org/abs/2206.12950>`_
     using some of the most advanced libraries in the world such as
