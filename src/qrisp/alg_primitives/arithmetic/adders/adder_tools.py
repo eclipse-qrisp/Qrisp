@@ -183,6 +183,9 @@ def ammend_inpl_adder(raw_inpl_adder, ammend_cl_int=True):
                 )
                 qf2 = list(qf2) + list(ancilla_var)
 
+            if len(qf2) > len(qf1):
+                qf2 = qf2[:len(qf1)]
+
             raw_inpl_adder(qf2, qf1, *args, **kwargs)
 
             try:
