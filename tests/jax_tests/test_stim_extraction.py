@@ -16,10 +16,20 @@
 ********************************************************************************
 """
 
-from qrisp.jasp.interpreter_tools.interpreters.pjit_flattening import *
-from qrisp.jasp.interpreter_tools.interpreters.environment_flattening import *
-from qrisp.jasp.interpreter_tools.interpreters.control_flow_interpretation import *
-from qrisp.jasp.interpreter_tools.interpreters.jaspr_to_gate_interpreter import *
-from qrisp.jasp.interpreter_tools.interpreters.terminal_sampling_interpreter import *
-from qrisp.jasp.interpreter_tools.interpreters.profiling_interpreter import *
-from qrisp.jasp.interpreter_tools.interpreters.stim_extractor import *
+from qrisp import *
+from jax import make_jaxpr
+
+def test_stim_extraction():
+
+    @extract_stim
+    def main():
+        qv = QuantumVariable(4)
+        x(qv[1])
+        a = measure(qv[0])
+        b = measure(qv[1])
+        return measure(qv)
+
+    meas_indices, stim_circuit = main()
+    sampler = stim_circuit.compile_sampler()
+    
+    assert np.all(sampler.sample(5)[:,meas_indices] == np.array([[False, True, False, False]]*5))
