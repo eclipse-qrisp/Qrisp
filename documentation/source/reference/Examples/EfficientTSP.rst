@@ -3,7 +3,7 @@
 Efficient Solution for the TSP
 ==============================
 
-This example showcases a few tweeks for the solution of the traveling salesman problem presented in the :ref:`tutorial`. We recommend checking the general idea out before returning for the optimized version here ::
+This example showcases a few tweeks for the solution of the traveling salesman problem presented (TSP) in the `tutorial about solving TSP <https://www.qrisp.eu/general/tutorial/TSP.html>`_. We recommend checking the general idea out before returning for the optimized version here ::
    
    import numpy as np
    from qrisp import *
@@ -185,7 +185,7 @@ Find the resulting permutation
 >>> winning_permutation.most_likely()
 OutcomeArray([1, 3, 2])
 
-Together with our assumption that the first city is always 0, this is the same result as in the :ref:`tutorial`. Finaly, we perform some benchmarking:
+Together with our assumption that the first city is always 0, this is the same result as in the `TSP tutorial <https://www.qrisp.eu/general/tutorial/TSP.html>`_. Finaly, we perform some benchmarking:
 
 >>> qpe_compiled_qc = perm_specifiers[0].qs.compile()
 >>> qpe_compiled_qc.depth()

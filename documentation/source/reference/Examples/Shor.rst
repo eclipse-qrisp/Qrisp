@@ -34,7 +34,7 @@ She publishes the pair $(e,N)=(11,65)$ as the public key, and keeps the pair $(d
 
 Enter our detective, let's call him Gadget, who manages to intercept the encrypted message using his highly advanced encrypted-message-interceptor tool. He knows that Alice and Bob have used RSA encryption, but he doesn’t know the private keys they used. "Aaaargh, so close!", he thought.
 
-Luckily for the future of his career as a detective, he remembered that he has recently stumbled upon the website of Eclipse Qrisp where he read the :ref:`enlightening tutorial about Shor's algorithm <tutorial>`. Albeit thinking the text in the tutorial is bordering science fiction, he still decided to give the implementation a go.
+Luckily for the future of his career as a detective, he remembered that he has recently stumbled upon the website of Eclipse Qrisp where he read the enlightening `tutorial about Shor's algorithm <https://www.qrisp.eu/general/tutorial/Shor.html>`_. Albeit thinking the text in the tutorial is bordering science fiction, he still decided to give the implementation a go.
 
 His console read:
 ::
@@ -53,7 +53,7 @@ New adder, no problem
 
 Stories like the one above are fun and exciting way to showcase the elegant approach of utilizing Eclipse Qrisp's high level structure. Learning from existing frameworks, however, it is also of utmost importance to ask ourselves the serious, hard hitting question of how to futureproof such an implementation. You've asked the question, we've got the answer - let's look under the hood and delve into the nitty-gritty!
 
-As elaborated on in the :ref:`Fault-Tolerant compilation tutorial <tutorial>`, the Qrisp implementation of Shor's algorithm allows you to provide an arbitrary adder for the execution of the required arithmetic. With our Qrispy structure one can write ones own adder, or implement a shiny new one future research publications might bring, and test its performance claims.
+As elaborated on in the `Fault-Tolerant compilation tutorial <https://www.qrisp.eu/general/tutorial/FT_compilation.html>`_, the Qrisp implementation of Shor's algorithm allows you to provide an arbitrary adder for the execution of the required arithmetic. With our Qrispy structure one can write ones own adder, or implement a shiny new one future research publications might bring, and test its performance claims.
 
 As of right now, the following list of adders have been pre-implemented:
 
