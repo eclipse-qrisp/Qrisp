@@ -67,6 +67,7 @@ nav.bd-links li>a:hover {
 
 .sidebar-button:hover {
     background-color: var(--pst-color-secondary);
+	color: #ffffff;
 }
 
 .thebelab-cell {
