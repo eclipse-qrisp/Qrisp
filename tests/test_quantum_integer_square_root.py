@@ -16,13 +16,35 @@
 ********************************************************************************
 """
 
-from qrisp.alg_primitives.arithmetic.comparisons import *
-from qrisp.alg_primitives.arithmetic.uint_clifford_t_comparisons import *
-from qrisp.alg_primitives.arithmetic.SBP_arithmetic import *
-from qrisp.alg_primitives.arithmetic.ripple_division import *
-from qrisp.alg_primitives.arithmetic.ripple_mult import *
-from qrisp.alg_primitives.arithmetic.matrix_multiplication import *
-from qrisp.alg_primitives.arithmetic.modular_arithmetic import *
-from qrisp.alg_primitives.arithmetic.adders import *
-from qrisp.alg_primitives.arithmetic.jasp_arithmetic import *
-from qrisp.alg_primitives.arithmetic.isqrt import *
+from qrisp.alg_primitives.arithmetic.isqrt import q_isqrt
+from qrisp import QuantumFloat, multi_measurement
+import math
+
+def test_quantum_square_root():
+    for a in range(1, 26):
+        expected_root = int(math.sqrt(a))
+        expected_remainder = a - expected_root**2
+
+        n = math.ceil(math.log2(a + 1))
+        R = QuantumFloat(n)
+        R[:] = a
+
+        F = q_isqrt(R)
+
+        r, f, = list(multi_measurement([R, F]))[0]
+
+        print("R:", a)
+        print("Root:", f)
+        print("Remainder", r)
+        assert f == expected_root and r == expected_remainder
+
+    R = QuantumFloat(8)
+    R[:] = {131: 1, 81: 1}
+    F = q_isqrt(R)
+    
+    mes_res = multi_measurement([R, F])
+    
+    expected_results = {(10, 11): 0.5, (0, 9): 0.5}
+    
+    assert mes_res == expected_results
+
