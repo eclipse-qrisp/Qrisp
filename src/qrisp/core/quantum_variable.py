@@ -17,13 +17,13 @@
 """
 
 import copy
-import weakref
 
 import matplotlib.pyplot as plt
 import numpy as np
 from jax import tree_util
 
 from qrisp.core.compilation import qompiler
+
 
 
 class QuantumVariable:
@@ -830,20 +830,32 @@ class QuantumVariable:
 
         """
 
-        if position == -1:
-            position = self.size
-
         insertion_qubits = self.qs.request_qubits(amount)
+        from qrisp.jasp import check_for_tracing_mode
 
-        for i in range(amount):
-            insertion_qubits[i].identifier = (
-                self.name
-                + "_ext_"
-                + str(self.qs.qubit_index_counter[0])
-                + "."
-                + str(self.size)
-            )
-            self.reg.insert(position + i, insertion_qubits[i])
+        if check_for_tracing_mode():
+            
+            if isinstance(position, int) and position in [0, -1]:
+                if position == -1:
+                    self.reg = self.reg + insertion_qubits
+                elif position == 0:
+                    self.reg = insertion_qubits + self.reg
+            else:
+                self.reg = self.reg[:position] + insertion_qubits + self.reg[position:]
+        else:
+            
+            if position == -1:
+                position = self.size
+            
+            for i in range(amount):
+                insertion_qubits[i].identifier = (
+                    self.name
+                    + "_ext_"
+                    + str(self.qs.qubit_index_counter[0])
+                    + "."
+                    + str(self.size)
+                )
+                self.reg.insert(position + i, insertion_qubits[i])
 
     def reduce(self, qubits, verify=False):
         r"""

@@ -148,16 +148,20 @@ class TracingQuantumSession:
 
         # Determine amount of required qubits
         if size is not None:
-            qb_array_tracer, self.abs_qc = create_qubits(size, self.abs_qc)
-            # Register in the list of active quantum variable
-            dynamic_qubit_array = DynamicQubitArray(qb_array_tracer)
-            qv.reg = dynamic_qubit_array
+            qv.reg = self.request_qubits(size)
+            
+        # Register in the list of active quantum variable
         self.qv_list.append(qv)
         qv.qs = self
 
         QuantumVariable.live_qvs.append(weakref.ref(qv))
         qv.creation_time = int(QuantumVariable.creation_counter[0])
         QuantumVariable.creation_counter += 1
+        
+    def request_qubits(self, amount):
+        qb_array_tracer, self.abs_qc = create_qubits(amount, self.abs_qc)
+        return DynamicQubitArray(qb_array_tracer)
+        
 
     def delete_qv(self, qv, verify=False):
         
