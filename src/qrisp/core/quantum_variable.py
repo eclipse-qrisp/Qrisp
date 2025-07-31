@@ -79,7 +79,7 @@ class QuantumVariable:
     >>> cx(example_qv, example_qv_2)
     >>> print(example_qv.qs)
 
-    ::
+    .. code-block:: none
 
         QuantumCircuit:
         --------------
@@ -117,7 +117,7 @@ class QuantumVariable:
 
     >>> print(s.qs)
 
-    ::
+    .. code-block:: none
 
         QuantumCircuit:
         --------------
@@ -1269,7 +1269,7 @@ class QuantumVariable:
         >>> p(0.5, b[1])
         >>> print(a.qs)
 
-        ::
+        .. code-block:: none
 
             QuantumCircuit:
             --------------
@@ -1292,7 +1292,7 @@ class QuantumVariable:
         >>> b.uncompute()
         >>> print(b.qs)
 
-        ::
+        .. code-block:: none
 
             QuantumCircuit:
             --------------

@@ -97,7 +97,7 @@ def custom_inversion(*func, **cusi_kwargs):
         print(a.qs)
 
 
-    ::
+    .. code-block:: none
 
         QuantumCircuit:
         --------------
@@ -128,7 +128,7 @@ def custom_inversion(*func, **cusi_kwargs):
 
         print(a.qs.transpile(1))
 
-    ::
+    .. code-block:: none
 
                          ┌───┐
                a.0: ──■──┤ X ├──■──
@@ -183,7 +183,7 @@ def custom_inversion(*func, **cusi_kwargs):
             # Retrieve the pjit equation
             jit_eqn = get_last_equation()
 
-            if not jit_eqn.params["jaxpr"].jaxpr.inv_jaspr:
+            if not jit_eqn.params["jaxpr"].inv_jaspr:
                 # Trace the inverted version
 
                 def ammended_func(*args, **kwargs):
@@ -195,8 +195,8 @@ def custom_inversion(*func, **cusi_kwargs):
                 )
                 
                 # Store controlled version
-                jit_eqn.params["jaxpr"].jaxpr.inv_jaspr = inverted_jaspr
-                inverted_jaspr.inv_jaspr = jit_eqn.params["jaxpr"].jaxpr
+                jit_eqn.params["jaxpr"].inv_jaspr = inverted_jaspr
+                inverted_jaspr.inv_jaspr = jit_eqn.params["jaxpr"]
 
         return res
 

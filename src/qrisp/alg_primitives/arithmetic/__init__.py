@@ -25,3 +25,4 @@ from qrisp.alg_primitives.arithmetic.matrix_multiplication import *
 from qrisp.alg_primitives.arithmetic.modular_arithmetic import *
 from qrisp.alg_primitives.arithmetic.adders import *
 from qrisp.alg_primitives.arithmetic.jasp_arithmetic import *
+from qrisp.alg_primitives.arithmetic.isqrt import *

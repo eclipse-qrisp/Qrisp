@@ -78,7 +78,7 @@ def jaspr_to_catalyst_jaxpr(jaspr):
 
     # Translate the input args according to the above rules.
     args = []
-    for invar in jaspr.invars:
+    for invar in jaspr.jaxpr.invars:
         if isinstance(invar.aval, AbstractQuantumCircuit):
             # We initialize with the inverted list [... 3, 2, 1, 0] since the
             # pop method of the dynamic list always removes the last element

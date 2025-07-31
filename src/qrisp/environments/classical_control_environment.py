@@ -261,13 +261,9 @@ class ClControlEnvironment(QuantumEnvironment):
         branch_0.jaxpr.eqns.pop(0)
         branch_0.jaxpr.outvars[-1] = branch_0.jaxpr.invars[-1]
         
-        branch_1 = traced_eqn.params["branches"][1]
-        
         from qrisp.jasp import Jaspr
         
-        traced_eqn.params["branches"] = (jax.extend.core.ClosedJaxpr(Jaspr.from_cache(branch_0.jaxpr),
-                                                                     branch_0.consts),
-                                         jax.extend.core.ClosedJaxpr(body_jaspr,
-                                                                     branch_1.consts))
+        traced_eqn.params["branches"] = (Jaspr.from_cache(branch_0),
+                                         body_jaspr)
         
         

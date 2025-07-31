@@ -404,9 +404,7 @@ class ControlEnvironment(QuantumEnvironment):
         # Retrieve the equation
         jit_eqn = get_last_equation()
         
-        jit_eqn.params["jaxpr"] = ClosedJaxpr(
-            controlled_jaspr, jit_eqn.params["jaxpr"].consts
-        )
+        jit_eqn.params["jaxpr"] = controlled_jaspr
         jit_eqn.params["name"] = "ctrl_env"
 
         if not isinstance(res, tuple):

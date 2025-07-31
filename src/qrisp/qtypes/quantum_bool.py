@@ -96,7 +96,7 @@ class QuantumBool(QuantumVariable):
 
     >>> print(qf.qs)
 
-    ::
+    .. code-block:: none
 
         QuantumCircuit:
         --------------

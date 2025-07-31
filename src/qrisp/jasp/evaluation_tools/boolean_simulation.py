@@ -181,7 +181,7 @@ def boolean_simulation(*func, bit_array_padding=2**16):
         )
 
         # Get the abstract value of the bit array representing the bit state
-        aval = cl_func_jaxpr.invars[-3].aval
+        aval = cl_func_jaxpr.jaxpr.invars[-3].aval
 
         bit_array = jnp.zeros(aval.shape, dtype=aval.dtype)
         free_qubit_list = Jlist(

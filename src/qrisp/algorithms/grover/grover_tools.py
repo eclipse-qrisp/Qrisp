@@ -70,7 +70,7 @@ def diffuser(input_object, phase=np.pi, state_function=None, reflection_indices=
     >>> diffuser(q_ch_list)
     >>> print(q_ch_list[0].qs)
 
-    ::
+    .. code-block:: none
 
                   ┌────────────┐
         q_ch_0.0: ┤0           ├
