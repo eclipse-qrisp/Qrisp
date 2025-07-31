@@ -102,6 +102,14 @@ def stim_evaluator(eqn, context_dic):
         
     elif eqn.primitive.name == "jasp.delete_qubits":
         outvalues = invalues[-1]
+    
+    elif eqn.primitive.name == "convert_element_type":
+        if isinstance(invalues[0], StimMeasurement):
+            outvalues = invalues[0]
+        elif isinstance(invalues[0], list) and len(invalues[0]) and isinstance(invalues[0][0], StimMeasurement):
+            outvalues = invalues[0]
+        else:
+            return True
         
     elif eqn.primitive.name == "jasp.get_qubit":
         
