@@ -207,6 +207,12 @@ def q_isqrt(R: QuantumFloat) -> QuantumFloat:
 
     if e != 0:
         raise Exception("Tried to compute integer square root for QuantumFloat with non-zero exponent")
+    
+    if n == 1:
+        F = QuantumFloat(1, 0)
+        cx(R[0],F[0])
+        cx(F[0],R[0])
+        return F
 
     # To ensure that first qubit is 0 and total amount of qubits is even we extend the input variable
     delta = 1 if n % 2 == 1 else 2
