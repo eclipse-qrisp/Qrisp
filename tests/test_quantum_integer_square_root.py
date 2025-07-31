@@ -21,7 +21,7 @@ from qrisp import QuantumFloat, multi_measurement
 import math
 
 def test_quantum_square_root():
-    for a in range(6, 26):
+    for a in range(1, 26):
         expected_root = int(math.sqrt(a))
         expected_remainder = a - expected_root**2
 
