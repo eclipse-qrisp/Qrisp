@@ -374,3 +374,12 @@ html, body {
 .bd-sidebar-primary {
   display: block
 }
+
+
+/** * Custom CSS for THEBE LAB */
+/** When a ThebeLab cell is rendered inside an existing Jupyter notebook box, it should not have a border */
+div.highlight>div.thebelab-cell {
+  border: none !important;
+  background-color: transparent !important;
+  padding: 0px !important;
+}
