@@ -65,6 +65,36 @@ nav.bd-links li>a:hover {
     color: #fff !important;
 }
 
+.thebelab-button {
+    transition: background-color 0.3s ease;
+    background: var(--pst-color-secondary);
+    color: #fff;
+    border: none;
+    padding: 6px 14px; /* Adjust padding for a smaller size */
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 12px; /* Adjust font size for a smaller size */
+}
+
+.thebelab-button:hover {
+    background-color: var(--pst-color-secondary);
+}
+
+.thebe-launch-button {
+  height: 5em;
+  font-size: 0.8em;
+  border: 0px black solid;
+  padding: 0.5em 2em;
+  background: var(--pst-color-primary);
+}
+
+/* Deactivates an ugly and empty "scroll bar" in the thebe cells */
+/* Deactivates an ugly and empty "scroll bar" in the thebe cells */
+div.nbinput.container div.prompt
+{
+    display:  none;
+}
+
 .sidebar-button:hover {
     background-color: var(--pst-color-secondary);
 	color: #ffffff;
