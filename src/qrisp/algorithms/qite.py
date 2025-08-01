@@ -24,14 +24,14 @@ import numpy as np
 import jax.numpy as jnp
 
 
-def QITE(qarg, procedure_type=None, **kwargs):
+def QITE(*args, procedure_type=None, **kwargs):
     r"""
     To anticipate other methods implementing QITE
     Currently, Qrisp supports only DB-QITE
     """
     # default
     if procedure_type is None:
-        DB_QITE(qarg, kwargs)
+        DB_QITE(*args, **kwargs)
     # TODO: variational methods based on measurements
     
     
