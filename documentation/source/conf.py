@@ -82,7 +82,7 @@ imgmath_latex_preamble = r'\usepackage{braket}\n\usepackage{xcolor}'
 thebe_config = {
     "repository_url": "https://github.com/fraunhoferfokus/Qrisp",
     "repository_branch": "thebe_branch",
-    "selector": "div.highlight",
+    "selector": "div.input_area",
     "selector_output": "span.go",
 }
 
@@ -177,7 +177,7 @@ html_logo = "../../logo/qrisp_logo.png"
 add_module_names = False
 
 html_css_files = [
-    'css/custom07.css',
+    'css/custom08.css',
 ]
 
 source_suffix = ['.rst', '.md']
