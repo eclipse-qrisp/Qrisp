@@ -95,6 +95,11 @@ div.nbinput.container div.prompt
     display:  none;
 }
 
+div.nboutput.container div.prompt
+{
+    display:  none;
+}
+
 .sidebar-button:hover {
     background-color: var(--pst-color-secondary);
 	color: #ffffff;
