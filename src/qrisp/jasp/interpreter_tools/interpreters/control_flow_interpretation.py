@@ -79,6 +79,10 @@ def evaluate_while_loop(
         )(*new_invalues)
 
         # Update the non-const invalues
+        
+        if len(while_loop_eqn.params["body_jaxpr"].jaxpr.outvars) == 1:
+            outvalues = (outvalues,)
+        
         invalues = invalues[:overall_constant_amount] + list(outvalues)
 
         if break_after_first_iter:
