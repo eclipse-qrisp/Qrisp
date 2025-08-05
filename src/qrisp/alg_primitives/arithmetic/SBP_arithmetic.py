@@ -588,7 +588,7 @@ def polynomial_encoder(qf_list, output_qf, poly, encoding_dic=None, inplace_mult
     """
 
     if isinstance(qf_list, QuantumArray):
-        qf_list = list(qf_list.flatten().qv_array)
+        qf_list = list(qf_list.flatten())
 
     if encoding_dic is not None:
         symbol_list = [encoding_dic[qv.name] for qv in qf_list]
