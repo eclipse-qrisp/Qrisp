@@ -330,7 +330,7 @@ def semi_classic_matmul(q_matrix, cl_matrix, output_array=None, res_bit_shape="e
         for k in range(K):
             temp_symb = Symbol("x_" + str(i) + "_" + str(k))
             symb_matrix[i, k] = temp_symb
-            symbol_dic[q_matrix[i, k].name] = temp_symb
+            symbol_dic[q_matrix[i, k]] = temp_symb
 
     res_symb_matrix = symb_matrix @ cl_matrix
 
