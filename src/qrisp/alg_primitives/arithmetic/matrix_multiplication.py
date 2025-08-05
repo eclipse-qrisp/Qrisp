@@ -501,7 +501,7 @@ def inplace_matrix_app(vector, matrix):
 
     # Create symbol dic in order for the polynomial encoder
     # to know which symbol to use as which quantum float
-    symbol_dic = {vector[j].name: x[j] for j in range(vector.shape[0])}
+    symbol_dic = {vector[j]: x[j] for j in range(vector.shape[0])}
 
     for i in range(n):
         # Evaluate the value of the entry in eval_eq into the x_j variable
