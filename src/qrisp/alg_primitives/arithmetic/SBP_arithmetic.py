@@ -591,7 +591,7 @@ def polynomial_encoder(qf_list, output_qf, poly, encoding_dic=None, inplace_mult
         qf_list = list(qf_list.flatten())
 
     if encoding_dic is not None:
-        symbol_list = [encoding_dic[qv.name] for qv in qf_list]
+        symbol_list = [encoding_dic[qv] for qv in qf_list]
 
     else:
         symbol_list = get_ordered_symbol_list(poly)
