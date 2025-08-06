@@ -27,7 +27,7 @@ def Lanczos(H, D):
                 for _ in jrange(k//2):
                     UR(case_indicator, operand, unitaries)
             print(case_indicator.qs)
-            multi_measurement([case_indicator, operand])
+            case_indicator.get_measurement()
     
     else:
         state_prep(case_indicator)
