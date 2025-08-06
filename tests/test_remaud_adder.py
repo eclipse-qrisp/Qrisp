@@ -18,7 +18,6 @@
 
 from qrisp import *
 from qrisp.jasp import *
-import pytest
 
 def test_L1_ladder():
     def main(N):
@@ -35,8 +34,9 @@ def test_L1_ladder():
 
         assert circ2.compare_unitary(circ1.qs)
 
-@pytest.mark.parametrize("N", range(4, 6))
-def test_l2_ladder(N):
+def test_l2_ladder(exhaustive = False):
+
+    @boolean_simulation
     def main(N, j, k):
         x2 = QuantumFloat(N)
         y2 = QuantumFloat(N)
@@ -44,37 +44,38 @@ def test_l2_ladder(N):
         x2[:] = j
         y2[:] = k
         ladder2_synth_jax(x2[:] + anc2[:], y2[:], method="khattar")
-        return x2, y2, anc2
+        return measure(x2), measure(y2), measure(anc2)
 
-    for k in range(2**N):
-        for j in range(2**N):
-            x1 = QuantumFloat(N)
-            y1 = QuantumFloat(N)
-            anc1 = QuantumFloat(1)
-            x1[:] = j
-            y1[:] = k
-            mcx([x1[N - 1], y1[N - 1]], anc1[0])
-            with invert():
-                for i in range(N - 1):
-                    mcx([x1[i], y1[i]], x1[i + 1])
-            res1 = multi_measurement([x1, y1, anc1])
-            print(dict(res1))
+    if exhaustive:
+        up_bound = 8
+    else:
+        up_bound = 5
+        
+    for N in range(4, up_bound):
+        for k in range(2**N):
+            for j in range(2**N):
+                
+                x1 = QuantumFloat(N)
+                y1 = QuantumFloat(N)
+                anc1 = QuantumFloat(1)
+                x1[:] = j
+                y1[:] = k
+                mcx([x1[N - 1], y1[N - 1]], anc1[0])
+                with invert():
+                    for i in range(N - 1):
+                        mcx([x1[i], y1[i]], x1[i + 1])
+                x1,y1,anc1 = next(iter(multi_measurement([x1, y1, anc1])))
 
-            res2 = terminal_sampling(main)(N, j, k)
-            print(dict(res2))
-            assert (
-                res1.keys() == res2.keys()
-            ), f"Key mismatch:\nres1: {res1.keys()}\nres2: {res2.keys()}"
-            res1_vals = np.array([res1[k] for k in sorted(res1)])
-            res2_vals = np.array([res2[k] for k in sorted(res2)])
-
-            assert np.allclose(
-                res1_vals, res2_vals, rtol=1e-12, atol=1e-12
-            ), f"Value mismatch:\nres1: {res1_vals}\nres2: {res2_vals}"
-            print("Test passed for N =", N, "j =", j, " k =", k)
+                x2, y2, anc2 = main(N, j, k)
+                
+                
+                assert x2 == x1
+                assert y2 == y1
+                assert anc2 == anc1
 
 
 def test_remaud_adder():
+    @boolean_simulation
     def main(N, j, k):
         
         A = QuantumFloat(N)
@@ -84,30 +85,35 @@ def test_remaud_adder():
 
         Z = QuantumFloat(1)
         remaud_adder(A, B, Z)
-        return A, B
-    # for N in range(4, 7):
-    N = 4
-    for k in range(2**N):
-        for j in range(2**N):
-            x1 = QuantumModulus(2**N)
-            y1 = QuantumModulus(2**N)
-            # anc1 = QuantumFloat(1)
-            x1[:] = j
-            y1[:] = k
-            y1+=x1
-                    
-            res1 = multi_measurement([x1, y1])
-            print(dict(res1))
+        return measure(A), measure(B)
+        
+    for N in range(4, 8):
+        for k in range(2**N):
+            for j in range(2**N):
+                A, B = main(N, j, k)
+                assert A == j
+                assert B == (k+j)%(2**N)
 
-            res2 = terminal_sampling(main)(N, j, k)
-            print(dict(res2))
-            assert (
-                res1.keys() == res2.keys()
-            ), f"Key mismatch:\nres1: {res1.keys()}\nres2: {res2.keys()}"
-            res1_vals = np.array([res1[k] for k in sorted(res1)])
-            res2_vals = np.array([res2[k] for k in sorted(res2)])
+def test_remaud_adder_standard(exhaustive = False):
+    
+    if exhaustive:
+        up_bound = 8
+    else:
+        up_bound = 5
+        
+    for N in range(4, up_bound):
+        for k in range(2**N):
+            for j in range(2**N):
+                
+                A = QuantumFloat(N)
+                B = QuantumFloat(N)
+                A[:] = j
+                B[:] = k
 
-            assert np.allclose(
-                res1_vals, res2_vals, rtol=1e-12, atol=1e-12
-            ), f"Value mismatch:\nres1: {res1_vals}\nres2: {res2_vals}"
-            print("Test passed for N =", N, "j =", j, " k =", k)
+                Z = QuantumFloat(1)
+                remaud_adder(A, B, Z)
+
+                assert A.get_measurement() == {j: 1.0}
+                assert B.get_measurement() == {(k+j)%(2**N): 1.0}
+      
+
