@@ -34,7 +34,7 @@ def test_L1_ladder():
 
         assert circ2.compare_unitary(circ1.qs)
 
-def test_l2_ladder():
+def test_l2_ladder(exhaustive = False):
 
     @boolean_simulation
     def main(N, j, k):
@@ -46,7 +46,12 @@ def test_l2_ladder():
         ladder2_synth_jax(x2[:] + anc2[:], y2[:], method="khattar")
         return measure(x2), measure(y2), measure(anc2)
 
-    for N in range(4, 8):
+    if exhaustive:
+        up_bound = 8
+    else:
+        up_bound = 5
+        
+    for N in range(4, up_bound):
         for k in range(2**N):
             for j in range(2**N):
                 
@@ -89,9 +94,14 @@ def test_remaud_adder():
                 assert A == j
                 assert B == (k+j)%(2**N)
 
-def test_remaud_adder_standard():
+def test_remaud_adder_standard(exhaustive = False):
+    
+    if exhaustive:
+        up_bound = 8
+    else:
+        up_bound = 5
         
-    for N in range(4, 8):
+    for N in range(4, up_bound):
         for k in range(2**N):
             for j in range(2**N):
                 
