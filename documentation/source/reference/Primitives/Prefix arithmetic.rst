@@ -16,6 +16,7 @@ In-place adders
    fourier_adder
    cuccaro_adder
    gidney_adder
+   remaud_adder
    qcla
 
 QuantumFloat processing
