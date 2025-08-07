@@ -17,19 +17,13 @@
 """
 
 # Created by ann81984 at 23.05.2022
+
 import numpy as np
 
 from qrisp import QuantumCircuit
 from qrisp.interface import VirtualBackend, QiskitBackend
 
 def test_qiskit_backend_client():
-    
-    try:
-        from qiskit_aer import AerSimulator
-        backend = AerSimulator()
-    except ImportError:
-        from qiskit.providers.basic_provider import BasicProvider
-        backend = BasicProvider().get_backend('basic_simulator')
 
     # Create QuantumCricuit
     qc = QuantumCircuit()
@@ -79,8 +73,14 @@ def test_qiskit_backend_client():
     assert str(test_virtual_backend.run(qc, 100)) == "{'0': 100}"
     assert test_virtual_backend.run(qc, 100)["0"] == 100
 
-    ###################
-
+    ################### temporarily deactivated tests due to dependency conflicts
+    """
+    try:
+        from qiskit_aer import AerSimulator
+        backend = AerSimulator()
+    except ImportError:
+        raise ImportError("Encountered ImportError when trying to import AerSimulator. Likely caused by incompatible qiskit and qiskit-aer versions.")
+    
     # Create Qiskit Backend
     test_qiskit_backend = QiskitBackend()
 
@@ -91,3 +91,31 @@ def test_qiskit_backend_client():
     print(test_qiskit_backend.run(qc, 2000))
     # status = test_qiskit_backend.ping()
     assert str(test_qiskit_backend.run(qc, 2000)) == "{'1': 2000}"
+    """
+
+"""
+def test_qiskit_aer_backend():
+
+    from qrisp import QuantumFloat
+    from qrisp.interface import QiskitBackend
+    from qiskit_aer import AerSimulator
+    example_backend = QiskitBackend(backend = AerSimulator())
+    qf = QuantumFloat(4)
+    qf[:] = 3
+    res = qf*qf
+    meas_res = res.get_measurement(backend = example_backend)
+    assert meas_res == {9: 1.0}
+
+
+def test_qiskit_fake_backend():
+
+    from qrisp import QuantumFloat
+    from qiskit_ibm_runtime.fake_provider import FakeWashingtonV2
+    from qrisp.interface import QiskitBackend
+    example_backend = QiskitBackend(FakeWashingtonV2())
+    qf = QuantumFloat(2)
+    qf[:] = 2
+    res = qf*qf
+    meas_res = res.get_measurement(backend = example_backend)
+    assert meas_res[4] > 0.5
+"""

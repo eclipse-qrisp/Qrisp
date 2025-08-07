@@ -26,11 +26,16 @@ import numpy as np
 import jax.numpy as jnp
 
 
-def qswitch(operand, case, case_function, method="auto", inv = False):
-    """
+def qswitch(operand, case, case_function, method="auto", case_amount=None, inv = False):
+    r"""
     Executes a switch - case statement distinguishing between a list of
     given in-place functions.
 
+    More precisely, the qswitch applies the unitary $U_i$ to the operand in state $\ket{\psi}$ given that the case variable is in state $\ket{i}$, i.e.,
+
+    .. math:: 
+
+        \text{qswitch}\ket{i}_{\text{case}}\ket{\psi}_{\text{operand}} = \ket{i}_{\text{case}}U_i\ket{\psi}_{\text{operand}}
 
     Parameters
     ----------
@@ -45,6 +50,10 @@ def qswitch(operand, case, case_function, method="auto", inv = False):
         The compilation method. Available are ``sequential``, ``parallel``, ``tree`` and ``auto``.
         ``parallel`` is exponentially fast but requires more temporary qubits. ``tree`` uses `balanced binaray trees <https://arxiv.org/pdf/2407.17966v1>`_.
         The default is ``auto``.
+    case_amount : int, optional
+        The number of cases. By default the number is inferred automatically:
+        - When ``case_function`` is a single function, the size of the case variable is used.
+        - When ``case_function`` is a list of functions, the length of that list is used instead.
 
     Examples
     --------
@@ -111,7 +120,8 @@ def qswitch(operand, case, case_function, method="auto", inv = False):
     
 
     if callable(case_function):
-        case_amount = 2**case.size
+        if case_amount == None:
+            case_amount = 2**case.size
         xrange = jrange
         if method == "auto":
             method = "tree"
@@ -120,19 +130,12 @@ def qswitch(operand, case, case_function, method="auto", inv = False):
             case_function = invert_inpl_function(case_function)
 
     else:
-        case_amount = len(case_function)
-
-        # Extend case_function list by identity such that its size is 2*n (necessary for tree qswitch)
-        def identity(operand):
-            pass
-
-        case_function.extend(
-            [identity] * ((1 << ((case_amount - 1).bit_length())) - case_amount)
-        )
         
+        if case_amount == None:
+            case_amount = len(case_function)
+
         if inv:
             case_function = [invert_inpl_function(func) for func in case_function]
-            
 
         xrange = range
         if method == "auto":
@@ -166,10 +169,15 @@ def qswitch(operand, case, case_function, method="auto", inv = False):
         # to execute cases in parallel.
 
         # This QuantumArray acts as an addressable QRAM via the demux function
-        enable = QuantumArray(qtype=QuantumBool(), shape=(case_amount,))
+
+        if case_amount != 2**case.size:
+            import warnings
+            warnings.warn("Warning: Additional qubit overhead because case amount is smaller than case QuantumVariable!")
+
+        enable = QuantumArray(qtype=QuantumBool(), shape=(2**case.size,))
         enable[0].flip()
 
-        qa = QuantumArray(qtype=operand, shape=((case_amount,)))
+        qa = QuantumArray(qtype=operand, shape=((2**case.size,)))
 
         with conjugate(demux)(operand, case, qa, parallelize_qc=True):
             with conjugate(demux)(enable[0], case, enable, parallelize_qc=True):
@@ -187,6 +195,35 @@ def qswitch(operand, case, case_function, method="auto", inv = False):
 
     # Uses balanced binaray trees https://arxiv.org/pdf/2407.17966v1
     elif method == "tree":
+
+        # Jasp mode
+        if check_for_tracing_mode():
+            xrange = jrange
+            x_fori_loop = q_fori_loop
+            x_cond = q_cond
+
+            def bitwise_count_diff(a, b):
+                return jnp.bitwise_count(jnp.bitwise_xor(a, b))
+
+        # Normal mode
+        else:
+            xrange = range
+
+            def x_fori_loop(lower, upper, body_fun, init_val):
+                val = init_val
+                for i in range(lower, upper):
+                    val = body_fun(i, val)
+                return val
+
+            def x_cond(pred, true_fun, false_fun, *operands):
+                if pred:
+                    return true_fun(*operands)
+                else:
+                    return false_fun(*operands)
+
+            def bitwise_count_diff(a, b):
+                return np.bitwise_count(np.bitwise_xor(a, b))
+
         n = case.size
 
         def bounce(d: int, anc, ca, oper):
@@ -210,27 +247,6 @@ def qswitch(operand, case, case_function, method="auto", inv = False):
                 with control(ca[n - 1 - d]):
                     x(anc[d + 1])
 
-        # Jasp mode
-        if check_for_tracing_mode():
-            xrange = jrange
-            x_fori_loop = q_fori_loop
-
-            def bitwise_count_diff(a, b):
-                return jnp.bitwise_count(jnp.bitwise_xor(a, b))
-
-        # Normal mode
-        else:
-            xrange = range
-
-            def x_fori_loop(lower, upper, body_fun, init_val):
-                val = init_val
-                for i in range(lower, upper):
-                    val = body_fun(i, val)
-                return val
-
-            def bitwise_count_diff(a, b):
-                return np.bitwise_count(np.bitwise_xor(a, b))
-
         # Function mode
         if callable(case_function):
 
@@ -242,8 +258,19 @@ def qswitch(operand, case, case_function, method="auto", inv = False):
                 with control(anc[d + 1]):
                     case_function(i + 1, oper)
 
+            def last_leaf(d: int, anc, ca, oper, i):
+                with control(anc[d + 1]):
+                    case_function(i, oper)
+
         # List mode
         elif isinstance(case_function, list):
+
+            if len(case_function) % 2 != 0:
+                def identity(_):
+                    pass
+
+                case_function.append(identity)
+
             if check_for_tracing_mode():
 
                 def leaf(d: int, anc, ca, oper, i):
@@ -273,6 +300,10 @@ def qswitch(operand, case, case_function, method="auto", inv = False):
                         x(anc[d + 1])
                     with control(anc[d + 1]):
                         case_function[i + 1](oper)
+            
+            def last_leaf(d: int, anc, ca, oper, i):
+                with control(anc[d + 1]):
+                    case_function[case_amount-1](oper)
 
         else:
             raise TypeError(
@@ -303,18 +334,34 @@ def qswitch(operand, case, case_function, method="auto", inv = False):
             down(j, anc, case, operand)
 
         # Perform leafs and jumps
-        anc_, _, _ = x_fori_loop(
-            0, 2 ** (n - 1) - 1, body_fun, (anc, case, operand)
+
+        _, _, _ = x_fori_loop(
+            0, -(-case_amount // 2) - 1, body_fun, (anc, case, operand)
         )
 
         # Perfrom last leaf
-        leaf(n - 1, anc, case, operand, 2**n - 2)
+        x_cond(case_amount % 2 == 0,
+               lambda: leaf(n - 1, anc, case, operand, case_amount - 2),
+               lambda: last_leaf(n - 1, anc, case, operand, case_amount - 1))
 
         # Go back from last node
+        diff = 2**n - case_amount
         for j in xrange(0, n, 1):
             up(n - j - 1, anc, case, operand)
 
+            def bf():
+                with control(anc[n-j-1]):
+                    x(anc[n - j])
+                return None
+
+            x_cond((diff >> j) & 1, lambda: bf(), lambda: None)
+            # The cond applies:
+            # if (diff >> j) & 1:
+            #    with control(anc[n-j-1]):
+            #        x(anc[n - j])
+
         x(anc[0])
+
         anc.delete()
 
     else:

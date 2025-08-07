@@ -381,7 +381,7 @@ def permute_iterable(iterable, perm):
     {OutcomeArray([1, 0, 3, 7, 5, 2, 6, 4]): 1.0}
     >>> print(qa.qs)
 
-    ::
+    .. code-block:: none
 
         QuantumCircuit:
         --------------

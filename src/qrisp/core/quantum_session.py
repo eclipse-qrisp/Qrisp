@@ -64,7 +64,7 @@ class QuantumSession(QuantumCircuit):
 
     >>> print(qv.qs)
 
-    ::
+    .. code-block:: none
 
         QuantumCircuit:
         --------------
@@ -894,7 +894,7 @@ class QuantumSession(QuantumCircuit):
         >>> mcx(ctrl, target)
         >>> print(ctrl.qs)
 
-        ::
+        .. code-block:: none
 
             QuantumCircuit:
             --------------
@@ -920,7 +920,7 @@ class QuantumSession(QuantumCircuit):
         50
         >>> print(compiled_qc)
 
-        ::
+        .. code-block:: none
 
                 ctrl.0: ──■──
                           │
@@ -942,7 +942,7 @@ class QuantumSession(QuantumCircuit):
         22
         >>> print(compiled_qc)
 
-        ::
+        .. code-block:: none
 
                          ┌────────┐               ┌────────┐
                  ctrl.0: ┤0       ├───────────────┤0       ├──────────
@@ -969,7 +969,7 @@ class QuantumSession(QuantumCircuit):
         >>> cx(target[0], qv)
         >>> print(ctrl.qs.compile())
 
-        ::
+        .. code-block:: none
 
                       ┌────────┐               ┌────────┐
               ctrl.0: ┤0       ├───────────────┤0       ├────────────────────
@@ -1004,7 +1004,7 @@ class QuantumSession(QuantumCircuit):
         >>> mcx(ctrl, target)
         >>> print(ctrl.qs.compile())
 
-        ::
+        .. code-block:: none
 
               ctrl.0: ────────────────────────────────────■──────────────────────────»
                                      ┌─────────────────┐  │  ┌─────────────────┐     »
@@ -1177,7 +1177,7 @@ class QuantumSession(QuantumCircuit):
         >>> res = triple_AND(a,b,c)
         >>> print(res.qs)
 
-        ::
+        .. code-block:: none
 
             QuantumCircuit:
             --------------
@@ -1203,7 +1203,7 @@ class QuantumSession(QuantumCircuit):
 
         >>> print(a.qs.compile(disable_uncomputation = False))
 
-        ::
+        .. code-block:: none
 
                          ┌────────┐     ┌────────┐
                     a.0: ┤0       ├─────┤0       ├

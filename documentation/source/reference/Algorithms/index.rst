@@ -22,7 +22,7 @@ This algorithms submodule of Qrisp provides a collection of commonly used quantu
    * - :ref:`Grover's Algorithm <grovers_alg>`
      - unstructured search
    * - :ref:`Quantum Backtracking Algorithms <QuantumBacktrackingTree>`
-     - solving constraint-satisfaction problems like 3-SAT or the :ref:`Traveling Salesman Problem (TSP) <tsp>`
+     - solving constraint-satisfaction problems like 3-SAT or the :ref:`Traveling Salesman Problem (TSP) <EfficientTSP>`
    * - :ref:`Quantum Counting <QCounting>`
      - estimating the amount of solutions for a given Grover oracle
    * - :ref:`Quantum Monte Carlo Integration <QMCI>`

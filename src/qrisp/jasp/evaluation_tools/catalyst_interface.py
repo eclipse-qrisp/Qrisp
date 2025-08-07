@@ -19,12 +19,12 @@
 from functools import lru_cache
 
 from jax import make_jaxpr
-from jax.core import Literal
+from jax.extend.core import Literal
 import jax.numpy as jnp
 
 import pennylane as qml
 import catalyst
-from catalyst.jax_primitives import qalloc_p, qdevice_p, AbstractQreg
+from catalyst.jax_primitives import qalloc_p, device_init_p, AbstractQreg
 
 from qrisp.jasp import (
     AbstractQubitArray,
@@ -78,7 +78,7 @@ def jaspr_to_catalyst_jaxpr(jaspr):
 
     # Translate the input args according to the above rules.
     args = []
-    for invar in jaspr.invars:
+    for invar in jaspr.jaxpr.invars:
         if isinstance(invar.aval, AbstractQuantumCircuit):
             # We initialize with the inverted list [... 3, 2, 1, 0] since the
             # pop method of the dynamic list always removes the last element
@@ -112,15 +112,16 @@ def jaspr_to_catalyst_function(jaspr):
 
     def catalyst_function(*args):
         # Initiate the backend
-        qdevice_p.bind(
+        device_init_p.bind(
             0,
             rtd_lib=backend_info.lpath,
             rtd_name=backend_info.c_interface_name,
             rtd_kwargs=str(backend_info.kwargs),
+            auto_qubit_management = True
         )
 
         # Create the AbstractQreg
-        qreg = qalloc_p.bind(25)
+        qreg = qalloc_p.bind(20)
 
         # Insert the Qreg into the list of arguments (such that it is used by the
         # Catalyst interpreter.

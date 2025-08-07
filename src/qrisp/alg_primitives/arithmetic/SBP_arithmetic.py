@@ -588,10 +588,10 @@ def polynomial_encoder(qf_list, output_qf, poly, encoding_dic=None, inplace_mult
     """
 
     if isinstance(qf_list, QuantumArray):
-        qf_list = list(qf_list.flatten().qv_array)
+        qf_list = list(qf_list.flatten())
 
     if encoding_dic is not None:
-        symbol_list = [encoding_dic[qv.name] for qv in qf_list]
+        symbol_list = [encoding_dic[qv] for qv in qf_list]
 
     else:
         symbol_list = get_ordered_symbol_list(poly)
@@ -1052,6 +1052,9 @@ def inpl_mult(qf, mult_int, treat_overflow=True):
 
 
     """
+
+    if not isinstance(mult_int, (int, float)):
+        raise Exception("Quantum inplace multiplication is restricted to classical values due to reversibility constraints")
 
     if mult_int < 0 and not qf.signed:
         raise Exception(

@@ -20,11 +20,11 @@ from functools import lru_cache
 
 import numpy as np
 from numba import njit
-from jax.core import ClosedJaxpr, JaxprEqn, Literal
+from jax.extend.core import ClosedJaxpr, JaxprEqn, Literal, Jaxpr
 
 
 @lru_cache(maxsize=int(1e5))
-def collect_environments(jaxpr):
+def collect_environments(closed_jaxpr):
     """
     This function turns Jaxpr that contain QuantumEnvironment primitive in enter/exit
     form into the collected form. Collected means that the QuantumEnvironments content
@@ -32,12 +32,12 @@ def collect_environments(jaxpr):
 
     Parameters
     ----------
-    jaxpr : jax.core.Jaxpr
+    closed_jaxpr : jax.extend.core.ClosedJaxpr
         The Jaxpr with QuantumEnvironment in enter/exit form.
 
     Returns
     -------
-    jax.core.Jaxpr
+    jax.extend.core.ClosedJaxpr
         A Jaxpr with QuantumEnvironments in collected form.
 
     """
@@ -47,7 +47,7 @@ def collect_environments(jaxpr):
 
     # Once we hit an exit primitive, we collect the Equations between the enter
     # and exit primitive.
-    eqn_list = list(jaxpr.eqns)
+    eqn_list = list(closed_jaxpr.jaxpr.eqns)
     new_eqn_list = []
     
     # An important part of collecting the quantum environments is determining
@@ -60,8 +60,8 @@ def collect_environments(jaxpr):
     
     from qrisp.jasp import Jaspr
 
-    if isinstance(jaxpr, Jaspr) and jaxpr.envs_flattened:
-        return jaxpr
+    if isinstance(closed_jaxpr, Jaspr) and closed_jaxpr.envs_flattened:
+        return closed_jaxpr
     
     for j in range(len(eqn_list)):
         eqn = eqn_list[j]
@@ -70,11 +70,9 @@ def collect_environments(jaxpr):
 
             new_params = dict(eqn.params)
 
-            collected_jaspr = collect_environments(eqn.params["jaxpr"].jaxpr)
+            collected_jaspr = collect_environments(eqn.params["jaxpr"])
 
-            new_params["jaxpr"] = ClosedJaxpr(
-                collected_jaspr, eqn.params["jaxpr"].consts
-            )
+            new_params["jaxpr"] = collected_jaspr
 
             eqn = JaxprEqn(
                 params=new_params,
@@ -83,6 +81,7 @@ def collect_environments(jaxpr):
                 outvars=list(eqn.outvars),
                 effects=eqn.effects,
                 source_info=eqn.source_info,
+                ctx=eqn.ctx
             )
 
         if eqn.primitive.name == "cond":
@@ -93,10 +92,7 @@ def collect_environments(jaxpr):
 
             for i in range(len(eqn.params["branches"])):
                 collected_branch_jaxpr = collect_environments(
-                    eqn.params["branches"][i].jaxpr
-                )
-                collected_branch_jaxpr = ClosedJaxpr(
-                    collected_branch_jaxpr, eqn.params["branches"][i].consts
+                    eqn.params["branches"][i]
                 )
                 branch_list.append(collected_branch_jaxpr)
 
@@ -109,17 +105,16 @@ def collect_environments(jaxpr):
                 outvars=list(eqn.outvars),
                 effects=eqn.effects,
                 source_info=eqn.source_info,
+                ctx=eqn.ctx,
             )
 
         if eqn.primitive.name == "while":
 
             new_params = dict(eqn.params)
 
-            body_collected_jaspr = collect_environments(eqn.params["body_jaxpr"].jaxpr)
+            body_collected_jaspr = collect_environments(eqn.params["body_jaxpr"])
 
-            new_params["body_jaxpr"] = ClosedJaxpr(
-                body_collected_jaspr, eqn.params["body_jaxpr"].consts
-            )
+            new_params["body_jaxpr"] = body_collected_jaspr
 
             eqn = JaxprEqn(
                 params=new_params,
@@ -128,6 +123,7 @@ def collect_environments(jaxpr):
                 outvars=list(eqn.outvars),
                 effects=eqn.effects,
                 source_info=eqn.source_info,
+                ctx=eqn.ctx
             )
 
         # If an exit primitive is found, start the collecting mechanism.
@@ -166,7 +162,7 @@ def collect_environments(jaxpr):
             outvars = find_outvars(
                 environment_body_eqn_list,
                 remaining_script_var_tracker,
-                [var for var in jaxpr.outvars if not isinstance(var, Literal)],
+                [var for var in closed_jaxpr.jaxpr.outvars if not isinstance(var, Literal)],
             )
 
             # Create the Jaxpr
@@ -185,6 +181,7 @@ def collect_environments(jaxpr):
                 outvars=outvars + eqn.outvars[-1:],
                 effects=eqn.effects,
                 source_info=eqn.source_info,
+                ctx=eqn.ctx
             )
 
             # Remove the collected equations from the new_eqn_list
@@ -196,21 +193,25 @@ def collect_environments(jaxpr):
         new_eqn_list.append(eqn)
         new_eqn_var_tracker.append(eqn)
         
-    if isinstance(jaxpr, Jaspr):
-        res = jaxpr.update_eqns(new_eqn_list)
-        if jaxpr.ctrl_jaspr is not None:
-            res.ctrl_jaspr = jaxpr.ctrl_jaspr
-        if jaxpr.inv_jaspr is not None:
-            res.inv_jaspr = jaxpr.inv_jaspr
+    if isinstance(closed_jaxpr, Jaspr):
+        res = closed_jaxpr.update_eqns(new_eqn_list)
+        
+        if closed_jaxpr.ctrl_jaspr is not None:
+            res.ctrl_jaspr = closed_jaxpr.ctrl_jaspr
+        if closed_jaxpr.inv_jaspr is not None:
+            res.inv_jaspr = closed_jaxpr.inv_jaspr
         return res
     else:
         # Return the transformed equation
-        return type(jaxpr)(
-            constvars=jaxpr.constvars,
-            invars=jaxpr.invars,
-            outvars=jaxpr.outvars,
+        
+        res_jaxpr = Jaxpr(
+            constvars=closed_jaxpr.jaxpr.constvars,
+            invars=closed_jaxpr.jaxpr.invars,
+            outvars=closed_jaxpr.jaxpr.outvars,
             eqns=new_eqn_list,
         )
+        
+        return ClosedJaxpr(res_jaxpr, closed_jaxpr.consts)
 
 
 def find_outvars(body_eqn_list, script_remainder_var_tracker, return_vars):

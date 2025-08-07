@@ -48,27 +48,42 @@ def evaluate_while_loop(
     while_loop_eqn, context_dic, eqn_evaluator=exec_eqn, break_after_first_iter=False
 ):
 
-    num_const_cond_args = while_loop_eqn.params["body_nconsts"]
+    num_const_cond_args = while_loop_eqn.params["cond_nconsts"]
     num_const_body_args = while_loop_eqn.params["body_nconsts"]
+    overall_constant_amount = max(num_const_cond_args, num_const_body_args)    
 
     def break_condition(invalues):
-        non_const_values = invalues[num_const_cond_args:]
+        
+        constants = invalues[:num_const_cond_args]
+        carries = invalues[overall_constant_amount:]
+        
+        new_invalues = constants + carries
+        
         return eval_jaxpr(
             while_loop_eqn.params["cond_jaxpr"], eqn_evaluator=eqn_evaluator
-        )(*non_const_values)
+        )(*new_invalues)
 
     # Extract the invalues from the context dic
     invalues = extract_invalues(while_loop_eqn, context_dic)
     outvalues = invalues[num_const_body_args:]
 
     while break_condition(invalues):
+        
+        constants = invalues[:num_const_body_args]
+        carries = invalues[overall_constant_amount:]
+        
+        new_invalues = constants + carries
 
         outvalues = eval_jaxpr(
             while_loop_eqn.params["body_jaxpr"], eqn_evaluator=eqn_evaluator
-        )(*invalues)
+        )(*new_invalues)
 
         # Update the non-const invalues
-        invalues[num_const_body_args:] = outvalues
+        
+        if len(while_loop_eqn.params["body_jaxpr"].jaxpr.outvars) == 1:
+            outvalues = (outvalues,)
+        
+        invalues = invalues[:overall_constant_amount] + list(outvalues)
 
         if break_after_first_iter:
             break

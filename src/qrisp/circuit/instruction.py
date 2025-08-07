@@ -54,7 +54,7 @@ class Instruction:
     {'1': 10000}
     >>> print(qc.transpile())
 
-    ::
+    .. code-block:: none
 
               ┌───┐
         qb_0: ┤ X ├──■─────
