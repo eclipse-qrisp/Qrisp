@@ -80,6 +80,6 @@ def gidney_adder(a, b, c_in=None, c_out=None):
         return qq_gidney_adder(a, b, c_in=c_in, c_out=c_out)
 
 
-# temp = gidney_adder.__doc__
-# gidney_adder = ammend_inpl_adder(gidney_adder, ammend_cl_int=False)
-# gidney_adder.__doc__ = temp
+temp = gidney_adder.__doc__
+gidney_adder = ammend_inpl_adder(gidney_adder, ammend_cl_int=False)
+gidney_adder.__doc__ = temp

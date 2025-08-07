@@ -144,6 +144,6 @@ def cuccaro_adder(a, b, c_in=None, c_out=None):
     cuccaro_procedure(b[0].qs(), a, b, carry_in=c_in, output_qubit=c_out)
 
 
-# temp = cuccaro_adder.__doc__
-# cuccaro_adder = ammend_inpl_adder(cuccaro_adder)
-# cuccaro_adder.__doc__ = temp
+temp = cuccaro_adder.__doc__
+cuccaro_adder = ammend_inpl_adder(cuccaro_adder)
+cuccaro_adder.__doc__ = temp
