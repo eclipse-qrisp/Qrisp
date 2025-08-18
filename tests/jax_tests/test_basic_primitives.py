@@ -146,3 +146,48 @@ def test_list_appending():
         return measure(qv_a), measure(qv_a)
 
     assert main() == (31, 31)
+    
+def test_quantum_array_appending():
+    
+    # Test QuantumArray gate application behavior
+    @jaspify
+    def test():
+        qa = QuantumArray(qtype=QuantumFloat(1), shape=(3,2))
+        qb = QuantumArray(qtype=QuantumFloat(1), shape=(3,2))
+        x(qa)
+        cx(qa, qb)
+        return measure(qb)
+
+    assert test()[0,0] == 1
+    
+    @jaspify
+    def test():
+        qa = QuantumArray(qtype=QuantumFloat(1), shape=(3,2))
+        qb = QuantumArray(qtype=QuantumFloat(1), shape=(3,1))
+        x(qa)
+        cx(qa, qb)
+        return measure(qb)
+
+    try:
+        test()
+    except Exception as e:
+        assert "shape" in str(e)
+        
+        
+    @jaspify
+    def test():
+        qa = QuantumArray(qtype=QuantumFloat(1), shape=(3,2))
+        qb = QuantumArray(qtype=QuantumFloat(1), shape=(3,2))
+        x(qa)
+        cx(qa, qb[0,1])
+        return measure(qb)
+
+    try:
+        test()
+    except Exception as e:
+        assert "mixed" in str(e)
+        
+    
+        
+    
+    
