@@ -21,6 +21,7 @@ import traceback
 import numpy as np
 import sympy
 from jax.lax import fori_loop, cond
+import functools
 
 
 def bin_rep(n, bits):
@@ -366,6 +367,7 @@ def gate_wrap(*args, permeability=None, is_qfree=None, name=None, verify=False):
         ---------------------
     """
 
+    """
     if len(args):
         return gate_wrap_inner(args[0])
 
@@ -381,7 +383,29 @@ def gate_wrap(*args, permeability=None, is_qfree=None, name=None, verify=False):
             )
 
         return gate_wrap_helper
+    """
 
+    def gate_wrap_helper(function):
+        @functools.wraps(function)
+        def wrapper(*fargs, **fkwargs):
+            # gate_wrap_inner is assumed to return another callable (the actual decorated function),
+            # which we then call with fargs, fkwargs
+            return gate_wrap_inner(
+                function,
+                permeability=permeability,
+                is_qfree=is_qfree,
+                name=name,
+                verify=verify
+            )(*fargs, **fkwargs)
+        return wrapper
+
+    # If the decorator is called directly with a function (e.g. @gate_wrap)
+    # args will contain that function as args[0].
+    if len(args) == 1 and callable(args[0]):
+        return gate_wrap_helper(args[0])
+    else:
+        # Otherwise, return the decorator that can be applied to a function later
+        return gate_wrap_helper
 
 def gate_wrap_inner(
     function, permeability=None, is_qfree=None, name=None, verify=False
