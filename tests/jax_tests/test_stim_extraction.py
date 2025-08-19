@@ -23,13 +23,13 @@ def test_stim_extraction():
 
     @extract_stim
     def main():
-        qv = QuantumVariable(4)
-        x(qv[1])
-        a = measure(qv[0])
-        b = measure(qv[1])
-        return measure(qv)
+        qa = QuantumArray(QuantumVariable(1), (2,))
+        x(qa[1])
+        a = measure(qa[0])
+        b = measure(qa[1])
+        return measure(qa)
 
     meas_indices, stim_circuit = main()
     sampler = stim_circuit.compile_sampler()
     
-    assert np.all(sampler.sample(5)[:,meas_indices] == np.array([[False, True, False, False]]*5))
+    assert np.all(sampler.sample(5)[:,meas_indices.flatten()] == np.array([[False, True]]*5))

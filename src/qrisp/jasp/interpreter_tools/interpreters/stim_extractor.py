@@ -17,16 +17,12 @@
 """
 
 import numpy as np
+import jax.numpy as jnp
 
 from qrisp.jasp.interpreter_tools import extract_invalues, eval_jaxpr, insert_outvalues
 from qrisp.jasp.primitives import OperationPrimitive, AbstractQubit, AbstractQubitArray, AbstractQuantumCircuit
 
 stim_gate_translation = {"cx": "CX", "cz": "CZ", "cy" : "CY", "reset" : "RZ", "h": "H", "s" : "S", "s_dg": "S_DAG", "x" : "X", "y" : "Y", "z" : "Z"}
-
-class StimMeasurement:
-    def __init__(self, index, state):
-        self.index = index
-        self.state = state
 
 class StimDetector:
     def __init__(self, index, state):
@@ -46,7 +42,7 @@ class StimState:
 def stim_evaluator(eqn, context_dic):
     
     invalues = extract_invalues(eqn, context_dic)
-    
+
     if isinstance(eqn.primitive, OperationPrimitive):
         op = eqn.primitive.op
         stim_circuit = invalues[-1].circuit
@@ -64,21 +60,23 @@ def stim_evaluator(eqn, context_dic):
         outvalues = eval_jaxpr(eqn.params["jaxpr"], 
                                eqn_evaluator = stim_evaluator)(*invalues)
         
+        if len(eqn.params["jaxpr"].jaxpr.outvars) == 1:
+            outvalues = [outvalues]
+            
     elif eqn.primitive.name == "jasp.measure":
         
         stim_state = invalues[-1]
         if isinstance(eqn.invars[0].aval, AbstractQubit):
-            meas_res = StimMeasurement(stim_state.measurement_amount, stim_state)
-            stim_state.measurement_amount += 1
             stim_state.circuit.append("MZ", invalues[0])
         elif isinstance(eqn.invars[0].aval, AbstractQubitArray):
-            meas_res = []
-            for i in range(len(invalues[0])):
-                meas_res.append(StimMeasurement(stim_state.measurement_amount, stim_state))
-                stim_state.measurement_amount += 1
-                stim_state.circuit.append("MZ", invalues[0][i])
-                
+            if len(invalues[0]) > 1:
+                raise Exception("Tried to measure multi qubit array in stim extraction mode")
+            stim_state.circuit.append("MZ", invalues[0][0])
+
+        meas_res = stim_state.measurement_amount
+        stim_state.measurement_amount += 1
         outvalues = [meas_res, stim_state]
+        
     elif eqn.primitive.name == "jasp.reset":
         
         stim_state = invalues[-1]
@@ -103,34 +101,18 @@ def stim_evaluator(eqn, context_dic):
     elif eqn.primitive.name == "jasp.delete_qubits":
         outvalues = invalues[-1]
     
-    elif eqn.primitive.name == "convert_element_type":
-        if isinstance(invalues[0], StimMeasurement):
-            outvalues = invalues[0]
-        elif isinstance(invalues[0], list) and len(invalues[0]) and isinstance(invalues[0][0], StimMeasurement):
-            outvalues = invalues[0]
-        else:
-            return True
-        
     elif eqn.primitive.name == "jasp.get_qubit":
         
         outvalues = invalues[0][invalues[1]]
-        
-    elif eqn.primitive.name == "eq":
-        import stim
-        if isinstance(invalues[0], StimMeasurement) and isinstance(invalues[1], StimMeasurement):
-            state = invalues[0].state
-            print(invalues[0].index-state.measurement_amount)
-            print(invalues[1].index-state.measurement_amount)
-            rec_0 = stim.target_rec(invalues[1].index-state.measurement_amount)
-            rec_1 = stim.target_rec(invalues[0].index-state.measurement_amount)
-            invalues[0].state.circuit.append("DETECTOR", [rec_0, rec_1])
-            outvalues = StimDetector(invalues[0].state.detector_amount, invalues[0].state)
-            invalues[0].state.detector_amount += 1
-        else:
-            return True
-        
+    
     elif len(eqn.invars) == 0 or not isinstance(eqn.invars[-1].aval, AbstractQuantumCircuit):
         return True
+    
+    elif eqn.primitive.name == "convert_element_type":
+        if isinstance(invalues[0], int) and not eqn.invars.aval == jnp.int32:
+            outvalues = list(invalues)
+        else:
+            return True
     
     elif eqn.primitive.name in ["while", "cond", "scan"]:
         return True
@@ -158,16 +140,12 @@ def extract_stim(fn):
         else:
             eval_res = list(eval_res)
             for i in range(len(eval_res)):
-                if isinstance(eval_res[i], StimMeasurement):
-                    eval_res[i] = eval_res[i].index
-                elif isinstance(eval_res[i], list) and len(eval_res[i]):
-                    for j in range(len(eval_res[i])):
-                        if isinstance(eval_res[i][j], StimMeasurement):
-                            eval_res[i][j] = eval_res[i][j].index
-                        else:
-                            break
-                    else:
+                if isinstance(eval_res[i], jnp.ndarray):
+                    if eval_res[i].dtype == jnp.int32:
                         eval_res[i] = np.array(eval_res[i], dtype = np.int32)
+                    if eval_res[i].dtype == jnp.float64:
+                        eval_res[i] = np.array(eval_res[i], dtype = np.int32)
+            
             eval_res[-1] = eval_res[-1].circuit
             return tuple(eval_res)
         
