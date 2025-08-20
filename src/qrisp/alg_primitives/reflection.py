@@ -20,144 +20,104 @@ import numpy as np
 from qrisp import (
     QuantumArray,
     QuantumVariable,
-    QuantumFloat,
     gate_wrap,
     gphase,
     h,
     mcx,
     mcp,
-    mcz,
-    p,
-    x,
     z,
-    merge,
-    recursive_qs_search,
     conjugate,
     invert,
     control,
-    IterationEnvironment,
 )
-from qrisp.jasp import check_for_tracing_mode, jrange
+from qrisp.jasp import jlen
 
 
-# Applies the grover diffuser onto the (list of) quantum variable input_object
-def reflection(input_object, phase=np.pi, state_function=None, reflection_indices=None):
+@gate_wrap(permeability=[], is_qfree=False)
+def reflection(qargs, state_function=None, phase=np.pi, reflection_indices=None):
     r"""
-    Applies a reflection onto (multiple) QuantumVariables.
+    Applies a reflection around a state $\ket{\psi}$ of (multiple) QuantumVariables, i.e.,
 
+    .. math::
+
+        R = (2\ket{\psi}\bra{\psi}-\mathbb I)
+
+    
     Parameters
     ----------
-    input_object : QuantumVariable or list[QuantumVariable]
-        The (list of) QuantumVariables to apply the Grover diffuser on.
-    phase : float or sympy.Symbol, optional
-        Specifies the phase shift. The default is $\pi$, i.e. a
-        multi-controlled Z gate.
+    qargs : QuantumVariable | QuantumArray | list[QuantumVariable | QuantumArray]
+        The (list of) QuantumVariables to apply the reflection on.
     state_function : function, optional
-        A Python function preparing the initial state.
+        A Python function preparing the state $\ket{\psi}$ around which to reflect.
         By default, the function prepares the uniform superposition state.
+    phase : float or sympy.Symbol, optional
+        Specifies the phase shift. The default is $\pi$.
     refection_indices : list[int], optional
-        A list indicating with respect to which variables the reflection is performed.
-        By default, the reflection is performed with respect to all variables in ``input_object``.
+        A list of indices indicating with respect to which variables the reflection is performed. 
+        This is used for `oblivious amplitude amplification <https://arxiv.org/pdf/1312.1414>`_.
+        Indices correspond to the flattened ``qargs``, e.g., if ``qargs = QuantumArray(QuantumFloat(3), (6,))``,
+        ``reflection_indices=[0,1,2,3]`` corresponds to the first four variables in the array.
+        By default, the reflection is performed with respect to all variables in ``qargs``.
 
     Examples
     --------
 
-    We apply the Grover diffuser onto several QuantumChars:
-
-    >>> from qrisp import QuantumChar
-    >>> from qrisp.grover import diffuser
-    >>> q_ch_list = [QuantumChar(), QuantumChar(), QuantumChar()]
-    >>> diffuser(q_ch_list)
-    >>> print(q_ch_list[0].qs)
-
-    .. code-block:: none
-
-                  ┌────────────┐
-        q_ch_0.0: ┤0           ├
-                  │            │
-        q_ch_0.1: ┤1           ├
-                  │            │
-        q_ch_0.2: ┤2           ├
-                  │            │
-        q_ch_0.3: ┤3           ├
-                  │            │
-        q_ch_0.4: ┤4           ├
-                  │            │
-        q_ch_1.0: ┤5           ├
-                  │            │
-        q_ch_1.1: ┤6           ├
-                  │            │
-        q_ch_1.2: ┤7  diffuser ├
-                  │            │
-        q_ch_1.3: ┤8           ├
-                  │            │
-        q_ch_1.4: ┤9           ├
-                  │            │
-        q_ch_2.0: ┤10          ├
-                  │            │
-        q_ch_2.1: ┤11          ├
-                  │            │
-        q_ch_2.2: ┤12          ├
-                  │            │
-        q_ch_2.3: ┤13          ├
-                  │            │
-        q_ch_2.4: ┤14          ├
-                  └────────────┘
+    
 
     """
     
-    
+    # Convert qargs into a list
+    if isinstance(qargs, (QuantumVariable, QuantumArray)):
+        qargs = [qargs]
 
-    if isinstance(input_object, (QuantumVariable, QuantumArray)):
-        input_object = [input_object]
+    # Generate a (flat) list of all QuantumVariables in input_object
+    flattened_qargs = []
 
-    # Generate a list of all QuantumVariables in input_object
-    flattened_qarg_list = []
-
-    for arg in input_object:
+    for arg in qargs:
         if isinstance(arg, QuantumVariable):
-            flattened_qarg_list.append(arg)
+            flattened_qargs.append(arg)
 
         elif isinstance(arg, QuantumArray):
-            flattened_qarg_list.extend([qv for qv in arg.flatten()])
+            flattened_qargs.extend([qv for qv in arg.flatten()])
 
         else:
             raise TypeError("Arguments must be of type QuantumVariable or QuantumArray")
+        
+
+    if reflection_indices is None:
+        reflection_indices = range(len(flattened_qargs))
+
+    qubits = sum([flattened_qargs[i].reg for i in reflection_indices], [])  
 
 
-    if isinstance(input_object, (list, tuple)) and reflection_indices is None:
-        reflection_indices = [i for i in range(len(input_object))]
+    if state_function is not None:
 
- 
-    def inv_state_function(args):
-        with invert():
-            state_function(*args)
+        def inv_state_function(args):
+            with invert():
+                state_function(*args)
 
-
-    if isinstance(input_object, (list, tuple)):
-        with conjugate(inv_state_function)(input_object):
-            if check_for_tracing_mode():
-                tag_state({input_object[i]: 0 for i in reflection_indices}, phase=phase)
-            else:
-                tag_state(
-                    {
-                        input_object[i]: "0" * input_object[i].size
-                        for i in reflection_indices
-                    },
-                    binary_values=True,
-                    phase=phase,
-                )
-        gphase(np.pi, input_object[0][0])
     else:
-        with conjugate(inv_state_function)(input_object):
-            if check_for_tracing_mode():
-                tag_state({input_object: 0}, phase=phase)
-            else:
-                tag_state(
-                    {input_object: input_object.size * "0"},
-                    binary_values=True,
-                    phase=phase,
-                )
-        gphase(np.pi, input_object[0])
 
-    return input_object
+        def inv_state_function(args):
+            [h(qv) for qv in args]
+        
+
+    with conjugate(inv_state_function)(qargs):
+
+        with control(phase == np.pi):
+
+            with control(jlen(qubits) == 1):
+                z(qubits[0])
+
+            with control(jlen(qubits) > 1):
+                h(qubits[-1])
+                mcx(qubits[:-1], qubits[-1], ctrl_state=0)
+                h(qubits[-1])
+
+        with control(phase != np.pi):
+
+            mcp(phase, qubits, ctrl_state=0)
+
+
+    gphase(np.pi, qargs[0][0])
+
