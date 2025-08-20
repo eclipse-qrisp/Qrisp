@@ -178,13 +178,14 @@ def process_op(op_prim, invars, outvars, context_dic):
     for i in range(op.num_qubits):
         qb_pos.append(context_dic[invars[i]])
 
-    if op.name == "x":
+    if op.name in ["x", "swap"]:
         ctrl_state = ""
     elif isinstance(op, PTControlledOperation) and op.base_operation.name in [
         "x",
         "y",
         "z",
-        "pt2cx"
+        "pt2cx",
+        "swap"
     ]:
         if op.base_operation.name in ["z", "rz", "t", "s", "t_dg", "s_dg", "p"]:
             context_dic[outvars[-1]] = context_dic[invars[-1]]
@@ -196,7 +197,16 @@ def process_op(op_prim, invars, outvars, context_dic):
     else:
         raise Exception(f"Classical function simulator can't process gate {op.name}")
 
-    bit_array = cl_multi_cx(bit_array, ctrl_state, qb_pos)
+    if "swap" in op.name:
+        swapped_qb_pos = list(qb_pos)
+        swapped_qb_pos[-1], swapped_qb_pos[-2] = swapped_qb_pos[-2], swapped_qb_pos[-1]
+        ctrl_state = ctrl_state + "1"
+        
+        bit_array = cl_multi_cx(bit_array, ctrl_state, swapped_qb_pos)
+        bit_array = cl_multi_cx(bit_array, ctrl_state, qb_pos)
+        bit_array = cl_multi_cx(bit_array, ctrl_state, swapped_qb_pos)
+    else:
+        bit_array = cl_multi_cx(bit_array, ctrl_state, qb_pos)
 
     context_dic[outvars[-1]] = (bit_array, context_dic[invars[-1]][1])
 
