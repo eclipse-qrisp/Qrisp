@@ -24,6 +24,17 @@ def test_qubit_array_fusion():
     
     @jaspify
     def main():
+        qarg = QuantumArray(QuantumFloat(3), shape=(3,))
+        flattened_qarg = qarg.flatten()
+    
+        reg = sum([qv.reg for qv in flattened_qarg], [])
+    
+        return measure(reg)
+    
+    assert main() == 0
+    
+    @jaspify
+    def main():
         qf =QuantumFloat(3)
         x(qf)
         qf.extend(1)
