@@ -105,36 +105,34 @@ def reflection(input_object, phase=np.pi, state_function=None, reflection_indice
                   └────────────┘
 
     """
+    
+    
 
-    if isinstance(input_object, QuantumArray):
-        input_object = [qv for qv in input_object.flatten()]
+    if isinstance(input_object, (QuantumVariable, QuantumArray)):
+        input_object = [input_object]
+
+    # Generate a list of all QuantumVariables in input_object
+    flattened_qarg_list = []
+
+    for arg in input_object:
+        if isinstance(arg, QuantumVariable):
+            flattened_qarg_list.append(arg)
+
+        elif isinstance(arg, QuantumArray):
+            flattened_qarg_list.extend([qv for qv in arg.flatten()])
+
+        else:
+            raise TypeError("Arguments must be of type QuantumVariable or QuantumArray")
+
 
     if isinstance(input_object, (list, tuple)) and reflection_indices is None:
         reflection_indices = [i for i in range(len(input_object))]
 
-    if state_function is not None:
+ 
+    def inv_state_function(args):
+        with invert():
+            state_function(*args)
 
-        if isinstance(input_object, (list, tuple)):
-            def inv_state_function(args):
-                with invert():
-                    state_function(*args)
-        
-        else:
-            
-            def inv_state_function(args):
-                    with invert():
-                        state_function(args)
-
-    else:
-        if isinstance(input_object, list):
-
-            def inv_state_function(args):
-                [h(qv) for qv in args]
-
-        else:
-
-            def inv_state_function(args):
-                h(args)
 
     if isinstance(input_object, (list, tuple)):
         with conjugate(inv_state_function)(input_object):
