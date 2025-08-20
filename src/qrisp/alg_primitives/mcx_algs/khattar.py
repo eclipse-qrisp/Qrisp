@@ -249,7 +249,7 @@ def khattar_mcp(phi, ctrls, ctrl_state):
     with conjugate(ctrl_state_conjugator)(ctrls, ctrl_state):
 
         with control(N == 1):
-            cp(phi, ctrls[0], target[0])
+            p(phi, ctrls[0])
 
         with control(N == 2):
             with conjugate(mcx)([ctrls[0], ctrls[1]], target[0], method="gray_pt"):
