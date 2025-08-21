@@ -18,7 +18,7 @@
 
 def test_reflection():
 
-    from qrisp import QuantumVariable, QuantumArray, OutcomeArray, h, x, cx, reflection, multi_measurement
+    from qrisp import QuantumVariable, QuantumFloat, QuantumArray, OutcomeArray, h, x, cx, reflection, multi_measurement
 
     # Reflection with QuantumVariable as input
     def ghz(qv):
@@ -51,15 +51,15 @@ def test_reflection():
 
 
     qv = QuantumVariable(5)
-    qa = QuantumArray(QuantumVariable(3), shape=(3,))
+    qa = QuantumArray(QuantumFloat(3), shape=(3,))
     x(qv)
     x(qa)
     res = multi_measurement([qv, qa])
-    assert res == {('11111', OutcomeArray(['111', '111', '111'], dtype=object)): 1.0}
+    assert res == {('11111', OutcomeArray([7, 7, 7])): 1.0}
 
     reflection([qv, qa], ghz)
     res = multi_measurement([qv, qa])
-    assert res == {('00000', OutcomeArray(['000', '000', '000'], dtype=object)): 1.0}
+    assert res == {('00000', OutcomeArray([0, 0, 0])): 1.0}
 
 
 def test_jasp_reflection():
