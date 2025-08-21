@@ -25,6 +25,7 @@ from qrisp import (
     h,
     mcx,
     mcp,
+    x,
     z,
     conjugate,
     invert,
@@ -112,9 +113,11 @@ def reflection(qargs, state_function=None, phase=np.pi, reflection_indices=None)
                 z(qubits[0])
 
             with control(jlen(qubits) > 1):
+                x(qubits[-1])
                 h(qubits[-1])
                 mcx(qubits[:-1], qubits[-1], ctrl_state=0)
                 h(qubits[-1])
+                x(qubits[-1])
 
         with control(phase != np.pi):
 
