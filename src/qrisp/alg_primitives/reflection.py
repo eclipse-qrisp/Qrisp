@@ -157,18 +157,19 @@ def reflection(qargs, state_function, phase=np.pi, reflection_indices=None):
 
         with control(phase == np.pi):
 
+            x(qubits[-1])
+
             with control(jlen(qubits) == 1):
                 z(qubits[0])
 
-            with control(jlen(qubits) > 1):
-                x(qubits[-1])
+            with control(jlen(qubits) > 1):   
                 h(qubits[-1])
                 mcx(qubits[:-1], qubits[-1], ctrl_state=0)
                 h(qubits[-1])
-                x(qubits[-1])
+
+            x(qubits[-1])
 
         with control(phase != np.pi):
-
             mcp(phase, qubits, ctrl_state=0)
 
 

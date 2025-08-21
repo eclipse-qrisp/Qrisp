@@ -104,14 +104,14 @@ def amplitude_amplification(
 
     """
 
-    from qrisp.grover import diffuser
+    from qrisp.alg_primitives import reflection
     from qrisp import merge, recursive_qs_search, IterationEnvironment
     from qrisp.jasp import check_for_tracing_mode, jrange
 
     if check_for_tracing_mode():
         for i in jrange(iter):
             oracle_function(*args, **kwargs_oracle)
-            diffuser(
+            reflection(
                 args,
                 state_function=state_function,
                 reflection_indices=reflection_indices,
@@ -122,7 +122,7 @@ def amplitude_amplification(
         if iter > 0:
             with IterationEnvironment(qs, iter):
                 oracle_function(*args, **kwargs_oracle)
-                diffuser(
+                reflection(
                     args,
                     state_function=state_function,
                     reflection_indices=reflection_indices,
