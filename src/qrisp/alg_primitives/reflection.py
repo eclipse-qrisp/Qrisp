@@ -35,7 +35,7 @@ from qrisp.jasp import jlen
 
 
 @gate_wrap(permeability=[], is_qfree=False)
-def reflection(qargs, state_function=None, phase=np.pi, reflection_indices=None):
+def reflection(qargs, state_function, phase=np.pi, reflection_indices=None):
     r"""
     Applies a reflection around a state $\ket{\psi}$ of (multiple) QuantumVariables, i.e.,
 
@@ -51,8 +51,7 @@ def reflection(qargs, state_function=None, phase=np.pi, reflection_indices=None)
     qargs : QuantumVariable | QuantumArray | list[QuantumVariable | QuantumArray]
         The (list of) QuantumVariables to apply the reflection on.
     state_function : function, optional
-        A Python function preparing the state $\ket{\psi}$ around which to reflect.
-        By default, the function prepares the uniform superposition state.
+        A Python function acting on the ``qargs`` and preparing the state $\ket{\psi}$ around which to reflect.
     phase : float or sympy.Symbol, optional
         Specifies the phase shift. The default is $\pi$.
     refection_indices : list[int], optional
@@ -65,7 +64,63 @@ def reflection(qargs, state_function=None, phase=np.pi, reflection_indices=None)
     Examples
     --------
 
-    
+    We prepare a QuantumVariable in state $\ket{1}^{\otimes n}$, and reflect around the GHZ state $\frac{1}{\sqrt{2}}(\ket{0}^{\otimes n} + \ket{1}^{\otimes n})$.
+    The resulting state is $\ket{0}^{\otimes n}$.
+
+    ::
+
+        from qrisp import QuantumVariable, QuantumArray, h, x, cx, reflection
+
+
+        def ghz(qv):
+            h(qv[0])
+
+            for i in range(1, qv.size):
+            cx(qv[0], qv[i])
+
+
+        # Prepare |1> state
+        qv = QuantumVariable(5)
+        x(qv)
+        print(qv)
+        # {'11111': 1.0}
+
+        # Reflection around GHZ state
+        reflection(qv, ghz)
+        print(qv)
+        # {'00000': 1.0} 
+
+    The refletion can also be applied to lists of QuantumVariables and QuantumArrays:
+
+    ::
+
+        from qrisp import QuantumVariable, QuantumArray, h, x, cx, reflection, multi_measurement
+
+
+        def ghz(qv, qa):
+            h(qv[0])
+
+            for i in range(1, qv.size):
+                cx(qv[0], qv[i])
+
+            for var in qa:
+                for i in range(var.size):
+                    cx(qv[0], var[i])
+
+
+        # Prepare |1> state
+        qv = QuantumVariable(5)
+        qa = QuantumArray(QuantumVariable(3), shape=(3,))
+        x(qv)
+        x(qa)
+        print(multi_measurement([qv, qa]))
+        # {('11111', OutcomeArray(['111', '111', '111'], dtype=object)): 1.0}
+
+        # Reflection around GHZ state
+        reflection([qv, qa], ghz)
+        print(multi_measurement([qv, qa]))
+        # {('00000', OutcomeArray(['000', '000', '000'], dtype=object)): 1.0}
+
 
     """
     
@@ -93,17 +148,10 @@ def reflection(qargs, state_function=None, phase=np.pi, reflection_indices=None)
     qubits = sum([flattened_qargs[i].reg for i in reflection_indices], [])  
 
 
-    if state_function is not None:
+    def inv_state_function(args):
+        with invert():
+            state_function(*args)
 
-        def inv_state_function(args):
-            with invert():
-                state_function(*args)
-
-    else:
-
-        def inv_state_function(args):
-            [h(qv) for qv in args]
-        
 
     with conjugate(inv_state_function)(qargs):
 
