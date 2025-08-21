@@ -43,7 +43,7 @@ def reflection(qargs, state_function, phase=np.pi, reflection_indices=None):
 
         R = ((1-e^{i\phi})\ket{\psi}\bra{\psi}-\mathbb I) = U^{\dagger}((1-e^{i\phi})\ket{0}\bra{0}-I)U,
 
-    where $\ket{psi} = U\ket{0}$.
+    where $\ket{\psi} = U\ket{0}$.
 
     
     Parameters
