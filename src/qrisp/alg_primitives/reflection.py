@@ -35,7 +35,7 @@ from qrisp.jasp import jlen
 
 
 @gate_wrap(permeability=[], is_qfree=False)
-def reflection(qargs, state_function, phase=np.pi, reflection_indices=None):
+def reflection(args, state_function, phase=np.pi, reflection_indices=None):
     r"""
     Applies a reflection around a state $\ket{\psi}$ of (multiple) QuantumVariables, i.e.,
 
@@ -48,18 +48,18 @@ def reflection(qargs, state_function, phase=np.pi, reflection_indices=None):
     
     Parameters
     ----------
-    qargs : QuantumVariable | QuantumArray | list[QuantumVariable | QuantumArray]
+    args : QuantumVariable | QuantumArray | list[QuantumVariable | QuantumArray]
         The (list of) QuantumVariables to apply the reflection on.
     state_function : function, optional
-        A Python function acting on the ``qargs`` and preparing the state $\ket{\psi}$ around which to reflect.
+        A Python function acting on the ``args`` and preparing the state $\ket{\psi}$ around which to reflect.
     phase : float or sympy.Symbol, optional
         Specifies the phase shift. The default is $\pi$.
     refection_indices : list[int], optional
         A list of indices indicating with respect to which variables the reflection is performed. 
         This is used for `oblivious amplitude amplification <https://arxiv.org/pdf/1312.1414>`_.
-        Indices correspond to the flattened ``qargs``, e.g., if ``qargs = QuantumArray(QuantumFloat(3), (6,))``,
+        Indices correspond to the flattened ``args``, e.g., if ``args = QuantumArray(QuantumFloat(3), (6,))``,
         ``reflection_indices=[0,1,2,3]`` corresponds to the first four variables in the array.
-        By default, the reflection is performed with respect to all variables in ``qargs``.
+        By default, the reflection is performed with respect to all variables in ``args``.
 
     Examples
     --------
@@ -124,28 +124,28 @@ def reflection(qargs, state_function, phase=np.pi, reflection_indices=None):
 
     """
     
-    # Convert qargs into a list
-    if isinstance(qargs, (QuantumVariable, QuantumArray)):
-        qargs = [qargs]
+    # Convert args into a list
+    if isinstance(args, (QuantumVariable, QuantumArray)):
+        args = [args]
 
     # Generate a (flat) list of all QuantumVariables in input_object
-    flattened_qargs = []
+    flattened_args = []
 
-    for arg in qargs:
+    for arg in args:
         if isinstance(arg, QuantumVariable):
-            flattened_qargs.append(arg)
+            flattened_args.append(arg)
 
         elif isinstance(arg, QuantumArray):
-            flattened_qargs.extend([qv for qv in arg.flatten()])
+            flattened_args.extend([qv for qv in arg.flatten()])
 
         else:
             raise TypeError("Arguments must be of type QuantumVariable or QuantumArray")
         
 
     if reflection_indices is None:
-        reflection_indices = range(len(flattened_qargs))
+        reflection_indices = range(len(flattened_args))
 
-    qubits = sum([flattened_qargs[i].reg for i in reflection_indices], [])  
+    qubits = sum([flattened_args[i].reg for i in reflection_indices], [])  
 
 
     def inv_state_function(args):
@@ -153,7 +153,7 @@ def reflection(qargs, state_function, phase=np.pi, reflection_indices=None):
             state_function(*args)
 
 
-    with conjugate(inv_state_function)(qargs):
+    with conjugate(inv_state_function)(args):
 
         with control(phase == np.pi):
 
@@ -173,5 +173,5 @@ def reflection(qargs, state_function, phase=np.pi, reflection_indices=None):
             mcp(phase, qubits, ctrl_state=0)
 
 
-    gphase(np.pi, qargs[0][0])
+    gphase(np.pi, args[0][0])
 
