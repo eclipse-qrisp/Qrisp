@@ -49,9 +49,13 @@ def reflection(qargs, state_function, args=(), kwargs={}, phase=np.pi, reflectio
     Parameters
     ----------
     qargs : QuantumVariable | QuantumArray | list[QuantumVariable | QuantumArray]
-        The (list of) QuantumVariables to apply the reflection on.
+        The (list of) QuantumVariables representing the state to apply the reflection on.
     state_function : function, optional
-        A Python function acting on the ``qargs`` and preparing the state $\ket{\psi}$ around which to reflect.
+        A Python function ``state_function(*qargs, *args, **kwargs)`` preparing the state $\ket{\psi}$ in variables ``qargs`` around which to reflect.
+    args : tuple, optional
+        Arguments for the state function.
+    kwargs : dict, optional
+        Keyword arguments for the state function.
     phase : float or sympy.Symbol, optional
         Specifies the phase shift. The default is $\pi$.
     refection_indices : list[int], optional
@@ -121,7 +125,29 @@ def reflection(qargs, state_function, args=(), kwargs={}, phase=np.pi, reflectio
         print(multi_measurement([qv, qa]))
         # {('00000', OutcomeArray(['000', '000', '000'], dtype=object)): 1.0}
 
+    Addtional arguments can be passed to the state function:     
 
+    ::
+
+        from qrisp import QuantumVariable, QuantumArray, h, x, cx, ry, reflection
+
+
+        def perturbed_ghz(qv, a, b):
+            h(qv[0])
+            ry(a, qv[1])
+            ry(b, qv[2])
+
+            for i in jrange(1, qv.size):
+                cx(qv[0], qv[i])
+
+            
+        # Prepare |1> state
+        qv = QuantumVariable(5)
+        x(qv)
+        reflection(qv, perturbed_ghz, args=(0.1, 0.1))
+        print(qv)
+        # {'00000': 0.9900599999999998,'01000': 0.0024799999999999996,'00100': 0.0024799999999999996,'11011': 0.0024799999999999996,'10111': 0.0024799999999999996,'11111': 1.9999999999999998e-05}
+ 
     """
     
     # Convert qargs into a list

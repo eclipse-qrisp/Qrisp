@@ -63,7 +63,7 @@ def amplitude_amplification(
     refection_indices : list[int], optional
         A list of indices indicating with respect to which variables the reflection is performed, i.e. 
         `oblivious amplitude amplification <https://arxiv.org/pdf/1312.1414>`_ is performed.
-        Indices correspond to the flattened ``qargs``, e.g., if ``qargs = QuantumArray(QuantumFloat(3), (6,))``,
+        Indices correspond to the flattened ``args``, e.g., if ``args = QuantumArray(QuantumFloat(3), (6,))``,
         ``reflection_indices=[0,1,2,3]`` corresponds to the first four variables in the array.
         By default, the reflection is performed with respect to all variables in ``args``, i.e. standard amplitude amplification is performed.
         
