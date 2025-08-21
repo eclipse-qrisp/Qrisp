@@ -214,6 +214,32 @@ def lanczos_alg(H, D, state_prep_func, cutoff=1e-2):
             - 'eigvecs': eigenvectors
             - 'S_reg': regularized overlap matrix
             - 'H_reg': regularized Hamiltonian matrix
+    
+    Examples
+    --------
+
+    ::
+
+        from qrisp.vqe.problems.heisenberg import create_heisenberg_init_function
+        import networkx as nx
+
+        L = 6
+        G = nx.Graph()
+        G.add_edges_from([(k, (k+1) % L) for k in range(L - 1)])
+
+        # Define Hamiltonian e.g. Heisenberg with custom couplings
+        H = (1/4)*sum((X(i)*X(j) + Y(i)*Y(j) + 0.5*Z(i)*Z(j)) for i,j in G.edges())
+
+        # Prepare initial state function (tensor product of singlets)
+        M = nx.maximal_matching(G)
+        U_singlet = create_heisenberg_init_function(M)
+
+        D = 6  # Krylov dimension
+        energy, info = lanczos_alg(H, D, U_singlet)
+
+        print(f"Ground state energy estimate: {energy}")
+
+        
     """
     unitaries, coeffs = H.unitaries()
     
