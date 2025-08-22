@@ -4,7 +4,7 @@ from qrisp.algorithms.grover import*
 import numpy as np
 import scipy
 
-def inner_lanczos(H, D, state_prep_func):
+def inner_lanczos(H, D, state_prep_func, mes_kwargs):
     """
     Perform the quantum subroutine of the exact and efficient Lanczos method to estimate Chebyshev polynomials of a Hamiltonian.
 
@@ -25,6 +25,8 @@ def inner_lanczos(H, D, state_prep_func):
         Krylov space dimension. Determines maximum Chebyshev order (2D-1).
     state_prep_func : callable 
         Function preparing the initial system state (operand) $\ket{\psi_0}$ on a QuantumVariable.
+    mes_kwargs : dictionary
+        The keyword arguments for the measurement function.
 
     Returns
     -------
@@ -58,7 +60,7 @@ def inner_lanczos(H, D, state_prep_func):
                 for _ in jrange(k//2):
                     UR(case_indicator, operand, unitaries)
             
-            meas = case_indicator.get_measurement()
+            meas = case_indicator.get_measurement(**mes_kwargs)
             meas_res[k] = meas 
 
         else:
@@ -71,7 +73,7 @@ def inner_lanczos(H, D, state_prep_func):
             with control(qv[0]):
                 qswitch(operand, case_indicator, unitaries) # control-U on the case_indicator QuantumFloat
             h(qv) # Hadamard test for <U>
-            meas = qv.get_measurement()
+            meas = qv.get_measurement(**mes_kwargs)
             meas_res[k] = meas
     
         case_indicator.delete()
@@ -177,10 +179,10 @@ def regularize_S_H(S, H_mat, cutoff=1e-3):
     mask = eigvals > threshold
     U = eigvecs[:, mask]
     S_reg = U.T @ S @ U
-    H_reg = U.T @ H @ U
+    H_reg = U.T @ H_mat @ U
     return S_reg, H_reg
 
-def lanczos_alg(H, D, state_prep_func, cutoff=1e-2):
+def lanczos_alg(H, D, state_prep_func, mes_kwargs = {}, cutoff=1e-2):
     """
     Exact and efficient Lanczos method on a quantum computer for ground state energy estimation.
 
@@ -212,6 +214,8 @@ def lanczos_alg(H, D, state_prep_func, cutoff=1e-2):
             Krylov space dimension.
         state_prep_func : callable 
             Function preparing the initial system state (operand) $\ket{\psi_0}$ on a QuantumVariable.
+        mes_kwargs : dictionary
+            The keyword arguments for the measurement function.
         cutoff : float
             Regularization cutoff threshold for overlap matrix S.
 
@@ -257,7 +261,7 @@ def lanczos_alg(H, D, state_prep_func, cutoff=1e-2):
     unitaries, coeffs = H.unitaries()
     
     # Step 1: Quantum Lanczos: Get expectation values of Chebyshev polynomials
-    meas_counts = inner_lanczos(H, D, state_prep_func)
+    meas_counts = inner_lanczos(H, D, state_prep_func, mes_kwargs)
 
     # Convert counts to expectation values
     Tk_expvals = {k: compute_expectation(counts) for k, counts in meas_counts.items()}
