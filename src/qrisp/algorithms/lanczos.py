@@ -5,7 +5,7 @@ import numpy as np
 import scipy
 
 def inner_lanczos(H, D, state_prep_func, mes_kwargs):
-    """
+    r"""
     Perform the quantum subroutine of the exact and efficient Lanczos method to estimate Chebyshev polynomials of a Hamiltonian.
 
     This function implements the Krylov space construction via block-encodings 
@@ -14,8 +14,8 @@ def inner_lanczos(H, D, state_prep_func, mes_kwargs):
     
     At each order $k = 0, \dots, 2D-1$ it prepares and measures circuits corresponding 
     either to $\bra{\psi\lfloor k/2\rfloor}R\ket{\psi\lfloor k/2\rfloor}$ for even k, or
-    $\bra{\psi\lfloor k/2\rfloor U\ket{\psi\lfoor k/2\rfloor}$ for odd k. 
-    The measured statistics encode the expectation values $\angleT_k(H)\rangle$. 
+    $\bra{\psi\lfloor k/2\rfloor}U\ket{\psi\lfloor k/2\rfloor}$ for odd k. 
+    The measured statistics encode the expectation values $\langle T_k(H)\rangle$. 
 
     Parameters
     ----------
@@ -82,7 +82,7 @@ def inner_lanczos(H, D, state_prep_func, mes_kwargs):
     return meas_res
 
 def compute_expectation(counts):
-    """
+    r"""
     Convert measurement counts into an expectation value.
 
     Assumes measurement outcomes correspond to $\pm 1$ eigenvalues of observables 
@@ -114,11 +114,13 @@ def compute_expectation(counts):
     return expval
 
 def build_S_H_from_Tk(Tk_expectation, D):
-    """
-    Construct Lanczos overlap matrix S and Hamiltonian matrix H from Chebyshev polynomials.
+    r"""
+    Construct the overlap matrix S and the Krylov Hamiltonian matrix H from Chebyshev polynomial expectation values.
 
-    Uses Chebyshev recurrence identities to compute matrix elements
-    (Equations (17), (19) in the reference paper) from measured expectations.
+    Using Chebyshev recurrence relations, this function generates the matrix elements for
+    both the overlap matrix (S) and the Hamiltonian matrix (H) in the Krylov subspace.
+    The approach follows Equations (17) and (19) in "Exact and efficient Lanczos method
+    on a quantum computer" (arXiv:2208.00567).
 
     Parameters
     ----------
@@ -155,10 +157,14 @@ def build_S_H_from_Tk(Tk_expectation, D):
     return S, H_mat
 
 def regularize_S_H(S, H_mat, cutoff=1e-3):
-    """
-    Regularize overlap matrix S by thresholding eigenvalues below cutoff * max_eigenvalue.
-    Project both S and H onto subspace defined by large eigenvalues.
+    r"""
+    Regularize the overlap matrix S by retaining onlz eigenvectors with sufficientlz large eigenvalues and projects H_mat accordinglz.
 
+    This function applies a spectral cutoff: only directions in the Krylov subspace with eigenvalues
+    above ``cutoff * max_eigenvalue`` are kept. Both the overlap matrix (S) and the Hamiltonian matrix (H_mat)
+    are projected onto this reduced subspace, ensuring numerical stability for subsequent
+    generalized eigenvalue calculations.
+    
     Parameters
     ----------
     S : Overlap matrix
@@ -183,7 +189,7 @@ def regularize_S_H(S, H_mat, cutoff=1e-3):
     return S_reg, H_reg
 
 def lanczos_alg(H, D, state_prep_func, mes_kwargs = {}, cutoff=1e-2):
-    """
+    r"""
     Exact and efficient Lanczos method on a quantum computer for ground state energy estimation.
 
     This function implements the Lanczos method on a quantum computer using block-encodings of Chebyshev

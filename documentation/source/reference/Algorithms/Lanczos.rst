@@ -8,4 +8,10 @@ Lanczos method
 
 .. autofunction:: lanczos_alg
    
-.. autofunction:: inner_lanczos
+.. autosummary::
+   :toctree: generated/
+   
+   inner_lanczos
+   compute_expectation
+   build_S_H_from_Tk
+   regularize_S_H
