@@ -9,20 +9,20 @@ def inner_lanczos(H, D, state_prep_func, mes_kwargs):
     Perform the quantum subroutine of the exact and efficient Lanczos method to estimate Chebyshev polynomials of a Hamiltonian.
 
     This function implements the Krylov space construction via block-encodings 
-    of Chebyshev polynomials T_k(H), as described in "Exact and efficient Lanczos method 
+    of Chebyshev polynomials $T_k(H)$, as described in "Exact and efficient Lanczos method 
     on a quantum computer" (arXiv:2208.00567). 
     
-    At each order k = 0, ..., 2D-1 it prepares and measures circuits corresponding 
+    At each order $k = 0, \dots, 2D-1$ it prepares and measures circuits corresponding 
     either to $\bra{\psi\lfloor k/2\rfloor}R\ket{\psi\lfloor k/2\rfloor}$ for even k, or
     $\bra{\psi\lfloor k/2\rfloor U\ket{\psi\lfoor k/2\rfloor}$ for odd k. 
-    The measured statistics encode the expectation values $⟨T_k(H)⟩$. 
+    The measured statistics encode the expectation values $\angleT_k(H)\rangle$. 
 
     Parameters
     ----------
     H : Hamiltonian (QubitOperator)
         Hamiltonian represented as a Pauli sum operator with block-encoding accessible via `unitaries()`. 
     D : int
-        Krylov space dimension. Determines maximum Chebyshev order (2D-1).
+        Krylov space dimension. Determines maximum Chebyshev order $(2D-1)$.
     state_prep_func : callable 
         Function preparing the initial system state (operand) $\ket{\psi_0}$ on a QuantumVariable.
     mes_kwargs : dictionary
@@ -85,11 +85,11 @@ def compute_expectation(counts):
     """
     Convert measurement counts into an expectation value.
 
-    Assumes measurement outcomes correspond to ±1 eigenvalues of observables 
+    Assumes measurement outcomes correspond to $\pm 1$ eigenvalues of observables 
     (reflection R or block-encoding unitary U). 
 
     For even k we measure the auxilary case_indicator QuantumFloat in the computational basis. We then map:
-    +1 if all-zeroes outcome (projector 2|0><0| - I), else -1 (paper step 2).
+    $+1$ if all-zeroes outcome (projector $2\ket{0}\bra{0} - I), else $-1$ (paper step 2).
 
     For odd k we perform the hadamard test for the unitary on the controlled unitary and then measure the 
     auxilary case_indicator QuantumFloat in the Z basis
@@ -118,7 +118,7 @@ def build_S_H_from_Tk(Tk_expectation, D):
     Construct Lanczos overlap matrix S and Hamiltonian matrix H from Chebyshev polynomials.
 
     Uses Chebyshev recurrence identities to compute matrix elements
-    (Eq. (17), (19) in the reference paper) from measured expectations.
+    (Equations (17), (19) in the reference paper) from measured expectations.
 
     Parameters
     ----------
@@ -187,7 +187,7 @@ def lanczos_alg(H, D, state_prep_func, mes_kwargs = {}, cutoff=1e-2):
     Exact and efficient Lanczos method on a quantum computer for ground state energy estimation.
 
     This function implements the Lanczos method on a quantum computer using block-encodings of Chebyshev
-    polynomials T_k(H), closely following the algorithm proposed in
+    polynomials $T_k(H)$, closely following the algorithm proposed in
     "Exact and efficient Lanczos method on a quantum computer" (arXiv:2208.00567).
 
     The quantum Lanczos algorithm efficiently constructs a Krylov subspace by applying Chebyshev polynomials
