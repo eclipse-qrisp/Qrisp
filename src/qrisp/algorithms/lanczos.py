@@ -184,12 +184,25 @@ def lanczos_alg(H, D, state_prep_func, cutoff=1e-2):
     """
     Exact and efficient Lanczos method on a quantum computer for ground state energy estimation.
 
+    This function implements the Lanczos method on a quantum computer using block-encodings of Chebyshev
+    polynomials T_k(H), closely following the algorithm proposed in
+    "Exact and efficient Lanczos method on a quantum computer" (arXiv:2208.00567).
+
+    The quantum Lanczos algorithm efficiently constructs a Krylov subspace by applying Chebyshev polynomials
+    of the Hamiltonian to an initial state. The Krylov space dimension D determines the accuracy of ground
+    state energy estimation, with convergence guaranteed when the initial state has a sufficiently large overlap 
+    ($|\gamma_0|=\Omega(1/\text{poly}(n))$ for n qubits) with the true ground state. The Chebyshev approach allows exact
+    Krylov space construction (up to sample noise) without real or imaginary time evolution.
+
+    This algorithm is motivated by the rapid convergence of the Lanczos method for estimating extremal eigenvalues,
+    and its quantum version avoids the classical barrier of exponential cost in representing Krylov vectors.
+
     Implements the following steps:
-      1. Run quantum Lanczos subroutine to obtain Chebyshev expectation values.
+      1. Run quantum Lanczos subroutine to obtain Chebyshev expectation values $\langle T_k(H)\rangle$.
       2. Build overlap and Hamiltonian subspace matrices (S, H).
-      3. Regularize overlap matrix S and H.
-      4. Solve generalized eigenvalue problem Hv=ESv.
-      5. Return lowest eigenvalue as ground state energy estimate.
+      3. Regularize overlap matrix S and H by projecting onto the subspace with well conditioned eigenvalues.
+      4. Solve generalized eigenvalue problem $\mathbf{H}\vec{v}=\epsilon\mathbf{S}\vec{v}$.
+      5. Return lowest eigenvalue $\epsilon_{\text{min}}$ as ground state energy estimate.
 
     Parameters
     ----------
@@ -239,23 +252,23 @@ def lanczos_alg(H, D, state_prep_func, cutoff=1e-2):
 
         print(f"Ground state energy estimate: {energy}")
 
-        
+
     """
     unitaries, coeffs = H.unitaries()
     
     # Step 1: Quantum Lanczos: Get expectation values of Chebyshev polynomials
     meas_counts = inner_lanczos(H, D, state_prep_func)
 
-    # Step 2: Convert counts to expectation values
+    # Convert counts to expectation values
     Tk_expvals = {k: compute_expectation(counts) for k, counts in meas_counts.items()}
 
-    # Step 3: Build matrices S and H
+    # Step 2: Build matrices S and H
     S, H_mat = build_S_H_from_Tk(Tk_expvals, D)
 
-    # Step 4: Regularize matrices via thresholding
+    # Step 3: Regularize matrices via thresholding
     S_reg, H_reg = regularize_S_H(S, H_mat, cutoff=cutoff)
 
-    # Step 5: Solve generalized eigenvalue problem Hv = ESv
+    # Step 4: Solve generalized eigenvalue problem $\mathbf{H}\vec{v}=\epsilon\mathbf{S}\vec{v}$
     evals, evecs = scipy.linalg.eigh(H_reg, S_reg)
 
     ground_state_energy = np.min(evals)*sum(coeffs)
