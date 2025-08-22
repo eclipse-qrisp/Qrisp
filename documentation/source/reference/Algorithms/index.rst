@@ -43,6 +43,7 @@ We encourage you to explore these algorithms, delve into their documentation, an
    QITE
    Shor
    Grover
+   Lanczos
    QuantumBacktrackingTree
    quantum_counting   
    QMCI

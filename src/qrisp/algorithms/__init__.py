@@ -25,3 +25,4 @@ from qrisp.algorithms.quantum_counting import quantum_counting
 import qrisp.algorithms.vqe as vqe
 import qrisp.algorithms.qite as qite
 import qrisp.algorithms.qmci as qmci
+import qrisp.algorithms.lanczos as lanczos
