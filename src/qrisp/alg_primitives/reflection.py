@@ -37,7 +37,7 @@ from qrisp.jasp import jlen
 @gate_wrap(permeability=[], is_qfree=False)
 def reflection(qargs, state_function, args=(), kwargs={}, phase=np.pi, reflection_indices=None):
     r"""
-    Applies a reflection around a state $\ket{\psi}$ of (multiple) QuantumVariables, i.e.,
+    Applies a reflection around a state $\ket{\psi}$ of (multiple) QuantumVariables, i.e., applies the operator
 
     .. math::
 
@@ -53,7 +53,7 @@ def reflection(qargs, state_function, args=(), kwargs={}, phase=np.pi, reflectio
     state_function : function, optional
         A Python function ``state_function(*qargs, *args, **kwargs)`` preparing the state $\ket{\psi}$ in variables ``qargs`` around which to reflect.
     args : tuple, optional
-        Arguments for the state function.
+        Additional arguments for the state function.
     kwargs : dict, optional
         Keyword arguments for the state function.
     phase : float or sympy.Symbol, optional
@@ -137,7 +137,7 @@ def reflection(qargs, state_function, args=(), kwargs={}, phase=np.pi, reflectio
             ry(a, qv[1])
             ry(b, qv[2])
 
-            for i in jrange(1, qv.size):
+            for i in range(1, qv.size):
                 cx(qv[0], qv[i])
 
             
