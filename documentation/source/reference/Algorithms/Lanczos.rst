@@ -4,7 +4,7 @@
 Lanczos method
 ==============
 
-.. currentmodule:: qrisp.lanzcos
+.. currentmodule:: qrisp.lanczos
 
 .. autofunction:: lanczos_alg
    
