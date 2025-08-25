@@ -452,6 +452,7 @@ We want to compare them to a brute force solution. The following can also be fou
 What we can see here is a comparison between the likelyhood of a result appearing as a result of our DQI algorithm, plotted against to objective value of a solutions aquired via brute force. The results speaks for itself. 
 Remarkably, all high objective value results appear with the highest likelyhood among our post-selected states!
 
+Also, note that is alot of code for a singular plot!! This is additional material, we will omit a clear explanation here, since this is just visulization.
 
 ::
 
@@ -460,7 +461,8 @@ Remarkably, all high objective value results appear with the highest likelyhood 
     import numpy as np
     import networkx as nx
 
-    def _enumerate_solutions(num_vars: int,score_fn: Callable[[Tuple[int, ...]], int]) 
+    # retype solutions as ints to order them, and assign objective value
+    def _enumerate_solutions(num_vars: int, score_fn: Callable[[Tuple[int, ...]], int]): 
 
         results = []
         for bits in product([0,1], repeat=num_vars):
@@ -469,41 +471,145 @@ Remarkably, all high objective value results appear with the highest likelyhood 
         results.sort(key=lambda x: x[1], reverse=True)
         return results
 
-
+    # get all solutions
     def max_xorsat_all_solutions(G: nx.Graph) -> Tuple[List[Dict[int,int]], int]:
-
         def score(bits: Tuple[int,...]) -> int:
             return sum((bits[i] ^ bits[j]) == 1 for i, j in G.edges())
-
         raw = _enumerate_solutions(G.number_of_nodes(), score)
         best_score = raw[0][1]
-        # collect all assignments tying that best_score
+        # collect all assignments tying the best_score
         best = [bits for bits, s in raw if s == best_score]
         return ([{i: bits[i] for i in range(len(bits))} for bits in best], best_score)
 
-
+    # solve for all solutions
     def brute_force_max(B: np.ndarray, v: np.ndarray) -> List[Tuple[str,int]]:
-
         m, n = B.shape
-
         def score(bits: Tuple[int,...]) -> int:
             x = np.array(bits, dtype=int)
             return int(np.sum((-1)**(B.dot(x)+v)))
-
         raw = _enumerate_solutions(n, score)
         # return sorted ascending by bitstring integer (you can re-sort here if you like)
         # or leave descending by score—choose whichever API you prefer
         return [("".join(map(str,bits)), sc) for bits, sc in raw]
 
-
+    # solve for all solutions - function call
     brute_force_results = brute_force_max(B, v)
 
-    plot_results_union_plotly(
+    # create the cool plot
+    def plot_results_union_matplotlib(
+    brute_force_results: List[Tuple[str, int]],
+    dqi_results: Dict[str, int],
+    plot_name: str = "Comparison of DQI and True Objective Values",
+    spline_smoothing: float = 1.0,
+    left_axis_margin: float = 0.05  # fraction of max to leave above the curve
+    ) -> None:
+        """
+        Dual-axis Matplotlib chart: brute-force objective vs. DQI probability.
+        Secondary axis centered on 0 to align with primary axis.
+        Primary axis has a tighter cutoff near the max value.
+        """
+        if not brute_force_results:
+            raise ValueError("brute_force_results must be non-empty")
+
+        # determine full bit-length from brute-force labels
+        full_len = len(brute_force_results[0][0])
+
+        # normalize DQI keys
+        norm_dqi: Dict[str, int] = {}
+        for key, count in dqi_results.items():
+            parts = key.split()
+            if len(parts) == 2:
+                prefix, suffix = parts
+            else:
+                prefix, suffix = "", parts[0]
+            bits = suffix
+            if len(bits) < full_len:
+                bits = "0" * (full_len - len(bits)) + bits
+            full_bits = (prefix + " " + bits) if prefix else bits
+            norm_dqi[full_bits] = norm_dqi.get(full_bits, 0) + count
+        
+        prefix = ""
+        if dqi_results:
+            key_split = list(dqi_results.keys())[0].split(" ")
+            if len(key_split) == 2:
+                prefix = "0"*len(key_split[0]) 
+        bf_dict = {f"{prefix} {label}".strip(): val for label, val in brute_force_results}
+        for bits in norm_dqi:
+            if bits not in bf_dict:
+                bf_dict[bits] = 0
+
+        # union of all labels
+        all_keys = set(bf_dict) | set(norm_dqi)
+        sorted_keys = sorted(all_keys, key=lambda k: int(k.replace(" ", ""), 2))
+
+        # prepare series
+        bf_values  = [bf_dict.get(k, 0) for k in sorted_keys]
+        ext_counts = [norm_dqi.get(k, 0) for k in sorted_keys]
+        total_ext  = sum(ext_counts)
+        ext_probs  = [(c / total_ext) if total_ext else 0 for c in ext_counts]
+
+        x = np.arange(len(sorted_keys))
+
+        # start plot
+        fig, ax1 = plt.subplots(figsize=(14, 5))
+
+        # spline smoothing for bf_values if more than 3 points
+        if len(x) > 3:
+            spline = UnivariateSpline(x, bf_values, s=spline_smoothing*len(x))
+            x_smooth = np.linspace(x.min(), x.max(), 10000)
+            bf_smooth = spline(x_smooth)
+            
+            # clip spline to original min/max
+            bf_smooth = np.clip(bf_smooth, min(bf_values), max(bf_values))
+            
+            ax1.plot(x_smooth, bf_smooth, color="blue", label="Objective Value")
+        else:
+            ax1.plot(x, bf_values, color="blue", label="Objective Value")
+
+        # set tighter y-axis using clipped spline
+        ax1.set_ylim(min(bf_values) - 0.05*abs(min(bf_values)),
+                    max(bf_smooth) + left_axis_margin*max(bf_values))
+
+        ax1.fill_between(x_smooth, bf_smooth, color="blue", alpha=0.2)
+        ax1.set_ylabel("Objective Value", color="blue")
+        ax1.tick_params(axis="y", labelcolor="blue")
+
+        # tighter y-axis range for left axis
+        bf_max = max(bf_values) if bf_values else 1
+        bf_min = min(bf_values) if bf_values else 0
+        ax1.set_ylim(-(bf_max + bf_max*left_axis_margin), bf_max + bf_max*left_axis_margin)
+
+        # secondary axis for DQI probabilities
+        ax2 = ax1.twinx()
+        
+        # make secondary y-axis symmetric around 0
+        dqi_max = max(ext_probs) if ext_probs else 0.1
+        #ax2.set_ylim(-dqi_max- dqi_max*0.2, dqi_max+ dqi_max*0.2)
+        ax2.set_ylim(-dqi_max - dqi_max*0.2 , dqi_max+ dqi_max*0.2)
+        # plot bars centered on 0
+        ax2.bar(x, ext_probs, alpha=0.6, color="red", label="DQI (Probability)", bottom=0)
+
+        ax2.set_ylabel("Probability (DQI)", color="red")
+        ax2.tick_params(axis="y", labelcolor="red")
+
+        plt.xticks(x, sorted_keys, rotation=45, ha="right")
+        plt.title(plot_name)
+
+        # combine legends
+        lines, labels = ax1.get_legend_handles_labels()
+        bars, blabels = ax2.get_legend_handles_labels()
+        ax1.legend(lines + bars, labels + blabels, loc="upper center", ncol=2)
+
+        plt.tight_layout()
+        plt.show()
+
+    # create the cool plot - function call
+    plot_results_union_matplotlib(
         brute_force_results,
         corr_sols_dqi,
         plot_name="Comparison of DQI Results with True Objective Values (Post-selected on |0⟩)",
         spline_smoothing=1.3
-    )
+        )
 
 
 Congratulations, you have implemented the full version of the DQI algorithm and are now able to tackle optimization problems all on your own! Check out the next section for a heads up on where to go from here.
