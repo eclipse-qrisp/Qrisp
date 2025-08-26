@@ -323,7 +323,8 @@ class QuantumModulus(QuantumFloat):
     @gate_wrap(permeability=[1], is_qfree=True)
     def __imul__(self, other):
         if check_for_tracing_mode():
-            if isinstance(other, (int, np.integer, jnp.integer)):
+            from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
+            if isinstance(other, (int, np.integer, jnp.integer, jax.Array, BigInteger)):
                 from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import (
                     cq_montgomery_multiply_inplace
                 )

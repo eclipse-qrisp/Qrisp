@@ -86,8 +86,10 @@ class BigInteger:
         def add_step(i, state):
             carry, result = state
             s = jnp.uint64(a[i]) + jnp.uint64(b[i]) + carry
-            digit = jnp.uint32(s % BASE)
-            new_carry = jnp.uint64(s // BASE)
+            #digit = jnp.uint32(s % BASE)
+            digit = jnp.uint32(s & (BASE - 1))
+            #new_carry = jnp.uint64(s // BASE)
+            new_carry = jnp.uint64(s >> 32)
             result = result.at[i].set(jnp.uint32(digit))
             return new_carry, result
 
@@ -113,6 +115,11 @@ class BigInteger:
         carry, result = lax.fori_loop(0, a.shape[0], add_step, (0, result))
 
         return BigInteger(result)
+    
+    
+    @jax.jit
+    def __sub_alt__(self, other: "BigInteger") -> "BigInteger":
+        return ~((~self) + other)
 
     @jax.jit
     def __mul__(self, other: "BigInteger") -> "BigInteger":
@@ -192,7 +199,7 @@ class BigInteger:
         return jnp.all(d0 == d1)
     
     @jax.jit
-    def __ne__(self, other):
+    def __ne__(self, other: "BigInteger"):
         return jnp.logical_not(self == other)
     
     @jax.jit
@@ -240,6 +247,60 @@ class BigInteger:
         
         return lax.fori_loop(shift, self.digits.shape[0]*32, body_fun, BigInteger(jnp.zeros_like(self.digits)))
     
+    @jax.jit
+    def __and__(self, other: "BigInteger") -> "BigInteger":
+        n = self.digits.shape[0]
+        if not isinstance(other, BigInteger):
+            other = BigInteger.from_int(other, n)
+        a, b = self.digits, other.digits
+
+        def step(i, res):
+            res = res.at[i].set(a[i] & b[i])
+            return res
+
+        result = lax.fori_loop(0, a.shape[0], step, jnp.zeros_like(a))
+        return BigInteger(result)
+    
+    @jax.jit
+    def __or__(self, other: "BigInteger") -> "BigInteger":
+        n = self.digits.shape[0]
+        if not isinstance(other, BigInteger):
+            other = BigInteger.from_int(other, n)
+        a, b = self.digits, other.digits
+
+        def step(i, res):
+            res = res.at[i].set(a[i] | b[i])
+            return res
+
+        result = lax.fori_loop(0, a.shape[0], step, jnp.zeros_like(a))
+        return BigInteger(result)
+    
+    @jax.jit
+    def __xor__(self, other: "BigInteger") -> "BigInteger":
+        n = self.digits.shape[0]
+        if not isinstance(other, BigInteger):
+            other = BigInteger.from_int(other, n)
+        a, b = self.digits, other.digits
+
+        def step(i, res):
+            res = res.at[i].set(a[i] ^ b[i])
+            return res
+
+        result = lax.fori_loop(0, a.shape[0], step, jnp.zeros_like(a))
+        return BigInteger(result)
+    
+    @jax.jit
+    def __invert__(self) -> "BigInteger":
+        n = self.digits.shape[0]
+        a = self.digits
+
+        def step(i, res):
+            res = res.at[i].set(~a[i])
+            return res
+
+        result = lax.fori_loop(0, a.shape[0], step, jnp.zeros_like(a))
+        return BigInteger(result)
+
     @jax.jit
     def __mod__(self, other: "BigInteger"):
         if not isinstance(other, BigInteger):

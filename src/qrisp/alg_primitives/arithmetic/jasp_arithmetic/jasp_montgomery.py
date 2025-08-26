@@ -19,7 +19,7 @@
 from typing import Union
 from qrisp.alg_primitives.arithmetic.adders.gidney import gidney_adder
 from qrisp.qtypes import QuantumFloat, QuantumModulus
-from qrisp.jasp import jrange, check_for_tracing_mode
+from qrisp.jasp import jrange, check_for_tracing_mode, jlen
 from qrisp.environments import control, invert, custom_control
 from .jasp_bigintiger import BigInteger
 from .jasp_mod_tools import *
@@ -82,7 +82,7 @@ def q_montgomery_reduction(qf: QuantumFloat, N: Union[int, BigInteger], m: int, 
     with control(qf[-1]):
         inpl_adder(N, qf[m:-1])
     
-    for i in xrange(get_size(qf)-m-+1):
+    for i in xrange(jlen(qf)-m-+1):
         swap(qf[-1-i], qf[-1-i-1])
     cx(qf[m+1], qf[m])
 
@@ -137,7 +137,7 @@ def cq_montgomery_multiply(X: Union[int, BigInteger], y: QuantumFloat, N: Union[
                 return len(arg)
             else:
                 return arg.size
-    n = get_size(y)
+    n = jlen(y)
     if res is None:
         res = QuantumFloat(n)
     aux = QuantumFloat(m+1)
@@ -268,18 +268,18 @@ def qq_montgomery_multiply(x: QuantumFloat, y: QuantumFloat, N: int, m: int, inp
                 return arg.size
             
     def qq_mul(ox: QuantumFloat, oy: QuantumFloat, ores: QuantumFloat):
-        for i in xrange(get_size(oy)):
+        for i in xrange(jlen(oy)):
             with control(oy[i]):
                 inpl_adder(ox[:], ores[i:])
 
     def qc_mul_inplace(operand, cl_int):
-        size = get_size(operand)
+        size = jlen(operand)
         for i in xrange(size - 1):
             with control(operand[size - 2 - i]):
                 inpl_adder(cl_int // 2, operand[size - 1 - i :])
 
             
-    n = get_size(y)
+    n = jlen(y)
     res = QuantumFloat(n)
     aux = QuantumFloat(m + 1)
     wqf = aux[:] + res[:]
@@ -326,19 +326,17 @@ def qq_montgomery_multiply_modulus(x: QuantumModulus, y: QuantumModulus):
                 return arg.size
             
     def qq_mul(ox: QuantumFloat, oy: QuantumFloat, ores: QuantumFloat):
-        for i in xrange(get_size(oy)):
+        for i in xrange(jlen(oy)):
             with control(oy[i]):
                 inpl_adder(ox[:], ores[i:])
 
     def qc_mul_inplace(operand, cl_int):
-        size = get_size(operand)
+        size = jlen(operand)
         for i in xrange(size - 1):
             with control(operand[size - 2 - i]):
                 inpl_adder(cl_int // 2, operand[size - 1 - i :])
 
-            
-    #n = get_size(y)
-    res = QuantumModulus(N)#QuantumFloat(n)
+    res = QuantumModulus(N)
     res.m = m
     aux = QuantumFloat(m + 1)
     wqf = aux[:] + res[:]
