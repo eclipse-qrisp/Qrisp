@@ -21,7 +21,6 @@ from qrisp import QuantumVariable, QuantumFloat, h, control, conjugate
 from qrisp.alg_primitives.prepare import prepare
 from qrisp.alg_primitives.switch_case import qswitch
 from qrisp.algorithms.grover import diffuser
-from qrisp.jasp import jrange
 import numpy as np
 import scipy
 
@@ -72,7 +71,7 @@ def inner_lanczos(H, D, state_prep_func, mes_kwargs):
 
     meas_res = {}
  
-    for k in jrange(0, 2*D):
+    for k in range(0, 2*D):
         case_indicator = QuantumFloat(n)
         operand = QuantumVariable(H.find_minimal_qubit_amount())
         state_prep_func(operand) # prepare operand $\ket{\psi_0}$
@@ -80,7 +79,7 @@ def inner_lanczos(H, D, state_prep_func, mes_kwargs):
         if k % 2 == 0:
             # EVEN k: Figure 1 top
             with conjugate(state_prep)(case_indicator):
-                for _ in jrange(k//2):
+                for _ in range(k//2):
                     UR(case_indicator, operand, unitaries)
             
             meas = case_indicator.get_measurement(**mes_kwargs)
@@ -89,7 +88,7 @@ def inner_lanczos(H, D, state_prep_func, mes_kwargs):
         else:
             # ODD k: Figure 1 bottom
             state_prep(case_indicator)
-            for _ in jrange(k//2):
+            for _ in range(k//2):
                 UR(case_indicator, operand, unitaries)
             qv = QuantumVariable(1)
             h(qv) # Hadamard test for <U>
