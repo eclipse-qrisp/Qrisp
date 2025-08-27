@@ -100,15 +100,23 @@ def jasp_qq_gidney_adder(a, b, ctrl=None):
 
             carry_out.delete()
 
-        # This is the CX at the "tip" of the V shape
-        cx(gidney_anc[n - 2], b[n - 1])
-
-        # This is the CX at the lower right of the circuit
+            cx(gidney_anc[n - 2], b[n - 1])
+        
+        
         if ctrl is not None:
+            # This is the CX at the "tip" of the V shape
+            with control(jnp.logical_not(perform_incrementation)):
+                mcx([ctrl, gidney_anc[n - 2]], ctrl_anc[0], method="gidney")
+                cx(ctrl_anc[0], b[n - 1])
+                mcx([ctrl, gidney_anc[n - 2]], ctrl_anc[0], method="gidney_inv")
+
+            # This is the CX at the lower right of the circuit
             mcx([ctrl, a[n - 1]], ctrl_anc[0], method="gidney")
             cx(ctrl_anc[0], b[n - 1])
             mcx([ctrl, a[n - 1]], ctrl_anc[0], method="gidney_inv")
         else:
+            with control(jnp.logical_not(perform_incrementation)):
+                cx(gidney_anc[n - 2], b[n - 1])
             cx(a[n - 1], b[n - 1])
 
         # Perform the right part of the V shape
@@ -120,7 +128,6 @@ def jasp_qq_gidney_adder(a, b, ctrl=None):
 
             if ctrl is not None:
                 # This is the controlled version described on page 4
-                pass
                 mcx([ctrl, a[i]], ctrl_anc[0], method="gidney")
                 cx(ctrl_anc[0], b[i])
                 mcx([ctrl, a[i]], ctrl_anc[0], method="gidney_inv")
