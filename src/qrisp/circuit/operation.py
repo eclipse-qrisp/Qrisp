@@ -332,7 +332,7 @@ class Operation:
         >>> qc.append(mcrx_gate, qc.qubits)
         >>> print(qc)
 
-        ::
+        .. code-block:: none
 
             qb_4: ─────■─────
                        │

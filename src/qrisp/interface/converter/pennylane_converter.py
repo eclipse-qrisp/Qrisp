@@ -89,6 +89,7 @@ import sympy
 
 
 def qml_converter(qc, circ=False):
+    import pennylane as qml
 
     def circuit(*args, wires=None):
 

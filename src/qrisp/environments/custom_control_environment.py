@@ -27,7 +27,7 @@ from qrisp.circuit import Operation, QuantumCircuit, Instruction
 from qrisp.environments.iteration_environment import IterationEnvironment
 from qrisp.core import merge
 
-from qrisp.jasp import check_for_tracing_mode, qache, AbstractQubit, make_jaspr
+from qrisp.jasp import check_for_tracing_mode, qache, AbstractQubit, make_jaspr, get_last_equation
 
 
 def custom_control(*func, **cusc_kwargs):
@@ -97,7 +97,7 @@ def custom_control(*func, **cusc_kwargs):
         print(a.qs)
 
 
-    ::
+    .. code-block:: none
 
         QuantumCircuit:
         --------------
@@ -128,7 +128,7 @@ def custom_control(*func, **cusc_kwargs):
 
         print(a.qs.transpile(1))
 
-    ::
+    .. code-block:: none
 
                          ┌───┐
                a.0: ──■──┤ X ├──■──
@@ -151,7 +151,15 @@ def custom_control(*func, **cusc_kwargs):
     # The controlled version is then stored in the params attribute
 
     # Qache the function (in non-traced mode, this has no effect)
-    func = qache(func, **cusc_kwargs)
+    
+    # Make sure the inv keyword argument is treated as a static argument
+    new_static_argnames = list(cusc_kwargs.get("static_argnames", []))
+    new_static_argnames.append("inv")
+    
+    qache_kwargs = dict(cusc_kwargs)
+    qache_kwargs["static_argnames"] = new_static_argnames
+    
+    func = qache(func, **qache_kwargs)
 
     def adaptive_control_function(*args, **kwargs):
 
@@ -240,30 +248,38 @@ def custom_control(*func, **cusc_kwargs):
             res = func(*args, **kwargs)
 
             # Retrieve the pjit equation
-            jit_eqn = jax._src.core.thread_local_state.trace_state.trace_stack.dynamic.jaxpr_stack[
-                0
-            ].eqns[
-                -1
-            ]
+            jit_eqn = get_last_equation()
 
-            if not jit_eqn.params["jaxpr"].jaxpr.ctrl_jaspr:
+            if not jit_eqn.params["jaxpr"].ctrl_jaspr:
                 # Trace the controlled version
+
+                # Make sure the inv keyword argument is treated as a static argument
+                # (this is important for the interaction with custom_inverse)
+                if "inv" in kwargs:
+                    custom_inversion = True
+                    custom_inv_value = kwargs["inv"]
+                    del kwargs["inv"]
+                else:
+                    custom_inversion = False
 
                 def ammended_func(*ammended_args, **kwargs):
                     new_kwargs = dict(kwargs)
                     new_kwargs["ctrl"] = ammended_args[0]
                     args = ammended_args[1:]
-                    return func(*args, **new_kwargs)
+                    if custom_inversion:
+                        return func(*args, inv = custom_inv_value, **new_kwargs)
+                    else:
+                        return func(*args, **new_kwargs)
 
                 ctrl_aval = AbstractQubit()
                 ammended_args = [ctrl_aval] + list(args)
-
+                
                 controlled_jaspr = make_jaspr(ammended_func, **cusc_kwargs)(
                     *ammended_args, **kwargs
                 )
-
+                
                 # Store controlled version
-                jit_eqn.params["jaxpr"].jaxpr.ctrl_jaspr = controlled_jaspr
+                jit_eqn.params["jaxpr"].ctrl_jaspr = controlled_jaspr
 
         return res
 

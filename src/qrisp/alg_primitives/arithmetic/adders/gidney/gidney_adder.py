@@ -29,8 +29,8 @@ from qrisp.jasp import check_for_tracing_mode, DynamicQubitArray
 
 def gidney_adder(a, b, c_in=None, c_out=None):
     """
-    In-place adder function based on `this paper <https://arxiv.org/abs/1709.06648>`__
-    performs the addition
+    In-place adder function based on `this paper <https://arxiv.org/abs/1709.06648>`__.
+    Performs the addition:
 
     ::
 

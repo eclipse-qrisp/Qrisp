@@ -17,12 +17,12 @@
 """
 
 import jax
-import jax.numpy as jnp
+from jax.extend.core import ClosedJaxpr
 
 from qrisp.core import recursive_qv_search, recursive_qa_search
 
 from qrisp.jasp.primitives import AbstractQuantumCircuit
-from qrisp.jasp.tracing_logic import TracingQuantumSession, check_for_tracing_mode
+from qrisp.jasp.tracing_logic import TracingQuantumSession, check_for_tracing_mode, get_last_equation
 
 
 def qache(*func, **kwargs):
@@ -216,10 +216,10 @@ def qache_helper(func, jax_kwargs):
 
     # This function performs the input function but also has the AbstractQuantumCircuit
     # in the signature.
-    def ammended_function(*ammended_args, **kwargs):
+    def ammended_function(*args, **kwargs):
 
-        abs_qc = ammended_args[-1]
-        args = ammended_args[:-1]
+        abs_qc = kwargs[10*"~"]
+        del kwargs[10*"~"]
 
         # Set the given AbstractQuantumCircuit as the
         # one carried by the tracing QuantumSession
@@ -297,9 +297,10 @@ def qache_helper(func, jax_kwargs):
         #         args[i] = jnp.array(args[i], dtype = jnp.complex)
 
         # Excecute the function
-        ammended_args = list(args) + [abs_qs.abs_qc]
+        ammended_kwargs = dict(kwargs)
+        ammended_kwargs[10*"~"] = abs_qs.abs_qc
         try:
-            res, abs_qc_new = ammended_function(*ammended_args, **kwargs)
+            res, abs_qc_new = ammended_function(*args, **ammended_kwargs)
         except Exception as e:
             abs_qs.conclude_tracing()
             raise e
@@ -309,11 +310,8 @@ def qache_helper(func, jax_kwargs):
         # Convert the jaxpr from the traced equation in to a Jaspr
         from qrisp.jasp import Jaspr
 
-        eqn = jax._src.core.thread_local_state.trace_state.trace_stack.dynamic.jaxpr_stack[
-            0
-        ].eqns[
-            -1
-        ]
+        eqn = get_last_equation()
+        
         jaxpr = eqn.params["jaxpr"].jaxpr
 
         if not isinstance(eqn.invars[-1].aval, AbstractQuantumCircuit):
@@ -330,9 +328,7 @@ def qache_helper(func, jax_kwargs):
                     )
                     break
 
-        eqn.params["jaxpr"] = jax.core.ClosedJaxpr(
-            Jaspr.from_cache(jaxpr), eqn.params["jaxpr"].consts
-        )
+        eqn.params["jaxpr"] = Jaspr.from_cache(eqn.params["jaxpr"])
 
         # Update the AbstractQuantumCircuit of the TracingQuantumSession
         abs_qs.abs_qc = abs_qc_new

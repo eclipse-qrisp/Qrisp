@@ -108,7 +108,7 @@ def inner_LCU(operand_prep, state_prep, unitaries, num_unitaries=None, oaa_iter=
 
     .. math::
 
-        A = \begin{pmatrix}1 & 1\\ 1 & 1\end{pmatrix} = \begin{pmatrix}1 & 0\\ 0 & 1\end{pmatrix} + \begin{pmatrix}1 & 1\\ 1 & 1\end{pmatrix} = I + X
+        A = \begin{pmatrix}1 & 1\\ 1 & 1\end{pmatrix} = \begin{pmatrix}1 & 0\\ 0 & 1\end{pmatrix} + \begin{pmatrix}0 & 1\\ 1 & 0\end{pmatrix} = I + X
 
     That is,
 
@@ -264,7 +264,7 @@ def LCU(operand_prep, state_prep, unitaries, num_unitaries=None, oaa_iter=0):
 
     .. math::
 
-        A = \begin{pmatrix}1 & 1\\ 1 & 1\end{pmatrix} = \begin{pmatrix}1 & 0\\ 0 & 1\end{pmatrix} + \begin{pmatrix}1 & 1\\ 1 & 1\end{pmatrix} = I + X
+        A = \begin{pmatrix}1 & 1\\ 1 & 1\end{pmatrix} = \begin{pmatrix}1 & 0\\ 0 & 1\end{pmatrix} + \begin{pmatrix}0 & 1\\ 1 & 0\end{pmatrix} = I + X
 
     This is,
 

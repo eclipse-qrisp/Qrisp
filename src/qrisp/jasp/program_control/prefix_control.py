@@ -17,9 +17,11 @@
 """
 
 from jax.lax import fori_loop, while_loop, cond
+from jax.extend.core import ClosedJaxpr
 import jax
 
-from qrisp.jasp.tracing_logic import TracingQuantumSession, check_for_tracing_mode
+from qrisp.core import recursive_qv_search, recursive_qa_search
+from qrisp.jasp.tracing_logic import TracingQuantumSession, check_for_tracing_mode, get_last_equation
 from qrisp.jasp.primitives import AbstractQuantumCircuit
 
 
@@ -111,31 +113,38 @@ def q_while_loop(cond_fun, body_fun, init_val):
 
     def new_body_fun(val):
         qs.start_tracing(val[1])
+        # The QuantumVariables from the arguments went through a flatten/unflattening cycle.
+        # The unflattening creates a new QuantumVariable object, that is however not yet
+        # registered in any QuantumSession. We register these in the current QuantumSession.
+        for qv in recursive_qv_search(val[0]):
+            qs.register_qv(qv, None)
         res = body_fun(val[0])
         abs_qc = qs.conclude_tracing()
         return (res, abs_qc)
 
     qs = TracingQuantumSession.get_instance()
     abs_qc = qs.abs_qc
-
     new_init_val = (init_val, abs_qc)
     while_res = while_loop(new_cond_fun, new_body_fun, new_init_val)
 
-    eqn = jax._src.core.thread_local_state.trace_state.trace_stack.dynamic.jaxpr_stack[
-        0
-    ].eqns[-1]
-    body_jaxpr = eqn.params["body_jaxpr"].jaxpr
-
-    if not isinstance(body_jaxpr.invars[-1].aval, AbstractQuantumCircuit):
-        raise Exception(
-            "Found implicit variable import in q_while. Please make sure all used variables are part of the body signature."
-        )
-
+    eqn = get_last_equation()
+    
+    body_jaxpr = eqn.params["body_jaxpr"]
+    
+    # If the AbstractQuantumCircuit is part of the constants of the body,
+    # the body did not execute any quantum operations.
+    # We remove the AbstractQuantumCircuit from the body signature
+    # to make the loop purely classical.
+    for i in range(eqn.params["body_nconsts"]):
+        if isinstance(body_jaxpr.jaxpr.invars[i].aval, AbstractQuantumCircuit):
+            eqn.invars.pop(i)
+            body_jaxpr.jaxpr.invars.pop(i)
+            eqn.params["body_nconsts"] -= 1
+            return while_res[0]
+        
     from qrisp import Jaspr
 
-    eqn.params["body_jaxpr"] = jax.core.ClosedJaxpr(
-        Jaspr.from_cache(body_jaxpr), eqn.params["body_jaxpr"].consts
-    )
+    eqn.params["body_jaxpr"] = Jaspr.from_cache(body_jaxpr)
 
     qs.abs_qc = while_res[1]
     return while_res[0]
@@ -290,12 +299,16 @@ def q_cond(pred, true_fun, false_fun, *operands):
 
     def new_true_fun(*operands):
         qs.start_tracing(operands[1])
+        for qv in recursive_qv_search(operands[0]):
+            qs.register_qv(qv, None)
         res = true_fun(*operands[0])
         abs_qc = qs.conclude_tracing()
         return (res, abs_qc)
 
     def new_false_fun(*operands):
         qs.start_tracing(operands[1])
+        for qv in recursive_qv_search(operands[0]):
+            qs.register_qv(qv, None)
         res = false_fun(*operands[0])
         abs_qc = qs.conclude_tracing()
         return (res, abs_qc)
@@ -307,14 +320,21 @@ def q_cond(pred, true_fun, false_fun, *operands):
 
     cond_res = cond(pred, new_true_fun, new_false_fun, *new_operands)
 
-    eqn = jax._src.core.thread_local_state.trace_state.trace_stack.dynamic.jaxpr_stack[
-        0
-    ].eqns[-1]
+    # There seem to be situations, where Jax performs some automatic type
+    # conversion after the cond call. This results in the cond equation
+    # not being the most recent equation.
+    # We therefore search for the last cond primitive.
+    i = 1
+    while True:
+        eqn = get_last_equation(-i)
+        if eqn.primitive.name == "cond":
+            break
+        i += 1
+        
+    false_jaxpr = eqn.params["branches"][0]
+    true_jaxpr = eqn.params["branches"][1]
 
-    false_jaxpr = eqn.params["branches"][0].jaxpr
-    true_jaxpr = eqn.params["branches"][1].jaxpr
-
-    if not isinstance(false_jaxpr.invars[-1].aval, AbstractQuantumCircuit):
+    if not isinstance(false_jaxpr.jaxpr.invars[-1].aval, AbstractQuantumCircuit):
         raise Exception(
             "Found implicit variable import in q_cond. Please make sure all used variables are part of the body signature."
         )
@@ -322,12 +342,8 @@ def q_cond(pred, true_fun, false_fun, *operands):
     from qrisp.jasp import Jaspr
 
     eqn.params["branches"] = (
-        jax.core.ClosedJaxpr(
-            Jaspr.from_cache(false_jaxpr), eqn.params["branches"][0].consts
-        ),
-        jax.core.ClosedJaxpr(
-            Jaspr.from_cache(true_jaxpr), eqn.params["branches"][1].consts
-        ),
+            Jaspr.from_cache(false_jaxpr),
+            Jaspr.from_cache(true_jaxpr)
     )
 
     qs.abs_qc = cond_res[-1]

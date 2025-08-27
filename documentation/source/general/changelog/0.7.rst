@@ -37,7 +37,7 @@ Iterative Quantum Phase Estimation
 Resource estimation
 -------------------
 
-Estimating the resources of large scale quantum algorithms has become an `important field of research <https://qre2024.quantumresource.org/>`_, as it provides concrete indicators, which purposes future quantum computers might be suitable for. A variety of frameworks exists for tackling this problem - in many cases however the framework can either (a) not compile/simulate the full algorithm, which makes it hard to verify correctness or (b) can only estimate the resources at limited scale. With Jasp we can now do both! The :ref:`count_ops <count_ops>` decorator uses the tight embedding into classically established compilation infrastructure to compile a binary program that computes the required resources. This allows us to probe algorithms with billions of gates within only a few seconds! By switching out the decorator to :ref:`jaspify`, we can simulate the exact same code without any changes on a smaller scale.
+Estimating the resources of large scale quantum algorithms has become an `important field of research <https://qre2024.quantumresource.org/>`_, as it provides concrete indicators, which purposes future quantum computers might be suitable for. A variety of frameworks exists for tackling this problem - in many cases however the framework can either (a) not compile/simulate the full algorithm, which makes it hard to verify correctness or (b) can only estimate the resources at limited scale. With Jasp we can now do both! The :ref:`count_ops <count_ops>` decorator uses the tight embedding into classically established compilation infrastructure to compile a binary program that computes the required resources. This allows us to probe algorithms at 1000000000 gates/s! By switching out the decorator to :ref:`jaspify`, we can simulate the exact same code without any changes on a smaller scale.
 
 Other Jaspified features
 ------------------------
@@ -55,8 +55,8 @@ New Tutorials
 
 Next to a major visual revamp of the :ref:`tutorial` page, the following tutorials have been added.
 
-* :ref:`HHL_tutorial`, explaining how to implement the HHL algorithm using Jasp.
-* :ref:`JaspQAOAtutorial`, explaining how to create your own Jasp implementation of QAOA from scratch.
+* A `tutorial about implementing the HHL algorithm using Jasp <https://www.qrisp.eu/general/tutorial/HHL.html>`_.
+* A `tutorial about creating your own Jasp implementation of QAOA <https://www.qrisp.eu/general/tutorial/JaspQAOAtutorial.html>`_ from scratch.
 
 UI Changes
 ----------

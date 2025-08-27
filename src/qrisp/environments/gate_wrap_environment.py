@@ -59,7 +59,7 @@ class GateWrapEnvironment(QuantumEnvironment):
 
     >>> print(qv.qs)
 
-    ::
+    .. code-block:: none
 
         QuantumCircuit:
         --------------
@@ -80,7 +80,7 @@ class GateWrapEnvironment(QuantumEnvironment):
     >>> instruction = gwe.instruction
     >>> print(instruction.op.definition)
 
-    ::
+    .. code-block:: none
 
                ┌───┐
         qb_41: ┤ X ├
@@ -104,7 +104,7 @@ class GateWrapEnvironment(QuantumEnvironment):
 
     >>> print(qv.qs)
 
-    ::
+    .. code-block:: none
 
         QuantumCircuit:
         --------------

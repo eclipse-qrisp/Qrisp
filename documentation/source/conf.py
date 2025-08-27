@@ -68,12 +68,21 @@ extensions = [
               #"nb2plots",
               ]
 
+# Use Python for default highlighting:
+highlight_language = "python"
+
+# Use a preferred Pygments style (e.g., "sphinx" or "monokai"):
+pygments_style = "sphinx"
+
+# Recognize code cells as Python 3 for highlighting:
+nbsphinx_codecell_lexer = "ipython3"
+
 imgmath_latex_preamble = r'\usepackage{braket}\n\usepackage{xcolor}'
 
 thebe_config = {
     "repository_url": "https://github.com/fraunhoferfokus/Qrisp",
     "repository_branch": "thebe_branch",
-    "selector": "div.highlight",
+    "selector": "div.input_area",
     "selector_output": "span.go",
 }
 
@@ -130,13 +139,14 @@ html_theme_options = {
     "search_bar_text": "Search the docs... ",
     # "navbar_align": "content",
     "pygment_light_style": "lovelace",
-    "secondary_sidebar_items": ["page-toc.html", "slack_link.html", "thebe_button.html"]
+    "secondary_sidebar_items": ["page-toc.html", "slack_link.html", "dynamic_sidebar.html", "thebe_button.html"]
 }
 html_sidebars = {
     "**": ["sidebar-nav-bs"],
     "index": [],
     "install": [],
-    "tutorial": [],
+    #"tutorial": [],
+    "tutorial/*": ["sidebar-nav-bs"],
     "auto_examples/index": [],
 }
 
@@ -167,7 +177,7 @@ html_logo = "../../logo/qrisp_logo.png"
 add_module_names = False
 
 html_css_files = [
-    'css/custom05.css',
+    'css/custom08.css',
 ]
 
 source_suffix = ['.rst', '.md']

@@ -35,20 +35,25 @@ This file implements the interfaces to evaluating the transformed Jaspr.
 
 from functools import lru_cache
 
+import numpy as np
+
 from qrisp.jasp.interpreter_tools.abstract_interpreter import (
-    insert_outvalues,
     extract_invalues,
     eval_jaxpr,
+    insert_outvalues
 )
+
 from qrisp.jasp.primitives import (
     QuantumPrimitive,
     OperationPrimitive,
     AbstractQubitArray,
 )
 
+
 import jax
 import jax.numpy as jnp
 from jax.random import key
+
 
 
 # This functions takes a "profiling dic", i.e. a dictionary of the form {str : int}
@@ -56,7 +61,7 @@ from jax.random import key
 # It returns an equation evaluator, which increments a counter in an array for
 # each quantum operation.
 def make_profiling_eqn_evaluator(profiling_dic, meas_behavior):
-
+    
     def profiling_eqn_evaluator(eqn, context_dic):
 
         invalues = extract_invalues(eqn, context_dic)
@@ -68,7 +73,8 @@ def make_profiling_eqn_evaluator(profiling_dic, meas_behavior):
             # via the Jax-given .at method.
             if isinstance(eqn.primitive, OperationPrimitive):
 
-                counting_array = list(invalues[-1])
+                counting_array = list(invalues[-1][0])
+                incrementation_constants = invalues[-1][1]
 
                 op = eqn.primitive.op
 
@@ -79,14 +85,31 @@ def make_profiling_eqn_evaluator(profiling_dic, meas_behavior):
 
                 for op_name, count in op_counts.items():
                     counting_index = profiling_dic[op_name]
-                    counting_array[counting_index] += count
+                    
+                    # It seems like at this point we can just
+                    # naively increment the Jax tracer but
+                    # unfortunately the XLA compiler really 
+                    # doesn't like constants. (Compile time blows up)
+                    # We therefore jump through a lot of hoops
+                    # to make it look like we are adding variables.
+                    # This is done by supplying a list of tracers
+                    # that will contain the numbers from 1 to n.
+                    # Here is the next problem: If n is very large
+                    # this also slows down the compilation because
+                    # each function call has to have n+ arguments.
+                    # We therefore perform the following loop:
+                    while count:
+                        incrementor = min(count, len(incrementation_constants))
+                        count -= incrementor
+                        counting_array[counting_index] += incrementation_constants[incrementor-1]
 
-                insert_outvalues(eqn, context_dic, counting_array)
+                insert_outvalues(eqn, context_dic, (counting_array, incrementation_constants))
 
             elif eqn.primitive.name == "jasp.measure":
 
                 counting_index = profiling_dic["measure"]
-                counting_array = list(invalues[-1])
+                counting_array = list(invalues[-1][0])
+                incrementation_constants = invalues[-1][1]
 
                 meas_number = counting_array[counting_index]
 
@@ -117,10 +140,10 @@ def make_profiling_eqn_evaluator(profiling_dic, meas_behavior):
                         raise Exception(
                             f"Tried to profil Jaspr with a measurement behavior not returning a boolean (got {meas_res.dtype}) instead"
                         )
-                    counting_array[counting_index] += 1
+                        
+                    counting_array[counting_index] += incrementation_constants[1]
 
-                # The measurement returns always 0
-                insert_outvalues(eqn, context_dic, [meas_res, counting_array])
+                insert_outvalues(eqn, context_dic, [meas_res, (counting_array, incrementation_constants)])
 
             # Since we don't need to track to which qubits a certain operation
             # is applied, we can implement a really simple behavior for most
@@ -156,32 +179,41 @@ def make_profiling_eqn_evaluator(profiling_dic, meas_behavior):
             elif eqn.primitive.name in ["jasp.delete_qubits", "jasp.reset"]:
                 # Trivial behavior: return the last argument (the counting array).
                 insert_outvalues(eqn, context_dic, invalues[-1])
-
-            elif eqn.primitive.name == "jasp.quantum_kernel":
-                raise Exception(
-                    "Tried to perform resource estimation on a function calling calling a kernelized function"
-                )
+            elif eqn.primitive.name == "jasp.create_quantum_kernel":
+                raise Exception("Tried to perform resource estimation on a function calling calling a kernelized function")
             else:
                 raise Exception(
                     f"Don't know how to perform resource estimation with quantum primitive {eqn.primitive}"
                 )
 
         elif eqn.primitive.name == "while":
-
+            
+            overall_constant_amount= max(eqn.params["body_nconsts"], eqn.params["cond_nconsts"])
+            
             # Reinterpreted body and cond function
             def body_fun(val):
+                
+                constants = val[:eqn.params["body_nconsts"]]
+                carries = val[overall_constant_amount:]
+                
                 body_res = eval_jaxpr(
                     eqn.params["body_jaxpr"], eqn_evaluator=profiling_eqn_evaluator
-                )(*val)
-                return tuple(body_res)
+                )(*(constants + carries))
+                
+                return val[:overall_constant_amount] + tuple(body_res)
 
             def cond_fun(val):
+                
+                constants = val[:eqn.params["cond_nconsts"]]
+                carries = val[overall_constant_amount:]
+                
                 res = eval_jaxpr(
                     eqn.params["cond_jaxpr"], eqn_evaluator=profiling_eqn_evaluator
-                )(*val)
+                )(*(constants + carries))
+                
                 return res
 
-            outvalues = jax.lax.while_loop(cond_fun, body_fun, tuple(invalues))
+            outvalues = jax.lax.while_loop(cond_fun, body_fun, tuple(invalues))[overall_constant_amount:]
 
             insert_outvalues(eqn, context_dic, outvalues)
 
@@ -223,7 +255,7 @@ def make_profiling_eqn_evaluator(profiling_dic, meas_behavior):
             zipped_profiling_dic = tuple(profiling_dic.items())
 
             profiler = get_compiled_profiler(
-                eqn.params["jaxpr"].jaxpr, zipped_profiling_dic, meas_behavior
+                eqn.params["jaxpr"], zipped_profiling_dic, meas_behavior
             )
 
             outvalues = profiler(*invalues)
@@ -246,8 +278,15 @@ def get_compiled_profiler(jaxpr, zipped_profiling_dic, meas_behavior):
 
     profiling_eqn_evaluator = make_profiling_eqn_evaluator(profiling_dic, meas_behavior)
 
-    @jax.jit
+    jitted_profiler = jax.jit(eval_jaxpr(jaxpr, eqn_evaluator=profiling_eqn_evaluator))
+    
+    call_counter = np.zeros(1)
+    
     def profiler(*args):
-        return eval_jaxpr(jaxpr, eqn_evaluator=profiling_eqn_evaluator)(*args)
+        if call_counter[0] < 3 or len(jaxpr.eqns) < 20:
+            call_counter[0] += 1
+            return eval_jaxpr(jaxpr, eqn_evaluator=profiling_eqn_evaluator)(*args)
+        else:
+            return jitted_profiler(*args)
 
     return profiler

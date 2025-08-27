@@ -21,6 +21,7 @@ import traceback
 import numpy as np
 import sympy
 from jax.lax import fori_loop, cond
+import functools
 
 
 def bin_rep(n, bits):
@@ -252,7 +253,7 @@ def gate_wrap(*args, permeability=None, is_qfree=None, name=None, verify=False):
 
     >>> print(a.qs)
 
-    ::
+    .. code-block:: none
 
         QuantumCircuit:
         --------------
@@ -276,7 +277,7 @@ def gate_wrap(*args, permeability=None, is_qfree=None, name=None, verify=False):
 
     >>> print(a.qs.transpile())
 
-    ::
+    .. code-block:: none
 
              ┌───┐                    ┌───┐
         b.0: ┤ X ├─────────────────■──┤ H ├──────────
@@ -315,7 +316,7 @@ def gate_wrap(*args, permeability=None, is_qfree=None, name=None, verify=False):
 
     >>> print(qv_0.qs)
 
-    ::
+    .. code-block:: none
 
         QuantumCircuit:
         --------------
@@ -336,7 +337,7 @@ def gate_wrap(*args, permeability=None, is_qfree=None, name=None, verify=False):
     >>> qv_1.uncompute()
     >>> print(qv_0.qs)
 
-    ::
+    .. code-block:: none
 
         QuantumCircuit:
         --------------
@@ -360,7 +361,7 @@ def gate_wrap(*args, permeability=None, is_qfree=None, name=None, verify=False):
     >>> res.uncompute()
     >>> print(qv_0.qs)
 
-    ::
+    .. code-block:: none
 
         QuantumCircuit:
         --------------
@@ -375,6 +376,7 @@ def gate_wrap(*args, permeability=None, is_qfree=None, name=None, verify=False):
         ---------------------
     """
 
+    """
     if len(args):
         return gate_wrap_inner(args[0])
 
@@ -390,7 +392,29 @@ def gate_wrap(*args, permeability=None, is_qfree=None, name=None, verify=False):
             )
 
         return gate_wrap_helper
+    """
 
+    def gate_wrap_helper(function):
+        @functools.wraps(function)
+        def wrapper(*fargs, **fkwargs):
+            # gate_wrap_inner is assumed to return another callable (the actual decorated function),
+            # which we then call with fargs, fkwargs
+            return gate_wrap_inner(
+                function,
+                permeability=permeability,
+                is_qfree=is_qfree,
+                name=name,
+                verify=verify
+            )(*fargs, **fkwargs)
+        return wrapper
+
+    # If the decorator is called directly with a function (e.g. @gate_wrap)
+    # args will contain that function as args[0].
+    if len(args) == 1 and callable(args[0]):
+        return gate_wrap_helper(args[0])
+    else:
+        # Otherwise, return the decorator that can be applied to a function later
+        return gate_wrap_helper
 
 def gate_wrap_inner(
     function, permeability=None, is_qfree=None, name=None, verify=False
@@ -728,6 +752,10 @@ def multi_measurement(qv_list, shots=None, backend=None):
     {(3, 2, 5): 0.5, (3, 3, 6): 0.5}
 
     """
+    
+    from qrisp.jasp import check_for_tracing_mode
+    if check_for_tracing_mode():
+        raise Exception("Tried to call multi_measurement in Jasp mode. Please use terminal_sampling instead")
 
     if backend is None:
         if qv_list[0].qs.backend is None:
@@ -1440,7 +1468,7 @@ def redirect_qfunction(function_to_redirect):
 
     >>> print(a.qs)
 
-    ::
+    .. code-block:: none
 
         QuantumCircuit:
         --------------
@@ -1874,7 +1902,7 @@ def lifted(*args, verify=False):
 
     >>> print(res.qs)
 
-    ::
+    .. code-block:: none
 
         QuantumCircuit:
         --------------
@@ -1893,7 +1921,7 @@ def lifted(*args, verify=False):
     >>> res.uncompute()
     >>> print(res.qs)
 
-    ::
+    .. code-block:: none
 
         QuantumCircuit:
         --------------
@@ -2213,3 +2241,99 @@ def inpl_adder_test(inpl_adder):
                         assert (
                             b == a
                         ), f"Controlled classical-quantum addition behaviour was incorrect; an operation was performed without the control qubit in |1> state. Faulty input sizes: {i}"
+
+
+def batched_measurement(variables, backend, shots=None):
+    """
+    This functions facilitates the measurement of multiple :ref:`QuantumVariables <QuantumVariable>` with a :ref:`BatchedBackend`.
+
+    Parameters
+    ----------
+    variables : list[:ref:`QuantumVariable`]
+        A list of QuantumVariables.
+    backend : :ref:`BatchedBackend`
+        The backend to evaluate the compiled QuantumCircuits on. 
+    shots : int, optional
+        The amount of shots to perform. The default is given by the backend used.
+        
+    Returns
+    -------
+    results : list[dict]
+        The list of results.
+
+    Examples
+    --------
+
+    We set up a BatchedBackend, which sequentially executes the QuantumCircuits
+    on the Qrisp simulator.
+
+    ::
+
+        from qrisp import *
+        from qrisp.interface import BatchedBackend
+
+        def run_func_batch(batch):
+            # Parameters
+            # ----------
+            # batch : list[tuple[QuantumCircuit, int]]
+            #     The circuit and shot batch indicating the backend queries.
+
+            # Returns
+            # -------
+            # results : list[dict[string, int]]
+            #     The list of results.
+
+            results = []
+            for i in range(len(batch)):
+                qc = batch[i][0]
+                shots = batch[i][1]
+                results.append(qc.run(shots = shots))
+
+            return results
+
+        # Set up batched backend
+        bb = BatchedBackend(run_func_batch)
+
+        a = QuantumFloat(4)
+        b = QuantumFloat(3)
+        a[:] = 1
+        b[:] = 2
+        c = a + b
+
+        d = QuantumFloat(4)
+        e = QuantumFloat(3)
+        d[:] = 2
+        e[:] = 3
+        f = d + e
+
+        batched_measurement([c,f], backend=bb)
+        # Yields: [{3: 1.0}, {5: 1.0}]
+    
+    """
+
+    import threading
+
+    results = [0]*len(variables)
+    def eval_measurement(qv, i):
+        results[i] = qv.get_measurement(backend = backend, shots = shots)
+
+    threads = []
+    for i, var in enumerate(variables):
+        thread = threading.Thread(target = eval_measurement, args = (var, i, ))
+        threads.append(thread)
+
+    # Start the threads
+    for thread in threads:
+        thread.start()
+
+    # Call the dispatch routine
+    # The min_calls keyword will make it wait 
+    # until the batch has a size of number of variables
+    backend.dispatch(min_calls = len(variables))
+
+    # Wait for the threads to join
+    for thread in threads:
+        thread.join()
+
+    # Inspect the results
+    return results

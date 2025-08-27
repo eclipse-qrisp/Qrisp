@@ -16,7 +16,7 @@
 ********************************************************************************
 """
 
-import pennylane as qml 
+
 from qrisp.interface import qml_converter
 
 from qrisp.circuit.standard_operations import     XGate,YGate, ZGate,    CXGate,  CYGate,    CZGate,MCXGate,PGate,  CPGate,u3Gate,  HGate,RXGate,   RYGate,   RZGate,   MCRXGate,SGate , TGate, RXXGate,RZZGate,  SXGate,   SXDGGate,  Barrier, Measurement,  Reset,  QubitAlloc, QubitDealloc,GPhaseGate,  SwapGate,U1Gate,  IDGate
@@ -28,6 +28,7 @@ from qrisp import QuantumVariable
 # create randomized qrisp circuit, convert to pennylane, measure outcomes and compare if they are equivalent.
 
 def randomized_ciruit_testing():
+    import pennylane as qml 
 
     ############ create the randomized circuit
     qvRand = QuantumVariable(10)

@@ -17,6 +17,7 @@
 """
 
 import sympy
+import jax
 
 import qrisp.circuit.standard_operations as std_ops
 from qrisp.jasp import check_for_tracing_mode, DynamicQubitArray, jlen
@@ -205,13 +206,13 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
 
     We apply a 3-contolled X gate
 
-    >>> from qrisp import QuantumVariable, mcx
+    >>> from qrisp import QuantumVariable, mcx, QuantumBool
     >>> control = QuantumVariable(3)
-    >>> target = QuantumVariable(1)
+    >>> target = QuantumBool()
     >>> mcx(control, target, method = "gray")
     >>> print(control.qs)
 
-    ::
+    .. code-block:: none
 
         QuantumCircuit:
         --------------
@@ -226,17 +227,17 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
         Live QuantumVariables:
         ---------------------
         QuantumVariable control
-        QuantumVariable target
+        QuantumBool target
 
     We compare different performance indicators. ::
 
-        from qrisp import QuantumVariable, mcx
+        from qrisp import QuantumVariable, mcx, QuantumBool
 
         def benchmark_mcx(n, methods):
             for method in methods:
 
                 controls = QuantumVariable(n)
-                target = QuantumVariable(1)
+                target = QuantumBool()
 
                 mcx(controls, target, method = method)
 
@@ -319,7 +320,7 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
 
     >>> from qrisp import QuantumVariable, mcx
     >>> control = QuantumVariable(2)
-    >>> target = QuantumVariable(1)
+    >>> target = QuantumBool()
     >>> mcx(control, target, method = "jones")
     >>> print(control.qs)
     QuantumCircuit:
@@ -338,7 +339,7 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
     Live QuantumVariables:
     ----------------------
     QuantumVariable control
-    QuantumVariable target
+    QuantumBool target
 
     We see that there is no classical bit and therefore also no measurement.
     The statevector can still be accessed:
@@ -388,7 +389,7 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
     the respective partner if called to invert:
 
     >>> control = QuantumVariable(2)
-    >>> target = QuantumVariable(1)
+    >>> target = QuantumBool()
     >>> mcx(control, target, method = "gidney")
     >>> print(control.qs)
     QuantumCircuit:
@@ -403,7 +404,7 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
     Live QuantumVariables:
     ----------------------
     QuantumVariable control
-    QuantumVariable target
+    QuantumBool target
 
     This even works in conjunction with the :ref:`uncomputation module <Uncomputation>`:
 
@@ -443,7 +444,7 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
         from qrisp import invert
 
         control = QuantumVariable(2)
-        target = QuantumVariable(1)
+        target = QuantumBool()
 
         with invert():
             mcx(control, target, method = "gidney")
@@ -462,7 +463,7 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
     Live QuantumVariables:
     ----------------------
     QuantumVariable control
-    QuantumVariable target
+    QuantumBool target
 
 
     """
@@ -913,14 +914,14 @@ def ry(phi, qubits):
 
 def rz(phi, qubits):
     """
-    Applies an RY gate.
+    Applies an RZ gate.
 
     Parameters
     ----------
     phi : float or sympy.Symbol
         The angle parameter.
     qubits : Qubit or list[Qubit] or QuantumVariable
-        The Qubit to perform the RY gate on.
+        The Qubit to perform the RZ gate on.
 
     """
 
@@ -936,7 +937,7 @@ def rz(phi, qubits):
 
 def crz(phi, qubits_0, qubits_1):
     """
-    Applies controled RZ gate
+    Applies controlled RZ gate
 
     Parameters
     ----------
@@ -1097,8 +1098,6 @@ def rzz(phi, qubits_0, qubits_1):
     ----------
     phi : float or sympy.Symbol
         The phase to apply.
-    beta : float or sympy.Symbol
-        The other angle parameter.
     qubits_0 : Qubit or list[Qubit] or QuantumVariable
         The first argument to perform the RZZ gate one.
     qubits_1 : Qubit or list[Qubit] or QuantumVariable
@@ -1122,8 +1121,6 @@ def rxx(phi, qubits_0, qubits_1):
     ----------
     phi : float or sympy.Symbol
         The phase to apply.
-    beta : float or sympy.Symbol
-        The other angle parameter.
     qubits_0 : Qubit or list[Qubit] or QuantumVariable
         The first argument to perform the RXX gate one.
     qubits_1 : Qubit or list[Qubit] or QuantumVariable
@@ -1134,10 +1131,8 @@ def rxx(phi, qubits_0, qubits_1):
         rxx_gate = std_ops.RXXGate(sympy.Symbol("alpha"))
         append_operation(rxx_gate, [qubits_0, qubits_1], param_tracers=[phi])
     else:
-        rxx_gate = std_ops.RZZGate(phi)
+        rxx_gate = std_ops.RXXGate(phi)
         append_operation(rxx_gate, [qubits_0, qubits_1])
-
-    append_operation(rxx_gate, [qubits_0, qubits_1])
     return qubits_0, qubits_1
 
 
@@ -1212,14 +1207,19 @@ def measure(qubits):
             DynamicQubitArray,
         )
         from qrisp import QuantumVariable, QuantumArray
+        
+        if not qs.abs_qc._trace is jax.core.trace_ctx.trace:
+            raise Exception(
+                """Lost track of QuantumCircuit during tracing. This might have been caused by a missing quantum_kernel decorator or not using quantum prefix control (like q_fori_loop, q_cond). Please visit https://www.qrisp.eu/reference/Jasp/Quantum%20Kernel.html for more details"""
+            )
 
         if isinstance(qubits, (DynamicQubitArray, QuantumVariable, QuantumArray)):
             res = qubits.measure()
-        elif isinstance(qubits.aval, (AbstractQubitArray, AbstractQubit)):
+        elif isinstance(qubits, jax.core.Tracer) and isinstance(qubits.aval, (AbstractQubitArray, AbstractQubit)):
             res, abs_qc = Measurement_p.bind(qubits, qs.abs_qc)
             qs.abs_qc = abs_qc
         else:
-            raise Exception(f"Tried to measure type {type(qubits.aval)}")
+            raise Exception(f"Tried to measure type {type(qubits)}")
 
         return res
 
@@ -1278,7 +1278,7 @@ def barrier(qubits):
     >>> y(qv)
     >>> print(qv.qs)
 
-    ::
+    .. code-block:: none
 
         QuantumCircuit:
         --------------

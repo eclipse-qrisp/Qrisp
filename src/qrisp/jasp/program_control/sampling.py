@@ -241,7 +241,7 @@ def sample(state_prep=None, shots=0, post_processor=None):
 
             # Trace the decoding
             @jax.jit
-            def sampling_helper_2(acc, i, *meas_ints):
+            def sampling_helper_2(*meas_ints):
                 decoded_values = []
                 for j in range(len(qv_tuple)):
                     decoded_values.append(qv_tuple[j].jdecoder(meas_ints[j]))
@@ -258,12 +258,12 @@ def sample(state_prep=None, shots=0, post_processor=None):
                     if len(acc.shape) == 1:
                         raise AuxException()
 
-                # Insert into the accumulating array
-                acc = acc.at[i].set(decoded_values)
+                return decoded_values
 
-                return acc
-
-            acc = sampling_helper_2(acc, i, *measurement_ints)
+            decoded_values = sampling_helper_2(*measurement_ints)
+            
+            # Insert into the accumulating array
+            acc = acc.at[i].set(decoded_values)
 
             return (acc, *args[1:])
 

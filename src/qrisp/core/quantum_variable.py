@@ -17,13 +17,13 @@
 """
 
 import copy
-import weakref
 
 import matplotlib.pyplot as plt
 import numpy as np
 from jax import tree_util
 
 from qrisp.core.compilation import qompiler
+
 
 
 class QuantumVariable:
@@ -79,7 +79,7 @@ class QuantumVariable:
     >>> cx(example_qv, example_qv_2)
     >>> print(example_qv.qs)
 
-    ::
+    .. code-block:: none
 
         QuantumCircuit:
         --------------
@@ -117,7 +117,7 @@ class QuantumVariable:
 
     >>> print(s.qs)
 
-    ::
+    .. code-block:: none
 
         QuantumCircuit:
         --------------
@@ -830,20 +830,32 @@ class QuantumVariable:
 
         """
 
-        if position == -1:
-            position = self.size
-
         insertion_qubits = self.qs.request_qubits(amount)
+        from qrisp.jasp import check_for_tracing_mode
 
-        for i in range(amount):
-            insertion_qubits[i].identifier = (
-                self.name
-                + "_ext_"
-                + str(self.qs.qubit_index_counter[0])
-                + "."
-                + str(self.size)
-            )
-            self.reg.insert(position + i, insertion_qubits[i])
+        if check_for_tracing_mode():
+            
+            if isinstance(position, int) and position in [0, -1]:
+                if position == -1:
+                    self.reg = self.reg + insertion_qubits
+                elif position == 0:
+                    self.reg = insertion_qubits + self.reg
+            else:
+                self.reg = self.reg[:position] + insertion_qubits + self.reg[position:]
+        else:
+            
+            if position == -1:
+                position = self.size
+            
+            for i in range(amount):
+                insertion_qubits[i].identifier = (
+                    self.name
+                    + "_ext_"
+                    + str(self.qs.qubit_index_counter[0])
+                    + "."
+                    + str(self.size)
+                )
+                self.reg.insert(position + i, insertion_qubits[i])
 
     def reduce(self, qubits, verify=False):
         r"""
@@ -1020,7 +1032,7 @@ class QuantumVariable:
         if circuit_preprocessor is not None:
             qc = circuit_preprocessor(qc)
 
-        qc = qc.transpile()
+        # qc = qc.transpile()
 
         from qrisp.misc import get_measurement_from_qc
 
@@ -1269,7 +1281,7 @@ class QuantumVariable:
         >>> p(0.5, b[1])
         >>> print(a.qs)
 
-        ::
+        .. code-block:: none
 
             QuantumCircuit:
             --------------
@@ -1292,7 +1304,7 @@ class QuantumVariable:
         >>> b.uncompute()
         >>> print(b.qs)
 
-        ::
+        .. code-block:: none
 
             QuantumCircuit:
             --------------

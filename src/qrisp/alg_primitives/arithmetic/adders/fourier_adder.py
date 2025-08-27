@@ -26,8 +26,8 @@ from qrisp.circuit import Operation, PGate, QuantumCircuit
 
 def fourier_adder(a, b, perform_QFT=True):
     """
-    In-place adder function based on `this paper <https://arxiv.org/abs/quant-ph/0410184>`__
-    Performs the addition
+    In-place adder function based on `this paper <https://arxiv.org/abs/quant-ph/0410184>`__.
+    Performs the addition:
 
     ::
 

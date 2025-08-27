@@ -45,6 +45,26 @@ nav.bd-links li>a:hover {
 }
 
 
+.sidebar-button {
+    transition: background-color 0.3s ease;
+    background: var(--pst-color-secondary);
+    color: #fff;
+    border: none;
+    padding: 6px 14px; /* Adjust padding for a smaller size */
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 12px; /* Adjust font size for a smaller size */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    height: auto;
+}
+
+.sidebar-button:visited {
+    color: #fff !important;
+}
+
 .thebelab-button {
     transition: background-color 0.3s ease;
     background: var(--pst-color-secondary);
@@ -58,6 +78,31 @@ nav.bd-links li>a:hover {
 
 .thebelab-button:hover {
     background-color: var(--pst-color-secondary);
+}
+
+.thebe-launch-button {
+  height: 5em;
+  font-size: 0.8em;
+  border: 0px black solid;
+  padding: 0.5em 2em;
+  background: var(--pst-color-primary);
+}
+
+/* Deactivates an ugly and empty "scroll bar" in the thebe cells */
+/* Deactivates an ugly and empty "scroll bar" in the thebe cells */
+div.nbinput.container div.prompt
+{
+    display:  none;
+}
+
+div.nboutput.container div.prompt
+{
+    display:  none;
+}
+
+.sidebar-button:hover {
+    background-color: var(--pst-color-secondary);
+	color: #ffffff;
 }
 
 .thebelab-cell {
@@ -104,7 +149,7 @@ nav.bd-links li>a:hover {
 }
 
 /* run button */ 
-button.thebelab-button.thebelab-run-button::before {
+button.sidebar-button.thebelab-run-button::before {
   font-family: 'Font Awesome 5 Free'; /* Ensure Font Awesome is loaded */
   content: '▶'; /* Unicode for the "play" icon */
   margin-right: 5px; /* Add spacing between the icon and text */
@@ -124,7 +169,7 @@ button.thebelab-button.thebelab-run-button::before {
   font-size: 0.875em !important;
 }
 
-.thebe-launch-button {
+.sidebar-launch-button {
   height: 5em;
   font-size: 0.8em;
   border: 0px black solid;
@@ -328,4 +373,13 @@ html, body {
 
 .bd-sidebar-primary {
   display: block
+}
+
+
+/** * Custom CSS for THEBE LAB */
+/** When a ThebeLab cell is rendered inside an existing Jupyter notebook box, it should not have a border */
+div.highlight>div.thebelab-cell {
+  border: none !important;
+  background-color: transparent !important;
+  padding: 0px !important;
 }

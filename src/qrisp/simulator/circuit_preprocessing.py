@@ -559,7 +559,7 @@ def get_circuit_block_(int_qc, qubits, established_indices=[]):
     # return instruction_indices, expansion_options.to_qubit_list()
 
 
-@njit
+@njit(cache = True)
 def binary_get_circuit_block_jitted(int_qc_list, qubits, n, established_indices):
     # Set up set of expansion options
     expansion_options = 0

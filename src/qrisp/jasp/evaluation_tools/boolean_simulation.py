@@ -19,7 +19,7 @@
 import jax.numpy as jnp
 from jax import jit
 
-from qrisp.jasp import make_jaspr
+from qrisp.jasp import make_jaspr, AbstractQubitArray, AbstractQubit
 
 from qrisp.jasp.interpreter_tools.interpreters.cl_func_interpreter import (
     jaspr_to_cl_func_jaxpr,
@@ -171,13 +171,17 @@ def boolean_simulation(*func, bit_array_padding=2**16):
     def return_function(*args):
 
         jaspr = make_jaspr(func, garbage_collection="manual")(*args)
+        
+        for var in jaspr.outvars:
+            if isinstance(var.aval, (AbstractQubitArray, AbstractQubit)):
+                raise Exception("Tried to perform boolean simulation of a function returning a quantum value (please measure before returning)")
 
         cl_func_jaxpr = jaspr_to_cl_func_jaxpr(
             jaspr.flatten_environments(), bit_array_padding
         )
 
         # Get the abstract value of the bit array representing the bit state
-        aval = cl_func_jaxpr.invars[-3].aval
+        aval = cl_func_jaxpr.jaxpr.invars[-3].aval
 
         bit_array = jnp.zeros(aval.shape, dtype=aval.dtype)
         free_qubit_list = Jlist(

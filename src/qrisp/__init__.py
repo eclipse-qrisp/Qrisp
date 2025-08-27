@@ -51,18 +51,29 @@ for i in [
 from qrisp.default_backend import *
 from qrisp.jasp import *
 
-# Register functions as "always static" within Jasp (there is no way of "flattening"
-# a function anyway)
-from jax import tree_util
+# Register some types as "always static" within Jasp
+def register_static_types():
+    from jax import tree_util
+    
+    def unflatten_function(aux_data, children):
+        return aux_data
+    
+    
+    def flatten_function(arg):
+        # return the tracers and auxiliary data (structure of the object)
+        return tuple(), arg
+    
+    
+    try:
+        tree_util.register_pytree_node(types.FunctionType, flatten_function, unflatten_function)
+        tree_util.register_pytree_node(str, flatten_function, unflatten_function)
+    except ValueError as e:
+        if not "PyTree" in str(e):
+            raise e
 
+    from qrisp.operators import QubitOperator, FermionicOperator
+    tree_util.register_pytree_node(QubitOperator, flatten_function, unflatten_function)
+    tree_util.register_pytree_node(FermionicOperator, flatten_function, unflatten_function)
 
-def unflatten_function(aux_data, children):
-    return aux_data
-
-
-def flatten_function(arg):
-    # return the tracers and auxiliary data (structure of the object)
-    return tuple(), arg
-
-
-tree_util.register_pytree_node(types.FunctionType, flatten_function, unflatten_function)
+register_static_types()
+        

@@ -16,7 +16,7 @@
 ********************************************************************************
 """
 
-from jax.core import ClosedJaxpr
+from jax.extend.core import ClosedJaxpr
 from jax import jit
 from qrisp.jasp.interpreter_tools import (
     eval_jaxpr,
@@ -44,9 +44,6 @@ def evaluate_pjit_eqn(pjit_eqn, context_dic):
 
 # Flattens/Inlines a pjit calls in a jaxpr
 def flatten_pjit(jaxpr):
-
-    if isinstance(jaxpr, ClosedJaxpr):
-        jaxpr = jaxpr.jaxpr
 
     def eqn_evaluator(eqn, context_dic):
         if eqn.primitive.name == "pjit":

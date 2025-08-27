@@ -18,6 +18,7 @@
 
 import numpy as np
 import sympy as sp
+import jax.numpy as jnp
 
 from qrisp.core import QuantumVariable, cx
 from qrisp.misc import gate_wrap
@@ -26,7 +27,7 @@ from qrisp.jasp import check_for_tracing_mode
 
 
 def signed_int_iso_2(x, n):
-    return x % (int(1) << (n))
+    return jnp.int64(x) & ((int(1) << jnp.minimum(n, 63))-1)
 
 
 def signed_int_iso(x, n):
@@ -763,7 +764,7 @@ class QuantumFloat(QuantumVariable):
         {8: 1.0}
         >>> print(a.qs)
 
-        ::
+        .. code-block:: none
 
             QuantumCircuit:
             --------------
@@ -1117,13 +1118,9 @@ def create_output_qf(operands, op):
     if op == "add":
         signed = operands[0].signed or operands[1].signed
         exponent = min(operands[0].exponent, operands[1].exponent)
-
-        max_sig = int(
-            np.ceil(
-                np.log2(int(2 ** operands[0].mshape[1] + 2 ** operands[1].mshape[1]))
-            )
-        )
+        max_sig = max(operands[0].mshape[1], operands[1].mshape[1]) + 1
         msize = max_sig - exponent + 1
+        
         return QuantumFloat(
             msize, exponent, operands[0].qs, signed=signed, name="add_res*"
         )
@@ -1148,11 +1145,7 @@ def create_output_qf(operands, op):
 
     if op == "sub":
         exponent = min(operands[0].exponent, operands[1].exponent)
-        max_sig = int(
-            np.ceil(
-                np.log2(int(2 ** operands[0].mshape[1] + 2 ** operands[1].mshape[1]))
-            )
-        )
+        max_sig = max(operands[0].mshape[1], operands[1].mshape[1]) + 1
         msize = max_sig - exponent + 1
 
         return QuantumFloat(
