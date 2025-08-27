@@ -279,16 +279,15 @@ def terminal_sampling_evaluator(sampling_res_type):
                         # We now build the key for the result dic
                         # For that we turn the jax types into the corresponding
                         # Python types.
-                        if not isinstance(outvalues, tuple):
+                        
+                        # This treats the case that the decoder returned only 
+                        # a single result (instead of a tuple).
+                        if len(eqn.params["jaxpr"].jaxpr.outvars) == 1:
                             if sampling_res_type == "ev":
                                 sampling_res += outvalues * v
                             elif sampling_res_type == "array":
                                 # sampling_res.extend(v*[outvalues[0]])
-                                key = outvalues[0]
-                                if key.size == 1:
-                                    sampling_res_dict[key.item()] = v
-                                else:
-                                    sampling_res_dict[tuple(np.array(key))] = v
+                                sampling_res_dict[outvalues.item()] = v
                                     # sampling_res.extend(v*[key])
                             elif sampling_res_type == "dict":
                                 key = outvalues
@@ -307,7 +306,7 @@ def terminal_sampling_evaluator(sampling_res_type):
                             if sampling_res_type == "ev":
                                 sampling_res += jnp.array(outvalues) * v
                             elif sampling_res_type == "array":
-                                sampling_res.extend(v * [outvalues])
+                                sampling_res_dict[tuple(np.array(outvalues))] = v
                             elif sampling_res_type == "dict":
                                 if not type(v) in [int, float]:
                                     if v.dtype in [np.float64, np.float32]:
@@ -358,4 +357,7 @@ def terminal_sampling_evaluator(sampling_res_type):
 
 @lru_cache(maxsize=int(1e5))
 def decoder_compiler(jaxpr, eqn_evaluator):
-    return jax.jit(eval_jaxpr(jaxpr, eqn_evaluator=eqn_evaluator))
+    if len(jaxpr.eqns) > 10:
+        return jax.jit(eval_jaxpr(jaxpr, eqn_evaluator=eqn_evaluator))
+    else:
+        return eval_jaxpr(jaxpr, eqn_evaluator=eqn_evaluator)

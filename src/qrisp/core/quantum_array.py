@@ -26,7 +26,7 @@ import jax
 
 from qrisp.circuit import transpile
 from qrisp.core import QuantumVariable, qompiler, QuantumSession, merge
-from qrisp.misc import bin_rep
+from qrisp.misc import bin_rep, lifted
 from qrisp.jasp import (
     check_for_tracing_mode,
     q_fori_loop,
@@ -746,6 +746,7 @@ class QuantumArray:
         else:
             return "<QuantumArray[" + str(self.shape)[1:-1] + "]>"
 
+    @lifted
     def __matmul__(self, other):
         from qrisp import QuantumFloat
 

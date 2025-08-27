@@ -19,11 +19,11 @@
 from functools import lru_cache
 
 from jax import make_jaxpr
-from jax.core import JaxprEqn, ClosedJaxpr
+from jax.extend.core import JaxprEqn, ClosedJaxpr
 from jax.lax import add_p, sub_p, while_loop
 
 from qrisp.jasp.primitives import AbstractQuantumCircuit, OperationPrimitive
-
+from qrisp.jasp.interpreter_tools import eval_jaxpr
 
 def copy_jaxpr_eqn(eqn):
     return JaxprEqn(
@@ -33,6 +33,7 @@ def copy_jaxpr_eqn(eqn):
         params=dict(eqn.params),
         source_info=eqn.source_info,
         effects=eqn.effects,
+        ctx=eqn.ctx,
     )
 
 
@@ -55,9 +56,7 @@ def invert_eqn(eqn):
 
     if eqn.primitive.name == "pjit":
         params = dict(eqn.params)
-        params["jaxpr"] = ClosedJaxpr(
-            (eqn.params["jaxpr"].jaxpr).inverse(), eqn.params["jaxpr"].consts
-        )
+        params["jaxpr"] = eqn.params["jaxpr"].inverse()
 
         name = params["name"]
         if name[-3:] == "_dg":
@@ -80,9 +79,7 @@ def invert_eqn(eqn):
         new_branch_list = []
 
         for i in range(len(branches)):
-            new_branch_list.append(
-                ClosedJaxpr((branches[i].jaxpr).inverse(), branches[i].consts)
-            )
+            new_branch_list.append(branches[i].inverse())
 
         params["branches"] = tuple(new_branch_list)
 
@@ -99,6 +96,7 @@ def invert_eqn(eqn):
         params=params,
         source_info=eqn.source_info,
         effects=eqn.effects,
+        ctx=eqn.ctx,
     )
 
 
@@ -237,7 +235,7 @@ def invert_loop_body(jaxpr):
     # Find the incrementation equation. For this we identify the equation,
     # which updates the loop index
 
-    loop_index = jaxpr.jaxpr.outvars[1]
+    loop_index = jaxpr.jaxpr.outvars[-2]
     for i in range(len(new_eqn_list))[::-1]:
         if loop_index == new_eqn_list[i].outvars[0]:
             break
@@ -266,13 +264,14 @@ def invert_loop_body(jaxpr):
         params=increment_eqn.params,
         source_info=increment_eqn.source_info,
         effects=increment_eqn.effects,
+        ctx=increment_eqn.ctx,
     )
     new_eqn_list[increment_eqn_index] = decrement_eqn
 
     # Create the new Jaspr
     from qrisp.jasp import Jaspr
 
-    new_jaspr = Jaspr(jaxpr.jaxpr).update_eqns(new_eqn_list)
+    new_jaspr = Jaspr(jaxpr).update_eqns(new_eqn_list)
 
     # Quantum inversion
     res_jaspr = new_jaspr.inverse()
@@ -283,21 +282,30 @@ def invert_loop_body(jaxpr):
 # This function performs the above mentioned step 2 to treat the loop primitive
 def invert_loop_eqn(eqn):
 
+    overall_constant_amount= max(eqn.params["body_nconsts"], eqn.params["cond_nconsts"])
+    
     # Process the loop body
     body_jaxpr = eqn.params["body_jaxpr"]
     inv_loop_body = invert_loop_body(body_jaxpr)
 
     def body_fun(val):
-        return inv_loop_body.eval(*val)
-
+        
+        constants = val[:eqn.params["body_nconsts"]]
+        carries = val[overall_constant_amount:]
+        
+        body_res = eval_jaxpr(inv_loop_body)(*(constants + carries))
+        
+        return val[:overall_constant_amount] + tuple(body_res)
+        
     # Process the loop cancelation
     cond_jaxpr = eqn.params["cond_jaxpr"]
 
     def cond_fun(val):
+        
         if cond_jaxpr.eqns[0].primitive.name == "ge":
-            return val[1] <= val[0]
+            return val[-2] <= val[-3]
         else:
-            return val[1] >= val[0]
+            return val[-2] >= val[-3]
 
     # Create the new equation by tracing the while loop
     def tracing_function(*args):
@@ -307,10 +315,10 @@ def invert_loop_eqn(eqn):
     new_eqn = jaxpr.eqns[0]
 
     # The new invars should have initial loop index at loop threshold switched.
-    # The loop initialization is located at invars[1] and the threshold at invars[0]
+    # The loop initialization is located at invars[-3] and the threshold at invars[-2]
     invars = eqn.invars
     new_invars = list(invars)
-    new_invars[1], new_invars[0] = new_invars[0], new_invars[1]
+    new_invars[-2], new_invars[-3] = new_invars[-3], new_invars[-2]
 
     # Create the Equation
     res = JaxprEqn(
@@ -320,6 +328,7 @@ def invert_loop_eqn(eqn):
         params=new_eqn.params,
         source_info=eqn.source_info,
         effects=eqn.effects,
+        ctx=new_eqn.ctx
     )
 
     return res

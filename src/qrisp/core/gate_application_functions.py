@@ -17,6 +17,7 @@
 """
 
 import sympy
+import jax
 
 import qrisp.circuit.standard_operations as std_ops
 from qrisp.jasp import check_for_tracing_mode, DynamicQubitArray, jlen
@@ -211,7 +212,7 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
     >>> mcx(control, target, method = "gray")
     >>> print(control.qs)
 
-    ::
+    .. code-block:: none
 
         QuantumCircuit:
         --------------
@@ -1206,6 +1207,11 @@ def measure(qubits):
             DynamicQubitArray,
         )
         from qrisp import QuantumVariable, QuantumArray
+        
+        if not qs.abs_qc._trace is jax.core.trace_ctx.trace:
+            raise Exception(
+                """Lost track of QuantumCircuit during tracing. This might have been caused by a missing quantum_kernel decorator or not using quantum prefix control (like q_fori_loop, q_cond). Please visit https://www.qrisp.eu/reference/Jasp/Quantum%20Kernel.html for more details"""
+            )
 
         if isinstance(qubits, (DynamicQubitArray, QuantumVariable, QuantumArray)):
             res = qubits.measure()
@@ -1272,7 +1278,7 @@ def barrier(qubits):
     >>> y(qv)
     >>> print(qv.qs)
 
-    ::
+    .. code-block:: none
 
         QuantumCircuit:
         --------------

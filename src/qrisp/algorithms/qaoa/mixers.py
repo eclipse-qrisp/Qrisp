@@ -154,7 +154,7 @@ def constrained_mixer_gen(constraint_oracle, winner_state_amount):
     by the constraints.
 
     For more details regarding implementation specifics please check the
-    corresponding :ref:`tutorial <ConstrainedMixers>`.
+    corresponding :ref:`tutorial <QAOA101>`.
 
     Parameters
     ----------

@@ -17,7 +17,7 @@
 """
 
 from jax import make_jaxpr
-from jax.core import ClosedJaxpr
+from jax.extend.core import ClosedJaxpr
 from qrisp.jasp import flatten_environments, flatten_pjit, eval_jaxpr, make_jaspr
 
 

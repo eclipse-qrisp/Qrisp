@@ -56,7 +56,7 @@ def UMA_gate(mode=2):
     return result
 
 
-# Performs inplace addition on qv2, ie.
+# Performs in-place addition on qv2, i.e.
 # qv1 += qv2
 
 
@@ -89,7 +89,7 @@ def cuccaro_procedure(qs, qubit_list_1, qubit_list_2, output_qubit=None, carry_i
         qbits = [slot_1_qbs[i], slot_2_qbs[i], slot_3_qbs[i]]
         qs.append(MAJ_gate(), qbits)
 
-    # Calculate output qbit
+    # Calculate output Qubit
     if output_qubit:
         qs.cx(qbits[2], output_qubit)
 
@@ -100,14 +100,14 @@ def cuccaro_procedure(qs, qubit_list_1, qubit_list_2, output_qubit=None, carry_i
         qs.append(UMA_gate(), qbits)
 
     if carry_in is None:
-        # Detete ancilla
+        # Delete ancilla
         ancilla.delete()
 
 
 def cuccaro_adder(a, b, c_in=None, c_out=None):
     """
-    In-place adder function based on `this paper <https://arxiv.org/abs/quant-ph/0410184>`__
-    Performs the addition
+    In-place adder function based on `this paper <https://arxiv.org/abs/quant-ph/0410184>`__ .
+    Performs the addition:
 
     ::
 

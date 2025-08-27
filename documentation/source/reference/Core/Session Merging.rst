@@ -74,7 +74,7 @@ This is however not the case for QuantumSessions that get created inside this en
 
 >>> print(a.qs)
 
-::
+.. code-block:: none
 
     QuantumCircuit:
     --------------

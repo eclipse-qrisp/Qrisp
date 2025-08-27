@@ -27,7 +27,7 @@ from qrisp.circuit import Operation, QuantumCircuit, Instruction
 from qrisp.environments.iteration_environment import IterationEnvironment
 from qrisp.core import merge
 
-from qrisp.jasp import check_for_tracing_mode, qache, AbstractQubit, make_jaspr
+from qrisp.jasp import check_for_tracing_mode, qache, AbstractQubit, make_jaspr, get_last_equation
 
 
 def custom_inversion(*func, **cusi_kwargs):
@@ -97,7 +97,7 @@ def custom_inversion(*func, **cusi_kwargs):
         print(a.qs)
 
 
-    ::
+    .. code-block:: none
 
         QuantumCircuit:
         --------------
@@ -128,7 +128,7 @@ def custom_inversion(*func, **cusi_kwargs):
 
         print(a.qs.transpile(1))
 
-    ::
+    .. code-block:: none
 
                          ┌───┐
                a.0: ──■──┤ X ├──■──
@@ -181,13 +181,9 @@ def custom_inversion(*func, **cusi_kwargs):
             res = qached_func(*args, inv = False, **kwargs)
 
             # Retrieve the pjit equation
-            jit_eqn = jax._src.core.thread_local_state.trace_state.trace_stack.dynamic.jaxpr_stack[
-                0
-            ].eqns[
-                -1
-            ]
+            jit_eqn = get_last_equation()
 
-            if not jit_eqn.params["jaxpr"].jaxpr.inv_jaspr:
+            if not jit_eqn.params["jaxpr"].inv_jaspr:
                 # Trace the inverted version
 
                 def ammended_func(*args, **kwargs):
@@ -199,8 +195,8 @@ def custom_inversion(*func, **cusi_kwargs):
                 )
                 
                 # Store controlled version
-                jit_eqn.params["jaxpr"].jaxpr.inv_jaspr = inverted_jaspr
-                inverted_jaspr.inv_jaspr = jit_eqn.params["jaxpr"].jaxpr
+                jit_eqn.params["jaxpr"].inv_jaspr = inverted_jaspr
+                inverted_jaspr.inv_jaspr = jit_eqn.params["jaxpr"]
 
         return res
 

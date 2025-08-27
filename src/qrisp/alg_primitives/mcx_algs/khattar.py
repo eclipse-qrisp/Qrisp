@@ -59,7 +59,7 @@ def ctrl_state_conjugator(ctrls, ctrl_state):
             x(ctrls[i])
 
 @custom_inversion
-def gidney_CCCZ(ctrls, target, inv=False):
+def gidney_CCCX(ctrls, target, inv=False):
     """
     Implements a CCCZ gate using the Gidney 
     method described in https://arxiv.org/abs/2106.11513 using only 6 T gates.
@@ -67,6 +67,8 @@ def gidney_CCCZ(ctrls, target, inv=False):
         ctrls (list): A list of control qubits. It is expected to contain three qubits.
         target (list): A list containing the target qubit. It is expected to contain one qubit.
     """
+    
+    h(target[0])
     
     gidney_anc = QuantumFloat(1)
 
@@ -96,6 +98,8 @@ def gidney_CCCZ(ctrls, target, inv=False):
     with control(cl_res):
         cz(ctrls[0], ctrls[1])
         x(gidney_anc[0])
+        
+    h(target[0])
 
     gidney_anc.delete()
 
@@ -188,10 +192,7 @@ def khattar_mcx(ctrls, target, ctrl_state):
 
             if N == 3:
                 if check_for_tracing_mode():
-                    #Conjugating with H to transform the CCCZ into a CCCX
-                    h(target[0])
-                    gidney_CCCZ(ctrls, target)
-                    h(target[0])
+                    gidney_CCCX(ctrls, target)
                 else:
                     mcx(ctrls, target[0], method="balauca")  # CHANGE
 
@@ -214,10 +215,7 @@ def khattar_mcx(ctrls, target, ctrl_state):
 
             with control(N == 3):
                 if check_for_tracing_mode():
-                    #Conjugating with H to transform the CCCZ into a CCCX
-                    h(target[0])
-                    gidney_CCCZ(ctrls, target)
-                    h(target[0])
+                    gidney_CCCX(ctrls, target)
                 else:
                     mcx(ctrls, target[0], method="balauca")  # CHANGE
 
@@ -251,7 +249,7 @@ def khattar_mcp(phi, ctrls, ctrl_state):
     with conjugate(ctrl_state_conjugator)(ctrls, ctrl_state):
 
         with control(N == 1):
-            cp(phi, ctrls[0], target[0])
+            p(phi, ctrls[0])
 
         with control(N == 2):
             with conjugate(mcx)([ctrls[0], ctrls[1]], target[0], method="gray_pt"):
@@ -259,15 +257,11 @@ def khattar_mcp(phi, ctrls, ctrl_state):
 
         with control(N == 3):
             if check_for_tracing_mode():
-                h(target[0])
-                gidney_CCCZ(ctrls, target)
-                h(target[0])
+                gidney_CCCX(ctrls, target)
                 
                 p(phi, target[0])
 
-                h(target[0])
-                gidney_CCCZ(ctrls, target)
-                h(target[0])
+                gidney_CCCX(ctrls, target)
             else:
                 with conjugate(mcx)(ctrls, target[0], method="balauca"):
                     p(phi, target[0])

@@ -74,7 +74,7 @@ Jax not only allows us to represent (classical) computations in a more simplifie
 What is Jasp?
 ^^^^^^^^^^^^^
 
-Jasp is a module that provides Jax primitives for Qrisp syntax and therefore makes Qrisp Jax-traceable. How does this work in practice? The central class here is the ``Jaspr``, which is a subtype of the Jaxpr. Similarly to Jaxprs, Jasprs can be create using the ``make_jaspr`` function.
+Jasp is a module that provides Jax primitives for Qrisp syntax and therefore makes Qrisp Jax-traceable. How does this work in practice? The central class here is the ``Jaspr``, which is a subtype of the ClosedJaxpr. Similarly to ClosedJaxprs, Jasprs can be created using the ``make_jaspr`` function.
 
 ::
     

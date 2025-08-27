@@ -47,6 +47,7 @@ class Clbit:
     def __init__(self, identifier):
         self.identifier = identifier
         self.hash_value = int(self.clbit_hash[0])
+        self.bit_type = 1
         self.clbit_hash += 1
 
     def __str__(self):
@@ -59,4 +60,4 @@ class Clbit:
         return self.hash_value
 
     def __eq__(self, other):
-        return self.hash_value == other.hash_value
+        return self.hash_value == other.hash_value and self.bit_type == other.bit_type

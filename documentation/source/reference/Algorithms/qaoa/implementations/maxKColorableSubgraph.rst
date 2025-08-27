@@ -1,9 +1,9 @@
-.. _MkCSQAOAdoc:
+.. _MkCSQAOA:
 
 QAOA M$\\kappa$CS
 =================
 
-The Max-$\kappa$-Colorable Subgraph problem and its QAOA implementation is discussed in plenty of detail in the :ref:`Max-$\\kappa$-Colorable Subgraph tutorial <MkCSQAOA>`.
+The Max-$\kappa$-Colorable Subgraph problem and its QAOA implementation is discussed in plenty of detail in the :ref:`QAOA tutorial <QAOA101>`.
 All the necessary ingredients and required steps to run QAOA are elaborated on in an easy to grasp manner.
 
 Here, we provide a condensed implementation of QAOA for M$\kappa$CS using all of the predefined functions.
