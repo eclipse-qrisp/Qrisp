@@ -416,10 +416,10 @@ class Jaspr(ClosedJaxpr):
                     return
                 return True
             else:
-                
+
                 invalues = extract_invalues(eqn, context_dic)
                 for val in invalues:
-                    if isinstance(val, list):
+                    if isinstance(val, list) and len(val):
                         if isinstance(val[0], Clbit):
                             break
                     elif isinstance(val, Clbit):
