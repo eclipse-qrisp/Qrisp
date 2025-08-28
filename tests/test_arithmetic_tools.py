@@ -15,15 +15,17 @@
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************
 """
+from qrisp import *
+from qrisp.jasp import *
 
-from qrisp.alg_primitives.arithmetic.comparisons import *
-from qrisp.alg_primitives.arithmetic.uint_clifford_t_comparisons import *
-from qrisp.alg_primitives.arithmetic.SBP_arithmetic import *
-from qrisp.alg_primitives.arithmetic.ripple_division import *
-from qrisp.alg_primitives.arithmetic.ripple_mult import *
-from qrisp.alg_primitives.arithmetic.matrix_multiplication import *
-from qrisp.alg_primitives.arithmetic.modular_arithmetic import *
-from qrisp.alg_primitives.arithmetic.adders import *
-from qrisp.alg_primitives.arithmetic.jasp_arithmetic import *
-from qrisp.alg_primitives.arithmetic.isqrt import *
-from qrisp.alg_primitives.arithmetic.arithmetic_tools import *
+up_bound = 4
+for N in range(2, up_bound):
+    for k in range(2**N):
+        for j in range(2**N):
+            
+            a = QuantumFloat(N)
+            b = QuantumFloat(N)
+            a[:] = j
+            b[:] = k
+            res = qmax(a,b).get_measurement()
+            assert max(j,k) == list(res.keys())[0]
