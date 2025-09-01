@@ -34,7 +34,16 @@ REQUIREMENTS = [
                 "requests",
                 "psutil",
                 "jax==0.6.0",
-                "jaxlib==0.6.0"]
+                "jaxlib==0.6.0", 
+                "webencodings", 
+                "beautifulsoup4", 
+                "tinycss2", 
+                "pytest",
+                "stim",
+                "pennylane-catalyst",
+                "qiskit-aer",
+                "qiskit-iqm",
+                "pyscf"]
 
 
 with open("README.md", "r", encoding="utf-8") as fh:
