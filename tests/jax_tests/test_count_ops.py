@@ -70,6 +70,18 @@ def test_count_ops():
     assert count_ops(meas_behavior = meas_behavior)(main)()["x"] == 2
     assert count_ops(meas_behavior = "0")(main)()["x"] == 2
     assert "x" not in count_ops(meas_behavior = "1")(main)()
+    
+    # Test passing static arguments
+    def state_prep():
+        return QuantumVariable(3)
+
+    @count_ops(meas_behavior='0')
+    def main(state_prep):
+        qv = state_prep()
+        return measure(qv)
+
+    assert main(state_prep) == {"measure" : 3}
+    
 
     # Test kernilization error message    
     def state_prep():
@@ -88,16 +100,6 @@ def test_count_ops():
             return
         else:
             assert False
-            
-    def state_prep():
-        return QuantumVariable(3)
-
-    @count_ops(meas_behavior='0')
-    def main(state_prep):
-        qv = state_prep()
-        return measure(qv)
-
-    assert main(state_prep) == {"measure" : 3}
 
         
             
