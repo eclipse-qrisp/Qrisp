@@ -33,12 +33,14 @@ This file implements the interfaces to evaluating the transformed Jaspr.
 """
 
 from functools import lru_cache
+import types
 
 import numpy as np
 
 import jax
 import jax.numpy as jnp
 from jax.extend.core import ClosedJaxpr
+
 
 from qrisp.jasp.primitives import OperationPrimitive
 from qrisp.jasp.interpreter_tools import make_profiling_eqn_evaluator, eval_jaxpr
@@ -318,9 +320,15 @@ def get_profiling_array_computer(jaspr, meas_behavior):
         # look like a constant is being added but a variable
         final_arg = ([0] * len(profiling_dic), list(range(1, 6)))
         
-        args = list(args) + [final_arg]
+        # Filter out types that are known to be static (https://github.com/eclipse-qrisp/Qrisp/issues/258)
+        filtered_args = []        
+        from qrisp.operators import QubitOperator, FermionicOperator
+        
+        for x in list(args) + [final_arg]:
+            if type(x) not in [str, QubitOperator, FermionicOperator, types.FunctionType]:
+                filtered_args.append(x)
 
-        res = evaluator(*args)
+        res = evaluator(*filtered_args)
 
         return res
 
