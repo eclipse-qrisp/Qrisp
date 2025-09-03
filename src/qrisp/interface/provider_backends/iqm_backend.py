@@ -18,7 +18,11 @@
 
 from qrisp.interface import BatchedBackend
 
-def IQMBackend(api_token, device_instance = None, server_url = None, compilation_options = None):
+def IQMBackend(api_token, 
+               device_instance = None, 
+               server_url = None, 
+               compilation_options = None, 
+               transpiler = None):
     """
     This function instantiates an IQMBackend based on :ref:`VirtualBackend`
     using Qiskit and Qiskit-on-IQM.
@@ -107,11 +111,15 @@ def IQMBackend(api_token, device_instance = None, server_url = None, compilation
     # Construct the server URL based on device_instance if server_url is not provided
     if server_url is None:
         server_url = "https://cocos.resonance.meetiqm.com/" + device_instance
+        
     client = IQMClient(url = server_url, token = api_token)
     backend = IQMBackend(client)
     
     if compilation_options is None:
         compilation_options = CircuitCompilationOptions()
+        
+    if transpiler is None:
+        transpiler = lambda qiskit_qc : transpile_to_IQM(qiskit_qc, backend)
 
     def run_batch_iqm(batch):
         
@@ -119,7 +127,7 @@ def IQMBackend(api_token, device_instance = None, server_url = None, compilation
         shot_batch = []
         for qc, shots in batch:
             qiskit_qc = qc.to_qiskit()
-            qiskit_qc = transpile_to_IQM(qiskit_qc, backend)
+            qiskit_qc = transpiler(qiskit_qc)
             circuit_batch.append(backend.serialize_circuit(qiskit_qc))
             if shots is None:
                 shots = 1000
