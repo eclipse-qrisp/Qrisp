@@ -530,7 +530,7 @@ class QuantumArray:
     def measure(self):
         from qrisp import measure
 
-        dtype = self.qtype.decoder(jnp.zeros(1)[0]).dtype
+        dtype = self.qtype.jdecoder(jnp.zeros(1)[0]).dtype
 
         meas_res = jnp.zeros(self.size, dtype=dtype)
 
