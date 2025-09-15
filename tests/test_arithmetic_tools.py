@@ -17,6 +17,7 @@
 """
 from qrisp import *
 from qrisp.jasp import *
+from math import floor, ceil
 
 def test_min_max(exhaustive = False):
     if exhaustive:
@@ -75,3 +76,40 @@ def test_min_max_jasp(exhaustive = False):
                 assert max(j,k) == meas_res[0]
                 assert min(j,k) == meas_res[1]
 
+def test_qfloor(exhaustive = False):    
+    if exhaustive:
+        up_bound = 8
+    else:
+        up_bound = 4
+                
+    for N in range(1, up_bound):
+        for e in range(N):
+            for i in range(2**N):
+                a = QuantumFloat(N, -e)
+
+                a[:] = i*2**(-e)
+                res_floor = qfloor(a).get_measurement()
+                assert floor(i*2**(-e)) == list(res_floor.keys())[0]
+
+def test_qceil(exhaustive = False):
+    if exhaustive:
+        up_bound = 8
+    else:
+        up_bound = 4
+                
+    for N in range(1, up_bound):
+        for e in range(N):
+            for i in range(2**N - 2**e + 1):
+                a = QuantumFloat(N, -e)
+
+                a[:] = i*2**(-e)
+                res_ceil = qceil(a).get_measurement()
+
+                assert ceil(i*2**(-e)) == list(res_ceil.keys())[0]
+
+            for i in range(2**N - 2**e + 1, 2**N):
+                a = QuantumFloat(N, -e)
+                a[:] = i*2**(-e)
+                res_ceil = qceil(a).get_measurement()
+
+                assert list(res_ceil.keys())[0] == 0.0
