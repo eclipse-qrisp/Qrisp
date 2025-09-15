@@ -229,7 +229,7 @@ def qswitch(operand, case, case_function, method="auto", case_amount=None, inv=F
             x_cond = q_cond
 
             def bitwise_count_diff(a, b):
-                return jnp.bitwise_count(jnp.bitwise_xor(a, b))
+                return jnp.int32(jnp.bitwise_count(jnp.bitwise_xor(a, b)))
 
         # Normal mode
         else:
@@ -248,7 +248,7 @@ def qswitch(operand, case, case_function, method="auto", case_amount=None, inv=F
                     return false_fun(*operands)
 
             def bitwise_count_diff(a, b):
-                return np.bitwise_count(np.bitwise_xor(a, b))
+                return np.int32(np.bitwise_count(np.bitwise_xor(a, b)))
 
         n = case.size
 
@@ -260,10 +260,10 @@ def qswitch(operand, case, case_function, method="auto", case_amount=None, inv=F
             # with control(anc[d - 2]):
             #    x(anc[d-1])
             if ctrl is None:
-                q_cond(d - 2 == -1, lambda: nor_x(anc[d-1]),
+                x_cond(d - 2 == -1, lambda: nor_x(anc[d-1]),
                        lambda: nor_cx(anc[d-2], anc[d-1]))
             else:
-                q_cond(d - 2 == -1, lambda: nor_cx(ctrl,
+                x_cond(d - 2 == -1, lambda: nor_cx(ctrl,
                        anc[d-1]), lambda: nor_cx(anc[d-2], anc[d-1]))
 
             with control(anc[d-1]):
@@ -273,10 +273,10 @@ def qswitch(operand, case, case_function, method="auto", case_amount=None, inv=F
             #    with control(ca[n - 1 - d]):
             #        x(anc[d])
             if ctrl is None:
-                q_cond(d - 2 == -1, lambda: nor_cx(ca[n - 1 - d], anc[d]),
+                x_cond(d - 2 == -1, lambda: nor_cx(ca[n - 1 - d], anc[d]),
                        lambda: nor_mcx([ca[n - 1 - d], anc[d-2]], anc[d]))
             else:
-                q_cond(d - 2 == -1, lambda: nor_mcx([ca[n - 1 - d], ctrl],
+                x_cond(d - 2 == -1, lambda: nor_mcx([ca[n - 1 - d], ctrl],
                        anc[d]), lambda: nor_mcx([ca[n - 1 - d], anc[d-2]], anc[d]))
 
         def down(d: int, anc, ca, oper):
@@ -285,10 +285,10 @@ def qswitch(operand, case, case_function, method="auto", case_amount=None, inv=F
             #    with control(ca[n - 1 - d]):
             #        x(anc[d])
             if ctrl is None:
-                q_cond(d - 1 == -1, lambda: nor_cx(ca[n - 1 - d], anc[d]),
+                x_cond(d - 1 == -1, lambda: nor_cx(ca[n - 1 - d], anc[d]),
                        lambda: nor_mcx([ca[n - 1 - d], anc[d-1]], anc[d]))
             else:
-                q_cond(d - 1 == -1, lambda: nor_mcx([ca[n - 1 - d], ctrl],
+                x_cond(d - 1 == -1, lambda: nor_mcx([ca[n - 1 - d], ctrl],
                        anc[d]), lambda: nor_mcx([ca[n - 1 - d], anc[d-1]], anc[d]))
             x(ca[n - 1 - d])
 
@@ -297,10 +297,10 @@ def qswitch(operand, case, case_function, method="auto", case_amount=None, inv=F
             #    with control(ca[n - 1 - d]):
             #        x(anc[d])
             if ctrl is None:
-                q_cond(d - 1 == -1, lambda: nor_cx(ca[n - 1 - d], anc[d]),
+                x_cond(d - 1 == -1, lambda: nor_cx(ca[n - 1 - d], anc[d]),
                        lambda: nor_mcx([ca[n - 1 - d], anc[d-1]], anc[d]))
             else:
-                q_cond(d - 1 == -1, lambda: nor_mcx([ca[n - 1 - d], ctrl],
+                x_cond(d - 1 == -1, lambda: nor_mcx([ca[n - 1 - d], ctrl],
                        anc[d]), lambda: nor_mcx([ca[n - 1 - d], anc[d-1]], anc[d]))
 
         # Function mode
@@ -313,10 +313,10 @@ def qswitch(operand, case, case_function, method="auto", case_amount=None, inv=F
                 # with control(anc[d-1]):
                 #    x(anc[d])
                 if ctrl is None:
-                    q_cond(d-1 == -1, lambda: nor_x(anc[d]),
+                    x_cond(d-1 == -1, lambda: nor_x(anc[d]),
                            lambda: nor_cx(anc[d-1], anc[d]))
                 else:
-                    q_cond(d-1 == -1, lambda: nor_cx(ctrl,
+                    x_cond(d-1 == -1, lambda: nor_cx(ctrl,
                            anc[d]), lambda: nor_cx(anc[d-1], anc[d]))
 
                 with control(anc[d]):
@@ -345,17 +345,17 @@ def qswitch(operand, case, case_function, method="auto", case_amount=None, inv=F
                         # with control(anc[d-1]):
                         #    x(anc[d])
                         if ctrl is None:
-                            q_cond(
+                            x_cond(
                                 d-1 == -1, lambda: nor_x(anc[d]), lambda: nor_cx(anc[d-1], anc[d]))
                         else:
-                            q_cond(d-1 == -1, lambda: nor_cx(ctrl,
+                            x_cond(d-1 == -1, lambda: nor_cx(ctrl,
                                    anc[d]), lambda: nor_cx(anc[d-1], anc[d]))
 
                         with control(anc[d]):
                             B(oper)
 
                     for j in range(0, len(case_function), 2):
-                        q_cond(
+                        x_cond(
                             j == i,
                             apply_leaf,
                             lambda a, b: None,
@@ -372,10 +372,10 @@ def qswitch(operand, case, case_function, method="auto", case_amount=None, inv=F
                     # with control(anc[d-1]):
                     #    x(anc[d])
                     if ctrl is None:
-                        q_cond(
+                        x_cond(
                             d-1 == -1, lambda: nor_x(anc[d]), lambda: nor_cx(anc[d-1], anc[d]))
                     else:
-                        q_cond(d-1 == -1, lambda: nor_cx(ctrl,
+                        x_cond(d-1 == -1, lambda: nor_cx(ctrl,
                                anc[d]), lambda: nor_cx(anc[d-1], anc[d]))
 
                     with control(anc[d]):
@@ -386,7 +386,7 @@ def qswitch(operand, case, case_function, method="auto", case_amount=None, inv=F
                     with control(anc[d]):
                         f(oper)
                 for j in range(0, len(case_function)):
-                    q_cond(j == i, apply, lambda x: None, case_function[j])
+                    x_cond(j == i, apply, lambda x: None, case_function[j])
 
         else:
             raise TypeError(
@@ -437,10 +437,10 @@ def qswitch(operand, case, case_function, method="auto", case_amount=None, inv=F
                 #    x(anc[n - j-1])
                 # return None
                 if ctrl is None:
-                    q_cond(
+                    x_cond(
                         n-j-2 == -1, lambda: nor_x(anc[n-j-1]), lambda: nor_cx(anc[n-j-2], anc[n-j-1]))
                 else:
-                    q_cond(n-j-2 == -1, lambda: nor_cx(ctrl,
+                    x_cond(n-j-2 == -1, lambda: nor_cx(ctrl,
                            anc[n-j-1]), lambda: nor_cx(anc[n-j-2], anc[n-j-1]))
 
             # The x_cond applies:
