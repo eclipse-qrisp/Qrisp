@@ -721,7 +721,7 @@ class QuantumFloat(QuantumVariable):
 
         from qrisp.alg_primitives.arithmetic import eq
 
-        if not isinstance(other, (QuantumFloat, int, float)):
+        if not check_for_tracing_mode() and not isinstance(other, (QuantumFloat, int, float)):
             raise Exception(f"Comparison with type {type(other)} not implemented")
 
         return eq(self, other)
@@ -730,7 +730,7 @@ class QuantumFloat(QuantumVariable):
 
         from qrisp.alg_primitives.arithmetic import neq
 
-        if not isinstance(other, (QuantumFloat, int, float)):
+        if not check_for_tracing_mode() and not isinstance(other, (QuantumFloat, int, float)):
             raise Exception(f"Comparison with type {type(other)} not implemented")
 
         return neq(self, other)
