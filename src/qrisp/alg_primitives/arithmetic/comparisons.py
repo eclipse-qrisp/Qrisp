@@ -228,7 +228,7 @@ def equal(qf_0, qf_1):
                 cx(qf_1[i + l - e1], qf_0[i + l - e0])
 
         mcx_qubits += qf_1.reg[:l - e1]
-        mcx_qubits += qf_1.reg[e0 + m0 : e1 + m1]
+        mcx_qubits += qf_1.reg[e0 + m0 - e1 : e1 + m1 - e1]
 
         with conjugate(conjugator)(qf_0, qf_1):
             mcx(mcx_qubits, eq_qbl, ctrl_state=0)
