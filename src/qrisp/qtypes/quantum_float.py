@@ -970,9 +970,17 @@ class QuantumFloat(QuantumVariable):
         {0.5: 1.0}
 
         """
-        decoder_values = np.array([self.decoder(i) for i in range(2**self.size)])
 
-        return decoder_values[np.argmin(np.abs(decoder_values - x))]
+        res = jnp.int64(jnp.round(x / jnp.float64(2) ** self.exponent))
+        res = jnp.min(jnp.array([2 ** self.msize - 1, res]))
+
+        if self.signed:
+            res = jnp.max(jnp.array([-2 ** self.msize, res]))
+            res = signed_int_iso_2(res, self.size)
+        else:
+            res = jnp.max(jnp.array([0, res]))
+
+        return self.decoder(res)
 
     def get_ev(self, **mes_kwargs):
         """
