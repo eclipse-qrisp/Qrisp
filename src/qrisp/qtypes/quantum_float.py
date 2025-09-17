@@ -19,15 +19,22 @@
 import numpy as np
 import sympy as sp
 import jax.numpy as jnp
+from jax import jit
 
 from qrisp.core import QuantumVariable, cx
 from qrisp.misc import gate_wrap
 from qrisp.environments import invert, conjugate
 from qrisp.jasp import check_for_tracing_mode
 
-
+@jit
 def signed_int_iso_2(x, n):
     return jnp.int64(x) & ((int(1) << jnp.minimum(n, 63))-1)
+
+@jit
+def signed_int_iso_inv_2(y, n, signed_int):
+    m = int(1) << (n + 1)
+    t = jnp.int64(y) % m
+    return t - signed_int * m * (t // (int(1) << n))
 
 
 def signed_int_iso(x, n):
@@ -311,30 +318,20 @@ class QuantumFloat(QuantumVariable):
 
     # Define outcome_labels
     def decoder(self, i):
-        if isinstance(self.signed, bool) and self.signed:
-            res = signed_int_iso_inv(i, self.size - 1) * 2.0**self.exponent
+        from jax.numpy import float64
+        from jax.core import Tracer
 
-            if self.exponent >= 0:
-                if isinstance(res, (int, float)):
-                    return int(res)
-                else:
-                    return res.astype(int)
-            else:
-                return res
-        else:
-            from jax.numpy import float64
-            from jax.core import Tracer
+        res = signed_int_iso_inv_2(i, self.msize, self.signed) * float64(2)**self.exponent
 
-            if isinstance(i, Tracer):
-                res = i * float64(2) ** self.exponent
-            else:
-                res = i * 2**self.exponent
-
+        if isinstance(i, Tracer):
             return res
+        else:
+            if self.exponent >= 0:
+                return int(res)
+            else:
+                return float(res)
 
     def jdecoder(self, i):
-        if isinstance(self.exponent, int) and self.exponent == 0:
-            return i
         return self.decoder(i)
 
     def encoder(self, i):
