@@ -219,8 +219,8 @@ def equal(qf_0, qf_1):
         e1 = qf_1.exponent
 
         # We calculate the overlap of bits with the same significance of qf_0 and qf_1.
-        l = jnp.max(jnp.array([e0, e1]))
-        r = jnp.min(jnp.array([e0 + m0, e1 + m1]))
+        l = jnp.maximum(e0, e1)
+        r = jnp.minimum(e0 + m0, e1 + m1)
         d = r - l
 
         def conjugator(qf_0, qf_1):
