@@ -969,13 +969,13 @@ class QuantumFloat(QuantumVariable):
         """
 
         res = jnp.int64(jnp.round(x / jnp.float64(2) ** self.exponent))
-        res = jnp.min(jnp.array([2 ** self.msize - 1, res]))
+        res = jnp.minimum(2 ** self.msize - 1, res)
 
         if self.signed:
-            res = jnp.max(jnp.array([-2 ** self.msize, res]))
+            res = jnp.maximum(-2 ** self.msize, res)
             res = signed_int_iso_2(res, self.size)
         else:
-            res = jnp.max(jnp.array([0, res]))
+            res = jnp.maximum(0, res)
 
         return self.decoder(res)
 
