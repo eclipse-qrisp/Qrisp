@@ -299,7 +299,7 @@ def grovers_alg(
 
     Parameters
     ----------
-    qv_list : QuantumVariable or list[QuantumVariable]
+    qv_list : QuantumVariable | QuantumArray | list[QuantumVariable | QuantumArray]
         A (list of) QuantumVariables on which to execute Grover's algorithm.
     oracle_function : function
         A Python function tagging the winner states.
