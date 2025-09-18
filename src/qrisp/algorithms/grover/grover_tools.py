@@ -109,15 +109,8 @@ def diffuser(input_object, phase=np.pi, state_function=None, reflection_indices=
 
     if state_function == None:
 
-        if isinstance(input_object, list):
-
-            def state_function(qargs):
-                [h(qv) for qv in qargs]
-
-        else:
-
-            def state_function(qargs):
-                h(qargs)
+        def state_function(*qargs):
+            [h(qv) for qv in qargs]
 
     reflection(input_object, state_function, phase=phase, reflection_indices=reflection_indices)
 
