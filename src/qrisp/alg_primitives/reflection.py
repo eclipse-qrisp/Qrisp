@@ -31,9 +31,10 @@ from qrisp import (
     invert,
     control,
 )
-from qrisp.jasp import jlen
+from qrisp.jasp import jlen, qache
 
 
+@qache
 @gate_wrap(permeability=[], is_qfree=False)
 def reflection(qargs, state_function, args=(), kwargs={}, phase=np.pi, reflection_indices=None):
     r"""
