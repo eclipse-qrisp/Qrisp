@@ -67,7 +67,7 @@ def test_jasp_reflection():
     from qrisp import QuantumVariable, QuantumArray, h, x, cx, reflection
     from qrisp.jasp import terminal_sampling, jrange
 
-    # Reflection with list[QuantumVariable | QuantumArray] as input
+    # Reflection with QuantumVariable as input
     def ghz(qv):
         h(qv[0])
 

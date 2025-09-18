@@ -45,7 +45,7 @@ def amplitude_amplification(
     Parameters
     ----------
 
-    args : QuantumVariable or list[QuantumVariable]
+    args : QuantumVariable | QuantumArray | list[QuantumVariable | QuantumArray]
         The (list of) QuantumVariables which represent the state,
         the amplitude amplification is performed on.
     state_function : function
