@@ -90,7 +90,11 @@ def test_qfloor(exhaustive = False):
                 a[:] = i*2**(-e)
                 res_floor = qfloor(a).get_measurement()
                 assert floor(i*2**(-e)) == list(res_floor.keys())[0]
-
+                
+    c = QuantumFloat(4, -2)
+    c[:] = {0.25: 0.25**0.5, 1.25: 0.75**0.5}
+    assert qfloor(c).get_measurement() == {1.0: 0.75, 0.0: 0.25}   
+    
 def test_qceil(exhaustive = False):
     if exhaustive:
         up_bound = 8
@@ -113,3 +117,7 @@ def test_qceil(exhaustive = False):
                 res_ceil = qceil(a).get_measurement()
 
                 assert list(res_ceil.keys())[0] == 0.0
+                
+    c = QuantumFloat(4, -2)
+    c[:] = {0.25: 0.25**0.5, 1.25: 0.75**0.5}
+    assert qceil(c).get_measurement() == {2.0: 0.75, 1.0: 0.25}   
