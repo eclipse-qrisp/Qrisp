@@ -19,8 +19,8 @@
 
 def test_montgomery_jasp_qq():
     import numpy as np
-    from qrisp import boolean_simulation, QuantumFloat, modinv, gidney_adder, measure
-    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import qq_montgomery_multiply, compute_aux_radix_exponent
+    from qrisp import boolean_simulation, QuantumFloat, modinv, gidney_adder, measure, best_montgomery_shift
+    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import qq_montgomery_multiply
 
     @boolean_simulation
     def qq(a, b, n, N):
@@ -28,7 +28,7 @@ def test_montgomery_jasp_qq():
         qa[:] = a
         qb = QuantumFloat(n)
         qb[:] = b
-        m = compute_aux_radix_exponent(N, n)
+        m = best_montgomery_shift(N)
         res = qq_montgomery_multiply(qa, qb, N, m, gidney_adder)
         return measure(qa), measure(qb), measure(res)
 
@@ -45,8 +45,8 @@ def test_montgomery_jasp_qq():
 
 
 def test_montgomery_not_jasp_qq():
-    from qrisp import QuantumFloat, modinv, gidney_adder, multi_measurement
-    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import qq_montgomery_multiply, compute_aux_radix_exponent
+    from qrisp import QuantumFloat, modinv, gidney_adder, multi_measurement, best_montgomery_shift
+    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import qq_montgomery_multiply
 
     X = 29
     y = 21
@@ -58,25 +58,25 @@ def test_montgomery_not_jasp_qq():
         qx[:] = X
         qy = QuantumFloat(n)
         qy[:] = y
-        m = compute_aux_radix_exponent(N, n)
+        m = best_montgomery_shift(N)
         res = qq_montgomery_multiply(qx, qy, N, m, gidney_adder)
         return multi_measurement([res])
 
-    m = compute_aux_radix_exponent(N, n)
+    m = best_montgomery_shift(N)
 
     assert test_qq_g()[((X*y*modinv(2**m, N)) % N,)] == 1.0
 
 
 def test_montgomery_jasp_cq():
     import numpy as np
-    from qrisp import boolean_simulation, QuantumFloat, gidney_adder, measure
-    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import cq_montgomery_multiply, best_montgomery_shift
+    from qrisp import boolean_simulation, QuantumFloat, gidney_adder, measure, best_montgomery_shift
+    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import cq_montgomery_multiply
 
     @boolean_simulation
     def cq(a, b, n, N):
         qb = QuantumFloat(n)
         qb[:] = b
-        shift = best_montgomery_shift(a, N)
+        shift = best_montgomery_shift(a)
         res = cq_montgomery_multiply(a, qb, N, shift, gidney_adder)
         return measure(qb), measure(res)
 
@@ -92,14 +92,15 @@ def test_montgomery_jasp_cq():
 
 def test_montgomery_jasp_cq_inplace():
     import numpy as np
-    from qrisp import boolean_simulation, QuantumFloat, modinv, gidney_adder, measure
-    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import cq_montgomery_multiply_inplace, best_montgomery_shift
+    from qrisp import boolean_simulation, QuantumFloat, gidney_adder, measure, best_montgomery_shift
+    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import cq_montgomery_multiply_inplace
+    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import modinv
 
     @boolean_simulation
     def icq(a, b, n, N):
         qb = QuantumFloat(n)
         qb[:] = b
-        shift = best_montgomery_shift(a, N)
+        shift = best_montgomery_shift(a)
         cq_montgomery_multiply_inplace(a, qb, N, shift, gidney_adder)
         return measure(qb)
 
@@ -115,14 +116,15 @@ def test_montgomery_jasp_cq_inplace():
 
 def test_montgomery_jasp_cq_inplace_controlled():
     import numpy as np
-    from qrisp import boolean_simulation, QuantumFloat, QuantumBool, modinv, gidney_adder, measure, control
-    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import cq_montgomery_multiply_inplace, best_montgomery_shift
+    from qrisp import boolean_simulation, QuantumFloat, gidney_adder, measure, QuantumBool, control, best_montgomery_shift
+    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import cq_montgomery_multiply_inplace
+    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import modinv
 
     @boolean_simulation
     def cicq(a, b, n, N, c):
         qb = QuantumFloat(n)
         qb[:] = b
-        shift = best_montgomery_shift(a, N)
+        shift = best_montgomery_shift(a)
         qc = QuantumBool()
         qc[:] = c
         with control(qc[0]):
@@ -142,16 +144,16 @@ def test_montgomery_jasp_cq_inplace_controlled():
 
 def test_montgomery_jasp_cq_inplace_bi():
     import numpy as np
-    from qrisp import boolean_simulation, QuantumFloat, QuantumBool, gidney_adder, measure, control, BigInteger
-    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import cq_montgomery_multiply_inplace, best_montgomery_shift
+    from qrisp import boolean_simulation, QuantumFloat, QuantumBool, gidney_adder, measure, control, BigInteger, best_montgomery_shift
+    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import cq_montgomery_multiply_inplace
 
     @boolean_simulation
     def bicicq(a, b, n, N, c):
-        a = BigInteger.from_int(a, 3)
-        N = BigInteger.from_int(N, 3)
+        a = BigInteger.create(a, 3)
+        N = BigInteger.create(N, 3)
         qb = QuantumFloat(n)
         qb[:] = b
-        shift = best_montgomery_shift(a, N)
+        shift = best_montgomery_shift(a)
         qc = QuantumBool()
         qc[:] = c
         with control(qc[0]):
@@ -215,7 +217,7 @@ def test_montgomery_find_order():
         QFT(qpe_res, inv=True)
         return qpe_res
 
-    dict_bim = find_order(BigInteger.from_int_python(4, 1), BigInteger.from_int(13, 1))
+    dict_bim = find_order(BigInteger.create(4, 1), BigInteger.create(13, 1))
 
     def check_dict_equality(a, b):
         for key in a.keys():

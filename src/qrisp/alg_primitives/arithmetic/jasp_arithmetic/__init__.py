@@ -34,16 +34,18 @@ from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_multiplyers import (
     jasp_multiplyer,
 )
 from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import (
-    compute_aux_radix_exponent,
     q_montgomery_reduction,
     qq_montgomery_multiply,
     cq_montgomery_multiply,
-    cq_montgomery_multiply_inplace,
-    montgomery_product
+    cq_montgomery_multiply_inplace
 )
 from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
     BigInteger,
     bi_modinv,
     bi_montgomery_encode,
-    bi_montgomery_decode
+    bi_montgomery_decode,
+    bi_extended_euclidean
+)
+from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import (
+    best_montgomery_shift
 )

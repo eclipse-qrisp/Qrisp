@@ -175,19 +175,13 @@ class QuantumModulus(QuantumFloat):
     def __init__(self, modulus, inpl_adder=None, qs=None):
 
         if check_for_tracing_mode():
-            from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import compute_aux_radix_exponent
+            from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import smallest_power_of_two
             
             from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
                 BigInteger
             )
             self.modulus = modulus
-            if isinstance(modulus, BigInteger):
-                @jax.jit
-                def compute(v):
-                    return compute_aux_radix_exponent(v)
-                aux = compute(modulus)#compute_aux_radix_exponent(modulus)#modulus.digits.shape[0]*32
-            else:
-                aux = compute_aux_radix_exponent(modulus)
+            aux = smallest_power_of_two(modulus)
 
             QuantumFloat.__init__(self, msize=aux, qs=qs)
             if inpl_adder is None:
@@ -221,7 +215,7 @@ class QuantumModulus(QuantumFloat):
 
             if isinstance(i, BigInteger):
                 n = i.digits.shape[0]
-                R = BigInteger.from_int(1, n) << self.m
+                R = BigInteger.create(1, n) << self.m
                 #return bi_montgomery_decode(i, R, self.modulus)
             
             else:
@@ -235,14 +229,33 @@ class QuantumModulus(QuantumFloat):
 
         if i >= self.modulus:  # or (np.gcd(i, self.modulus) != 1 and i != 0):
             return np.nan
-        return montgomery_decoder(i, 2**self.m, self.modulus)
+        return montgomery_decoder(i, 1 >> self.m, self.modulus)
     
     def jdecoder(self, i):
         from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import montgomery_decoder
-        return montgomery_decoder(i, 2**self.m, self.modulus)
+        return montgomery_decoder(i, 1 >> self.m, self.modulus)
     
     def measure(self):
-        return self.jdecoder(self.reg.measure())
+        from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
+            BigInteger
+        )
+        if isinstance(self.modulus, BigInteger):
+            from qrisp import q_fori_loop, measure, jlen
+            if check_for_tracing_mode():
+                for_loop = q_fori_loop
+            else:
+                def for_loop(lower, upper, body_fun, init_val):
+                    val = init_val
+                    for i in range(lower, upper):
+                        val = body_fun(i, val)
+                    return val
+            def body_fun(i, val):
+                return val.at[i].set(measure(self[32*i:32*(i+1)]))
+            digits = for_loop(0, (self.size-1)//32, body_fun, jnp.zeros_like(self.modulus.digits))
+            digits = digits.at[(self.size-1)//32].set(measure(self[32*((self.size - 1)//32):]))
+            return self.jdecoder(BigInteger(digits))
+        else:
+            return self.jdecoder(self.reg.measure())
 
     def encoder(self, i):
         if check_for_tracing_mode():
@@ -252,7 +265,7 @@ class QuantumModulus(QuantumFloat):
             )
             from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import montgomery_encoder
             if isinstance(i, BigInteger):
-                return montgomery_encoder(i, BigInteger.from_int(1, i.digits.shape[0]) << self.m, self.modulus)
+                return montgomery_encoder(i, BigInteger.create(1, i.digits.shape[0]) << self.m, self.modulus)
             else:
                 return montgomery_encoder(i, 1 << self.m, self.modulus)
         
