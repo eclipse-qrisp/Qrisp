@@ -416,10 +416,10 @@ class Jaspr(ClosedJaxpr):
                     return
                 return True
             else:
-                
+
                 invalues = extract_invalues(eqn, context_dic)
                 for val in invalues:
-                    if isinstance(val, list):
+                    if isinstance(val, list) and len(val):
                         if isinstance(val[0], Clbit):
                             break
                     elif isinstance(val, Clbit):
@@ -429,7 +429,8 @@ class Jaspr(ClosedJaxpr):
                 
             raise Exception(f"Tried to convert Jaspr involving real-time computation primitive `{eqn.primitive.name}` to QuantumCircuit")
 
-        ammended_args = list(args) + [QuantumCircuit()] + jaspr.consts
+        ammended_args = list(args) + [QuantumCircuit()]
+        
         if len(ammended_args) != len(jaspr.invars):
             raise Exception(
                 "Supplied invalid number of arguments to Jaspr.to_qc (please exclude any static arguments, in particular callables)"
