@@ -17,7 +17,7 @@
 """
 
 def test_jasp_grovers_algorithm():
-    from qrisp import QuantumFloat
+    from qrisp import QuantumFloat, QuantumArray
     from qrisp.jasp import terminal_sampling
     from qrisp.grover import tag_state, grovers_alg
     import numpy as np
@@ -44,3 +44,21 @@ def test_jasp_grovers_algorithm():
 
     res_dict = main()
     assert np.abs(res_dict[(0,0.5)]-1) < 1e-4
+
+    # Test for input of type QuantumArray
+
+    def oracle(qa):
+        tag_state({qa[0]:0, qa[1]:0, qa[2]:0})
+
+    @terminal_sampling
+    def main():
+
+        qa = QuantumArray(QuantumFloat(2), shape=(3,))
+
+        grovers_alg(qa, oracle)
+
+        return qa[0], qa[1], qa[2]
+
+    mes_res = main()
+
+    assert mes_res[(0.0, 0.0, 0.0)] > 0.99

@@ -45,7 +45,7 @@ def amplitude_amplification(
     Parameters
     ----------
 
-    args : QuantumVariable or list[QuantumVariable]
+    args : QuantumVariable | QuantumArray | list[QuantumVariable | QuantumArray]
         The (list of) QuantumVariables which represent the state,
         the amplitude amplification is performed on.
     state_function : function
@@ -61,9 +61,12 @@ def amplitude_amplification(
     iter : int, optional
         The amount of amplitude amplification iterations to perform. The default is 1.
     refection_indices : list[int], optional
-        A list indicating with respect to which variables the reflection within the diffuser is performed, i.e. oblivious amplitude amplification is performed.
+        A list of indices indicating with respect to which variables the reflection is performed, i.e. 
+        `oblivious amplitude amplification <https://arxiv.org/pdf/1312.1414>`_ is performed.
+        Indices correspond to the flattened ``args``, e.g., if ``args = QuantumArray(QuantumFloat(3), (6,))``,
+        ``reflection_indices=[0,1,2,3]`` corresponds to the first four variables in the array.
         By default, the reflection is performed with respect to all variables in ``args``, i.e. standard amplitude amplification is performed.
-
+        
     Examples
     --------
 
@@ -104,14 +107,14 @@ def amplitude_amplification(
 
     """
 
-    from qrisp.grover import diffuser
+    from qrisp.alg_primitives import reflection
     from qrisp import merge, recursive_qs_search, IterationEnvironment
     from qrisp.jasp import check_for_tracing_mode, jrange
 
     if check_for_tracing_mode():
         for i in jrange(iter):
             oracle_function(*args, **kwargs_oracle)
-            diffuser(
+            reflection(
                 args,
                 state_function=state_function,
                 reflection_indices=reflection_indices,
@@ -122,7 +125,7 @@ def amplitude_amplification(
         if iter > 0:
             with IterationEnvironment(qs, iter):
                 oracle_function(*args, **kwargs_oracle)
-                diffuser(
+                reflection(
                     args,
                     state_function=state_function,
                     reflection_indices=reflection_indices,

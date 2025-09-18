@@ -34,7 +34,7 @@ def QAE(
 
     Parameters
     ----------
-    args : QuantumVariable or list[QuantumVariable]
+    args : QuantumVariable | QuantumArray | list[QuantumVariable | QuantumArray]
         The (list of) QuantumVariables which represent the state,
         the quantum amplitude estimation is performed on.
     state_function : function
