@@ -429,7 +429,8 @@ class Jaspr(ClosedJaxpr):
                 
             raise Exception(f"Tried to convert Jaspr involving real-time computation primitive `{eqn.primitive.name}` to QuantumCircuit")
 
-        ammended_args = list(args) + [QuantumCircuit()] + jaspr.consts
+        ammended_args = list(args) + [QuantumCircuit()]
+        
         if len(ammended_args) != len(jaspr.invars):
             raise Exception(
                 "Supplied invalid number of arguments to Jaspr.to_qc (please exclude any static arguments, in particular callables)"

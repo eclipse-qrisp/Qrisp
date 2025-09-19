@@ -147,22 +147,49 @@ class BatchedBackend(VirtualBackend):
     
     def __init__(self, batch_run_func):
         
+        # The function to call the backend
         self.batch_run_func = batch_run_func
+        
+        # A list[tuple[QuantumCircuit, int]] representing the quantum circuits and
+        # the shots of the batch
         self.batch = []
+        
+        # This attribute tracks if the backend evaluation concluded. Having 
+        # this attribute is important because it facilitates the communication
+        # of threaded execution model
         self.results_available = False
+        
+        # A dictionary of the form dict[QuantumCircuit,dict[str, int]] indicating
+        # which QuantumCircuit gave which results
         self.results = {}
+        
+        # This attributes stores any potential exception that might have occured
+        # during the backed evaluation and transmits them to the main thread
+        # to be properly raised.
+        self.backend_exception = None
         
     def run(self, qc, shots):
         
+        # Appends the circuit-shot tuple
         self.batch.append((qc, shots))
         
+        # If the run function is called from the main thread, the backend is evaluated
+        # immediately. This makes sure that users who are not interested in batched
+        # execution can still use the backend like an unbatched backend.
         if threading.current_thread() is threading.main_thread():
-            
             dispatching_thread = threading.Thread(target = self.dispatch)
             dispatching_thread.start()
         
+        # Wait for the results to be available
         while not self.results_available:
             time.sleep(0.01)
+        
+        # Raise any potential execption
+        if self.backend_exception is not None:
+            temp = self.backend_exception
+            self.backend_exception = None
+            raise temp
+        
         result = self.results[id(qc)]
         del self.results[id(qc)]
         
@@ -187,12 +214,17 @@ class BatchedBackend(VirtualBackend):
         while len(self.batch) < min_calls:
             time.sleep(0.01)
         
-        run_func_results = self.batch_run_func(self.batch)
-        self.results = {id(self.batch[i][0]) : run_func_results[i] for i in range(len(self.batch))}
+        # We now perform the backend call and catch potential exceptions
+        try:
+            run_func_results = self.batch_run_func(self.batch)
+            self.results = {id(self.batch[i][0]) : run_func_results[i] for i in range(len(self.batch))}
+        except Exception as e:
+            self.backend_exception = e
+        
         self.batch = []
         self.results_available = True
         
-        while len(self.results):
+        while len(self.results) or not self.backend_exception is None:
             time.sleep(0.01)
         
         self.results_available = False

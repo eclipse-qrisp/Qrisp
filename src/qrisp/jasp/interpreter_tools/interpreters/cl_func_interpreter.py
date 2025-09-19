@@ -270,7 +270,7 @@ def exec_multi_measurement(bit_array, qubit_reg):
         acc, bit_array, qubit_reg = arg_tuple
         qb_index = qubit_reg[i]
         res_bl = get_bit_array(bit_array, qb_index)
-        acc = acc + (jnp.asarray(1, dtype="int64") << i) * res_bl
+        acc = acc + (jnp.asarray(res_bl, dtype="int64") << i)
         return (acc, bit_array, qubit_reg)
 
     acc, bit_array, qubit_reg = fori_loop(
