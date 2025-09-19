@@ -33,8 +33,8 @@ def test_min_max(exhaustive = False):
                 b = QuantumFloat(N)
                 a[:] = j
                 b[:] = k
-                res_min = qmin(a,b).get_measurement()
-                res_max = qmax(a,b).get_measurement()
+                res_min = q_min(a,b).get_measurement()
+                res_max = q_max(a,b).get_measurement()
                 assert min(j,k) == list(res_min.keys())[0]
                 assert max(j,k) == list(res_max.keys())[0]
         
@@ -44,8 +44,8 @@ def test_min_max(exhaustive = False):
     h(c[0])
     d+=1
 
-    res_min = qmin(c,d)
-    res_max = qmax(c,d)
+    res_min = q_min(c,d)
+    res_max = q_max(c,d)
 
     assert multi_measurement([c,d,res_min]) == {(2, 1, 1): 0.5, (3, 1, 1): 0.5}     
     assert multi_measurement([c,d,res_max]) == {(2, 1, 2): 0.5, (3, 1, 3): 0.5}
@@ -58,8 +58,8 @@ def test_min_max_jasp(exhaustive = False):
         b = QuantumFloat(N)
         a[:] = j
         b[:] = k
-        res_max = qmax(a,b)
-        res_min = qmin(a,b)
+        res_max = q_max(a,b)
+        res_min = q_min(a,b)
         return measure(res_max), measure(res_min)
     
     if exhaustive:
@@ -76,7 +76,7 @@ def test_min_max_jasp(exhaustive = False):
                 assert max(j,k) == meas_res[0]
                 assert min(j,k) == meas_res[1]
 
-def test_qfloor(exhaustive = False):    
+def test_q_floor(exhaustive = False):    
     if exhaustive:
         up_bound = 8
     else:
@@ -88,14 +88,14 @@ def test_qfloor(exhaustive = False):
                 a = QuantumFloat(N, -e)
 
                 a[:] = i*2**(-e)
-                res_floor = qfloor(a).get_measurement()
+                res_floor = q_floor(a).get_measurement()
                 assert floor(i*2**(-e)) == list(res_floor.keys())[0]
                 
     c = QuantumFloat(4, -2)
     c[:] = {0.25: 0.25**0.5, 1.25: 0.75**0.5}
-    assert qfloor(c).get_measurement() == {1.0: 0.75, 0.0: 0.25}   
+    assert q_floor(c).get_measurement() == {1.0: 0.75, 0.0: 0.25}   
     
-def test_qceil(exhaustive = False):
+def test_q_ceil(exhaustive = False):
     if exhaustive:
         up_bound = 8
     else:
@@ -107,17 +107,33 @@ def test_qceil(exhaustive = False):
                 a = QuantumFloat(N, -e)
 
                 a[:] = i*2**(-e)
-                res_ceil = qceil(a).get_measurement()
+                res_ceil = q_ceil(a).get_measurement()
 
                 assert ceil(i*2**(-e)) == list(res_ceil.keys())[0]
 
             for i in range(2**N - 2**e + 1, 2**N):
                 a = QuantumFloat(N, -e)
                 a[:] = i*2**(-e)
-                res_ceil = qceil(a).get_measurement()
+                res_ceil = q_ceil(a).get_measurement()
 
                 assert list(res_ceil.keys())[0] == 0.0
                 
     c = QuantumFloat(4, -2)
     c[:] = {0.25: 0.25**0.5, 1.25: 0.75**0.5}
-    assert qceil(c).get_measurement() == {2.0: 0.75, 1.0: 0.25}   
+    assert q_ceil(c).get_measurement() == {2.0: 0.75, 1.0: 0.25}   
+
+
+def test_q_floor_jasp():
+
+    @boolean_simulation
+    def main(N, e, i):
+        a = QuantumFloat(N, -e)
+        a[:] = i*2.0**(-e)
+
+        b = q_floor(a)
+        return measure(b)
+    for N in range(1, 8):
+        for e in range(N):
+            for i in range(2**N):
+                
+                assert floor(i*2**(-e)) == main(N,e, i)

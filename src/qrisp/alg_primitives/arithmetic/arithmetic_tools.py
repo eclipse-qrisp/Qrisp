@@ -24,7 +24,7 @@ from qrisp.jasp import jrange
 from typing import Tuple
 
 
-def qmax(a: QuantumFloat, b: QuantumFloat) -> QuantumFloat:
+def q_max(a: QuantumFloat, b: QuantumFloat) -> QuantumFloat:
     """Returns a QuantumFloat containing the maximum of two QuantumFloats a and b
     a: QuantumFloat
     b: QuantumFloat
@@ -51,7 +51,7 @@ def qmax(a: QuantumFloat, b: QuantumFloat) -> QuantumFloat:
     return res
 
 
-def qmin(a: QuantumFloat, b: QuantumFloat) -> QuantumFloat:
+def q_min(a: QuantumFloat, b: QuantumFloat) -> QuantumFloat:
     """Returns a QuantumFloat containing the minimum of two QuantumFloats a and b
     a: QuantumFloat
     b: QuantumFloat
@@ -77,7 +77,7 @@ def qmin(a: QuantumFloat, b: QuantumFloat) -> QuantumFloat:
     return res
 
 
-def qfloor(a: QuantumFloat) -> QuantumFloat:
+def q_floor(a: QuantumFloat) -> QuantumFloat:
     """Returns a QuantumFloat containing the floor of a QuantumFloat a
     a: QuantumFloat
     return: QuantumFloat
@@ -90,23 +90,23 @@ def qfloor(a: QuantumFloat) -> QuantumFloat:
     return b
 
 
-def qceil(a: QuantumFloat) -> QuantumFloat:
+def q_ceil(a: QuantumFloat) -> QuantumFloat:
     """Returns a QuantumFloat containing the ceiling of a QuantumFloat a
     a: QuantumFloat
     return: QuantumFloat
     """
-    b = qfloor(a)
+    b = q_floor(a)
 
-    # Logical OR on the fractional part
-    if a.exponent < 0:
+    with control(a.exponent < 0):
         flag = QuantumFloat(1)
 
-        logical_OR([a[i] for i in range(-a.exponent)], flag)
+        # Logical OR on the fractional part
+        logical_OR(a[:-a.exponent], flag)
 
-        with control(flag):
+        with control(flag[0]):
             b += 1
 
-        logical_OR([a[i] for i in range(-a.exponent)], flag)
+        logical_OR(a[:-a.exponent], flag)
         flag.delete()
     return b
 
@@ -114,29 +114,26 @@ def qceil(a: QuantumFloat) -> QuantumFloat:
 def logical_OR(operands: list[Qubit], flag: Qubit):
     # handle the case fo an empty list
     # Implement the case of a Quantum Variable with more the 2 qubits
-    for qb in operands:
-        x(qb)
+    x(operands)
     x(flag)
     mcx(operands, flag[0])
-    for qb in operands:
-        x(qb)
+    x(operands)
 
-
-def qround(a: QuantumFloat) -> QuantumFloat:
+def q_round(a: QuantumFloat) -> QuantumFloat:
     """Returns a QuantumFloat containing the rounded value of a QuantumFloat a
     a: QuantumFloat
     return: QuantumFloat
     """
-    b = qfloor(a)
+    b = q_floor(a)
 
-    if a.exponent < 0:
+    with control(a.exponent < 0):
         with control(a[-a.exponent - 1]):
             b += 1
 
     return b
 
 
-def qfractional(a: QuantumFloat) -> QuantumFloat:
+def q_fractional(a: QuantumFloat) -> QuantumFloat:
     """Returns a QuantumFloat containing the fractional part of a QuantumFloat a
     a: QuantumFloat
     return: QuantumFloat
@@ -149,35 +146,35 @@ def qfractional(a: QuantumFloat) -> QuantumFloat:
         flag = QuantumFloat(1)
         cx(a[-1], flag)
         with control(flag):
-            c = qceil(a)
+            c = q_ceil(a)
             b -= c
-            injected_qceil = c << qceil
+            injected_qceil = c << q_ceil
             with invert():
                 injected_qceil(a)
             c.delete()
             
         with control(flag, 0):
-            c = qfloor(a)
+            c = q_floor(a)
             b -= c
-            injected_qceil = c << qfloor
+            injected_qceil = c << q_floor
             with invert():
                 injected_qceil(a)
             c.delete()
         cx(a[-1], flag)
         flag.delete()
     else:
-        c = qfloor(a)
+        c = q_floor(a)
         b -= c
-        injected_qceil = c << qfloor
+        injected_qceil = c << q_floor
         with invert():
             injected_qceil(a)
         c.delete()
     return b
 
 
-def qmodf(a: QuantumFloat) -> Tuple[QuantumFloat, QuantumFloat]:
+def q_modf(a: QuantumFloat) -> Tuple[QuantumFloat, QuantumFloat]:
     """Returns a tuple of two QuantumFloats containing the floor and fractional part of a QuantumFloat a
     a: QuantumFloat
     return: (QuantumFloat, QuantumFloat)
     """
-    return (qfloor(a), qfractional(a))
+    return (q_floor(a), q_fractional(a))
