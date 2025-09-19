@@ -25,10 +25,30 @@ from typing import Tuple
 
 
 def q_max(a: QuantumFloat, b: QuantumFloat) -> QuantumFloat:
-    """Returns a QuantumFloat containing the maximum of two QuantumFloats a and b
-    a: QuantumFloat
-    b: QuantumFloat
-    return: QuantumFloat
+    """
+    Computes the maximum of two QuantumFloats a and b.
+    Parameters
+    ----------
+    a : QuantumFloat
+    b : QuantumFloat
+
+    Returns
+    -------
+    QuantumFloat
+        The maximum value between a and b.
+
+    Examples
+    --------
+
+    >>> from qrisp import *
+    >>> a = QuantumFloat(2)
+    >>> b = QuantumFloat(2)
+    >>> a += 2
+    >>> h(a[0])
+    >>> b+=1
+    >>> res_max = q_max(a,b)
+    >>> multi_measurement([a,b,res_max])
+    {(2, 1, 2): 0.5, (3, 1, 3): 0.5}
     """
 
     res = QuantumFloat(a.size)
@@ -52,10 +72,30 @@ def q_max(a: QuantumFloat, b: QuantumFloat) -> QuantumFloat:
 
 
 def q_min(a: QuantumFloat, b: QuantumFloat) -> QuantumFloat:
-    """Returns a QuantumFloat containing the minimum of two QuantumFloats a and b
-    a: QuantumFloat
-    b: QuantumFloat
-    return: QuantumFloat
+    """
+    Computes the minimum of two QuantumFloats a and b.
+    Parameters
+    ----------
+    a : QuantumFloat
+    b : QuantumFloat
+
+    Returns
+    -------
+    QuantumFloat
+        The minimum value between a and b.
+
+    Examples
+    --------
+
+    >>> from qrisp import *
+    >>> a = QuantumFloat(2)
+    >>> b = QuantumFloat(2)
+    >>> a += 2
+    >>> h(a[0])
+    >>> b+=1
+    >>> res_min = q_min(a,b)
+    >>> multi_measurement([a,b,res_min])
+    {(2, 1, 1): 0.5, (3, 1, 1): 0.5}
     """
     res = QuantumFloat(a.size)
     c = a <= b
@@ -78,9 +118,26 @@ def q_min(a: QuantumFloat, b: QuantumFloat) -> QuantumFloat:
 
 
 def q_floor(a: QuantumFloat) -> QuantumFloat:
-    """Returns a QuantumFloat containing the floor of a QuantumFloat a
-    a: QuantumFloat
-    return: QuantumFloat
+    """
+    Computes out-of-place the floor of a QuantumFloat
+    Parameters
+    ----------
+    a : QuantumFloat
+
+    Returns
+    -------
+    QuantumFloat
+       \lfloor a \rfloor, the floor of a.
+
+    Examples
+    --------
+
+    >>> from qrisp import *
+    >>> a = QuantumFloat(4,-2)
+    >>> a[:] = {0.25: 0.25**0.5, 1.75: 0.75**0.5}
+    >>> b = q_floor(a)
+    >>> b.get_measurement()
+    {1.0: 0.75, 0.0: 0.25}
     """
 
     b = a.duplicate()
@@ -91,9 +148,30 @@ def q_floor(a: QuantumFloat) -> QuantumFloat:
 
 
 def q_ceil(a: QuantumFloat) -> QuantumFloat:
-    """Returns a QuantumFloat containing the ceiling of a QuantumFloat a
-    a: QuantumFloat
-    return: QuantumFloat
+    """
+    Computes out-of-place the ceiling of a QuantumFloat
+    Parameters
+    ----------
+    a : QuantumFloat
+
+    Returns
+    -------
+    QuantumFloat
+       \lceil a \rceil, the ceiling of a.
+
+    Examples
+    --------
+
+    >>> from qrisp import *
+    >>> a = QuantumFloat(4,-2)
+    >>> a[:] = {0.25: 0.25**0.5, 1.75: 0.75**0.5}
+    >>> b = q_ceil(a)
+    >>> b.get_measurement()
+    {2.0: 0.75, 1.0: 0.25}
+
+    .. warning::
+        Ceiling operations that would result in overflow, raise no errors. Instead, the operations
+        are performed `modular <https://en.wikipedia.org/wiki/Modular_arithmetic>`_.
     """
     b = q_floor(a)
 
@@ -120,9 +198,30 @@ def logical_OR(operands: list[Qubit], flag: Qubit):
     x(operands)
 
 def q_round(a: QuantumFloat) -> QuantumFloat:
-    """Returns a QuantumFloat containing the rounded value of a QuantumFloat a
-    a: QuantumFloat
-    return: QuantumFloat
+    """
+    Computes out-of-place the rounding of a QuantumFloat to the first significant digit.
+    Parameters
+    ----------
+    a : QuantumFloat
+
+    Returns
+    -------
+    QuantumFloat
+       The rounding of a.
+
+    Examples
+    --------
+
+    >>> from qrisp import *
+    >>> a = QuantumFloat(4,-2)
+    >>> a[:] = {0.25: 0.25**0.5, 1.75: 0.75**0.5}
+    >>> b = q_round(a)
+    >>> b.get_measurement()
+    {2.0: 0.75, 0.0: 0.25}
+
+    .. warning::
+        Rounding operations that would result in overflow, raise no errors. Instead, the operations
+        are performed `modular <https://en.wikipedia.org/wiki/Modular_arithmetic>`_.
     """
     b = q_floor(a)
 
@@ -134,9 +233,27 @@ def q_round(a: QuantumFloat) -> QuantumFloat:
 
 
 def q_fractional(a: QuantumFloat) -> QuantumFloat:
-    """Returns a QuantumFloat containing the fractional part of a QuantumFloat a
-    a: QuantumFloat
-    return: QuantumFloat
+    """
+    Computes out-of-place the fractional part of a QuantumFloat.
+    Parameters
+    ----------
+    a : QuantumFloat
+
+    Returns
+    -------
+    QuantumFloat
+       \{a\}, the fractional part of a
+
+    Examples
+    --------
+
+    >>> from qrisp import *
+    >>> a = QuantumFloat(4,-2)
+    >>> a[:] = {0.25: 0.25**0.5, 1.75: 0.75**0.5}
+    >>> b = q_fractional(a)
+    >>> b.get_measurement()
+    {0.75: 0.75, 0.25: 0.25}
+
     """
     b = a.duplicate()
     for i in jrange(a.size):
@@ -173,8 +290,32 @@ def q_fractional(a: QuantumFloat) -> QuantumFloat:
 
 
 def q_modf(a: QuantumFloat) -> Tuple[QuantumFloat, QuantumFloat]:
-    """Returns a tuple of two QuantumFloats containing the floor and fractional part of a QuantumFloat a
-    a: QuantumFloat
-    return: (QuantumFloat, QuantumFloat)
+    """
+    Computes out-of-place the integer and fractional parts of a QuantumFloat.
+
+    Parameters
+    ----------
+    a : QuantumFloat
+        Input quantum fixed-point number.
+
+    Returns
+    -------
+    Tuple[QuantumFloat, QuantumFloat]
+        A pair (i, f) where
+        - i = q_floor(a) is the integer part, and
+        - f = q_fractional(a) is the fractional part.
+        Both are new QuantumFloat registers with the same configuration as `a`.
+        The input `a` is left unchanged.
+
+    Examples
+    --------
+    >>> from qrisp import *
+    >>> a = QuantumFloat(4, -2)
+    >>> a[:] = {0.25: 0.25**0.5, 1.75: 0.75**0.5}
+    >>> i, f = qmodf(a)
+    >>> i.get_measurement()
+    {1.0: 0.75, 0.0: 0.25}
+    >>> f.get_measurement()
+    {0.75: 0.75, 0.25: 0.25}
     """
     return (q_floor(a), q_fractional(a))
