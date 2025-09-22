@@ -142,7 +142,6 @@ def test_q_fractional(exhaustive = False):
     c[:] = {0.25: 0.25**0.5, 1.75: 0.75**0.5}
     assert q_fractional(c).get_measurement() == {0.75: 0.75, 0.25: 0.25}   
 
-
 def test_q_floor_jasp():
 
     @boolean_simulation

@@ -177,16 +177,14 @@ def q_ceil(a: QuantumFloat) -> QuantumFloat:
 
     with control(a.exponent < 0):
         flag = QuantumFloat(1)
-        x(flag)
-        # # Logical OR on the fractional part
-        # logical_OR(a[:-a.exponent], flag[0])
 
-        #with control(flag[0]):
-        b += 1
+        # Logical OR on the fractional part
+        logical_OR(a[:-a.exponent], flag[0])
 
-        # logical_OR(a[:-a.exponent], flag[0])
-        x(flag)
+        with control(flag[0]):
+            b += 1
 
+        logical_OR(a[:-a.exponent], flag[0])
         flag.delete()
     return b
 
