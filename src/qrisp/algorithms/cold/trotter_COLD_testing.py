@@ -20,6 +20,8 @@ ATTENTION!! This is btw different to the original nested commutator approximatio
 A_λ^(1) = ∂_λ H_beta + alpha_1 i[ H_beta, ∂_λ H_beta] 
 Which is because we chose a custom AGP here ~ sum(Y[i])
 Is this better? What happens if i stick with the normal derivation?
+---
+ATTENTION!! we have forget the lambda dependency for H_0, i.e. the mulplicative lambda infront of H_i and H_p
 
 ATTENTION!!
 Lambda in this work is defined as a redefinition of time, i.e.
@@ -40,26 +42,21 @@ where we end up with the KIPU scheduling again
 # where the last part is the AGP
 
 # Q: How do we optimize? 
+# --> ATTENTION!! The suggested optimization schemes (Nealder-Mead and Powell are local optimizers, not suited for the problem at hand really (or maybe yes?) )
+#   --> maybe use dual annealing?
 # --> we have params = c_k of len(N_k) which are optimizeable
 # --> but with respect to which cost function --> fidelity 
 # --> can also minimize the size of the control pulse, see eq. 5.2 p94
 #Quote from p86 on the optimization procedure
-#All that is left now is the third COLD step, which is the optimisation of the coefficients βk(λ) 
+#All that is left now is the third COLD step, which is the optimisation of the coefficients βk(λ) 
 #using QOCT methods presented in Sec. 3.2. A natural, though not
 #exclusive, cost function for this process would be the final state fidelity from Eq. (3.15)
-#with respect to the desired eigenstate of H(λf ). We will provide a more detailed discussion of the optimal control component of COLD in the 
+#with respect to the desired eigenstate of H(λf ). We will provide a more detailed discussion of the optimal control component of COLD in the 
 # --> ⟨ψ(τ,u)|HT |ψ(τ,u)⟩ ??
 # !!!! How can we improve the results??
 
-"""
-Implementation: We first consider the H_0, 
-where me make some adjustments compared to p105, 6.15
---> we take the normal QUBO Hamiltonian, 
-    and add the X-terms from the above equation 
---> this leads to additional lambda dependency for H_f_cold, 
-    but ones for H_f_qubo and H_i are gone (?), 
---> should not be, H_f_qubo and H_i, need to be scheduled
-"""
+
+
 
 num_qubits = 5
 n = num_qubits
@@ -71,6 +68,7 @@ Q = np.array([
     [ 0.0,  0.0, -0.7, -0.4,  0.5],
     [ 0.0,  0.0,  0.0,  0.5,  0.3]
 ], dtype=float)
+
 
 
 """ num_qubits = 3        
@@ -85,8 +83,10 @@ Q = np.array([
 h_i = -0.5 * np.diag(Q) - 0.5 * np.sum(Q, axis=1)
 J_ij = 0.5 * Q
 
+
 H_i = -1*sum([X(i) for i in range(n)])
 H_f_qubo =  sum([h_i[i] *Z(i) for i in range(n)]) + sum([ sum([ J_ij[i][j]*Z(i)*Z(j) for i in range(j) ]) for j in range(n) ])
+
 
 # additional transverse field hamiltonian, which is added to final hamiltionian, and taken times lambda.
 # lambda multiplication does not appear 
@@ -127,23 +127,25 @@ def lambda_scheduling_deriv(t, T ): # time derivative of lambda_scheduling
     dtlambda = np.pi**2 * np.sin( np.pi*t/T )* np.sin( np.pi* np.sin( np.pi*t/( 2 *T ))**2 ) /(4*T)  
     return dtlambda
 
+
 # Then the f_opt_CRAB
-
 def f_opt_CRAB(params, lamb, r_uniform):
+    
+    #!!!!!!!!!!!!!
+    # r_uniform needs to be rerandomized on every iteration...
 
-    # params == c_k ? 
+    # params == c_k 
     #  lamb == lambda parameter obviously
     #for i in range(len(params)):
-
-    
     f_opt = sum([ params[k] * (np.sin(2*np.pi *(k+1) *(1+ r_uniform[k])) *lamb) for k in range(len(params))]) 
     
     return f_opt
 
+
 # DONT FORGET!! THERE IS AN i HIDDEN SOMEWHERE!!
-def alpha_symbolic(params, t, T, opt_CRAB #J_ij, h_i, f_opt_CRAB
+def alpha_symbolic(t, T, opt_CRAB #J_ij, h_i, f_opt_CRAB
                    ):
-    lamb =t/T
+    
     # some random names taken from my FHGenie derivation lol
     d = lambda_scheduling_deriv(t,T)
     g = lambda_scheduling(t,T)
@@ -189,16 +191,16 @@ def trotterization_COLD(
                 control_term = 0 
 
             O = (
-                (1-lambda_symbolic(t, T))/steps *H_i 
-                + lambda_symbolic(t, T)/steps *H_f_qubo 
-                + lambda_scheduling(t, T) *H_f_cold
-                + control_term
-                + lambda_t_deriv(t, T) *alpha_symbolic(params, t, T, opt_CRAB)/steps *A_lamb 
+                (1-lambda_symbolic(t, T)) /steps *H_i 
+                + lambda_symbolic(t, T) /steps *H_f_qubo 
+                + lambda_scheduling(t, T) /steps *H_f_cold
+                + control_term /steps
+                + lambda_t_deriv(t, T) *alpha_symbolic(t, T, opt_CRAB)/steps *A_lamb 
             ) #*i-> imaginary DONT FORGET!! THERE IS AN i HIDDEN SOMEWHERE!!
             # *lambda_symbolic(t, T) ??
             
             print("params")
-                
+            
             print("lambda_sym " + str(lambda_symbolic(t, T)))        
             print("lambda_t_deriv " + str(lambda_t_deriv(t, T)))     
             print("lambda_scheduling " + str(lambda_scheduling(t, T)))     
@@ -286,10 +288,11 @@ def optimization_routine(qarg, compiled_qc, symbols, N_params,
     #print(qarg.qs)
     return res_sample.x, res_sample.fun
 
+
 def cold_routine(qarg, qarg_prep, cold_hamiltonian, N_params,steps, T):
 
     #deltat=T/steps
-    r_uniform = np.random.uniform(-0.5,0.5,N_params)
+    r_uniform = np.random.uniform(-0.5,0.5,N_params) # this is actually incorrect, this should be reseeded on every optimization loop
     qarg_dupl= qarg.duplicate()
     compiled_qc, symbols = compile_U_circuit(qarg_dupl, qarg_prep, cold_hamiltonian, N_params,steps,r_uniform)
     opt_theta, opt_res = optimization_routine(qarg_dupl, compiled_qc, symbols, N_params)
