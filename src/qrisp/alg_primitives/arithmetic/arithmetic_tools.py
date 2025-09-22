@@ -26,7 +26,8 @@ from typing import Tuple
 
 def q_max(a: QuantumFloat, b: QuantumFloat) -> QuantumFloat:
     """
-    Computes the maximum of two QuantumFloats a and b.
+    Computes the maximum of two QuantumFloats ``a`` and ``b``.
+    
     Parameters
     ----------
     a : QuantumFloat
@@ -35,11 +36,10 @@ def q_max(a: QuantumFloat, b: QuantumFloat) -> QuantumFloat:
     Returns
     -------
     QuantumFloat
-        The maximum value between a and b.
+        The maximum value between ``a`` and ``b``.
 
     Examples
     --------
-
     >>> from qrisp import *
     >>> a = QuantumFloat(2)
     >>> b = QuantumFloat(2)
@@ -73,7 +73,8 @@ def q_max(a: QuantumFloat, b: QuantumFloat) -> QuantumFloat:
 
 def q_min(a: QuantumFloat, b: QuantumFloat) -> QuantumFloat:
     """
-    Computes the minimum of two QuantumFloats a and b.
+    Computes the minimum of two QuantumFloats ``a`` and ``b``.
+    
     Parameters
     ----------
     a : QuantumFloat
@@ -82,11 +83,10 @@ def q_min(a: QuantumFloat, b: QuantumFloat) -> QuantumFloat:
     Returns
     -------
     QuantumFloat
-        The minimum value between a and b.
+        The minimum value between ``a`` and ``b``.
 
     Examples
-    --------
-
+    -------- 
     >>> from qrisp import *
     >>> a = QuantumFloat(2)
     >>> b = QuantumFloat(2)
@@ -119,7 +119,8 @@ def q_min(a: QuantumFloat, b: QuantumFloat) -> QuantumFloat:
 
 def q_floor(a: QuantumFloat) -> QuantumFloat:
     """
-    Computes out-of-place the floor of a QuantumFloat
+    Computes out-of-place the floor of a QuantumFloat.
+    
     Parameters
     ----------
     a : QuantumFloat
@@ -127,11 +128,10 @@ def q_floor(a: QuantumFloat) -> QuantumFloat:
     Returns
     -------
     QuantumFloat
-       \lfloor a \rfloor, the floor of a.
+        The floor of ``a``.
 
     Examples
     --------
-
     >>> from qrisp import *
     >>> a = QuantumFloat(4,-2)
     >>> a[:] = {0.25: 0.25**0.5, 1.75: 0.75**0.5}
@@ -149,7 +149,8 @@ def q_floor(a: QuantumFloat) -> QuantumFloat:
 
 def q_ceil(a: QuantumFloat) -> QuantumFloat:
     """
-    Computes out-of-place the ceiling of a QuantumFloat
+    Computes out-of-place the ceiling of a QuantumFloat.
+    
     Parameters
     ----------
     a : QuantumFloat
@@ -157,11 +158,10 @@ def q_ceil(a: QuantumFloat) -> QuantumFloat:
     Returns
     -------
     QuantumFloat
-       \lceil a \rceil, the ceiling of a.
+        The ceiling of ``a``.
 
     Examples
     --------
-
     >>> from qrisp import *
     >>> a = QuantumFloat(4,-2)
     >>> a[:] = {0.25: 0.25**0.5, 1.75: 0.75**0.5}
@@ -177,14 +177,16 @@ def q_ceil(a: QuantumFloat) -> QuantumFloat:
 
     with control(a.exponent < 0):
         flag = QuantumFloat(1)
+        x(flag)
+        # # Logical OR on the fractional part
+        # logical_OR(a[:-a.exponent], flag[0])
 
-        # Logical OR on the fractional part
-        logical_OR(a[:-a.exponent], flag)
+        #with control(flag[0]):
+        b += 1
 
-        with control(flag[0]):
-            b += 1
+        # logical_OR(a[:-a.exponent], flag[0])
+        x(flag)
 
-        logical_OR(a[:-a.exponent], flag)
         flag.delete()
     return b
 
@@ -194,12 +196,13 @@ def logical_OR(operands: list[Qubit], flag: Qubit):
     # Implement the case of a Quantum Variable with more the 2 qubits
     x(operands)
     x(flag)
-    mcx(operands, flag[0])
+    mcx(operands, flag)
     x(operands)
 
 def q_round(a: QuantumFloat) -> QuantumFloat:
     """
     Computes out-of-place the rounding of a QuantumFloat to the first significant digit.
+    
     Parameters
     ----------
     a : QuantumFloat
@@ -207,7 +210,7 @@ def q_round(a: QuantumFloat) -> QuantumFloat:
     Returns
     -------
     QuantumFloat
-       The rounding of a.
+       The rounding of ``a``.
 
     Examples
     --------
@@ -226,7 +229,9 @@ def q_round(a: QuantumFloat) -> QuantumFloat:
     b = q_floor(a)
 
     with control(a.exponent < 0):
-        with control(a[-a.exponent - 1]):
+        with control(a[-a.exponent - 1]): 
+            #Control on the first fractional bit (the one holding the value b*0.5)
+            #specifies if the number is rounded up or down.
             b += 1
 
     return b
@@ -235,6 +240,7 @@ def q_round(a: QuantumFloat) -> QuantumFloat:
 def q_fractional(a: QuantumFloat) -> QuantumFloat:
     """
     Computes out-of-place the fractional part of a QuantumFloat.
+    
     Parameters
     ----------
     a : QuantumFloat
@@ -242,7 +248,7 @@ def q_fractional(a: QuantumFloat) -> QuantumFloat:
     Returns
     -------
     QuantumFloat
-       \{a\}, the fractional part of a
+       The fractional part of ``a``.
 
     Examples
     --------
@@ -259,10 +265,11 @@ def q_fractional(a: QuantumFloat) -> QuantumFloat:
     for i in jrange(a.size):
         cx(a[i], b[i])
 
-    if a.signed:
+    with control(a.signed):
         flag = QuantumFloat(1)
         cx(a[-1], flag)
-        with control(flag):
+        with control(flag): 
+            #If the QuantumFloat is signed and the value negative: substract the ceiling
             c = q_ceil(a)
             b -= c
             injected_qceil = c << q_ceil
@@ -270,21 +277,24 @@ def q_fractional(a: QuantumFloat) -> QuantumFloat:
                 injected_qceil(a)
             c.delete()
             
-        with control(flag, 0):
+        with control(flag, 0): 
+            #If the QuantumFloat is signed and the value positive: substract the floor
             c = q_floor(a)
             b -= c
-            injected_qceil = c << q_floor
+            injected_qfloor = c << q_floor
             with invert():
-                injected_qceil(a)
+                injected_qfloor(a)
             c.delete()
         cx(a[-1], flag)
         flag.delete()
-    else:
+        
+    with control(not a.signed):  
+        #If the QuantumFloat is unsigned: substract the floor
         c = q_floor(a)
         b -= c
-        injected_qceil = c << q_floor
+        injected_qfloor = c << q_floor
         with invert():
-            injected_qceil(a)
+            injected_qfloor(a)
         c.delete()
     return b
 
@@ -296,16 +306,16 @@ def q_modf(a: QuantumFloat) -> Tuple[QuantumFloat, QuantumFloat]:
     Parameters
     ----------
     a : QuantumFloat
-        Input quantum fixed-point number.
 
     Returns
     -------
     Tuple[QuantumFloat, QuantumFloat]
-        A pair (i, f) where
-        - i = q_floor(a) is the integer part, and
-        - f = q_fractional(a) is the fractional part.
-        Both are new QuantumFloat registers with the same configuration as `a`.
-        The input `a` is left unchanged.
+        A pair `(i, f)` where:
+
+        - `i =` :func:`q_floor <qrisp.q_floor>`(a) is the integer part
+        - `f =` :func:`q_fractional <qrisp.q_fractional>`(a) is the fractional part
+
+        Both are new QuantumFloats with the same configuration as ``a``.
 
     Examples
     --------

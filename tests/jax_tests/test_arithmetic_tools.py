@@ -122,6 +122,26 @@ def test_q_ceil(exhaustive = False):
     c[:] = {0.25: 0.25**0.5, 1.25: 0.75**0.5}
     assert q_ceil(c).get_measurement() == {2.0: 0.75, 1.0: 0.25}   
 
+def test_q_fractional(exhaustive = False):
+    if exhaustive:
+        up_bound = 8
+    else:
+        up_bound = 4
+                
+    for N in range(1, up_bound):
+        for e in range(N):
+            for i in range(2**N):
+                a = QuantumFloat(N, -e)
+
+                a[:] = i*2**(-e)
+                
+                res_frac = q_fractional(a).get_measurement()
+                assert (i*2**(-e))%1 == list(res_frac.keys())[0]
+                
+    c = QuantumFloat(4, -2)
+    c[:] = {0.25: 0.25**0.5, 1.75: 0.75**0.5}
+    assert q_fractional(c).get_measurement() == {0.75: 0.75, 0.25: 0.25}   
+
 
 def test_q_floor_jasp():
 
