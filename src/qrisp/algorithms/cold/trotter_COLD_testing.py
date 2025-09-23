@@ -334,3 +334,8 @@ def average_qubo_cost(Q, P):
     return expected_cost
 
 print(average_qubo_cost(Q=Q, P=res_dict))
+
+# for tomorrow: 
+# further alpha investigations - we have forget the lambda dependency for H_0, i.e. the mulplicative lambda infront of H_i and H_p
+# F_OPT_CRAB seed once per run!!
+# The suggested optimization schemes (Nealder-Mead and Powell are local optimizers, not suited for the problem at hand really (or maybe yes?) 
