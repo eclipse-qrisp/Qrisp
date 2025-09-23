@@ -73,3 +73,14 @@ def test_terminal_sampling():
         return qf
 
     main()
+    
+    @terminal_sampling
+    def main():
+        a = QuantumFloat(2, signed=True) 
+        b = QuantumFloat(2) 
+
+        h(a)
+
+        return a, b # This does not work
+        
+    res = main()
