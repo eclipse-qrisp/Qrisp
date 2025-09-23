@@ -25,11 +25,15 @@ from qrisp.jasp.interpreter_tools import (
     exec_eqn,
 )
 
+from qrisp.jasp.jasp_expression import ProcessedMeasurement
 
 def evaluate_cond_eqn(cond_eqn, context_dic, eqn_evaluator=exec_eqn):
-
+    
     # Extract the invalues from the context dic
     invalues = extract_invalues(cond_eqn, context_dic)
+    
+    if isinstance(invalues[0], ProcessedMeasurement):
+        raise Exception("Tried to convert real-time feedback into QuantumCircuit")
 
     for i in range(len(cond_eqn.params["branches"])):
         if int(invalues[0]) == i:
@@ -59,9 +63,14 @@ def evaluate_while_loop(
         
         new_invalues = constants + carries
         
-        return eval_jaxpr(
+        res = eval_jaxpr(
             while_loop_eqn.params["cond_jaxpr"], eqn_evaluator=eqn_evaluator
         )(*new_invalues)
+        
+        if isinstance(res, ProcessedMeasurement):
+            raise Exception("Tried to convert real-time feedback into QuantumCircuit")
+        
+        return res
 
     # Extract the invalues from the context dic
     invalues = extract_invalues(while_loop_eqn, context_dic)
