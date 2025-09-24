@@ -247,13 +247,15 @@ class QubitOperator(Hamiltonian):
 
         for term, coeff in self.terms_dict.items():
             res_terms_dict[term] = res_terms_dict.get(term, 0) + coeff
-            if abs(res_terms_dict[term]) < threshold:
-                del res_terms_dict[term]
+            if not isinstance(res_terms_dict[term], sp.Basic): 
+                if abs(res_terms_dict[term]) < threshold:
+                    del res_terms_dict[term]
 
         for term, coeff in other.terms_dict.items():
             res_terms_dict[term] = res_terms_dict.get(term, 0) + coeff
-            if abs(res_terms_dict[term]) < threshold:
-                del res_terms_dict[term]
+            if not isinstance(res_terms_dict[term], sp.Basic): 
+                if abs(res_terms_dict[term]) < threshold:
+                    del res_terms_dict[term]
 
         result = QubitOperator(res_terms_dict)
         return result
@@ -283,13 +285,15 @@ class QubitOperator(Hamiltonian):
 
         for term, coeff in self.terms_dict.items():
             res_terms_dict[term] = res_terms_dict.get(term, 0) + coeff
-            if abs(res_terms_dict[term]) < threshold:
-                del res_terms_dict[term]
+            if not isinstance(res_terms_dict[term], sp.Basic): 
+                if abs(res_terms_dict[term]) < threshold:
+                    del res_terms_dict[term]
 
         for term, coeff in other.terms_dict.items():
             res_terms_dict[term] = res_terms_dict.get(term, 0) - coeff
-            if abs(res_terms_dict[term]) < threshold:
-                del res_terms_dict[term]
+            if not isinstance(res_terms_dict[term], sp.Basic): 
+                if abs(res_terms_dict[term]) < threshold:
+                    del res_terms_dict[term]
 
         result = QubitOperator(res_terms_dict)
         return result
@@ -346,7 +350,7 @@ class QubitOperator(Hamiltonian):
 
         """
 
-        if isinstance(other, (int, float, complex)):
+        if isinstance(other, (int, float, complex, sp.Basic)):
             other = QubitOperator({QubitTerm(): other})
         if not isinstance(other, QubitOperator):
             raise TypeError("Cannot multipliy QubitOperator and " + str(type(other)))
@@ -548,8 +552,9 @@ class QubitOperator(Hamiltonian):
         delete_list = []
         new_terms_dict = dict(self.terms_dict)
         for term, coeff in self.terms_dict.items():
-            if abs(coeff) <= threshold:
-                delete_list.append(term)
+            if not isinstance(self.terms_dict[term], sp.Basic): 
+                if abs(coeff) <= threshold:
+                    delete_list.append(term)
         for term in delete_list:
             del new_terms_dict[term]
         return QubitOperator(new_terms_dict)
@@ -1875,7 +1880,8 @@ class QubitOperator(Hamiltonian):
                             )
                             for intersect_group in intersect_groups:
                                 for term, coeff in intersect_group.terms_dict.items():
-                                    coeff = jnp.real(coeff)
+                                    coeff = np.real(coeff)
+                                    #coeff = jnp.real(coeff)
                                     term.simulate(
                                         -coeff
                                         * t
@@ -2044,7 +2050,7 @@ class QubitOperator(Hamiltonian):
 
         for term, coeff in hamiltonian.terms_dict.items():
             coeff_ = np.real(coeff)
-            unitaries.append(term.unitary(sign = (coeff_ < 0)))
+            unitaries.append(term.unitary(sign = (coeff<0) ))    
             coefficients.append(np.abs(coeff_))
 
         return unitaries, np.array(coefficients, dtype=float)
