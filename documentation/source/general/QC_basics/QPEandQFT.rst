@@ -28,7 +28,7 @@ instead:
 .. figure:: ./Fourier_transform.png
    :alt: Fourier
 
-   Fourier
+Source: Wikipedia (https://commons.wikimedia.org/wiki/File:FFT-Time-Frequency-View.png)
   
 Here, you can see the different domains represented as axes and the
 switch between them would be done with the Fourier transformation.
@@ -469,4 +469,5 @@ Summary
 
 More examples that make use of both of these routines will be in the
 next chapters, when we dive into more complicated algorithms, like
+
 Shor’s algorithm for factoring. Until then, stay qrispy!
