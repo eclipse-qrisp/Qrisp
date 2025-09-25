@@ -1,7 +1,7 @@
 from qrisp.operators.qubit import X,Y,Z, conjugate
 import numpy as np
-from qrisp import IterationEnvironment, merge, invert, jrange, check_for_tracing_mode, QuantumVariable, h 
-import jax.numpy as jnp 
+from qrisp import QuantumVariable, h 
+from sympy import Symbol
 
 
 
@@ -129,18 +129,21 @@ def lambda_scheduling_deriv(t, T ): # time derivative of lambda_scheduling
 
 
 # Then the f_opt_CRAB
-def f_opt_CRAB(params, lamb):
+def f_opt_CRAB(params, lamb, r_uniform):
+    
+    #!!!!!!!!!!!!!
+    # r_uniform needs to be rerandomized on every iteration...
 
     # params == c_k 
     #  lamb == lambda parameter obviously
     #for i in range(len(params)):
-    f_opt = sum([ params[k] * np.sin(2*np.pi *(k+1) *lamb) for k in range(len(params))]) 
+    f_opt = sum([ params[k] * np.sin(2*np.pi *(k+1) *(1+ r_uniform[k])*lamb) for k in range(len(params))]) 
 
     return f_opt
 
-def deriv_f_opt_CRAB(params, lamb):
+def deriv_f_opt_CRAB(params, lamb, r_uniform):
 
-    d_f_opt = sum([ params[k] *  2*np.pi *(k+1) ** np.cos(2*np.pi *(k+1) *lamb) for k in range(len(params))]) 
+    d_f_opt = sum([ params[k] *  2*np.pi *(k+1) *(1+ r_uniform[k]) * np.cos(2*np.pi *(k+1) *(1+ r_uniform[k]) *lamb) for k in range(len(params))]) 
 
     return d_f_opt
 
@@ -191,7 +194,7 @@ def alpha_symbolic(t, T, opt_CRAB, d_opt_CRAB #J_ij, h_i, f_opt_CRAB
 
 
 
-def trotterization_COLD(
+def trotterization_COLD(steps,  T,
         #params, 
         #H_i, H_f_qubo, H_f_cold , H_control, A_lamb, 
         #lambda_t_deriv, lambda_symbolic, lambda_scheduling, lambda_scheduling_deriv, 
@@ -202,15 +205,18 @@ def trotterization_COLD(
     # set seeded randomly drawn r_k for f_opt_CRAB
     
 
-    def cold_hamiltonian(qarg, qarg_prep, params, steps):
-        qarg_prep(qarg)
+    def cold_hamiltonian(qarg, qarg_prep, params):
+        #r_uniform = np.random.uniform(-0.5,0.5,len(params))
+        r_uniform = np.ones(1,)*0.2
+        #qarg_prep(qarg)
+        h(qarg)
         for ind in range(1,int(steps)+1):
             t=ind*T/steps
-            opt_CRAB = f_opt_CRAB(params, lambda_symbolic(t, T))
-            d_opt_CRAB = deriv_f_opt_CRAB(params, lambda_symbolic(t, T))
+            opt_CRAB = f_opt_CRAB(params, lambda_symbolic(t, T), r_uniform)
+            d_opt_CRAB = deriv_f_opt_CRAB(params, lambda_symbolic(t, T), r_uniform)
 
             try:       
-                control_term =  opt_CRAB *H_control
+                control_term =  opt_CRAB/steps *H_control
             except TypeError:
                 control_term = 0 
 
@@ -218,52 +224,29 @@ def trotterization_COLD(
                 (1-lambda_symbolic(t, T)) /steps *H_i 
                 + lambda_symbolic(t, T) /steps *H_f_qubo 
                 #+ lambda_scheduling(t, T) /steps *H_f_cold # this term was added in the PhD thesis, we can omit it for our purposes
-                + control_term /steps
+                + control_term 
                 + lambda_t_deriv(t, T) *alpha_symbolic(t, T, opt_CRAB,d_opt_CRAB)/steps *A_lamb 
             ) #*i-> imaginary DONT FORGET!! THERE IS AN i HIDDEN SOMEWHERE!!
             # *lambda_symbolic(t, T) ??
-            
-            print("params")
-            
+            """ print("params")
+            print(params)
             print("lambda_sym " + str(lambda_symbolic(t, T)))        
             print("lambda_t_deriv " + str(lambda_t_deriv(t, T)))     
             print("lambda_scheduling " + str(lambda_scheduling(t, T)))     
             print("alpha_symbolic " + str(alpha_symbolic(params, t, T, opt_CRAB)))         
-            print("f_opt_CRAB " + str(opt_CRAB) )
+            print("f_opt_CRAB " + str(opt_CRAB) ) """
+            
             #print(O)
             U = O.trotterization()
             U(qarg)
         #print(qarg.qs)
     return cold_hamiltonian
 
-from sympy import Symbol
-def compile_U_circuit(qarg, qarg_prep, cold_hamiltonian, N_params, steps):
-
-    temp = list(qarg.qs.data)
-
-    # Define params for COLD control terms
-    params = [Symbol("params" + str(i)) for i in range(N_params)]
-
-    # Prepare initial state - if no init_function is specified, prepare uniform superposition
-    # should always be custom though
-    """ if init_function is not None:
-        self.init_function(qarg) """
-    #else:
-    #    h(qarg)
-
-    
-    cold_hamiltonian(qarg,qarg_prep, params,steps)
-    #print(qarg.qs)
-    # Compile quantum circuit with intended measurements
-    intended_measurement_qubits = list(qarg)
-    compiled_qc = qarg.qs.compile(intended_measurements=intended_measurement_qubits)
-    qarg.qs.data = temp
-    
-    return compiled_qc, params
 
 
 
-def optimization_routine(qarg, compiled_qc, symbols, N_params,
+
+def optimization_routine(qarg, cold_hamiltonian, qarg_prep, N_params,
                         optimizer="Nelder-Mead",
                         options={},
                         ):
@@ -281,17 +264,33 @@ def optimization_routine(qarg, compiled_qc, symbols, N_params,
     #https://docs.scipy.org/doc/scipy/reference/optimize.minimize-neldermead.html
     
 
-    def optimization_wrapper(params, qarg, compiled_qc, symbols, mes_kwargs={}):
+    def optimization_wrapper(params, qarg, qarg_prep , mes_kwargs={}):
         #params = np.random.rand(N_params) * np.pi / 2
+        #print("wrapper")
+        temp = list(qarg.qs.data)
+        params = [0.57489003]
+        # Define params for COLD control terms
+        symbols = [Symbol("params" + str(i)) for i in range(N_params)]
 
+
+        
+        cold_hamiltonian(qarg,qarg_prep, params)
+        #print(qarg.qs)
+        # Compile quantum circuit with intended measurements
+        intended_measurement_qubits = list(qarg)
+        compiled_qc = qarg.qs.compile(intended_measurements=intended_measurement_qubits)
+        print(qarg.qs.depth())
+        qarg.qs.data = temp
         subs_dic = {symbols[i]: params[i] for i in range(len(symbols))}
         # instead of this state_prep it should somehow be a U(subs_dic)
-        cl_cost = -H_f_qubo.expectation_value(qarg,subs_dic=subs_dic, precompiled_qc=compiled_qc)()
-        #print(params)
-        #print(cl_cost)
+        cl_cost = -H_f_qubo.expectation_value(qarg, subs_dic=subs_dic, precompiled_qc=compiled_qc)()
+        print(cl_cost)
+        if cl_cost < -2:
+            print(qarg.get_measurement(subs_dic=subs_dic, precompiled_qc=compiled_qc))
+            print(compiled_qc)
+        #print(qarg.qs.depth())
+        print(params)
 
-        """ if self.callback:
-            self.optimization_costs.append(cl_cost) """
 
         return cl_cost
 
@@ -301,38 +300,36 @@ def optimization_routine(qarg, compiled_qc, symbols, N_params,
                 optimization_wrapper,
                 init_point,
                 #method=optimizer,
-                #options=options,
-                args=(qarg, compiled_qc, symbols
+                options={"maxiter":20},
+                args=(qarg, qarg_prep
                       #, mes_kwargs
                       ),
-                options={"maxiter":20}
+                
             )
-    #print(qarg.qs)
+    
     return res_sample.x, res_sample.fun
 
 
-def cold_routine(qarg, qarg_prep, cold_hamiltonian, N_params,steps, T):
+def cold_routine(qarg, qarg_prep, cold_hamiltonian, N_params):
 
     #deltat=T/steps
      # this is actually incorrect, this should be reseeded on every optimization loop
     qarg_dupl= qarg.duplicate()
-    compiled_qc, symbols = compile_U_circuit(qarg_dupl, qarg_prep, cold_hamiltonian, N_params,steps)
-    qarg_opt= qarg.duplicate()
-    opt_theta, opt_res = optimization_routine(qarg_opt, compiled_qc, symbols, N_params)
+    opt_theta, opt_res = optimization_routine(qarg_dupl, cold_hamiltonian,  qarg_prep, N_params)
+    opt_theta = [0.57489003]
+    cold_hamiltonian(qarg, qarg_prep, opt_theta)
     
-    cold_hamiltonian(qarg, qarg_prep, opt_theta, steps)
-    print(opt_theta)
-    #print(qarg.qs)
+    #print(qarg.qs) 
     res_sample = qarg.get_measurement()
 
-    return res_sample
+    return res_sample 
 
 
 def qarg_init(qarg):
     h(qarg) 
 
 
-qarg = QuantumVariable(len(Q[0]))
+qarg_outer = QuantumVariable(len(Q[0]))
 
 ########################
 #PROBLEM -- F_OPT_CRAB is being reseeded on every function call, this should not be the case!!!! --> make it seed once per run!!
@@ -341,7 +338,7 @@ qarg = QuantumVariable(len(Q[0]))
 T = 1
 N_Steps =2
 N_params=1
-res_dict = cold_routine(qarg, qarg_init, trotterization_COLD(), N_params,N_Steps, T)
+res_dict = cold_routine(qarg_outer, qarg_init, trotterization_COLD(steps=N_Steps,T = T), N_params)
 
 print(res_dict)
 
@@ -360,5 +357,5 @@ print(average_qubo_cost(Q=Q, P=res_dict))
 
 # for tomorrow: 
 # further alpha investigations - we have forgot the lambda dependency for H_0, i.e. the mulplicative lambda infront of H_i and H_p
-# F_OPT_CRAB seed once per run??
+# F_OPT_CRAB seed once per run?? --> move this into the optimization_wrapper!!
 # The suggested optimization schemes (Nealder-Mead and Powell are local optimizers, not suited for the problem at hand really (or maybe yes?) 
