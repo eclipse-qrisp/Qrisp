@@ -32,8 +32,14 @@ def test_comparisons():
     def ge_op(a, b):
         return a >= b
     
+    def eq_op(a, b):
+        return a == b
     
-    op_list = [lt_op, gt_op, le_op, ge_op]
+    def neq_op(a, b):
+        return a != b
+    
+    
+    op_list = [lt_op, gt_op, le_op, ge_op, eq_op, neq_op]
     
     for op in op_list:
     

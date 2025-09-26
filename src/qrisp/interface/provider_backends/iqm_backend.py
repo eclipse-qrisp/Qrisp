@@ -133,13 +133,14 @@ def IQMBackend(api_token,
                 shots = 1000
             
             shot_batch.append(shots)
-        
-    
+
         UUID = client.submit_circuits(circuit_batch, 
                                       options = compilation_options, 
                                       shots = max(shot_batch))
         
+        
         client.wait_for_results(UUID)
+            
         answer = client.get_run_counts(UUID)
         import re
         
