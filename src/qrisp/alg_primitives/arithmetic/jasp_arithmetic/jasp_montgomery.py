@@ -20,12 +20,12 @@ from typing import Union
 
 from qrisp.alg_primitives.arithmetic.adders.gidney import gidney_adder
 from qrisp.qtypes import QuantumFloat, QuantumModulus
-from qrisp.jasp import jrange, check_for_tracing_mode, jlen
+from qrisp.jasp import jrange, check_for_tracing_mode, jlen, q_cond
 from qrisp.environments import control, invert, custom_control
 from qrisp.core import swap, cx, x
 
 from .jasp_bigintiger import BigInteger
-from .jasp_mod_tools import montgomery_encoder, montgomery_decoder, modinv, smallest_power_of_two
+from .jasp_mod_tools import montgomery_encoder, montgomery_decoder, modinv, best_montgomery_shift
 
 
 def q_montgomery_reduction(qf: QuantumFloat, N: Union[int, BigInteger], m: int, inpl_adder=gidney_adder):
@@ -340,3 +340,31 @@ def qq_montgomery_multiply_modulus(x: QuantumModulus, y: QuantumModulus):
     aux.delete()
 
     return res
+
+def cq_montgomery_mat_multiply(A, B, out):
+    if check_for_tracing_mode():
+        xrange = jrange
+    else:
+        xrange = range
+
+    n1 = A.shape[0]
+    n2 = B.shape[1]
+
+    m = A.shape[1]
+
+    #out = QuantumArray(qtype=A[0,0], shape=(n1, n2))
+
+    for k in xrange(m):
+        for j in xrange(n2):
+            for i in xrange(n1):
+                def true_fun():
+                    best_montgomery_shift(B[k,j], A[i,k].modulus)
+                    shift = best_montgomery_shift(B[k,j], A[i,k].modulus)
+                    aux = cq_montgomery_multiply(B[k,j], A[i,k], A[i,k].modulus, shift)
+                    out[i,j] += aux
+                    with invert():
+                        cq_montgomery_multiply(B[k,j], A[i,k], A[i,k].modulus, shift, res=aux)
+                    aux.delete()
+                q_cond(B[k,j] != 0, true_fun, lambda:None)
+
+    return out

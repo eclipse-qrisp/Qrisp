@@ -37,19 +37,16 @@ class BigInteger:
     This type represents non-negative integers using a fixed number of 32-bit
     limbs (dtype=uint32) in little-endian order (digits[0] is the least significant
     limb). It is compatible with JAX transformations (jit, vmap, pytrees).
-
-    Global semantics
-    ----------------
+    
     All arithmetic (addition, subtraction, multiplication, shifts, division,
     modulo, bitwise) is performed modulo 2^(32*n), where n = len(digits).
     Overflow and underflow beyond the most-significant limb are discarded.
 
     Notes
     -----
-    - Many methods are annotated with jax.jit for performance.
     - Width (number of limbs) is determined by `digits.shape[0]` and remains
       constant; operations do not change the number of limbs.
-    - Comparison operators assume both operands have the same number of limbs.
+    - Operators assume both operands have the same number of limbs.
 
     Attributes
     ----------
@@ -792,7 +789,6 @@ class BigInteger:
 
         return lax.cond(is_zero, lambda: jnp.int64(0), nonzero_len)
 
-    # Attach to the class (replace previous remainder_division)
     def remainder_division(self, other: "BigInteger"):
         """
         Exact division using Knuth long division (base 2^32).
