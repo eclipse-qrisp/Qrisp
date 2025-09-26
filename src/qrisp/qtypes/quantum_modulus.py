@@ -175,7 +175,7 @@ class QuantumModulus(QuantumFloat):
     def __init__(self, modulus, inpl_adder=None, qs=None):
 
         if check_for_tracing_mode():
-            from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import smallest_power_of_two
+            from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import smallest_power_of_two
             
             from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
                 BigInteger
@@ -229,11 +229,11 @@ class QuantumModulus(QuantumFloat):
 
         if i >= self.modulus:  # or (np.gcd(i, self.modulus) != 1 and i != 0):
             return np.nan
-        return montgomery_decoder(i, 1 >> self.m, self.modulus)
+        return montgomery_decoder(i, 1 << self.m, self.modulus)
     
     def jdecoder(self, i):
         from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import montgomery_decoder
-        return montgomery_decoder(i, 1 >> self.m, self.modulus)
+        return montgomery_decoder(i, 1 << self.m, self.modulus)
     
     def measure(self):
         from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
