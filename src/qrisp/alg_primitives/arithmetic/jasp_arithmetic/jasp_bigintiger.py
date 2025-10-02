@@ -390,7 +390,8 @@ class BigInteger:
         str
             String representation of digits (uint32 list).
         """
-        return f"BigInteger(digits={self.digits.tolist()})"
+        return self.digits.__repr__()
+        #return f"BigInteger(digits={self.digits.tolist()})"
 
     @jax.jit
     def __lt__(self, other: "BigInteger"):
