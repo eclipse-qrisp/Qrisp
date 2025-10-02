@@ -748,7 +748,7 @@ class QuantumArray:
 
     @lifted
     def __matmul__(self, other):
-        from qrisp import QuantumFloat
+        from qrisp import QuantumFloat, QuantumModulus
 
         if isinstance(self.qtype, QuantumFloat):
             if isinstance(other, QuantumArray):
@@ -760,13 +760,21 @@ class QuantumArray:
                 from qrisp.alg_primitives.arithmetic import semi_classic_matmul
 
                 return semi_classic_matmul(self, other)
-
-        raise Exception("Matrix multiplication for non-float types not implemented")
+        elif isinstance(self.qtype, QuantumModulus):
+            from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import cq_montgomery_mat_multiply
+            n1 = self.shape[0]
+            n2 = other.shape[1]
+            out = QuantumArray(qtype=self[0,0], shape=(n1, n2))
+            cq_montgomery_mat_multiply(self, other, out)
+            return out
+        raise Exception(f"Matrix multiplication not implemented for {str(self.qtype)}")
 
     def __rmatmul__(self, other):
-        from qrisp import QuantumFloat
+        from qrisp import QuantumFloat, QuantumModulus
 
         if isinstance(self.qtype, QuantumFloat):
+            return (self.transpose() @ other.transpose()).transpose()
+        if isinstance(self.qtype, QuantumModulus):
             return (self.transpose() @ other.transpose()).transpose()
 
     def __iter__(self):
