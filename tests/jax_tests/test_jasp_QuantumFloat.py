@@ -16,18 +16,19 @@
 ********************************************************************************
 """
 
-from qrisp.alg_primitives.qft import *
-from qrisp.alg_primitives.qpe import *
-from qrisp.alg_primitives.qae import *
-from qrisp.alg_primitives.iterative_qae import *
-from qrisp.alg_primitives.logic_synthesis import *
-from qrisp.alg_primitives.mcx_algs import *
-from qrisp.alg_primitives.arithmetic import *
-from qrisp.alg_primitives.iterable_processing import *
-from qrisp.alg_primitives.dicke_state_prep import *
-from qrisp.alg_primitives.switch_case import *
-from qrisp.alg_primitives.amplitude_amplification import *
-from qrisp.alg_primitives.lcu import *
-from qrisp.alg_primitives.prepare import *
-from qrisp.alg_primitives.iterative_qpe import *
-from qrisp.alg_primitives.reflection import *
+def test_jasp_QuantumFloat():
+
+    # Test decoder for QuantumFloat (Issue #271) 
+    from qrisp import QuantumFloat, h
+    from qrisp.jasp import terminal_sampling
+
+    @terminal_sampling
+    def main():
+        a = QuantumFloat(3, -2, signed = True) 
+
+        h(a)
+
+        return a
+    
+    res = main()
+    assert res == {-2.0: 0.0625, -1.75: 0.0625, -1.5: 0.0625, -1.25: 0.0625, -1.0: 0.0625, -0.75: 0.0625, -0.5: 0.0625, -0.25: 0.0625, 0.0: 0.0625, 0.25: 0.0625, 0.5: 0.0625, 0.75: 0.0625, 1.0: 0.0625, 1.25: 0.0625, 1.5: 0.0625, 1.75: 0.0625}

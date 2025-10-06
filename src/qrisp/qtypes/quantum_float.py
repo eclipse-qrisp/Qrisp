@@ -19,15 +19,23 @@
 import numpy as np
 import sympy as sp
 import jax.numpy as jnp
+from jax import jit, Array
+from jax.core import Tracer
 
 from qrisp.core import QuantumVariable, cx
 from qrisp.misc import gate_wrap
 from qrisp.environments import invert, conjugate
 from qrisp.jasp import check_for_tracing_mode
 
-
+@jit
 def signed_int_iso_2(x, n):
     return jnp.int64(x) & ((int(1) << jnp.minimum(n, 63))-1)
+
+@jit
+def signed_int_iso_inv_2(y, n, signed_int):
+    m = int(1) << (n + 1)
+    t = jnp.int64(y) % m
+    return t - signed_int * m * (t // (int(1) << n))
 
 
 def signed_int_iso(x, n):
@@ -311,36 +319,22 @@ class QuantumFloat(QuantumVariable):
 
     # Define outcome_labels
     def decoder(self, i):
-        if isinstance(self.signed, bool) and self.signed:
-            res = signed_int_iso_inv(i, self.size - 1) * 2.0**self.exponent
 
-            if self.exponent >= 0:
-                if isinstance(res, (int, float)):
-                    return int(res)
-                else:
-                    return res.astype(int)
-            else:
-                return res
-        else:
-            from jax.numpy import float64
-            from jax.core import Tracer
+        res = signed_int_iso_inv_2(i, self.msize, self.signed) * jnp.float64(2)**self.exponent
 
-            if isinstance(i, Tracer):
-                res = i * float64(2) ** self.exponent
-            else:
-                res = i * 2**self.exponent
-
+        if check_for_tracing_mode():
             return res
+        else:
+            if self.exponent >= 0:
+                return int(res)
+            else:
+                return float(res)
 
     def jdecoder(self, i):
-        if isinstance(self.exponent, int) and self.exponent == 0:
-            return i
         return self.decoder(i)
 
     def encoder(self, i):
-        from jax.numpy import float64
-
-        res = signed_int_iso_2(i / (float64(2) ** self.exponent), self.size)
+        res = signed_int_iso_2(i / (jnp.float64(2) ** self.exponent), self.size)
         # if self.signed:
         #     res = signed_int_iso(i/2**self.exponent, self.size-1)
         # else:
@@ -581,8 +575,18 @@ class QuantumFloat(QuantumVariable):
 
         if check_for_tracing_mode():
             from qrisp.alg_primitives.arithmetic import gidney_adder
-
-            gidney_adder(other, self)
+            
+            if isinstance(other, QuantumFloat):
+                starting_digit = jnp.maximum(other.exponent, self.exponent)
+                
+                gidney_adder(other[starting_digit-other.exponent:], self[starting_digit-self.exponent:])
+            elif isinstance(other, (int, float)) or (isinstance(other, Tracer) and isinstance(other, Array)):
+                gidney_adder(self.encoder(other), self)
+            else:
+                print(isinstance(other, Tracer))
+                print(type(other.dtype))
+                raise Exception(f"Don't know how to handle quantum addition with type {type(other)}")
+            
             return self
 
         from qrisp.alg_primitives.arithmetic import polynomial_encoder
@@ -622,10 +626,8 @@ class QuantumFloat(QuantumVariable):
         from qrisp.jasp import check_for_tracing_mode
 
         if check_for_tracing_mode():
-            from qrisp.alg_primitives.arithmetic import gidney_adder
-
             with invert():
-                gidney_adder(other, self)
+                self.__iadd__(other)
             return self
 
         if isinstance(other, QuantumFloat):
@@ -972,13 +974,13 @@ class QuantumFloat(QuantumVariable):
         """
 
         res = jnp.int64(jnp.round(x / jnp.float64(2) ** self.exponent))
-        res = jnp.min(jnp.array([2 ** self.msize - 1, res]))
+        res = jnp.minimum(2 ** self.msize - 1, res)
 
         if self.signed:
-            res = jnp.max(jnp.array([-2 ** self.msize, res]))
+            res = jnp.maximum(-2 ** self.msize, res)
             res = signed_int_iso_2(res, self.size)
         else:
-            res = jnp.max(jnp.array([0, res]))
+            res = jnp.maximum(0, res)
 
         return self.decoder(res)
 

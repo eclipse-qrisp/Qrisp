@@ -18,8 +18,12 @@
 
 from jax import random
 
+from dataclasses import dataclass
+from jax.tree_util import register_pytree_node_class, tree_flatten
+
 from qrisp import *
 from qrisp.jasp import *
+
 
 
 def test_count_ops():
@@ -82,6 +86,30 @@ def test_count_ops():
 
     assert main(state_prep) == {"measure" : 3}
     
+    # Test https://github.com/eclipse-qrisp/Qrisp/issues/281
+    @register_pytree_node_class
+    @dataclass(frozen=True)
+    class TestClass:
+        digits: jnp.ndarray
+        def tree_flatten(self): return (self.digits,), None
+        @classmethod
+        def tree_unflatten(cls, aux_data, children): return cls(*children) 
+        
+    @count_ops(meas_behavior="0")
+    def ttt(N):
+        return N.digits[0]
+    
+    assert ttt(TestClass(jnp.array([0,1]))) == {}
+
+    # Test Operators as input arguments
+    from qrisp.operators import X, Z
+    @count_ops(meas_behavior = "1")
+    def main(H):
+        qv = QuantumVariable(2)
+        U = H.trotterization()
+        U(qv, 1)
+    
+    assert main(X(0)*Z(1)) == {'cx': 2, 'rz': 1, 'h': 2}
 
     # Test kernilization error message    
     def state_prep():

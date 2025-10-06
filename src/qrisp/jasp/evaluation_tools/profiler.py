@@ -40,7 +40,7 @@ import numpy as np
 import jax
 import jax.numpy as jnp
 from jax.extend.core import ClosedJaxpr
-
+from jax.tree_util import tree_flatten
 
 from qrisp.jasp.primitives import OperationPrimitive
 from qrisp.jasp.interpreter_tools import make_profiling_eqn_evaluator, eval_jaxpr
@@ -254,6 +254,8 @@ def profile_jaspr(jaspr, meas_behavior="0"):
             profiling_array_computer, profiling_dic = get_profiling_array_computer(
                 jaspr, meas_behavior
             )
+            
+            args = tree_flatten(args)[0]
             
             # Compute the profiling array
             if len(jaspr.outvars) > 1:
