@@ -168,6 +168,11 @@ class Operation:
 
         return res
 
+    def __str__(self):
+        if self.params:
+            return self.name + str(tuple(self.params))
+        else:
+            return self.name
     # Method to get the unitary matrix of the operation
 
     # The parameter decimals has no influence on what is calculated

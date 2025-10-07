@@ -20,7 +20,7 @@ import weakref
 
 import jax
 
-from qrisp.jasp.primitives import create_qubits, delete_qubits_p, OperationPrimitive
+from qrisp.jasp.primitives import create_qubits, delete_qubits_p, OperationPrimitive, quantum_gate_p
 from qrisp.jasp.tracing_logic.dynamic_qubit_array import DynamicQubitArray
 from qrisp.core.quantum_variable import QuantumVariable
 
@@ -151,10 +151,9 @@ class TracingQuantumSession:
         for i in range(len(temp_op.params)):
             temp_op.params[i] = greek_letters[i]
 
-        op_primitive = OperationPrimitive(temp_op)
-
-        self.abs_qc = op_primitive.bind(
-            *([b for b in qubits] + param_tracers + [self.abs_qc])
+        self.abs_qc = quantum_gate_p.bind(
+            *([b for b in qubits] + param_tracers + [self.abs_qc]),
+            gate = operation
         )
 
     def register_qv(self, qv, size):
