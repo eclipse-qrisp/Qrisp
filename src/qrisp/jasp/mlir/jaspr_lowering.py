@@ -89,9 +89,6 @@ def create_qubits_lowering(ctx, amount, qst_in):
     """
     Lowering rule that emits our CreateQubits dialect operation.
     """
-    # Enable unregistered dialects for our dialect
-    ctx.module_context.context.allow_unregistered_dialects = True
-    
     # Create our create_qubits operation using the generated class
     create_qubits_op = jasp_dialect.CreateQubitsOp(get_ir_qa_type(), get_ir_qst_type(), amount, qst_in)
     # Return both results: QubitArray and QuantumState as list

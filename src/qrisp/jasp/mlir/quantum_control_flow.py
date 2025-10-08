@@ -81,6 +81,14 @@ class HLOControlFlowReplacement(RewritePattern):
 
         # stablehlo.case -> scf.index_switch
         if op_name == "\"stablehlo.case\"":
+            
+            # If no quantum types are involved, we don't need to transform
+            for tp in op.operand_types:
+                if "jasp" in str(tp):
+                    break
+            else:
+                return
+            
             # StableHLO case selector is an i32 scalar; SCF switch expects an index.
             # We also enumerate cases 0..N-1 and use the last region as default.
             case_values = builtin.DenseArrayBase.from_list(
@@ -104,6 +112,14 @@ class HLOControlFlowReplacement(RewritePattern):
 
         # stablehlo.while -> scf.while
         if op_name == "\"stablehlo.while\"":
+            
+            # If no quantum types are involved, we don't need to transform
+            for tp in op.operand_types:
+                if "jasp" in str(tp):
+                    break
+            else:
+                return
+            
             while_op = scf.WhileOp(
                 arguments=op.operands,
                 result_types=op.result_types,
