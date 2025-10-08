@@ -19,7 +19,7 @@
 from qrisp import *
 from qrisp.jasp import *
 
-def test_jasp_gidney_adder():
+def old_test_jasp_gidney_adder():
     
     def call_qq_gidney_adder(i, j, k):
         a = QuantumFloat(i)
@@ -153,4 +153,80 @@ def test_jasp_gidney_adder():
         return
     assert qjit(call_qq_gidney_adder)(4) == 11
     
+def test_jasp_gidney_adder():
+
+    ### quantum-quantum
+    @boolean_simulation
+    def qq(i, j, asize, bsize):
+        a = QuantumFloat(asize)
+        a[:] = i
+        b = QuantumFloat(bsize)
+        b[:] = j
+        jasp_qq_gidney_adder(a, b)
+        return measure(a), measure(b)
     
+    for i in range(0, 128, 11):
+        for j in range(0, 128, 13):
+            for asize in range(2, 6):
+                for bsize in range(2, 6):
+                    a, b = qq(i, j, asize, bsize)
+                    assert a == i%(2**asize)
+                    assert b == ((i%(2**asize))+j)%(2**bsize)
+
+    ### quantum-quantum controlled
+    @boolean_simulation
+    def qq_controlled(i, j, asize, bsize, c):
+        a = QuantumFloat(asize)
+        a[:] = i
+        b = QuantumFloat(bsize)
+        b[:] = j
+        cq = QuantumFloat(1)
+        cq[:] = c
+        with control(cq[0]):
+            jasp_qq_gidney_adder(a, b)
+        return measure(a), measure(b), measure(cq)
+    
+    for i in range(0, 128, 11):
+        for j in range(0, 128, 13):
+            for asize in range(2, 6):
+                for bsize in range(2, 6):
+                    for c in [0, 1]:
+                        a, b, cq = qq_controlled(i, j, asize, bsize, c)
+                        assert a == i%(2**asize)
+                        assert b == ((i%(2**asize))*c+j)%(2**bsize)
+                        assert cq == c
+
+    ### classical-quantum
+    @boolean_simulation
+    def cq(i, j, bsize):
+        b = QuantumFloat(bsize)
+        b[:] = j
+        jasp_cq_gidney_adder(i, b)
+        return measure(b)
+    
+    for i in range(0, 128, 11):
+        for j in range(0, 128, 13):
+            for bsize in range(2, 6):
+                b = cq(i, j, bsize)
+                assert b == (i+j)%(2**bsize)
+
+    ### classical-quantum controlled
+    @boolean_simulation
+    def cq_controlled(i, j, bsize, c):
+        b = QuantumFloat(bsize)
+        b[:] = j
+        cq = QuantumFloat(1)
+        cq[:] = c
+        with control(cq[0]):
+            jasp_cq_gidney_adder(i, b)
+        return measure(b), measure(cq)
+    
+    for i in range(0, 128, 11):
+        for j in range(0, 128, 13):
+            for bsize in range(2, 6):
+                for c in [0, 1]:
+                    b, cq = cq_controlled(i, j, bsize, c)
+                    assert b == (i*c+j)%(2**bsize)
+                    assert cq == c
+
+                        
