@@ -27,7 +27,6 @@ from numba import njit
 from qrisp.circuit import (
     Instruction,
     QuantumCircuit,
-    operation,
     transpile,
     Reset,
     ClControlledOperation,
@@ -531,20 +530,6 @@ def qb_set_to_int(qubits, qb_to_index):
 def qc_to_int_list(qc, qb_to_index):
     res_list = []
     for instr in qc.data:
-        # Given the dynamic nature of the jasp IR, we need to check
-        # the validity of the instructions at simulation time, which
-        # is here.
-        if len(set(instr.qubits)) != len(instr.qubits):
-            raise Exception(
-                f"Duplicate qubit arguments in {instr.qubits} for operation {instr.op.name}"
-            )
-        if len(instr.qubits) != instr.op.num_qubits:
-            raise Exception(
-                f"Provided incorrect amount ({len(instr.qubits)}) of qubits for operation "
-                + str(instr.op.name)
-                + f" (requires {instr.op.num_qubits})"
-            )
-
         res_list.append(qb_set_to_int(instr.qubits, qb_to_index))
         if instr.op.name in ["measure", "reset", "disentangle"] or (
             isinstance(instr.op, ClControlledOperation)
