@@ -247,7 +247,7 @@ CUSTOM_LOWERING_RULES = tuple(lowering_rules)
 # Use LoweringParameters with override_lowering_rules
 lowering_params = LoweringParameters(override_lowering_rules=CUSTOM_LOWERING_RULES)
 
-def lower_jaspr_to_MLIR(jaspr):
+def lower_jaspr_to_MLIR_raw(jaspr):
     
     # Create the necessary components for ModuleContext
     keepalives = []

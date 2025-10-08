@@ -16,4 +16,4 @@
 ********************************************************************************
 """
 
-from qrisp.jasp.mlir.MLIR_lowering import lower_jaspr_to_MLIR
+from qrisp.jasp.mlir.mlir_emission import jaspr_to_mlir
