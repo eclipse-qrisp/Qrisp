@@ -71,12 +71,12 @@ def make_profiling_eqn_evaluator(profiling_dic, meas_behavior):
             # In the case of an OperationPrimitive, we determine the array index
             # to be increment via dictionary look-up and perform the increment
             # via the Jax-given .at method.
-            if isinstance(eqn.primitive, OperationPrimitive):
+            if eqn.primitive.name == "jasp.quantum_gate":
 
                 counting_array = list(invalues[-1][0])
                 incrementation_constants = invalues[-1][1]
 
-                op = eqn.primitive.op
+                op = eqn.params["gate"]
 
                 if op.definition:
                     op_counts = op.definition.transpile().count_ops()

@@ -83,7 +83,7 @@ class HLOControlFlowReplacement(RewritePattern):
         if op_name == "\"stablehlo.case\"":
             
             # If no quantum types are involved, we don't need to transform
-            for tp in op.operand_types:
+            for tp in op.result_types + op.operand_types:
                 if "jasp" in str(tp):
                     break
             else:
@@ -114,7 +114,7 @@ class HLOControlFlowReplacement(RewritePattern):
         if op_name == "\"stablehlo.while\"":
             
             # If no quantum types are involved, we don't need to transform
-            for tp in op.operand_types:
+            for tp in op.result_types + op.operand_types:
                 if "jasp" in str(tp):
                     break
             else:
