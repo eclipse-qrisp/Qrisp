@@ -17,10 +17,10 @@
 """
 
 from qrisp.core import Qubit
-from qrisp.qtypes import QuantumFloat
-from qrisp.environments import control, invert
+from qrisp.qtypes import QuantumFloat, QuantumBool
+from qrisp.environments import control, invert, conjugate
 from qrisp.core.gate_application_functions import x, cx, mcx
-from qrisp.jasp import jrange
+from qrisp.jasp import jrange, jnp
 from typing import Tuple
 
 
@@ -51,20 +51,22 @@ def q_max(a: QuantumFloat, b: QuantumFloat) -> QuantumFloat:
     {(2, 1, 2): 0.5, (3, 1, 3): 0.5}
     """
 
-    res = QuantumFloat(a.size)
-    c = a >= b
-
-    with control(c):
-        for i in jrange(a.size):
-            cx(a[i], res[i])
-    with control(c, 0):
-        for i in jrange(b.size):
-            cx(b[i], res[i])
+    res_mshape = [jnp.minimum(a.mshape[0], b.mshape[0]), jnp.maximum(a.mshape[1], b.mshape[1])] 
+    new_msize = res_mshape[1] - res_mshape[0]
+    new_exponent = res_mshape[0]
+    res = QuantumFloat(new_msize, new_exponent, signed=a.signed | b.signed)
+    c = QuantumBool()
 
     compare_func = lambda x, y: x >= y
+    injecteted_comp_func = c << compare_func
 
-    with invert():
-        (c << compare_func)(a, b)
+    with conjugate(injecteted_comp_func)(a, b):
+        with control(c):
+            for i in jrange(a.size):
+                cx(a[i], res[i + a.exponent - new_exponent])
+        with control(c, 0):
+            for i in jrange(b.size):
+                cx(b[i], res[i + b.exponent - new_exponent])
 
     c.delete()
 
@@ -97,20 +99,22 @@ def q_min(a: QuantumFloat, b: QuantumFloat) -> QuantumFloat:
     >>> multi_measurement([a,b,res_min])
     {(2, 1, 1): 0.5, (3, 1, 1): 0.5}
     """
-    res = QuantumFloat(a.size)
-    c = a <= b
-
-    with control(c):
-        for i in jrange(a.size):
-            cx(a[i], res[i])
-    with control(c, 0):
-        for i in jrange(b.size):
-            cx(b[i], res[i])
+    res_mshape = [jnp.minimum(a.mshape[0], b.mshape[0]), jnp.maximum(a.mshape[1], b.mshape[1])] 
+    new_msize = res_mshape[1] - res_mshape[0]
+    new_exponent = res_mshape[0]
+    res = QuantumFloat(new_msize, new_exponent, signed=a.signed | b.signed)
+    c = QuantumBool()
 
     compare_func = lambda x, y: x <= y
+    injecteted_comp_func = c << compare_func
 
-    with invert():
-        (c << compare_func)(a, b)
+    with conjugate(injecteted_comp_func)(a, b):
+        with control(c):
+            for i in jrange(a.size):
+                cx(a[i], res[i + a.exponent - new_exponent])
+        with control(c, 0):
+            for i in jrange(b.size):
+                cx(b[i], res[i + b.exponent - new_exponent])
 
     c.delete()
 
