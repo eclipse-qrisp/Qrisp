@@ -41,7 +41,7 @@ class Qubit:
     >>> qc.x(qb)
     >>> print(qc)
 
-    ::
+    .. code-block:: none
 
                   ┌───┐
         alphonse: ┤ X ├
@@ -82,10 +82,12 @@ class Qubit:
         return self.hash_value == other.hash_value and self.bit_type == other.bit_type
 
     def __add__(self, other):
-        if not isinstance(other, list):
+        if not isinstance(other, (list, Qubit)):
             raise Exception(
                 f"Tried to add Qubit to type {type(other)} (only list ist possible)"
             )
+        if isinstance(other, Qubit):
+            return [self] + [other]
         return [self] + other
 
     def __radd__(self, other):

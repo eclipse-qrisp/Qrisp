@@ -29,6 +29,7 @@ from qrisp.misc import (
     unlock,
 )
 from qrisp.circuit import fast_append
+from qrisp.jasp import check_for_tracing_mode
 
 
 def quantum_condition(function):
@@ -164,7 +165,7 @@ class ConditionEnvironment(QuantumEnvironment):
     >>> res_bool = quantum_eq(q_ch_0, q_ch_1)
     >>> print(q_ch_0.qs)
 
-    ::
+    .. code-block:: none
 
         QuantumCircuit:
         --------------
@@ -606,6 +607,9 @@ class ConditionEnvironment(QuantumEnvironment):
 def adaptive_condition(cond_eval_function):
     def new_cond_eval_function(*args, **kwargs):
         from qrisp import auto_uncompute
+
+        if check_for_tracing_mode():
+            return cond_eval_function(*args, **kwargs)
 
         calling_line = find_calling_line(2)
 

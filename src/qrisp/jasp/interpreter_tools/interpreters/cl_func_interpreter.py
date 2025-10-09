@@ -25,7 +25,7 @@ from jax.extend.core import ClosedJaxpr, Literal
 from jax.lax import fori_loop, cond, while_loop, switch
 import jax.numpy as jnp
 
-from qrisp.circuit import ControlledOperation
+from qrisp.circuit import PTControlledOperation
 from qrisp.jasp import (
     QuantumPrimitive,
     OperationPrimitive,
@@ -178,12 +178,14 @@ def process_op(op_prim, invars, outvars, context_dic):
     for i in range(op.num_qubits):
         qb_pos.append(context_dic[invars[i]])
 
-    if op.name == "x":
+    if op.name in ["x", "swap"]:
         ctrl_state = ""
-    elif isinstance(op, ControlledOperation) and op.base_operation.name in [
+    elif isinstance(op, PTControlledOperation) and op.base_operation.name in [
         "x",
         "y",
         "z",
+        "pt2cx",
+        "swap"
     ]:
         if op.base_operation.name in ["z", "rz", "t", "s", "t_dg", "s_dg", "p"]:
             context_dic[outvars[-1]] = context_dic[invars[-1]]
@@ -195,7 +197,16 @@ def process_op(op_prim, invars, outvars, context_dic):
     else:
         raise Exception(f"Classical function simulator can't process gate {op.name}")
 
-    bit_array = cl_multi_cx(bit_array, ctrl_state, qb_pos)
+    if "swap" in op.name:
+        swapped_qb_pos = list(qb_pos)
+        swapped_qb_pos[-1], swapped_qb_pos[-2] = swapped_qb_pos[-2], swapped_qb_pos[-1]
+        ctrl_state = ctrl_state + "1"
+        
+        bit_array = cl_multi_cx(bit_array, ctrl_state, swapped_qb_pos)
+        bit_array = cl_multi_cx(bit_array, ctrl_state, qb_pos)
+        bit_array = cl_multi_cx(bit_array, ctrl_state, swapped_qb_pos)
+    else:
+        bit_array = cl_multi_cx(bit_array, ctrl_state, qb_pos)
 
     context_dic[outvars[-1]] = (bit_array, context_dic[invars[-1]][1])
 
@@ -259,7 +270,7 @@ def exec_multi_measurement(bit_array, qubit_reg):
         acc, bit_array, qubit_reg = arg_tuple
         qb_index = qubit_reg[i]
         res_bl = get_bit_array(bit_array, qb_index)
-        acc = acc + (jnp.asarray(1, dtype="int64") << i) * res_bl
+        acc = acc + (jnp.asarray(res_bl, dtype="int64") << i)
         return (acc, bit_array, qubit_reg)
 
     acc, bit_array, qubit_reg = fori_loop(
@@ -325,6 +336,7 @@ def process_cond(eqn, context_dic):
     branch_list = []
 
     for i in range(len(eqn.params["branches"])):
+        
         converted_jaxpr = ensure_conversion(
             eqn.params["branches"][i].jaxpr, invalues[1:]
         )
@@ -351,11 +363,9 @@ def get_traced_fun(jaxpr, bit_array_size):
     else:
         cl_func_jaxpr = jaxpr
 
-    cl_func_jaxpr = ClosedJaxpr(cl_func_jaxpr, [])
-
     @jit
     def jitted_fun(*args):
-        return eval_jaxpr(cl_func_jaxpr.jaxpr, [], *args)
+        return eval_jaxpr(cl_func_jaxpr.jaxpr, cl_func_jaxpr.consts, *args)
 
     return jitted_fun
 
@@ -363,12 +373,16 @@ def get_traced_fun(jaxpr, bit_array_size):
 def process_pjit(eqn, context_dic):
 
     invalues = extract_invalues(eqn, context_dic)
-
+    
     if eqn.params["name"] in ["gidney_mcx", "gidney_mcx_inv"]:
         unflattened_outvalues = [
             (cl_multi_cx(invalues[-1][0], "11", invalues[:-1]), invalues[-1][1])
         ]
-
+    elif eqn.params["name"] in ["gidney_CCCX", "gidney_CCCX_dg"]:
+        controls = [invalues[0][i] for i in range(3)]
+        unflattened_outvalues = [
+            (cl_multi_cx(invalues[-1][0], "111",  controls + [invalues[1]]), invalues[-1][1])
+        ]
     else:
         flattened_invalues = []
         for value in invalues:
@@ -379,12 +393,12 @@ def process_pjit(eqn, context_dic):
 
         jaxpr = eqn.params["jaxpr"]
 
-        if isinstance(jaxpr.jaxpr, Jaspr):
+        if isinstance(jaxpr, Jaspr):
             bit_array_padding = invalues[-1][0].shape[0] * 64
         else:
             bit_array_padding = 0
 
-        traced_fun = get_traced_fun(jaxpr.jaxpr, bit_array_padding)
+        traced_fun = get_traced_fun(jaxpr, bit_array_padding)
 
         flattened_invalues = flatten_signature(invalues, eqn.invars)
         outvalues = traced_fun(*flattened_invalues)
@@ -478,7 +492,7 @@ def jaspr_to_cl_func_jaxpr(jaspr, bit_array_padding):
 
     return make_jaxpr(eval_jaxpr(jaspr, eqn_evaluator=cl_func_eqn_evaluator))(
         *args
-    ).jaxpr
+    )
 
 
 def conditional_bit_flip_bit_array(bit_array, index, condition):

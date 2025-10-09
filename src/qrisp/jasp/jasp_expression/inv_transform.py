@@ -18,8 +18,10 @@
 
 from functools import lru_cache
 
+import numpy as np
+
 from jax import make_jaxpr
-from jax.extend.core import JaxprEqn, ClosedJaxpr
+from jax.extend.core import JaxprEqn, Var
 from jax.lax import add_p, sub_p, while_loop
 
 from qrisp.jasp.primitives import AbstractQuantumCircuit, OperationPrimitive
@@ -36,6 +38,7 @@ def copy_jaxpr_eqn(eqn):
         ctx=eqn.ctx,
     )
 
+qc_var_count = np.zeros(1, dtype = np.int64)
 
 def invert_eqn(eqn):
     """
@@ -56,9 +59,7 @@ def invert_eqn(eqn):
 
     if eqn.primitive.name == "pjit":
         params = dict(eqn.params)
-        params["jaxpr"] = ClosedJaxpr(
-            (eqn.params["jaxpr"].jaxpr).inverse(), eqn.params["jaxpr"].consts
-        )
+        params["jaxpr"] = eqn.params["jaxpr"].inverse()
 
         name = params["name"]
         if name[-3:] == "_dg":
@@ -81,9 +82,7 @@ def invert_eqn(eqn):
         new_branch_list = []
 
         for i in range(len(branches)):
-            new_branch_list.append(
-                ClosedJaxpr((branches[i].jaxpr).inverse(), branches[i].consts)
-            )
+            new_branch_list.append(branches[i].inverse())
 
         params["branches"] = tuple(new_branch_list)
 
@@ -131,6 +130,7 @@ def invert_jaspr(jaspr):
     op_eqs = []
     non_op_eqs = []
     deletions = []
+    current_abs_qc = jaspr.invars[-1]
 
     # Since the Operation equations require as inputs only qubit object and a QuantumCircuit
     # we achieve our goal by pulling all the non-Operation equations to the front
@@ -147,70 +147,36 @@ def invert_jaspr(jaspr):
         elif eqn.primitive.name == "jasp.measure":
             raise Exception("Tried to invert a jaspr containing a measurement")
         elif eqn.primitive.name == "jasp.delete_qubits":
+            eqn = copy_jaxpr_eqn(eqn)
             deletions.append(eqn)
+        elif len(eqn.invars) and isinstance(eqn.invars[-1].aval, AbstractQuantumCircuit):
+            eqn = copy_jaxpr_eqn(eqn)
+            eqn.invars[-1] = current_abs_qc
+            current_abs_qc = eqn.outvars[-1]
+            non_op_eqs.append(copy_jaxpr_eqn(eqn))
         else:
-            non_op_eqs.append(eqn)
+            non_op_eqs.append(copy_jaxpr_eqn(eqn))
 
     # Finally, we need to make sure the Order of QuantumCircuit I/O is also reversed.
     n = len(op_eqs)
     if n == 0:
         return jaspr
-
-    for i in range(n // 2):
-
-        for j in range(len(op_eqs[i].invars)):
-            if isinstance(op_eqs[i].invars[j].aval, AbstractQuantumCircuit):
-                break
-        else:
-            raise
-
-        for k in range(len(op_eqs[n - i - 1].invars)):
-            if isinstance(op_eqs[n - i - 1].invars[k].aval, AbstractQuantumCircuit):
-                break
-        else:
-            raise
-
-        op_eqs[i].invars[j], op_eqs[n - i - 1].invars[k] = (
-            op_eqs[n - i - 1].invars[k],
-            op_eqs[i].invars[j],
-        )
-
-        for j in range(len(op_eqs[i].outvars)):
-            if isinstance(op_eqs[i].outvars[j].aval, AbstractQuantumCircuit):
-                break
-        else:
-            raise
-
-        for k in range(len(op_eqs[n - i - 1].outvars)):
-            if isinstance(op_eqs[n - i - 1].outvars[k].aval, AbstractQuantumCircuit):
-                break
-        else:
-            raise
-
-        op_eqs[i].outvars[j], op_eqs[n - i - 1].outvars[k] = (
-            op_eqs[n - i - 1].outvars[k],
-            op_eqs[i].outvars[j],
-        )
-
+    
+    op_eqs = op_eqs + deletions
+    
+    for i in range(len(op_eqs)):
+        op_eqs[i].invars[-1] = current_abs_qc
+        current_abs_qc = Var(suffix=str(qc_var_count[0]), aval=AbstractQuantumCircuit())
+        qc_var_count[0] += 1
+        op_eqs[i].outvars[-1] = current_abs_qc
+        
     from qrisp.jasp import Jaspr
-
-    # Find the last AbstractQuantumCircuit variable
-
-    for j in range(len(op_eqs[-1].outvars)):
-        if isinstance(op_eqs[-1].outvars[j].aval, AbstractQuantumCircuit):
-            last_abs_qc = op_eqs[-1].outvars[j]
-            break
-
-    if len(deletions):
-        first_deletion = copy_jaxpr_eqn(deletions[0])
-        first_deletion.invars[-1] = last_abs_qc
-        last_abs_qc = deletions[-1].outvars[-1]
 
     res = Jaspr(
         constvars=jaspr.constvars,
         invars=list(jaspr.invars),
-        outvars=jaspr.outvars[:-1] + [last_abs_qc],
-        eqns=non_op_eqs + op_eqs + deletions,
+        outvars=jaspr.outvars[:-1] + [current_abs_qc],
+        eqns=non_op_eqs + op_eqs,
     )
 
     if jaspr.ctrl_jaspr:
@@ -239,7 +205,7 @@ def invert_loop_body(jaxpr):
     # Find the incrementation equation. For this we identify the equation,
     # which updates the loop index
 
-    loop_index = jaxpr.jaxpr.outvars[-3]
+    loop_index = jaxpr.jaxpr.outvars[-2]
     for i in range(len(new_eqn_list))[::-1]:
         if loop_index == new_eqn_list[i].outvars[0]:
             break
@@ -275,7 +241,7 @@ def invert_loop_body(jaxpr):
     # Create the new Jaspr
     from qrisp.jasp import Jaspr
 
-    new_jaspr = Jaspr(jaxpr.jaxpr).update_eqns(new_eqn_list)
+    new_jaspr = Jaspr(jaxpr).update_eqns(new_eqn_list)
 
     # Quantum inversion
     res_jaspr = new_jaspr.inverse()
@@ -307,9 +273,9 @@ def invert_loop_eqn(eqn):
     def cond_fun(val):
         
         if cond_jaxpr.eqns[0].primitive.name == "ge":
-            return val[-3] <= val[-2]
+            return val[-2] <= val[-3]
         else:
-            return val[-3] >= val[-2]
+            return val[-2] >= val[-3]
 
     # Create the new equation by tracing the while loop
     def tracing_function(*args):

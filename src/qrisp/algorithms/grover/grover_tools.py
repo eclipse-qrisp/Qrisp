@@ -37,6 +37,7 @@ from qrisp import (
     control,
     IterationEnvironment,
 )
+from qrisp.alg_primitives.reflection import reflection
 from qrisp.jasp import check_for_tracing_mode, jrange
 
 
@@ -47,7 +48,7 @@ def diffuser(input_object, phase=np.pi, state_function=None, reflection_indices=
 
     Parameters
     ----------
-    input_object : QuantumVariable or list[QuantumVariable]
+    input_object : QuantumVariable | QuantumArray | list[QuantumVariable | QuantumArray]
         The (list of) QuantumVariables to apply the Grover diffuser on.
     phase : float or sympy.Symbol, optional
         Specifies the phase shift. The default is $\pi$, i.e. a
@@ -70,7 +71,7 @@ def diffuser(input_object, phase=np.pi, state_function=None, reflection_indices=
     >>> diffuser(q_ch_list)
     >>> print(q_ch_list[0].qs)
 
-    ::
+    .. code-block:: none
 
                   ┌────────────┐
         q_ch_0.0: ┤0           ├
@@ -106,6 +107,14 @@ def diffuser(input_object, phase=np.pi, state_function=None, reflection_indices=
 
     """
 
+    if state_function == None:
+
+        def state_function(*qargs):
+            [h(qv) for qv in qargs]
+
+    reflection(input_object, state_function, phase=phase, reflection_indices=reflection_indices)
+
+    """
     if isinstance(input_object, QuantumArray):
         input_object = [qv for qv in input_object.flatten()]
 
@@ -114,9 +123,16 @@ def diffuser(input_object, phase=np.pi, state_function=None, reflection_indices=
 
     if state_function is not None:
 
-        def inv_state_function(args):
-            with invert():
-                state_function(*args)
+        if isinstance(input_object, (list, tuple)):
+            def inv_state_function(args):
+                with invert():
+                    state_function(*args)
+        
+        else:
+            
+            def inv_state_function(args):
+                    with invert():
+                        state_function(args)
 
     else:
         if isinstance(input_object, list):
@@ -156,6 +172,7 @@ def diffuser(input_object, phase=np.pi, state_function=None, reflection_indices=
         gphase(np.pi, input_object[0])
 
     return input_object
+    """
 
 
 def tag_state(tag_specificator, binary_values=False, phase=np.pi):
@@ -275,7 +292,7 @@ def grovers_alg(
 
     Parameters
     ----------
-    qv_list : QuantumVariable or list[QuantumVariable]
+    qv_list : QuantumVariable | QuantumArray | list[QuantumVariable | QuantumArray]
         A (list of) QuantumVariables on which to execute Grover's algorithm.
     oracle_function : function
         A Python function tagging the winner states.

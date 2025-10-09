@@ -2044,7 +2044,7 @@ class QubitOperator(Hamiltonian):
 
         for term, coeff in hamiltonian.terms_dict.items():
             coeff_ = np.real(coeff)
-            unitaries.append(term.unitary(sign = (coeff<0) ))    
+            unitaries.append(term.unitary(sign = (coeff_ < 0)))
             coefficients.append(np.abs(coeff_))
 
         return unitaries, np.array(coefficients, dtype=float)

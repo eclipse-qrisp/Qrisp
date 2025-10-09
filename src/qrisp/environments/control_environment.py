@@ -27,6 +27,8 @@ from qrisp.misc import perm_lock, perm_unlock, bin_rep
 from qrisp.jasp import check_for_tracing_mode, get_last_equation
 from qrisp.core import mcx, p, rz, x
 
+import numpy as np
+
 
 class ControlEnvironment(QuantumEnvironment):
     """
@@ -404,9 +406,7 @@ class ControlEnvironment(QuantumEnvironment):
         # Retrieve the equation
         jit_eqn = get_last_equation()
         
-        jit_eqn.params["jaxpr"] = ClosedJaxpr(
-            controlled_jaspr, jit_eqn.params["jaxpr"].consts
-        )
+        jit_eqn.params["jaxpr"] = controlled_jaspr
         jit_eqn.params["name"] = "ctrl_env"
 
         if not isinstance(res, tuple):
@@ -504,7 +504,7 @@ def control(*args, **kwargs):
     else:
         if all(isinstance(obj, (Qubit, QuantumBool)) for obj in args[0]):
             return ControlEnvironment(*args, **kwargs)
-        elif all(isinstance(obj, bool) for obj in [x for x in args[0]]):
+        elif all(isinstance(obj, (bool, np.bool)) for obj in [x for x in args[0]]):
             return ClControlEnvironment(*args, **kwargs)
         elif all(isinstance(obj, ArrayImpl) for obj in [x for x in args[0]]):
             args[0] = [bool(bit) for bit in args[0]]

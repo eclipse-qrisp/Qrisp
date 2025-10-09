@@ -219,10 +219,6 @@ def qompiler(
             reordered_qc, transpile_predicate=logic_synth_transpile_predicate
         )
 
-        # We combine adjacent single qubit gates
-        if not qs.abstract_params and False:
-            reordered_qc = combine_single_qubit_gates(reordered_qc)
-
         # We now determine the amount of Qubits the circuit will need
         required_qubits = 0
         max_required_qubits = 0
@@ -815,51 +811,52 @@ def fuse_operations(op_a, op_b, gphase_array):
 
     from qrisp.alg_primitives import GidneyLogicalAND
     from qrisp.environments import CustomControlOperation
-    if "swap" == op_a.name:
-        
-        if op_b.name == "cx":
-            half_swap_qc = QuantumCircuit(2)
-            half_swap_qc.cx(0, 1)
-            half_swap_qc.cx(1, 0)
-            return half_swap_qc.to_gate()
-        elif op_b.name == "rzz":
-            half_rzz_qc = QuantumCircuit(2)
-            half_rzz_qc.cx(0,1)
-            half_rzz_qc.cx(1,0)
-            half_rzz_qc.rz(op_b.params[0], 1)
-            half_rzz_qc.cx(0,1)
-            return half_rzz_qc.to_gate()
-        elif op_b.name == "cp":
-            half_cp_qc = QuantumCircuit(2)
-            half_cp_qc.cx(0,1)
-            half_cp_qc.cx(1,0)
-            half_cp_qc.p(-op_b.params[0]/2, 1)
-            half_cp_qc.cx(0,1)
-            half_cp_qc.p(op_b.params[0]/2, 0)
-            half_cp_qc.p(op_b.params[0]/2, 1)
-            return half_cp_qc.to_gate()
-    if "swap" == op_b.name:
-        if op_a.name == "cx":
-            half_swap_qc = QuantumCircuit(2)
-            half_swap_qc.cx(1, 0)
-            half_swap_qc.cx(0, 1)
-            return half_swap_qc.to_gate()
-        elif op_a.name == "rzz":
-            half_rzz_qc = QuantumCircuit(2)
-            half_rzz_qc.cx(0,1)
-            half_rzz_qc.cx(1,0)
-            half_rzz_qc.rz(op_a.params[0], 1)
-            half_rzz_qc.cx(0,1)
-            return half_rzz_qc.to_gate()
-        elif op_a.name == "cp":
-            half_cp_qc = QuantumCircuit(2)
-            half_cp_qc.cx(0,1)
-            half_cp_qc.cx(1,0)
-            half_cp_qc.p(-op_a.params[0]/2, 1)
-            half_cp_qc.cx(0,1)
-            half_cp_qc.p(op_a.params[0]/2, 0)
-            half_cp_qc.p(op_a.params[0]/2, 1)
-            return half_cp_qc.to_gate()
+    
+    with fast_append(0):
+        if "swap" == op_a.name:
+            if op_b.name == "cx":
+                half_swap_qc = QuantumCircuit(2)
+                half_swap_qc.cx(0, 1)
+                half_swap_qc.cx(1, 0)
+                return half_swap_qc.to_gate()
+            elif op_b.name == "rzz":
+                half_rzz_qc = QuantumCircuit(2)
+                half_rzz_qc.cx(0,1)
+                half_rzz_qc.cx(1,0)
+                half_rzz_qc.rz(op_b.params[0], 1)
+                half_rzz_qc.cx(0,1)
+                return half_rzz_qc.to_gate()
+            elif op_b.name == "cp":
+                half_cp_qc = QuantumCircuit(2)
+                half_cp_qc.cx(0,1)
+                half_cp_qc.cx(1,0)
+                half_cp_qc.p(-op_b.params[0]/2, 1)
+                half_cp_qc.cx(0,1)
+                half_cp_qc.p(op_b.params[0]/2, 0)
+                half_cp_qc.p(op_b.params[0]/2, 1)
+                return half_cp_qc.to_gate()
+        if "swap" == op_b.name:
+            if op_a.name == "cx":
+                half_swap_qc = QuantumCircuit(2)
+                half_swap_qc.cx(1, 0)
+                half_swap_qc.cx(0, 1)
+                return half_swap_qc.to_gate()
+            elif op_a.name == "rzz":
+                half_rzz_qc = QuantumCircuit(2)
+                half_rzz_qc.cx(0,1)
+                half_rzz_qc.cx(1,0)
+                half_rzz_qc.rz(op_a.params[0], 1)
+                half_rzz_qc.cx(0,1)
+                return half_rzz_qc.to_gate()
+            elif op_a.name == "cp":
+                half_cp_qc = QuantumCircuit(2)
+                half_cp_qc.cx(0,1)
+                half_cp_qc.cx(1,0)
+                half_cp_qc.p(-op_a.params[0]/2, 1)
+                half_cp_qc.cx(0,1)
+                half_cp_qc.p(op_a.params[0]/2, 0)
+                half_cp_qc.p(op_a.params[0]/2, 1)
+                return half_cp_qc.to_gate()
 
     if op_a.definition or op_a.name in ["cx", "cy", "cz"]:
 

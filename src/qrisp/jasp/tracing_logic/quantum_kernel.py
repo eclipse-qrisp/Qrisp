@@ -135,7 +135,7 @@ def quantum_kernel(func):
         eqn = get_last_equation()
         
         flattened_jaspr = Jaspr.from_cache(
-            collect_environments(eqn.params["jaxpr"].jaxpr)
+            collect_environments(eqn.params["jaxpr"])
         ).flatten_environments()
         for var in flattened_jaspr.invars:
             if isinstance(var.aval, (AbstractQubitArray, AbstractQubit)):

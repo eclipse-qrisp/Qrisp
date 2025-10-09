@@ -330,7 +330,7 @@ def semi_classic_matmul(q_matrix, cl_matrix, output_array=None, res_bit_shape="e
         for k in range(K):
             temp_symb = Symbol("x_" + str(i) + "_" + str(k))
             symb_matrix[i, k] = temp_symb
-            symbol_dic[q_matrix[i, k].name] = temp_symb
+            symbol_dic[q_matrix[i, k]] = temp_symb
 
     res_symb_matrix = symb_matrix @ cl_matrix
 
@@ -501,7 +501,7 @@ def inplace_matrix_app(vector, matrix):
 
     # Create symbol dic in order for the polynomial encoder
     # to know which symbol to use as which quantum float
-    symbol_dic = {vector[j].name: x[j] for j in range(vector.shape[0])}
+    symbol_dic = {vector[j]: x[j] for j in range(vector.shape[0])}
 
     for i in range(n):
         # Evaluate the value of the entry in eval_eq into the x_j variable

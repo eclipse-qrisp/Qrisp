@@ -21,7 +21,48 @@ from qrisp.jasp import *
 
 
 def test_qubit_array_fusion():
+    
+    @jaspify
+    def main():
+        qarg = QuantumArray(QuantumFloat(3), shape=(3,))
+        flattened_qarg = qarg.flatten()
+    
+        reg = sum([qv.reg for qv in flattened_qarg], [])
+    
+        return measure(reg)
+    
+    assert main() == 0
+    
+    @jaspify
+    def main():
+        qf =QuantumFloat(3)
+        x(qf)
+        qf.extend(1)
+        a = measure(qf)
+        return a
 
+    assert main() == 7
+    
+    @jaspify
+    def main():
+        qf =QuantumFloat(3)
+        x(qf)
+        qf.extend(1, position = 0)
+        
+        a = measure(qf)
+        return a
+
+    assert main() == 14
+    
+    @jaspify
+    def main():
+        qf =QuantumFloat(3)
+        x(qf)
+        qf.extend(1, position = qf.size//2)
+        a = measure(qf)
+        return a
+    
+    assert main() == 13
     
     def main():
         
@@ -35,6 +76,9 @@ def test_qubit_array_fusion():
 
     assert jaspify(main)() == 63
     assert boolean_simulation(main)() == 63
+    
+    
+    
     
     try:
         import catalyst

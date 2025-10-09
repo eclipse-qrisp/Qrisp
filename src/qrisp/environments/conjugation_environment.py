@@ -115,7 +115,7 @@ class ConjugationEnvironment(QuantumEnvironment):
 
     >>> print(qf.qs.transpile(1))
 
-    ::
+    .. code-block:: none
 
         ctrl.0: ─────────■──────────■─────────■─────────■─────────■─────────────────
                 ┌──────┐ │P(3π/16)  │         │         │         │      ┌─────────┐
@@ -277,9 +277,8 @@ class ConjugationEnvironment(QuantumEnvironment):
         # Retrieve the equation
         jit_eqn = get_last_equation()
         
-        jit_eqn.params["jaxpr"] = ClosedJaxpr(
-            flattened_jaspr, jit_eqn.params["jaxpr"].consts
-        )
+        jit_eqn.params["jaxpr"] = flattened_jaspr
+        
         jit_eqn.params["name"] = "conjugation_env"
 
         if not isinstance(res, tuple):
@@ -429,10 +428,7 @@ class PJITEnvironment(QuantumEnvironment):
 
         jit_eqn = get_last_equation()
         
-        jit_eqn.params["jaxpr"] = ClosedJaxpr(
-            Jaspr.from_cache(jit_eqn.params["jaxpr"].jaxpr),
-            jit_eqn.params["jaxpr"].consts,
-        )
+        jit_eqn.params["jaxpr"] = Jaspr.from_cache(jit_eqn.params["jaxpr"])
 
         if not isinstance(res, tuple):
             res = (res,)

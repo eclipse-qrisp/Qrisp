@@ -80,7 +80,7 @@ class GMSEnvironment(QuantumEnvironment):
     >>> QFT(qf, use_gms = True)
     >>> print(qf.qs)
 
-    ::
+    .. code-block:: none
 
         QuantumCircuit:
         --------------

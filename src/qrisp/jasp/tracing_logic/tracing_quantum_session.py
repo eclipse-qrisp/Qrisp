@@ -103,11 +103,10 @@ class TracingQuantumSession:
                 "Tried to append Operation with non-zero classical bits in JAX mode."
             )
 
-        from qrisp.core import QuantumVariable
+        from qrisp.core import QuantumVariable, QuantumArray
+        from qrisp.jasp import jrange
 
         if isinstance(qubits[0], (QuantumVariable, DynamicQubitArray)):
-
-            from qrisp.jasp import jrange
 
             for i in jrange(qubits[0].size):
                 self.append(
@@ -123,6 +122,25 @@ class TracingQuantumSession:
                 self.append(
                     operation,
                     [qubits[j][i] for j in range(operation.num_qubits)],
+                    param_tracers=param_tracers,
+                )
+            return
+        
+        elif isinstance(qubits[0], QuantumArray):
+            
+            for i in range(1, len(qubits)):
+                if not isinstance(qubits[i], QuantumArray):
+                    raise Exception(f"Tried to apply multi-qubit gate to mixed qubit argument types (QuantumArray + {type(qubits[i])})")
+                
+                if qubits[i].shape != qubits[0].shape:
+                    raise Exception("Tried to apply multi-qubit quantum gate to QuantumArrays of differing shape.")
+            
+            flattened_qubits = [qubits[i].flatten() for i in range(len(qubits))]
+            
+            for i in jrange(flattened_qubits[0].size):
+                self.append(
+                    operation,
+                    [flattened_qubits[j][i] for j in range(operation.num_qubits)],
                     param_tracers=param_tracers,
                 )
             return
@@ -148,16 +166,20 @@ class TracingQuantumSession:
 
         # Determine amount of required qubits
         if size is not None:
-            qb_array_tracer, self.abs_qc = create_qubits(size, self.abs_qc)
-            # Register in the list of active quantum variable
-            dynamic_qubit_array = DynamicQubitArray(qb_array_tracer)
-            qv.reg = dynamic_qubit_array
+            qv.reg = self.request_qubits(size)
+            
+        # Register in the list of active quantum variable
         self.qv_list.append(qv)
         qv.qs = self
 
         QuantumVariable.live_qvs.append(weakref.ref(qv))
         qv.creation_time = int(QuantumVariable.creation_counter[0])
         QuantumVariable.creation_counter += 1
+        
+    def request_qubits(self, amount):
+        qb_array_tracer, self.abs_qc = create_qubits(amount, self.abs_qc)
+        return DynamicQubitArray(qb_array_tracer)
+        
 
     def delete_qv(self, qv, verify=False):
         

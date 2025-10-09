@@ -111,7 +111,7 @@ def reinterpret(jaxpr, eqn_evaluator=exec_eqn):
     temp = list(res.invars[len(inter_jaxpr.constvars) :])
     res.invars.clear()
     res.invars.extend(temp)
-
+    
     if isinstance(jaxpr, ClosedJaxpr):
         res = ClosedJaxpr(res, jaxpr.consts)
 

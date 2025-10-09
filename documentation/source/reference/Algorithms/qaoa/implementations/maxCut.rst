@@ -1,9 +1,9 @@
-.. _maxCutQAOAdoc:
+.. _maxCutQAOA:
 
 QAOA MaxCut
 ===========
 
-The MaxCut problem and its QAOA implementation is discussed in plenty of detail in the :ref:`MaxCut tutorial <MaxCutQAOA>`.
+The MaxCut problem and its QAOA implementation is discussed in plenty of detail in the :ref:`QAOA tutorial <QAOA101>`.
 All the necessary ingredients and required steps to run QAOA are elaborated on in an easy to grasp manner.
 
 Here, we provide a condensed implementation of QAOA for MaxCut using all of the predefined functions.
