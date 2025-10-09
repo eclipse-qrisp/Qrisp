@@ -480,7 +480,7 @@ class U3Gate(Operation):
         elif self.name == "rz":
             self.permeability[0] = True
             self.is_qfree = True
-            self.params = [self.phi + self.phi]
+            self.params = [self.lam + self.phi]
         elif self.name in ["rx", "ry"]:
             self.permeability[0] = False
             self.is_qfree = False
