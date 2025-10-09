@@ -183,11 +183,11 @@ def invert_jaspr(jaspr):
             symbols = greek_letters[:len(params)]
             
             processed_tracers = []
+            
             for expr in params:
                 processed_tracers.append(lambdify(symbols, expr, modules='jax')(*tracers))
 
-            new_gate = eqn.params["gate"].copy()
-            new_gate.params = greek_letters[:len(params)]
+            new_gate = eqn.params["gate"].bind_parameters({symbols[i] : params[i] for i in range(len(params))})
             
             outvalues = quantum_gate_p.bind(*(invals[:num_qubits] + processed_tracers + [invals[-1]]), gate = new_gate)
             

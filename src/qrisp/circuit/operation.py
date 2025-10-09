@@ -476,11 +476,11 @@ class U3Gate(Operation):
         if self.name == "p":
             self.permeability[0] = True
             self.is_qfree = True
-            self.params = [self.lam]
+            self.params = [self.lam + self.phi]
         elif self.name == "rz":
             self.permeability[0] = True
             self.is_qfree = True
-            self.params = [self.phi]
+            self.params = [self.phi + self.phi]
         elif self.name in ["rx", "ry"]:
             self.permeability[0] = False
             self.is_qfree = False
@@ -568,9 +568,8 @@ class U3Gate(Operation):
                 self.lambdified_params.append(lambdify(args, par, modules="numpy"))
 
         for l_par in self.lambdified_params:
-
             new_params.append(l_par(*repl_args))
-
+        
         return U3Gate(
             new_params[0], new_params[1], new_params[2], self.name, new_params[3]
         )
@@ -625,6 +624,9 @@ class PauliGate(U3Gate):
 
     def __repr__(self):
         return self.name
+    
+    def bind_parameters(self, subs_dict):
+        return self.copy()
 
 
 # This class describes phase tolerant controlled operations
@@ -834,7 +836,7 @@ class PTControlledOperation(Operation):
         from copy import copy
 
         res = copy(self)
-        if not isinstance(self.definition, type(None)):
+        if self.definition:
             res.definition = self.definition.bind_parameters(subs_dic)
         res.base_operation = self.base_operation.bind_parameters(subs_dic)
         res.params = res.base_operation.params
