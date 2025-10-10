@@ -694,7 +694,7 @@ def find_qs(args):
             except:
                 pass
 
-    raise Exception("Couldn't find QuantumSession")
+    raise Exception(f"Couldn't find QuantumSession in input {args}")
 
 
 # Function to measure multiple quantum variables at once to assess their entanglement

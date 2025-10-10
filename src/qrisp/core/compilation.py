@@ -219,10 +219,6 @@ def qompiler(
             reordered_qc, transpile_predicate=logic_synth_transpile_predicate
         )
 
-        # We combine adjacent single qubit gates
-        if not qs.abstract_params and False:
-            reordered_qc = combine_single_qubit_gates(reordered_qc)
-
         # We now determine the amount of Qubits the circuit will need
         required_qubits = 0
         max_required_qubits = 0
