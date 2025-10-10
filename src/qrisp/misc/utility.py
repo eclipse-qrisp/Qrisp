@@ -682,18 +682,17 @@ def find_qs(args):
         if isinstance(arg, Qubit):
             return arg.qs()
 
-    else:
-        for arg in args:
-            if isinstance(arg, (list, tuple)):
-                try:
-                    return find_qs(arg)
-                except:
-                    pass
-            if isinstance(arg, dict):
-                try:
-                    return find_qs(arg.items())
-                except:
-                    pass
+    for arg in args:
+        if isinstance(arg, (list, tuple)):
+            try:
+                return find_qs(arg)
+            except:
+                pass
+        if isinstance(arg, dict):
+            try:
+                return find_qs(arg.items())
+            except:
+                pass
 
     raise Exception("Couldn't find QuantumSession")
 
