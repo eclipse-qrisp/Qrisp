@@ -489,20 +489,27 @@ class U3Gate(Operation):
             self.params = [self.global_phase]
             self.permeability[0] = True
             self.is_qfree = True
-        elif self.name == "h":
+        elif self.name in ["h", "sx", "sx_dg"]:
             self.params = []
             self.permeability[0] = False
             self.is_qfree = False
+        elif self.name in ["s", "s_dg", "t", "t_dg"]:
+            self.params = []
+            self.permeability[0] = True
+            self.is_qfree = True
 
     # Specify inversion method
     def inverse(self):
         # The inverse of a product of matrices if the reverted product of the inverses,
         # i.e. (A*B*C)^(-1) = C^-1 * B^-1 * A^-1
 
-        if self.name[-3:] == "_dg":
-            new_name = self.name[:-3]
+        if self.name in ["p", "rz", "rx", "ry", "gphase", "h"]:
+            new_name = str(self.name)
         else:
-            new_name = self.name + "_dg"
+            if self.name[-3:] == "_dg":
+                new_name = self.name[:-3]
+            else:
+                new_name = self.name + "_dg"
 
         # For exponentials of hermitian matrices, the inverse is the hermitean
         # conjugate, which implies that we simply have to negate the parameters
@@ -517,14 +524,6 @@ class U3Gate(Operation):
 
         if self.name == "u3":
             res.name = "u3"
-
-        # These are special gates that require only a single parameter
-        if self.name in ["rx", "ry", "rz", "p", "h", "gphase"]:
-            res.name = self.name
-            res.params = [-par for par in self.params]
-
-        if self.name in ["s", "t", "s_dg", "t_dg", "sx", "sx_dg"]:
-            res.params = []
 
         if res.is_qfree is not None:
             res.is_qfree = bool(self.is_qfree)
