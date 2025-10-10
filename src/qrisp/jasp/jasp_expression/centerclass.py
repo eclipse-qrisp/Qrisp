@@ -994,9 +994,10 @@ class Jaspr(ClosedJaxpr):
     def to_mlir(self):
         """
         Compiles the Jaspr to an xDSL module using the Jasp Dialect.
+        Requires the xDSL package to be installed (``pip install xdsl``).
         
         
-        ..note
+        .. note::
         
             An xDSL module can be visualized via:
                 
@@ -1015,11 +1016,8 @@ class Jaspr(ClosedJaxpr):
         Returns
         -------
         xdsl.dialects.builtin.ModuleOp
-            An xDSL module.
+            An xDSL module representing the quantum computation.
             
-        Examples
-        --------
-        
         Examples
         --------
 
