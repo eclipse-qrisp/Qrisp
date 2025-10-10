@@ -20,12 +20,11 @@
 import numpy as np
 
 from qrisp.misc import multi_measurement
-from qrisp.core import QuantumSession
 from qrisp.alg_primitives.arithmetic import QuantumFloat, sbp_mult
 from qrisp.grover import tag_state, grovers_alg
 from qrisp.environments import invert
 from itertools import product
-from qrisp import p, QuantumVariable, h, mcx, QuantumBool
+from qrisp import p, QuantumVariable, QuantumArray, OutcomeArray, h, mcx, QuantumBool
 import time
 
 def test_grovers_algorithm():
@@ -140,3 +139,16 @@ def test_grovers_algorithm():
     grovers_alg(qv, oracle, exact=True, winner_state_amount=2)
 
     assert qv.get_measurement() == {"011111": 0.5, "111111": 0.5}
+
+    # Test for input of type QuantumArray
+
+    def oracle(qa):
+        tag_state({qa[0]:0, qa[1]:0, qa[2]:0})
+
+    qa = QuantumArray(QuantumFloat(2), shape=(3,))
+
+    grovers_alg(qa, oracle)
+
+    mes_res = qa.get_measurement()
+
+    assert mes_res[OutcomeArray([0, 0, 0])] > 0.99

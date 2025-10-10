@@ -16,7 +16,7 @@
 ********************************************************************************
 """
 
-from qrisp.jasp.primitives import get_qubit, slice_qb_array, get_size, fuse_qb_array
+from qrisp.jasp.primitives import get_qubit, slice_qb_array, get_size, fuse_qb_array, AbstractQubit
 
 
 class DynamicQubitArray:
@@ -53,7 +53,28 @@ class DynamicQubitArray:
     def __add__(self, other):
         if isinstance(other, DynamicQubitArray):
             other = other.tracer
+        if isinstance(other, list):
+            temp = self
+            for x in other:
+                if not isinstance(other, AbstractQubit):
+                    raise Exception("Can only concatenate type AbstractQubit or list[AbstractQubit] to DynamicQubitArray")
+                temp = temp + x
+            return temp
         return DynamicQubitArray(fuse_qb_array(self.tracer, other))
+    
+    def __radd__(self, other):
+        if isinstance(other, DynamicQubitArray):
+            other = other.tracer
+        if isinstance(other, list):
+            temp = self
+            for x in other[::-1]:
+                if not isinstance(other, AbstractQubit):
+                    raise Exception("Can only concatenate type AbstractQubit or list[AbstractQubit] to DynamicQubitArray")
+                temp = x + temp
+            return temp
+        
+        return DynamicQubitArray(fuse_qb_array(other, self.tracer))
+        
 
     @property
     def reg(self):

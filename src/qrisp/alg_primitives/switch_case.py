@@ -16,9 +16,9 @@
 ********************************************************************************
 """
 
-from qrisp.core import QuantumArray, QuantumVariable, x
+from qrisp.core import QuantumArray, QuantumVariable, x, cx, mcx
 from qrisp.qtypes import QuantumBool
-from qrisp.environments import conjugate, control, custom_inversion, invert
+from qrisp.environments import conjugate, control, custom_inversion, invert, custom_control
 from qrisp.alg_primitives import demux
 from qrisp.core.gate_application_functions import mcx
 from qrisp.jasp import check_for_tracing_mode, jrange, q_fori_loop, q_cond
@@ -26,7 +26,8 @@ import numpy as np
 import jax.numpy as jnp
 
 
-def qswitch(operand, case, case_function, method="auto", case_amount=None, inv = False):
+@custom_control
+def qswitch(operand, case, case_function, method="auto", case_amount=None, inv=False, ctrl=None):
     r"""
     Executes a switch - case statement distinguishing between a list of
     given in-place functions.
@@ -110,39 +111,47 @@ def qswitch(operand, case, case_function, method="auto", case_amount=None, inv =
     {(0, 1): 0.25, (1, 2): 0.25, (2, 4): 0.25, (3, 8): 0.25}
 
     """
-    
+
     def invert_inpl_function(func):
         def return_func(*args, **kwargs):
             with invert():
                 res = func(*args, **kwargs)
             return res
         return return_func
-    
 
     if callable(case_function):
         if case_amount == None:
             case_amount = 2**case.size
-        xrange = jrange
+        if check_for_tracing_mode():
+            xrange = jrange
+        else:
+            xrange = range
         if method == "auto":
             method = "tree"
-            
+
         if inv:
             case_function = invert_inpl_function(case_function)
 
-    else:
-        
+    elif isinstance(case_function, list):
         if case_amount == None:
             case_amount = len(case_function)
+        else:
+            if method == "sequential":
+                raise TypeError(
+                    "Argument 'case_amount' must be 'None' when using the 'sequential' method and a list as a 'case_function'"
+                    )
 
         if inv:
             case_function = [invert_inpl_function(func) for func in case_function]
 
         xrange = range
         if method == "auto":
-            if case_amount <= 4:
-                method = "sequential"
-            else:
-                method = "tree"
+            method = "tree"
+
+    else:
+        raise TypeError(
+            "Argument 'case_function' must be a list or a callable(i, x)"
+        )
 
     if method == "sequential":
 
@@ -151,10 +160,18 @@ def qswitch(operand, case, case_function, method="auto", case_amount=None, inv =
         for i in xrange(case_amount):
             with conjugate(mcx)(case, control_qbl, ctrl_state=i):
                 with control(control_qbl):
-                    if callable(case_function):
-                        case_function(i, operand)
+                    if ctrl is None:
+                        if callable(case_function):
+                            case_function(i, operand)
+                        else:
+                            case_function[i](operand)
                     else:
-                        case_function[i](operand)
+                        if callable(case_function):
+                            with control(ctrl):
+                                case_function(i, operand)
+                        else:
+                            with control(ctrl):
+                                case_function[i](operand)
 
         control_qbl.delete()
 
@@ -172,7 +189,8 @@ def qswitch(operand, case, case_function, method="auto", case_amount=None, inv =
 
         if case_amount != 2**case.size:
             import warnings
-            warnings.warn("Warning: Additional qubit overhead because case amount is smaller than case QuantumVariable!")
+            warnings.warn(
+                "Warning: Additional qubit overhead because case amount is smaller than case QuantumVariable!")
 
         enable = QuantumArray(qtype=QuantumBool(), shape=(2**case.size,))
         enable[0].flip()
@@ -183,10 +201,18 @@ def qswitch(operand, case, case_function, method="auto", case_amount=None, inv =
             with conjugate(demux)(enable[0], case, enable, parallelize_qc=True):
                 for i in range(case_amount):
                     with control(enable[i]):
-                        if callable(case_function):
-                            case_function(i, qa[i])
+                        if ctrl is None:
+                            if callable(case_function):
+                                case_function(i, qa[i])
+                            else:
+                                case_function[i](qa[i])
                         else:
-                            case_function[i](qa[i])
+                            if callable(case_function):
+                                with control(ctrl):
+                                    case_function(i, qa[i])
+                            else:
+                                with control(ctrl):
+                                    case_function[i](qa[i])
 
         qa.delete()
 
@@ -203,7 +229,7 @@ def qswitch(operand, case, case_function, method="auto", case_amount=None, inv =
             x_cond = q_cond
 
             def bitwise_count_diff(a, b):
-                return jnp.bitwise_count(jnp.bitwise_xor(a, b))
+                return jnp.int32(jnp.bitwise_count(jnp.bitwise_xor(a, b)))
 
         # Normal mode
         else:
@@ -222,44 +248,82 @@ def qswitch(operand, case, case_function, method="auto", case_amount=None, inv =
                     return false_fun(*operands)
 
             def bitwise_count_diff(a, b):
-                return np.bitwise_count(np.bitwise_xor(a, b))
+                return np.int32(np.bitwise_count(np.bitwise_xor(a, b)))
 
         n = case.size
 
+        def nor_x(t): x(t)
+        def nor_cx(c, t): cx(c, t)
+        def nor_mcx(c, t): mcx(c, t)
+
         def bounce(d: int, anc, ca, oper):
-            with control(anc[d - 1]):
+            # with control(anc[d - 2]):
+            #    x(anc[d-1])
+            if ctrl is None:
+                x_cond(d - 2 == -1, lambda: nor_x(anc[d-1]),
+                       lambda: nor_cx(anc[d-2], anc[d-1]))
+            else:
+                x_cond(d - 2 == -1, lambda: nor_cx(ctrl,
+                       anc[d-1]), lambda: nor_cx(anc[d-2], anc[d-1]))
+
+            with control(anc[d-1]):
                 x(anc[d])
-            with control(anc[d]):
-                x(anc[d + 1])
-            with control(anc[d - 1]):
-                with control(ca[n - 1 - d]):
-                    x(anc[d + 1])
+
+            # with control(anc[d - 2]):
+            #    with control(ca[n - 1 - d]):
+            #        x(anc[d])
+            if ctrl is None:
+                x_cond(d - 2 == -1, lambda: nor_cx(ca[n - 1 - d], anc[d]),
+                       lambda: nor_mcx([ca[n - 1 - d], anc[d-2]], anc[d]))
+            else:
+                x_cond(d - 2 == -1, lambda: nor_mcx([ca[n - 1 - d], ctrl],
+                       anc[d]), lambda: nor_mcx([ca[n - 1 - d], anc[d-2]], anc[d]))
 
         def down(d: int, anc, ca, oper):
-            with control(anc[d]):
-                x(ca[n - 1 - d])
-                with control(ca[n - 1 - d]):
-                    x(anc[d + 1])
-                x(ca[n - 1 - d])
+            x(ca[n - 1 - d])
+            # with control(anc[d-1]):
+            #    with control(ca[n - 1 - d]):
+            #        x(anc[d])
+            if ctrl is None:
+                x_cond(d - 1 == -1, lambda: nor_cx(ca[n - 1 - d], anc[d]),
+                       lambda: nor_mcx([ca[n - 1 - d], anc[d-1]], anc[d]))
+            else:
+                x_cond(d - 1 == -1, lambda: nor_mcx([ca[n - 1 - d], ctrl],
+                       anc[d]), lambda: nor_mcx([ca[n - 1 - d], anc[d-1]], anc[d]))
+            x(ca[n - 1 - d])
 
         def up(d: int, anc, ca, oper):
-            with control(anc[d]):
-                with control(ca[n - 1 - d]):
-                    x(anc[d + 1])
+            # with control(anc[d-1]):
+            #    with control(ca[n - 1 - d]):
+            #        x(anc[d])
+            if ctrl is None:
+                x_cond(d - 1 == -1, lambda: nor_cx(ca[n - 1 - d], anc[d]),
+                       lambda: nor_mcx([ca[n - 1 - d], anc[d-1]], anc[d]))
+            else:
+                x_cond(d - 1 == -1, lambda: nor_mcx([ca[n - 1 - d], ctrl],
+                       anc[d]), lambda: nor_mcx([ca[n - 1 - d], anc[d-1]], anc[d]))
 
         # Function mode
         if callable(case_function):
 
             def leaf(d: int, anc, ca, oper, i):
-                with control(anc[d + 1]):
-                    case_function(i, oper)
                 with control(anc[d]):
-                    x(anc[d + 1])
-                with control(anc[d + 1]):
+                    case_function(i, oper)
+
+                # with control(anc[d-1]):
+                #    x(anc[d])
+                if ctrl is None:
+                    x_cond(d-1 == -1, lambda: nor_x(anc[d]),
+                           lambda: nor_cx(anc[d-1], anc[d]))
+                else:
+                    x_cond(d-1 == -1, lambda: nor_cx(ctrl,
+                           anc[d]), lambda: nor_cx(anc[d-1], anc[d]))
+
+                with control(anc[d]):
                     case_function(i + 1, oper)
 
             def last_leaf(d: int, anc, ca, oper, i):
-                with control(anc[d + 1]):
+                with control(anc[d]):
                     case_function(i, oper)
 
         # List mode
@@ -275,15 +339,23 @@ def qswitch(operand, case, case_function, method="auto", case_amount=None, inv =
 
                 def leaf(d: int, anc, ca, oper, i):
                     def apply_leaf(A, B):
-                        with control(anc[d + 1]):
-                            A(oper)
                         with control(anc[d]):
-                            x(anc[d + 1])
-                        with control(anc[d + 1]):
+                            A(oper)
+
+                        # with control(anc[d-1]):
+                        #    x(anc[d])
+                        if ctrl is None:
+                            x_cond(
+                                d-1 == -1, lambda: nor_x(anc[d]), lambda: nor_cx(anc[d-1], anc[d]))
+                        else:
+                            x_cond(d-1 == -1, lambda: nor_cx(ctrl,
+                                   anc[d]), lambda: nor_cx(anc[d-1], anc[d]))
+
+                        with control(anc[d]):
                             B(oper)
 
                     for j in range(0, len(case_function), 2):
-                        q_cond(
+                        x_cond(
                             j == i,
                             apply_leaf,
                             lambda a, b: None,
@@ -294,16 +366,27 @@ def qswitch(operand, case, case_function, method="auto", case_amount=None, inv =
             else:
 
                 def leaf(d: int, anc, ca, oper, i):
-                    with control(anc[d + 1]):
-                        case_function[i](oper)
                     with control(anc[d]):
-                        x(anc[d + 1])
-                    with control(anc[d + 1]):
+                        case_function[i](oper)
+
+                    # with control(anc[d-1]):
+                    #    x(anc[d])
+                    if ctrl is None:
+                        x_cond(
+                            d-1 == -1, lambda: nor_x(anc[d]), lambda: nor_cx(anc[d-1], anc[d]))
+                    else:
+                        x_cond(d-1 == -1, lambda: nor_cx(ctrl,
+                               anc[d]), lambda: nor_cx(anc[d-1], anc[d]))
+
+                    with control(anc[d]):
                         case_function[i + 1](oper)
-            
+
             def last_leaf(d: int, anc, ca, oper, i):
-                with control(anc[d + 1]):
-                    case_function[case_amount-1](oper)
+                def apply(f):
+                    with control(anc[d]):
+                        f(oper)
+                for j in range(0, len(case_function)):
+                    x_cond(j == i, apply, lambda x: None, case_function[j])
 
         else:
             raise TypeError(
@@ -326,8 +409,8 @@ def qswitch(operand, case, case_function, method="auto", case_amount=None, inv =
 
             return anc, ca, oper
 
-        anc = QuantumVariable(n + 1)
-        x(anc[0])
+        anc = QuantumVariable(n)
+        # x(anc[0])
 
         # Go to first node
         for j in xrange(0, n, 1):
@@ -350,17 +433,23 @@ def qswitch(operand, case, case_function, method="auto", case_amount=None, inv =
             up(n - j - 1, anc, case, operand)
 
             def bf():
-                with control(anc[n-j-1]):
-                    x(anc[n - j])
-                return None
+                # with control(anc[n-j-2]):
+                #    x(anc[n - j-1])
+                # return None
+                if ctrl is None:
+                    x_cond(
+                        n-j-2 == -1, lambda: nor_x(anc[n-j-1]), lambda: nor_cx(anc[n-j-2], anc[n-j-1]))
+                else:
+                    x_cond(n-j-2 == -1, lambda: nor_cx(ctrl,
+                           anc[n-j-1]), lambda: nor_cx(anc[n-j-2], anc[n-j-1]))
 
-            x_cond((diff >> j) & 1, lambda: bf(), lambda: None)
-            # The cond applies:
+            # The x_cond applies:
             # if (diff >> j) & 1:
             #    with control(anc[n-j-1]):
             #        x(anc[n - j])
+            x_cond((diff >> j) & 1, lambda: bf(), lambda: None)
 
-        x(anc[0])
+        # x(anc[0])
 
         anc.delete()
 
@@ -368,6 +457,7 @@ def qswitch(operand, case, case_function, method="auto", case_amount=None, inv =
         raise Exception(
             f"Don't know compile method {method} for switch-case structure."
         )
+
 
 temp = qswitch.__doc__
 qswitch = custom_inversion(qswitch)

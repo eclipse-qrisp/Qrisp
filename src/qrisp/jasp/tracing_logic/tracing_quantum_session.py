@@ -103,11 +103,10 @@ class TracingQuantumSession:
                 "Tried to append Operation with non-zero classical bits in JAX mode."
             )
 
-        from qrisp.core import QuantumVariable
+        from qrisp.core import QuantumVariable, QuantumArray
+        from qrisp.jasp import jrange
 
         if isinstance(qubits[0], (QuantumVariable, DynamicQubitArray)):
-
-            from qrisp.jasp import jrange
 
             for i in jrange(qubits[0].size):
                 self.append(
@@ -123,6 +122,25 @@ class TracingQuantumSession:
                 self.append(
                     operation,
                     [qubits[j][i] for j in range(operation.num_qubits)],
+                    param_tracers=param_tracers,
+                )
+            return
+        
+        elif isinstance(qubits[0], QuantumArray):
+            
+            for i in range(1, len(qubits)):
+                if not isinstance(qubits[i], QuantumArray):
+                    raise Exception(f"Tried to apply multi-qubit gate to mixed qubit argument types (QuantumArray + {type(qubits[i])})")
+                
+                if qubits[i].shape != qubits[0].shape:
+                    raise Exception("Tried to apply multi-qubit quantum gate to QuantumArrays of differing shape.")
+            
+            flattened_qubits = [qubits[i].flatten() for i in range(len(qubits))]
+            
+            for i in jrange(flattened_qubits[0].size):
+                self.append(
+                    operation,
+                    [flattened_qubits[j][i] for j in range(operation.num_qubits)],
                     param_tracers=param_tracers,
                 )
             return

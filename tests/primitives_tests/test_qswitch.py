@@ -33,7 +33,7 @@ def test_qswitch_case_list():
     h(case)
     
     # Execute switch_case function
-    qswitch(operand, case, case_function_list)
+    qswitch(operand, case, case_function_list, method = "sequential")
     
     # Simulate
     assert multi_measurement([case, operand]) == {(0, 2): 0.25, (1, 3): 0.25, (2, 1): 0.25, (3, 1): 0.125, (3, 3): 0.125}
@@ -89,7 +89,7 @@ def test_qswitch_case_function():
     h(case)
     
     # Execute switch_case function
-    qswitch(operand, case, case_function_list)
+    qswitch(operand, case, case_function_list, method = "sequential")
     
     # Simulate
     assert multi_measurement([case, operand]) == {(0, 2): 0.25, (1, 3): 0.25, (2, 1): 0.25, (3, 1): 0.125, (3, 3): 0.125}

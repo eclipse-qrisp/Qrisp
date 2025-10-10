@@ -6,7 +6,7 @@ Session Merging
 Session merging describes the process of merging two QuantumSessions into one. This construct is necessary because we want to ensure that the user can
 
 * write multiple quantum algorithms in parallel inside a single Python instance, and
-* construct circuits that only include the qubits, which are relevant for that quantum algorithm.
+* construct circuits that only include the qubits which are relevant for that quantum algorithm.
 
 While the first point in principle could be achieved by having a global quantum circuit per Python instance, the second point discourages this approach, as this would imply that each time we want to query a backend, a circuit analyzer would have to pinpoint which qubits of the global quantum circuit are relevant and which are not.
 

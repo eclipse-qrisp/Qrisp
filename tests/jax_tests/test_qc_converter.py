@@ -18,7 +18,7 @@
 
 from jax import make_jaxpr
 from qrisp import QuantumVariable, cx, QuantumCircuit, QuantumFloat, x, rz, measure, control, QuantumBool
-from qrisp.jasp import qache, flatten_pjit, make_jaspr
+from qrisp.jasp import qache, flatten_pjit, make_jaspr, ProcessedMeasurement
 
 def test_qc_converter():
     
@@ -120,9 +120,6 @@ def test_qc_converter():
         
     jaspr = make_jaspr(main)()
     
-    try:
-        qiskit_qc = jaspr.to_qc().run()
-    except Exception as e:
-        assert "real-time" in str(e)
+    assert isinstance(jaspr.to_qc()[0], ProcessedMeasurement)
     
     
