@@ -80,7 +80,7 @@ class HLOControlFlowReplacement(RewritePattern):
         op_name = op.op_name.data
 
         # stablehlo.case -> scf.index_switch
-        if op_name == "\"stablehlo.case\"":
+        if op_name == "stablehlo.case":
             
             # If no quantum types are involved, we don't need to transform
             for tp in op.result_types + op.operand_types:
@@ -111,7 +111,7 @@ class HLOControlFlowReplacement(RewritePattern):
             return
 
         # stablehlo.while -> scf.while
-        if op_name == "\"stablehlo.while\"":
+        if op_name == "stablehlo.while":
             
             # If no quantum types are involved, we don't need to transform
             for tp in op.result_types + op.operand_types:
@@ -131,7 +131,7 @@ class HLOControlFlowReplacement(RewritePattern):
             return
 
         # stablehlo.return inside case/while regions
-        if op_name == "\"stablehlo.return\"":
+        if op_name == "stablehlo.return":
             parent_op = op.parent_op()
 
             # In switch arms: just yield the carried values
