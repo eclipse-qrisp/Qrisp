@@ -26,8 +26,24 @@ from qrisp.jasp import check_for_tracing_mode, DynamicQubitArray, jlen
 def append_operation(operation, qubits=[], clbits=[], param_tracers=[]):
     from qrisp import find_qs
 
-    qs = find_qs(qubits)
-    qs.append(operation, qubits, clbits, param_tracers=param_tracers)
+    try:
+        qs = find_qs(qubits)
+        qs.append(operation, qubits, clbits, param_tracers=param_tracers)
+    except Exception as e:
+        
+        # Handle the case that the user specified an empty qubit list, i.e.
+        # cx([], [])
+        if "Couldn't find QuantumSession" in str(e):
+            if len(qubits) == 0:
+                return
+            for q in qubits:
+                if not (isinstance(q, list) and len(q) == 0):
+                    break
+            else:
+                return
+            
+        raise e
+                    
 
 
 def cx(control, target):
