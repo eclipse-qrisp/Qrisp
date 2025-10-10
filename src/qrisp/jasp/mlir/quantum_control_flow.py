@@ -77,7 +77,7 @@ class HLOControlFlowReplacement(RewritePattern):
     def match_and_rewrite(self, op: builtin.UnregisteredOp, rewriter: PatternRewriter):
         """Pattern callback that matches unregistered StableHLO ops and rewrites them."""
         # Unregistered ops keep their name as a string attribute, including quotes.
-        op_name = str(op.op_name)
+        op_name = op.op_name.data
 
         # stablehlo.case -> scf.index_switch
         if op_name == "\"stablehlo.case\"":
