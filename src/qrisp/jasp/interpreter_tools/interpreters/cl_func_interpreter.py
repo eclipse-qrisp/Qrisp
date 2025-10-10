@@ -28,7 +28,6 @@ import jax.numpy as jnp
 from qrisp.circuit import PTControlledOperation
 from qrisp.jasp import (
     QuantumPrimitive,
-    OperationPrimitive,
     AbstractQuantumCircuit,
     AbstractQubitArray,
     AbstractQubit,

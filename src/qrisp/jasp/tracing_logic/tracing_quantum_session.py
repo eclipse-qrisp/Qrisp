@@ -20,7 +20,7 @@ import weakref
 
 import jax
 
-from qrisp.jasp.primitives import create_qubits, delete_qubits_p, OperationPrimitive, quantum_gate_p
+from qrisp.jasp.primitives import create_qubits, delete_qubits_p, quantum_gate_p
 from qrisp.jasp.tracing_logic.dynamic_qubit_array import DynamicQubitArray
 from qrisp.core.quantum_variable import QuantumVariable
 

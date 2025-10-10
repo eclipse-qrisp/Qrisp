@@ -25,7 +25,7 @@ from jax import make_jaxpr
 from jax.extend.core import JaxprEqn, Var, ClosedJaxpr, Jaxpr
 from jax.lax import add_p, sub_p, while_loop
 
-from qrisp.jasp.primitives import AbstractQuantumCircuit, OperationPrimitive, quantum_gate_p, greek_letters
+from qrisp.jasp.primitives import AbstractQuantumCircuit, quantum_gate_p, greek_letters
 from qrisp.jasp.interpreter_tools import eval_jaxpr, extract_invalues, insert_outvalues
 
 def copy_jaxpr_eqn(eqn):

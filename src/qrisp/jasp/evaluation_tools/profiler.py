@@ -35,14 +35,10 @@ This file implements the interfaces to evaluating the transformed Jaspr.
 from functools import lru_cache
 import types
 
-import numpy as np
-
 import jax
-import jax.numpy as jnp
 from jax.extend.core import ClosedJaxpr
 from jax.tree_util import tree_flatten
 
-from qrisp.jasp.primitives import OperationPrimitive
 from qrisp.jasp.interpreter_tools import make_profiling_eqn_evaluator, eval_jaxpr
 from qrisp.jasp.evaluation_tools.jaspification import simulate_jaspr
 
@@ -283,10 +279,9 @@ def profile_jaspr(jaspr, meas_behavior="0"):
 @lru_cache(int(1e5))
 def get_profiling_array_computer(jaspr, meas_behavior):
 
-    # This functions determines the set of primitives that appear in a given Jaxpr
+    # Find the occuring quantum operations and store their names in a dictionary,
+    # indicating, which tracer counts what operation
     quantum_operations = get_quantum_operations(jaspr)
-
-    # Filter out the non OperationPrimitives and fill them in a dictionary
     profiling_dic = {quantum_operations[i] : i for i in range(len(quantum_operations))}
     
     if "measure" not in profiling_dic:
