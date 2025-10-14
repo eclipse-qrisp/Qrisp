@@ -33,7 +33,7 @@ from qrisp.jasp import (
     extract_invalues,
     insert_outvalues
 )
-from qrisp.jasp.primitives import AbstractQuantumCircuit
+from qrisp.jasp.primitives import AbstractQuantumCircuit, QuantumPrimitive
 
 
 class Jaspr(ClosedJaxpr):
@@ -458,11 +458,12 @@ class Jaspr(ClosedJaxpr):
                     elif isinstance(val, (ProcessedMeasurement, Clbit)):
                         break
                 else:
-                    
-                    
-                    outvalues = eqn.primitive.impl(*invalues, **eqn.params)
-                    insert_outvalues(eqn, context_dic, outvalues)
-                    return
+                    if isinstance(eqn.primitive, QuantumPrimitive):
+                        outvalues = eqn.primitive.impl(*invalues, **eqn.params)
+                        insert_outvalues(eqn, context_dic, outvalues)
+                        return
+                    else:
+                        return True
                 
             if len(eqn.outvars) == 0:
                 return
