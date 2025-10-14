@@ -34,7 +34,8 @@ from xdsl.context import Context
 from xdsl.parser import Parser
 from xdsl.dialects import builtin, func
 
-from qrisp.jasp.mlir.jaspr_lowering import lower_jaspr_to_MLIR_raw
+from qrisp.jasp.mlir.jaxpr_lowering import lower_jaxpr_to_MLIR
+from qrisp.jasp.mlir.jasp_lowering_rules import jasp_lowering_rules
 from qrisp.jasp.mlir.quantum_control_flow import fix_quantum_control_flow
 
 
@@ -88,7 +89,7 @@ def jaspr_to_mlir(jaspr: Any) -> builtin.ModuleOp:
         may be rewritten to SCF so that JASP quantum types are supported.
     """
     # 1) Lower to MLIR (jasp dialect) using the custom lowering pipeline.
-    mlir_module = lower_jaspr_to_MLIR_raw(jaspr)
+    mlir_module = lower_jaxpr_to_MLIR(jaspr, lowering_rules = jasp_lowering_rules)
 
     # 2) Capture generic MLIR printing. Use try/finally to avoid stdout leaks
     #    if an exception is thrown during printing.

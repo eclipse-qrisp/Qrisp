@@ -34,9 +34,8 @@ from qrisp.jasp.primitives import (
 
 import qrisp.jasp.mlir.dialect_implementation._jasp_ops_gen as jasp_dialect
 
-from jax.interpreters.mlir import LoweringParameters, ModuleContext, lower_jaxpr_to_fun, ir_type_handlers
+from jax.interpreters.mlir import ir_type_handlers
 from jaxlib.mlir import ir
-
 
 ##########################
 # Register type lowering #
@@ -240,50 +239,4 @@ def quantum_gate_lowering(ctx, *args, **params):
 
 lowering_rules.append((quantum_gate_p, quantum_gate_lowering))
 
-CUSTOM_LOWERING_RULES = tuple(lowering_rules)
-# Use LoweringParameters with override_lowering_rules
-lowering_params = LoweringParameters(override_lowering_rules=CUSTOM_LOWERING_RULES)
-
-def lower_jaspr_to_MLIR_raw(jaspr):
-    
-    # Create the necessary components for ModuleContext
-    keepalives = []
-    host_callbacks = []
-    channel_iter = 1
-    
-    ctx = ModuleContext(
-        backend=None,
-        platforms=["cpu"],
-        axis_context=None,
-        keepalives=keepalives,
-        channel_iterator=channel_iter,
-        host_callbacks=host_callbacks,
-        lowering_parameters=lowering_params,
-    )
-    
-    # Enable unregistered dialects
-    ctx.context.allow_unregistered_dialects = True
-    
-    # Lower JAXPR to MLIR using Catalyst's method
-    with ctx.context, ir.Location.unknown(ctx.context):
-        
-        ctx.module.operation.attributes["sym_name"] = ir.StringAttr.get("jasp_module")
-        
-        from jax._src.source_info_util import NameStack
-        
-        try:
-            lower_jaxpr_to_fun(
-                ctx,
-                "main",
-                jaspr,  # Pass the full ClosedJaxpr object
-                jaspr.effects,
-                public=True,
-                name_stack=NameStack(),
-            )
-        except Exception as e:
-            print(f"Error in lower_jaxpr_to_fun: {e}")
-            import traceback
-            print(f"Traceback: {traceback.format_exc()}")
-            raise
-    
-    return ctx.module
+jasp_lowering_rules = tuple(lowering_rules)
