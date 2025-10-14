@@ -16,11 +16,35 @@
 ********************************************************************************
 """
 
+import sys
+from io import StringIO
+
 from jax.interpreters.mlir import LoweringParameters, ModuleContext, lower_jaxpr_to_fun
 from jaxlib.mlir import ir
 
-def lower_jaxpr_to_MLIR(jaspr, lowering_rules = tuple([])):
-    
+from xdsl.context import Context
+from xdsl.parser import Parser
+from xdsl.dialects import builtin, func
+
+def lower_jaxpr_to_MLIR(jaxpr, lowering_rules = tuple([])):
+    """
+    Lowers a Jaxpr object into an MLIR string uses Jax's MLIR infrastructure.
+
+    Parameters
+    ----------
+    jaxpr : ClosedJaxpr
+        The Jaxpr to lower.
+    lowering_rules : tuple, optional
+        The lowering rules to apply to custom primitives. 
+        Check the jasp_lowering_rules file for an example. 
+        The default is tuple([]).
+
+    Returns
+    -------
+    MLIR Module
+        An MLIR Module object in Jax's MLIR infrastructure.
+
+    """
     # Create the necessary components for ModuleContext
     keepalives = []
     host_callbacks = []
@@ -52,8 +76,8 @@ def lower_jaxpr_to_MLIR(jaspr, lowering_rules = tuple([])):
             lower_jaxpr_to_fun(
                 ctx,
                 "main",
-                jaspr,  # Pass the full ClosedJaxpr object
-                jaspr.effects,
+                jaxpr,  # Pass the full ClosedJaxpr object
+                jaxpr.effects,
                 public=True,
                 name_stack=NameStack(),
             )
@@ -64,3 +88,72 @@ def lower_jaxpr_to_MLIR(jaspr, lowering_rules = tuple([])):
             raise
     
     return ctx.module
+
+def generic_mlir_to_xdsl(mlir_string: str) -> builtin.ModuleOp:
+    """Parse a generic-format MLIR string into an xDSL ``builtin.module``.
+
+    Parameters
+    ----------
+    mlir_string:
+        MLIR in generic op form. This is what MLIR prints when
+        ``print_generic_op_form=True``.
+
+    Returns
+    -------
+    builtin.ModuleOp
+        The parsed xDSL module operation. Unregistered ops are allowed so that
+        custom JASP ops survive the round-trip.
+    """
+    # Create context with unregistered operations allowed so our custom ops
+    # remain intact when parsed by xDSL.
+    ctx = Context()
+    ctx.allow_unregistered = True
+
+    # Register essential dialects used by the wrapper module and functions.
+    ctx.load_dialect(builtin.Builtin)
+    ctx.load_dialect(func.Func)
+
+    # Parse the MLIR string and return the module op.
+    parser = Parser(ctx, mlir_string)
+    return parser.parse_operation()
+
+
+def jaxpr_to_xdsl(jaxpr, lowering_rules = tuple([])):
+    """Lower a JAXPR to an xDSL module.
+
+    This function performs two steps:
+    1) Use Qrisp's JAXPR lowering to create an MLIR module with custom ops.
+    2) Print the module in MLIR's generic form and re-parse it with xDSL to
+       obtain an xDSL ``builtin.module`` object.
+
+
+    Parameters
+    ----------
+    jaspr:
+        A ClosedJaxpr (or JAXPR-like) object produced by Qrisp/JAX tracing.
+
+    Returns
+    -------
+    builtin.ModuleOp
+        The xDSL module containing the lowered program.
+    """
+    # 1) Lower to MLIR (jasp dialect) using the custom lowering pipeline.
+    mlir_module = lower_jaxpr_to_MLIR(jaxpr, lowering_rules = lowering_rules)
+
+    # 2) Capture generic MLIR printing. Use try/finally to avoid stdout leaks
+    #    if an exception is thrown during printing.
+    old_stdout = sys.stdout
+    captured_output = StringIO()
+    try:
+        sys.stdout = captured_output
+        # Print in generic format - key for xDSL compatibility
+        mlir_module.operation.print(print_generic_op_form=True)
+    finally:
+        sys.stdout = old_stdout
+
+    generic_mlir_string = captured_output.getvalue()
+
+    # Parse to xDSL.
+    return generic_mlir_to_xdsl(generic_mlir_string)
+    
+    
