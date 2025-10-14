@@ -458,7 +458,11 @@ class Jaspr(ClosedJaxpr):
                     elif isinstance(val, (ProcessedMeasurement, Clbit)):
                         break
                 else:
-                    return True
+                    
+                    
+                    outvalues = eqn.primitive.impl(*invalues, **eqn.params)
+                    insert_outvalues(eqn, context_dic, outvalues)
+                    return
                 
             if len(eqn.outvars) == 0:
                 return
