@@ -5,6 +5,10 @@ from qrisp import h as hadamard
 from qrisp import x
 from sympy import Symbol
 import scipy
+import sympy as sp
+from qrisp.algorithms.cold.crab import CRABObjective
+import time
+
 
 #########################
 ### System parameters ###
@@ -19,9 +23,9 @@ import scipy
 # x = (1, 0, 1) minimize to xQx = -4
 
 ### Other small example
-# Q = np.array([[-0.9, 0.5, 0.3], 
-#               [0.5, -0.7, -0.4], 
-#               [0.3, -0.4, 0.2]])
+Q = np.array([[-0.9, 0.5, 0.3], 
+              [0.5, -0.7, -0.4], 
+              [0.3, -0.4, 0.2]])
 ### Solution
 # x = (0, 1, 1) minimiza to xQx = -1.3
 
@@ -33,11 +37,11 @@ import scipy
 # # x = (1, 0, 1, 1) minimize to xQx = -1.8
 
 ### Medium example
-Q = np.array([[-1.2,  0.6,  0.6,  0.0,  0.0],
-              [ 0.6, -0.8,  0.6,  0.0,  0.0],
-              [ 0.6,  0.6, -0.9, -0.7,  0.0],
-              [ 0.0,  0.0, -0.7, -0.4,  0.5],
-              [ 0.0,  0.0,  0.0,  0.5,  0.3]])
+# Q = np.array([[-1.2,  0.6,  0.6,  0.0,  0.0],
+#               [ 0.6, -0.8,  0.6,  0.0,  0.0],
+#               [ 0.6,  0.6, -0.9, -0.7,  0.0],
+#               [ 0.0,  0.0, -0.7, -0.4,  0.5],
+#               [ 0.0,  0.0,  0.0,  0.5,  0.3]])
 
 ### Solution
 # x = (0, 0, 1, 1, 0) with xQx = -2.7
@@ -63,8 +67,11 @@ def H_0(lam):
     return H
 
 # Control Hamiltonian
-def H_control(f):
-    H = f * sum_z
+def H_control(f, CRAB):
+    if CRAB:
+        H = sum(f[i, 0] * sum_z for i in range(f.rows))
+    else:
+        H = f * sum_z
     return H
 
 # Control pulse weighted by optimizable parameters beta
@@ -111,8 +118,8 @@ def alpha(lam, f = 0, f_deriv = 0):
     B = 1 - lam
     C = h + f_deriv
 
-    nom = sum([A[i] + 4*B*C[i] for i in range(N)])
-    denom = 2 * sum([A[i]**2 + B**2 for i in range(N)]) + 4 * sum([lam**2 * sum([J[i][j] for j in range(i)]) for i in range(N)])
+    nom = np.sum(A + 4*B*C)
+    denom = 2 * (np.sum(A**2) + N * (B**2)) + 4 * (lam**2) * np.sum(np.tril(J, -1).sum(axis=1))
     alph = nom/denom
 
     return alph
@@ -151,16 +158,22 @@ def apply_lcd_hamiltonian(qarg, N_steps):
 # Precompute f (sine) and f_deriv (cosine) for each timestep
 def precompute_opt_pulses(T, t_list, N_steps, N_opt, CRAB: bool):
 
-    sin_matrix = np.zeros((N_steps, N_opt))
-    cos_matrix = np.zeros((N_steps, N_opt))
-
     if CRAB:
-        r = np.random.uniform(-0.5, 0.5, N_opt)
+        # Matrices and arrays must be sympy objects
+        sin_matrix = sp.MutableDenseMatrix.zeros(N_steps, N_opt)
+        cos_matrix = sp.MutableDenseMatrix.zeros(N_steps, N_opt)
+        t_list = sp.Array(t_list)
+
+        # Add symbols for random parameters to be called in optimizaton
+        r_params = [Symbol("r_"+str(i)) for i in range(N_opt)]
         for k in range(N_opt):
-            sin_matrix[:, k] = np.sin(np.pi * (k+1+r[k]) * t_list/T)
-            cos_matrix[:, k] = (np.pi/T * (k+1+r[k])) * np.cos(np.pi * (k+1+r[k]) * t_list/T)
+            sin_matrix[:, k] = sp.Matrix(t_list.applyfunc(lambda t: sp.sin(sp.pi * (k+1+r_params[k]) * t / T)))
+            cos_matrix[:, k] = sp.Matrix(t_list.applyfunc(lambda t: (sp.pi/T * (k+1+r_params[k])) * sp.cos(sp.pi * (k+1+r_params[k]) * t / T)))
 
     else:
+        sin_matrix = np.zeros((N_steps, N_opt))
+        cos_matrix = np.zeros((N_steps, N_opt))
+
         for k in range(N_opt):
             sin_matrix[:, k] = np.sin(np.pi * (k+1) * t_list/T)
             cos_matrix[:, k] = (np.pi/T * (k+1)) * np.cos(np.pi * (k+1) * t_list/T)
@@ -180,6 +193,10 @@ def apply_cold_hamiltonian(qarg, N_steps, beta, CRAB=False):
     lamdot = np.array([lam_deriv(t, T) for t in time])
     sin_matrix, cos_matrix = precompute_opt_pulses(T, time, N_steps, N_opt, CRAB)
 
+    if CRAB:
+        # Transform beta to sympy to work with symbols for random values
+        beta = sp.Matrix(beta)
+
     # Apply hamiltonian to qarg for each timestep
     for s in range(N_steps):
 
@@ -195,7 +212,7 @@ def apply_cold_hamiltonian(qarg, N_steps, beta, CRAB=False):
         H_step = H_step + dt * lamdot[s] * A_lam(alph)
 
         # Control pulse contribution 
-        H_step = H_step + dt * H_control(f)
+        H_step = H_step + dt * H_control(f, CRAB)
 
         # Get unitary from trotterization and apply to qarg
         U = H_step.trotterization()
@@ -214,7 +231,7 @@ def compile_U(qarg, N_opt, N_steps, CRAB=False):
     intended_measurements = list(qarg)
     qc = qarg.qs.compile(intended_measurements=intended_measurements)
 
-    qarg.qs.data = temp # warum?
+    qarg.qs.data = temp
 
     return qc
 
@@ -233,7 +250,7 @@ def LCD_routine(qarg, N_steps):
     return psi, res_dict
 
 
-def optimization_routine(qarg, N_opt, qc): 
+def optimization_routine(qarg, N_opt, qc, CRAB): 
 
 
     def objective(params):
@@ -249,14 +266,17 @@ def optimization_routine(qarg, N_opt, qc):
     
     init_point = np.random.rand(N_opt) * np.pi/2
 
-    # print(f'Init {init_point} with cost {objective(init_point)}')
+    # Create CRAB objective to make sure randomization is applied at each optimization iteration
+    if CRAB:
+        objective = CRABObjective(H_p, qarg, qc, N_opt)
+    # Otherwise objective from above is used
+    else:
+        objective = objective
 
     res = scipy.optimize.minimize(objective,
                                   init_point,
                                   method='Powell'
                                   )
-    
-    # print(f'Final params: {res.x} with cost {objective(res.x,)}')
     
     return res.x
 
@@ -265,16 +285,15 @@ def COLD_routine(qarg, N_steps, N_opt, CRAB=False):
 
     qarg1, qarg2 = qarg.duplicate(), qarg.duplicate()
 
-    # Frage: Muss qarg prep auch bei compile und find optimal parameters gecalled werden?
-
     # Compile COLD routine into a circuit
     U_circuit = compile_U(qarg1, N_opt, N_steps, CRAB)
 
     # Find optimal params for control pulse
-    opt_params = optimization_routine(qarg2, N_opt, U_circuit)
+    opt_params = optimization_routine(qarg2, N_opt, U_circuit, CRAB)
 
     # Apply hamiltonian with optimal parameters
-    apply_cold_hamiltonian(qarg, N_steps, opt_params, CRAB)
+    # Here we do not want the randomized parameters to be included -> CRAB=False
+    apply_cold_hamiltonian(qarg, N_steps, opt_params, CRAB=False)
 
     # Measure qarg and get statevector
     psi = qarg.qs.statevector('array')
@@ -284,9 +303,9 @@ def COLD_routine(qarg, N_steps, N_opt, CRAB=False):
 
 
 # Evolution time
-T = 5
+T = 4
 # Number of timesteps
-N_steps = 500
+N_steps = T*100
 # Number of control pulse parameters
 N_opt = 1
 # Use crab method
@@ -295,15 +314,18 @@ CRAB = True
 print("\n--- Simulation parameters ---")
 print(f'T = {T}')
 print(f'Steps = {N_steps}')
-print(f'N opt = {N_opt}')
+print(f'N opt = {N_opt}\n')
 # print(f'CRAB: {CRAB}\n')
 
 # Create qarg and run algorithms
 qarg_lcd, qarg_cold, qarg_cold_crab = QuantumVariable(N), QuantumVariable(N), QuantumVariable(N)
 
-psi_lcd, meas_lcd = LCD_routine(qarg_lcd, N_steps)
+# psi_lcd, meas_lcd = LCD_routine(qarg_lcd, N_steps)
+t0 = time.time()
 psi_cold, meas_cold = COLD_routine(qarg_cold, N_steps, N_opt, CRAB=False)
+t1 = time.time()
 psi_cold_crab, meas_cold_crab = COLD_routine(qarg_cold_crab, N_steps, N_opt, CRAB=True)
+t2 = time.time()
 
 def qubo_cost(Q, P):
     expected_cost = 0.0
@@ -316,11 +338,13 @@ def qubo_cost(Q, P):
         expected_cost += prob * cost
     return expected_cost
 
-print(meas_lcd)
-print(f'Cost LCD: {qubo_cost(Q, meas_lcd)}\n')
+# print(meas_lcd)
+# print(f'Cost LCD: {qubo_cost(Q, meas_lcd)}\n')
 
+print(f'Computational time COLD: {t1-t0}')
 print(meas_cold)
 print(f'Cost COLD: {qubo_cost(Q, meas_cold)}\n')
 
+print(f'Computational time COLD-CRAB: {t2-t1}')
 print(meas_cold_crab)
 print(f'Cost COLD-CRAB: {qubo_cost(Q, meas_cold_crab)}\n')
