@@ -588,7 +588,7 @@ class QubitOperator(Hamiltonian):
         return H
 
     @classmethod
-    def from_matrix(self, matrix):
+    def from_matrix(self, matrix, reversed=False):
         r"""
         Represents a matrix as an operator
 
@@ -602,6 +602,8 @@ class QubitOperator(Hamiltonian):
         ----------
         matrix : numpy.ndarray or scipy.sparse.csr_matrix
             The matrix.
+        reversed : bool
+            If true, the endianness is reversed.
 
         Returns
         -------
@@ -656,7 +658,10 @@ class QubitOperator(Hamiltonian):
             for k in range(n):
                 i = (row >> k) & 1
                 j = (col >> k) & 1
-                factor_dict[n - k - 1] = OPERATOR_TABLE[(i, j)]
+                if reversed:
+                    factor_dict[k] = OPERATOR_TABLE[(i, j)]
+                else:
+                    factor_dict[n - k - 1] = OPERATOR_TABLE[(i, j)]
 
             O.terms_dict[QubitTerm(factor_dict)] = value
         return O
@@ -2048,3 +2053,70 @@ class QubitOperator(Hamiltonian):
             coefficients.append(np.abs(coeff_))
 
         return unitaries, np.array(coefficients, dtype=float)
+
+    def pauli_block_encoding(self):
+        """
+        A block encoding of a Hamiltonian $H$ (acting on a Hilbert space $\mathcal H_s$) is a pair of unitaries $(U,G)$, 
+        where $U$ is the block encoding unitary acting on $\mathcal H_a\otimes H_s$ (for some auxiliary Hilbert space $\mathcal H_a$), 
+        and $G$ prepares the block encoding state $\ket{G}_a=G\ket{0}_a$ in the auxiliary variable such that $(\bra{G}_a\otimes\mathbb I_s)U(\ket{G_a}\otimes\mathbb I_s)=H$.
+        Here $\mathbb I_s$ denotes the identity acting on $\mathcal H_s$.
+
+        For a Pauli block encoding, consider an $n$-qubit Hamiltonian expressed as linear combination of Pauli operators
+
+        .. math::
+    
+            H = \sum_{i=0}^{T-1}\alpha_iP_i
+
+        where $\alpha_i$ are real coefficients, $P_i$ are Pauli operators, and $T$ is the number of terms.
+        We assume that the coefficients $\alpha_i$ are nonnegative, and each Pauli $P_i$ carries a $\pm1$ sign. 
+        We also require the coefficients of $H$ to be normalized: $\sum_{i=0}^{T-1}\alpha_i=1$.
+
+        The block encoding unitaty is
+
+        .. math::
+
+            U = \sum_{i=0}^{T-1}\ket{i}\bra{i}\otimes P_i
+
+        i.e., application of each Pauli term $P_i$ controlled on the state of the auxiliary variable being $\ket{i}_a$.
+        The belonging block encoding state is
+
+        .. math::
+
+            \ket{G} = \sum_{i=0}^{T-1}\sqrt{\alpha_i}\ket{i}.
+
+
+        For encoding a Hamiltonian $H$ acting on the state variable, we use an auxiliary variable with $n=\lceil\log_2T\rceil$ qubits representing integers $0,\dotsc,2^{n-1}$. 
+        The unitary $G$ is implemented by a state preparation procedure [CITE] that scales linearly in $T$. 
+        The block encoding unitary $U$ acting on the Hilbert space $\mathcal H_s\otimes\mathcal H_{a}$ applies the operator $P_i$ to the state variable controlled on the state of the auxiliary variable being $\ket{i}_a$.
+        
+        Returns
+        -------
+        U_func : function
+            A function ``U_func(operand, case)`` applying the block encoding unitary $U$ to ``operand`` and ``case`` QuantumVariables.
+        G_func : function
+            A function preparing the block encoding state $\ket{G}$ in an auxiliary ``case`` QuantumVariable.
+        n : int
+            The number of qubits of the auxiliary ``case``QuantumVariable.
+
+        Examples
+        --------
+
+        """
+        from qrisp.jasp import qache
+        from qrisp.alg_primitives import prepare, qswitch
+    
+        unitaries, coeffs = self.unitaries()
+        alpha = np.sum(coeffs)
+
+        # Number of qubits for case variable
+        n = np.int64(np.ceil(np.log2(len(coeffs))))
+
+        @qache
+        def G_func(case):
+            prepare(case, np.sqrt(coeffs)/alpha)
+
+        @qache
+        def U_func(operand, case):
+            qswitch(operand, case, unitaries)
+
+        return U_func, G_func, n
