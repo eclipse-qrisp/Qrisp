@@ -2055,7 +2055,9 @@ class QubitOperator(Hamiltonian):
         return unitaries, np.array(coefficients, dtype=float)
 
     def pauli_block_encoding(self):
-        """
+        r"""
+        Returns a block encoding of the operator.
+
         A block encoding of a Hamiltonian $H$ (acting on a Hilbert space $\mathcal H_s$) is a pair of unitaries $(U,G)$, 
         where $U$ is the block encoding unitary acting on $\mathcal H_a\otimes H_s$ (for some auxiliary Hilbert space $\mathcal H_a$), 
         and $G$ prepares the block encoding state $\ket{G}_a=G\ket{0}_a$ in the auxiliary variable such that $(\bra{G}_a\otimes\mathbb I_s)U(\ket{G_a}\otimes\mathbb I_s)=H$.
@@ -2071,7 +2073,7 @@ class QubitOperator(Hamiltonian):
         We assume that the coefficients $\alpha_i$ are nonnegative, and each Pauli $P_i$ carries a $\pm1$ sign. 
         We also require the coefficients of $H$ to be normalized: $\sum_{i=0}^{T-1}\alpha_i=1$.
 
-        The block encoding unitaty is
+        The block encoding unitary is
 
         .. math::
 
@@ -2083,23 +2085,93 @@ class QubitOperator(Hamiltonian):
         .. math::
 
             \ket{G} = \sum_{i=0}^{T-1}\sqrt{\alpha_i}\ket{i}.
-
-
-        For encoding a Hamiltonian $H$ acting on the state variable, we use an auxiliary variable with $n=\lceil\log_2T\rceil$ qubits representing integers $0,\dotsc,2^{n-1}$. 
-        The unitary $G$ is implemented by a state preparation procedure [CITE] that scales linearly in $T$. 
-        The block encoding unitary $U$ acting on the Hilbert space $\mathcal H_s\otimes\mathcal H_{a}$ applies the operator $P_i$ to the state variable controlled on the state of the auxiliary variable being $\ket{i}_a$.
-        
+       
         Returns
         -------
         U_func : function
             A function ``U_func(operand, case)`` applying the block encoding unitary $U$ to ``operand`` and ``case`` QuantumVariables.
         G_func : function
-            A function preparing the block encoding state $\ket{G}$ in an auxiliary ``case`` QuantumVariable.
+            A function ``G_func(case)`` preparing the block encoding state $\ket{G}$ in an auxiliary ``case`` QuantumVariable.
         n : int
-            The number of qubits of the auxiliary ``case``QuantumVariable.
+            The number of qubits of the auxiliary ``case`` QuantumVariable.
 
         Examples
         --------
+
+        We apply a matrix to a quantum state via a Pauli block encoding.
+
+        ::
+
+            from qrisp import *
+            from qrisp.operators import QubitOperator
+            import numpy as np
+
+            m = 2
+            A = np.eye(2**m, k=1)  
+            A = A+ A.T
+            print(A)
+
+            H = QubitOperator.from_matrix(A, reversed=True)
+
+        The matrix $A$ encodes the mapping $\ket{0}\rightarrow\ket{1}$, $\ket{k}\rightarrow\ket{k-1}+\ket{k+1}$ for $k=1,\dotsc,2^m-2$, $\ket{2^m-1}\rightarrow\ket{2^m-2}$.
+        We now apply the matrix $A$ to a QuantumVariable in supersosition state $\ket{0}+\dotsb+\ket{2^m-1}$ via the Pauli block encoding of the corresponding QubitOperator $H$.
+
+        To illustrate the result, we actually create an entangled state 
+
+        .. math::
+
+            \sum_{k=0}^{2^m-1}\ket{i}_a\ket{i}_b
+
+        of QuantumVariables $a, b$, and apply the matrix $A$ to the variable $b$.
+
+        ::
+
+            @RUS
+            def inner():
+
+                U_func, G_func, n = H.pauli_block_encoding()
+
+                a = QuantumFloat(3)
+                h(a)
+
+                b = QuantumFloat(3)
+                cx(a,b)
+
+                case = QuantumVariable(n)
+
+                # Apply matrix A via block encoding 
+                with conjugate(G_func)(case):
+                    U_func(a, case)
+
+                success_bool = measure(case) == 0
+
+                return success_bool, a, b
+
+
+            @terminal_sampling
+            def main():
+
+                a, b = inner()
+
+                return a, b
+
+
+            main()
+            
+        .. code-block::
+
+            {(1.0, 2.0): 0.08333333830038721,
+            (2.0, 1.0): 0.08333333830038721,
+            (5.0, 6.0): 0.08333333830038721,
+            (6.0, 5.0): 0.08333333830038721,
+            (0.0, 1.0): 0.08333333084980639,
+            (1.0, 0.0): 0.08333333084980639,
+            (2.0, 3.0): 0.08333333084980639,
+            (3.0, 2.0): 0.08333333084980639,
+            (4.0, 5.0): 0.08333333084980639,
+            (5.0, 4.0): 0.08333333084980639,
+            (6.0, 7.0): 0.08333333084980639,
+            (7.0, 6.0): 0.08333333084980639}
 
         """
         from qrisp.jasp import qache
