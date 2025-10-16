@@ -258,9 +258,9 @@ def inner_CKS(A, b, eps, max_beta=None, block_encoding=None):
         U(operand, case_indicator) #applies $U = \sum_i\ket{i}\bra{i}\otimes P_i$.
         reflection(case_indicator, state_function=state_prep) # diffuser implements the reflection operator R about $\ket{G}$.
     
-    out_case = QuantumVariable(j_0)
+    out_case = QuantumFloat(j_0)
     in_case = QuantumFloat(n)
-    operand = QuantumVariable(H.find_minimal_qubit_amount())
+    operand = QuantumFloat(H.find_minimal_qubit_amount())
 
     # Core LCU protocol: PREP, SELECT, PREP^† following V^† U V structure
     with conjugate(unary_prep)(out_case, phi):
