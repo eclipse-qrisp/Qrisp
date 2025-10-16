@@ -17,9 +17,11 @@
 """
 
 import numpy as np
-import jax.numpy as jnp
 from scipy.special import comb
-from qrisp import QuantumVariable, QuantumFloat, x, ry, jrange, control, reflection, conjugate, prepare, RUS, measure
+import jax.numpy as jnp
+from qrisp import QuantumVariable, QuantumFloat, x, z, ry, control, conjugate, measure
+from qrisp.alg_primitives import reflection, prepare
+from qrisp.jasp import jrange, RUS
 from qrisp.operators import QubitOperator
 
 
