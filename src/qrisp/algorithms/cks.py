@@ -20,7 +20,8 @@ import numpy as np
 from scipy.special import comb
 import jax.numpy as jnp
 from qrisp import QuantumVariable, QuantumFloat, x, z, ry, control, conjugate, measure
-from qrisp.alg_primitives import reflection, prepare
+from qrisp.alg_primitives.reflection import reflection
+from qrisp.alg_primitives.prepare import prepare
 from qrisp.jasp import jrange, RUS
 from qrisp.operators import QubitOperator
 
