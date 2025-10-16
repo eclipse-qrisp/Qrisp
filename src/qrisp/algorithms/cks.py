@@ -53,17 +53,15 @@ def CKS_parameters(A, eps, max_beta = None):
         Target precision :math:`\epsilon`, such that the prepared state :math:`\ket{\\tilde{x}}` is within
         :math:`\epsilon` of :math:`\ket{x}.
     max_beta : float, optional
-        Optional upper bound on :math:`\\beta`. If provided,
-        :math:`\\beta` is capped as the minimum of the provided :math:`\\beta_{\\text{max}}` and 
-        calculated values.
+        Optional upper bound on :math:`\\beta` for the complexity parameter.
 
     Returns
     -------
     j_0 : int
         Truncation order of the Chebyshev expansion,
-        :math:`j_0 = \sqrt{\\beta \log(4\\beta/\epsilon)}`.
+        :math:`j_0 = \\lfloor\sqrt{\\beta \log(4\\beta/\epsilon)}\\rfloor`.
     beta : float
-        Complexity parameter :math:`\\beta = \kappa^2 \log(\kappa/\epsilon)`.
+        Complexity parameter :math:`\\beta = \\lfloor\kappa^2 \log(\kappa/\epsilon)\\rfloor`.
     """
     kappa = np.linalg.cond(A)
     # Determine complexity parameter beta with optional cap
@@ -77,11 +75,10 @@ def CKS_parameters(A, eps, max_beta = None):
 def cheb_coefficients(j0, b):
     """
     Calculates the positive coefficients :math:`\\alpha_i` for the truncated
-    Chebyshev expansion used in approximating :math:`\\frac{1}{x}`.
+    Chebyshev expansion of :math:`\\frac{1}{x}` up to order :math:`2j_0+1`.
 
-    The approximation function :math:`g(x)` is expressed as a linear combination
-    of odd Chebyshev polynomials :math:`T_{2j+1}(x)` truncated at index
-    :math:`j_0`:
+    The approximation is expressed as a linear combination
+    of odd Chebyshev polynomials truncated at index :math:`j_0`:
 
     .. math::
 
@@ -89,23 +86,23 @@ def cheb_coefficients(j0, b):
         \\left[ \\sum_{i=j+1}^{b} \\frac{\\binom{2b}{b+i}}{2^{2b}} \\right]
         T_{2j+1}(x)
 
-    Since the Linear Combination of Unitaries (LCU) framework requires strictly
+    The Linear Combination of Unitaries (LCU) lemma requires strictly
     positive coefficients :math:`\\alpha_i > 0`, their absolute values are
     used. The alternating factor :math:`(-1)^j` is later implemented as a set of
-    conditional Z-phase gates within the Chebyshev circuit (see
-    :func:`inner_CKS`).
+    conditional Z gates within the Chebyshev circuit (see :func:`inner_CKS`).
 
     Parameters
     ----------
     j0 : int
-        Truncation order :math:`j_0` of the Chebyshev expansion.
+        Truncation order of the Chebyshev expansion,
+        :math:`j_0 = \\lfloor\sqrt{\\beta \log(4\\beta/\epsilon)}\\rfloor`.
     b : float
-        Complexity parameter :math:`\\beta`.
+        Complexity parameter :math:`\\beta = \\lfloor\kappa^2 \log(\kappa/\epsilon)\\rfloor`.
 
     Returns
     -------
     coeffs : np.ndarray
-        Array of coefficients
+        Array of positive coefficients
         :math:`{\\alpha_1, \\alpha_3, \\dots, \\alpha_{2j_0+1}}`
         corresponding to :math:`T_1, T_3, \\dots, T_{2j_0+1}`.
     """
@@ -121,11 +118,11 @@ def cheb_coefficients(j0, b):
 
 def unary_angles(coeffs):
     """
-    Computes the rotation angles :math:`\\phi_i` for preparing the unary state :math:`\ket{\text{unary}}`,
+    Computes rotation angles :math:`\\phi_i` to prepare the unary state :math:`\ket{\text{unary}}`,
     corresponding to the square-root-amplitude encoding of the Chebyshev
     coefficients.
 
-    The unary-encoded state prepared corresponds to
+    The prepared unary state is
 
     .. math::
 
@@ -133,10 +130,9 @@ def unary_angles(coeffs):
         \\alpha_1|100\\dots00\\rangle + \\alpha_3|110\\dots00\\rangle +
         \\cdots + \\alpha_{2j_0+1}|111\\dots11\\rangle
 
-    Angles are determined by successive :math:`\\arctan` operations on ratios of
-    target amplitudes :math:`\\sqrt{\\alpha_i}`. The resulting vector
-    of :math:`\\phi_i` angles is then multiplied by 2 to compensate for the
-    :math:`1/2` scaling convention in the elementary ``ry`` gate.
+    Angles are determined recursively via :math:`\\arctan` ratios of
+    target amplitudes :math:`\\sqrt{\\alpha_i}`. The resulting angles are multiplied by 2 to match the ``ry`` gate convention
+    :math:`\\mathrm{ry}(\\theta) = e^{-i\\theta Y/2}`.
 
     Parameters
     ----------
@@ -146,8 +142,7 @@ def unary_angles(coeffs):
     Returns
     -------
     phi : np.ndarray
-        Rotation angles :math:`\\phi_i` defining the unary state preparation
-        register.
+        Rotation angles :math:`\\phi_i` for unary state preparation.
     """
     
     alpha = np.sqrt(coeffs/len(coeffs))
@@ -159,10 +154,9 @@ def unary_angles(coeffs):
 
 def unary_prep(out_case, phi):
     """
-    Prepares the unary-encoded
-    superposition of Chebyshev coefficients in the unary register.
+    Prepares the unary-encoded state of Chebyshev coefficients.
 
-    The unary-encoded state prepared corresponds to
+    The resulting superposition is 
 
     .. math::
 
@@ -201,8 +195,6 @@ def inner_CKS(A, b, eps, max_beta=None, block_encoding=None):
     Chebyshev terms :math:`T_k` controlled on a unary register. Based of the Hamming-weight :math:`k` of :math:`\ket{\\text{unary}}`,
     the polynomial :math:`T_{2k-1}` is block encoded and applied to the circuit.
 
-    Handling of Coefficients and Phases
-    ----------------------------------
     The Chebyshev coefficients alternate in sign :math:`(-1)^j\\alpha_j`.
     Since the LCU lemma requires :math:`\\alpha_i>0`, negative terms are
     implemented by conditional Z-gates applied on each index qubit in
@@ -211,13 +203,15 @@ def inner_CKS(A, b, eps, max_beta=None, block_encoding=None):
     Parameters
     ----------
     A : np.ndarray
-        Hermitian matrix being inverted.
-    b : function
-        State preparation procedure generating :math:`|b\\rangle`.
+        The :math:`N \\times N` Hermitian matrix :math:`A` in the linear system
+        :math:`A\\vec{x} = \\vec{b}`.
+    b : np.ndarray
+        Vector :math:`\\vec{b]}` in the linear system :math:`A\\vec{x} = \\vec{b}`.
     eps : float
-        Desired precision :math:`\\epsilon`.
+        Target precision :math:`\epsilon`, such that the prepared state :math:`\ket{\\tilde{x}}` is within
+        :math:`\epsilon` of :math:`\ket{x}.
     max_beta : float, optional
-        Maximum allowable :math:`\\beta` cap.
+        Maximum allowable complexity parameter :math:`\\beta_{\\text{max}}`.
 
     Returns
     -------
@@ -343,13 +337,15 @@ def CKS(A, b, eps, max_beta=None, block_encoding=None):
     Parameters
     ----------
     A : np.ndarray
-        Hermitian matrix defining the system.
-    b : function
-        Quantum state preparation function generating :math:`|b\\rangle`.
+        The :math:`N \\times N` Hermitian matrix :math:`A` in the linear system
+        :math:`A\\vec{x} = \\vec{b}`.
+    b : np.ndarray
+        Vector :math:`\\vec{b]}` in the linear system :math:`A\\vec{x} = \\vec{b}`.
     eps : float
-        Desired precision :math:`\\epsilon`.
+        Target precision :math:`\epsilon`, such that the prepared state :math:`\ket{\\tilde{x}}` is within
+        :math:`\epsilon` of :math:`\ket{x}.
     max_beta : float, optional
-        Optional upper bound for the complexity parameter :math:`\\beta`.
+        Maximum allowable complexity parameter :math:`\\beta_{\\text{max}}`.
 
     Returns
     -------
