@@ -19,29 +19,30 @@
 import numpy as np
 import jax.numpy as jnp
 from scipy.special import comb
-from qrisp import *
-from qrisp.operators import *
+from qrisp import QuantumVariable, QuantumFloat, x, ry, jrange, control, reflection, conjugate, prepare, RUS, measure
+from qrisp.operators import QubitOperator
 
 
 def CKS_parameters(A, eps, max_beta = None):
     """
-    Computes the Chebyshev complexity parameter :math:`b` and the truncation order :math:´j_0´ for the
-    truncated Chebyshev series approximation of :math:`\\frac{1}{x}`, used in the
-    Childs–Kothari–Somma (CKS) algorithm. To avoid confusion with the vector :math:`\ket{b}`, we represent the complexity parameter as :math:`\\beta`.
+    Computes the Chebyshev-series complexity parameter :math:`\\beta` and the truncation order :math:´j_0´ for the
+    truncated Chebyshev approximation of :math:`1/x` used in the
+    Childs–Kothari–Somma (CKS) algorithm. 
+    
+    To avoid confusion with the vector :math:`\ket{b}`, we represent the complexity parameter as :math:`\\beta`.
 
-    Parameters, :math:`(j_0, \\beta)` determine both precision and
-    gate complexity of the Chebyshev CKS approach.
+    Given the condition number :math:`\\kappa` of :math:`A` and target precision
+    :math:`\\epsilon`, we use:
 
     .. math::
 
         \\beta = \kappa^2 \log\!\left(\\frac{\kappa}{\epsilon}\\right),
         \quad
-        j_0 = \sqrt{\\beta \log\!\left(\\frac{4\\beta}{\epsilon}\\right)},
+        j_0 = \sqrt{\\beta \log\!\left(\\frac{4\\beta}{\epsilon}\\right)}.
 
-    where :math:`\kappa` denotes the condition number of :math:`A`. 
-
-    It is also possible for the user to manually set the maximal complexity parameter :math:`\\beta_{\\text{max}}` as a
-    keyword argument. 
+    If ``max_beta`` is provided, :math:`\\beta` is capped to
+    :math:`\\min(\\beta, \\beta_{\\max})`. Returned values are cast to integers
+    (floor).
 
     Parameters
     ----------
@@ -49,8 +50,8 @@ def CKS_parameters(A, eps, max_beta = None):
         The :math:`N \\times N` Hermitian matrix :math:`A` in the linear system
         :math:`A\\vec{x} = \\vec{b}`.
     eps : float
-        Desired precision :math:`\epsilon`, such that
-        :math:`\|\,|\\tilde x\\rangle - |x\\rangle\,\| \leq \epsilon`.
+        Target precision :math:`\epsilon`, such that the prepared state :math:`\ket{\\tilde{x}}` is within
+        :math:`\epsilon` of :math:`\ket{x}.
     max_beta : float, optional
         Optional upper bound on :math:`\\beta`. If provided,
         :math:`\\beta` is capped as the minimum of the provided :math:`\\beta_{\\text{max}}` and 
@@ -76,7 +77,7 @@ def CKS_parameters(A, eps, max_beta = None):
 def cheb_coefficients(j0, b):
     """
     Calculates the positive coefficients :math:`\\alpha_i` for the truncated
-    Chebyshev expansion used in approximating :math:`\frac{1}{x}`.
+    Chebyshev expansion used in approximating :math:`\\frac{1}{x}`.
 
     The approximation function :math:`g(x)` is expressed as a linear combination
     of odd Chebyshev polynomials :math:`T_{2j+1}(x)` truncated at index
@@ -120,7 +121,7 @@ def cheb_coefficients(j0, b):
 
 def unary_angles(coeffs):
     """
-    Computes the rotation angles :math:`\\phi_i` for preparing the unary state
+    Computes the rotation angles :math:`\\phi_i` for preparing the unary state :math:`\ket{\text{unary}}`,
     corresponding to the square-root-amplitude encoding of the Chebyshev
     coefficients.
 
@@ -133,7 +134,7 @@ def unary_angles(coeffs):
         \\cdots + \\alpha_{2j_0+1}|111\\dots11\\rangle
 
     Angles are determined by successive :math:`\\arctan` operations on ratios of
-    target amplitudes :math:`\\sqrt{\\alpha_i}` [16]. The resulting vector
+    target amplitudes :math:`\\sqrt{\\alpha_i}`. The resulting vector
     of :math:`\\phi_i` angles is then multiplied by 2 to compensate for the
     :math:`1/2` scaling convention in the elementary ``ry`` gate.
 
@@ -175,9 +176,9 @@ def unary_prep(out_case, phi):
     Parameters
     ----------
     out_case : QuantumVariable
-        Unary-encoded state representing the LCU index variable :math:`i`.
+        Unary-encoded state :math:`\ket{\\textt{unary}}`.
     phi : np.ndarray
-        Rotation angles derived from Chebyshev coefficients.
+        Rotation angles :math:`\\vec{\phi}` derived from Chebyshev coefficients.
     """
     x(out_case[0])
     ry(phi[0], out_case[1])
@@ -185,7 +186,7 @@ def unary_prep(out_case, phi):
         with control(out_case[i]):
             ry(phi[i], out_case[i + 1])
 
-def inner_CKS(A, b, eps, max_beta=None):
+def inner_CKS(A, b, eps, max_beta=None, block_encoding=None):
     """
     Core circuit implementation of the Childs–Kothari–Somma (CKS) linear
     systems algorithm using the Chebyshev approximation of :math:`1/x`.
@@ -197,7 +198,8 @@ def inner_CKS(A, b, eps, max_beta=None):
         W = V^\\dagger U V ,
 
     where :math:`V` prepares the LCU state and :math:`U` applies the
-    Chebyshev terms :math:`T_{2j+1}(H)` conditioned on a unary register.
+    Chebyshev terms :math:`T_k` controlled on a unary register. Based of the Hamming-weight :math:`k` of :math:`\ket{\\text{unary}}`,
+    the polynomial :math:`T_{2k-1}` is block encoded and applied to the circuit.
 
     Handling of Coefficients and Phases
     ----------------------------------
@@ -228,18 +230,17 @@ def inner_CKS(A, b, eps, max_beta=None):
     """
 
     # Construct block encoding of A as a set of Pauli unitaries
-    H = QubitOperator.from_matrix(A).to_pauli()
-    unitaries, coeffs = H.unitaries()
-    n = int(np.ceil(np.log2(len(unitaries))))
+    H = QubitOperator.from_matrix(A, reversed = True)
+    if block_encoding == None:
+        block_encoding = H.pauli_block_encoding()
+    
+    U, state_prep, n = block_encoding
 
     # Compute Chebyshev parameters and rotation angle
     j_0, beta = CKS_parameters(A, eps, max_beta)
     phi = unary_angles(cheb_coefficients(j_0, beta))
-    
-    def state_prep(case):
-        prepare(case, np.sqrt(coeffs))
 
-    def RU(case_indicator, operand, unitaries):
+    def RU(case_indicator, operand):
         """
         Applies one qubitization step :math:`RU` (or its inverse) corresponding
         to the Chebyshev polynomial block encoding.
@@ -257,7 +258,7 @@ def inner_CKS(A, b, eps, max_beta=None):
         operand : QuantumVariable
             Target state register upon which block-encoded :math:`H` acts.
         """
-        qswitch(operand, case_indicator, unitaries) #qswitch applies $U = \sum_i\ket{i}\bra{i}\otimes P_i$.
+        U(operand, case_indicator) #applies $U = \sum_i\ket{i}\bra{i}\otimes P_i$.
         reflection(case_indicator, state_function=state_prep) # diffuser implements the reflection operator R about $\ket{G}$.
     
     out_case = QuantumVariable(j_0)
@@ -269,17 +270,17 @@ def inner_CKS(A, b, eps, max_beta=None):
         with conjugate(state_prep)(in_case):
             prepare(operand, b, reversed=True)
             with control(out_case[0]):
-                RU(in_case, operand, unitaries)
+                RU(in_case, operand)
             for i in jrange(1, j_0):
                 z(out_case[i])
                 with control(out_case[i]):
-                    RU(in_case, operand, unitaries)
-                    RU(in_case, operand, unitaries)
+                    RU(in_case, operand)
+                    RU(in_case, operand)
 
     return operand, in_case, out_case
 
 @RUS(static_argnums=[1,2])
-def inner_CKS_wrapper(qlsp, eps, max_beta=None):
+def inner_CKS_wrapper(qlsp, eps, max_beta=None, block_encoding=None):
     """
     Wraps the full CKS circuit construction and post-selection measurement.
 
@@ -311,17 +312,14 @@ def inner_CKS_wrapper(qlsp, eps, max_beta=None):
 
     A, b = qlsp()
 
-    operand, in_case, out_case = inner_CKS(A, b, eps, max_beta)
+    operand, in_case, out_case = inner_CKS(A, b, eps, max_beta, block_encoding)
 
     success_bool = (measure(out_case) == 0) & (measure(in_case) == 0)
-
-    for i in jrange(operand.size//2):
-        swap(operand[i], operand[operand.size-i-1])
 
     return success_bool, operand   
 
 
-def CKS(A, b, eps, max_beta=None):
+def CKS(A, b, eps, max_beta=None, block_encoding=None):
     """
     Solves the Quantum Linear Systems Problem (QLSP)
     :math:`A\\vec{x} = \\vec{b}` using the Chebyshev-based
@@ -363,5 +361,5 @@ def CKS(A, b, eps, max_beta=None):
     def qlsp():
         return A, b
     
-    operand = inner_CKS_wrapper(qlsp, eps, max_beta)
+    operand = inner_CKS_wrapper(qlsp, eps, max_beta, block_encoding)
     return operand
