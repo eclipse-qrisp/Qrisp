@@ -1,5 +1,7 @@
 .. _CKS:
 
+.. currentmodule:: qrisp.cks
+
 Childs-Kothari-Somma (CKS)
 ==========================
 
@@ -25,8 +27,8 @@ Unlike HHL, which depends polynomially on the precision parameter $\epsilon$ as 
 
 The computational complexity depends on the precision $\epsilon$, sparsity $d$ of the matrix $A$, and its condition number $\kappa$.
 
-Overview of the CKS Method
---------------------------
+Overview of the CKS Algorithm
+-----------------------------
 
 The inverse operator $A^{-1}$ is approximated by a function $g(x)$ over the spectral range of $A$'s eigenvalues, expressed as a linear combination of odd Chebyshev polynomials of the first kind $A^{-1}\approx\sum_{k=1}^{2j_0+1}T_k(x)$:
 
@@ -46,8 +48,6 @@ where:
 
 - $U$ applies the conditional Chebyshev polynomial operators $T_{2j+1}(A)$ block encoded through Qubitization.
 - $V$ prepares the unary auxiliary register in a superposition weighted by the Chebyshec coefficients $\sqrt{\alpha_k}$.
-
-.. currentmodule:: qrisp.cks
 
 .. autofunction:: CKS
 

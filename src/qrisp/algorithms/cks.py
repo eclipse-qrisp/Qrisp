@@ -262,7 +262,7 @@ def inner_CKS(A, b, eps, max_beta=None, block_encoding=None):
     # Core LCU protocol: PREP, SELECT, PREP^† following V^† U V structure
     with conjugate(unary_prep)(out_case, phi):
         with conjugate(state_prep)(in_case):
-            prepare(operand, b, reversed=True)
+            prepare(operand, b)
             with control(out_case[0]):
                 RU(in_case, operand)
             for i in jrange(1, j_0):
