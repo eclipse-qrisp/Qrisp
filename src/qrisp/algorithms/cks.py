@@ -26,7 +26,7 @@ from qrisp.jasp import jrange, RUS
 from qrisp.operators import QubitOperator
 
 
-def CKS_parameters(A, eps, max_beta = None):
+def CKS_parameters(A, eps, kappa = None, max_beta = None):
     """
     Computes the Chebyshev-series complexity parameter :math:`\\beta` and the truncation order :math:´j_0´ for the
     truncated Chebyshev approximation of :math:`1/x` used in the
@@ -66,8 +66,10 @@ def CKS_parameters(A, eps, max_beta = None):
     beta : float
         Complexity parameter :math:`\\beta = \\lfloor\kappa^2 \log(\kappa/\epsilon)\\rfloor`.
     """
-    kappa = np.linalg.cond(A)
-    # Determine complexity parameter beta with optional cap
+    if isinstance(A, tuple) and len(A) == 3:
+        kappa = kappa
+    else: kappa = np.linalg.cond(A)
+
     if max_beta == None:
         beta = kappa ** 2 * np.log(kappa / eps)
     else:
@@ -183,7 +185,7 @@ def unary_prep(out_case, phi):
         with control(out_case[i]):
             ry(phi[i], out_case[i + 1])
 
-def inner_CKS(A, b, eps, max_beta=None, block_encoding=None):
+def inner_CKS(A, b, eps, kappa=None, max_beta=None):
     """
     Core circuit implementation of the Childs–Kothari–Somma (CKS) linear
     systems algorithm using the Chebyshev approximation of :math:`1/x`.
@@ -225,18 +227,15 @@ def inner_CKS(A, b, eps, max_beta=None, block_encoding=None):
     out_case : QuantumVariable
         Unary register encoding :math:`T_{2j+1}` terms.
     """
+    if isinstance(A, tuple) and len(A) == 3:
+        U, state_prep, n = A
+    else:
+        H = QubitOperator.from_matrix(A, reversed=True) 
+        U, state_prep, n = H.pauli_block_encoding() # Construct block encoding of A as a set of Pauli unitaries
 
-    # Construct block encoding of A as a set of Pauli unitaries
-    H = QubitOperator.from_matrix(A, reversed = True)
-    if block_encoding == None:
-        block_encoding = H.pauli_block_encoding()
-    
-    U, state_prep, n = block_encoding
-
-    # Compute Chebyshev parameters and rotation angle
-    j_0, beta = CKS_parameters(A, eps, max_beta)
+    j_0, beta = CKS_parameters(A, eps, kappa, max_beta)
     phi = unary_angles(cheb_coefficients(j_0, beta))
-
+    
     def RU(case_indicator, operand):
         """
         Applies one qubitization step :math:`RU` (or its inverse) corresponding
@@ -255,17 +254,21 @@ def inner_CKS(A, b, eps, max_beta=None, block_encoding=None):
         operand : QuantumVariable
             Target state register upon which block-encoded :math:`H` acts.
         """
-        U(operand, case_indicator) #applies $U = \sum_i\ket{i}\bra{i}\otimes P_i$.
-        reflection(case_indicator, state_function=state_prep) # diffuser implements the reflection operator R about $\ket{G}$.
+        U(operand, case_indicator)
+        reflection(case_indicator, state_function=state_prep) # reflection operator R about $\ket{G}$.
     
     out_case = QuantumFloat(j_0)
     in_case = QuantumFloat(n)
-    operand = QuantumFloat(H.find_minimal_qubit_amount())
 
-    # Core LCU protocol: PREP, SELECT, PREP^† following V^† U V structure
+    if callable(b):
+        operand = b()
+    else:
+        operand = QuantumFloat(int(np.log2(b.shape[0])))
+        prepare(operand, b)
+
+    # Core LCU protocol: PREP, SELECT, PREP^†
     with conjugate(unary_prep)(out_case, phi):
         with conjugate(state_prep)(in_case):
-            prepare(operand, b)
             with control(out_case[0]):
                 RU(in_case, operand)
             for i in jrange(1, j_0):
@@ -277,7 +280,7 @@ def inner_CKS(A, b, eps, max_beta=None, block_encoding=None):
     return operand, in_case, out_case
 
 @RUS(static_argnums=[1,2])
-def inner_CKS_wrapper(qlsp, eps, max_beta=None, block_encoding=None):
+def inner_CKS_wrapper(qlsp, eps, kappa=None, max_beta=None):
     """
     Wraps the full CKS circuit construction and post-selection measurement.
 
@@ -309,14 +312,14 @@ def inner_CKS_wrapper(qlsp, eps, max_beta=None, block_encoding=None):
 
     A, b = qlsp()
 
-    operand, in_case, out_case = inner_CKS(A, b, eps, max_beta, block_encoding)
+    operand, in_case, out_case = inner_CKS(A, b, eps, kappa, max_beta)
 
     success_bool = (measure(out_case) == 0) & (measure(in_case) == 0)
 
-    return success_bool, operand   
+    return success_bool, operand    
 
 
-def CKS(A, b, eps, max_beta=None, block_encoding=None):
+def CKS(A, b, eps, kappa=None, max_beta=None):
     """
     Solves the Quantum Linear Systems Problem (QLSP)
     :math:`A\\vec{x} = \\vec{b}` using the Chebyshev-based
@@ -360,5 +363,5 @@ def CKS(A, b, eps, max_beta=None, block_encoding=None):
     def qlsp():
         return A, b
     
-    operand = inner_CKS_wrapper(qlsp, eps, max_beta, block_encoding)
+    operand = inner_CKS_wrapper(qlsp, eps, kappa, max_beta)
     return operand
