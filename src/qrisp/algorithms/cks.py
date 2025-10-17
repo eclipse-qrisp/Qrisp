@@ -19,23 +19,44 @@
 import numpy as np
 from scipy.special import comb
 import jax.numpy as jnp
-from qrisp import QuantumVariable, QuantumFloat, x, z, ry, control, conjugate, measure
+from qrisp import (
+    QuantumVariable,
+    QuantumFloat,
+    x,
+    z,
+    ry,
+    control,
+    conjugate,
+    measure,
+)
 from qrisp.alg_primitives.reflection import reflection
 from qrisp.alg_primitives.prepare import prepare
 from qrisp.jasp import jrange, RUS
 from qrisp.operators import QubitOperator
 
 
-def CKS_parameters(A, eps, kappa = None, max_beta = None):
+def CKS_parameters(A, eps, kappa=None, max_beta=None):
     """
-    Computes the Chebyshev-series complexity parameter :math:`\\beta` and the truncation order :math:´j_0´ for the
-    truncated Chebyshev approximation of :math:`1/x` used in the
-    Childs–Kothari–Somma (CKS) algorithm. 
-    
+    Computes the Chebyshev-series complexity parameter :math:`\\beta` and the truncation order :math:`j_0` for the
+    truncated Chebyshev approximation of :math:`1/x` used in the Childs–Kothari–Somma (CKS) algorithm.
+
     To avoid confusion with the vector :math:`\ket{b}`, we represent the complexity parameter as :math:`\\beta`.
 
-    Given the condition number :math:`\\kappa` of :math:`A` and target precision
-    :math:`\\epsilon`, we use:
+    This function distinguishes two input cases:
+
+    1. **Matrix input** — If ``A`` is a NumPy array (Hermitian matrix), the
+       condition number :math:`\\kappa` is computed internally as
+       :math:`\\kappa = \\mathrm{cond}(A)`.
+    2. **Tuple input** — If ``A`` is a tuple of length 3, the function assumes
+       external context provides or manages :math:`\\kappa` directly. In this
+       case, ``kappa`` must be specified explicitly or precomputed elsewhere.
+       Additionally, the block encoding unitary :math:`U` supplied must satisfy
+       the property :math:`U^2 = I`, i.e., it is self-inverse. This condition is
+       required for the correctness of the Chebyshev polynomial block encoding
+       and qubitization step. Further details can be found `here <https://arxiv.org/abs/2208.00567>`_.
+
+    Given the condition number :math:`\\kappa` and the target precision
+    :math:`\\epsilon`, the parameters are computed as:
 
     .. math::
 
@@ -44,17 +65,19 @@ def CKS_parameters(A, eps, kappa = None, max_beta = None):
         j_0 = \sqrt{\\beta \log\!\left(\\frac{4\\beta}{\epsilon}\\right)}.
 
     If ``max_beta`` is provided, :math:`\\beta` is capped to
-    :math:`\\min(\\beta, \\beta_{\\max})`. Returned values are cast to integers
-    (floor).
+    :math:`\\min(\\beta, \\beta_{\\max})`. The returned values are cast to integers
+    via the floor operation.
 
     Parameters
     ----------
-    A : np.ndarray
-        The :math:`N \\times N` Hermitian matrix :math:`A` in the linear system
-        :math:`A\\vec{x} = \\vec{b}`.
+    A : np.ndarray or tuple
+        The :math:`N \\times N` Hermitian matrix :math:`A` of the linear system
+        :math:`A\\vec{x} = \\vec{b}`, or a 3-tuple representing the block encoding of A in which :math:`\\kappa` is handled externally.
     eps : float
         Target precision :math:`\epsilon`, such that the prepared state :math:`\ket{\\tilde{x}}` is within
         :math:`\epsilon` of :math:`\ket{x}.
+    kappa : float, optional
+        Condition number :math:`\\kappa` of :math:`A`. Required if ``A`` is a tuple.
     max_beta : float, optional
         Optional upper bound on :math:`\\beta` for the complexity parameter.
 
@@ -64,23 +87,25 @@ def CKS_parameters(A, eps, kappa = None, max_beta = None):
         Truncation order of the Chebyshev expansion,
         :math:`j_0 = \\lfloor\sqrt{\\beta \log(4\\beta/\epsilon)}\\rfloor`.
     beta : float
-        Complexity parameter :math:`\\beta = \\lfloor\kappa^2 \log(\kappa/\epsilon)\\rfloor`.
+        Complexity parameter, :math:`\\beta = \\lfloor\kappa^2 \log(\kappa/\epsilon)\\rfloor`.
     """
     if isinstance(A, tuple) and len(A) == 3:
         kappa = kappa
-    else: kappa = np.linalg.cond(A)
+    else:
+        kappa = np.linalg.cond(A)
 
     if max_beta == None:
-        beta = kappa ** 2 * np.log(kappa / eps)
+        beta = kappa**2 * np.log(kappa / eps)
     else:
-        beta = min(kappa ** 2 * np.log(kappa / eps), max_beta)
+        beta = min(kappa**2 * np.log(kappa / eps), max_beta)
     j_0 = np.sqrt(beta * np.log(4 * beta / eps))
     return int(j_0), int(beta)
+
 
 def cheb_coefficients(j0, b):
     """
     Calculates the positive coefficients :math:`\\alpha_i` for the truncated
-    Chebyshev expansion of :math:`\\frac{1}{x}` up to order :math:`2j_0+1`.
+    Chebyshev expansion of :math:`1/x` up to order :math:`2j_0+1`.
 
     The approximation is expressed as a linear combination
     of odd Chebyshev polynomials truncated at index :math:`j_0`:
@@ -102,28 +127,28 @@ def cheb_coefficients(j0, b):
         Truncation order of the Chebyshev expansion,
         :math:`j_0 = \\lfloor\sqrt{\\beta \log(4\\beta/\epsilon)}\\rfloor`.
     b : float
-        Complexity parameter :math:`\\beta = \\lfloor\kappa^2 \log(\kappa/\epsilon)\\rfloor`.
+        Complexity parameter, :math:`\\beta = \\lfloor\kappa^2 \log(\kappa/\epsilon)\\rfloor`.
 
     Returns
     -------
     coeffs : np.ndarray
-        Array of positive coefficients
-        :math:`{\\alpha_1, \\alpha_3, \\dots, \\alpha_{2j_0+1}}`
-        corresponding to :math:`T_1, T_3, \\dots, T_{2j_0+1}`.
+        Array of positive Chebyshev coefficients
+        :math:`{\\alpha_i}`, corresponding to the odd degrees of Chebyshev polynomials of the first order :math:`T_1, T_3, \\dots, T_{2j_0+1}`.
     """
     coeffs = []
     for j in range(j0 + 1):
         sum_i = 0
-        for i in range(j+1, b+1):
-            sum_i += comb(2*b, b + i)
+        for i in range(j + 1, b + 1):
+            sum_i += comb(2 * b, b + i)
 
         coeff = 4 * (2 ** (-2 * b)) * sum_i
         coeffs.append(coeff)
     return np.array(coeffs)
 
+
 def unary_angles(coeffs):
     """
-    Computes rotation angles :math:`\\phi_i` to prepare the unary state :math:`\ket{\text{unary}}`,
+    Computes rotation angles :math:`\\phi_i` to prepare the unary state :math:`\ket{\\text{unary}}`,
     corresponding to the square-root-amplitude encoding of the Chebyshev
     coefficients.
 
@@ -149,19 +174,24 @@ def unary_angles(coeffs):
     phi : np.ndarray
         Rotation angles :math:`\\phi_i` for unary state preparation.
     """
-    
-    alpha = np.sqrt(coeffs/len(coeffs))
-    phi = jnp.zeros(len(alpha)-1)
-    phi = phi.at[-1].set(jnp.arctan(alpha[-1] / alpha[-2])) # Last angle is determined by ratio of final two amplitudes
-    for i in range(len(phi)-2,-1,-1):
-        phi = phi.at[i].set(jnp.arctan(alpha[i+1]/alpha[i]/jnp.cos(phi[i+1]))) # Recursively compute previous rotation angles
-    return 2 * phi # Compensate for factor 1/2 in ry 
+
+    alpha = np.sqrt(coeffs / len(coeffs))
+    phi = jnp.zeros(len(alpha) - 1)
+    phi = phi.at[-1].set(
+        jnp.arctan(alpha[-1] / alpha[-2])
+    )  # Last angle is determined by ratio of final two amplitudes
+    for i in range(len(phi) - 2, -1, -1):
+        phi = phi.at[i].set(
+            jnp.arctan(alpha[i + 1] / alpha[i] / jnp.cos(phi[i + 1]))
+        )  # Recursively compute previous rotation angles
+    return 2 * phi  # Compensate for factor 1/2 in ry
+
 
 def unary_prep(out_case, phi):
     """
-    Prepares the unary-encoded state of Chebyshev coefficients.
+    Prepares the unary-encoded state :math:`\ket{\\text{unary}}` of Chebyshev coefficients.
 
-    The resulting superposition is 
+    The resulting superposition is
 
     .. math::
 
@@ -185,18 +215,19 @@ def unary_prep(out_case, phi):
         with control(out_case[i]):
             ry(phi[i], out_case[i + 1])
 
+
 def inner_CKS(A, b, eps, kappa=None, max_beta=None):
     """
     Core circuit implementation of the Childs–Kothari–Somma (CKS) linear
     systems algorithm using the Chebyshev approximation of :math:`1/x`.
 
-    This constructs the composite unitary
+    This constructs the circuit for the block encoding (LCU) protocol.
 
     .. math::
 
-        W = V^\\dagger U V ,
+        LCU\ket{0}\ket{\psi}=PREP^\daggerSELPREP\ket{0}\ket{\psi}=\\tilde{A}\ket{0}\ket{\psi} ,
 
-    where :math:`V` prepares the LCU state and :math:`U` applies the
+    where :math:`PREP` prepares the LCU state and :math:`SEL` applies the
     Chebyshev terms :math:`T_k` controlled on a unary register. Based of the Hamming-weight :math:`k` of :math:`\ket{\\text{unary}}`,
     the polynomial :math:`T_{2k-1}` is block encoded and applied to the circuit.
 
@@ -205,58 +236,120 @@ def inner_CKS(A, b, eps, kappa=None, max_beta=None):
     implemented by conditional Z-gates applied on each index qubit in
     ``out_case``.
 
+    This function supports interchangeable and independent input cases for both
+    the matrix ``A`` and vector``b`` from the QLSP :math:`A\\vec{x} = \\vec{b}`:
+
+    **Case distinctions for A**
+
+        1. **Matrix input** — If ``A`` is a NumPy array (Hermitian matrix),
+           the block encoding :math:`SEL` and state-preparation unitary
+           :math:`PREP` are constructed internally from ``A`` via Pauli
+           decomposition.
+
+        2. **Tuple input** — If ``A`` is a tuple of length 3, the function assumes
+            external context provides or manages :math:`\\kappa` directly. In this
+            case, ``kappa`` must be specified explicitly or precomputed elsewhere.
+            Additionally, the block encoding unitary :math:`U` supplied must satisfy
+            the property :math:`U^2 = I`, i.e., it is self-inverse. This condition is
+            required for the correctness of the Chebyshev polynomial block encoding
+            and qubitization step. Further details can be found `here <https://arxiv.org/abs/2208.00567>`_.
+
+
+    **Case distinctions for b**
+
+        1. **Vector input** — If ``b`` is a NumPy array, a new operand QuantumFloat is constructed, and state preparation is performed via
+           ``prepare(operand, b)``.
+
+        2. **Callable input** — If ``b`` is a callable, it is assumed to
+           prepare the operand state when called. The function invokes it to
+           generate the operand QuantumFloat directly via ``operand = b()``.
+
     Parameters
     ----------
-    A : np.ndarray
-        The :math:`N \\times N` Hermitian matrix :math:`A` in the linear system
-        :math:`A\\vec{x} = \\vec{b}`.
-    b : np.ndarray
-        Vector :math:`\\vec{b]}` in the linear system :math:`A\\vec{x} = \\vec{b}`.
+    A : np.ndarray or tuple
+        Either the Hermitian matrix :math:`A` of size :math:`N \\times N` from
+        the linear system :math:`A \\vec{x} = \\vec{b}`, or a 3-tuple
+        ``(U, state_prep, n)`` representing a preconstructed block encoding
+        unitary, state preparation routine, and problem size.
+    b : np.ndarray or callable
+        Vector :math:`\\vec{b}` of the linear system, or a
+        callable that prepares the corresponding quantum state.
     eps : float
         Target precision :math:`\epsilon`, such that the prepared state :math:`\ket{\\tilde{x}}` is within
         :math:`\epsilon` of :math:`\ket{x}.
+    kappa : float, optional
+        Condition number :math:`\\kappa` of :math:`A`. Required when ``A`` is
+        a tuple rather than a matrix.
     max_beta : float, optional
-        Maximum allowable complexity parameter :math:`\\beta_{\\text{max}}`.
+        Optional upper bound on the complexity parameter :math:`\\beta`.
 
     Returns
     -------
     operand : QuantumVariable
-        Register holding the resulting solution state.
+        Operand QuantumFloat after applying the :math:'SELECT' part of the LCU protocol.
     in_case : QuantumVariable
-        Auxiliary case indicator register.
+        Operand QuantumFloat after applying the LCU protocol :math:`PREP^\dagger SEL PREP`.
     out_case : QuantumVariable
-        Unary register encoding :math:`T_{2j+1}` terms.
+        Unary QuantumFloat after applying the LCU protocol :math:`PREP^\dagger SEL PREP`.
     """
     if isinstance(A, tuple) and len(A) == 3:
         U, state_prep, n = A
     else:
-        H = QubitOperator.from_matrix(A, reversed=True) 
-        U, state_prep, n = H.pauli_block_encoding() # Construct block encoding of A as a set of Pauli unitaries
+        H = QubitOperator.from_matrix(A, reversed=True)
+        U, state_prep, n = (
+            H.pauli_block_encoding()
+        )  # Construct block encoding of A as a set of Pauli unitaries
 
     j_0, beta = CKS_parameters(A, eps, kappa, max_beta)
     phi = unary_angles(cheb_coefficients(j_0, beta))
-    
-    def RU(case_indicator, operand):
+
+    def RU(in_case, operand):
         """
-        Applies one qubitization step :math:`RU` (or its inverse) corresponding
-        to the Chebyshev polynomial block encoding.
+        Applies one qubitization step :math:`RU` (or its inverse) associated
+        with the Chebyshev polynomial block encoding of :math:`A`.
+
+        This operation alternates between application of the block-encoded
+        unitary :math:`U` and a reflection about the prepared auxiliary state
+        :math:`|G\\rangle_a`, realizing the recursive structure
 
         .. math::
 
-            T_k(H) = (RU)^k
+            T_k(H) = (RU)^k,
 
         where :math:`R` reflects about the auxiliary state :math:`|G\\rangle_a`.
 
+        The specific implementation of :math:`U` and :math:`R` depends on the
+        input case chosen for ``A``:
+
+        1. **Matrix input** — If ``A`` is a NumPy array (Hermitian matrix),
+           the block encoding :math:`SEL` and state-preparation unitary
+           :math:`PREP` are constructed internally from ``A`` via Pauli
+           decomposition.
+
+        2. **Tuple input** — If ``A`` is a tuple of length 3, the function assumes
+            external context provides or manages :math:`\\kappa` directly. In this
+            case, ``kappa`` must be specified explicitly or precomputed elsewhere.
+            Additionally, the block encoding unitary :math:`U` supplied must satisfy
+            the property :math:`U^2 = I`, i.e., it is self-inverse. This condition is
+            required for the correctness of the Chebyshev polynomial block encoding
+            and qubitization step. Further details can be found `here <https://arxiv.org/abs/2208.00567>`_.
+
         Parameters
         ----------
-        case_indicator : QuantumVariable
-            Register encoding the Chebyshev index :math:`i`.
+        in_case : QuantumVariable
+            Inner case QuantumFloat encoding the Chebyshev index :math:`i` or
+            similar indicator state used to control block-encoded applications
+            of :math:`A`.
         operand : QuantumVariable
-            Target state register upon which block-encoded :math:`H` acts.
+            Operand (solution) QuantumFloat upon which the block-encoded matrix
+            :math:`A` acts. If ``b`` was provided as a callable, this register
+            corresponds to that prepared state directly; otherwise, it
+            represents the amplitude-prepared encoding of the classical vector
+            :math:`\\vec{b}`.
         """
-        U(operand, case_indicator)
-        reflection(case_indicator, state_function=state_prep) # reflection operator R about $\ket{G}$.
-    
+        U(operand, in_case)
+        reflection(in_case, state_function=state_prep)  # reflection operator R about $\ket{G}$.
+
     out_case = QuantumFloat(j_0)
     in_case = QuantumFloat(n)
 
@@ -279,35 +372,44 @@ def inner_CKS(A, b, eps, kappa=None, max_beta=None):
 
     return operand, in_case, out_case
 
-@RUS(static_argnums=[1,2])
+
+@RUS(static_argnums=[1, 2])
 def inner_CKS_wrapper(qlsp, eps, kappa=None, max_beta=None):
     """
-    Wraps the full CKS circuit construction and post-selection measurement.
+    Wrapper for the full Childs–Kothari–Somma (CKS) algorithm, performing post-selection using the RUS (Repeat-Until-Success) protocol.
 
-    Post-selection
-    --------------
-    The algorithm succeeds if both auxiliary registers
-    (:data:`in_case`, :data:`out_case`) are measured in the
-    :math:`|0\\rangle` state. Amplitude amplification is optionally used
-    to improve the success probability from :math:`\\Omega(1)` to constant.
+    This function calls a supplied problem generator ``qlsp`` to obtain the linear system,
+    constructs the required circuit via :func:`inner_CKS`, and returns the solution operand QuantumFloat
+    if post-selection on auxiliary QuantumFloats succeeds.
+
+    The algorithm succeeds if both auxiliary QuantumFloats ``in_case`` and ``out_case`` are measured
+    in the :math:`|0\\rangle` state. If post-selection fails, the simulation
+    restarts until successful as managed by the :func:`RUS` decorator.
 
     Parameters
     ----------
-    qlsp : function
-        Function returning the linear system specification
-        :math:`(A, \\vec{b})`.
+    qlsp : callable
+        Function returning a tuple :math:`(A, \\vec{b})`, where ``A`` is either a Hermitian matrix
+        or a 3-tuple with preconstructed block encoding (see :func:`inner_CKS`), and ``b`` is either
+        a NumPy array or a callable that prepares a quantum state.
     eps : float
-        Target precision :math:`\\epsilon`.
+        Target precision :math:`\epsilon`, such that the prepared state :math:`\ket{\\tilde{x}}` is within
+        :math:`\epsilon` of :math:`\ket{x}.
+    kappa : float, optional
+        Condition number :math:`\\kappa` of :math:`A`. Required when ``A`` is
+        a tuple rather than a matrix.
     max_beta : float, optional
-        Optional cap on complexity parameter :math:`\\beta`.
+        Optional upper bound on the complexity parameter :math:`\\beta`.
 
     Returns
     -------
     success_bool : bool
-        Indicates whether post-selection succeeded.
+        Indicates whether post-selection succeeded. Only when ``success_bool`` is ``True``
+        does ``operand`` contain the proper solution state; otherwise, the simulation
+        will run again according to the RUS protocol.
     operand : QuantumVariable
-        Register containing the resulting solution
-        :math:`|\\tilde x\\rangle \\propto A^{-1}|b\\rangle` on success.
+        QuantumFloat containing the resulting (approximate) solution state
+        :math:`|\\tilde x\\rangle \\propto A^{-1}|b\\rangle` if ``success_bool`` is ``True``.
     """
 
     A, b = qlsp()
@@ -316,21 +418,34 @@ def inner_CKS_wrapper(qlsp, eps, kappa=None, max_beta=None):
 
     success_bool = (measure(out_case) == 0) & (measure(in_case) == 0)
 
-    return success_bool, operand    
+    return success_bool, operand
+
+
+# Apply the RUS decorator with the workaround in order to show in documentation
+temp_docstring = inner_CKS_wrapper.__doc__
+inner_CKS_wrapper = RUS(static_argnums=[1, 2])(inner_CKS_wrapper)
+inner_CKS_wrapper.__doc__ = temp_docstring
 
 
 def CKS(A, b, eps, kappa=None, max_beta=None):
     """
     Solves the Quantum Linear Systems Problem (QLSP)
-    :math:`A\\vec{x} = \\vec{b}` using the Chebyshev-based
-    Childs–Kothari–Somma algorithm.
 
-    This routine initializes the QLSP instance, constructs required quantum
-    registers, and invokes the CKS wrapper to produce the output state
+        :math:`A \\vec{x} = \\vec{b}`
+
+    using the Chebyshev-based **Childs–Kothari–Somma (CKS)** algorithm.
+
+    This high-level routine integrates all core components of the CKS method:
+    Chebyshev polynomial approximation, linear combination of unitaries (LCU),
+    qubitization with reflection operators, and the Repeat-Until-Success (RUS) protocol.
+
+    The resulting QuantumFloat approximates the solution state
 
     .. math::
 
-        |\\tilde x\\rangle \\propto A^{-1}|b\\rangle .
+        |\\tilde{x}\\rangle = A^{-1} |b\\rangle ,
+
+    within target precision :math:`\epsilon` of the ideal solution :math:`|x\rangle`.
 
     The asymptotic complexity is
 
@@ -340,28 +455,64 @@ def CKS(A, b, eps, kappa=None, max_beta=None):
 
     providing exponentially better precision scaling compared to HHL.
 
+    This function supports interchangeable and independent input cases for both
+    the matrix ``A`` and vector``b`` from the QLSP :math:`A\\vec{x} = \\vec{b}`:
+
+    **Case distinctions for A**
+
+        1. **Matrix input** — If ``A`` is a NumPy array (Hermitian matrix),
+           the block encoding :math:`SEL` and state-preparation unitary
+           :math:`PREP` are constructed internally from ``A`` via Pauli
+           decomposition.
+
+        2. **Tuple input** — If ``A`` is a tuple of length 3, the function assumes
+            external context provides or manages :math:`\\kappa` directly. In this
+            case, ``kappa`` must be specified explicitly or precomputed elsewhere.
+            Additionally, the block encoding unitary :math:`U` supplied must satisfy
+            the property :math:`U^2 = I`, i.e., it is self-inverse. This condition is
+            required for the correctness of the Chebyshev polynomial block encoding
+            and qubitization step. Further details can be found `here <https://arxiv.org/abs/2208.00567>`_.
+
+    **Case distinctions for b**
+
+        1. **Vector input** — If ``b`` is a NumPy array, a new operand QuantumFloat is constructed, and state preparation is performed via
+           ``prepare(operand, b)``.
+
+        2. **Callable input** — If ``b`` is a callable, it is assumed to
+           prepare the operand state when called. The function invokes it to
+           generate the operand QuantumFloat directly via ``operand = b()``.
+
     Parameters
     ----------
-    A : np.ndarray
-        The :math:`N \\times N` Hermitian matrix :math:`A` in the linear system
-        :math:`A\\vec{x} = \\vec{b}`.
-    b : np.ndarray
-        Vector :math:`\\vec{b]}` in the linear system :math:`A\\vec{x} = \\vec{b}`.
+    A : np.ndarray or tuple
+        Either the Hermitian matrix :math:`A` of size :math:`N \\times N` from
+        the linear system :math:`A \\vec{x} = \\vec{b}`, or a 3-tuple
+        ``(U, state_prep, n)`` representing a preconstructed block encoding
+        unitary, state preparation routine, and problem size.
+    b : np.ndarray or callable
+        Vector :math:`\\vec{b}` of the linear system, or a
+        callable that prepares the corresponding quantum state.
     eps : float
         Target precision :math:`\epsilon`, such that the prepared state :math:`\ket{\\tilde{x}}` is within
         :math:`\epsilon` of :math:`\ket{x}.
+    kappa : float, optional
+        Condition number :math:`\\kappa` of :math:`A`. Required when ``A`` is
+        a tuple rather than a matrix.
     max_beta : float, optional
-        Maximum allowable complexity parameter :math:`\\beta_{\\text{max}}`.
+        Optional upper bound on the complexity parameter :math:`\\beta`.
 
     Returns
     -------
     operand : QuantumVariable
-        Quantum register containing the final solution
-        :math:`|\\tilde x\\rangle \\propto A^{-1}|b\\rangle`.
+        Quantum register containing the final (approximate) solution state
+        :math:`|\\tilde{x}\\rangle \propto A^{-1}|b\\rangle`. When the internal
+        :func:`RUS` decorator reports success (``success_bool = True``), this
+        register contains the valid post-selected solution. If ``success_bool``
+        is ``False``, the simulation automatically repeats until success.
     """
 
     def qlsp():
         return A, b
-    
+
     operand = inner_CKS_wrapper(qlsp, eps, kappa, max_beta)
     return operand
