@@ -1,7 +1,7 @@
-.. _scaleable_integer_type:
+.. _scalable_integer_type:
 
-Scaleable Integer Type
-=======================
+Scalable Integer Type
+=====================
 
 .. currentmodule:: qrisp
 
