@@ -174,7 +174,7 @@ def test_montgomery_find_order():
     import numpy as np
     import jax
     from qrisp import terminal_sampling, QuantumModulus, QuantumFloat, jrange, control, QFT, h, x, BigInteger
-    from qrisp import fourier_adder, jasp_fourier_adder, gidney_adder, jasp_cq_gidney_adder
+    from qrisp import fourier_adder, jasp_fourier_adder, gidney_adder
 
     def find_order(a, N, inpl_adder):
         qg = QuantumModulus(N, inpl_adder)
@@ -205,10 +205,10 @@ def test_montgomery_find_order():
         return qpe_res
 
     dict_jasp_fourier = find_order(4, 13, jasp_fourier_adder)
-    dict_jasp_gidney = find_order(4, 13, jasp_cq_gidney_adder)
+    dict_jasp_gidney = find_order(4, 13, gidney_adder)
 
     dict_bim_fourier = find_order(BigInteger.create(4, 1), BigInteger.create(13, 1), jasp_fourier_adder)
-    dict_bim_gidney = find_order(BigInteger.create(4, 1), BigInteger.create(13, 1), jasp_cq_gidney_adder)
+    dict_bim_gidney = find_order(BigInteger.create(4, 1), BigInteger.create(13, 1), gidney_adder)
 
     def check_dict_equality(a, b):
         for key in a.keys():
