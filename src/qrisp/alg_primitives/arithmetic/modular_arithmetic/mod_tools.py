@@ -16,6 +16,9 @@
 ********************************************************************************
 """
 
+from qrisp import check_for_tracing_mode
+import jax.numpy as jnp
+import jax.lax as lax
 
 def montgomery_decoder(y, R, N):
     if 0 < R < 1:
@@ -38,8 +41,26 @@ def egcd(a, b):
 
 
 def modinv(a, m):
-    g, x, y = egcd(a, m)
-    if g != 1:
-        raise Exception("modular inverse does not exist")
+    if check_for_tracing_mode():
+
+        def cf(val):
+            t, new_t, r, new_r = val
+            return new_r != 0
+
+        def bf(val):
+            t, new_t, r, new_r = val
+            quotient = r // new_r
+            t, new_t = new_t, t - quotient * new_t
+            r, new_r = new_r, r - quotient * new_r
+            return t, new_t, r, new_r
+
+        t, new_t, r, new_r = lax.while_loop(cf, bf, (0, 1, m, a))
+
+        # Ensure result is in [0, MOD)
+        return jnp.where(t < 0, t + m, t)
     else:
-        return x % m
+        g, x, y = egcd(a, m)
+        if g != 1:
+            raise Exception("modular inverse does not exist")
+        else:
+            return x % m
