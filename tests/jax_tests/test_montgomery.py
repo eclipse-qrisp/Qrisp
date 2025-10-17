@@ -173,10 +173,11 @@ def test_montgomery_jasp_cq_inplace_bi():
 def test_montgomery_find_order():
     import numpy as np
     import jax
-    from qrisp import terminal_sampling, QuantumModulus, QuantumFloat, jrange, control, jasp_fourier_adder, QFT, h, x, fourier_adder, BigInteger
+    from qrisp import terminal_sampling, QuantumModulus, QuantumFloat, jrange, control, QFT, h, x, BigInteger
+    from qrisp import fourier_adder, jasp_fourier_adder, gidney_adder, jasp_cq_gidney_adder
 
-    def find_order(a, N):
-        qg = QuantumModulus(N, inpl_adder=fourier_adder)
+    def find_order(a, N, inpl_adder):
+        qg = QuantumModulus(N, inpl_adder)
         qg[:] = 1
         qpe_res = QuantumFloat(2*qg.size + 1, exponent=-(2*qg.size + 1))
         h(qpe_res)
@@ -187,26 +188,12 @@ def test_montgomery_find_order():
         QFT(qpe_res, inv=True)
         return qpe_res.get_measurement()
 
-    dict_norm = find_order(4, 13)
+    dict_norm_fourier = find_order(4, 13, fourier_adder)
+    dict_norm_gidney = find_order(4, 13, gidney_adder)
 
     @terminal_sampling
-    def find_order(a, N):
-        qg = QuantumModulus(N, inpl_adder=jasp_fourier_adder)
-        qg[:] = 1
-        qpe_res = QuantumFloat(2*qg.size + 1, exponent=-(2*qg.size + 1))
-        h(qpe_res)
-        for i in jrange(qpe_res.size):
-            with control(qpe_res[i]):
-                qg *= a
-            a = (a*a) % N
-        QFT(qpe_res, inv=True)
-        return qpe_res
-
-    dict_jasp = find_order(4, 13)
-
-    @terminal_sampling
-    def find_order(a, N):
-        qg = QuantumModulus(N, inpl_adder=jasp_fourier_adder)
+    def find_order(a, N, inpl_adder):
+        qg = QuantumModulus(N, inpl_adder=inpl_adder)
         x(qg[0])
         qpe_res = QuantumFloat(2*qg.size + 1, exponent=-(2*qg.size + 1))
         h(qpe_res)
@@ -217,7 +204,11 @@ def test_montgomery_find_order():
         QFT(qpe_res, inv=True)
         return qpe_res
 
-    dict_bim = find_order(BigInteger.create(4, 1), BigInteger.create(13, 1))
+    dict_jasp_fourier = find_order(4, 13, jasp_fourier_adder)
+    dict_jasp_gidney = find_order(4, 13, jasp_cq_gidney_adder)
+
+    dict_bim_fourier = find_order(BigInteger.create(4, 1), BigInteger.create(13, 1), jasp_fourier_adder)
+    dict_bim_gidney = find_order(BigInteger.create(4, 1), BigInteger.create(13, 1), jasp_cq_gidney_adder)
 
     def check_dict_equality(a, b):
         for key in a.keys():
@@ -225,5 +216,9 @@ def test_montgomery_find_order():
                 return False
         return True
 
-    assert check_dict_equality(dict_jasp, dict_norm)
-    assert check_dict_equality(dict_jasp, dict_bim)
+    assert check_dict_equality(dict_norm_fourier, dict_norm_gidney)
+    assert check_dict_equality(dict_jasp_fourier, dict_jasp_gidney)
+    assert check_dict_equality(dict_bim_fourier, dict_bim_gidney)
+
+    assert check_dict_equality(dict_norm_gidney, dict_jasp_gidney)
+    assert check_dict_equality(dict_jasp_gidney, dict_bim_gidney)
