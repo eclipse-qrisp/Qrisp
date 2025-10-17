@@ -588,7 +588,7 @@ class QubitOperator(Hamiltonian):
         return H
 
     @classmethod
-    def from_matrix(self, matrix):
+    def from_matrix(self, matrix, reversed=False):
         r"""
         Represents a matrix as an operator
 
@@ -602,6 +602,8 @@ class QubitOperator(Hamiltonian):
         ----------
         matrix : numpy.ndarray or scipy.sparse.csr_matrix
             The matrix.
+        reversed : bool
+            If true, the endianness is reversed.
 
         Returns
         -------
@@ -656,7 +658,10 @@ class QubitOperator(Hamiltonian):
             for k in range(n):
                 i = (row >> k) & 1
                 j = (col >> k) & 1
-                factor_dict[n - k - 1] = OPERATOR_TABLE[(i, j)]
+                if reversed:
+                    factor_dict[k] = OPERATOR_TABLE[(i, j)]
+                else:
+                    factor_dict[n - k - 1] = OPERATOR_TABLE[(i, j)]
 
             O.terms_dict[QubitTerm(factor_dict)] = value
         return O
@@ -2048,3 +2053,142 @@ class QubitOperator(Hamiltonian):
             coefficients.append(np.abs(coeff_))
 
         return unitaries, np.array(coefficients, dtype=float)
+
+    def pauli_block_encoding(self):
+        r"""
+        Returns a block encoding of the operator.
+
+        A block encoding of a Hamiltonian $H$ (acting on a Hilbert space $\mathcal H_s$) is a pair of unitaries $(U,G)$, 
+        where $U$ is the block encoding unitary acting on $\mathcal H_a\otimes H_s$ (for some auxiliary Hilbert space $\mathcal H_a$), 
+        and $G$ prepares the block encoding state $\ket{G}_a=G\ket{0}_a$ in the auxiliary variable such that $(\bra{G}_a\otimes\mathbb I_s)U(\ket{G_a}\otimes\mathbb I_s)=H$.
+        Here $\mathbb I_s$ denotes the identity acting on $\mathcal H_s$.
+
+        For a Pauli block encoding, consider an $n$-qubit Hamiltonian expressed as linear combination of Pauli operators
+
+        .. math::
+    
+            H = \sum_{i=0}^{T-1}\alpha_iP_i
+
+        where $\alpha_i$ are real coefficients, $P_i$ are Pauli operators, and $T$ is the number of terms.
+        We assume that the coefficients $\alpha_i$ are nonnegative, and each Pauli $P_i$ carries a $\pm1$ sign. 
+        We also require the coefficients of $H$ to be normalized: $\sum_{i=0}^{T-1}\alpha_i=1$.
+
+        The block encoding unitary is
+
+        .. math::
+
+            U = \sum_{i=0}^{T-1}\ket{i}\bra{i}\otimes P_i
+
+        i.e., application of each Pauli term $P_i$ controlled on the state of the auxiliary variable being $\ket{i}_a$.
+        The belonging block encoding state is
+
+        .. math::
+
+            \ket{G} = \sum_{i=0}^{T-1}\sqrt{\alpha_i}\ket{i}.
+       
+        Returns
+        -------
+        U_func : function
+            A function ``U_func(operand, case)`` applying the block encoding unitary $U$ to ``operand`` and ``case`` QuantumVariables.
+        G_func : function
+            A function ``G_func(case)`` preparing the block encoding state $\ket{G}$ in an auxiliary ``case`` QuantumVariable.
+        n : int
+            The number of qubits of the auxiliary ``case`` QuantumVariable.
+
+        Examples
+        --------
+
+        We apply a matrix to a quantum state via a Pauli block encoding.
+
+        ::
+
+            from qrisp import *
+            from qrisp.operators import QubitOperator
+            import numpy as np
+
+            m = 2
+            A = np.eye(2**m, k=1)  
+            A = A+ A.T
+            print(A)
+
+            H = QubitOperator.from_matrix(A, reversed=True)
+
+        The matrix $A$ encodes the mapping $\ket{0}\rightarrow\ket{1}$, $\ket{k}\rightarrow\ket{k-1}+\ket{k+1}$ for $k=1,\dotsc,2^m-2$, $\ket{2^m-1}\rightarrow\ket{2^m-2}$.
+        We now apply the matrix $A$ to a QuantumVariable in supersosition state $\ket{0}+\dotsb+\ket{2^m-1}$ via the Pauli block encoding of the corresponding QubitOperator $H$.
+
+        To illustrate the result, we actually create an entangled state 
+
+        .. math::
+
+            \sum_{k=0}^{2^m-1}\ket{i}_a\ket{i}_b
+
+        of QuantumVariables $a, b$, and apply the matrix $A$ to the variable $b$.
+
+        ::
+
+            @RUS
+            def inner():
+
+                U_func, G_func, n = H.pauli_block_encoding()
+
+                a = QuantumFloat(3)
+                h(a)
+
+                b = QuantumFloat(3)
+                cx(a,b)
+
+                case = QuantumVariable(n)
+
+                # Apply matrix A via block encoding 
+                with conjugate(G_func)(case):
+                    U_func(a, case)
+
+                success_bool = measure(case) == 0
+
+                return success_bool, a, b
+
+
+            @terminal_sampling
+            def main():
+
+                a, b = inner()
+
+                return a, b
+
+
+            main()
+            
+        .. code-block::
+
+            {(1.0, 2.0): 0.08333333830038721,
+            (2.0, 1.0): 0.08333333830038721,
+            (5.0, 6.0): 0.08333333830038721,
+            (6.0, 5.0): 0.08333333830038721,
+            (0.0, 1.0): 0.08333333084980639,
+            (1.0, 0.0): 0.08333333084980639,
+            (2.0, 3.0): 0.08333333084980639,
+            (3.0, 2.0): 0.08333333084980639,
+            (4.0, 5.0): 0.08333333084980639,
+            (5.0, 4.0): 0.08333333084980639,
+            (6.0, 7.0): 0.08333333084980639,
+            (7.0, 6.0): 0.08333333084980639}
+
+        """
+        from qrisp.jasp import qache
+        from qrisp.alg_primitives import prepare, qswitch
+    
+        unitaries, coeffs = self.unitaries()
+        alpha = np.sum(coeffs)
+
+        # Number of qubits for case variable
+        n = np.int64(np.ceil(np.log2(len(coeffs))))
+
+        @qache
+        def G_func(case):
+            prepare(case, np.sqrt(coeffs)/alpha)
+
+        @qache
+        def U_func(operand, case):
+            qswitch(operand, case, unitaries)
+
+        return U_func, G_func, n
