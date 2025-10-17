@@ -296,9 +296,7 @@ def inner_CKS(A, b, eps, kappa=None, max_beta=None):
         U, state_prep, n = A
     else:
         H = QubitOperator.from_matrix(A, reversed=True)
-        U, state_prep, n = (
-            H.pauli_block_encoding()
-        )  # Construct block encoding of A as a set of Pauli unitaries
+        U, state_prep, n = (H.pauli_block_encoding())  # Construct block encoding of A as a set of Pauli unitaries
 
     j_0, beta = CKS_parameters(A, eps, kappa, max_beta)
     phi = unary_angles(cheb_coefficients(j_0, beta))
@@ -372,8 +370,6 @@ def inner_CKS(A, b, eps, kappa=None, max_beta=None):
 
     return operand, in_case, out_case
 
-
-@RUS(static_argnums=[1, 2])
 def inner_CKS_wrapper(qlsp, eps, kappa=None, max_beta=None):
     """
     Wrapper for the full Childs–Kothari–Somma (CKS) algorithm, performing post-selection using the RUS (Repeat-Until-Success) protocol.
