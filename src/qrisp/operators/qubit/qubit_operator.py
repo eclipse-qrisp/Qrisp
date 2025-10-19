@@ -2092,13 +2092,13 @@ class QubitOperator(Hamiltonian):
             A function ``U_func(operand, case)`` applying the block encoding unitary $U$ to ``operand`` and ``case`` QuantumVariables.
         G_func : function
             A function ``G_func(case)`` preparing the block encoding state $\ket{G}$ in an auxiliary ``case`` QuantumVariable.
-        n : int
+        num_qubits : int
             The number of qubits of the auxiliary ``case`` QuantumVariable.
 
         Examples
         --------
 
-        We apply a matrix to a quantum state via a Pauli block encoding.
+        We apply a Hermitian matrix to a quantum state via a Pauli block encoding.
 
         ::
 
@@ -2108,13 +2108,14 @@ class QubitOperator(Hamiltonian):
 
             m = 2
             A = np.eye(2**m, k=1)  
-            A = A+ A.T
+            A = A + A.T
             print(A)
 
             H = QubitOperator.from_matrix(A, reversed=True)
 
         The matrix $A$ encodes the mapping $\ket{0}\rightarrow\ket{1}$, $\ket{k}\rightarrow\ket{k-1}+\ket{k+1}$ for $k=1,\dotsc,2^m-2$, $\ket{2^m-1}\rightarrow\ket{2^m-2}$.
         We now apply the matrix $A$ to a QuantumVariable in supersosition state $\ket{0}+\dotsb+\ket{2^m-1}$ via the Pauli block encoding of the corresponding QubitOperator $H$.
+        (In this case, the endianness must be reversed when encoding the matrix as QubitOperator for compatibility with Qrisp's QuantumFloat.)
 
         To illustrate the result, we actually create an entangled state 
 
@@ -2181,14 +2182,14 @@ class QubitOperator(Hamiltonian):
         alpha = np.sum(coeffs)
 
         # Number of qubits for case variable
-        n = np.int64(np.ceil(np.log2(len(coeffs))))
+        num_qubits = np.int64(np.ceil(np.log2(len(coeffs))))
 
         @qache
         def G_func(case):
-            prepare(case, np.sqrt(coeffs)/alpha)
+            prepare(case, np.sqrt(coeffs/alpha))
 
         @qache
         def U_func(operand, case):
             qswitch(operand, case, unitaries)
 
-        return U_func, G_func, n
+        return U_func, G_func, num_qubits
