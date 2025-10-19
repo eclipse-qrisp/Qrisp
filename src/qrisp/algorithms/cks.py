@@ -225,7 +225,7 @@ def inner_CKS(A, b, eps, kappa=None, max_beta=None):
 
     .. math::
 
-        LCU\ket{0}\ket{\psi}=PREP^\daggerSELPREP\ket{0}\ket{\psi}=\\tilde{A}\ket{0}\ket{\psi} ,
+        LCU\ket{0}\ket{\psi}=PREP^{\dagger}SELPREP\ket{0}\ket{\psi}=\\tilde{A}\ket{0}\ket{\psi} ,
 
     where :math:`PREP` prepares the LCU state and :math:`SEL` applies the
     Chebyshev terms :math:`T_k` controlled on a unary register. Based of the Hamming-weight :math:`k` of :math:`\ket{\\text{unary}}`,
@@ -237,7 +237,7 @@ def inner_CKS(A, b, eps, kappa=None, max_beta=None):
     ``out_case``.
 
     This function supports interchangeable and independent input cases for both
-    the matrix ``A`` and vector``b`` from the QLSP :math:`A\\vec{x} = \\vec{b}`:
+    the matrix ``A`` and vector ``b`` from the QLSP :math:`A\\vec{x} = \\vec{b}`:
 
     **Case distinctions for A**
 
@@ -266,17 +266,17 @@ def inner_CKS(A, b, eps, kappa=None, max_beta=None):
 
     Parameters
     ----------
-    A : np.ndarray or tuple
+    A : numpy.ndarray or scipy.sparse.csr_matrix or tuple
         Either the Hermitian matrix :math:`A` of size :math:`N \\times N` from
         the linear system :math:`A \\vec{x} = \\vec{b}`, or a 3-tuple
         ``(U, state_prep, n)`` representing a preconstructed block encoding
         unitary, state preparation routine, and problem size.
-    b : np.ndarray or callable
+    b : numpy.ndarray or callable
         Vector :math:`\\vec{b}` of the linear system, or a
         callable that prepares the corresponding quantum state.
     eps : float
-        Target precision :math:`\epsilon`, such that the prepared state :math:`\ket{\\tilde{x}}` is within
-        :math:`\epsilon` of :math:`\ket{x}.
+        Target precision :math:`\epsilon`, such that the prepared state :math:`\ket{\\tilde{x}}` is within error
+        :math:`\epsilon` of :math:`\ket{x}`.
     kappa : float, optional
         Condition number :math:`\\kappa` of :math:`A`. Required when ``A`` is
         a tuple rather than a matrix.
@@ -286,11 +286,14 @@ def inner_CKS(A, b, eps, kappa=None, max_beta=None):
     Returns
     -------
     operand : QuantumVariable
-        Operand QuantumFloat after applying the :math:'SELECT' part of the LCU protocol.
+        Operand QuantumFloat after applying the LCU protocol.
     in_case : QuantumVariable
-        Operand QuantumFloat after applying the LCU protocol :math:`PREP^\dagger SEL PREP`.
+        Auxiliary QuantumFloat after applying the LCU protocol.
+        Must be measured in state $\ket{0}$ for the LCU protocol to be successful.
     out_case : QuantumVariable
-        Unary QuantumFloat after applying the LCU protocol :math:`PREP^\dagger SEL PREP`.
+        Auxiliary QuantumFloat after applying the LCU protocol.
+        Must be measured in state $\ket{0}$ for the LCU protocol to be successful.
+
     """
     if isinstance(A, tuple) and len(A) == 3:
         U, state_prep, n = A
@@ -480,17 +483,17 @@ def CKS(A, b, eps, kappa=None, max_beta=None):
 
     Parameters
     ----------
-    A : np.ndarray or tuple
+    A : numpy.ndarray or scipy.sparse.csr_matrix or tuple
         Either the Hermitian matrix :math:`A` of size :math:`N \\times N` from
         the linear system :math:`A \\vec{x} = \\vec{b}`, or a 3-tuple
         ``(U, state_prep, n)`` representing a preconstructed block encoding
         unitary, state preparation routine, and problem size.
-    b : np.ndarray or callable
+    b : numpy.ndarray or callable
         Vector :math:`\\vec{b}` of the linear system, or a
         callable that prepares the corresponding quantum state.
     eps : float
-        Target precision :math:`\epsilon`, such that the prepared state :math:`\ket{\\tilde{x}}` is within
-        :math:`\epsilon` of :math:`\ket{x}.
+        Target precision :math:`\epsilon`, such that the prepared state :math:`\ket{\\tilde{x}}` is within error
+        :math:`\epsilon` of :math:`\ket{x}`.
     kappa : float, optional
         Condition number :math:`\\kappa` of :math:`A`. Required when ``A`` is
         a tuple rather than a matrix.
@@ -500,10 +503,10 @@ def CKS(A, b, eps, kappa=None, max_beta=None):
     Returns
     -------
     operand : QuantumVariable
-        Quantum register containing the final (approximate) solution state
+        Quantum variable containing the final (approximate) solution state
         :math:`|\\tilde{x}\\rangle \propto A^{-1}|b\\rangle`. When the internal
         :func:`RUS` decorator reports success (``success_bool = True``), this
-        register contains the valid post-selected solution. If ``success_bool``
+        variable contains the valid post-selected solution. If ``success_bool``
         is ``False``, the simulation automatically repeats until success.
     """
 
