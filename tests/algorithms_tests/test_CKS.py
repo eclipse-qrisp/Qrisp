@@ -19,7 +19,6 @@
 from qrisp import *
 import numpy as np
 from qrisp.algorithms.cks import CKS
-from qrisp.operators import QubitOperator
 from qrisp.jasp import terminal_sampling
 
 def test_hermitian_matrix():

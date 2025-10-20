@@ -492,6 +492,226 @@ def CKS(A, b, eps, kappa=None, max_beta=None):
         prepare the operand state when called. The function invokes it to
         generate the operand QuantumFloat directly via ``operand = b()``.
 
+        
+    Examples
+    --------
+
+    The following examples demonstrate how to use the CKS algorithm to solve the
+    quantum linear systems problem (QLSP)
+    :math:`A \\vec{x} = \\vec{b}` using both a direct Hermitian matrix input and
+    a preconstructed block-encoding representation.
+    
+    **Example 1: Solving a 4×4 Hermitian system**
+
+    First, we define a small Hermitian matrix :math:`A` and a right-hand side vector :math:`\\vec{b}`
+
+    ::
+
+        import numpy as np
+
+        A = np.array([[0.73255474, 0.14516978, -0.14510851, -0.0391581],
+                      [0.14516978, 0.68701415, -0.04929867, -0.00999921],
+                      [-0.14510851, -0.04929867, 0.76587818, -0.03420339],
+                      [-0.0391581, -0.00999921, -0.03420339, 0.58862043]])
+
+        b = np.array([0, 1, 1, 1])
+
+    Next, we solve the linear system with the CKS quantum algorithm:
+
+    ::
+
+        from qrisp.algorithms.cks import CKS
+        from qrisp.jasp import terminal_sampling
+
+        @terminal_sampling
+        def main():
+
+            x = CKS(A, b, 0.01)
+            return x
+
+        res_dict = main()
+
+    The measured dictionary contains probabilities corresponding to each computational basis state.
+    To extract the quantum amplitudes:
+
+    ::
+
+        for k, v in res_dict.items():
+            res_dict[k] = v**0.5
+
+        q = np.array([res_dict.get(key, 0) for key in range(n)])
+        print("QUANTUM SIMULATION\\n", q)
+        QUANTUM SIMULATION
+        [0.02714082 0.55709921 0.53035395 0.63845794]
+
+    
+    We can compare this to the classical normalized solution:
+
+    ::
+
+        c = (np.linalg.inv(A) @ b) / np.linalg.norm(np.linalg.inv(A) @ b)
+
+        print("CLASSICAL SOLUTION\\n", c)  
+        CLASSICAL SOLUTION
+        [0.02944539 0.55423278 0.53013239 0.64102936]
+
+    We see that we obtained the same result obsered in the quantum simulation up to precision :math:`\epsilon`!
+
+    To perform quantum resource estimation, replace the ``@terminal_sampling``
+    decorator with the ``@count_ops(meas_behavior="0")`` decorator:
+
+    ::
+
+        @count_ops(meas_behavior="0")
+        def main():
+
+            x = CKS(A, b, 0.01)
+            return x
+
+        res_dict = main()
+        print(res_dict)
+        {'cx': 3628, 
+        't': 1288, 
+        't_dg': 1702, 
+        'p': 178, 
+        'cz': 138, 
+        'cy': 46, 
+        'h': 960, 
+        'x': 324, 
+        's': 66, 
+        's_dg': 66, 
+        'u3': 723, 
+        'gphase': 49, 
+        'ry': 2, 
+        'z': 11, 
+        'measure': 16}
+
+    The printed dictionary lists the estimated quantum gate counts for the full simulation. Since this approach doesn't run
+    the simulation itself, one can estimate the quantum gate counts for arbitrary linear system problem sizes.
+    
+    **Example 2: Using a custom block encoding**
+
+    This example displays how to solve the linear system for any Hermitian matrix :math:`A`,
+    where the the block encoding :math:`SEL` and state preparation unitary
+    :math:`PREP` are constructed internally from ``A`` via Pauli decomposition.
+
+    Since for a matrix size :math:`n`, we need :math:`n` such terms for said decomposition,
+    it is more efficient to pass the matrix :math:`A` with a more efficient block encoding, 
+    and pass them as a 3-tuple ``(U, state_prep, n)`` representing a preconstructed block encoding
+    unitary, state preparation routine, and problem size.
+
+    Construct a block-encoded matrix representation for a tridiagonal 3-sparse matrix defined by
+
+    ::
+
+        import numpy as np
+
+        def tridiagonal_shifted(n, mu=1.0, dtype=float):
+        I = np.eye(n, dtype=dtype)
+        return (2 + mu) * I - 2*np.eye(n, k=n//2, dtype=dtype) - 2*np.eye(n, k=-n//2, dtype=dtype)
+
+        n = 8
+        A = tridiagonal_shifted(n, mu=3)
+        b = np.random.randint(0, 2, size=n)
+
+    The matrix can be represented using three unitaries: the identity and the two shift operators.
+    Define their corresponding functions:
+
+    ::
+
+        def U0(qv):
+        pass
+
+        def U1(qv):
+            qv += n//2
+            gphase(np.pi, qv[0])
+
+        def U2(qv):
+            qv -= n//2
+            gphase(np.pi, qv[0])
+
+        unitaries = [U0, U1, U2]
+
+    Additionally, the block encoding unitary :math:`U` supplied must satisfy
+    the property :math:`U^2 = I`, i.e., it is self-inverse. This condition is
+    required for the correctness of the Chebyshev polynomial block encoding
+    and qubitization step. Further details can be found `here <https://arxiv.org/abs/2208.00567>`_.
+
+    We can now define the tuple ``(U, state_prep, n)``, by also defining the PREPARE and SELECT
+    operators in the scope of LCU
+
+    ::
+
+        coeffs = np.array([5,1,1])
+        alpha = np.sum(coeffs)
+
+        def U_func(operand, case):
+            qswitch(operand, case, unitaries)
+
+        def G_func(case):
+            prepare(case, np.sqrt(coeffs/alpha))
+
+        BE = (U_func, G_func, 2)
+
+    We can nove solve the problem by passing the block encoding tuple defined above as A in the CKS function
+
+    ::
+
+        @terminal_sampling
+        def main():
+
+            x = CKS(BE, b, 0.01, np.linalg.cond(A))
+            return x
+
+        res_dict = main()
+
+    We can, again, compare the solution we obtain by quantum simulation with the classic solution
+
+    ::
+
+        for k, v in res_dict.items():
+            res_dict[k] = v**0.5
+
+        q = np.array([res_dict.get(key, 0) for key in range(n)])
+        c = (np.linalg.inv(A) @ b) / np.linalg.norm(np.linalg.inv(A) @ b)
+
+        print("QUANTUM SIMULATION\\n", q, "\\nCLASSICAL SOLUTION\\n", c)
+        QUANTUM SIMULATION
+        [0.43917486 0.31395935 0.12522139 0.43917505 0.43917459 0.12522104
+        0.31395943 0.43917502]
+        CLASSICAL SOLUTION
+        [0.43921906 0.3137279  0.12549116 0.43921906 0.43921906 0.12549116
+        0.3137279  0.43921906]
+
+    Performing quantum resource estimation can be performed in the same manner as in the first example:
+
+    ::
+
+        @count_ops(meas_behavior="0")
+        def main():
+
+            x = CKS(BE, b, 0.01, np.linalg.cond(A))
+            return x
+    
+        res_dict = main()
+        print(res_dict)
+        {'h': 676, 
+        't_dg': 806, 
+        'cx': 1984, 
+        't': 651, 
+        's': 152, 
+        's_dg': 90, 
+        'u3': 199, 
+        'gphase': 65, 
+        'p': 149, 
+        'z': 15, 
+        'x': 126, 
+        'measure': 142, 
+        'ry': 2}
+
+    Important to note, that one can also solve a linear system without calling the ``@RUS`` decorator,
+    and perform the necessary post-selection by hand. Such an example can be found in :func:`inner_CKS`.
+
     Parameters
     ----------
     A : numpy.ndarray or scipy.sparse.csr_matrix or tuple
