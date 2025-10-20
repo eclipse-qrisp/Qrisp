@@ -51,27 +51,50 @@ def q_max(a: QuantumFloat, b: QuantumFloat) -> QuantumFloat:
     {(2, 1, 2): 0.5, (3, 1, 3): 0.5}
     """
 
-    res_mshape = [jnp.minimum(a.mshape[0], b.mshape[0]), jnp.maximum(a.mshape[1], b.mshape[1])] 
+    res_mshape = [
+        jnp.minimum(a.mshape[0], b.mshape[0]),
+        jnp.maximum(a.mshape[1], b.mshape[1]),
+    ]
     new_msize = res_mshape[1] - res_mshape[0]
     new_exponent = res_mshape[0]
     res = QuantumFloat(new_msize, new_exponent, signed=a.signed | b.signed)
-    c = QuantumBool()
 
+    # We calculate the overlap of bits with the same significance of a and b.
+    l = jnp.maximum(a.mshape[0], b.mshape[0])
+    r = jnp.minimum(a.mshape[1], b.mshape[1])
+
+    c = QuantumBool()
+    
     compare_func = lambda x, y: x >= y
     injecteted_comp_func = c << compare_func
 
     with conjugate(injecteted_comp_func)(a, b):
+        cx(a[l - a.exponent : r - a.exponent], res[l - new_exponent : r - new_exponent])
+
+        with conjugate(cx)(
+            a[l - a.exponent : r - a.exponent], b[l - b.exponent : r - b.exponent]
+        ):
+            with control(c, 0):
+                cx(
+                    b[l - b.exponent : r - b.exponent],
+                    res[l - new_exponent : r - new_exponent],
+                )
+
         with control(c):
-            for i in jrange(a.size):
-                cx(a[i], res[i + a.exponent - new_exponent])
+            up_bd = jnp.minimum(a.size,l - a.exponent)
+            cx(a[:up_bd], res[:up_bd])
+            lw_bd = jnp.maximum(r, a.exponent)
+            cx(a[lw_bd - a.exponent :], res[lw_bd - new_exponent : a.mshape[1] - new_exponent])
+
         with control(c, 0):
-            for i in jrange(b.size):
-                cx(b[i], res[i + b.exponent - new_exponent])
+            up_bd = jnp.minimum(b.size,l - b.exponent)
+            cx(b[: up_bd], res[: up_bd])
+            lw_bd = jnp.maximum(r, b.exponent)
+            cx(b[lw_bd - b.exponent :], res[lw_bd - new_exponent : b.mshape[1] - new_exponent])
 
     c.delete()
 
     return res
-
 
 def q_min(a: QuantumFloat, b: QuantumFloat) -> QuantumFloat:
     """
@@ -99,27 +122,50 @@ def q_min(a: QuantumFloat, b: QuantumFloat) -> QuantumFloat:
     >>> multi_measurement([a,b,res_min])
     {(2, 1, 1): 0.5, (3, 1, 1): 0.5}
     """
-    res_mshape = [jnp.minimum(a.mshape[0], b.mshape[0]), jnp.maximum(a.mshape[1], b.mshape[1])] 
+    res_mshape = [
+        jnp.minimum(a.mshape[0], b.mshape[0]),
+        jnp.maximum(a.mshape[1], b.mshape[1]),
+    ]
     new_msize = res_mshape[1] - res_mshape[0]
     new_exponent = res_mshape[0]
     res = QuantumFloat(new_msize, new_exponent, signed=a.signed | b.signed)
+
+    # We calculate the overlap of bits with the same significance of a and b.
+    l = jnp.maximum(a.mshape[0], b.mshape[0])
+    r = jnp.minimum(a.mshape[1], b.mshape[1])
+
     c = QuantumBool()
 
     compare_func = lambda x, y: x <= y
     injecteted_comp_func = c << compare_func
 
     with conjugate(injecteted_comp_func)(a, b):
+        cx(a[l - a.exponent : r - a.exponent], res[l - new_exponent : r - new_exponent])
+
+        with conjugate(cx)(
+            a[l - a.exponent : r - a.exponent], b[l - b.exponent : r - b.exponent]
+        ):
+            with control(c, 0):
+                cx(
+                    b[l - b.exponent : r - b.exponent],
+                    res[l - new_exponent : r - new_exponent],
+                )
+
         with control(c):
-            for i in jrange(a.size):
-                cx(a[i], res[i + a.exponent - new_exponent])
+            up_bd = jnp.minimum(a.size,l - a.exponent)
+            cx(a[:up_bd], res[:up_bd])
+            lw_bd = jnp.maximum(r, a.exponent)
+            cx(a[lw_bd - a.exponent :], res[lw_bd - new_exponent : a.mshape[1] - new_exponent])
+
         with control(c, 0):
-            for i in jrange(b.size):
-                cx(b[i], res[i + b.exponent - new_exponent])
+            up_bd = jnp.minimum(b.size,l - b.exponent)
+            cx(b[: up_bd], res[: up_bd])
+            lw_bd = jnp.maximum(r, b.exponent)
+            cx(b[lw_bd - b.exponent :], res[lw_bd - new_exponent : b.mshape[1] - new_exponent])
 
     c.delete()
 
     return res
-
 
 def q_floor(a: QuantumFloat) -> QuantumFloat:
     """
