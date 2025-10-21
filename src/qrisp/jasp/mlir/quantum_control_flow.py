@@ -82,26 +82,46 @@ class HLOControlFlowReplacement(RewritePattern):
         # stablehlo.case -> scf.index_switch
         if op_name == "stablehlo.case":
             
-            # StableHLO case selector is an i32 scalar; SCF switch expects an index.
-            # We also enumerate cases 0..N-1 and use the last region as default.
-            case_values = builtin.DenseArrayBase.from_list(
-                builtin.i64, list(range(len(op.regions) - 1))
-            )
-
             # Extract scalar from a tensor value (StableHLO convention) as i32 then cast to index.
             i32_case_indicator = tensor.ExtractOp(op.operands[0], [], builtin.i32)
-            selector_index = arith.IndexCastOp(i32_case_indicator.result, builtin.IndexType())
+            
+            if len(op.regions) == 2:
+                
+                const_op = arith.ConstantOp(builtin.IntegerAttr(0, builtin.IntegerType(32)))
+                cmp_op = arith.CmpiOp(i32_case_indicator, const_op, "ne")
+                
+                if_op = scf.IfOp(
+                    cond = cmp_op.results[0],
+                    return_types = op.result_types,
+                    true_region = op.regions[1].clone(),
+                    false_region = op.regions[0].clone(),
+                    )
+                
+                rewriter.replace_matched_op([i32_case_indicator, const_op, cmp_op, if_op])
+                
+                return
+                
+            else:
+            
+                # StableHLO case selector is an i32 scalar; SCF switch expects an index.
+                # We also enumerate cases 0..N-1 and use the last region as default.
+                case_values = builtin.DenseArrayBase.from_list(
+                    builtin.i64, list(range(len(op.regions) - 1))
+                )
+                
 
-            switch_op = scf.IndexSwitchOp(
-                arg=selector_index,
-                cases=case_values,
-                default_region=op.regions[-1].clone(),
-                case_regions=[region.clone() for region in op.regions[:-1]],
-                result_types=op.result_types,
-            )
-
-            rewriter.replace_matched_op([i32_case_indicator, selector_index, switch_op])
-            return
+                selector_index = arith.IndexCastOp(i32_case_indicator.result, builtin.IndexType())
+    
+                switch_op = scf.IndexSwitchOp(
+                    arg=selector_index,
+                    cases=case_values,
+                    default_region=op.regions[-1].clone(),
+                    case_regions=[region.clone() for region in op.regions[:-1]],
+                    result_types=op.result_types,
+                )
+    
+                rewriter.replace_matched_op([i32_case_indicator, selector_index, switch_op])
+                return
 
         # stablehlo.while -> scf.while
         if op_name == "stablehlo.while":
@@ -121,7 +141,7 @@ class HLOControlFlowReplacement(RewritePattern):
             parent_op = op.parent_op()
 
             # In switch arms: just yield the carried values
-            if isinstance(parent_op, scf.IndexSwitchOp):
+            if isinstance(parent_op, (scf.IndexSwitchOp, scf.IfOp)):
                 yield_op = scf.YieldOp(*op.operands)
                 rewriter.replace_matched_op(yield_op)
                 return
