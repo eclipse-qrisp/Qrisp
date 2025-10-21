@@ -10,6 +10,7 @@ Circuit construction
 --------------------
 
 .. autosummary:: 
+    :toctree: generated/
     
     inner_CKS
 
@@ -18,6 +19,7 @@ Miscellaneous
 -------------
 
 .. autosummary:: 
+    :toctree: generated/
     
     CKS_parameters
     cheb_coefficients
