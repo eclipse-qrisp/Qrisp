@@ -26,7 +26,6 @@ import numpy as np
 import jax.numpy as jnp
 
 
-@custom_control
 def qswitch(operand, case, case_function, method="auto", case_amount=None, inv=False, ctrl=None):
     r"""
     Executes a switch - case statement distinguishing between a list of
@@ -460,5 +459,5 @@ def qswitch(operand, case, case_function, method="auto", case_amount=None, inv=F
 
 
 temp = qswitch.__doc__
-qswitch = custom_inversion(qswitch)
+qswitch = custom_control(custom_inversion(qswitch))
 qswitch.__doc__ = temp
