@@ -128,11 +128,14 @@ def IQMBackend(api_token,
         for qc, shots in batch:
             qiskit_qc = qc.to_qiskit()
             qiskit_qc = transpiler(qiskit_qc)
+            
             circuit_batch.append(backend.serialize_circuit(qiskit_qc))
             if shots is None:
                 shots = 1000
             
             shot_batch.append(shots)
+            
+        
 
         UUID = client.submit_circuits(circuit_batch, 
                                       options = compilation_options, 
@@ -151,7 +154,7 @@ def IQMBackend(api_token,
             new_counts = {}
             for key in counts.keys():
                 counts_string = re.sub(r"\W", "", key)
-                new_counts[counts_string[::-1]] = counts[key]
+                new_counts[counts_string] = counts[key]
                 
             counts_batch.append(new_counts)
     
