@@ -8,6 +8,7 @@ import scipy
 import sympy as sp
 from qrisp.algorithms.cold.crab import CRABObjective
 import time
+import pandas as pd
 
 
 #########################
@@ -27,39 +28,105 @@ Q = np.array([[-0.9, 0.5, 0.3],
               [0.5, -0.7, -0.4], 
               [0.3, -0.4, 0.2]])
 ### Solution
-# x = (0, 1, 1) minimiza to xQx = -1.3
+solution = {'011': -1.3}
 
-# Q = np.array([[-1.0, 0.5, 0.4, 0.0], 
-#               [0.5, -0.9, 0.6, 0.0], 
-#               [0.4, 0.6, -0.8, -0.5], 
-#               [0.0, 0.0, -0.5, 0.2]])
-# ### Solution
-# # x = (1, 0, 1, 1) minimize to xQx = -1.8
+Q = np.array([[-1.0, 0.5, 0.4, 0.0], 
+              [0.5, -0.9, 0.6, 0.0], 
+              [0.4, 0.6, -0.8, -0.5], 
+              [0.0, 0.0, -0.5, 0.2]])
+### Solution
+solution = {'1011': -1.8}
 
 ### Medium example
-# Q = np.array([[-1.2,  0.6,  0.6,  0.0,  0.0],
-#               [ 0.6, -0.8,  0.6,  0.0,  0.0],
-#               [ 0.6,  0.6, -0.9, -0.7,  0.0],
-#               [ 0.0,  0.0, -0.7, -0.4,  0.5],
-#               [ 0.0,  0.0,  0.0,  0.5,  0.3]])
+Q = np.array([[-1.2,  0.6,  0.6,  0.0,  0.0],
+              [ 0.6, -0.8,  0.6,  0.0,  0.0],
+              [ 0.6,  0.6, -0.9, -0.7,  0.0],
+              [ 0.0,  0.0, -0.7, -0.4,  0.5],
+              [ 0.0,  0.0,  0.0,  0.5,  0.3]])
 
 ### Solution
-# x = (0, 0, 1, 1, 0) with xQx = -2.7
-# x = (1, 0, 1, 1, 0) with xQx = -2.7
+solution = {'00110': -2.7, 
+            '10110': -2.7}
 
 
-### Values that bring Qubo problem into Hamiltonian form
-h = -0.5 * np.diag(Q) - 0.5 * np.sum(Q, axis=1)
-J = 0.5 * Q
-N = Q.shape[0]
+# N = 6 example
+Q = np.array([[-1.1, 0.6, 0.4, 0.0, 0.0, 0.0],
+              [0.6, -0.9,  0.5, 0.0, 0.0, 0.0],
+              [0.4, 0.5, -1.0, -0.6, 0.0, 0.0],
+              [0.0, 0.0, -0.6, -0.5, 0.6, 0.0],
+              [0.0, 0.0, 0.0, 0.6, -0.3, 0.5],
+              [0.0, 0.0, 0.0, 0.0, 0.5, -0.4]])
+solution = {'101101': -3.4}
 
-### Precompute global Pauli-sums 
-sum_z = sum([Z(i) for i in range(N)])
-sum_y = sum([Y(i) for i in range(N)])
+# N = 7 example
+Q = np.array([[-1.2,0.5, 0.4, 0.0, 0.0, 0.0, 0.0],
+              [0.5, -1.0, 0.5, 0.0, 0.0, 0.0, 0.0],
+              [0.4, 0.5, -0.9, -0.6, 0.0, 0.0, 0.0],
+              [0.0, 0.0, -0.6, -0.7, 0.6, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.6, -0.4, 0.5, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.5, -0.3, 0.4],
+              [0.0, 0.0, 0.0, 0.0, 0.0, 0.4, -0.2]])
+solution = {'1011010': -3.5}
 
-### Build Hamiltonain terms
-H_i = -1 * sum([X(i) for i in range(N)])
-H_p = sum([sum([J[i][j]*Z(i)*Z(j) for j in range(i)]) for i in range(N)]) + sum([h[i]*Z(i) for i in range(N)])
+# N = 8 example
+Q = np.array([[-1.3, 0.6, 0.4, 0., 0., 0., 0., 0.],
+              [0.6, -1., 0.5, 0., 0., 0., 0., 0.],
+              [0.4, 0.5, -1.1, -0.6, 0., 0., 0., 0.],
+              [0., 0., -0.6, -0.6, 0.6, 0., 0., 0.],
+              [0., 0., 0., 0.6, -0.4, 0.5, 0., 0.],
+              [0., 0., 0., 0., 0.5, -0.3, 0.4, 0.],
+              [0., 0., 0., 0., 0., 0.4, -0.25, 0.3],
+              [0., 0., 0., 0., 0., 0., 0.3, -0.2]])
+solution = {'10110101': -3.9}
+
+# N = 9 example
+Q = np.array([[-1.,0.4, 0.3, 0., 0., 0., 0., 0., 0.2],
+              [0.4, -0.9, 0.6, 0., 0., 0., 0., 0., 0.],
+              [0.3, 0.6, -1.2, -0.5, 0., 0., 0., 0., 0.],
+              [0., 0., -0.5, -0.8, 0.70, 0., 0., 0., 0.],
+              [0., 0., 0., 0.7, -0.3, 0.6, 0., 0., 0.],
+              [0., 0., 0., 0., 0.6, -0.4, 0.5, 0., 0.],
+              [0., 0., 0., 0., 0., 0.5, -0.25, 0.4, 0.],
+              [0., 0., 0., 0., 0., 0., 0.4, -0.2, 0.35],
+              [0.2, 0., 0., 0., 0., 0., 0., 0.35, -0.15]])
+solution = {'101101010': -4.0}
+
+# Build initial Hamiltonian
+def H_init(N):
+    H_i = -1 * sum([X(i) for i in range(N)])
+    return H_i
+
+# Build problem Hamiltonian
+def H_prob(Q):
+    global h
+    global J
+
+    h = -0.5 * np.diag(Q) - 0.5 * np.sum(Q, axis=1)
+    J = 0.5 * Q
+
+    H_p = sum([sum([J[i][j]*Z(i)*Z(j) for j in range(i)]) for i in range(N)]) + sum([h[i]*Z(i) for i in range(N)])
+
+    return H_p
+
+# Precompute pauli sums to avoid redundant computations
+def compute_pauli_sums(N):
+    sum_z = sum([Z(i) for i in range(N)])
+    sum_y = sum([Y(i) for i in range(N)])
+    return sum_z, sum_y
+
+# Initialize some global variables for the QUBO matrix Q
+# that are needed for further computations
+def initialize_qubo_problem(Q):
+    global N
+    global H_i
+    global H_p
+    global sum_y
+    global sum_z
+
+    N = Q.shape[0]
+    H_i = H_init(N)
+    H_p = H_prob(Q)
+    sum_z, sum_y = compute_pauli_sums(N)
 
 # System Hamiltonian w/o optimizable parameters
 def H_0(lam):
@@ -129,7 +196,7 @@ def qarg_prep(qarg):
     hadamard(qarg)
 
 # Apply LCD Hamiltonian by trotterization with N_steps
-def apply_lcd_hamiltonian(qarg, N_steps):
+def apply_lcd_hamiltonian(qarg, N_steps, T):
 
     qarg_prep(qarg)
 
@@ -181,12 +248,13 @@ def precompute_opt_pulses(T, t_list, N_steps, N_opt, CRAB: bool):
     return sin_matrix, cos_matrix
 
 
-def apply_cold_hamiltonian(qarg, N_steps, beta, CRAB=False):
+def apply_cold_hamiltonian(qarg, N_steps, T, beta, CRAB=False):
 
     # Initialize qarg
     qarg_prep(qarg)
 
     # Precompute timegrid
+    N_opt = len(beta)
     dt = T / N_steps
     time = np.linspace(dt, T, N_steps)
     lam = np.array([lam_t(t, T) for t in time])
@@ -219,14 +287,14 @@ def apply_cold_hamiltonian(qarg, N_steps, beta, CRAB=False):
         U(qarg)
 
 
-def compile_U(qarg, N_opt, N_steps, CRAB=False):
+def compile_U(qarg, N_opt, N_steps, T, CRAB=False):
 
     temp = list(qarg.qs.data)
 
     # Initzialize parameters as symbols
     params = [Symbol("par_"+str(i)) for i in range(N_opt)]
 
-    apply_cold_hamiltonian(qarg, N_steps, params, CRAB=CRAB)
+    apply_cold_hamiltonian(qarg, N_steps, T, params, CRAB=CRAB)
 
     intended_measurements = list(qarg)
     qc = qarg.qs.compile(intended_measurements=intended_measurements)
@@ -236,18 +304,17 @@ def compile_U(qarg, N_opt, N_steps, CRAB=False):
     return qc
 
 
-def LCD_routine(qarg, N_steps):
+def LCD_routine(Q, qarg, N_steps, T):
+
+    initialize_qubo_problem(Q)
 
     # Aapply hamiltonian
-    apply_lcd_hamiltonian(qarg, N_steps)
+    apply_lcd_hamiltonian(qarg, N_steps, T)
 
     # Measure qarg
     res_dict = qarg.get_measurement()
 
-    # Get statevector
-    psi = qarg.qs.statevector(return_type='array')
-
-    return psi, res_dict
+    return res_dict
 
 
 def optimization_routine(qarg, N_opt, qc, CRAB): 
@@ -281,70 +348,23 @@ def optimization_routine(qarg, N_opt, qc, CRAB):
     return res.x
 
 
-def COLD_routine(qarg, N_steps, N_opt, CRAB=False):
+def COLD_routine(Q, qarg, N_steps, T, N_opt, CRAB=False):
+
+    initialize_qubo_problem(Q)
 
     qarg1, qarg2 = qarg.duplicate(), qarg.duplicate()
 
     # Compile COLD routine into a circuit
-    U_circuit = compile_U(qarg1, N_opt, N_steps, CRAB)
+    U_circuit = compile_U(qarg1, N_opt, N_steps, T, CRAB)
 
     # Find optimal params for control pulse
     opt_params = optimization_routine(qarg2, N_opt, U_circuit, CRAB)
 
     # Apply hamiltonian with optimal parameters
     # Here we do not want the randomized parameters to be included -> CRAB=False
-    apply_cold_hamiltonian(qarg, N_steps, opt_params, CRAB=False)
+    apply_cold_hamiltonian(qarg, N_steps, T, opt_params, CRAB=False)
 
-    # Measure qarg and get statevector
-    psi = qarg.qs.statevector('array')
+    # Measure qarg
     res_dict = qarg.get_measurement()
 
-    return psi, res_dict
-
-
-# Evolution time
-T = 4
-# Number of timesteps
-N_steps = T*100
-# Number of control pulse parameters
-N_opt = 1
-# Use crab method
-CRAB = True
-
-print("\n--- Simulation parameters ---")
-print(f'T = {T}')
-print(f'Steps = {N_steps}')
-print(f'N opt = {N_opt}\n')
-# print(f'CRAB: {CRAB}\n')
-
-# Create qarg and run algorithms
-qarg_lcd, qarg_cold, qarg_cold_crab = QuantumVariable(N), QuantumVariable(N), QuantumVariable(N)
-
-# psi_lcd, meas_lcd = LCD_routine(qarg_lcd, N_steps)
-t0 = time.time()
-psi_cold, meas_cold = COLD_routine(qarg_cold, N_steps, N_opt, CRAB=False)
-t1 = time.time()
-psi_cold_crab, meas_cold_crab = COLD_routine(qarg_cold_crab, N_steps, N_opt, CRAB=True)
-t2 = time.time()
-
-def qubo_cost(Q, P):
-    expected_cost = 0.0
-    for bitstring, prob in P.items():
-        # Convert bitstring (e.g., "10110") to numpy array of ints
-        x = np.array([int(b) for b in bitstring], dtype=float)
-        # Compute quadratic form x^T Q x
-        cost = x @ Q @ x
-        # Weight by probability
-        expected_cost += prob * cost
-    return expected_cost
-
-# print(meas_lcd)
-# print(f'Cost LCD: {qubo_cost(Q, meas_lcd)}\n')
-
-print(f'Computational time COLD: {t1-t0}')
-print(meas_cold)
-print(f'Cost COLD: {qubo_cost(Q, meas_cold)}\n')
-
-print(f'Computational time COLD-CRAB: {t2-t1}')
-print(meas_cold_crab)
-print(f'Cost COLD-CRAB: {qubo_cost(Q, meas_cold_crab)}\n')
+    return res_dict
