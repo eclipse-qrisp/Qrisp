@@ -17,6 +17,7 @@
 """
 
 import numpy as np
+import scipy as sp
 from scipy.special import comb
 import jax.numpy as jnp
 from qrisp import (
@@ -44,16 +45,11 @@ def CKS_parameters(A, eps, kappa=None, max_beta=None):
 
     This function distinguishes two input cases:
 
-    1. **Matrix input** — If ``A`` is either a NumPy array (Hermitian matrix), or a SciPy sparse CSR matrix (Hermitian matrix),the
-       condition number :math:`\\kappa` is computed internally as
-       :math:`\\kappa = \\mathrm{cond}(A)`.
-    2. **Tuple input** — If ``A`` is a tuple of length 3, the function assumes
-       external context provides or manages :math:`\\kappa` directly. In this
-       case, ``kappa`` must be specified explicitly or precomputed elsewhere.
-       Additionally, the block encoding unitary :math:`U` supplied must satisfy
-       the property :math:`U^2 = I`, i.e., it is self-inverse. This condition is
-       required for the correctness of the Chebyshev polynomial block encoding
-       and qubitization step. Further details can be found `here <https://arxiv.org/abs/2208.00567>`_.
+    - **Matrix input** 
+        If ``A`` is either a NumPy array (Hermitian matrix), or a SciPy Compressed Sparse Row matrix (Hermitian matrix), the
+        condition number :math:`\\kappa` is computed internally as :math:`\\kappa = \\mathrm{cond}(A)` if it is not specified.
+    - **Block-encoding input** 
+        If ``A`` is a 3-tuple representing a block-encoding, ``kappa`` must be specified.
 
     Given the condition number :math:`\\kappa` and the target precision
     :math:`\\epsilon`, the parameters are computed as:
@@ -70,29 +66,43 @@ def CKS_parameters(A, eps, kappa=None, max_beta=None):
 
     Parameters
     ----------
-    A : np.ndarray or tuple
-        The :math:`N \\times N` Hermitian matrix :math:`A` of the linear system
-        :math:`A\\vec{x} = \\vec{b}`, or a 3-tuple representing the block encoding of A in which :math:`\\kappa` is handled externally.
+    A : numpy.ndarray or scipy.sparse.csr_matrix or tuple
+        Either the Hermitian matrix :math:`A` of size :math:`N \\times N` from
+        the linear system :math:`A \\vec{x} = \\vec{b}`, or a 3-tuple
+        representing a preconstructed block-encoding.
     eps : float
         Target precision :math:`\epsilon`, such that the prepared state :math:`\ket{\\tilde{x}}` is within
-        :math:`\epsilon` of :math:`\ket{x}.
+        :math:`\epsilon` of :math:`\ket{x}`.
     kappa : float, optional
-        Condition number :math:`\\kappa` of :math:`A`. Required if ``A`` is a tuple.
+        Condition number :math:`\\kappa` of :math:`A`. Required if ``A`` is a tuple (block-encoding).
     max_beta : float, optional
         Optional upper bound on :math:`\\beta` for the complexity parameter.
 
     Returns
     -------
     j_0 : int
-        Truncation order of the Chebyshev expansion,
+        Truncation order of the Chebyshev expansion
         :math:`j_0 = \\lfloor\sqrt{\\beta \log(4\\beta/\epsilon)}\\rfloor`.
     beta : float
-        Complexity parameter, :math:`\\beta = \\lfloor\kappa^2 \log(\kappa/\epsilon)\\rfloor`.
+        Complexity parameter :math:`\\beta = \\lfloor\kappa^2 \log(\kappa/\epsilon)\\rfloor`.
     """
-    if isinstance(A, tuple) and len(A) == 3:
-        kappa = kappa
-    else:
-        kappa = np.linalg.cond(A)
+    if kappa != None:
+        # kappa is specified by the user
+        pass 
+    elif isinstance(A, tuple): # block-encoding
+        raise Exception("Condition number must be specified if A is a block-encoding")
+    else: # matrix
+        from scipy.sparse import csr_matrix
+        from numpy import ndarray
+
+        if isinstance(A, ndarray):
+            kappa = np.linalg.cond(A)
+        elif isinstance(A, csr_matrix):
+            lam_max = sp.sparse.linalg.eigsh(A, k=1, which='LA', return_eigenvectors=False)[0]
+            lam_min = sp.sparse.linalg.eigsh(A, k=1, which='SA', return_eigenvectors=False)[0]
+            kappa = float(abs(lam_max) / abs(lam_min))
+        else:
+            raise TypeError(f"Unsupported type {type(A)} for the matrix A")
 
     if max_beta == None:
         beta = kappa**2 * np.log(kappa / eps)
