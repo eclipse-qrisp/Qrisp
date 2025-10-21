@@ -397,54 +397,33 @@ def inner_CKS(A, b, eps, kappa=None, max_beta=None):
     j_0, beta = CKS_parameters(A, eps, kappa, max_beta)
     phi = unary_angles(cheb_coefficients(j_0, beta))
 
-    def RU(in_case, operand):
+    def RU(case, operand):
         """
         Applies one qubitization step :math:`RU` (or its inverse) associated
-        with the Chebyshev polynomial block encoding of :math:`A`.
+        with the Chebyshev polynomial block-encoding of an operator :math:`A`.
 
-        This operation alternates between application of the block-encoded
-        unitary :math:`U` and a reflection about the prepared auxiliary state
-        :math:`\ket{G}_a`, realizing the recursive structure
+        This operation alternates between application of the block-encoding
+        unitary :math:`U` and a reflection about the block-encoding state
+        :math:`\ket{G}`, realizing
 
         .. math::
 
-            T_k(H) = (RU)^k,
+            T_k(A) = (RU)^k,
 
-        where :math:`R` reflects about the auxiliary state :math:`\ket{G}_a`.
-
-        The specific implementation of :math:`U` and :math:`R` depends on the
-        input case chosen for ``A``.
-
-        - Matrix input: 
-            if ``A`` is either a NumPy array (Hermitian matrix), or SciPy sparse CSR matrix (Hermitian matrix),
-            the block encoding :math:`SEL` and state-preparation unitary
-            :math:`PREP` are constructed internally from ``A`` via Pauli
-            decomposition.
-
-        - Tuple input: 
-            if ``A`` is a tuple of length 3, the function assumes
-            external context provides or manages :math:`\\kappa` directly. In this
-            case, ``kappa`` must be specified explicitly or precomputed elsewhere.
-            Additionally, the block encoding unitary :math:`U` supplied must satisfy
-            the property :math:`U^2 = I`, i.e., it is self-inverse. This condition is
-            required for the correctness of the Chebyshev polynomial block encoding
-            and qubitization step. Further details can be found `here <https://arxiv.org/abs/2208.00567>`_.
+        where :math:`R` reflects about the block-encoding state :math:`\ket{G}`,
+        and :math:`T_k(A)` is the Chebyshev polynomials of the first kind of degree :math:`k`.
 
         Parameters
         ----------
-        in_case : QuantumVariable
-            Inner case QuantumFloat encoding the Chebyshev index :math:`i` or
-            similar indicator state used to control block-encoded applications
-            of :math:`A`.
+        case : QuantumVariable
+            Auxiliary case variable encoding the block-encoding state :math:`\ket{G}`.
         operand : QuantumVariable
-            Operand (solution) QuantumFloat upon which the block-encoded matrix
-            :math:`A` acts. If ``b`` was provided as a callable, this register
-            corresponds to that prepared state directly; otherwise, it
-            represents the amplitude-prepared encoding of the classical vector
-            :math:`\\vec{b}`.
+            Operand (solution) variable upon which the block-encoded matrix
+            :math:`A` acts. 
+
         """
-        U(operand, in_case)
-        reflection(in_case, state_function=state_prep)  # reflection operator R about $\ket{G}$.
+        U(operand, case)
+        reflection(case, state_function=state_prep)  # reflection operator R about $\ket{G}$.
 
     out_case = QuantumFloat(j_0)
     in_case = QuantumFloat(n)
@@ -484,7 +463,7 @@ def inner_CKS_wrapper(qlsp, eps, kappa=None, max_beta=None):
     ----------
     qlsp : callable
         Function returning a tuple :math:`(A, \\vec{b})`, where ``A`` is either a Hermitian matrix
-        or a 3-tuple with preconstructed block encoding (see :func:`inner_CKS`), and ``b`` is either
+        or a 3-tuple with preconstructed block-encoding (see :func:`inner_CKS`), and ``b`` is either
         a NumPy array or a callable that prepares a quantum state.
     eps : float
         Target precision :math:`\epsilon`, such that the prepared state :math:`\ket{\\tilde{x}}` is within
