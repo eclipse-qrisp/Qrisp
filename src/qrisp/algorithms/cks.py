@@ -525,7 +525,7 @@ def CKS(A, b, eps, kappa=None, max_beta=None):
     within target precision :math:`\epsilon` of the ideal solution :math:`\ket{x}`. 
     
     The asymptotic complexity is
-    :math:`\\mathcal{O}\\!\\left(d \\kappa^2 \\log^2\\!\\frac{d\\kappa}{\\epsilon}\\right)`, where :math:`d` is the sparsity of a :math:`d`-sparse matrix, and 
+    :math:`\\mathcal{O}\\!\\left(\\log(N)d \\kappa^2 \\text{polylog}\\!\\frac{d\\kappa}{\\epsilon}\\right)` where :math:`d` is the sparsity of the matrix, and 
     :math:`\kappa` is the condition number of the matrix. This represents an exponentially
     better precision scaling compared to the HHL algorithm.
 
@@ -544,22 +544,30 @@ def CKS(A, b, eps, kappa=None, max_beta=None):
       3. Build the core LCU structure and qubitization operator (:func:`inner_CKS`).
       4. Apply the RUS post-selection step to project onto the valid success outcome.
 
-    This function supports interchangeable and independent input cases for both
+    This function supports interchangeable and independent input types for both
     the matrix ``A`` and vector ``b`` from the QLSP :math:`A\\vec{x} = \\vec{b}`.
 
     **Case distinctions for A**
 
     - Matrix input: 
-        if ``A`` is either a NumPy array (Hermitian matrix), or SciPy sparse CSR matrix (Hermitian matrix),
-        the block encoding :math:`SEL` and state-preparation unitary
-        :math:`PREP` are constructed internally from ``A`` via Pauli
-        decomposition.
+        ``A`` is either a NumPy array (Hermitian matrix), or SciPy Compressed Sparse Row matrix (Hermitian matrix).
+        The block encoding unitary :math:`SEL` and state preparation unitary
+        :math:`PREP` are constructed internally from ``A`` via
+        :meth:`Pauli decomposition <qrisp.operators.qubit.QubitOperator.pauli_block_encoding>`.
 
-    - Tuple input: 
-        if ``A`` is a tuple of length 3, the function assumes
-        external context provides or manages :math:`\\kappa` directly. In this
-        case, ``kappa`` must be specified explicitly or precomputed elsewhere.
-        Additionally, the block encoding unitary :math:`U` supplied must satisfy
+    - Block-encoding input: 
+        ``A`` is a 3-tuple ``(U, state_prep, n)`` representing a block-encoding: 
+        
+        * U : callable
+            A callable ``U(operand, case)`` applying the block-encoding unitary :math:`SEL`.
+        * state_prep : callable
+            A callable ``state_prep(case)`` applying the block-encoding state preparatiion unitary :math:`PREP`
+            to an auxiliary ``case`` QuantumVariable .
+        * n : int
+            The size of the auxiliary ``case`` QuantumVariable.
+            
+        In this case, (an upper bound for) the condition number ``kappa`` must be specified.
+        Additionally, the block-encoding unitary :math:`U` supplied must satisfy
         the property :math:`U^2 = I`, i.e., it is self-inverse. This condition is
         required for the correctness of the Chebyshev polynomial block encoding
         and qubitization step. Further details can be found `here <https://arxiv.org/abs/2208.00567>`_.
@@ -567,14 +575,39 @@ def CKS(A, b, eps, kappa=None, max_beta=None):
     **Case distinctions for b**
 
     - Vector input: 
-        if ``b`` is a NumPy array, a new operand QuantumFloat is constructed, and state preparation is performed via
+        if ``b`` is a NumPy array, a new ``operand`` QuantumFloat is constructed, and state preparation is performed via
         ``prepare(operand, b)``.
 
     - Callable input:
-        if ``b`` is a callable, it is assumed to
-        prepare the operand state when called. The function invokes it to
-        generate the operand QuantumFloat directly via ``operand = b()``.
+        if ``b`` is a callable, it is assumed to prepare the operand state when called. 
+        The ``operand`` QuantumFloat is generated directly via ``operand = b()``.
 
+    Parameters
+    ----------
+    A : numpy.ndarray or scipy.sparse.csr_matrix or tuple
+        Either the Hermitian matrix :math:`A` of size :math:`N \\times N` from
+        the linear system :math:`A \\vec{x} = \\vec{b}`, or a 3-tuple
+        ``(U, state_prep, n)`` representing a preconstructed block-encoding.
+    b : numpy.ndarray or callable
+        Vector :math:`\\vec{b}` of the linear system, or a
+        callable that prepares the corresponding quantum state.
+    eps : float
+        Target precision :math:`\epsilon`, such that the prepared state :math:`\ket{\\tilde{x}}` is within error
+        :math:`\epsilon` of :math:`\ket{x}`.
+    kappa : float, optional
+        Condition number :math:`\\kappa` of :math:`A`. Required when ``A`` is
+        a tuple (block-encoding) rather than a matrix.
+    max_beta : float, optional
+        Optional upper bound on the complexity parameter :math:`\\beta`.
+
+    Returns
+    -------
+    operand : QuantumVariable
+        Quantum variable containing the final (approximate) solution state
+        :math:`\ket{\\tilde{x}} \propto A^{-1}\ket{b}`. When the internal
+        :func:`RUS` decorator reports success (``success_bool = True``), this
+        variable contains the valid post-selected solution. If ``success_bool``
+        is ``False``, the simulation automatically repeats until success.
         
     Examples
     --------
@@ -586,7 +619,7 @@ def CKS(A, b, eps, kappa=None, max_beta=None):
     
     **Example 1: Solving a 4×4 Hermitian system**
 
-    First, we define a small Hermitian matrix :math:`A` and a right-hand side vector :math:`\\vec{b}`
+    First, we define a small Hermitian matrix :math:`A` and a right-hand side vector :math:`\\vec{b}`:
 
     ::
 
@@ -615,28 +648,27 @@ def CKS(A, b, eps, kappa=None, max_beta=None):
         res_dict = main()
 
     The measured dictionary contains probabilities corresponding to each computational basis state.
-    To extract the quantum amplitudes:
+    To extract the quantum amplitudes (up to sign):
 
     ::
 
         for k, v in res_dict.items():
             res_dict[k] = v**0.5
 
-        q = np.array([res_dict.get(key, 0) for key in range(n)])
+        q = np.array([res_dict.get(key, 0) for key in range(len(b))])
         print("QUANTUM SIMULATION\\n", q)
-        QUANTUM SIMULATION
-        [0.02714082 0.55709921 0.53035395 0.63845794]
-
+        # QUANTUM SIMULATION
+        # [0.02714082 0.55709921 0.53035395 0.63845794]
     
-    We can compare this to the classical normalized solution:
+    We compare this to the classical normalized solution:
 
     ::
 
         c = (np.linalg.inv(A) @ b) / np.linalg.norm(np.linalg.inv(A) @ b)
 
         print("CLASSICAL SOLUTION\\n", c)  
-        CLASSICAL SOLUTION
-        [0.02944539 0.55423278 0.53013239 0.64102936]
+        # CLASSICAL SOLUTION
+        # [0.02944539 0.55423278 0.53013239 0.64102936]
 
     We see that we obtained the same result obsered in the quantum simulation up to precision :math:`\epsilon`!
 
@@ -644,7 +676,9 @@ def CKS(A, b, eps, kappa=None, max_beta=None):
     decorator with the ``@count_ops(meas_behavior="0")`` decorator:
 
     ::
-
+        
+        from qrisp.jasp import count_ops
+    
         @count_ops(meas_behavior="0")
         def main():
 
@@ -653,118 +687,99 @@ def CKS(A, b, eps, kappa=None, max_beta=None):
 
         res_dict = main()
         print(res_dict)
-        {'cx': 3628, 
-        't': 1288, 
-        't_dg': 1702, 
-        'p': 178, 
-        'cz': 138, 
-        'cy': 46, 
-        'h': 960, 
-        'x': 324, 
-        's': 66, 
-        's_dg': 66, 
-        'u3': 723, 
-        'gphase': 49, 
-        'ry': 2, 
-        'z': 11, 
-        'measure': 16}
+        # {'cx': 3628, 't': 1288, 't_dg': 1702, 'p': 178, 'cz': 138, 'cy': 46, 'h': 960, 'x': 324, 's': 66, 's_dg': 66, 'u3': 723, 'gphase': 49, 'ry': 2, 'z': 11, 'measure': 16}
 
     The printed dictionary lists the estimated quantum gate counts for the full simulation. Since this approach doesn't run
     the simulation itself, one can estimate the quantum gate counts for arbitrary linear system problem sizes.
     
     **Example 2: Using a custom block encoding**
 
-    This example displays how to solve the linear system for any Hermitian matrix :math:`A`,
-    where the the block encoding :math:`SEL` and state preparation unitary
-    :math:`PREP` are constructed internally from ``A`` via Pauli decomposition.
+    The previous example displays how to solve the linear system for any Hermitian matrix :math:`A`,
+    where the block-encoding is constructed from :math:`A` via Pauli decomposition. While this approach is efficient when :math:`A`
+    corresponds to, e.g., an Ising od a Heisenberg Hamiltonian, in gerneral the number of Pauli terms may not scale favorably, and
+    for certain sparse matrices their structure can be expoited to construct more efficient block-encodings.
 
-    Since for a matrix size :math:`n`, we need :math:`n` such terms for said decomposition,
-    it is more efficient to pass the matrix :math:`A` with a more efficient block encoding, 
-    and pass them as a 3-tuple ``(U, state_prep, n)`` representing a preconstructed block encoding
-    unitary, state preparation routine, and problem size.
-
-    Construct a block-encoded matrix representation for a tridiagonal 3-sparse matrix defined by
+    In this example, we construct a block-encoding representation for a tridiagonal 3-sparse matrix defined by
 
     ::
 
         import numpy as np
 
         def tridiagonal_shifted(n, mu=1.0, dtype=float):
-        I = np.eye(n, dtype=dtype)
-        return (2 + mu) * I - 2*np.eye(n, k=n//2, dtype=dtype) - 2*np.eye(n, k=-n//2, dtype=dtype)
+            I = np.eye(n, dtype=dtype)
+            return (2 + mu) * I - 2*np.eye(n, k=n//2, dtype=dtype) - 2*np.eye(n, k=-n//2, dtype=dtype)
 
-        n = 8
-        A = tridiagonal_shifted(n, mu=3)
-        b = np.random.randint(0, 2, size=n)
+        N = 8
+        A = tridiagonal_shifted(N, mu=3)
+        b = np.random.randint(0, 2, size=N)
 
-    The matrix can be represented using three unitaries: the identity and the two shift operators.
-    Define their corresponding functions:
+    This matrix can be decomposed using three unitaries: the identity $I$, and two shift operators $V\colon\ket{k}\\rightarrow-\ket{k+N/2 \mod N}$ and $V^{\dagger}\colon\ket{k}\\rightarrow-\ket{k-N/2 \mod N}$.
+    We define their corresponding functions:
 
     ::
 
-        def U0(qv):
-        pass
+        from qrisp import gphase, prepare, qswitch
 
-        def U1(qv):
-            qv += n//2
+        def I(qv):
+            pass
+
+        def V(qv):
+            qv += N//2
             gphase(np.pi, qv[0])
 
-        def U2(qv):
-            qv -= n//2
+        def V_dg(qv):
+            qv -= N//2
             gphase(np.pi, qv[0])
 
-        unitaries = [U0, U1, U2]
+        unitaries = [I, V, V_dg]
 
-    Additionally, the block encoding unitary :math:`U` supplied must satisfy
-    the property :math:`U^2 = I`, i.e., it is self-inverse. This condition is
-    required for the correctness of the Chebyshev polynomial block encoding
-    and qubitization step. Further details can be found `here <https://arxiv.org/abs/2208.00567>`_.
+    Additionally, the block encoding unitary :math:`U` supplied must satisfy the property :math:`U^2 = I`, i.e., it is self-inverse. In this case, 
+    This condition is required for the correctness of the Chebyshev polynomial block encoding
+    and qubitization step. Further details can be found `here <https://arxiv.org/abs/2208.00567>`_. In this case, the fact that $V^2=(V^{\dagger})^2=I$
+    ensures that defining the block encoding unitary via a :ref:`quantum switch case <qswitch>` satsifies :math:`U^2 = I`.
 
-    We can now define the tuple ``(U, state_prep, n)``, by also defining the PREPARE and SELECT
-    operators in the scope of LCU
+    We now define the block_encoding ``(U, state_prep, n)``:
 
     ::
 
         coeffs = np.array([5,1,1])
         alpha = np.sum(coeffs)
 
-        def U_func(operand, case):
+        def U(operand, case):
             qswitch(operand, case, unitaries)
 
-        def G_func(case):
+        def state_prep(case):
             prepare(case, np.sqrt(coeffs/alpha))
 
-        BE = (U_func, G_func, 2)
+        block_encoding = (U, state_prep, 2)
 
-    We can nove solve the problem by passing the block encoding tuple defined above as A in the CKS function
+    We now solve the problem by passing the block-encoding tuple defined above as ``A`` in the CKS function
 
     ::
 
         @terminal_sampling
         def main():
 
-            x = CKS(BE, b, 0.01, np.linalg.cond(A))
+            x = CKS(block_encoding, b, 0.01, np.linalg.cond(A))
             return x
 
         res_dict = main()
 
-    We can, again, compare the solution we obtain by quantum simulation with the classic solution
+    We, again, compare the solution we obtain by quantum simulation with the classical solution
 
     ::
 
         for k, v in res_dict.items():
             res_dict[k] = v**0.5
 
-        q = np.array([res_dict.get(key, 0) for key in range(n)])
+        q = np.array([res_dict.get(key, 0) for key in range(N)])
         c = (np.linalg.inv(A) @ b) / np.linalg.norm(np.linalg.inv(A) @ b)
 
         print("QUANTUM SIMULATION\\n", q, "\\nCLASSICAL SOLUTION\\n", c)
-        QUANTUM SIMULATION
-        [0.43917486 0.31395935 0.12522139 0.43917505 0.43917459 0.12522104
-        0.31395943 0.43917502]
-        CLASSICAL SOLUTION
-        [0.43921906 0.3137279  0.12549116 0.43921906 0.43921906 0.12549116
-        0.3137279  0.43921906]
+        # QUANTUM SIMULATION
+        # [0.43917486 0.31395935 0.12522139 0.43917505 0.43917459 0.12522104 0.31395943 0.43917502]
+        # CLASSICAL SOLUTION
+        # [0.43921906 0.3137279  0.12549116 0.43921906 0.43921906 0.12549116 0.3137279  0.43921906]
 
     Performing quantum resource estimation can be performed in the same manner as in the first example:
 
@@ -773,55 +788,16 @@ def CKS(A, b, eps, kappa=None, max_beta=None):
         @count_ops(meas_behavior="0")
         def main():
 
-            x = CKS(BE, b, 0.01, np.linalg.cond(A))
+            x = CKS(block_encoding, b, 0.01, np.linalg.cond(A))
             return x
     
         res_dict = main()
         print(res_dict)
-        {'h': 676, 
-        't_dg': 806, 
-        'cx': 1984, 
-        't': 651, 
-        's': 152, 
-        's_dg': 90, 
-        'u3': 199, 
-        'gphase': 65, 
-        'p': 149, 
-        'z': 15, 
-        'x': 126, 
-        'measure': 142, 
-        'ry': 2}
+        # {'h': 676, 't_dg': 806, 'cx': 1984, 't': 651, 's': 152, 's_dg': 90, 'u3': 199, 'gphase': 65, 'p': 149, 'z': 15, 'x': 126, 'measure': 142, 'ry': 2}
 
-    Important to note, that one can also solve a linear system without calling the ``@RUS`` decorator,
+    Important to note, that one can also solve a linear system without calling the :ref:`RUS` decorator,
     and perform the necessary post-selection by hand. Such an example can be found in :func:`inner_CKS`.
 
-    Parameters
-    ----------
-    A : numpy.ndarray or scipy.sparse.csr_matrix or tuple
-        Either the Hermitian matrix :math:`A` of size :math:`N \\times N` from
-        the linear system :math:`A \\vec{x} = \\vec{b}`, or a 3-tuple
-        ``(U, state_prep, n)`` representing a preconstructed block encoding
-        unitary, state preparation routine, and problem size.
-    b : numpy.ndarray or callable
-        Vector :math:`\\vec{b}` of the linear system, or a
-        callable that prepares the corresponding quantum state.
-    eps : float
-        Target precision :math:`\epsilon`, such that the prepared state :math:`\ket{\\tilde{x}}` is within error
-        :math:`\epsilon` of :math:`\ket{x}`.
-    kappa : float, optional
-        Condition number :math:`\\kappa` of :math:`A`. Required when ``A`` is
-        a tuple rather than a matrix.
-    max_beta : float, optional
-        Optional upper bound on the complexity parameter :math:`\\beta`.
-
-    Returns
-    -------
-    operand : QuantumVariable
-        Quantum variable containing the final (approximate) solution state
-        :math:`\ket{\\tilde{x}} \propto A^{-1}\ket{b}`. When the internal
-        :func:`RUS` decorator reports success (``success_bool = True``), this
-        variable contains the valid post-selected solution. If ``success_bool``
-        is ``False``, the simulation automatically repeats until success.
     """
 
     def qlsp():
