@@ -93,8 +93,8 @@ class HLOControlFlowReplacement(RewritePattern):
                 if_op = scf.IfOp(
                     cond = cmp_op.results[0],
                     return_types = op.result_types,
-                    true_region = op.regions[1].clone(),
-                    false_region = op.regions[0].clone(),
+                    true_region = op.regions[0].clone(),
+                    false_region = op.regions[1].clone(),
                     )
                 
                 rewriter.replace_matched_op([i32_case_indicator, const_op, cmp_op, if_op])
