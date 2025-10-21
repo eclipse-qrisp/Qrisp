@@ -2088,10 +2088,10 @@ class QubitOperator(Hamiltonian):
        
         Returns
         -------
-        U_func : function
-            A function ``U_func(operand, case)`` applying the block encoding unitary $U$ to ``operand`` and ``case`` QuantumVariables.
-        G_func : function
-            A function ``G_func(case)`` preparing the block encoding state $\ket{G}$ in an auxiliary ``case`` QuantumVariable.
+        U : function
+            A function ``U(operand, case)`` applying the block encoding unitary $U$ to ``operand`` and ``case`` QuantumVariables.
+        state_prep : function
+            A function ``state_prep(case)`` preparing the block encoding state $\ket{G}$ in an auxiliary ``case`` QuantumVariable.
         num_qubits : int
             The number of qubits of the auxiliary ``case`` QuantumVariable.
 
@@ -2130,7 +2130,7 @@ class QubitOperator(Hamiltonian):
             @RUS
             def inner():
 
-                U_func, G_func, n = H.pauli_block_encoding()
+                U, state_prep, n = H.pauli_block_encoding()
 
                 a = QuantumFloat(3)
                 h(a)
@@ -2141,8 +2141,8 @@ class QubitOperator(Hamiltonian):
                 case = QuantumVariable(n)
 
                 # Apply matrix A via block encoding 
-                with conjugate(G_func)(case):
-                    U_func(a, case)
+                with conjugate(state_prep)(case):
+                    U(a, case)
 
                 success_bool = measure(case) == 0
 
@@ -2185,11 +2185,11 @@ class QubitOperator(Hamiltonian):
         num_qubits = np.int64(np.ceil(np.log2(len(coeffs))))
 
         @qache
-        def G_func(case):
-            prepare(case, np.sqrt(coeffs/alpha))
-
-        @qache
-        def U_func(operand, case):
+        def U(operand, case):
             qswitch(operand, case, unitaries)
 
-        return U_func, G_func, num_qubits
+        @qache
+        def state_prep(case):
+            prepare(case, np.sqrt(coeffs/alpha))
+
+        return U, state_prep, num_qubits
