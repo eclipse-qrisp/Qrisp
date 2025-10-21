@@ -159,20 +159,15 @@ def cheb_coefficients(j0, b):
 def unary_angles(coeffs):
     """
     Computes rotation angles :math:`\\phi_i` to prepare the unary state :math:`\ket{\\text{unary}}`,
-    corresponding to the square-root-amplitude encoding of the Chebyshev
-    coefficients.
+    corresponding to the square-root-amplitude encoding of the Chebyshev coefficients.
 
     The prepared unary state is
 
     .. math::
 
-        \ket{\\text{unary}} =
-        \\alpha_1\ket{100\\dots00} + \\alpha_3\ket{110\\dots00} +
-        \\cdots + \\alpha_{2j_0+1}\ket{111\\dots11}
-
-    Angles are determined recursively via :math:`\\arctan` ratios of
-    target amplitudes :math:`\\sqrt{\\alpha_i}`. The resulting angles are multiplied by 2 to match the ``ry`` gate convention
-    :math:`\\mathrm{ry}(\\theta) = e^{-i\\theta Y/2}`.
+        \ket{\\text{unary}} \propto
+        \\sqrt{\\alpha_1}\ket{100\\dots00} + \\sqrt{\\alpha_3}\ket{110\\dots00} +
+        \\cdots + \\sqrt{\\alpha_{2j_0+1}}\ket{111\\dots11}
 
     Parameters
     ----------
@@ -197,38 +192,34 @@ def unary_angles(coeffs):
     return 2 * phi  # Compensate for factor 1/2 in ry
 
 
-def unary_prep(out_case, phi):
+def unary_prep(case, coeffs):
     """
     Prepares the unary-encoded state :math:`\ket{\\text{unary}}` of Chebyshev coefficients.
 
-    The resulting superposition is
+    When applied to a variable in state :math:`\ket{0}`, the resulting superposition is
 
     .. math::
 
-        \ket{\\text{unary}} =
-        \\alpha_1\ket{100\\dots00} + \\alpha_3\ket{110\\dots00} +
-        \\cdots + \\alpha_{2j_0+1}\ket{111\\dots11}.
-
-    The operation is implemented as a cascade of controlled ``ry`` rotations,
-    each conditioned on the activation of previous qubits in the unary chain.
+        \ket{\\text{unary}} \propto
+        \\sqrt{\\alpha_1}\ket{100\\dots00} + \\sqrt{\\alpha_3}\ket{110\\dots00} +
+        \\cdots + \\sqrt{\\alpha_{2j_0+1}}\ket{111\\dots11}
 
     Parameters
     ----------
-    out_case : QuantumFloat
-        Empty QuantumFloat with $j_0$ qubits on which the unary-encoded state :math:`\ket{\\text{unary}}` will be performed.
-    phi : np.ndarray
-        Rotation angles :math:`\\vec{\phi}` derived from Chebyshev coefficients.
+    case : QuantumVariable
+        Variable with :math:`j_0` qubits on which the unary state preparation will be performed.
+        If the variable is in state :math:`\ket{0}`, the state :math:`\ket{\\text{unary}}` is prepared.
+    coeffs : np.ndarray
+        An array of :math:`j_0` Chebyshev coefficients :math:`\\alpha_1,\\alpha_3,\dotsc,\\alpha_{2j_0+1}`.
     
-    Returns
-    -------
-    out_case : QuantumFloat
-        Unary-encoded state :math:`\ket{\\text{unary}}`.
     """
-    x(out_case[0])
-    ry(phi[0], out_case[1])
-    for i in jrange(1, out_case.size - 1):
-        with control(out_case[i]):
-            ry(phi[i], out_case[i + 1])
+    phi = unary_angles(coeffs)
+
+    x(case[0])
+    ry(phi[0], case[1])
+    for i in jrange(1, case.size - 1):
+        with control(case[i]):
+            ry(phi[i], case[i + 1])
 
 
 def inner_CKS(A, b, eps, kappa=None, max_beta=None):
@@ -405,7 +396,7 @@ def inner_CKS(A, b, eps, kappa=None, max_beta=None):
         U, state_prep, n = (H.pauli_block_encoding())  # Construct block encoding of A as a set of Pauli unitaries
 
     j_0, beta = CKS_parameters(A, eps, kappa, max_beta)
-    phi = unary_angles(cheb_coefficients(j_0, beta))
+    cheb_coeffs = cheb_coefficients(j_0, beta)
 
     def RU(case, operand):
         """
@@ -445,7 +436,7 @@ def inner_CKS(A, b, eps, kappa=None, max_beta=None):
         prepare(operand, b)
 
     # Core LCU protocol: PREP, SELECT, PREP^†
-    with conjugate(unary_prep)(out_case, phi):
+    with conjugate(unary_prep)(out_case, cheb_coeffs):
         with conjugate(state_prep)(in_case):
             with control(out_case[0]):
                 RU(in_case, operand)

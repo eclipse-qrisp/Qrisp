@@ -23,5 +23,4 @@ Miscellaneous
     
     CKS_parameters
     cheb_coefficients
-    unary_angles
     unary_prep
