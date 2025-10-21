@@ -129,7 +129,7 @@ def cheb_coefficients(j0, b):
     The Linear Combination of Unitaries (LCU) lemma requires strictly
     positive coefficients :math:`\\alpha_i > 0`, their absolute values are
     used. The alternating factor :math:`(-1)^j` is later implemented as a set of
-    conditional Z gates within the Chebyshev circuit (see :func:`inner_CKS`).
+    Z-gates within the CKS circuit (see :func:`inner_CKS`).
 
     Parameters
     ----------
@@ -143,7 +143,7 @@ def cheb_coefficients(j0, b):
     -------
     coeffs : np.ndarray
         Array of positive Chebyshev coefficients
-        :math:`{\\alpha_i}`, corresponding to the odd degrees of Chebyshev polynomials of the first order :math:`T_1, T_3, \\dots, T_{2j_0+1}`.
+        :math:`{\\alpha_i}`, corresponding to the odd degrees of Chebyshev polynomials of the first kind :math:`T_1, T_3, \\dots, T_{2j_0+1}`.
     """
     coeffs = []
     for j in range(j0 + 1):
@@ -249,7 +249,7 @@ def inner_CKS(A, b, eps, kappa=None, max_beta=None):
          (:func:`cheb_coefficients`, :func:`unary_angles`, :func:`unary_prep`).
       3. Build the core LCU structure and qubitization operator (:func:`inner_CKS`).
 
-    This function constructs the routine for the block-encoding (LCU) protocol
+    This function constructs the circuit for the block-encoding (LCU) protocol
 
     .. math::
 
