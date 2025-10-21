@@ -223,11 +223,11 @@ def unary_prep(out_case, phi):
 
 def inner_CKS(A, b, eps, kappa=None, max_beta=None):
     """
-    Core circuit implementation of the CKS algorithm. 
+    Core implementation of the CKS algorithm. 
     
     This function integrates core components of the CKS approach to construct the circuit:
     Chebyshev polynomial approximation, linear combination of unitaries (LCU), and
-    `qubitization with reflection operators <https://arxiv.org/abs/2208.00567>`_. and the Repeat-Until-Success (RUS) protocol.
+    `qubitization with reflection operators <https://arxiv.org/abs/2208.00567>`_ and the :ref:`RUS` (RUS) protocol.
     The semantics of the approach can be illustrated with the following circuit schematics:
 
     .. image:: /_static/CKS_circuit.png
@@ -239,20 +239,20 @@ def inner_CKS(A, b, eps, kappa=None, max_beta=None):
          (:func:`cheb_coefficients`, :func:`unary_angles`, :func:`unary_prep`).
       3. Build the core LCU structure and qubitization operator (:func:`inner_CKS`).
 
-    This function constructs the circuit for the block encoding (LCU) protocol.
+    This function constructs the routine for the block-encoding (LCU) protocol
 
     .. math::
 
-        LCU\ket{0}\ket{\psi}=PREP^{\dagger}SELPREP\ket{0}\ket{\psi}=\\tilde{A}\ket{0}\ket{\psi} ,
+        LCU\ket{0}\ket{\psi}=PREP^{\dagger}\cdot SEL\cdot PREP\ket{0}\ket{\psi}=\\tilde{A}\ket{0}\ket{\psi}
 
     where :math:`PREP` prepares the LCU state and :math:`SEL` applies the
-    Chebyshev terms constructed with $k$ qubitization steps :math:`T_k=(RU)^k` controlled on a unary register. Based of the Hamming-weight :math:`k` of :math:`\ket{\\text{unary}}`,
+    Chebyshev terms constructed with $k$ qubitization steps :math:`T_k=(RU)^k` controlled on the qubits of a QuantumVariable in a unary-encoded state :math:`\ket{\\text{unary}}`. 
+    Based of the Hamming-weight :math:`k` of :math:`\ket{\\text{unary}}`,
     the polynomial :math:`T_{2k-1}` is block encoded and applied to the circuit.
 
     The Chebyshev coefficients alternate in sign :math:`(-1)^j\\alpha_j`.
     Since the LCU lemma requires :math:`\\alpha_i>0`, negative terms are
-    implemented by conditional Z-gates applied on each index qubit in
-    ``out_case``.
+    implemented by Z-gates applied on each index qubit in ``out_case``.
 
     This function supports interchangeable and independent input cases for both
     the matrix ``A`` and vector ``b`` from the QLSP :math:`A\\vec{x} = \\vec{b}`:
@@ -260,16 +260,24 @@ def inner_CKS(A, b, eps, kappa=None, max_beta=None):
     **Case distinctions for A**
 
     - Matrix input: 
-        if ``A`` is either a NumPy array (Hermitian matrix), or SciPy sparse CSR matrix (Hermitian matrix),
-        the block encoding :math:`SEL` and state-preparation unitary
-        :math:`PREP` are constructed internally from ``A`` via Pauli
-        decomposition.
+        ``A`` is either a NumPy array (Hermitian matrix), or SciPy Compressed Sparse Row matrix (Hermitian matrix).
+        The block encoding unitary :math:`SEL` and state preparation unitary
+        :math:`PREP` are constructed internally from ``A`` via
+        :meth:`Pauli decomposition <qrisp.operators.qubit.QubitOperator.pauli_block_encoding>`.
 
-    - Tuple input: 
-        if ``A`` is a tuple of length 3, the function assumes
-        external context provides or manages :math:`\\kappa` directly. In this
-        case, ``kappa`` must be specified explicitly or precomputed elsewhere.
-        Additionally, the block encoding unitary :math:`U` supplied must satisfy
+    - Block-encoding input: 
+        ``A`` is a 3-tuple ``(U, state_prep, n)`` representing a block-encoding: 
+        
+        * U : callable
+            A callable ``U(operand, case)`` applying the block-encoding unitary :math:`SEL`.
+        * state_prep : callable
+            A callable ``state_prep(case)`` applying the block-encoding state preparatiion unitary :math:`PREP`
+            to an auxiliary ``case`` QuantumVariable .
+        * n : int
+            The size of the auxiliary ``case`` QuantumVariable.
+            
+        In this case, (an upper bound for) the condition number ``kappa`` must be specified.
+        Additionally, the block-encoding unitary :math:`U` supplied must satisfy
         the property :math:`U^2 = I`, i.e., it is self-inverse. This condition is
         required for the correctness of the Chebyshev polynomial block encoding
         and qubitization step. Further details can be found `here <https://arxiv.org/abs/2208.00567>`_.
@@ -277,88 +285,19 @@ def inner_CKS(A, b, eps, kappa=None, max_beta=None):
     **Case distinctions for b**
 
     - Vector input: 
-        if ``b`` is a NumPy array, a new operand QuantumFloat is constructed, and state preparation is performed via
+        if ``b`` is a NumPy array, a new ``operand`` QuantumFloat is constructed, and state preparation is performed via
         ``prepare(operand, b)``.
 
     - Callable input:
-        if ``b`` is a callable, it is assumed to
-        prepare the operand state when called. The function invokes it to
-        generate the operand QuantumFloat directly via ``operand = b()``.
+        if ``b`` is a callable, it is assumed to prepare the operand state when called. 
+        The ``operand`` QuantumFloat is generated directly via ``operand = b()``.
 
-        
-    Examples
-    --------
-
-    The example shows how to solve the QLSP using the ``inner_CKS`` function directly,
-    without employing the ``@RUS`` Repeat Until Success protocol in qrisp.
-
-    First, define a small Hermitian matrix :math:`A` and a right-hand side vector :math:`\\vec{b}`
-
-    ::
-
-        import numpy as np
-
-        A = np.array([[0.73255474, 0.14516978, -0.14510851, -0.0391581],
-                      [0.14516978, 0.68701415, -0.04929867, -0.00999921],
-                      [-0.14510851, -0.04929867, 0.76587818, -0.03420339],
-                      [-0.0391581, -0.00999921, -0.03420339, 0.58862043]])
-
-        b = np.array([0, 1, 1, 1])
-
-    Then, constuct the CKS circuit and perform a multi measurement:
-    ::
-
-        operand, in_case, out_case = inner_CKS(A, b, 0.001)
-        res_dict = multi_measurement([operand, in_case, out_case])
-
-    This performs the measurement on all three of our QuantumVariables ``out_case``, ``in_case```, and ``operand``.
-    Since the CKS (and all other LCU based approaches) is correctly performed only when
-    auxiliary QuantumVariables are measured in :math:`\ket{0}`, we need
-    to construct a new dictionarry, and sample from the measurements when this is true.
-
-    ::
-
-        new_dict = dict()
-        sum = 0
-
-        for key, prob in res_dict.items():
-            if key[1]==0 and key[2]==0:
-                new_dict[key[0]] = prob
-                sum += prob
-
-        for key in new_dict.keys():
-            new_dict[key] = new_dict[key]/sum
-
-        for k, v in new_dict.items():
-            new_dict[k] = v**0.5
-    
-    Finally, compare the quantum simulation result with the classical solution:
-
-    ::
-
-        q = np.array([new_dict.get(key, 0) for key in range(n)])
-        c = (np.linalg.inv(A) @ b) / np.linalg.norm(np.linalg.inv(A) @ b)
-
-        print("QUANTUM SIMULATION\\n", q, "\\nCLASSICAL SOLUTION\\n", c)
-        QUANTUM SIMULATION
-        [0.0289281  0.55469649 0.53006773 0.64070521] 
-        CLASSICAL SOLUTION
-        [0.02944539 0.55423278 0.53013239 0.64102936]
-
-    This approach enables execution of the compiled CKS circuit on compatible quantum
-    hardware or simulators.
-
-    Note that, unlike the examples using the ``@RUS`` decorator in :func:`CKS`, 
-    quantum resource estimation cannot be directly performed with this approach.    
-
-    
     Parameters
     ----------
     A : numpy.ndarray or scipy.sparse.csr_matrix or tuple
         Either the Hermitian matrix :math:`A` of size :math:`N \\times N` from
         the linear system :math:`A \\vec{x} = \\vec{b}`, or a 3-tuple
-        ``(U, state_prep, n)`` representing a preconstructed block encoding
-        unitary, state preparation routine, and problem size.
+        ``(U, state_prep, n)`` representing a preconstructed block-encoding.
     b : numpy.ndarray or callable
         Vector :math:`\\vec{b}` of the linear system, or a
         callable that prepares the corresponding quantum state.
@@ -367,7 +306,7 @@ def inner_CKS(A, b, eps, kappa=None, max_beta=None):
         :math:`\epsilon` of :math:`\ket{x}`.
     kappa : float, optional
         Condition number :math:`\\kappa` of :math:`A`. Required when ``A`` is
-        a tuple rather than a matrix.
+        a tuple (block-encoding) rather than a matrix.
     max_beta : float, optional
         Optional upper bound on the complexity parameter :math:`\\beta`.
 
@@ -381,6 +320,72 @@ def inner_CKS(A, b, eps, kappa=None, max_beta=None):
     out_case : QuantumVariable
         Auxiliary QuantumFloat after applying the LCU protocol.
         Must be measured in state $\ket{0}$ for the LCU protocol to be successful.
+        
+    Examples
+    --------
+
+    The example shows how to solve a QLSP using the ``inner_CKS`` function directly,
+    without employing the :ref:`RUS` protocol in Qrisp.
+
+    First, define a Hermitian matrix :math:`A` and a right-hand side vector :math:`\\vec{b}`
+
+    ::
+
+        import numpy as np
+
+        A = np.array([[0.73255474, 0.14516978, -0.14510851, -0.0391581],
+                      [0.14516978, 0.68701415, -0.04929867, -0.00999921],
+                      [-0.14510851, -0.04929867, 0.76587818, -0.03420339],
+                      [-0.0391581, -0.00999921, -0.03420339, 0.58862043]])
+
+        b = np.array([0, 1, 1, 1])
+
+    Then, constuct the CKS circuit and perform a multi measurement: 
+
+    ::
+
+        from qrisp.algorithms.cks import inner_CKS
+        from qrisp import multi_measurement
+
+        operand, in_case, out_case = inner_CKS(A, b, 0.001)
+        res_dict = multi_measurement([operand, in_case, out_case])
+
+    This performs the measurement on all three of our QuantumVariables ``out_case``, ``in_case``, and ``operand``.
+    Since the CKS (and all other LCU based approaches) is correctly performed only when
+    auxiliary QuantumVariables are measured in :math:`\ket{0}`, we need
+    to construct a new dictionary, and collect the measurements when this is true.
+
+    ::
+
+        new_dict = dict()
+        success_prob = 0
+
+        for key, prob in res_dict.items():
+            if key[1]==0 and key[2]==0:
+                new_dict[key[0]] = prob
+                success_prob += prob
+
+        for key in new_dict.keys():
+            new_dict[key] = new_dict[key]/success_prob
+
+        for k, v in new_dict.items():
+            new_dict[k] = v**0.5
+    
+    Finally, compare the quantum simulation result with the classical solution:
+
+    ::
+
+        q = np.array([new_dict.get(key, 0) for key in range(len(b))])
+        c = (np.linalg.inv(A) @ b) / np.linalg.norm(np.linalg.inv(A) @ b)
+
+        print("QUANTUM SIMULATION\\n", q, "\\nCLASSICAL SOLUTION\\n", c)
+        # QUANTUM SIMULATION
+        # [0.0289281  0.55469649 0.53006773 0.64070521] 
+        # CLASSICAL SOLUTION
+        # [0.02944539 0.55423278 0.53013239 0.64102936]
+
+    This approach enables execution of the compiled CKS circuit on :ref:`compatible quantum
+    hardware or simulators <BackendInterface>`.  
 
     """
     if isinstance(A, tuple) and len(A) == 3:
