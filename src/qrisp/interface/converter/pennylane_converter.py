@@ -39,7 +39,7 @@ TODO:
 
 """
 
-# mapping from Qrisp operation names to PennyLane gates
+# Mapping from Qrisp operation names to PennyLane gates
 mapping = {
     "rxx": qml.IsingXX,
     "ryy": qml.IsingYY,
@@ -69,18 +69,15 @@ def create_qml_instruction(op):
     """Create a PennyLane instruction from a Qrisp operation."""
 
     if op.name in mapping:
-        qml_ins = mapping[op.name]
+        return mapping[op.name]
 
     # complex gate, with subcircuit definition we create a representative subcircuit
-    elif op.definition:
+    if op.definition is not None:
         return qml_converter(op.definition, circ=True)
 
-    else:
-        NotImplementedError(
-            f"Operation {op.name} not implemented in PennyLane converter."
-        )
-
-    return qml_ins
+    raise NotImplementedError(
+        f"Operation {op.name} not implemented in PennyLane converter."
+    )
 
 
 def qml_converter(qc, circ=False):
