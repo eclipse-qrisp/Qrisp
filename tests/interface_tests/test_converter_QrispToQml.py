@@ -261,6 +261,64 @@ class TestSingleGateConversion:
         check_probs_equivalence(qrisp_res, qml_res)
 
 
+class TestMultiQubitGateConversion:
+    """Test class for multi-qubit gate conversions from Qrisp to PennyLane."""
+
+    def test_cx_cz_cy_gates(self):
+        """Test conversion of CX, CZ, CY gates from Qrisp to PennyLane."""
+        qrisp_qv = QuantumVariable(3)
+        qrisp_qs = qrisp_qv.qs
+
+        qrisp_qs.append(CXGate(), [qrisp_qv[0], qrisp_qv[1]])
+        qrisp_qs.append(CZGate(), [qrisp_qv[1], qrisp_qv[2]])
+        qrisp_qs.append(CYGate(), [qrisp_qv[2], qrisp_qv[0]])
+
+        qml_converted_circuit = _create_qml_circuit(qrisp_qv)
+
+        # We execute the circuit to populate the tape
+        qml_res = qml_converted_circuit()
+
+        expected_ops = [
+            qml.CNOT(wires=[qrisp_qv[0].identifier, qrisp_qv[1].identifier]),
+            qml.CZ(wires=[qrisp_qv[1].identifier, qrisp_qv[2].identifier]),
+            qml.CY(wires=[qrisp_qv[2].identifier, qrisp_qv[0].identifier]),
+        ]
+        check_qml_operations(qml_converted_circuit, expected_ops)
+
+        qrisp_res = qrisp_qv.get_measurement()
+        qml_res = np.asarray(qml_res, dtype=float)
+        check_probs_equivalence(qrisp_res, qml_res)
+
+    def test_swap_rxx_rzz_gates(self):
+        """Test conversion of SWAP, RXX, RZZ gates from Qrisp to PennyLane."""
+        qrisp_qv = QuantumVariable(2)
+        qrisp_qs = qrisp_qv.qs
+
+        qrisp_qs.append(SwapGate(), [qrisp_qv[0], qrisp_qv[1]])
+        qrisp_qs.append(RXXGate(np.pi / 2), [qrisp_qv[0], qrisp_qv[1]])
+        qrisp_qs.append(RZZGate(np.pi / 4), [qrisp_qv[1], qrisp_qv[0]])
+
+        qml_converted_circuit = _create_qml_circuit(qrisp_qv)
+
+        # We execute the circuit to populate the tape
+        qml_res = qml_converted_circuit()
+
+        expected_ops = [
+            qml.SWAP(wires=[qrisp_qv[0].identifier, qrisp_qv[1].identifier]),
+            qml.IsingXX(
+                np.pi / 2, wires=[qrisp_qv[0].identifier, qrisp_qv[1].identifier]
+            ),
+            qml.IsingZZ(
+                np.pi / 4, wires=[qrisp_qv[1].identifier, qrisp_qv[0].identifier]
+            ),
+        ]
+        check_qml_operations(qml_converted_circuit, expected_ops)
+
+        qrisp_res = qrisp_qv.get_measurement()
+        qml_res = np.asarray(qml_res, dtype=float)
+        check_probs_equivalence(qrisp_res, qml_res)
+
+
 # TODO: continue from here
 
 # create randomized qrisp circuit, convert to pennylane, measure outcomes and compare if they are equivalent.
