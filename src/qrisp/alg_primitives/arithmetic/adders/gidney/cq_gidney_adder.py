@@ -21,7 +21,7 @@
 # and one quantum input.
 
 # For the quantum-quantum version please check qrisp.alg_primitives.arithmetic.adders.gidney_adder
-
+import numpy as np
 
 from qrisp.qtypes import QuantumBool
 from qrisp.core import QuantumVariable, merge
@@ -59,7 +59,8 @@ def cq_gidney_adder(a, b, c_in=None, c_out=None, ctrl=None):
 
     with fast_append(3):
 
-        if isinstance(a, int):
+        if isinstance(a, (int, np.int_)):
+            a = int(a)
             a = bin_rep(a % 2 ** len(b), len(b))[::-1]
         elif not isinstance(a, str):
             raise Exception(

@@ -176,7 +176,10 @@ class QuantumModulus(QuantumFloat):
 
         if check_for_tracing_mode():
             from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import smallest_power_of_two
-            
+            from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
+            if isinstance(modulus, BigInteger):
+                pad = jnp.zeros(modulus.digits.shape[0], dtype=modulus.digits.dtype)
+                modulus = BigInteger(jnp.concatenate([modulus.digits, pad], axis=0))
             self.modulus = modulus
             aux = smallest_power_of_two(modulus)
 
@@ -292,6 +295,7 @@ class QuantumModulus(QuantumFloat):
 
     @gate_wrap(permeability="args", is_qfree=True)
     def __mul__(self, other):
+        from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
         if isinstance(other, QuantumModulus):
             if self.m != other.m:
                 raise ValueError("Both QuantumModuli must have the same shift")
@@ -308,14 +312,16 @@ class QuantumModulus(QuantumFloat):
                 )           
                 return montgomery_mod_mul(self, other)
 
-
-        elif isinstance(other, (int, np.integer, jnp.integer)):
+        elif isinstance(other, (int, np.integer, jnp.integer, BigInteger)):
             from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import (
                 cq_montgomery_multiply
             )
             from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import (
                 best_montgomery_shift
             )
+            if isinstance(other, BigInteger):
+                pad = jnp.zeros(other.digits.shape[0], dtype=other.digits.dtype)
+                other = BigInteger(jnp.concatenate([other.digits, pad], axis=0))
             shift = best_montgomery_shift(other, self.modulus)
             return cq_montgomery_multiply(other, self, self.modulus, shift)
         else:
@@ -336,6 +342,10 @@ class QuantumModulus(QuantumFloat):
             from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import (
                 best_montgomery_shift
             )
+            if isinstance(other, BigInteger):
+                pad = jnp.zeros(other.digits.shape[0], dtype=other.digits.dtype)
+                other = BigInteger(jnp.concatenate([other.digits, pad], axis=0))
+            
             shift = best_montgomery_shift(other, self.modulus)
             cq_montgomery_multiply_inplace(other, self, self.modulus, shift, self.inpl_adder)
             return self

@@ -1205,9 +1205,13 @@ def bi_modinv(a: BigInteger, m: BigInteger) -> BigInteger:
     Uses `//` and `%` which rely on exact multi-precision division implemented
     in this module. Both `a` and `m` are treated as fixed-width unsigned values.
     """
+    # Widen to 2n limbs
     n = a.digits.shape[0]
-    bi0 = BigInteger.create(0, n)
-    bi1 = BigInteger.create(1, n)
+    pad = jnp.zeros(n, dtype=DTYPE)
+    a = BigInteger(jnp.concatenate([a.digits, pad], axis=0))
+    m = BigInteger(jnp.concatenate([m.digits, pad], axis=0))
+    bi0 = BigInteger.create(0, 2*n)
+    bi1 = BigInteger.create(1, 2*n)
 
     t, new_t = bi0, bi1
     r, new_r = m, a
@@ -1227,7 +1231,7 @@ def bi_modinv(a: BigInteger, m: BigInteger) -> BigInteger:
         return new_t, t_updated, new_r, r_updated
 
     final_t, _, final_r, _ = lax.while_loop(cond, body, (t, new_t, r, new_r))
-    return final_t
+    return BigInteger(final_t.digits[0:n])
 
 
 @jax.jit

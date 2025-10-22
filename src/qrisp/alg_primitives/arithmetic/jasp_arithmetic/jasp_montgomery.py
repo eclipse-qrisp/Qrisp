@@ -344,8 +344,14 @@ def qq_montgomery_multiply_modulus(x: QuantumModulus, y: QuantumModulus):
 def cq_montgomery_mat_multiply(A, B, out):
     if check_for_tracing_mode():
         xrange = jrange
+        x_cond = q_cond
     else:
         xrange = range
+        def x_cond(condition, tf, ff):
+            if condition:
+                tf()
+            else:
+                ff()
 
     n1 = A.shape[0]
     n2 = B.shape[1]
@@ -365,6 +371,6 @@ def cq_montgomery_mat_multiply(A, B, out):
                     with invert():
                         cq_montgomery_multiply(B[k,j], A[i,k], A[i,k].modulus, shift, res=aux)
                     aux.delete()
-                q_cond(B[k,j] != 0, true_fun, lambda:None)
+                x_cond(B[k,j] != 0, true_fun, lambda:None)
 
     return out
