@@ -817,6 +817,19 @@ class BigInteger:
         assert n == m
         r_digits, q_digits = _remainder_division_knuth(self.digits, other.digits)
         return BigInteger(r_digits), BigInteger(q_digits)
+    
+    def get_larger(self):
+        """
+        Given a BigInteger with n limbs, return a new BigInteger with 2n limbs and the 
+        same number
+
+        Returns
+        -------
+        BigInteger
+            Larger BigInteger with 2n limbs
+        """
+        pad = jnp.zeros(self.digits.shape[0], dtype=self.digits.dtype)
+        return BigInteger(jnp.concatenate([self.digits, pad], axis=0))
 
 
 @jax.jit

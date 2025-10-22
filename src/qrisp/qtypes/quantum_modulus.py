@@ -177,9 +177,9 @@ class QuantumModulus(QuantumFloat):
         if check_for_tracing_mode():
             from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import smallest_power_of_two
             from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
-            if isinstance(modulus, BigInteger):
-                pad = jnp.zeros(modulus.digits.shape[0], dtype=modulus.digits.dtype)
-                modulus = BigInteger(jnp.concatenate([modulus.digits, pad], axis=0))
+            #if isinstance(modulus, BigInteger):
+            #    pad = jnp.zeros(modulus.digits.shape[0], dtype=modulus.digits.dtype)
+            #    self.modulus_double = BigInteger(jnp.concatenate([modulus.digits, pad], axis=0))
             self.modulus = modulus
             aux = smallest_power_of_two(modulus)
 
@@ -319,10 +319,10 @@ class QuantumModulus(QuantumFloat):
             from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import (
                 best_montgomery_shift
             )
-            if isinstance(other, BigInteger):
-                pad = jnp.zeros(other.digits.shape[0], dtype=other.digits.dtype)
-                other = BigInteger(jnp.concatenate([other.digits, pad], axis=0))
             shift = best_montgomery_shift(other, self.modulus)
+            if isinstance(self.modulus, BigInteger):
+                assert isinstance(other, BigInteger)
+                return cq_montgomery_multiply(other.get_larger(), self, self.modulus.get_larger(), shift)
             return cq_montgomery_multiply(other, self, self.modulus, shift)
         else:
             raise Exception(
@@ -342,12 +342,18 @@ class QuantumModulus(QuantumFloat):
             from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import (
                 best_montgomery_shift
             )
+            
+            shift = best_montgomery_shift(other, self.modulus)
+            if isinstance(self.modulus, BigInteger):
+                assert isinstance(other, BigInteger)
+                cq_montgomery_multiply_inplace(other.get_larger(), self, self.modulus.get_larger(), shift, self.inpl_adder)
+            else:
+                cq_montgomery_multiply_inplace(other, self, self.modulus, shift, self.inpl_adder)
+        
             if isinstance(other, BigInteger):
                 pad = jnp.zeros(other.digits.shape[0], dtype=other.digits.dtype)
                 other = BigInteger(jnp.concatenate([other.digits, pad], axis=0))
             
-            shift = best_montgomery_shift(other, self.modulus)
-            cq_montgomery_multiply_inplace(other, self, self.modulus, shift, self.inpl_adder)
             return self
         else: 
             raise Exception(
