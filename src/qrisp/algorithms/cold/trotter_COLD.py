@@ -7,89 +7,7 @@ from sympy import Symbol
 import scipy
 import sympy as sp
 from qrisp.algorithms.cold.crab import CRABObjective
-import time
-import pandas as pd
 
-
-#########################
-### System parameters ###
-#########################
-
-### Small example
-# Q = np.array([[-1, 2, -1],
-#               [2, -2, 0],
-#               [-1, 0, -1]])
-
-### Solution
-# x = (1, 0, 1) minimize to xQx = -4
-
-### Other small example
-Q = np.array([[-0.9, 0.5, 0.3], 
-              [0.5, -0.7, -0.4], 
-              [0.3, -0.4, 0.2]])
-### Solution
-solution = {'011': -1.3}
-
-Q = np.array([[-1.0, 0.5, 0.4, 0.0], 
-              [0.5, -0.9, 0.6, 0.0], 
-              [0.4, 0.6, -0.8, -0.5], 
-              [0.0, 0.0, -0.5, 0.2]])
-### Solution
-solution = {'1011': -1.8}
-
-### Medium example
-Q = np.array([[-1.2,  0.6,  0.6,  0.0,  0.0],
-              [ 0.6, -0.8,  0.6,  0.0,  0.0],
-              [ 0.6,  0.6, -0.9, -0.7,  0.0],
-              [ 0.0,  0.0, -0.7, -0.4,  0.5],
-              [ 0.0,  0.0,  0.0,  0.5,  0.3]])
-
-### Solution
-solution = {'00110': -2.7, 
-            '10110': -2.7}
-
-
-# N = 6 example
-Q = np.array([[-1.1, 0.6, 0.4, 0.0, 0.0, 0.0],
-              [0.6, -0.9,  0.5, 0.0, 0.0, 0.0],
-              [0.4, 0.5, -1.0, -0.6, 0.0, 0.0],
-              [0.0, 0.0, -0.6, -0.5, 0.6, 0.0],
-              [0.0, 0.0, 0.0, 0.6, -0.3, 0.5],
-              [0.0, 0.0, 0.0, 0.0, 0.5, -0.4]])
-solution = {'101101': -3.4}
-
-# N = 7 example
-Q = np.array([[-1.2,0.5, 0.4, 0.0, 0.0, 0.0, 0.0],
-              [0.5, -1.0, 0.5, 0.0, 0.0, 0.0, 0.0],
-              [0.4, 0.5, -0.9, -0.6, 0.0, 0.0, 0.0],
-              [0.0, 0.0, -0.6, -0.7, 0.6, 0.0, 0.0],
-              [0.0, 0.0, 0.0, 0.6, -0.4, 0.5, 0.0],
-              [0.0, 0.0, 0.0, 0.0, 0.5, -0.3, 0.4],
-              [0.0, 0.0, 0.0, 0.0, 0.0, 0.4, -0.2]])
-solution = {'1011010': -3.5}
-
-# N = 8 example
-Q = np.array([[-1.3, 0.6, 0.4, 0., 0., 0., 0., 0.],
-              [0.6, -1., 0.5, 0., 0., 0., 0., 0.],
-              [0.4, 0.5, -1.1, -0.6, 0., 0., 0., 0.],
-              [0., 0., -0.6, -0.6, 0.6, 0., 0., 0.],
-              [0., 0., 0., 0.6, -0.4, 0.5, 0., 0.],
-              [0., 0., 0., 0., 0.5, -0.3, 0.4, 0.],
-              [0., 0., 0., 0., 0., 0.4, -0.25, 0.3],
-              [0., 0., 0., 0., 0., 0., 0.3, -0.2]])
-solution = {'10110101': -3.9}
-
-# N = 9 example
-Q = np.array([[-1.,0.4, 0.3, 0., 0., 0., 0., 0., 0.2],
-              [0.4, -0.9, 0.6, 0., 0., 0., 0., 0., 0.],
-              [0.3, 0.6, -1.2, -0.5, 0., 0., 0., 0., 0.],
-              [0., 0., -0.5, -0.8, 0.70, 0., 0., 0., 0.],
-              [0., 0., 0., 0.7, -0.3, 0.6, 0., 0., 0.],
-              [0., 0., 0., 0., 0.6, -0.4, 0.5, 0., 0.],
-              [0., 0., 0., 0., 0., 0.5, -0.25, 0.4, 0.],
-              [0., 0., 0., 0., 0., 0., 0.4, -0.2, 0.35],
-              [0.2, 0., 0., 0., 0., 0., 0., 0.35, -0.15]])
-solution = {'101101010': -4.0}
 
 # Build initial Hamiltonian
 def H_init(N):
@@ -265,6 +183,12 @@ def apply_cold_hamiltonian(qarg, N_steps, T, beta, CRAB=False):
         # Transform beta to sympy to work with symbols for random values
         beta = sp.Matrix(beta)
 
+    # Trotterize Hamiltonians with different time-dependent prefactors
+    U1 = H_i.trotterization()
+    U2 = H_p.trotterization()
+    U3 = sum_y.trotterization()
+    U4 = sum_z.trotterization()
+
     # Apply hamiltonian to qarg for each timestep
     for s in range(N_steps):
 
@@ -273,18 +197,21 @@ def apply_cold_hamiltonian(qarg, N_steps, T, beta, CRAB=False):
         f_deriv = cos_matrix[s, :] @ beta
         alph = alpha(lam[s], f, f_deriv)
 
-        # H_0 contribution scaled by dt
-        H_step = dt * H_0(lam[s])
-
-        # AGP contribution scaled by dt* lambda_dot(t)
-        H_step = H_step + dt * lamdot[s] * A_lam(alph)
-
-        # Control pulse contribution 
-        H_step = H_step + dt * H_control(f, CRAB)
-
-        # Get unitary from trotterization and apply to qarg
-        U = H_step.trotterization()
-        U(qarg)
+        # Prefactor for U1
+        a = dt * (1 - lam[s])
+        U1(qarg, a)
+        # Prefactor for U2
+        b = dt * lam[s]
+        U2(qarg, b)
+        # Prefactor for U3
+        c = dt * lamdot[s] * alph
+        U3(qarg, c)
+        # Prefactor for U4
+        if CRAB:
+            d = dt * sum(f[i, 0] for i in range(f.rows)) # richtig?
+        else:
+            d = dt * f
+        U4(qarg, d)
 
 
 def compile_U(qarg, N_opt, N_steps, T, CRAB=False):
@@ -368,3 +295,29 @@ def COLD_routine(Q, qarg, N_steps, T, N_opt, CRAB=False):
     res_dict = qarg.get_measurement()
 
     return res_dict
+
+def qubo_cost(Q, P):
+    expected_cost = 0.0
+    for bitstring, prob in P.items():
+        # Convert bitstring (e.g., "10110") to numpy array of ints
+        x = np.array([int(b) for b in bitstring], dtype=float)
+        # Compute quadratic form x^T Q x
+        cost = x @ Q @ x
+        # Weight by probability
+        expected_cost += prob * cost
+    return expected_cost
+
+def success_prob(meas, solution):
+    sp = 0
+    for s in solution.keys():
+        try:
+            sp += meas[s]
+        except KeyError:
+            continue
+    return sp
+
+def approx_ratio(Q, meas, solution):
+    cost = qubo_cost(Q, meas)
+    opt_cost = list(solution.values())[0]
+    ar = cost/opt_cost
+    return ar

@@ -5,8 +5,7 @@ import time
 import itertools
 from qrisp import QuantumVariable
 from qrisp.algorithms.cold.trotter_COLD import LCD_routine, COLD_routine
-from qrisp.algorithms.cold.qubo_problems import Q6 as Q
-from qrisp.algorithms.cold.qubo_problems import solution6 as solution
+from qrisp.algorithms.cold.qubo_problems import *
 
 ### Some Functions for evaluating algorithms ###
 
@@ -30,7 +29,7 @@ def success_prob(meas, solution):
             continue
     return sp
 
-def approx_ratio(meas, solution):
+def approx_ratio(Q, meas, solution):
     cost = qubo_cost(Q, meas)
     opt_cost = list(solution.values())[0]
     ar = cost/opt_cost
@@ -67,7 +66,7 @@ def evaluate(Q, solution, T, dt, method):
         data = [N, T, T/N_steps, 'lcd',
                 qubo_cost(Q, meas_lcd), 
                 success_prob(meas_lcd, solution), 
-                approx_ratio(meas_lcd, solution), 
+                approx_ratio(Q, meas_lcd, solution), 
                 t1-t0]
 
     elif method == 'COLD':
@@ -81,7 +80,7 @@ def evaluate(Q, solution, T, dt, method):
         data = [N, T, T/N_steps, 'cold', 
                 qubo_cost(Q, meas_cold), 
                 success_prob(meas_cold, solution), 
-                approx_ratio(meas_cold, solution), 
+                approx_ratio(Q, meas_cold, solution), 
                 t1-t0]
         
     elif method == 'COLD-CRAB':
@@ -95,7 +94,7 @@ def evaluate(Q, solution, T, dt, method):
         data = [N, T, T/N_steps, 'cold-crab', 
                 qubo_cost(Q, meas_cold_crab), 
                 success_prob(meas_cold_crab, solution), 
-                approx_ratio(meas_cold_crab, solution), 
+                approx_ratio(Q, meas_cold_crab, solution), 
                 t1-t0]
 
     # Save as csv
@@ -105,21 +104,21 @@ def evaluate(Q, solution, T, dt, method):
 
 
 # Paralell ececution of each evloution time and method
-comm = MPI.COMM_WORLD
-rank = comm.Get_rank()
+# comm = MPI.COMM_WORLD
+# rank = comm.Get_rank()
 
-methods = ["LCD", "COLD", "COLD-CRAB"]
-times = [1, 2, 3, 4, 5]
+# methods = ["LCD", "COLD", "COLD-CRAB"]
+# times = [1, 2, 3, 4, 5]
 
-tasks = list(itertools.product(methods, times))  # all (method, T) combinations
-n_tasks = len(tasks)
+# tasks = list(itertools.product(methods, times))  # all (method, T) combinations
+# n_tasks = len(tasks)
 
-# Run every combination of T and method on different GPU node
-if rank < n_tasks:
-    method, T = tasks[rank]
-    print(f"[Rank {rank}] Running {method} with T={T}")
+# # Run every combination of T and method on different GPU node
+# if rank < n_tasks:
+#     method, T = tasks[rank]
+#     print(f"[Rank {rank}] Running {method} with T={T}")
     
-    evaluate(Q, solution, T, dt=0.01, method=method)
+#     evaluate(Q, solution, T, dt=0.01, method=method)
     
-else:
-    print(f"[Rank {rank}] idle.")
+# else:
+#     print(f"[Rank {rank}] idle.")
