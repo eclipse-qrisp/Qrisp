@@ -25,7 +25,14 @@ import sympy
 from qrisp.circuit import ControlledOperation
 
 """
-TODO: 
+TODO:
+
+-- Change the structure of the mapping
+-- Update mapping with more gates (ideally all the currently supported Qrisp gates)
+-- Add support for all gates in the mapping
+-- Polish the code with pylint/black standards
+-- Improve efficiency if possible
+
 -- clbit interaction with measurements 
 -- conditional environment, i.e. mid-circuit measurement is possible, have to create this
     --> otherwise no clbit interaction?
@@ -67,9 +74,8 @@ def create_qml_instruction(op):
         return mapping[op.name]
 
     # Fallback: if gate is defined as a subcircuit, convert that
-    if getattr(op, "definition", None):
-        circ = qml_converter(op.definition, circ=True)
-        return circ
+    if getattr(op, "definition", None) is not None:
+        return qml_converter(op.definition, circ=True)
 
     raise NotImplementedError(f"Cannot convert operation '{op.name}'")
 
@@ -153,6 +159,14 @@ def qml_converter(qc, circ=False):
                     qml_ins = qml.ControlledPhaseShift(
                         *params, [qubit_list[0], qubit_list[1]]
                     )
+            elif op.name == "x":
+                qml_ins = qml.PauliX(wires=qubit_list[0])
+
+            elif op.name == "y":
+                qml_ins = qml.PauliY(wires=qubit_list[0])
+
+            elif op.name == "z":
+                qml_ins = qml.PauliZ(wires=qubit_list[0])
 
             # return the controlled instruction or the nested circuit
             elif isinstance(op, ControlledOperation):
