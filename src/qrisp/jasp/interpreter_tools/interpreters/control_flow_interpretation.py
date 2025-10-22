@@ -78,7 +78,7 @@ def evaluate_while_loop(
 
     # Extract the invalues from the context dic
     invalues = extract_invalues(while_loop_eqn, context_dic)
-    outvalues = invalues[num_const_body_args:]
+    outvalues = invalues[overall_constant_amount:]
 
     while break_condition(invalues):
         
