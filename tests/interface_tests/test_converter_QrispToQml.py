@@ -16,6 +16,14 @@
 ********************************************************************************
 """
 
+"""
+TODO:
+
+-- Add test with wires=None
+-- Add test with parameterized gates
+
+"""
+
 # pylint: disable=line-too-long
 
 import numpy as np

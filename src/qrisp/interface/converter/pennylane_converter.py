@@ -37,8 +37,6 @@ TODO:
 -- conditional environment, i.e. mid-circuit measurement is possible, have to create this
     --> otherwise no clbit interaction?
 
-BUGS:
-
 """
 
 # mapping from Qrisp operation names to PennyLane gates
@@ -71,13 +69,18 @@ def create_qml_instruction(op):
     """Create a PennyLane instruction from a Qrisp operation."""
 
     if op.name in mapping:
-        return mapping[op.name]
+        qml_ins = mapping[op.name]
 
-    # Fallback: if gate is defined as a subcircuit, convert that
-    if getattr(op, "definition", None) is not None:
+    # complex gate, with subcircuit definition we create a representative subcircuit
+    elif op.definition:
         return qml_converter(op.definition, circ=True)
 
-    raise NotImplementedError(f"Cannot convert operation '{op.name}'")
+    else:
+        NotImplementedError(
+            f"Operation {op.name} not implemented in PennyLane converter."
+        )
+
+    return qml_ins
 
 
 def qml_converter(qc, circ=False):
@@ -159,14 +162,6 @@ def qml_converter(qc, circ=False):
                     qml_ins = qml.ControlledPhaseShift(
                         *params, [qubit_list[0], qubit_list[1]]
                     )
-            elif op.name == "x":
-                qml_ins = qml.PauliX(wires=qubit_list[0])
-
-            elif op.name == "y":
-                qml_ins = qml.PauliY(wires=qubit_list[0])
-
-            elif op.name == "z":
-                qml_ins = qml.PauliZ(wires=qubit_list[0])
 
             # return the controlled instruction or the nested circuit
             elif isinstance(op, ControlledOperation):
