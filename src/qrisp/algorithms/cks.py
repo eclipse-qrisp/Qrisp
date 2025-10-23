@@ -142,7 +142,7 @@ def cheb_coefficients(j0, b):
 
     Returns
     -------
-    coeffs : np.ndarray
+    coeffs : numpy.ndarray
         Array of positive Chebyshev coefficients
         :math:`{\\alpha_{2j+1}}`, corresponding to the odd degrees of Chebyshev polynomials of the first kind :math:`T_1, T_3, \\dots, T_{2j_0+1}`.
     """
@@ -172,16 +172,16 @@ def unary_angles(coeffs):
 
     Parameters
     ----------
-    coeffs : np.ndarray
+    coeffs : numpy.ndarray
         Positive Chebyshev coefficients :math:`\\alpha_i`.
 
     Returns
     -------
-    phi : np.ndarray
+    phi : numpy.ndarray
         Rotation angles :math:`\\phi_i` for unary state preparation.
     """
 
-    alpha = np.sqrt(coeffs / len(coeffs))
+    alpha = jnp.sqrt(coeffs) # coeffs need not to be normalized since unary angles only depend on their ratio
     phi = jnp.zeros(len(alpha) - 1)
     phi = phi.at[-1].set(
         jnp.arctan(alpha[-1] / alpha[-2])
@@ -210,7 +210,7 @@ def unary_prep(case, coeffs):
     case : QuantumVariable
         Variable with :math:`j_0` qubits on which the unary state preparation will be performed.
         If the variable is in state :math:`\ket{0}`, the state :math:`\ket{\\text{unary}}` is prepared.
-    coeffs : np.ndarray
+    coeffs : numpy.ndarray
         An array of :math:`j_0` Chebyshev coefficients :math:`\\alpha_1,\\alpha_3,\dotsc,\\alpha_{2j_0+1}`.
     
     """
