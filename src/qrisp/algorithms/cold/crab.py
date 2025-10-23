@@ -21,7 +21,9 @@ class CRABObjective:
             self.random_pulses = np.random.uniform(-0.5, 0.5, self.N_opt)
             self.iteration += 1
         self.last_x = params.copy()
-
+        print("iter")
+        print(params)
+        print(self.random_pulses)
         # Parameters to give to the quantum circuit for compilation
         # Optimization params
         subs_dic = {Symbol(f"par_{i}"): params[i] for i in range(len(params))}

@@ -46,10 +46,30 @@ def initialize_qubo_problem(Q):
     H_p = H_prob(Q)
     sum_z, sum_y = compute_pauli_sums(N)
 
+def initialize_nonlocalqubo_problem(Q):
+    global N
+    global H_i
+    global H_p
+    global sum_y
+    global sum_z
+
+    N = Q.shape[0]
+    H_i = H_init(N)
+    H_p = H_prob(Q)
+    sum_z, sum_y =  sum([Z(i) for i in range(N)]), A_lamb_nonlocal()
+
 # System Hamiltonian w/o optimizable parameters
 def H_0(lam):
     H = (1-lam) * H_i + lam*H_p
     return H
+
+def A_lamb_nonlocal():
+    A_lamb_nl_1 = -2* ( sum([h[i]*Y(i) for i in range(N)])  ) 
+    A_lamb_nl_2 = -2* sum( [ sum([ J[i][j] * Y(i)*Z(j) + J[i][j]* Z(i)*Y(j) for i in range(j) ]) for j in range(N)])
+
+
+    A_lamb = (A_lamb_nl_1+ A_lamb_nl_2)
+    return A_lamb
 
 # Control Hamiltonian
 def H_control(f, CRAB):
@@ -108,6 +128,36 @@ def alpha(lam, f = 0, f_deriv = 0):
     alph = nom/denom
 
     return alph
+
+def alpha_nonlocal(lam, opt_CRAB, d_opt_CRAB):
+    # lengthy expression for alpha with non-local AGP
+    # from the FraunhoferGPT conversation:
+    
+    num_qubits = len(J[0])
+    #n = num_qubits
+    S_hR = sum([sum([J[i][j]**2 *(h[i]+h[j]) for i in range(j)]) for j in range(num_qubits)])
+    S_hsqR = sum([sum([J[i][j]**2 *(h[i]**2+h[j]**2) for i in range(j)]) for j in range(num_qubits)])
+    S_2 = sum([sum([J[i][j]**2 for i in range(j)]) for j in range(num_qubits)])
+    S_4 = sum([sum([J[i][j]**4 for i in range(j)]) for j in range(num_qubits)])
+    R_i_list =[ sum([J[i][j]**2 if j!=i else 0 for j in range(num_qubits)])  for i in range(num_qubits)]
+    S_Rsq = sum( R_i**2 for R_i in R_i_list)
+    S_h = sum(h)
+    S_hsq = sum(i**2 for i in h)
+    c = opt_CRAB
+    dc = d_opt_CRAB
+
+    denom = 4 *(
+            c**2 *( num_qubits + 4*S_2)
+            +c*lam *(2*S_h + 4*S_hR + 12*S_2)
+            +lam**2 *(S_hsq + 2*S_hsqR + 6*S_hR + 2*S_Rsq + 4*S_2 + 2*S_4)
+            + (1-lam)**2 *num_qubits
+            + 8 *(1-lam)**2 *S_2
+    )
+
+    nom = num_qubits *c + S_h + 2*S_2 + num_qubits*(1-lam)* dc
+
+    alpha = -nom/denom
+    return alpha
 
 # Routine to prepare quantum variable
 def qarg_prep(qarg):
@@ -193,9 +243,10 @@ def apply_cold_hamiltonian(qarg, N_steps, T, beta, CRAB=False):
     for s in range(N_steps):
 
         # Get alpha, f and f_deriv for the timestep
-        f = sin_matrix[s, :] @ beta
-        f_deriv = cos_matrix[s, :] @ beta
+        f = sin_matrix[s-1, :] @ beta
+        f_deriv = cos_matrix[s-1, :] @ beta
         alph = alpha(lam[s], f, f_deriv)
+        #print(alph.shape)
 
         # Prefactor for U1
         a = dt * (1 - lam[s])
@@ -255,6 +306,8 @@ def optimization_routine(qarg, N_opt, qc, CRAB):
         subs_dic = {Symbol("par_"+str(i)): params[i] for i in range(len(params))}
 
         cost = H_p.expectation_value(qarg, compile=False, subs_dic=subs_dic, precompiled_qc=qc)()
+        print("cost")
+        print(cost)
         
         return cost
     

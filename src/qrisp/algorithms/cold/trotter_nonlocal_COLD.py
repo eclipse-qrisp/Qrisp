@@ -50,15 +50,15 @@ N = num_qubits = len(Q[0])
 
 
 #
-Q = np.array([[-3,  2,  1,  0,  0,  3, -3],
-       [ 2,  1, -2, -3,  0,  3,  2],
-       [ 1, -2,  2,  2,  2,  0, -3],
-       [ 0, -3,  2,  2,  0,  0, -1],
-       [ 0,  0,  2,  0, -2,  3,  2],
-       [ 3,  3,  0,  0,  3,  1, -1],
-       [-3,  2, -3, -1,  2, -1,  2]])
+Q = np.array([[ 3,  0,  0, -3,  0, -1,  0],
+       [ 0,  0,  0,  0,  0,  0, -2],
+       [ 0,  0,  0,  1,  0,  0,  5],
+       [-3,  0,  1, -2,  3,  0,  0],
+       [ 0,  0,  0,  3,  1,  0,  0],
+       [-1,  0,  0,  0,  0,  1, -2],
+       [ 0, -2,  5,  0,  0, -2, -3]])
 # best solutions
-# [1, 0, 1, 0, 0, 0, 1] with energy -9
+# 1101011 with energy –17
 N = num_qubits = len(Q[0])
 
 h_i = -0.5 * np.diag(Q) - 0.5 * np.sum(Q, axis=1)
@@ -189,6 +189,11 @@ def apply_cold_hamiltonian(qarg, N_steps, beta, CRAB=False):
         # Transform beta to sympy to work with symbols for random values
         beta = sp.Matrix(beta)
 
+    U1 = H_i.trotterization()
+    U2 = H_f_qubo.trotterization()
+    U3 = A_lamb.trotterization()
+    U4 = H_control.trotterization()
+
     for s in range(1, N_steps+1):
         
         # Get t, lambda, alpha for the timestep
@@ -197,73 +202,23 @@ def apply_cold_hamiltonian(qarg, N_steps, beta, CRAB=False):
         f = sin_matrix[s-1, :] @ beta
         f_deriv = cos_matrix[s-1, :] @ beta
         alph = alpha_symbolic(t, T,f,f_deriv)
-        #alph = alpha_symbolic(t, T,f[0],f_deriv[0])
+
         if hasattr(alph, "__len__"):
             alph = alph[0]
             f = f[0]
-        """ print(sin_matrix.shape)
-        print(sin_matrix[s-1, :].shape)
-        print(type(beta))
-        print(beta.shape)
-        print(f.shape)
-        print(type(alph) ) """
-        #print(alph.shape)
-        
-        #print(type(alph))
-        #print(alph.shape)
-        #ddd = f * A_lamb
+        #print(alph*lamdot)
+
         # H_0 contribution scaled by dt
         H_step = dt *(1-lam[s-1])* H_i + dt * lam[s-1]*H_f_qubo
-        """ print(type(A_lamb))
-        ddd = d_crab_p * A_lamb
-        A_lam22 =  alph* A_lamb """
+
         # AGP contribution scaled by dt* lambda_dot(t)
-        
         H_step = dt * lamdot[s-1] * alph* A_lamb
 
         # Control pulse contribution 
         H_step = H_step + dt * f*  H_control
-        #print(H_step)
         # Get unitary from trotterization and apply to qarg
         U = H_step.trotterization()
         U(qarg)
-
-""" def apply_cold_hamiltonian(qarg, N_steps, beta, CRAB=False):
-
-    # Initialize qarg
-    qarg_prep(qarg)
-
-    # Precompute timegrid
-    dt = T / N_steps
-    time = np.linspace(dt, T, N_steps)
-    lam = np.array([lam_t(t, T) for t in time])
-    lamdot = np.array([lam_deriv(t, T) for t in time])
-    sin_matrix, cos_matrix = precompute_opt_pulses(T, time, N_steps, N_opt, CRAB)
-
-    if CRAB:
-        # Transform beta to sympy to work with symbols for random values
-        beta = sp.Matrix(beta)
-
-    # Apply hamiltonian to qarg for each timestep
-    for s in range(N_steps):
-
-        # Get alpha, f and f_deriv for the timestep
-        f = sin_matrix[s, :] @ beta
-        f_deriv = cos_matrix[s, :] @ beta
-        alph = alpha(lam[s], f, f_deriv)
-
-        # H_0 contribution scaled by dt
-        H_step = dt * H_0(lam[s])
-
-        # AGP contribution scaled by dt* lambda_dot(t)
-        H_step = H_step + dt * lamdot[s] * A_lam(alph)
-
-        # Control pulse contribution 
-        H_step = H_step + dt * H_control(f, CRAB)
-
-        # Get unitary from trotterization and apply to qarg
-        U = H_step.trotterization()
-        U(qarg) """
 
 
 def compile_U(qarg, N_opt, N_steps, CRAB=False):
@@ -384,4 +339,10 @@ print(f'Cost COLD: {qubo_cost(Q, meas_cold)}\n') """
 
 print(f'Computational time COLD-CRAB: {t2-t1}')
 print(meas_cold_crab)
+
 print(f'Cost COLD-CRAB: {qubo_cost(Q, meas_cold_crab)}\n')
+print("best 5")
+b5 = list(meas_cold_crab.keys())[:5]
+for i in b5:
+    print(i, qubo_cost(Q, {i:1}))
+
