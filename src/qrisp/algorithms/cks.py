@@ -144,7 +144,7 @@ def cheb_coefficients(j0, b):
     -------
     coeffs : np.ndarray
         Array of positive Chebyshev coefficients
-        :math:`{\\alpha_i}`, corresponding to the odd degrees of Chebyshev polynomials of the first kind :math:`T_1, T_3, \\dots, T_{2j_0+1}`.
+        :math:`{\\alpha_{2j+1}}`, corresponding to the odd degrees of Chebyshev polynomials of the first kind :math:`T_1, T_3, \\dots, T_{2j_0+1}`.
     """
     coeffs = []
     for j in range(j0 + 1):
@@ -225,11 +225,14 @@ def unary_prep(case, coeffs):
 
 def inner_CKS(A, b, eps, kappa=None, max_beta=None):
     """
-    Core implementation of the CKS algorithm. 
+    Core implementation of the Childs-Kothari-Somma (CKS) quantum algorithm. 
     
     This function integrates core components of the CKS approach to construct the circuit:
     Chebyshev polynomial approximation, linear combination of unitaries (LCU), and
-    `qubitization with reflection operators <https://arxiv.org/abs/2208.00567>`_.
+    `qubitization with reflection operators <https://arxiv.org/abs/2208.00567>`_. This function does
+    not include the Repeat-Until-Success (RUS) protocol and thus serves as the low-level routine
+    for generating the underlying circuit of the CKS algorithm.
+
     The semantics of the approach can be illustrated with the following circuit schematics:
 
     .. image:: /_static/CKS_circuit.png
@@ -241,20 +244,46 @@ def inner_CKS(A, b, eps, kappa=None, max_beta=None):
          (:func:`cheb_coefficients`, :func:`unary_prep`).
       3. Build the core LCU structure and qubitization operator (:func:`inner_CKS`).
 
-    This function constructs the circuit for the block-encoding (LCU) protocol
+    The goal of this algorithm is to apply the non-unitary operator :math:`A^{-1}` to the
+    input state :math:`\ket{b}`. Following the Chebyshev approach introduced in the CKS paper, we express :math:`A^{-1}` as
+    a linear combination of odd Chebyshev polynomials: 
 
     .. math::
+    
+        A^{-1}\propto\sum_{j=0}^{j_0}\\alpha_{2j+1}T_{2j+1}(A),
 
-        LCU\ket{0}\ket{\psi}=PREP^{\dagger}\cdot SEL\cdot PREP\ket{0}\ket{\psi}=\\tilde{A}\ket{0}\ket{\psi},
+    where :math:`T_k(A)` are Chebyshev polynomials of the first kind and :math:`\\alpha_{2j+1} > 0` are computed
+    via :func:`cheb_coefficients`. These operators can be efficiently implemented with qubitization, which relies on a unitary
+    block encoding :math:`U` of the matrix :math:`A`, and a :ref:`reflection operator <reflection>` :math:`R`.
+ 
+    .. note::
 
-    where :math:`PREP` prepares the LCU state and :math:`SEL` applies the
-    Chebyshev terms constructed with $k$ qubitization steps :math:`T_k=(RU)^k` controlled on the qubits of a QuantumVariable in a unary-encoded state :math:`\ket{\\text{unary}}`. 
-    Based of the Hamming-weight :math:`k` of :math:`\ket{\\text{unary}}`,
-    the polynomial :math:`T_{2k-1}` is block encoded and applied to the circuit.
+        Qubitization requires that the block encoding unitary :math:`U` is self-inverse (:math:`U^2=I`).
+
+    The fundamental iteration step is defined as :math:`(RU)`, where :math:`R` reflects
+    around the auxiliary block-encoding state :math:`\ket{G}`, prepared as the ``inner_case`` QuantumFloat.
+
+    Repeated applications of these unitaries, :math:`(RU)^k`, yield a block encoding of the :math:`k`-th Chebyshev polynomial 
+    of the first kind :math:`T_k(A)`.
+    
+    We then construct a linear combination of these block-encoded polynomials using the LCU structure 
+
+    .. math::
+    
+        LCU\ket{0}\ket{\psi}=PREP^{\dagger}\cdot SEL\cdot PREP\ket{0}\ket{\psi}=\\tilde{A}\ket{0}\ket{\psi}.
+    
+    Here, the :math:`PREP` operation prepares an auxiliary ``out_case`` Quantumfloat in the unary state :math:`\ket{\\text{unary}}`
+    that encodes the square root of the Chebyshev coefficients :math:`\sqrt{\\alpha_j}`. The :math:`SEL` operation selects and applies the
+    appropriate Chebyshev polynomial operator :math:`T_k(A)`, implemented by :math:`(RU)^k`, controlled on ``out_case`` in the unary
+    state :math:`\ket{\\text{unary}}`. Based on the Hamming-weight :math:`k` of :math:`\ket{\\text{unary}}`,
+    the polynomial :math:`T_{2k-1}` is block encoded and applied to the circuit. 
+    
+    To construct a linear combination of Chebyshev polynomials up to the :math:`2j_0+1`-th order, as in the original paper, 
+    our implementation requires :math:`j_0+1` in the ``out_case`` state :math:`\ket{\\text{unary}}`.
 
     The Chebyshev coefficients alternate in sign :math:`(-1)^j\\alpha_j`.
-    Since the LCU lemma requires :math:`\\alpha_i>0`, negative terms are
-    implemented by Z-gates applied on each index qubit in ``out_case``.
+    Since the LCU lemma requires :math:`\\alpha_j>0`, negative terms are accounted for
+    by applying Z-gates on each index qubit in ``out_case``.
 
     This function supports interchangeable and independent input cases for both
     the matrix ``A`` and vector ``b`` from the QLSP :math:`A\\vec{x} = \\vec{b}`:
