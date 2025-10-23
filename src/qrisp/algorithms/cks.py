@@ -74,9 +74,10 @@ def CKS_parameters(A, eps, kappa=None, max_beta=None):
         Target precision :math:`\epsilon`, such that the prepared state :math:`\ket{\\tilde{x}}` is within
         :math:`\epsilon` of :math:`\ket{x}`.
     kappa : float, optional
-        Condition number :math:`\\kappa` of :math:`A`. Required if ``A`` is a tuple (block-encoding).
+        Condition number :math:`\\kappa` of :math:`A`. Required when ``A`` is
+        a block-encoding tuple ``(U, state_prep, n)`` rather than a matrix.
     max_beta : float, optional
-        Optional upper bound on :math:`\\beta` for the complexity parameter.
+        Optional upper bound on the complexity parameter :math:`\\beta`.
 
     Returns
     -------
@@ -228,7 +229,7 @@ def inner_CKS(A, b, eps, kappa=None, max_beta=None):
     
     This function integrates core components of the CKS approach to construct the circuit:
     Chebyshev polynomial approximation, linear combination of unitaries (LCU), and
-    `qubitization with reflection operators <https://arxiv.org/abs/2208.00567>`_ and the :ref:`RUS` (RUS) protocol.
+    `qubitization with reflection operators <https://arxiv.org/abs/2208.00567>`_.
     The semantics of the approach can be illustrated with the following circuit schematics:
 
     .. image:: /_static/CKS_circuit.png
@@ -237,14 +238,14 @@ def inner_CKS(A, b, eps, kappa=None, max_beta=None):
     Implementation overview:
       1. Compute the CKS parameters :math:`j_0` and :math:`\\beta` (:func:`CKS_parameters`).
       2. Generate Chebyshev coefficients and unary state angles
-         (:func:`cheb_coefficients`, :func:`unary_angles`, :func:`unary_prep`).
+         (:func:`cheb_coefficients`, :func:`unary_prep`).
       3. Build the core LCU structure and qubitization operator (:func:`inner_CKS`).
 
     This function constructs the circuit for the block-encoding (LCU) protocol
 
     .. math::
 
-        LCU\ket{0}\ket{\psi}=PREP^{\dagger}\cdot SEL\cdot PREP\ket{0}\ket{\psi}=\\tilde{A}\ket{0}\ket{\psi}
+        LCU\ket{0}\ket{\psi}=PREP^{\dagger}\cdot SEL\cdot PREP\ket{0}\ket{\psi}=\\tilde{A}\ket{0}\ket{\psi},
 
     where :math:`PREP` prepares the LCU state and :math:`SEL` applies the
     Chebyshev terms constructed with $k$ qubitization steps :math:`T_k=(RU)^k` controlled on the qubits of a QuantumVariable in a unary-encoded state :math:`\ket{\\text{unary}}`. 
@@ -270,9 +271,9 @@ def inner_CKS(A, b, eps, kappa=None, max_beta=None):
         ``A`` is a 3-tuple ``(U, state_prep, n)`` representing a block-encoding: 
         
         * U : callable
-            A callable ``U(operand, case)`` applying the block-encoding unitary :math:`SEL`.
+            Callable ``U(operand, case)`` applies the block-encoding unitary :math:`SEL`.
         * state_prep : callable
-            A callable ``state_prep(case)`` applying the block-encoding state preparatiion unitary :math:`PREP`
+            Callable ``state_prep(case)`` applies the block-encoding state preparatiion unitary :math:`PREP`
             to an auxiliary ``case`` QuantumVariable .
         * n : int
             The size of the auxiliary ``case`` QuantumVariable.
@@ -286,11 +287,11 @@ def inner_CKS(A, b, eps, kappa=None, max_beta=None):
     **Case distinctions for b**
 
     - Vector input: 
-        if ``b`` is a NumPy array, a new ``operand`` QuantumFloat is constructed, and state preparation is performed via
+        If ``b`` is a NumPy array, a new ``operand`` QuantumFloat is constructed, and state preparation is performed via
         ``prepare(operand, b)``.
 
     - Callable input:
-        if ``b`` is a callable, it is assumed to prepare the operand state when called. 
+        If ``b`` is a callable, it is assumed to prepare the operand state when called. 
         The ``operand`` QuantumFloat is generated directly via ``operand = b()``.
 
     Parameters
@@ -471,7 +472,7 @@ def inner_CKS_wrapper(qlsp, eps, kappa=None, max_beta=None):
         :math:`\epsilon` of :math:`\ket{x}.
     kappa : float, optional
         Condition number :math:`\\kappa` of :math:`A`. Required when ``A`` is
-        a tuple rather than a matrix.
+        a block-encoding tuple ``(U, state_prep, n)`` rather than a matrix.
     max_beta : float, optional
         Optional upper bound on the complexity parameter :math:`\\beta`.
 
@@ -510,13 +511,13 @@ def CKS(A, b, eps, kappa=None, max_beta=None):
     within target precision :math:`\epsilon` of the ideal solution :math:`\ket{x}`. 
     
     The asymptotic complexity is
-    :math:`\\mathcal{O}\\!\\left(\\log(N)d \\kappa^2 \\text{polylog}\\!\\frac{d\\kappa}{\\epsilon}\\right)` where :math:`d` is the sparsity of the matrix, and 
-    :math:`\kappa` is the condition number of the matrix. This represents an exponentially
+    :math:`\\mathcal{O}\\!\\left(\\log(N)s \\kappa^2 \\text{polylog}\\!\\frac{s\\kappa}{\\epsilon}\\right)`, where :math:`N` is the matrix size, :math:`s` its sparsity, and 
+    :math:`\kappa` its condition number. This represents an exponentially
     better precision scaling compared to the HHL algorithm.
 
     This function integrates all core components of the CKS approach:
     Chebyshev polynomial approximation, linear combination of unitaries (LCU),
-    `qubitization with reflection operators <https://arxiv.org/abs/2208.00567>`_, and the Repeat-Until-Success (RUS) protocol.
+    `qubitization with reflection operators <https://arxiv.org/abs/2208.00567>`_, and the :ref:`Repeat-Until-Success (RUS) <RUS>` protocol.
     The semantics of the approach can be illustrated with the following circuit schematics:
 
     .. image:: /_static/CKS_schematics.png
@@ -524,8 +525,7 @@ def CKS(A, b, eps, kappa=None, max_beta=None):
 
     Implementation overview:
       1. Compute the CKS parameters :math:`j_0` and :math:`\\beta` (:func:`CKS_parameters`).
-      2. Generate Chebyshev coefficients and unary state angles
-         (:func:`cheb_coefficients`, :func:`unary_angles`, :func:`unary_prep`).
+      2. Generate Chebyshev coefficients and the auxiliary unary state (:func:`cheb_coefficients`, :func:`unary_prep`).
       3. Build the core LCU structure and qubitization operator (:func:`inner_CKS`).
       4. Apply the RUS post-selection step to project onto the valid success outcome.
 
@@ -544,9 +544,9 @@ def CKS(A, b, eps, kappa=None, max_beta=None):
         ``A`` is a 3-tuple ``(U, state_prep, n)`` representing a block-encoding: 
         
         * U : callable
-            A callable ``U(operand, case)`` applying the block-encoding unitary :math:`SEL`.
+            Callable ``U(operand, case)`` applies the block-encoding unitary :math:`SEL`.
         * state_prep : callable
-            A callable ``state_prep(case)`` applying the block-encoding state preparatiion unitary :math:`PREP`
+            Callable ``state_prep(case)`` applies the block-encoding state preparatiion unitary :math:`PREP`
             to an auxiliary ``case`` QuantumVariable .
         * n : int
             The size of the auxiliary ``case`` QuantumVariable.
@@ -560,11 +560,11 @@ def CKS(A, b, eps, kappa=None, max_beta=None):
     **Case distinctions for b**
 
     - Vector input: 
-        if ``b`` is a NumPy array, a new ``operand`` QuantumFloat is constructed, and state preparation is performed via
+        If ``b`` is a NumPy array, a new ``operand`` QuantumFloat is constructed, and state preparation is performed via
         ``prepare(operand, b)``.
 
     - Callable input:
-        if ``b`` is a callable, it is assumed to prepare the operand state when called. 
+        If ``b`` is a callable, it is assumed to prepare the operand state when called. 
         The ``operand`` QuantumFloat is generated directly via ``operand = b()``.
 
     Parameters
@@ -574,14 +574,14 @@ def CKS(A, b, eps, kappa=None, max_beta=None):
         the linear system :math:`A \\vec{x} = \\vec{b}`, or a 3-tuple
         ``(U, state_prep, n)`` representing a preconstructed block-encoding.
     b : numpy.ndarray or callable
-        Vector :math:`\\vec{b}` of the linear system, or a
-        callable that prepares the corresponding quantum state.
+        Either a vector :math:`\\vec{b}` of the linear system, or a
+        callable that prepares the corresponding quantum state ``operand``.
     eps : float
         Target precision :math:`\epsilon`, such that the prepared state :math:`\ket{\\tilde{x}}` is within error
         :math:`\epsilon` of :math:`\ket{x}`.
     kappa : float, optional
         Condition number :math:`\\kappa` of :math:`A`. Required when ``A`` is
-        a tuple (block-encoding) rather than a matrix.
+        a block-encoding tuple ``(U, state_prep, n)`` rather than a matrix.
     max_beta : float, optional
         Optional upper bound on the complexity parameter :math:`\\beta`.
 
@@ -590,16 +590,16 @@ def CKS(A, b, eps, kappa=None, max_beta=None):
     operand : QuantumVariable
         Quantum variable containing the final (approximate) solution state
         :math:`\ket{\\tilde{x}} \propto A^{-1}\ket{b}`. When the internal
-        :func:`RUS` decorator reports success (``success_bool = True``), this
+        :ref:`RUS <RUS>` decorator reports success (``success_bool = True``), this
         variable contains the valid post-selected solution. If ``success_bool``
         is ``False``, the simulation automatically repeats until success.
         
     Examples
     --------
 
-    The following examples demonstrate how to use the CKS algorithm to solve the
+    The following examples demonstrate how the CKS algorithm can be applied to solve the
     quantum linear systems problem (QLSP)
-    :math:`A \\vec{x} = \\vec{b}` using both a direct Hermitian matrix input and
+    :math:`A \\vec{x} = \\vec{b}`, using either a direct Hermitian matrix input or
     a preconstructed block-encoding representation.
     
     **Example 1: Solving a 4×4 Hermitian system**
@@ -617,7 +617,7 @@ def CKS(A, b, eps, kappa=None, max_beta=None):
 
         b = np.array([0, 1, 1, 1])
 
-    Next, we solve the linear system with the CKS quantum algorithm:
+    Next, we solve this linear system using the CKS quantum algorithm:
 
     ::
 
@@ -632,8 +632,8 @@ def CKS(A, b, eps, kappa=None, max_beta=None):
 
         res_dict = main()
 
-    The measured dictionary contains probabilities corresponding to each computational basis state.
-    To extract the quantum amplitudes (up to sign):
+    The resulting dictionary contains the measurement probabilities for each computational basis state.
+    To extract the corresponding quantum amplitudes (up to sign):
 
     ::
 
@@ -655,10 +655,10 @@ def CKS(A, b, eps, kappa=None, max_beta=None):
         # CLASSICAL SOLUTION
         # [0.02944539 0.55423278 0.53013239 0.64102936]
 
-    We see that we obtained the same result obsered in the quantum simulation up to precision :math:`\epsilon`!
+    We see that we obtained the same result in our quantum simulation up to precision :math:`\epsilon`!
 
     To perform quantum resource estimation, replace the ``@terminal_sampling``
-    decorator with the ``@count_ops(meas_behavior="0")`` decorator:
+    decorator with ``@count_ops(meas_behavior="0")``:
 
     ::
         
@@ -674,15 +674,15 @@ def CKS(A, b, eps, kappa=None, max_beta=None):
         print(res_dict)
         # {'cx': 3628, 't': 1288, 't_dg': 1702, 'p': 178, 'cz': 138, 'cy': 46, 'h': 960, 'x': 324, 's': 66, 's_dg': 66, 'u3': 723, 'gphase': 49, 'ry': 2, 'z': 11, 'measure': 16}
 
-    The printed dictionary lists the estimated quantum gate counts for the full simulation. Since this approach doesn't run
-    the simulation itself, one can estimate the quantum gate counts for arbitrary linear system problem sizes.
+    The printed dictionary lists the estimated quantum gate counts required for the CKS algorithm. Since the simulation itself is not executed, 
+    this approach enables scalable gate count estimation for linear systems of arbitrary size.
     
     **Example 2: Using a custom block encoding**
 
     The previous example displays how to solve the linear system for any Hermitian matrix :math:`A`,
-    where the block-encoding is constructed from :math:`A` via Pauli decomposition. While this approach is efficient when :math:`A`
-    corresponds to, e.g., an Ising od a Heisenberg Hamiltonian, in gerneral the number of Pauli terms may not scale favorably, and
-    for certain sparse matrices their structure can be expoited to construct more efficient block-encodings.
+    where the block-encoding is constructed from the Pauli decomposition of :math:`A`. While this approach is efficient when :math:`A`
+    corresponds to, e.g., an Ising or a Heisenberg Hamiltonian, the number of Pauli terms may not scale favorably in general.
+    For certain sparse matrices, their structure can be exploited to construct more efficient block-encodings.
 
     In this example, we construct a block-encoding representation for a tridiagonal 3-sparse matrix defined by
 
@@ -718,7 +718,7 @@ def CKS(A, b, eps, kappa=None, max_beta=None):
 
         unitaries = [I, V, V_dg]
 
-    Additionally, the block encoding unitary :math:`U` supplied must satisfy the property :math:`U^2 = I`, i.e., it is self-inverse. In this case, 
+    Additionally, the block encoding unitary :math:`U` supplied must satisfy the property :math:`U^2 = I`, i.e., it is self-inverse.
     This condition is required for the correctness of the Chebyshev polynomial block encoding
     and qubitization step. Further details can be found `here <https://arxiv.org/abs/2208.00567>`_. In this case, the fact that $V^2=(V^{\dagger})^2=I$
     ensures that defining the block encoding unitary via a :ref:`quantum switch case <qswitch>` satsifies :math:`U^2 = I`.
@@ -738,7 +738,7 @@ def CKS(A, b, eps, kappa=None, max_beta=None):
 
         block_encoding = (U, state_prep, 2)
 
-    We now solve the problem by passing the block-encoding tuple defined above as ``A`` in the CKS function
+    We solve the linear system by passing this block-encoding tuple as ``A`` into the CKS function:
 
     ::
 
@@ -750,7 +750,7 @@ def CKS(A, b, eps, kappa=None, max_beta=None):
 
         res_dict = main()
 
-    We, again, compare the solution we obtain by quantum simulation with the classical solution
+    We, again, compare the solution obtained by quantum simulation with the classical solution
 
     ::
 
@@ -766,7 +766,7 @@ def CKS(A, b, eps, kappa=None, max_beta=None):
         # CLASSICAL SOLUTION
         # [0.43921906 0.3137279  0.12549116 0.43921906 0.43921906 0.12549116 0.3137279  0.43921906]
 
-    Performing quantum resource estimation can be performed in the same manner as in the first example:
+    Quantum resource estimation can be performed in the same way as in the first example:
 
     ::
 
@@ -780,8 +780,8 @@ def CKS(A, b, eps, kappa=None, max_beta=None):
         print(res_dict)
         # {'h': 676, 't_dg': 806, 'cx': 1984, 't': 651, 's': 152, 's_dg': 90, 'u3': 199, 'gphase': 65, 'p': 149, 'z': 15, 'x': 126, 'measure': 142, 'ry': 2}
 
-    Important to note, that one can also solve a linear system without calling the :ref:`RUS` decorator,
-    and perform the necessary post-selection by hand. Such an example can be found in :func:`inner_CKS`.
+    Finally, note that it is also possible to solve a linear system without using the :ref:`RUS` decorator,
+    by performing the necessary post-selection manually. Such an example can be found in :func:`inner_CKS`.
 
     """
 
