@@ -16,8 +16,9 @@
 ********************************************************************************
 """
 
-from qrisp import *
 import numpy as np
+from qrisp import QuantumFloat, gphase, prepare
+from qrisp.alg_primitives import qswitch
 from qrisp.algorithms.cks import CKS
 from qrisp.jasp import terminal_sampling
 
