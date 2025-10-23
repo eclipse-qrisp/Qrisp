@@ -427,7 +427,7 @@ def inner_CKS(A, b, eps, kappa=None, max_beta=None):
         U(operand, case)
         reflection(case, state_function=state_prep)  # reflection operator R about $\ket{G}$.
 
-    out_case = QuantumFloat(j_0)
+    out_case = QuantumFloat(j_0+1)
     in_case = QuantumFloat(n)
 
     if callable(b):
@@ -441,7 +441,7 @@ def inner_CKS(A, b, eps, kappa=None, max_beta=None):
         with conjugate(state_prep)(in_case):
             with control(out_case[0]):
                 RU(in_case, operand)
-            for i in jrange(1, j_0):
+            for i in jrange(1, j_0+1):
                 z(out_case[i])
                 with control(out_case[i]):
                     RU(in_case, operand)
