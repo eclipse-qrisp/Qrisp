@@ -1,6 +1,6 @@
 """
 ********************************************************************************
-* Copyright (c) 2024 the Qrisp authors
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -22,6 +22,12 @@ from qrisp.alg_primitives import qswitch
 from qrisp.algorithms.cks import CKS
 from qrisp.jasp import terminal_sampling
 
+def rand_binary_with_forced_one(n):
+    b = np.random.randint(0, 2, size=n)
+    if not b.any():
+        b[np.random.randint(n)] = 1
+    return b
+
 def test_hermitian_matrix():
 
     def hermitian_matrix_with_eigenvalues_in_range(n, low=0.45, high=1.0):
@@ -36,7 +42,7 @@ def test_hermitian_matrix():
     
     n=4
     A = hermitian_matrix_with_eigenvalues_in_range(n)
-    b = np.random.randint(0, 2, size=n)
+    b = rand_binary_with_forced_one(n)
 
     @terminal_sampling
     def main():
@@ -62,7 +68,7 @@ def test_3_sparse_matrix_8x8():
     
     n = 8
     A = tridiagonal_shifted(n, mu=3)
-    b = np.random.randint(0, 2, size=n)
+    b = rand_binary_with_forced_one(n)
 
     @terminal_sampling
     def main():
@@ -88,7 +94,7 @@ def test_A_block_encoding():
     
     n=4
     A = tridiagonal_shifted(n, mu=3)
-    b = np.random.randint(0, 2, size=n)
+    b = rand_binary_with_forced_one(n)
     
     def U0(qv):
         pass
@@ -138,7 +144,7 @@ def test_A_block_encoding_b_callable():
     
     n=4
     A = tridiagonal_shifted(n, mu=3)
-    b = np.random.randint(0, 2, size=n)
+    b = rand_binary_with_forced_one(n)
 
     def bprep():
         operand = QuantumFloat(int(np.log2(b.shape[0])))
