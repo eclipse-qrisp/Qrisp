@@ -230,7 +230,7 @@ def inner_CKS(A, b, eps, kappa=None, max_beta=None):
     This function integrates core components of the CKS approach to construct the circuit:
     Chebyshev polynomial approximation, linear combination of unitaries (LCU), and
     `qubitization with reflection operators <https://arxiv.org/abs/2208.00567>`_. This function does
-    not include the Repeat-Until-Success (RUS) protocol and thus serves as the low-level routine
+    not include the Repeat-Until-Success (RUS) protocol and thus serves as a subroutine
     for generating the underlying circuit of the CKS algorithm.
 
     The semantics of the approach can be illustrated with the following circuit schematics:
@@ -279,7 +279,7 @@ def inner_CKS(A, b, eps, kappa=None, max_beta=None):
     the polynomial :math:`T_{2k-1}` is block encoded and applied to the circuit. 
     
     To construct a linear combination of Chebyshev polynomials up to the :math:`2j_0+1`-th order, as in the original paper, 
-    our implementation requires :math:`j_0+1` in the ``out_case`` state :math:`\ket{\\text{unary}}`.
+    our implementation requires :math:`j_0+1` qubits in the ``out_case`` state :math:`\ket{\\text{unary}}`.
 
     The Chebyshev coefficients alternate in sign :math:`(-1)^j\\alpha_j`.
     Since the LCU lemma requires :math:`\\alpha_j>0`, negative terms are accounted for
@@ -344,12 +344,12 @@ def inner_CKS(A, b, eps, kappa=None, max_beta=None):
     Returns
     -------
     operand : QuantumVariable
-        Operand QuantumFloat after applying the LCU protocol.
-    in_case : QuantumVariable
-        Auxiliary QuantumFloat after applying the LCU protocol.
+        Operand variable after applying the LCU protocol.
+    in_case : QuantumFloat
+        Auxiliary variable after applying the LCU protocol.
         Must be measured in state $\ket{0}$ for the LCU protocol to be successful.
-    out_case : QuantumVariable
-        Auxiliary QuantumFloat after applying the LCU protocol.
+    out_case : QuantumFloat
+        Auxiliary variable after applying the LCU protocol.
         Must be measured in state $\ket{0}$ for the LCU protocol to be successful.
         
     Examples
@@ -456,7 +456,7 @@ def inner_CKS(A, b, eps, kappa=None, max_beta=None):
         U(operand, case)
         reflection(case, state_function=state_prep)  # reflection operator R about $\ket{G}$.
 
-    out_case = QuantumFloat(j_0+1)
+    out_case = QuantumFloat(j_0 + 1)
     in_case = QuantumFloat(n)
 
     if callable(b):
@@ -470,7 +470,7 @@ def inner_CKS(A, b, eps, kappa=None, max_beta=None):
         with conjugate(state_prep)(in_case):
             with control(out_case[0]):
                 RU(in_case, operand)
-            for i in jrange(1, j_0+1):
+            for i in jrange(1, j_0 + 1):
                 z(out_case[i])
                 with control(out_case[i]):
                     RU(in_case, operand)
