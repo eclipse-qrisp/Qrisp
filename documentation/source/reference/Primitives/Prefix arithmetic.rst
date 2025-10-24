@@ -35,6 +35,13 @@ QuantumFloat processing
    q_div
    qf_inversion
    q_isqrt
+   q_max
+   q_min
+   q_floor
+   q_ceil
+   q_round
+   q_fractional
+   q_modf
    
 QuantumArray processing
 -----------------------
