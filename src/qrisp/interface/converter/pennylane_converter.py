@@ -19,105 +19,120 @@
 import types
 
 import numpy as np
+import pennylane as qml
+import sympy
 
-from qrisp.circuit import ControlledOperation
+from qrisp.circuit import ControlledOperation, QuantumCircuit, Operation
 
 """
-TODO: 
+TODO:
+
+-- Change the structure of the mapping
+-- Update mapping with more gates (ideally all the currently supported Qrisp gates)
+-- Add support for all gates in the mapping
+-- Polish the code with pylint/black standards
+-- Improve efficiency if possible
+
 -- clbit interaction with measurements 
 -- conditional environment, i.e. mid-circuit measurement is possible, have to create this
     --> otherwise no clbit interaction?
 
-BUGS:
-
 """
 
+# Mapping from Qrisp operation names to PennyLane gates
+mapping = {
+    "rxx": qml.IsingXX,
+    "ryy": qml.IsingYY,
+    "rzz": qml.IsingZZ,
+    "p": qml.RZ,
+    "rx": qml.RX,
+    "ry": qml.RY,
+    "rz": qml.RZ,
+    "u1": qml.U1,
+    "u3": qml.U3,
+    "xxyy": qml.IsingXY,
+    "swap": qml.SWAP,
+    "h": qml.Hadamard,
+    "x": qml.PauliX,
+    "y": qml.PauliY,
+    "z": qml.PauliZ,
+    "sx": qml.SX,
+    "sx_dg": qml.SX,
+    "s": qml.S,
+    "s_dg": qml.S,
+    "t": qml.T,
+    "t_dg": qml.T,
+    "cx": qml.CNOT,
+    "cy": qml.CY,
+    "cz": qml.CZ,
+    "cp": qml.ControlledPhaseShift,
+}
 
-def create_qml_instruction(op):
-    import pennylane as qml
 
-    # create basic, straight forward instructions
-    if op.name == "rxx":
-        qml_ins = qml.IsingXX
-    elif op.name == "ryy":
-        qml_ins = qml.IsingYY
-    elif op.name == "rzz":
-        qml_ins = qml.IsingZZ
+def _create_qml_instruction(op: Operation) -> types.FunctionType:
+    """Create a PennyLane instruction from a Qrisp operation."""
 
-    elif op.name == "p":
-        qml_ins = qml.RZ
-    elif op.name == "rx":
-        qml_ins = qml.RX
-    elif op.name == "ry":
-        qml_ins = qml.RY
-    elif op.name == "rz":
-        qml_ins = qml.RZ
-    elif op.name == "u1":
-        qml_ins = qml.U1
-
-    elif op.name == "u3":
-        qml_ins = qml.U3
-    elif op.name == "xxyy":
-        qml_ins = qml.IsingXY
-    elif op.name == "swap":
-        qml_ins = qml.SWAP
-    elif op.name == "h":
-        qml_ins = qml.Hadamard
-    elif op.name == "x":
-        qml_ins = qml.PauliX
-    elif op.name == "y":
-        qml_ins = qml.PauliY
-    elif op.name == "z":
-        qml_ins = qml.PauliZ
-    elif op.name == "s" or op.name == "s_dg":
-        qml_ins = qml.S
-    elif op.name == "t" or op.name == "t_dg":
-        qml_ins = qml.T
-    elif op.name == "sx" or op.name == "sx_dg":
-        qml_ins = qml.SX
+    if op.name in mapping:
+        return mapping[op.name]
 
     # complex gate, with subcircuit definition we create a representative subcircuit
-    elif op.definition:
-        circ = qml_converter(op.definition, circ=True)
-        return circ
-    else:
-        Exception("Cannot convert")
-    return qml_ins
+    if op.definition is not None:
+        return qml_converter(op.definition, circ=True)
+
+    raise NotImplementedError(
+        f"Operation {op.name} not implemented in PennyLane converter."
+    )
 
 
-import sympy
+def qml_converter(qc: QuantumCircuit, circ: bool = False) -> types.FunctionType:
+    """
+    Convert a Qrisp quantum circuit to a PennyLane quantum function.
 
+    Parameters
+    ----------
+    qc : QuantumCircuit
+        The Qrisp quantum circuit to be converted.
+    circ : bool, optional
+        If True, the returned function is a PennyLane quantum function. Default is False.
 
-def qml_converter(qc, circ=False):
-    import pennylane as qml
+    Returns
+    -------
+    types.FunctionType
+        A PennyLane quantum function representing the Qrisp circuit.
+
+    """
 
     def circuit(*args, wires=None):
 
-        circFlag = False
-
+        circ_flag = False
         qbit_dic = {}
-        # add qubits
+
+        # Map Qrisp qubit identifiers to PennyLane wires
         if wires is None:
             for qubit in qc.qubits:
                 qbit_dic[qubit.identifier] = qubit.identifier
         else:
-            for i in range(len(qc.qubits)):
-                qbit_dic[qc.qubits[i].identifier] = wires[i]
+            for i, qubit in enumerate(qc.qubits):
+                qbit_dic[qubit.identifier] = wires[i]
 
-        # save measurements
         measurelist = []
         symbols = list(qc.abstract_params)
 
-        for index in range(len(qc.data)):
+        for idx, data in enumerate(qc.data):
 
-            op = qc.data[index].op
+            op = data.op
             params = list(op.params)
-            for i in range(len(params)):
-                if isinstance(params[i], sympy.Symbol):
-                    params[i] = args[symbols.index(params[i])]
 
-            qubit_list = [qbit_dic[qubit.identifier] for qubit in qc.data[index].qubits]
-            op_qubits = qc.data[index].qubits
+            # If the operation has symbolic parameters, substitute them with the provided arguments.
+            # Otherwise, convert them to float64 (with float128 there is a bug in PennyLane)
+            for i, param in enumerate(params):
+                if isinstance(param, sympy.Symbol):
+                    params[i] = args[symbols.index(param)]
+                else:
+                    params[i] = np.float64(param)
+
+            qubit_list = [qbit_dic[qubit.identifier] for qubit in data.qubits]
+            op_qubits = data.qubits
 
             if op.name in ["qb_alloc", "qb_dealloc"]:
                 continue
@@ -137,41 +152,19 @@ def qml_converter(qc, circ=False):
                 # deffed as RXXYY with angle pi
                 params = [np.pi]
 
-            if op.name == "cx":
-                # maybe adjustment necessary here
-                if hasattr(op, "ctrl_state"):
-                    qml_ins = qml.CNOT([qubit_list[0], qubit_list[1]])
-                else:
-                    qml_ins = qml.CNOT([qubit_list[0], qubit_list[1]])
-
-            elif op.name == "cy":
-                if hasattr(op, "ctrl_state"):
-                    qml_ins = qml.CY([qubit_list[0], qubit_list[1]])
-                else:
-                    qml_ins = qml.CY([qubit_list[0], qubit_list[1]])
-
-            elif op.name == "cz":
-                if hasattr(op, "ctrl_state"):
-                    qml_ins = qml.CZ([qubit_list[0], qubit_list[1]])
-                else:
-                    qml_ins = qml.CZ([qubit_list[0], qubit_list[1]])
+            # TODO: this can certainly be optimized/simplified
+            if op.name in ("cx", "cy", "cz"):
+                qml_ins = mapping[op.name](wires=qubit_list[:2])
 
             elif op.name == "cp":
-                if hasattr(op, "ctrl_state"):
-                    qml_ins = qml.ControlledPhaseShift(
-                        *params, [qubit_list[0], qubit_list[1]]
-                    )
-                else:
-                    qml_ins = qml.ControlledPhaseShift(
-                        *params, [qubit_list[0], qubit_list[1]]
-                    )
+                qml_ins = mapping[op.name](params[0], wires=qubit_list[:2])
 
             # return the controlled instruction or the nested circuit
             elif isinstance(op, ControlledOperation):
-                qml_trafo = create_qml_instruction(op)
+                qml_trafo = _create_qml_instruction(op)
                 if isinstance(qml_trafo, types.FunctionType):
-                    circFlag = True
-                    wire_map = dict()
+                    circ_flag = True
+                    wire_map = {}
                     for i in range(len(op_qubits)):
                         # wire_map[i] = op_qubits[i].identifier
                         wire_map[op.definition.qubits[i].identifier] = op_qubits[
@@ -186,15 +179,15 @@ def qml_converter(qc, circ=False):
 
             # return the instruction or the nested circuit
             else:
-                qml_trafo = create_qml_instruction(op)
+                qml_trafo = _create_qml_instruction(op)
                 if isinstance(qml_trafo, types.FunctionType):
-                    circFlag = True
-                    wire_map = dict()
-                    for i in range(len(op_qubits)):
+                    circ_flag = True
+                    wire_map = {}
+                    for idx, qubit in enumerate(op_qubits):
                         # map the wires as given for the nested circuit
-                        wire_map[op.definition.qubits[i].identifier] = op_qubits[
-                            i
-                        ].identifier
+                        wire_map[op.definition.qubits[idx].identifier] = (
+                            qubit.identifier
+                        )
                     mapped_quantum_function = qml.map_wires(qml_trafo, wire_map)
 
                 else:
@@ -205,13 +198,13 @@ def qml_converter(qc, circ=False):
 
             if not isinstance(circ, bool):
                 circ()
-            elif not circFlag:
+            elif not circ_flag:
                 qml_ins
             else:
                 mapped_quantum_function()
 
         # add measurements at the end, i.e. return a count object
-        if len(measurelist):
+        if len(measurelist) > 0:
             return qml.counts(wires=measurelist)
 
     return circuit

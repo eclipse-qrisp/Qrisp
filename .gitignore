@@ -4,6 +4,9 @@ __pycache__/
 *.egg-info/
 *.eggs
 *.DS_Store
+/.vscode/*
+timer.dat
+tmp/*
 
 /build/
 /dist/
@@ -14,3 +17,4 @@ __pycache__/
 /eccvenv/
 /python311venv/
 /multiverseenv/
+/notebooks/
