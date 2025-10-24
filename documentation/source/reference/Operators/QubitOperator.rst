@@ -19,6 +19,7 @@ Methods
    QubitOperator.get_measurement
    QubitOperator.ground_state_energy
    QubitOperator.hermitize
+   QubitOperator.pauli_block_encoding
    QubitOperator.to_array
    QubitOperator.to_sparse_matrix
    QubitOperator.to_pauli
