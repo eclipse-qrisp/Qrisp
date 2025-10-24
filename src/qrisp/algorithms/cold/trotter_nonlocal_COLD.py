@@ -50,16 +50,12 @@ N = num_qubits = len(Q[0])
 
 
 #
-Q = np.array([[ 3,  0,  0, -3,  0, -1,  0],
-       [ 0,  0,  0,  0,  0,  0, -2],
-       [ 0,  0,  0,  1,  0,  0,  5],
-       [-3,  0,  1, -2,  3,  0,  0],
-       [ 0,  0,  0,  3,  1,  0,  0],
-       [-1,  0,  0,  0,  0,  1, -2],
-       [ 0, -2,  5,  0,  0, -2, -3]])
-# best solutions
-# 1101011 with energy –17
-N = num_qubits = len(Q[0])
+Q = np.array([[-1.2,  0.6,  0.6,  0.0,  0.0],
+              [ 0.6, -0.8,  0.6,  0.0,  0.0],
+              [ 0.6,  0.6, -0.9, -0.7,  0.0],
+              [ 0.0,  0.0, -0.7, -0.4,  0.5],
+              [ 0.0,  0.0,  0.0,  0.5,  0.3]])
+N = len(Q[0])
 
 h_i = -0.5 * np.diag(Q) - 0.5 * np.sum(Q, axis=1)
 J_ij = 0.5 * Q
@@ -91,6 +87,12 @@ def lambda_symbolic(t, T):
 def lambda_t_deriv(t, T ): # time derivative of lambda_scheduling
     dtlambda = np.pi**2 * np.sin( np.pi*t/T )* np.sin( np.pi* np.sin( np.pi*t/( 2 *T ))**2 ) /(4*T)  
     return dtlambda
+
+def sympy_lambda():
+        #return np.sin(np.pi/2 * np.sin(np.pi*t/(2*T))**2)**2
+        t1, T1 = sp.symbols('t T', real=True)
+        lam_t_expr = sp.sin(sp.pi/2 * sp.sin(sp.pi*t1/(2*T1))**2)**2
+        return lam_t_expr
 
 
 # Then the f_opt_CRAB
@@ -145,10 +147,6 @@ def qarg_prep(qarg):
     hadamard(qarg)
 
 
-
-
-
-
 # Precompute f (sine) and f_deriv (cosine) for each timestep
 def precompute_opt_pulses(T, t_list, N_steps, N_opt, CRAB: bool):
 
@@ -181,8 +179,13 @@ def apply_cold_hamiltonian(qarg, N_steps, beta, CRAB=False):
     # Apply hamiltonian to qarg for each timestep
     dt = T / N_steps
     time = np.linspace(dt, T, N_steps)
-    lam = np.array([lambda_symbolic(t, T) for t in time])
-    lamdot = np.array([lambda_t_deriv(t, T) for t in time])
+    tl, Tl = sp.symbols('t T', real=True)
+        
+    lam_deriv_expr = sp.diff(sympy_lambda(), tl)
+    lam_t_func = sp.lambdify((tl, Tl), sympy_lambda(), 'numpy')
+    lam_deriv_func = sp.lambdify((tl, Tl), lam_deriv_expr, 'numpy')
+    lam = lam_t_func(time, T)
+    lamdot = lam_deriv_func(time, T)
     sin_matrix, cos_matrix = precompute_opt_pulses(T, time, N_steps, N_opt, CRAB)
 
     if CRAB:
@@ -203,12 +206,14 @@ def apply_cold_hamiltonian(qarg, N_steps, beta, CRAB=False):
         f_deriv = cos_matrix[s-1, :] @ beta
         alph = alpha_symbolic(t, T,f,f_deriv)
 
+        
         if hasattr(alph, "__len__"):
+            print("has_lenn")
             alph = alph[0]
             f = f[0]
         #print(alph*lamdot)
 
-        # H_0 contribution scaled by dt
+        """ # H_0 contribution scaled by dt
         H_step = dt *(1-lam[s-1])* H_i + dt * lam[s-1]*H_f_qubo
 
         # AGP contribution scaled by dt* lambda_dot(t)
@@ -218,7 +223,23 @@ def apply_cold_hamiltonian(qarg, N_steps, beta, CRAB=False):
         H_step = H_step + dt * f*  H_control
         # Get unitary from trotterization and apply to qarg
         U = H_step.trotterization()
-        U(qarg)
+        U(qarg) """
+
+        # Prefactor for U1
+        a = dt * (1 - lam[s-1])
+        U1(qarg, a)
+        # Prefactor for U2
+        b = dt * lam[s-1]
+        U2(qarg, b)
+        # Prefactor for U3
+        c = dt * lamdot[s-1] * alph
+        U3(qarg, c)
+        # Prefactor for U4
+        if CRAB:
+            d = dt * f #+sum(f[i, 0] for i in range(f.rows)) # richtig?
+        else:
+            d = dt * f
+        U4(qarg, d)
 
 
 def compile_U(qarg, N_opt, N_steps, CRAB=False):
@@ -241,7 +262,6 @@ def compile_U(qarg, N_opt, N_steps, CRAB=False):
 
 
 def optimization_routine(qarg, N_opt, qc, CRAB): 
-
 
     def objective(params):
         # Objective function to be minimized: 
@@ -345,4 +365,6 @@ print("best 5")
 b5 = list(meas_cold_crab.keys())[:5]
 for i in b5:
     print(i, qubo_cost(Q, {i:1}))
+
+print("Trotter_nonlocl")
 
