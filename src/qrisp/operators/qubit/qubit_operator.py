@@ -2058,10 +2058,25 @@ class QubitOperator(Hamiltonian):
         r"""
         Returns a block encoding of the operator.
 
-        A block encoding of a Hamiltonian $H$ (acting on a Hilbert space $\mathcal H_s$) is a pair of unitaries $(U,G)$, 
+        A block encoding (`Low & Chuang <https://quantum-journal.org/papers/q-2019-07-12-163/pdf/>`_, `Kirby et al. <https://quantum-journal.org/papers/q-2023-05-23-1018/pdf/>`_) 
+        of a Hamiltonian $H$ (acting on a Hilbert space $\mathcal H_s$) is a pair of unitaries $(U,G)$, 
         where $U$ is the block encoding unitary acting on $\mathcal H_a\otimes H_s$ (for some auxiliary Hilbert space $\mathcal H_a$), 
         and $G$ prepares the block encoding state $\ket{G}_a=G\ket{0}_a$ in the auxiliary variable such that $(\bra{G}_a\otimes\mathbb I_s)U(\ket{G_a}\otimes\mathbb I_s)=H$.
         Here $\mathbb I_s$ denotes the identity acting on $\mathcal H_s$.
+
+        The operator $H$, which is non-unitary in general, is applied as follows:
+
+        .. math::
+            U\ket{G}_a\ket{\psi}_s = \ket{G}_a H\ket{\psi}_s + \sqrt{1-\|H\ket{\psi}\|^2}\ket{G_{\psi}^{\perp}}_{as},\quad 
+            U= 
+            \begin{pmatrix}
+                H & *\\
+                * & * 
+            \end{pmatrix}
+
+        where $\ket{G_{\psi}^{\perp}}_{as}$ is a state in $\mathcal H_a\otimes H_s$ orthogonal to $\ket{G}$, i.e., $(\bra{G}_a\otimes\mathbb I_s)\ket{G_{\psi}^{\perp}}_{as}=0$.
+        Therefore, a block-encoding embeds a not necessarily unitary operator $H$ as a block into a larger unitary operator $U$. In standard form i.e., when $\ket{G}_a=G\ket{0}_a$
+        is prepared from the $\ket{0}$ state, $H$ is embedded as the upper left block of the operator $U$.
 
         For a Pauli block encoding, consider an $n$-qubit Hamiltonian expressed as linear combination of Pauli operators
 
@@ -2069,7 +2084,7 @@ class QubitOperator(Hamiltonian):
     
             H = \sum_{i=0}^{T-1}\alpha_iP_i
 
-        where $\alpha_i$ are real coefficients, $P_i$ are Pauli operators, and $T$ is the number of terms.
+        where $\alpha_i$ are real coefficients, $P_i$ are Pauli strings acting on $n$ qubits, and $T$ is the number of terms.
         We assume that the coefficients $\alpha_i$ are nonnegative, and each Pauli $P_i$ carries a $\pm1$ sign. 
         We also require the coefficients of $H$ to be normalized: $\sum_{i=0}^{T-1}\alpha_i=1$.
 
@@ -2079,7 +2094,7 @@ class QubitOperator(Hamiltonian):
 
             U = \sum_{i=0}^{T-1}\ket{i}\bra{i}\otimes P_i
 
-        i.e., application of each Pauli term $P_i$ controlled on the state of the auxiliary variable being $\ket{i}_a$.
+        i.e., application of each Pauli string $P_i$ controlled on the state of the auxiliary variable being $\ket{i}_a$.
         The belonging block encoding state is
 
         .. math::
@@ -2121,7 +2136,7 @@ class QubitOperator(Hamiltonian):
 
         .. math::
 
-            \sum_{k=0}^{2^m-1}\ket{i}_a\ket{i}_b
+            \sum_{k=0}^{2^m-1}\ket{i}_{a}\ket{i}_b
 
         of QuantumVariables $a, b$, and apply the matrix $A$ to the variable $b$.
 
@@ -2140,7 +2155,7 @@ class QubitOperator(Hamiltonian):
 
                 case = QuantumVariable(n)
 
-                # Apply matrix A via block encoding 
+                # Apply matrix A via block encoding
                 with conjugate(state_prep)(case):
                     U(a, case)
 
@@ -2158,6 +2173,9 @@ class QubitOperator(Hamiltonian):
 
 
             main()
+
+        The ``inner`` function is equipped with the :ref:`RUS` decorator. This means that the routine is repeatedly run until the ``case`` variable is measured in state $\ket{0}$, i.e.,
+        the matrix $A$ is successfully applied. 
             
         .. code-block::
 
