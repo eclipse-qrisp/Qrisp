@@ -588,7 +588,7 @@ class QubitOperator(Hamiltonian):
         return H
 
     @classmethod
-    def from_matrix(self, matrix, reversed=False):
+    def from_matrix(self, matrix, reverse_endianness=False):
         r"""
         Represents a matrix as an operator
 
@@ -602,8 +602,8 @@ class QubitOperator(Hamiltonian):
         ----------
         matrix : numpy.ndarray or scipy.sparse.csr_matrix
             The matrix.
-        reversed : bool
-            If true, the endianness is reversed.
+        reverse_endianness : bool, optional
+            If ``True``, the endianness is reversed. The default is ``False``.
 
         Returns
         -------
@@ -658,7 +658,7 @@ class QubitOperator(Hamiltonian):
             for k in range(n):
                 i = (row >> k) & 1
                 j = (col >> k) & 1
-                if reversed:
+                if reverse_endianness:
                     factor_dict[k] = OPERATOR_TABLE[(i, j)]
                 else:
                     factor_dict[n - k - 1] = OPERATOR_TABLE[(i, j)]
@@ -2111,7 +2111,7 @@ class QubitOperator(Hamiltonian):
             A = A + A.T
             print(A)
 
-            H = QubitOperator.from_matrix(A, reversed=True)
+            H = QubitOperator.from_matrix(A, reverse_endianness=True)
 
         The matrix $A$ encodes the mapping $\ket{0}\rightarrow\ket{1}$, $\ket{k}\rightarrow\ket{k-1}+\ket{k+1}$ for $k=1,\dotsc,2^m-2$, $\ket{2^m-1}\rightarrow\ket{2^m-2}$.
         We now apply the matrix $A$ to a QuantumVariable in supersosition state $\ket{0}+\dotsb+\ket{2^m-1}$ via the Pauli block encoding of the corresponding QubitOperator $H$.

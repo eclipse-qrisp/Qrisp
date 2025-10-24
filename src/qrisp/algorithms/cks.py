@@ -422,7 +422,7 @@ def inner_CKS(A, b, eps, kappa=None, max_beta=None):
     if isinstance(A, tuple) and len(A) == 3:
         U, state_prep, n = A
     else:
-        H = QubitOperator.from_matrix(A, reversed=True)
+        H = QubitOperator.from_matrix(A, reverse_endianness=True)
         U, state_prep, n = (H.pauli_block_encoding())  # Construct block encoding of A as a set of Pauli unitaries
 
     j_0, beta = CKS_parameters(A, eps, kappa, max_beta)
