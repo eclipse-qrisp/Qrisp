@@ -24,23 +24,16 @@ import sympy
 
 from qrisp.circuit import ControlledOperation, QuantumCircuit, Operation
 
+from qrisp import QuantumSession
+
 """
 TODO:
 
--- Change the structure of the mapping
--- Update mapping with more gates (ideally all the currently supported Qrisp gates)
--- Add support for all gates in the mapping
--- Polish the code with pylint/black standards
--- Improve efficiency if possible
-
--- clbit interaction with measurements 
--- conditional environment, i.e. mid-circuit measurement is possible, have to create this
-    --> otherwise no clbit interaction?
+-- Implement complex parameters handling for gates
 
 """
 
-# Mapping from Qrisp operation names to PennyLane gates
-mapping = {
+QRISP_PL_OP_MAP = {
     "rxx": qml.IsingXX,
     "ryy": qml.IsingYY,
     "rzz": qml.IsingZZ,
@@ -69,31 +62,30 @@ mapping = {
 }
 
 
-def _create_qml_instruction(op: Operation) -> types.FunctionType:
+def _create_qml_instruction(op: Operation) -> qml.operation.Operator:
     """Create a PennyLane instruction from a Qrisp operation."""
 
-    if op.name in mapping:
-        return mapping[op.name]
+    if op.name in QRISP_PL_OP_MAP:
+        return QRISP_PL_OP_MAP[op.name]
 
     # complex gate, with subcircuit definition we create a representative subcircuit
-    if op.definition is not None:
-        return qml_converter(op.definition, circ=True)
+    # TODO: this is only used so far for MCXGate and MCRXGate
+    # if op.definition is not None:
+    #     return qml_converter(op.definition)
 
     raise NotImplementedError(
         f"Operation {op.name} not implemented in PennyLane converter."
     )
 
 
-def qml_converter(qc: QuantumCircuit, circ: bool = False) -> types.FunctionType:
+def qml_converter(qc: QuantumCircuit | QuantumSession) -> types.FunctionType:
     """
     Convert a Qrisp quantum circuit to a PennyLane quantum function.
 
     Parameters
     ----------
-    qc : QuantumCircuit
+    qc : QuantumCircuit | QuantumSession
         The Qrisp quantum circuit to be converted.
-    circ : bool, optional
-        If True, the returned function is a PennyLane quantum function. Default is False.
 
     Returns
     -------
@@ -102,108 +94,91 @@ def qml_converter(qc: QuantumCircuit, circ: bool = False) -> types.FunctionType:
 
     """
 
-    def circuit(*args, wires=None):
+    def circuit(*args, wires: qml.wires.WiresLike = None):
+        """
+        PennyLane quantum function representing the Qrisp circuit.
 
-        circ_flag = False
-        qbit_dic = {}
+        Parameters
+        ----------
+        *args : list
+            The parameters for the quantum circuit.
 
-        # Map Qrisp qubit identifiers to PennyLane wires
-        if wires is None:
-            for qubit in qc.qubits:
-                qbit_dic[qubit.identifier] = qubit.identifier
-        else:
-            for i, qubit in enumerate(qc.qubits):
-                qbit_dic[qubit.identifier] = wires[i]
+        wires : qml.wires.WiresLike, optional
+            The wires to be used in the PennyLane circuit. If None, the qubit identifiers
+            from the Qrisp circuit are used.
 
+        Returns
+        -------
+        qml.counts or None
+            The measurement results if measurements are present in the circuit, otherwise None.
+
+        """
+
+        qubits = {}
         measurelist = []
         symbols = list(qc.abstract_params)
 
-        for idx, data in enumerate(qc.data):
+        if wires is None:
+            for qubit in qc.qubits:
+                qubits[qubit.identifier] = qubit.identifier
+        else:
+            for i, qubit in enumerate(qc.qubits):
+                qubits[qubit.identifier] = wires[i]
+
+        for data in qc.data:
 
             op = data.op
-            params = list(op.params)
-
-            # If the operation has symbolic parameters, substitute them with the provided arguments.
-            # Otherwise, convert them to float64 (with float128 there is a bug in PennyLane)
-            for i, param in enumerate(params):
-                if isinstance(param, sympy.Symbol):
-                    params[i] = args[symbols.index(param)]
-                else:
-                    params[i] = np.float64(param)
-
-            qubit_list = [qbit_dic[qubit.identifier] for qubit in data.qubits]
-            op_qubits = data.qubits
+            qml_params = list(op.params)
+            qml_wires = [qubits[qubit.identifier] for qubit in data.qubits]
 
             if op.name in ["qb_alloc", "qb_dealloc"]:
                 continue
 
             if op.name == "measure":
-                ### below: possible implementation for nested circuit measurments
-                # if circ == True:
-                #   Exception("Measurements in nested circuits not supported (yet)")
-                measurelist.append(*qubit_list)
+                measurelist.append(*qml_wires)
                 continue
 
-            ###### BugCatcher + special gates ######
-            if op.name in ["sx", "sx_dg", "id", "t", "t_dg", "s", "s_dg"]:
-                # bugged -> params empty
-                params = []
-            if op.name == "xxyy":
-                # deffed as RXXYY with angle pi
-                params = [np.pi]
+            #########################
+            ### Parameter Handling
+            #########################
 
-            # TODO: this can certainly be optimized/simplified
-            if op.name in ("cx", "cy", "cz"):
-                qml_ins = mapping[op.name](wires=qubit_list[:2])
-
-            elif op.name == "cp":
-                qml_ins = mapping[op.name](params[0], wires=qubit_list[:2])
-
-            # return the controlled instruction or the nested circuit
-            elif isinstance(op, ControlledOperation):
-                qml_trafo = _create_qml_instruction(op)
-                if isinstance(qml_trafo, types.FunctionType):
-                    circ_flag = True
-                    wire_map = {}
-                    for i in range(len(op_qubits)):
-                        # wire_map[i] = op_qubits[i].identifier
-                        wire_map[op.definition.qubits[i].identifier] = op_qubits[
-                            i
-                        ].identifier
-                    mapped_quantum_function = qml.map_wires(qml_trafo, wire_map)
-                    qml_ins = qml.ctrl(
-                        mapped_quantum_function, control=op.ctrl_state[::-1]
-                    )
+            # If the operation has symbolic parameters, substitute them with the provided arguments.
+            # Otherwise, convert them to float64 (with float128 there is a bug in PennyLane)
+            for i, param in enumerate(list(op.params)):
+                if isinstance(param, sympy.Symbol):
+                    qml_params[i] = args[symbols.index(param)]
                 else:
-                    qml_ins = qml.ctrl(qml_trafo, control=op.ctrl_state[::-1])
+                    qml_params[i] = np.float64(param)
 
-            # return the instruction or the nested circuit
-            else:
-                qml_trafo = _create_qml_instruction(op)
-                if isinstance(qml_trafo, types.FunctionType):
-                    circ_flag = True
-                    wire_map = {}
-                    for idx, qubit in enumerate(op_qubits):
-                        # map the wires as given for the nested circuit
-                        wire_map[op.definition.qubits[idx].identifier] = (
-                            qubit.identifier
-                        )
-                    mapped_quantum_function = qml.map_wires(qml_trafo, wire_map)
+            qml_op_instance = _create_qml_instruction(op)
 
-                else:
-                    if "_dg" in op.name:
-                        qml_ins = qml.adjoint(qml_trafo(*params, wires=qubit_list))
-                    else:
-                        qml_ins = qml_trafo(*params, wires=qubit_list)
+            # n_controls = 0
+            # if isinstance(op, ControlledOperation):
+            #     n_controls = len(op.ctrl_state)
 
-            if not isinstance(circ, bool):
-                circ()
-            elif not circ_flag:
-                qml_ins
-            else:
-                mapped_quantum_function()
+            # controls = qml_wires[:n_controls]
+            # targets = qml_wires[n_controls:]
 
-        # add measurements at the end, i.e. return a count object
+            with qml.QueuingManager.stop_recording():
+
+                qml_op = qml_op_instance(*qml_params, wires=qml_wires)
+
+                if "_dg" in op.name:
+                    qml_op = qml.adjoint(qml_op)
+
+                # if isinstance(op, ControlledOperation):
+                #     qml_op = qml.ctrl(
+                #         op=qml_op,
+                #         control=controls,
+                #         control_values=[int(bit) for bit in op.ctrl_state],
+                #     )
+
+            ######################
+            ### Apply Operation
+            ######################
+
+            qml.apply(qml_op)
+
         if len(measurelist) > 0:
             return qml.counts(wires=measurelist)
 

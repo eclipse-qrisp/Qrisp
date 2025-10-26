@@ -19,8 +19,9 @@
 """
 TODO:
 
--- Add test with wires=None
--- Add test with parameterized gates
+-- Add test with wires provided to the converter as argument
+-- Add test with parameters provided the the converter as argument
+-- Add test with `measure` operations in the circuit
 
 """
 
@@ -203,6 +204,7 @@ class TestSingleGateConversion:
         qrisp_qs.append(PGate(np.pi / 4), qrisp_qv[1])
 
         qrisp_qs.append(TGate(), qrisp_qv[0])
+
         qrisp_qs.append(TGate(), qrisp_qv[1])
 
         qml_converted_circuit = _create_qml_circuit(qrisp_qv)
@@ -259,6 +261,56 @@ class TestSingleGateConversion:
         qrisp_res = qrisp_qv.get_measurement()
         qml_res = np.asarray(qml_res, dtype=float)
         check_probs_equivalence(qrisp_res, qml_res)
+
+    def test_adjoint_gates(self):
+        """Test conversion of adjoint gates from Qrisp to PennyLane."""
+        qrisp_qv = QuantumVariable(1)
+        qrisp_qs = qrisp_qv.qs
+
+        qrisp_qs.append(SGate().inverse(), qrisp_qv[0])
+        qrisp_qs.append(SXGate().inverse(), qrisp_qv[0])
+        qrisp_qs.append(TGate().inverse(), qrisp_qv[0])
+
+        qml_converted_circuit = _create_qml_circuit(qrisp_qv)
+
+        # We execute the circuit to populate the tape
+        qml_res = qml_converted_circuit()
+
+        expected_ops = [
+            qml.adjoint(qml.S)(wires=qrisp_qv[0].identifier),
+            qml.adjoint(qml.SX)(wires=qrisp_qv[0].identifier),
+            qml.adjoint(qml.T)(wires=qrisp_qv[0].identifier),
+        ]
+        check_qml_operations(qml_converted_circuit, expected_ops)
+
+        qrisp_res = qrisp_qv.get_measurement()
+        qml_res = np.asarray(qml_res, dtype=float)
+        check_probs_equivalence(qrisp_res, qml_res)
+
+    # def test_controlled_gates(self):
+    #     """Test conversion of controlled gates from Qrisp to PennyLane."""
+
+    #     qrisp_qv = QuantumVariable(3)
+    #     qrisp_qs = qrisp_qv.qs
+
+    #     # control(2, ctrl_state="01")
+
+    #     qrisp_qs.append(RXGate(0.5).control(2, ctrl_state="01"), [qrisp_qv[0], qrisp_qv[1], qrisp_qv[2]])
+
+    #     qml_converted_circuit = _create_qml_circuit(qrisp_qv)
+
+    #     # We execute the circuit to populate the tape
+    #     qml_res = qml_converted_circuit()
+
+    #     expected_ops = [
+    #         qml.CNOT(wires=[qrisp_qv[0].identifier, qrisp_qv[1].identifier]),
+    #         #  qml.CRZ(np.pi / 2, wires=[qrisp_qv[1].identifier, qrisp_qv[0].identifier]),
+    #     ]
+    #     check_qml_operations(qml_converted_circuit, expected_ops)
+
+    #     qrisp_res = qrisp_qv.get_measurement()
+    #     qml_res = np.asarray(qml_res, dtype=float)
+    #     check_probs_equivalence(qrisp_res, qml_res)
 
 
 class TestMultiQubitGateConversion:
