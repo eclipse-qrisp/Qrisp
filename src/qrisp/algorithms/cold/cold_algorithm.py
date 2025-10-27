@@ -38,14 +38,14 @@ class COLDproblem:
     def __init__(
         self, 
         qarg_prep, 
+        sympy_lambda, 
+        alpha,
         H_i,
         H_p,
         A_lam,
-        H_control,
-        sympy_lambda, 
-        alpha,
-        
+        H_control=None,
         callback=False
+
     ):
         
         self.qarg_prep = qarg_prep
@@ -87,7 +87,39 @@ class COLDproblem:
 
     # Precompute f (sine) and f_deriv (cosine) for each timestep
     
+    
 
+
+    def apply_lcd_hamiltonian(self, qarg, N_steps, T):
+
+        self.qarg_prep(qarg)
+
+        # Precompute timegrid
+        dt = T / N_steps
+        t_list = np.linspace(dt, T, int(N_steps))
+
+        tl, Tl = sp.symbols('t T', real=True)
+        lam_deriv_expr = sp.diff(self.sympy_lambda(), tl)
+        lam_t_func = sp.lambdify((tl, Tl), self.sympy_lambda(), 'numpy')
+        lam_deriv_func = sp.lambdify((tl, Tl), lam_deriv_expr, 'numpy')
+        lam = lam_t_func(t_list, T)
+        lamdot = lam_deriv_func(t_list, T)
+
+        # Apply hamiltonian to qarg for each timestep
+        for s in range(N_steps):
+
+            # Get alpha for the timestep
+            alph = self.alpha(lam[s])
+
+            # H_0 contribution scaled by dt
+            H_step = dt *(1-lam[s-1])* self.H_i + dt * lam[s-1]*self.H_p
+
+            # AGP contribution scaled by dt* lambda_dot(t)
+            H_step = dt * lamdot[s-1] * alph* self.A_lam
+
+            # Get unitary from trotterization and apply to qarg
+            U = H_step.trotterization()
+            U(qarg)
 
     def apply_cold_hamiltonian(self, 
                                qarg, N_steps, T, beta, CRAB=False):
@@ -130,16 +162,15 @@ class COLDproblem:
         N_steps = int(N_steps)
         N_opt = len(beta)
         dt = T / N_steps
-        time = np.linspace(dt, T, int(N_steps))
+        t_list = np.linspace(dt, T, int(N_steps))
 
         tl, Tl = sp.symbols('t T', real=True)
-        
         lam_deriv_expr = sp.diff(self.sympy_lambda(), tl)
         lam_t_func = sp.lambdify((tl, Tl), self.sympy_lambda(), 'numpy')
         lam_deriv_func = sp.lambdify((tl, Tl), lam_deriv_expr, 'numpy')
-        lam = lam_t_func(time, T)
-        lamdot = lam_deriv_func(time, T)
-        sin_matrix, cos_matrix = precompute_opt_pulses(time,  N_opt)
+        lam = lam_t_func(t_list, T)
+        lamdot = lam_deriv_func(t_list, T)
+        sin_matrix, cos_matrix = precompute_opt_pulses(t_list,  N_opt)
 
         if CRAB:
             # Transform beta to sympy to work with symbols for random values
@@ -272,21 +303,25 @@ class COLDproblem:
         return res.x
     
 
-    def run(self, qarg, N_steps, T, N_opt, CRAB=False):
+    def run(self, qarg, N_steps, T, N_opt=None, CRAB=False):
 
         # create the H_p and A_lam via the usage of Q only here? 
+        if self.H_control is not None:
+            qarg1, qarg2 = qarg.duplicate(), qarg.duplicate()
 
-        qarg1, qarg2 = qarg.duplicate(), qarg.duplicate()
+            # Compile COLD routine into a circuit
+            U_circuit = self.compile_U(qarg1, N_opt, N_steps, T, CRAB)
 
-        # Compile COLD routine into a circuit
-        U_circuit = self.compile_U(qarg1, N_opt, N_steps, T, CRAB)
+            # Find optimal params for control pulse
+            opt_params = self.optimization_routine(qarg2, N_opt, U_circuit, CRAB)
 
-        # Find optimal params for control pulse
-        opt_params = self.optimization_routine(qarg2, N_opt, U_circuit, CRAB)
+            # Apply hamiltonian with optimal parameters
+            # Here we do not want the randomized parameters to be included -> CRAB=False
+            self.apply_cold_hamiltonian(qarg, N_steps, T, opt_params, CRAB=False)
 
-        # Apply hamiltonian with optimal parameters
-        # Here we do not want the randomized parameters to be included -> CRAB=False
-        self.apply_cold_hamiltonian(qarg, N_steps, T, opt_params, CRAB=False)
+        else:
+            # Aapply hamiltonian
+            self.apply_lcd_hamiltonian(qarg, N_steps, T)
 
         # Measure qarg
         res_dict = qarg.get_measurement()

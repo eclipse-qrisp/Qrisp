@@ -96,14 +96,44 @@ def create_nl_QUBO(Q):
         alpha = -nom/denom
         return alpha
     
-    return qarg_prep, H_i, H_p, A_lamb, H_control,  lam_t, alpha_nonlocal
+    def alpha_LOCAL(lam):
+        # lengthy expression for alpha with non-local AGP
+        # from the FraunhoferGPT conversation:
+        
+        num_qubits = len(J[0])
+        #n = num_qubits
+        S_hR = sum([sum([J[i][j]**2 *(h_i[i]+h_i[j]) for i in range(j)]) for j in range(num_qubits)])
+        S_hsqR = sum([sum([J[i][j]**2 *(h_i[i]**2+h_i[j]**2) for i in range(j)]) for j in range(num_qubits)])
+        S_2 = sum([sum([J[i][j]**2 for i in range(j)]) for j in range(num_qubits)])
+        S_4 = sum([sum([J[i][j]**4 for i in range(j)]) for j in range(num_qubits)])
+        R_i_list =[ sum([J[i][j]**2 if j!=i else 0 for j in range(num_qubits)])  for i in range(num_qubits)]
+        S_Rsq = sum( R_i**2 for R_i in R_i_list)
+        S_h = sum(h_i)
+        S_hsq = sum(i**2 for i in h_i)
+        c = 0.05
+        dc = 0.05
+
+        denom = 4 *(
+                c**2 *( num_qubits + 4*S_2)
+                +c*lam *(2*S_h + 4*S_hR + 12*S_2)
+                +lam**2 *(S_hsq + 2*S_hsqR + 6*S_hR + 2*S_Rsq + 4*S_2 + 2*S_4)
+                + (1-lam)**2 *num_qubits
+                + 8 *(1-lam)**2 *S_2
+        )
+
+        nom = num_qubits *c + S_h + 2*S_2 + num_qubits*(1-lam)* dc
+
+        alpha = -nom/denom
+        return alpha
+    
+    return qarg_prep, H_i, H_p, A_lamb, H_control,  lam_t, alpha_nonlocal, alpha_LOCAL
 
 
 from qrisp.algorithms.cold.cold_algorithm import COLDproblem
 
-qarg_prep, H_init, H_prob, A_lamb, H_control, lam_t, alpha_nonlocal = create_nl_QUBO(Q)
+qarg_prep, H_init, H_prob, A_lamb, H_control, lam_t, alpha_nonlocal, alpha_LOCAL = create_nl_QUBO(Q)
 
-cold_problem = COLDproblem(qarg_prep, H_init, H_prob, A_lamb, H_control,  lam_t, alpha_nonlocal)
+cold_problem = COLDproblem(qarg_prep, lam_t, alpha_nonlocal, H_init, H_prob, A_lamb, H_control)
 #run(self, qarg, N_steps, T, N_opt, CRAB=False):
 qarg_cold = QuantumVariable(N)
 # Evolution time
@@ -113,10 +143,17 @@ N_steps = T*20
 # Number of control pulse parameters
 N_opt = 1
 # Use crab method
-CRAB = True
+CRAB_here = True
 
-meas_cold_crab = cold_problem.run(qarg_cold, int(N_steps), T, N_opt, CRAB)
+meas_cold_crab = cold_problem.run(qarg_cold, int(N_steps), T, N_opt)
 print(meas_cold_crab)
+
+
+
+lcd_problem = COLDproblem(qarg_prep, lam_t, alpha_LOCAL, H_init, H_prob, A_lamb)
+meas_lcd = lcd_problem.run(qarg_cold, int(N_steps), T)
+print(meas_lcd)
+
 
 def qubo_cost(Q, P):
     expected_cost = 0.0
@@ -131,7 +168,9 @@ def qubo_cost(Q, P):
 
 
 print(f'Cost COLD-CRAB: {qubo_cost(Q, meas_cold_crab)}\n')
-print("best 5")
+print(f'Cost COLD-CRAB: {qubo_cost(Q, meas_lcd)}\n')
+
+print("best 5 COLD-CRAB")
 b5 = list(meas_cold_crab.keys())[:5]
 for i in b5:
     print(i, qubo_cost(Q, {i:1}))
