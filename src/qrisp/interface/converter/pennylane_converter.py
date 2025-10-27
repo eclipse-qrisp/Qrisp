@@ -16,23 +16,25 @@
 ********************************************************************************
 """
 
+import re
 import types
 
 import numpy as np
 import pennylane as qml
 import sympy
 
-from qrisp.circuit import ControlledOperation, QuantumCircuit, Operation
-
 from qrisp import QuantumSession
+from qrisp.circuit import ControlledOperation, Operation, QuantumCircuit
 
 """
 TODO:
 
 -- Implement complex parameters handling for gates
+-- Implement controlled operations properly
+-- Implement all gates listed in `scr/qrisp/circuit/standard_operations.py`
 
 """
-
+# Mapping for basic operations
 QRISP_PL_OP_MAP = {
     "rxx": qml.IsingXX,
     "ryy": qml.IsingYY,
@@ -55,10 +57,24 @@ QRISP_PL_OP_MAP = {
     "s_dg": qml.S,
     "t": qml.T,
     "t_dg": qml.T,
-    "cx": qml.CNOT,
-    "cy": qml.CY,
-    "cz": qml.CZ,
-    "cp": qml.ControlledPhaseShift,
+}
+
+# Mapping for controlled operations
+
+# To avoid different naming conventions between Qrisp and PennyLane,
+# we map qrisp controlled gate names to their PennyLane base gate counterparts.
+# Then, we use `qml.ctrl` to create the controlled versions in the main conversion function.
+QRISP_PL_OP_MAP_CTRL = {
+    "cx": qml.X,
+    "cy": qml.Y,
+    "cz": qml.Z,
+    "cp": qml.PhaseShift,
+    "crx": qml.RX,
+    "cry": qml.RY,
+    "crz": qml.RZ,
+    "mcrx": qml.RX,
+    "csx": qml.SX,
+    "csx_dg": qml.SX,
 }
 
 
@@ -68,10 +84,15 @@ def _create_qml_instruction(op: Operation) -> qml.operation.Operator:
     if op.name in QRISP_PL_OP_MAP:
         return QRISP_PL_OP_MAP[op.name]
 
-    # complex gate, with subcircuit definition we create a representative subcircuit
-    # TODO: this is only used so far for MCXGate and MCRXGate
-    # if op.definition is not None:
-    #     return qml_converter(op.definition)
+    if op.name in QRISP_PL_OP_MAP_CTRL:
+        return QRISP_PL_OP_MAP_CTRL[op.name]
+
+    # Handle custom multi-controlled gates, e.g., '2cx', '3cz', '3csx_dg', etc.
+    gate_match = re.fullmatch(r"(\d+)(c[a-z_]+)", op.name)
+    if gate_match:
+        ctrl_gate_name = gate_match.group(2)
+        if ctrl_gate_name in QRISP_PL_OP_MAP_CTRL:
+            return QRISP_PL_OP_MAP_CTRL[ctrl_gate_name]
 
     raise NotImplementedError(
         f"Operation {op.name} not implemented in PennyLane converter."
@@ -129,7 +150,12 @@ def qml_converter(qc: QuantumCircuit | QuantumSession) -> types.FunctionType:
 
             op = data.op
             qml_params = list(op.params)
+
+            # data.qubits = [controls..., targets...]
             qml_wires = [qubits[qubit.identifier] for qubit in data.qubits]
+            n_ctrls = len(op.ctrl_state) if isinstance(op, ControlledOperation) else 0
+            controls = qml_wires[:n_ctrls]
+            targets = qml_wires[n_ctrls:]
 
             if op.name in ["qb_alloc", "qb_dealloc"]:
                 continue
@@ -137,10 +163,6 @@ def qml_converter(qc: QuantumCircuit | QuantumSession) -> types.FunctionType:
             if op.name == "measure":
                 measurelist.append(*qml_wires)
                 continue
-
-            #########################
-            ### Parameter Handling
-            #########################
 
             # If the operation has symbolic parameters, substitute them with the provided arguments.
             # Otherwise, convert them to float64 (with float128 there is a bug in PennyLane)
@@ -150,32 +172,22 @@ def qml_converter(qc: QuantumCircuit | QuantumSession) -> types.FunctionType:
                 else:
                     qml_params[i] = np.float64(param)
 
-            qml_op_instance = _create_qml_instruction(op)
-
-            # n_controls = 0
-            # if isinstance(op, ControlledOperation):
-            #     n_controls = len(op.ctrl_state)
-
-            # controls = qml_wires[:n_controls]
-            # targets = qml_wires[n_controls:]
+            # if the operation is controlled, this returns the PL base operation
+            qml_op_class = _create_qml_instruction(op)
 
             with qml.QueuingManager.stop_recording():
 
-                qml_op = qml_op_instance(*qml_params, wires=qml_wires)
+                qml_op = qml_op_class(*qml_params, wires=targets)
 
                 if "_dg" in op.name:
                     qml_op = qml.adjoint(qml_op)
 
-                # if isinstance(op, ControlledOperation):
-                #     qml_op = qml.ctrl(
-                #         op=qml_op,
-                #         control=controls,
-                #         control_values=[int(bit) for bit in op.ctrl_state],
-                #     )
-
-            ######################
-            ### Apply Operation
-            ######################
+                if n_ctrls:
+                    qml_op = qml.ctrl(
+                        op=qml_op,
+                        control=controls,
+                        control_values=[int(bit) for bit in op.ctrl_state],
+                    )
 
             qml.apply(qml_op)
 
