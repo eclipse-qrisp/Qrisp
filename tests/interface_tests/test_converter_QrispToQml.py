@@ -118,8 +118,161 @@ def check_probs_equivalence(qrisp_probs, qml_probs, atol=1e-8):
         )
 
 
+import pytest
+import numpy as np
+import pennylane as qml
+from qrisp import (
+    XGate,
+    YGate,
+    ZGate,
+    RXGate,
+    RYGate,
+    RZGate,
+    PGate,
+    SGate,
+    TGate,
+    HGate,
+    SXGate,
+    QuantumVariable,
+)
+
+SINGLE_GATE_MAP = [
+    (XGate, qml.PauliX, []),
+    (YGate, qml.PauliY, []),
+    (ZGate, qml.PauliZ, []),
+    (RXGate, qml.RX, [np.pi / 4]),
+    (RYGate, qml.RY, [np.pi / 3]),
+    (RZGate, qml.RZ, [np.pi / 2]),
+    (PGate, qml.RZ, [np.pi / 2]),
+    (SGate, qml.S, []),
+    (TGate, qml.T, []),
+    (HGate, qml.Hadamard, []),
+    (SXGate, qml.SX, []),
+]
+
+
+@pytest.mark.parametrize("qrisp_gate_class,qml_gate_class,params", SINGLE_GATE_MAP)
+def test_single_gate_conversion(qrisp_gate_class, qml_gate_class, params):
+    """Test one-to-one conversion of simple gates from Qrisp to PennyLane."""
+    qv = QuantumVariable(1)
+    qs = qv.qs
+    qs.append(qrisp_gate_class(*params), qv[0])
+
+    qml_circ = _create_qml_circuit(qv)
+    qml_res = qml_circ()  # populate tape
+
+    expected_ops = [qml_gate_class(*params, wires=qv[0].identifier)]
+    check_qml_operations(qml_circ, expected_ops)
+
+    qrisp_res = qv.get_measurement()
+    qml_res = np.asarray(qml_res, dtype=float)
+    atol = 1e-5 if params else 1e-8
+    check_probs_equivalence(qrisp_res, qml_res, atol=atol)
+
+
+MULTI_GATE_MAP = [
+    (CXGate, qml.CNOT, 2, []),
+    (CZGate, qml.CZ, 2, []),
+    (SwapGate, qml.SWAP, 2, []),
+]
+
+
+@pytest.mark.parametrize(
+    "qrisp_gate_class,qml_gate_class,n_qubits,params", MULTI_GATE_MAP
+)
+def test_multi_qubit_gate_conversion(
+    qrisp_gate_class, qml_gate_class, n_qubits, params
+):
+    """Test conversion of multi-qubit gates from Qrisp to PennyLane."""
+    qv = QuantumVariable(n_qubits)
+    qs = qv.qs
+
+    if n_qubits == 2:
+        targets = [qv[0], qv[1]]
+    elif n_qubits == 3:
+        targets = [qv[0], qv[1], qv[2]]
+    else:
+        raise ValueError(f"Unsupported gate with {n_qubits} qubits.")
+
+    qs.append(qrisp_gate_class(*params), targets)
+
+    qml_circ = _create_qml_circuit(qv)
+    qml_res = qml_circ()  # populate tape
+
+    expected_ops = [qml_gate_class(*params, wires=[q.identifier for q in targets])]
+    check_qml_operations(qml_circ, expected_ops)
+
+    qrisp_res = qv.get_measurement()
+    qml_res = np.asarray(qml_res, dtype=float)
+    atol = 1e-5 if params else 1e-8
+    check_probs_equivalence(qrisp_res, qml_res, atol=atol)
+
+
 class TestSingleGateConversion:
     """Test class for single gate conversions from Qrisp to PennyLane."""
+
+    @pytest.mark.parametrize(
+        "gate_sequence,qml_sequence",
+        [
+            (
+                [
+                    XGate(),
+                    XGate(),
+                    YGate(),
+                    ZGate(),
+                    YGate(),
+                    ZGate(),
+                    XGate(),
+                    YGate(),
+                    ZGate(),
+                ],
+                [
+                    qml.PauliX,
+                    qml.PauliX,
+                    qml.PauliY,
+                    qml.PauliZ,
+                    qml.PauliY,
+                    qml.PauliZ,
+                    qml.PauliX,
+                    qml.PauliY,
+                    qml.PauliZ,
+                ],
+            )
+        ],
+    )
+    def test_pauli_gates_mixed(self, gate_sequence, qml_sequence):
+        """Test a mixed sequence of Pauli gates in a single circuit."""
+        qrisp_qv = QuantumVariable(3)
+        qrisp_qs = qrisp_qv.qs
+
+        # Apply the gates as per the mixed sequence
+        targets = [
+            qrisp_qv[0],
+            qrisp_qv[0],
+            qrisp_qv[0],
+            qrisp_qv[0],
+            qrisp_qv[1],
+            qrisp_qv[2],
+            qrisp_qv[2],
+            qrisp_qv[0],
+            qrisp_qv[0],
+        ]
+
+        for gate, target in zip(gate_sequence, targets):
+            qrisp_qs.append(gate, target)
+
+        qml_converted_circuit = _create_qml_circuit(qrisp_qv)
+        qml_res = qml_converted_circuit()
+
+        expected_ops = [
+            qml_gate(target.identifier)
+            for qml_gate, target in zip(qml_sequence, targets)
+        ]
+        check_qml_operations(qml_converted_circuit, expected_ops)
+
+        qrisp_res = qrisp_qv.get_measurement()
+        qml_res = np.asarray(qml_res, dtype=float)
+        check_probs_equivalence(qrisp_res, qml_res)
 
     def test_pauli_gates(self):
         """Test conversion of Pauli gates (X, Y, Z) from Qrisp to PennyLane."""

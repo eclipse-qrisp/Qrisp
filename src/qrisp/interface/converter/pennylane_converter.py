@@ -36,6 +36,9 @@ TODO:
 """
 # Mapping for basic operations
 QRISP_PL_OP_MAP = {
+    "x": qml.X,
+    "y": qml.Y,
+    "z": qml.Z,
     "rxx": qml.IsingXX,
     "ryy": qml.IsingYY,
     "rzz": qml.IsingZZ,
@@ -48,9 +51,6 @@ QRISP_PL_OP_MAP = {
     "xxyy": qml.IsingXY,
     "swap": qml.SWAP,
     "h": qml.Hadamard,
-    "x": qml.PauliX,
-    "y": qml.PauliY,
-    "z": qml.PauliZ,
     "sx": qml.SX,
     "sx_dg": qml.SX,
     "s": qml.S,
@@ -60,6 +60,8 @@ QRISP_PL_OP_MAP = {
 }
 
 # Mapping for controlled operations
+
+# TODO: handle controlled gates such as 'ccx', 'cccx', etc.
 
 # To avoid different naming conventions between Qrisp and PennyLane,
 # we map qrisp controlled gate names to their PennyLane base gate counterparts.
