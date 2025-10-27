@@ -300,7 +300,7 @@ def inner_CKS(A, b, eps, kappa=None, max_beta=None):
         ``A`` is a 3-tuple ``(U, state_prep, n)`` representing a block-encoding: 
         
         * U : callable
-            Callable ``U(operand, case)`` applies the block-encoding unitary :math:`SEL`.
+            Callable ``U(case, operand)`` applies the block-encoding unitary :math:`SEL`.
         * state_prep : callable
             Callable ``state_prep(case)`` applies the block-encoding state preparatiion unitary :math:`PREP`
             to an auxiliary ``case`` QuantumVariable .
@@ -453,7 +453,7 @@ def inner_CKS(A, b, eps, kappa=None, max_beta=None):
             :math:`A` acts. 
 
         """
-        U(operand, case)
+        U(case, operand)
         reflection(case, state_function=state_prep)  # reflection operator R about $\ket{G}$.
 
     out_case = QuantumFloat(j_0 + 1)
@@ -759,7 +759,7 @@ def CKS(A, b, eps, kappa=None, max_beta=None):
         coeffs = np.array([5,1,1])
         alpha = np.sum(coeffs)
 
-        def U(operand, case):
+        def U(case, operand):
             qswitch(operand, case, unitaries)
 
         def state_prep(case):

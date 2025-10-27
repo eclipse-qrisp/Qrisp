@@ -2104,7 +2104,7 @@ class QubitOperator(Hamiltonian):
         Returns
         -------
         U : function
-            A function ``U(operand, case)`` applying the block encoding unitary $U$ to ``operand`` and ``case`` QuantumVariables.
+            A function ``U(case, operand)`` applying the block encoding unitary $U$ to ``case`` and ``operand`` QuantumVariables.
         state_prep : function
             A function ``state_prep(case)`` preparing the block encoding state $\ket{G}$ in an auxiliary ``case`` QuantumVariable.
         num_qubits : int
@@ -2157,7 +2157,7 @@ class QubitOperator(Hamiltonian):
 
                 # Apply matrix A via block encoding
                 with conjugate(state_prep)(case):
-                    U(a, case)
+                    U(case, a)
 
                 success_bool = measure(case) == 0
 
@@ -2203,7 +2203,7 @@ class QubitOperator(Hamiltonian):
         num_qubits = np.int64(np.ceil(np.log2(len(coeffs))))
 
         @qache
-        def U(operand, case):
+        def U(case, operand):
             qswitch(operand, case, unitaries)
 
         @qache

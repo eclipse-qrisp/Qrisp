@@ -112,7 +112,7 @@ def test_A_block_encoding():
     coeffs = np.array([5,1,1])
     alpha = np.sum(coeffs)
 
-    def U_func(operand, case):
+    def U_func(case, operand):
         qswitch(operand, case, unitaries)
 
     def G_func(case):
@@ -167,7 +167,7 @@ def test_A_block_encoding_b_callable():
     coeffs = np.array([5,1,1])
     alpha = np.sum(coeffs)
 
-    def U_func(operand, case):
+    def U_func(case, operand):
         qswitch(operand, case, unitaries)
 
     def G_func(case):
