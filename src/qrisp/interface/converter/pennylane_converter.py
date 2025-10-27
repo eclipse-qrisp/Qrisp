@@ -34,70 +34,73 @@ TODO:
 -- Implement all gates listed in `scr/qrisp/circuit/standard_operations.py`
 
 """
-# Mapping for basic operations
-QRISP_PL_OP_MAP = {
+
+QRISP_PL_BASE_MAP = {
     "x": qml.X,
     "y": qml.Y,
     "z": qml.Z,
-    "rxx": qml.IsingXX,
-    "ryy": qml.IsingYY,
-    "rzz": qml.IsingZZ,
-    "p": qml.RZ,
+    "h": qml.Hadamard,
     "rx": qml.RX,
     "ry": qml.RY,
     "rz": qml.RZ,
+    "p": qml.PhaseShift,
     "u1": qml.U1,
     "u3": qml.U3,
+    "rxx": qml.IsingXX,
+    "ryy": qml.IsingYY,
+    "rzz": qml.IsingZZ,
     "xxyy": qml.IsingXY,
     "swap": qml.SWAP,
-    "h": qml.Hadamard,
     "sx": qml.SX,
-    "sx_dg": qml.SX,
     "s": qml.S,
-    "s_dg": qml.S,
     "t": qml.T,
-    "t_dg": qml.T,
-}
-
-# Mapping for controlled operations
-
-# TODO: handle controlled gates such as 'ccx', 'cccx', etc.
-
-# To avoid different naming conventions between Qrisp and PennyLane,
-# we map qrisp controlled gate names to their PennyLane base gate counterparts.
-# Then, we use `qml.ctrl` to create the controlled versions in the main conversion function.
-QRISP_PL_OP_MAP_CTRL = {
-    "cx": qml.X,
-    "cy": qml.Y,
-    "cz": qml.Z,
-    "cp": qml.PhaseShift,
-    "crx": qml.RX,
-    "cry": qml.RY,
-    "crz": qml.RZ,
-    "mcrx": qml.RX,
-    "csx": qml.SX,
-    "csx_dg": qml.SX,
+    "gphase": qml.GlobalPhase,
+    "id": qml.Identity,
+    "r": qml.Rot,
 }
 
 
-def _create_qml_instruction(op: Operation) -> qml.operation.Operator:
-    """Create a PennyLane instruction from a Qrisp operation."""
+def _extract_name(name: str) -> tuple[str, bool]:
+    """Extract the operation name and check if it's inverted."""
+    is_inverse = name.endswith("_dg")
+    name = name[:-3] if is_inverse else name
+    return name, is_inverse
 
-    if op.name in QRISP_PL_OP_MAP:
-        return QRISP_PL_OP_MAP[op.name]
 
-    if op.name in QRISP_PL_OP_MAP_CTRL:
-        return QRISP_PL_OP_MAP_CTRL[op.name]
+def _create_qml_instruction(op: Operation) -> tuple[qml.operation.Operator, bool]:
+    """
+    Create a PennyLane instruction from a Qrisp operation.
 
-    # Handle custom multi-controlled gates, e.g., '2cx', '3cz', '3csx_dg', etc.
-    gate_match = re.fullmatch(r"(\d+)(c[a-z_]+)", op.name)
-    if gate_match:
-        ctrl_gate_name = gate_match.group(2)
-        if ctrl_gate_name in QRISP_PL_OP_MAP_CTRL:
-            return QRISP_PL_OP_MAP_CTRL[ctrl_gate_name]
+    Parameters
+    ----------
+    op : Operation
+        The Qrisp operation to convert.
+
+    Returns
+    -------
+    tuple[qml.operation.Operator, bool]
+        A tuple containing the PennyLane operator class corresponding
+        to the Qrisp operation and a boolean indicating if the operation is inverted.
+        For controlled Qrisp operations, it returns the base PennyLane operator class.
+
+    Raises
+    ------
+    NotImplementedError
+        If the operation is not supported in the PennyLane converter.
+    """
+
+    name, is_inverse = _extract_name(op.name)
+
+    if name in QRISP_PL_BASE_MAP:
+        return QRISP_PL_BASE_MAP[name], is_inverse
+
+    if isinstance(op, ControlledOperation):
+        base_name, is_inverse = _extract_name(op.base_operation.name)
+        if base_name in QRISP_PL_BASE_MAP:
+            return QRISP_PL_BASE_MAP[base_name], is_inverse
 
     raise NotImplementedError(
-        f"Operation {op.name} not implemented in PennyLane converter."
+        f"Operation '{op.name}' is not supported in the PennyLane converter."
     )
 
 
@@ -175,13 +178,13 @@ def qml_converter(qc: QuantumCircuit | QuantumSession) -> types.FunctionType:
                     qml_params[i] = np.float64(param)
 
             # if the operation is controlled, this returns the PL base operation
-            qml_op_class = _create_qml_instruction(op)
+            qml_op_class, is_inverse = _create_qml_instruction(op)
 
             with qml.QueuingManager.stop_recording():
 
                 qml_op = qml_op_class(*qml_params, wires=targets)
 
-                if "_dg" in op.name:
+                if is_inverse:
                     qml_op = qml.adjoint(qml_op)
 
                 if n_ctrls:

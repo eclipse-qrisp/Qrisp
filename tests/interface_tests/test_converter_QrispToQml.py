@@ -143,7 +143,7 @@ SINGLE_GATE_MAP = [
     (RXGate, qml.RX, [np.pi / 4]),
     (RYGate, qml.RY, [np.pi / 3]),
     (RZGate, qml.RZ, [np.pi / 2]),
-    (PGate, qml.RZ, [np.pi / 2]),
+    (PGate, qml.PhaseShift, [np.pi / 2]),
     (SGate, qml.S, []),
     (TGate, qml.T, []),
     (HGate, qml.Hadamard, []),
@@ -649,6 +649,30 @@ class TestControlledGateConversion:
                 control_values=[0, 1, 0],
             )
         ]
+
+    def test_controlled_adjoint_gate2(self):
+        """Test conversion of controlled adjoint gates from Qrisp to PennyLane."""
+        qrisp_qv = QuantumVariable(4)
+        qrisp_qs = qrisp_qv.qs
+
+        qrisp_qs.append(
+            SXGate().inverse().control(num_ctrl_qubits=3, ctrl_state="010"),
+            [qrisp_qv[3], qrisp_qv[0], qrisp_qv[1], qrisp_qv[2]],
+        )
+        qml_converted_circuit = _create_qml_circuit(qrisp_qv)
+        qml_res = qml_converted_circuit()  # Execute to populate tape
+
+        expected_ops = [
+            qml.ctrl(
+                op=qml.adjoint(qml.SX)(wires=qrisp_qv[2].identifier),
+                control=[
+                    qrisp_qv[3].identifier,
+                    qrisp_qv[0].identifier,
+                    qrisp_qv[1].identifier,
+                ],
+                control_values=[0, 1, 0],
+            )
+        ]        
 
         check_qml_operations(qml_converted_circuit, expected_ops)
 
