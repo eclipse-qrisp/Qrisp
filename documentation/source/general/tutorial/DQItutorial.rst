@@ -5,10 +5,10 @@
 Decoding by Quantum Interferometry
 ==================================
 
-In this tutorial, we will show you Qrisp implementation of the `Optimization by Decoded Quantum Interferometry <https://arxiv.org/abs/2408.08292>`_ and its relevant subroutines. This algorithm is rigourusly derivated in the oringal paper, 
-including a motiviation with physics intuition, so we highly recommend giving it a read! Additionally the 2025 paper  `Quantum Circuit Design for Decoded Quantum Interferometry <https://arxiv.org/abs/2504.18334>`_ goes into circuit design for this algorithm (as the title would suggest) and worth investigating!
-We will cross-reference throughout the text if applicable, such that you know where to look for a specific thing.
-Let us quickly summarize what this paper is about: 
+In this tutorial, we will show you Qrisp implementation of the `Optimization by Decoded Quantum Interferometry <https://arxiv.org/abs/2408.08292>`_ and its relevant subroutines. This algorithm is rigourusly derived in the oringal paper, 
+including a motiviation with physics intuition, so we highly recommend giving it a read! Additionally the 2025 paper  `Quantum Circuit Design for Decoded Quantum Interferometry <https://arxiv.org/abs/2504.18334>`_ goes into circuit design for this algorithm (as the title would suggest) and worth investigating aswell!
+We will cross-reference these two papers throughout the text if applicable, such that you know where to look for a specific thing.
+Let us quickly summarize what the original paper is about: 
 
 The algorithm is called Decoded Quantum Interferometry (DQI), which uses the quantum
 Fourier transform to arrange that amplitudes interfere constructively on symbol strings for which the objective value is large, thereby enhancing the
@@ -452,7 +452,7 @@ We want to compare them to a brute force solution. The following can also be fou
 What we can see here is a comparison between the likelyhood of a result appearing as a result of our DQI algorithm, plotted against to objective value of a solutions aquired via brute force. The results speaks for itself. 
 Remarkably, all high objective value results appear with the highest likelyhood among our post-selected states!
 
-Also, note that is alot of code for a singular plot!! This is additional material, we will omit a clear explanation here, since this is just visulization.
+Also, note that is alot of code for a singular plot! This is additional material, we will omit a clear explanation here, since this is just visulization.
 
 ::
 
@@ -612,7 +612,7 @@ Also, note that is alot of code for a singular plot!! This is additional materia
         )
 
 
-Congratulations, you have implemented the full version of the DQI algorithm and are now able to tackle optimization problems all on your own! Check out the next section for a heads up on where to go from here.
+Congratulations, you have implemented the full version of the DQI algorithm and are now able to tackle optimization problems all on your own and can investigate the results with adequate vizualisation! Check out the next section for a heads up on where to go from here.
 
 Further reading
 ---------------
@@ -622,4 +622,4 @@ Another topic of interest is the belief propapagation version of syndrome decodi
 
 Should you be interested in resource analysis, we again refer to `Patamawisut's paper <https://arxiv.org/abs/2504.18334>`_, where he gives a detailed description on all aspects of the algorithm.
 
-Now that you have reached the end of the tutoria, we hope you had alot of fun! If you like eploring Qrisp more, go have a look at our other tutorials! 
+Now that you have reached the end of the tutorial, we hope you had alot of fun! If you like eploring Qrisp more, go have a look at our other tutorials! 
