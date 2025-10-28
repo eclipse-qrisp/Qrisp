@@ -713,7 +713,7 @@ def CKS(A, b, eps, kappa=None, max_beta=None):
     corresponds to, e.g., an Ising or a Heisenberg Hamiltonian, the number of Pauli terms may not scale favorably in general.
     For certain sparse matrices, their structure can be exploited to construct more efficient block-encodings.
 
-    In this example, we construct a block-encoding representation for a tridiagonal 3-sparse matrix defined by
+    In this example, we construct a block-encoding representation for the following tridiagonal sparse matrix:
 
     ::
 
@@ -726,6 +726,16 @@ def CKS(A, b, eps, kappa=None, max_beta=None):
         N = 8
         A = tridiagonal_shifted(N, mu=3)
         b = np.random.randint(0, 2, size=N)
+
+        print(A)
+        # [[ 5.  0.  0.  0. -2.  0.  0.  0.]
+        #  [ 0.  5.  0.  0.  0. -2.  0.  0.]
+        #  [ 0.  0.  5.  0.  0.  0. -2.  0.]
+        #  [ 0.  0.  0.  5.  0.  0.  0. -2.]
+        #  [-2.  0.  0.  0.  5.  0.  0.  0.]
+        #  [ 0. -2.  0.  0.  0.  5.  0.  0.]
+        #  [ 0.  0. -2.  0.  0.  0.  5.  0.]
+        #  [ 0.  0.  0. -2.  0.  0.  0.  5.]]
 
     This matrix can be decomposed using three unitaries: the identity $I$, and two shift operators $V\colon\ket{k}\\rightarrow-\ket{k+N/2 \mod N}$ and $V^{\dagger}\colon\ket{k}\\rightarrow-\ket{k-N/2 \mod N}$.
     We define their corresponding functions:
