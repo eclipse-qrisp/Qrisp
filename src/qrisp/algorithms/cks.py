@@ -39,7 +39,7 @@ from qrisp.operators import QubitOperator
 def CKS_parameters(A, eps, kappa=None, max_beta=None):
     """
     Computes the Chebyshev-series complexity parameter :math:`\\beta` and the truncation order :math:`j_0` for the
-    truncated Chebyshev approximation of :math:`1/x` used in the Childs–Kothari–Somma (CKS) algorithm.
+    truncated Chebyshev approximation of :math:`1/x` used in the `Childs–Kothari–Somma quantum algorithm <https://arxiv.org/abs/1511.02306>`_.
 
     To avoid confusion with the vector :math:`\ket{b}`, we represent the complexity parameter as :math:`\\beta`.
 
@@ -116,10 +116,10 @@ def CKS_parameters(A, eps, kappa=None, max_beta=None):
 def cheb_coefficients(j0, b):
     """
     Calculates the positive coefficients :math:`\\alpha_i` for the truncated
-    Chebyshev expansion of :math:`1/x` up to order :math:`2j_0+1`.
+    Chebyshev expansion of :math:`1/x` up to order :math:`2j_0+1`, as described in the `Childs–Kothari–Somma paper <https://arxiv.org/abs/1511.02306>`_.
 
     The approximation is expressed as a linear combination
-    of odd Chebyshev polynomials truncated at index :math:`j_0`:
+    of odd Chebyshev polynomials truncated at index :math:`j_0` (Lemma 14):
 
     .. math::
 
@@ -225,7 +225,7 @@ def unary_prep(case, coeffs):
 
 def inner_CKS(A, b, eps, kappa=None, max_beta=None):
     """
-    Core implementation of the Childs-Kothari-Somma (CKS) quantum algorithm. 
+    Core implementation of the `Childs–Kothari–Somma (CKS) quantum algorithm <https://arxiv.org/abs/1511.02306>`_. 
     
     This function integrates core components of the CKS approach to construct the circuit:
     Chebyshev polynomial approximation, linear combination of unitaries (LCU), and
