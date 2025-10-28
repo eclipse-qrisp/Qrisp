@@ -78,8 +78,6 @@ class DCQOProblem:
         """
         self.init_function = init_function
 
-    # Precompute f (sine) and f_deriv (cosine) for each timestep
-    
     
 
 
@@ -114,13 +112,11 @@ class DCQOProblem:
             U = H_step.trotterization()
             U(qarg)
 
-    def apply_cold_hamiltonian(self, 
-                               qarg, N_steps, T, beta, CRAB=False):
+    def apply_cold_hamiltonian(self, qarg, N_steps, T, beta, CRAB=False):
         
-        
-
         def precompute_opt_pulses(t_list, N_opt):
-
+            
+            # Precompute f (sine) and f_deriv (cosine) for each timestep
             if CRAB:
                 # Matrices and arrays must be sympy objects
                 sin_matrix = sp.MutableDenseMatrix.zeros(N_steps, N_opt)
@@ -173,11 +169,9 @@ class DCQOProblem:
         # Apply hamiltonian to qarg for each timestep
         for s in range(N_steps):
 
-
-
             # Get alpha, f and f_deriv for the timestep
-            f = sin_matrix[s-1, :] @ beta
-            f_deriv = cos_matrix[s-1, :] @ beta
+            f = sin_matrix[s, :] @ beta
+            f_deriv = cos_matrix[s, :] @ beta
             alph = self.alpha(lam[s], f, f_deriv)
             
             if hasattr(alph, "__len__"):
@@ -186,10 +180,10 @@ class DCQOProblem:
                 f = f[0] 
 
             # H_0 contribution scaled by dt
-            H_step = dt *(1-lam[s-1])* self.H_i + dt * lam[s-1]*self.H_p
+            H_step = dt *(1-lam[s])* self.H_i + dt * lam[s]*self.H_p
 
             # AGP contribution scaled by dt* lambda_dot(t)
-            H_step = dt * lamdot[s-1] * alph* self.A_lam
+            H_step = dt * lamdot[s] * alph* self.A_lam
 
             # Control pulse contribution 
             H_step = H_step + dt * f*  self.H_control
