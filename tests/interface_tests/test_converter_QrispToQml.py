@@ -70,6 +70,41 @@ from qrisp.circuit.standard_operations import (
 from qrisp.interface import qml_converter
 
 
+SINGLE_GATE_MAP = [
+    (XGate, qml.PauliX, []),
+    (YGate, qml.PauliY, []),
+    (ZGate, qml.PauliZ, []),
+    (RXGate, qml.RX, [np.pi / 4]),
+    (RYGate, qml.RY, [np.pi / 3]),
+    (RZGate, qml.RZ, [np.pi / 2]),
+    (PGate, qml.PhaseShift, [np.pi / 2]),
+    (SGate, qml.S, []),
+    (TGate, qml.T, []),
+    (HGate, qml.Hadamard, []),
+    (SXGate, qml.SX, []),
+    (u3Gate, qml.U3, [np.pi / 2, np.pi / 4, np.pi / 8]),
+    (IDGate, qml.Identity, []),
+    (GPhaseGate, qml.GlobalPhase, [np.pi / 5]),
+    # (RGate, qml.Rot, [np.pi / 2, np.pi / 3, np.pi / 4])
+    (U1Gate, qml.U1, [np.pi / 6]),
+]
+
+MULTI_GATE_MAP = [
+    (CXGate, qml.CNOT, 2, []),
+    (CZGate, qml.CZ, 2, []),
+    (SwapGate, qml.SWAP, 2, []),
+    (RXXGate, qml.IsingXX, 2, [np.pi / 2]),
+    # (Barrier, qml.Barrier, 3, []),
+]
+
+CONTROLLED_GATE_MAP = [
+    (CPGate, qml.ControlledPhase, [np.pi / 2]),
+    (CXGate, qml.CNOT, 2, []),
+    (CZGate, qml.CZ, 2, []),
+    (SwapGate, qml.SWAP, 2, []),
+]
+
+
 def _get_qml_operations(qml_circuit):
     """Helper function to extract PennyLane operations from a PennyLane QNode."""
     qml_ops = []
@@ -81,11 +116,13 @@ def _get_qml_operations(qml_circuit):
 
 def _create_qml_circuit(qrisp_circuit):
     """Helper function to create a PennyLane circuit from a Qrisp circuit."""
+    
+    pennylane_circuit = qml_converter(qc=qrisp_circuit.qs)
     qrisp_qubits = [qubit.identifier for qubit in qrisp_circuit]
 
     @qml.qnode(device=qml.device("default.qubit", wires=qrisp_qubits))
     def circuit():
-        qml_converter(qc=qrisp_circuit.qs)()
+        pennylane_circuit()
         return qml.probs(wires=qrisp_qubits)
 
     return circuit
@@ -118,39 +155,6 @@ def check_probs_equivalence(qrisp_probs, qml_probs, atol=1e-8):
         )
 
 
-import pytest
-import numpy as np
-import pennylane as qml
-from qrisp import (
-    XGate,
-    YGate,
-    ZGate,
-    RXGate,
-    RYGate,
-    RZGate,
-    PGate,
-    SGate,
-    TGate,
-    HGate,
-    SXGate,
-    QuantumVariable,
-)
-
-SINGLE_GATE_MAP = [
-    (XGate, qml.PauliX, []),
-    (YGate, qml.PauliY, []),
-    (ZGate, qml.PauliZ, []),
-    (RXGate, qml.RX, [np.pi / 4]),
-    (RYGate, qml.RY, [np.pi / 3]),
-    (RZGate, qml.RZ, [np.pi / 2]),
-    (PGate, qml.PhaseShift, [np.pi / 2]),
-    (SGate, qml.S, []),
-    (TGate, qml.T, []),
-    (HGate, qml.Hadamard, []),
-    (SXGate, qml.SX, []),
-]
-
-
 @pytest.mark.parametrize("qrisp_gate_class,qml_gate_class,params", SINGLE_GATE_MAP)
 def test_single_gate_conversion(qrisp_gate_class, qml_gate_class, params):
     """Test one-to-one conversion of simple gates from Qrisp to PennyLane."""
@@ -170,11 +174,26 @@ def test_single_gate_conversion(qrisp_gate_class, qml_gate_class, params):
     check_probs_equivalence(qrisp_res, qml_res, atol=atol)
 
 
-MULTI_GATE_MAP = [
-    (CXGate, qml.CNOT, 2, []),
-    (CZGate, qml.CZ, 2, []),
-    (SwapGate, qml.SWAP, 2, []),
-]
+# # Here we test all the controlled gates systematically
+# @pytest.mark.parametrize("qrisp_gate_class,qml_gate_class,params", CONTROLLED_GATE_MAP)
+# def test_controlled_gate_conversion(qrisp_gate_class, qml_gate_class, params):
+#     """Test conversion of controlled gates from Qrisp to PennyLane."""
+#     qv = QuantumVariable(2)
+#     qs = qv.qs
+#     qs.append(qrisp_gate_class(*params), [qv[0], qv[1]])
+
+#     qml_circ = _create_qml_circuit(qv)
+#     qml_res = qml_circ()  # populate tape
+
+#     expected_ops = [
+#         qml_gate_class(*params, wires=[q.identifier for q in [qv[0], qv[1]]])
+#     ]
+#     check_qml_operations(qml_circ, expected_ops)
+
+#     qrisp_res = qv.get_measurement()
+#     qml_res = np.asarray(qml_res, dtype=float)
+#     atol = 1e-5 if params else 1e-8
+#     check_probs_equivalence(qrisp_res, qml_res, atol=atol)
 
 
 @pytest.mark.parametrize(
@@ -381,11 +400,11 @@ class TestSingleGateConversion:
         qml_res = qml_converted_circuit()
 
         expected_ops = [
-            qml.RZ(np.pi / 2, wires=qrisp_qv[0].identifier),
+            qml.PhaseShift(np.pi / 2, wires=qrisp_qv[0].identifier),
             qml.S(wires=qrisp_qv[0].identifier),
             qml.S(wires=qrisp_qv[1].identifier),
             qml.T(wires=qrisp_qv[1].identifier),
-            qml.RZ(np.pi / 4, wires=qrisp_qv[1].identifier),
+            qml.PhaseShift(np.pi / 4, wires=qrisp_qv[1].identifier),
             qml.T(wires=qrisp_qv[0].identifier),
             qml.T(wires=qrisp_qv[1].identifier),
         ]
@@ -672,7 +691,7 @@ class TestControlledGateConversion:
                 ],
                 control_values=[0, 1, 0],
             )
-        ]        
+        ]
 
         check_qml_operations(qml_converted_circuit, expected_ops)
 
