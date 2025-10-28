@@ -290,6 +290,9 @@ def QubitDealloc():
     res.permeability[0] = False
     return res
 
+def MoveGate():
+    return Operation("move", 2)
+
 
 op_list = [
     XGate,

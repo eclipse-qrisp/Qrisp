@@ -258,6 +258,12 @@ def create_qiskit_instruction(op, params=[]):
         qiskit_ins = qsk_gates.IGate()
     elif op.name == "reset":
         qiskit_ins = Reset()
+    elif op.name == "move":
+        try:
+            from iqm.qiskit_iqm import MoveGate
+        except ImportError:
+            raise Exception("Tried to convert Qrisp Move Gate to Qiskit without iqm-client being installed (pip install iqm-client)")
+        qiskit_ins = MoveGate()    
     elif op.definition:
         qiskit_definition = convert_to_qiskit(op.definition)
         try:

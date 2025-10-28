@@ -22,7 +22,8 @@ def IQMBackend(api_token,
                device_instance = None, 
                server_url = None, 
                compilation_options = None, 
-               transpiler = None):
+               transpiler = None,
+               perform_move_routing = False,):
     """
     This function instantiates an IQMBackend based on :ref:`VirtualBackend`
     using Qiskit and Qiskit-on-IQM.
@@ -41,6 +42,8 @@ def IQMBackend(api_token,
         using the device_instance. If a server URL is provided, a device instance should not be provided.
     compilation_options: `CircuitCompilationOptions <https://docs.meetiqm.com/iqm-client/api/iqm.iqm_client.models.CircuitCompilationOptions.html>`_.
         An object to specify several options regarding pulse-level compilation.
+    perform_move_routing : bool, optional
+        Indicates whether to automatically insert move operations to overcomme connectivity restrictions.
 
     Examples
     --------
@@ -119,7 +122,7 @@ def IQMBackend(api_token,
         compilation_options = CircuitCompilationOptions()
         
     if transpiler is None:
-        transpiler = lambda qiskit_qc : transpile_to_IQM(qiskit_qc, backend)
+        transpiler = lambda qiskit_qc : transpile_to_IQM(qiskit_qc, backend, perform_move_routing = perform_move_routing)
 
     def run_batch_iqm(batch):
         
