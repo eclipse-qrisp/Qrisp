@@ -106,7 +106,7 @@ class DCQOProblem:
             H_step = dt *(1-lam[s-1])* self.H_i + dt * lam[s-1]*self.H_p
 
             # AGP contribution scaled by dt* lambda_dot(t)
-            H_step = dt * lamdot[s-1] * alph* self.A_lam
+            H_step = H_step + dt * lamdot[s-1] * alph* self.A_lam
 
             # Get unitary from trotterization and apply to qarg
             U = H_step.trotterization()
@@ -183,7 +183,7 @@ class DCQOProblem:
             H_step = dt *(1-lam[s])* self.H_i + dt * lam[s]*self.H_p
 
             # AGP contribution scaled by dt* lambda_dot(t)
-            H_step = dt * lamdot[s] * alph* self.A_lam
+            H_step = H_step + dt * lamdot[s] * alph* self.A_lam
 
             # Control pulse contribution 
             H_step = H_step + dt * f*  self.H_control
