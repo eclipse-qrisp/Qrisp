@@ -123,6 +123,8 @@ def qml_converter(qc: QuantumCircuit | QuantumSession) -> types.FunctionType:
         """
         PennyLane quantum function representing the Qrisp circuit.
 
+        This function should be used within a PennyLane QNode context.
+
         Parameters
         ----------
         *args : list
