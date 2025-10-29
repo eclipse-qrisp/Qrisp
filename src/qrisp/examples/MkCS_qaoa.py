@@ -16,19 +16,21 @@
 ********************************************************************************
 """
 
+import random
+from operator import itemgetter
+
+import networkx as nx
+import numpy as np
+
+from qrisp import QuantumArray, QuantumVariable
 from qrisp.qaoa import (
-    create_coloring_operator,
+    QAOAProblem,
+    RX_mixer,
     XY_mixer,
     apply_XY_mixer,
-    QAOAProblem,
     create_coloring_cl_cost_function,
-    RX_mixer,
+    create_coloring_operator,
 )
-from qrisp import QuantumArray, QuantumVariable
-import networkx as nx
-from operator import itemgetter
-import numpy as np
-import random
 
 
 class QuantumColor(QuantumVariable):

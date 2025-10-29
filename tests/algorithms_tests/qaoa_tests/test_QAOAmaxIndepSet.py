@@ -16,36 +16,46 @@
 ********************************************************************************
 """
 
+import itertools
+
+import networkx as nx
 
 from qrisp import QuantumVariable
-from qrisp.qaoa import QAOAProblem, RZ_mixer, approximation_ratio, create_max_indep_set_cl_cost_function, create_max_indep_set_mixer, max_indep_set_init_function
-import networkx as nx
-import itertools
+from qrisp.qaoa import (
+    QAOAProblem,
+    RZ_mixer,
+    approximation_ratio,
+    create_max_indep_set_cl_cost_function,
+    create_max_indep_set_mixer,
+    max_indep_set_init_function,
+)
 
 
 def test_QAOAmaxIndepSet():
 
-    G = nx.erdos_renyi_graph(9, 0.5, seed = 133)
+    G = nx.erdos_renyi_graph(9, 0.5, seed=133)
 
     qarg = QuantumVariable(G.number_of_nodes())
 
-    qaoa_max_indep_set = QAOAProblem(cost_operator=RZ_mixer,
-                                    mixer=create_max_indep_set_mixer(G),
-                                    cl_cost_function=create_max_indep_set_cl_cost_function(G),
-                                    init_function=max_indep_set_init_function)
+    qaoa_max_indep_set = QAOAProblem(
+        cost_operator=RZ_mixer,
+        mixer=create_max_indep_set_mixer(G),
+        cl_cost_function=create_max_indep_set_cl_cost_function(G),
+        init_function=max_indep_set_init_function,
+    )
     results = qaoa_max_indep_set.run(qarg, depth=5)
 
     cl_cost = create_max_indep_set_cl_cost_function(G)
 
-    # check if all states are valid solutions 
+    # check if all states are valid solutions
     for state in results.keys():
-            indices = [index for index, value in enumerate(state) if value == '1']
-            combinations = list(itertools.combinations(indices, 2))
+        indices = [index for index, value in enumerate(state) if value == "1"]
+        combinations = list(itertools.combinations(indices, 2))
 
-            for combination in combinations:
-                assert combination not in G.edges()
+        for combination in combinations:
+            assert combination not in G.edges()
 
     # approximation ratio test
     nx_sol = nx.maximal_independent_set(G)
     nx_sol = "".join(["1" if s in nx_sol else "0" for s in range(G.number_of_nodes())])
-    assert approximation_ratio(results, nx_sol, cl_cost)>=0.5
+    assert approximation_ratio(results, nx_sol, cl_cost) >= 0.5

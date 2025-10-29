@@ -17,7 +17,7 @@
 """
 
 from qrisp.jasp.evaluation_tools.boolean_simulation import *
-from qrisp.jasp.evaluation_tools.terminal_sampling import *
-from qrisp.jasp.evaluation_tools.jaspification import *
 from qrisp.jasp.evaluation_tools.catalyst_qjit import *
+from qrisp.jasp.evaluation_tools.jaspification import *
 from qrisp.jasp.evaluation_tools.profiler import *
+from qrisp.jasp.evaluation_tools.terminal_sampling import *

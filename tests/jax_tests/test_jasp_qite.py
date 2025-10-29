@@ -18,12 +18,12 @@
 
 
 def test_jasp_QITE_GC():
-    from qrisp import rx, h, ry, s_dg, swap, QuantumFloat
-    from qrisp.jasp import terminal_sampling
-    from qrisp.algorithms.qite import QITE
-    from qrisp import multi_measurement
     import jax.numpy as jnp
     import numpy as np
+
+    from qrisp import QuantumFloat, h, multi_measurement, rx, ry, s_dg, swap
+    from qrisp.algorithms.qite import QITE
+    from qrisp.jasp import terminal_sampling
 
     def U_s(a):
         h(a)
@@ -60,15 +60,16 @@ def test_jasp_QITE_GC():
     b = QITE_basic()
 
     for i in range(8):
-        assert(np.abs(a[float(i)] - b[(i,)]) < 0.001)
+        assert np.abs(a[float(i)] - b[(i,)]) < 0.001
+
 
 def test_jasp_QITE_HOPF():
-    from qrisp import rx, h, ry, s_dg, swap, QuantumFloat
-    from qrisp.jasp import terminal_sampling
-    from qrisp.algorithms.qite import QITE
-    from qrisp import multi_measurement
     import jax.numpy as jnp
     import numpy as np
+
+    from qrisp import QuantumFloat, h, multi_measurement, rx, ry, s_dg, swap
+    from qrisp.algorithms.qite import QITE
+    from qrisp.jasp import terminal_sampling
 
     def U_s(a):
         h(a)
@@ -105,4 +106,4 @@ def test_jasp_QITE_HOPF():
     b = QITE_basic()
 
     for i in range(8):
-        assert(np.abs(a[float(i)] - b[(i,)]) < 0.001)
+        assert np.abs(a[float(i)] - b[(i,)]) < 0.001

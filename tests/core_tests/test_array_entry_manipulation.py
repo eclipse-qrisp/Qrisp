@@ -18,7 +18,7 @@
 
 
 def array_entry_manipulation_test():
-    from qrisp import QuantumBool, QuantumArray, QuantumFloat, h, multi_measurement
+    from qrisp import QuantumArray, QuantumBool, QuantumFloat, h, multi_measurement
 
     q_array = QuantumArray(QuantumBool(), (4, 4))
     index_0 = QuantumFloat(2, signed=False)

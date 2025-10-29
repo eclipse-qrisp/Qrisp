@@ -16,8 +16,8 @@
 ********************************************************************************
 """
 
+from qrisp import QuantumBool, auto_uncompute, control, cx, h, x, z
 from qrisp.alg_primitives import IQAE
-from qrisp import h, cx, x, z, auto_uncompute, QuantumBool, control
 
 
 def uniform(*args):

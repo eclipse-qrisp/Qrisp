@@ -25,14 +25,14 @@ import numpy as np
 from numba import njit
 
 from qrisp.circuit import (
-    Instruction,
-    QuantumCircuit,
-    transpile,
-    Reset,
     ClControlledOperation,
     CXGate,
-    Operation,
+    Instruction,
     Measurement,
+    Operation,
+    QuantumCircuit,
+    Reset,
+    transpile,
 )
 from qrisp.permeability.type_checker import is_permeable
 
@@ -559,7 +559,7 @@ def get_circuit_block_(int_qc, qubits, established_indices=[]):
     # return instruction_indices, expansion_options.to_qubit_list()
 
 
-@njit(cache = True)
+@njit(cache=True)
 def binary_get_circuit_block_jitted(int_qc_list, qubits, n, established_indices):
     # Set up set of expansion options
     expansion_options = 0

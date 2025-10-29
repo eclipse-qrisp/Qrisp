@@ -16,8 +16,8 @@
 ********************************************************************************
 """
 
-from qrisp.core import h
 from qrisp.alg_primitives import QPE
+from qrisp.core import h
 
 
 def quantum_counting(qv, oracle, precision):

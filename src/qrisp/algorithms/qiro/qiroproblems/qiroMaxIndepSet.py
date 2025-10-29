@@ -16,13 +16,14 @@
 ********************************************************************************
 """
 
-from qrisp import rz, rzz, x
-import numpy as np
 import copy
-from qrisp.algorithms.qiro.qiroproblems.qiro_utils import find_max
-from qrisp.algorithms.qiro.qiro_mixers import qiro_controlled_RX_mixer_gen
-from qrisp import QuantumBool, mcx
+
+import numpy as np
+
+from qrisp import QuantumBool, mcx, rz, rzz, x
 from qrisp.algorithms.qaoa import controlled_RX_mixer_gen
+from qrisp.algorithms.qiro.qiro_mixers import qiro_controlled_RX_mixer_gen
+from qrisp.algorithms.qiro.qiroproblems.qiro_utils import find_max
 
 
 def create_max_indep_replacement_routine(res, problem_updated):

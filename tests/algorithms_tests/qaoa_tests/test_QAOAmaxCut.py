@@ -16,17 +16,25 @@
 ********************************************************************************
 """
 
-from qrisp.qaoa import QAOAProblem, RX_mixer, create_maxcut_cl_cost_function,create_maxcut_cost_operator
-from qrisp import QuantumArray, QuantumVariable
-import networkx as nx
 from operator import itemgetter
 
+import networkx as nx
+
+from qrisp import QuantumArray, QuantumVariable
+from qrisp.qaoa import (
+    QAOAProblem,
+    RX_mixer,
+    create_maxcut_cl_cost_function,
+    create_maxcut_cost_operator,
+)
+
+
 def test_maxcut():
-    def maxcut_obj(x,G):
+    def maxcut_obj(x, G):
         cut = 0
         for i, j in G.edges():
-            if x[i] != x[j]:                        
-                cut -= 1    
+            if x[i] != x[j]:
+                cut -= 1
         return cut
 
     depth = 5
@@ -40,27 +48,39 @@ def test_maxcut():
     G1 = nx.Graph()
     G1.add_edge(0, 1)
 
-    qarg = QuantumArray(qtype = QuantumVariable(1), shape = len(G1))
+    qarg = QuantumArray(qtype=QuantumVariable(1), shape=len(G1))
 
-    maxcut_instance1 = QAOAProblem(create_maxcut_cost_operator(G1), RX_mixer, create_maxcut_cl_cost_function(G1))
+    maxcut_instance1 = QAOAProblem(
+        create_maxcut_cost_operator(G1), RX_mixer, create_maxcut_cl_cost_function(G1)
+    )
 
-    res1 = maxcut_instance1.run(qarg, depth, mes_kwargs={"backend" : qaoa_backend, "shots" : 100000}, max_iter = 50)
-    best_cut1, best_solution1 = min([(maxcut_obj(x,G1),x) for x in res1.keys()], key=itemgetter(0))
+    res1 = maxcut_instance1.run(
+        qarg, depth, mes_kwargs={"backend": qaoa_backend, "shots": 100000}, max_iter=50
+    )
+    best_cut1, best_solution1 = min(
+        [(maxcut_obj(x, G1), x) for x in res1.keys()], key=itemgetter(0)
+    )
 
     res_str1 = list(res1.keys())[0]
-    best_cut1, best_solution1 = (maxcut_obj(res_str1,G1),res_str1)
+    best_cut1, best_solution1 = (maxcut_obj(res_str1, G1), res_str1)
     assert -best_cut1 == 1
 
     ####### Less trivial case
     G4 = nx.Graph()
-    G4.add_edges_from([[0,3],[0,4],[1,3],[1,4],[2,3],[2,4]])
+    G4.add_edges_from([[0, 3], [0, 4], [1, 3], [1, 4], [2, 3], [2, 4]])
 
-    qarg = QuantumArray(qtype = QuantumVariable(1), shape = len(G4))
+    qarg = QuantumArray(qtype=QuantumVariable(1), shape=len(G4))
 
-    maxcut_instance4 = QAOAProblem(create_maxcut_cost_operator(G4), RX_mixer, create_maxcut_cl_cost_function(G4))
-    res4 = maxcut_instance4.run(qarg, depth, mes_kwargs={"backend" : qaoa_backend, "shots" : 100000}, max_iter = 50)
-    best_cut4, best_solution4 = min([(maxcut_obj(x,G4),x) for x in res4.keys()], key=itemgetter(0))
+    maxcut_instance4 = QAOAProblem(
+        create_maxcut_cost_operator(G4), RX_mixer, create_maxcut_cl_cost_function(G4)
+    )
+    res4 = maxcut_instance4.run(
+        qarg, depth, mes_kwargs={"backend": qaoa_backend, "shots": 100000}, max_iter=50
+    )
+    best_cut4, best_solution4 = min(
+        [(maxcut_obj(x, G4), x) for x in res4.keys()], key=itemgetter(0)
+    )
 
     res_str4 = list(res4.keys())[0]
-    best_cut4, best_solution1 = (maxcut_obj(res_str4,G4),res_str4)
+    best_cut4, best_solution1 = (maxcut_obj(res_str4, G4), res_str4)
     assert -best_cut4 == 6

@@ -16,16 +16,18 @@
 ********************************************************************************
 """
 
-# Created by ann81984 at 22.07.2022
-from qrisp import QuantumSession, QuantumArray
-from qrisp.alg_primitives.arithmetic import QuantumFloat, inplace_matrix_app
 import numpy as np
+
+# Created by ann81984 at 22.07.2022
+from qrisp import QuantumArray, QuantumSession
+from qrisp.alg_primitives.arithmetic import QuantumFloat, inplace_matrix_app
 
 
 def test_inpl_matrix_multiplication_example():
     def generate_random_inv_matrix(n, bit):
-        from qrisp.misc import is_inv
         import random
+
+        from qrisp.misc import is_inv
 
         found = False
 

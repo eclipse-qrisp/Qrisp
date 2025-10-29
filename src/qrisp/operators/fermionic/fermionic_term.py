@@ -16,14 +16,14 @@
 ********************************************************************************
 """
 
+import numpy as np
+
 from qrisp.operators.fermionic.visualization import a_, c_
 from qrisp.operators.qubit import A, C, Z
 
 #
 # FermionicTerm
 #
-
-import numpy as np
 
 
 class FermionicTerm:

@@ -18,16 +18,15 @@
 
 import time
 
+import jax
+import jax.numpy as jnp
 import numpy as np
 from scipy.optimize import minimize
 from sympy import Symbol
 
 from qrisp import QuantumArray, h, x
 from qrisp.algorithms.qaoa.qaoa_benchmark_data import QAOABenchmark
-
-import jax
-import jax.numpy as jnp
-from qrisp.jasp import check_for_tracing_mode, sample, jrange
+from qrisp.jasp import check_for_tracing_mode, jrange, sample
 from qrisp.jasp.optimization_tools.optimize import minimize as jasp_minimize
 
 

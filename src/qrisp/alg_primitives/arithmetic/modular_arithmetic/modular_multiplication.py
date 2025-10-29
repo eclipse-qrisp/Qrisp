@@ -18,18 +18,17 @@
 
 import numpy as np
 
-from qrisp.qtypes import QuantumFloat, QuantumModulus
 from qrisp.alg_primitives.arithmetic.comparisons import less_than
 from qrisp.alg_primitives.arithmetic.modular_arithmetic.mod_tools import (
     modinv,
     montgomery_encoder,
 )
-from qrisp.environments import custom_control
-from qrisp.core.gate_application_functions import cx, swap, mcx
-from qrisp.misc.utility import bin_rep, redirect_qfunction
-from qrisp.environments import control, invert
 from qrisp.circuit import fast_append
+from qrisp.core.gate_application_functions import cx, mcx, swap
+from qrisp.environments import control, custom_control, invert
+from qrisp.misc.utility import bin_rep, redirect_qfunction
 from qrisp.permeability import auto_uncompute
+from qrisp.qtypes import QuantumFloat, QuantumModulus
 
 # This file implements the techniques described in this paper: https://arxiv.org/abs/1801.01081
 # The goal is to have performant modular multiplication. To this end, instead of taking the
@@ -406,7 +405,7 @@ def montgomery_mod_mul(a, b, output_qg=None):
 
     m = int(np.ceil(np.log2((a.modulus - 1) ** 2) + 1)) - a.size
 
-    from qrisp import h, merge, QFT, q_int_mult
+    from qrisp import QFT, h, merge, q_int_mult
 
     if a.modulus != b.modulus:
         raise Exception("Tried to multiply two QuantumModulus with differing modulus")

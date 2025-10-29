@@ -16,35 +16,44 @@
 ********************************************************************************
 """
 
-
-from qrisp import h, QuantumFloat, multi_measurement, auto_uncompute, QuantumBool, mcx, cx
-from qrisp.quantum_backtracking import QuantumBacktrackingTree
 import numpy as np
-from sympy import nsimplify, Float
+from sympy import Float, nsimplify
+
+from qrisp import (
+    QuantumBool,
+    QuantumFloat,
+    auto_uncompute,
+    cx,
+    h,
+    mcx,
+    multi_measurement,
+)
+from qrisp.quantum_backtracking import QuantumBacktrackingTree
+
 
 def test_backtracking():
-    
-    # This test is depracated (i.e., for previous implementation of backtracking). 
+
+    # This test is depracated (i.e., for previous implementation of backtracking).
     # In this example [1,1,1] is accepted and rejected and can be reached in the backtracking tree!
     """
-    @auto_uncompute    
+    @auto_uncompute
     def P(tree):
         temp_0 = (tree.h == 0)
         predicate = QuantumBool()
         mcx(list(tree.branch_qa) + list(temp_0), predicate)
-        
+
         return predicate
 
-    @auto_uncompute    
+    @auto_uncompute
     def Q(tree):
         return (tree.h != tree.max_depth) & (tree.h != (tree.max_depth-1)) & (tree.branch_qa[0] == tree.branch_qa[1])
 
     tree = QuantumBacktrackingTree(3, QuantumFloat(1, name = "branch_qf*"), P, Q)
     tree.init_node([])
     res = tree.estimate_phase(4)
-    
+
     mes_res = res.get_measurement()
-    
+
     assert mes_res[0] < 0.25
     """
 
@@ -53,116 +62,123 @@ def test_backtracking():
     def reject(tree):
 
         reject_qbl = QuantumBool()
-        for i in range(tree.max_depth-1):
-            mcx([tree.h[i],tree.branch_qa[i],tree.branch_qa[i+1]],reject_qbl,ctrl_state="100")
-            mcx([tree.h[i],tree.branch_qa[i],tree.branch_qa[i+1]],reject_qbl)
+        for i in range(tree.max_depth - 1):
+            mcx(
+                [tree.h[i], tree.branch_qa[i], tree.branch_qa[i + 1]],
+                reject_qbl,
+                ctrl_state="100",
+            )
+            mcx([tree.h[i], tree.branch_qa[i], tree.branch_qa[i + 1]], reject_qbl)
         return reject_qbl
-    
+
     @auto_uncompute
     def accept(tree):
 
-        height_condition = (tree.h == 0)
+        height_condition = tree.h == 0
 
         path_condition = QuantumBool()
-        mcx(tree.branch_qa[::-1], path_condition, ctrl_state = "001")
+        mcx(tree.branch_qa[::-1], path_condition, ctrl_state="001")
 
         return height_condition & path_condition
 
-    tree = QuantumBacktrackingTree(max_depth = 3, branch_qv = QuantumFloat(1), accept = accept, reject = reject)
+    tree = QuantumBacktrackingTree(
+        max_depth=3, branch_qv=QuantumFloat(1), accept=accept, reject=reject
+    )
     tree.init_node([])
-    qpe_res = tree.estimate_phase(precision = 4)
+    qpe_res = tree.estimate_phase(precision=4)
 
     mes_res = qpe_res.get_measurement()
 
     assert mes_res[0] < 0.25
-    
-    
-    @auto_uncompute    
+
+    @auto_uncompute
     def P(tree):
         predicate = QuantumBool()
         mcx(list(tree.branch_qa), predicate)
         return predicate
 
-    @auto_uncompute    
+    @auto_uncompute
     def Q(tree):
         return QuantumBool()
-    
-    tree = QuantumBacktrackingTree(3, QuantumFloat(1, name = "branch_qf*"), P, Q)
+
+    tree = QuantumBacktrackingTree(3, QuantumFloat(1, name="branch_qf*"), P, Q)
     tree.init_node([])
     res = tree.estimate_phase(4)
-    
+
     mes_res = res.get_measurement()
-    
+
     assert mes_res[0] > 0.375
-    
-    for i in range(1,5):
-    
-        tree = QuantumBacktrackingTree(i, QuantumFloat(1, name = "branch_qf*"), P, Q)
-        
-        tree.init_phi(i*[1])
-        
+
+    for i in range(1, 5):
+
+        tree = QuantumBacktrackingTree(i, QuantumFloat(1, name="branch_qf*"), P, Q)
+
+        tree.init_phi(i * [1])
+
         temp_sv_0 = tree.qs.statevector().expand().evalf()
         tree.quantum_step()
         temp_sv_1 = tree.qs.statevector().expand().evalf()
-        
+
         diff = (temp_sv_0 - temp_sv_1).expand().evalf()
         diff_atoms = list(diff.atoms(Float))
         s = sum(diff_atoms)
-        assert abs(s) < 1E-4
-        
-        tree = QuantumBacktrackingTree(i, QuantumFloat(1, name = "branch_qf*"), P, Q)
-        tree.init_node(i*[1])
-        
+        assert abs(s) < 1e-4
+
+        tree = QuantumBacktrackingTree(i, QuantumFloat(1, name="branch_qf*"), P, Q)
+        tree.init_node(i * [1])
+
         temp_sv_0 = tree.qs.statevector().expand().evalf()
-        tree.qstep_diffuser(even = True)
+        tree.qstep_diffuser(even=True)
         temp_sv_1 = tree.qs.statevector().expand().evalf()
-        
+
         diff = (temp_sv_0 - temp_sv_1).expand().evalf()
         diff_atoms = list(diff.atoms(Float))
         s = sum(diff_atoms)
 
-        assert abs(s) < 1E-4
-    
-        
-    tree = QuantumBacktrackingTree(3, QuantumFloat(1, name = "branch_qf*"), P, Q)
-    solution = tree.find_solution(precision = 4)
-    assert solution == [1,1,1]
-    
-    
-    #Test non-binary tree
-    
-    @auto_uncompute    
+        assert abs(s) < 1e-4
+
+    tree = QuantumBacktrackingTree(3, QuantumFloat(1, name="branch_qf*"), P, Q)
+    solution = tree.find_solution(precision=4)
+    assert solution == [1, 1, 1]
+
+    # Test non-binary tree
+
+    @auto_uncompute
     def accept(tree):
         height_condition = tree.h == 0
         path_condition = QuantumBool()
         qubit_list = sum([list(qv) for qv in tree.branch_qa.flatten()], [])
-        mcx(qubit_list, path_condition, method = "balauca")
+        mcx(qubit_list, path_condition, method="balauca")
         return height_condition & path_condition
 
-    @auto_uncompute    
+    @auto_uncompute
     def reject(tree):
         return QuantumBool()
 
     max_depth = 2
-    
-    tree = QuantumBacktrackingTree(max_depth, QuantumFloat(2), accept, reject, subspace_optimization = True)
+
+    tree = QuantumBacktrackingTree(
+        max_depth, QuantumFloat(2), accept, reject, subspace_optimization=True
+    )
     tree.init_node([])
     qpe_res = tree.estimate_phase(3)
-    
+
     mes_res = qpe_res.get_measurement()
-    
+
     assert mes_res[0] > 0.375
-    
-    @auto_uncompute    
+
+    @auto_uncompute
     def reject(tree):
         return tree.h == 1
 
     max_depth = 2
-    
-    tree = QuantumBacktrackingTree(max_depth, QuantumFloat(2), accept, reject, subspace_optimization = True)
+
+    tree = QuantumBacktrackingTree(
+        max_depth, QuantumFloat(2), accept, reject, subspace_optimization=True
+    )
     tree.init_node([])
     qpe_res = tree.estimate_phase(3)
-    
+
     mes_res = qpe_res.get_measurement()
-    
+
     assert mes_res[0] < 0.25

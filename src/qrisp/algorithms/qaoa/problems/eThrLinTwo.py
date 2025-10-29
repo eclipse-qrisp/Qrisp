@@ -16,7 +16,7 @@
 ********************************************************************************
 """
 
-from qrisp import cx, rz, conjugate
+from qrisp import conjugate, cx, rz
 
 
 def parity(qarg, indices):

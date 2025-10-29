@@ -16,14 +16,14 @@
 ********************************************************************************
 """
 
-from sympy import symbols
-import jax.numpy as jnp
 import jax
+import jax.numpy as jnp
+from sympy import symbols
 
 from qrisp.jasp.primitives import (
-    QuantumPrimitive,
     AbstractQuantumCircuit,
     AbstractQubit,
+    QuantumPrimitive,
 )
 
 greek_letters = symbols(

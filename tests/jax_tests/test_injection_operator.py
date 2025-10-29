@@ -16,31 +16,33 @@
 ********************************************************************************
 """
 
-from qrisp import *
-from qrisp.jasp import *
 from jax import make_jaxpr
 
+from qrisp import *
+from qrisp.jasp import *
+
+
 def test_injection_operator():
-    
+
     @jaspify
     def main(i):
-        
+
         a = QuantumFloat(i)
         b = QuantumFloat(i)
-        
+
         h(a)
         h(b)
-        
-        s = a*b
-        
+
+        s = a * b
+
         with invert():
-            (s << (lambda a, b : a*b))(a,b)
-        
+            (s << (lambda a, b: a * b))(a, b)
+
         return measure(s)
-    
+
     for i in range(2, 6):
         assert main(i) == 0
-        
+
     def AND(a, b):
         res = QuantumBool()
         mcx([a, b], res)
@@ -53,7 +55,7 @@ def test_injection_operator():
 
         tar = QuantumBool()
 
-        (tar << AND)(a,b)
+        (tar << AND)(a, b)
 
         res = measure(tar)
         return res

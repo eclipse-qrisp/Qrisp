@@ -71,10 +71,10 @@ norm_mu = list(norm_mu_full[0][:n_assets])
 norm_sigma = norm_sigma_full[0:n_assets, 0:n_assets]
 problem = [old_pos, risk_return, norm_sigma, norm_mu, T]
 
-from qrisp import QuantumVariable, QuantumArray
+from qrisp import QuantumArray, QuantumVariable
+from qrisp.qaoa import QAOAProblem
 from qrisp.qaoa.mixers import portfolio_mixer
 from qrisp.qaoa.problems.portfolio_rebalancing import *
-from qrisp.qaoa import QAOAProblem
 
 # assign operators
 cost_op = portfolio_cost_operator(problem=problem)

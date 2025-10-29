@@ -16,23 +16,25 @@
 ********************************************************************************
 """
 
-from qrisp import QuantumVariable   
-from qrisp.operators import X, Y, Z
-from qrisp.vqe.problems.heisenberg import create_heisenberg_init_function
-from qrisp.qite import QITE
 import networkx as nx
 import numpy as np
 import sympy as sp
+
+from qrisp import QuantumVariable
+from qrisp.operators import X, Y, Z
+from qrisp.qite import QITE
+from qrisp.vqe.problems.heisenberg import create_heisenberg_init_function
+
 
 def test_qite_heisenberg():
 
     # Create a graph
     N = 4
     G = nx.Graph()
-    G.add_edges_from([(k,k+1) for k in range(N-1)]) 
+    G.add_edges_from([(k, k + 1) for k in range(N - 1)])
 
     def create_heisenberg_hamiltonian(G):
-        H = sum(X(i)*X(j)+Y(i)*Y(j)+Z(i)*Z(j) for (i,j) in G.edges())
+        H = sum(X(i) * X(j) + Y(i) * Y(j) + Z(i) * Z(j) for (i, j) in G.edges())
         return H
 
     H = create_heisenberg_hamiltonian(G)
@@ -46,28 +48,36 @@ def test_qite_heisenberg():
     E_0 = H.get_measurement(qv)
 
     def exp_H(qv, t):
-        H.trotterization(method='commuting')(qv,t,5)
-    
-    steps = 4
-    s_values = np.linspace(.01,.3,10)
+        H.trotterization(method="commuting")(qv, t, 5)
 
-    theta = sp.Symbol('theta')
+    steps = 4
+    s_values = np.linspace(0.01, 0.3, 10)
+
+    theta = sp.Symbol("theta")
     optimal_s = [theta]
     optimal_energies = [E_0]
 
-    for k in range(1,steps+1):
+    for k in range(1, steps + 1):
 
         # Perform k steps of QITE
         qv = QuantumVariable(N)
         QITE(qv, U_0, exp_H, optimal_s, k)
         qc = qv.qs.compile()
 
-        # Find optimal evolution time 
-        energies = [H.get_measurement(qv,subs_dic={theta:s_},precompiled_qc=qc,diagonalisation_method='commuting') for s_ in s_values]
+        # Find optimal evolution time
+        energies = [
+            H.get_measurement(
+                qv,
+                subs_dic={theta: s_},
+                precompiled_qc=qc,
+                diagonalisation_method="commuting",
+            )
+            for s_ in s_values
+        ]
         index = np.argmin(energies)
         s_min = s_values[index]
 
-        optimal_s.insert(-1,s_min)
+        optimal_s.insert(-1, s_min)
         optimal_energies.append(energies[index])
 
-    assert np.abs(E_tar-optimal_energies[-1]) < 1e-1
+    assert np.abs(E_tar - optimal_energies[-1]) < 1e-1

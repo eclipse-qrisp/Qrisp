@@ -16,8 +16,9 @@
 ********************************************************************************
 """
 
-from qrisp import QuantumFloat
 import numpy as np
+
+from qrisp import QuantumFloat
 
 
 def prepare(qv, target_array, reversed=False):

@@ -16,7 +16,6 @@
 ********************************************************************************
 """
 
-from qrisp.alg_primitives.mcx_algs.multi_cx import *
 from qrisp.alg_primitives.mcx_algs.amy import *
 from qrisp.alg_primitives.mcx_algs.balauca import *
 from qrisp.alg_primitives.mcx_algs.gidney import *
@@ -24,9 +23,10 @@ from qrisp.alg_primitives.mcx_algs.gms import *
 from qrisp.alg_primitives.mcx_algs.gray import *
 from qrisp.alg_primitives.mcx_algs.gray_pt import *
 from qrisp.alg_primitives.mcx_algs.jones import *
-from qrisp.alg_primitives.mcx_algs.maslov import *
-from qrisp.alg_primitives.mcx_algs.yong import *
 from qrisp.alg_primitives.mcx_algs.khattar import *
+from qrisp.alg_primitives.mcx_algs.maslov import *
+from qrisp.alg_primitives.mcx_algs.multi_cx import *
+from qrisp.alg_primitives.mcx_algs.yong import *
 
 
 # Interface function to quickly change between different implementations of

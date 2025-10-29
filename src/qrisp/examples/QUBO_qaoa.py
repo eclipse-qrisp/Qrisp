@@ -16,8 +16,9 @@
 ********************************************************************************
 """
 
-from qrisp.qaoa import *
 import numpy as np
+
+from qrisp.qaoa import *
 
 # Pulser tutorial example from QAOA and QAA to solve a QUBO problem
 #        available here: https://pulser.readthedocs.io/en/stable/tutorials/qubo.html

@@ -19,10 +19,10 @@
 import copy
 
 import numpy as np
-from sympy.core.expr import Expr
-from sympy import lambdify
 from jax.core import Tracer
 from jaxlib.xla_extension import ArrayImpl
+from sympy import lambdify
+from sympy.core.expr import Expr
 
 
 def adaptive_substitution(expr, subs_dic, precision=10):
@@ -902,7 +902,7 @@ class ClControlledOperation(Operation):
 
         if base_op.definition:
 
-            from qrisp import QuantumCircuit, Clbit
+            from qrisp import Clbit, QuantumCircuit
 
             definition = QuantumCircuit()
             definition.qubits = list(base_op.definition.qubits)

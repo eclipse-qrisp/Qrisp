@@ -16,8 +16,9 @@
 ********************************************************************************
 """
 
-from qrisp import p, cp, cx, mcp, QuantumVariable
 import numpy as np
+
+from qrisp import QuantumVariable, cp, cx, mcp, p
 
 
 class QuantumColor(QuantumVariable):

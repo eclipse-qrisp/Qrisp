@@ -16,13 +16,14 @@
 ********************************************************************************
 """
 
-import numpy as np
 import time
+
+import numpy as np
+
 from qrisp import QuantumFloat, auto_uncompute
 from qrisp.grover import grovers_alg, tag_state
-from qrisp.misc import multi_measurement
 from qrisp.interface import QiskitBackend
-
+from qrisp.misc import multi_measurement
 
 # Create two quantum variables
 

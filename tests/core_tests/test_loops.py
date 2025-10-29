@@ -16,12 +16,11 @@
 ********************************************************************************
 """
 
-
-from qrisp import h, qRange, QuantumFloat
+from qrisp import QuantumFloat, h, qRange
 
 
 def test_loop():
-    from qrisp import QuantumFloat, qRange, h
+    from qrisp import QuantumFloat, h, qRange
 
     # Create some QuantumFloats
     n = QuantumFloat(3)

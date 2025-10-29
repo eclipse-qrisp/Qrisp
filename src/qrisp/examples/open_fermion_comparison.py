@@ -26,14 +26,15 @@
 # In this device model, arbitrary angle gates (like RZ, P or RX) need to be
 # synthesized by a sequence of Clifford+T gates. More details here: https://arxiv.org/abs/1403.2975
 
+import cirq
 import numpy as np
 import openfermion as of
 import openfermionpyscf as ofpyscf
-import cirq
+from numpy.linalg import norm
+from scipy.sparse import linalg
+
 from qrisp import QuantumCircuit, QuantumVariable
 from qrisp.operators import FermionicOperator
-from scipy.sparse import linalg
-from numpy.linalg import norm
 
 
 # Function to indicate whether an Operation object contributes

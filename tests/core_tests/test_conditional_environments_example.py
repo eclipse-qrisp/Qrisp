@@ -20,19 +20,19 @@
 # import pytest
 import numpy
 
-from qrisp.interface import QiskitBackend
 from qrisp import (
-    QuantumFloat,
-    QuantumChar,
-    QuantumArray,
-    merge,
-    x,
-    h,
     OutcomeArray,
-    multi_measurement,
+    QuantumArray,
+    QuantumChar,
+    QuantumFloat,
     auto_uncompute,
-    invert
+    h,
+    invert,
+    merge,
+    multi_measurement,
+    x,
 )
+from qrisp.interface import QiskitBackend
 
 
 # check if the respone from QuantumArray.get_measurement() has the expected formet.
@@ -54,7 +54,7 @@ def test_conditional_environments_example():
         h(q_array[0][0])
 
         with q_array[0] == -0.5:
-            q_array[2].encode(-0.5, permit_dirtyness = True)
+            q_array[2].encode(-0.5, permit_dirtyness=True)
             q_array[1] -= -1
             with q_array[1] == 1:
                 q_array[3].init_from(q_array[2])
@@ -71,7 +71,7 @@ def test_conditional_environments_example():
 
     assert len(qc.qs.qv_list) == 5
 
-    from qrisp import as_hamiltonian, QuantumBool, control
+    from qrisp import QuantumBool, as_hamiltonian, control
 
     @as_hamiltonian
     def dummy_d_function(i, j):
@@ -151,16 +151,16 @@ def test_conditional_environments_example():
             print(d.qs)
 
     assert len(a.qs.qv_list) == 4
-    
+
     @auto_uncompute
     def test_function(qf_a, qbl):
-        
+
         with qf_a == 0:
             x(qbl)
-        
+
         # print(qbl.qs)
         return qbl
-        
+
     qf_a = QuantumFloat(2)
     qbl = QuantumBool()
 
@@ -168,5 +168,5 @@ def test_conditional_environments_example():
 
     with invert():
         test_function(qf_a, qbl)
-        
+
     print(qf_a.qs)

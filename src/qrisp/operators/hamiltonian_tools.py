@@ -16,9 +16,9 @@
 ********************************************************************************
 """
 
+import networkx as nx
 import numba as nb
 import numpy as np
-import networkx as nx
 
 
 def multi_hamiltonian_measurement(

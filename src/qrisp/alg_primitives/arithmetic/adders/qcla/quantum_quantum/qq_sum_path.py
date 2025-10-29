@@ -7,15 +7,15 @@ Created on Tue Nov 21 11:22:37 2023
 
 import numpy as np
 
-from qrisp.core.gate_application_functions import x, cx
-from qrisp.qtypes import QuantumVariable, QuantumBool
-from qrisp.environments import invert
-from qrisp.misc import redirect_qfunction
 from qrisp.alg_primitives.arithmetic.adders.gidney import gidney_adder
+from qrisp.alg_primitives.arithmetic.adders.incrementation import lin_incr
 from qrisp.alg_primitives.arithmetic.adders.qcla.quantum_quantum.qq_carry_path import (
     qq_calc_carry,
 )
-from qrisp.alg_primitives.arithmetic.adders.incrementation import lin_incr
+from qrisp.core.gate_application_functions import cx, x
+from qrisp.environments import invert
+from qrisp.misc import redirect_qfunction
+from qrisp.qtypes import QuantumBool, QuantumVariable
 
 
 def qq_sum_path(a, b, c, R):

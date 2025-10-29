@@ -22,9 +22,10 @@
 # of SparseBiArray manipulation
 
 import numpy as np
-from numba import uint64, uint32, int64, njit, prange, vectorize
-from qrisp.simulator.numerics_config import cutoff_ratio
+from numba import int64, njit, prange, uint32, uint64, vectorize
 from scipy.sparse import coo_array
+
+from qrisp.simulator.numerics_config import cutoff_ratio
 
 
 # It can happen that the coo-matrix multiplication puts two data entries
@@ -394,7 +395,10 @@ def dense_measurement_smart(input_array, mes_amount, outcome_index, float_thresh
         outcome_index_list.extend(c)
 
     a, b, c = dense_measurement_smart(
-        input_array[N // 2 :], mes_amount - 1, outcome_index + 2 ** (mes_amount - 1), float_thresh
+        input_array[N // 2 :],
+        mes_amount - 1,
+        outcome_index + 2 ** (mes_amount - 1),
+        float_thresh,
     )
 
     if c[0] != -1:
@@ -524,7 +528,7 @@ def coo_sparse_matrix_mult_inner(
 
     abs_R = np.abs(R)
     max_abs = np.max(R.ravel())
-    
+
     I, J = np.nonzero(abs_R > (cutoff_ratio * max_abs))
 
     res_row = A_row[unique_marker_a[I]]
@@ -599,7 +603,15 @@ def coo_sparse_matrix_mult(A, B):
     else:
 
         new_col, new_row, new_data = coo_sparse_matrix_mult_inner(
-            B.col, B.row, B.data, A.col, A.row, A.data, B.shape[::-1], A.shape[::-1], cutoff_ratio
+            B.col,
+            B.row,
+            B.data,
+            A.col,
+            A.row,
+            A.data,
+            B.shape[::-1],
+            A.shape[::-1],
+            cutoff_ratio,
         )
 
     if len(new_data) == 0:

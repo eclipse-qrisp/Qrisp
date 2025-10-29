@@ -19,44 +19,41 @@
 from qrisp import *
 from qrisp.jasp import *
 
+
 def test_custom_control():
-    
+
     @custom_control
-    def swap(qv, qb, ctrl = None):
-        
+    def swap(qv, qb, ctrl=None):
+
         cx(qv[0], qv[1])
-        
+
         if ctrl is not None:
             with control(ctrl):
                 cx(qv[1], qv[0])
 
         else:
             cx(qv[1], qv[0])
-        
+
         h(qb)
         cx(qv[0], qv[1])
-    
+
     def test_f():
-        
+
         ctrl_qv = QuantumVariable(3)
         qv = QuantumFloat(2)
-        
+
         qb = ctrl_qv[2]
-        
+
         x(ctrl_qv[0])
         x(ctrl_qv[1])
-        
+
         x(qv[0])
-        
+
         with control([ctrl_qv[0], ctrl_qv[1]]):
             swap(qv, qb)
-        
+
         return measure(qv)
-    
+
     jaspr = make_jaspr(test_f)()
-    
+
     assert jaspr() == 2
-    
-
-
-

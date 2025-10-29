@@ -16,8 +16,9 @@
 ********************************************************************************
 """
 
-from qrisp import QuantumFloat, h, qRange
 import time
+
+from qrisp import QuantumFloat, h, qRange
 
 # Create some QuantumFloats
 n = QuantumFloat(3, signed=False)

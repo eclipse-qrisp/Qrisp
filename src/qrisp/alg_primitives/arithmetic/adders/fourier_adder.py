@@ -19,9 +19,9 @@
 import numpy as np
 
 from qrisp.alg_primitives import QFT
-from qrisp.core.gate_application_functions import p, cz
-from qrisp.environments import QuantumEnvironment, conjugate
 from qrisp.circuit import Operation, PGate, QuantumCircuit
+from qrisp.core.gate_application_functions import cz, p
+from qrisp.environments import QuantumEnvironment, conjugate
 
 
 def fourier_adder(a, b, perform_QFT=True):

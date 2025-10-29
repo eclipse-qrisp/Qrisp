@@ -16,8 +16,8 @@
 ********************************************************************************
 """
 
-import matplotlib.pyplot as plt
 import dill as pickle
+import matplotlib.pyplot as plt
 
 
 class QAOABenchmark:

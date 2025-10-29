@@ -18,16 +18,21 @@
 
 
 def test_jasp_qswitch_case_hamiltonian_simulation():
-    from qrisp import QuantumFloat, h, qswitch, terminal_sampling
     import numpy as np
+
+    from qrisp import QuantumFloat, h, qswitch, terminal_sampling
     from qrisp.operators import X, Y, Z
 
-    H1 = Z(0)*Z(1)
-    H2 = Y(0)+Y(1)
+    H1 = Z(0) * Z(1)
+    H2 = Y(0) + Y(1)
 
     # Some sample case functions
-    def f0(x): H1.trotterization()(x)
-    def f1(x): H2.trotterization()(x, t=np.pi/4)
+    def f0(x):
+        H1.trotterization()(x)
+
+    def f1(x):
+        H2.trotterization()(x, t=np.pi / 4)
+
     case_function_list = [f0, f1]
 
     @terminal_sampling
@@ -51,9 +56,10 @@ def test_jasp_qswitch_case_hamiltonian_simulation():
 
 def test_jasp_qswitch_inversion():
 
-    from qrisp import QuantumFloat, qswitch, jaspify, measure
     import jax.numpy as jnp
     from jax import jit
+
+    from qrisp import QuantumFloat, jaspify, measure, qswitch
 
     @jit
     def extract_boolean_digit(integer, digit):
@@ -61,11 +67,12 @@ def test_jasp_qswitch_inversion():
 
     def fake_inversion(qf, precision, res_qf=None):
         if res_qf is None:
-            res_qf = QuantumFloat(2*precision+1, -precision)
+            res_qf = QuantumFloat(2 * precision + 1, -precision)
 
         def case_function(i, operand):
-            curr = 2**(2*precision)//(jnp.maximum(i, 1))
-            operand[:] = curr/2**(2*precision)
+            curr = 2 ** (2 * precision) // (jnp.maximum(i, 1))
+            operand[:] = curr / 2 ** (2 * precision)
+
         qswitch(res_qf, qf, case_function)
         return res_qf
 
@@ -81,7 +88,7 @@ def test_jasp_qswitch_inversion():
 
 
 def test_jasp_qswitch_function():
-    from qrisp import QuantumFloat, qswitch, boolean_simulation, measure
+    from qrisp import QuantumFloat, boolean_simulation, measure, qswitch
 
     # tree
     @boolean_simulation
@@ -98,7 +105,7 @@ def test_jasp_qswitch_function():
         return measure(operand_qf)
 
     for case_size in range(1, 6):
-        for num in range(1, 2**case_size+1):
+        for num in range(1, 2**case_size + 1):
             for case_val in range(0, 2**case_size):
                 r = main(num, case_size, case_val)
                 if num <= case_val:
@@ -121,7 +128,7 @@ def test_jasp_qswitch_function():
         return measure(operand_qf)
 
     for case_size in range(1, 6):
-        for num in range(1, 2**case_size+1):
+        for num in range(1, 2**case_size + 1):
             for case_val in range(0, 2**case_size):
                 r = main(num, case_size, case_val)
                 if num <= case_val:
@@ -131,7 +138,7 @@ def test_jasp_qswitch_function():
 
 
 def test_jasp_qswitch_function_control():
-    from qrisp import QuantumFloat, qswitch, control, boolean_simulation, measure
+    from qrisp import QuantumFloat, boolean_simulation, control, measure, qswitch
 
     # tree
     @boolean_simulation
@@ -151,7 +158,7 @@ def test_jasp_qswitch_function_control():
         return measure(operand_qf)
 
     for case_size in range(1, 6):
-        for num in range(1, 2**case_size+1):
+        for num in range(1, 2**case_size + 1):
             for case_val in range(0, 2**case_size):
                 for c in [0, 1]:
                     r = main(num, case_size, case_val, c)
@@ -178,7 +185,7 @@ def test_jasp_qswitch_function_control():
         return measure(operand_qf)
 
     for case_size in range(1, 6):
-        for num in range(1, 2**case_size+1):
+        for num in range(1, 2**case_size + 1):
             for case_val in range(0, 2**case_size):
                 for c in [0, 1]:
                     r = main(num, case_size, case_val, c)
@@ -189,7 +196,7 @@ def test_jasp_qswitch_function_control():
 
 
 def test_jasp_qswitch_tree_list():
-    from qrisp import QuantumFloat, qswitch, boolean_simulation, measure
+    from qrisp import QuantumFloat, boolean_simulation, measure, qswitch
 
     def case_function(i, operand):
         operand += i
@@ -208,8 +215,8 @@ def test_jasp_qswitch_tree_list():
         return measure(operand_qf)
 
     for case_size in range(1, 3):
-        for num in range(1, 2**case_size+1):
-            for case_val in range(2**case_size//2, 2**case_size):
+        for num in range(1, 2**case_size + 1):
+            for case_val in range(2**case_size // 2, 2**case_size):
                 r = main(num, case_size, case_val)
                 if num <= case_val:
                     assert r == 0
@@ -230,13 +237,13 @@ def test_jasp_qswitch_tree_list():
         return measure(operand_qf)
 
     for case_size in [2]:
-        for case_val in range(2**case_size//2, 2**case_size):
+        for case_val in range(2**case_size // 2, 2**case_size):
             r = main(case_size, case_val)
             assert r == case_val
 
 
 def test_jasp_qswitch_tree_list_control():
-    from qrisp import QuantumFloat, qswitch, control, boolean_simulation, measure
+    from qrisp import QuantumFloat, boolean_simulation, control, measure, qswitch
 
     def case_function(i, operand):
         operand += i
@@ -258,8 +265,8 @@ def test_jasp_qswitch_tree_list_control():
         return measure(operand_qf)
 
     for case_size in range(1, 3):
-        for num in range(1, 2**case_size+1):
-            for case_val in range(2**case_size//2, 2**case_size):
+        for num in range(1, 2**case_size + 1):
+            for case_val in range(2**case_size // 2, 2**case_size):
                 for c in [0, 1]:
                     r = main(num, case_size, case_val, c)
                     if c == 0 or num <= case_val:
@@ -284,7 +291,7 @@ def test_jasp_qswitch_tree_list_control():
         return measure(operand_qf)
 
     for case_size in [2]:
-        for case_val in range(2**case_size//2, 2**case_size):
+        for case_val in range(2**case_size // 2, 2**case_size):
             for c in [0, 1]:
                 r = main(case_size, case_val, c)
                 if c == 0:

@@ -16,16 +16,18 @@
 ********************************************************************************
 """
 
+import time
+from itertools import product
+
 # Created by ann81984 at 06.05.2022
 import numpy as np
 
-from qrisp.misc import multi_measurement
+from qrisp import OutcomeArray, QuantumArray, QuantumBool, QuantumVariable, h, mcx, p
 from qrisp.alg_primitives.arithmetic import QuantumFloat, sbp_mult
-from qrisp.grover import tag_state, grovers_alg
 from qrisp.environments import invert
-from itertools import product
-from qrisp import p, QuantumVariable, QuantumArray, OutcomeArray, h, mcx, QuantumBool
-import time
+from qrisp.grover import grovers_alg, tag_state
+from qrisp.misc import multi_measurement
+
 
 def test_grovers_algorithm():
     qf1 = QuantumFloat(2)
@@ -143,7 +145,7 @@ def test_grovers_algorithm():
     # Test for input of type QuantumArray
 
     def oracle(qa):
-        tag_state({qa[0]:0, qa[1]:0, qa[2]:0})
+        tag_state({qa[0]: 0, qa[1]: 0, qa[2]: 0})
 
     qa = QuantumArray(QuantumFloat(2), shape=(3,))
 

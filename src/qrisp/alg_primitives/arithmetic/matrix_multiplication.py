@@ -19,12 +19,12 @@
 import numpy as np
 import sympy as sp
 
-from qrisp.core.gate_application_functions import p, z
-from qrisp.core import QuantumArray
 from qrisp.alg_primitives.arithmetic.SBP_arithmetic import (
     hybrid_mult,
     polynomial_encoder,
 )
+from qrisp.core import QuantumArray
+from qrisp.core.gate_application_functions import p, z
 
 
 def q_matmul(
@@ -292,6 +292,7 @@ def semi_classic_matmul(q_matrix, cl_matrix, output_array=None, res_bit_shape="e
     J = cl_matrix.shape[1]
 
     from sympy import Symbol
+
     from qrisp import QuantumFloat
 
     if output_array is None:

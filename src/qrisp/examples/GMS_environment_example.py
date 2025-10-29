@@ -18,9 +18,9 @@
 
 import numpy as np
 
-from qrisp import QuantumVariable, QFT, cp, h, p, x
-from qrisp.environments import GMSEnvironment
+from qrisp import QFT, QuantumVariable, cp, h, p, x
 from qrisp.alg_primitives.arithmetic import QuantumFloat
+from qrisp.environments import GMSEnvironment
 
 qv1 = QuantumVariable(1)
 qv2 = QuantumVariable(1)

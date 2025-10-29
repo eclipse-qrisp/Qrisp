@@ -18,7 +18,7 @@
 
 import numpy as np
 
-from qrisp import QuantumCircuit, CZGate, XGate, Instruction
+from qrisp import CZGate, Instruction, QuantumCircuit, XGate
 
 
 def ctrl_state_wrap(qc, ctrl_state):

@@ -16,12 +16,12 @@
 ********************************************************************************
 """
 
+import functools
 import traceback
 
 import numpy as np
 import sympy
-from jax.lax import fori_loop, cond
-import functools
+from jax.lax import cond, fori_loop
 
 
 def bin_rep(n, bits):
@@ -40,8 +40,8 @@ def bin_rep(n, bits):
 
 def int_encoder(qv, encoding_number):
 
-    from qrisp import x, control
-    from qrisp.jasp import TracingQuantumSession, jrange, check_for_tracing_mode
+    from qrisp import control, x
+    from qrisp.jasp import TracingQuantumSession, check_for_tracing_mode, jrange
 
     if not check_for_tracing_mode():
         if encoding_number > 2 ** len(qv) - 1:
@@ -395,8 +395,9 @@ def gate_wrap(*args, permeability=None, is_qfree=None, name=None, verify=False):
                 permeability=permeability,
                 is_qfree=is_qfree,
                 name=name,
-                verify=verify
+                verify=verify,
             )(*fargs, **fkwargs)
+
         return wrapper
 
     # If the decorator is called directly with a function (e.g. @gate_wrap)
@@ -406,6 +407,7 @@ def gate_wrap(*args, permeability=None, is_qfree=None, name=None, verify=False):
     else:
         # Otherwise, return the decorator that can be applied to a function later
         return gate_wrap_helper
+
 
 def gate_wrap_inner(
     function, permeability=None, is_qfree=None, name=None, verify=False
@@ -423,10 +425,10 @@ def gate_wrap_inner(
             return qached_function(*args, **kwargs)
 
         wrapped_function.__name__ = function.__name__
+        from qrisp import QuantumArray, QuantumVariable, merge
         from qrisp.circuit import Qubit
         from qrisp.core import recursive_qs_search, recursive_qv_search
         from qrisp.environments import GateWrapEnvironment
-        from qrisp import merge, QuantumVariable, QuantumArray
 
         try:
             qs = find_qs(args)
@@ -674,7 +676,7 @@ def find_qs(args):
     if hasattr(args, "qs"):
         return args.qs()
 
-    from qrisp import QuantumVariable, QuantumArray, Qubit
+    from qrisp import QuantumArray, QuantumVariable, Qubit
 
     for arg in args:
         if isinstance(arg, (QuantumVariable, QuantumArray)):
@@ -743,10 +745,13 @@ def multi_measurement(qv_list, shots=None, backend=None):
     {(3, 2, 5): 0.5, (3, 3, 6): 0.5}
 
     """
-    
+
     from qrisp.jasp import check_for_tracing_mode
+
     if check_for_tracing_mode():
-        raise Exception("Tried to call multi_measurement in Jasp mode. Please use terminal_sampling instead")
+        raise Exception(
+            "Tried to call multi_measurement in Jasp mode. Please use terminal_sampling instead"
+        )
 
     if backend is None:
         if qv_list[0].qs.backend is None:
@@ -767,8 +772,8 @@ def multi_measurement(qv_list, shots=None, backend=None):
     from qrisp import (
         QuantumArray,
         QuantumVariable,
-        recursive_qv_search,
         recursive_qa_search,
+        recursive_qv_search,
     )
     from qrisp.core.compilation import qompiler
 
@@ -1387,7 +1392,7 @@ def find_calling_line(level=0):
 
 
 def retarget_instructions(data, source_qubits, target_qubits):
-    from qrisp import QuantumEnvironment, recursive_qs_search, multi_session_merge
+    from qrisp import QuantumEnvironment, multi_session_merge, recursive_qs_search
 
     for i in range(len(data)):
         instr = data[i]
@@ -1478,14 +1483,15 @@ def redirect_qfunction(function_to_redirect):
 
 
     """
-    from qrisp import QuantumEnvironment, QuantumVariable, merge, QuantumArray
     import weakref
+
+    from qrisp import QuantumArray, QuantumEnvironment, QuantumVariable, merge
     from qrisp.jasp import (
-        check_for_tracing_mode,
-        make_jaspr,
-        injection_transform,
         TracingQuantumSession,
+        check_for_tracing_mode,
         eval_jaxpr,
+        injection_transform,
+        make_jaspr,
     )
 
     def redirected_qfunction(*args, target=None, **kwargs):
@@ -2094,7 +2100,7 @@ def inpl_adder_test(inpl_adder):
         print("The qcla_2_0 adder passed the tests without errors.")
 
     """
-    from qrisp import QuantumFloat, multi_measurement, h, control, QuantumBool
+    from qrisp import QuantumBool, QuantumFloat, control, h, multi_measurement
 
     for i in range(1, 7):
 
@@ -2243,10 +2249,10 @@ def batched_measurement(variables, backend, shots=None):
     variables : list[:ref:`QuantumVariable`]
         A list of QuantumVariables.
     backend : :ref:`BatchedBackend`
-        The backend to evaluate the compiled QuantumCircuits on. 
+        The backend to evaluate the compiled QuantumCircuits on.
     shots : int, optional
         The amount of shots to perform. The default is given by the backend used.
-        
+
     Returns
     -------
     results : list[dict]
@@ -2299,18 +2305,25 @@ def batched_measurement(variables, backend, shots=None):
 
         batched_measurement([c,f], backend=bb)
         # Yields: [{3: 1.0}, {5: 1.0}]
-    
+
     """
 
     import threading
 
-    results = [0]*len(variables)
+    results = [0] * len(variables)
+
     def eval_measurement(qv, i):
-        results[i] = qv.get_measurement(backend = backend, shots = shots)
+        results[i] = qv.get_measurement(backend=backend, shots=shots)
 
     threads = []
     for i, var in enumerate(variables):
-        thread = threading.Thread(target = eval_measurement, args = (var, i, ))
+        thread = threading.Thread(
+            target=eval_measurement,
+            args=(
+                var,
+                i,
+            ),
+        )
         threads.append(thread)
 
     # Start the threads
@@ -2318,9 +2331,9 @@ def batched_measurement(variables, backend, shots=None):
         thread.start()
 
     # Call the dispatch routine
-    # The min_calls keyword will make it wait 
+    # The min_calls keyword will make it wait
     # until the batch has a size of number of variables
-    backend.dispatch(min_calls = len(variables))
+    backend.dispatch(min_calls=len(variables))
 
     # Wait for the threads to join
     for thread in threads:

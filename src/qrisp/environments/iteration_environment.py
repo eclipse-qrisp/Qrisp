@@ -5,11 +5,11 @@ Created on Mon Jul  3 17:37:05 2023
 @author: sea
 """
 
-from qrisp.environments import QuantumEnvironment, GateWrapEnvironment
-from qrisp.core.quantum_variable import QuantumVariable
-from qrisp.core.compilation import qompiler
-from qrisp.misc.utility import retarget_instructions
 from qrisp.circuit import QubitAlloc, transpile
+from qrisp.core.compilation import qompiler
+from qrisp.core.quantum_variable import QuantumVariable
+from qrisp.environments import GateWrapEnvironment, QuantumEnvironment
+from qrisp.misc.utility import retarget_instructions
 
 
 class IterationEnvironment(QuantumEnvironment):

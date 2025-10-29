@@ -19,12 +19,12 @@
 import jax
 from jax.extend.core import ClosedJaxpr, JaxprEqn
 
+from qrisp.circuit import Operation
+from qrisp.core.session_merging_tools import merge, recursive_qs_search
 from qrisp.environments import QuantumEnvironment, control
 from qrisp.environments.custom_control_environment import custom_control
-from qrisp.circuit import Operation
-from qrisp.core.session_merging_tools import recursive_qs_search, merge
-from qrisp.misc import get_depth_dic
 from qrisp.jasp import check_for_tracing_mode, get_last_equation
+from qrisp.misc import get_depth_dic
 
 
 class ConjugationEnvironment(QuantumEnvironment):
@@ -158,7 +158,7 @@ class ConjugationEnvironment(QuantumEnvironment):
         merge(recursive_qs_search(self.args) + [self.env_qs])
 
         qv_set_before = set(self.env_qs.qv_list)
-        
+
         try:
             res = self.conjugation_function(*self.args, **self.kwargs)
         except Exception as e:
@@ -183,10 +183,12 @@ class ConjugationEnvironment(QuantumEnvironment):
                 creation_dic[instr.qubits[0]] = 1
             elif instr.op.name == "qb_dealloc":
                 if instr.qubits[0] not in creation_dic:
-                    raise Exception(f"Tried to destroy qubit {instr.qubits[0]} within a conjugator.")
+                    raise Exception(
+                        f"Tried to destroy qubit {instr.qubits[0]} within a conjugator."
+                    )
                 else:
-                    creation_dic[instr.qubits[0]] -=1
-                    
+                    creation_dic[instr.qubits[0]] -= 1
+
         for k, v in creation_dic.items():
             if v != 0:
                 raise Exception(f"Tried to create qubit {k} within a conjugator.")
@@ -200,7 +202,9 @@ class ConjugationEnvironment(QuantumEnvironment):
     def __exit__(self, exception_type, exception_value, traceback):
 
         if exception_value:
-            QuantumEnvironment.__exit__(self, exception_type, exception_value, traceback)
+            QuantumEnvironment.__exit__(
+                self, exception_type, exception_value, traceback
+            )
 
         if not check_for_tracing_mode():
             conjugation_center_data = list(self.env_qs.data)
@@ -276,9 +280,9 @@ class ConjugationEnvironment(QuantumEnvironment):
 
         # Retrieve the equation
         jit_eqn = get_last_equation()
-        
+
         jit_eqn.params["jaxpr"] = flattened_jaspr
-        
+
         jit_eqn.params["name"] = "conjugation_env"
 
         if not isinstance(res, tuple):
@@ -417,7 +421,7 @@ class PJITEnvironment(QuantumEnvironment):
 
     def jcompile(self, eqn, context_dic):
 
-        from qrisp.jasp import extract_invalues, insert_outvalues, Jaspr
+        from qrisp.jasp import Jaspr, extract_invalues, insert_outvalues
 
         args = extract_invalues(eqn, context_dic)
         body_jaspr = eqn.params["jaspr"]
@@ -427,7 +431,7 @@ class PJITEnvironment(QuantumEnvironment):
         res = jax.jit(flattened_jaspr.eval)(*args)
 
         jit_eqn = get_last_equation()
-        
+
         jit_eqn.params["jaxpr"] = Jaspr.from_cache(jit_eqn.params["jaxpr"])
 
         if not isinstance(res, tuple):

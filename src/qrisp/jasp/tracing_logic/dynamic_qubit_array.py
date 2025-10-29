@@ -16,7 +16,13 @@
 ********************************************************************************
 """
 
-from qrisp.jasp.primitives import get_qubit, slice_qb_array, get_size, fuse_qb_array, AbstractQubit
+from qrisp.jasp.primitives import (
+    AbstractQubit,
+    fuse_qb_array,
+    get_qubit,
+    get_size,
+    slice_qb_array,
+)
 
 
 class DynamicQubitArray:
@@ -57,11 +63,13 @@ class DynamicQubitArray:
             temp = self
             for x in other:
                 if not isinstance(other, AbstractQubit):
-                    raise Exception("Can only concatenate type AbstractQubit or list[AbstractQubit] to DynamicQubitArray")
+                    raise Exception(
+                        "Can only concatenate type AbstractQubit or list[AbstractQubit] to DynamicQubitArray"
+                    )
                 temp = temp + x
             return temp
         return DynamicQubitArray(fuse_qb_array(self.tracer, other))
-    
+
     def __radd__(self, other):
         if isinstance(other, DynamicQubitArray):
             other = other.tracer
@@ -69,27 +77,29 @@ class DynamicQubitArray:
             temp = self
             for x in other[::-1]:
                 if not isinstance(other, AbstractQubit):
-                    raise Exception("Can only concatenate type AbstractQubit or list[AbstractQubit] to DynamicQubitArray")
+                    raise Exception(
+                        "Can only concatenate type AbstractQubit or list[AbstractQubit] to DynamicQubitArray"
+                    )
                 temp = x + temp
             return temp
-        
+
         return DynamicQubitArray(fuse_qb_array(other, self.tracer))
-        
 
     @property
     def reg(self):
         return self
 
     def measure(self):
-        from qrisp.jasp import TracingQuantumSession, Measurement_p
+        from qrisp.jasp import Measurement_p, TracingQuantumSession
 
         qs = TracingQuantumSession.get_instance()
         res, qs.abs_qc = Measurement_p.bind(self.tracer, qs.abs_qc)
         return res
 
 
-from jax import tree_util
 from builtins import id
+
+from jax import tree_util
 
 
 def flatten_dqa(dqa):

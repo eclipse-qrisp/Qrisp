@@ -17,25 +17,26 @@
 """
 
 import numpy as np
+
 from qrisp import (
+    IterationEnvironment,
     QuantumArray,
-    QuantumVariable,
     QuantumFloat,
+    QuantumVariable,
+    conjugate,
+    control,
     gate_wrap,
     gphase,
     h,
-    mcx,
+    invert,
     mcp,
+    mcx,
     mcz,
+    merge,
     p,
+    recursive_qs_search,
     x,
     z,
-    merge,
-    recursive_qs_search,
-    conjugate,
-    invert,
-    control,
-    IterationEnvironment,
 )
 from qrisp.alg_primitives.reflection import reflection
 from qrisp.jasp import check_for_tracing_mode, jrange
@@ -112,7 +113,9 @@ def diffuser(input_object, phase=np.pi, state_function=None, reflection_indices=
         def state_function(*qargs):
             [h(qv) for qv in qargs]
 
-    reflection(input_object, state_function, phase=phase, reflection_indices=reflection_indices)
+    reflection(
+        input_object, state_function, phase=phase, reflection_indices=reflection_indices
+    )
 
     """
     if isinstance(input_object, QuantumArray):

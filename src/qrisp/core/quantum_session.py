@@ -22,15 +22,15 @@ import numpy as np
 
 from qrisp.circuit import (
     Clbit,
+    Instruction,
+    Operation,
     QuantumCircuit,
     Qubit,
     QubitAlloc,
     QubitDealloc,
-    Instruction,
-    Operation,
 )
-from qrisp.core.session_merging_tools import multi_session_merge
 from qrisp.core.quantum_variable import QuantumVariable
+from qrisp.core.session_merging_tools import multi_session_merge
 from qrisp.misc import get_depth_dic
 
 

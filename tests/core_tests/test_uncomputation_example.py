@@ -18,9 +18,9 @@
 
 # Created by ann81984 at 07.05.2022
 import numpy as np
-from qrisp import *
 
-from qrisp import QuantumVariable, mcx, cx, QuantumEnvironment, x
+from qrisp import *
+from qrisp import QuantumEnvironment, QuantumVariable, cx, mcx, x
 
 
 def test_uncomputation_example():
@@ -71,15 +71,23 @@ def test_uncomputation_example():
         sqrt_oracle(qf)
         diffuser(qf)
         print(qf)
-    
-    
+
     meas_dic = qf.get_measurement()
     print(meas_dic)
-    expect_dic = {0.5: 0.9453124945312494, 0.0: 0.007812500781250079, 1.0: 0.007812500781250079, 1.5: 0.007812500781250079, 2.0: 0.007812500781250079, 2.5: 0.007812500781250079, 3.0: 0.007812500781250079, 3.5: 0.007812500781250079}
-    
+    expect_dic = {
+        0.5: 0.9453124945312494,
+        0.0: 0.007812500781250079,
+        1.0: 0.007812500781250079,
+        1.5: 0.007812500781250079,
+        2.0: 0.007812500781250079,
+        2.5: 0.007812500781250079,
+        3.0: 0.007812500781250079,
+        3.5: 0.007812500781250079,
+    }
+
     for k in meas_dic.keys():
-        assert abs(meas_dic[k] - expect_dic[k]) < 1E-3
-    
+        assert abs(meas_dic[k] - expect_dic[k]) < 1e-3
+
     # ---------
     print("Test 2 passed")
 
@@ -117,13 +125,13 @@ def test_uncomputation_example():
 
         return res
 
-    perm = QuantumArray(QuantumFloat(2), shape = 4)
+    perm = QuantumArray(QuantumFloat(2), shape=4)
     perm[:] = [2, 1, 0, 3]
 
     res = calc_perm_travel_distance(perm, 5)
-    
+
     assert res.get_measurement() == {0.53125: 1.0}
-    
+
     assert len(res.qs.compile().qubits) == 18
 
     # --------
@@ -238,9 +246,9 @@ def test_uncomputation_example():
     qv_2.uncompute()
     qv_3.uncompute()
     assert qv_1.qs.cnot_count() == 10
-    
+
     print("Test 6 passed")
-    
+
     qv_0 = QuantumVariable(1)
     qv_1 = QuantumVariable(1)
     qv_2 = QuantumVariable(1)
@@ -256,7 +264,7 @@ def test_uncomputation_example():
     qv_3.uncompute()
 
     assert qv_1.qs.cnot_count() == 10
-    
+
     print("Test 7 passed")
 
     verify[0] = 0

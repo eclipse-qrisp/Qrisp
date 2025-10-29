@@ -21,7 +21,7 @@
 
 
 def test_qompiler():
-    from qrisp import QuantumSession, QuantumVariable, x, cx
+    from qrisp import QuantumSession, QuantumVariable, cx, x
 
     qs = QuantumSession()
 

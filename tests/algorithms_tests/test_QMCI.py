@@ -18,15 +18,16 @@
 
 
 def test_QMCI():
-    from qrisp import QuantumFloat
-    from qrisp.algorithms.qmci import QMCI
     import numpy as np
 
+    from qrisp import QuantumFloat
+    from qrisp.algorithms.qmci import QMCI
+
     def f(qf):
-        return qf*qf
+        return qf * qf
 
-    qf_x = QuantumFloat(3,-3)
-    qf_y = QuantumFloat(6,-6)
-    a = QMCI([qf_x,qf_y], f)
+    qf_x = QuantumFloat(3, -3)
+    qf_y = QuantumFloat(6, -6)
+    a = QMCI([qf_x, qf_y], f)
 
-    assert np.abs(a-0.2734375)<0.01
+    assert np.abs(a - 0.2734375) < 0.01

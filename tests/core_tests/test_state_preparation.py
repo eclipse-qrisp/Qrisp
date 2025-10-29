@@ -16,11 +16,12 @@
 ********************************************************************************
 """
 
-# Created by ann81984 at 26.07.2022
-from qrisp import QuantumVariable, QuantumFloat
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 from numpy.linalg import norm
+
+# Created by ann81984 at 26.07.2022
+from qrisp import QuantumFloat, QuantumVariable
 
 
 def test_state_preparation():

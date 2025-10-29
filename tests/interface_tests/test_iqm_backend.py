@@ -16,14 +16,13 @@
 ********************************************************************************
 """
 
+from unittest.mock import MagicMock, patch
+
 # Created by manzanillo
 import pytest
-from unittest.mock import patch
+
 from qrisp.interface import IQMBackend, VirtualBackend
 
-import pytest
-from unittest.mock import patch, MagicMock
-from qrisp.interface import IQMBackend
 
 # Mock the IQMProvider and transpile_to_IQM functions from qiskit_iqm
 def test_IQMBackend():
@@ -36,16 +35,20 @@ def test_IQMBackend():
     device_instance = "garnet:fake"
 
     from iqm.iqm_client import CircuitCompilationOptions
+
     compilation_options = CircuitCompilationOptions()
     # Create an instance of IQMBackend
-    backend = IQMBackend(api_token, device_instance, compilation_options = compilation_options)
+    backend = IQMBackend(
+        api_token, device_instance, compilation_options=compilation_options
+    )
 
     # Check that the backend is an instance of VirtualBackend
     assert isinstance(backend, VirtualBackend)
 
     # Create a mock QASM string
     from qrisp import QuantumCircuit
-    qc = QuantumCircuit(4, name = "test")
+
+    qc = QuantumCircuit(4, name="test")
 
     # Call the run method
     result = backend.run(qc, shots=1000, token=api_token)
@@ -56,16 +59,19 @@ def test_IQMBackend_api_token_string_is_missing():
     with pytest.raises(TypeError):
         IQMBackend(123, "garnet")
 
+
 # Test that the device instance is a string
 def test_IQMBackend_device_instance_string_is_missing():
     with pytest.raises(TypeError):
         IQMBackend("mock_api_token", 123)
-        
+
+
 # Test that error is raised when server URL and device instance are passed at the same time
 def test_IQMBackend_server_url_and_device_instance_conflict():
     with pytest.raises(ValueError):
-        IQMBackend("mock_api_token", "garnet", server_url="www.qrisp.eu") 
-        
+        IQMBackend("mock_api_token", "garnet", server_url="www.qrisp.eu")
+
+
 # Test that error is raised when server URL and device instance or not provided
 def test_IQMBackend_server_url_and_device_instance_not_provided():
     with pytest.raises(ValueError):

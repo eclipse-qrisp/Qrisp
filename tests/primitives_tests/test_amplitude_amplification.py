@@ -16,26 +16,27 @@
 ********************************************************************************
 """
 
+
 def test_amplitude_amplification():
-    from qrisp import QuantumBool, ry, z, amplitude_amplification
     import numpy as np
 
-    def state_function(qb):
-        ry(np.pi/8,qb)
+    from qrisp import QuantumBool, amplitude_amplification, ry, z
 
-    def oracle_function(qb):   
+    def state_function(qb):
+        ry(np.pi / 8, qb)
+
+    def oracle_function(qb):
         z(qb)
 
     qb = QuantumBool()
     state_function(qb)
-    assert np.round(qb.get_measurement()[True],2) == 0.04
+    assert np.round(qb.get_measurement()[True], 2) == 0.04
 
     amplitude_amplification([qb], state_function, oracle_function, iter=1)
-    assert np.round(qb.get_measurement()[True],2) == 0.31
+    assert np.round(qb.get_measurement()[True], 2) == 0.31
 
     amplitude_amplification([qb], state_function, oracle_function, iter=1)
-    assert np.round(qb.get_measurement()[True],2) == 0.69
+    assert np.round(qb.get_measurement()[True], 2) == 0.69
 
     amplitude_amplification([qb], state_function, oracle_function, iter=1)
-    assert np.round(qb.get_measurement()[True],2) == 0.96
-
+    assert np.round(qb.get_measurement()[True], 2) == 0.96

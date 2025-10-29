@@ -19,12 +19,11 @@
 import weakref
 
 import jax
-
-from qrisp.jasp.primitives import create_qubits, delete_qubits_p, OperationPrimitive
-from qrisp.jasp.tracing_logic.dynamic_qubit_array import DynamicQubitArray
-from qrisp.core.quantum_variable import QuantumVariable
-
 from sympy import symbols
+
+from qrisp.core.quantum_variable import QuantumVariable
+from qrisp.jasp.primitives import OperationPrimitive, create_qubits, delete_qubits_p
+from qrisp.jasp.tracing_logic.dynamic_qubit_array import DynamicQubitArray
 
 greek_letters = symbols(
     "alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu nu xi omicron pi rho sigma tau upsilon phi chi psi omega"
@@ -92,7 +91,7 @@ class TracingQuantumSession:
         return temp
 
     def append(self, operation, qubits=[], clbits=[], param_tracers=[]):
-        
+
         if not self.abs_qc._trace is jax.core.trace_ctx.trace:
             raise Exception(
                 """Lost track of QuantumCircuit during tracing. This might have been caused by a missing quantum_kernel decorator or not using quantum prefix control (like q_fori_loop, q_cond). Please visit https://www.qrisp.eu/reference/Jasp/Quantum%20Kernel.html for more details"""
@@ -103,7 +102,7 @@ class TracingQuantumSession:
                 "Tried to append Operation with non-zero classical bits in JAX mode."
             )
 
-        from qrisp.core import QuantumVariable, QuantumArray
+        from qrisp.core import QuantumArray, QuantumVariable
         from qrisp.jasp import jrange
 
         if isinstance(qubits[0], (QuantumVariable, DynamicQubitArray)):
@@ -125,18 +124,22 @@ class TracingQuantumSession:
                     param_tracers=param_tracers,
                 )
             return
-        
+
         elif isinstance(qubits[0], QuantumArray):
-            
+
             for i in range(1, len(qubits)):
                 if not isinstance(qubits[i], QuantumArray):
-                    raise Exception(f"Tried to apply multi-qubit gate to mixed qubit argument types (QuantumArray + {type(qubits[i])})")
-                
+                    raise Exception(
+                        f"Tried to apply multi-qubit gate to mixed qubit argument types (QuantumArray + {type(qubits[i])})"
+                    )
+
                 if qubits[i].shape != qubits[0].shape:
-                    raise Exception("Tried to apply multi-qubit quantum gate to QuantumArrays of differing shape.")
-            
+                    raise Exception(
+                        "Tried to apply multi-qubit quantum gate to QuantumArrays of differing shape."
+                    )
+
             flattened_qubits = [qubits[i].flatten() for i in range(len(qubits))]
-            
+
             for i in jrange(flattened_qubits[0].size):
                 self.append(
                     operation,
@@ -167,7 +170,7 @@ class TracingQuantumSession:
         # Determine amount of required qubits
         if size is not None:
             qv.reg = self.request_qubits(size)
-            
+
         # Register in the list of active quantum variable
         self.qv_list.append(qv)
         qv.qs = self
@@ -175,14 +178,13 @@ class TracingQuantumSession:
         QuantumVariable.live_qvs.append(weakref.ref(qv))
         qv.creation_time = int(QuantumVariable.creation_counter[0])
         QuantumVariable.creation_counter += 1
-        
+
     def request_qubits(self, amount):
         qb_array_tracer, self.abs_qc = create_qubits(amount, self.abs_qc)
         return DynamicQubitArray(qb_array_tracer)
-        
 
     def delete_qv(self, qv, verify=False):
-        
+
         if not self.abs_qc._trace is jax.core.trace_ctx.trace:
             raise Exception(
                 """Lost track of QuantumCircuit during tracing. This might have been caused by a missing quantum_kernel decorator or not using quantum prefix control (like q_fori_loop, q_cond). Please visit https://www.qrisp.eu/reference/Jasp/Quantum%20Kernel.html for more details"""
@@ -228,8 +230,10 @@ tracing_qs_singleton = TracingQuantumSession()
 def check_for_tracing_mode():
     return hasattr(jax._src.core.trace_ctx.trace, "frame")
 
-def get_last_equation(i = -1):
+
+def get_last_equation(i=-1):
     return jax._src.core.trace_ctx.trace.frame.eqns[i]
+
 
 def check_live(tracer):
     if tracer is None:

@@ -17,8 +17,10 @@
 """
 
 import math
-from qrisp import cx, RYGate, ry, x, rzz, rz
+
 import numpy as np
+
+from qrisp import RYGate, cx, ry, rz, rzz, x
 
 
 def portfolio_cost_operator(problem):

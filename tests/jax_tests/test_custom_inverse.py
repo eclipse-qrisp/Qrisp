@@ -19,23 +19,24 @@
 from qrisp import *
 from qrisp.jasp import *
 
+
 def test_custom_inverse():
-    
+
     @custom_inversion
-    def c_inv_function(qbl, inv = False):
+    def c_inv_function(qbl, inv=False):
         if inv:
             pass
         else:
             qbl.flip()
 
     def recursion(qbl, recursion_level):
-        
+
         if recursion_level == 0:
             c_inv_function(qbl)
         else:
             with QuantumEnvironment():
                 with invert():
-                    recursion(qbl, recursion_level = recursion_level - 1)
+                    recursion(qbl, recursion_level=recursion_level - 1)
 
     @jaspify
     def main():
@@ -52,11 +53,11 @@ def test_custom_inverse():
         return measure(qbl)
 
     assert main() == False
-    
+
     @custom_control
     @custom_inversion
-    def c_inv_control_function(qf, inv = False, ctrl = None):
-        
+    def c_inv_control_function(qf, inv=False, ctrl=None):
+
         if inv and ctrl is None:
             qf[:] = 1
         if not inv and ctrl is not None:
@@ -68,39 +69,39 @@ def test_custom_inverse():
 
     @jaspify
     def main(j):
-        
+
         qbl = QuantumBool()
         qf = QuantumFloat(4)
-        
+
         for i in range(8):
-            
-            if i&1:
+
+            if i & 1:
                 env_0 = invert()
             else:
                 env_0 = QuantumEnvironment()
-                
-            if i&2:
+
+            if i & 2:
                 env_1 = control(qbl)
             else:
                 env_1 = QuantumEnvironment()
-                
-            if i&4:
+
+            if i & 4:
                 env_0, env_1 = env_1, env_0
-            
+
             with control(j == i):
                 with env_0:
                     with env_1:
                         c_inv_control_function(qf)
-        
+
         return measure(qf)
 
     for i in range(8):
-        assert main(i)%4 == i%4
-        
+        assert main(i) % 4 == i % 4
+
     @custom_inversion
     @custom_control
-    def c_inv_control_function(qf, inv = False, ctrl = None):
-        
+    def c_inv_control_function(qf, inv=False, ctrl=None):
+
         if inv and ctrl is None:
             qf[:] = 1
         if not inv and ctrl is not None:
@@ -112,37 +113,37 @@ def test_custom_inverse():
 
     @jaspify
     def main(j):
-        
+
         qbl = QuantumBool()
         qf = QuantumFloat(4)
-        
+
         for i in range(8):
-            
-            if i&1:
+
+            if i & 1:
                 env_0 = invert()
             else:
                 env_0 = QuantumEnvironment()
-                
-            if i&2:
+
+            if i & 2:
                 env_1 = control(qbl)
             else:
                 env_1 = QuantumEnvironment()
-                
-            if i&4:
+
+            if i & 4:
                 env_0, env_1 = env_1, env_0
-            
+
             with control(j == i):
                 with env_0:
                     with env_1:
                         c_inv_control_function(qf)
-        
+
         return measure(qf)
 
     for i in range(8):
-        assert main(i)%4 == i%4
-        
+        assert main(i) % 4 == i % 4
+
     @custom_inversion
-    def inner_f(qv, inv = False):
+    def inner_f(qv, inv=False):
         if inv:
             measure(qv[0])
             x(qv[0])
@@ -151,11 +152,11 @@ def test_custom_inverse():
             z(qv[0])
 
     def main():
-        
+
         qv = QuantumBool()
         qbl = QuantumBool()
         qbl.flip()
-        
+
         with control(qbl):
             with QuantumEnvironment():
                 with conjugate(h)(qv):
@@ -164,10 +165,6 @@ def test_custom_inverse():
                             inner_f(qv)
 
         return measure(qv)
+
     jsp = make_jaspr(main)()
     assert jsp() == True
-    
-    
-
-
-

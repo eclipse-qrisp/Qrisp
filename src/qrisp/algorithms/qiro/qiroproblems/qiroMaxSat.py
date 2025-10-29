@@ -18,15 +18,15 @@
 
 # just write a replacement_routine and throw out not relevant sets
 
-from qrisp import rz, x, cx
-from qrisp.alg_primitives import app_sb_phase_polynomial
+import copy
+import math
+from itertools import combinations
 
 import numpy as np
-import math
-import copy
-from qrisp.algorithms.qiro.qiroproblems.qiro_utils import *
 
-from itertools import combinations
+from qrisp import cx, rz, x
+from qrisp.alg_primitives import app_sb_phase_polynomial
+from qrisp.algorithms.qiro.qiroproblems.qiro_utils import *
 
 
 def create_maxsat_replacement_routine(res, problem_updated):

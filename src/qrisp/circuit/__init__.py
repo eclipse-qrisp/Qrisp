@@ -16,12 +16,12 @@
 ********************************************************************************
 """
 
-from qrisp.circuit.qubit import *
 from qrisp.circuit.clbit import *
-from qrisp.circuit.operation import *
-from qrisp.circuit.instruction import *
-from qrisp.circuit.quantum_circuit import *
 from qrisp.circuit.compilation_acceleration import *
-from qrisp.circuit.transpiler import *
-from qrisp.circuit.standard_operations import *
 from qrisp.circuit.controlled_operations import *
+from qrisp.circuit.instruction import *
+from qrisp.circuit.operation import *
+from qrisp.circuit.quantum_circuit import *
+from qrisp.circuit.qubit import *
+from qrisp.circuit.standard_operations import *
+from qrisp.circuit.transpiler import *

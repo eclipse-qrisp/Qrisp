@@ -16,19 +16,19 @@
 ********************************************************************************
 """
 
-# Created by ann81984 at 05.05.2022
-import pytest
 import numpy as np
 
-from qrisp import QuantumSession, QuantumVariable
+# Created by ann81984 at 05.05.2022
+import pytest
+
+from qrisp import QuantumSession, QuantumVariable, x
 from qrisp.misc.GMS_tools import (
-    gms_multi_cx_fan_out,
-    gms_multi_cx_fan_in,
+    GXX_wrapper,
     gms_multi_cp_gate,
     gms_multi_cp_gate_mono_phase,
-    GXX_wrapper,
+    gms_multi_cx_fan_in,
+    gms_multi_cx_fan_out,
 )
-from qrisp import x
 
 
 def test_GXX_gates_example():

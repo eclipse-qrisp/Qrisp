@@ -16,18 +16,17 @@
 ********************************************************************************
 """
 
-from jax.core import ShapedArray
-from jaxlib.xla_extension import ArrayImpl
-from jax.extend.core import ClosedJaxpr
-
-from qrisp.circuit import Qubit, QuantumCircuit, XGate
-from qrisp.core.session_merging_tools import merge, merge_sessions, multi_session_merge
-from qrisp.environments import QuantumEnvironment, ClControlEnvironment
-from qrisp.misc import perm_lock, perm_unlock, bin_rep
-from qrisp.jasp import check_for_tracing_mode, get_last_equation
-from qrisp.core import mcx, p, rz, x
-
 import numpy as np
+from jax.core import ShapedArray
+from jax.extend.core import ClosedJaxpr
+from jaxlib.xla_extension import ArrayImpl
+
+from qrisp.circuit import QuantumCircuit, Qubit, XGate
+from qrisp.core import mcx, p, rz, x
+from qrisp.core.session_merging_tools import merge, merge_sessions, multi_session_merge
+from qrisp.environments import ClControlEnvironment, QuantumEnvironment
+from qrisp.jasp import check_for_tracing_mode, get_last_equation
+from qrisp.misc import bin_rep, perm_lock, perm_unlock
 
 
 class ControlEnvironment(QuantumEnvironment):
@@ -405,7 +404,7 @@ class ControlEnvironment(QuantumEnvironment):
 
         # Retrieve the equation
         jit_eqn = get_last_equation()
-        
+
         jit_eqn.params["jaxpr"] = controlled_jaspr
         jit_eqn.params["name"] = "ctrl_env"
 
@@ -481,7 +480,7 @@ def convert_to_custom_control(instruction, control_qubit, invert_control=False):
 
 def control(*args, **kwargs):
     args = list(args)
-    from qrisp import Qubit, QuantumBool, QuantumVariable
+    from qrisp import QuantumBool, QuantumVariable, Qubit
     from qrisp.jasp import AbstractQubit, check_for_tracing_mode
 
     if isinstance(args[0], QuantumVariable):

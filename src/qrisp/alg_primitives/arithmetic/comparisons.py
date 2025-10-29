@@ -16,8 +16,8 @@
 ********************************************************************************
 """
 
-from qrisp.misc.utility import lifted
 from qrisp.environments import adaptive_condition, conjugate, control
+from qrisp.misc.utility import lifted
 
 
 def less_than_gate(a, b):
@@ -197,9 +197,10 @@ def less_than(a, b):
 
 @lifted
 def equal(qf_0, qf_1):
+    import jax.numpy as jnp
+
     from qrisp import QuantumBool, QuantumFloat, cx, mcx
     from qrisp.jasp import jrange
-    import jax.numpy as jnp
 
     eq_qbl = QuantumBool(qs=qf_0.qs, name="eq_qbl*")
 
@@ -227,7 +228,7 @@ def equal(qf_0, qf_1):
             for i in jrange(d):
                 cx(qf_1[i + l - e1], qf_0[i + l - e0])
 
-        mcx_qubits += qf_1.reg[:l - e1]
+        mcx_qubits += qf_1.reg[: l - e1]
         mcx_qubits += qf_1.reg[e0 + m0 - e1 : e1 + m1 - e1]
 
         with conjugate(conjugator)(qf_0, qf_1):
@@ -237,14 +238,14 @@ def equal(qf_0, qf_1):
             cx(qf_1.sign(), qf_0.sign())
 
         return eq_qbl
-    
-    #if qf_0.truncate(qf_1) != qf_1:
+
+    # if qf_0.truncate(qf_1) != qf_1:
     #    return always_false()
 
     # We compare a QuantumFloat to a classical float. If the condition is False, the result is always False.
     with control(qf_0.truncate(qf_1) == qf_1):
         mcx(qf_0, eq_qbl, ctrl_state=qf_0.encoder(qf_1))
-    
+
     return eq_qbl
 
 

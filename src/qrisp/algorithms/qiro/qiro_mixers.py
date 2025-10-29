@@ -16,7 +16,7 @@
 ********************************************************************************
 """
 
-from qrisp import x, rx, rz, auto_uncompute, control
+from qrisp import auto_uncompute, control, rx, rz, x
 
 
 def qiro_rx_mixer(problem_updated):

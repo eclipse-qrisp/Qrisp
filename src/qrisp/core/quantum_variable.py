@@ -25,7 +25,6 @@ from jax import tree_util
 from qrisp.core.compilation import qompiler
 
 
-
 class QuantumVariable:
     """
     The QuantumVariable is the quantum equivalent of a regular variable in classical
@@ -234,7 +233,7 @@ class QuantumVariable:
 
         # Store quantum session
         from qrisp.core import QuantumSession
-        from qrisp.jasp import check_for_tracing_mode, TracingQuantumSession
+        from qrisp.jasp import TracingQuantumSession, check_for_tracing_mode
 
         if check_for_tracing_mode():
             self.qs = TracingQuantumSession.get_instance()
@@ -343,7 +342,7 @@ class QuantumVariable:
         self.traced_attributes = []
 
     def __or__(self, other):
-        from qrisp import mcx, x, cx
+        from qrisp import cx, mcx, x
 
         if len(self) > len(other):
             or_res = self.duplicate()
@@ -526,7 +525,7 @@ class QuantumVariable:
         """
 
         from qrisp.core import QuantumSession
-        from qrisp.jasp import check_for_tracing_mode, TracingQuantumSession
+        from qrisp.jasp import TracingQuantumSession, check_for_tracing_mode
 
         if check_for_tracing_mode():
             new_qs = TracingQuantumSession.get_instance()
@@ -706,8 +705,8 @@ class QuantumVariable:
 
         """
 
-        from qrisp.misc import check_if_fresh, int_encoder
         from qrisp.jasp import TracingQuantumSession
+        from qrisp.misc import check_if_fresh, int_encoder
 
         if not isinstance(self.qs, TracingQuantumSession):
             if not permit_dirtyness:
@@ -834,7 +833,7 @@ class QuantumVariable:
         from qrisp.jasp import check_for_tracing_mode
 
         if check_for_tracing_mode():
-            
+
             if isinstance(position, int) and position in [0, -1]:
                 if position == -1:
                     self.reg = self.reg + insertion_qubits
@@ -843,10 +842,10 @@ class QuantumVariable:
             else:
                 self.reg = self.reg[:position] + insertion_qubits + self.reg[position:]
         else:
-            
+
             if position == -1:
                 position = self.size
-            
+
             for i in range(amount):
                 insertion_qubits[i].identifier = (
                     self.name

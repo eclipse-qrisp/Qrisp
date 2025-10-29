@@ -18,12 +18,11 @@
 
 import numpy as np
 
-from qrisp import QuantumSession, QuantumVariable, QuantumCircuit
-
+from qrisp import QuantumCircuit, QuantumSession, QuantumVariable
 from qrisp.alg_primitives.mcx_algs.circuit_library import (
-    reduced_margolus_qc,
     margolus_qc,
     maslov_qc,
+    reduced_margolus_qc,
     reduced_maslov_qc,
 )
 

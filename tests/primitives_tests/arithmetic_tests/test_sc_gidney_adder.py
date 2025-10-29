@@ -18,54 +18,59 @@
 
 import numpy as np
 
-from qrisp import QuantumFloat, gidney_adder, h, cx, multi_measurement, QuantumBool, control
+from qrisp import (
+    QuantumBool,
+    QuantumFloat,
+    control,
+    cx,
+    gidney_adder,
+    h,
+    multi_measurement,
+)
 
 
 def test_sc_gidney_adder():
-    
-    
+
     for n in range(1, 7):
         for j in range(2**n):
-                
+
             b = QuantumFloat(n)
             c = QuantumFloat(n)
             h(b)
-            cx(b,c)
-    
+            cx(b, c)
+
             gidney_adder(j, b)
-            
-            mes_res = multi_measurement([b,c])
-            
+
+            mes_res = multi_measurement([b, c])
+
             for k in mes_res.keys():
-                assert (k[1] + j)%(2**n) == k[0]
-    
-    
+                assert (k[1] + j) % (2**n) == k[0]
+
         for j in range(2**n):
             b = QuantumFloat(n)
             c = QuantumFloat(n)
             ctrl = QuantumBool()
             h(ctrl)
             h(b)
-            cx(b,c)
+            cx(b, c)
             with ctrl:
                 gidney_adder(j, b)
-            
+
             mes_res = multi_measurement([b, c, ctrl])
-            
+
             for k in mes_res.keys():
-                
+
                 if k[2]:
-                    assert (k[1] + j)%(2**n) == k[0]
+                    assert (k[1] + j) % (2**n) == k[0]
                 else:
                     assert k[1] == k[0]
-                    
-    
+
     n = 6
     b = QuantumFloat(n)
     d = b.duplicate()
 
     h(b)
-    cx(b,d)
+    cx(b, d)
     ctrl = QuantumBool()
     h(ctrl)
 
@@ -75,17 +80,14 @@ def test_sc_gidney_adder():
     c_out = QuantumBool()
 
     with control(ctrl):
-        gidney_adder(7, b, c_in = c_in, c_out = c_out)
-    
-    mes_res = multi_measurement([b,d,ctrl,c_in,c_out])
+        gidney_adder(7, b, c_in=c_in, c_out=c_out)
+
+    mes_res = multi_measurement([b, d, ctrl, c_in, c_out])
     for b, d, ctrl, c_in, c_out in mes_res.keys():
-        
+
         if ctrl:
-            assert (d + 7 + int(c_in))%(2**n) == b
+            assert (d + 7 + int(c_in)) % (2**n) == b
             assert ((d + 7 + int(c_in)) >= 2**n) == c_out
         else:
             assert d == b
             assert c_out == False
-            
-    
-    

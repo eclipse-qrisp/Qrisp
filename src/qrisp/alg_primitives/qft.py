@@ -18,8 +18,8 @@
 
 import numpy as np
 
-from qrisp.core import p, h, cp, cx, x, s, swap
-from qrisp.jasp import qache, jrange, check_for_tracing_mode
+from qrisp.core import cp, cx, h, p, s, swap, x
+from qrisp.jasp import check_for_tracing_mode, jrange, qache
 
 
 def QFT_inner(

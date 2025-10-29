@@ -16,20 +16,22 @@
 ********************************************************************************
 """
 
+import jax.numpy as jnp
 import numpy as np
 import sympy as sp
-import jax.numpy as jnp
-from jax import jit, Array
+from jax import Array, jit
 from jax.core import Tracer
 
 from qrisp.core import QuantumVariable, cx
-from qrisp.misc import gate_wrap
-from qrisp.environments import invert, conjugate
+from qrisp.environments import conjugate, invert
 from qrisp.jasp import check_for_tracing_mode
+from qrisp.misc import gate_wrap
+
 
 @jit
 def signed_int_iso_2(x, n):
-    return jnp.int64(x) & ((int(1) << jnp.minimum(n, 63))-1)
+    return jnp.int64(x) & ((int(1) << jnp.minimum(n, 63)) - 1)
+
 
 @jit
 def signed_int_iso_inv_2(y, n, signed_int):
@@ -320,7 +322,10 @@ class QuantumFloat(QuantumVariable):
     # Define outcome_labels
     def decoder(self, i):
 
-        res = signed_int_iso_inv_2(i, self.msize, self.signed) * jnp.float64(2)**self.exponent
+        res = (
+            signed_int_iso_inv_2(i, self.msize, self.signed)
+            * jnp.float64(2) ** self.exponent
+        )
 
         if check_for_tracing_mode():
             return res
@@ -414,7 +419,7 @@ class QuantumFloat(QuantumVariable):
                     f"Tried to multiply class {type(other)} with QuantumFloat"
                 )
 
-        from qrisp.alg_primitives.arithmetic import q_mult, polynomial_encoder
+        from qrisp.alg_primitives.arithmetic import polynomial_encoder, q_mult
 
         if isinstance(other, QuantumFloat):
             return q_mult(self, other)
@@ -451,8 +456,8 @@ class QuantumFloat(QuantumVariable):
     @gate_wrap(permeability="args", is_qfree=True)
     def __add__(self, other):
 
-        from qrisp.alg_primitives.arithmetic import sbp_add
         from qrisp import check_for_tracing_mode
+        from qrisp.alg_primitives.arithmetic import sbp_add
 
         if isinstance(other, QuantumFloat):
             if check_for_tracing_mode():
@@ -475,8 +480,8 @@ class QuantumFloat(QuantumVariable):
 
     @gate_wrap(permeability="args", is_qfree=True)
     def __sub__(self, other):
-        from qrisp.alg_primitives.arithmetic import sbp_sub
         from qrisp import check_for_tracing_mode
+        from qrisp.alg_primitives.arithmetic import sbp_sub
 
         if isinstance(other, QuantumFloat):
             if check_for_tracing_mode():
@@ -575,18 +580,25 @@ class QuantumFloat(QuantumVariable):
 
         if check_for_tracing_mode():
             from qrisp.alg_primitives.arithmetic import gidney_adder
-            
+
             if isinstance(other, QuantumFloat):
                 starting_digit = jnp.maximum(other.exponent, self.exponent)
-                
-                gidney_adder(other[starting_digit-other.exponent:], self[starting_digit-self.exponent:])
-            elif isinstance(other, (int, float)) or (isinstance(other, Tracer) and isinstance(other, Array)):
+
+                gidney_adder(
+                    other[starting_digit - other.exponent :],
+                    self[starting_digit - self.exponent :],
+                )
+            elif isinstance(other, (int, float)) or (
+                isinstance(other, Tracer) and isinstance(other, Array)
+            ):
                 gidney_adder(self.encoder(other), self)
             else:
                 print(isinstance(other, Tracer))
                 print(type(other.dtype))
-                raise Exception(f"Don't know how to handle quantum addition with type {type(other)}")
-            
+                raise Exception(
+                    f"Don't know how to handle quantum addition with type {type(other)}"
+                )
+
             return self
 
         from qrisp.alg_primitives.arithmetic import polynomial_encoder
@@ -622,7 +634,6 @@ class QuantumFloat(QuantumVariable):
     def __isub__(self, other):
 
         from qrisp.alg_primitives.arithmetic import polynomial_encoder
-
         from qrisp.jasp import check_for_tracing_mode
 
         if check_for_tracing_mode():
@@ -675,7 +686,7 @@ class QuantumFloat(QuantumVariable):
         return self
 
     def __lt__(self, other):
-        from qrisp.alg_primitives.arithmetic import lt, uint_lt, gidney_adder
+        from qrisp.alg_primitives.arithmetic import gidney_adder, lt, uint_lt
 
         if check_for_tracing_mode():
             return uint_lt(self, other, gidney_adder)
@@ -686,7 +697,7 @@ class QuantumFloat(QuantumVariable):
             return lt(self, other)
 
     def __gt__(self, other):
-        from qrisp.alg_primitives.arithmetic import gt, uint_gt, gidney_adder
+        from qrisp.alg_primitives.arithmetic import gidney_adder, gt, uint_gt
 
         if check_for_tracing_mode():
             return uint_gt(self, other, gidney_adder)
@@ -697,7 +708,7 @@ class QuantumFloat(QuantumVariable):
             return gt(self, other)
 
     def __le__(self, other):
-        from qrisp.alg_primitives.arithmetic import leq, uint_le, gidney_adder
+        from qrisp.alg_primitives.arithmetic import gidney_adder, leq, uint_le
 
         if check_for_tracing_mode():
             return uint_le(self, other, gidney_adder)
@@ -708,7 +719,7 @@ class QuantumFloat(QuantumVariable):
             return leq(self, other)
 
     def __ge__(self, other):
-        from qrisp.alg_primitives.arithmetic import geq, uint_ge, gidney_adder
+        from qrisp.alg_primitives.arithmetic import geq, gidney_adder, uint_ge
 
         if check_for_tracing_mode():
             return uint_ge(self, other, gidney_adder)
@@ -723,7 +734,9 @@ class QuantumFloat(QuantumVariable):
 
         from qrisp.alg_primitives.arithmetic import eq
 
-        if not check_for_tracing_mode() and not isinstance(other, (QuantumFloat, int, float)):
+        if not check_for_tracing_mode() and not isinstance(
+            other, (QuantumFloat, int, float)
+        ):
             raise Exception(f"Comparison with type {type(other)} not implemented")
 
         return eq(self, other)
@@ -732,7 +745,9 @@ class QuantumFloat(QuantumVariable):
 
         from qrisp.alg_primitives.arithmetic import neq
 
-        if not check_for_tracing_mode() and not isinstance(other, (QuantumFloat, int, float)):
+        if not check_for_tracing_mode() and not isinstance(
+            other, (QuantumFloat, int, float)
+        ):
             raise Exception(f"Comparison with type {type(other)} not implemented")
 
         return neq(self, other)
@@ -974,10 +989,10 @@ class QuantumFloat(QuantumVariable):
         """
 
         res = jnp.int64(jnp.round(x / jnp.float64(2) ** self.exponent))
-        res = jnp.minimum(2 ** self.msize - 1, res)
+        res = jnp.minimum(2**self.msize - 1, res)
 
         if self.signed:
-            res = jnp.maximum(-2 ** self.msize, res)
+            res = jnp.maximum(-(2**self.msize), res)
             res = signed_int_iso_2(res, self.size)
         else:
             res = jnp.maximum(0, res)
@@ -1130,7 +1145,7 @@ def create_output_qf(operands, op):
         exponent = min(operands[0].exponent, operands[1].exponent)
         max_sig = max(operands[0].mshape[1], operands[1].mshape[1]) + 1
         msize = max_sig - exponent + 1
-        
+
         return QuantumFloat(
             msize, exponent, operands[0].qs, signed=signed, name="add_res*"
         )

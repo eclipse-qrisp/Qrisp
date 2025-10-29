@@ -19,7 +19,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-from qrisp import QuantumFloat, h, QFT
+from qrisp import QFT, QuantumFloat, h
 from qrisp.misc import as_hamiltonian, multi_measurement
 
 

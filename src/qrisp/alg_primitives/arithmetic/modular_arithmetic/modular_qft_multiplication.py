@@ -18,15 +18,15 @@
 
 import numpy as np
 
-from qrisp.qtypes.quantum_float import QuantumFloat
 from qrisp.alg_primitives import QFT
-from qrisp.alg_primitives.arithmetic import multi_controlled_U_g, hybrid_mult
-from qrisp.core.gate_application_functions import h, cx, swap, mcx
-from qrisp.environments import conjugate, control
+from qrisp.alg_primitives.arithmetic import hybrid_mult, multi_controlled_U_g
 from qrisp.alg_primitives.arithmetic.modular_arithmetic.mod_tools import (
     modinv,
     montgomery_encoder,
 )
+from qrisp.core.gate_application_functions import cx, h, mcx, swap
+from qrisp.environments import conjugate, control
+from qrisp.qtypes.quantum_float import QuantumFloat
 
 
 def QREDC(t, N, m):
@@ -209,7 +209,7 @@ def qft_semi_cl_inpl_mult(a, X, ctrl=None, treat_invalid=False):
 
     tmp = a.duplicate(qs=a.qs)
 
-    from qrisp import multi_measurement, less_than, redirect_qfunction, QuantumModulus
+    from qrisp import QuantumModulus, less_than, multi_measurement, redirect_qfunction
 
     if treat_invalid:
         a.__class__ = QuantumFloat

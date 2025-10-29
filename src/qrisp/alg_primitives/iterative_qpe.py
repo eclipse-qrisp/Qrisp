@@ -16,9 +16,10 @@
 ********************************************************************************
 """
 
-from qrisp import h, control, rz, measure, QuantumFloat
-from qrisp.jasp import jrange, q_fori_loop
 import numpy as np
+
+from qrisp import QuantumFloat, control, h, measure, rz
+from qrisp.jasp import jrange, q_fori_loop
 
 
 def IQPE(args, U, precision, iter_spec=False, ctrl_method=None, kwargs={}):

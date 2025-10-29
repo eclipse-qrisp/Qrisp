@@ -18,8 +18,9 @@
 
 
 def test_mcx():
-    from qrisp import h, mcx, QuantumVariable, multi_measurement, bin_rep, QuantumBool
     import numpy as np
+
+    from qrisp import QuantumBool, QuantumVariable, bin_rep, h, mcx, multi_measurement
 
     def test_mcx_inner(n, ctrl_state, method, test_phase=True, num_ancilla=0):
         ctrl = QuantumVariable(n)

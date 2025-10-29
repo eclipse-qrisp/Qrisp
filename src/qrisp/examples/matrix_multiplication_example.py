@@ -20,12 +20,12 @@ import numpy as np
 
 from qrisp import (
     QuantumArray,
-    QuantumFloat,
     QuantumBool,
-    multi_measurement,
-    tensordot,
+    QuantumFloat,
     dot,
     h,
+    multi_measurement,
+    tensordot,
 )
 
 # Quantum-Quantum matrix multiplication

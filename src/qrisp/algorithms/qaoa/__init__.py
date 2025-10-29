@@ -16,7 +16,7 @@
 ********************************************************************************
 """
 
-from qrisp.algorithms.qaoa.qaoa_problem import *
-from qrisp.algorithms.qaoa.qaoa_benchmark_data import *
 from qrisp.algorithms.qaoa.mixers import *
 from qrisp.algorithms.qaoa.problems import *
+from qrisp.algorithms.qaoa.qaoa_benchmark_data import *
+from qrisp.algorithms.qaoa.qaoa_problem import *

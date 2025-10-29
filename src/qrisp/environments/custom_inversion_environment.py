@@ -21,13 +21,18 @@ import inspect
 import jax
 import jax.numpy as jnp
 
-from qrisp.environments.quantum_environments import QuantumEnvironment
-from qrisp.environments.gate_wrap_environment import GateWrapEnvironment
-from qrisp.circuit import Operation, QuantumCircuit, Instruction
-from qrisp.environments.iteration_environment import IterationEnvironment
+from qrisp.circuit import Instruction, Operation, QuantumCircuit
 from qrisp.core import merge
-
-from qrisp.jasp import check_for_tracing_mode, qache, AbstractQubit, make_jaspr, get_last_equation
+from qrisp.environments.gate_wrap_environment import GateWrapEnvironment
+from qrisp.environments.iteration_environment import IterationEnvironment
+from qrisp.environments.quantum_environments import QuantumEnvironment
+from qrisp.jasp import (
+    AbstractQubit,
+    check_for_tracing_mode,
+    get_last_equation,
+    make_jaspr,
+    qache,
+)
 
 
 def custom_inversion(*func, **cusi_kwargs):
@@ -151,12 +156,12 @@ def custom_inversion(*func, **cusi_kwargs):
     # The controlled version is then stored in the params attribute
 
     # Qache the function (in non-traced mode, this has no effect)
-    
+
     # Make sure the inv keyword argument is treated as a static argument
     new_static_argnames = list(cusi_kwargs.get("static_argnames", []))
     new_static_argnames.append("inv")
     cusi_kwargs["static_argnames"] = new_static_argnames
-    
+
     qached_func = qache(func, **cusi_kwargs)
 
     def adaptive_inversion_function(*args, **kwargs):
@@ -178,7 +183,7 @@ def custom_inversion(*func, **cusi_kwargs):
                     args[i] = jnp.array(args[i], dtype=jnp.complex64)
 
             # Call the (qached) function
-            res = qached_func(*args, inv = False, **kwargs)
+            res = qached_func(*args, inv=False, **kwargs)
 
             # Retrieve the pjit equation
             jit_eqn = get_last_equation()
@@ -188,12 +193,10 @@ def custom_inversion(*func, **cusi_kwargs):
 
                 def ammended_func(*args, **kwargs):
                     new_kwargs = dict(kwargs)
-                    return func(*args, inv = True, **new_kwargs)
+                    return func(*args, inv=True, **new_kwargs)
 
-                inverted_jaspr = make_jaspr(ammended_func)(
-                    *args, **kwargs
-                )
-                
+                inverted_jaspr = make_jaspr(ammended_func)(*args, **kwargs)
+
                 # Store controlled version
                 jit_eqn.params["jaxpr"].inv_jaspr = inverted_jaspr
                 inverted_jaspr.inv_jaspr = jit_eqn.params["jaxpr"]
@@ -201,4 +204,3 @@ def custom_inversion(*func, **cusi_kwargs):
         return res
 
     return adaptive_inversion_function
-

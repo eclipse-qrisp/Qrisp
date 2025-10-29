@@ -19,8 +19,8 @@
 from functools import lru_cache
 
 import numpy as np
+from jax.extend.core import ClosedJaxpr, Jaxpr, JaxprEqn, Literal
 from numba import njit
-from jax.extend.core import ClosedJaxpr, JaxprEqn, Literal, Jaxpr
 
 
 @lru_cache(maxsize=int(1e5))
@@ -49,7 +49,7 @@ def collect_environments(closed_jaxpr):
     # and exit primitive.
     eqn_list = list(closed_jaxpr.jaxpr.eqns)
     new_eqn_list = []
-    
+
     # An important part of collecting the quantum environments is determining
     # the input output variables. Doing this analysis can be prohibitvely costly
     # if implemented naively. For this reason the VarTracker class implements,
@@ -57,12 +57,12 @@ def collect_environments(closed_jaxpr):
     # enables an efficient solution to this problem.
     eqn_var_tracker = VarTracker(eqn_list)
     new_eqn_var_tracker = VarTracker(new_eqn_list)
-    
+
     from qrisp.jasp import Jaspr
 
     if isinstance(closed_jaxpr, Jaspr) and closed_jaxpr.envs_flattened:
         return closed_jaxpr
-    
+
     for j in range(len(eqn_list)):
         eqn = eqn_list[j]
 
@@ -81,7 +81,7 @@ def collect_environments(closed_jaxpr):
                 outvars=list(eqn.outvars),
                 effects=eqn.effects,
                 source_info=eqn.source_info,
-                ctx=eqn.ctx
+                ctx=eqn.ctx,
             )
 
         if eqn.primitive.name == "cond":
@@ -91,9 +91,7 @@ def collect_environments(closed_jaxpr):
             branch_list = []
 
             for i in range(len(eqn.params["branches"])):
-                collected_branch_jaxpr = collect_environments(
-                    eqn.params["branches"][i]
-                )
+                collected_branch_jaxpr = collect_environments(eqn.params["branches"][i])
                 branch_list.append(collected_branch_jaxpr)
 
             new_params["branches"] = tuple(branch_list)
@@ -123,7 +121,7 @@ def collect_environments(closed_jaxpr):
                 outvars=list(eqn.outvars),
                 effects=eqn.effects,
                 source_info=eqn.source_info,
-                ctx=eqn.ctx
+                ctx=eqn.ctx,
             )
 
         # If an exit primitive is found, start the collecting mechanism.
@@ -142,27 +140,30 @@ def collect_environments(closed_jaxpr):
 
             # Set an alias for the equations marked as the body
             environment_body_eqn_list = new_eqn_list[i + 1 :]
-            
+
             # Compute the sliced version of the var tracker
-            environment_body_var_tracker = new_eqn_var_tracker.slice_start(i+1)
-            
+            environment_body_var_tracker = new_eqn_var_tracker.slice_start(i + 1)
+
             # Compute the invars
             invars = environment_body_var_tracker.find_invars()
-            
+
             # Remove the AbstractQuantumCircuit variable and prepend it.
             try:
                 invars.remove(enter_eq.outvars[0])
             except ValueError:
                 pass
 
+            remaining_script_var_tracker = eqn_var_tracker.slice_start(j + 1)
 
-            remaining_script_var_tracker = eqn_var_tracker.slice_start(j+1)
-            
             # Same for the outvars
             outvars = find_outvars(
                 environment_body_eqn_list,
                 remaining_script_var_tracker,
-                [var for var in closed_jaxpr.jaxpr.outvars if not isinstance(var, Literal)],
+                [
+                    var
+                    for var in closed_jaxpr.jaxpr.outvars
+                    if not isinstance(var, Literal)
+                ],
             )
 
             # Create the Jaxpr
@@ -181,21 +182,20 @@ def collect_environments(closed_jaxpr):
                 outvars=outvars + eqn.outvars[-1:],
                 effects=eqn.effects,
                 source_info=eqn.source_info,
-                ctx=eqn.ctx
+                ctx=eqn.ctx,
             )
 
             # Remove the collected equations from the new_eqn_list
             new_eqn_list = new_eqn_list[:i]
             new_eqn_var_tracker = new_eqn_var_tracker.slice_end(i)
-            
 
         # Append the equation
         new_eqn_list.append(eqn)
         new_eqn_var_tracker.append(eqn)
-        
+
     if isinstance(closed_jaxpr, Jaspr):
         res = closed_jaxpr.update_eqns(new_eqn_list)
-        
+
         if closed_jaxpr.ctrl_jaspr is not None:
             res.ctrl_jaspr = closed_jaxpr.ctrl_jaspr
         if closed_jaxpr.inv_jaspr is not None:
@@ -203,14 +203,14 @@ def collect_environments(closed_jaxpr):
         return res
     else:
         # Return the transformed equation
-        
+
         res_jaxpr = Jaxpr(
             constvars=closed_jaxpr.jaxpr.constvars,
             invars=closed_jaxpr.jaxpr.invars,
             outvars=closed_jaxpr.jaxpr.outvars,
             eqns=new_eqn_list,
         )
-        
+
         return ClosedJaxpr(res_jaxpr, closed_jaxpr.consts)
 
 
@@ -256,68 +256,67 @@ class VarTracker:
     of the collected environments. For large Jaxpr, this can be prohibitively
     expensive, which is why this class tracks a specialized data structure, which
     allows an efficient solution of this problem.
-    
+
     To describe how this works in detail, we start by noting that it is beneficial
     to assign every variable (input and outputs) a simply integer.
-    
+
     The translation between this assignment is achieved through the var_to_int_dic
     and the int_to_var_dic.
-    
-    Given a list of equations, what this class tracks is now a list of integers 
+
+    Given a list of equations, what this class tracks is now a list of integers
     for both inputs and outputs that describe all the inputs and outputs.
-    
+
     i.e. if we are given the equations
-    
+
     %1 = prim_0 %2 %3 %4
     %5 %6 = prim_1 %1
-    
+
     These lists would look like this:
-        
+
     inputs = [%2, %3, %4, %1]
     outputs = [%1, %5, %6]
-    
+
     We can now compute efficiently which variables are the invars of this list
     of equations by initializing an array with 6 entries, first setting all
     the invar positions to 1, i.e. [1, 1, 1, 1, 0, 0]
     and then setting all the outvar position to 0, i.e. [0, 1, 1, 1, 0, 0].
 
     This is implemented in the find_invars method.
-    
-    
+
+
     An important feature that is required by the environment collection function
     is to slice the list of equations - afterall the environment body will
     be a slice of the equation list in most cases.
-    
+
     Because of this, the class tracks another list of integers, demarking
     which interval of integers belongs to which equation. This list always
     starts with 0.
-    
+
     For the above example we would have
-    
+
     invar_index_tracker = [0, 3, 4]
     outvar_index_tracker = [0, 1, 3]
-    
+
     Each entry of these lists therefore denotes where the corresponding equation
     starts.
-    
+
     This list can be used to efficiently implement the slicing features.
     """
-    
+
     def __init__(self, eqn_list):
-        
-        
+
         # Initialize the translation dics
         var_to_int_dic = {}
         int_to_var_dic = {}
-        
+
         # Initialize the variable lists
         eqn_invar_list = []
         eqn_outvar_list = []
-        
+
         # Initialize the index trackers
         outvar_eqn_index_tracker = [0]
         invar_eqn_index_tracker = [0]
-        
+
         # Fill the variable lists
         for eqn in eqn_list:
             invar_integers = []
@@ -343,23 +342,22 @@ class VarTracker:
                     outvar_integers.append(var_to_int_dic[var])
                 except TypeError:
                     continue
-            
+
             eqn_invar_list.extend(invar_integers)
             invar_eqn_index_tracker.append(len(eqn_invar_list))
-            
+
             eqn_outvar_list.extend(outvar_integers)
             outvar_eqn_index_tracker.append(len(eqn_outvar_list))
-            
+
         # Store the attributes
         self.var_to_int_dic = var_to_int_dic
         self.int_to_var_dic = int_to_var_dic
-        
+
         self.eqn_invar_list = eqn_invar_list
         self.eqn_outvar_list = eqn_outvar_list
-        
+
         self.invar_eqn_index_tracker = invar_eqn_index_tracker
         self.outvar_eqn_index_tracker = outvar_eqn_index_tracker
-        
 
     def append(self, eqn):
         """
@@ -370,8 +368,8 @@ class VarTracker:
         eqn : jax.core.Equation
 
         """
-        
-        # Perform similar logic as in __init__        
+
+        # Perform similar logic as in __init__
         invar_integers = []
         for var in eqn.invars:
             try:
@@ -392,15 +390,13 @@ class VarTracker:
                 outvar_integers.append(self.var_to_int_dic[var])
             except TypeError:
                 continue
-    
-        
+
         self.eqn_invar_list.extend(invar_integers)
         self.invar_eqn_index_tracker.append(len(self.eqn_invar_list))
-        
+
         self.eqn_outvar_list.extend(outvar_integers)
         self.outvar_eqn_index_tracker.append(len(self.eqn_outvar_list))
-        
-        
+
     def slice_start(self, starting_point):
         """
         If self is represented by VarTracker(eqn_list), the result of this
@@ -410,26 +406,32 @@ class VarTracker:
         ----------
         starting_point : int
         """
-        
+
         res = VarTracker([])
-        
+
         # Identify where the invar list has to be sliced from
         invar_starting_point = self.invar_eqn_index_tracker[starting_point]
         # Slice the invar list
         res.eqn_invar_list = self.eqn_invar_list[invar_starting_point:]
         # Slice the index tracker and ensure it starts from 0
-        res.invar_eqn_index_tracker = [i - invar_starting_point for i in self.invar_eqn_index_tracker[starting_point:]]
-        
+        res.invar_eqn_index_tracker = [
+            i - invar_starting_point
+            for i in self.invar_eqn_index_tracker[starting_point:]
+        ]
+
         # Same for the outvars
         outvar_starting_point = self.outvar_eqn_index_tracker[starting_point]
         res.eqn_outvar_list = self.eqn_outvar_list[outvar_starting_point:]
-        res.outvar_eqn_index_tracker = [i - outvar_starting_point for i in self.outvar_eqn_index_tracker[starting_point:]]
-        
+        res.outvar_eqn_index_tracker = [
+            i - outvar_starting_point
+            for i in self.outvar_eqn_index_tracker[starting_point:]
+        ]
+
         res.int_to_var_dic = self.int_to_var_dic
         res.var_to_int_dic = self.var_to_int_dic
-        
+
         return res
-    
+
     def slice_end(self, end_point):
         """
         If self is represented by VarTracker(eqn_list), the result of this
@@ -439,23 +441,23 @@ class VarTracker:
         ----------
         end_point : int
         """
-        
+
         res = VarTracker([])
-        
+
         # Perform similar slicing logic as in slice_start
         invar_end_point = self.invar_eqn_index_tracker[end_point]
         res.eqn_invar_list = self.eqn_invar_list[:invar_end_point]
-        res.invar_eqn_index_tracker = self.invar_eqn_index_tracker[:end_point+1]
-        
+        res.invar_eqn_index_tracker = self.invar_eqn_index_tracker[: end_point + 1]
+
         outvar_end_point = self.outvar_eqn_index_tracker[end_point]
         res.eqn_outvar_list = self.eqn_outvar_list[:outvar_end_point]
-        res.outvar_eqn_index_tracker = self.outvar_eqn_index_tracker[:end_point+1]
-        
+        res.outvar_eqn_index_tracker = self.outvar_eqn_index_tracker[: end_point + 1]
+
         res.int_to_var_dic = self.int_to_var_dic
         res.var_to_int_dic = self.var_to_int_dic
-        
+
         return res
-    
+
     def find_invars(self):
         """
         Computes the undefined invars of the currently tracked equation list,
@@ -466,48 +468,55 @@ class VarTracker:
         -------
         res : list[Eqn]
         """
-        
+
         # If viable, call the jitted version.
         if len(self.eqn_invar_list) < 20 or len(self.eqn_outvar_list) < 20:
-            invar_index_list = find_invar_kernel([-1] + self.eqn_invar_list, [-1] +self.eqn_outvar_list)
+            invar_index_list = find_invar_kernel(
+                [-1] + self.eqn_invar_list, [-1] + self.eqn_outvar_list
+            )
         else:
-            invar_index_list = jitted_find_invar_kernel(np.array([-1] + self.eqn_invar_list, dtype = np.int32), 
-                                                        np.array([-1] +self.eqn_outvar_list, dtype = np.int32))
-            
+            invar_index_list = jitted_find_invar_kernel(
+                np.array([-1] + self.eqn_invar_list, dtype=np.int32),
+                np.array([-1] + self.eqn_outvar_list, dtype=np.int32),
+            )
+
         res = []
-        
+
         # Convert from integers to variables
         for i in range(len(invar_index_list)):
             res.append(self.int_to_var_dic[invar_index_list[i]])
-        
+
         # For some jaxpr transformations, it is important that the order of invars
         # returned by this function is according to the order of appearance in the
         # body.
-        
+
         # We therefore create a dictionary that indicates the index of the first
         # usage as an invar and sort according to this dictionary.
-        sorting_dic = {self.eqn_invar_list[i] : i for i in range(len(self.eqn_invar_list))[::-1]}
-        
-        res.sort(key = lambda x : sorting_dic[self.var_to_int_dic[x]])
-        
+        sorting_dic = {
+            self.eqn_invar_list[i]: i for i in range(len(self.eqn_invar_list))[::-1]
+        }
+
+        res.sort(key=lambda x: sorting_dic[self.var_to_int_dic[x]])
+
         return res
-        
-        
+
+
 def find_invar_kernel(invar_indices, outvar_indices):
     # executes the algorithm described in the docstring of VarTracker
-    
+
     max_invar = np.max(invar_indices)
     max_outvar = np.max(outvar_indices)
     max_var = max(max_invar, max_outvar)
-    
+
     if max_var == -1:
-        return np.zeros(0, dtype = np.int64)
-    
-    invar_array = np.zeros(max_var+1, dtype = np.int8)
+        return np.zeros(0, dtype=np.int64)
+
+    invar_array = np.zeros(max_var + 1, dtype=np.int8)
     invar_array[invar_indices] = 1
     invar_array[outvar_indices] = 0
     res = np.nonzero(invar_array)[0]
-    
-    return res            
 
-jitted_find_invar_kernel = njit(find_invar_kernel)        
+    return res
+
+
+jitted_find_invar_kernel = njit(find_invar_kernel)

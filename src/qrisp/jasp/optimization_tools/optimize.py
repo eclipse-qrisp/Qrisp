@@ -16,11 +16,11 @@
 ********************************************************************************
 """
 
-from qrisp.jasp.optimization_tools.spsa import spsa
 from qrisp.jasp.optimization_tools.cobyla import cobyla
+from qrisp.jasp.optimization_tools.spsa import spsa
 
 
-def minimize(fun, x0, args=(), method='COBYLA', options={}):
+def minimize(fun, x0, args=(), method="COBYLA", options={}):
     r"""
 
     Minimization of scalar functions of one ore more variables via gradient-free solvers.

@@ -28,9 +28,9 @@ from scipy.sparse import (
 
 import qrisp.simulator.bi_array_helper as hlp
 from qrisp.simulator.numerics_config import (
+    cutoff_ratio,
     float_thresh,
     sparsification_rate,
-    cutoff_ratio,
 )
 
 try:

@@ -18,13 +18,12 @@
 
 from itertools import product
 
-from qrisp.simulator.numerics_config import xp
-from qrisp.simulator.tensor_factor import TensorFactor, multi_entangle
-from qrisp.simulator.bi_array_helper import permute_axes, invert_permutation
 import numpy as np
 
 from qrisp.misc.utility import bin_rep
-
+from qrisp.simulator.bi_array_helper import invert_permutation, permute_axes
+from qrisp.simulator.numerics_config import xp
+from qrisp.simulator.tensor_factor import TensorFactor, multi_entangle
 
 # This class describes a quantum state
 # This is achieved by another class, the TensorFactor.

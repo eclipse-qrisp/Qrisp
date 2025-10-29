@@ -16,10 +16,11 @@
 ********************************************************************************
 """
 
-from qrisp import z, control
+from jax.lax import while_loop
+
+from qrisp import control, z
 from qrisp.alg_primitives.qae import amplitude_amplification
 from qrisp.jasp import check_for_tracing_mode, expectation_value
-from jax.lax import while_loop
 
 
 def IQAE(qargs, state_function, eps, alpha, mes_kwargs={}):

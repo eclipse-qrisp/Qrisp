@@ -22,10 +22,10 @@
 # For this we implement the Brent-Kung-Tree in a recursive manner. See:
 # https://web.stanford.edu/class/archive/ee/ee371/ee371.1066/lectures/lect_04.pdf Page 13
 
-from qrisp.core.gate_application_functions import x, cx
-from qrisp.misc.utility import check_if_fresh
-from qrisp.alg_primitives.arithmetic.adders.gidney import gidney_adder, cq_gidney_adder
+from qrisp.alg_primitives.arithmetic.adders.gidney import cq_gidney_adder, gidney_adder
 from qrisp.alg_primitives.arithmetic.adders.incrementation import lin_incr
+from qrisp.core.gate_application_functions import cx, x
+from qrisp.misc.utility import check_if_fresh
 
 # Both of these functions are the semi-classical versions of the ones found in
 # qrisp.alg_primitives.arithmetic.adders.qcla.quantum_quantum.qq_sum_path

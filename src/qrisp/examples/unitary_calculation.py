@@ -16,9 +16,11 @@
 ********************************************************************************
 """
 
-from numpy.linalg import norm
 import time
+
+from numpy.linalg import norm
 from qiskit import Aer, execute
+
 from qrisp import QuantumFloat, transpile
 from qrisp.interface import convert_to_qiskit
 

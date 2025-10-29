@@ -19,8 +19,9 @@
 from qrisp import *
 from qrisp.jasp import *
 
+
 def test_environment_compilation():
-    
+
     def outer_function(x):
         qv = QuantumVariable(x)
         with invert():
@@ -30,19 +31,19 @@ def test_environment_compilation():
         return qv
 
     jaspr = make_jaspr(outer_function)(2)
-    
+
     jasp_function_test(outer_function)
-    
+
     @qache
     def inner_function(qv):
         h(qv[0])
         cx(qv[0], qv[1])
-        cx(qv[0], qv[qv.size-1])
+        cx(qv[0], qv[qv.size - 1])
         return qv.size
-    
+
     def outer_function(x):
         qv = QuantumVariable(x)
-        
+
         # with invert():
         #     inner_function(qv)
         #     with invert():
@@ -50,12 +51,10 @@ def test_environment_compilation():
         # temp_1 = inner_function(qv)
         temp_2 = inner_function(qv)
         return qv
-    
+
     testing_function = jasp_function_test(outer_function)
-    
+
     assert testing_function(5)
     assert testing_function(6)
     assert testing_function(7)
     assert testing_function(8)
-    
-    

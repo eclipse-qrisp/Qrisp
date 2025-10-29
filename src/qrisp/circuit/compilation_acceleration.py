@@ -16,8 +16,9 @@
 ********************************************************************************
 """
 
-import numpy as np
 import threading
+
+import numpy as np
 
 from qrisp.circuit.quantum_circuit import QuantumCircuit
 
@@ -29,7 +30,6 @@ class CompilationAccelerator:
 
     def __enter__(self):
 
-        
         self.original_xla_mode = QuantumCircuit.xla_mode
 
         if threading.current_thread() is threading.main_thread():

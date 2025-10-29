@@ -17,11 +17,12 @@
 """
 
 from jax.core import AbstractValue
-from qrisp.jasp.primitives import QuantumPrimitive, AbstractQubitArray
+
+from qrisp.jasp.primitives import AbstractQubitArray, QuantumPrimitive
 
 
 class AbstractQuantumCircuit(AbstractValue):
-    
+
     def __init__(self):
         self.vma = None
         AbstractValue.__init__(self)

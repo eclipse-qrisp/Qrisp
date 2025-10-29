@@ -17,13 +17,13 @@
 """
 
 from jax.core import ShapedArray
-from qrisp.circuit import Reset, Qubit
 
+from qrisp.circuit import Qubit, Reset
 from qrisp.jasp.primitives import (
     AbstractQuantumCircuit,
     AbstractQubit,
-    QuantumPrimitive,
     AbstractQubitArray,
+    QuantumPrimitive,
 )
 
 # Create the primitive
@@ -57,7 +57,7 @@ Measurement_p.multiple_results = True
 
 @Measurement_p.def_impl
 def measure_implementation(meas_object, qc):
-    from qrisp import Qubit, QuantumCircuit
+    from qrisp import QuantumCircuit, Qubit
 
     return_bool = False
     if isinstance(meas_object, Qubit):

@@ -16,10 +16,11 @@
 ********************************************************************************
 """
 
-# imports
-from qrisp import QuantumVariable
 import matplotlib.pyplot as plt
 import networkx as nx
+
+# imports
+from qrisp import QuantumVariable
 from qrisp.algorithms.qiro import *
 
 # First we define a graph via the number of nodes and the QuantumVariable arguments

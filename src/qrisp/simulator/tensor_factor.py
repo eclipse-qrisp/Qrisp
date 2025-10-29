@@ -18,7 +18,7 @@
 
 # -*- coding: utf-8 -*-
 
-from qrisp.simulator.bi_arrays import DenseBiArray, SparseBiArray, tensordot, BiArray
+from qrisp.simulator.bi_arrays import BiArray, DenseBiArray, SparseBiArray, tensordot
 from qrisp.simulator.numerics_config import float_thresh, xp
 
 # tensordot = xp.tensordot

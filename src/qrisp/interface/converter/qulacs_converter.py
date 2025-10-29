@@ -19,10 +19,10 @@
 
 def qulacs_converter(qc):
 
-    from qrisp.simulator import extract_measurements
-
-    from qulacs import QuantumCircuit
     import qulacs.gate as gt
+    from qulacs import QuantumCircuit
+
+    from qrisp.simulator import extract_measurements
 
     temp_qc, measurements = extract_measurements(qc.copy())
 

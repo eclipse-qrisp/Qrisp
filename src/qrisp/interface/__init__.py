@@ -16,10 +16,9 @@
 ********************************************************************************
 """
 
-from qrisp.interface.qunicorn import *
-from qrisp.interface.virtual_backend import *
 from qrisp.interface.batched_backend import *
 from qrisp.interface.converter import *
 from qrisp.interface.docker_backends import *
 from qrisp.interface.provider_backends import *
-
+from qrisp.interface.qunicorn import *
+from qrisp.interface.virtual_backend import *

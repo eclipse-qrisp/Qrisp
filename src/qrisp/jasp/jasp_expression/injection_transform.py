@@ -19,11 +19,11 @@
 from functools import lru_cache
 
 from jax import make_jaxpr
-from jax.extend.core import JaxprEqn, ClosedJaxpr
+from jax.extend.core import ClosedJaxpr, JaxprEqn
 from jax.lax import add_p, sub_p, while_loop
 
-from qrisp.jasp.primitives import AbstractQuantumCircuit, OperationPrimitive
 from qrisp.jasp.jasp_expression.centerclass import Jaspr
+from qrisp.jasp.primitives import AbstractQuantumCircuit, OperationPrimitive
 
 
 def copy_jaxpr_eqn(eqn):
@@ -122,7 +122,9 @@ def injection_transform(jaspr, qubit_array_outvar):
                 eqn = copy_jaxpr_eqn(eqn)
 
                 # Modify the copied equation
-                eqn.params["jaxpr"] = injection_transform(sub_jaspr, sub_qubit_array_outvar)
+                eqn.params["jaxpr"] = injection_transform(
+                    sub_jaspr, sub_qubit_array_outvar
+                )
                 eqn.invars.insert(0, qubit_array_outvar)
                 eqn.outvars.remove(qubit_array_outvar)
 

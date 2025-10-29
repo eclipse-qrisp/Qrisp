@@ -18,8 +18,9 @@
 
 from qrisp import *
 
+
 def test_comparisons():
-    
+
     def lt_op(a, b):
         return a < b
 
@@ -31,54 +32,51 @@ def test_comparisons():
 
     def ge_op(a, b):
         return a >= b
-    
+
     def eq_op(a, b):
         return a == b
-    
+
     def neq_op(a, b):
         return a != b
-    
-    
+
     op_list = [lt_op, gt_op, le_op, ge_op, eq_op, neq_op]
-    
+
     for op in op_list:
-    
+
         @terminal_sampling
         def main(i, j):
-            
+
             a = QuantumFloat(i)
             b = QuantumFloat(j)
-            
+
             h(a)
             h(b)
-            
+
             return a, b, op(a, b)
-        
+
         for i in range(1, 5):
             for j in range(1, 5):
                 sampling_dict = main(i, j)
-                
+
                 for k in sampling_dict.keys():
-                    
+
                     a, b, comparison_value = k
-                    
-                    assert op(a,b) == comparison_value
-                    
+
+                    assert op(a, b) == comparison_value
+
         @terminal_sampling
         def main(i, j):
-            
+
             a = QuantumFloat(i)
             h(a)
-            
+
             return a, op(a, j)
-        
+
         for i in range(1, 5):
             for j in range(1, 5):
                 sampling_dict = main(i, j)
-                
+
                 for k in sampling_dict.keys():
                     a, comparison_value = k
-                    
-                    assert op(a,j) == comparison_value
-                
-        
+
+                    assert op(a, j) == comparison_value

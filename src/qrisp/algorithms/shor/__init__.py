@@ -16,5 +16,5 @@
 ********************************************************************************
 """
 
-from qrisp.algorithms.shor.shors_algorithm import *
 from qrisp.algorithms.shor.crypto_tools import *
+from qrisp.algorithms.shor.shors_algorithm import *

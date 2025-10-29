@@ -25,24 +25,24 @@ from qrisp.alg_primitives.arithmetic.poly_tools import (
     filter_pow,
     get_ordered_symbol_list,
 )
+from qrisp.circuit import XGate
 from qrisp.core import (
     QuantumArray,
     QuantumVariable,
     cp,
+    crz,
     cx,
     cz,
+    gphase,
     h,
+    mcp,
     mcx,
     p,
-    z,
     rz,
     rzz,
-    crz,
-    mcp,
-    gphase,
+    z,
 )
 from qrisp.misc import gate_wrap, lifted
-from qrisp.circuit import XGate
 
 # Threshold of rounding used in detecting integer multiples of pi
 pi_mult_round_threshold = 11
@@ -106,9 +106,9 @@ def multi_controlled_U_g(
     # of multiple qubits within a single laser pulse
 
     from qrisp.environments import (
+        GMSEnvironment,
         QuantumEnvironment,
         control,
-        GMSEnvironment,
         custom_control,
     )
 
@@ -225,7 +225,7 @@ def sb_polynomial_encoder(
     # Acquire monomials in list form
     monomial_list = expr_to_list(poly)
 
-    from qrisp import QFT, conjugate, QuantumEnvironment
+    from qrisp import QFT, QuantumEnvironment, conjugate
 
     if inplace_mult == 1:
         env = conjugate(QFT)(
@@ -1054,7 +1054,9 @@ def inpl_mult(qf, mult_int, treat_overflow=True):
     """
 
     if not isinstance(mult_int, (int, float)):
-        raise Exception("Quantum inplace multiplication is restricted to classical values due to reversibility constraints")
+        raise Exception(
+            "Quantum inplace multiplication is restricted to classical values due to reversibility constraints"
+        )
 
     if mult_int < 0 and not qf.signed:
         raise Exception(
@@ -1102,7 +1104,7 @@ def inpl_mult(qf, mult_int, treat_overflow=True):
 
 def quantum_bit_shift(qf, bit_shift, treat_overflow=True):
 
-    from qrisp import cyclic_shift, control, QuantumFloat
+    from qrisp import QuantumFloat, control, cyclic_shift
 
     if isinstance(bit_shift, QuantumFloat):
 

@@ -16,19 +16,37 @@
 ********************************************************************************
 """
 
+
 def test_jasp_QuantumFloat():
 
-    # Test decoder for QuantumFloat (Issue #271) 
+    # Test decoder for QuantumFloat (Issue #271)
     from qrisp import QuantumFloat, h
     from qrisp.jasp import terminal_sampling
 
     @terminal_sampling
     def main():
-        a = QuantumFloat(3, -2, signed = True) 
+        a = QuantumFloat(3, -2, signed=True)
 
         h(a)
 
         return a
-    
+
     res = main()
-    assert res == {-2.0: 0.0625, -1.75: 0.0625, -1.5: 0.0625, -1.25: 0.0625, -1.0: 0.0625, -0.75: 0.0625, -0.5: 0.0625, -0.25: 0.0625, 0.0: 0.0625, 0.25: 0.0625, 0.5: 0.0625, 0.75: 0.0625, 1.0: 0.0625, 1.25: 0.0625, 1.5: 0.0625, 1.75: 0.0625}
+    assert res == {
+        -2.0: 0.0625,
+        -1.75: 0.0625,
+        -1.5: 0.0625,
+        -1.25: 0.0625,
+        -1.0: 0.0625,
+        -0.75: 0.0625,
+        -0.5: 0.0625,
+        -0.25: 0.0625,
+        0.0: 0.0625,
+        0.25: 0.0625,
+        0.5: 0.0625,
+        0.75: 0.0625,
+        1.0: 0.0625,
+        1.25: 0.0625,
+        1.5: 0.0625,
+        1.75: 0.0625,
+    }

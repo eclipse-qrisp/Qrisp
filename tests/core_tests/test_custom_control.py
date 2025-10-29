@@ -16,34 +16,47 @@
 ********************************************************************************
 """
 
-import time
 import random
+import time
+
 import numpy as np
 
-from qrisp import QuantumVariable, QuantumBool, custom_control, h, x, y, cp, control, invert, QuantumFloat, cx, qcla
+from qrisp import (
+    QuantumBool,
+    QuantumFloat,
+    QuantumVariable,
+    control,
+    cp,
+    custom_control,
+    cx,
+    h,
+    invert,
+    qcla,
+    x,
+    y,
+)
+
 
 def test_custom_control():
-    
+
     qv_0 = QuantumVariable(2)
     qv_1 = QuantumVariable(2)
 
-            
     qv_0 = QuantumVariable(1)
     qv_1 = QuantumVariable(1)
     qf = QuantumFloat(1)
-            
+
     @custom_control
-    def test_function(qv, ctrl = None):
+    def test_function(qv, ctrl=None):
         if ctrl is None:
             y(qv)
         else:
             temp = QuantumVariable(1)
             cx(qv, temp)
-            cp(np.pi/4, ctrl, qv)
+            cp(np.pi / 4, ctrl, qv)
             x(qv)
             temp.uncompute()
         return None
-
 
     with control(qv_0):
         test_function(qv_1)
@@ -55,42 +68,45 @@ def test_custom_control():
             x(qv_1)
             with qf == 0:
                 test_function(qv_1)
-                
+
         test_function(qv_1)
     # print(qv_1.qs)
-    assert qv_1.get_measurement() == {"1" : 1.0}
-    
+    assert qv_1.get_measurement() == {"1": 1.0}
+
     # Test whether qubit management and compilation are still working without performance loss
-    for n in [3,4,7,8]:
-        for a in range(2**n-1):
-            
+    for n in [3, 4, 7, 8]:
+        for a in range(2**n - 1):
+
             for i in range(6):
                 b = QuantumFloat(n)
                 h(b)
-                
+
                 qbl = QuantumBool()
-                
+
                 # Semi classical qcla is custom controlled
                 with control(qbl):
                     qcla(a, b)
-                
+
                 from qrisp import t_depth_indicator
-                gate_speed = lambda x : t_depth_indicator(x, epsilon = 2**-10)
-                qc = b.qs.compile(gate_speed = gate_speed, compile_mcm = True)
-                
+
+                gate_speed = lambda x: t_depth_indicator(x, epsilon=2**-10)
+                qc = b.qs.compile(gate_speed=gate_speed, compile_mcm=True)
+
                 env_num_qubits = qc.num_qubits()
                 env_t_depth = qc.t_depth()
-                
+
                 b = QuantumFloat(n)
                 h(b)
                 qbl = QuantumBool()
-                
-                qcla(a, b, ctrl = qbl[0])
-                
-                qc = b.qs.compile(gate_speed = gate_speed, compile_mcm = True)
-                if env_num_qubits <= qc.num_qubits() +2 and env_t_depth <= qc.t_depth() + 2:
+
+                qcla(a, b, ctrl=qbl[0])
+
+                qc = b.qs.compile(gate_speed=gate_speed, compile_mcm=True)
+                if (
+                    env_num_qubits <= qc.num_qubits() + 2
+                    and env_t_depth <= qc.t_depth() + 2
+                ):
                     break
-                
+
             else:
                 assert False
-        

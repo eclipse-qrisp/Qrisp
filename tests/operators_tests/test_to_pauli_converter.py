@@ -16,19 +16,20 @@
 ********************************************************************************
 """
 
-from qrisp.operators import X, Y, Z, A, C, P0, P1
 from numpy.linalg import norm
+
+from qrisp.operators import P0, P1, A, C, X, Y, Z
+
 
 def test_to_pauli_converter():
 
-    operator_list = [lambda x : 1, X, Y, Z, A, C, P0, P1]
+    operator_list = [lambda x: 1, X, Y, Z, A, C, P0, P1]
 
-    for O0 in operator_list: 
+    for O0 in operator_list:
         for O1 in operator_list:
             for O2 in operator_list:
-                H = O0(0)*O1(1)*O2(2)
+                H = O0(0) * O1(1) * O2(2)
                 if isinstance(H, int):
                     continue
-                
-                assert norm(H.to_array() - H.to_pauli().to_array()) < 1E-5
 
+                assert norm(H.to_array() - H.to_pauli().to_array()) < 1e-5

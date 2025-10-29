@@ -16,14 +16,16 @@
 ********************************************************************************
 """
 
+
 def test_QAE():
-    from qrisp import QuantumBool, ry, z, QAE
     import numpy as np
 
-    def state_function(qb):
-        ry(np.pi/4,qb)
+    from qrisp import QAE, QuantumBool, ry, z
 
-    def oracle_function(qb):   
+    def state_function(qb):
+        ry(np.pi / 4, qb)
+
+    def oracle_function(qb):
         z(qb)
 
     qb = QuantumBool()
@@ -33,29 +35,37 @@ def test_QAE():
 
 
 def test_QAE_integration():
-    from qrisp import QuantumFloat, QuantumBool, control, z, h, ry, QAE
     import numpy as np
+
+    from qrisp import QAE, QuantumBool, QuantumFloat, control, h, ry, z
 
     # We compute the integral of f(x)=(sin(x))^2 from 0 to 1
     def state_function(inp, tar):
-        h(inp) # Distribution
-    
+        h(inp)  # Distribution
+
         N = 2**inp.size
         for k in range(inp.size):
             with control(inp[k]):
-                ry(2**(k+1)/N,tar)
-    
+                ry(2 ** (k + 1) / N, tar)
+
     def oracle_function(inp, tar):
         z(tar)
 
-    n = 6 # 2^n sampling points for integration
-    inp = QuantumFloat(n,-n)
+    n = 6  # 2^n sampling points for integration
+    inp = QuantumFloat(n, -n)
     tar = QuantumBool()
     input_list = [inp, tar]
 
-    prec = 3 # precision
+    prec = 3  # precision
     res = QAE(input_list, state_function, oracle_function, precision=prec)
     print(res)
-    assert res.get_measurement() == {0.125: 0.31334, 0.875: 0.31334, 0.25: 0.12557, 0.75: 0.12557, 0.0: 0.05096, 0.375: 0.02632, 0.625: 0.02632, 0.5: 0.01858}
-
-
+    assert res.get_measurement() == {
+        0.125: 0.31334,
+        0.875: 0.31334,
+        0.25: 0.12557,
+        0.75: 0.12557,
+        0.0: 0.05096,
+        0.375: 0.02632,
+        0.625: 0.02632,
+        0.5: 0.01858,
+    }

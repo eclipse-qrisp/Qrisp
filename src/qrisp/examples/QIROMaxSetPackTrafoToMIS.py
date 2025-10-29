@@ -16,12 +16,12 @@
 ********************************************************************************
 """
 
-from qrisp.algorithms.qiro import *
-from qrisp import QuantumVariable
+import random
+
 import networkx as nx
 
-
-import random
+from qrisp import QuantumVariable
+from qrisp.algorithms.qiro import *
 
 random.seed(105)
 # sets are given as list of lists

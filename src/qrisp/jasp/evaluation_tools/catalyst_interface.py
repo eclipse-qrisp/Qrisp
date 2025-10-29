@@ -18,20 +18,19 @@
 
 from functools import lru_cache
 
+import catalyst
+import jax.numpy as jnp
+import pennylane as qml
+from catalyst.jax_primitives import AbstractQreg, device_init_p, qalloc_p
 from jax import make_jaxpr
 from jax.extend.core import Literal
-import jax.numpy as jnp
-
-import pennylane as qml
-import catalyst
-from catalyst.jax_primitives import qalloc_p, device_init_p, AbstractQreg
 
 from qrisp.jasp import (
-    AbstractQubitArray,
-    AbstractQubit,
     AbstractQuantumCircuit,
-    eval_jaxpr,
+    AbstractQubit,
+    AbstractQubitArray,
     Jlist,
+    eval_jaxpr,
 )
 from qrisp.jasp.interpreter_tools.interpreters.catalyst_interpreter import (
     catalyst_eqn_evaluator,
@@ -117,7 +116,7 @@ def jaspr_to_catalyst_function(jaspr):
             rtd_lib=backend_info.lpath,
             rtd_name=backend_info.c_interface_name,
             rtd_kwargs=str(backend_info.kwargs),
-            auto_qubit_management = True
+            auto_qubit_management=True,
         )
 
         # Create the AbstractQreg

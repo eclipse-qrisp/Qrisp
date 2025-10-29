@@ -16,9 +16,11 @@
 ********************************************************************************
 """
 
-from qrisp import *
-import numpy as np
 from operator import itemgetter
+
+import numpy as np
+
+from qrisp import *
 
 
 def QUBO_obj(bitstring, Q):

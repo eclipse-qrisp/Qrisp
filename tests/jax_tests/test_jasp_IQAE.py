@@ -18,20 +18,31 @@
 
 
 def test_jasp_IQAE_integration():
-    from qrisp import QuantumFloat, QuantumBool, control, z, h, ry, IQAE, jrange, jaspify
     import numpy as np
+
+    from qrisp import (
+        IQAE,
+        QuantumBool,
+        QuantumFloat,
+        control,
+        h,
+        jaspify,
+        jrange,
+        ry,
+        z,
+    )
 
     # We compute the integral of f(x)=(sin(x))^2 from 0 to 1
     def state_function(inp, tar):
-        h(inp) # Distribution
-    
+        h(inp)  # Distribution
+
         N = 2**inp.size
         for k in jrange(inp.size):
             with control(inp[k]):
-                ry(2**(k+1)/N,tar)
+                ry(2 ** (k + 1) / N, tar)
 
-    n = 6 # 2^n sampling points for integration
-    inp = QuantumFloat(n,-n)
+    n = 6  # 2^n sampling points for integration
+    inp = QuantumFloat(n, -n)
     tar = QuantumBool()
     input_list = [inp, tar]
 
@@ -42,6 +53,4 @@ def test_jasp_IQAE_integration():
     def main():
         return IQAE(input_list, state_function, eps=eps, alpha=alpha)
 
-    assert np.abs(main()-0.26716231971793425)<0.01
-
-
+    assert np.abs(main() - 0.26716231971793425) < 0.01

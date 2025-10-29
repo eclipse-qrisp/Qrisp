@@ -16,16 +16,16 @@
 ********************************************************************************
 """
 
-import numpy as np
 import warnings
+
+import numpy as np
+import sympy as sp
 
 from qrisp.operators import Hamiltonian
 from qrisp.operators.fermionic.fermionic_term import FermionicTerm
 from qrisp.operators.fermionic.trotterization import fermionic_trotterization
 from qrisp.operators.hamiltonian_tools import group_up_iterable
 from qrisp.operators.qubit import QubitOperator
-
-import sympy as sp
 
 threshold = 1e-9
 

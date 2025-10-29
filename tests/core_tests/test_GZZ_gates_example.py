@@ -16,20 +16,20 @@
 ********************************************************************************
 """
 
-# Created by ann81984 at 05.05.2022
-import pytest
 import numpy as np
 
-from qrisp import QuantumSession, QuantumVariable, QuantumCircuit
+# Created by ann81984 at 05.05.2022
+import pytest
+
+from qrisp import QuantumCircuit, QuantumSession, QuantumVariable, x
 from qrisp.misc.GMS_tools import (
-    gms_multi_cx_fan_out,
-    gms_multi_cx_fan_in,
-    gms_multi_cp_gate,
-    gms_multi_cp_gate_mono_phase,
     GXX_wrapper,
     GZZ_converter,
+    gms_multi_cp_gate,
+    gms_multi_cp_gate_mono_phase,
+    gms_multi_cx_fan_in,
+    gms_multi_cx_fan_out,
 )
-from qrisp import x
 
 
 def test_GZZ_gates_example():
@@ -37,8 +37,9 @@ def test_GZZ_gates_example():
     # M = np.array([[0,0,1,1,1,1,0,1,0], [0,1,0,0,1,0,1,1,1],[0,1,0,1,1,1,0,0,1],[1,0,0,0,1,1,0,0,0],[0,0,1,0,1,1,0,0,1],[1,1,1,0,1,1,1,1,1],[1,1,0,0,0,1,1,0,0],[0,1,1,0,1,1,0,0,0],[0,1,0,0,0,1,1,0,1]])
 
     def generate_random_inv_matrix(n, bit):
-        from qrisp.misc import is_inv
         import random
+
+        from qrisp.misc import is_inv
 
         found = False
 

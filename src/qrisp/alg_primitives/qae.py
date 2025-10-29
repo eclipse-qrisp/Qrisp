@@ -16,8 +16,8 @@
 ********************************************************************************
 """
 
-from qrisp.alg_primitives.qpe import QPE
 from qrisp.alg_primitives.amplitude_amplification import amplitude_amplification
+from qrisp.alg_primitives.qpe import QPE
 
 
 def QAE(

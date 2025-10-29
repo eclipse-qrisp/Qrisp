@@ -16,58 +16,57 @@
 ********************************************************************************
 """
 
-import pytest
 import time
+
+import pytest
 
 from qrisp import *
 
+
 def test_jones_mcx():
-    compilation_kwargs = {"compile_mcm" : True}
+    compilation_kwargs = {"compile_mcm": True}
     for i in range(4):
-        
+
         ctrl = QuantumFloat(2)
         target = QuantumBool()
-        
+
         ctrl[:] = i
-        mcx(ctrl, target, method = "jones")
+        mcx(ctrl, target, method="jones")
         with invert():
-            mcx(ctrl, target, method = "jones")
-        
-        assert ctrl.get_measurement(compilation_kwargs = compilation_kwargs) == {i : 1}
-        
-        
+            mcx(ctrl, target, method="jones")
+
+        assert ctrl.get_measurement(compilation_kwargs=compilation_kwargs) == {i: 1}
+
         ctrl = QuantumFloat(2)
         target = QuantumBool()
         ctrl[:] = i
-        
+
         h(ctrl)
-        mcx(ctrl, target, method = "jones")
+        mcx(ctrl, target, method="jones")
         with invert():
-            mcx(ctrl, target, method = "jones")
+            mcx(ctrl, target, method="jones")
         h(ctrl)
-        
-        assert ctrl.get_measurement(compilation_kwargs = compilation_kwargs) == {i : 1}
-        
+
+        assert ctrl.get_measurement(compilation_kwargs=compilation_kwargs) == {i: 1}
+
         ctrl = QuantumFloat(2)
         target = QuantumBool()
-        
+
         ctrl[:] = i
-        mcx(ctrl, target, method = "jones")
+        mcx(ctrl, target, method="jones")
         target.uncompute()
-        
-        assert ctrl.get_measurement(compilation_kwargs = compilation_kwargs) == {i : 1}
-        
-        
+
+        assert ctrl.get_measurement(compilation_kwargs=compilation_kwargs) == {i: 1}
+
         ctrl = QuantumFloat(2)
         target = QuantumBool()
         ctrl[:] = i
-        
+
         h(ctrl)
-        mcx(ctrl, target, method = "jones")
+        mcx(ctrl, target, method="jones")
         target.uncompute()
         h(ctrl)
-        
-        assert ctrl.get_measurement(compilation_kwargs = compilation_kwargs) == {i : 1}
-        
+
+        assert ctrl.get_measurement(compilation_kwargs=compilation_kwargs) == {i: 1}
+
     print(target.qs.compile(**compilation_kwargs).transpile())
-        

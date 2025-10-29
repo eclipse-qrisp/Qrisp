@@ -26,8 +26,9 @@ https://qunicorn-core.readthedocs.io/en/latest/index.html
 
 
 """
-import requests
 import time
+
+import requests
 
 
 class BackendClient:

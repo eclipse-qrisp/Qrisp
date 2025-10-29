@@ -17,6 +17,7 @@
 """
 
 import time
+
 from qrisp import (
     QuantumArray,
     QuantumBool,

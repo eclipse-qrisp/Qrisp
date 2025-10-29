@@ -18,23 +18,23 @@
 
 import inspect
 
-from jax.lax import while_loop, cond
 import jax
 import jax.numpy as jnp
+from jax.lax import cond, while_loop
 
 from qrisp.circuit import XGate
 from qrisp.jasp import (
-    TracingQuantumSession,
     AbstractQubitArray,
     DynamicQubitArray,
+    TracingQuantumSession,
     qache,
 )
 from qrisp.jasp.primitives import (
     Measurement_p,
     OperationPrimitive,
+    delete_qubits_p,
     get_qubit_p,
     get_size_p,
-    delete_qubits_p,
     reset_p,
 )
 
@@ -278,16 +278,15 @@ def RUS(*trial_function, **jit_kwargs):
     # From the infered output signature the q_while_loop is constructed
 
     def return_function(*trial_args):
-        
-        from qrisp.jasp import q_while_loop, q_cond
-        from qrisp.core import recursive_qv_search, reset
 
+        from qrisp.core import recursive_qv_search, reset
+        from qrisp.jasp import q_cond, q_while_loop
 
         abs_qs = TracingQuantumSession.get_instance()
 
         initial_gc_mode = abs_qs.gc_mode
-        
-        # Set the garbage collection mode to temporarily auto to collect 
+
+        # Set the garbage collection mode to temporarily auto to collect
         # any ancillas that have not been deleted.
         abs_qs.gc_mode = "auto"
         # Execute the function
@@ -295,8 +294,7 @@ def RUS(*trial_function, **jit_kwargs):
         first_iter_res = qached_function(*trial_args)
 
         abs_qs.gc_mode = initial_gc_mode
-        
-        
+
         # Filter out the static arguments
         if "static_argnums" in jit_kwargs:
             static_argnums = jit_kwargs["static_argnums"]
@@ -304,24 +302,23 @@ def RUS(*trial_function, **jit_kwargs):
                 static_argnums = [static_argnums]
         else:
             static_argnums = []
-        
+
         if "static_argnames" in jit_kwargs:
             argname_list = inspect.getfullargspec(trial_function)
             for i in range(len(argname_list)):
                 if argname_list[i] in jit_kwargs["static_argnames"]:
                     static_argnums.append(i)
-        
-        
+
         dynamic_args = []
-        
+
         for i in range(len(trial_args)):
             if i not in static_argnums:
                 dynamic_args.append(trial_args[i])
 
-        n_arg_vals = len(dynamic_args)        
-        
+        n_arg_vals = len(dynamic_args)
+
         # Next we construct the body of the loop
-        # The q_while_loop receives a tuple of arguments and 
+        # The q_while_loop receives a tuple of arguments and
         # also returns a tuple with the same signature.
         # We therefore combine the results of the first iteration with
         # the arguments to execute the loop.
@@ -330,24 +327,23 @@ def RUS(*trial_function, **jit_kwargs):
 
         # This is the body function of the while loop
         def body_fun(args):
-            
+
             # The first step is to reset and delete the results
             # from the previous iteration
             qv_results = recursive_qv_search(args[n_arg_vals:])
-            
+
             abs_qs = TracingQuantumSession.get_instance()
             for qv in qv_results:
                 abs_qs.register_qv(qv, None)
                 reset(qv)
                 qv.delete()
 
-            
             # We now construct the arguments for the function call of
             # the current iteration.
             # For this, we combine the dynamic arguments with the static
             # arguments.
             dynamic_args = list(args[:n_arg_vals])
-            
+
             new_trial_args = []
             for i in range(len(trial_args)):
                 if i not in static_argnums:
@@ -355,11 +351,11 @@ def RUS(*trial_function, **jit_kwargs):
                 else:
                     new_trial_args.append(trial_args[i])
 
-            # Set the garbage collection mode to auto and call the function            
+            # Set the garbage collection mode to auto and call the function
             abs_qs.gc_mode = "auto"
             trial_res = qached_function(*new_trial_args)
             abs_qs.gc_mode = initial_gc_mode
-            
+
             # Update the tuple with initial args and the new results
             combined_args = tuple(list(args[:n_arg_vals]) + list(trial_res))
             return combined_args
@@ -384,11 +380,11 @@ def RUS(*trial_function, **jit_kwargs):
 
         # Evaluate everything
         combined_res = q_cond(first_iter_res[0], true_fun, false_fun, combined_args)
-        
+
         # Return the results
         if len(first_iter_res) == 2:
-            return combined_res[n_arg_vals+1]
+            return combined_res[n_arg_vals + 1]
         else:
-            return combined_res[n_arg_vals+1:]
+            return combined_res[n_arg_vals + 1 :]
 
     return return_function

@@ -16,10 +16,11 @@
 ********************************************************************************
 """
 
-# Created by ann81984 at 05.05.2022
-from qrisp import QuantumVariable, x, h, merge
-from qrisp.environments.GMS_environment import GMSEnvironment
 import numpy as np
+
+# Created by ann81984 at 05.05.2022
+from qrisp import QuantumVariable, h, merge, x
+from qrisp.environments.GMS_environment import GMSEnvironment
 
 
 def test_GMS_environment_example():

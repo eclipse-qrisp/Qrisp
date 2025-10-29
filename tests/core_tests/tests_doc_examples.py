@@ -18,7 +18,7 @@
 
 
 def test_QuantumArray_indexing():
-    from qrisp import QuantumBool, QuantumArray, QuantumFloat, h, multi_measurement
+    from qrisp import QuantumArray, QuantumBool, QuantumFloat, h, multi_measurement
 
     q_array = QuantumArray(QuantumBool(), shape=(4, 4))
     index_0 = QuantumFloat(2)
@@ -79,20 +79,21 @@ def test_QuantumFloat():
 
 
 def test_ConditionEnvironment():
+    import numpy as np
+
     from qrisp import (
+        ConditionEnvironment,
+        QuantumBool,
         QuantumChar,
         QuantumFloat,
-        QuantumBool,
         QuantumVariable,
-        h,
-        x,
         cx,
+        h,
         mcx,
-        p,
         multi_measurement,
-        ConditionEnvironment,
+        p,
+        x,
     )
-    import numpy as np
 
     q_ch = QuantumChar()
     qf = QuantumFloat(3, signed=True)
@@ -145,7 +146,7 @@ def test_ConditionEnvironment():
 
 
 def test_InversionEnvironment():
-    from qrisp import QuantumFloat, invert, QuantumBool, h, q_mult, multi_measurement
+    from qrisp import QuantumBool, QuantumFloat, h, invert, multi_measurement, q_mult
 
     qf = QuantumFloat(3)
 
