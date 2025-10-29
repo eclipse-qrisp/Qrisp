@@ -109,7 +109,7 @@ class BigInteger:
         return cls(*children)
 
     @staticmethod
-    def create_static(n, size=2):
+    def create_static(n, size):
         """
         Create a BigInteger from Python using pure Python loops.
 
@@ -122,7 +122,7 @@ class BigInteger:
         n : int or float
             Non-negative number. Floats are truncated; very large floats
             (> 2**53) may lose precision before conversion.
-        size : int, default=2
+        size : int
             Number of limbs (digits) to allocate.
 
         Returns
@@ -137,7 +137,7 @@ class BigInteger:
         return BigInteger(jnp.array(digits, dtype=DTYPE))
 
     @staticmethod
-    def create(n, size=2):
+    def create(n, size):
         """
         Create a BigInteger using JAX primitives.
 
@@ -149,7 +149,7 @@ class BigInteger:
         n : int or float or jnp.integer or jnp.floating
             Non-negative number. Floats are truncated; very large floats
             (> 2**53) may lose precision before conversion.
-        size : int, default=2
+        size : int
             Number of limbs (digits) to allocate.
 
         Returns
@@ -172,7 +172,7 @@ class BigInteger:
         return BigInteger(digits)
 
     @staticmethod
-    def create_dynamic(n, size=2):
+    def create_dynamic(n, size):
         """
         Alias of `create`.
 
@@ -180,7 +180,7 @@ class BigInteger:
         ----------
         n : int or float or jnp.integer or jnp.floating
             Non-negative number.
-        size : int, default=2
+        size : int
             Number of limbs (digits) to allocate.
 
         Returns

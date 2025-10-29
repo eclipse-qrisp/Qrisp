@@ -27,6 +27,30 @@ Here's a basic example that demonstrates the use of ``BigInteger``:
 
 Note that we use the ``__call__`` method (``x()``) to approximate the ``BigInteger`` as a nicely-readable float.
 
+The ``BigInteger`` natively works with the ``QuantumModulus``:
+
+.. code-block:: python
+
+    from qrisp import *
+
+    @boolean_simulation
+    def main():
+        N = BigInteger.create_static(340282366762482138434845932244680310783, size=4)
+        a = BigInteger.create_static(131313, size=4)
+
+        qm = QuantumModulus(N)
+        qm[:] = 1
+
+        for i in jrange(10):
+            qm *= a
+
+        return measure(qm)()
+
+    print(main())
+    # Output: 1.63367308e+38
+
+Here, we use the ``create_static`` method to transform a Python integer that is larger than 64 bits into a ``BigInteger``.
+
 Class Documentation
 -------------------
 
