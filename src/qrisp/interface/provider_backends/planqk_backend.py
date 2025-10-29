@@ -109,9 +109,9 @@ class PlanQKBackend(VirtualBackend):
 
         backend = provider.get_backend(device_instance)
         #provider = AQTProvider(api_token)
-        
-
         def run_planqk(qasm_str, shots, token):
+            #result_dic = {}
+            #return result_dic 
 
             # Create the run method
             if shots is None:
@@ -123,28 +123,55 @@ class PlanQKBackend(VirtualBackend):
 
             # Make circuit with one monolithic register
             new_qiskit_qc = QuantumCircuit(len(qiskit_qc.qubits), len(qiskit_qc.clbits))
+            measured_dict = {}
+            #print()
             for instr in qiskit_qc:
-                new_qiskit_qc.append(
-                    instr.operation,
-                    [qiskit_qc.qubits.index(qb) for qb in instr.qubits],
-                    [qiskit_qc.clbits.index(cb) for cb in instr.clbits],
-                )
-
+                print(instr)
+                if instr.name =="measure":
+                    measured_dict.setdefault(instr.qubits[0]._register.name,instr.clbits[0]._register.name)
+                    pass
+                else:
+                    new_qiskit_qc.append(
+                        instr.operation,
+                        [qiskit_qc.qubits.index(qb) for qb in instr.qubits],
+                        [qiskit_qc.clbits.index(cb) for cb in instr.clbits],
+                        
+                    )
+            print(measured_dict)
+            
+            new_qiskit_qc.measure_all()
+            
             from qiskit import transpile
             qiskit_qc = transpile(new_qiskit_qc, backend=backend)
-            job = backend.run([qiskit_qc], shots=shots)     
+            try:
+                job = backend.run([qiskit_qc], shots=shots)
+            except ValueError as e:
+                if "QISKIT_QPY" in str(e):
+                    # Convert to supported format
+                    qiskit_qc = QuantumCircuit.from_qasm_str(qiskit_qc.qasm())
+                    job = backend.run([qiskit_qc], shots=shots)
+                else:
+                    raise
             result = job.result()
-            planqk_result = result.results[0].data.probabilities
             
-            # Remove the spaces in the qiskit result keys
+            planqk_result = result.results[0].data.counts
+
+            print(qiskit_qc)
+            print(planqk_result)
+            # Remove the ancilla qubits 
             result_dic = {}
             import re
-
+            sum_counts = sum(list(planqk_result.values()))
+            n_qubs = len(qiskit_qc.qubits)
+            len_keys = len(list(measured_dict.values()))
             for key in planqk_result.keys():
                 counts_string = re.sub(r"\W", "", key)
-                result_dic[counts_string] = planqk_result[key]
+                counts_string = counts_string[:(n_qubs-len_keys)][::-1]
+                result_dic[counts_string] = planqk_result[key]/sum_counts
+            
 
-            return result_dic  
+            #result_dic = {}
+            return result_dic   
 
         super().__init__(run_planqk)
 
