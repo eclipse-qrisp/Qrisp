@@ -16,45 +16,63 @@
 ********************************************************************************
 """
 
-import time
-
 import numpy as np
 from scipy.optimize import minimize
-from sympy import Symbol
-
-from qrisp import QuantumArray, h, x
-from qrisp.algorithms.qaoa.qaoa_benchmark_data import QAOABenchmark
-
-import jax
-import jax.numpy as jnp
-from qrisp.jasp import check_for_tracing_mode, sample, jrange
-from qrisp.jasp.optimization_tools.optimize import minimize as jasp_minimize
 import sympy as sp
 from qrisp.algorithms.cold.crab import CRABObjective
+from qrisp import h
 
 class DCQOProblem:
+    """
+    General structure to formulate Digitized Counterdiabaric Quantum Optimization problems.
+    This class is used to solve DCQA problems with the algorithms COLD, LCD and or a nonlocal AGP,
+    depending on the parameters given by the user.
+
+    Parameters
+    ----------
+    qarg_prep : callable
+        A function receiving a :ref:`QuantumVariable` for preparing the inital state.
+        By default, the uniform superposition state $\ket{+}^n$ is prepared.
+    sympy_lambda : callable
+        A function $\lambda(t, T)$ mapping $t \in$ [0, T] to $\lambda \in$ [0, 1]. This function needs to return
+        a sympy expression with $t$ and $T$ as sympy Symbols.
+    alpha : callable
+        The parameters for the adiabatic gauge potential (AGP). If the COLD method is being used,
+        alpha must depend on the optimization pulses in ``H_control``.
+    H_init : :ref:`QubitOperator`
+        Hamiltonian, the system is at the time t=0.
+    H_prob : :ref:`QubitOperator`
+        Hamiltonian, the system evolves to for t=T.
+    A_lam : :ref:`QubitOperator`
+        Operator holding an appoximation for the adiabatic gauge potential (AGP).
+    H_control : :ref:`QubitOperator`, optional
+        Hamiltonian specifying the control pulses for the COLD method. If not given, the LCD method is used automatically.
+    callback : bool, optional
+        If ``True``, intermediate results are stored. The default is ``False``.
+    """
+
     def __init__(
         self, 
-        qarg_prep, 
         sympy_lambda, 
         alpha,
-        H_i,
-        H_p,
+        H_init,
+        H_prob,
         A_lam,
         H_control=None,
+        qarg_prep=None, 
         callback=False
 
     ):
         
-        self.qarg_prep = qarg_prep
         self.sympy_lambda = sympy_lambda
         self.alpha = alpha
-        self.H_i = H_i
-        self.H_p = H_p
+        self.H_init = H_init
+        self.H_prob = H_prob
         self.A_lam = A_lam
         self.H_control = H_control
+        self.qarg_prep = qarg_prep
         
-        # parameters for callback
+        # Parameters for callback
         self.callback = callback
         self.optimization_params = []
         self.optimization_costs = []
@@ -67,52 +85,98 @@ class DCQOProblem:
 
         self.callback = True
 
-    def set_init_function(self, init_function):
+    def precompute_timegrid(self, N_steps, T):
         """
-        Set the initial state preparation function for the QAOA problem.
+        Compute lambda(t, T) and the time-derivative lambdadot(t, T) 
+        for each timestep.
 
         Parameters
         ----------
-        init_function : function
-            The initial state preparation function for the specific QAOA problem instance.
+        N_steps : int
+            Number of timesteps.
+        T : float
+            Evolution time for the simulation.
+        
+        Returns
+        -------
+        lam : array
+            The parametrized timefunction, specified by ``sympy_lambda`` for t in [0, T].
+        lamdot : array
+            The time derivative of ``sympy_lambda`` for t in [0, T].
         """
-        self.init_function = init_function
 
-    
+        # Sympy symbols for t and T
+        t_sym, T_sym = sp.symbols('t T', real=True)
+        # Array for t values
+        dt = T/N_steps
+        t_list = np.linspace(dt, T, N_steps)
 
+        # Sympy functions for lam and lamdot
+        lam_func = sp.lambdify((t_sym, T_sym), self.sympy_lambda(), 'numpy')
+        lamdot_expr = sp.diff(self.sympy_lambda(), t_sym)
+        lamdot_func = sp.lambdify((t_sym, T_sym), lamdot_expr, 'numpy')
+
+        # Compute functions of values t_list
+        lam = lam_func(t_list, T)
+        lamdot = lamdot_func(t_list, T)
+
+        return lam, lamdot
 
     def apply_lcd_hamiltonian(self, qarg, N_steps, T):
+        """
+        Simulate the local counterdiabatic driving (LCD) Hamiltonian on a 
+        quantum argument via trotterization. The LCD Hamiltonian consists 
+        of the system Hamiltonian and the adiabatic gauge potential (AGP).
+
+        Parameters
+        ----------
+        qarg : :ref:`QuantumVariable`
+            The quantum argument to which the quantum circuit is applied.
+        N_steps : int
+            Number of steps in which the timefunction ``lambda'' is split up.
+        T : float
+            Evolution time for the simulation.
+        """
 
         self.qarg_prep(qarg)
-
-        # Precompute timegrid
         dt = T / N_steps
-        t_list = np.linspace(dt, T, int(N_steps))
-
-        tl, Tl = sp.symbols('t T', real=True)
-        lam_deriv_expr = sp.diff(self.sympy_lambda(), tl)
-        lam_t_func = sp.lambdify((tl, Tl), self.sympy_lambda(), 'numpy')
-        lam_deriv_func = sp.lambdify((tl, Tl), lam_deriv_expr, 'numpy')
-        lam = lam_t_func(t_list, T)
-        lamdot = lam_deriv_func(t_list, T)
-
+        
         # Apply hamiltonian to qarg for each timestep
         for s in range(N_steps):
 
             # Get alpha for the timestep
-            alph = self.alpha(lam[s])
+            alph = self.alpha(self.lam[s])
 
             # H_0 contribution scaled by dt
-            H_step = dt *(1-lam[s-1])* self.H_i + dt * lam[s-1]*self.H_p
+            H_step = (1-self.lam[s]) * self.H_init + self.lam[s] * self.H_prob
 
             # AGP contribution scaled by dt* lambda_dot(t)
-            H_step = dt * lamdot[s-1] * alph* self.A_lam
+            H_step += self.lamdot[s] * alph * self.A_lam
 
             # Get unitary from trotterization and apply to qarg
             U = H_step.trotterization()
-            U(qarg)
+            U(qarg, t=dt)
 
-    def apply_cold_hamiltonian(self, qarg, N_steps, T, beta, CRAB=False):
+    def apply_cold_hamiltonian(self, qarg, N_steps, T, opt_params, CRAB=False):
+        """
+        Simulate counterdiabatic optimized local driving (COLD) Hamiltonian 
+        on a quantumvariable via trotterization. The COLD Hamiltonian consists 
+        of the system Hamiltonian, the adiabatic gauge potential (AGP) and
+        local pulses (given by ``H_control``) with optimized parameters.
+
+        Parameters
+        ----------
+        qarg : :ref:`QuantumVariable`
+            The quantum argument to which the quantum circuit is applied.
+        N_steps : int
+            Number of steps in which the timefunction ``lambda'' is split up.
+        T : float
+            Evolution time for the simulation.
+        opt_params : list
+            Either the optimized parameters or the corresponding sympy Symbols.
+        CRAB : bool, optional
+            If ``True``, the CRAB optimization method is being used. The default is ``False``.
+        """
         
         def precompute_opt_pulses(t_list, N_opt):
             
@@ -124,11 +188,12 @@ class DCQOProblem:
                 t_list = sp.Array(t_list)
 
                 # Add symbols for random parameters to be called in optimizaton
-                r_params = [Symbol("r_"+str(i)) for i in range(N_opt)]
+                r_params = [sp.Symbol("r_"+str(i)) for i in range(N_opt)]
                 for k in range(N_opt):
                     sin_matrix[:, k] = sp.Matrix(t_list.applyfunc(lambda t: sp.sin(sp.pi * (k+1+r_params[k]) * t / T)))
                     cos_matrix[:, k] = sp.Matrix(t_list.applyfunc(lambda t: (sp.pi/T * (k+1+r_params[k])) * sp.cos(sp.pi * (k+1+r_params[k]) * t / T)))
 
+            # Use numpy if not random params are used
             else:
                 sin_matrix = np.zeros((N_steps, N_opt))
                 cos_matrix = np.zeros((N_steps, N_opt))
@@ -142,29 +207,16 @@ class DCQOProblem:
         # Initialize qarg
         self.qarg_prep(qarg)
 
-        # Precompute timegrid
-        N_steps = int(N_steps)
-        N_opt = len(beta)
+        # Precompute opt pulses
         dt = T / N_steps
         t_list = np.linspace(dt, T, int(N_steps))
+        sin_matrix, cos_matrix = precompute_opt_pulses(t_list, N_opt=len(opt_params))
 
-        tl, Tl = sp.symbols('t T', real=True)
-        lam_deriv_expr = sp.diff(self.sympy_lambda(), tl)
-        lam_t_func = sp.lambdify((tl, Tl), self.sympy_lambda(), 'numpy')
-        lam_deriv_func = sp.lambdify((tl, Tl), lam_deriv_expr, 'numpy')
-        lam = lam_t_func(t_list, T)
-        lamdot = lam_deriv_func(t_list, T)
-        sin_matrix, cos_matrix = precompute_opt_pulses(t_list,  N_opt)
-
+        # Transform opt_params to sympy to work with symbols for random values
         if CRAB:
-            # Transform beta to sympy to work with symbols for random values
-            beta = sp.Matrix(beta)
-
-        # Trotterize Hamiltonians with different time-dependent prefactors
-        """ U1 = self.H_i.trotterization()
-        U2 = self.H_p.trotterization()
-        U3 = self.A_lam.trotterization()
-        U4 = self.H_control.trotterization() """
+            beta = sp.Matrix(opt_params)
+        else:
+            beta = opt_params
 
         # Apply hamiltonian to qarg for each timestep
         for s in range(N_steps):
@@ -172,89 +224,89 @@ class DCQOProblem:
             # Get alpha, f and f_deriv for the timestep
             f = sin_matrix[s, :] @ beta
             f_deriv = cos_matrix[s, :] @ beta
-            alph = self.alpha(lam[s], f, f_deriv)
+            alph = self.alpha(self.lam[s], f, f_deriv)
             
+            # TODO: check ob nötig
             if hasattr(alph, "__len__"):
                 #print("has_len")
                 alph = alph[0]
                 f = f[0] 
 
             # H_0 contribution scaled by dt
-            H_step = dt *(1-lam[s])* self.H_i + dt * lam[s]*self.H_p
+            H_step = (1-self.lam[s]) * self.H_init + self.lam[s] * self.H_prob
 
             # AGP contribution scaled by dt* lambda_dot(t)
-            H_step = dt * lamdot[s] * alph* self.A_lam
+            H_step += self.lamdot[s] * alph* self.A_lam
 
             # Control pulse contribution 
-            H_step = H_step + dt * f*  self.H_control
+            H_step += f * self.H_control
+
             # Get unitary from trotterization and apply to qarg
             U = H_step.trotterization()
-            U(qarg)  
-
-            """ # Prefactor for U1
-            a = dt * (1 - lam[s-1])
-            U1(qarg, a)
-            # Prefactor for U2
-            b = dt * lam[s-1]
-            U2(qarg, b)
-            # Prefactor for U3
-            c = dt * lamdot[s-1] * alph
-            U3(qarg, c)
-            # Prefactor for U4
-            #if CRAB:
-            #    d = dt * f #+sum(f[i, 0] for i in range(f.rows)) # richtig?
-            #else:
-            d = dt * f
-            U4(qarg, d) """
-        
+            U(qarg, t=dt)  
 
     
-    def compile_U(self,qarg, N_opt, N_steps, T, CRAB=False):
-
-        temp = list(qarg.qs.data)
-        # Initzialize parameters as symbols
-        params = [Symbol("par_"+str(i)) for i in range(N_opt)]
-        self.apply_cold_hamiltonian(qarg, N_steps, T, params, CRAB=CRAB)
-        intended_measurements = list(qarg)
-        qc = qarg.qs.compile(intended_measurements=intended_measurements)
-        qarg.qs.data = temp
-
-        return qc
-
-
-    def optimization_routine(self, qarg, N_opt, qc, CRAB
-                             ): 
+    def compile_U(self, qarg, N_opt, N_steps, T, CRAB=False):
         """
-        Wrapper subroutine for the optimization method used in QAOA. The initial values are set and the optimization via ``COBYLA`` is conducted here.
+        Compiles the circuit that is evaluated by the :meth:`run <qrisp.cold.DCQOProblem.run>` method.
 
         Parameters
         ----------
-        qarg_prep : callable
-            A function returning a :ref:`QuantumVariable` or :ref:`QuantumArray` to which the QAOA circuit is applied.
-        depth : int
-            The amont of QAOA layers.
-        symbols : list
-            The list of symbols used in the quantum circuit.
-        mes_kwargs : dict, optional
-            The keyword arguments for the measurement function. Default is an empty dictionary, as defined in previous functions.
-        init_type : string, optional
-            Specifies the way the initial optimization parameters are chosen. Available are ``random`` and ``tqa``. The default is ``random``.
-        init_point : ndarray, shape (n,), optional
-            Specifies the initial optimization parameters.
+        qarg : :ref:`QuantumVariable`
+            The argument to which the COLD circuit is applied.
+        N_opt : int
+            Number of optimization parameters in ``H_control``.
+        N_steps : int
+            Number of timesteps.
+        T : float
+            Evolution time for the simulation.
+        CRAB : bool, optional
+            If ``True``, the CRAB optimization method is being used. The default is ``False``.
+        
+        Returns
+        -------
+        compiled_qc : :ref:`QuantumCircuit`
+            The compiled quantum circuit.
+
+        """
+
+        temp = list(qarg.qs.data)
+        # Initzialize parameters as symbols
+        params = [sp.Symbol("par_"+str(i)) for i in range(N_opt)]
+        self.apply_cold_hamiltonian(qarg, N_steps, T, params, CRAB=CRAB)
+        intended_measurements = list(qarg)
+        compiled_qc = qarg.qs.compile(intended_measurements=intended_measurements)
+        qarg.qs.data = temp
+
+        return compiled_qc
+
+
+    def optimization_routine(self, qarg, N_opt, qc, CRAB, optimizer, options
+                             ): 
+        """
+        Subroutine for the optimization method used in COLD. 
+        The initial values are set and the optimization via ``COBYLA`` is conducted here.
+
+        Parameters
+        ----------
+        qarg : :ref:`QuantumVariable`
+            The argument to which the H_prob circuit is applied.
+        N_opt : int
+            Number of optimization parameters in ``H_control``.
+        qc : :ref:`QuantumCircuit`
+            The COLD circuit that is applied before measuring the qarg.
+        CRAB : bool, optional
+            If ``True``, the CRAB optimization method is being used. The default is ``False``.
         optimizer : str, optional
             Specifies the `SciPy optimization routine <https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html>`_.
-            Available are, e.g., ``COBYLA``, ``COBYQA``, ``Nelder-Mead``. The Default is ``COBYLA``.
-            In tracing mode (i.e. Jasp) Jax-traceable :ref:`optimization routines <optimization_tools>` must be utilized.
-            Available are ``SPSA``. The Default is ``SPSA``.
+            The Default is ``Powell``.
         options : dict
             A dictionary of solver options.
 
         Returns
         -------
-        ndarray, shape (n,)
+        res.x: array
             The optimized parameters of the problem instance.
-        float or jax.Array
-            The expectation value of the classical cost function for the optimized parameters.
         """
 
         def objective(params):
@@ -262,9 +314,15 @@ class DCQOProblem:
             # Expectation value of the QUBO Hamiltonian
 
             # Dict to assign the optimization parameters
-            subs_dic = {Symbol("par_"+str(i)): params[i] for i in range(len(params))}
+            subs_dic = {sp.Symbol("par_"+str(i)): params[i] for i in range(len(params))}
 
-            cost = self.H_p.expectation_value(qarg, compile=False, subs_dic=subs_dic, precompiled_qc=qc)()
+            cost = self.H_prob.expectation_value(qarg, 
+                                                 compile=False, 
+                                                 subs_dic=subs_dic, 
+                                                 precompiled_qc=qc)()
+            
+            if self.callback:
+                self.optimization_costs.append(cost)
             
             return cost
         
@@ -272,22 +330,69 @@ class DCQOProblem:
 
         # Create CRAB objective to make sure randomization is applied at each optimization iteration
         if CRAB:
-            objective = CRABObjective(self.H_p, qarg, qc, N_opt)
+            objective = CRABObjective(self.H_prob, qarg, qc, N_opt)
         # Otherwise objective from above is used
         else:
             objective = objective
 
         res = minimize(objective,
                         init_point,
-                        method='Powell'
+                        method=optimizer,
+                        options=options
                         )
         
         return res.x
-    
 
-    def run(self, qarg, N_steps, T, N_opt=None, CRAB=False):
+    def run(
+        self, 
+        qarg, 
+        N_steps, 
+        T, 
+        N_opt=None, 
+        CRAB=False, 
+        optimizer="Powell",
+        options={}
+    ):
+        """
+        Run the specific DCQO problem instance with given quantum arguments, number of timesteps and
+        evolution time.
 
-        # create the H_p and A_lam via the usage of Q only here? 
+        Parameters
+        ----------
+        qarg : :ref:`QuantumVariable`
+            The argument to which the DCQO circuit is applied.
+        N_steps : int
+            Number of time steps in which the function ``lambda'' is split up.
+            Or: Number of time steps for the simulation.
+        T : float
+            Evolution time for the simulation.
+        N_opt : int
+            Number of optimization parameters in ``H_control``.
+        CRAB : bool
+            If ``True``, the CRAB optimization method is being used. The default is ``False``.
+        optimizer : str, optional
+            Specifies the `SciPy optimization routine <https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html>`_.
+            The Default is ``Powell``.
+        options : dict
+            A dictionary of solver options.
+
+        Returns
+        -------
+        dict
+            The optimal result after running DCQO problem for a specific problem instance. It contains the measurement results after applying the optimal DCQO circuit to the quantum argument.
+
+        """
+
+        # Compute time-function lamda(t, T) and the derivative lamdot(t, T)
+        self.lam, self.lamdot = self.precompute_timegrid(N_steps, T)
+
+        # If no prep for qarg is specified, use uniform superposition state
+        if self.qarg_prep is None:
+            def qarg_prep(q):
+                return h(q)
+            self.qarg_prep = qarg_prep
+
+        # Run COLD routine if H_control is given
         if self.H_control is not None:
             qarg1, qarg2 = qarg.duplicate(), qarg.duplicate()
 
@@ -295,14 +400,14 @@ class DCQOProblem:
             U_circuit = self.compile_U(qarg1, N_opt, N_steps, T, CRAB)
 
             # Find optimal params for control pulse
-            opt_params = self.optimization_routine(qarg2, N_opt, U_circuit, CRAB)
+            opt_params = self.optimization_routine(qarg2, N_opt, U_circuit, CRAB, optimizer, options)
 
             # Apply hamiltonian with optimal parameters
             # Here we do not want the randomized parameters to be included -> CRAB=False
             self.apply_cold_hamiltonian(qarg, N_steps, T, opt_params, CRAB=False)
 
+        # Otherwise run LCD routine
         else:
-            # Apply lcd hamiltonian without cold
             self.apply_lcd_hamiltonian(qarg, N_steps, T)
 
         # Measure qarg

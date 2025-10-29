@@ -129,11 +129,11 @@ def create_nl_QUBO(Q):
     return qarg_prep, H_i, H_p, A_lamb, H_control,  lam_t, alpha_nonlocal, alpha_LOCAL
 
 
-from qrisp.algorithms.cold.cold_algorithm import COLDproblem
+from qrisp.algorithms.cold.dcqo_problem import DCQOProblem
 
 qarg_prep, H_init, H_prob, A_lamb, H_control, lam_t, alpha_nonlocal, alpha_LOCAL = create_nl_QUBO(Q)
 
-cold_problem = COLDproblem(qarg_prep, lam_t, alpha_nonlocal, H_init, H_prob, A_lamb, H_control)
+cold_problem = DCQOProblem(lam_t, alpha_nonlocal, H_init, H_prob, A_lamb, H_control)
 #run(self, qarg, N_steps, T, N_opt, CRAB=False):
 qarg_cold = QuantumVariable(N)
 # Evolution time
@@ -150,7 +150,7 @@ print(meas_cold_crab)
 
 
 
-lcd_problem = COLDproblem(qarg_prep, lam_t, alpha_LOCAL, H_init, H_prob, A_lamb)
+lcd_problem = DCQOProblem(lam_t, alpha_LOCAL, H_init, H_prob, A_lamb)
 meas_lcd = lcd_problem.run(qarg_cold, int(N_steps), T)
 print(meas_lcd)
 
