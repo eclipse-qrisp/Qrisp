@@ -236,7 +236,7 @@ class DCQOProblem:
             H_step = (1-self.lam[s]) * self.H_init + self.lam[s] * self.H_prob
 
             # AGP contribution scaled by dt* lambda_dot(t)
-            H_step += self.lamdot[s] * alph* self.A_lam
+            H_step += self.lamdot[s] * alph * self.A_lam
 
             # Control pulse contribution 
             H_step += f * self.H_control
