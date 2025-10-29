@@ -187,3 +187,5 @@ source_suffix = ['.rst', '.md']
 #     "gitlab_repo": "Qrisp Compiler", # Repo name
 #     "conf_py_path": "/source/", # Path in the checkout to the docs root
 # }
+
+html_extra_path = ['_extra']  # copies contents of docs/_extra/ to _build/html/

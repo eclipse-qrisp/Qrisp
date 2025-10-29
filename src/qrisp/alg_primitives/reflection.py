@@ -45,7 +45,7 @@ def reflection(
 
     .. math::
 
-        R = ((1-e^{i\phi})\ket{\psi}\bra{\psi}-\mathbb I) = U^{\dagger}((1-e^{i\phi})\ket{0}\bra{0}-I)U,
+        R = ((1-e^{i\phi})\ket{\psi}\bra{\psi}-\mathbb I) = U((1-e^{i\phi})\ket{0}\bra{0}-I)U^{\dagger},
 
     where $\ket{\psi} = U\ket{0}$.
 

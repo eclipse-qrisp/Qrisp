@@ -127,11 +127,14 @@ def IQMBackend(
         for qc, shots in batch:
             qiskit_qc = qc.to_qiskit()
             qiskit_qc = transpiler(qiskit_qc)
+            
             circuit_batch.append(backend.serialize_circuit(qiskit_qc))
             if shots is None:
                 shots = 1000
 
             shot_batch.append(shots)
+            
+        
 
         UUID = client.submit_circuits(
             circuit_batch, options=compilation_options, shots=max(shot_batch)

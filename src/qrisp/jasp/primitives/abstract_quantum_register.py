@@ -17,7 +17,7 @@
 """
 
 import jax.numpy as jnp
-from jax.core import AbstractValue, ShapedArray
+from jax.core import AbstractValue, ShapedArray, Tracer
 from jax.extend.core import Primitive
 
 from qrisp.jasp.primitives import AbstractQubit, QuantumPrimitive
@@ -66,6 +66,8 @@ class AbstractQubitArray(AbstractValue):
 
 
 def get_qubit(qb_array, index):
+    if not isinstance(index, (Tracer, int)):
+        index = int(index)
     return get_qubit_p.bind(qb_array, index)
 
 

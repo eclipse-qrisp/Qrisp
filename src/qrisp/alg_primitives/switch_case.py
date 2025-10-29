@@ -527,5 +527,5 @@ def qswitch(
 
 
 temp = qswitch.__doc__
-qswitch = custom_inversion(qswitch)
+qswitch = custom_control(custom_inversion(qswitch))
 qswitch.__doc__ = temp
