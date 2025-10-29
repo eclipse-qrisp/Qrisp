@@ -123,16 +123,19 @@ def _create_qml_circuit(qrisp_circuit, inner_wires=None):
 
 
 def check_qml_operations(qml_circuit, expected_ops):
-    """Helper function to check if the PennyLane operations match the expected operations."""
+    """Helper function to check if the PennyLane operations in a circuit match the expected operations."""
     qml_ops = _get_qml_operations(qml_circuit)
     for op, expected_op in zip(qml_ops, expected_ops, strict=True):
         qml.assert_equal(op, expected_op)
 
 
-def check_probs_equivalence(qrisp_probs, qml_probs, atol=1e-8):
+def check_probs_measurement_equivalence(qrisp_qv, qml_res, atol=1e-8):
     """Helper function to check if the measurement probabilities from Qrisp and PennyLane are equivalent."""
 
-    qrisp_items = sorted(qrisp_probs.items(), key=lambda kv: int(kv[0], 2))
+    qrisp_res = qrisp_qv.get_measurement()
+    qml_probs = np.asarray(qml_res, dtype=float)
+
+    qrisp_items = sorted(qrisp_res.items(), key=lambda kv: int(kv[0], 2))
 
     for bitstring, q_prob in qrisp_items:
         idx = int(bitstring, 2)
@@ -165,10 +168,7 @@ class TestSingleGateConversion:
         expected_ops = [qml_gate_class(*params, wires=qv[0].identifier)]
         check_qml_operations(qml_circ, expected_ops)
 
-        qrisp_res = qv.get_measurement()
-        qml_res = np.asarray(qml_res, dtype=float)
-        atol = 1e-5 if params else 1e-8
-        check_probs_equivalence(qrisp_res, qml_res, atol=atol)
+        check_probs_measurement_equivalence(qv, qml_res, atol=1e-5 if params else 1e-8)
 
     def test_inner_wires(self):
         """Test conversion of a circuit with inner wires provided to the converter."""
@@ -188,9 +188,7 @@ class TestSingleGateConversion:
         ]
         check_qml_operations(qml_converted_circuit, expected_ops)
 
-        qrisp_res = qrisp_qv.get_measurement()
-        qml_res = np.asarray(qml_res, dtype=float)
-        check_probs_equivalence(qrisp_res, qml_res)
+        check_probs_measurement_equivalence(qrisp_qv, qml_res)
 
     def test_pauli_gates(self):
         """Test conversion of Pauli gates (X, Y, Z) from Qrisp to PennyLane."""
@@ -226,9 +224,7 @@ class TestSingleGateConversion:
         ]
         check_qml_operations(qml_converted_circuit, expected_ops)
 
-        qrisp_res = qrisp_qv.get_measurement()
-        qml_res = np.asarray(qml_res, dtype=float)
-        check_probs_equivalence(qrisp_res, qml_res)
+        check_probs_measurement_equivalence(qrisp_qv, qml_res)
 
     def test_rotation_gates(self):
         """Test conversion of rotation gates (RX, RY, RZ) from Qrisp to PennyLane."""
@@ -269,9 +265,7 @@ class TestSingleGateConversion:
         ]
         check_qml_operations(qml_converted_circuit, expected_ops)
 
-        qrisp_res = qrisp_qv.get_measurement()
-        qml_res = np.asarray(qml_res, dtype=float)
-        check_probs_equivalence(qrisp_res, qml_res, atol=1e-5)
+        check_probs_measurement_equivalence(qrisp_qv, qml_res, atol=1e-5)
 
     def test_phase_gates(self):
         """Test conversion of phase gates (P, S, T) from Qrisp to PennyLane."""
@@ -303,9 +297,7 @@ class TestSingleGateConversion:
         ]
         check_qml_operations(qml_converted_circuit, expected_ops)
 
-        qrisp_res = qrisp_qv.get_measurement()
-        qml_res = np.asarray(qml_res, dtype=float)
-        check_probs_equivalence(qrisp_res, qml_res)
+        check_probs_measurement_equivalence(qrisp_qv, qml_res)
 
     def test_h_sx_gates(self):
         """Test conversion of H and SX gates from Qrisp to PennyLane."""
@@ -336,9 +328,7 @@ class TestSingleGateConversion:
         ]
         check_qml_operations(qml_converted_circuit, expected_ops)
 
-        qrisp_res = qrisp_qv.get_measurement()
-        qml_res = np.asarray(qml_res, dtype=float)
-        check_probs_equivalence(qrisp_res, qml_res)
+        check_probs_measurement_equivalence(qrisp_qv, qml_res)
 
     def test_adjoint_gates(self):
         """Test conversion of adjoint gates from Qrisp to PennyLane."""
@@ -361,9 +351,7 @@ class TestSingleGateConversion:
         ]
         check_qml_operations(qml_converted_circuit, expected_ops)
 
-        qrisp_res = qrisp_qv.get_measurement()
-        qml_res = np.asarray(qml_res, dtype=float)
-        check_probs_equivalence(qrisp_res, qml_res)
+        check_probs_measurement_equivalence(qrisp_qv, qml_res)
 
 
 class TestMultiQubitGateConversion:
@@ -389,10 +377,7 @@ class TestMultiQubitGateConversion:
         expected_ops = [qml_gate_class(*params, wires=[q.identifier for q in targets])]
         check_qml_operations(qml_circ, expected_ops)
 
-        qrisp_res = qv.get_measurement()
-        qml_res = np.asarray(qml_res, dtype=float)
-        atol = 1e-5 if params else 1e-8
-        check_probs_equivalence(qrisp_res, qml_res, atol=atol)
+        check_probs_measurement_equivalence(qv, qml_res, atol=1e-5 if params else 1e-8)
 
     def test_swap_rxx_rzz_gates(self):
         """Test conversion of SWAP, RXX, RZZ gates from Qrisp to PennyLane."""
@@ -417,9 +402,7 @@ class TestMultiQubitGateConversion:
         ]
         check_qml_operations(qml_converted_circuit, expected_ops)
 
-        qrisp_res = qrisp_qv.get_measurement()
-        qml_res = np.asarray(qml_res, dtype=float)
-        check_probs_equivalence(qrisp_res, qml_res)
+        check_probs_measurement_equivalence(qrisp_qv, qml_res)
 
 
 class TestControlledGateConversion:
@@ -442,10 +425,7 @@ class TestControlledGateConversion:
         ]
         check_qml_operations(qml_circ, expected_ops)
 
-        qrisp_res = qv.get_measurement()
-        qml_res = np.asarray(qml_res, dtype=float)
-        atol = 1e-5 if params else 1e-8
-        check_probs_equivalence(qrisp_res, qml_res, atol=atol)
+        check_probs_measurement_equivalence(qv, qml_res, atol=1e-5 if params else 1e-8)
 
     def test_cx_cz_cy_gates(self):
         """Test conversion of CX, CZ, CY gates from Qrisp to PennyLane."""
@@ -466,9 +446,7 @@ class TestControlledGateConversion:
         ]
         check_qml_operations(qml_converted_circuit, expected_ops)
 
-        qrisp_res = qrisp_qv.get_measurement()
-        qml_res = np.asarray(qml_res, dtype=float)
-        check_probs_equivalence(qrisp_res, qml_res)
+        check_probs_measurement_equivalence(qrisp_qv, qml_res)
 
     def test_mcx_gate(self):
         """Test conversion of MCX gate from Qrisp to PennyLane."""
@@ -496,9 +474,7 @@ class TestControlledGateConversion:
         ]
         check_qml_operations(qml_converted_circuit, expected_ops)
 
-        qrisp_res = qrisp_qv.get_measurement()
-        qml_res = np.asarray(qml_res, dtype=float)
-        check_probs_equivalence(qrisp_res, qml_res)
+        check_probs_measurement_equivalence(qrisp_qv, qml_res)
 
     def test_mcrx_gate(self):
         """Test conversion of MCRX gate from Qrisp to PennyLane."""
@@ -526,9 +502,7 @@ class TestControlledGateConversion:
         ]
         check_qml_operations(qml_converted_circuit, expected_ops)
 
-        qrisp_res = qrisp_qv.get_measurement()
-        qml_res = np.asarray(qml_res, dtype=float)
-        check_probs_equivalence(qrisp_res, qml_res)
+        check_probs_measurement_equivalence(qrisp_qv, qml_res)
 
     @pytest.mark.parametrize(
         "gate_class, qml_gate_class",
@@ -568,9 +542,7 @@ class TestControlledGateConversion:
         ]
         check_qml_operations(qml_converted_circuit, expected_ops)
 
-        qrisp_res = qrisp_qv.get_measurement()
-        qml_res = np.asarray(qml_res, dtype=float)
-        check_probs_equivalence(qrisp_res, qml_res)
+        check_probs_measurement_equivalence(qrisp_qv, qml_res)
 
     def test_controlled_adjoint_gate(self):
         """Test conversion of controlled adjoint gates from Qrisp to PennyLane."""
@@ -609,9 +581,8 @@ class TestControlledGateConversion:
             ),
         ]
         check_qml_operations(qml_converted_circuit, expected_ops)
-        qrisp_res = qrisp_qv.get_measurement()
-        qml_res = np.asarray(qml_res, dtype=float)
-        check_probs_equivalence(qrisp_res, qml_res)
+
+        check_probs_measurement_equivalence(qrisp_qv, qml_res)
 
 
 def test_mixed_circuit():
@@ -688,6 +659,5 @@ def test_mixed_circuit():
     ]
 
     check_qml_operations(qml_converted_circuit, expected_ops)
-    qrisp_res = qrisp_qv.get_measurement()
-    qml_res = np.asarray(qml_res, dtype=float)
-    check_probs_equivalence(qrisp_res, qml_res, atol=1e-4)
+
+    check_probs_measurement_equivalence(qrisp_qv, qml_res, atol=1e-4)
