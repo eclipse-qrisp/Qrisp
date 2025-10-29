@@ -17,4 +17,4 @@
 """
 
 from qrisp.algorithms.cold.crab import * 
-from qrisp.algorithms.cold.cold_algorithm import *
+from qrisp.algorithms.cold.dcqo_problem import *
