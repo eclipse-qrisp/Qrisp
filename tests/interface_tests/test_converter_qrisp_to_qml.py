@@ -16,25 +16,13 @@
 ********************************************************************************
 """
 
-"""
-TODO:
-
--- Add test with parameters provided the the converter as argument
--- Add test with abstract parameters (sympy.Symbol) in the Qrisp circuit
--- Add test with `measure` operations in the circuit
--- Add test with all the imported gates
-
-"""
-
-# pylint: disable=line-too-long
-
 import numpy as np
 import pennylane as qml
 import pytest
 
 from qrisp import QuantumVariable
 from qrisp.circuit.standard_operations import (
-    Barrier,
+    # Barrier,
     CPGate,
     CXGate,
     CYGate,
@@ -44,12 +32,12 @@ from qrisp.circuit.standard_operations import (
     IDGate,
     MCRXGate,
     MCXGate,
-    Measurement,
+    # Measurement,
     PGate,
-    QubitAlloc,
-    QubitDealloc,
-    Reset,
-    RGate,
+    # QubitAlloc,
+    # QubitDealloc,
+    # Reset,
+    # RGate,
     RXGate,
     RXXGate,
     RYGate,
@@ -57,12 +45,10 @@ from qrisp.circuit.standard_operations import (
     RZZGate,
     SGate,
     SwapGate,
-    SXDGGate,
     SXGate,
     TGate,
     U1Gate,
     XGate,
-    XXYYGate,
     YGate,
     ZGate,
     u3Gate,
@@ -109,6 +95,7 @@ def _get_qml_operations(qml_circuit):
     return qml_ops
 
 
+# The circuit returned should be executed to populate the tape
 def _create_qml_circuit(qrisp_circuit, inner_wires=None):
     """
     Helper function to create a PennyLane circuit from a Qrisp circuit.
@@ -193,8 +180,6 @@ class TestSingleGateConversion:
 
         inner_wires = ["aux_0", "aux_1"]
         qml_converted_circuit = _create_qml_circuit(qrisp_qv, inner_wires=inner_wires)
-
-        # We execute the circuit to populate the tape
         qml_res = qml_converted_circuit()
 
         expected_ops = [
@@ -226,8 +211,6 @@ class TestSingleGateConversion:
         qrisp_qs.append(ZGate(), qrisp_qv[0])
 
         qml_converted_circuit = _create_qml_circuit(qrisp_qv)
-
-        # We execute the circuit to populate the tape
         qml_res = qml_converted_circuit()
 
         expected_ops = [
@@ -269,8 +252,6 @@ class TestSingleGateConversion:
         qrisp_qs.append(RZGate(np.pi / 9), qrisp_qv[0])
 
         qml_converted_circuit = _create_qml_circuit(qrisp_qv)
-
-        # We execute the circuit to populate the tape
         qml_res = qml_converted_circuit()
 
         expected_ops = [
@@ -309,8 +290,6 @@ class TestSingleGateConversion:
         qrisp_qs.append(TGate(), qrisp_qv[1])
 
         qml_converted_circuit = _create_qml_circuit(qrisp_qv)
-
-        # We execute the circuit to populate the tape
         qml_res = qml_converted_circuit()
 
         expected_ops = [
@@ -344,8 +323,6 @@ class TestSingleGateConversion:
         qrisp_qs.append(HGate(), qrisp_qv[1])
 
         qml_converted_circuit = _create_qml_circuit(qrisp_qv)
-
-        # We execute the circuit to populate the tape
         qml_res = qml_converted_circuit()
 
         expected_ops = [
@@ -374,8 +351,6 @@ class TestSingleGateConversion:
         qrisp_qs.append(RXGate(0.5).inverse(), qrisp_qv[0])
 
         qml_converted_circuit = _create_qml_circuit(qrisp_qv)
-
-        # We execute the circuit to populate the tape
         qml_res = qml_converted_circuit()
 
         expected_ops = [
@@ -409,7 +384,7 @@ class TestMultiQubitGateConversion:
         qs.append(qrisp_gate_class(*params), targets)
 
         qml_circ = _create_qml_circuit(qv)
-        qml_res = qml_circ()  # populate tape
+        qml_res = qml_circ()
 
         expected_ops = [qml_gate_class(*params, wires=[q.identifier for q in targets])]
         check_qml_operations(qml_circ, expected_ops)
@@ -429,8 +404,6 @@ class TestMultiQubitGateConversion:
         qrisp_qs.append(RZZGate(np.pi / 4), [qrisp_qv[1], qrisp_qv[0]])
 
         qml_converted_circuit = _create_qml_circuit(qrisp_qv)
-
-        # We execute the circuit to populate the tape
         qml_res = qml_converted_circuit()
 
         expected_ops = [
@@ -462,7 +435,7 @@ class TestControlledGateConversion:
         qs.append(qrisp_gate_class(*params), [qv[0], qv[1]])
 
         qml_circ = _create_qml_circuit(qv)
-        qml_res = qml_circ()  # populate tape
+        qml_res = qml_circ()
 
         expected_ops = [
             qml_gate_class(*params, wires=[q.identifier for q in [qv[0], qv[1]]])
@@ -484,8 +457,6 @@ class TestControlledGateConversion:
         qrisp_qs.append(CYGate(), [qrisp_qv[2], qrisp_qv[0]])
 
         qml_converted_circuit = _create_qml_circuit(qrisp_qv)
-
-        # We execute the circuit to populate the tape
         qml_res = qml_converted_circuit()
 
         expected_ops = [
@@ -510,8 +481,6 @@ class TestControlledGateConversion:
         )
 
         qml_converted_circuit = _create_qml_circuit(qrisp_qv)
-
-        # We execute the circuit to populate the tape
         qml_res = qml_converted_circuit()
 
         expected_ops = [
@@ -542,8 +511,6 @@ class TestControlledGateConversion:
         )
 
         qml_converted_circuit = _create_qml_circuit(qrisp_qv)
-
-        # We execute the circuit to populate the tape
         qml_res = qml_converted_circuit()
 
         expected_ops = [
@@ -585,7 +552,7 @@ class TestControlledGateConversion:
         )
 
         qml_converted_circuit = _create_qml_circuit(qrisp_qv)
-        qml_res = qml_converted_circuit()  # Execute to populate tape
+        qml_res = qml_converted_circuit()
 
         expected_ops = [
             qml.ctrl(
@@ -599,7 +566,6 @@ class TestControlledGateConversion:
                 control_values=[0, 1, 0, 1],
             )
         ]
-
         check_qml_operations(qml_converted_circuit, expected_ops)
 
         qrisp_res = qrisp_qv.get_measurement()
@@ -620,7 +586,7 @@ class TestControlledGateConversion:
             [qrisp_qv[3], qrisp_qv[0], qrisp_qv[1], qrisp_qv[2]],
         )
         qml_converted_circuit = _create_qml_circuit(qrisp_qv)
-        qml_res = qml_converted_circuit()  # Execute to populate tape
+        qml_res = qml_converted_circuit()
 
         expected_ops = [
             qml.ctrl(
@@ -648,85 +614,80 @@ class TestControlledGateConversion:
         check_probs_equivalence(qrisp_res, qml_res)
 
 
-# This was the previously existing test
-def randomized_circuit_testing():
+def test_mixed_circuit():
+    """Test conversion of a mixed circuit with various gate types from Qrisp to PennyLane."""
 
-    ############ create the randomized circuit
-    qvRand = QuantumVariable(10)
-    qcRand = qvRand.qs
+    qrisp_qv = QuantumVariable(10)
+    qrisp_qs = qrisp_qv.qs
 
     single_gates = [XGate(), YGate(), ZGate(), HGate(), SXGate(), SGate()]
-
     rot_gates = [RXGate(0.5), RYGate(0.5), RZGate(0.5), PGate(0.5)]
-
     c_gates = [CXGate(), CYGate(), CZGate()]
-
     mc_gates = [SwapGate(), RXXGate(0.5), RZZGate(0.5)]
-
     special_gates = [MCXGate(control_amount=3), MCRXGate(0.5, control_amount=3)]
 
-    op_list = [*mc_gates, *c_gates, *single_gates, *rot_gates, *special_gates]
+    for idx, gate in enumerate(single_gates):
+        qrisp_qs.append(gate, qrisp_qv[idx])
 
-    used_ops = []
-    for index in range(30):
-        used_ops.append(op_list[np.random.randint(0, len(op_list))])
-    for op in used_ops:
-        qubit_1 = qvRand[np.random.randint(7, 9)]
-        qubit_2 = qvRand[np.random.randint(3, 6)]
-        if op in single_gates or op in rot_gates:
-            qcRand.append(op, qubit_1)
-        # this is being called first due to mcx is subclass of cx reasons
-        elif op in special_gates:
-            qcRand.append(op, [qvRand[0], qvRand[2], qubit_2, qubit_1])
-        elif op in c_gates or mc_gates:
-            qcRand.append(op, [qubit_1, qubit_2])
-    ######## done with the circuit
+    for offset, gate in enumerate(rot_gates, start=1):
+        qrisp_qs.append(gate, qrisp_qv[offset])
 
-    # instanciate pennylane circuit
-    qcRand_qubits = [qubit.identifier for qubit in qcRand.qubits]
-    dev = qml.device("default.qubit", wires=qcRand_qubits)
-    pl_qcRand = qml_converter(qc=qcRand)
-    circ = pl_qcRand
+    controlled_pairs = [(2, 3), (3, 4), (4, 5)]
+    for gate, (a, b) in zip(c_gates, controlled_pairs):
+        qrisp_qs.append(gate, [qrisp_qv[a], qrisp_qv[b]])
 
-    @qml.set_shots(1000)
-    @qml.qnode(dev)
-    def circuit():
-        circ()
-        return qml.probs(wires=qcRand_qubits)
+    qrisp_qs.append(mc_gates[0], [qrisp_qv[6], qrisp_qv[7]])  # SWAP
+    qrisp_qs.append(mc_gates[1], [qrisp_qv[7], qrisp_qv[8]])  # RXX
+    qrisp_qs.append(mc_gates[2], [qrisp_qv[8], qrisp_qv[9]])  # RZZ
 
-    # save result from probability measurement
-    # --> look up   qml.probs()   documentation for further insights
-    # --> the result is an ordered array containing measurement probabilities (ordered in terms of binary strings representing the measurement results)
-    qml_res_w_zeros = circuit().tolist()
-    qml_res = qml_res_w_zeros
+    qrisp_qs.append(
+        special_gates[0], [qrisp_qv[0], qrisp_qv[1], qrisp_qv[2], qrisp_qv[3]]
+    )  # MCX
+    qrisp_qs.append(
+        special_gates[1], [qrisp_qv[3], qrisp_qv[4], qrisp_qv[5], qrisp_qv[6]]
+    )  # MCRX
 
-    # get qrisp-qv measurement
-    qrisp_res = qvRand.get_measurement()
-    # sort the keys in binary order
-    qrisp_keySort = sorted(qrisp_res, key=lambda x: int(x, 2))
-    temp = True
+    qml_converted_circuit = _create_qml_circuit(qrisp_qv)
+    qml_res = qml_converted_circuit()  # Execute to populate
 
-    for index in range(len(qrisp_keySort)):
-        # get the index for qml_res array --> can trafo to int from binary
-        index2 = int(qrisp_keySort[index], 2)
-        if qrisp_res[qrisp_keySort[index]] < 0.13:
-            # small results are problematic... might have to adjust for accuracy
-            continue
-        # we allow for slight deviations in result probabilities
+    expected_ops = [
+        qml.X(qrisp_qv[0].identifier),
+        qml.Y(qrisp_qv[1].identifier),
+        qml.Z(qrisp_qv[2].identifier),
+        qml.H(qrisp_qv[3].identifier),
+        qml.SX(qrisp_qv[4].identifier),
+        qml.S(qrisp_qv[5].identifier),
+        qml.RX(0.5, wires=qrisp_qv[1].identifier),
+        qml.RY(0.5, wires=qrisp_qv[2].identifier),
+        qml.RZ(0.5, wires=qrisp_qv[3].identifier),
+        qml.PhaseShift(0.5, wires=qrisp_qv[4].identifier),
+        qml.CNOT(wires=[qrisp_qv[2].identifier, qrisp_qv[3].identifier]),
+        qml.CY(wires=[qrisp_qv[3].identifier, qrisp_qv[4].identifier]),
+        qml.CZ(wires=[qrisp_qv[4].identifier, qrisp_qv[5].identifier]),
+        qml.SWAP(wires=[qrisp_qv[6].identifier, qrisp_qv[7].identifier]),
+        qml.IsingXX(0.5, wires=[qrisp_qv[7].identifier, qrisp_qv[8].identifier]),
+        qml.IsingZZ(0.5, wires=[qrisp_qv[8].identifier, qrisp_qv[9].identifier]),
+        qml.MultiControlledX(
+            wires=[
+                qrisp_qv[0].identifier,
+                qrisp_qv[1].identifier,
+                qrisp_qv[2].identifier,
+                qrisp_qv[3].identifier,
+            ],
+            control_values=[1, 1, 1],
+        ),
+        qml.ctrl(
+            op=qml.RX(0.5, wires=qrisp_qv[6].identifier),
+            control=[
+                qrisp_qv[3].identifier,
+                qrisp_qv[4].identifier,
+                qrisp_qv[5].identifier,
+            ],
+            control_values=[1, 1, 1],
+        ),
+    ]
 
-        if (
-            not qrisp_res[qrisp_keySort[index]] * 0.8
-            <= qml_res[index2]
-            <= qrisp_res[qrisp_keySort[index]] * 1.2
-        ):
-
-            temp = False
-            break
-
-    assert temp
-
-
-def test_wrapper():
-
-    for _ in range(20):
-        randomized_circuit_testing()
+    check_qml_operations(qml_converted_circuit, expected_ops)
+    qrisp_res = qrisp_qv.get_measurement()
+    qml_res = np.asarray(qml_res, dtype=float)
+    check_probs_equivalence(qrisp_res, qml_res, atol=1e-4)

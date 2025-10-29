@@ -20,7 +20,6 @@ import types
 
 import numpy as np
 import pennylane as qml
-import sympy
 
 from qrisp import QuantumSession
 from qrisp.circuit import ControlledOperation, Operation, QuantumCircuit
@@ -28,8 +27,11 @@ from qrisp.circuit import ControlledOperation, Operation, QuantumCircuit
 """
 TODO:
 
--- Implement complex parameters handling for gates that support them.
+-- Add support for mid-circuit measurements.
+-- Add support for abstract parameters (symbols) in the converted PennyLane circuit.
 -- Implement all gates listed in `scr/qrisp/circuit/standard_operations.py`
+-- Add support for control-flow operations (if, while, for)
+-- Implement complex parameters handling for gates that support them.
 
 """
 
@@ -115,11 +117,7 @@ def qml_converter(qc: QuantumCircuit | QuantumSession) -> types.FunctionType:
 
     """
 
-    symbols = list(qc.abstract_params)
-
-    def circuit(
-        *args, wires: qml.wires.WiresLike = None
-    ) -> qml.measurements.CountsMP | None:
+    def circuit(wires: qml.wires.WiresLike = None) -> None:
         """
         PennyLane quantum function representing the Qrisp circuit.
 
@@ -127,17 +125,9 @@ def qml_converter(qc: QuantumCircuit | QuantumSession) -> types.FunctionType:
 
         Parameters
         ----------
-        *args : list
-            Parameter values corresponding to Qrisp symbolic parameters.
-
         wires : qml.wires.WiresLike, optional
             The wires to be used in the PennyLane circuit. If None, the qubit identifiers
             from the Qrisp circuit are used.
-
-        Returns
-        -------
-        qml.measurements.CountsMP or None
-            The measurement results if measurements are present in the circuit, otherwise None.
 
         """
 
@@ -146,17 +136,10 @@ def qml_converter(qc: QuantumCircuit | QuantumSession) -> types.FunctionType:
         else:
             wire_map = {qb.identifier: wires[i] for i, qb in enumerate(qc.qubits)}
 
-        measure_wires = []
-
         for data in qc.data:
-
             op = data.op
 
             if op.name in {"qb_alloc", "qb_dealloc"}:
-                continue
-
-            if op.name == "measure":
-                measure_wires.extend([wire_map[qb.identifier] for qb in data.qubits])
                 continue
 
             qml_op_class, is_inverse, is_controlled = _create_qml_instruction(op)
@@ -165,22 +148,9 @@ def qml_converter(qc: QuantumCircuit | QuantumSession) -> types.FunctionType:
             n_ctrls = len(op.ctrl_state) if is_controlled else 0
             controls, targets = qml_wires[:n_ctrls], qml_wires[n_ctrls:]
 
-            # If the operation has symbolic parameters, substitute them with the provided arguments.
-            # Otherwise, convert them to float64 (with float128 there is a bug in PennyLane)
-            qml_params = []
-            for param in op.params:
-                if isinstance(param, sympy.Symbol):
-                    try:
-                        # TODO: precomputing this in a dictionary
-                        # might be more efficient (O(1) lookup instead of O(n))
-                        idx = symbols.index(param)
-                    except ValueError as exc:
-                        raise ValueError(f"Unrecognized symbol: {param}") from exc
-                    qml_params.append(np.float64(args[idx]))
-                else:
-                    qml_params.append(np.float64(param))
+            qml_params = [np.float64(param) for param in op.params]
 
-            # Special case for Identity gate
+            # Here we'll probably need to handle more special cases.
             if qml_op_class.__name__ == "Identity":
                 qml_params = []
 
@@ -199,10 +169,5 @@ def qml_converter(qc: QuantumCircuit | QuantumSession) -> types.FunctionType:
                     )
 
             qml.apply(qml_op)
-
-        if measure_wires:
-            return qml.counts(wires=measure_wires)
-
-        return None
 
     return circuit
