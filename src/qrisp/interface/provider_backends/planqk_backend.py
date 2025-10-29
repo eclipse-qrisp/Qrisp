@@ -126,7 +126,7 @@ class PlanQKBackend(VirtualBackend):
             measured_dict = {}
             #print()
             for instr in qiskit_qc:
-                print(instr)
+                #print(instr)
                 if instr.name =="measure":
                     measured_dict.setdefault(instr.qubits[0]._register.name,instr.clbits[0]._register.name)
                     pass
@@ -137,7 +137,7 @@ class PlanQKBackend(VirtualBackend):
                         [qiskit_qc.clbits.index(cb) for cb in instr.clbits],
                         
                     )
-            print(measured_dict)
+            #print(measured_dict)
             
             new_qiskit_qc.measure_all()
             
@@ -156,8 +156,6 @@ class PlanQKBackend(VirtualBackend):
             
             planqk_result = result.results[0].data.counts
 
-            print(qiskit_qc)
-            print(planqk_result)
             # Remove the ancilla qubits 
             result_dic = {}
             import re
