@@ -16,11 +16,11 @@
 ********************************************************************************
 """
 
-import sympy
 import jax
+import sympy
 
 import qrisp.circuit.standard_operations as std_ops
-from qrisp.jasp import check_for_tracing_mode, DynamicQubitArray, jlen
+from qrisp.jasp import DynamicQubitArray, check_for_tracing_mode, jlen
 
 
 def append_operation(operation, qubits=[], clbits=[], param_tracers=[]):
@@ -30,7 +30,7 @@ def append_operation(operation, qubits=[], clbits=[], param_tracers=[]):
         qs = find_qs(qubits)
         qs.append(operation, qubits, clbits, param_tracers=param_tracers)
     except Exception as e:
-        
+
         # Handle the case that the user specified an empty qubit list, i.e.
         # cx([], [])
         if "Couldn't find QuantumSession" in str(e):
@@ -41,9 +41,8 @@ def append_operation(operation, qubits=[], clbits=[], param_tracers=[]):
                     break
             else:
                 return
-            
+
         raise e
-                    
 
 
 def cx(control, target):
@@ -484,16 +483,16 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
 
     """
 
-    from qrisp.misc import bin_rep
     from qrisp.alg_primitives.mcx_algs import (
         GidneyLogicalAND,
         amy_toffoli,
-        jones_toffoli,
         jasp_gidney_mcx,
         jasp_gidney_mcx_inv,
+        jones_toffoli,
         khattar_mcx,
     )
     from qrisp.core import QuantumVariable
+    from qrisp.misc import bin_rep
     from qrisp.qtypes import QuantumBool
 
     if isinstance(controls, list):
@@ -546,13 +545,13 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
         ) and method not in ["balauca", "khattar"]:
             method = "balauca"
         qubits_1 = [target]
+    from qrisp.alg_primitives.mcx_algs import jasp_balauca_mcx  # Merge the import
     from qrisp.alg_primitives.mcx_algs import (
         balauca_dirty,
         balauca_mcx,
         hybrid_mcx,
         maslov_mcx,
         yong_mcx,
-        jasp_balauca_mcx,  # Merge the import
     )
 
     if method in ["gray", "gray_pt", "gray_pt_inv"]:
@@ -755,11 +754,12 @@ def mcp(phi, qubits, method="auto", ctrl_state=-1):
 
     """
 
-    from qrisp.alg_primitives.mcx_algs import hybrid_mcx, jasp_balauca_mcp, khattar_mcp
-    from qrisp import QuantumBool
-    from qrisp.misc import bin_rep, gate_wrap
-    from qrisp.environments import control
     import numpy as np
+
+    from qrisp import QuantumBool
+    from qrisp.alg_primitives.mcx_algs import hybrid_mcx, jasp_balauca_mcp, khattar_mcp
+    from qrisp.environments import control
+    from qrisp.misc import bin_rep, gate_wrap
 
     @gate_wrap(permeability="full", is_qfree=True, name="anc supported mcp")
     def balauca_mcp(phi, qubits, ctrl_state):
@@ -1216,14 +1216,14 @@ def measure(qubits):
 
         return clbits
     else:
+        from qrisp import QuantumArray, QuantumVariable
         from qrisp.jasp import (
-            Measurement_p,
             AbstractQubit,
             AbstractQubitArray,
             DynamicQubitArray,
+            Measurement_p,
         )
-        from qrisp import QuantumVariable, QuantumArray
-        
+
         if not qs.abs_qc._trace is jax.core.trace_ctx.trace:
             raise Exception(
                 """Lost track of QuantumCircuit during tracing. This might have been caused by a missing quantum_kernel decorator or not using quantum prefix control (like q_fori_loop, q_cond). Please visit https://www.qrisp.eu/reference/Jasp/Quantum%20Kernel.html for more details"""
@@ -1231,7 +1231,9 @@ def measure(qubits):
 
         if isinstance(qubits, (DynamicQubitArray, QuantumVariable, QuantumArray)):
             res = qubits.measure()
-        elif isinstance(qubits, jax.core.Tracer) and isinstance(qubits.aval, (AbstractQubitArray, AbstractQubit)):
+        elif isinstance(qubits, jax.core.Tracer) and isinstance(
+            qubits.aval, (AbstractQubitArray, AbstractQubit)
+        ):
             res, abs_qc = Measurement_p.bind(qubits, qs.abs_qc)
             qs.abs_qc = abs_qc
         else:
@@ -1258,8 +1260,8 @@ def reset(qubits):
         append_operation(std_ops.Reset(), [qubits])
         return None
     else:
-        from qrisp.jasp import reset_p, AbstractQubit, AbstractQubitArray
         from qrisp import QuantumVariable
+        from qrisp.jasp import AbstractQubit, AbstractQubitArray, reset_p
 
         if isinstance(qubits, QuantumVariable):
             abs_qc = reset_p.bind(qubits.reg.tracer, qs.abs_qc)

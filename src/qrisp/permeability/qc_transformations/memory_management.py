@@ -18,8 +18,8 @@
 
 import networkx as nx
 import numpy as np
-from numba import njit
 import psutil
+from numba import njit
 
 
 def optimize_allocations(qc):

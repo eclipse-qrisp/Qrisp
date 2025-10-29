@@ -20,10 +20,10 @@
 from qrisp import (
     QuantumDictionary,
     QuantumFloat,
+    QuantumVariable,
     custom_qv,
     h,
     multi_measurement,
-    QuantumVariable,
 )
 
 # This example demonstrates the use of a QuantumDictionary with flexible types

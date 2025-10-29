@@ -17,5 +17,5 @@
 """
 
 from qrisp.alg_primitives.arithmetic.adders.qcla.classical_quantum.cq_carry_path import *
-from qrisp.alg_primitives.arithmetic.adders.qcla.classical_quantum.cq_sum_path import *
 from qrisp.alg_primitives.arithmetic.adders.qcla.classical_quantum.cq_qcla_adder import *
+from qrisp.alg_primitives.arithmetic.adders.qcla.classical_quantum.cq_sum_path import *

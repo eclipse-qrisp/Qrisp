@@ -17,6 +17,7 @@
 """
 
 import sympy as sp
+
 from qrisp.alg_primitives.logic_synthesis.truth_tables import TruthTable, synth_poly
 from qrisp.misc.utility import gate_wrap
 

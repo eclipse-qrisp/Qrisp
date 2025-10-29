@@ -16,10 +16,11 @@
 ********************************************************************************
 """
 
-from flask import Flask, request, jsonify, make_response
-import yaml
-from datetime import date, datetime
 import threading
+from datetime import date, datetime
+
+import yaml
+from flask import Flask, jsonify, make_response, request
 
 """
 

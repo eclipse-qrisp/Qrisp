@@ -16,59 +16,57 @@
 ********************************************************************************
 """
 
+import time
+
 # Created by ann81984 at 04.05.2022
 import pytest
-import time
 
 from qrisp import *
 
 
 # Check by printing circuit
 def test_gidney_mcx():
-    compilation_kwargs = {"compile_mcm" : True}
+    compilation_kwargs = {"compile_mcm": True}
     for i in range(4):
-        
+
         ctrl = QuantumFloat(2)
         target = QuantumBool()
-        
+
         ctrl[:] = i
-        mcx(ctrl, target, method = "gidney")
-        mcx(ctrl, target, method = "gidney_inv")
-        
-        assert ctrl.get_measurement(compilation_kwargs = compilation_kwargs) == {i : 1}
-        
-        
+        mcx(ctrl, target, method="gidney")
+        mcx(ctrl, target, method="gidney_inv")
+
+        assert ctrl.get_measurement(compilation_kwargs=compilation_kwargs) == {i: 1}
+
         ctrl = QuantumFloat(2)
         target = QuantumBool()
         ctrl[:] = i
-        
+
         h(ctrl)
-        mcx(ctrl, target, method = "gidney")
-        mcx(ctrl, target, method = "gidney_inv")
+        mcx(ctrl, target, method="gidney")
+        mcx(ctrl, target, method="gidney_inv")
         h(ctrl)
-        
-        assert ctrl.get_measurement(compilation_kwargs = compilation_kwargs) == {i : 1}
-        
+
+        assert ctrl.get_measurement(compilation_kwargs=compilation_kwargs) == {i: 1}
+
         ctrl = QuantumFloat(2)
         target = QuantumBool()
-        
+
         ctrl[:] = i
-        mcx(ctrl, target, method = "gidney")
+        mcx(ctrl, target, method="gidney")
         target.uncompute()
-        
-        assert ctrl.get_measurement(compilation_kwargs = compilation_kwargs) == {i : 1}
-        
-        
+
+        assert ctrl.get_measurement(compilation_kwargs=compilation_kwargs) == {i: 1}
+
         ctrl = QuantumFloat(2)
         target = QuantumBool()
         ctrl[:] = i
-        
+
         h(ctrl)
-        mcx(ctrl, target, method = "gidney")
+        mcx(ctrl, target, method="gidney")
         target.uncompute()
         h(ctrl)
-        
-        assert ctrl.get_measurement(compilation_kwargs = compilation_kwargs) == {i : 1}
-        
+
+        assert ctrl.get_measurement(compilation_kwargs=compilation_kwargs) == {i: 1}
+
     print(target.qs.compile(**compilation_kwargs).transpile())
-        

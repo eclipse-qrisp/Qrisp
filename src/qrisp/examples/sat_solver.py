@@ -19,7 +19,8 @@
 import numpy as np
 import sympy as sp
 from sympy.logic.utilities.dimacs import load
-from qrisp import auto_uncompute, z, multi_measurement
+
+from qrisp import auto_uncompute, multi_measurement, z
 from qrisp.grover import grovers_alg
 
 # %%

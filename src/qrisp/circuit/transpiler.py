@@ -18,17 +18,17 @@
 
 import numpy as np
 
+from qrisp.circuit import fast_append
 from qrisp.circuit.instruction import Instruction
 from qrisp.circuit.operation import (
     Operation,
 )
-from qrisp.circuit import fast_append
 
 
 # This function dissolves any Operation objects that have a definition circuit such
 # that the result only consists of elementary gates
 def transpile(qc, transpilation_level=np.inf, transpile_predicate=None, **kwargs):
-    from qrisp.circuit import QuantumCircuit, Clbit, Qubit
+    from qrisp.circuit import Clbit, QuantumCircuit, Qubit
 
     with fast_append():
 

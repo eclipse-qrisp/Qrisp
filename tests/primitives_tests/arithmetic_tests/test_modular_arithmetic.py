@@ -16,94 +16,97 @@
 ********************************************************************************
 """
 
-
-from qrisp import QuantumModulus, h, multi_measurement, cx, qcla, gidney_adder, QuantumBool, control
 import numpy as np
 
+from qrisp import (
+    QuantumBool,
+    QuantumModulus,
+    control,
+    cx,
+    gidney_adder,
+    h,
+    multi_measurement,
+    qcla,
+)
+
+
 def test_modular_arithmetic():
-    
-    #Test In-Place addition
+
+    # Test In-Place addition
     N = 13
     a = QuantumModulus(N)
     b = QuantumModulus(N)
 
     a[:] = 4
-    b[:] = {i : 1 for i in range(N)}
+    b[:] = {i: 1 for i in range(N)}
     a += b
 
-    mes_res = multi_measurement([a,b])
+    mes_res = multi_measurement([a, b])
 
     for k in mes_res.keys():
         if k[0] is np.nan or k[1] is np.nan:
             continue
-        assert (4 + k[1])%N == k[0]
-        
-        
+        assert (4 + k[1]) % N == k[0]
+
     a = QuantumModulus(N)
     b = 12
 
-    a[:] = {i : 1 for i in range(N)}
-    temp = a.duplicate(init = True)
+    a[:] = {i: 1 for i in range(N)}
+    temp = a.duplicate(init=True)
     a += b
 
-    mes_res = multi_measurement([temp,a])
+    mes_res = multi_measurement([temp, a])
 
     for k in mes_res.keys():
         if k[0] is np.nan:
             continue
-        assert (12 + k[0])%N == k[1]
+        assert (12 + k[0]) % N == k[1]
 
-
-        
-    #Test In-Place subtraction
+    # Test In-Place subtraction
     a = QuantumModulus(N)
     b = QuantumModulus(N)
 
     a[:] = 4
-    b[:] = {i : 1 for i in range(N)}
+    b[:] = {i: 1 for i in range(N)}
 
     a -= b
 
-    mes_res = multi_measurement([a,b])
+    mes_res = multi_measurement([a, b])
 
     for k in mes_res.keys():
         if k[0] is np.nan or k[1] is np.nan:
             continue
-        assert (4 - k[1])%N == k[0]
-
+        assert (4 - k[1]) % N == k[0]
 
     a = QuantumModulus(N)
     b = 12
 
-    a[:] = {i : 1 for i in range(N)}
-    temp = a.duplicate(init = True)
+    a[:] = {i: 1 for i in range(N)}
+    temp = a.duplicate(init=True)
     a -= b
 
-    mes_res = multi_measurement([temp,a])
+    mes_res = multi_measurement([temp, a])
 
     for k in mes_res.keys():
         if k[0] is np.nan:
             continue
-        assert (-12 + k[0])%N == k[1]
+        assert (-12 + k[0]) % N == k[1]
 
-
-        
-    #Test Out-of-place addition
+    # Test Out-of-place addition
     a = QuantumModulus(N)
     b = QuantumModulus(N)
 
-    a[:] = {i : 1 for i in range(N)}
-    b[:] = {i : 1 for i in range(N)}
+    a[:] = {i: 1 for i in range(N)}
+    b[:] = {i: 1 for i in range(N)}
 
     res = a + b
 
-    mes_res = multi_measurement([a,b, res])
+    mes_res = multi_measurement([a, b, res])
 
     for k in mes_res.keys():
         if k[0] is np.nan or k[1] is np.nan:
             continue
-        assert (k[0] + k[1])%N == k[2]
-        
+        assert (k[0] + k[1]) % N == k[2]
 
     a = QuantumModulus(N)
 
@@ -116,25 +119,23 @@ def test_modular_arithmetic():
     for k in mes_res.keys():
         if k[0] is np.nan:
             continue
-        assert (9+10)%N == k[0]
+        assert (9 + 10) % N == k[0]
 
-
-    #Test Out-of-place subtraction
+    # Test Out-of-place subtraction
     a = QuantumModulus(N)
     b = QuantumModulus(N)
 
-    a[:] = {i : 1 for i in range(N)}
-    b[:] = {i : 1 for i in range(N)}
+    a[:] = {i: 1 for i in range(N)}
+    b[:] = {i: 1 for i in range(N)}
 
     res = a - b
 
-    mes_res = multi_measurement([a,b, res])
+    mes_res = multi_measurement([a, b, res])
 
     for k in mes_res.keys():
         if k[0] is np.nan or k[1] is np.nan:
             continue
-        assert (k[0] - k[1])%N == k[2]
-        
+        assert (k[0] - k[1]) % N == k[2]
 
     a = QuantumModulus(N)
     a[:] = 2
@@ -147,106 +148,102 @@ def test_modular_arithmetic():
     for k in mes_res.keys():
         if k[0] is np.nan:
             continue
-        assert (2-7)%N == k[0]
+        assert (2 - 7) % N == k[0]
 
-    #Test multiplication
+    # Test multiplication
     a = QuantumModulus(N)
     b = QuantumModulus(N)
 
-    a[:] = {i : 1 for i in range(N)}
-    b[:] = {i : 1 for i in range(N)}
+    a[:] = {i: 1 for i in range(N)}
+    b[:] = {i: 1 for i in range(N)}
 
-    res = a*b
+    res = a * b
 
-    mes_res = multi_measurement([a,b, res])
+    mes_res = multi_measurement([a, b, res])
 
     for k in mes_res.keys():
         if k[0] is np.nan or k[1] is np.nan:
             continue
-        assert (k[0]*k[1])%N == k[2]
+        assert (k[0] * k[1]) % N == k[2]
 
     a = QuantumModulus(N)
 
-    a[:] = {i : 1 for i in range(N)}
+    a[:] = {i: 1 for i in range(N)}
     b = 5
 
-    res = a*b
+    res = a * b
 
-    mes_res = multi_measurement([a,res])
+    mes_res = multi_measurement([a, res])
 
     for k in mes_res.keys():
 
         if k[0] is np.nan:
             continue
-        assert (k[0]*5)%N == k[1]
-    #Test in-place multiplication
+        assert (k[0] * 5) % N == k[1]
+    # Test in-place multiplication
 
-    
-    
     for i in range(1, N):
         a = QuantumModulus(N)
-        a[:] = {i : 1 for i in range(N)}
+        a[:] = {i: 1 for i in range(N)}
         b = a.duplicate()
         cx(a, b)
-    
+
         a *= i
-    
-        mes_res = multi_measurement([b,a])
-    
+
+        mes_res = multi_measurement([b, a])
+
         for k in mes_res.keys():
             if k[1] is np.nan or k[0] is np.nan:
                 continue
-            assert (k[0]*i)%N == k[1]
-            
-    for i in range(1, N):
-        a = QuantumModulus(N, inpl_adder = qcla)
-        a[:] = {i : 1 for i in range(N)}
-        b = a.duplicate()
-        cx(a, b)
-    
-        a *= i
-    
-        mes_res = multi_measurement([b,a])
-    
-        for k in mes_res.keys():
-            if k[1] is np.nan or k[0] is np.nan:
-                continue
-            assert (k[0]*i)%N == k[1]
+            assert (k[0] * i) % N == k[1]
 
     for i in range(1, N):
-        a = QuantumModulus(N, inpl_adder = gidney_adder)
-        a[:] = {i : 1 for i in range(N)}
+        a = QuantumModulus(N, inpl_adder=qcla)
+        a[:] = {i: 1 for i in range(N)}
+        b = a.duplicate()
+        cx(a, b)
+
+        a *= i
+
+        mes_res = multi_measurement([b, a])
+
+        for k in mes_res.keys():
+            if k[1] is np.nan or k[0] is np.nan:
+                continue
+            assert (k[0] * i) % N == k[1]
+
+    for i in range(1, N):
+        a = QuantumModulus(N, inpl_adder=gidney_adder)
+        a[:] = {i: 1 for i in range(N)}
         b = a.duplicate()
         cx(a, b)
         qbl = QuantumBool()
         h(qbl)
-        
+
         with control(qbl):
             a *= i
-        
-    
-        mes_res = multi_measurement([b,a, qbl])
-    
+
+        mes_res = multi_measurement([b, a, qbl])
+
         for k in mes_res.keys():
             if k[1] is np.nan or k[0] is np.nan:
                 continue
             if k[2]:
-                assert (k[0]*i)%N == k[1]
+                assert (k[0] * i) % N == k[1]
             else:
                 assert k[0] == k[1]
 
     # Test arbitrary adder out of place multiplication
-    
-    a = QuantumModulus(N, inpl_adder = gidney_adder)
-    b = QuantumModulus(N, inpl_adder = gidney_adder)
 
+    a = QuantumModulus(N, inpl_adder=gidney_adder)
+    b = QuantumModulus(N, inpl_adder=gidney_adder)
 
-    a[:] = {i : 1 for i in range(N)}
-    b[:] = {i : 1 for i in range(N)}
+    a[:] = {i: 1 for i in range(N)}
+    b[:] = {i: 1 for i in range(N)}
 
-    c = a*b
+    c = a * b
 
     meas_res = multi_measurement([a, b, c])
 
     for a, b, c in meas_res.keys():
-        assert (a*b)%N == c
+        assert (a * b) % N == c

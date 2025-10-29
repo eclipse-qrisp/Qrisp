@@ -16,13 +16,17 @@
 ********************************************************************************
 """
 
-from jax.lax import fori_loop, while_loop, cond
-from jax.extend.core import ClosedJaxpr
 import jax
+from jax.extend.core import ClosedJaxpr
+from jax.lax import cond, fori_loop, while_loop
 
-from qrisp.core import recursive_qv_search, recursive_qa_search
-from qrisp.jasp.tracing_logic import TracingQuantumSession, check_for_tracing_mode, get_last_equation
+from qrisp.core import recursive_qa_search, recursive_qv_search
 from qrisp.jasp.primitives import AbstractQuantumCircuit
+from qrisp.jasp.tracing_logic import (
+    TracingQuantumSession,
+    check_for_tracing_mode,
+    get_last_equation,
+)
 
 
 def q_while_loop(cond_fun, body_fun, init_val):
@@ -128,9 +132,9 @@ def q_while_loop(cond_fun, body_fun, init_val):
     while_res = while_loop(new_cond_fun, new_body_fun, new_init_val)
 
     eqn = get_last_equation()
-    
+
     body_jaxpr = eqn.params["body_jaxpr"]
-    
+
     # If the AbstractQuantumCircuit is part of the constants of the body,
     # the body did not execute any quantum operations.
     # We remove the AbstractQuantumCircuit from the body signature
@@ -141,7 +145,7 @@ def q_while_loop(cond_fun, body_fun, init_val):
             body_jaxpr.jaxpr.invars.pop(i)
             eqn.params["body_nconsts"] -= 1
             return while_res[0]
-        
+
     from qrisp import Jaspr
 
     eqn.params["body_jaxpr"] = Jaspr.from_cache(body_jaxpr)
@@ -330,7 +334,7 @@ def q_cond(pred, true_fun, false_fun, *operands):
         if eqn.primitive.name == "cond":
             break
         i += 1
-        
+
     false_jaxpr = eqn.params["branches"][0]
     true_jaxpr = eqn.params["branches"][1]
 
@@ -342,8 +346,8 @@ def q_cond(pred, true_fun, false_fun, *operands):
     from qrisp.jasp import Jaspr
 
     eqn.params["branches"] = (
-            Jaspr.from_cache(false_jaxpr),
-            Jaspr.from_cache(true_jaxpr)
+        Jaspr.from_cache(false_jaxpr),
+        Jaspr.from_cache(true_jaxpr),
     )
 
     qs.abs_qc = cond_res[-1]

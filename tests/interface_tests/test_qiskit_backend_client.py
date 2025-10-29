@@ -21,7 +21,8 @@
 import numpy as np
 
 from qrisp import QuantumCircuit
-from qrisp.interface import VirtualBackend, QiskitBackend
+from qrisp.interface import QiskitBackend, VirtualBackend
+
 
 def test_qiskit_backend_client():
 
@@ -30,7 +31,6 @@ def test_qiskit_backend_client():
 
     qc.add_qubit()
     qc.add_qubit()
-    
 
     qc.h(0)
 
@@ -38,14 +38,13 @@ def test_qiskit_backend_client():
 
     qc.x(0)
     qc.cx(0, 1)
-    
 
     qc.append(qc.to_op("composed_op"), qc.qubits, qc.clbits)
 
     qc.append(qc.to_op("multi_composed_op"), qc.qubits, qc.clbits)
 
     qc.add_clbit()
-    qc.measure(1, 0)    
+    qc.measure(1, 0)
     # TO-DO prevent this test from crashing regardless of functionality
     # Create QuantumSession
     qc = QuantumCircuit()
@@ -62,8 +61,7 @@ def test_qiskit_backend_client():
     qc.cx(0, 1)
     qc.measure(1, 0)
 
-
-    def sample_run_func(qc, shots = None, token = ""):
+    def sample_run_func(qc, shots=None, token=""):
         if shots is None:
             shots = 10000
         return {"0": shots}
@@ -92,6 +90,7 @@ def test_qiskit_backend_client():
     # status = test_qiskit_backend.ping()
     assert str(test_qiskit_backend.run(qc, 2000)) == "{'1': 2000}"
     """
+
 
 """
 def test_qiskit_aer_backend():

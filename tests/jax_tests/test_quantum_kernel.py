@@ -16,33 +16,34 @@
 ********************************************************************************
 """
 
-from qrisp import *
-from qrisp.jasp import *
 from jax import make_jaxpr
 
+from qrisp import *
+from qrisp.jasp import *
+
+
 def test_quantum_kernel():
-        
+
     @quantum_kernel
     def inner_f(k):
         qf = QuantumFloat(4)
-        
+
         with conjugate(h)(qf):
             for i in jrange(k):
                 t(qf[0])
-                
+
         return measure(qf)
 
-    
     def main(a, b):
-        
+
         a = inner_f(a)
         b = inner_f(b)
-        
+
         return a + b
-    
-    jaxpr = make_jaxpr(main)(1,1)
-    main = jaspify(main)    
-    
+
+    jaxpr = make_jaxpr(main)(1, 1)
+    main = jaspify(main)
+
     assert main(4, 8) == 1
     assert main(4, 4) == 2
     assert main(8, 4) == 1

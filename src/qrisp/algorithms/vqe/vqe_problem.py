@@ -18,18 +18,17 @@
 
 import time
 
+import jax
+import jax.numpy as jnp
 import numpy as np
 from scipy.optimize import minimize
 from sympy import Symbol
 
 from qrisp.algorithms.vqe.vqe_benchmark_data import VQEBenchmark
-from qrisp.operators.qubit.measurement import QubitOperatorMeasurement
-from qrisp.operators.fermionic import FermionicOperator
-
-import jax
-import jax.numpy as jnp
 from qrisp.jasp import check_for_tracing_mode
 from qrisp.jasp.optimization_tools.optimize import minimize as jasp_minimize
+from qrisp.operators.fermionic import FermionicOperator
+from qrisp.operators.qubit.measurement import QubitOperatorMeasurement
 
 
 class VQEProblem:

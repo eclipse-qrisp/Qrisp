@@ -16,10 +16,11 @@
 ********************************************************************************
 """
 
-import numpy as np
 import random
 import time
-from sympy import Symbol, Matrix, simplify
+
+import numpy as np
+from sympy import Matrix, Symbol, simplify
 
 from qrisp.circuit import (
     PGate,
@@ -56,6 +57,7 @@ if use_qiskit:
     from qiskit.circuit import Parameter, QuantumCircuit
 else:
     from sympy import Symbol as Parameter
+
     from qrisp.circuit import QuantumCircuit
 
 

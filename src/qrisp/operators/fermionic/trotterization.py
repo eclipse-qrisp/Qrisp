@@ -17,15 +17,14 @@
 """
 
 import numpy as np
+import sympy as sp
 
+from qrisp import IterationEnvironment, conjugate, merge
+from qrisp.jasp import check_for_tracing_mode, jrange
 from qrisp.operators import Hamiltonian
 from qrisp.operators.fermionic.fermionic_term import FermionicTerm
 from qrisp.operators.hamiltonian_tools import group_up_iterable
-from qrisp import merge, IterationEnvironment, conjugate
 from qrisp.operators.qubit import QubitOperator
-
-from qrisp.jasp import check_for_tracing_mode, jrange
-import sympy as sp
 
 threshold = 1e-9
 

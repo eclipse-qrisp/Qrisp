@@ -16,10 +16,11 @@
 ********************************************************************************
 """
 
-from qrisp.operators.qubit import X, Y, Z
-from qrisp.core import x, h, cx, cp, gphase, rz
-from qrisp.environments import conjugate
 import networkx as nx
+
+from qrisp.core import cp, cx, gphase, h, rz, x
+from qrisp.environments import conjugate
+from qrisp.operators.qubit import X, Y, Z
 
 
 def greedy_edge_coloring(G, E=None):

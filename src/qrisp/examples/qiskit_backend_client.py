@@ -17,8 +17,9 @@
 """
 
 import numpy as np
-from qrisp import QuantumCircuit, QuantumVariable
 from qiskit import Aer
+
+from qrisp import QuantumCircuit, QuantumVariable
 from qrisp.interface import QiskitBackend
 from qrisp.interface.backends import VirtualBackend
 

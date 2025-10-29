@@ -16,33 +16,35 @@
 ********************************************************************************
 """
 
-from qrisp import *
-from qrisp.jasp import *
 from jax import make_jaxpr
 
+from qrisp import *
+from qrisp.jasp import *
+
+
 def test_stim_simulation():
-    
+
     @stimulate
     def main():
-        
+
         qbl = QuantumBool()
         qf = QuantumFloat(4)
-        
+
         # Bring qbl into superposition
         h(qbl)
-        
+
         # Perform a measure
         cl_bl = measure(qbl)
-        
+
         # Perform a conditional operation based on the measurement outcome
         with control(cl_bl):
             qf[:] = 1
             h(qf[2])
-        
+
         return measure(qf), measure(qbl)
 
     assert main() in [(1.0, True), (5.0, True), (0.0, False)]
-    
+
     @stimulate
     def main(i, j):
         qf = QuantumFloat(3)

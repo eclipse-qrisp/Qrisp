@@ -16,9 +16,10 @@
 ********************************************************************************
 """
 
-from jax.extend.core import ClosedJaxpr, Literal
-from jax import make_jaxpr
 import jax.numpy as jnp
+from jax import make_jaxpr
+from jax.extend.core import ClosedJaxpr, Literal
+
 from qrisp.jasp import check_for_tracing_mode
 
 
@@ -111,7 +112,7 @@ def reinterpret(jaxpr, eqn_evaluator=exec_eqn):
     temp = list(res.invars[len(inter_jaxpr.constvars) :])
     res.invars.clear()
     res.invars.extend(temp)
-    
+
     if isinstance(jaxpr, ClosedJaxpr):
         res = ClosedJaxpr(res, jaxpr.consts)
 
@@ -133,8 +134,8 @@ def eval_jaxpr_with_context_dic(jaxpr, context_dic, eqn_evaluator=exec_eqn):
 
                 from qrisp.jasp import (
                     evaluate_cond_eqn,
-                    evaluate_while_loop,
                     evaluate_scan,
+                    evaluate_while_loop,
                 )
 
                 if eqn.primitive.name == "while":
@@ -170,8 +171,10 @@ def insert_outvalues(eqn, context_dic, outvalues):
 
     if eqn.primitive.multiple_results:
         if len(outvalues) != len(eqn.outvars):
-            raise Exception("Tried to insert invalid amount of values into the Context Dictionary")
-        
+            raise Exception(
+                "Tried to insert invalid amount of values into the Context Dictionary"
+            )
+
         for i in range(len(eqn.outvars)):
             context_dic[eqn.outvars[i]] = outvalues[i]
     else:

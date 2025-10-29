@@ -23,7 +23,6 @@ from qrisp import ControlledOperation
 
 def create_tket_instruction(op):
     from pytket import OpType
-
     from pytket.circuit import CircBox
 
     if op.name == "rxx":
@@ -80,9 +79,8 @@ def create_tket_instruction(op):
 
 
 def pytket_converter(qc, boxFlag=False):
-    from pytket import Circuit, Qubit, Bit, OpType
-
-    from pytket.circuit import CircBox, QControlBox, Op
+    from pytket import Bit, Circuit, OpType, Qubit
+    from pytket.circuit import CircBox, Op, QControlBox
 
     # This dic gives the qiskit qubits/clbits when presented with their identifier
     qubit_dic = {}

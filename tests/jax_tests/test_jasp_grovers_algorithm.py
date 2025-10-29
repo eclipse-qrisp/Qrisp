@@ -16,39 +16,41 @@
 ********************************************************************************
 """
 
+
 def test_jasp_grovers_algorithm():
-    from qrisp import QuantumFloat, QuantumArray
-    from qrisp.jasp import terminal_sampling
-    from qrisp.grover import tag_state, grovers_alg
     import numpy as np
 
-    def test_oracle(qf_list, phase = np.pi):
-        tag_dic = {qf_list[0] : 0, qf_list[1] : 0.5}
+    from qrisp import QuantumArray, QuantumFloat
+    from qrisp.grover import grovers_alg, tag_state
+    from qrisp.jasp import terminal_sampling
+
+    def test_oracle(qf_list, phase=np.pi):
+        tag_dic = {qf_list[0]: 0, qf_list[1]: 0.5}
         tag_state(tag_dic, phase=phase)
 
     @terminal_sampling
     def main():
-        qf_list = [QuantumFloat(2,-2), QuantumFloat(2,-2)]
+        qf_list = [QuantumFloat(2, -2), QuantumFloat(2, -2)]
         grovers_alg(qf_list, test_oracle)
         return qf_list[0], qf_list[1]
 
     res_dict = main()
-    assert res_dict[(0,0.5)]>0.95
+    assert res_dict[(0, 0.5)] > 0.95
 
     # Exact Grover's algorithm
     @terminal_sampling
     def main():
-        qf_list = [QuantumFloat(2,-2), QuantumFloat(2,-2)]
+        qf_list = [QuantumFloat(2, -2), QuantumFloat(2, -2)]
         grovers_alg(qf_list, test_oracle, winner_state_amount=1, exact=True)
         return qf_list[0], qf_list[1]
 
     res_dict = main()
-    assert np.abs(res_dict[(0,0.5)]-1) < 1e-4
+    assert np.abs(res_dict[(0, 0.5)] - 1) < 1e-4
 
     # Test for input of type QuantumArray
 
     def oracle(qa):
-        tag_state({qa[0]:0, qa[1]:0, qa[2]:0})
+        tag_state({qa[0]: 0, qa[1]: 0, qa[2]: 0})
 
     @terminal_sampling
     def main():

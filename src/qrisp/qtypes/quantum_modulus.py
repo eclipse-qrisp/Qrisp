@@ -18,9 +18,9 @@
 
 import numpy as np
 
-from qrisp.qtypes.quantum_float import QuantumFloat
-from qrisp.misc import gate_wrap
 from qrisp.core import QuantumVariable
+from qrisp.misc import gate_wrap
+from qrisp.qtypes.quantum_float import QuantumFloat
 
 
 def comparison_wrapper(func):
@@ -238,12 +238,11 @@ class QuantumModulus(QuantumFloat):
     def __imul__(self, other):
         if isinstance(other, int):
 
+            from qrisp.alg_primitives.arithmetic.adders import fourier_adder
             from qrisp.alg_primitives.arithmetic.modular_arithmetic import (
                 qft_semi_cl_inpl_mult,
                 semi_cl_inpl_mult,
             )
-
-            from qrisp.alg_primitives.arithmetic.adders import fourier_adder
 
             if self.inpl_adder is fourier_adder:
 

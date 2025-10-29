@@ -16,12 +16,12 @@
 ********************************************************************************
 """
 
-from qrisp import *
-import numpy as np
 import jax.numpy as jnp
-
-from numba import njit, prange
+import numpy as np
 from jax import jit, vmap
+from numba import njit, prange
+
+from qrisp import *
 
 
 def maxcut_obj(x, G):

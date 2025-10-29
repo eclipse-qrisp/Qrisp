@@ -32,19 +32,18 @@ This file implements the interfaces to evaluating the transformed Jaspr.
 
 """
 
-from functools import lru_cache
 import types
-
-import numpy as np
+from functools import lru_cache
 
 import jax
 import jax.numpy as jnp
+import numpy as np
 from jax.extend.core import ClosedJaxpr
 from jax.tree_util import tree_flatten
 
-from qrisp.jasp.primitives import OperationPrimitive
-from qrisp.jasp.interpreter_tools import make_profiling_eqn_evaluator, eval_jaxpr
 from qrisp.jasp.evaluation_tools.jaspification import simulate_jaspr
+from qrisp.jasp.interpreter_tools import eval_jaxpr, make_profiling_eqn_evaluator
+from qrisp.jasp.primitives import OperationPrimitive
 
 
 def count_ops(meas_behavior):
@@ -254,9 +253,9 @@ def profile_jaspr(jaspr, meas_behavior="0"):
             profiling_array_computer, profiling_dic = get_profiling_array_computer(
                 jaspr, meas_behavior
             )
-            
+
             args = tree_flatten(args)[0]
-            
+
             # Compute the profiling array
             if len(jaspr.outvars) > 1:
                 profiling_array = profiling_array_computer(*args)[-1][0]
@@ -301,10 +300,8 @@ def get_profiling_array_computer(jaspr, meas_behavior):
         elif primitives[i].name == "jasp.measure" and not "measure" in profiling_dic:
             profiling_dic["measure"] = len(profiling_dic) - 1
 
-    profiling_eqn_evaluator = make_profiling_eqn_evaluator(
-        profiling_dic, meas_behavior
-    )
-    
+    profiling_eqn_evaluator = make_profiling_eqn_evaluator(profiling_dic, meas_behavior)
+
     evaluator = jax.jit(eval_jaxpr(jaspr, eqn_evaluator=profiling_eqn_evaluator))
 
     # This function calls the profiling interpeter to evaluate the gate counts
@@ -321,13 +318,18 @@ def get_profiling_array_computer(jaspr, meas_behavior):
         # incrementation (i.e. CZ_count += 1). It therefore doesn't
         # look like a constant is being added but a variable
         final_arg = ([0] * len(profiling_dic), list(range(1, 6)))
-        
+
         # Filter out types that are known to be static (https://github.com/eclipse-qrisp/Qrisp/issues/258)
-        filtered_args = []        
-        from qrisp.operators import QubitOperator, FermionicOperator
-        
+        filtered_args = []
+        from qrisp.operators import FermionicOperator, QubitOperator
+
         for x in list(args) + [final_arg]:
-            if type(x) not in [str, QubitOperator, FermionicOperator, types.FunctionType]:
+            if type(x) not in [
+                str,
+                QubitOperator,
+                FermionicOperator,
+                types.FunctionType,
+            ]:
                 filtered_args.append(x)
 
         res = evaluator(*filtered_args)

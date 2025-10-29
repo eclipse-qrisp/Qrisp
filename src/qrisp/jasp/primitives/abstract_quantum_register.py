@@ -19,7 +19,8 @@
 import jax.numpy as jnp
 from jax.core import AbstractValue, ShapedArray
 from jax.extend.core import Primitive
-from qrisp.jasp.primitives import QuantumPrimitive, AbstractQubit
+
+from qrisp.jasp.primitives import AbstractQubit, QuantumPrimitive
 
 get_qubit_p = QuantumPrimitive("get_qubit")
 get_size_p = QuantumPrimitive("get_size")
@@ -28,7 +29,7 @@ fuse_p = QuantumPrimitive("fuse")
 
 
 class AbstractQubitArray(AbstractValue):
-    
+
     def __init__(self):
         self.vma = None
         AbstractValue.__init__(self)

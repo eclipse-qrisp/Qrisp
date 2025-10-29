@@ -23,11 +23,10 @@
 # from qrisp.operators.hamiltonian import *
 # from qrisp.operators.hamiltonian_tools import *
 
+from qrisp.operators.fermionic import *
 from qrisp.operators.hamiltonian import *
 from qrisp.operators.hamiltonian_tools import *
-
 from qrisp.operators.qubit import *
-from qrisp.operators.fermionic import *
 
 # from qrisp.operators.qubit.pauli_operator import *
 # from qrisp.operators.qubit.bound_pauli_operator import *

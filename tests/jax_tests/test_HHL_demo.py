@@ -16,9 +16,11 @@
 ********************************************************************************
 """
 
+
 def test_HHL_demo():
 
     import jax
+
     import qrisp
 
     qv = qrisp.QuantumVariable(5)
@@ -39,7 +41,16 @@ def test_HHL_demo():
     qrisp.h(a)
     print(a)
 
-    assert a.get_measurement() == {0.0: 0.125, 0.25: 0.125, 0.5: 0.125, 0.75: 0.125, 1.0: 0.125, 1.25: 0.125, 1.5: 0.125, 1.75: 0.125}
+    assert a.get_measurement() == {
+        0.0: 0.125,
+        0.25: 0.125,
+        0.5: 0.125,
+        0.75: 0.125,
+        1.0: 0.125,
+        1.25: 0.125,
+        1.5: 0.125,
+        1.75: 0.125,
+    }
 
     ############################################################
 
@@ -76,9 +87,9 @@ def test_HHL_demo():
     qb_1 = qrisp.QuantumBool()
     print(qb_1)
     print(qb | qb_1)
-    print(qb & qb_1)   
+    print(qb & qb_1)
 
-    ############################################################ 
+    ############################################################
 
     a = qrisp.QuantumFloat(4)
     qrisp.h(a[3])
@@ -113,7 +124,7 @@ def test_HHL_demo():
                     U(psi)
 
         return qrisp.QFT(res, inv=True)
-    
+
     ############################################################
 
     import numpy as np
@@ -132,7 +143,12 @@ def test_HHL_demo():
 
     print(qrisp.multi_measurement([psi, res]))
 
-    assert qrisp.multi_measurement([psi, res]) == {(0, 0.0): 0.25, (1, 0.5): 0.25, (2, 0.125): 0.25, (3, 0.625): 0.25}
+    assert qrisp.multi_measurement([psi, res]) == {
+        (0, 0.0): 0.25,
+        (1, 0.5): 0.25,
+        (2, 0.125): 0.25,
+        (3, 0.625): 0.25,
+    }
 
     ############################################################
 
@@ -160,7 +176,7 @@ def test_HHL_demo():
             qrisp.cx(qf[i], res[qf.size - i])
 
         return res
-    
+
     ############################################################
 
     qf = qrisp.QuantumFloat(3, -3)
@@ -169,7 +185,11 @@ def test_HHL_demo():
     res = fake_inversion(qf)
     print(qrisp.multi_measurement([qf, res]))
 
-    assert qrisp.multi_measurement([qf, res]) == {(0.125, 8): 0.3333333333333333, (0.25, 4): 0.3333333333333333, (0.5, 2): 0.3333333333333333}
+    assert qrisp.multi_measurement([qf, res]) == {
+        (0.125, 8): 0.3333333333333333,
+        (0.25, 4): 0.3333333333333333,
+        (0.5, 2): 0.3333333333333333,
+    }
 
     ############################################################
 
@@ -187,13 +207,15 @@ def test_HHL_demo():
         case_indicator = qrisp.QuantumFloat(inv_res.size)
 
         with qrisp.conjugate(qrisp.h)(case_indicator):
-            qbl = (case_indicator >= inv_res)
+            qbl = case_indicator >= inv_res
 
-        cancellation_bool = (qrisp.measure(case_indicator) == 0) & (qrisp.measure(qbl) == 0)
+        cancellation_bool = (qrisp.measure(case_indicator) == 0) & (
+            qrisp.measure(qbl) == 0
+        )
 
         # The first return value is a boolean value. Additional return values are QuantumVariables.
         return cancellation_bool, qf, qpe_res, inv_res
-    
+
     ############################################################
 
     def HHL(b, hamiltonian_evolution, n, precision):
@@ -210,11 +232,12 @@ def test_HHL_demo():
             qrisp.swap(qf[i], qf[n - i - 1])
 
         return qf
-    
+
     ############################################################
 
-    from qrisp.operators import QubitOperator
     import numpy as np
+
+    from qrisp.operators import QubitOperator
 
     A = np.array([[3 / 8, 1 / 8], [1 / 8, 3 / 8]])
     b = np.array([1, 1])
@@ -223,7 +246,7 @@ def test_HHL_demo():
 
     # By default e^{-itH} is performed. Therefore, we set t=-pi.
     def U(qf):
-        H.trotterization()(qf, t=-np.pi, steps=1)    
+        H.trotterization()(qf, t=-np.pi, steps=1)
 
     ############################################################
 
@@ -237,7 +260,7 @@ def test_HHL_demo():
     for k, v in res_dict.items():
         res_dict[k] = v**0.5
 
-    x_ = np.array([res_dict[key] for key in sorted(res_dict)]) 
+    x_ = np.array([res_dict[key] for key in sorted(res_dict)])
     print(x_)
 
     ############################################################
@@ -245,7 +268,7 @@ def test_HHL_demo():
     x = (np.linalg.inv(A) @ b) / np.linalg.norm(np.linalg.inv(A) @ b)
     print(x)
 
-    assert np.linalg.norm(np.abs(x_)-np.abs(x)) < 1e-3
+    assert np.linalg.norm(np.abs(x_) - np.abs(x)) < 1e-3
 
     ############################################################
 
@@ -293,7 +316,7 @@ def test_HHL_demo():
     for k, v in res_dict.items():
         res_dict[k] = v**0.5
 
-    x_ = np.array([res_dict[key] for key in sorted(res_dict)])  
+    x_ = np.array([res_dict[key] for key in sorted(res_dict)])
     print(x_)
 
     ############################################################
@@ -301,7 +324,7 @@ def test_HHL_demo():
     x = (np.linalg.inv(A) @ b) / np.linalg.norm(np.linalg.inv(A) @ b)
     print(x)
 
-    assert np.linalg.norm(np.abs(x_)-np.abs(x)) < 1e-1
+    assert np.linalg.norm(np.abs(x_) - np.abs(x)) < 1e-1
 
     ############################################################
 
@@ -317,7 +340,7 @@ def test_HHL_demo():
         # quantum variables, while most other evaluation modes require
         # classical return values.
         return qrisp.measure(x)
-    
+
     try:
         import catalyst
     except ImportError:
@@ -327,7 +350,6 @@ def test_HHL_demo():
     qir_str = jaspr.to_qir()
     # Print only the first few lines - the whole string is very long.
     print(qir_str[:200])
-
 
     ############################################################
 

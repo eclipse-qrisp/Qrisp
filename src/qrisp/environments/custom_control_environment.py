@@ -21,13 +21,18 @@ import inspect
 import jax
 import jax.numpy as jnp
 
-from qrisp.environments.quantum_environments import QuantumEnvironment
-from qrisp.environments.gate_wrap_environment import GateWrapEnvironment
-from qrisp.circuit import Operation, QuantumCircuit, Instruction
-from qrisp.environments.iteration_environment import IterationEnvironment
+from qrisp.circuit import Instruction, Operation, QuantumCircuit
 from qrisp.core import merge
-
-from qrisp.jasp import check_for_tracing_mode, qache, AbstractQubit, make_jaspr, get_last_equation
+from qrisp.environments.gate_wrap_environment import GateWrapEnvironment
+from qrisp.environments.iteration_environment import IterationEnvironment
+from qrisp.environments.quantum_environments import QuantumEnvironment
+from qrisp.jasp import (
+    AbstractQubit,
+    check_for_tracing_mode,
+    get_last_equation,
+    make_jaspr,
+    qache,
+)
 
 
 def custom_control(*func, **cusc_kwargs):
@@ -151,29 +156,29 @@ def custom_control(*func, **cusc_kwargs):
     # The controlled version is then stored in the params attribute
 
     # Qache the function (in non-traced mode, this has no effect)
-    
+
     # Make sure the inv keyword argument is treated as a static argument
     new_static_argnames = list(cusc_kwargs.get("static_argnames", []))
     new_static_argnames.append("inv")
-    
+
     qache_kwargs = dict(cusc_kwargs)
     qache_kwargs["static_argnames"] = new_static_argnames
-    
+
     func = qache(func, **qache_kwargs)
 
     def adaptive_control_function(*args, **kwargs):
 
         if not check_for_tracing_mode():
 
-            from qrisp.core import recursive_qs_search
             from qrisp import (
-                merge,
-                ControlEnvironment,
                 ConditionEnvironment,
-                QuantumEnvironment,
-                InversionEnvironment,
                 ConjugationEnvironment,
+                ControlEnvironment,
+                InversionEnvironment,
+                QuantumEnvironment,
+                merge,
             )
+            from qrisp.core import recursive_qs_search
 
             qs_list = recursive_qs_search(args)
 
@@ -267,17 +272,17 @@ def custom_control(*func, **cusc_kwargs):
                     new_kwargs["ctrl"] = ammended_args[0]
                     args = ammended_args[1:]
                     if custom_inversion:
-                        return func(*args, inv = custom_inv_value, **new_kwargs)
+                        return func(*args, inv=custom_inv_value, **new_kwargs)
                     else:
                         return func(*args, **new_kwargs)
 
                 ctrl_aval = AbstractQubit()
                 ammended_args = [ctrl_aval] + list(args)
-                
+
                 controlled_jaspr = make_jaspr(ammended_func, **cusc_kwargs)(
                     *ammended_args, **kwargs
                 )
-                
+
                 # Store controlled version
                 jit_eqn.params["jaxpr"].ctrl_jaspr = controlled_jaspr
 

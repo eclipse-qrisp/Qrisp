@@ -16,12 +16,12 @@
 ********************************************************************************
 """
 
+import sympy as sp
+
+from qrisp import IterationEnvironment, conjugate, h, merge, sx
 from qrisp.operators.hamiltonian import Hamiltonian
 from qrisp.operators.qubit.bound_qubit_term import BoundQubitTerm
 from qrisp.operators.qubit.measurement import get_measurement
-from qrisp import h, sx, IterationEnvironment, conjugate, merge
-
-import sympy as sp
 
 threshold = 1e-9
 
@@ -429,7 +429,8 @@ class BoundQubitOperator(Hamiltonian):
         """
 
         import scipy.sparse as sp
-        from scipy.sparse import kron as TP, csr_matrix
+        from scipy.sparse import csr_matrix
+        from scipy.sparse import kron as TP
 
         I = csr_matrix([[1, 0], [0, 1]])
 
@@ -692,7 +693,7 @@ class BoundQubitOperator(Hamiltonian):
         )
 
     def unbind(self):
-        from qrisp.operators import QubitTerm, QubitOperator
+        from qrisp.operators import QubitOperator, QubitTerm
 
         participating_qubits = []
         for term, coeff in self.terms_dict.items():

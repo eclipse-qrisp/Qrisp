@@ -53,7 +53,9 @@ def pjit_to_gate(pjit_eqn, context_dic, eqn_evaluator):
 
     for i in range(len(new_qc.data)):
         if new_qc.data[i].op.num_clbits:
-            old_qc.extend(new_qc, translation_dic = {b : b for b in new_qc.qubits + new_qc.clbits})
+            old_qc.extend(
+                new_qc, translation_dic={b: b for b in new_qc.qubits + new_qc.clbits}
+            )
             break
     else:
         # Append the wrapped old circuit to the new circuit
@@ -69,7 +71,7 @@ def pjit_to_gate(pjit_eqn, context_dic, eqn_evaluator):
 
 
 def cond_to_cl_control(eqn, context_dic, eqn_evaluator):
-    from qrisp.circuit import QuantumCircuit, Clbit
+    from qrisp.circuit import Clbit, QuantumCircuit
 
     if len(eqn.params["branches"]) > 2:
         raise Exception(

@@ -18,8 +18,9 @@
 
 
 def outome_array_hashing_test():
-    from qrisp import OutcomeArray
     import numpy as np
+
+    from qrisp import OutcomeArray
 
     test = OutcomeArray(np.eye(3))
 

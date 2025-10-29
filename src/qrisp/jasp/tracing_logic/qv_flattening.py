@@ -17,14 +17,15 @@
 """
 
 import copy
-from jax import tree_util
+
 import jax.numpy as jnp
+from jax import tree_util
+
 from qrisp.jasp.tracing_logic import (
-    TracingQuantumSession,
     DynamicQubitArray,
+    TracingQuantumSession,
     check_for_tracing_mode,
 )
-
 
 # This class has two purposes
 

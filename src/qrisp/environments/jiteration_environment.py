@@ -16,12 +16,11 @@
 ********************************************************************************
 """
 
-from jax.lax import while_loop
-from jax.extend.core import Literal
 from jax.core import ShapedArray
+from jax.extend.core import Literal
+from jax.lax import while_loop
 
 from qrisp.environments import QuantumEnvironment
-
 
 # The idea behind this equation compiler is the following:
 # The jrange feature executes 2 iterations of the loop to capture
@@ -194,7 +193,7 @@ def iteration_env_evaluator(eqn, context_dic):
                 if isinstance(iteration_2_eqn.invars[i].aval, ShapedArray):
                     update_rules.append(None)
                     continue
-                
+
                 raise
             update_rules.append(res_index)
         else:

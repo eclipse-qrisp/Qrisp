@@ -16,7 +16,8 @@
 ********************************************************************************
 """
 
+from qrisp.operators.fermionic.fermionic import *
+from qrisp.operators.fermionic.fermionic_operator import *
+
 # -*- coding: utf-8 -*-
 from qrisp.operators.fermionic.trotterization import *
-from qrisp.operators.fermionic.fermionic_operator import *
-from qrisp.operators.fermionic.fermionic import *

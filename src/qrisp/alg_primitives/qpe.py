@@ -16,8 +16,8 @@
 ********************************************************************************
 """
 
-from qrisp.core.gate_application_functions import h
 from qrisp.alg_primitives.qft import QFT
+from qrisp.core.gate_application_functions import h
 from qrisp.jasp import jrange
 
 

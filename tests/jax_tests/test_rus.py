@@ -16,12 +16,14 @@
 ********************************************************************************
 """
 
-from qrisp import *
-from qrisp.jasp import *
 from jax import make_jaxpr
 
+from qrisp import *
+from qrisp.jasp import *
+
+
 def test_rus():
-    
+
     @RUS
     def rus_trial_function():
         qf = QuantumFloat(5)
@@ -42,11 +44,11 @@ def test_rus():
     jaspr = make_jaspr(call_RUS_example)()
     assert jaspr() == 31
     # Yields, 31 which is the decimal version of 11111
-    
+
     # More complicated example
-    
+
     def test_function():
-        
+
         @RUS
         def trial_function():
             a = QuantumFloat(5)
@@ -54,23 +56,23 @@ def test_rus():
             qbl = QuantumBool()
             a[:] = 10
             h(qbl[0])
-            
+
             with control(qbl[0]):
-                jasp_mod_adder(a, b, 7, inpl_adder = jasp_fourier_adder)
-            
+                jasp_mod_adder(a, b, 7, inpl_adder=jasp_fourier_adder)
+
             return measure(qbl[0]), b
-        
-        
+
         res = trial_function()
         jasp_fourier_adder(5, res)
-        
+
         return measure(res)
+
     jaspr = make_jaspr(test_function)()
-    
+
     assert jaspr() == 8
-    
+
     # Test LCU feature
-    
+
     def case_function_0(x):
         pass
 
@@ -86,40 +88,43 @@ def test_rus():
     def case_function_4(x):
         x += 4
 
-    case_function_list = [case_function_0, case_function_1, case_function_2, case_function_3]
+    case_function_list = [
+        case_function_0,
+        case_function_1,
+        case_function_2,
+        case_function_3,
+    ]
 
     def state_preparation(qv):
         h(qv)
 
-
     # Encodes |3> + |4> + |5> + |6>
     def block_encoding():
-        
+
         qf = QuantumFloat(3)
         qf[:] = 3
-        
+
         case_indicator = QuantumFloat(2)
         case_indicator_qubits = [case_indicator[i] for i in range(2)]
-        
+
         with conjugate(state_preparation)(case_indicator):
             for i in range(len(case_function_list)):
-                with control(case_indicator_qubits, ctrl_state = i):
+                with control(case_indicator_qubits, ctrl_state=i):
                     case_function_list[i](qf)
-        
-        return measure(case_indicator) == 0, qf
 
+        return measure(case_indicator) == 0, qf
 
     @jaspify
     def main():
-        
+
         qf = RUS(block_encoding)()
-        
+
         return measure(qf)
 
-    assert main() in [3,4,5,6]
-    
+    assert main() in [3, 4, 5, 6]
+
     # Test static arguments
-    
+
     def case_function_0(x):
         x += 3
 
@@ -132,10 +137,12 @@ def test_rus():
     def case_function_3(x):
         x += 6
 
-    case_functions = (case_function_0, 
-                      case_function_1, 
-                      case_function_2, 
-                      case_function_3)
+    case_functions = (
+        case_function_0,
+        case_function_1,
+        case_function_2,
+        case_function_3,
+    )
 
     def state_prep_full(qv):
         h(qv[0])
@@ -149,37 +156,37 @@ def test_rus():
 
     @RUS
     def block_encoding(return_size, state_preparation, case_functions):
-        
+
         # This QuantumFloat will be returned
         qf = QuantumFloat(return_size)
-        
+
         # Specify the QuantumVariable that indicates, which
         # case to execute
         n = int(np.ceil(np.log2(len(case_functions))))
         case_indicator = QuantumFloat(n)
-        
+
         # Turn into a list of qubits
         case_indicator_qubits = [case_indicator[i] for i in range(n)]
-        
+
         # Perform the LCU protocoll
         with conjugate(state_preparation)(case_indicator):
             for i in range(len(case_functions)):
-                with control(case_indicator_qubits, ctrl_state = i):
+                with control(case_indicator_qubits, ctrl_state=i):
                     case_functions[i](qf)
-        
+
         # Compute the success condition
-        success_bool = (measure(case_indicator) == 0)
-        
+        success_bool = measure(case_indicator) == 0
+
         return success_bool, qf
 
     @terminal_sampling
     def main():
         return block_encoding(4, state_prep_full, case_functions)
-    
+
     res_dict = main()
     expected_res = {3.0: 0.25, 4.0: 0.25, 5.0: 0.25, 6.0: 0.25}
-    
+
     assert len(res_dict) == len(expected_res)
-    
+
     for k, v in res_dict.items():
-        assert abs(expected_res[k] - res_dict[k]) < 1E-3
+        assert abs(expected_res[k] - res_dict[k]) < 1e-3

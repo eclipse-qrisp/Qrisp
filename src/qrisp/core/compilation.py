@@ -16,28 +16,28 @@
 ********************************************************************************
 """
 
-import numpy as np
 import networkx as nx
+import numpy as np
 
 from qrisp.circuit import (
-    QuantumCircuit,
-    Operation,
-    Qubit,
-    PTControlledOperation,
+    ClControlledOperation,
     ControlledOperation,
-    transpile,
+    GPhaseGate,
     Instruction,
-    fast_append,
+    Operation,
+    PGate,
+    PTControlledOperation,
+    QuantumCircuit,
+    Qubit,
     RXGate,
     RYGate,
     RZGate,
     RZZGate,
-    PGate,
-    GPhaseGate,
-    ClControlledOperation
+    fast_append,
+    transpile,
 )
 from qrisp.misc import get_depth_dic, retarget_instructions
-from qrisp.permeability import optimize_allocations, parallelize_qc, lightcone_reduction
+from qrisp.permeability import lightcone_reduction, optimize_allocations, parallelize_qc
 
 # The purpose of this function is to dynamically (de)allocate qubits when they are
 # needed or not needed anymore. The qompiler function knows when a qubit is ready to
@@ -127,9 +127,9 @@ def qompiler(
         #   can also look into reordering the inner structure of high-level functions to also
         #   get a good allocation strategy for this type of functions.
 
+        from qrisp.alg_primitives.arithmetic import QuasiRZZ
         from qrisp.alg_primitives.logic_synthesis import LogicSynthGate
         from qrisp.alg_primitives.mcx_algs import GidneyLogicalAND, JonesToffoli
-        from qrisp.alg_primitives.arithmetic import QuasiRZZ
 
         def allocation_level_transpile_predicate(op):
 
@@ -194,8 +194,6 @@ def qompiler(
         transpiled_qc = transpile(
             qc, transpile_predicate=allocation_level_transpile_predicate
         )
-        
-        
 
         reordered_qc = optimize_allocations(transpiled_qc)
 
@@ -210,11 +208,10 @@ def qompiler(
                 isinstance(op, LogicSynthGate)
                 or ("equal" in op.name)
                 or ("less_than" in op.name)
-                or (op.name in  ["cp"] and op.num_qubits == 2)
+                or (op.name in ["cp"] and op.num_qubits == 2)
                 or allocation_level_transpile_predicate(op)
             )
 
-        
         reordered_qc = transpile(
             reordered_qc, transpile_predicate=logic_synth_transpile_predicate
         )
@@ -487,8 +484,8 @@ def gen_hybrid_mcx_data(
 
     # This function generates the data for the hybrid mcx implementation
 
-    from qrisp.core import QuantumVariable
     from qrisp.alg_primitives.mcx_algs import hybrid_mcx
+    from qrisp.core import QuantumVariable
 
     # Specify QuantumVariables to call mcx function
     control_qv = QuantumVariable(len(controls), name="control")
@@ -780,9 +777,11 @@ def fuse_instructions(instr_a, instr_b, gphase_array):
 
     if len(instr_a.qubits) != len(instr_b.qubits):
         return None
-    if isinstance(instr_a.op, ClControlledOperation) or isinstance(instr_b.op, ClControlledOperation):
+    if isinstance(instr_a.op, ClControlledOperation) or isinstance(
+        instr_b.op, ClControlledOperation
+    ):
         return None
-    
+
     symmetric_instruction = None
     if instr_a.op.name in ["cz", "swap", "cp", "rzz"]:
         symmetric_instruction = "a"
@@ -811,7 +810,7 @@ def fuse_operations(op_a, op_b, gphase_array):
 
     from qrisp.alg_primitives import GidneyLogicalAND
     from qrisp.environments import CustomControlOperation
-    
+
     with fast_append(0):
         if "swap" == op_a.name:
             if op_b.name == "cx":
@@ -821,19 +820,19 @@ def fuse_operations(op_a, op_b, gphase_array):
                 return half_swap_qc.to_gate()
             elif op_b.name == "rzz":
                 half_rzz_qc = QuantumCircuit(2)
-                half_rzz_qc.cx(0,1)
-                half_rzz_qc.cx(1,0)
+                half_rzz_qc.cx(0, 1)
+                half_rzz_qc.cx(1, 0)
                 half_rzz_qc.rz(op_b.params[0], 1)
-                half_rzz_qc.cx(0,1)
+                half_rzz_qc.cx(0, 1)
                 return half_rzz_qc.to_gate()
             elif op_b.name == "cp":
                 half_cp_qc = QuantumCircuit(2)
-                half_cp_qc.cx(0,1)
-                half_cp_qc.cx(1,0)
-                half_cp_qc.p(-op_b.params[0]/2, 1)
-                half_cp_qc.cx(0,1)
-                half_cp_qc.p(op_b.params[0]/2, 0)
-                half_cp_qc.p(op_b.params[0]/2, 1)
+                half_cp_qc.cx(0, 1)
+                half_cp_qc.cx(1, 0)
+                half_cp_qc.p(-op_b.params[0] / 2, 1)
+                half_cp_qc.cx(0, 1)
+                half_cp_qc.p(op_b.params[0] / 2, 0)
+                half_cp_qc.p(op_b.params[0] / 2, 1)
                 return half_cp_qc.to_gate()
         if "swap" == op_b.name:
             if op_a.name == "cx":
@@ -843,19 +842,19 @@ def fuse_operations(op_a, op_b, gphase_array):
                 return half_swap_qc.to_gate()
             elif op_a.name == "rzz":
                 half_rzz_qc = QuantumCircuit(2)
-                half_rzz_qc.cx(0,1)
-                half_rzz_qc.cx(1,0)
+                half_rzz_qc.cx(0, 1)
+                half_rzz_qc.cx(1, 0)
                 half_rzz_qc.rz(op_a.params[0], 1)
-                half_rzz_qc.cx(0,1)
+                half_rzz_qc.cx(0, 1)
                 return half_rzz_qc.to_gate()
             elif op_a.name == "cp":
                 half_cp_qc = QuantumCircuit(2)
-                half_cp_qc.cx(0,1)
-                half_cp_qc.cx(1,0)
-                half_cp_qc.p(-op_a.params[0]/2, 1)
-                half_cp_qc.cx(0,1)
-                half_cp_qc.p(op_a.params[0]/2, 0)
-                half_cp_qc.p(op_a.params[0]/2, 1)
+                half_cp_qc.cx(0, 1)
+                half_cp_qc.cx(1, 0)
+                half_cp_qc.p(-op_a.params[0] / 2, 1)
+                half_cp_qc.cx(0, 1)
+                half_cp_qc.p(op_a.params[0] / 2, 0)
+                half_cp_qc.p(op_a.params[0] / 2, 1)
                 return half_cp_qc.to_gate()
 
     if op_a.definition or op_a.name in ["cx", "cy", "cz"]:
@@ -951,10 +950,10 @@ def cancel_inverses(qc):
     for i in range(qc.num_qubits()):
         qubit_dic[qc.qubits[i]] = -i - 1
         G.add_node(-i - 1)
-        
+
     for i in range(len(qc.clbits)):
-        clbit_dic[qc.clbits[i]] = -i-1
-        G.add_node(-qc.num_qubits() - i -1)
+        clbit_dic[qc.clbits[i]] = -i - 1
+        G.add_node(-qc.num_qubits() - i - 1)
 
     data_list = list(qc.data)
     for i in range(len(data_list)):
@@ -973,7 +972,7 @@ def cancel_inverses(qc):
 
             edge_dic[(qubit_dic[qb], i)].append(qb)
             qubit_dic[qb] = i
-        
+
         for cb in instr.clbits:
             G.add_edge(clbit_dic[cb], i)
             clbit_dic[cb] = i
@@ -984,9 +983,9 @@ def cancel_inverses(qc):
             pred = predecessors[0]
             if pred < 0:
                 continue
-            
+
             fused_gate = fuse_instructions(data_list[pred], data_list[i], gphase_array)
-            
+
             if fused_gate is not None:
                 if fused_gate == 1:
                     for edge in G.in_edges(pred):
@@ -1018,7 +1017,9 @@ def cancel_inverses(qc):
                     if gphase_array[0] != 0:
                         qc_new.gphase(gphase_array[0], data_list[i].qubits[0])
                 if data_list[i].op.name != "gphase":
-                    qc_new.append(data_list[i].op, data_list[i].qubits, qc.data[i].clbits)
+                    qc_new.append(
+                        data_list[i].op, data_list[i].qubits, qc.data[i].clbits
+                    )
                 else:
                     gphase_array[0] += data_list[i].op.params[0]
     return qc_new

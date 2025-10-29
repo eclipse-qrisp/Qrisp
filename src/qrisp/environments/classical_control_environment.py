@@ -16,13 +16,17 @@
 ********************************************************************************
 """
 
-from jax.lax import cond
-from jax.extend.core import ClosedJaxpr
 import jax
-
+from jax.extend.core import ClosedJaxpr
+from jax.lax import cond
 
 from qrisp.environments import QuantumEnvironment
-from qrisp.jasp import extract_invalues, insert_outvalues, check_for_tracing_mode, get_last_equation
+from qrisp.jasp import (
+    check_for_tracing_mode,
+    extract_invalues,
+    get_last_equation,
+    insert_outvalues,
+)
 
 
 class ClControlEnvironment(QuantumEnvironment):
@@ -244,26 +248,23 @@ class ClControlEnvironment(QuantumEnvironment):
         if self.invert:
             cond_bl = ~cond_bl
 
-        @jax.jit       
+        @jax.jit
         def identity_fun(*args):
             return args[-1]
-        
+
         true_fun = identity_fun
         false_fun = identity_fun
-        
+
         res_abs_qc = cond(cond_bl, true_fun, false_fun, *env_vars)
-        
+
         insert_outvalues(eqn, context_dic, [res_abs_qc])
-        
+
         traced_eqn = get_last_equation()
-        
+
         branch_0 = traced_eqn.params["branches"][0]
         branch_0.jaxpr.eqns.pop(0)
         branch_0.jaxpr.outvars[-1] = branch_0.jaxpr.invars[-1]
-        
+
         from qrisp.jasp import Jaspr
-        
-        traced_eqn.params["branches"] = (Jaspr.from_cache(branch_0),
-                                         body_jaspr)
-        
-        
+
+        traced_eqn.params["branches"] = (Jaspr.from_cache(branch_0), body_jaspr)

@@ -16,10 +16,12 @@
 ********************************************************************************
 """
 
-from qrisp.algorithms.qaoa.qaoa_problem import QAOAProblem
-import inspect
-import numpy as np
 import copy
+import inspect
+
+import numpy as np
+
+from qrisp.algorithms.qaoa.qaoa_problem import QAOAProblem
 
 
 class QIROProblem(QAOAProblem):

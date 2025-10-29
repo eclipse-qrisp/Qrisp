@@ -16,9 +16,11 @@
 ********************************************************************************
 """
 
-from qrisp.alg_primitives import app_sb_phase_polynomial
-import sympy as sp
 import math
+
+import sympy as sp
+
+from qrisp.alg_primitives import app_sb_phase_polynomial
 
 
 def create_maxsat_cost_polynomials(problem):

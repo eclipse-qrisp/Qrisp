@@ -19,7 +19,7 @@
 import jax
 import jax.numpy as jnp
 
-from qrisp.jasp.tracing_logic import quantum_kernel, check_for_tracing_mode
+from qrisp.jasp.tracing_logic import check_for_tracing_mode, quantum_kernel
 
 # The following function implements the sample feature.
 
@@ -164,8 +164,8 @@ def sample(state_prep=None, shots=0, post_processor=None):
 
     """
 
-    from qrisp.jasp import qache
     from qrisp.core import QuantumVariable, measure
+    from qrisp.jasp import qache
 
     if isinstance(state_prep, int):
         shots = state_prep
@@ -261,7 +261,7 @@ def sample(state_prep=None, shots=0, post_processor=None):
                 return decoded_values
 
             decoded_values = sampling_helper_2(*measurement_ints)
-            
+
             # Insert into the accumulating array
             acc = acc.at[i].set(decoded_values)
 

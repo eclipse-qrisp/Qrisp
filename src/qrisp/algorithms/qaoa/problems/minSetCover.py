@@ -16,7 +16,7 @@
 ********************************************************************************
 """
 
-from qrisp import QuantumVariable, QuantumBool, x, mcx
+from qrisp import QuantumBool, QuantumVariable, mcx, x
 from qrisp.algorithms.qaoa.mixers import controlled_RX_mixer_gen
 
 

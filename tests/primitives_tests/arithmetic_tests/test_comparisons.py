@@ -16,9 +16,9 @@
 ********************************************************************************
 """
 
-
-from qrisp import h, QuantumFloat, multi_measurement, QuantumModulus, gphase
 import numpy as np
+
+from qrisp import QuantumFloat, QuantumModulus, gphase, h, multi_measurement
 
 
 def test_quantum_float_comparison():
@@ -69,69 +69,67 @@ def test_quantum_float_comparison():
 
 
 def test_quantum_modulus_comparison():
-    
+
     a = QuantumModulus(5)
     b = QuantumModulus(5)
-    
+
     for comp in ["eq", "neq", "lt", "gt", "leq", "geq"]:
         comparison_helper(a, b, comp)
-        
+
     a = QuantumModulus(7)
     b = QuantumModulus(7)
-    
+
     for comp in ["eq", "neq", "lt", "gt", "leq", "geq"]:
         comparison_helper(a, b, comp)
-        
+
     a = QuantumModulus(13)
     b = QuantumModulus(13)
-    
+
     for comp in ["eq", "neq", "lt", "gt", "leq", "geq"]:
         comparison_helper(a, b, comp)
-        
+
     a = QuantumModulus(5)
     b = 3
-    
+
     for comp in ["eq", "neq", "lt", "gt", "leq", "geq"]:
         comparison_helper(a, b, comp)
-        
+
     a = QuantumModulus(7)
     b = 5
-    
+
     for comp in ["eq", "neq", "lt", "gt", "leq", "geq"]:
         comparison_helper(a, b, comp)
-        
+
     a = QuantumModulus(13)
     b = 7
-    
+
     for comp in ["eq", "neq", "lt", "gt", "leq", "geq"]:
         comparison_helper(a, b, comp)
-        
-    
+
     # Test comparisons as ConditionalEnvironments
-    
+
     qf1 = QuantumFloat(2)
     qf2 = QuantumFloat(2)
 
     h(qf1)
     h(qf2)
 
-    with qf1==qf2:
-        gphase(np.pi,qf1[0])
+    with qf1 == qf2:
+        gphase(np.pi, qf1[0])
 
     qf1.qs.statevector()
-    
+
     qf1 = QuantumFloat(2)
     qf2 = QuantumFloat(2)
 
     h(qf1)
     h(qf2)
 
-    with qf1<qf2:
-        gphase(np.pi,qf1[0])
+    with qf1 < qf2:
+        gphase(np.pi, qf1[0])
 
     qf1.qs.statevector()
 
-    
 
 def comparison_helper(qf_0, qf_1, comp):
     qf_0 = qf_0.duplicate()
@@ -157,13 +155,12 @@ def comparison_helper(qf_0, qf_1, comp):
     if isinstance(qf_1, (QuantumFloat, QuantumModulus)):
         mes_res = multi_measurement([qf_0, qf_1, qf_res])
         for a, b, c in mes_res.keys():
-            
+
             if a is np.nan or b is np.nan:
                 continue
-            
+
             print(a, b, c)
-            
-            
+
             if comp == "eq":
                 assert (a == b) == c
             elif comp == "neq":
@@ -180,18 +177,16 @@ def comparison_helper(qf_0, qf_1, comp):
         # Test correct phase behavior7
         statevector = qf_res.qs.statevector("array")
         angles = np.angle(
-            statevector[
-                np.abs(statevector) > 1 / 2 ** ((qf_0.size + qf_1.size) / 2)
-            ]
+            statevector[np.abs(statevector) > 1 / 2 ** ((qf_0.size + qf_1.size) / 2)]
         )
         assert np.sum(np.abs(angles)) < 0.1
     else:
         mes_res = multi_measurement([qf_0, qf_res])
         for a, c in mes_res.keys():
-            
+
             if a is np.nan:
                 continue
-            
+
             b = qf_1
             print(a, b, c)
             if comp == "eq":

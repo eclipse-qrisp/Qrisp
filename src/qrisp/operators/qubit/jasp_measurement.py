@@ -16,13 +16,13 @@
 ********************************************************************************
 """
 
-import numpy as np
-from qrisp.core import QuantumVariable, measure
-from qrisp.jasp import sample
-
 import jax
 import jax.numpy as jnp
-from jax.lax import while_loop, fori_loop
+import numpy as np
+from jax.lax import fori_loop, while_loop
+
+from qrisp.core import QuantumVariable, measure
+from qrisp.jasp import sample
 
 
 def get_jasp_measurement(
@@ -148,7 +148,9 @@ def jasp_evaluate_expectation_jitted(samples, operators, coefficients):
 
     # Evaluate and sum intermediate results for each measurement setting
     for index, ops in enumerate(operators):
-        expectation += sum_over_observables_and_samples(ops, samples[index], coefficients[index]) / len(samples[index])
+        expectation += sum_over_observables_and_samples(
+            ops, samples[index], coefficients[index]
+        ) / len(samples[index])
 
     return expectation
 
@@ -161,7 +163,7 @@ def jasp_evaluate_observable_jitted(observable: tuple, x: int):
 
     # The observable is given as tuple, containing four integers.
     # To understand the meaning of these integers check QubitTerm.serialize.
-    #print(observable)
+    # print(observable)
     # Unwrap the tuple
     z_int, AND_bits, AND_ctrl_state, contains_ladder = observable
 
@@ -187,12 +189,14 @@ def jasp_evaluate_observable_jitted(observable: tuple, x: int):
 
 @jax.jit
 def sum_over_observables_and_samples(observables, x_values, coefficients):
-    
+
     def body_fun(i, val):
         sum_val = val
         obs = observables[i]
         c = coefficients[i]
-        results = jax.vmap(jasp_evaluate_observable_jitted, in_axes=(None, 0))(obs, x_values)
+        results = jax.vmap(jasp_evaluate_observable_jitted, in_axes=(None, 0))(
+            obs, x_values
+        )
         return sum_val + c * jnp.sum(results)
 
     total_sum = jax.lax.fori_loop(

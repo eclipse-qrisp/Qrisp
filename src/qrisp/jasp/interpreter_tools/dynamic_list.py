@@ -118,13 +118,13 @@ class Jlist:
             if key.start is None:
                 start = 0
             else:
-                start = key.start + (key.start < 0)*self.counter
+                start = key.start + (key.start < 0) * self.counter
 
             if key.stop is None:
                 stop = self.counter
             else:
                 stop = jnp.minimum(key.stop, self.counter)
-                stop = stop + (stop < 0)*self.counter
+                stop = stop + (stop < 0) * self.counter
 
             length = stop - start
 
@@ -146,7 +146,7 @@ class Jlist:
 
             return res
         else:
-            return self.array[key + (key < 0)*self.counter]
+            return self.array[key + (key < 0) * self.counter]
 
     @jax.jit
     def _slice(array, counter, start, end):

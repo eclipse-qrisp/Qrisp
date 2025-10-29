@@ -33,7 +33,7 @@ class AbstractQubit(AbstractValue):
         return isinstance(other, AbstractQubit)
 
     def _add(self, a, b):
-        from qrisp.jasp import fuse_qb_array, DynamicQubitArray
+        from qrisp.jasp import DynamicQubitArray, fuse_qb_array
 
         if isinstance(b, DynamicQubitArray):
             b = b.tracer

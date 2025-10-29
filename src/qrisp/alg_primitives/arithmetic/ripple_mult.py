@@ -16,7 +16,7 @@
 ********************************************************************************
 """
 
-from qrisp import cx, x, control
+from qrisp import control, cx, x
 from qrisp.alg_primitives.arithmetic.adders import fourier_adder
 from qrisp.qtypes.quantum_float import QuantumFloat
 

@@ -16,11 +16,13 @@
 ********************************************************************************
 """
 
-from qrisp.core.quantum_variable import QuantumVariable
+from qrisp.circuit import fast_append
 from qrisp.core.gate_application_functions import p, rz, x, z
+from qrisp.core.quantum_variable import QuantumVariable
 from qrisp.core.session_merging_tools import merge
 from qrisp.environments.quantum_environments import QuantumEnvironment
 from qrisp.environments.quantum_inversion import invert
+from qrisp.jasp import check_for_tracing_mode
 from qrisp.misc import (
     find_calling_line,
     perm_lock,
@@ -28,8 +30,6 @@ from qrisp.misc import (
     redirect_qfunction,
     unlock,
 )
-from qrisp.circuit import fast_append
-from qrisp.jasp import check_for_tracing_mode
 
 
 def quantum_condition(function):
@@ -347,9 +347,9 @@ class ConditionEnvironment(QuantumEnvironment):
 
     def __exit__(self, exception_type, exception_value, traceback):
         from qrisp.environments import (
+            ConjugationEnvironment,
             ControlEnvironment,
             InversionEnvironment,
-            ConjugationEnvironment,
         )
 
         # We determine the parent condition environment
@@ -368,11 +368,11 @@ class ConditionEnvironment(QuantumEnvironment):
 
     # Compile method
     def compile(self):
-        from qrisp.qtypes.quantum_bool import QuantumBool
         from qrisp.environments.control_environment import (
             ControlEnvironment,
             convert_to_custom_control,
         )
+        from qrisp.qtypes.quantum_bool import QuantumBool
 
         # Create the quantum variable where the condition truth value should be saved
         # Incase we have a parent environment we create two qubits because
@@ -630,7 +630,7 @@ def adaptive_condition(cond_eval_function):
 
 @adaptive_condition
 def q_eq(input_0, input_1, invert=False):
-    from qrisp import mcx, cx, conjugate, QuantumBool
+    from qrisp import QuantumBool, conjugate, cx, mcx
 
     res = QuantumBool(name="eq_cond*", qs=input_0[0].qs())
 

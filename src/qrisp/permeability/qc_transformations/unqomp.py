@@ -18,15 +18,14 @@
 
 import networkx as nx
 
-from qrisp.circuit import fast_append, ControlledOperation, PTControlledOperation
-from qrisp.permeability.type_checker import is_qfree
-
+from qrisp.circuit import ControlledOperation, PTControlledOperation, fast_append
 from qrisp.permeability.permeability_dag import (
-    PermeabilityGraph,
-    InstructionNode,
-    TerminatorNode,
     AllocNode,
+    InstructionNode,
+    PermeabilityGraph,
+    TerminatorNode,
 )
+from qrisp.permeability.type_checker import is_qfree
 
 
 def uncompute_qc(qc, uncomp_qbs, recompute_qubits=[]):

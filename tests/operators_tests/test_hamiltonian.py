@@ -16,17 +16,19 @@
 ********************************************************************************
 """
 
+
 def test_pauli_hamiltonian():
 
-    from qrisp import QuantumVariable, QuantumArray, h
-    from qrisp.operators.qubit import X,Y,Z
     import numpy as np
-            
+
+    from qrisp import QuantumArray, QuantumVariable, h
+    from qrisp.operators.qubit import X, Y, Z
+
     qv = QuantumVariable(2)
     h(qv)
-    H = Z(0)*Z(1)
-    res = H.get_measurement(qv, precision = 0.001)
-    assert np.abs(res-0.0) < 2e-2
+    H = Z(0) * Z(1)
+    res = H.get_measurement(qv, precision=0.001)
+    assert np.abs(res - 0.0) < 2e-2
 
     # What is the semantics here?
     # qtype = QuantumVariable(2)
@@ -36,11 +38,13 @@ def test_pauli_hamiltonian():
     # res = H.get_measurement(q_array)
     # assert np.abs(res-1.0) < 2e-2
 
+
 def test_bound_pauli_hamiltonian():
 
-    from qrisp import QuantumVariable, QuantumArray, h, x
-    from qrisp.operators.qubit import X,Y,Z
     import numpy as np
+
+    from qrisp import QuantumArray, QuantumVariable, h, x
+    from qrisp.operators.qubit import X, Y, Z
 
     qv1 = QuantumVariable(2)
     qv2 = QuantumVariable(2)
@@ -48,34 +52,41 @@ def test_bound_pauli_hamiltonian():
     h(qv1[0])
     x(qv2[0])
 
-    H = X(qv1[0])*Z(qv2[0])
-    res = H.get_measurement([qv1,qv2])
-    assert np.abs(res-(-1.0)) < 2e-2
+    H = X(qv1[0]) * Z(qv2[0])
+    res = H.get_measurement([qv1, qv2])
+    assert np.abs(res - (-1.0)) < 2e-2
+
 
 def test_trotterization():
 
-    from qrisp import QuantumVariable, x, QPE
-    from qrisp.operators.qubit import X,Y,Z
     import numpy as np
 
-    # Hydrogen https://arxiv.org/abs/1704.05018
-    G = 0.011280*Z(0)*Z(1) + 0.397936*Z(0) + 0.397936*Z(1) + 0.180931*X(0)*X(1)
-    E0 = G.ground_state_energy()
-    assert np.abs(E0-(-0.804899065613056)) < 2e-2
+    from qrisp import QPE, QuantumVariable, x
+    from qrisp.operators.qubit import X, Y, Z
 
-    U = G.trotterization(forward_evolution = False)
+    # Hydrogen https://arxiv.org/abs/1704.05018
+    G = (
+        0.011280 * Z(0) * Z(1)
+        + 0.397936 * Z(0)
+        + 0.397936 * Z(1)
+        + 0.180931 * X(0) * X(1)
+    )
+    E0 = G.ground_state_energy()
+    assert np.abs(E0 - (-0.804899065613056)) < 2e-2
+
+    U = G.trotterization(forward_evolution=False)
 
     qv = QuantumVariable(2)
-    x(qv) 
+    x(qv)
     E1 = G.get_measurement(qv)
-    assert np.abs(E1-(-0.78)) < 2e-2
+    assert np.abs(E1 - (-0.78)) < 2e-2
 
     # Find minimum Eigenvalue with Hamiltonian simulation + QPE
     qv = QuantumVariable(2)
-    x(qv) # Initial state close to exact solution
-    res = QPE(qv,U,precision=5,kwargs={"steps":3},iter_spec=True)
+    x(qv)  # Initial state close to exact solution
+    res = QPE(qv, U, precision=5, kwargs={"steps": 3}, iter_spec=True)
     meas = res.get_measurement()
     sorted_meas = dict(sorted(meas.items(), key=lambda item: item[1], reverse=True))
     phi = list(sorted_meas.items())[0][0]
-    E2 = 2*np.pi*(phi-1)
-    assert np.abs(E0-E2) < 2e-2
+    E2 = 2 * np.pi * (phi - 1)
+    assert np.abs(E0 - E2) < 2e-2

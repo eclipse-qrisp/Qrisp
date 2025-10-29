@@ -17,12 +17,12 @@
 """
 
 import numpy as np
-from sympy import continued_fraction_convergents, continued_fraction_iterator, Rational
+from sympy import Rational, continued_fraction_convergents, continued_fraction_iterator
 
-from qrisp.interface import QiskitBackend
-from qrisp.alg_primitives.arithmetic.modular_arithmetic import find_optimal_m, modinv
+from qrisp import QuantumFloat, QuantumModulus, control, h
 from qrisp.alg_primitives import QFT
-from qrisp import QuantumModulus, QuantumFloat, h, control
+from qrisp.alg_primitives.arithmetic.modular_arithmetic import find_optimal_m, modinv
+from qrisp.interface import QiskitBackend
 
 depths = []
 cnot_count = []

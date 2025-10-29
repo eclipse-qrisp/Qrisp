@@ -19,8 +19,8 @@
 import numpy as np
 import sympy as sp
 
-from qrisp.misc import int_as_array
 from qrisp.circuit import Operation, QuantumCircuit
+from qrisp.misc import int_as_array
 
 
 # Class to describe truth tables

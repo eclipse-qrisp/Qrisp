@@ -16,68 +16,65 @@
 ********************************************************************************
 """
 
-from qrisp.vqe.problems.electronic_structure import *
-from qrisp import QuantumVariable, QuantumFloat
-from qrisp.jasp import jaspify
-import numpy as np
 import jax.numpy as jnp
+import numpy as np
+
+from qrisp import QuantumFloat, QuantumVariable
+from qrisp.jasp import jaspify
+from qrisp.vqe.problems.electronic_structure import *
 
 #
 # H2 molecule
 #
 
-def test_vqe_electronic_structure_H2():  
-    
+
+def test_vqe_electronic_structure_H2():
+
     try:
         from pyscf import gto
     except:
         return
 
-    mol = gto.M(
-        atom = '''H 0 0 0; H 0 0 0.74''',
-        basis = 'sto-3g')
-    
+    mol = gto.M(atom="""H 0 0 0; H 0 0 0.74""", basis="sto-3g")
+
     H = create_electronic_hamiltonian(mol).to_qubit_operator()
-    assert np.abs(H.ground_state_energy()-(-1.85238817356958))
+    assert np.abs(H.ground_state_energy() - (-1.85238817356958))
 
     vqe = electronic_structure_problem(mol)
-    
+
     results = []
     for i in range(5):
-        res = vqe.run(QuantumVariable(4),
-                depth=1,
-                max_iter=50)
+        res = vqe.run(QuantumVariable(4), depth=1, max_iter=50)
         results.append(res)
-    
-    assert np.abs(min(results)-(-1.85238817356958)) < 1e-1
+
+    assert np.abs(min(results) - (-1.85238817356958)) < 1e-1
 
 
-def test_jasp_vqe_electronic_structure_H2():  
-    
+def test_jasp_vqe_electronic_structure_H2():
+
     try:
         from pyscf import gto
     except:
         return
-    
+
     @jaspify(terminal_sampling=True)
     def main():
 
-        mol = gto.M(
-            atom = '''H 0 0 0; H 0 0 0.74''',
-            basis = 'sto-3g')
+        mol = gto.M(atom="""H 0 0 0; H 0 0 0.74""", basis="sto-3g")
 
         vqe = electronic_structure_problem(mol)
 
-        results = jnp.array([0.0]*5)
+        results = jnp.array([0.0] * 5)
         for i in range(5):
             res = vqe.run(QuantumFloat(4), depth=1, max_iter=100, optimizer="SPSA")
             results = results.at[i].set(res)
 
         return results
-    
+
     results = main()
-    
-    assert np.abs(min(results)-(-1.85238817356958)) < 2e-1
+
+    assert np.abs(min(results) - (-1.85238817356958)) < 2e-1
+
 
 #
 # BeH2 molecule, active space

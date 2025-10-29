@@ -16,16 +16,18 @@
 ********************************************************************************
 """
 
-from qrisp import QuantumVariable, LCU, prepare, terminal_sampling
-from qrisp.operators import X, Y, Z
 import numpy as np
+
+from qrisp import LCU, QuantumVariable, prepare, terminal_sampling
+from qrisp.operators import X, Y, Z
+
 
 def test_operators_LCU():
 
     @terminal_sampling
     def main():
 
-        H = 2*X(0)*X(1)-Z(0)*Z(1)
+        H = 2 * X(0) * X(1) - Z(0) * Z(1)
 
         unitaries, coeffs = H.unitaries()
 
@@ -43,11 +45,10 @@ def test_operators_LCU():
     for k, v in res_dict.items():
         res_dict[k] = v**0.5
     for k, v in res_dict.items():
-        res_dict[k] = v/res_dict[0]     
+        res_dict[k] = v / res_dict[0]
 
     # print(res_dict)
     # {3: 2.0000002235174685, 0: 1.0}
 
-    assert(np.abs(res_dict[0]-1)) < 1e-4
-    assert(np.abs(res_dict[3]-2)) < 1e-4
-
+    assert (np.abs(res_dict[0] - 1)) < 1e-4
+    assert (np.abs(res_dict[3] - 2)) < 1e-4

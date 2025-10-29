@@ -18,40 +18,40 @@
 
 from itertools import product
 
-import numpy as np
 import networkx as nx
+import numpy as np
 from sympy.physics.quantum import Ket, OrthogonalKet
 
-from qrisp.alg_primitives import QFT
 from qrisp import (
-    QuantumFloat,
-    QuantumBool,
-    QuantumArray,
-    mcz,
-    cx,
-    h,
-    ry,
-    swap,
-    auto_uncompute,
-    invert,
-    control,
-    IterationEnvironment,
-    bin_rep,
-    multi_measurement,
-    xxyy,
-    p,
-    QuantumVariable,
-    cz,
-    mcx,
-    z,
-    x,
-    RYGate,
     HGate,
+    IterationEnvironment,
+    QuantumArray,
+    QuantumBool,
+    QuantumFloat,
+    QuantumVariable,
+    RYGate,
+    auto_uncompute,
+    bin_rep,
+    control,
+    cx,
+    cz,
+    h,
+    invert,
+    mcx,
+    mcz,
+    multi_measurement,
+    p,
+    ry,
     s,
-    t,
     s_dg,
+    swap,
+    t,
     t_dg,
+    x,
+    xxyy,
+    z,
 )
+from qrisp.alg_primitives import QFT
 
 """
 As specified in the paper (https://arxiv.org/abs/1509.02374), the key challenge

@@ -16,7 +16,6 @@
 ********************************************************************************
 """
 
-from qrisp.alg_primitives.arithmetic.adders.qcla.quantum_quantum import *
 from qrisp.alg_primitives.arithmetic.adders.qcla.classical_quantum import *
-
+from qrisp.alg_primitives.arithmetic.adders.qcla.quantum_quantum import *
 from qrisp.alg_primitives.arithmetic.adders.qcla.wrapper_function import qcla

@@ -16,13 +16,15 @@
 ********************************************************************************
 """
 
+from itertools import combinations
+
+import networkx as nx
+
 from qrisp.algorithms.qaoa.problems.maxIndepSet import (
     create_max_indep_set_cl_cost_function,
     create_max_indep_set_mixer,
     max_indep_set_init_function,
 )
-import networkx as nx
-from itertools import combinations
 
 
 def max_set_packing_problem(sets):

@@ -16,9 +16,8 @@
 ********************************************************************************
 """
 
-from qrisp import QuantumFloat
+from qrisp import QuantumFloat, quantum_counting
 from qrisp.grover import tag_state
-from qrisp import quantum_counting
 
 
 def oracle(qv):

@@ -17,14 +17,14 @@
 """
 
 import time
-from math import factorial
 from itertools import permutations
-from numpy import binary_repr
-from qrisp import *
-from qrisp import auto_uncompute
-from qrisp.grover import grovers_alg
-from qrisp import QuantumFloat
+from math import factorial
 
+from numpy import binary_repr
+
+from qrisp import *
+from qrisp import QuantumFloat, auto_uncompute
+from qrisp.grover import grovers_alg
 
 city_amount = 4
 

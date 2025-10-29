@@ -17,11 +17,11 @@
 """
 
 import numpy as np
-from sympy import lambdify, Expr
+from sympy import Expr, lambdify
 
-from qrisp.misc import bin_rep
+from qrisp.circuit import ClControlledOperation, ControlledOperation
 from qrisp.circuit.standard_operations import op_list
-from qrisp.circuit import ControlledOperation, ClControlledOperation
+from qrisp.misc import bin_rep
 
 
 # Function to convert qrisp quantum circuits to Qiskit quantum circuits
@@ -105,8 +105,10 @@ def convert_to_qiskit(qc, transpile=False):
             # In Qiskit 1.3, the c_if interface was deprecated
             try:
                 from qiskit.circuit import IfElseOp
-    
-                qregs = [qiskit_qc.qregs[qc.qubits.index(qb)] for qb in qc.data[i].qubits]
+
+                qregs = [
+                    qiskit_qc.qregs[qc.qubits.index(qb)] for qb in qc.data[i].qubits
+                ]
                 body_qc = QuantumCircuit(*qregs)
                 if op.base_op.definition:
                     body_qc = body_qc.compose(op.base_op.definition.to_qiskit())
@@ -160,9 +162,10 @@ def convert_to_qiskit(qc, transpile=False):
 
 def create_qiskit_instruction(op, params=[]):
     import qiskit.circuit.library.standard_gates as qsk_gates
-    from qiskit.circuit import Measure, Reset, Barrier
-    from qrisp.circuit import ControlledOperation
     from qiskit import QiskitError
+    from qiskit.circuit import Barrier, Measure, Reset
+
+    from qrisp.circuit import ControlledOperation
 
     if op.name == "cx":
         if hasattr(op, "ctrl_state"):
@@ -277,10 +280,10 @@ op_dic["u"] = op_dic["u3"]
 
 
 def convert_from_qiskit(qiskit_qc):
-    from qiskit.circuit import ControlledGate, ParameterExpression
     from qiskit import QuantumCircuit as QiskitQuantumCircuit
+    from qiskit.circuit import ControlledGate, ParameterExpression
 
-    from qrisp import Clbit, ControlledOperation, QuantumCircuit, Barrier, Qubit
+    from qrisp import Barrier, Clbit, ControlledOperation, QuantumCircuit, Qubit
 
     qc = QuantumCircuit()
 

@@ -153,8 +153,8 @@ def expectation_value(state_prep, shots, return_dict=False, post_processor=None)
 
     """
 
-    from qrisp.jasp import make_tracer, qache
     from qrisp.core import QuantumVariable, measure
+    from qrisp.jasp import make_tracer, qache
 
     if isinstance(shots, int):
         shots = make_tracer(shots)

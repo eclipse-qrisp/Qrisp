@@ -16,12 +16,13 @@
 ********************************************************************************
 """
 
-from qrisp import QuantumArray, mcp, conjugate, invert
-from qrisp.jasp import q_fori_loop, q_cond, check_for_tracing_mode
-from jax import lax
-import sympy as sp
-import numpy as np
 import jax.numpy as jnp
+import numpy as np
+import sympy as sp
+from jax import lax
+
+from qrisp import QuantumArray, conjugate, invert, mcp
+from qrisp.jasp import check_for_tracing_mode, q_cond, q_fori_loop
 
 
 def QITE(qarg, U_0, exp_H, s, k, method="GC"):
@@ -190,7 +191,7 @@ def QITE(qarg, U_0, exp_H, s, k, method="GC"):
 
             def reflection(qarg, t_):
                 with conjugate(conjugator)(qarg):
-                    if isinstance(qarg,QuantumArray):
+                    if isinstance(qarg, QuantumArray):
                         qubits = sum([qv.reg for qv in qarg.flatten()], [])
                         mcp(t_, qubits, ctrl_state=0, method="khattar")
                     else:

@@ -16,11 +16,11 @@
 ********************************************************************************
 """
 
-from qrisp import gphase, rz, cx, conjugate, custom_control, x, y, z
-from qrisp.operators.qubit.visualization import X_, Y_, Z_
-
-from sympy import Symbol
 import numpy as np
+from sympy import Symbol
+
+from qrisp import conjugate, custom_control, cx, gphase, rz, x, y, z
+from qrisp.operators.qubit.visualization import X_, Y_, Z_
 
 PAULI_TABLE = {
     ("I", "I"): ("I", 1),
@@ -236,25 +236,26 @@ class QubitTerm:
     @custom_control(static_argnums=0)
     def simulate(self, coeff, qv, ctrl=None):
 
+        import numpy as np
+
         from qrisp import (
-            h,
-            cx,
-            rz,
-            mcp,
+            QuantumBool,
+            QuantumEnvironment,
+            QuantumVariable,
             conjugate,
             control,
-            QuantumBool,
-            mcx,
-            x,
-            p,
-            s,
-            QuantumEnvironment,
-            gphase,
-            QuantumVariable,
+            cx,
             find_qs,
+            gphase,
+            h,
+            mcp,
+            mcx,
+            p,
+            rz,
+            s,
+            x,
         )
         from qrisp.operators import QubitOperator
-        import numpy as np
 
         # If required, do change of basis. Change of basis here means, that
         # the quantum argument is conjugated with a function that makes the
@@ -611,56 +612,57 @@ class QubitTerm:
                 result_coeff *= value
 
         return QubitTerm(result_factor_dict), result_coeff
-    
+
     #
     # Unitary
     #
 
-    def unitary(self, sign = False):
+    def unitary(self, sign=False):
         """
-        Returns the unitary for the term self. 
+        Returns the unitary for the term self.
 
         Parameters
         ----------
             sign : bool
                 A Boolean indicating whether a phase -1 must be applied. The default is False.
-        
+
         """
+
         def unitary_(operand):
             for i, factor in self.factor_dict.items():
-                if factor=="X":
+                if factor == "X":
                     x(operand[i])
-                elif factor=="Y":
+                elif factor == "Y":
                     y(operand[i])
-                elif factor=="Z":
+                elif factor == "Z":
                     z(operand[i])
 
             if sign:
                 gphase(np.pi, operand[0])
-            
+
         return unitary_
-    
-    def apply_unitary(self, operand, sign = False):
+
+    def apply_unitary(self, operand, sign=False):
         """
-        Applies the unitary for the term self to the ``operand``. 
+        Applies the unitary for the term self to the ``operand``.
 
         Parameters
         ----------
             sign : bool
                 A Boolean indicating whether a phase -1 must be applied. The default is False.
-        
+
         """
         for i, factor in self.factor_dict.items():
-            if factor=="X":
+            if factor == "X":
                 x(operand[i])
-            elif factor=="Y":
+            elif factor == "Y":
                 y(operand[i])
-            elif factor=="Z":
+            elif factor == "Z":
                 z(operand[i])
 
         if sign:
-                gphase(np.pi, operand[0])
-            
+            gphase(np.pi, operand[0])
+
     #
     # Commutativity
     #

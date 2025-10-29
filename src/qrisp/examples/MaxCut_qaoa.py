@@ -16,16 +16,18 @@
 ********************************************************************************
 """
 
-from qrisp.qaoa import (
-    create_maxcut_cost_operator,
-    RX_mixer,
-    QAOAProblem,
-    create_maxcut_cl_cost_function,
-)
-from qrisp import QuantumVariable, QuantumArray, h
-import networkx as nx
 from operator import itemgetter
+
+import networkx as nx
 import numpy as np
+
+from qrisp import QuantumArray, QuantumVariable, h
+from qrisp.qaoa import (
+    QAOAProblem,
+    RX_mixer,
+    create_maxcut_cl_cost_function,
+    create_maxcut_cost_operator,
+)
 
 # Create an empty graph
 G = nx.Graph()

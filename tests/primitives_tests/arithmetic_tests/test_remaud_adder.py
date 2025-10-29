@@ -19,6 +19,7 @@
 from qrisp import *
 from qrisp.jasp import *
 
+
 def test_L1_ladder():
     def main(N):
         qf = QuantumFloat(N)
@@ -34,7 +35,8 @@ def test_L1_ladder():
 
         assert circ2.compare_unitary(circ1.qs)
 
-def test_l2_ladder(exhaustive = False):
+
+def test_l2_ladder(exhaustive=False):
 
     @boolean_simulation
     def main(N, j, k):
@@ -50,11 +52,11 @@ def test_l2_ladder(exhaustive = False):
         up_bound = 8
     else:
         up_bound = 5
-        
+
     for N in range(4, up_bound):
         for k in range(2**N):
             for j in range(2**N):
-                
+
                 x1 = QuantumFloat(N)
                 y1 = QuantumFloat(N)
                 anc1 = QuantumFloat(1)
@@ -64,11 +66,10 @@ def test_l2_ladder(exhaustive = False):
                 with invert():
                     for i in range(N - 1):
                         mcx([x1[i], y1[i]], x1[i + 1])
-                x1,y1,anc1 = next(iter(multi_measurement([x1, y1, anc1])))
+                x1, y1, anc1 = next(iter(multi_measurement([x1, y1, anc1])))
 
                 x2, y2, anc2 = main(N, j, k)
-                
-                
+
                 assert x2 == x1
                 assert y2 == y1
                 assert anc2 == anc1
@@ -77,7 +78,7 @@ def test_l2_ladder(exhaustive = False):
 def test_remaud_adder():
     @boolean_simulation
     def main(N, j, k):
-        
+
         A = QuantumFloat(N)
         B = QuantumFloat(N)
         A[:] = j
@@ -86,25 +87,26 @@ def test_remaud_adder():
         Z = QuantumFloat(1)
         remaud_adder(A, B, Z)
         return measure(A), measure(B)
-        
+
     for N in range(4, 8):
         for k in range(2**N):
             for j in range(2**N):
                 A, B = main(N, j, k)
                 assert A == j
-                assert B == (k+j)%(2**N)
+                assert B == (k + j) % (2**N)
 
-def test_remaud_adder_standard(exhaustive = False):
-    
+
+def test_remaud_adder_standard(exhaustive=False):
+
     if exhaustive:
         up_bound = 8
     else:
         up_bound = 5
-        
+
     for N in range(4, up_bound):
         for k in range(2**N):
             for j in range(2**N):
-                
+
                 A = QuantumFloat(N)
                 B = QuantumFloat(N)
                 A[:] = j
@@ -114,6 +116,4 @@ def test_remaud_adder_standard(exhaustive = False):
                 remaud_adder(A, B, Z)
 
                 assert A.get_measurement() == {j: 1.0}
-                assert B.get_measurement() == {(k+j)%(2**N): 1.0}
-      
-
+                assert B.get_measurement() == {(k + j) % (2**N): 1.0}

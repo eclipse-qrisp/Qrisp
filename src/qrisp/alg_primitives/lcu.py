@@ -16,12 +16,13 @@
 ********************************************************************************
 """
 
+import numpy as np
+
 from qrisp import QuantumFloat, conjugate, measure
-from qrisp.jasp import make_jaspr, RUS
+from qrisp.alg_primitives.amplitude_amplification import amplitude_amplification
 from qrisp.alg_primitives.switch_case import qswitch
 from qrisp.algorithms.grover.grover_tools import tag_state
-from qrisp.alg_primitives.amplitude_amplification import amplitude_amplification
-import numpy as np
+from qrisp.jasp import RUS, make_jaspr
 
 
 def inner_LCU(operand_prep, state_prep, unitaries, num_unitaries=None, oaa_iter=0):

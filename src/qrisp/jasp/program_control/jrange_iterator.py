@@ -17,8 +17,8 @@
 """
 
 import jax.numpy as jnp
-from jaxlib.xla_extension import ArrayImpl
 from jax import jit
+from jaxlib.xla_extension import ArrayImpl
 
 from qrisp.jasp.tracing_logic import check_for_tracing_mode
 
@@ -64,8 +64,8 @@ class JRangeIterator:
         # We capture the loop semantics using the JIterationEnvironment.
         # The actual jax loop primitive is then compiled in
         # JIterationEnvironment.jcompile
-        from qrisp.jasp import TracingQuantumSession
         from qrisp import reset
+        from qrisp.jasp import TracingQuantumSession
 
         self.iteration += 1
         if self.iteration == 1:

@@ -16,6 +16,6 @@
 ********************************************************************************
 """
 
-from qrisp.algorithms.vqe.vqe_problem import *
-from qrisp.algorithms.vqe.vqe_benchmark_data import *
 from qrisp.algorithms.vqe.problems import *
+from qrisp.algorithms.vqe.vqe_benchmark_data import *
+from qrisp.algorithms.vqe.vqe_problem import *

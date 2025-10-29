@@ -18,23 +18,24 @@
 
 import numpy as np
 
+
 def test_depth_computation():
-    
+
     from qrisp import QuantumCircuit
+
     qc = QuantumCircuit(4)
-    qc.cx(0,1)
+    qc.cx(0, 1)
     qc.x(1)
-    qc.cx(1,2)
+    qc.cx(1, 2)
     qc.y(2)
-    qc.cx(2,3)
-    qc.cx(1,0)
-    
+    qc.cx(2, 3)
+    qc.cx(1, 0)
+
     qc.cnot_depth() == 3
-    
+
     qc = QuantumCircuit(2)
     qc.t(0)
-    qc.cx(0,1)
-    qc.rx(2*np.pi*3/2**4, 1)
-    
-    
-    assert qc.t_depth(epsilon = 2**-5) == 16
+    qc.cx(0, 1)
+    qc.rx(2 * np.pi * 3 / 2**4, 1)
+
+    assert qc.t_depth(epsilon=2**-5) == 16

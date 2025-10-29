@@ -16,23 +16,21 @@
 ********************************************************************************
 """
 
-from itertools import product
 import warnings
+from itertools import product
 
-import sympy as sp
-import numpy as np
 import jax.numpy as jnp
+import numpy as np
+import sympy as sp
 
-from qrisp.operators.hamiltonian_tools import group_up_iterable
-from qrisp.operators.hamiltonian import Hamiltonian
-from qrisp.operators.qubit.qubit_term import QubitTerm
-from qrisp.operators.qubit.measurement import get_measurement
-from qrisp.operators.qubit.jasp_measurement import get_jasp_measurement
-from qrisp.operators.qubit.commutativity_tools import construct_change_of_basis
-from qrisp import cx, cz, h, s, sx_dg, IterationEnvironment, conjugate, merge, invert
-
+from qrisp import IterationEnvironment, conjugate, cx, cz, h, invert, merge, s, sx_dg
 from qrisp.jasp import check_for_tracing_mode, jrange
-
+from qrisp.operators.hamiltonian import Hamiltonian
+from qrisp.operators.hamiltonian_tools import group_up_iterable
+from qrisp.operators.qubit.commutativity_tools import construct_change_of_basis
+from qrisp.operators.qubit.jasp_measurement import get_jasp_measurement
+from qrisp.operators.qubit.measurement import get_measurement
+from qrisp.operators.qubit.qubit_term import QubitTerm
 
 threshold = 1e-9
 
@@ -627,9 +625,9 @@ class QubitOperator(Hamiltonian):
             # Yields: A_0*A_1 + C_0*C_1 + 5*P^0_0*A_1 + 5*P^0_0*C_1 + 2*P^1_0*A_1 + 2*P^1_0*C_1
 
         """
-        from scipy.sparse import csr_matrix
-        from numpy import ndarray
         import numpy as np
+        from numpy import ndarray
+        from scipy.sparse import csr_matrix
 
         OPERATOR_TABLE = {(0, 0): "P0", (0, 1): "A", (1, 0): "C", (1, 1): "P1"}
 
@@ -1949,7 +1947,7 @@ class QubitOperator(Hamiltonian):
             H = \sum_{i=0}^{M-1}\alpha_iP_i
 
         where $\alpha_i$ are real coefficients, $P_i\in\{I,X,Y,Z\}^{\otimes n}$ are Pauli operators. Coefficients $\alpha_i$ are nonnegative and each Pauli carries a $\pm1$ sign (corressponding to a phase shift).
-        
+
         Returns
         -------
         list[callable]
@@ -1981,15 +1979,15 @@ class QubitOperator(Hamiltonian):
             unitaries[0](qv)
             barrier(qv)
             unitaries[1](qv)
-        
-        >>> print(qv.qs)  
+
+        >>> print(qv.qs)
         QuantumCircuit:
         ---------------
               ┌───┐ ░ ┌───┐┌────────┐
         qv.0: ┤ X ├─░─┤ Z ├┤ gphase ├
               ├───┤ ░ ├───┤└────────┘
         qv.1: ┤ X ├─░─┤ Z ├──────────
-              └───┘ ░ └───┘          
+              └───┘ ░ └───┘
         Live QuantumVariables:
         ----------------------
         QuantumVariable qv
@@ -2020,19 +2018,19 @@ class QubitOperator(Hamiltonian):
 
             res_dict = main()
 
-        We convert the resulting measurement probabilities to amplitudes by applying the square root. 
+        We convert the resulting measurement probabilities to amplitudes by applying the square root.
         Note that, minus signs of amplitudes cannot be recovered from measurement probabilities.
 
-        
+
         ::
-        
+
             for k, v in res_dict.items():
                 res_dict[k] = v**0.5
 
             print(res_dict)
-            # Yields: {3: 0.8944272109919233, 0: 0.4472135555159407} 
+            # Yields: {3: 0.8944272109919233, 0: 0.4472135555159407}
 
-        Here, the unitary $P_0=XX$ acts as $\ket{0}\rightarrow\ket{3}$, the unitary $P_1=-ZZ$ acts as $\ket{0}\rightarrow -\ket{0}$, 
+        Here, the unitary $P_0=XX$ acts as $\ket{0}\rightarrow\ket{3}$, the unitary $P_1=-ZZ$ acts as $\ket{0}\rightarrow -\ket{0}$,
         and the resulting state is $(2\ket{3}-\ket{0})/\sqrt{5}$.
 
         """
@@ -2044,7 +2042,7 @@ class QubitOperator(Hamiltonian):
 
         for term, coeff in hamiltonian.terms_dict.items():
             coeff_ = np.real(coeff)
-            unitaries.append(term.unitary(sign = (coeff_ < 0)))
+            unitaries.append(term.unitary(sign=(coeff_ < 0)))
             coefficients.append(np.abs(coeff_))
 
         return unitaries, np.array(coefficients, dtype=float)

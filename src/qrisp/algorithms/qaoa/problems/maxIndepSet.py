@@ -16,9 +16,10 @@
 ********************************************************************************
 """
 
-from qrisp import QuantumBool, x, mcx
-from qrisp.algorithms.qaoa.mixers import controlled_RX_mixer_gen
 import itertools
+
+from qrisp import QuantumBool, mcx, x
+from qrisp.algorithms.qaoa.mixers import controlled_RX_mixer_gen
 
 
 def create_max_indep_set_mixer(G):

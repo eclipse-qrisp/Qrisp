@@ -19,12 +19,11 @@
 import jax.numpy as jnp
 from jax import jit
 
-from qrisp.jasp import make_jaspr, AbstractQubitArray, AbstractQubit
-
+from qrisp.jasp import AbstractQubit, AbstractQubitArray, make_jaspr
+from qrisp.jasp.interpreter_tools import Jlist, eval_jaxpr
 from qrisp.jasp.interpreter_tools.interpreters.cl_func_interpreter import (
     jaspr_to_cl_func_jaxpr,
 )
-from qrisp.jasp.interpreter_tools import Jlist, eval_jaxpr
 
 
 def boolean_simulation(*func, bit_array_padding=2**16):
@@ -171,10 +170,12 @@ def boolean_simulation(*func, bit_array_padding=2**16):
     def return_function(*args):
 
         jaspr = make_jaspr(func, garbage_collection="manual")(*args)
-        
+
         for var in jaspr.outvars:
             if isinstance(var.aval, (AbstractQubitArray, AbstractQubit)):
-                raise Exception("Tried to perform boolean simulation of a function returning a quantum value (please measure before returning)")
+                raise Exception(
+                    "Tried to perform boolean simulation of a function returning a quantum value (please measure before returning)"
+                )
 
         cl_func_jaxpr = jaspr_to_cl_func_jaxpr(
             jaspr.flatten_environments(), bit_array_padding

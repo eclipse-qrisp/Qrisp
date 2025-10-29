@@ -19,124 +19,120 @@
 from qrisp import *
 from qrisp.jasp import *
 
+
 def test_prefix_control():
-    
+
     @jaspify
     def main(k):
-        
+
         qf_ = QuantumFloat(6)
-        
+
         def body_fun(i, val):
             acc, qf = val
             x(qf[i])
             acc += measure(qf[i])
             return acc, qf
-        
+
         acc, qf = q_fori_loop(0, k, body_fun, (0, qf_))
-        
+
         return acc, measure(qf)
 
     assert main(6) == (6, 63)
 
     @jaspify
     def main(k):
-        
+
         qf = QuantumFloat(6)
-        
+
         def body_fun(i, qf):
             x(qf[i])
             return qf
-        
+
         qf = q_fori_loop(0, k, body_fun, qf)
-        
+
         return measure(qf)
 
     assert main(6) == 63
 
-
     @jaspify
     def main(k):
-        
+
         qf = QuantumFloat(6)
-        
+
         def body_fun(val):
             i, acc, qf = val
             x(qf[i])
             acc += measure(qf[i])
             i += 1
             return i, acc, qf
-        
+
         def cond_fun(val):
             return val[0] < 5
-        
+
         i, acc, qf = q_while_loop(cond_fun, body_fun, (0, 0, qf))
-        
+
         return acc, measure(qf)
 
     assert main(6) == (5, 31)
-    
+
     @jaspify
     def main():
-        
+
         qf = QuantumFloat(7)
-        
+
         def body_fun(val):
             i, acc, qf = val
             x(qf[i])
             QFT(qf)
             acc += measure(qf)
-            
+
             i += 1
             return (i, acc, qf)
-        
+
         def cond_fun(val):
             return val[0] < 5
-        
+
         i, acc, qf = q_while_loop(cond_fun, body_fun, (0, 0, qf))
-        return acc ,measure(qf)
+        return acc, measure(qf)
 
     main()
 
     @jaspify
     def main(k):
-        
+
         qf = QuantumFloat(6)
-        
+
         def body_fun(val):
             i, qf = val
             x(qf[i])
             i += 1
             return (i, qf)
-        
+
         def cond_fun(val):
             return val[0] < 5
-        
+
         i, qf = q_while_loop(cond_fun, body_fun, (0, qf))
-        
+
         return measure(qf)
 
     assert main(6) == 31
 
-
     @jaspify
     def main():
-        
+
         def false_fun(qbl):
             qbl.flip()
             return qbl
-        
+
         def true_fun(qbl):
             return qbl
-        
+
         qbl = QuantumBool()
         h(qbl)
         pred = measure(qbl)
-        
-        qbl = q_cond(pred, 
-                    true_fun, 
-                    false_fun, 
-                    qbl)
-        
+
+        qbl = q_cond(pred, true_fun, false_fun, qbl)
+
         return measure(qbl)
 
     assert main()

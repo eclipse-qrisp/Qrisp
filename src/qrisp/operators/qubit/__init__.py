@@ -16,6 +16,7 @@
 ********************************************************************************
 """
 
+from qrisp.operators.qubit.operator_factors import *
+
 # -*- coding: utf-8 -*-
 from qrisp.operators.qubit.qubit_operator import *
-from qrisp.operators.qubit.operator_factors import *

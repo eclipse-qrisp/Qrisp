@@ -17,43 +17,61 @@
 """
 
 from qrisp.operators.fermionic import a, c
-from qrisp.operators.qubit import X,Y,Z
+from qrisp.operators.qubit import X, Y, Z
 from qrisp.vqe.problems.electronic_structure import *
+
 
 def test_fermionic_to_qubit():
 
-
     # Check if transformation works for both, reduced and non-reduced FermionicOperators
 
-    H = c(0)*c(1)*a(3)*a(2) + c(2)*c(3)*a(1)*a(0)
+    H = c(0) * c(1) * a(3) * a(2) + c(2) * c(3) * a(1) * a(0)
 
     G1 = H.to_qubit_operator().to_pauli().hermitize()
 
-    K = (1/8)*(X(0)*X(1)*X(2)*X(3) - X(0)*X(1)*Y(2)*Y(3) \
-                + X(0)*Y(1)*X(2)*Y(3) + X(0)*Y(1)*Y(2)*X(3) \
-                + Y(0)*X(1)*X(2)*Y(3) + Y(0)*X(1)*Y(2)*X(3) \
-                - Y(0)*Y(1)*X(2)*X(3) + Y(0)*Y(1)*Y(2)*Y(3))
-    
-    assert str(G1-K)=='0'
+    K = (1 / 8) * (
+        X(0) * X(1) * X(2) * X(3)
+        - X(0) * X(1) * Y(2) * Y(3)
+        + X(0) * Y(1) * X(2) * Y(3)
+        + X(0) * Y(1) * Y(2) * X(3)
+        + Y(0) * X(1) * X(2) * Y(3)
+        + Y(0) * X(1) * Y(2) * X(3)
+        - Y(0) * Y(1) * X(2) * X(3)
+        + Y(0) * Y(1) * Y(2) * Y(3)
+    )
+
+    assert str(G1 - K) == "0"
 
 
 def test_hamiltonian_H2():
-    
+
     try:
         from pyscf import gto
     except:
         return
 
-    K = -0.812170607248714 -0.0453026155037992*X(0)*X(1)*Y(2)*Y(3) +0.0453026155037992*X(0)*Y(1)*Y(2)*X(3) +0.0453026155037992*Y(0)*X(1)*X(2)*Y(3) -0.0453026155037992*Y(0)*Y(1)*X(2)*X(3) \
-        +0.171412826447769*Z(0) +0.168688981703612*Z(0)*Z(1) +0.120625234833904*Z(0)*Z(2) +0.165927850337703*Z(0)*Z(3) +0.171412826447769*Z(1) \
-        +0.165927850337703*Z(1)*Z(2) +0.120625234833904*Z(1)*Z(3) -0.223431536908133*Z(2) +0.174412876122615*Z(2)*Z(3) -0.223431536908133*Z(3)
+    K = (
+        -0.812170607248714
+        - 0.0453026155037992 * X(0) * X(1) * Y(2) * Y(3)
+        + 0.0453026155037992 * X(0) * Y(1) * Y(2) * X(3)
+        + 0.0453026155037992 * Y(0) * X(1) * X(2) * Y(3)
+        - 0.0453026155037992 * Y(0) * Y(1) * X(2) * X(3)
+        + 0.171412826447769 * Z(0)
+        + 0.168688981703612 * Z(0) * Z(1)
+        + 0.120625234833904 * Z(0) * Z(2)
+        + 0.165927850337703 * Z(0) * Z(3)
+        + 0.171412826447769 * Z(1)
+        + 0.165927850337703 * Z(1) * Z(2)
+        + 0.120625234833904 * Z(1) * Z(3)
+        - 0.223431536908133 * Z(2)
+        + 0.174412876122615 * Z(2) * Z(3)
+        - 0.223431536908133 * Z(3)
+    )
 
-    mol = gto.M(
-        atom = '''H 0 0 0; H 0 0 0.74''',
-        basis = 'sto-3g')
-    
+    mol = gto.M(atom="""H 0 0 0; H 0 0 0.74""", basis="sto-3g")
+
     H = create_electronic_hamiltonian(mol).to_qubit_operator().to_pauli().hermitize()
-    G = K-H
-    
+    G = K - H
+
     G.apply_threshold(1e-4)
-    assert str(G)=='0'
+    assert str(G) == "0"

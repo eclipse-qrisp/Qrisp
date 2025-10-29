@@ -16,10 +16,12 @@
 ********************************************************************************
 """
 
-from qrisp import QuantumVariable, h, x, LCU
-from qrisp.jasp import terminal_sampling
-from qrisp.operators import X,Y,Z
 import numpy as np
+
+from qrisp import LCU, QuantumVariable, h, x
+from qrisp.jasp import terminal_sampling
+from qrisp.operators import X, Y, Z
+
 
 # A = I + X
 def test_LCU():
@@ -46,14 +48,14 @@ def test_LCU():
         return qv
 
     meas_res = main()
-    assert np.round(meas_res[0],3)==0.5 and np.round(meas_res[1],3)==0.5
-    #{0: 0.5, 1: 0.5}
+    assert np.round(meas_res[0], 3) == 0.5 and np.round(meas_res[1], 3) == 0.5
+    # {0: 0.5, 1: 0.5}
 
 
 # A = cos(H)
 def test_LCU_cos():
 
-    H = Z(0)*Z(1) + X(0)*X(1)
+    H = Z(0) * Z(1) + X(0) * X(1)
 
     def U0(operand):
         H.trotterization(forward_evolution=False)(operand)
@@ -77,5 +79,5 @@ def test_LCU_cos():
         return qv
 
     meas_res = main()
-    assert np.round(meas_res[0],3)==0.145 and np.round(meas_res[3],3)==0.855
-    #{3: 0.85471756539818, 0: 0.14528243460182003}
+    assert np.round(meas_res[0], 3) == 0.145 and np.round(meas_res[3], 3) == 0.855
+    # {3: 0.85471756539818, 0: 0.14528243460182003}

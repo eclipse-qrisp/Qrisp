@@ -20,20 +20,19 @@ import jax.numpy as jnp
 
 from qrisp.jasp.interpreter_tools import (
     eval_jaxpr,
+    exec_eqn,
     extract_invalues,
     insert_outvalues,
-    exec_eqn,
 )
 
 
-
 def evaluate_cond_eqn(cond_eqn, context_dic, eqn_evaluator=exec_eqn):
-    
+
     # Extract the invalues from the context dic
     invalues = extract_invalues(cond_eqn, context_dic)
-    
+
     from qrisp.jasp.jasp_expression import ProcessedMeasurement
-    
+
     if isinstance(invalues[0], ProcessedMeasurement):
         raise Exception("Tried to convert real-time feedback into QuantumCircuit")
 
@@ -53,27 +52,27 @@ def evaluate_cond_eqn(cond_eqn, context_dic, eqn_evaluator=exec_eqn):
 def evaluate_while_loop(
     while_loop_eqn, context_dic, eqn_evaluator=exec_eqn, break_after_first_iter=False
 ):
-    
+
     from qrisp.jasp.jasp_expression import ProcessedMeasurement
 
     num_const_cond_args = while_loop_eqn.params["cond_nconsts"]
     num_const_body_args = while_loop_eqn.params["body_nconsts"]
-    overall_constant_amount = max(num_const_cond_args, num_const_body_args)    
+    overall_constant_amount = max(num_const_cond_args, num_const_body_args)
 
     def break_condition(invalues):
-        
+
         constants = invalues[:num_const_cond_args]
         carries = invalues[overall_constant_amount:]
-        
+
         new_invalues = constants + carries
-        
+
         res = eval_jaxpr(
             while_loop_eqn.params["cond_jaxpr"], eqn_evaluator=eqn_evaluator
         )(*new_invalues)
-        
+
         if isinstance(res, ProcessedMeasurement):
             raise Exception("Tried to convert real-time feedback into QuantumCircuit")
-        
+
         return res
 
     # Extract the invalues from the context dic
@@ -81,10 +80,10 @@ def evaluate_while_loop(
     outvalues = invalues[overall_constant_amount:]
 
     while break_condition(invalues):
-        
+
         constants = invalues[:num_const_body_args]
         carries = invalues[overall_constant_amount:]
-        
+
         new_invalues = constants + carries
 
         outvalues = eval_jaxpr(
@@ -92,10 +91,10 @@ def evaluate_while_loop(
         )(*new_invalues)
 
         # Update the non-const invalues
-        
+
         if len(while_loop_eqn.params["body_jaxpr"].jaxpr.outvars) == 1:
             outvalues = (outvalues,)
-        
+
         invalues = invalues[:overall_constant_amount] + list(outvalues)
 
         if break_after_first_iter:

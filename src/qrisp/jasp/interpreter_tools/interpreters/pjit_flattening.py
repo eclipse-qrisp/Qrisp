@@ -16,8 +16,9 @@
 ********************************************************************************
 """
 
-from jax.extend.core import ClosedJaxpr
 from jax import jit
+from jax.extend.core import ClosedJaxpr
+
 from qrisp.jasp.interpreter_tools import (
     eval_jaxpr,
     extract_invalues,

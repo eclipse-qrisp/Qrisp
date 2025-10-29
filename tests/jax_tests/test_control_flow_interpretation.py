@@ -16,12 +16,14 @@
 ********************************************************************************
 """
 
-from qrisp import *
-from jax.lax import fori_loop, switch
 from jax import random
+from jax.lax import fori_loop, switch
+
+from qrisp import *
+
 
 def test_control_flow_interpretation():
-    
+
     @qache
     def inner_function(qf, i):
         qf[:] = i
@@ -35,20 +37,20 @@ def test_control_flow_interpretation():
         b = measure(a)
         b += 4
         return b
-    
+
     jasp_program = make_jaspr(test_f)(0.5)
-    
+
     for i in range(5):
-        
+
         res = jasp_program(i + 0.5)
-        
+
         assert res == i + 4.5
-    
+
     @jaspify
     def main():
 
         params = jnp.array([1.5, -0.5])
-        
+
         rng = random.PRNGKey(4)
 
         def body_fun(k, val):
@@ -57,13 +59,13 @@ def test_control_flow_interpretation():
             delta = random.choice(rng_input, jnp.array([1, -1]), shape=(2,))
             res += delta
             return rng, res
-        
-        rng_, res = fori_loop(0,10,body_fun,(rng, params))
+
+        rng_, res = fori_loop(0, 10, body_fun, (rng, params))
 
         return res
 
     main()
-    
+
     @jaspify
     def main():
 
@@ -78,15 +80,15 @@ def test_control_flow_interpretation():
             delta = random.choice(rng_input, jnp.array([1, -1]), shape=(4,))
             res += delta
             return rng, res, a
-        
-        rng_, res, a = fori_loop(0,10,body_fun,(rng, params, a))
+
+        rng_, res, a = fori_loop(0, 10, body_fun, (rng, params, a))
 
         return res
 
     main()
-    
+
     # Test https://github.com/eclipse-qrisp/Qrisp/issues/173
-    
+
     @jaspify
     def main():
 
@@ -98,20 +100,19 @@ def test_control_flow_interpretation():
 
         def case2(x):
             return x + 3
-        
+
         def case3(x):
             return x + 4
 
         def compute(index, x):
             return switch(index, [case0, case1, case2, case3], x)
 
-
         qf = QuantumFloat(2)
         qf[:] = 3
         ind = jnp.int8(measure(qf))
 
-        res = compute(ind,jnp.int32(0))
+        res = compute(ind, jnp.int32(0))
 
         return ind, res
-    
-    assert main() == (3,4)
+
+    assert main() == (3, 4)

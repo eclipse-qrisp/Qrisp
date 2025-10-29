@@ -18,18 +18,18 @@
 
 import numpy as np
 
-from qrisp.core.gate_application_functions import x, cx
+from qrisp.alg_primitives.arithmetic.adders.gidney import gidney_adder
 from qrisp.alg_primitives.arithmetic.adders.qcla.quantum_quantum.qq_carry_path import (
     qq_calc_carry,
 )
 from qrisp.alg_primitives.arithmetic.adders.qcla.quantum_quantum.qq_sum_path import (
-    qq_sum_path_direct_uncomputation,
     qq_sum_path,
+    qq_sum_path_direct_uncomputation,
 )
-from qrisp.alg_primitives.arithmetic.adders.gidney import gidney_adder
-from qrisp.environments import QuantumEnvironment, invert
-from qrisp.core import QuantumVariable
 from qrisp.circuit import fast_append
+from qrisp.core import QuantumVariable
+from qrisp.core.gate_application_functions import cx, x
+from qrisp.environments import QuantumEnvironment, invert
 from qrisp.misc.utility import redirect_qfunction
 
 verify_manual_uncomputations = np.zeros(1)

@@ -16,10 +16,12 @@
 ********************************************************************************
 """
 
+import random
+
 # Created by ann81984 at 29.04.2022
 import numpy as np
-import random
-from qrisp import QuantumSession, QuantumVariable, p, cp
+
+from qrisp import QuantumSession, QuantumVariable, cp, p
 from qrisp.misc.GMS_tools import GXX_converter
 
 

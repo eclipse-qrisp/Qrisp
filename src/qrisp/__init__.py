@@ -19,21 +19,18 @@
 import sys
 import types
 
-
 import jax
 
 jax.config.update("jax_enable_x64", True)
 
-from qrisp.circuit import *
-from qrisp.core import *
-from qrisp.misc import *
-from qrisp.circuit import *
-from qrisp.permeability import *
-from qrisp.core import *
-from qrisp.qtypes import *
-from qrisp.environments import *
 from qrisp.alg_primitives import *
 from qrisp.algorithms import *
+from qrisp.circuit import *
+from qrisp.core import *
+from qrisp.environments import *
+from qrisp.misc import *
+from qrisp.permeability import *
+from qrisp.qtypes import *
 
 for i in [
     "shor",
@@ -51,29 +48,33 @@ for i in [
 from qrisp.default_backend import *
 from qrisp.jasp import *
 
+
 # Register some types as "always static" within Jasp
 def register_static_types():
     from jax import tree_util
-    
+
     def unflatten_function(aux_data, children):
         return aux_data
-    
-    
+
     def flatten_function(arg):
         # return the tracers and auxiliary data (structure of the object)
         return tuple(), arg
-    
-    
+
     try:
-        tree_util.register_pytree_node(types.FunctionType, flatten_function, unflatten_function)
+        tree_util.register_pytree_node(
+            types.FunctionType, flatten_function, unflatten_function
+        )
         tree_util.register_pytree_node(str, flatten_function, unflatten_function)
     except ValueError as e:
         if not "PyTree" in str(e):
             raise e
 
-    from qrisp.operators import QubitOperator, FermionicOperator
+    from qrisp.operators import FermionicOperator, QubitOperator
+
     tree_util.register_pytree_node(QubitOperator, flatten_function, unflatten_function)
-    tree_util.register_pytree_node(FermionicOperator, flatten_function, unflatten_function)
+    tree_util.register_pytree_node(
+        FermionicOperator, flatten_function, unflatten_function
+    )
+
 
 register_static_types()
-        

@@ -16,9 +16,11 @@
 ********************************************************************************
 """
 
-from qrisp.alg_primitives.arithmetic.isqrt import q_isqrt
-from qrisp import QuantumFloat, multi_measurement
 import math
+
+from qrisp import QuantumFloat, multi_measurement
+from qrisp.alg_primitives.arithmetic.isqrt import q_isqrt
+
 
 def test_quantum_square_root():
     for a in range(1, 26):
@@ -31,7 +33,12 @@ def test_quantum_square_root():
 
         F = q_isqrt(R)
 
-        r, f, = list(multi_measurement([R, F]))[0]
+        (
+            r,
+            f,
+        ) = list(
+            multi_measurement([R, F])
+        )[0]
 
         print("R:", a)
         print("Root:", f)
@@ -41,10 +48,9 @@ def test_quantum_square_root():
     R = QuantumFloat(8)
     R[:] = {131: 1, 81: 1}
     F = q_isqrt(R)
-    
-    mes_res = multi_measurement([R, F])
-    
-    expected_results = {(10, 11): 0.5, (0, 9): 0.5}
-    
-    assert mes_res == expected_results
 
+    mes_res = multi_measurement([R, F])
+
+    expected_results = {(10, 11): 0.5, (0, 9): 0.5}
+
+    assert mes_res == expected_results

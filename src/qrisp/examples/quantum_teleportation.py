@@ -17,8 +17,10 @@
 """
 
 import random
-import numpy as np
 import time
+
+import numpy as np
+
 from qrisp import QuantumCircuit
 from qrisp.quantum_network import QuantumNetworkClient, QuantumNetworkServer
 

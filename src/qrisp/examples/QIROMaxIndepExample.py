@@ -16,11 +16,12 @@
 ********************************************************************************
 """
 
-# imports
-from qrisp.algorithms.qiro import *
-from qrisp import QuantumVariable
 import networkx as nx
 
+from qrisp import QuantumVariable
+
+# imports
+from qrisp.algorithms.qiro import *
 
 # First we define a graph via the number of nodes and the QuantumVariable arguments
 num_nodes = 18

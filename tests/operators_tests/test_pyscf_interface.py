@@ -19,24 +19,28 @@
 from qrisp import QuantumVariable
 from qrisp.operators import FermionicOperator
 
+
 def test_pyscf_interface():
 
     try:
         from pyscf import gto
     except:
         return
-    
-    mol = gto.M(atom = '''H 0 0 0; H 0 0 0.74''', basis = 'sto-3g')
+
+    mol = gto.M(atom="""H 0 0 0; H 0 0 0.74""", basis="sto-3g")
     H = FermionicOperator.from_pyscf(mol)
     U = H.trotterization()
-    
+
     electron_state = QuantumVariable(4)
     electron_state[:] = "0011"
-    U(electron_state, t = 100, steps = 20)
-    
-    mol = gto.M(atom = '''Li     0.0000     0.0000     0.0000; H      1.595     0.0000     0.0000''', basis = 'sto-3g') # DOES NOT WORK
+    U(electron_state, t=100, steps=20)
 
-    H_ferm = FermionicOperator.from_pyscf(mol) # DOES NOT WORK
-    
+    mol = gto.M(
+        atom="""Li     0.0000     0.0000     0.0000; H      1.595     0.0000     0.0000""",
+        basis="sto-3g",
+    )  # DOES NOT WORK
+
+    H_ferm = FermionicOperator.from_pyscf(mol)  # DOES NOT WORK
+
     qv = QuantumVariable(12)
     H_ferm.get_measurement(qv)

@@ -95,14 +95,19 @@ class QiskitBackend(VirtualBackend):
         if backend is None:
             try:
                 from qiskit_aer import AerSimulator
+
                 backend = AerSimulator()
             except ImportError:
-                raise ImportError("Encountered ImportError when trying to import AerSimulator. Likely caused by incompatible qiskit and qiskit-aer versions.")
+                raise ImportError(
+                    "Encountered ImportError when trying to import AerSimulator. Likely caused by incompatible qiskit and qiskit-aer versions."
+                )
 
         try:
             from qiskit_ibm_runtime import SamplerV2
         except ImportError:
-            raise ImportError("Please install qiskit-ibm-runtime to use the QiskitBackend. You can do this by running `pip install qiskit-ibm-runtime`.")
+            raise ImportError(
+                "Please install qiskit-ibm-runtime to use the QiskitBackend. You can do this by running `pip install qiskit-ibm-runtime`."
+            )
         sampler = SamplerV2(backend)
 
         # Create the run method
@@ -127,10 +132,10 @@ class QiskitBackend(VirtualBackend):
 
             qiskit_qc = transpile(new_qiskit_qc, backend=backend)
 
-            job = sampler.run([qiskit_qc], shots=shots)     
+            job = sampler.run([qiskit_qc], shots=shots)
 
             qiskit_result = (
-                job.result()[0].data.c.get_counts() 
+                job.result()[0].data.c.get_counts()
                 # https://docs.quantum.ibm.com/migration-guides/v2-primitives
             )
 
@@ -142,7 +147,7 @@ class QiskitBackend(VirtualBackend):
                 counts_string = re.sub(r"\W", "", key)
                 result_dic[counts_string] = qiskit_result[key]
 
-            return result_dic  
+            return result_dic
 
         # Call VirtualBackend constructor
         if isinstance(backend.name, str):
@@ -182,7 +187,7 @@ class QiskitRuntimeBackend(VirtualBackend):
         The default is ``ibm_cloud``.
     mode : str, optional
         The `execution mode <https://quantum.cloud.ibm.com/docs/en/guides/execution-modes>`_. Available are ``job`` and ``session``.
-        The default is ``job``. 
+        The default is ``job``.
 
     Attributes
     ----------
@@ -225,14 +230,16 @@ class QiskitRuntimeBackend(VirtualBackend):
         try:
             from qiskit_ibm_runtime import QiskitRuntimeService, SamplerV2, Session
         except ImportError:
-            raise ImportError("Please install qiskit-ibm-runtime to use the QiskitBackend. You can do this by running `pip install qiskit-ibm-runtime`.")
+            raise ImportError(
+                "Please install qiskit-ibm-runtime to use the QiskitBackend. You can do this by running `pip install qiskit-ibm-runtime`."
+            )
 
         service = QiskitRuntimeService(channel=channel, token=api_token)
         if backend is None:
             backend = service.least_busy()
         else:
             backend = service.backend(backend)
-            
+
         if mode == "session":
             self.session = Session(backend)
             sampler = SamplerV2(self.session)
@@ -263,10 +270,10 @@ class QiskitRuntimeBackend(VirtualBackend):
 
             qiskit_qc = transpile(new_qiskit_qc, backend=backend)
 
-            job = sampler.run([qiskit_qc], shots=shots)     
+            job = sampler.run([qiskit_qc], shots=shots)
 
             qiskit_result = (
-                job.result()[0].data.c.get_counts() 
+                job.result()[0].data.c.get_counts()
                 # https://docs.quantum.ibm.com/migration-guides/v2-primitives
             )
 
@@ -278,7 +285,7 @@ class QiskitRuntimeBackend(VirtualBackend):
                 counts_string = re.sub(r"\W", "", key)
                 result_dic[counts_string] = qiskit_result[key]
 
-            return result_dic  
+            return result_dic
 
         super().__init__(run)
 

@@ -19,14 +19,14 @@
 import numpy as np
 import sympy as sp
 
-from qrisp.misc import array_as_int, gate_wrap, int_as_array
 from qrisp.circuit import (
-    QuantumCircuit,
+    ControlledOperation,
     Operation,
     PTControlledOperation,
-    ControlledOperation,
+    QuantumCircuit,
     fast_append,
 )
+from qrisp.misc import array_as_int, gate_wrap, int_as_array
 
 use_gray_code = False
 try:

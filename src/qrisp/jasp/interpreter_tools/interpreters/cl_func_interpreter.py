@@ -18,25 +18,24 @@
 
 from functools import lru_cache
 
-import numpy as np
-
-from jax import make_jaxpr, jit, debug
-from jax.extend.core import ClosedJaxpr, Literal
-from jax.lax import fori_loop, cond, while_loop, switch
 import jax.numpy as jnp
+import numpy as np
+from jax import debug, jit, make_jaxpr
+from jax.extend.core import ClosedJaxpr, Literal
+from jax.lax import cond, fori_loop, switch, while_loop
 
 from qrisp.circuit import PTControlledOperation
 from qrisp.jasp import (
-    QuantumPrimitive,
-    OperationPrimitive,
     AbstractQuantumCircuit,
-    AbstractQubitArray,
     AbstractQubit,
-    eval_jaxpr,
+    AbstractQubitArray,
     Jaspr,
+    Jlist,
+    OperationPrimitive,
+    QuantumPrimitive,
+    eval_jaxpr,
     extract_invalues,
     insert_outvalues,
-    Jlist,
 )
 
 
@@ -185,7 +184,7 @@ def process_op(op_prim, invars, outvars, context_dic):
         "y",
         "z",
         "pt2cx",
-        "swap"
+        "swap",
     ]:
         if op.base_operation.name in ["z", "rz", "t", "s", "t_dg", "s_dg", "p"]:
             context_dic[outvars[-1]] = context_dic[invars[-1]]
@@ -201,7 +200,7 @@ def process_op(op_prim, invars, outvars, context_dic):
         swapped_qb_pos = list(qb_pos)
         swapped_qb_pos[-1], swapped_qb_pos[-2] = swapped_qb_pos[-2], swapped_qb_pos[-1]
         ctrl_state = ctrl_state + "1"
-        
+
         bit_array = cl_multi_cx(bit_array, ctrl_state, swapped_qb_pos)
         bit_array = cl_multi_cx(bit_array, ctrl_state, qb_pos)
         bit_array = cl_multi_cx(bit_array, ctrl_state, swapped_qb_pos)
@@ -289,7 +288,9 @@ def process_while(eqn, context_dic):
 
     body_jaxpr = eqn.params["body_jaxpr"]
     cond_jaxpr = eqn.params["cond_jaxpr"]
-    overall_constant_amount= max(eqn.params["body_nconsts"], eqn.params["cond_nconsts"])
+    overall_constant_amount = max(
+        eqn.params["body_nconsts"], eqn.params["cond_nconsts"]
+    )
 
     invalues = extract_invalues(eqn, context_dic)
 
@@ -303,29 +304,35 @@ def process_while(eqn, context_dic):
         )
 
     def body_fun(args):
-        
-        constants = args[:eqn.params["body_nconsts"]]
+
+        constants = args[: eqn.params["body_nconsts"]]
         carries = args[overall_constant_amount:]
-        
-        flattened_invalues = flatten_signature(constants + carries, body_jaxpr.jaxpr.invars)
-        
+
+        flattened_invalues = flatten_signature(
+            constants + carries, body_jaxpr.jaxpr.invars
+        )
+
         body_res = eval_jaxpr(converted_body_jaxpr)(*(flattened_invalues))
-        
-        unflattened_body_outvalues = unflatten_signature(body_res, body_jaxpr.jaxpr.outvars)
-        
+
+        unflattened_body_outvalues = unflatten_signature(
+            body_res, body_jaxpr.jaxpr.outvars
+        )
+
         return list(args[:overall_constant_amount]) + list(unflattened_body_outvalues)
 
     def cond_fun(args):
-        
-        constants = args[:eqn.params["cond_nconsts"]]
+
+        constants = args[: eqn.params["cond_nconsts"]]
         carries = args[overall_constant_amount:]
-        
-        flattened_invalues = flatten_signature(constants + carries, cond_jaxpr.jaxpr.invars)
-        
+
+        flattened_invalues = flatten_signature(
+            constants + carries, cond_jaxpr.jaxpr.invars
+        )
+
         return eval_jaxpr(converted_cond_jaxpr)(*flattened_invalues)
 
-    outvalues = while_loop(cond_fun, body_fun, invalues)[eqn.params["body_nconsts"]:]
-    
+    outvalues = while_loop(cond_fun, body_fun, invalues)[eqn.params["body_nconsts"] :]
+
     insert_outvalues(eqn, context_dic, outvalues)
 
 
@@ -336,7 +343,7 @@ def process_cond(eqn, context_dic):
     branch_list = []
 
     for i in range(len(eqn.params["branches"])):
-        
+
         converted_jaxpr = ensure_conversion(
             eqn.params["branches"][i].jaxpr, invalues[1:]
         )
@@ -373,7 +380,7 @@ def get_traced_fun(jaxpr, bit_array_size):
 def process_pjit(eqn, context_dic):
 
     invalues = extract_invalues(eqn, context_dic)
-    
+
     if eqn.params["name"] in ["gidney_mcx", "gidney_mcx_inv"]:
         unflattened_outvalues = [
             (cl_multi_cx(invalues[-1][0], "11", invalues[:-1]), invalues[-1][1])
@@ -381,7 +388,10 @@ def process_pjit(eqn, context_dic):
     elif eqn.params["name"] in ["gidney_CCCX", "gidney_CCCX_dg"]:
         controls = [invalues[0][i] for i in range(3)]
         unflattened_outvalues = [
-            (cl_multi_cx(invalues[-1][0], "111",  controls + [invalues[1]]), invalues[-1][1])
+            (
+                cl_multi_cx(invalues[-1][0], "111", controls + [invalues[1]]),
+                invalues[-1][1],
+            )
         ]
     else:
         flattened_invalues = []
@@ -490,9 +500,7 @@ def jaspr_to_cl_func_jaxpr(jaspr, bit_array_padding):
         else:
             args.append(invar.aval)
 
-    return make_jaxpr(eval_jaxpr(jaspr, eqn_evaluator=cl_func_eqn_evaluator))(
-        *args
-    )
+    return make_jaxpr(eval_jaxpr(jaspr, eqn_evaluator=cl_func_eqn_evaluator))(*args)
 
 
 def conditional_bit_flip_bit_array(bit_array, index, condition):

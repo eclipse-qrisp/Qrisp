@@ -19,12 +19,11 @@
 from functools import lru_cache
 
 import numpy as np
+from jax.extend.core import ClosedJaxpr, Jaxpr, JaxprEqn, Var
 
-from jax.extend.core import JaxprEqn, ClosedJaxpr, Var, Jaxpr
-
+from qrisp.jasp import OperationPrimitive, TracingQuantumSession
 from qrisp.jasp.jasp_expression.centerclass import Jaspr
 from qrisp.jasp.primitives import AbstractQubit
-from qrisp.jasp import TracingQuantumSession, OperationPrimitive
 
 
 class ControlledJaspr(Jaspr):
@@ -42,7 +41,7 @@ class ControlledJaspr(Jaspr):
 
     __slots__ = ("base_jaspr", "ctrl_state")
 
-    def __init__(self, base_jaspr, ctrl_state, stop_recursion = False):
+    def __init__(self, base_jaspr, ctrl_state, stop_recursion=False):
 
         self.base_jaspr = base_jaspr
         self.ctrl_state = str(ctrl_state)
@@ -56,10 +55,11 @@ class ControlledJaspr(Jaspr):
 
         Jaspr.__init__(self, controlled_jaspr)
         self.envs_flattened = True
-        
+
         if self.base_jaspr.inv_jaspr and not stop_recursion:
-            self.inv_jaspr = ControlledJaspr(base_jaspr.inv_jaspr, ctrl_state, stop_recursion = True)
-        
+            self.inv_jaspr = ControlledJaspr(
+                base_jaspr.inv_jaspr, ctrl_state, stop_recursion=True
+            )
 
     def control(self, num_ctrl, ctrl_state=-1):
 
@@ -111,7 +111,7 @@ def control_eqn(eqn, ctrl_qubit_var):
         The equation with inverted operation.
 
     """
-    from qrisp.jasp import Jaspr, AbstractQuantumCircuit
+    from qrisp.jasp import AbstractQuantumCircuit, Jaspr
 
     if eqn.primitive.name == "pjit":
 
@@ -137,7 +137,7 @@ def control_eqn(eqn, ctrl_qubit_var):
     elif eqn.primitive.name == "while":
 
         new_params = dict(eqn.params)
-        
+
         body_jaxpr = eqn.params["body_jaxpr"].jaxpr
         cond_jaxpr = eqn.params["cond_jaxpr"].jaxpr
 
@@ -154,31 +154,31 @@ def control_eqn(eqn, ctrl_qubit_var):
             new_params["body_jaxpr"] = ClosedJaxpr(
                 new_jaxpr, eqn.params["body_jaxpr"].consts
             )
-            
+
             new_params["body_nconsts"] += 1
 
         if isinstance(
             cond_jaxpr.invars[-1].aval, AbstractQuantumCircuit
         ) and isinstance(cond_jaxpr.outvars[-1].aval, AbstractQuantumCircuit):
             new_params["cond_jaxpr"] = control_jaspr(Jaspr(eqn.params["cond_jaxpr"]))
-            
+
         else:
             new_jaxpr = copy_jaxpr(new_params["cond_jaxpr"].jaxpr)
             new_params["cond_jaxpr"] = ClosedJaxpr(
                 new_jaxpr, eqn.params["cond_jaxpr"].consts
             )
-            
+
         control_var_count[0] += 1
         temp = JaxprEqn(
             primitive=eqn.primitive,
-            invars=[ctrl_qubit_var] +eqn.invars,
+            invars=[ctrl_qubit_var] + eqn.invars,
             outvars=eqn.outvars,
             params=new_params,
             source_info=eqn.source_info,
             effects=eqn.effects,
             ctx=eqn.ctx,
         )
-        
+
         return temp
     elif eqn.primitive.name == "cond":
 
@@ -243,7 +243,7 @@ def control_jaspr(jaspr):
 
     """
 
-    from qrisp.jasp import Jaspr, AbstractQubit
+    from qrisp.jasp import AbstractQubit, Jaspr
 
     ctrl_qubit_var = Var(suffix=str(control_var_count[0]), aval=AbstractQubit())
     control_var_count[0] += 1
@@ -271,7 +271,7 @@ def control_jaspr(jaspr):
         invars=[ctrl_qubit_var] + jaspr.invars,
         outvars=jaspr.outvars,
         eqns=new_eqns,
-        consts=jaspr.consts
+        consts=jaspr.consts,
     )
 
 

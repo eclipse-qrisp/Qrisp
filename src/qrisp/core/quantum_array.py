@@ -19,22 +19,21 @@
 import copy
 from itertools import product
 
-import numpy as np
-import jax.numpy as jnp
 import jax
-
+import jax.numpy as jnp
+import numpy as np
 
 from qrisp.circuit import transpile
-from qrisp.core import QuantumVariable, qompiler, QuantumSession, merge
-from qrisp.misc import bin_rep, lifted
+from qrisp.core import QuantumSession, QuantumVariable, merge, qompiler
 from qrisp.jasp import (
-    check_for_tracing_mode,
-    q_fori_loop,
-    jrange,
-    create_qubits,
     DynamicQubitArray,
     TracingQuantumSession,
+    check_for_tracing_mode,
+    create_qubits,
+    jrange,
+    q_fori_loop,
 )
+from qrisp.misc import bin_rep, lifted
 
 
 class QuantumArray:

@@ -16,27 +16,27 @@
 ********************************************************************************
 """
 
-from qrisp.core.gate_application_functions import (
-    x,
-    cx,
-    mcx,
-    h,
-    t,
-    t_dg,
-    sx,
-    cz,
-    p,
-    cp,
-    measure,
-)
-from qrisp.qtypes import QuantumFloat
-from qrisp.environments import invert, control, conjugate, custom_inversion
-from qrisp.jasp import jlen, jrange, check_for_tracing_mode, qache
-
 # Move this one layer up
 import jax.numpy as jnp
-from jax.lax import cond
 from jax import jit
+from jax.lax import cond
+
+from qrisp.core.gate_application_functions import (
+    cp,
+    cx,
+    cz,
+    h,
+    mcx,
+    measure,
+    p,
+    sx,
+    t,
+    t_dg,
+    x,
+)
+from qrisp.environments import conjugate, control, custom_inversion, invert
+from qrisp.jasp import check_for_tracing_mode, jlen, jrange, qache
+from qrisp.qtypes import QuantumFloat
 
 
 # Move this one layer up
@@ -58,18 +58,19 @@ def ctrl_state_conjugator(ctrls, ctrl_state):
         with control(~extract_boolean_digit(ctrl_state, i)):
             x(ctrls[i])
 
+
 @custom_inversion
 def gidney_CCCX(ctrls, target, inv=False):
     """
-    Implements a CCCZ gate using the Gidney 
+    Implements a CCCZ gate using the Gidney
     method described in https://arxiv.org/abs/2106.11513 using only 6 T gates.
     Args:
         ctrls (list): A list of control qubits. It is expected to contain three qubits.
         target (list): A list containing the target qubit. It is expected to contain one qubit.
     """
-    
+
     h(target[0])
-    
+
     gidney_anc = QuantumFloat(1)
 
     h(gidney_anc[0])
@@ -86,7 +87,7 @@ def gidney_CCCX(ctrls, target, inv=False):
     cx(ctrls[2], gidney_anc[0])
     t_dg(gidney_anc[0])
     cx(target[0], gidney_anc[0])
-    
+
     with invert():
         sx(gidney_anc[0])
     cl_res = measure(gidney_anc[0])
@@ -98,14 +99,14 @@ def gidney_CCCX(ctrls, target, inv=False):
     with control(cl_res):
         cz(ctrls[0], ctrls[1])
         x(gidney_anc[0])
-        
+
     h(target[0])
 
     gidney_anc.delete()
 
 
 def cca_4ctrls(ctrls, target):
-    #This function handles the case of 4 control qubits in the conditionally clean ancillae MCX
+    # This function handles the case of 4 control qubits in the conditionally clean ancillae MCX
     cca4_anc = QuantumFloat(1)
 
     mcx([ctrls[1], ctrls[0]], cca4_anc[0], method="gray_pt")
@@ -129,7 +130,7 @@ def cca_mcx(ctrls, target, anc):
         xrange = range
     else:
         xrange = jrange
-        
+
     # STEP 1
     mcx([ctrls[0], ctrls[1]], anc[0], method="gidney")
 
@@ -157,7 +158,7 @@ def cca_mcx(ctrls, target, anc):
 def khattar_mcx(ctrls, target, ctrl_state):
     """
     Implements the Khattar multi-controlled X (MCX) gate methode using conditionally clean ancillae described in https://arxiv.org/abs/2407.17966.
-    The behavior of the function varies depending on the number of 
+    The behavior of the function varies depending on the number of
     control qubits (N) and the control state.
     Args:
         ctrls (list): A list of control qubits.
@@ -172,7 +173,7 @@ def khattar_mcx(ctrls, target, ctrl_state):
         - For N = 4: A custom 4-controlled gate (`cca_4ctrls`) is applied.
         - For N > 4: An ancillary qubit is used to decompose the operation into smaller steps.
     """
-    
+
     N = jlen(ctrls)
 
     if isinstance(ctrl_state, str):
@@ -234,9 +235,9 @@ def khattar_mcx(ctrls, target, ctrl_state):
 def khattar_mcp(phi, ctrls, ctrl_state):
     """
     Implements the multi-controlled phase (MCP) gate based on the Khattar MCX implementation.
-    
+
     """
-    
+
     N = jlen(ctrls)
 
     if isinstance(ctrl_state, str):
@@ -258,7 +259,7 @@ def khattar_mcp(phi, ctrls, ctrl_state):
         with control(N == 3):
             if check_for_tracing_mode():
                 gidney_CCCX(ctrls, target)
-                
+
                 p(phi, target[0])
 
                 gidney_CCCX(ctrls, target)

@@ -16,15 +16,17 @@
 ********************************************************************************
 """
 
+
 def test_jasp_QAE():
-    from qrisp import QuantumFloat, ry, z, QAE
-    from qrisp.jasp import terminal_sampling
     import numpy as np
 
-    def state_function(qb):
-        ry(np.pi/4,qb)
+    from qrisp import QAE, QuantumFloat, ry, z
+    from qrisp.jasp import terminal_sampling
 
-    def oracle_function(qb):   
+    def state_function(qb):
+        ry(np.pi / 4, qb)
+
+    def oracle_function(qb):
         z(qb)
 
     @terminal_sampling
@@ -34,41 +36,42 @@ def test_jasp_QAE():
         return res
 
     meas_res = main()
-    
-    assert np.round(meas_res[0.125],2) == 0.5
-    assert np.round(meas_res[0.875],2) == 0.5
+
+    assert np.round(meas_res[0.125], 2) == 0.5
+    assert np.round(meas_res[0.875], 2) == 0.5
 
 
 def test_QAE_integration():
-    from qrisp import QuantumFloat, QuantumBool, control, z, h, ry, QAE
-    from qrisp.jasp import terminal_sampling, jrange
     import numpy as np
+
+    from qrisp import QAE, QuantumBool, QuantumFloat, control, h, ry, z
+    from qrisp.jasp import jrange, terminal_sampling
 
     # We compute the integral of f(x)=(sin(x))^2 from 0 to 1
     def state_function(inp, tar):
-        h(inp) # Distribution
-    
+        h(inp)  # Distribution
+
         N = 2**inp.size
         for k in jrange(inp.size):
             with control(inp[k]):
-                ry(2**(k+1)/N,tar)
-    
+                ry(2 ** (k + 1) / N, tar)
+
     def oracle_function(inp, tar):
         z(tar)
 
     @terminal_sampling
     def main():
-        n = 6 # 2^n sampling points for integration
-        inp = QuantumFloat(n,-n)
+        n = 6  # 2^n sampling points for integration
+        inp = QuantumFloat(n, -n)
         tar = QuantumFloat(1)
         input_list = [inp, tar]
 
-        prec = 6 # precision
+        prec = 6  # precision
         res = QAE(input_list, state_function, oracle_function, precision=prec)
         return res
-    
-    meas_res = main()
-    theta = np.pi*max(meas_res, key=meas_res.get)
-    a = np.sin(theta)**2  
 
-    assert np.abs(a-0.26430) < 1e-4
+    meas_res = main()
+    theta = np.pi * max(meas_res, key=meas_res.get)
+    a = np.sin(theta) ** 2
+
+    assert np.abs(a - 0.26430) < 1e-4

@@ -19,10 +19,13 @@
 import jax
 from jax.extend.core import ClosedJaxpr
 
-from qrisp.core import recursive_qv_search, recursive_qa_search
-
+from qrisp.core import recursive_qa_search, recursive_qv_search
 from qrisp.jasp.primitives import AbstractQuantumCircuit
-from qrisp.jasp.tracing_logic import TracingQuantumSession, check_for_tracing_mode, get_last_equation
+from qrisp.jasp.tracing_logic import (
+    TracingQuantumSession,
+    check_for_tracing_mode,
+    get_last_equation,
+)
 
 
 def qache(*func, **kwargs):
@@ -218,8 +221,8 @@ def qache_helper(func, jax_kwargs):
     # in the signature.
     def ammended_function(*args, **kwargs):
 
-        abs_qc = kwargs[10*"~"]
-        del kwargs[10*"~"]
+        abs_qc = kwargs[10 * "~"]
+        del kwargs[10 * "~"]
 
         # Set the given AbstractQuantumCircuit as the
         # one carried by the tracing QuantumSession
@@ -298,7 +301,7 @@ def qache_helper(func, jax_kwargs):
 
         # Excecute the function
         ammended_kwargs = dict(kwargs)
-        ammended_kwargs[10*"~"] = abs_qs.abs_qc
+        ammended_kwargs[10 * "~"] = abs_qs.abs_qc
         try:
             res, abs_qc_new = ammended_function(*args, **ammended_kwargs)
         except Exception as e:
@@ -311,7 +314,7 @@ def qache_helper(func, jax_kwargs):
         from qrisp.jasp import Jaspr
 
         eqn = get_last_equation()
-        
+
         jaxpr = eqn.params["jaxpr"].jaxpr
 
         if not isinstance(eqn.invars[-1].aval, AbstractQuantumCircuit):

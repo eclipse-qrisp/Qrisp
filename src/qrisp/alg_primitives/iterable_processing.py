@@ -264,7 +264,7 @@ def cyclic_shift(iterable, shift_amount=1):
     {OutcomeArray([0, 1, 2, 3, 4, 5, 6, 7]): 0.3333, OutcomeArray([7, 0, 1, 2, 3, 4, 5, 6]): 0.3333, OutcomeArray([3, 4, 5, 6, 7, 0, 1, 2]): 0.3333}
     """
 
-    from qrisp import QuantumFloat, control, QuantumBool, cx
+    from qrisp import QuantumBool, QuantumFloat, control, cx
 
     if isinstance(shift_amount, QuantumFloat):
 

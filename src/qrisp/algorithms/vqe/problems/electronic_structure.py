@@ -16,14 +16,15 @@
 ********************************************************************************
 """
 
-import numpy as np
-
-from qrisp import h, x, cx, ry, control, conjugate
-from qrisp.operators.qubit import QubitOperator, QubitTerm
-from qrisp.operators.fermionic import *
-from functools import cache
 import itertools
 import math
+from functools import cache
+
+import numpy as np
+
+from qrisp import conjugate, control, cx, h, ry, x
+from qrisp.operators.fermionic import *
+from qrisp.operators.qubit import QubitOperator, QubitTerm
 
 #
 # helper functions
@@ -180,7 +181,7 @@ def electronic_data(mol):
 
     """
 
-    from pyscf import scf, ao2mo
+    from pyscf import ao2mo, scf
 
     data = {}
 
@@ -585,8 +586,9 @@ def electronic_structure_problem(
         #Yields -1.8461290172512965
 
     """
-    from qrisp.vqe import VQEProblem
     import pyscf
+
+    from qrisp.vqe import VQEProblem
 
     if isinstance(arg, pyscf.gto.Mole):
         data = electronic_data(arg)
