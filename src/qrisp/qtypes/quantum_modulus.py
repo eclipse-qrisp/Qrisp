@@ -253,9 +253,9 @@ class QuantumModulus(QuantumFloat):
                         val = body_fun(i, val)
                     return val
             def body_fun(i, val):
-                return val.at[i].set(measure(self[32*i:32*(i+1)]))
+                return val.at[i].set(measure(self[32*i:32*(i+1)]).astype(jnp.uint32))
             digits = for_loop(0, (self.size-1)//32, body_fun, jnp.zeros_like(self.modulus.digits))
-            digits = digits.at[(self.size-1)//32].set(measure(self[32*((self.size - 1)//32):]))
+            digits = digits.at[(self.size-1)//32].set(measure(self[32*((self.size - 1)//32):]).astype(jnp.uint32))
             return self.jdecoder(BigInteger(digits))
         else:
             return self.jdecoder(self.reg.measure())
