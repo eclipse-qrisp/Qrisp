@@ -16,13 +16,14 @@
 ********************************************************************************
 """
 
+import jax
 import numpy as np
 
 from qrisp.jasp import qache, jrange, DynamicQubitArray
 from qrisp.core import swap, h, p, cp
 from qrisp.qtypes import QuantumFloat
 from qrisp.environments import control, conjugate
-
+from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
 
 @qache
 def qft(qv):
@@ -45,8 +46,14 @@ def qft(qv):
 @qache
 def jasp_fourier_adder(a, b):
 
-    if isinstance(b, list):
+    if isinstance(a, list):
         n_a = len(a)
+    elif isinstance(a, BigInteger):
+        @jax.jit
+        def get_size(a):
+            return a.bit_size()
+        n_a = get_size(a)
+        a = a()
     else:
         n_a = a.size
 

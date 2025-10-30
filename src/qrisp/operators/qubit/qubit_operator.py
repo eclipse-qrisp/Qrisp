@@ -588,7 +588,7 @@ class QubitOperator(Hamiltonian):
         return H
 
     @classmethod
-    def from_matrix(self, matrix):
+    def from_matrix(self, matrix, reverse_endianness=False):
         r"""
         Represents a matrix as an operator
 
@@ -602,6 +602,8 @@ class QubitOperator(Hamiltonian):
         ----------
         matrix : numpy.ndarray or scipy.sparse.csr_matrix
             The matrix.
+        reverse_endianness : bool, optional
+            If ``True``, the endianness is reversed. The default is ``False``.
 
         Returns
         -------
@@ -656,7 +658,10 @@ class QubitOperator(Hamiltonian):
             for k in range(n):
                 i = (row >> k) & 1
                 j = (col >> k) & 1
-                factor_dict[n - k - 1] = OPERATOR_TABLE[(i, j)]
+                if reverse_endianness:
+                    factor_dict[k] = OPERATOR_TABLE[(i, j)]
+                else:
+                    factor_dict[n - k - 1] = OPERATOR_TABLE[(i, j)]
 
             O.terms_dict[QubitTerm(factor_dict)] = value
         return O
@@ -2048,3 +2053,161 @@ class QubitOperator(Hamiltonian):
             coefficients.append(np.abs(coeff_))
 
         return unitaries, np.array(coefficients, dtype=float)
+
+    def pauli_block_encoding(self):
+        r"""
+        Returns a block encoding of the operator.
+
+        A block encoding (`Low & Chuang <https://quantum-journal.org/papers/q-2019-07-12-163/pdf/>`_, `Kirby et al. <https://quantum-journal.org/papers/q-2023-05-23-1018/pdf/>`_) 
+        of a Hamiltonian $H$ (acting on a Hilbert space $\mathcal H_s$) is a pair of unitaries $(U,G)$, 
+        where $U$ is the block encoding unitary acting on $\mathcal H_a\otimes H_s$ (for some auxiliary Hilbert space $\mathcal H_a$), 
+        and $G$ prepares the block encoding state $\ket{G}_a=G\ket{0}_a$ in the auxiliary variable such that $(\bra{G}_a\otimes\mathbb I_s)U(\ket{G_a}\otimes\mathbb I_s)=H$.
+        Here $\mathbb I_s$ denotes the identity acting on $\mathcal H_s$.
+
+        The operator $H$, which is non-unitary in general, is applied as follows:
+
+        .. math::
+            U\ket{G}_a\ket{\psi}_s = \ket{G}_a H\ket{\psi}_s + \sqrt{1-\|H\ket{\psi}\|^2}\ket{G_{\psi}^{\perp}}_{as},\quad 
+            U= 
+            \begin{pmatrix}
+                H & *\\
+                * & * 
+            \end{pmatrix}
+
+        where $\ket{G_{\psi}^{\perp}}_{as}$ is a state in $\mathcal H_a\otimes H_s$ orthogonal to $\ket{G}$, i.e., $(\bra{G}_a\otimes\mathbb I_s)\ket{G_{\psi}^{\perp}}_{as}=0$.
+        Therefore, a block-encoding embeds a not necessarily unitary operator $H$ as a block into a larger unitary operator $U$. In standard form i.e., when $\ket{G}_a=G\ket{0}_a$
+        is prepared from the $\ket{0}$ state, $H$ is embedded as the upper left block of the operator $U$.
+
+        For a Pauli block encoding, consider an $n$-qubit Hamiltonian expressed as linear combination of Pauli operators
+
+        .. math::
+    
+            H = \sum_{i=0}^{T-1}\alpha_iP_i
+
+        where $\alpha_i$ are real coefficients, $P_i$ are Pauli strings acting on $n$ qubits, and $T$ is the number of terms.
+        We assume that the coefficients $\alpha_i$ are nonnegative, and each Pauli $P_i$ carries a $\pm1$ sign. 
+        We also require the coefficients of $H$ to be normalized: $\sum_{i=0}^{T-1}\alpha_i=1$.
+
+        The block encoding unitary is
+
+        .. math::
+
+            U = \sum_{i=0}^{T-1}\ket{i}\bra{i}\otimes P_i
+
+        i.e., application of each Pauli string $P_i$ controlled on the state of the auxiliary variable being $\ket{i}_a$.
+        The belonging block encoding state is
+
+        .. math::
+
+            \ket{G} = \sum_{i=0}^{T-1}\sqrt{\alpha_i}\ket{i}.
+       
+        Returns
+        -------
+        U : function
+            A function ``U(case, operand)`` applying the block encoding unitary $U$ to ``case`` and ``operand`` QuantumVariables.
+        state_prep : function
+            A function ``state_prep(case)`` preparing the block encoding state $\ket{G}$ in an auxiliary ``case`` QuantumVariable.
+        num_qubits : int
+            The number of qubits of the auxiliary ``case`` QuantumVariable.
+
+        Examples
+        --------
+
+        We apply a Hermitian matrix to a quantum state via a Pauli block encoding.
+
+        ::
+
+            from qrisp import *
+            from qrisp.operators import QubitOperator
+            import numpy as np
+
+            m = 2
+            A = np.eye(2**m, k=1)  
+            A = A + A.T
+            print(A)
+
+            H = QubitOperator.from_matrix(A, reverse_endianness=True)
+
+        The matrix $A$ encodes the mapping $\ket{0}\rightarrow\ket{1}$, $\ket{k}\rightarrow\ket{k-1}+\ket{k+1}$ for $k=1,\dotsc,2^m-2$, $\ket{2^m-1}\rightarrow\ket{2^m-2}$.
+        We now apply the matrix $A$ to a QuantumVariable in supersosition state $\ket{0}+\dotsb+\ket{2^m-1}$ via the Pauli block encoding of the corresponding QubitOperator $H$.
+        (In this case, the endianness must be reversed when encoding the matrix as QubitOperator for compatibility with Qrisp's QuantumFloat.)
+
+        To illustrate the result, we actually create an entangled state 
+
+        .. math::
+
+            \sum_{k=0}^{2^m-1}\ket{i}_{a}\ket{i}_b
+
+        of QuantumVariables $a, b$, and apply the matrix $A$ to the variable $b$.
+
+        ::
+
+            @RUS
+            def inner():
+
+                U, state_prep, n = H.pauli_block_encoding()
+
+                a = QuantumFloat(3)
+                h(a)
+
+                b = QuantumFloat(3)
+                cx(a,b)
+
+                case = QuantumVariable(n)
+
+                # Apply matrix A via block encoding
+                with conjugate(state_prep)(case):
+                    U(case, a)
+
+                success_bool = measure(case) == 0
+
+                return success_bool, a, b
+
+
+            @terminal_sampling
+            def main():
+
+                a, b = inner()
+
+                return a, b
+
+
+            main()
+
+        The ``inner`` function is equipped with the :ref:`RUS` decorator. This means that the routine is repeatedly run until the ``case`` variable is measured in state $\ket{0}$, i.e.,
+        the matrix $A$ is successfully applied. 
+            
+        .. code-block::
+
+            {(1.0, 2.0): 0.08333333830038721,
+            (2.0, 1.0): 0.08333333830038721,
+            (5.0, 6.0): 0.08333333830038721,
+            (6.0, 5.0): 0.08333333830038721,
+            (0.0, 1.0): 0.08333333084980639,
+            (1.0, 0.0): 0.08333333084980639,
+            (2.0, 3.0): 0.08333333084980639,
+            (3.0, 2.0): 0.08333333084980639,
+            (4.0, 5.0): 0.08333333084980639,
+            (5.0, 4.0): 0.08333333084980639,
+            (6.0, 7.0): 0.08333333084980639,
+            (7.0, 6.0): 0.08333333084980639}
+
+        """
+        from qrisp.jasp import qache
+        from qrisp.alg_primitives import prepare, qswitch
+    
+        unitaries, coeffs = self.unitaries()
+        alpha = np.sum(coeffs)
+
+        # Number of qubits for case variable
+        num_qubits = np.int64(np.ceil(np.log2(len(coeffs))))
+
+        @qache
+        def U(case, operand):
+            qswitch(operand, case, unitaries)
+
+        @qache
+        def state_prep(case):
+            prepare(case, np.sqrt(coeffs/alpha))
+
+        return U, state_prep, num_qubits
