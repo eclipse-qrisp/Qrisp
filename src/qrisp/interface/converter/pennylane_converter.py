@@ -102,7 +102,7 @@ def _create_qml_instruction(op: Operation) -> tuple[qml.operation.Operator, bool
 
 
 def _process_qrisp_circuit(
-    qc: QuantumCircuit, wire_map: dict[str, qml.wires.WiresLike]
+    qc: QuantumCircuit, wire_map: dict[str, qml.wires.WiresLike], subs_dic: dict = None
 ) -> None:
     """Recursively process a Qrisp quantum circuit and apply PennyLane operations.
 
@@ -113,6 +113,9 @@ def _process_qrisp_circuit(
 
     wire_map : dict[str, qml.wires.WiresLike]
         A mapping from Qrisp qubit identifiers to PennyLane wires.
+
+    subs_dic : dict, optional
+        A dictionary for substituting abstract parameters with concrete values.
     """
 
     for data in qc.data:
@@ -141,7 +144,13 @@ def _process_qrisp_circuit(
 
         n_ctrls = len(op.ctrl_state) if is_controlled else 0
         controls, targets = qml_wires[:n_ctrls], qml_wires[n_ctrls:]
-        qml_params = [np.float64(param) for param in op.params]
+
+        qml_params = []
+        for param in op.params:
+            if subs_dic is not None and hasattr(param, "subs"):
+                qml_params.append(np.float64(param.subs(subs_dic)))
+            else:
+                qml_params.append(np.float64(param))
 
         if qml_op_class.__name__ == "Identity":
             qml_params = []
@@ -178,7 +187,7 @@ def qml_converter(qc: QuantumCircuit | QuantumSession) -> types.FunctionType:
 
     """
 
-    def circuit(wires: qml.wires.WiresLike = None) -> None:
+    def circuit(wires: qml.wires.WiresLike = None, subs_dic: dict = None) -> None:
         """
         PennyLane quantum function representing the Qrisp circuit.
 
@@ -190,6 +199,9 @@ def qml_converter(qc: QuantumCircuit | QuantumSession) -> types.FunctionType:
             The wires to be used in the PennyLane circuit. If None, the qubit identifiers
             from the Qrisp circuit are used.
 
+        subs_dic : dict, optional
+            A dictionary for substituting abstract parameters with concrete values.
+
         """
 
         if wires is None:
@@ -197,6 +209,6 @@ def qml_converter(qc: QuantumCircuit | QuantumSession) -> types.FunctionType:
         else:
             wire_map = {qb.identifier: wires[i] for i, qb in enumerate(qc.qubits)}
 
-        _process_qrisp_circuit(qc, wire_map)
+        _process_qrisp_circuit(qc, wire_map, subs_dic)
 
     return circuit

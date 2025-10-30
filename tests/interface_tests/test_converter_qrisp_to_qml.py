@@ -19,10 +19,10 @@
 import numpy as np
 import pennylane as qml
 import pytest
+from sympy import symbols
 
 from qrisp import QuantumVariable
-from qrisp.circuit.standard_operations import (
-    # Barrier,
+from qrisp.circuit.standard_operations import (  # Barrier,; Measurement,; QubitAlloc,; QubitDealloc,; Reset,; RGate,
     CPGate,
     CXGate,
     CYGate,
@@ -32,12 +32,7 @@ from qrisp.circuit.standard_operations import (
     IDGate,
     MCRXGate,
     MCXGate,
-    # Measurement,
     PGate,
-    # QubitAlloc,
-    # QubitDealloc,
-    # Reset,
-    # RGate,
     RXGate,
     RXXGate,
     RYGate,
@@ -96,7 +91,7 @@ def _get_qml_operations(qml_circuit):
 
 
 # The circuit returned should be executed to populate the tape
-def _create_qml_circuit(qrisp_circuit, inner_wires=None):
+def _create_qml_circuit(qrisp_circuit, inner_wires=None, subs_dic=None):
     """
     Helper function to create a PennyLane circuit from a Qrisp circuit.
 
@@ -116,7 +111,7 @@ def _create_qml_circuit(qrisp_circuit, inner_wires=None):
 
     @qml.qnode(device=qml.device("default.qubit", wires=device_wires))
     def circuit():
-        pennylane_circuit(wires=inner_wires)
+        pennylane_circuit(wires=inner_wires, subs_dic=subs_dic)
         return qml.probs(wires=inner_wires if inner_wires is not None else qrisp_qubits)
 
     return circuit
@@ -247,6 +242,38 @@ class TestSingleGateConversion:
         check_qml_operations(qml_converted_circuit, expected_ops)
 
         check_probs_measurement_equivalence(outer_qv, qml_res, atol=1e-5)
+
+    def test_abstract_parameters(self):
+        """Test conversion of gates with abstract parameters from Qrisp to PennyLane."""
+        qrisp_qv = QuantumVariable(1)
+        qrisp_qs = qrisp_qv.qs
+
+        abstract_parameters = symbols("a b c")
+
+        qrisp_qs.append(RXGate(abstract_parameters[0]), qrisp_qv[0])
+        qrisp_qs.append(RZGate(abstract_parameters[0]), qrisp_qv[0])
+        qrisp_qs.append(PGate(1), qrisp_qv[0])
+        qrisp_qs.append(
+            RYGate(abstract_parameters[1] + abstract_parameters[2]), qrisp_qv[0]
+        )
+
+        subs_dic = {
+            abstract_parameters[0]: np.pi / 4,
+            abstract_parameters[1]: np.pi / 2,
+            abstract_parameters[2]: np.pi / 3,
+        }
+
+        qml_converted_circuit = _create_qml_circuit(qrisp_qv, subs_dic=subs_dic)
+        _ = qml_converted_circuit()
+
+        expected_ops = [
+            qml.RX(np.pi / 4, wires=qrisp_qv[0].identifier),
+            qml.RZ(np.pi / 4, wires=qrisp_qv[0].identifier),
+            qml.PhaseShift(1, wires=qrisp_qv[0].identifier),
+            qml.RY(np.pi / 2 + np.pi / 3, wires=qrisp_qv[0].identifier),
+        ]
+
+        check_qml_operations(qml_converted_circuit, expected_ops)
 
     def test_pauli_gates(self):
         """Test conversion of Pauli gates (X, Y, Z) from Qrisp to PennyLane."""
