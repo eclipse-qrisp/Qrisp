@@ -190,6 +190,64 @@ class TestSingleGateConversion:
 
         check_probs_measurement_equivalence(qrisp_qv, qml_res)
 
+    @pytest.mark.parametrize("outer_wires", [[0, 1], [2, 3], [1, 4]])
+    def test_nested_circuits(self, outer_wires):
+        """Test conversion of nested circuits from Qrisp to PennyLane."""
+
+        inner_qv = QuantumVariable(2)
+        inner_qs = inner_qv.qs
+        inner_qs.append(CXGate(), [0, 1])
+
+        outer_qv = QuantumVariable(5)
+        outer_qs = outer_qv.qs
+        outer_qs.append(CYGate(), [0, 1])
+        outer_qs.append(inner_qs.to_gate(name="inner_circuit"), outer_wires)
+
+        qml_converted_circuit = _create_qml_circuit(outer_qv)
+        qml_res = qml_converted_circuit()
+
+        expected_ops = [
+            qml.CY(wires=[outer_qv[0].identifier, outer_qv[1].identifier]),
+            qml.CNOT(
+                wires=[
+                    outer_qv[outer_wires[0]].identifier,
+                    outer_qv[outer_wires[1]].identifier,
+                ]
+            ),
+        ]
+        check_qml_operations(qml_converted_circuit, expected_ops)
+
+        check_probs_measurement_equivalence(outer_qv, qml_res)
+
+    def test_nested_circuits_multiple_levels(self):
+        """Test conversion of nested circuits with multiple levels from Qrisp to PennyLane."""
+
+        inner_qv = QuantumVariable(2)
+        inner_qs = inner_qv.qs
+        inner_qs.append(CXGate(), [0, 1])
+
+        middle_qv = QuantumVariable(3)
+        middle_qs = middle_qv.qs
+        middle_qs.append(RXGate(np.pi / 4), middle_qv[0])
+        middle_qs.append(inner_qs.to_gate(name="inner_circuit"), [1, 2])
+
+        outer_qv = QuantumVariable(4)
+        outer_qs = outer_qv.qs
+        outer_qs.append(XGate(), outer_qv[0])
+        outer_qs.append(middle_qs.to_gate(name="middle_circuit"), [1, 2, 3])
+
+        qml_converted_circuit = _create_qml_circuit(outer_qv)
+        qml_res = qml_converted_circuit()
+
+        expected_ops = [
+            qml.X(wires=outer_qv[0].identifier),
+            qml.RX(np.pi / 4, wires=outer_qv[1].identifier),
+            qml.CNOT(wires=[outer_qv[2].identifier, outer_qv[3].identifier]),
+        ]
+        check_qml_operations(qml_converted_circuit, expected_ops)
+
+        check_probs_measurement_equivalence(outer_qv, qml_res, atol=1e-5)
+
     def test_pauli_gates(self):
         """Test conversion of Pauli gates (X, Y, Z) from Qrisp to PennyLane."""
         qrisp_qv = QuantumVariable(3)
