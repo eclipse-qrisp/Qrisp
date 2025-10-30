@@ -342,7 +342,7 @@ def q_cond(pred, true_fun, false_fun, *operands):
     from qrisp.jasp import Jaspr
 
     if (not isinstance(false_jaxpr.jaxpr.invars[-1], AbstractQuantumCircuit)) and (not isinstance(true_jaxpr.jaxpr.invars[-1], AbstractQuantumCircuit)):
-        return
+        return cond_res[0]
         
     eqn.params["branches"] = (
             Jaspr.from_cache(false_jaxpr),
