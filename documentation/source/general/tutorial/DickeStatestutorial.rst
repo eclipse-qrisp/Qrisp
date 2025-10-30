@@ -43,18 +43,21 @@ Probablistic approach
 ---------------------
 
 The first algorithm we want to highlight here is `Efficient preparation of Dicke states (2024) <https://arxiv.org/abs/2411.03428>`_ by Jeffery Yu et al., from the University of Maryland. 
-The algorithm utilizes mid-circuit Hamming-weight measurements and feedback to prepare Dicke states by incorporating adaptively-chosen global rotations. It is further motivated by its nativity to a cavity QED context, where both the mid-circuit measurement and rotations 
-are easily implemented in a physical system.
+The algorithm utilizes mid-circuit Hamming-weight measurements and feedback to prepare Dicke states by incorporating adaptively-chosen global rotations. 
 
-But as he knows best, we will let Jeffery explain it himself:
+The goal of the algorithm is to prepare a Dicke state :math:`|j, m_t\rangle` for a desired target value of :math:`m_t`, starting from the initial product state :math:`|j, j\rangle = |0\rangle^{\otimes n}`.
+The basic procedure is to perform a uniform rotation :math:`e^{-i\theta J_Y}` for some angle :math:`\theta` and measure :math:`J_Z`, the eigenvalue in the Pauli Z-basis.
+If :math:`m = m_t` is measured, the procedure ends. Otherwise, we iterate, choosing subsequent rotation angles :math:`\theta` based on the prior outcome of the measurement of :math:`J_Z`.
+The rotation angles :math:`\theta` are chosen to maximize the overlap of the current state with the target Dicke state on each iteration.
+The pseudocode for these iterations is shown in Fig. 1.
 
-[Theoretical Intro and physical motivation]
+The angle :math:`\theta_{m_t, m}` is chosen such that it maximizes the overlap of the Husimi–Q distributions (for more information refer to the paper) of the rotated state and the target Dicke state in the limit of large $j$.
+We reach this maximum when the corresponding ring distributions intersect at a point where they share the same tangent vector, as shown in Fig. 1.
+With this condition, we can derive the rotation angle to be:
+:math:`\theta_{m_t, m} = \arcsin\!\left[\frac{m_r m_t - m_t r_m}{r_0^2}\right]`.
 
-
---> Pseudo-Algo
---> physical intuition behind rotation in Bloch-Sphere, I.e. rotate towards desired overlap
---> quick idea of where the optimal rotation angle comes from 
---> Hamming weight measurement and short explanation of nativity to cavity QED system (maybe for this also further explanation of spin manipulations in this system?)
+The paper further explains how the collective Hamming weight measurements may be directly implemented on an ensemble of $n$ atomic qubits, in which one of the two qubit states is coupled to a single-mode cavity.
+In conclusion, we arrive at an algorithm for preparing Dicke states with depth and width logarithmic in the number of qubits, using only sequences of global single-qubit rotations and collective native Hamming weight measurements.
 
 Implementation 
 --------------
@@ -92,7 +95,7 @@ scheme. We first create the necessary amount of ancilla qubits, and then apply t
         return ancillas
 
 
-With that out of the way, let's get back to the implementation of Jeffery's algorithm, which emerges naturally from the pseudocode provided.
+With that out of the way, let's get back to the implementation of the algorithm, which emerges naturally from the pseudocode provided.
 It is already :ref:`jaspified <JASP>` and intended to be called with the :func:`@terminal_sampling` decorator (or an adaption with makes use of the :ref:`terminal_sampling` simulator optimization).
 
 To reiterate: the procedure performs iterative :func:`ry`-rotations, where the rotation angle is adaptively chosen based on the :func:`collective_hamming_measurement` of previous iteration.
@@ -100,7 +103,7 @@ We stop once we measure the correct Hamming-weight.
 In *JASP*-terms, this is achieved by wrapping the "rotate-and-measure" procedure in a :ref:`q_while_loop <q_while_loop>`. This jaspified version of a quantum while-loop requires a condition function ``cond_fun`` with a ``bool`` (or :class:`QuantumBool`) return, and a body function ``body_fun``.
 The ``cond_fun`` checks whether the "while" condition is still true, while the ``body_fun`` performs the iterative quantum operations.
 
-Let us investigate the ``body_fun`` first. We directly translate what Jeffery proposes into code. First, we perform some arithmetic to find the updated rotation angle.
+Let us investigate the ``body_fun`` first. We directly translate what the paper proposes into code. First, we perform some arithmetic to find the updated rotation angle.
 Then, we apply the corrected :func:`ry`-rotations. And finally, we perform the :func:`collective_hamming_measurement` to gather information about our Hamming-weight overlap. 
 
 ::
