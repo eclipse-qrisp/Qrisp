@@ -139,4 +139,5 @@ If you are interested in how the QIR representation looks like, try calling
    Resource Estimation
    Simulation Tools/index
    Optimization Tools/Optimization Tools
+   Scalable Integer Type
    Ported Features
