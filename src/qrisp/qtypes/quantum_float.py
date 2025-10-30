@@ -418,7 +418,7 @@ class QuantumFloat(QuantumVariable):
 
         if isinstance(other, QuantumFloat):
             return q_mult(self, other)
-        elif isinstance(other, int):
+        elif isinstance(other, (int, np.integer)):
             bit_shift = 0
             while not other % 2:
                 other = other >> 1
