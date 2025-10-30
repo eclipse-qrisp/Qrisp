@@ -360,8 +360,8 @@ def q_modf(a: QuantumFloat) -> Tuple[QuantumFloat, QuantumFloat]:
     Tuple[QuantumFloat, QuantumFloat]
         A pair `(i, f)` where:
 
-        - `i =` :func:`q_floor <qrisp.q_floor>`(a) is the integer part
-        - `f =` :func:`q_fractional <qrisp.q_fractional>`(a) is the fractional part
+        - `i =` :func:`q_floor(a) <qrisp.q_floor>` is the integer part
+        - `f =` :func:`q_fractional(a) <qrisp.q_fractional>` is the fractional part
 
         Both are new QuantumFloats with the same configuration as ``a``.
 
