@@ -365,6 +365,36 @@ Welcome to the tutorial of Qrisp! This page will help you get started by providi
         .. raw:: html
 
             <h4 style="font-weight: bold; margin-top: 0;">
+                <a href="./DickeStatestutorial.html" style="text-decoration: none; color: inherit;">Preparation of Dicke States</a>
+            </h4>
+
+        .. image:: ../../_static/qmci.svg
+            :align: center
+            :target: ./DickeStatestutorial.html
+
+        .. raw:: html
+            
+            <p style="margin-top: 5px;"></p>
+
+        .. dropdown:: :fa:`eye me-1` Description
+            :color: primary
+
+            This tutorial will show you how to numerically calculate integrals with Quantum Monte Carlo Integration using Iterative Quantum Amplitude Estimation.
+
+        .. raw:: html
+
+            </div>
+    
+    .. grid-item-card::
+        :shadow: none
+
+        .. raw:: html
+
+            <div style="display: flex; flex-direction: column; height: 100%; justify-content: space-between;">
+
+        .. raw:: html
+
+            <h4 style="font-weight: bold; margin-top: 0;">
                 <a href="./QMCItutorial.html" style="text-decoration: none; color: inherit;">Quantum Monte Carlo Integration</a>
             </h4>
 
@@ -379,7 +409,7 @@ Welcome to the tutorial of Qrisp! This page will help you get started by providi
         .. dropdown:: :fa:`eye me-1` Description
             :color: primary
 
-            This tutorial will show you how to numerically calculate integrals with Quantum Monte Carlo Integration using Iterative Quantum Amplitude Estimation.
+            In this tutorial, we will show you different routines for the preparation of Dicke States and how to implement them in Qrisp.
 
         .. raw:: html
 
@@ -407,4 +437,5 @@ By the end of this tutorial, you'll have a solid foundation of our high-level fr
    JaspQAOAtutorial.ipynb
    QIROtutorial.ipynb
    QMCItutorial.ipynb
+   DickeStatestutorial.ipynb
    
