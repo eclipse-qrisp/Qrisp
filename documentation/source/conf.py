@@ -68,6 +68,12 @@ extensions = [
               #"nb2plots",
               ]
 
+# Configure sphinx-copybutton to only copy input lines (with >>> prompts) and strip the prompts
+copybutton_prompt_text = r">>> |\.\.\. "
+copybutton_prompt_is_regexp = True
+# Only copy lines that have prompts (input lines), automatically excluding output
+copybutton_only_copy_prompt_lines = True
+
 # Use Python for default highlighting:
 highlight_language = "python"
 
