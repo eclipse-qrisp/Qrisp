@@ -33,6 +33,7 @@ from qrisp.circuit import Clbit, Instruction, Operation, Qubit
 
 TO_GATE_COUNTER = np.zeros(1)
 
+
 class QuantumCircuit:
     """
     This class describes quantum circuits. Many of the attribute and method names are
@@ -208,7 +209,7 @@ class QuantumCircuit:
     clbit_index_counter = np.zeros(1, dtype=int)
     xla_mode = 0
 
-    def __init__(self, num_qubits=0, num_clbits=0, name=None):
+    def __init__(self, num_qubits=0, num_clbits=0):
         object.__setattr__(self, "data", [])
         object.__setattr__(self, "qubits", [])
         object.__setattr__(self, "clbits", [])
@@ -340,7 +341,7 @@ class QuantumCircuit:
         """
 
         if name is None:
-            #name = "circuit" + str(id(self))[:5]
+            # name = "circuit" + str(id(self))[:5]
             name = "circuit" + str(int(TO_GATE_COUNTER[0]))[:7].zfill(7)
 
             TO_GATE_COUNTER[0] += 1
@@ -1073,13 +1074,13 @@ class QuantumCircuit:
         try:
             return qiskit_qc.qasm(formatted, filename, encoding)
         except:
-            from qiskit.qasm2 import dumps, QASM2ExportError
+            from qiskit.qasm2 import QASM2ExportError, dumps
 
             try:
                 return dumps(qiskit_qc)
             except (QASM2ExportError, TypeError):
-                from qiskit.qasm3 import dumps
                 from qiskit import transpile
+                from qiskit.qasm3 import dumps
 
                 transpiled_qiskit_qc = transpile(
                     qiskit_qc,
@@ -2328,7 +2329,7 @@ class QuantumCircuit:
 
         """
         self.append(ops.u3Gate(theta, phi, lam), [qubits])
-        
+
     def r(self, phi, theta, qubits):
         self.append(ops.RGate(phi, theta), [qubits])
 
