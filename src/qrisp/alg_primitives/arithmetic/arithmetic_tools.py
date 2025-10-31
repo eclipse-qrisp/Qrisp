@@ -84,13 +84,17 @@ def q_max(a: QuantumFloat, b: QuantumFloat) -> QuantumFloat:
             up_bd = jnp.minimum(a.size,l - a.exponent)
             cx(a[:up_bd], res[:up_bd])
             lw_bd = jnp.maximum(r, a.exponent)
-            cx(a[lw_bd - a.exponent :], res[lw_bd - new_exponent : a.mshape[1] - new_exponent])
+            cx(a[lw_bd - a.exponent : a.msize], res[lw_bd - new_exponent : a.mshape[1] - new_exponent])
+            if a.signed:
+                cx(a.sign(), res.sign())
 
         with control(c, 0):
             up_bd = jnp.minimum(b.size,l - b.exponent)
             cx(b[: up_bd], res[: up_bd])
             lw_bd = jnp.maximum(r, b.exponent)
-            cx(b[lw_bd - b.exponent :], res[lw_bd - new_exponent : b.mshape[1] - new_exponent])
+            cx(b[lw_bd - b.exponent : b.msize], res[lw_bd - new_exponent : b.mshape[1] - new_exponent])
+            if b.signed:
+                cx(b.sign(), res.sign())
 
     c.delete()
 
@@ -155,13 +159,17 @@ def q_min(a: QuantumFloat, b: QuantumFloat) -> QuantumFloat:
             up_bd = jnp.minimum(a.size,l - a.exponent)
             cx(a[:up_bd], res[:up_bd])
             lw_bd = jnp.maximum(r, a.exponent)
-            cx(a[lw_bd - a.exponent :], res[lw_bd - new_exponent : a.mshape[1] - new_exponent])
+            cx(a[lw_bd - a.exponent : a.msize], res[lw_bd - new_exponent : a.mshape[1] - new_exponent])
+            if a.signed:
+                cx(a.sign(), res.sign())
 
         with control(c, 0):
             up_bd = jnp.minimum(b.size,l - b.exponent)
             cx(b[: up_bd], res[: up_bd])
             lw_bd = jnp.maximum(r, b.exponent)
-            cx(b[lw_bd - b.exponent :], res[lw_bd - new_exponent : b.mshape[1] - new_exponent])
+            cx(b[lw_bd - b.exponent : b.msize], res[lw_bd - new_exponent : b.mshape[1] - new_exponent])
+            if b.signed:
+                cx(b.sign(), res.sign())
 
     c.delete()
 

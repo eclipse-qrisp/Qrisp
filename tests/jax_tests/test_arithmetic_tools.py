@@ -73,6 +73,18 @@ def test_min_max(exhaustive = False):
 
     assert multi_measurement([c,d,res_min]) == {(1.25, 0.125, 0.125): 0.75, (0.25, 0.125, 0.125): 0.25}     
     assert multi_measurement([c,d,res_max]) == {(1.25, 0.125, 1.25): 0.75, (0.25, 0.125, 0.25): 0.25}
+
+    #Signed
+    c = QuantumFloat(2, signed=True)
+    d = QuantumFloat(2, signed=True)
+    c[:] = {0: 0.5**0.5, 1: 0.5**0.5}
+    d[:] = -2
+
+    res_max = q_max(c,d)
+    res_min = q_min(c,d)
+
+    assert multi_measurement([c,d,res_max]) == {(0, -2, 0): 0.5, (1, -2, 1): 0.5}
+    assert multi_measurement([c,d,res_min]) == {(0, -2, -2): 0.5, (1, -2, -2): 0.5}
     
 def test_min_max_jasp(exhaustive = False):
     @boolean_simulation
