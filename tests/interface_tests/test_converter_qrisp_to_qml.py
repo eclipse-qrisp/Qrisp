@@ -121,6 +121,9 @@ def check_qml_operations(qml_circuit, expected_ops):
     """Helper function to check if the PennyLane operations in a circuit match the expected operations."""
     qml_ops = _get_qml_operations(qml_circuit)
     for op, expected_op in zip(qml_ops, expected_ops, strict=True):
+        if op.name == "MidMeasureMP" and expected_op.name == "MidMeasureMP":
+            assert op.wires == expected_op.wires
+            continue
         qml.assert_equal(op, expected_op)
 
 
@@ -639,7 +642,7 @@ class TestControlledGateConversion:
             [qrisp_qv[3], qrisp_qv[0], qrisp_qv[1], qrisp_qv[2]],
         )
         qrisp_qs.append(
-            SXGate().inverse().control(num_ctrl_qubits=3, ctrl_state="010"),
+            SXGate().inverse().control(num_ctrl_qubits=3, ctrl_state="101"),
             [qrisp_qv[3], qrisp_qv[0], qrisp_qv[1], qrisp_qv[2]],
         )
         qml_converted_circuit = _create_qml_circuit(qrisp_qv)
@@ -662,12 +665,41 @@ class TestControlledGateConversion:
                     qrisp_qv[0].identifier,
                     qrisp_qv[1].identifier,
                 ],
-                control_values=[0, 1, 0],
+                control_values=[1, 0, 1],
             ),
         ]
         check_qml_operations(qml_converted_circuit, expected_ops)
 
         check_probs_measurement_equivalence(qrisp_qv, qml_res)
+
+
+def test_measure():
+    """Test conversion of measurement operations from Qrisp to PennyLane."""
+    qrisp_qv = QuantumVariable(2)
+    qrisp_qs = qrisp_qv.qs
+
+    qrisp_qs.append(XGate(), qrisp_qv[0])
+    qrisp_qs.measure(qrisp_qv[0])
+    qrisp_qs.append(HGate(), qrisp_qv[1])
+    qrisp_qs.measure(qrisp_qv[1])
+
+    @qml.qnode(device=qml.device("default.qubit", wires=5))
+    def circuit():
+        qml_converter(qc=qrisp_qs)(wires=[0, 1])
+        return qml.probs(wires=[0, 1])
+
+    qml_converted_circuit = circuit
+    qml_res = qml_converted_circuit()
+
+    expected_ops = [
+        qml.X(wires=[0]),
+        qml.measurements.MidMeasureMP(wires=[0]),
+        qml.Hadamard(wires=[1]),
+        qml.measurements.MidMeasureMP(wires=[1]),
+    ]
+    check_qml_operations(qml_converted_circuit, expected_ops)
+
+    check_probs_measurement_equivalence(qrisp_qv, qml_res)
 
 
 def test_mixed_circuit():

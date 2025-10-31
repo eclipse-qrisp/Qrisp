@@ -17,6 +17,7 @@
 """
 
 import types
+import uuid
 
 import numpy as np
 import pennylane as qml
@@ -27,8 +28,6 @@ from qrisp.circuit import ControlledOperation, Operation, QuantumCircuit
 """
 TODO:
 
--- Add support for mid-circuit measurements.
--- Add support for abstract parameters (symbols) in the converted PennyLane circuit.
 -- Implement all gates listed in `scr/qrisp/circuit/standard_operations.py`
 -- Add support for control-flow operations (if, while, for)
 -- Implement complex parameters handling for gates that support them.
@@ -57,6 +56,7 @@ QRISP_PL_BASE_MAP = {
     "gphase": qml.GlobalPhase,
     "id": qml.Identity,
     "r": qml.Rot,
+    "measure": qml.measurements.MidMeasureMP,
 }
 
 
@@ -152,10 +152,17 @@ def _process_qrisp_circuit(
             else:
                 qml_params.append(np.float64(param))
 
+        # TODO: Find a more elegant way to handle special cases
         if qml_op_class.__name__ == "Identity":
             qml_params = []
 
+        if qml_op_class.__name__ == "MidMeasureMP":
+            mp = qml.measurements.MidMeasureMP(wires=targets, id=str(uuid.uuid4()))
+            qml.measurements.MeasurementValue([mp])
+            continue
+
         with qml.QueuingManager.stop_recording():
+
             qml_op = qml_op_class(*qml_params, wires=targets)
 
             if is_inverse:
