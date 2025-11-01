@@ -30,6 +30,7 @@ jobs:
           pip install qiskit-iqm
           pip install pyscf
           pip install stim
+          pip install xdsl
       - name: Test with pytest
         run: |
           pytest
