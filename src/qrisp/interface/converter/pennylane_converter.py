@@ -147,18 +147,25 @@ def _process_qrisp_circuit(qc, wire_map, subs_dic=None):
 
         qml_params = _evaluate_params(op, subs_dic)
 
-        # Handle special cases for certain gates
+        # TODO: Avoid this special case handling (this is a temporary solution)
         if qml_op_class is qml.Identity:
             qml_params = []
         elif qml_op_class is qml.Rot:
             # RGate(theta, phi) -> qml.Rot(-phi, -theta, phi)
             qml_params = [-op.params[1], -op.params[0], op.params[1]]
+        elif qml_op_class is qml.GlobalPhase:
+            # GPhaseGate(phi) -> qml.GlobalPhase(-phi)
+            qml_params = [-op.params[0]]
+        elif qml_op_class is qml.SX:
+            # SXGate() -> qml.RX(pi/2)
+            qml_op_class, qml_params = qml.RX, [np.pi / 2]
         elif qml_op_class is qml.measurements.MidMeasureMP:
             # Mid-circuit measurements cannot be queued as standard operations
             qml.measure(wires=targets)
             continue
 
         with qml.QueuingManager.stop_recording():
+
             qml_op = qml_op_class(*qml_params, wires=targets)
 
             if is_inverse:

@@ -62,10 +62,8 @@ SINGLE_GATE_MAP = [
     (SGate, qml.S, []),
     (TGate, qml.T, []),
     (HGate, qml.Hadamard, []),
-    (SXGate, qml.SX, []),
     (u3Gate, qml.U3, [np.pi / 2, np.pi / 4, np.pi / 8]),
     (IDGate, qml.Identity, []),
-    (GPhaseGate, qml.GlobalPhase, [np.pi / 5]),
     (U1Gate, qml.RZ, [np.pi / 6]),
 ]
 
@@ -77,6 +75,13 @@ SINGLE_GATE_MAP_DIFF_PARAMS = [
         [np.pi / 2, np.pi / 3],
         [-np.pi / 3, -np.pi / 2, np.pi / 3],
     ),  # RGate(theta, phi) -> qml.Rot(-phi, -theta, phi)
+    (SXGate, qml.RX, [], [np.pi / 2]),  # SXGate() -> qml.RX(pi/2)
+    (
+        GPhaseGate,
+        qml.GlobalPhase,
+        [np.pi / 4],
+        [-np.pi / 4],
+    ),  # GPhaseGate(phi) -> qml.GlobalPhase(-phi)
 ]
 
 MULTI_GATE_MAP = [
@@ -102,28 +107,24 @@ def _get_qml_operations(qml_circuit):
 
 
 # The circuit returned should be executed to populate the tape
-def _create_qml_circuit(qrisp_circuit, inner_wires=None, subs_dic=None):
+def _create_qml_circuit(qrisp_circuit, subs_dic=None):
     """
     Helper function to create a PennyLane circuit from a Qrisp circuit.
 
-    This functions uses qml.probs to return the measurement probabilities.
-
-    Probabilities are returned for all qubits in the Qrisp circuit unless inner_wires are provided.
-    If inner_wires are provided, probabilities are returned only for those wires.
-
+    This function wraps the PennyLane circuit in a QNode for execution.
+    The measurement used is `qml.state()` to retrieve the statevector after execution.
+    If `subs_dic` is provided, it is used to substitute abstract parameters in the Qrisp circuit.
     """
 
     pennylane_circuit = qml_converter(qc=qrisp_circuit.qs)
     qrisp_qubits = [qubit.identifier for qubit in qrisp_circuit]
 
     device_wires = qrisp_qubits
-    if inner_wires is not None:
-        device_wires += inner_wires
 
     @qml.qnode(device=qml.device("default.qubit", wires=device_wires))
     def circuit():
-        pennylane_circuit(wires=inner_wires, subs_dic=subs_dic)
-        return qml.probs(wires=inner_wires if inner_wires is not None else qrisp_qubits)
+        pennylane_circuit(subs_dic=subs_dic)
+        return qml.state()
 
     return circuit
 
@@ -138,6 +139,19 @@ def check_qml_operations(qml_circuit, expected_ops):
         qml.assert_equal(op, expected_op)
 
 
+def check_statevector_equivalence(qrisp_qv, qml_statevector, atol=1e-8):
+    """Helper function to check if the statevectors from Qrisp and PennyLane are equivalent."""
+
+    qrisp_statevector = qrisp_qv.qs.statevector_array()
+
+    assert np.allclose(qrisp_statevector, qml_statevector, atol=atol), (
+        f"Statevector mismatch:\n"
+        f"Qrisp: {qrisp_statevector}\n"
+        f"PennyLane: {qml_statevector}"
+    )
+
+
+# We use this check when the statevector comparison is not possible
 def check_probs_measurement_equivalence(qrisp_qv, qml_res, atol=1e-8):
     """Helper function to check if the measurement probabilities from Qrisp and PennyLane are equivalent."""
 
@@ -166,6 +180,7 @@ def check_probs_measurement_equivalence(qrisp_qv, qml_res, atol=1e-8):
 #####################
 
 
+# This test is used for gates with different conventions between Qrisp and PennyLane
 @pytest.mark.parametrize(
     "qrisp_gate_factory,qml_gate_factory,params_list",
     [
@@ -190,6 +205,16 @@ def check_probs_measurement_equivalence(qrisp_qv, qml_res, atol=1e-8):
             RZZGate,
             lambda t: qml.IsingZZ(t, wires=[0, 1]),
             [(np.pi / 3,), (1.5,), (0.0,)],
+        ),
+        (
+            GPhaseGate,
+            lambda p: qml.GlobalPhase(-p, wires=[0]),
+            [(np.pi / 5,), (1.0,), (0.0,)],
+        ),
+        (
+            SXGate,
+            lambda: qml.RX(np.pi / 2, wires=0),
+            [],
         ),
     ],
 )
@@ -221,7 +246,7 @@ class TestSingleGateConversion:
         expected_ops = [qml_gate_class(*params, wires=qv[0].identifier)]
         check_qml_operations(qml_circ, expected_ops)
 
-        check_probs_measurement_equivalence(qv, qml_res, atol=1e-5 if params else 1e-8)
+        check_statevector_equivalence(qv, qml_res)
 
     @pytest.mark.parametrize(
         "qrisp_gate_class,qml_gate_class, params, expected_params",
@@ -241,7 +266,7 @@ class TestSingleGateConversion:
         expected_ops = [qml_gate_class(*expected_params, wires=qv[0].identifier)]
         check_qml_operations(qml_circ, expected_ops)
 
-        check_probs_measurement_equivalence(qv, qml_res, atol=1e-5 if params else 1e-8)
+        check_statevector_equivalence(qv, qml_res)
 
     def test_inner_wires(self):
         """Test conversion of a circuit with inner wires provided to the converter."""
@@ -252,7 +277,15 @@ class TestSingleGateConversion:
         qrisp_qs.append(HGate(), qrisp_qv[1])
 
         inner_wires = ["aux_0", "aux_1"]
-        qml_converted_circuit = _create_qml_circuit(qrisp_qv, inner_wires=inner_wires)
+        pennylane_circuit = qml_converter(qc=qrisp_qs)
+        qrisp_qubits = [qubit.identifier for qubit in qrisp_qv]
+
+        @qml.qnode(device=qml.device("default.qubit", wires=qrisp_qubits + inner_wires))
+        def circuit():
+            pennylane_circuit(wires=inner_wires)
+            return qml.probs(wires=inner_wires)
+
+        qml_converted_circuit = circuit
         qml_res = qml_converted_circuit()
 
         expected_ops = [
@@ -290,7 +323,7 @@ class TestSingleGateConversion:
         ]
         check_qml_operations(qml_converted_circuit, expected_ops)
 
-        check_probs_measurement_equivalence(outer_qv, qml_res)
+        check_statevector_equivalence(outer_qv, qml_res)
 
     def test_nested_circuits_multiple_levels(self):
         """Test conversion of nested circuits with multiple levels from Qrisp to PennyLane."""
@@ -319,7 +352,7 @@ class TestSingleGateConversion:
         ]
         check_qml_operations(qml_converted_circuit, expected_ops)
 
-        check_probs_measurement_equivalence(outer_qv, qml_res, atol=1e-5)
+        check_statevector_equivalence(outer_qv, qml_res)
 
     def test_abstract_parameters(self):
         """Test conversion of gates with abstract parameters from Qrisp to PennyLane."""
@@ -387,7 +420,7 @@ class TestSingleGateConversion:
         ]
         check_qml_operations(qml_converted_circuit, expected_ops)
 
-        check_probs_measurement_equivalence(qrisp_qv, qml_res)
+        check_statevector_equivalence(qrisp_qv, qml_res)
 
     def test_rotation_gates(self):
         """Test conversion of rotation gates (RX, RY, RZ) from Qrisp to PennyLane."""
@@ -428,7 +461,7 @@ class TestSingleGateConversion:
         ]
         check_qml_operations(qml_converted_circuit, expected_ops)
 
-        check_probs_measurement_equivalence(qrisp_qv, qml_res, atol=1e-5)
+        check_statevector_equivalence(qrisp_qv, qml_res)
 
     def test_phase_gates(self):
         """Test conversion of phase gates (P, S, T) from Qrisp to PennyLane."""
@@ -460,7 +493,7 @@ class TestSingleGateConversion:
         ]
         check_qml_operations(qml_converted_circuit, expected_ops)
 
-        check_probs_measurement_equivalence(qrisp_qv, qml_res)
+        check_statevector_equivalence(qrisp_qv, qml_res)
 
     def test_h_sx_gates(self):
         """Test conversion of H and SX gates from Qrisp to PennyLane."""
@@ -482,16 +515,16 @@ class TestSingleGateConversion:
 
         expected_ops = [
             qml.Hadamard(wires=qrisp_qv[0].identifier),
-            qml.SX(wires=qrisp_qv[0].identifier),
-            qml.SX(wires=qrisp_qv[1].identifier),
+            qml.RX(np.pi / 2, wires=qrisp_qv[0].identifier),
+            qml.RX(np.pi / 2, wires=qrisp_qv[1].identifier),
             qml.Hadamard(wires=qrisp_qv[1].identifier),
-            qml.SX(wires=qrisp_qv[1].identifier),
+            qml.RX(np.pi / 2, wires=qrisp_qv[1].identifier),
             qml.Hadamard(wires=qrisp_qv[0].identifier),
             qml.Hadamard(wires=qrisp_qv[1].identifier),
         ]
         check_qml_operations(qml_converted_circuit, expected_ops)
 
-        check_probs_measurement_equivalence(qrisp_qv, qml_res)
+        check_statevector_equivalence(qrisp_qv, qml_res)
 
     def test_adjoint_gates(self):
         """Test conversion of adjoint gates from Qrisp to PennyLane."""
@@ -508,13 +541,13 @@ class TestSingleGateConversion:
 
         expected_ops = [
             qml.adjoint(qml.S)(wires=qrisp_qv[0].identifier),
-            qml.adjoint(qml.SX)(wires=qrisp_qv[0].identifier),
+            qml.adjoint(qml.RX(np.pi / 2, wires=qrisp_qv[0].identifier)),
             qml.adjoint(qml.T)(wires=qrisp_qv[0].identifier),
             qml.RX(-0.5, wires=qrisp_qv[0].identifier),
         ]
         check_qml_operations(qml_converted_circuit, expected_ops)
 
-        check_probs_measurement_equivalence(qrisp_qv, qml_res)
+        check_statevector_equivalence(qrisp_qv, qml_res)
 
 
 class TestMultiQubitGateConversion:
@@ -540,7 +573,7 @@ class TestMultiQubitGateConversion:
         expected_ops = [qml_gate_class(*params, wires=[q.identifier for q in targets])]
         check_qml_operations(qml_circ, expected_ops)
 
-        check_probs_measurement_equivalence(qv, qml_res, atol=1e-5 if params else 1e-8)
+        check_statevector_equivalence(qv, qml_res)
 
     def test_swap_rxx_rzz_gates(self):
         """Test conversion of SWAP, RXX, RZZ gates from Qrisp to PennyLane."""
@@ -565,7 +598,7 @@ class TestMultiQubitGateConversion:
         ]
         check_qml_operations(qml_converted_circuit, expected_ops)
 
-        check_probs_measurement_equivalence(qrisp_qv, qml_res)
+        check_statevector_equivalence(qrisp_qv, qml_res)
 
 
 class TestControlledGateConversion:
@@ -588,7 +621,7 @@ class TestControlledGateConversion:
         ]
         check_qml_operations(qml_circ, expected_ops)
 
-        check_probs_measurement_equivalence(qv, qml_res, atol=1e-5 if params else 1e-8)
+        check_statevector_equivalence(qv, qml_res)
 
     def test_cx_cz_cy_gates(self):
         """Test conversion of CX, CZ, CY gates from Qrisp to PennyLane."""
@@ -609,7 +642,7 @@ class TestControlledGateConversion:
         ]
         check_qml_operations(qml_converted_circuit, expected_ops)
 
-        check_probs_measurement_equivalence(qrisp_qv, qml_res)
+        check_statevector_equivalence(qrisp_qv, qml_res)
 
     def test_mcx_gate(self):
         """Test conversion of MCX gate from Qrisp to PennyLane."""
@@ -637,7 +670,7 @@ class TestControlledGateConversion:
         ]
         check_qml_operations(qml_converted_circuit, expected_ops)
 
-        check_probs_measurement_equivalence(qrisp_qv, qml_res)
+        check_statevector_equivalence(qrisp_qv, qml_res)
 
     def test_mcrx_gate(self):
         """Test conversion of MCRX gate from Qrisp to PennyLane."""
@@ -665,7 +698,7 @@ class TestControlledGateConversion:
         ]
         check_qml_operations(qml_converted_circuit, expected_ops)
 
-        check_probs_measurement_equivalence(qrisp_qv, qml_res)
+        check_statevector_equivalence(qrisp_qv, qml_res)
 
     @pytest.mark.parametrize(
         "gate_class, qml_gate_class",
@@ -705,7 +738,7 @@ class TestControlledGateConversion:
         ]
         check_qml_operations(qml_converted_circuit, expected_ops)
 
-        check_probs_measurement_equivalence(qrisp_qv, qml_res)
+        check_statevector_equivalence(qrisp_qv, qml_res)
 
     def test_controlled_adjoint_gate(self):
         """Test conversion of controlled adjoint gates from Qrisp to PennyLane."""
@@ -725,7 +758,7 @@ class TestControlledGateConversion:
 
         expected_ops = [
             qml.ctrl(
-                op=qml.adjoint(qml.SX)(wires=qrisp_qv[2].identifier),
+                op=qml.adjoint(qml.RX(np.pi / 2, wires=qrisp_qv[2].identifier)),
                 control=[
                     qrisp_qv[3].identifier,
                     qrisp_qv[0].identifier,
@@ -734,7 +767,7 @@ class TestControlledGateConversion:
                 control_values=[0, 1, 0],
             ),
             qml.ctrl(
-                op=qml.adjoint(qml.SX)(wires=qrisp_qv[2].identifier),
+                op=qml.adjoint(qml.RX(np.pi / 2, wires=qrisp_qv[2].identifier)),
                 control=[
                     qrisp_qv[3].identifier,
                     qrisp_qv[0].identifier,
@@ -745,7 +778,7 @@ class TestControlledGateConversion:
         ]
         check_qml_operations(qml_converted_circuit, expected_ops)
 
-        check_probs_measurement_equivalence(qrisp_qv, qml_res)
+        check_statevector_equivalence(qrisp_qv, qml_res)
 
 
 def test_measure():
@@ -818,7 +851,7 @@ def test_mixed_circuit():
         qml.Y(qrisp_qv[1].identifier),
         qml.Z(qrisp_qv[2].identifier),
         qml.H(qrisp_qv[3].identifier),
-        qml.SX(qrisp_qv[4].identifier),
+        qml.RX(np.pi / 2, wires=qrisp_qv[4].identifier),
         qml.S(qrisp_qv[5].identifier),
         qml.RX(0.5, wires=qrisp_qv[1].identifier),
         qml.RY(0.5, wires=qrisp_qv[2].identifier),
@@ -852,4 +885,4 @@ def test_mixed_circuit():
 
     check_qml_operations(qml_converted_circuit, expected_ops)
 
-    check_probs_measurement_equivalence(qrisp_qv, qml_res, atol=1e-4)
+    check_statevector_equivalence(qrisp_qv, qml_res)
