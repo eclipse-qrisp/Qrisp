@@ -17,6 +17,7 @@
 """
 
 import types
+import uuid
 
 import numpy as np
 import pennylane as qml
@@ -27,8 +28,6 @@ from qrisp.circuit import ControlledOperation, Operation, QuantumCircuit
 """
 TODO:
 
--- Add support for mid-circuit measurements.
--- Add support for abstract parameters (symbols) in the converted PennyLane circuit.
 -- Implement all gates listed in `scr/qrisp/circuit/standard_operations.py`
 -- Add support for control-flow operations (if, while, for)
 -- Implement complex parameters handling for gates that support them.
@@ -57,6 +56,7 @@ QRISP_PL_BASE_MAP = {
     "gphase": qml.GlobalPhase,
     "id": qml.Identity,
     "r": qml.Rot,
+    "measure": qml.measurements.MidMeasureMP,
 }
 
 
@@ -101,6 +101,83 @@ def _create_qml_instruction(op: Operation) -> tuple[qml.operation.Operator, bool
     )
 
 
+def _process_qrisp_circuit(
+    qc: QuantumCircuit, wire_map: dict[str, qml.wires.WiresLike], subs_dic: dict = None
+) -> None:
+    """Recursively process a Qrisp quantum circuit and apply PennyLane operations.
+
+    Parameters
+    ----------
+    qc : QuantumCircuit
+        The Qrisp quantum circuit to be processed.
+
+    wire_map : dict[str, qml.wires.WiresLike]
+        A mapping from Qrisp qubit identifiers to PennyLane wires.
+
+    subs_dic : dict, optional
+        A dictionary for substituting abstract parameters with concrete values.
+    """
+
+    for data in qc.data:
+        op = data.op
+
+        if op.name in {"qb_alloc", "qb_dealloc"}:
+            continue
+
+        # Can this check be improved?
+        if (
+            op.definition is not None
+            and not isinstance(op, ControlledOperation)
+            and op.name not in QRISP_PL_BASE_MAP
+        ):
+            sub_qc = op.definition
+            sub_qubits = data.qubits
+            sub_wire_map = {
+                qb.identifier: wire_map[outer.identifier]
+                for qb, outer in zip(sub_qc.qubits, sub_qubits)
+            }
+            _process_qrisp_circuit(sub_qc, sub_wire_map)
+            continue
+
+        qml_op_class, is_inverse, is_controlled = _create_qml_instruction(op)
+        qml_wires = [wire_map[qb.identifier] for qb in data.qubits]
+
+        n_ctrls = len(op.ctrl_state) if is_controlled else 0
+        controls, targets = qml_wires[:n_ctrls], qml_wires[n_ctrls:]
+
+        qml_params = []
+        for param in op.params:
+            if subs_dic is not None and hasattr(param, "subs"):
+                qml_params.append(np.float64(param.subs(subs_dic)))
+            else:
+                qml_params.append(np.float64(param))
+
+        # TODO: Find a more elegant way to handle special cases
+        if qml_op_class.__name__ == "Identity":
+            qml_params = []
+
+        if qml_op_class.__name__ == "MidMeasureMP":
+            mp = qml.measurements.MidMeasureMP(wires=targets, id=str(uuid.uuid4()))
+            qml.measurements.MeasurementValue([mp])
+            continue
+
+        with qml.QueuingManager.stop_recording():
+
+            qml_op = qml_op_class(*qml_params, wires=targets)
+
+            if is_inverse:
+                qml_op = qml.adjoint(qml_op)
+
+            if is_controlled:
+                qml_op = qml.ctrl(
+                    op=qml_op,
+                    control=controls,
+                    control_values=[int(bit) for bit in op.ctrl_state],
+                )
+
+        qml.apply(qml_op)
+
+
 def qml_converter(qc: QuantumCircuit | QuantumSession) -> types.FunctionType:
     """
     Convert a Qrisp quantum circuit to a PennyLane quantum function.
@@ -117,7 +194,7 @@ def qml_converter(qc: QuantumCircuit | QuantumSession) -> types.FunctionType:
 
     """
 
-    def circuit(wires: qml.wires.WiresLike = None) -> None:
+    def circuit(wires: qml.wires.WiresLike = None, subs_dic: dict = None) -> None:
         """
         PennyLane quantum function representing the Qrisp circuit.
 
@@ -129,6 +206,9 @@ def qml_converter(qc: QuantumCircuit | QuantumSession) -> types.FunctionType:
             The wires to be used in the PennyLane circuit. If None, the qubit identifiers
             from the Qrisp circuit are used.
 
+        subs_dic : dict, optional
+            A dictionary for substituting abstract parameters with concrete values.
+
         """
 
         if wires is None:
@@ -136,38 +216,6 @@ def qml_converter(qc: QuantumCircuit | QuantumSession) -> types.FunctionType:
         else:
             wire_map = {qb.identifier: wires[i] for i, qb in enumerate(qc.qubits)}
 
-        for data in qc.data:
-            op = data.op
-
-            if op.name in {"qb_alloc", "qb_dealloc"}:
-                continue
-
-            qml_op_class, is_inverse, is_controlled = _create_qml_instruction(op)
-
-            qml_wires = [wire_map[qb.identifier] for qb in data.qubits]
-            n_ctrls = len(op.ctrl_state) if is_controlled else 0
-            controls, targets = qml_wires[:n_ctrls], qml_wires[n_ctrls:]
-
-            qml_params = [np.float64(param) for param in op.params]
-
-            # Here we'll probably need to handle more special cases.
-            if qml_op_class.__name__ == "Identity":
-                qml_params = []
-
-            with qml.QueuingManager.stop_recording():
-
-                qml_op = qml_op_class(*qml_params, wires=targets)
-
-                if is_inverse:
-                    qml_op = qml.adjoint(qml_op)
-
-                if is_controlled:
-                    qml_op = qml.ctrl(
-                        op=qml_op,
-                        control=controls,
-                        control_values=[int(bit) for bit in op.ctrl_state],
-                    )
-
-            qml.apply(qml_op)
+        _process_qrisp_circuit(qc, wire_map, subs_dic)
 
     return circuit
