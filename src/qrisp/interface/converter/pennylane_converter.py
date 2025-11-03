@@ -18,7 +18,7 @@
 
 import types
 from dataclasses import dataclass
-from typing import Callable
+from typing import Callable, Optional
 
 import numpy as np
 import pennylane as qml
@@ -126,7 +126,7 @@ def _is_nested_circuit(op: Operation) -> bool:
     )
 
 
-def _evaluate_params(params, subs_dic):
+def _evaluate_params(params: list, subs_dic: dict | None) -> list:
     """Return parameters with optional substitution and numeric conversion."""
     out = []
     for p in params:
@@ -136,7 +136,9 @@ def _evaluate_params(params, subs_dic):
     return out
 
 
-def _process_qrisp_circuit(qc, wire_map, subs_dic=None):
+def _process_qrisp_circuit(
+    qc: QuantumCircuit | QuantumSession, wire_map: dict, subs_dic: dict | None
+) -> None:
     """Recursively process a Qrisp circuit into PennyLane operations."""
 
     for data in qc.data:
@@ -201,7 +203,9 @@ def qml_converter(qc: QuantumCircuit | QuantumSession) -> types.FunctionType:
 
     """
 
-    def circuit(wires: qml.wires.WiresLike = None, subs_dic: dict = None) -> None:
+    def circuit(
+        wires: Optional[qml.wires.WiresLike] = None, subs_dic: Optional[dict] = None
+    ) -> None:
         """
         PennyLane quantum function representing the Qrisp circuit.
 
