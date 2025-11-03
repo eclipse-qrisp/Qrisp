@@ -126,11 +126,11 @@ def _is_nested_circuit(op: Operation) -> bool:
     )
 
 
-def _evaluate_params(params: list, subs_dic: dict | None) -> list:
-    """Return parameters with optional substitution and numeric conversion."""
+def _evaluate_abstract_params(params: list, subs_dic: dict) -> list:
+    """Return parameters with substitution for abstract parameters."""
     out = []
     for p in params:
-        if subs_dic is not None and hasattr(p, "subs"):
+        if hasattr(p, "subs"):
             p = p.subs(subs_dic)
         out.append(np.float64(p))
     return out
@@ -163,8 +163,10 @@ def _process_qrisp_circuit(
         n_ctrls = len(op.ctrl_state) if is_controlled else 0
         controls, targets = qml_wires[:n_ctrls], qml_wires[n_ctrls:]
 
-        raw_params = qml_gate_desc.param_fn(op)
-        qml_params = _evaluate_params(raw_params, subs_dic)
+        qml_params = qml_gate_desc.param_fn(op)
+
+        if subs_dic is not None:
+            qml_params = _evaluate_abstract_params(qml_params, subs_dic)
 
         if qml_gate_desc.gate_class is qml.measurements.MidMeasureMP:
             qml.measure(wires=targets)
