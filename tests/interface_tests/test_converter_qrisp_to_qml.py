@@ -22,7 +22,7 @@ import pytest
 from sympy import symbols
 
 from qrisp import QuantumVariable
-from qrisp.circuit.standard_operations import (  # Barrier,; Measurement,; QubitAlloc,; QubitDealloc,; Reset,; RGate,
+from qrisp.circuit.standard_operations import (  # Barrier,
     CPGate,
     CXGate,
     CYGate,
@@ -33,6 +33,7 @@ from qrisp.circuit.standard_operations import (  # Barrier,; Measurement,; Qubit
     MCRXGate,
     MCXGate,
     PGate,
+    RGate,
     RXGate,
     RXXGate,
     RYGate,
@@ -65,12 +66,23 @@ SINGLE_GATE_MAP = [
     (u3Gate, qml.U3, [np.pi / 2, np.pi / 4, np.pi / 8]),
     (IDGate, qml.Identity, []),
     (GPhaseGate, qml.GlobalPhase, [np.pi / 5]),
-    (U1Gate, qml.U1, [np.pi / 6]),
+    (U1Gate, qml.RZ, [np.pi / 6]),
+]
+
+# These are gates that map to the same PennyLane gate but with different parameters
+SINGLE_GATE_MAP_DIFF_PARAMS = [
+    (
+        RGate,
+        qml.Rot,
+        [np.pi / 2, np.pi / 3],
+        [-np.pi / 3, -np.pi / 2, np.pi / 3],
+    ),  # RGate(theta, phi) -> qml.Rot(-phi, -theta, phi)
 ]
 
 MULTI_GATE_MAP = [
     (SwapGate, qml.SWAP, 2, []),
     (RXXGate, qml.IsingXX, 2, [np.pi / 2]),
+    (RZZGate, qml.IsingZZ, 2, [np.pi / 3]),
 ]
 
 CONTROLLED_GATE_MAP = [
@@ -84,7 +96,6 @@ CONTROLLED_GATE_MAP = [
 def _get_qml_operations(qml_circuit):
     """Helper function to extract PennyLane operations from a PennyLane QNode."""
     qml_ops = []
-    # pylint: disable=protected-access
     for op in qml_circuit._tape.operations:
         qml_ops.append(op)
     return qml_ops
@@ -150,6 +161,50 @@ def check_probs_measurement_equivalence(qrisp_qv, qml_res, atol=1e-8):
         )
 
 
+#####################
+###### TESTS ########
+#####################
+
+
+@pytest.mark.parametrize(
+    "qrisp_gate_factory,qml_gate_factory,params_list",
+    [
+        (
+            RGate,
+            lambda t, p: qml.Rot(-p, -t, p, wires=0),
+            [(np.pi / 3, np.pi / 4), (1.2, 2.3), (0.0, 0.0)],
+        ),
+        (PGate, lambda p: qml.PhaseShift(p, wires=0), [(np.pi / 6,), (1.5,), (0.0,)]),
+        (
+            u3Gate,
+            lambda t, p, l: qml.U3(t, p, l, wires=0),
+            [(np.pi / 3, np.pi / 4, np.pi / 5), (1.2, 2.3, 3.4), (0.0, 0.0, 0.0)],
+        ),
+        (U1Gate, lambda p: qml.RZ(p, wires=0), [(np.pi / 4,), (1.0,), (0.0,)]),
+        (
+            RXXGate,
+            lambda t: qml.IsingXX(t, wires=[0, 1]),
+            [(np.pi / 3,), (1.5,), (0.0,)],
+        ),
+        (
+            RZZGate,
+            lambda t: qml.IsingZZ(t, wires=[0, 1]),
+            [(np.pi / 3,), (1.5,), (0.0,)],
+        ),
+    ],
+)
+def test_gate_unitary_equivalence(qrisp_gate_factory, qml_gate_factory, params_list):
+    """Test that Qrisp gates convert to equivalent PennyLane gates by comparing unitaries."""
+    for params in params_list:
+        qrisp_gate = qrisp_gate_factory(*params)
+        qml_gate = qml_gate_factory(*params)
+
+        qrisp_unitary = qrisp_gate.get_unitary()
+        qml_unitary = qml_gate.matrix()
+
+        assert np.allclose(qrisp_unitary, qml_unitary)
+
+
 class TestSingleGateConversion:
     """Test class for single gate conversions from Qrisp to PennyLane."""
 
@@ -164,6 +219,26 @@ class TestSingleGateConversion:
         qml_res = qml_circ()  # populate tape
 
         expected_ops = [qml_gate_class(*params, wires=qv[0].identifier)]
+        check_qml_operations(qml_circ, expected_ops)
+
+        check_probs_measurement_equivalence(qv, qml_res, atol=1e-5 if params else 1e-8)
+
+    @pytest.mark.parametrize(
+        "qrisp_gate_class,qml_gate_class, params, expected_params",
+        SINGLE_GATE_MAP_DIFF_PARAMS,
+    )
+    def test_single_gate_conversion_diff_params(
+        self, qrisp_gate_class, qml_gate_class, params, expected_params
+    ):
+        """Test conversion of simple gates from Qrisp to PennyLane with different parameters."""
+        qv = QuantumVariable(1)
+        qs = qv.qs
+        qs.append(qrisp_gate_class(*params), qv[0])
+
+        qml_circ = _create_qml_circuit(qv)
+        qml_res = qml_circ()  # populate tape
+
+        expected_ops = [qml_gate_class(*expected_params, wires=qv[0].identifier)]
         check_qml_operations(qml_circ, expected_ops)
 
         check_probs_measurement_equivalence(qv, qml_res, atol=1e-5 if params else 1e-8)

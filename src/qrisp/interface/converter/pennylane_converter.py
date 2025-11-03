@@ -17,7 +17,6 @@
 """
 
 import types
-import uuid
 
 import numpy as np
 import pennylane as qml
@@ -43,12 +42,13 @@ QRISP_PL_BASE_MAP = {
     "ry": qml.RY,
     "rz": qml.RZ,
     "p": qml.PhaseShift,
-    "u1": qml.U1,
+    "u1": qml.RZ,
     "u3": qml.U3,
     "rxx": qml.IsingXX,
     "ryy": qml.IsingYY,
     "rzz": qml.IsingZZ,
-    "xxyy": qml.IsingXY,
+    # TODO: implement IsingXY gate mapping
+    # qml.IsingXY(phi, ...) is equivalent to XXYYGate(phi, beta=np.pi)
     "swap": qml.SWAP,
     "sx": qml.SX,
     "s": qml.S,
@@ -101,22 +101,27 @@ def _create_qml_instruction(op: Operation) -> tuple[qml.operation.Operator, bool
     )
 
 
-def _process_qrisp_circuit(
-    qc: QuantumCircuit, wire_map: dict[str, qml.wires.WiresLike], subs_dic: dict = None
-) -> None:
-    """Recursively process a Qrisp quantum circuit and apply PennyLane operations.
+def _is_nested_circuit(op: Operation) -> bool:
+    """Return True if this Qrisp operation is a subcircuit."""
+    return (
+        op.definition is not None
+        and not isinstance(op, ControlledOperation)
+        and op.name not in QRISP_PL_BASE_MAP
+    )
 
-    Parameters
-    ----------
-    qc : QuantumCircuit
-        The Qrisp quantum circuit to be processed.
 
-    wire_map : dict[str, qml.wires.WiresLike]
-        A mapping from Qrisp qubit identifiers to PennyLane wires.
+def _evaluate_params(op, subs_dic):
+    """Return the evaluated parameters of a Qrisp operation."""
+    out = []
+    for p in op.params:
+        if subs_dic is not None and hasattr(p, "subs"):
+            p = p.subs(subs_dic)
+        out.append(np.float64(p))
+    return out
 
-    subs_dic : dict, optional
-        A dictionary for substituting abstract parameters with concrete values.
-    """
+
+def _process_qrisp_circuit(qc, wire_map, subs_dic=None):
+    """Recursively process a Qrisp circuit into PennyLane operations."""
 
     for data in qc.data:
         op = data.op
@@ -124,19 +129,14 @@ def _process_qrisp_circuit(
         if op.name in {"qb_alloc", "qb_dealloc"}:
             continue
 
-        # Can this check be improved?
-        if (
-            op.definition is not None
-            and not isinstance(op, ControlledOperation)
-            and op.name not in QRISP_PL_BASE_MAP
-        ):
+        if _is_nested_circuit(op):
             sub_qc = op.definition
             sub_qubits = data.qubits
             sub_wire_map = {
-                qb.identifier: wire_map[outer.identifier]
-                for qb, outer in zip(sub_qc.qubits, sub_qubits)
+                inner.identifier: wire_map[outer.identifier]
+                for inner, outer in zip(sub_qc.qubits, sub_qubits)
             }
-            _process_qrisp_circuit(sub_qc, sub_wire_map)
+            _process_qrisp_circuit(sub_qc, sub_wire_map, subs_dic)
             continue
 
         qml_op_class, is_inverse, is_controlled = _create_qml_instruction(op)
@@ -145,24 +145,20 @@ def _process_qrisp_circuit(
         n_ctrls = len(op.ctrl_state) if is_controlled else 0
         controls, targets = qml_wires[:n_ctrls], qml_wires[n_ctrls:]
 
-        qml_params = []
-        for param in op.params:
-            if subs_dic is not None and hasattr(param, "subs"):
-                qml_params.append(np.float64(param.subs(subs_dic)))
-            else:
-                qml_params.append(np.float64(param))
+        qml_params = _evaluate_params(op, subs_dic)
 
-        # TODO: Find a more elegant way to handle special cases
-        if qml_op_class.__name__ == "Identity":
+        # Handle special cases for certain gates
+        if qml_op_class is qml.Identity:
             qml_params = []
-
-        if qml_op_class.__name__ == "MidMeasureMP":
-            mp = qml.measurements.MidMeasureMP(wires=targets, id=str(uuid.uuid4()))
-            qml.measurements.MeasurementValue([mp])
+        elif qml_op_class is qml.Rot:
+            # RGate(theta, phi) -> qml.Rot(-phi, -theta, phi)
+            qml_params = [-op.params[1], -op.params[0], op.params[1]]
+        elif qml_op_class is qml.measurements.MidMeasureMP:
+            # Mid-circuit measurements cannot be queued as standard operations
+            qml.measure(wires=targets)
             continue
 
         with qml.QueuingManager.stop_recording():
-
             qml_op = qml_op_class(*qml_params, wires=targets)
 
             if is_inverse:
