@@ -17,6 +17,8 @@
 """
 
 import types
+from dataclasses import dataclass
+from typing import Callable
 
 import numpy as np
 import pennylane as qml
@@ -33,30 +35,44 @@ TODO:
 
 """
 
+
+@dataclass
+class QMLGateDescriptor:
+    """Descriptor for mapping Qrisp operations to PennyLane gates."""
+
+    gate_class: Callable
+    param_fn: Callable = lambda op: op.params
+
+
 QRISP_PL_BASE_MAP = {
-    "x": qml.X,
-    "y": qml.Y,
-    "z": qml.Z,
-    "h": qml.Hadamard,
-    "rx": qml.RX,
-    "ry": qml.RY,
-    "rz": qml.RZ,
-    "p": qml.PhaseShift,
-    "u1": qml.RZ,
-    "u3": qml.U3,
-    "rxx": qml.IsingXX,
-    "ryy": qml.IsingYY,
-    "rzz": qml.IsingZZ,
-    # TODO: implement IsingXY gate mapping
+    "x": QMLGateDescriptor(qml.X),
+    "y": QMLGateDescriptor(qml.Y),
+    "z": QMLGateDescriptor(qml.Z),
+    "h": QMLGateDescriptor(qml.Hadamard),
+    "rx": QMLGateDescriptor(qml.RX),
+    "ry": QMLGateDescriptor(qml.RY),
+    "rz": QMLGateDescriptor(qml.RZ),
+    "p": QMLGateDescriptor(qml.PhaseShift),
+    "u1": QMLGateDescriptor(qml.RZ),
+    "u3": QMLGateDescriptor(qml.U3),
+    "rxx": QMLGateDescriptor(qml.IsingXX),
+    "ryy": QMLGateDescriptor(qml.IsingYY),
+    "rzz": QMLGateDescriptor(qml.IsingZZ),
     # qml.IsingXY(phi, ...) is equivalent to XXYYGate(phi, beta=np.pi)
-    "swap": qml.SWAP,
-    "sx": qml.SX,
-    "s": qml.S,
-    "t": qml.T,
-    "gphase": qml.GlobalPhase,
-    "id": qml.Identity,
-    "r": qml.Rot,
-    "measure": qml.measurements.MidMeasureMP,
+    "swap": QMLGateDescriptor(qml.SWAP),
+    "s": QMLGateDescriptor(qml.S),
+    "t": QMLGateDescriptor(qml.T),
+    "id": QMLGateDescriptor(qml.Identity, param_fn=lambda _: []),
+    "sx": QMLGateDescriptor(
+        qml.RX, param_fn=lambda _: [np.pi / 2]
+    ),  # SXGate() -> qml.RX(pi/2)
+    "gphase": QMLGateDescriptor(
+        qml.GlobalPhase, param_fn=lambda op: [-op.params[0]]
+    ),  # GPhaseGate(phi) -> qml.GlobalPhase(-phi)
+    "r": QMLGateDescriptor(
+        qml.Rot, param_fn=lambda op: [-op.params[1], -op.params[0], op.params[1]]
+    ),  # RGate(theta, phi) -> qml.Rot(-phi, -theta, phi)
+    "measure": QMLGateDescriptor(qml.measurements.MidMeasureMP),
 }
 
 
@@ -67,7 +83,7 @@ def _extract_name(name: str) -> tuple[str, bool]:
     return name, is_inverse
 
 
-def _create_qml_instruction(op: Operation) -> tuple[qml.operation.Operator, bool, bool]:
+def _create_qml_instruction(op: Operation) -> tuple[QMLGateDescriptor, bool, bool]:
     """
     Create a PennyLane instruction from a Qrisp operation.
 
@@ -78,11 +94,11 @@ def _create_qml_instruction(op: Operation) -> tuple[qml.operation.Operator, bool
 
     Returns
     -------
-    tuple[qml.operation.Operator, bool, bool]
-        A tuple containing the PennyLane operator class corresponding
-        to the Qrisp operation, a boolean indicating if the operation
-        is inverted, and a boolean indicating if the operation is controlled.
-        For controlled Qrisp operations, it returns the base PennyLane operator class.
+    tuple[QMLGateDescriptor, bool, bool]
+        A tuple containing the QMLGateDescriptor corresponding to the Qrisp operation,
+        a boolean indicating if the operation is inverted, and a boolean indicating
+        if the operation is controlled. For controlled Qrisp operations, it
+        returns the base QMLGateDescriptor.
 
     """
 
@@ -110,10 +126,10 @@ def _is_nested_circuit(op: Operation) -> bool:
     )
 
 
-def _evaluate_params(op, subs_dic):
-    """Return the evaluated parameters of a Qrisp operation."""
+def _evaluate_params(params, subs_dic):
+    """Return parameters with optional substitution and numeric conversion."""
     out = []
-    for p in op.params:
+    for p in params:
         if subs_dic is not None and hasattr(p, "subs"):
             p = p.subs(subs_dic)
         out.append(np.float64(p))
@@ -139,34 +155,22 @@ def _process_qrisp_circuit(qc, wire_map, subs_dic=None):
             _process_qrisp_circuit(sub_qc, sub_wire_map, subs_dic)
             continue
 
-        qml_op_class, is_inverse, is_controlled = _create_qml_instruction(op)
+        qml_gate_desc, is_inverse, is_controlled = _create_qml_instruction(op)
         qml_wires = [wire_map[qb.identifier] for qb in data.qubits]
 
         n_ctrls = len(op.ctrl_state) if is_controlled else 0
         controls, targets = qml_wires[:n_ctrls], qml_wires[n_ctrls:]
 
-        qml_params = _evaluate_params(op, subs_dic)
+        raw_params = qml_gate_desc.param_fn(op)
+        qml_params = _evaluate_params(raw_params, subs_dic)
 
-        # TODO: Avoid this special case handling (this is a temporary solution)
-        if qml_op_class is qml.Identity:
-            qml_params = []
-        elif qml_op_class is qml.Rot:
-            # RGate(theta, phi) -> qml.Rot(-phi, -theta, phi)
-            qml_params = [-op.params[1], -op.params[0], op.params[1]]
-        elif qml_op_class is qml.GlobalPhase:
-            # GPhaseGate(phi) -> qml.GlobalPhase(-phi)
-            qml_params = [-op.params[0]]
-        elif qml_op_class is qml.SX:
-            # SXGate() -> qml.RX(pi/2)
-            qml_op_class, qml_params = qml.RX, [np.pi / 2]
-        elif qml_op_class is qml.measurements.MidMeasureMP:
-            # Mid-circuit measurements cannot be queued as standard operations
+        if qml_gate_desc.gate_class is qml.measurements.MidMeasureMP:
             qml.measure(wires=targets)
             continue
 
         with qml.QueuingManager.stop_recording():
 
-            qml_op = qml_op_class(*qml_params, wires=targets)
+            qml_op = qml_gate_desc.gate_class(*qml_params, wires=targets)
 
             if is_inverse:
                 qml_op = qml.adjoint(qml_op)
