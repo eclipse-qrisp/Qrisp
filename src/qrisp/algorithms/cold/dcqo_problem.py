@@ -25,7 +25,7 @@ from qrisp import h
 class DCQOProblem:
     """
     General structure to formulate Digitized Counterdiabaric Quantum Optimization problems.
-    This class is used to solve DCQA problems with the algorithms COLD, LCD and or a nonlocal AGP,
+    This class is used to solve DCQO problems with the algorithms COLD, LCD and/or a nonlocal AGP,
     depending on the parameters given by the user.
 
     Parameters
@@ -35,7 +35,7 @@ class DCQOProblem:
         By default, the uniform superposition state $\ket{+}^n$ is prepared.
     sympy_lambda : callable
         A function $\lambda(t, T)$ mapping $t \in$ [0, T] to $\lambda \in$ [0, 1]. This function needs to return
-        a sympy expression with $t$ and $T$ as sympy Symbols.
+        a `sympy <https://docs.sympy.org/>`_ expression with $t$ and $T$ as `sympy.Symbols <https://docs.sympy.org/latest/modules/core.html#sympy.core.symbol.Symbol>`_.
     alpha : callable
         The parameters for the adiabatic gauge potential (AGP). If the COLD method is being used,
         alpha must depend on the optimization pulses in ``H_control``.
@@ -178,7 +178,7 @@ class DCQOProblem:
         T : float
             Evolution time for the simulation.
         opt_params : list
-            Either the optimized parameters or the corresponding sympy Symbols.
+            Either the optimized parameters or the corresponding `sympy.Symbols <https://docs.sympy.org/latest/modules/core.html#sympy.core.symbol.Symbol>`_.
         CRAB : bool, optional
             If ``True``, the CRAB optimization method is being used. The default is ``False``.
         """
@@ -252,9 +252,9 @@ class DCQOProblem:
             U(qarg, t=dt)  
 
     
-    def compile_U(self, qarg, N_opt, N_steps, T, CRAB=False):
+    def compile_U_cold(self, qarg, N_opt, N_steps, T, CRAB=False):
         """
-        Compiles the circuit that is evaluated by the :meth:`run <qrisp.cold.DCQOProblem.run>` method.
+        Compiles the circuit that is created by the :meth:`apply_cold_hamiltonian <qrisp.cold.DCQOProblem.apply_cold_hamiltonian>` method.
 
         Parameters
         ----------
@@ -291,7 +291,7 @@ class DCQOProblem:
                              ): 
         """
         Subroutine for the optimization method used in COLD. 
-        The initial values are set and the optimization via ``COBYLA`` is conducted here.
+        The initial values are set and the optimization via is conducted here.
 
         Parameters
         ----------
@@ -303,9 +303,8 @@ class DCQOProblem:
             The COLD circuit that is applied before measuring the qarg.
         CRAB : bool, optional
             If ``True``, the CRAB optimization method is being used. The default is ``False``.
-        optimizer : str, optional
+        optimizer : str
             Specifies the `SciPy optimization routine <https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html>`_.
-            The Default is ``Powell``.
         options : dict
             A dictionary of solver options.
 
@@ -378,13 +377,13 @@ class DCQOProblem:
             If ``True``, the CRAB optimization method is being used. The default is ``False``.
         optimizer : str, optional
             Specifies the `SciPy optimization routine <https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html>`_.
-            The Default is ``Powell``.
+            We set the default to ``Powell``.
         options : dict
             A dictionary of solver options.
 
         Returns
         -------
-        dict
+        res_dict : dict
             The optimal result after running DCQO problem for a specific problem instance. It contains the measurement results after applying the optimal DCQO circuit to the quantum argument.
 
         """
@@ -403,7 +402,7 @@ class DCQOProblem:
             qarg1, qarg2 = qarg.duplicate(), qarg.duplicate()
 
             # Compile COLD routine into a circuit
-            U_circuit = self.compile_U(qarg1, N_opt, N_steps, T, CRAB)
+            U_circuit = self.compile_U_cold(qarg1, N_opt, N_steps, T, CRAB)
 
             # Find optimal params for control pulse
             opt_params = self.optimization_routine(qarg2, N_opt, U_circuit, CRAB, optimizer, options)
