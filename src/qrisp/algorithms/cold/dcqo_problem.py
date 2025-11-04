@@ -85,7 +85,7 @@ class DCQOProblem:
 
         self.callback = True
 
-    def precompute_timegrid(self, N_steps, T):
+    def __precompute_timegrid(self, N_steps, T):
         """
         Compute lambda(t, T) and the time-derivative lambdadot(t, T) 
         for each timestep.
@@ -120,7 +120,8 @@ class DCQOProblem:
         lam = lam_func(t_list, T)
         lamdot = lamdot_func(t_list, T)
 
-        return lam, lamdot
+        self.lam = lam
+        self.lamdot = lamdot
 
     def apply_lcd_hamiltonian(self, qarg, N_steps, T):
         """
@@ -140,6 +141,10 @@ class DCQOProblem:
 
         self.qarg_prep(qarg)
         dt = T / N_steps
+
+        # Make sure timegrid is computed
+        if not hasattr(self, "lam"):
+            self.__precompute_timegrid(N_steps, T)
         
         # Apply hamiltonian to qarg for each timestep
         for s in range(N_steps):
@@ -207,6 +212,10 @@ class DCQOProblem:
         # Initialize qarg
         self.qarg_prep(qarg)
 
+        # Make sure timegrid is computed
+        if not hasattr(self, "lam"):
+            self.__precompute_timegrid(N_steps, T)
+
         # Precompute opt pulses
         dt = T / N_steps
         t_list = np.linspace(dt, T, int(N_steps))
@@ -225,12 +234,6 @@ class DCQOProblem:
             f = sin_matrix[s, :] @ beta
             f_deriv = cos_matrix[s, :] @ beta
             alph = self.alpha(self.lam[s], f, f_deriv)
-            
-            # TODO: check ob nötig
-            if hasattr(alph, "__len__"):
-                #print("has_len")
-                alph = alph[0]
-                f = f[0] 
 
             # H_0 contribution scaled by dt
             H_step = (1-self.lam[s]) * self.H_init + self.lam[s] * self.H_prob
@@ -239,7 +242,10 @@ class DCQOProblem:
             H_step += self.lamdot[s] * alph * self.A_lam
 
             # Control pulse contribution 
-            H_step += f * self.H_control
+            if CRAB:
+                H_step += sum(f[i, 0] for i in range(f.rows)) * self.H_control
+            else:
+                H_step += f * self.H_control
 
             # Get unitary from trotterization and apply to qarg
             U = H_step.trotterization()
@@ -383,7 +389,7 @@ class DCQOProblem:
         """
 
         # Compute time-function lamda(t, T) and the derivative lamdot(t, T)
-        self.lam, self.lamdot = self.precompute_timegrid(N_steps, T)
+        self.__precompute_timegrid(N_steps, T)
 
         # If no prep for qarg is specified, use uniform superposition state
         if self.qarg_prep is None:
