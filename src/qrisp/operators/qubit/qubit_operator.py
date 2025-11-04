@@ -393,8 +393,9 @@ class QubitOperator(Hamiltonian):
 
         for term, coeff in other.terms_dict.items():
             self.terms_dict[term] = self.terms_dict.get(term, 0) + coeff
-            if abs(self.terms_dict[term]) < threshold:
-                del self.terms_dict[term]
+            if not isinstance(self.terms_dict[term], sp.Basic):
+                if abs(self.terms_dict[term]) < threshold:
+                    del self.terms_dict[term]
         return self
 
     def __isub__(self, other):
