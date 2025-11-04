@@ -54,19 +54,20 @@ class CRABObjective:
         self.last_x = None  # Keep track of last result
         self.random_pulses = np.random.uniform(-0.5, 0.5, N_opt)
         self.iteration = 0
-        # TODO: self.rtol = ?
+        self.atol = 1e-6
 
     def __call__(self, params):
         
         # Detect new iteration by comparing parameter vectors
-        if self.last_x is None or np.allclose(params, self.last_x) == False:
+        if self.last_x is None or np.allclose(params, self.last_x, atol=self.atol) == False:
             # When optimizer moves away from last point, refresh random distribution
-            self.random_pulses = np.random.uniform(-0.5, 0.5, self.N_opt)
+            if not self.last_x is None:
+                # Change random pulse where parameters have changed
+                new_pulse_index = np.where(self.last_x != params)[0]
+                self.random_pulses[new_pulse_index] = np.random.uniform(-0.5, 0.5)
             self.iteration += 1
         self.last_x = params.copy()
-        print("iter")
-        print(params)
-        print(self.random_pulses)
+
         # Parameters to give to the quantum circuit for compilation
         # Optimization params
         subs_dic = {Symbol(f"par_{i}"): params[i] for i in range(len(params))}
@@ -74,6 +75,6 @@ class CRABObjective:
         subs_dic.update({Symbol(f"r_{k}"): self.random_pulses[k] for k in range(self.N_opt)})
 
         # Evluate cost
-        cost = self.H_p.expectation_value(self.qarg, compile=False,
+        cost = self.H_prob.expectation_value(self.qarg, compile=False,
                                           subs_dic=subs_dic, precompiled_qc=self.qc)()
         return cost
