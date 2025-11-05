@@ -23,6 +23,7 @@ from qrisp import (
     QuantumBool,
     u3,
     control,
+    invert,
 )
 from qrisp.jasp import qache, jrange
 import jax
@@ -130,15 +131,15 @@ def compute_gqsp_phase_factors(p, q):
 
         return d, S_hat, theta_arr, phi_arr
 
-    d, S, theta, phi = jax.lax.while_loop(cond_fun, body_fun, (d, S, theta, phi))
+    d, S, theta_arr, phi_arr = jax.lax.while_loop(cond_fun, body_fun, (d, S, theta_arr, phi_arr))
 
     kappa = jnp.angle(S[1][0])
 
-    return theta, phi, kappa
+    return theta_arr, phi_arr, kappa
 
 
 # https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368
-def GQSP(qargs, U, p, q=None):
+def GQSP(qargs, U, p, q=None, k=0):
     r"""
     Performs `Generalized Quantum Signal Processing <https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368>`_.
 
@@ -174,6 +175,9 @@ def GQSP(qargs, U, p, q=None):
     q : numpy.ndarray, optional
         A polynomial $q\in\mathbb C[x]$ represended as a vector of its coeffcients. 
         If not specified, the polynomial is computed numerically from $p$.
+    k : int, optional
+        If specified, the Laurent polynomials $p'(x)=x^{-k}P(x)$, $q'(x)=x^{-k}q(x)$ are applied.
+        The default is 0.
 
     Returns
     -------
@@ -201,11 +205,15 @@ def GQSP(qargs, U, p, q=None):
 
     u3(theta[0], phi[0], kappa, qbl)
 
-    for i in jrange(d):
-
+    for i in jrange(d-k):
         with control(qbl, ctrl_state=0):
-            U(*qargs)
-        
+            U(*qargs)   
         u3(theta[i+1], phi[i+1], 0, qbl)
+
+    for i in jrange(k):
+        with control(qbl, ctrl_state=0):
+            with invert():
+                U(*qargs)
+        u3(theta[d-k+i+1], phi[d-k+i+1], 0, qbl)
 
     return qbl
