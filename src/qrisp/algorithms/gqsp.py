@@ -121,7 +121,7 @@ def compute_gqsp_phase_factors(p, q):
         theta = theta_arr[d]
         phi = phi_arr[d]
         # R(theta, phi, 0)^dagger
-        R = jnp.array([[jnp.exp(-phi*1j) * jnp.cos(theta), jnp.sin(theta)],[jnp.exp(-phi*1j) * jnp.sin(theta), jnp.cos(theta)]])
+        R = jnp.array([[jnp.exp(-phi*1j) * jnp.cos(theta), jnp.sin(theta)],[jnp.exp(-phi*1j) * jnp.sin(theta), -jnp.cos(theta)]])
         S = R @ S
         S = jnp.vstack([S[0][1:d+1],S[1][0:d]])
         
