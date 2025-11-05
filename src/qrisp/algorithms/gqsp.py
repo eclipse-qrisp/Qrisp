@@ -102,14 +102,14 @@ def compute_gqsp_phase_factors(p, q):
     
     """
 
-    d = len(p)
-    theta_arr = jnp.zeros(d)
-    phi_arr = jnp.zeros(d)
+    d = len(p) - 1
+    theta_arr = jnp.zeros(d + 1)
+    phi_arr = jnp.zeros(d + 1)
 
     S = jnp.vstack([p, q])
 
-    theta_arr.at[d-1].set(jnp.arctan(jnp.abs(S[1][d-1] / S[0][d-1])))
-    phi_arr.at[d-1].set(jnp.angle(S[0][d-1] / S[1][d-1]))
+    theta_arr = theta_arr.at[d].set(jnp.arctan(jnp.abs(S[1][d] / S[0][d])))
+    phi_arr = phi_arr.at[d].set(jnp.angle(S[0][d] / S[1][d]))
 
     def cond_fun(vals):
         d, S, theta_arr, phi_arr = vals
@@ -123,16 +123,20 @@ def compute_gqsp_phase_factors(p, q):
         # R(theta, phi, 0)^dagger
         R = jnp.array([[jnp.exp(-phi*1j) * jnp.cos(theta), jnp.sin(theta)],[jnp.exp(-phi*1j) * jnp.sin(theta), jnp.cos(theta)]])
         S = R @ S
-        S_hat = jnp.vstack(S[0][1:d],S[1][0:d-1])
+        S = jnp.vstack([S[0][1:d+1],S[1][0:d]])
         
         d = d-1
-        theta_arr.at[d-1].set(jnp.arctan(jnp.abs(S[1][d-1] / S[0][d-1])))
-        phi_arr.at[d-1].set(jnp.angle(S[0][d-1] / S[1][d-1]))
+        theta_arr = theta_arr.at[d].set(jnp.arctan(jnp.abs(S[1][d] / S[0][d])))
+        phi_arr = phi_arr.at[d].set(jnp.angle(S[0][d] / S[1][d]))
 
-        return d, S_hat, theta_arr, phi_arr
+        return d, S, theta_arr, phi_arr
+    
+    #d, S, theta_arr, phi_arr = jax.lax.while_loop(cond_fun, body_fun, (d, S, theta_arr, phi_arr))
+    vals = (d, S, theta_arr, phi_arr)
+    while(cond_fun(vals)):
+        vals = body_fun(vals)
 
-    d, S, theta_arr, phi_arr = jax.lax.while_loop(cond_fun, body_fun, (d, S, theta_arr, phi_arr))
-
+    d, S, theta_arr, phi_arr = vals
     kappa = jnp.angle(S[1][0])
 
     return theta_arr, phi_arr, kappa
