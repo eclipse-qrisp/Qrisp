@@ -200,7 +200,7 @@ def GQSP(qargs, U, p, q=None, k=0):
 
     d = len(p)
 
-    if not q:
+    if q == None:
         q = compute_gqsp_polynomial(p, num_iterations=5000)
 
     theta, phi, kappa = compute_gqsp_phase_factors(p, q)
