@@ -29,6 +29,8 @@ This algorithms submodule of Qrisp provides a collection of commonly used quantu
      - numerical integration
    * - :ref:`CKS Algorithm <CKS>`
      - solving the quantum linear system problem
+   * - :ref:`Generalized Quantum Signal Processing <GQSP>`
+     - performing quantum signal processing
 
 
 We encourage you to explore these algorithms, delve into their documentation, and experiment with their implementations.
@@ -49,3 +51,4 @@ We encourage you to explore these algorithms, delve into their documentation, an
    quantum_counting   
    QMCI
    CKS
+   GQSP
