@@ -21,7 +21,7 @@ import pennylane as qml
 import pytest
 from sympy import symbols
 
-from qrisp import QuantumVariable
+from qrisp import QuantumFloat, QuantumVariable, auto_uncompute, h, z
 from qrisp.circuit.standard_operations import (  # Barrier,
     CPGate,
     CXGate,
@@ -49,6 +49,7 @@ from qrisp.circuit.standard_operations import (  # Barrier,
     ZGate,
     u3Gate,
 )
+from qrisp.grover import diffuser
 from qrisp.interface import qml_converter
 
 SINGLE_GATE_MAP = [
@@ -886,3 +887,34 @@ def test_mixed_circuit():
     check_qml_operations(qml_converted_circuit, expected_ops)
 
     check_statevector_equivalence(qrisp_qv, qml_res)
+
+
+def test_grover():
+    """Test conversion of a Grover's search circuit from Qrisp to PennyLane."""
+
+    @auto_uncompute
+    def sqrt_oracle(qf):
+        temp_qbool = qf * qf == 0.25
+        z(temp_qbool)
+
+    qf = QuantumFloat(3, -1, signed=True)
+    iterations = 1
+    h(qf)
+
+    for _ in range(iterations):
+        sqrt_oracle(qf)
+        diffuser(qf)
+
+    pennylane_circuit = qml_converter(qc=qf.qs)
+    qrisp_qubits = [qubit.identifier for qubit in qf]
+
+    @qml.qnode(device=qml.device("default.qubit"))
+    def circuit():
+        pennylane_circuit()
+        return qml.probs(wires=qrisp_qubits)
+
+    pl_probs = circuit()
+    qrisp_probs = list(qf.get_measurement().values())
+    # We compare probability distributions up to relabelling of basis states
+    # (Qrisp and PennyLane use different mappings from quantum basis states to classical labels)
+    assert np.allclose(np.sort(pl_probs), np.sort(qrisp_probs), atol=1e-5)
