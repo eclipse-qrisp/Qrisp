@@ -22,8 +22,10 @@ from qrisp import (
     QuantumVariable,
     QuantumBool,
     u3,
+    z,
     control,
     invert,
+    gphase,
 )
 from qrisp.jasp import qache, jrange
 import jax
@@ -209,17 +211,24 @@ def GQSP(qargs, U, p, q=None, k=0):
 
     qbl = QuantumBool()
 
-    u3(theta[0], phi[0], kappa, qbl)
+    # Define R gate application function based on formula (4) in https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368
+    def R(theta, phi, kappa, qubit):
+        z(qubit)
+        u3(2 * theta, -phi, -kappa, qubit)
+        gphase(phi + kappa, qubit)
+
+
+    R(theta[0], phi[0], kappa, qbl)
 
     for i in jrange(d-k):
         with control(qbl, ctrl_state=0):
             U(*qargs)   
-        u3(theta[i+1], phi[i+1], 0, qbl)
+        R(theta[i+1], phi[i+1], 0, qbl)
 
     for i in jrange(k):
         with control(qbl, ctrl_state=0):
             with invert():
                 U(*qargs)
-        u3(theta[d-k+i+1], phi[d-k+i+1], 0, qbl)
-
+        R(theta[d-k+i+1], phi[d-k+i+1], 0, qbl)
+        
     return qbl
