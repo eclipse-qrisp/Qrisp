@@ -25,30 +25,12 @@ from qrisp import (
     conjugate,
     measure,
     invert,
-    multi_measurement,
     mcx,
     rz,
-    terminal_sampling
 )
 from qrisp.alg_primitives.prepare import prepare
 from qrisp.jasp import jrange, RUS
 from qrisp.operators import QubitOperator
-
-""" from pyqsp.poly import PolyOneOverX
-from pyqsp.angle_sequence import QuantumSignalProcessingPhases
-
-def qsvt_angles_scaling(kappa, eps):   
-
-    pcoefs, s = PolyOneOverX().generate(kappa, eps, return_coef=True, ensure_bounded=True, return_scale=True)
-    phi_qsp = QuantumSignalProcessingPhases(pcoefs, signal_operator="Wx", tolerance=0.00001)
-
-    phi_qsvt = np.empty(len(phi_qsp))
-
-    phi_qsvt[0] = phi_qsp[0] + 3 * np.pi / 4 - (3 + len(phi_qsp) % 4) * np.pi / 2
-    phi_qsvt[1:-1] = phi_qsp[1:-1] + np.pi / 2
-    phi_qsvt[-1] = phi_qsp[-1] - np.pi / 4
-
-    return phi_qsvt, s """
 
 
 def inner_QSVT_inversion(A_scaled, b, phi_qsvt):
@@ -198,6 +180,219 @@ def QSVT_inversion(A_scaled, b, phi_qsvt):
         :ref:`RUS <RUS>` decorator reports success (``success_bool = True``), this
         variable contains the valid post-selected solution. If ``success_bool``
         is ``False``, the simulation automatically repeats until success.
+
+        Examples
+    --------
+
+    The following examples demonstrate how QSVT can be applied for matrix inversion to solve the
+    quantum linear systems problem (QLSP)
+    :math:`A \\vec{x} = \\vec{b}`, using either a direct Hermitian matrix input or
+    a preconstructed block-encoding representation.
+    
+    **Example 1: Solving a 4×4 Hermitian system**
+
+    First, we define a small Hermitian matrix :math:`A` and a right-hand side vector :math:`\\vec{b}`:
+
+    ::
+
+        import numpy as np
+
+        A = np.array([[0.73255474, 0.14516978, -0.14510851, -0.0391581],
+                      [0.14516978, 0.68701415, -0.04929867, -0.00999921],
+                      [-0.14510851, -0.04929867, 0.76587818, -0.03420339],
+                      [-0.0391581, -0.00999921, -0.03420339, 0.58862043]])
+
+        b = np.array([0, 1, 1, 1])
+
+    Next, we calculate the condition number :math:`\kappa`, and define our desired precision
+    :math:`\epsilon` in order to obtain the correct phase angles ``phi_qsvt``, and the rescaling
+    factor (since our polynomial has to be bounded in the scope of QSVT).
+
+    ::
+
+        from pyqsp.poly import PolyOneOverX
+        from pyqsp.angle_sequence import QuantumSignalProcessingPhases
+
+        def qsvt_angles_scaling(kappa, eps):   
+
+            pcoefs, s = PolyOneOverX().generate(kappa, eps, return_coef=True, ensure_bounded=True, return_scale=True)
+            phi_qsp = QuantumSignalProcessingPhases(pcoefs, signal_operator="Wx", tolerance=0.00001)
+
+            phi_qsvt = np.empty(len(phi_qsp))
+
+            phi_qsvt[0] = phi_qsp[0] + 3 * np.pi / 4 - (3 + len(phi_qsp) % 4) * np.pi / 2
+            phi_qsvt[1:-1] = phi_qsp[1:-1] + np.pi / 2
+            phi_qsvt[-1] = phi_qsp[-1] - np.pi / 4
+
+            return phi_qsvt, s
+
+        kappa = np.linalg.cond(A)
+        eps = 0.01
+
+        phi_qsvt, s = qsvt_angles_scaling(kappa, eps)
+    
+    We now rescale our matrix by solve this linear system using the CKS quantum algorithm:
+
+    ::
+
+    A_scaled = A * s
+
+    We now solve this linear system using QSVT for matrix inversion:
+
+    ::
+
+        from qrisp.algorithms.cks import QSVT
+        from qrisp.jasp import terminal_sampling
+
+        @terminal_sampling
+        def main():
+
+            x = QSVT(A_scaled, b, phi_qsvt)
+            return x
+
+        res_dict = main()
+
+    The resulting dictionary contains the measurement probabilities for each computational basis state.
+    To extract the corresponding quantum amplitudes (up to sign) and compare to the classical normalized
+    solution:
+
+    ::
+
+        for k, v in res_dict.items():
+            res_dict[k] = v**0.5
+
+        q = np.array([res_dict.get(key, 0) for key in range(n)])
+        c = (np.linalg.inv(A) @ b) / np.linalg.norm(np.linalg.inv(A) @ b)
+        print("QUANTUM SIMULATION\\n", q, "\\nCLASSICAL SOLUTION\\n", c)
+        # QUANTUM SIMULATION                                                              
+        #  [0.02712914 0.55708366 0.53037499 0.63845452] 
+        # CLASSICAL SOLUTION
+        #  [0.02944539 0.55423278 0.53013239 0.64102936]
+
+    We see that we obtained the same result in our quantum simulation up to precision :math:`\epsilon`!
+
+    **Example 2: Using a custom block encoding**
+
+    The previous example displays how to solve the linear system for any Hermitian matrix :math:`A`,
+    where the block-encoding is constructed from the Pauli decomposition of :math:`A`. While this approach is efficient when :math:`A`
+    corresponds to, e.g., an Ising or a Heisenberg Hamiltonian, the number of Pauli terms may not scale favorably in general.
+    For certain sparse matrices, their structure can be exploited to construct more efficient block-encodings.
+
+    In this example, we construct a block-encoding representation for the following tridiagonal sparse matrix:
+
+    ::
+
+        import numpy as np
+
+        def tridiagonal_shifted(n, mu=1.0, dtype=float):
+            I = np.eye(n, dtype=dtype)
+            return (2 + mu) * I - 2*np.eye(n, k=n//2, dtype=dtype) - 2*np.eye(n, k=-n//2, dtype=dtype)
+
+        N = 8
+        A = tridiagonal_shifted(N, mu=3)
+        b = np.array([0, 1, 1, 1, 0, 0, 1, 1])
+
+        print(A)
+        # [[ 5.  0.  0.  0. -2.  0.  0.  0.]
+        #  [ 0.  5.  0.  0.  0. -2.  0.  0.]
+        #  [ 0.  0.  5.  0.  0.  0. -2.  0.]
+        #  [ 0.  0.  0.  5.  0.  0.  0. -2.]
+        #  [-2.  0.  0.  0.  5.  0.  0.  0.]
+        #  [ 0. -2.  0.  0.  0.  5.  0.  0.]
+        #  [ 0.  0. -2.  0.  0.  0.  5.  0.]
+        #  [ 0.  0.  0. -2.  0.  0.  0.  5.]]
+
+    As before, we obtain the QSVT phase angles by calculating :math:`\kappa` and setting our desired 
+    precision :math:`\epsilon`. We again rescale $A$.
+
+    ::
+
+        kappa = np.linalg.cond(A)
+        eps = 0.01
+
+        phi_qsvt, s = qsvt_angles_scaling(kappa, eps)
+
+        A_scaled = A * s
+    
+    This matrix can be decomposed using three unitaries: the identity $I$, and two shift operators $V\colon\ket{k}\\rightarrow-\ket{k+N/2 \mod N}$ and $V^{\dagger}\colon\ket{k}\\rightarrow-\ket{k-N/2 \mod N}$.
+    We define their corresponding functions:
+
+    ::
+
+        from qrisp import gphase, prepare, qswitch
+
+        def I(qv):
+            pass
+
+        def V(qv):
+            qv += N//2
+            gphase(np.pi, qv[0])
+
+        def V_dg(qv):
+            qv -= N//2
+            gphase(np.pi, qv[0])
+
+        unitaries = [I, V, V_dg]
+
+    We now define the block_encoding ``(U, state_prep, n)``:
+
+    ::
+
+        coeffs = np.array([5,1,1]) * s
+        alpha = np.sum(coeffs)
+
+        def U(case, operand):
+            qswitch(operand, case, unitaries)
+
+        def state_prep(case):
+            prepare(case, np.sqrt(coeffs/alpha))
+
+        block_encoding = (U, state_prep, 2)
+
+    We solve the linear system by passing this block-encoding tuple as ``A`` into the QSVT function:
+
+    ::
+
+        @terminal_sampling
+        def main():
+
+            x = QSVT(block_encoding, b, phi_qsvt)
+            return x
+
+        res_dict = main()
+
+    We, again, compare the solution obtained by quantum simulation with the classical solution
+
+    ::
+
+        for k, v in res_dict.items():
+            res_dict[k] = v**0.5
+
+        q = np.array([res_dict.get(key, 0) for key in range(N)])
+        c = (np.linalg.inv(A) @ b) / np.linalg.norm(np.linalg.inv(A) @ b)
+
+        print("QUANTUM SIMULATION\\n", q, "\\nCLASSICAL SOLUTION\\n", c)
+        # QUANTUM SIMULATION
+        # [0.         0.3336103  0.46663903 0.46663891 0.         0.13302811 0.46663899 0.46663891] 
+        # CLASSICAL SOLUTION
+        # [0.         0.33333333 0.46666667 0.46666667 0.         0.13333333 0.46666667 0.46666667]
+
+    To perform quantum resource estimation, replace the ``@terminal_sampling``
+    decorator with ``@count_ops(meas_behavior="0")``:
+
+    ::
+
+        from qrisp import count_ops
+
+        @count_ops(meas_behavior="0")
+        def main():
+
+            x = QSVT(A_scaled, b, phi_qsvt)
+            return x
+
+        res_dict = main()
+        print(res_dict)
+        # {'rz': 58, 'x': 403, 'cx': 291, 'gphase': 115, 'u3': 121, 'p': 57, 'h': 2, 'measure': 2}   
     """
     def qlsp():
         return A_scaled, b
