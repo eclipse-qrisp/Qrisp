@@ -217,9 +217,9 @@ def QSVT_inversion(A_scaled, b, phi_qsvt):
 
             pcoefs, s = PolyOneOverX().generate(kappa, eps, return_coef=True, ensure_bounded=True, return_scale=True)
             phi_qsp = QuantumSignalProcessingPhases(pcoefs, signal_operator="Wx", tolerance=0.00001)
+            phi_qsp = np.array(phi_qsp)
 
             phi_qsvt = np.empty(len(phi_qsp))
-
             phi_qsvt[0] = phi_qsp[0] + 3 * np.pi / 4 - (3 + len(phi_qsp) % 4) * np.pi / 2
             phi_qsvt[1:-1] = phi_qsp[1:-1] + np.pi / 2
             phi_qsvt[-1] = phi_qsp[-1] - np.pi / 4
@@ -241,13 +241,13 @@ def QSVT_inversion(A_scaled, b, phi_qsvt):
 
     ::
 
-        from qrisp.algorithms.cks import QSVT
+        from qrisp.algorithms.cks import QSVT_inversion
         from qrisp.jasp import terminal_sampling
 
         @terminal_sampling
         def main():
 
-            x = QSVT(A_scaled, b, phi_qsvt)
+            x = QSVT_inversion(A_scaled, b, phi_qsvt)
             return x
 
         res_dict = main()
@@ -356,7 +356,7 @@ def QSVT_inversion(A_scaled, b, phi_qsvt):
         @terminal_sampling
         def main():
 
-            x = QSVT(block_encoding, b, phi_qsvt)
+            x = QSVT_inversion(block_encoding, b, phi_qsvt)
             return x
 
         res_dict = main()
