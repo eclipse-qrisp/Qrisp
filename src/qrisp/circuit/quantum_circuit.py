@@ -2510,6 +2510,24 @@ class QuantumCircuit:
         if phi == 0:
             return
         self.append(ops.MCRXGate(phi, 1), [qubits_0, qubits_1])
+    
+    def crz(self, phi, qubits_0, qubits_1):
+        """
+        Instruct a controlled rz-gate.
+
+        Parameters
+        ----------
+        phi : float or sympy.Symbol
+            The angle parameter.
+
+        qubits_0 : Qubit
+            The Qubit to apply the gate on.
+        qubits_1 : Qubit
+            The other Qubit to apply the gate on.
+        """
+        if phi == 0:
+            return
+        self.append(ops.MCRZGate(phi, 1), [qubits_0, qubits_1])
 
     def t(self, qubits):
         """
