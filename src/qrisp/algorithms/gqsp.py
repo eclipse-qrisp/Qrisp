@@ -21,6 +21,7 @@ from qrisp import (
     QuantumArray,
     QuantumVariable,
     QuantumBool,
+    h,
     u3,
     z,
     control,
@@ -202,7 +203,7 @@ def GQSP(qargs, U, p, q=None, k=0):
     if isinstance(qargs, (QuantumVariable, QuantumArray)):
         qargs = [qargs]
 
-    d = len(p)
+    d = len(p) - 1
 
     if q == None:
         q = compute_gqsp_polynomial(p, num_iterations=5000)
@@ -226,9 +227,9 @@ def GQSP(qargs, U, p, q=None, k=0):
         R(theta[i+1], phi[i+1], 0, qbl)
 
     for i in jrange(k):
-        with control(qbl, ctrl_state=0):
+        with control(qbl, ctrl_state=1):
             with invert():
                 U(*qargs)
         R(theta[d-k+i+1], phi[d-k+i+1], 0, qbl)
-        
+
     return qbl
