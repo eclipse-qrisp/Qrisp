@@ -241,7 +241,7 @@ def QSVT_inversion(A_scaled, b, phi_qsvt):
 
     ::
 
-        from qrisp.algorithms.cks import QSVT_inversion
+        from qrisp.algorithms.qsvt import QSVT_inversion
         from qrisp.jasp import terminal_sampling
 
         @terminal_sampling
