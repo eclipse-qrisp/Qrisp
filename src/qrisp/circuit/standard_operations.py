@@ -63,6 +63,9 @@ def CZGate():
 def MCXGate(control_amount=1, ctrl_state=-1, method="gray"):
     return XGate().control(control_amount, method=method, ctrl_state=ctrl_state)
 
+def MCZGate(control_amount=1, ctrl_state=-1, method="gray"):
+    return ZGate().control(control_amount, method=method, ctrl_state=ctrl_state)
+
 
 def PGate(phi=0):
     res = U3Gate(0, 0, phi, name="p")
@@ -86,6 +89,9 @@ def CPGate(phi=0):
             return PGate(phi).control()
     else:
         return PGate(phi).control()
+
+def MCPGate(control_amount=1, ctrl_state=-1, method="gray"):
+    return PGate().control(control_amount, method=method, ctrl_state=ctrl_state)
 
 
 def HGate():
@@ -301,6 +307,8 @@ op_list = [
     CYGate,
     CZGate,
     MCXGate,
+    MCZGate,
+    MCPGate,
     PGate,
     CPGate,
     u3Gate,

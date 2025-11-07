@@ -2428,6 +2428,52 @@ class QuantumCircuit:
             ops.MCXGate(len(control_qubits), ctrl_state=ctrl_state, method=method),
             control_qubits + [target_qubits],
         )
+    
+    def mcz(self, control_qubits, target_qubits, method="gray", ctrl_state=-1):
+        """
+        Instruct a multi-controlled Z-gate.
+
+        Parameters
+        ----------
+        control_qubits : list
+            The list of Qubits to control on.
+        target_qubits : Qubit
+            The target Qubit.
+        method : str, optional
+            The algorithm to synthesize the mcz gate. The default is "gray".
+        ctrl_state : str or int, optional
+            The state on which the X gate is activated. Can be supplied as a string
+            (i.e. "010110...") or an integer. The default is all ones ("11111...").
+
+
+        """
+        self.append(
+            ops.MCZGate(len(control_qubits), ctrl_state=ctrl_state, method=method),
+            control_qubits + [target_qubits],
+        )
+    
+    def mcp(self, control_qubits, target_qubits, method="gray", ctrl_state=-1):
+        """
+        Instruct a multi-controlled P-gate.
+
+        Parameters
+        ----------
+        control_qubits : list
+            The list of Qubits to control on.
+        target_qubits : Qubit
+            The target Qubit.
+        method : str, optional
+            The algorithm to synthesize the mcp gate. The default is "gray".
+        ctrl_state : str or int, optional
+            The state on which the X gate is activated. Can be supplied as a string
+            (i.e. "010110...") or an integer. The default is all ones ("11111...").
+
+
+        """
+        self.append(
+            ops.MCPGate(len(control_qubits), ctrl_state=ctrl_state, method=method),
+            control_qubits + [target_qubits],
+        )
 
     def ccx(self, ctrl_qubit_0, ctrl_qubit_1, target_qubit, method="gray"):
         """
