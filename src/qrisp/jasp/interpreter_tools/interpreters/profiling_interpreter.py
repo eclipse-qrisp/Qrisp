@@ -188,7 +188,7 @@ def make_profiling_eqn_evaluator(profiling_dic, meas_behavior):
 
         elif eqn.primitive.name == "while":
             
-            overall_constant_amount= max(eqn.params["body_nconsts"], eqn.params["cond_nconsts"])
+            overall_constant_amount= eqn.params["body_nconsts"] + eqn.params["cond_nconsts"]
             
             # Reinterpreted body and cond function
             def body_fun(val):
@@ -207,7 +207,7 @@ def make_profiling_eqn_evaluator(profiling_dic, meas_behavior):
 
             def cond_fun(val):
                 
-                constants = val[:eqn.params["cond_nconsts"]]
+                constants = val[eqn.params["body_nconsts"]:overall_constant_amount]
                 carries = val[overall_constant_amount:]
                 
                 res = eval_jaxpr(

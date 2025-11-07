@@ -29,6 +29,8 @@ This algorithms submodule of Qrisp provides a collection of commonly used quantu
      - numerical integration
    * - :ref:`Lanczos Method <lanczos_alg>`
      - finding the ground state energy of a Hamiltonian
+   * - :ref:`CKS Algorithm <CKS>`
+     - solving the quantum linear system problem
 
 
 We encourage you to explore these algorithms, delve into their documentation, and experiment with their implementations.
@@ -49,3 +51,4 @@ We encourage you to explore these algorithms, delve into their documentation, an
    QuantumBacktrackingTree
    quantum_counting   
    QMCI
+   CKS

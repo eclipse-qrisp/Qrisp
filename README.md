@@ -81,11 +81,15 @@ Qrisp was mainly devised and implemented by Raphael Seidel, supported by Sebasti
 
 If you have comments, questions or love letters, feel free to reach out to us:
 
-raphael.seidel@fokus.fraunhofer.de
+raphael.seidel [at] meetiqm.com
 
-sebastian.bock@fokus.fraunhofer.de
+sebastian.bock [at] fokus.fraunhofer.de
 
-nikolay.tcholtchev@fokus.fraunhofer.de
+nikolay.tcholtchev [at] fokus.fraunhofer.de
+
+rene.zander [at] fokus.fraunhofer.de
+
+matic.petric [at] fokus.fraunhofer.de
 
 If you want to cite Qrisp in your work, please use:
 
