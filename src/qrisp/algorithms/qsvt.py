@@ -17,6 +17,7 @@
 """
 
 import numpy as np
+import jax.numpy as jnp
 from qrisp import (
     QuantumVariable,
     QuantumFloat,
@@ -29,7 +30,7 @@ from qrisp import (
     rz,
 )
 from qrisp.alg_primitives.prepare import prepare
-from qrisp.jasp import jrange, RUS
+from qrisp.jasp import jrange, q_cond, RUS
 from qrisp.operators import QubitOperator
 
 
@@ -82,13 +83,14 @@ def inner_QSVT_inversion(A_scaled, b, phi_qsvt):
         with conjugate(mcx)(case,temp,ctrl_state=0):
             rz(phase, temp)
     
-    def U_tilde(case, operand, state_function, dg = False):
+    def U_tilde(case, operand, state_function):
         with conjugate(state_function)(case):
-            if dg:
-                with invert():
-                    U(case, operand)
+            U(case, operand)
+
             
-            else:
+    def U_tilde_dg(case, operand, state_function):
+        with conjugate(state_function)(case):
+            with invert():
                 U(case, operand)
     
     temp = QuantumBool()
@@ -98,13 +100,13 @@ def inner_QSVT_inversion(A_scaled, b, phi_qsvt):
     prepare(operand, b)
     h(temp) 
 
+    phi_qsvt = jnp.flip(phi_qsvt)
     d = len(phi_qsvt) - 1
-    dg_flag = False
-    for i in range(d, -1, -1):
+
+    for i in jrange(0, d): 
         reflection(in_case, temp, phase=2 * phi_qsvt[i])
-        if i != 0:
-            U_tilde(in_case, operand, state_prep, dg=dg_flag)
-        dg_flag = not dg_flag
+        q_cond(i%2==0, U_tilde, U_tilde_dg, in_case, operand, state_prep) 
+    reflection(in_case, temp, phase=2 * phi_qsvt[d])
         
     h(temp)
 
@@ -398,7 +400,7 @@ def QSVT_inversion(A_scaled, b, phi_qsvt):
         return A_scaled, b
     
     def angles():
-        return tuple(phi_qsvt)
+        return jnp.array(phi_qsvt)
     
     operand = inner_QSVT_inversion_wrapper(qlsp, angles)
     return operand
