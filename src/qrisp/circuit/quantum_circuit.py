@@ -2458,6 +2458,8 @@ class QuantumCircuit:
 
         Parameters
         ----------
+        phi : float or sympy.Symbol
+            The angle parameter.
         control_qubits : list
             The list of Qubits to control on.
         target_qubits : Qubit
