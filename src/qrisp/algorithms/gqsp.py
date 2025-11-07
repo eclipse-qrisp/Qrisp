@@ -197,6 +197,90 @@ def GQSP(qargs, U, p, q=None, k=0):
     Examples
     --------
 
+    We apply the operator
+
+    .. math::
+
+        \cos(H) = \frac{e^{iH}+e^{-iH}}{2}
+
+    for some :ref:`Hermitian operator <operators>` $H$ to the input state $\ket{\psi}=\ket{0}$.
+
+    First, we define an operator $H$ and the unitaries performing the Hamiltonian evolution $e^{iH}$.
+    (In this case, Trotterization will perform Hamiltonian evolution exactly since the individual terms commute.)
+
+    ::
+
+        from qrisp import *
+        from qrisp.gqsp import *
+        from qrisp.operators import X,Y,Z
+        import jax.numpy as jnp
+
+        H = Z(0)*Z(1) + X(0)*X(1)
+
+        def U(operand):
+            H.trotterization(forward_evolution=False)(operand)
+
+
+    Next, we define the ``operand_prep`` function
+
+    ::
+
+        def operand_prep():
+            operand = QuantumVariable(2)
+            return operand
+
+    The transformation $\cos(H)$ is achieved by appliying the $p'(x)=0.5x^{-1} + 0.5x^1$ to the unitary $e^{iH}$.
+    This corresponds to the polynomial $p(x)=0.5+0.5x^2$ (i.e., ``p=[0.5,0,0.5]``) and ``k=1``. 
+    A suitable second polynomoal is $q(x)=-0.5+0.5x^2$ (i.e., ``q=[-0.5,0,0.5]``) which corresponds to $q'(x)=-0.5x^{-1}+0.5x$.
+
+    Finally, we apply QSP
+
+    ::
+
+        @RUS
+        def inner():
+
+            p = jnp.array([0.5,0,0.5])
+            q = jnp.array([-0.5,0,0.5])
+
+            operand = operand_prep()
+            qbl = GQSP(operand, U, p, q, k=1)
+
+            success_bool = measure(qbl) == 0
+            return success_bool, operand
+
+
+        @terminal_sampling
+        def main(): 
+
+            qv = inner()
+            return qv
+
+    and simulate
+
+    >>> main()
+    {3: 0.85471756539818, 0: 0.14528243460182003}
+
+    Let's compare to the classically calculated result:
+
+    >>> A = H.to_array()
+    >>> from scipy.linalg import cosm
+    >>> print(cosm(A))
+    [[ 0.29192658+0.j  0.        +0.j  0.        +0.j -0.70807342+0.j]
+    [ 0.        +0.j  0.29192658+0.j  0.70807342+0.j  0.        +0.j]
+    [ 0.        +0.j  0.70807342+0.j  0.29192658+0.j  0.        +0.j]
+    [-0.70807342+0.j  0.        +0.j  0.        +0.j  0.29192658+0.j]]
+
+    That is, starting in state $\ket{\psi}=\ket{0}=(1,0,0,0)$, we obtain
+
+    >>> result = cosm(A)@(np.array([1,0,0,0]).transpose())
+    >>> result = result/np.linalg.norm(result) # normalise
+    >>> result = result**2 # compute measurement probabilities
+    >>> print(result)
+    [0.1452825+0.j 0.       +0.j 0.       +0.j 0.8547175-0.j]
+
+    which are exactly the probabilities we observed in the quantum simulation.
+
     """
 
     # Convert qargs into a list
