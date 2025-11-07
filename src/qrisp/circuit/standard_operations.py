@@ -128,6 +128,10 @@ def MCRXGate(phi=0, control_amount=0):
     res.name = "mcrx"
     return res
 
+def MCRZGate(phi=0, control_amount=0):
+    res = RZGate(phi).control(control_amount)
+    res.name = "mcrz"
+    return res
 
 def SGate():
     res = PGate(np.pi / 2)
@@ -315,6 +319,7 @@ op_list = [
     RYGate,
     RZGate,
     MCRXGate,
+    MCRZGate,
     SGate,
     TGate,
     RXXGate,
