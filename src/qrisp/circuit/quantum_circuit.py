@@ -2452,7 +2452,7 @@ class QuantumCircuit:
             control_qubits + [target_qubits],
         )
     
-    def mcp(self, control_qubits, target_qubits, method="gray", ctrl_state=-1):
+    def mcp(self, phi, control_qubits, target_qubits, method="gray", ctrl_state=-1):
         """
         Instruct a multi-controlled P-gate.
 
@@ -2471,7 +2471,7 @@ class QuantumCircuit:
 
         """
         self.append(
-            ops.MCPGate(len(control_qubits), ctrl_state=ctrl_state, method=method),
+            ops.MCPGate(phi, len(control_qubits), ctrl_state=ctrl_state, method=method),
             control_qubits + [target_qubits],
         )
 

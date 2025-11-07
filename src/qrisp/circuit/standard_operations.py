@@ -90,8 +90,8 @@ def CPGate(phi=0):
     else:
         return PGate(phi).control()
 
-def MCPGate(control_amount=1, ctrl_state=-1, method="gray"):
-    return PGate().control(control_amount, method=method, ctrl_state=ctrl_state)
+def MCPGate(phi=0, control_amount=1, ctrl_state=-1, method="gray"):
+    return PGate(phi).control(control_amount, method=method, ctrl_state=ctrl_state)
 
 
 def HGate():
