@@ -24,8 +24,8 @@ qc = QuantumCircuit(4)
 qc.cx(0, range(1,4))
 
 @pytest.mark.parametrize("method, args, expected_ops, expected_counts", [
-    ("mcz", ([0, 1], 3), '2cz', {"cx": 3, "2cz": 1}),
-    ("mcp", (0.3, [0, 1], 3), '2cp', {"cx": 3, "2cp": 1}),
+    ("mcz", ([0, 1], 3), 'mcz', {"cx": 3, "mcz": 1}),
+    ("mcp", (0.3, [0, 1], 3), 'mcp', {"cx": 3, "mcp": 1}),
     ("crz", (0.3, [0, 1], 3), 'mcrz', {"cx": 3, "mcrz": 2}),
 ])
 def test_qc_gate_methods(method, args, expected_ops, expected_counts):
