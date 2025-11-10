@@ -21,10 +21,16 @@ from dataclasses import dataclass
 from typing import Callable, Optional
 
 import numpy as np
-import pennylane as qml
 
 from qrisp import QuantumSession
 from qrisp.circuit import ControlledOperation, Operation, QuantumCircuit
+
+has_pennylane = True
+
+try:
+    import pennylane as qml
+except (ModuleNotFoundError, ImportError) as import_error:
+    has_pennylane = False
 
 """
 TODO:
@@ -44,36 +50,37 @@ class QMLGateDescriptor:
     param_fn: Callable = lambda op: op.params
 
 
-QRISP_PL_BASE_MAP = {
-    "x": QMLGateDescriptor(qml.X),
-    "y": QMLGateDescriptor(qml.Y),
-    "z": QMLGateDescriptor(qml.Z),
-    "h": QMLGateDescriptor(qml.Hadamard),
-    "rx": QMLGateDescriptor(qml.RX),
-    "ry": QMLGateDescriptor(qml.RY),
-    "rz": QMLGateDescriptor(qml.RZ),
-    "p": QMLGateDescriptor(qml.PhaseShift),
-    "u1": QMLGateDescriptor(qml.RZ),
-    "u3": QMLGateDescriptor(qml.U3),
-    "rxx": QMLGateDescriptor(qml.IsingXX),
-    "ryy": QMLGateDescriptor(qml.IsingYY),
-    "rzz": QMLGateDescriptor(qml.IsingZZ),
-    # qml.IsingXY(phi, ...) is equivalent to XXYYGate(phi, beta=np.pi)
-    "swap": QMLGateDescriptor(qml.SWAP),
-    "s": QMLGateDescriptor(qml.S),
-    "t": QMLGateDescriptor(qml.T),
-    "id": QMLGateDescriptor(qml.Identity, param_fn=lambda _: []),
-    "sx": QMLGateDescriptor(
-        qml.RX, param_fn=lambda _: [np.pi / 2]
-    ),  # SXGate() -> qml.RX(pi/2)
-    "gphase": QMLGateDescriptor(
-        qml.GlobalPhase, param_fn=lambda op: [-op.params[0]]
-    ),  # GPhaseGate(phi) -> qml.GlobalPhase(-phi)
-    "r": QMLGateDescriptor(
-        qml.Rot, param_fn=lambda op: [-op.params[1], -op.params[0], op.params[1]]
-    ),  # RGate(theta, phi) -> qml.Rot(-phi, -theta, phi)
-    "measure": QMLGateDescriptor(qml.measurements.MidMeasureMP),
-}
+if has_pennylane:
+    QRISP_PL_BASE_MAP = {
+        "x": QMLGateDescriptor(qml.X),
+        "y": QMLGateDescriptor(qml.Y),
+        "z": QMLGateDescriptor(qml.Z),
+        "h": QMLGateDescriptor(qml.Hadamard),
+        "rx": QMLGateDescriptor(qml.RX),
+        "ry": QMLGateDescriptor(qml.RY),
+        "rz": QMLGateDescriptor(qml.RZ),
+        "p": QMLGateDescriptor(qml.PhaseShift),
+        "u1": QMLGateDescriptor(qml.RZ),
+        "u3": QMLGateDescriptor(qml.U3),
+        "rxx": QMLGateDescriptor(qml.IsingXX),
+        "ryy": QMLGateDescriptor(qml.IsingYY),
+        "rzz": QMLGateDescriptor(qml.IsingZZ),
+        # qml.IsingXY(phi, ...) is equivalent to XXYYGate(phi, beta=np.pi)
+        "swap": QMLGateDescriptor(qml.SWAP),
+        "s": QMLGateDescriptor(qml.S),
+        "t": QMLGateDescriptor(qml.T),
+        "id": QMLGateDescriptor(qml.Identity, param_fn=lambda _: []),
+        "sx": QMLGateDescriptor(
+            qml.RX, param_fn=lambda _: [np.pi / 2]
+        ),  # SXGate() -> qml.RX(pi/2)
+        "gphase": QMLGateDescriptor(
+            qml.GlobalPhase, param_fn=lambda op: [-op.params[0]]
+        ),  # GPhaseGate(phi) -> qml.GlobalPhase(-phi)
+        "r": QMLGateDescriptor(
+            qml.Rot, param_fn=lambda op: [-op.params[1], -op.params[0], op.params[1]]
+        ),  # RGate(theta, phi) -> qml.Rot(-phi, -theta, phi)
+        "measure": QMLGateDescriptor(qml.measurements.MidMeasureMP),
+    }
 
 
 def _extract_name(name: str) -> tuple[str, bool]:
@@ -204,6 +211,12 @@ def qml_converter(qc: QuantumCircuit | QuantumSession) -> types.FunctionType:
         A PennyLane quantum function reproducing the Qrisp circuit.
 
     """
+
+    if not has_pennylane:
+        raise ImportError(
+            "This feature requires pennylane, a library for quantum computing and "
+            "quantum machine learning. It can be installed with:\n\npip install pennylane"
+        )  # pragma: no cover
 
     def circuit(
         wires: Optional[qml.wires.WiresLike] = None, subs_dic: Optional[dict] = None

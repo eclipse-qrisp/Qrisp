@@ -279,9 +279,24 @@ def RUS(*trial_function, **jit_kwargs):
 
     def return_function(*trial_args):
         
+        # Filter out the static arguments
+        if "static_argnums" in jit_kwargs:
+            static_argnums = jit_kwargs["static_argnums"]
+            if isinstance(static_argnums, int):
+                static_argnums = [static_argnums]
+        else:
+            static_argnums = []
+        
+        if "static_argnames" in jit_kwargs:
+            argname_list = inspect.getfullargspec(trial_function).args
+            for i in range(len(argname_list)):
+                if argname_list[i] in jit_kwargs["static_argnames"]:
+                    static_argnums.append(i)
+            jit_kwargs["static_argnums"] = static_argnums
+            del jit_kwargs["static_argnames"]
+        
         from qrisp.jasp import q_while_loop, q_cond
         from qrisp.core import recursive_qv_search, reset
-
 
         abs_qs = TracingQuantumSession.get_instance()
 
@@ -295,21 +310,6 @@ def RUS(*trial_function, **jit_kwargs):
         first_iter_res = qached_function(*trial_args)
 
         abs_qs.gc_mode = initial_gc_mode
-        
-        
-        # Filter out the static arguments
-        if "static_argnums" in jit_kwargs:
-            static_argnums = jit_kwargs["static_argnums"]
-            if isinstance(static_argnums, int):
-                static_argnums = [static_argnums]
-        else:
-            static_argnums = []
-        
-        if "static_argnames" in jit_kwargs:
-            argname_list = inspect.getfullargspec(trial_function)
-            for i in range(len(argname_list)):
-                if argname_list[i] in jit_kwargs["static_argnames"]:
-                    static_argnums.append(i)
         
         
         dynamic_args = []
