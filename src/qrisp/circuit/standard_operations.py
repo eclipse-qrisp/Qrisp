@@ -64,7 +64,9 @@ def MCXGate(control_amount=1, ctrl_state=-1, method="gray"):
     return XGate().control(control_amount, method=method, ctrl_state=ctrl_state)
 
 def MCZGate(control_amount=1, ctrl_state=-1, method="gray"):
-    return ZGate().control(control_amount, method=method, ctrl_state=ctrl_state)
+    res = ZGate().control(control_amount, method=method, ctrl_state=ctrl_state)
+    res.name = "mcz"
+    return res
 
 
 def PGate(phi=0):
@@ -91,7 +93,9 @@ def CPGate(phi=0):
         return PGate(phi).control()
 
 def MCPGate(phi=0, control_amount=1, ctrl_state=-1, method="gray"):
-    return PGate(phi).control(control_amount, method=method, ctrl_state=ctrl_state)
+    res = PGate(phi).control(control_amount, method=method, ctrl_state=ctrl_state)
+    res.name = "mcp"
+    return res
 
 
 def HGate():
