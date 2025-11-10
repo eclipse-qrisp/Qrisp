@@ -748,11 +748,7 @@ class QuantumVariable:
         # Below, we filter the statevector to only keep the amplitudes corresponding
         # to the original QuantumVariable.
         # This is a temporary trick until we have a better way to extract
-
-        if any(np.isnan(prepared_statevector)):
-            raise NotImplementedError(
-                "Division by zero during state preparation. Degenerate case not implemented yet."
-            )
+        # This does not work if there are zero amplitudes in between!
         prepared_statevector = prepared_statevector[prepared_statevector != 0]
 
         # Right now, we just return the prepared statevector (of course we will need to

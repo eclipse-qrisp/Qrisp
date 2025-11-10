@@ -1283,7 +1283,8 @@ def init_state_recursive(amps, qubits):
     from qrisp import ry, u3, qswitch, gphase
 
     if len(qubits) == 1:
-        vec = amps / np.linalg.norm(amps)
+        norm = np.linalg.norm(amps)
+        vec = amps / norm if norm > 1e-12 else amps
         alpha = np.angle(vec[0])
         vec *= np.exp(-1j * alpha)
         theta, phi, lam = rotation_from_state(vec)
