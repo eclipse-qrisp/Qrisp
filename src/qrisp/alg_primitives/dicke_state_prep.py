@@ -16,7 +16,7 @@
 ********************************************************************************
 """
 
-from qrisp import  cx,  x, ry,  control, invert, h, QuantumFloat, rz,  measure
+from qrisp import  cx,  x, ry,  control, invert, h, QuantumFloat, rz,  measure, QuantumArray
 from qrisp.alg_primitives.qft import QFT
 from qrisp.jasp import jrange, terminal_sampling, check_for_tracing_mode, q_while_loop
 
@@ -38,11 +38,12 @@ def dicke_state(qv,k):
     <https://arxiv.org/abs/1904.07358>`_. 
 
     This algorithm creates an equal superposition of Dicke states for a given Hamming weight. The initial input QuantumVariable has to be within this subspace.
-    Works in JASP and non-JASP mode, see
+    Works in JASP and non-JASP mode.
+    Works with QuantumArrays.
 
     Parameters
     ----------
-    qv : QuantumVariable
+    qv : QuantumVariable, QuantumArray
         Initial quantum variable to be prepared. Has to be in target subspace.
     k : Int
         The Hamming weight (i.e. number of "ones") for the desired dicke state
@@ -64,7 +65,7 @@ def dicke_state(qv,k):
         dicke_state(qv, 2)
 
     """
-    
+
     # jasp compatibility
     if check_for_tracing_mode():
         n = qv.size
@@ -98,8 +99,23 @@ def split_cycle_shift(qv, highIndex, lowIndex):
         Index for indication of preparation steps, as seen in original algorithm.
     """
 
+    from qrisp import control
+    
+    # below a check for QuantumArrays, ensure correct indexing
+    def check_qa_indexing(qv_ix):
+        def indexing_qa(index):
+            return qv_ix[index][0]
+        def indexing(index):
+            return qv_ix[index]
+        if isinstance(qv_ix, QuantumArray):
+            return indexing_qa
+        else:
+            return indexing
+
+    idx_f = check_qa_indexing(qv)
+
     with invert():
-        # reversed jrange
+
         for i in jrange(lowIndex): 
 
             index = highIndex - i 
@@ -107,19 +123,17 @@ def split_cycle_shift(qv, highIndex, lowIndex):
 
             ctrL_bool = index == highIndex
             ctrL_bool_false = index != highIndex
-
-            # application of the c-ry rotations 
             with control(ctrL_bool):
-                cx(qv[highIndex - 2], qv[highIndex-1]) 
-                with control( qv[highIndex-1] ):
-                    ry(param, qv[highIndex - 2])
-                cx(qv[highIndex - 2], qv[highIndex -1])
+                cx(idx_f(highIndex - 2), idx_f(highIndex-1)) 
+                with control(idx_f(highIndex-1)):
+                    ry(param, idx_f(highIndex - 2))
+                cx(idx_f(highIndex - 2), idx_f(highIndex -1))
             
             with control(ctrL_bool_false):
-                cx(qv[index -2], qv[highIndex-1]) 
-                with control([qv[highIndex -1],qv[index -1]]):
-                    ry(param, qv[index - 2])
-                cx(qv[index -2], qv[highIndex-1]) 
+                cx(idx_f(index -2), idx_f(highIndex-1)) 
+                with control([idx_f(highIndex -1),idx_f(index -1)]):
+                    ry(param, idx_f(index - 2))
+                cx(idx_f(index -2), idx_f(highIndex-1)) 
                 
 
 
