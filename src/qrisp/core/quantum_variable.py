@@ -25,7 +25,6 @@ from jax import tree_util
 from qrisp.core.compilation import qompiler
 
 
-
 class QuantumVariable:
     """
     The QuantumVariable is the quantum equivalent of a regular variable in classical
@@ -718,6 +717,48 @@ class QuantumVariable:
 
         int_encoder(self, self.encoder(value))
 
+    def init_state_qswitch(self, state_array):
+        """
+        TODO: Add description
+        """
+
+        # These imports are here to avoid circular dependencies
+        from qrisp import init_state_recursive, QuantumFloat
+
+        expected_length = 2**self.size
+        if len(state_array) != expected_length:
+            raise ValueError(
+                f"Length of statevector must be {expected_length} for {self.size} qubits, got {len(state_array)}."
+            )
+
+        # Is there a better way to do this without initializing extra QuantumFloats?
+        quantum_floats = [QuantumFloat(1) for _ in range(self.size)]
+
+        init_state_recursive(state_array, quantum_floats)
+
+        # At this point, every QuantumFloat in quantum_floats has been initialized
+
+        # The idea now is to compile the circuit and extract the statevector
+        # TODO: I need to avoid `compile` here, as otherwise the computed statevector is not correct anymore!
+        # prepared_statevector = quantum_floats[0].qs.compile().statevector_array()
+        prepared_statevector = quantum_floats[0].qs.statevector_array()
+
+        # We still have some workspace_ auxiliary qubits in the QuantumFloats.
+
+        # Below, we filter the statevector to only keep the amplitudes corresponding
+        # to the original QuantumVariable.
+        # This is a temporary trick until we have a better way to extract
+
+        if any(np.isnan(prepared_statevector)):
+            raise NotImplementedError(
+                "Division by zero during state preparation. Degenerate case not implemented yet."
+            )
+        prepared_statevector = prepared_statevector[prepared_statevector != 0]
+
+        # Right now, we just return the prepared statevector (of course we will need to
+        # append it to the QuantumVariable in the final version)
+        return prepared_statevector
+
     def init_state(self, state_dic):
         r"""
         The ``init_state`` method allows the initialization of arbitrary quantum states.
@@ -834,7 +875,7 @@ class QuantumVariable:
         from qrisp.jasp import check_for_tracing_mode
 
         if check_for_tracing_mode():
-            
+
             if isinstance(position, int) and position in [0, -1]:
                 if position == -1:
                     self.reg = self.reg + insertion_qubits
@@ -843,10 +884,10 @@ class QuantumVariable:
             else:
                 self.reg = self.reg[:position] + insertion_qubits + self.reg[position:]
         else:
-            
+
             if position == -1:
                 position = self.size
-            
+
             for i in range(amount):
                 insertion_qubits[i].identifier = (
                     self.name

@@ -56,9 +56,9 @@ def int_encoder(qv, encoding_number):
     else:
 
         from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
-                BigInteger
-            )
-        
+            BigInteger,
+        )
+
         if isinstance(encoding_number, BigInteger):
             for i in jrange(qv.size):
                 with control(encoding_number.get_bit(i)):
@@ -404,8 +404,9 @@ def gate_wrap(*args, permeability=None, is_qfree=None, name=None, verify=False):
                 permeability=permeability,
                 is_qfree=is_qfree,
                 name=name,
-                verify=verify
+                verify=verify,
             )(*fargs, **fkwargs)
+
         return wrapper
 
     # If the decorator is called directly with a function (e.g. @gate_wrap)
@@ -415,6 +416,7 @@ def gate_wrap(*args, permeability=None, is_qfree=None, name=None, verify=False):
     else:
         # Otherwise, return the decorator that can be applied to a function later
         return gate_wrap_helper
+
 
 def gate_wrap_inner(
     function, permeability=None, is_qfree=None, name=None, verify=False
@@ -751,10 +753,13 @@ def multi_measurement(qv_list, shots=None, backend=None):
     {(3, 2, 5): 0.5, (3, 3, 6): 0.5}
 
     """
-    
+
     from qrisp.jasp import check_for_tracing_mode
+
     if check_for_tracing_mode():
-        raise Exception("Tried to call multi_measurement in Jasp mode. Please use terminal_sampling instead")
+        raise Exception(
+            "Tried to call multi_measurement in Jasp mode. Please use terminal_sampling instead"
+        )
 
     if backend is None:
         if qv_list[0].qs.backend is None:
@@ -1233,6 +1238,84 @@ def custom_qv(labels, decoder=None, qs=None, name=None):
             return decoder(x)
 
     return CustomQuantumVariable(qs=qs, name=name)
+
+
+def rotation_from_state(vec):
+    """Return U3 parameters mapping $|0\rangle$ to the given single-qubit state vector.
+
+    The state vector should be normalized with the first component real and positive.
+
+    Parameters
+    ----------
+    vec : array-like
+        A normalized single-qubit state vector with the first component real and positive.
+
+    Returns
+    -------
+    tuple[float, float, float]
+        The (theta, phi, lambda) parameters for the U3 gate.
+
+    """
+    a, b = vec
+    theta = 2 * np.arccos(np.real(a))
+    phi = 0.0 if np.abs(b) < 1e-12 else np.angle(b)
+    lam = 0.0
+    return theta, phi, lam
+
+
+def init_state_recursive(amps, qubits):
+    """
+    Recursively prepare a normalized state $|\psi\rangle = \sum_i \text{amps}_i
+    |i\rangle$ on the given qubits.
+
+
+    Parameters
+    ----------
+    amps : array-like
+        The amplitudes of the state to prepare. Must be normalized.
+
+    qubits : list[QuantumFloat]
+        List of QuantumFloats (MSB to LSB) to prepare the state on.
+
+    """
+
+    # This imports must be here to avoid circular imports
+    from qrisp import ry, u3, qswitch, gphase
+
+    if len(qubits) == 1:
+        vec = amps / np.linalg.norm(amps)
+        alpha = np.angle(vec[0])
+        vec *= np.exp(-1j * alpha)
+        theta, phi, lam = rotation_from_state(vec)
+        u3(theta, phi, lam, qubits[0])
+        gphase(alpha, qubits[0])
+        return
+
+    half = len(amps) // 2
+    v0, v1 = amps[:half], amps[half:]
+    n0, n1 = np.linalg.norm(v0), np.linalg.norm(v1)
+
+    theta0 = 2 * np.arccos(n0)
+    ry(theta0, qubits[0])
+
+    alpha0 = np.angle(v0[0])
+    alpha1 = np.angle(v1[0])
+
+    v0n = v0 / (n0 * np.exp(1j * alpha0)) if n0 > 1e-12 else v0
+    v1n = v1 / (n1 * np.exp(1j * alpha1)) if n1 > 1e-12 else v1
+
+    def case_function(i, sub_qubits):
+        init_state_recursive(v0n if i == 0 else v1n, sub_qubits)
+        phase_i = alpha0 if i == 0 else alpha1
+        gphase(phase_i, sub_qubits[0])
+
+    qswitch(
+        operand=qubits[1:],
+        case=qubits[0],
+        case_function=case_function,
+        method="auto",
+        ctrl=None,
+    )
 
 
 def init_state(qv, target_array):
@@ -2251,10 +2334,10 @@ def batched_measurement(variables, backend, shots=None):
     variables : list[:ref:`QuantumVariable`]
         A list of QuantumVariables.
     backend : :ref:`BatchedBackend`
-        The backend to evaluate the compiled QuantumCircuits on. 
+        The backend to evaluate the compiled QuantumCircuits on.
     shots : int, optional
         The amount of shots to perform. The default is given by the backend used.
-        
+
     Returns
     -------
     results : list[dict]
@@ -2307,18 +2390,25 @@ def batched_measurement(variables, backend, shots=None):
 
         batched_measurement([c,f], backend=bb)
         # Yields: [{3: 1.0}, {5: 1.0}]
-    
+
     """
 
     import threading
 
-    results = [0]*len(variables)
+    results = [0] * len(variables)
+
     def eval_measurement(qv, i):
-        results[i] = qv.get_measurement(backend = backend, shots = shots)
+        results[i] = qv.get_measurement(backend=backend, shots=shots)
 
     threads = []
     for i, var in enumerate(variables):
-        thread = threading.Thread(target = eval_measurement, args = (var, i, ))
+        thread = threading.Thread(
+            target=eval_measurement,
+            args=(
+                var,
+                i,
+            ),
+        )
         threads.append(thread)
 
     # Start the threads
@@ -2326,9 +2416,9 @@ def batched_measurement(variables, backend, shots=None):
         thread.start()
 
     # Call the dispatch routine
-    # The min_calls keyword will make it wait 
+    # The min_calls keyword will make it wait
     # until the batch has a size of number of variables
-    backend.dispatch(min_calls = len(variables))
+    backend.dispatch(min_calls=len(variables))
 
     # Wait for the threads to join
     for thread in threads:
