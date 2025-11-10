@@ -2472,6 +2472,9 @@ class QuantumCircuit:
 
 
         """
+        if not isinstance(phi, (float, sympy.Symbol)):
+            raise ValueError("Input parameter phi must be of type float or sympy.Symbol.")
+
         self.append(
             ops.MCPGate(phi, len(control_qubits), ctrl_state=ctrl_state, method=method),
             control_qubits + [target_qubits],
@@ -2529,6 +2532,8 @@ class QuantumCircuit:
         """
         if phi == 0:
             return
+        if not isinstance(phi, (float, sympy.Symbol)):
+            raise ValueError("Input parameter phi must be of type float or sympy.Symbol.")
         self.append(ops.MCRZGate(phi, 1), [qubits_0, qubits_1])
 
     def t(self, qubits):
