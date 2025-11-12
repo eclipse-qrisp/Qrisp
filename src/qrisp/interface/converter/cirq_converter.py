@@ -1,7 +1,7 @@
 from cirq import Circuit, LineQubit
 from qrisp.circuit import ControlledOperation, ClControlledOperation
 
-from cirq import CNOT, H, X, Y, Z
+from cirq import CNOT, H, X, Y, Z, CZ, S, T, R, SWAP, rx, ry, rz
 
 qrisp_cirq_ops_dict = {
     'cx': CNOT,
@@ -9,6 +9,7 @@ qrisp_cirq_ops_dict = {
     'x': X,
     'y': Y,
     'z': Z,
+    'rx': rx
 }
 
 
@@ -34,8 +35,9 @@ def convert_to_cirq(qrisp_circuit):
         # and parameters if there are any
         op_i = instr.op.name
         op_qubits_i = instr.qubits
-        # if hasattr(instr.op, 'params'):
-        #    params = instr.op.params
+        
+        if hasattr(instr.op, 'params'):
+            params = instr.op.params
         
         if op_i not in qrisp_cirq_ops_dict:
             raise ValueError(f"{op_i} gate is not supported by the Qrisp to Cirq converter.")
@@ -50,6 +52,12 @@ def convert_to_cirq(qrisp_circuit):
         # if isinstance(instr.op, ControlledOperation):
             
         cirq_gate = qrisp_cirq_ops_dict[op_i]
-        cirq_circuit.append(cirq_gate(*cirq_op_qubits))
+
+        if instr.op.params:
+            gate_instance = cirq_gate(*params)
+            cirq_circuit.append(gate_instance(*cirq_op_qubits))
+        
+        else:
+            cirq_circuit.append(cirq_gate(*cirq_op_qubits))
     
-    return cirq_circuit 
+    return cirq_circuit
