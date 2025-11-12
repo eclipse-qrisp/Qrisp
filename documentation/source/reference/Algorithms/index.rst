@@ -27,6 +27,10 @@ This algorithms submodule of Qrisp provides a collection of commonly used quantu
      - estimating the amount of solutions for a given Grover oracle
    * - :ref:`Quantum Monte Carlo Integration <QMCI>`
      - numerical integration
+   * - :ref:`CKS Algorithm <CKS>`
+     - solving the quantum linear system problem
+   * - :ref:`DQI Algorithm <DQI>`
+     - solving optimization problems with DQI
 
 
 We encourage you to explore these algorithms, delve into their documentation, and experiment with their implementations.
@@ -46,3 +50,5 @@ We encourage you to explore these algorithms, delve into their documentation, an
    QuantumBacktrackingTree
    quantum_counting   
    QMCI
+   CKS
+   DQI

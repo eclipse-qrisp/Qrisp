@@ -22,7 +22,7 @@ from qrisp import control, cx , swap, QuantumFloat, QuantumArray, h, z, invert,r
 
 
 from scipy.sparse.linalg import eigsh
-from qrisp.alg_primitives import dicke_state
+from qrisp.alg_primitives.dicke_state_prep import dicke_state
 from scipy.sparse import diags
 
 import numpy as np 
@@ -255,7 +255,7 @@ def constraint_encoding(qa_error, qv_syndrome, B):
 
 
 
-def dqi_optimization(B, v, l=2, p=2, r=1):
+def DQI(B, v, l=2, p=2, r=1):
     r"""
     Implementation of `Optimization by Decoded Quantum Interferometry <https://arxiv.org/pdf/2408.08292>`_, with inspiration from `Quantum Circuit Design for Decoded Quantum
     Interferometry <https://arxiv.org/pdf/2504.18334>`_.
@@ -309,7 +309,7 @@ def dqi_optimization(B, v, l=2, p=2, r=1):
         res_dict = multi_measurement([qvin,  resqf])
 
     """
-   # L =2 for MaxCut 
+    # L =2 for MaxCut 
     
     m = B.shape[0]
     n = B.shape[1] 
