@@ -17,10 +17,8 @@
 """
 
 #from qrisp.operators import *
-from qrisp import QuantumVariable, QuantumFloat, h, control, conjugate
-from qrisp.alg_primitives.prepare import prepare
+from qrisp import QuantumVariable, QuantumFloat, h, control, conjugate, reflection
 from qrisp.alg_primitives.switch_case import qswitch
-from qrisp.algorithms.grover import diffuser
 import numpy as np
 import scipy
 
@@ -57,17 +55,11 @@ def inner_lanczos(H, D, state_prep_func, mes_kwargs):
     """
 
     # Extract unitaries and size of the case_indicator QuantumFloat.
-    unitaries, coeffs = H.unitaries()
-    num_unitaries = len(unitaries)
-    n = np.int64(np.ceil(np.log2(num_unitaries)))
-
-    # Prepare $\ket{G} = \sum_i \sqrt{\alpha_i}\ket{i}$ on the auxiliary register (case_indicator) (paper Def. 1, Eq. (4))
-    def state_prep(case):
-        prepare(case, np.sqrt(coeffs))
+    U, state_prep, n = (H.pauli_block_encoding())
 
     def UR(case_indicator, operand, unitaries):
-        qswitch(operand, case_indicator, unitaries) #qswitch applies $U = \sum_i\ket{i}\bra{i}\otimes P_i$.
-        diffuser(case_indicator, state_function=state_prep) # diffuser implements the reflection operator R about $\ket{G}$.
+        U(case_indicator, operand) # applies $U = \sum_i\ket{i}\bra{i}\otimes P_i$.
+        reflection(case_indicator, state_function=state_prep) # reflection operator R about $\ket{G}$.
 
     meas_res = {}
  
@@ -80,7 +72,7 @@ def inner_lanczos(H, D, state_prep_func, mes_kwargs):
             # EVEN k: Figure 1 top
             with conjugate(state_prep)(case_indicator):
                 for _ in range(k//2):
-                    UR(case_indicator, operand, unitaries)
+                    UR(case_indicator, operand)
             
             meas = case_indicator.get_measurement(**mes_kwargs)
             meas_res[k] = meas 
@@ -89,11 +81,11 @@ def inner_lanczos(H, D, state_prep_func, mes_kwargs):
             # ODD k: Figure 1 bottom
             state_prep(case_indicator)
             for _ in range(k//2):
-                UR(case_indicator, operand, unitaries)
+                UR(case_indicator, operand)
             qv = QuantumVariable(1)
             h(qv) # Hadamard test for <U>
             with control(qv[0]):
-                qswitch(operand, case_indicator, unitaries) # control-U on the case_indicator QuantumFloat
+                U(case_indicator, operand) # control-U on the case_indicator QuantumFloat
             h(qv) # Hadamard test for <U>
             meas = qv.get_measurement(**mes_kwargs)
             meas_res[k] = meas
