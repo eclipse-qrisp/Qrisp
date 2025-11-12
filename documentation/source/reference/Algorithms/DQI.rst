@@ -1,9 +1,9 @@
 ﻿.. _DQI:
 
-Grover's Algorithm
-==================
+Decoded Quantum Interferometry
+==============================
 
 .. currentmodule:: qrisp.dqi
 
-.. autofunction:: dqi
+.. autofunction:: DQI
 
