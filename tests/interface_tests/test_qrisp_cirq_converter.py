@@ -2,7 +2,7 @@ import pytest
 
 from cirq import Circuit, LineQubit
 
-from cirq import CNOT, H, X, Y, Z, CZ, S, T, R, SWAP, rx, ry, rz
+from cirq import CNOT, H, X, Y, Z, CZ, S, T, R, SWAP, rx, ry, rz, M, R
 
 from qrisp.interface.converter.cirq_converter import convert_to_cirq
 from qrisp import QuantumCircuit
@@ -20,6 +20,10 @@ qc_single_qubit_gates.ry(0.4, 1)
 qc_single_qubit_gates.rz(0.2, 2)
 qc_single_qubit_gates.s(0)
 qc_single_qubit_gates.t(1)
+qc_single_qubit_gates.t_dg(3)
+qc_single_qubit_gates.s_dg(2)
+qc_single_qubit_gates.measure(0)
+qc_single_qubit_gates.reset(0)
 
 def test_single_qubit_circuit():
     """Check a Qrisp circuit containing all single qubit gates is properly converted to a 
@@ -35,7 +39,11 @@ def test_single_qubit_circuit():
         ry(rads=0.4).on(LineQubit(1)),
         rz(rads=0.2).on(LineQubit(2)),
         S(LineQubit(0)),
-        T(LineQubit(1))
+        T(LineQubit(1)),
+        (T**-1).on(LineQubit(3)),
+        (S**-1).on(LineQubit(2)),
+        M(LineQubit(0)),
+        R(LineQubit(0))
         ]
     assert expected_res == list(converted_circ.all_operations())
 
@@ -57,12 +65,4 @@ def test_symbolic_parametrized_gates():
 def test_unsupported_gate():
     """Mock unit test to verify an error is raised for an unsupported gate."""
 
-
-def test_barrier_gate():
-    """Check a Qrisp circuit containing a barrier gate raises an error as expected."""
-    qc = QuantumCircuit(4)
-    qc.barrier([1, 2, 3, 0])
-    with pytest.raises(ValueError, match=r"Qrisp circuit contains a barrier which is unavailable in Cirq."):
-        convert_to_cirq(qc)
-        
     

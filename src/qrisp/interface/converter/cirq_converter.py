@@ -1,7 +1,7 @@
 from cirq import Circuit, LineQubit
 from qrisp.circuit import ControlledOperation, ClControlledOperation
 
-from cirq import CNOT, H, X, Y, Z, CZ, S, T, R, SWAP, rx, ry, rz
+from cirq import CNOT, H, X, Y, Z, CZ, S, T, R, SWAP, rx, ry, rz, inverse, M, R
 
 qrisp_cirq_ops_dict = {
     'cx': CNOT,
@@ -14,6 +14,10 @@ qrisp_cirq_ops_dict = {
     'rz': rz,
     's': S,
     't': T,
+    's_dg': inverse(S),
+    't_dg': inverse(T),
+    'measure': M,
+    'reset': R,
 }
 
 
@@ -38,8 +42,6 @@ def convert_to_cirq(qrisp_circuit):
         # get the gate name, qubits it is acting on 
         # and parameters if there are any
         op_i = instr.op.name
-        if op_i == 'barrier':
-            raise ValueError("Qrisp circuit contains a barrier which is unavailable in Cirq.")
         op_qubits_i = instr.qubits
         
         if hasattr(instr.op, 'params'):
