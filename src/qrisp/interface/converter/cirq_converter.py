@@ -9,7 +9,11 @@ qrisp_cirq_ops_dict = {
     'x': X,
     'y': Y,
     'z': Z,
-    'rx': rx
+    'rx': rx,
+    'ry': ry,
+    'rz': rz,
+    's': S,
+    't': T,
 }
 
 
@@ -34,6 +38,8 @@ def convert_to_cirq(qrisp_circuit):
         # get the gate name, qubits it is acting on 
         # and parameters if there are any
         op_i = instr.op.name
+        if op_i == 'barrier':
+            raise ValueError("Qrisp circuit contains a barrier which is unavailable in Cirq.")
         op_qubits_i = instr.qubits
         
         if hasattr(instr.op, 'params'):

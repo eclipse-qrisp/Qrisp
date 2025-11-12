@@ -1,0 +1,68 @@
+import pytest
+
+from cirq import Circuit, LineQubit
+
+from cirq import CNOT, H, X, Y, Z, CZ, S, T, R, SWAP, rx, ry, rz
+
+from qrisp.interface.converter.cirq_converter import convert_to_cirq
+from qrisp import QuantumCircuit
+
+# define circuits to be used by the unit tests
+
+# 4 qubit circuit containing all single qubit gates
+qc_single_qubit_gates = QuantumCircuit(4)
+qc_single_qubit_gates.h(0)
+qc_single_qubit_gates.x(1)
+qc_single_qubit_gates.y(3)
+qc_single_qubit_gates.z(2)
+qc_single_qubit_gates.rx(0.3, 3)
+qc_single_qubit_gates.ry(0.4, 1)
+qc_single_qubit_gates.rz(0.2, 2)
+qc_single_qubit_gates.s(0)
+qc_single_qubit_gates.t(1)
+
+def test_single_qubit_circuit():
+    """Check a Qrisp circuit containing all single qubit gates is properly converted to a 
+    Cirq circuit."""
+
+    converted_circ = convert_to_cirq(qc_single_qubit_gates)
+    expected_res = [
+        H(LineQubit(0)),
+        X(LineQubit(1)),
+        Y(LineQubit(3)),
+        Z(LineQubit(2)),
+        rx(rads=0.3).on(LineQubit(3)),
+        ry(rads=0.4).on(LineQubit(1)),
+        rz(rads=0.2).on(LineQubit(2)),
+        S(LineQubit(0)),
+        T(LineQubit(1))
+        ]
+    assert expected_res == list(converted_circ.all_operations())
+
+def test_two_qubit_circuit():
+    """Check a Qrisp circuit containing all two qubit gates is properly converted to a Cirq circuit."""
+
+
+def test_mc_qubit_circuit():
+    """Check a Qrisp circuit containing all multi-controlled gates is properly converted to a Cirq circuit."""
+
+
+def test_labeled_qubits():
+    """Verify converter works for named qubits in the Qrisp circuit."""
+
+
+def test_symbolic_parametrized_gates():
+    """Verify error is raised when a symbolic parameter is provided to certain parametrized gates."""
+
+def test_unsupported_gate():
+    """Mock unit test to verify an error is raised for an unsupported gate."""
+
+
+def test_barrier_gate():
+    """Check a Qrisp circuit containing a barrier gate raises an error as expected."""
+    qc = QuantumCircuit(4)
+    qc.barrier([1, 2, 3, 0])
+    with pytest.raises(ValueError, match=r"Qrisp circuit contains a barrier which is unavailable in Cirq."):
+        convert_to_cirq(qc)
+        
+    
