@@ -100,7 +100,10 @@ def q_while_loop(cond_fun, body_fun, init_val):
     """
 
     if not check_for_tracing_mode():
-        return while_loop(cond_fun, body_fun, init_val)
+        val = init_val
+        while cond_fun(val):
+            val = body_fun(val)
+        return val
 
     def new_cond_fun(val):
         temp_qc = qs.abs_qc
@@ -296,6 +299,12 @@ def q_cond(pred, true_fun, false_fun, *operands):
         # True
 
     """
+
+    if not check_for_tracing_mode():
+        if pred:
+            return true_fun(*operands)
+        else:
+            return false_fun(*operands)
 
     def new_true_fun(*operands):
         qs.start_tracing(operands[1])
