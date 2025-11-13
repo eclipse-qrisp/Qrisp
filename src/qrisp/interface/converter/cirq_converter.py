@@ -25,9 +25,9 @@ qrisp_cirq_ops_dict = {
     'measure': M,
     'reset': R,
     'id': I,
-    'p': ZPowGate,
-    'sx': XPowGate,
-    'sx_dg': XPowGate,
+    'p': None,
+    'sx': None,
+    'sx_dg': None,
 }
 
 
@@ -69,22 +69,19 @@ def convert_to_cirq(qrisp_circuit):
             
         cirq_gate = qrisp_cirq_ops_dict[op_i]
 
-        if instr.op.params and not isinstance(instr.op, ControlledOperation):
+        if op_i != 'id' and instr.op.params and not isinstance(instr.op, ControlledOperation):
             # for single qubit parametrized gates
-            if op_i == 'id':
-                # added becasue the identity gate has parameters (0, 0, 0)
-                cirq_circuit.append(cirq_gate(*cirq_op_qubits))
+            # added becasue the identity gate has parameters (0, 0, 0)
+            if op_i == 'p':
+                # Cirq does not have a phase gate
+                # for this reason, it has to be dealt with as a special case.
+                # the ZPowGate has a global phase in addition to the 
+                # phase exponent. The default is to assume global_shift = 0 in cirq
+                exp_param = params[0]
+                cirq_circuit.append(ZPowGate(exponent=exp_param)(*cirq_op_qubits))
             else:
-                if op_i == 'p':
-                    # Cirq does not have a phase gate
-                    # for this reason, it has to be dealt with as a special case.
-                    # the ZPowGate has a global phase in addition to the 
-                    # phase exponent. The default is to assume global_shift = 0 in cirq
-                    exp_param = params[0]
-                    cirq_circuit.append(ZPowGate(exponent=exp_param)(*cirq_op_qubits))
-                else:
-                    gate_instance = cirq_gate(*params)
-                    cirq_circuit.append(gate_instance(*cirq_op_qubits))
+                gate_instance = cirq_gate(*params)
+                cirq_circuit.append(gate_instance(*cirq_op_qubits))
         
         elif isinstance(instr.op, ControlledOperation):
             # control and target qubits from qrisp
