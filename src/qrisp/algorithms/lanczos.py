@@ -16,14 +16,16 @@
 ********************************************************************************
 """
 
-#from qrisp.operators import *
 from qrisp import QuantumVariable, QuantumFloat, h, control, conjugate, reflection
 from qrisp.alg_primitives.switch_case import qswitch
+from qrisp.jasp import jrange, q_cond, check_for_tracing_mode, expectation_value
+import jax.numpy as jnp
+import jax
 import numpy as np
 import scipy
 
 
-def inner_lanczos(H, D, state_prep_func, mes_kwargs):
+def inner_lanczos(H, k, state_prep_func):
     r"""
     Perform the quantum subroutine of the exact and efficient Lanczos method to estimate expectation values of Chebyshev polynomials of a Hamiltonian.
 
@@ -57,44 +59,43 @@ def inner_lanczos(H, D, state_prep_func, mes_kwargs):
     # Extract unitaries and size of the case_indicator QuantumFloat.
     U, state_prep, n = H.pauli_block_encoding()
 
-    def UR(case_indicator, operand, unitaries):
+    def UR(case_indicator, operand):
         U(case_indicator, operand) # applies $U = \sum_i\ket{i}\bra{i}\otimes P_i$.
         reflection(case_indicator, state_function=state_prep) # reflection operator R about $\ket{G}$.
 
-    meas_res = {}
- 
-    for k in range(0, 2*D):
-        case_indicator = QuantumFloat(n)
-        operand = QuantumVariable(H.find_minimal_qubit_amount())
-        state_prep_func(operand) # prepare operand $\ket{\psi_0}$
+    case_indicator = QuantumFloat(n)
+    operand = QuantumVariable(H.find_minimal_qubit_amount())
+    state_prep_func(operand) # prepare operand $\ket{\psi_0}$
 
-        if k % 2 == 0:
-            # EVEN k: Figure 1 top
-            with conjugate(state_prep)(case_indicator):
-                for _ in range(k//2):
-                    UR(case_indicator, operand)
-            
-            meas = case_indicator.get_measurement(**mes_kwargs)
-            meas_res[k] = meas 
-
-        else:
-            # ODD k: Figure 1 bottom
-            state_prep(case_indicator)
-            for _ in range(k//2):
+    def even(case_indicator, operand, k):
+        # EVEN k: Figure 1 top
+        with conjugate(state_prep)(case_indicator):
+            for _ in jrange(k//2):
                 UR(case_indicator, operand)
-            qv = QuantumVariable(1)
-            h(qv) # Hadamard test for <U>
-            with control(qv[0]):
-                U(case_indicator, operand) # control-U on the case_indicator QuantumFloat
-            h(qv) # Hadamard test for <U>
-            meas = qv.get_measurement(**mes_kwargs)
-            meas_res[k] = meas
+        return case_indicator
+
+    def odd(case_indicator, operand, k):
+        # ODD k: Figure 1 bottom
+        state_prep(case_indicator)
+        for _ in jrange(k//2):
+            UR(case_indicator, operand)
+        qv = QuantumFloat(1)
+        h(qv) # Hadamard test for <U>
+        with control(qv[0]):
+            U(case_indicator, operand) # control-U on the case_indicator QuantumFloat
+        h(qv) # Hadamard test for <U>
+        return qv
     
-        case_indicator.delete()
-        operand.delete()
-
-    return meas_res
-
+    if check_for_tracing_mode():
+        x_cond = q_cond
+    else:
+        def x_cond(pred, true_fun, false_fun, *operands):
+            if pred:
+                return true_fun(*operands)
+            else:
+                return false_fun(*operands)
+            
+    return x_cond(k%2==0, even, odd, case_indicator, operand, k)
 
 def compute_expectation(meas_res):
     r"""
@@ -129,8 +130,33 @@ def compute_expectation(meas_res):
             expval += prob * (-1)
     return expval
 
+def lanczos_expvals(H, D, state_prep_func, mes_kwargs={}):
+    if check_for_tracing_mode():
 
-def build_S_H_from_Tk(Tk_expectation, D):
+        @jax.jit
+        def post_processor(x):
+            """
+            Returns 1 if the input integer x is 0, and -1 otherwise, using jax.numpy.where.
+            """
+            return jnp.where(x == 0, 1, -1)
+        
+        ev_function = expectation_value(inner_lanczos, shots = 50, post_processor = post_processor)
+        expvals = jnp.zeros(2*D)
+
+        for k in range(0, 2*D):
+            expval = ev_function(H, k, state_prep_func)
+            expvals = expvals.at[k].set(expval)
+
+    else:
+        expvals = np.zeros(2*D)
+        for k in range(0, 2*D):
+            qarg = inner_lanczos(H, k, state_prep_func)
+            meas = qarg.get_measurement(**mes_kwargs)
+            expvals[k] = compute_expectation(meas)
+    
+    return expvals
+
+def build_S_H_from_Tk(Tk_expvals, D):
     r"""
     Construct the overlap matrix $\mathbf{S}$ and the Krylov Hamiltonian matrix $\mathbf{H}$ from Chebyshev polynomial expectation values.
 
@@ -156,7 +182,7 @@ def build_S_H_from_Tk(Tk_expectation, D):
     """
     def Tk(k):
         k = abs(k)
-        return Tk_expectation.get(k, 0)
+        return Tk_expvals[k]
 
     S = np.zeros((D, D))
     H_mat = np.zeros((D, D))
@@ -292,10 +318,7 @@ def lanczos_alg(H, D, state_prep_func, mes_kwargs = {}, cutoff=1e-2):
     unitaries, coeffs = H.unitaries()
     
     # Step 1: Quantum Lanczos: Get expectation values of Chebyshev polynomials
-    meas_counts = inner_lanczos(H, D, state_prep_func, mes_kwargs)
-
-    # Convert counts to expectation values
-    Tk_expvals = {k: compute_expectation(counts) for k, counts in meas_counts.items()}
+    Tk_expvals = lanczos_expvals(H, D, state_prep_func, mes_kwargs)
 
     # Step 2: Build matrices S and H
     S, H_mat = build_S_H_from_Tk(Tk_expvals, D)
