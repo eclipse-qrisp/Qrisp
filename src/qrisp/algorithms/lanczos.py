@@ -16,8 +16,8 @@
 ********************************************************************************
 """
 
-from qrisp import QuantumVariable, QuantumFloat, h, control, conjugate, reflection
-from qrisp.alg_primitives.switch_case import qswitch
+from qrisp import QuantumVariable, QuantumFloat, h, control, conjugate
+from qrisp.alg_primitives.switch_case import reflection
 from qrisp.jasp import jrange, q_cond, check_for_tracing_mode, expectation_value
 import jax.numpy as jnp
 import jax
@@ -33,7 +33,7 @@ def inner_lanczos(H, k, state_prep_func):
     of Chebyshev polynomials $T_k(H)$, as described in 
     `"Exact and efficient Lanczos method on a quantum computer" <https://quantum-journal.org/papers/q-2023-05-23-1018/>`_.
     
-    At each order $k = 0, \dots, 2D-1$ it prepares and measures circuits corresponding 
+    For each polynomial order $k = 0, \dots, 2D-1$, it prepares and measures circuits corresponding 
     either to $\bra{\psi\lfloor k/2\rfloor}R\ket{\psi\lfloor k/2\rfloor}$ for even $k$, or
     $\bra{\psi\lfloor k/2\rfloor}U\ket{\psi\lfloor k/2\rfloor}$ for odd $k$. 
     The measured statistics encode the expectation values $\langle T_k(H)\rangle$. 
