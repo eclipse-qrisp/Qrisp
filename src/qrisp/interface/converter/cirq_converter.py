@@ -1,10 +1,16 @@
 from cirq import Circuit, LineQubit
 from qrisp.circuit import ControlledOperation, ClControlledOperation
 
-from cirq import CNOT, H, X, Y, Z, CZ, S, T, R, SWAP, rx, ry, rz, inverse, M, R
+from cirq import CNOT, H, X, Y, Z, CZ, S, T, R, SWAP, rx, ry, rz, inverse, I, M, R, CZ, CCNOT
 
 qrisp_cirq_ops_dict = {
+    # all multi-qubit gates
     'cx': CNOT,
+    'cz': CZ,
+    'swap': SWAP,
+    # toffoli gate
+    '2cx': CCNOT,
+    # all single qubit gates
     'h': H,
     'x': X,
     'y': Y,
@@ -18,6 +24,7 @@ qrisp_cirq_ops_dict = {
     't_dg': inverse(T),
     'measure': M,
     'reset': R,
+    'id': I,
 }
 
 
@@ -61,11 +68,37 @@ def convert_to_cirq(qrisp_circuit):
             
         cirq_gate = qrisp_cirq_ops_dict[op_i]
 
-        if instr.op.params:
-            gate_instance = cirq_gate(*params)
-            cirq_circuit.append(gate_instance(*cirq_op_qubits))
+        if instr.op.params and not isinstance(instr.op, ControlledOperation):
+            # for single qubit parametrized gates
+            if op_i == 'id':
+                # added becasue the identity gate has parameters (0, 0, 0)
+                cirq_circuit.append(cirq_gate(*cirq_op_qubits))
+            else:  
+                gate_instance = cirq_gate(*params)
+                cirq_circuit.append(gate_instance(*cirq_op_qubits))
+        
+        elif isinstance(instr.op, ControlledOperation):
+            # control and target qubits from qrisp
+            control_qubits = instr.qubits[:len(instr.op.ctrl_state)]
+            target_qubits = instr.qubits[len(instr.op.ctrl_state):]
+            
+
+            cirq_ctrl_qubits = [qubit_map[q] for q in control_qubits]
+            cirq_target_qubits = [qubit_map[q] for q in target_qubits]
+            
+            # verify the contorl and target qubit mapping worked
+            assert cirq_op_qubits == cirq_ctrl_qubits + cirq_target_qubits
+            assert op_qubits_i == control_qubits + target_qubits
+
+            # if the controlled operation is also parametrized
+            if instr.op.params:
+                gate_instance = cirq_gate(*params)
+                cirq_circuit.append(gate_instance(*cirq_ctrl_qubits, *cirq_target_qubits))
+            else:
+                cirq_circuit.append(cirq_gate(*cirq_ctrl_qubits, *cirq_target_qubits))
         
         else:
+            # for simple single qubit gates
             cirq_circuit.append(cirq_gate(*cirq_op_qubits))
     
     return cirq_circuit
