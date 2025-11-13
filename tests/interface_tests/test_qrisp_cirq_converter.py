@@ -3,6 +3,8 @@ import pytest
 from cirq import Circuit, LineQubit
 
 from cirq import CNOT, H, X, Y, Z, CZ, S, T, R, SWAP, rx, ry, rz, M, R
+from unittest.mock import MagicMock, create_autospec
+from qrisp.circuit import QuantumCircuit, ControlledOperation, ClControlledOperation
 
 from qrisp.interface.converter.cirq_converter import convert_to_cirq
 from qrisp import QuantumCircuit
@@ -62,7 +64,19 @@ def test_labeled_qubits():
 def test_symbolic_parametrized_gates():
     """Verify error is raised when a symbolic parameter is provided to certain parametrized gates."""
 
-def test_unsupported_gate():
-    """Mock unit test to verify an error is raised for an unsupported gate."""
 
+@pytest.mark.parametrize("op, expected_msg", [
+    (MagicMock(name='some_gate'), "some_gate gate is not supported by the Qrisp to Cirq converter."),
+    (MagicMock(spec=ClControlledOperation), "Classically controlled gate is not supported by the Qrisp to Cirq converter.")
+    ])
+def test_unsupported_gate(op, expected_msg):
+    """Mock unit test to verify an error is raised for an unsupported gate."""
+    if isinstance(op, ClControlledOperation):
+        op.configure_mock(name='Classically controlled')
+    else:
+        op.configure_mock(name='some_gate')
     
+    qc = QuantumCircuit(1)
+    qc.data = [MagicMock(op=op, qubits=[MagicMock()])]
+    with pytest.raises(ValueError, match=expected_msg):
+        convert_to_cirq(qc)

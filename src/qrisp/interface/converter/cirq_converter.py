@@ -56,8 +56,6 @@ def convert_to_cirq(qrisp_circuit):
         
         if op_i not in qrisp_cirq_ops_dict:
             raise ValueError(f"{op_i} gate is not supported by the Qrisp to Cirq converter.")
-        # elif isinstance(op_i, ClControlledOperation):
-        #    raise ValueError(f"{op_i} gate is not supported by the Qrisp to Cirq converter.")
         
         cirq_op_qubits = [qubit_map[q] for q in op_qubits_i]
 
