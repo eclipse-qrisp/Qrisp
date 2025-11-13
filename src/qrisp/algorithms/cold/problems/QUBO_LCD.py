@@ -34,6 +34,7 @@ def create_LCD_instance(Q):
         nom = np.sum(A + 4*B*C)
         denom = 2 * (np.sum(A**2) + N * (B**2)) + 4 * (lam**2) * np.sum(np.tril(J, -1).sum(axis=1))
         alph = nom/denom
+        alph = [alph]*N
 
         return alph
 
@@ -45,27 +46,24 @@ def create_LCD_instance(Q):
               + sum([h[i] * Z(i) for i in range(N)]))
     
     # AGP
-    A_lam = sum([Y(i) for i in range(N)])
+    def A_lam(alph):
+        return sum([alph[i] * Y(i) for i in range(N)])
 
     return lam, alpha, H_init, H_prob, A_lam
 
 # Create DCQO instance
 lam, alpha, H_init, H_prob, A_lam = create_LCD_instance(Q)
-LCD_prob = DCQOProblem(lam, alpha, H_init, H_prob, A_lam)
+LCD_prob = DCQOProblem(lam, None, alpha, H_init, H_prob, A_lam)
 
 # Run LCD problem
 qarg = QuantumVariable(size=Q.shape[0])
 LCD_result = LCD_prob.run(qarg, N_steps=10, T=5)
 
-# print(f'LCD result: \n{LCD_result}')
-# print(f'Actual solution: {solution}')
+# from qrisp.algorithms.cold.cold_benchmark import *
+# ar = approx_ratio(Q, LCD_result, solution)
+# sp = success_prob(LCD_result, solution)
+# most_likely_3 = most_likely_res(Q, LCD_result, N=3)
 
-# TODO:
-from qrisp.algorithms.cold.cold_benchmark import *
-ar = approx_ratio(Q, LCD_result, solution)
-sp = success_prob(LCD_result, solution)
-most_likely_3 = most_likely_res(Q, LCD_result, N=3)
-
-print(f'Approximation ratio: {ar}')
-print(f'Success probability: {sp}')
-print(f'3 most likely: {most_likely_3}')
+# print(f'Approximation ratio: {ar}')
+# print(f'Success probability: {sp}')
+# print(f'3 most likely: {most_likely_3}')

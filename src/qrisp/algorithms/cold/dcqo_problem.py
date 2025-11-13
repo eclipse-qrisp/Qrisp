@@ -21,6 +21,7 @@ from scipy.optimize import minimize
 import sympy as sp
 from qrisp.algorithms.cold.crab import CRABObjective
 from qrisp import h
+from qrisp.algorithms.cold.AGP_param_opt import solve_params_at_lambda, build_Hg
 
 class DCQOProblem:
     """
@@ -54,6 +55,7 @@ class DCQOProblem:
     def __init__(
         self, 
         sympy_lambda, 
+        sympy_g,
         alpha,
         H_init,
         H_prob,
@@ -65,6 +67,7 @@ class DCQOProblem:
     ):
         
         self.sympy_lambda = sympy_lambda
+        self.sympy_g = sympy_g
         self.alpha = alpha
         self.H_init = H_init
         self.H_prob = H_prob
@@ -85,7 +88,7 @@ class DCQOProblem:
 
         self.callback = True
 
-    def __precompute_timegrid(self, N_steps, T):
+    def __precompute_timegrid(self, N_steps, T, method):
         """
         Compute lambda(t, T) and the time-derivative lambdadot(t, T) 
         for each timestep.
@@ -119,9 +122,24 @@ class DCQOProblem:
         # Compute functions of values t_list
         lam = lam_func(t_list, T)
         lamdot = lamdot_func(t_list, T)
+        # Convert lamdot to a constant list to make it subscriptable by timestep
+        if isinstance(lamdot, float): lamdot = [lamdot] * N_steps
 
         self.lam = lam
         self.lamdot = lamdot
+
+        # Functions for t = g(lam) and derivative (later needed for opt pulses)
+        # must only be calculated for COLD, not for LCD
+        if method == 'COLD':
+            lam_sym = sp.Symbol("lam")
+            g_func = sp.lambdify((lam_sym, T_sym), self.sympy_g(), 'numpy')
+            g_deriv_expr = sp.diff(self.sympy_g(), lam_sym)
+            g_deriv_func = sp.lambdify((lam_sym, T_sym), g_deriv_expr, 'numpy')
+            g_deriv = g_deriv_func(self.lam, T)
+
+            self.g = g_func(self.lam, T)
+            self.g_deriv = g_deriv
+
 
     def apply_lcd_hamiltonian(self, qarg, N_steps, T):
         """
@@ -142,9 +160,8 @@ class DCQOProblem:
         self.qarg_prep(qarg)
         dt = T / N_steps
 
-        # Make sure timegrid is computed
-        if not hasattr(self, "lam"):
-            self.__precompute_timegrid(N_steps, T)
+        # Compute time-function lamda(t, T) and the derivative lamdot(t, T)
+        self.__precompute_timegrid(N_steps, T, 'LCD')
         
         # Apply hamiltonian to qarg for each timestep
         for s in range(N_steps):
@@ -156,7 +173,7 @@ class DCQOProblem:
             H_step = (1-self.lam[s]) * self.H_init + self.lam[s] * self.H_prob
 
             # AGP contribution scaled by dt* lambda_dot(t)
-            H_step += self.lamdot[s] * alph * self.A_lam
+            H_step += self.lamdot[s] * self.A_lam(alph)
 
             # Get unitary from trotterization and apply to qarg
             U = H_step.trotterization()
@@ -205,16 +222,15 @@ class DCQOProblem:
 
                 for k in range(N_opt):
                     sin_matrix[:, k] = np.sin(np.pi * (k+1) * t_list/T)
-                    cos_matrix[:, k] = (np.pi/T * (k+1)) * np.cos(np.pi * (k+1) * t_list/T)
+                    cos_matrix[:, k] = (np.pi * (k+1)) * np.cos(np.pi * (k+1) * self.g) * self.g_deriv
 
             return sin_matrix, cos_matrix
         
         # Initialize qarg
         self.qarg_prep(qarg)
 
-        # Make sure timegrid is computed
-        if not hasattr(self, "lam"):
-            self.__precompute_timegrid(N_steps, T)
+        # Compute time-function lamda(t, T) and the derivative lamdot(t, T)
+        self.__precompute_timegrid(N_steps, T, 'COLD')
 
         # Precompute opt pulses
         dt = T / N_steps
@@ -239,7 +255,7 @@ class DCQOProblem:
             H_step = (1-self.lam[s]) * self.H_init + self.lam[s] * self.H_prob
 
             # AGP contribution scaled by dt* lambda_dot(t)
-            H_step += self.lamdot[s] * alph * self.A_lam
+            H_step += self.lamdot[s] * self.A_lam(alph)
 
             # Control pulse contribution 
             if CRAB:
@@ -387,9 +403,6 @@ class DCQOProblem:
             The optimal result after running DCQO problem for a specific problem instance. It contains the measurement results after applying the optimal DCQO circuit to the quantum argument.
 
         """
-
-        # Compute time-function lamda(t, T) and the derivative lamdot(t, T)
-        self.__precompute_timegrid(N_steps, T)
 
         # If no prep for qarg is specified, use uniform superposition state
         if self.qarg_prep is None:
