@@ -30,7 +30,7 @@ from qrisp import (
     rz,
 )
 from qrisp.alg_primitives.prepare import prepare
-from qrisp.jasp import jrange, q_cond, RUS
+from qrisp.jasp import jrange, q_cond, RUS, check_for_tracing_mode
 from qrisp.operators import QubitOperator
 
 
@@ -103,9 +103,19 @@ def inner_QSVT_inversion(A_scaled, b, phi_qsvt):
     phi_qsvt = jnp.flip(phi_qsvt)
     d = len(phi_qsvt) - 1
 
+    # Jasp mode
+    if check_for_tracing_mode():
+        x_cond = q_cond
+    else:
+        def x_cond(pred, true_fun, false_fun, *operands):
+            if pred:
+                return true_fun(*operands)
+            else:
+                return false_fun(*operands)
+            
     for i in jrange(0, d): 
         reflection(in_case, temp, phase=2 * phi_qsvt[i])
-        q_cond(i%2==0, U_tilde, U_tilde_dg, in_case, operand, state_prep) 
+        x_cond(i%2==0, U_tilde, U_tilde_dg, in_case, operand, state_prep) 
     reflection(in_case, temp, phase=2 * phi_qsvt[d])
         
     h(temp)
