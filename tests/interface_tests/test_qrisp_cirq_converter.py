@@ -27,12 +27,7 @@ qc_single_qubit_gates.s_dg(2)
 qc_single_qubit_gates.measure(0)
 qc_single_qubit_gates.reset(0)
 
-def test_single_qubit_circuit():
-    """Check a Qrisp circuit containing all single qubit gates is properly converted to a 
-    Cirq circuit."""
-
-    converted_circ = convert_to_cirq(qc_single_qubit_gates)
-    expected_res = [
+expected_cirq_qc_single_qubit_gates_ops = [
         H(LineQubit(0)),
         X(LineQubit(1)),
         Y(LineQubit(3)),
@@ -47,7 +42,20 @@ def test_single_qubit_circuit():
         M(LineQubit(0)),
         R(LineQubit(0))
         ]
+
+# 4 qubit circuit containing all two qubit gates
+
+# 4 qubit circuit containing all multi-controlled gates
+
+@pytest.mark.parametrize("input_circuit, expected_res", [
+    (qc_single_qubit_gates, expected_cirq_qc_single_qubit_gates_ops)])
+def test_cirq_converter(input_circuit, expected_res):
+    """Check the Qrisp to Cirq converter works for different circuits."""
+    converted_circ = convert_to_cirq(input_circuit)
     assert expected_res == list(converted_circ.all_operations())
+
+
+    
 
 def test_two_qubit_circuit():
     """Check a Qrisp circuit containing all two qubit gates is properly converted to a Cirq circuit."""

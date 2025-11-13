@@ -1,7 +1,7 @@
 from cirq import Circuit, LineQubit
 from qrisp.circuit import ControlledOperation, ClControlledOperation
 
-from cirq import CNOT, H, X, Y, Z, CZ, S, T, R, SWAP, rx, ry, rz, inverse, I, M, R, CZ, CCNOT
+from cirq import CNOT, H, X, Y, Z, CZ, S, T, R, SWAP, rx, ry, rz, inverse, I, M, R, CZ, CCNOT, ZPowGate, XPowGate
 
 qrisp_cirq_ops_dict = {
     # all multi-qubit gates
@@ -25,6 +25,9 @@ qrisp_cirq_ops_dict = {
     'measure': M,
     'reset': R,
     'id': I,
+    'p': ZPowGate,
+    'sx': XPowGate,
+    'sx_dg': XPowGate,
 }
 
 
@@ -71,9 +74,17 @@ def convert_to_cirq(qrisp_circuit):
             if op_i == 'id':
                 # added becasue the identity gate has parameters (0, 0, 0)
                 cirq_circuit.append(cirq_gate(*cirq_op_qubits))
-            else:  
-                gate_instance = cirq_gate(*params)
-                cirq_circuit.append(gate_instance(*cirq_op_qubits))
+            else:
+                if op_i == 'p':
+                    # Cirq does not have a phase gate
+                    # for this reason, it has to be dealt with as a special case.
+                    # the ZPowGate has a global phase in addition to the 
+                    # phase exponent. The default is to assume global_shift = 0 in cirq
+                    exp_param = params[0]
+                    cirq_circuit.append(ZPowGate(exponent=exp_param)(*cirq_op_qubits))
+                else:
+                    gate_instance = cirq_gate(*params)
+                    cirq_circuit.append(gate_instance(*cirq_op_qubits))
         
         elif isinstance(instr.op, ControlledOperation):
             # control and target qubits from qrisp
@@ -97,6 +108,11 @@ def convert_to_cirq(qrisp_circuit):
         
         else:
             # for simple single qubit gates
-            cirq_circuit.append(cirq_gate(*cirq_op_qubits))
+            if op_i == 'sx':
+                cirq_circuit.append(XPowGate(exponent=0.5)(*cirq_op_qubits))
+            elif op_i == 'sx_dg':
+                cirq_circuit.append(inverse(XPowGate(exponent=0.5)(*cirq_op_qubits)))
+            else:
+                cirq_circuit.append(cirq_gate(*cirq_op_qubits))
     
     return cirq_circuit
