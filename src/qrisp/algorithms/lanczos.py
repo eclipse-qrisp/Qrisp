@@ -55,7 +55,7 @@ def inner_lanczos(H, D, state_prep_func, mes_kwargs):
     """
 
     # Extract unitaries and size of the case_indicator QuantumFloat.
-    U, state_prep, n = (H.pauli_block_encoding())
+    U, state_prep, n = H.pauli_block_encoding()
 
     def UR(case_indicator, operand, unitaries):
         U(case_indicator, operand) # applies $U = \sum_i\ket{i}\bra{i}\otimes P_i$.
