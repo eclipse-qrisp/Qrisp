@@ -155,6 +155,7 @@ def lanczos_expvals(H, D, init_state, mes_kwargs={}):
         ``operand=init_state()``.
     mes_kwargs : dict, optional
         The keyword arguments for the measurement function.
+        By default, 100_000 ``shots`` are executed for measuring each expectation value.
 
     Returns
     -------
@@ -361,10 +362,11 @@ def lanczos_alg(H, D, init_state, mes_kwargs={}, cutoff=1e-2, show_info=False):
             Function returning the (operand) QuantumVariable in the initial system state $\ket{\psi_0}$, i.e.,
             ``operand=init_state()``.
         mes_kwargs : dict
-            The keyword arguments for the measurement function.
+            The keyword arguments for the measurement function. 
+            By default, 100_000 ``shots`` are executed for measuring each expectation value.
         cutoff : float
             Regularization cutoff threshold for overlap matrix $\mathbf{S}$. The default is 1e-2.
-        show_info : bool
+        show_info : bool, optional
             If True, a dictionary with detailed information is returned. The default is False.
 
     Returns
@@ -373,12 +375,18 @@ def lanczos_alg(H, D, init_state, mes_kwargs={}, cutoff=1e-2, show_info=False):
         Estimated ground state energy of the Hamiltonian H.
     info : dict, optional
         Full details including:
-            - 'Tk_expvals': dictionary of Chebyshev expectation values
-            - 'energy': ground-state energy estimate
-            - 'eigvals': eigenvalues of regularized problem
-            - 'eigvecs': eigenvectors of regularized problem
-            - 'S_reg': regularized overlap matrix
-            - 'H_reg': regularized Hamiltonian matrix
+            - 'Tk_expvals' : ndarray
+                Chebyshev expectation values
+            - 'energy' : float 
+                Ground-state energy estimate
+            - 'eigvals' : ndarray 
+                Eigenvalues of regularized problem
+            - 'eigvecs' : ndarray
+                Eigenvectors of regularized problem
+            - 'S_reg' : ndarray
+                Regularized overlap matrix
+            - 'H_reg' : ndarray
+                Regularized Hamiltonian matrix
     
     Examples
     --------
