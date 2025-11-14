@@ -346,7 +346,7 @@ def QSVT_inversion(A, b, eps, kappa=None):
         @terminal_sampling
         def main():
 
-            x = QSVT_inversion(A, b, phi_qsvt)
+            x = QSVT_inversion(A, b, eps)
             return x
 
         res_dict = main()
@@ -391,6 +391,8 @@ def QSVT_inversion(A, b, eps, kappa=None):
         A = tridiagonal_shifted(N, mu=3)
         b = np.array([0, 1, 1, 1, 0, 0, 1, 1])
 
+        eps = 0.01     
+
         print(A)
         # [[ 5.  0.  0.  0. -2.  0.  0.  0.]
         #  [ 0.  5.  0.  0.  0. -2.  0.  0.]
@@ -401,17 +403,7 @@ def QSVT_inversion(A, b, eps, kappa=None):
         #  [ 0.  0. -2.  0.  0.  0.  5.  0.]
         #  [ 0.  0.  0. -2.  0.  0.  0.  5.]]
 
-    As before, we obtain the QSVT phase angles by calculating :math:`\kappa` and setting our desired 
-    precision :math:`\epsilon`. We again rescale :math:`A`.
-
-    ::
-
-        kappa = np.linalg.cond(A)
-        eps = 0.01
-
-        phi_qsvt, s = qsvt_angles_scaling(kappa, eps)
-
-    
+   
     This matrix can be decomposed using three unitaries: the identity :math:`I`, and two shift operators :math:`V\colon\ket{k}\\rightarrow-\ket{k+N/2 \mod N}` and :math:`V^{\dagger}\colon\ket{k}\\rightarrow-\ket{k-N/2 \mod N}`.
     We define their corresponding functions:
 
@@ -432,7 +424,8 @@ def QSVT_inversion(A, b, eps, kappa=None):
 
         unitaries = [I, V, V_dg]
 
-    We now define the block_encoding ``(U, state_prep, n)``:
+    We now define the block_encoding ``(U, state_prep, n)``. 
+    In this case, we have to also pass the condition number :math:`\kappa`:
 
     ::
 
@@ -447,14 +440,28 @@ def QSVT_inversion(A, b, eps, kappa=None):
 
         block_encoding = (U, state_prep, 2)
 
-    We solve the linear system by passing this block-encoding tuple as ``A`` into the QSVT function:
+        kappa = np.linalg.cond(A)
+
+    We solve the linear system by passing this block-encoding tuple as ``A`` into the QSVT function.
+    We can also pass ``b`` as a function. In this case we define ``bprep`` as
+
+    ::
+
+        from qrisp import QuantumFloat
+        def bprep():
+            operand = QuantumFloat(int(np.log2(b.shape[0])))
+            prepare(operand, b)
+            return operand
+
+    
+    and solve the linear system:
 
     ::
 
         @terminal_sampling
         def main():
 
-            x = QSVT_inversion(block_encoding, b, phi_qsvt)
+            x = QSVT_inversion(block_encoding, bprep, eps, kappa)
             return x
 
         res_dict = main()
@@ -485,7 +492,7 @@ def QSVT_inversion(A, b, eps, kappa=None):
         @count_ops(meas_behavior="0")
         def main():
 
-            x = QSVT(A, b, phi_qsvt)
+            x = QSVT_inversion(A, bprep, eps, kappa)
             return x
 
         res_dict = main()
