@@ -16,12 +16,13 @@
 ********************************************************************************
 """
 
-from qrisp import QuantumVariable, QuantumFloat, h, control, conjugate
-from qrisp.alg_primitives.reflection import reflection
-from qrisp.jasp import jrange, q_cond, check_for_tracing_mode, expectation_value
+from functools import partial
 import jax.numpy as jnp
 import jax
 import numpy as np
+from qrisp import QuantumVariable, QuantumFloat, h, control, conjugate
+from qrisp.alg_primitives.reflection import reflection
+from qrisp.jasp import jrange, q_cond, check_for_tracing_mode, expectation_value
 import scipy
 
 
@@ -97,6 +98,7 @@ def inner_lanczos(H, k, state_prep_func):
             
     return x_cond(k%2==0, even, odd, case_indicator, operand, k)
 
+
 def compute_expectation(meas_res):
     r"""
     Convert measurement results into an expectation value.
@@ -130,7 +132,13 @@ def compute_expectation(meas_res):
             expval += prob * (-1)
     return expval
 
+
 def lanczos_expvals(H, D, state_prep_func, mes_kwargs={}):
+
+    # Set default options
+    if not "shots" in mes_kwargs:
+        mes_kwargs["shots"] = 100000
+
     if check_for_tracing_mode():
 
         @jax.jit
@@ -140,7 +148,7 @@ def lanczos_expvals(H, D, state_prep_func, mes_kwargs={}):
             """
             return jnp.where(x == 0, 1, -1)
         
-        ev_function = expectation_value(inner_lanczos, shots = 50, post_processor = post_processor)
+        ev_function = expectation_value(inner_lanczos, shots = mes_kwargs["shots"], post_processor = post_processor)
         expvals = jnp.zeros(2*D)
 
         for k in range(0, 2*D):
@@ -156,6 +164,8 @@ def lanczos_expvals(H, D, state_prep_func, mes_kwargs={}):
     
     return expvals
 
+
+@partial(jax.jit, static_argnums=[1])
 def build_S_H_from_Tk(Tk_expvals, D):
     r"""
     Construct the overlap matrix $\mathbf{S}$ and the Krylov Hamiltonian matrix $\mathbf{H}$ from Chebyshev polynomial expectation values.
@@ -167,35 +177,40 @@ def build_S_H_from_Tk(Tk_expvals, D):
 
     Parameters
     ----------
-    Tk_expectation : dict
+    Tk_expectation : numpy.ndarray
         Dictionary of expectations $⟨T_k(H)⟩$ for each Chebyshev polynomial order $k$.
     D : int
         Krylov space dimension.
 
     Returns
     -------
-    S : ndarray
+    S : numpy.ndarray
         Overlap (Gram) matrix $\mathbf{S}$ for Krylov states.
-    H_mat : ndarray
+    H_mat : numpy.ndarray
         Hamiltonian matrix $\mathbf{H}$ in Krylov subspace.
 
     """
-    def Tk(k):
-        k = abs(k)
+    def Tk_vec(k):
+        k = jnp.abs(k)
         return Tk_expvals[k]
 
-    S = np.zeros((D, D))
-    H_mat = np.zeros((D, D))
+    # Create 2D arrays of indices i and j
+    i_indices = jnp.arange(D, dtype=jnp.int32)[:, None] # Column vector (D, 1)
+    j_indices = jnp.arange(D, dtype=jnp.int32)[None, :] # Row vector (1, D)
+    # The combination of these two will broadcast operations across a (D, D) grid
 
-    for i in range(D):
-        for j in range(D):
-            S[i, j] = 0.5 * (Tk(i + j) + Tk(abs(i - j)))
-            H_mat[i, j] = 0.25 * (
-                Tk(i + j + 1)
-                + Tk(abs(i + j - 1))
-                + Tk(abs(i - j + 1))
-                + Tk(abs(i - j - 1))
-            )
+    # Calculate S matrix using vectorized operations
+    # i+j and abs(i-j) are performed element-wise across the (D, D) grid
+    S = 0.5 * (Tk_vec(i_indices + j_indices) + Tk_vec(jnp.abs(i_indices - j_indices)))
+
+    # Calculate H_mat matrix using vectorized operations
+    H_mat = 0.25 * (
+        Tk_vec(i_indices + j_indices + 1)
+        + Tk_vec(jnp.abs(i_indices + j_indices - 1))
+        + Tk_vec(jnp.abs(i_indices - j_indices + 1))
+        + Tk_vec(jnp.abs(i_indices - j_indices - 1))
+    )
+
     return S, H_mat
 
 
