@@ -119,6 +119,24 @@ def inner_QSVT(A, operand_prep, phi_qsvt):
 
     return operand, in_case, temp
 
+@RUS
+def inner_QSVT_wrapper(matrix, operand_prep, phi_qsvt):
+
+    A = matrix()
+
+    operand, in_case, temp = inner_QSVT(A, operand_prep, phi_qsvt)
+
+    success_bool = (measure(temp) == 0) & (measure(in_case) == 0)
+
+    return success_bool, operand
+
+def QSVT(A, operand_prep, phi_qsvt):
+    def matrix():
+        return A
+       
+    operand = inner_QSVT_wrapper(matrix, operand_prep, phi_qsvt)
+    return operand
+
 def inner_QSVT_inversion(A, b, eps, kappa = None):
     """
     Quantum Linear System solver via Quantum Singular Value Transformation (QSVT).
