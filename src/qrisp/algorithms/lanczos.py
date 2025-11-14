@@ -425,20 +425,22 @@ def lanczos_alg(H, D, init_state, mes_kwargs={}, cutoff=1e-2, show_info=False):
     # Step 1: Quantum Lanczos: Get expectation values of Chebyshev polynomials
     Tk_expvals = lanczos_expvals(H, D, init_state, mes_kwargs)
 
-    #if check_for_tracing_mode():
+    """
+    if check_for_tracing_mode():
 
         # Step 2: Build matrices S and H
-        #S, H_mat = build_S_H_from_Tk_jax(Tk_expvals, D)
+        S, H_mat = build_S_H_from_Tk_jax(Tk_expvals, D)
 
         # Step 3: Regularize matrices via thresholding
-        #S_reg, H_reg = regularize_S_H_jax(S, H_mat, D, cutoff=cutoff)  
+        S_reg, H_reg = regularize_S_H_jax(S, H_mat, D, cutoff=cutoff)  
 
         # Step 4: Solve generalized eigenvalue problem $\mathbf{H}\vec{v}=\epsilon\mathbf{S}\vec{v}$
-        #evals, evecs = solve_generalized_eigenproblem_jax(H_reg, S_reg)
-        #evals, evecs = jax.scipy.linalg.eigh(H_reg, S_reg) # Solving the generalized eigenvalue problem not implemented in JAX 0.6
+        evals, evecs = jax.scipy.linalg.eigh(H_reg, S_reg) # Solving the generalized eigenvalue problem not implemented in JAX 0.6
 
-        #ground_state_energy = jnp.min(evals) * jnp.sum(coeffs)
+        ground_state_energy = jnp.min(evals) * jnp.sum(coeffs)
 
+        return ground_state_energy
+    """
 
     # Step 2: Build matrices S and H
     S, H_mat = build_S_H_from_Tk(Tk_expvals, D)
