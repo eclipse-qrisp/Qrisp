@@ -33,6 +33,7 @@ REQUIREMENTS = [
                 "pyyaml",
                 "requests",
                 "psutil",
+                "pyqsp",
                 "jax==0.6.0",
                 "jaxlib==0.6.0"]
 
