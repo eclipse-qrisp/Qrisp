@@ -33,8 +33,8 @@ def test_lanczos_algorithm():
     # Define Hamiltonian e.g. Heisenberg with custom couplings
     H = (1/4)*sum((X(i)*X(j) + Y(i)*Y(j) + 0.5*Z(i)*Z(j)) for i,j in G.edges())
 
-    energy_classical = H.ground_state_energy()
-    print(f"Ground state energy: {energy_classical}")
+    energy_exact = H.ground_state_energy()
+    print(f"Ground state energy: {energy_exact}")
 
     # Prepare initial state function (tensor product of singlets)
     M = nx.maximal_matching(G)
@@ -49,4 +49,4 @@ def test_lanczos_algorithm():
     energy, info = lanczos_alg(H, D, init_state, show_info=True)
     print(f"Ground state energy estimate: {energy}")
 
-    assert np.abs(energy_classical-energy) < 1e-2
+    assert np.abs(energy_exact-energy) < 1e-2
