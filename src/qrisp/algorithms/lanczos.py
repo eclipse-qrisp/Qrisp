@@ -402,7 +402,7 @@ def lanczos_alg(H, D, state_prep_func, mes_kwargs={}, cutoff=1e-2, show_info=Fal
         U_singlet = create_heisenberg_init_function(M)
 
         D = 6  # Krylov dimension
-        energy, info = lanczos_alg(H, D, U_singlet)
+        energy, info = lanczos_alg(H, D, U_singlet, show_info=True)
 
         print(f"Ground state energy estimate: {energy}")
 
