@@ -33,19 +33,18 @@ from qrisp.alg_primitives.prepare import prepare
 from qrisp.jasp import jrange, q_cond, RUS, check_for_tracing_mode
 from qrisp.operators import QubitOperator
 
-
-def inner_QSVT_inversion(A, b, phi_qsvt):
+def inner_QSVT(A, operand_prep, phi_qsvt):
     """
     Core implementation of the Quantum Singular Value Transformation (QSVT) algorithm.
 
     This function constructs the quantum circuit performing singular value transformation 
     on a block-encoded matrix A, applied to an input quantum state b, using 
-    a sequence of phase modulation angles phi_qsvt. The implementation follows the 
+    a sequence of phase modulation angles ``phi_qsvt``. The implementation follows the 
     alternating phase modulation framework of QSVT based on controlled reflections and 
     block-encoding unitaries, as described by `Gilyén et al. <https://arxiv.org/abs/1806.01838>`_.
 
     The algorithm applies a sequence of phase modulated reflection operators interleaved 
-    with applications of the block-encoding unitary U and its state preparation auxiliary, 
+    with applications of the block-encoding unitary :math:`U` and its state preparation auxiliary, 
     implementing a polynomial transformation of the singular values of A determined by 
     the phase angles phi_qsvt.
 
@@ -57,9 +56,8 @@ def inner_QSVT_inversion(A, b, phi_qsvt):
         Either a 3-tuple (U, state_prep, n) representing the block-encoding unitary and its 
         associated state preparation callable and ancilla qubit size, or a Hermitian matrix 
         that is internally block-encoded.
-    b : numpy.ndarray
-        Vector representing the input quantum state |b> to which the transformed operator 
-        is applied.
+    operand_prep : callable
+        Callable that prepares the input quantum state :math:`\ket{b}` as the operand.
     phi_qsvt : tuple or list of floats
         Phase modulation angles phi used in the singular value transformation polynomial.
 
@@ -95,9 +93,8 @@ def inner_QSVT_inversion(A, b, phi_qsvt):
     
     temp = QuantumBool()
     in_case = QuantumFloat(n)
-    operand = QuantumFloat(int(np.log2(b.shape[0])))
+    operand = operand_prep()
 
-    prepare(operand, b)
     h(temp) 
 
     phi_qsvt = jnp.flip(phi_qsvt)
@@ -122,10 +119,118 @@ def inner_QSVT_inversion(A, b, phi_qsvt):
 
     return operand, in_case, temp
 
-@RUS
-def inner_QSVT_inversion_wrapper(qlsp, angles):
+def inner_QSVT_inversion(A, b, eps, kappa = None):
     """
-    Wrapper for the Quantum Singular Value Transformation (QSVT) implementation, performing post-selection using the RUS (Repeat-Until-Success) protocol.
+    Quantum Linear System solver via Quantum Singular Value Transformation (QSVT).
+
+    This function implements a QSVT-based quantum circuit that approximates the matrix 
+    inversion operation :math:`A^{-1}` applied to an input quantum state :math:`\ket{b}` representing. 
+    Using polynomial phase factor sequences generated to approximate 
+    the inverse function within error tolerance ``eps``, it constructs the quantum singular 
+    value transformation that effectively solves the Quantum Linear System Problem (QLSP) :math:`A\\vec{x}=\\vec{b}`.
+
+    The block-encoding of matrix :math:`A` can be provided either explicitly as a block encoding tuple,
+    or implicitly via a Hermitian matrix which will be block-encoded internally via :meth:`Pauli decomposition <qrisp.operators.qubit.QubitOperator.pauli_block_encoding>`. 
+    Note that in the former case, the condition number :math:`\kappa` of :math:`A` also has to be provided. 
+
+    This function implements the core QSVT circuit without repeat-until-success or post-selection.
+
+    Parameters
+    ----------
+    A : tuple or numpy.ndarray
+        Either a 3-tuple (U, state_prep, n) representing the block-encoding unitary and its 
+        associated state preparation callable and ancilla qubit size, or a Hermitian matrix 
+        that is internally block-encoded.
+    b : numpy.ndarray or callable
+        Either a vector :math:`\\vec{b}` of the linear system, or a
+        callable that prepares the corresponding quantum state ``operand``.
+    eps : float
+        Target precision :math:`\epsilon`, such that the prepared state :math:`\ket{\\tilde{x}}` is within error
+        :math:`\epsilon` of :math:`\ket{x}`.
+    kappa : float, optional
+        Condition number :math:`\\kappa` of :math:`A`. Required when ``A`` is
+        a block-encoding tuple ``(U, state_prep, n)`` rather than a matrix.
+
+    Returns
+    -------
+    operand : QuantumVariable
+        Quantum register containing the operand state after applying the QSVT circuit.
+    in_case : QuantumFloat
+        Auxiliary quantum float register encoding the internal block-encoding state. Must be 
+        measured to |0> for successful transformation.
+    temp : QuantumBool
+        Ancillary qubit used in reflections and measurement for success post-selection.
+    """
+    if isinstance(A, tuple) and len(A) == 3:
+        kappa = kappa
+    else:
+        kappa = np.linalg.cond(A)
+
+    def inversion_angles(eps, kappa):
+        """
+        Compute phase angles for QSVT polynomial approximation of matrix inversion.
+
+        This helper function generates a sequence of phase modulation angles ``phi_qsvt`` 
+        that define a quantum singular value transformation polynomial approximating 
+        the function :math:`f(x) = 1/x` on the domain :math:`\[1/\kappa, 1\]` within precision
+        ``eps``. It leverages the `pyqsp library <https://github.com/ichuang/pyqsp>`_'s polynomial construction for rational 
+        function approximation, ensuring boundedness and numerical stability.
+
+        The function first constructs a polynomial approximation of the inverse function 
+        using the condition number ``kappa`` and specified precision `eps`. Then, it translates 
+        the QSP phase sequence into the corresponding QSVT angles by applying appropriate 
+        phase shifts, matching the alternating phase modulation framework of QSVT.
+
+        Parameters
+        ----------
+        eps : float
+            Target precision :math:`\epsilon`, such that the prepared state :math:`\ket{\\tilde{x}}` is within error
+            :math:`\epsilon` of :math:`\ket{x}`.
+        kappa : float, optional
+            Condition number :math:`\\kappa` of :math:`A`. Required when ``A`` is
+            a block-encoding tuple ``(U, state_prep, n)`` rather than a matrix.
+
+        Returns
+        -------
+        phi_qsvt : numpy.ndarray
+            Array of phase modulation angles encoding the QSVT polynomial for matrix inversion.
+        s : float
+            Scaling factor from the polynomial generation process, related to norm bounding.
+        """
+        from pyqsp.poly import PolyOneOverX
+        from pyqsp.angle_sequence import QuantumSignalProcessingPhases
+
+        pcoefs, s = PolyOneOverX().generate(kappa, eps, return_coef=True, ensure_bounded=True, return_scale=True)
+        phi_qsp = QuantumSignalProcessingPhases(pcoefs, signal_operator="Wx", tolerance=0.00001)
+        phi_qsp = np.array(phi_qsp)
+
+        phi_qsvt = np.empty(len(phi_qsp))
+        phi_qsvt[0] = phi_qsp[0] + 3 * np.pi / 4 - (3 + len(phi_qsp) % 4) * np.pi / 2
+        phi_qsvt[1:-1] = phi_qsp[1:-1] + np.pi / 2
+        phi_qsvt[-1] = phi_qsp[-1] - np.pi / 4
+
+        return jnp.array(phi_qsvt), s
+
+    phi_inversion, _ = inversion_angles(eps, kappa)
+    
+    if callable(b):
+        def bprep():
+            return b()
+
+    else:
+        def bprep():
+            operand = QuantumFloat(int(np.log2(b.shape[0])))
+            prepare(operand, b)
+            return operand
+    
+    operand, in_case, temp = inner_QSVT(A, bprep, phi_inversion)
+
+    return operand, in_case, temp
+
+@RUS(static_argnums=[1, 2])
+def inner_QSVT_inversion_wrapper(qlsp, eps, kappa = None):
+    """
+    Wrapper for the Quantum Linear System solver via Quantum Singular Value Transformation (QSVT), performing post-selection using the RUS (Repeat-Until-Success) protocol.
     
     This function calls a supplied problem generator ``qlsp`` to obtain the linear system, 
     ``angles`` to obtain the QSVT phase angles, and constructs the required circuit via
@@ -141,8 +246,12 @@ def inner_QSVT_inversion_wrapper(qlsp, angles):
     qlsp : callable
         A function that returns a tuple (A, b) representing the block-encoded operator 
         and input state vector for the quantum linear system problem.
-    angles : callable
-        A function returning the phase angles tuple used in the QSVT polynomial transformation.
+    eps : float
+        Target precision :math:`\epsilon`, such that the prepared state :math:`\ket{\\tilde{x}}` is within error
+        :math:`\epsilon` of :math:`\ket{x}`.
+    kappa : float, optional
+        Condition number :math:`\\kappa` of :math:`A`. Required when ``A`` is
+        a block-encoding tuple ``(U, state_prep, n)`` rather than a matrix.
 
     Returns
     -------
@@ -156,14 +265,18 @@ def inner_QSVT_inversion_wrapper(qlsp, angles):
     """
     A, b = qlsp()
 
-    phi_qsvt = angles()
-    operand, in_case, temp = inner_QSVT_inversion(A, b, phi_qsvt)
+    if isinstance(A, tuple) and len(A) == 3:
+        kappa = kappa
+    else:
+        kappa = np.linalg.cond(A)
+
+    operand, in_case, temp = inner_QSVT_inversion(A, b, eps, kappa)
 
     success_bool = (measure(temp) == 0) & (measure(in_case) == 0)
 
     return success_bool, operand
 
-def QSVT_inversion(A, b, phi_qsvt):
+def QSVT_inversion(A, b, eps, kappa=None):
     """
     Performs the Quantum Singular Value Transformation (QSVT) for matrix inversion.
 
@@ -179,11 +292,15 @@ def QSVT_inversion(A, b, phi_qsvt):
     A : tuple or numpy.ndarray
         A block-encoded operator tuple (U, state_prep, n) or a Hermitian matrix representing 
         the operator to transform.
-    b : numpy.ndarray
-        Vector representing the input quantum state to which the polynomial transformation is applied.
-    phi_qsvt : tuple or list of floats
-        Phase angles defining the polynomial transformation in the QSVT.
-
+    b : numpy.ndarray or callable
+        Either a vector :math:`\\vec{b}` of the linear system, or a
+        callable that prepares the corresponding quantum state ``operand``.
+    eps : float
+        Target precision :math:`\epsilon`, such that the prepared state :math:`\ket{\\tilde{x}}` is within error
+        :math:`\epsilon` of :math:`\ket{x}`.
+    kappa : float, optional
+        Condition number :math:`\\kappa` of :math:`A`. Required when ``A`` is
+        a block-encoding tuple ``(U, state_prep, n)`` rather than a matrix.
     Returns
     -------
     operand : QuantumVariable
@@ -311,7 +428,7 @@ def QSVT_inversion(A, b, phi_qsvt):
         #  [ 0.  0.  0. -2.  0.  0.  0.  5.]]
 
     As before, we obtain the QSVT phase angles by calculating :math:`\kappa` and setting our desired 
-    precision :math:`\epsilon`. We again rescale $A$.
+    precision :math:`\epsilon`. We again rescale :math:`A`.
 
     ::
 
@@ -321,7 +438,7 @@ def QSVT_inversion(A, b, phi_qsvt):
         phi_qsvt, s = qsvt_angles_scaling(kappa, eps)
 
     
-    This matrix can be decomposed using three unitaries: the identity $I$, and two shift operators $V\colon\ket{k}\\rightarrow-\ket{k+N/2 \mod N}$ and $V^{\dagger}\colon\ket{k}\\rightarrow-\ket{k-N/2 \mod N}$.
+    This matrix can be decomposed using three unitaries: the identity :math:`I`, and two shift operators :math:`V\colon\ket{k}\\rightarrow-\ket{k+N/2 \mod N}` and :math:`V^{\dagger}\colon\ket{k}\\rightarrow-\ket{k-N/2 \mod N}`.
     We define their corresponding functions:
 
     ::
@@ -403,9 +520,6 @@ def QSVT_inversion(A, b, phi_qsvt):
     """
     def qlsp():
         return A, b
-    
-    def angles():
-        return jnp.array(phi_qsvt)
-    
-    operand = inner_QSVT_inversion_wrapper(qlsp, angles)
+       
+    operand = inner_QSVT_inversion_wrapper(qlsp, eps, kappa)
     return operand
