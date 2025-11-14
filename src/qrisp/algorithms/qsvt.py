@@ -34,7 +34,7 @@ from qrisp.jasp import jrange, q_cond, RUS, check_for_tracing_mode
 from qrisp.operators import QubitOperator
 
 
-def inner_QSVT_inversion(A_scaled, b, phi_qsvt):
+def inner_QSVT_inversion(A, b, phi_qsvt):
     """
     Core implementation of the Quantum Singular Value Transformation (QSVT) algorithm.
 
@@ -53,7 +53,7 @@ def inner_QSVT_inversion(A_scaled, b, phi_qsvt):
 
     Parameters
     ----------
-    A_scaled : tuple or numpy.ndarray
+    A : tuple or numpy.ndarray
         Either a 3-tuple (U, state_prep, n) representing the block-encoding unitary and its 
         associated state preparation callable and ancilla qubit size, or a Hermitian matrix 
         that is internally block-encoded.
@@ -73,10 +73,10 @@ def inner_QSVT_inversion(A_scaled, b, phi_qsvt):
     temp : QuantumBool
         Ancillary qubit used in reflections and measurement for success post-selection.
     """
-    if isinstance(A_scaled, tuple) and len(A_scaled) == 3:
-        U, state_prep, n = A_scaled
+    if isinstance(A, tuple) and len(A) == 3:
+        U, state_prep, n = A
     else:
-        H = QubitOperator.from_matrix(A_scaled, reverse_endianness=True)
+        H = QubitOperator.from_matrix(A, reverse_endianness=True)
         U, state_prep, n = (H.pauli_block_encoding())  # Construct block encoding of A as a set of Pauli unitaries
 
     def reflection(case, temp, phase):
@@ -139,7 +139,7 @@ def inner_QSVT_inversion_wrapper(qlsp, angles):
     Parameters
     ----------
     qlsp : callable
-        A function that returns a tuple (A_scaled, b) representing the block-encoded operator 
+        A function that returns a tuple (A, b) representing the block-encoded operator 
         and input state vector for the quantum linear system problem.
     angles : callable
         A function returning the phase angles tuple used in the QSVT polynomial transformation.
@@ -154,16 +154,16 @@ def inner_QSVT_inversion_wrapper(qlsp, angles):
         The quantum state after successful QSVT circuit execution corresponding to the polynomial 
         transformed state.
     """
-    A_scaled, b = qlsp()
+    A, b = qlsp()
 
     phi_qsvt = angles()
-    operand, in_case, temp = inner_QSVT_inversion(A_scaled, b, phi_qsvt)
+    operand, in_case, temp = inner_QSVT_inversion(A, b, phi_qsvt)
 
     success_bool = (measure(temp) == 0) & (measure(in_case) == 0)
 
     return success_bool, operand
 
-def QSVT_inversion(A_scaled, b, phi_qsvt):
+def QSVT_inversion(A, b, phi_qsvt):
     """
     Performs the Quantum Singular Value Transformation (QSVT) for matrix inversion.
 
@@ -176,7 +176,7 @@ def QSVT_inversion(A_scaled, b, phi_qsvt):
 
     Parameters
     ----------
-    A_scaled : tuple or numpy.ndarray
+    A : tuple or numpy.ndarray
         A block-encoded operator tuple (U, state_prep, n) or a Hermitian matrix representing 
         the operator to transform.
     b : numpy.ndarray
@@ -245,10 +245,6 @@ def QSVT_inversion(A_scaled, b, phi_qsvt):
     
     We now rescale our matrix by solve this linear system using the CKS quantum algorithm:
 
-    ::
-
-    A_scaled = A * s
-
     We now solve this linear system using QSVT for matrix inversion:
 
     ::
@@ -259,7 +255,7 @@ def QSVT_inversion(A_scaled, b, phi_qsvt):
         @terminal_sampling
         def main():
 
-            x = QSVT_inversion(A_scaled, b, phi_qsvt)
+            x = QSVT_inversion(A, b, phi_qsvt)
             return x
 
         res_dict = main()
@@ -273,7 +269,7 @@ def QSVT_inversion(A_scaled, b, phi_qsvt):
         for k, v in res_dict.items():
             res_dict[k] = v**0.5
 
-        q = np.array([res_dict.get(key, 0) for key in range(n)])
+        q = np.array([res_dict.get(key, 0) for key in range(4)])
         c = (np.linalg.inv(A) @ b) / np.linalg.norm(np.linalg.inv(A) @ b)
         print("QUANTUM SIMULATION\\n", q, "\\nCLASSICAL SOLUTION\\n", c)
         # QUANTUM SIMULATION                                                              
@@ -324,7 +320,6 @@ def QSVT_inversion(A_scaled, b, phi_qsvt):
 
         phi_qsvt, s = qsvt_angles_scaling(kappa, eps)
 
-        A_scaled = A * s
     
     This matrix can be decomposed using three unitaries: the identity $I$, and two shift operators $V\colon\ket{k}\\rightarrow-\ket{k+N/2 \mod N}$ and $V^{\dagger}\colon\ket{k}\\rightarrow-\ket{k-N/2 \mod N}$.
     We define their corresponding functions:
@@ -350,7 +345,7 @@ def QSVT_inversion(A_scaled, b, phi_qsvt):
 
     ::
 
-        coeffs = np.array([5,1,1]) * s
+        coeffs = np.array([5,1,1])
         alpha = np.sum(coeffs)
 
         def U(case, operand):
@@ -399,7 +394,7 @@ def QSVT_inversion(A_scaled, b, phi_qsvt):
         @count_ops(meas_behavior="0")
         def main():
 
-            x = QSVT(A_scaled, b, phi_qsvt)
+            x = QSVT(A, b, phi_qsvt)
             return x
 
         res_dict = main()
@@ -407,7 +402,7 @@ def QSVT_inversion(A_scaled, b, phi_qsvt):
         # {'rz': 58, 'x': 403, 'cx': 291, 'gphase': 115, 'u3': 121, 'p': 57, 'h': 2, 'measure': 2}   
     """
     def qlsp():
-        return A_scaled, b
+        return A, b
     
     def angles():
         return jnp.array(phi_qsvt)
