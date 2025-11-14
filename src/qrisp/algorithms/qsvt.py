@@ -121,6 +121,39 @@ def inner_QSVT(A, operand_prep, phi_qsvt):
 
 @RUS
 def inner_QSVT_wrapper(matrix, operand_prep, phi_qsvt):
+    """
+    Wrapper for Quantum Singular Value Transformation (QSVT), performing post-selection using the RUS (Repeat-Until-Success) protocol.
+    
+    This function calls a supplied problem generator ``matrix`` to obtain the matrix :math`A`, 
+    an initial state preparation function ``operand_prep``, and a sequence of phase angles ``phi_qsvt``. 
+    It invokes :func:`inner_QSVT`, and returns the solution operand QuantumFloat
+    if post-selection on auxiliary QuantumFloats succeeds.
+
+    The algorithm succeeds if both auxiliary QuantumFloats ``in_case`` and ``temp`` are measured
+    in the :math:`\ket{0}` state. If post-selection fails, the :func:`RUS` decorator repeats the
+    simulation until success.
+
+    Parameters
+    ----------
+    matrix : callable
+        A function that returns the block-encoded matrix :math:`A` used in
+        the QSVT procedure.
+    operand_prep : callable
+        A callable that prepares the corresponding quantum state ``operand``.
+    phi_qsvt : jnp.array
+        Sequence of phase angles defining the polynomial transformation implemented
+        by the QSVT circuit.
+
+    Returns
+    -------
+    success_bool : bool
+        Indicates whether post-selection succeeded. Only when ``success_bool`` is ``True``
+        does ``operand`` contain the proper solution state; otherwise, the simulation
+        will run again according to the RUS protocol.
+    operand : QuantumVariable
+        The quantum state after successful QSVT circuit execution corresponding to the polynomial 
+        transformed state.
+    """
 
     A = matrix()
 
