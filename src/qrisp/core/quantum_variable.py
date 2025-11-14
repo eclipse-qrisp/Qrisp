@@ -723,7 +723,11 @@ class QuantumVariable:
         """
 
         # These imports are here to avoid circular dependencies
-        from qrisp import init_state_recursive, QuantumFloat
+        from qrisp.misc import check_if_fresh
+        from qrisp import state_preparation
+
+        if not check_if_fresh(self.reg, self.qs):
+            raise Exception("Tried to initialize qubits which are not fresh anymore.")
 
         expected_length = 2**self.size
         if len(state_array) != expected_length:
@@ -731,29 +735,7 @@ class QuantumVariable:
                 f"Length of statevector must be {expected_length} for {self.size} qubits, got {len(state_array)}."
             )
 
-        # Is there a better way to do this without initializing extra QuantumFloats?
-        quantum_floats = [QuantumFloat(1) for _ in range(self.size)]
-
-        init_state_recursive(state_array, quantum_floats)
-
-        # At this point, every QuantumFloat in quantum_floats has been initialized
-
-        # The idea now is to compile the circuit and extract the statevector
-        # TODO: I need to avoid `compile` here, as otherwise the computed statevector is not correct anymore!
-        # prepared_statevector = quantum_floats[0].qs.compile().statevector_array()
-        prepared_statevector = quantum_floats[0].qs.statevector_array()
-
-        # We still have some workspace_ auxiliary qubits in the QuantumFloats.
-
-        # Below, we filter the statevector to only keep the amplitudes corresponding
-        # to the original QuantumVariable.
-        # This is a temporary trick until we have a better way to extract
-        # This does not work if there are zero amplitudes in between!
-        prepared_statevector = prepared_statevector[prepared_statevector != 0]
-
-        # Right now, we just return the prepared statevector (of course we will need to
-        # append it to the QuantumVariable in the final version)
-        return prepared_statevector
+        state_preparation(self, state_array)
 
     def init_state(self, state_dic):
         r"""

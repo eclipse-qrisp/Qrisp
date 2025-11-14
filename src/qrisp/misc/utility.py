@@ -1240,83 +1240,187 @@ def custom_qv(labels, decoder=None, qs=None, name=None):
     return CustomQuantumVariable(qs=qs, name=name)
 
 
+# def rotation_from_state(vec):
+#     """Return U3 parameters mapping $|0\rangle$ to the given single-qubit state vector.
+
+#     The state vector should be normalized with the first component real and positive.
+
+#     Parameters
+#     ----------
+#     vec : array-like
+#         A normalized single-qubit state vector with the first component real and positive.
+
+#     Returns
+#     -------
+#     tuple[float, float, float]
+#         The (theta, phi, lambda) parameters for the U3 gate.
+
+#     """
+#     a, b = vec
+#     theta = 2 * np.arccos(np.real(a))
+#     phi = 0.0 if np.abs(b) < 1e-12 else np.angle(b)
+#     lam = 0.0
+#     return theta, phi, lam
+
+
 def rotation_from_state(vec):
-    """Return U3 parameters mapping $|0\rangle$ to the given single-qubit state vector.
-
-    The state vector should be normalized with the first component real and positive.
-
-    Parameters
-    ----------
-    vec : array-like
-        A normalized single-qubit state vector with the first component real and positive.
-
-    Returns
-    -------
-    tuple[float, float, float]
-        The (theta, phi, lambda) parameters for the U3 gate.
-
-    """
+    """Map |0> → a|0> + b|1>, with a real ≥ 0; return (theta, phi, lam)."""
     a, b = vec
-    theta = 2 * np.arccos(np.real(a))
-    phi = 0.0 if np.abs(b) < 1e-12 else np.angle(b)
+    # numerical guard
+    a_real = float(np.real_if_close(a))
+    if a_real < 0:
+        # flip a global π phase to make 'a' non-negative real
+        a_real = -a_real
+        b = -b
+    theta = 2.0 * np.arccos(a_real)
+    phi = float(np.angle(b)) if abs(b) > 1e-12 else 0.0
     lam = 0.0
-    return theta, phi, lam
+    return float(theta), float(phi), float(lam)
 
 
-def init_state_recursive(amps, qubits):
-    """
-    Recursively prepare a normalized state $|\psi\rangle = \sum_i \text{amps}_i
-    |i\rangle$ on the given qubits.
+def qswitch_sequential(operand, case, case_function, control_qbl, ctrl=None):
+    r"""
+    Executes a switch - case statement distinguishing between a list of
+    given in-place functions.
 
+    More precisely, the qswitch applies the unitary $U_i$ to the operand in state $\ket{\psi}$ given that the case variable is in state $\ket{i}$, i.e.,
+
+    .. math::
+
+        \text{qswitch}\ket{i}_{\text{case}}\ket{\psi}_{\text{operand}} = \ket{i}_{\text{case}}U_i\ket{\psi}_{\text{operand}}
 
     Parameters
     ----------
-    amps : array-like
-        The amplitudes of the state to prepare. Must be normalized.
+    operand : Qubit
+        The argument on which the case function operates.
+    case : list[Qubit]
+        The index specifying which case should be executed.
+    case_function : callable
+        A function ``case_function(i, operand)`` performing some in-place operation on ``operand`` depending on a nonnegative integer index ``i`` specifying the case.
 
-    qubits : list[QuantumFloat]
-        List of QuantumFloats (MSB to LSB) to prepare the state on.
+    """
 
+    from qrisp.jasp import check_for_tracing_mode, jrange
+    from qrisp import conjugate, control, mcx
+
+    case_amount = 2 ** len(case)
+
+    if check_for_tracing_mode():
+        xrange = jrange
+    else:
+        xrange = range
+
+    for i in xrange(case_amount):
+        with conjugate(mcx)(case, control_qbl, ctrl_state=i):
+            with control(control_qbl):
+                if ctrl is None:
+                    case_function(i, operand)
+                else:
+                    with control(ctrl):
+                        case_function(i, operand)
+
+
+def state_preparation(qv, target_array: np.ndarray):
+    """
+    Prepare an arbitrary n-qubit state |psi> = sum_i target_array[i] |i>
+    with qubit order |q0 q1 ... q_{n-1}>, where q0 is MSB and q_{n-1} is LSB.
+
+    This builds an n-layer tree of multiplexers:
+      - layer 0: R_y on q0
+      - layer 1..n-2: R_y on q_l multiplexed by (q0..q_{l-1})
+      - layer n-1: U3 + accumulated phases on q_{n-1} multiplexed by (q0..q_{n-2})
+
+    The function allocates QuantumFloat(n), compiles the circuit, and returns the QuantumSession.
     """
 
     # This imports must be here to avoid circular imports
-    from qrisp import ry, u3, qswitch, gphase
+    from qrisp import ry, u3, gphase, QuantumBool
 
-    if len(qubits) == 1:
-        norm = np.linalg.norm(amps)
-        vec = amps / norm if norm > 1e-12 else amps
-        alpha = np.angle(vec[0])
-        vec *= np.exp(-1j * alpha)
-        theta, phi, lam = rotation_from_state(vec)
-        u3(theta, phi, lam, qubits[0])
-        gphase(alpha, qubits[0])
-        return
+    target_array = np.array(target_array, dtype=np.complex128)
 
-    half = len(amps) // 2
-    v0, v1 = amps[:half], amps[half:]
-    n0, n1 = np.linalg.norm(v0), np.linalg.norm(v1)
+    n = int(np.log2(target_array.size))
 
-    theta0 = 2 * np.arccos(n0)
-    ry(theta0, qubits[0])
+    thetas = [None] * max(1, n - 1)
+    for l in range(n - 1):
+        thetas[l] = np.zeros(1 << l, dtype=float)
 
-    alpha0 = np.angle(v0[0])
-    alpha1 = np.angle(v1[0])
+    leaf_U = np.zeros((1 << (n - 1), 3), dtype=float)
+    leaf_phase = np.zeros(1 << (n - 1), dtype=float)
 
-    v0n = v0 / (n0 * np.exp(1j * alpha0)) if n0 > 1e-12 else v0
-    v1n = v1 / (n1 * np.exp(1j * alpha1)) if n1 > 1e-12 else v1
+    def preprocess(subvec, level, prefix_idx, acc_phase):
+        """
+        subvec: length 2**(n - level)
+        level: 0..n-1, current target qubit is q_level (except leaves)
+        prefix_idx: integer (0..2**level-1) encoding (q0..q_{level-1}) with q_{level-1} as LSB in idx
+        acc_phase: float, accumulated phase to re-apply at the leaf
+        Fills: thetas[level], leaf_U, leaf_phase
+        """
+        L = subvec.size
+        if L == 2:
+            a0_phase = float(np.angle(subvec[0])) if abs(subvec[0]) > 1e-12 else 0.0
+            vec_n = subvec * np.exp(-1j * a0_phase)
+            theta, phi, lam = rotation_from_state(vec_n)
+            leaf_U[prefix_idx, :] = (theta, phi, lam)
+            leaf_phase[prefix_idx] = acc_phase + a0_phase
+            return
 
-    def case_function(i, sub_qubits):
-        init_state_recursive(v0n if i == 0 else v1n, sub_qubits)
-        phase_i = alpha0 if i == 0 else alpha1
-        gphase(phase_i, sub_qubits[0])
+        half = L // 2
+        v0, v1 = subvec[:half], subvec[half:]
+        n0, n1 = np.linalg.norm(v0), np.linalg.norm(v1)
 
-    qswitch(
-        operand=qubits[1:],
-        case=qubits[0],
-        case_function=case_function,
-        method="auto",
-        ctrl=None,
-    )
+        theta_l = 2.0 * float(np.arccos(n0 if n0 <= 1.0 else 1.0))
+        thetas[level][prefix_idx] = theta_l
+
+        alpha0 = float(np.angle(v0[0])) if n0 > 1e-12 else 0.0
+        alpha1 = float(np.angle(v1[0])) if n1 > 1e-12 else 0.0
+
+        v0n = v0 / (n0 * np.exp(1j * alpha0)) if n0 > 1e-12 else v0
+        v1n = v1 / (n1 * np.exp(1j * alpha1)) if n1 > 1e-12 else v1
+
+        preprocess(v0n, level + 1, (prefix_idx << 1) | 0, acc_phase + alpha0)
+        preprocess(v1n, level + 1, (prefix_idx << 1) | 1, acc_phase + alpha1)
+
+    preprocess(target_array, level=0, prefix_idx=0, acc_phase=0.0)
+
+    control_qbl = QuantumBool()
+
+    ry(thetas[0][0], qv[0])
+
+    for l in range(1, n - 1):
+        case_qubits = [qv[k] for k in range(l - 1, -1, -1)]
+        thetas_l = thetas[l]
+
+        def make_case_fn(thetas_arr):
+            def case_fn(i, qb):
+                ry(float(thetas_arr[i]), qb)
+
+            return case_fn
+
+        qswitch_sequential(
+            operand=qv[l],
+            case=case_qubits,
+            case_function=make_case_fn(thetas_l),
+            control_qbl=control_qbl,
+        )
+
+    if n == 1:
+        theta, phi, lam = leaf_U[0]
+        u3(theta, phi, lam, qv[0])
+        gphase(leaf_phase[0], qv[0])
+    else:
+        case_qubits = [qv[k] for k in range(n - 2, -1, -1)]
+
+        def final_case_fn(i, qb):
+            theta_i, phi_i, lam_i = map(float, leaf_U[i])
+            u3(theta_i, phi_i, lam_i, qb)
+            gphase(float(leaf_phase[i]), qb)
+
+        qswitch_sequential(
+            operand=qv[n - 1],
+            case=case_qubits,
+            case_function=final_case_fn,
+            control_qbl=control_qbl,
+        )
 
 
 def init_state(qv, target_array):
