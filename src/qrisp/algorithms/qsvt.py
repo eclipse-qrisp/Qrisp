@@ -320,7 +320,8 @@ def QSVT_inversion(A, b, eps, kappa=None):
     
     **Example 1: Solving a 4×4 Hermitian system**
 
-    First, we define a small Hermitian matrix :math:`A` and a right-hand side vector :math:`\\vec{b}`:
+    First, we define a small Hermitian matrix :math:`A` and a right-hand side vector :math:`\\vec{b}`, as 
+    well as our desired precision :math:`\epsilon`:
 
     ::
 
@@ -333,34 +334,7 @@ def QSVT_inversion(A, b, eps, kappa=None):
 
         b = np.array([0, 1, 1, 1])
 
-    Next, we calculate the condition number :math:`\kappa`, and define our desired precision
-    :math:`\epsilon` in order to obtain the correct phase angles ``phi_qsvt``, and the rescaling
-    factor (since our polynomial has to be bounded in the scope of QSVT).
-
-    ::
-
-        from pyqsp.poly import PolyOneOverX
-        from pyqsp.angle_sequence import QuantumSignalProcessingPhases
-
-        def qsvt_angles_scaling(kappa, eps):   
-
-            pcoefs, s = PolyOneOverX().generate(kappa, eps, return_coef=True, ensure_bounded=True, return_scale=True)
-            phi_qsp = QuantumSignalProcessingPhases(pcoefs, signal_operator="Wx", tolerance=0.00001)
-            phi_qsp = np.array(phi_qsp)
-
-            phi_qsvt = np.empty(len(phi_qsp))
-            phi_qsvt[0] = phi_qsp[0] + 3 * np.pi / 4 - (3 + len(phi_qsp) % 4) * np.pi / 2
-            phi_qsvt[1:-1] = phi_qsp[1:-1] + np.pi / 2
-            phi_qsvt[-1] = phi_qsp[-1] - np.pi / 4
-
-            return phi_qsvt, s
-
-        kappa = np.linalg.cond(A)
-        eps = 0.01
-
-        phi_qsvt, s = qsvt_angles_scaling(kappa, eps)
-    
-    We now rescale our matrix by solve this linear system using the CKS quantum algorithm:
+        eps = 0.001
 
     We now solve this linear system using QSVT for matrix inversion:
 
@@ -389,8 +363,8 @@ def QSVT_inversion(A, b, eps, kappa=None):
         q = np.array([res_dict.get(key, 0) for key in range(4)])
         c = (np.linalg.inv(A) @ b) / np.linalg.norm(np.linalg.inv(A) @ b)
         print("QUANTUM SIMULATION\\n", q, "\\nCLASSICAL SOLUTION\\n", c)
-        # QUANTUM SIMULATION                                                              
-        #  [0.02712914 0.55708366 0.53037499 0.63845452] 
+        # QUANTUM SIMULATION
+        #  [0.02898903 0.55472887 0.53005196 0.64068747] 
         # CLASSICAL SOLUTION
         #  [0.02944539 0.55423278 0.53013239 0.64102936]
 
