@@ -1,8 +1,8 @@
 ﻿.. _lanczos_alg:
 
 
-Lanczos method
-==============
+Lanczos Algorithm
+=================
 
 .. currentmodule:: qrisp.lanczos
 
@@ -11,7 +11,7 @@ Lanczos method
 .. autosummary::
    :toctree: generated/
    
+   lanczos_expvals
    inner_lanczos
-   compute_expectation
    build_S_H_from_Tk
    regularize_S_H

@@ -34,10 +34,10 @@ def inner_lanczos(H, k, state_prep_func):
     of Chebyshev polynomials $T_k(H)$, as described in 
     `"Exact and efficient Lanczos method on a quantum computer" <https://quantum-journal.org/papers/q-2023-05-23-1018/>`_.
     
-    For each polynomial order $k = 0, \dots, 2D-1$, it prepares and measures circuits corresponding 
+    For each polynomial order $k = 0, \dots, 2D-1$, it prepares circuits corresponding 
     either to $\bra{\psi\lfloor k/2\rfloor}R\ket{\psi\lfloor k/2\rfloor}$ for even $k$, or
     $\bra{\psi\lfloor k/2\rfloor}U\ket{\psi\lfloor k/2\rfloor}$ for odd $k$. 
-    The measured statistics encode the expectation values $\langle T_k(H)\rangle$. 
+    The measured statistics of the prepared quantum states encode the expectation values $\langle T_k(H)\rangle$. 
 
     Parameters
     ----------
@@ -47,13 +47,11 @@ def inner_lanczos(H, k, state_prep_func):
         Krylov space dimension. Determines maximum Chebyshev order $(2D-1)$.
     state_prep_func : callable 
         Function preparing the initial system state $\ket{\psi_0}$ on a (operand) QuantumVariable.
-    mes_kwargs : dict
-        The keyword arguments for the measurement function.
 
     Returns
     -------
-    meas_res : dict
-        Measurement results for each Chebyshev polynomial order $k$, suitable for calculation of expectation values $\langle T_k(H)\rangle$.
+    QuantumVariable
+        A QuantumVariable for which the measured statistics encodes the expectation values $\langle T_k(H)\rangle$. 
 
     """
 
@@ -134,6 +132,35 @@ def compute_expectation(meas_res):
 
 
 def lanczos_expvals(H, D, state_prep_func, mes_kwargs={}):
+    r"""
+    Perform the quantum subroutine of the exact and efficient Lanczos method to estimate expectation values of Chebyshev polynomials of a Hamiltonian.
+
+    This function implements the Krylov space construction via block-encodings 
+    of Chebyshev polynomials $T_k(H)$, as described in 
+    `"Exact and efficient Lanczos method on a quantum computer" <https://quantum-journal.org/papers/q-2023-05-23-1018/>`_.
+    
+    For each polynomial order $k = 0, \dotsc, 2D-1$, it prepares and measures circuits corresponding 
+    either to $\bra{\psi\lfloor k/2\rfloor}R\ket{\psi\lfloor k/2\rfloor}$ for even $k$, or
+    $\bra{\psi\lfloor k/2\rfloor}U\ket{\psi\lfloor k/2\rfloor}$ for odd $k$. 
+    The measured statistics encode the expectation values $\langle T_k(H)\rangle$. 
+
+    Parameters
+    ----------
+    H : QubitOperator
+        Hamiltonian for which to estimate the ground-state energy.
+    D : int
+        Krylov space dimension. Determines maximum Chebyshev order $(2D-1)$.
+    state_prep_func : callable 
+        Function preparing the initial system state $\ket{\psi_0}$ on a (operand) QuantumVariable.
+    mes_kwargs : dict, optional
+        The keyword arguments for the measurement function.
+
+    Returns
+    -------
+    expvals : ndarray
+        The expectation values $\langle T_k(H)\rangle$ for $k=0, \dotsc, 2D-1$.
+
+    """
 
     # Set default options
     if not "shots" in mes_kwargs:
@@ -165,7 +192,6 @@ def lanczos_expvals(H, D, state_prep_func, mes_kwargs={}):
     return expvals
 
 
-@partial(jax.jit, static_argnums=[1])
 def build_S_H_from_Tk(Tk_expvals, D):
     r"""
     Construct the overlap matrix $\mathbf{S}$ and the Krylov Hamiltonian matrix $\mathbf{H}$ from Chebyshev polynomial expectation values.
@@ -177,19 +203,46 @@ def build_S_H_from_Tk(Tk_expvals, D):
 
     Parameters
     ----------
-    Tk_expectation : numpy.ndarray
+    Tk_expectation : ndarray
         Dictionary of expectations $⟨T_k(H)⟩$ for each Chebyshev polynomial order $k$.
     D : int
         Krylov space dimension.
 
     Returns
     -------
-    S : numpy.ndarray
+    S : ndarray
         Overlap (Gram) matrix $\mathbf{S}$ for Krylov states.
-    H_mat : numpy.ndarray
+    H_mat : ndarray
         Hamiltonian matrix $\mathbf{H}$ in Krylov subspace.
 
     """
+    def Tk_vec(k):
+        k = np.abs(k)
+        return Tk_expvals[k]
+
+    # Create 2D arrays of indices i and j
+    i_indices = np.arange(D, dtype=np.int32)[:, None] # Column vector (D, 1)
+    j_indices = np.arange(D, dtype=np.int32)[None, :] # Row vector (1, D)
+    # The combination of these two will broadcast operations across a (D, D) grid
+
+    # Calculate S matrix using vectorized operations
+    # i+j and abs(i-j) are performed element-wise across the (D, D) grid
+    S = 0.5 * (Tk_vec(i_indices + j_indices) + Tk_vec(np.abs(i_indices - j_indices)))
+
+    # Calculate H_mat matrix using vectorized operations
+    H_mat = 0.25 * (
+        Tk_vec(i_indices + j_indices + 1)
+        + Tk_vec(np.abs(i_indices + j_indices - 1))
+        + Tk_vec(np.abs(i_indices - j_indices + 1))
+        + Tk_vec(np.abs(i_indices - j_indices - 1))
+    )
+
+    return S, H_mat
+
+
+@partial(jax.jit, static_argnums=(1,))
+def build_S_H_from_Tk_jax(Tk_expvals, D):
+
     def Tk_vec(k):
         k = jnp.abs(k)
         return Tk_expvals[k]
@@ -250,7 +303,30 @@ def regularize_S_H(S, H_mat, cutoff=1e-3):
     return S_reg, H_reg
 
 
-def lanczos_alg(H, D, state_prep_func, mes_kwargs = {}, cutoff=1e-2):
+@partial(jax.jit, static_argnums=(2,)) # max_D_out must be static
+def regularize_S_H_jax(S, H_mat, max_D_out, cutoff=1e-3):
+    eigvals, eigvecs = jnp.linalg.eigh(S)
+    
+    max_eigval = eigvals.max()
+    threshold = cutoff * max_eigval
+    
+    mask = eigvals > threshold
+    
+    # Use nonzero with a fixed size and fill_value to handle static shapes
+    kept_indices = jnp.nonzero(mask, size=max_D_out, fill_value=0)[0]
+    
+    # Use jnp.take to select eigenvectors. The resulting U has a static shape.
+    # We might need to ensure the indices array has the correct shape for broadcasting
+    U = jnp.take(eigvecs, kept_indices, axis=1)
+
+    S_reg = U.T @ S @ U
+    H_reg = U.T @ H_mat @ U
+    
+    # Note: S_reg and H_reg will be of shape (max_D_out, max_D_out)
+    return S_reg, H_reg
+
+
+def lanczos_alg(H, D, state_prep_func, mes_kwargs={}, cutoff=1e-2, show_info=False):
     r"""
     Exact and efficient Lanczos method on a quantum computer for ground state energy estimation.
 
@@ -285,13 +361,15 @@ def lanczos_alg(H, D, state_prep_func, mes_kwargs = {}, cutoff=1e-2):
         mes_kwargs : dict
             The keyword arguments for the measurement function.
         cutoff : float
-            Regularization cutoff threshold for overlap matrix $\mathbf{S}$.
+            Regularization cutoff threshold for overlap matrix $\mathbf{S}$. The default is 1e-2.
+        show_info : bool
+            If True, a dictionary with detailed information is returned. The default is False.
 
     Returns
     -------
     energy : float
         Estimated ground state energy of the Hamiltonian H.
-    results : dict
+    info : dict, optional
         Full details including:
             - 'Tk_expvals': dictionary of Chebyshev expectation values
             - 'energy': ground-state energy estimate
@@ -330,22 +408,42 @@ def lanczos_alg(H, D, state_prep_func, mes_kwargs = {}, cutoff=1e-2):
 
 
     """
+
+    if check_for_tracing_mode():
+        raise NotImplementedError("Solving the generalized eigenvalue problem not implemented in JAX 0.6")
+    
     unitaries, coeffs = H.unitaries()
     
     # Step 1: Quantum Lanczos: Get expectation values of Chebyshev polynomials
     Tk_expvals = lanczos_expvals(H, D, state_prep_func, mes_kwargs)
 
+    #if check_for_tracing_mode():
+
+        # Step 2: Build matrices S and H
+        #S, H_mat = build_S_H_from_Tk_jax(Tk_expvals, D)
+
+        # Step 3: Regularize matrices via thresholding
+        #S_reg, H_reg = regularize_S_H_jax(S, H_mat, D, cutoff=cutoff)  
+
+        # Step 4: Solve generalized eigenvalue problem $\mathbf{H}\vec{v}=\epsilon\mathbf{S}\vec{v}$
+        #evals, evecs = solve_generalized_eigenproblem_jax(H_reg, S_reg)
+        #evals, evecs = jax.scipy.linalg.eigh(H_reg, S_reg) # Solving the generalized eigenvalue problem not implemented in JAX 0.6
+
+        #ground_state_energy = jnp.min(evals) * jnp.sum(coeffs)
+
+
     # Step 2: Build matrices S and H
     S, H_mat = build_S_H_from_Tk(Tk_expvals, D)
 
     # Step 3: Regularize matrices via thresholding
-    S_reg, H_reg = regularize_S_H(S, H_mat, cutoff=cutoff)
+    S_reg, H_reg = regularize_S_H(S, H_mat, cutoff=cutoff)  
 
     # Step 4: Solve generalized eigenvalue problem $\mathbf{H}\vec{v}=\epsilon\mathbf{S}\vec{v}$
-    evals, evecs = scipy.linalg.eigh(H_reg, S_reg)
+    evals, evecs = scipy.linalg.eigh(H_reg, S_reg) 
 
-    ground_state_energy = np.min(evals)*sum(coeffs)
+    ground_state_energy = np.min(evals) * np.sum(coeffs)
 
+    
     results = {
         'Tk_expvals': Tk_expvals,
         'energy': ground_state_energy,
@@ -354,4 +452,8 @@ def lanczos_alg(H, D, state_prep_func, mes_kwargs = {}, cutoff=1e-2):
         'S_reg': S_reg,
         'H_reg': H_reg,
     }
-    return ground_state_energy, results
+    
+    if show_info:
+        return ground_state_energy, results
+    else:
+        return ground_state_energy
