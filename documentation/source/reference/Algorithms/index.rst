@@ -27,6 +27,8 @@ This algorithms submodule of Qrisp provides a collection of commonly used quantu
      - estimating the amount of solutions for a given Grover oracle
    * - :ref:`Quantum Monte Carlo Integration <QMCI>`
      - numerical integration
+   * - :ref:`Lanczos Method <lanczos_alg>`
+     - finding the ground state energy of a Hamiltonian
    * - :ref:`CKS Algorithm <CKS>`
      - solving the quantum linear system problem
 
@@ -45,6 +47,7 @@ We encourage you to explore these algorithms, delve into their documentation, an
    QITE
    Shor
    Grover
+   Lanczos
    QuantumBacktrackingTree
    quantum_counting   
    QMCI
