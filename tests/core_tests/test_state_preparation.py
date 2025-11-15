@@ -16,11 +16,37 @@
 ********************************************************************************
 """
 
-# Created by ann81984 at 26.07.2022
-from qrisp import QuantumVariable, QuantumFloat
 import numpy as np
-import matplotlib.pyplot as plt
-from numpy.linalg import norm
+import pytest
+
+from qrisp import QuantumFloat, QuantumVariable
+
+
+@pytest.mark.parametrize("n_qubits", [1, 2, 3, 4])
+def test_qswitch_state_preparation(n_qubits):
+    """Test qswitch state preparation for various qubit counts."""
+
+    def normalize(vec):
+        """Utility to normalize any vector."""
+        vec = np.asarray(vec, dtype=complex)
+        return vec / np.linalg.norm(vec)
+
+    # Generate two random test vectors
+    test_vectors = [
+        np.random.rand(2**n_qubits) + 1j * np.random.rand(2**n_qubits),
+        np.random.rand(2**n_qubits) + 1j * np.random.rand(2**n_qubits),
+    ]
+
+    for sv in test_vectors:
+        sv = normalize(sv)
+
+        qv = QuantumVariable(n_qubits)
+        prepared = qv.init_state_qswitch(sv)
+
+        assert np.allclose(prepared, sv, atol=1e-6), (
+            f"State preparation failed for {n_qubits} qubits.\n"
+            f"Expected: {sv}\nGot: {prepared}"
+        )
 
 
 def test_state_preparation():

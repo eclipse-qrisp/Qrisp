@@ -25,7 +25,6 @@ from jax import tree_util
 from qrisp.core.compilation import qompiler
 
 
-
 class QuantumVariable:
     """
     The QuantumVariable is the quantum equivalent of a regular variable in classical
@@ -718,6 +717,26 @@ class QuantumVariable:
 
         int_encoder(self, self.encoder(value))
 
+    def init_state_qswitch(self, state_array):
+        """
+        TODO: Add description
+        """
+
+        # These imports are here to avoid circular dependencies
+        from qrisp.misc import check_if_fresh
+        from qrisp import state_preparation
+
+        if not check_if_fresh(self.reg, self.qs):
+            raise Exception("Tried to initialize qubits which are not fresh anymore.")
+
+        expected_length = 2**self.size
+        if len(state_array) != expected_length:
+            raise ValueError(
+                f"Length of statevector must be {expected_length} for {self.size} qubits, got {len(state_array)}."
+            )
+
+        state_preparation(self, state_array)
+
     def init_state(self, state_dic):
         r"""
         The ``init_state`` method allows the initialization of arbitrary quantum states.
@@ -834,7 +853,7 @@ class QuantumVariable:
         from qrisp.jasp import check_for_tracing_mode
 
         if check_for_tracing_mode():
-            
+
             if isinstance(position, int) and position in [0, -1]:
                 if position == -1:
                     self.reg = self.reg + insertion_qubits
@@ -843,10 +862,10 @@ class QuantumVariable:
             else:
                 self.reg = self.reg[:position] + insertion_qubits + self.reg[position:]
         else:
-            
+
             if position == -1:
                 position = self.size
-            
+
             for i in range(amount):
                 insertion_qubits[i].identifier = (
                     self.name
