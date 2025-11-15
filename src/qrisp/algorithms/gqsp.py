@@ -34,33 +34,48 @@ import jax.numpy as jnp
 import optax
 
 
-def compute_gqsp_polynomial(p, num_iterations=1000, learning_rate=0.01):
+def compute_gqsp_polynomial(p, num_iterations=10000, learning_rate=0.01):
     r"""
-    Finds a vector b using Optax optimization within a JAX JIT loop.
+    Find the second GQSP polynomial $q$ using Optax optimization within a JAX JIT loop.
+
+    This function solves the optimization problem
 
     .. math::
 
-        \text{argmin}_{q}\|p\star\text{reversed}(p) + q\star\text{reversed}(q) - \delta\|^2
+        \text{argmin}_{q}\|p\star\text{reversed}(p)^* + q\star\text{reversed}(q)^* - \delta\|^2
 
-    Args:
-        c_target (np.ndarray): The target convolution result c.
-        b_len_guess (int): The required length of vector b.
-        num_iterations (int): Number of optimization steps.
-        learning_rate (float): Optimizer learning rate.
+    where $\delta=(0,\dotsc,0,1,0,\dotsc,0)$ is a vector of length $2d+1$ with $1$ at the center and $d$ zeros on each side, 
+    and $\star$ is the convolution operator.
 
-    Returns:
-        np.ndarray: The optimized vector b.
+    The polynomial $p$ must satisfy $|p(e^{ix})|^2\leq 1$ for all $x\in\mathbb R$.
+
+    This function is JAX-traceable.
+
+    Parameters
+    ----------
+    p : ndarray
+        A polynomial $p\in\mathbb C[x]$ represended as a vector of its coeffcients, 
+        i.e., $p=(p_0,p_1,\dotsc,p_d)$ corresponds to $p_0+p_1x+\dotsb+p_dx^d$.
+    num_iterations : int
+        Number of optimization steps.
+    learning_rate : float
+        Optimizer learning rate.
+
+    Returns
+    -------
+        ndarray
+            The optimized vector $q$.
     """
 
     d = len(p)
     delta = jnp.zeros(2*d-1)
     delta = delta.at[d-1].set(1)
-    c_target = delta - jnp.convolve(p,p[::-1]) 
+    c_target = delta - jnp.convolve(p, jnp.conjugate(p[::-1]), mode='full') 
 
     def objective_function(q, c_target):
-        c_actual = jnp.convolve(q, q[::-1], mode='full')
+        c_actual = jnp.convolve(q, jnp.conjugate(q[::-1]), mode='full')
         diff = c_actual - c_target
-        return jnp.sum(diff**2)
+        return jnp.linalg.norm(diff)**2
 
     # JIT-compile the value and gradient calculation
     loss_and_grad = jax.jit(jax.value_and_grad(objective_function))
@@ -85,24 +100,40 @@ def compute_gqsp_polynomial(p, num_iterations=1000, learning_rate=0.01):
     # Run the optimization loop (this loop itself is Python, but the step inside is JIT)
     for i in range(num_iterations):
         b_params, opt_state, loss_val = update_step(b_params, opt_state, c_target)
-        #if i % 100 == 0:
-        #    print(f"Step {i}, Loss: {loss_val.item()}")
 
-    #print(f"Final Loss: {loss_val.item()}")
     return b_params
 
 
 def compute_gqsp_phase_factors(p, q):
-    """
-    Computes the phase factors for Generalized Quantum Signal Processing.
+    r"""
+    Computes the phase factors for GQSP.
 
     Given two polynomials such that
 
-    * $p,q\in\mathbb C[x]$, $\deg p, deg q\leq d$
-    * For all $x\in\mathbb R$, $|p(e^{ix})|^2+|q(e^{ix})|^2=1$,
+    * $p,q\in\mathbb C[x]$, $\deg p, \deg q \leq d$,
+    * for all $x\in\mathbb R$, $|p(e^{ix})|^2+|q(e^{ix})|^2=1$,
 
-    this method computes the phase factors $\tetha,\phi\in\mathbb R^{d+1}$, $\lambda\in\mathbb R$.
-    
+    this method computes the phase factors $\theta,\phi\in\mathbb R^{d+1}$, $\lambda\in\mathbb R$.
+
+    This function is JAX-traceable.
+
+    Parameters
+    ----------
+    p : ndarray
+        A polynomial $p\in\mathbb C[x]$ represended as a vector of its coeffcients, 
+        i.e., $p=(p_0,p_1,\dotsc,p_d)$ corresponds to $p_0+p_1x+\dotsb+p_dx^d$.
+    q : ndarray, optional
+        A polynomial $q\in\mathbb C[x]$ represended as a vector of its coeffcients. 
+
+    Returns
+    -------
+    theta_arr : ndarray
+        The phase factors $(\theta_0,\dotsc,\theta_d)$.
+    phi_arr : ndarray
+        The phase factors $(\phi_0,\dotsc,\phi_d)$.
+    lambda : float
+        The phase factor $\lambda$.
+
     """
 
     d = len(p) - 1
@@ -142,9 +173,9 @@ def compute_gqsp_phase_factors(p, q):
         vals = body_fun(vals)
 
     d, S, theta_arr, phi_arr = vals
-    kappa = jnp.angle(S[1][0])
+    lambda_ = jnp.angle(S[1][0])
 
-    return theta_arr, phi_arr, kappa
+    return theta_arr, phi_arr, lambda_
 
 
 # https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368
@@ -178,10 +209,10 @@ def GQSP(qargs, U, p, q=None, k=0):
     U : function
         A function appying a unitary to the variables in ``qargs``.
         Typically, $U=e^{iH}$ for a Hermitian operator $H$ and GQSP applies a function of $H$.
-    p : numpy.ndarray
+    p : ndarray
         A polynomial $p\in\mathbb C[x]$ represended as a vector of its coeffcients, 
         i.e., $p=(p_0,p_1,\dotsc,p_d)$ corresponds to $p_0+p_1x+\dotsb+p_dx^d$.
-    q : numpy.ndarray, optional
+    q : ndarray, optional
         A polynomial $q\in\mathbb C[x]$ represended as a vector of its coeffcients. 
         If not specified, the polynomial is computed numerically from $p$.
     k : int, optional
@@ -196,6 +227,8 @@ def GQSP(qargs, U, p, q=None, k=0):
         
     Examples
     --------
+
+    **Example 1: Applying a trasnformation in Fourier basis**
 
     We apply the operator
 
@@ -221,7 +254,7 @@ def GQSP(qargs, U, p, q=None, k=0):
             H.trotterization(forward_evolution=False)(operand)
 
 
-    Next, we define the ``operand_prep`` function
+    Next, we define the ``operand_prep`` function taht prepares a QuantumVariable is state $\ket{\psi}=\ket{0}$.
 
     ::
 
@@ -233,7 +266,7 @@ def GQSP(qargs, U, p, q=None, k=0):
     This corresponds to the polynomial $p(x)=0.5+0.5x^2$ (i.e., ``p=[0.5,0,0.5]``) and ``k=1``. 
     A suitable second polynomoal is $q(x)=-0.5+0.5x^2$ (i.e., ``q=[-0.5,0,0.5]``) which corresponds to $q'(x)=-0.5x^{-1}+0.5x$.
 
-    Finally, we apply QSP
+    Finally, we apply QSP within a :ref:`RUS` protocol.
 
     ::
 
@@ -281,6 +314,11 @@ def GQSP(qargs, U, p, q=None, k=0):
 
     which are exactly the probabilities we observed in the quantum simulation.
 
+
+    **Example 2: Applying a trasnformation in Chebyshev basis**
+
+
+
     """
 
     # Convert qargs into a list
@@ -290,9 +328,9 @@ def GQSP(qargs, U, p, q=None, k=0):
     d = len(p) - 1
 
     if q == None:
-        q = compute_gqsp_polynomial(p, num_iterations=5000)
+        q = compute_gqsp_polynomial(p, num_iterations=10000)
 
-    theta, phi, kappa = compute_gqsp_phase_factors(p, q)
+    theta, phi, lambda_ = compute_gqsp_phase_factors(p, q)
 
     qbl = QuantumBool()
 
@@ -303,7 +341,7 @@ def GQSP(qargs, U, p, q=None, k=0):
         gphase(phi + kappa, qubit)
 
 
-    R(theta[0], phi[0], kappa, qbl)
+    R(theta[0], phi[0], lambda_, qbl)
 
     for i in jrange(d-k):
         with control(qbl, ctrl_state=0):
@@ -317,3 +355,47 @@ def GQSP(qargs, U, p, q=None, k=0):
         R(theta[d-k+i+1], phi[d-k+i+1], 0, qbl)
 
     return qbl
+
+
+@jax.jit
+def polynomial_to_chebyshev(coeffs):
+    """
+    Converts polynomial coefficients in the power basis to coefficients 
+    in the Chebyshev basis of the first kind $(T_n(x))$.
+
+    This function is JAX-traceable.
+    
+    Parameters
+    ----------
+    coeffs : ndarray
+        A polynomial $p\in\mathbb C[x]$ represended as a vector of its coeffcients, 
+        i.e., $p=(p_0,p_1,\dotsc,p_d)$ corresponds to $p_0+p_1x+\dotsb+p_dx^d$.
+
+    Returns
+    -------
+    ndarray
+        A polynomial $p\in\mathbb C[x]$ represended as a vector of its coeffcients in Chebyshev basis, 
+        i.e., $(t_0,t_1,\dotsc,t_d)$ corresponds to $t_0T_0(x)+t_1T_1(x)+\dotsb+t_dT_d(x)$
+        where $T_n(x)$ is the $n$-th Chebyshev polynomial of first kind.
+
+    """
+    N = len(coeffs)
+    
+    # Build the transformation matrix C such that P_power = C @ P_cheb
+    # This matrix contains the power-basis coefficients of T_n(x)
+    C = jnp.zeros((N, N), dtype=coeffs.dtype)
+    C = C.at[0, 0].set(1)
+    if N > 1:
+        C = C.at[1, 1].set(1)
+        for n in range(2, N):
+            prev = C[n-1]
+            prev_shifted = jnp.roll(prev, 1) * 2
+            # Handle the roll boundary condition manually to match 2*x*T_{n-1}
+            prev_shifted = prev_shifted.at[0].set(0) 
+            C = C.at[n, :].set(prev_shifted - C[n-2, :])
+            
+    # Solve the linear system for the Chebyshev coefficients
+    # The matrix C is triangular/well-behaved, making the solve stable
+    cheb_coeffs = jnp.linalg.solve(C.T, coeffs)
+    
+    return cheb_coeffs

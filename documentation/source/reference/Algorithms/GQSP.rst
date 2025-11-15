@@ -15,3 +15,4 @@ Miscellaneous
     
     compute_gqsp_polynomial
     compute_gqsp_phase_factors
+    polynomial_to_chebyshev
