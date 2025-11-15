@@ -417,7 +417,9 @@ class QuantumEnvironment(QuantumPrimitive):
         self.active_qs_list = QuantumSession.get_active_quantum_sessions()
         for qs in self.active_qs_list:
             # Append self to the environment stack of the QuantumSession
-            qs().env_stack.append(self)
+            qs = qs()
+            if qs is not None:
+                qs.env_stack.append(self)
 
         # Start the dumping process
         self.start_dumping()

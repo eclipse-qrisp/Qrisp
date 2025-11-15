@@ -26,11 +26,12 @@ Evaluation
    :toctree: generated/
    
    Jaspr.qjit
-   Jaspr.to_qc
-   Jaspr.to_qir
-   Jaspr.to_mlir
+   Jaspr.to_qc   
    Jaspr.to_qasm
+   Jaspr.to_mlir
    Jaspr.to_catalyst_jaxpr
+   Jaspr.to_catalyst_mlir
+   Jaspr.to_qir
    
 
 

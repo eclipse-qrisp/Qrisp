@@ -24,7 +24,7 @@ from jax.extend.core import JaxprEqn, ClosedJaxpr, Var, Jaxpr
 
 from qrisp.jasp.jasp_expression.centerclass import Jaspr
 from qrisp.jasp.primitives import AbstractQubit
-from qrisp.jasp import TracingQuantumSession, OperationPrimitive
+from qrisp.jasp import TracingQuantumSession
 
 
 class ControlledJaspr(Jaspr):
@@ -123,6 +123,10 @@ def control_eqn(eqn, ctrl_qubit_var):
             new_params["name"] = "c" + new_params["name"]
 
             invars = [ctrl_qubit_var] + eqn.invars
+            
+            new_params["in_shardings"] = (new_params["in_shardings"][-1],) + new_params["in_shardings"]
+            new_params["in_layouts"] = (new_params["in_layouts"][-1],) + new_params["in_layouts"]
+            new_params["donated_invars"] = (False,) + new_params["donated_invars"]
 
         return JaxprEqn(
             primitive=eqn.primitive,
@@ -210,14 +214,17 @@ def control_eqn(eqn, ctrl_qubit_var):
         return temp
 
     else:
-        num_qubits = eqn.primitive.op.num_qubits
+        num_qubits = eqn.params["gate"].num_qubits
+        new_params = dict(eqn.params)
+        new_params["gate"] = new_params["gate"].control()
+        
         return JaxprEqn(
-            primitive=eqn.primitive.control(),
+            primitive=eqn.primitive,
             invars=[ctrl_qubit_var]
             + eqn.invars[:-num_qubits]
             + eqn.invars[-num_qubits:],
             outvars=eqn.outvars,
-            params=eqn.params,
+            params=new_params,
             source_info=eqn.source_info,
             effects=eqn.effects,
             ctx=eqn.ctx,
@@ -250,7 +257,7 @@ def control_jaspr(jaspr):
 
     new_eqns = []
     for eqn in jaspr.eqns:
-        if isinstance(eqn.primitive, OperationPrimitive) or eqn.primitive.name in [
+        if eqn.primitive.name == "jasp.quantum_gate" or eqn.primitive.name in [
             "pjit",
             "while",
             "cond",
