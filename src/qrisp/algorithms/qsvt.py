@@ -267,7 +267,7 @@ def inner_QSVT_inversion(A, b, eps, kappa = None):
         function approximation, ensuring boundedness and numerical stability.
 
         The function first constructs a polynomial approximation of the inverse function 
-        using the condition number ``kappa`` and specified precision `eps`. Then, it translates 
+        using the condition number ``kappa`` and specified precision ```eps``. Then, it translates 
         the QSP phase sequence into the corresponding QSVT angles by applying appropriate 
         phase shifts, matching the alternating phase modulation framework of QSVT.
 
@@ -276,9 +276,8 @@ def inner_QSVT_inversion(A, b, eps, kappa = None):
         eps : float
             Target precision :math:`\epsilon`, such that the prepared state :math:`\ket{\\tilde{x}}` is within error
             :math:`\epsilon` of :math:`\ket{x}`.
-        kappa : float, optional
-            Condition number :math:`\\kappa` of :math:`A`. Required when ``A`` is
-            a block-encoding tuple ``(U, state_prep, n)`` rather than a matrix.
+        kappa : float
+            Condition number :math:`\\kappa` of the matrix :math:`A`.
 
         Returns
         -------
