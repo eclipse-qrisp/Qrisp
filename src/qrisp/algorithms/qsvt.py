@@ -463,6 +463,7 @@ def QSVT_inversion(A, b, eps, kappa=None):
 
     We see that we obtained the same result in our quantum simulation up to precision :math:`\epsilon`!
 
+    
     **Example 2: Using a custom block encoding**
 
     The previous example displays how to solve the linear system for any Hermitian matrix :math:`A`,
@@ -536,12 +537,12 @@ def QSVT_inversion(A, b, eps, kappa=None):
         kappa = np.linalg.cond(A)
 
     We solve the linear system by passing this block-encoding tuple as ``A`` into the QSVT function.
-    We can also pass ``b`` as a function. In this case we define ``bprep`` as
+    We can also pass ``b`` as a function. In this case we define ``b_prep`` as
 
     ::
 
         from qrisp import QuantumFloat
-        def bprep():
+        def b_prep():
             operand = QuantumFloat(int(np.log2(b.shape[0])))
             prepare(operand, b)
             return operand
@@ -554,7 +555,7 @@ def QSVT_inversion(A, b, eps, kappa=None):
         @terminal_sampling
         def main():
 
-            x = QSVT_inversion(block_encoding, bprep, eps, kappa)
+            x = QSVT_inversion(block_encoding, b_prep, eps, kappa)
             return x
 
         res_dict = main()
@@ -585,12 +586,108 @@ def QSVT_inversion(A, b, eps, kappa=None):
         @count_ops(meas_behavior="0")
         def main():
 
-            x = QSVT_inversion(A, bprep, eps, kappa)
+            x = QSVT_inversion(A, b_prep, eps, kappa)
             return x
 
         res_dict = main()
         print(res_dict)
         # {'rz': 58, 'x': 403, 'cx': 291, 'gphase': 115, 'u3': 121, 'p': 57, 'h': 2, 'measure': 2}   
+
+        
+    **Example 3: Using a custom block encoding**
+
+    In this example, we construct a block-encoding representation for the following tridiagonal sparse matrix:
+
+    ::
+
+        import numpy as np
+
+        def tridiagonal_shifted(n, mu=1.0, dtype=float):
+            I = np.eye(n, dtype=dtype)
+            return (2 + mu) * I - np.eye(n, k=1, dtype=dtype) - np.eye(n, k=-1, dtype=dtype)
+
+        N = 8
+        A = tridiagonal_shifted(N, mu=3)
+        A[N-1,0] = -1
+        A[0,N-1] = -1
+        b = np.array([0, 1, 1, 1, 0, 0, 1, 1])
+
+        eps = 0.01
+        kappa = np.linalg.cond(A)
+
+        print(A)
+        #[[ 5. -1.  0.  0.  0.  0.  0. -1.]
+        # [-1.  5. -1.  0.  0.  0.  0.  0.]
+        # [ 0. -1.  5. -1.  0.  0.  0.  0.]
+        # [ 0.  0. -1.  5. -1.  0.  0.  0.]
+        # [ 0.  0.  0. -1.  5. -1.  0.  0.]
+        # [ 0.  0.  0.  0. -1.  5. -1.  0.]
+        # [ 0.  0.  0.  0.  0. -1.  5. -1.]
+        # [-1.  0.  0.  0.  0.  0. -1.  5.]]
+
+    This matrix can be decomposed using three unitaries: the identity :math:`I`, and two shift operators :math:`V\colon\ket{k}\\rightarrow-\ket{k+1 \mod N}` and :math:`V^{\dagger}\colon\ket{k}\\rightarrow-\ket{k-1 \mod N}`.
+    We define their corresponding functions:
+
+    ::
+
+        from qrisp import gphase, prepare, qswitch
+
+        def I(qv):
+            pass
+
+        def V(qv):
+            qv += 1
+            gphase(np.pi, qv[0])
+
+        def V_dg(qv):
+            qv -= 1
+            gphase(np.pi, qv[0])
+
+        unitaries = [I, V, V_dg]
+
+    We now define the block_encoding ``(U, state_prep, n)``: 
+    
+    ::
+
+        coeffs = np.array([5,1,1])
+        alpha = np.sum(coeffs)
+
+        def U(case, operand):
+            qswitch(operand, case, unitaries)
+
+        def state_prep(case):
+            prepare(case, np.sqrt(coeffs/alpha))
+
+        block_encoding = (U, state_prep, 2)
+
+    Note that, unlike the previous example, the block-encoding unitary does not satisfy $U^2=I$.
+
+    ::
+
+        @terminal_sampling
+        def main():
+
+            x = QSVT_inversion(block_encoding, b, eps, kappa)
+            return x
+
+        res_dict = main()
+
+    We, again, compare the solution obtained by quantum simulation with the classical solution
+
+    ::
+
+        for k, v in res_dict.items():
+            res_dict[k] = v**0.5
+
+        q = np.array([res_dict.get(key, 0) for key in range(N)])
+        c = (np.linalg.inv(A) @ b) / np.linalg.norm(np.linalg.inv(A) @ b)
+
+        print("QUANTUM SIMULATION\\n", q, "\\nCLASSICAL SOLUTION\\n", c)
+        # QUANTUM SIMULATION
+        # [0.17153117 0.43691595 0.47894578 0.42359613 0.10474241 0.10286244 0.41215706 0.42359611] 
+        # CLASSICAL SOLUTION
+        # [0.17207112 0.43684477 0.47875139 0.42351084 0.1054015  0.10349665 0.41208177 0.42351084]
+
     """
     def qlsp():
         return A, b
