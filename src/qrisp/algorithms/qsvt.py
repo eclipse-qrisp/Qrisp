@@ -33,6 +33,7 @@ from qrisp.alg_primitives.prepare import prepare
 from qrisp.jasp import jrange, q_cond, RUS, check_for_tracing_mode
 from qrisp.operators import QubitOperator
 
+
 def inner_QSVT(A, operand_prep, phi_qsvt):
     """
     Core implementation of the Quantum Singular Value Transformation (QSVT) algorithm.
@@ -64,12 +65,13 @@ def inner_QSVT(A, operand_prep, phi_qsvt):
     Returns
     -------
     operand : QuantumVariable
-        Quantum register containing the operand state after applying the QSVT circuit.
+        Operand variable after applying the QSVT protocol.
     in_case : QuantumFloat
-        Auxiliary quantum float register encoding the internal block-encoding state. Must be 
-        measured to |0> for successful transformation.
+        Auxiliary variable used for the block-encoding after applying the QSVT protocol.
+        Must be measured in state $\ket{0}$ for the QSVT protocol to be successful.
     temp : QuantumBool
-        Ancillary qubit used in reflections and measurement for success post-selection.
+        Auxiliary variable used for the reflections after applying the QSVT protocol.
+        Must be measured in state $\ket{0}$ for the QSVT protocol to be successful.
     """
     if isinstance(A, tuple) and len(A) == 3:
         U, state_prep, n = A
@@ -119,6 +121,7 @@ def inner_QSVT(A, operand_prep, phi_qsvt):
 
     return operand, in_case, temp
 
+
 @RUS
 def inner_QSVT_wrapper(matrix, operand_prep, phi_qsvt):
     """
@@ -163,12 +166,51 @@ def inner_QSVT_wrapper(matrix, operand_prep, phi_qsvt):
 
     return success_bool, operand
 
+
 def QSVT(A, operand_prep, phi_qsvt):
+    """
+    Performs the Quantum Singular Value Transformation (QSVT) for matrix inversion.
+
+    This function serves as the simplified entry point to perform quantum singular value 
+    transformation on a block-encoded operator and an input quantum state vector to solve
+    a QLSP problem :math:`A \\vec{x} = \\vec{b}`.
+
+    It wraps the core QSVT circuit execution with post-selection handling, abstracting the 
+    lower-level details of block-encoding and phase modulation angle management.
+
+    Parameters
+    ----------
+    A : tuple or numpy.ndarray
+        A block-encoded operator tuple (U, state_prep, n) or a Hermitian matrix representing 
+        the operator to transform.
+    b : numpy.ndarray or callable
+        Either a vector :math:`\\vec{b}` of the linear system, or a
+        callable that prepares the corresponding quantum state ``operand``.
+    eps : float
+        Target precision :math:`\epsilon`, such that the prepared state :math:`\ket{\\tilde{x}}` is within error
+        :math:`\epsilon` of :math:`\ket{x}`.
+    kappa : float, optional
+        Condition number :math:`\\kappa` of :math:`A`. Required when ``A`` is
+        a block-encoding tuple ``(U, state_prep, n)`` rather than a matrix.
+        
+    Returns
+    -------
+    operand : QuantumVariable
+        Quantum variable containing the final (approximate) solution state
+        :math:`\ket{\\tilde{x}} \propto A^{-1}\ket{b}`. When the internal
+        :ref:`RUS <RUS>` decorator reports success (``success_bool = True``), this
+        variable contains the valid post-selected solution. If ``success_bool``
+        is ``False``, the simulation automatically repeats until success.
+
+    Examples
+    --------
+    """
     def matrix():
         return A
        
     operand = inner_QSVT_wrapper(matrix, operand_prep, phi_qsvt)
     return operand
+
 
 def inner_QSVT_inversion(A, b, eps, kappa = None):
     """
@@ -205,17 +247,19 @@ def inner_QSVT_inversion(A, b, eps, kappa = None):
     Returns
     -------
     operand : QuantumVariable
-        Quantum register containing the operand state after applying the QSVT circuit.
+        Operand variable after applying the QSVT protocol.
     in_case : QuantumFloat
-        Auxiliary quantum float register encoding the internal block-encoding state. Must be 
-        measured to |0> for successful transformation.
+        Auxiliary variable used for the block-encoding after applying the QSVT protocol.
+        Must be measured in state $\ket{0}$ for the QSVT protocol to be successful.
     temp : QuantumBool
-        Ancillary qubit used in reflections and measurement for success post-selection.
+        Auxiliary variable used for the reflections after applying the QSVT protocol.
+        Must be measured in state $\ket{0}$ for the QSVT protocol to be successful.
     """
     if isinstance(A, tuple) and len(A) == 3:
         kappa = kappa
     else:
         kappa = np.linalg.cond(A)
+
 
     def inversion_angles(eps, kappa):
         """
@@ -262,6 +306,7 @@ def inner_QSVT_inversion(A, b, eps, kappa = None):
 
         return jnp.array(phi_qsvt), s
 
+
     phi_inversion, _ = inversion_angles(eps, kappa)
     
     if callable(b):
@@ -277,6 +322,7 @@ def inner_QSVT_inversion(A, b, eps, kappa = None):
     operand, in_case, temp = inner_QSVT(A, bprep, phi_inversion)
 
     return operand, in_case, temp
+
 
 @RUS(static_argnums=[1, 2])
 def inner_QSVT_inversion_wrapper(qlsp, eps, kappa = None):
@@ -327,6 +373,7 @@ def inner_QSVT_inversion_wrapper(qlsp, eps, kappa = None):
 
     return success_bool, operand
 
+
 def QSVT_inversion(A, b, eps, kappa=None):
     """
     Performs the Quantum Singular Value Transformation (QSVT) for matrix inversion.
@@ -361,7 +408,7 @@ def QSVT_inversion(A, b, eps, kappa=None):
         variable contains the valid post-selected solution. If ``success_bool``
         is ``False``, the simulation automatically repeats until success.
 
-        Examples
+    Examples
     --------
 
     The following examples demonstrate how QSVT can be applied for matrix inversion to solve the
