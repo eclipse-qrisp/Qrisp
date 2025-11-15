@@ -486,6 +486,7 @@ def QSVT_inversion(A, b, eps, kappa=None):
         b = np.array([0, 1, 1, 1, 0, 0, 1, 1])
 
         eps = 0.01     
+        kappa = np.linalg.cond(A)
 
         print(A)
         # [[ 5.  0.  0.  0. -2.  0.  0.  0.]
@@ -533,8 +534,6 @@ def QSVT_inversion(A, b, eps, kappa=None):
             prepare(case, np.sqrt(coeffs/alpha))
 
         block_encoding = (U, state_prep, 2)
-
-        kappa = np.linalg.cond(A)
 
     We solve the linear system by passing this block-encoding tuple as ``A`` into the QSVT function.
     We can also pass ``b`` as a function. In this case we define ``b_prep`` as
