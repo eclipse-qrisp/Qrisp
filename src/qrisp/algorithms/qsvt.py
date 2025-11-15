@@ -58,7 +58,8 @@ def inner_QSVT(A, operand_prep, phi_qsvt):
         associated state preparation callable and ancilla qubit size, or a Hermitian matrix 
         that is internally block-encoded.
     operand_prep : callable
-        Callable that prepares the input quantum state :math:`\ket{b}` as the operand.
+        Function returning the (operand) QuantumVariable in the initial system state $\ket{\psi_0}$, i.e.,
+        ``operand=operand_prep()``.
     phi_qsvt : tuple or list of floats
         Phase modulation angles phi used in the singular value transformation polynomial.
 
@@ -183,16 +184,10 @@ def QSVT(A, operand_prep, phi_qsvt):
     A : tuple or numpy.ndarray
         A block-encoded operator tuple (U, state_prep, n) or a Hermitian matrix representing 
         the operator to transform.
-    b : numpy.ndarray or callable
-        Either a vector :math:`\\vec{b}` of the linear system, or a
-        callable that prepares the corresponding quantum state ``operand``.
-    eps : float
-        Target precision :math:`\epsilon`, such that the prepared state :math:`\ket{\\tilde{x}}` is within error
-        :math:`\epsilon` of :math:`\ket{x}`.
-    kappa : float, optional
-        Condition number :math:`\\kappa` of :math:`A`. Required when ``A`` is
-        a block-encoding tuple ``(U, state_prep, n)`` rather than a matrix.
-        
+    operand_prep : callable
+        Function returning the (operand) QuantumVariable in the initial system state $\ket{\psi_0}$, i.e.,
+        ``operand=operand_prep()``.
+
     Returns
     -------
     operand : QuantumVariable
