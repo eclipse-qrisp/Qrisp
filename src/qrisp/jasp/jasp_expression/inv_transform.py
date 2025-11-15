@@ -252,7 +252,7 @@ def invert_loop_body(jaxpr):
 # This function performs the above mentioned step 2 to treat the loop primitive
 def invert_loop_eqn(eqn):
 
-    overall_constant_amount= max(eqn.params["body_nconsts"], eqn.params["cond_nconsts"])
+    overall_constant_amount= eqn.params["body_nconsts"] + eqn.params["cond_nconsts"]
     
     # Process the loop body
     body_jaxpr = eqn.params["body_jaxpr"]
@@ -260,7 +260,7 @@ def invert_loop_eqn(eqn):
 
     def body_fun(val):
         
-        constants = val[:eqn.params["body_nconsts"]]
+        constants = val[eqn.params["cond_nconsts"]:overall_constant_amount]
         carries = val[overall_constant_amount:]
         
         body_res = eval_jaxpr(inv_loop_body)(*(constants + carries))
