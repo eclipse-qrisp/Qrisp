@@ -67,7 +67,7 @@ def inner_QSVT(A, operand_prep, phi_qsvt):
     -------
     operand : QuantumVariable
         Operand variable after applying the QSVT protocol.
-    in_case : QuantumFloat
+    case : QuantumFloat
         Auxiliary variable used for the block-encoding after applying the QSVT protocol.
         Must be measured in state $\ket{0}$ for the QSVT protocol to be successful.
     temp : QuantumBool
@@ -95,7 +95,7 @@ def inner_QSVT(A, operand_prep, phi_qsvt):
                 U(case, operand)
     
     temp = QuantumBool()
-    in_case = QuantumFloat(n)
+    case = QuantumFloat(n)
     operand = operand_prep()
 
     h(temp) 
@@ -114,13 +114,13 @@ def inner_QSVT(A, operand_prep, phi_qsvt):
                 return false_fun(*operands)
             
     for i in jrange(0, d): 
-        reflection(in_case, temp, phase=2 * phi_qsvt[i])
-        x_cond(i%2==0, U_tilde, U_tilde_dg, in_case, operand, state_prep) 
-    reflection(in_case, temp, phase=2 * phi_qsvt[d])
+        reflection(case, temp, phase=2 * phi_qsvt[i])
+        x_cond(i%2==0, U_tilde, U_tilde_dg, case, operand, state_prep) 
+    reflection(case, temp, phase=2 * phi_qsvt[d])
         
     h(temp)
 
-    return operand, in_case, temp
+    return operand, case, temp
 
 
 @RUS
@@ -133,7 +133,7 @@ def inner_QSVT_wrapper(matrix, operand_prep, phi_qsvt):
     It invokes :func:`inner_QSVT`, and returns the solution operand QuantumFloat
     if post-selection on auxiliary QuantumFloats succeeds.
 
-    The algorithm succeeds if both auxiliary QuantumFloats ``in_case`` and ``temp`` are measured
+    The algorithm succeeds if both auxiliary QuantumVariables ``case`` and ``temp`` are measured
     in the :math:`\ket{0}` state. If post-selection fails, the :func:`RUS` decorator repeats the
     simulation until success.
 
@@ -161,9 +161,9 @@ def inner_QSVT_wrapper(matrix, operand_prep, phi_qsvt):
 
     A = matrix()
 
-    operand, in_case, temp = inner_QSVT(A, operand_prep, phi_qsvt)
+    operand, case, temp = inner_QSVT(A, operand_prep, phi_qsvt)
 
-    success_bool = (measure(temp) == 0) & (measure(in_case) == 0)
+    success_bool = (measure(temp) == 0) & (measure(case) == 0)
 
     return success_bool, operand
 
@@ -217,7 +217,7 @@ def inner_QSVT_inversion(A, b, eps, kappa = None):
     the inverse function within error tolerance ``eps``, it constructs the quantum singular 
     value transformation that effectively solves the Quantum Linear System Problem (QLSP) :math:`A\\vec{x}=\\vec{b}`.
 
-    The block-encoding of matrix :math:`A` can be provided either explicitly as a block encoding tuple,
+    The block-encoding of matrix :math:`A` can be provided either explicitly as a block-encoding tuple,
     or implicitly via a Hermitian matrix which will be block-encoded internally via :meth:`Pauli decomposition <qrisp.operators.qubit.QubitOperator.pauli_block_encoding>`. 
     Note that in the former case, the condition number :math:`\kappa` of :math:`A` also has to be provided. 
 
@@ -225,10 +225,10 @@ def inner_QSVT_inversion(A, b, eps, kappa = None):
 
     Parameters
     ----------
-    A : tuple or numpy.ndarray
-        Either a 3-tuple (U, state_prep, n) representing the block-encoding unitary and its 
-        associated state preparation callable and ancilla qubit size, or a Hermitian matrix 
-        that is internally block-encoded.
+    A : numpy.ndarray or scipy.sparse.csr_matrix or tuple
+        Either the Hermitian matrix :math:`A` of size :math:`N \\times N` from
+        the linear system :math:`A \\vec{x} = \\vec{b}`, or a 3-tuple
+        ``(U, state_prep, n)`` representing a preconstructed block-encoding.
     b : numpy.ndarray or callable
         Either a vector :math:`\\vec{b}` of the linear system, or a
         callable that prepares the corresponding quantum state ``operand``.
@@ -243,7 +243,7 @@ def inner_QSVT_inversion(A, b, eps, kappa = None):
     -------
     operand : QuantumVariable
         Operand variable after applying the QSVT protocol.
-    in_case : QuantumFloat
+    case : QuantumFloat
         Auxiliary variable used for the block-encoding after applying the QSVT protocol.
         Must be measured in state $\ket{0}$ for the QSVT protocol to be successful.
     temp : QuantumBool
@@ -305,18 +305,17 @@ def inner_QSVT_inversion(A, b, eps, kappa = None):
     phi_inversion, _ = inversion_angles(eps, kappa)
     
     if callable(b):
-        def bprep():
-            return b()
+        b_prep = b
 
     else:
-        def bprep():
+        def b_prep():
             operand = QuantumFloat(int(np.log2(b.shape[0])))
             prepare(operand, b)
             return operand
     
-    operand, in_case, temp = inner_QSVT(A, bprep, phi_inversion)
+    operand, case, temp = inner_QSVT(A, b_prep, phi_inversion)
 
-    return operand, in_case, temp
+    return operand, case, temp
 
 
 @RUS(static_argnums=[1, 2])
@@ -382,9 +381,10 @@ def QSVT_inversion(A, b, eps, kappa=None):
 
     Parameters
     ----------
-    A : tuple or numpy.ndarray
-        A block-encoded operator tuple (U, state_prep, n) or a Hermitian matrix representing 
-        the operator to transform.
+    A : numpy.ndarray or scipy.sparse.csr_matrix or tuple
+        Either the Hermitian matrix :math:`A` of size :math:`N \\times N` from
+        the linear system :math:`A \\vec{x} = \\vec{b}`, or a 3-tuple
+        ``(U, state_prep, n)`` representing a preconstructed block-encoding.
     b : numpy.ndarray or callable
         Either a vector :math:`\\vec{b}` of the linear system, or a
         callable that prepares the corresponding quantum state ``operand``.
@@ -394,6 +394,7 @@ def QSVT_inversion(A, b, eps, kappa=None):
     kappa : float, optional
         Condition number :math:`\\kappa` of :math:`A`. Required when ``A`` is
         a block-encoding tuple ``(U, state_prep, n)`` rather than a matrix.
+
     Returns
     -------
     operand : QuantumVariable
