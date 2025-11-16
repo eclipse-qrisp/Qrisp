@@ -36,7 +36,7 @@ import optax
 
 def compute_gqsp_polynomial(p, num_iterations=10000, learning_rate=0.01):
     r"""
-    Find the second GQSP polynomial $q$ using Optax optimization within a JAX JIT loop.
+    Find the second GQSP polynomial $q$.
 
     This function solves the optimization problem
 
@@ -104,16 +104,16 @@ def compute_gqsp_polynomial(p, num_iterations=10000, learning_rate=0.01):
     return b_params
 
 
-def compute_gqsp_phase_factors(p, q):
+def compute_gqsp_angles(p, q):
     r"""
-    Computes the phase factors for GQSP.
+    Computes the angles for GQSP.
 
     Given two polynomials such that
 
     * $p,q\in\mathbb C[x]$, $\deg p, \deg q \leq d$,
     * for all $x\in\mathbb R$, $|p(e^{ix})|^2+|q(e^{ix})|^2=1$,
 
-    this method computes the phase factors $\theta,\phi\in\mathbb R^{d+1}$, $\lambda\in\mathbb R$.
+    this method computes the angles $\theta,\phi\in\mathbb R^{d+1}$, $\lambda\in\mathbb R$.
 
     This function is JAX-traceable.
 
@@ -128,11 +128,11 @@ def compute_gqsp_phase_factors(p, q):
     Returns
     -------
     theta_arr : ndarray
-        The phase factors $(\theta_0,\dotsc,\theta_d)$.
+        The angles $(\theta_0,\dotsc,\theta_d)$.
     phi_arr : ndarray
-        The phase factors $(\phi_0,\dotsc,\phi_d)$.
+        The angles $(\phi_0,\dotsc,\phi_d)$.
     lambda : float
-        The phase factor $\lambda$.
+        The angle $\lambda$.
 
     """
 
@@ -142,7 +142,7 @@ def compute_gqsp_phase_factors(p, q):
 
     S = jnp.vstack([p, q])
 
-    # Add a small perturbation to denominators to avoid division by zero when computing phase factors
+    # Add a small perturbation to denominators to avoid division by zero when computing angles
     eps = 1e-10
     theta_arr = theta_arr.at[d].set(jnp.arctan(jnp.abs(S[1][d] / (S[0][d] + eps))))
     phi_arr = phi_arr.at[d].set(jnp.angle(S[0][d] / (S[1][d] + eps)))
@@ -330,7 +330,7 @@ def GQSP(qargs, U, p, q=None, k=0):
     if q == None:
         q = compute_gqsp_polynomial(p, num_iterations=10000)
 
-    theta, phi, lambda_ = compute_gqsp_phase_factors(p, q)
+    theta, phi, lambda_ = compute_gqsp_angles(p, q)
 
     qbl = QuantumBool()
 

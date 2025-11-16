@@ -18,5 +18,5 @@ Miscellaneous
     :toctree: generated/
     
     compute_gqsp_polynomial
-    compute_gqsp_phase_factors
+    compute_gqsp_angles
     polynomial_to_chebyshev
