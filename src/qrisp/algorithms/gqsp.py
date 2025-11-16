@@ -315,9 +315,9 @@ def GQSP(qargs, U, p, q=None, k=0):
     which are exactly the probabilities we observed in the quantum simulation.
 
 
-    **Example 2: Applying a trasnformation in Chebyshev basis**
+    **Example 2: Applying a transformation in Chebyshev basis**
 
-
+    An example for filtered state preparation with GQSP is shown in the :ref:`tutorial`.
 
     """
 
