@@ -54,7 +54,7 @@ def compute_gqsp_polynomial(p, num_iterations=10000, learning_rate=0.01):
     Parameters
     ----------
     p : ndarray
-        A polynomial $p\in\mathbb C[x]$ represended as a vector of its coeffcients, 
+        A polynomial $p\in\mathbb C[x]$ represended as a vector of its coefficients, 
         i.e., $p=(p_0,p_1,\dotsc,p_d)$ corresponds to $p_0+p_1x+\dotsb+p_dx^d$.
     num_iterations : int
         Number of optimization steps.
@@ -120,10 +120,10 @@ def compute_gqsp_phase_factors(p, q):
     Parameters
     ----------
     p : ndarray
-        A polynomial $p\in\mathbb C[x]$ represended as a vector of its coeffcients, 
+        A polynomial $p\in\mathbb C[x]$ represented as a vector of its coefficients, 
         i.e., $p=(p_0,p_1,\dotsc,p_d)$ corresponds to $p_0+p_1x+\dotsb+p_dx^d$.
-    q : ndarray, optional
-        A polynomial $q\in\mathbb C[x]$ represended as a vector of its coeffcients. 
+    q : ndarray
+        A polynomial $q\in\mathbb C[x]$ represented as a vector of its coefficients. 
 
     Returns
     -------
@@ -210,10 +210,10 @@ def GQSP(qargs, U, p, q=None, k=0):
         A function appying a unitary to the variables in ``qargs``.
         Typically, $U=e^{iH}$ for a Hermitian operator $H$ and GQSP applies a function of $H$.
     p : ndarray
-        A polynomial $p\in\mathbb C[x]$ represended as a vector of its coeffcients, 
+        A polynomial $p\in\mathbb C[x]$ represented as a vector of its coefficients, 
         i.e., $p=(p_0,p_1,\dotsc,p_d)$ corresponds to $p_0+p_1x+\dotsb+p_dx^d$.
     q : ndarray, optional
-        A polynomial $q\in\mathbb C[x]$ represended as a vector of its coeffcients. 
+        A polynomial $q\in\mathbb C[x]$ represented as a vector of its coefficients. 
         If not specified, the polynomial is computed numerically from $p$.
     k : int, optional
         If specified, the Laurent polynomials $p'(x)=x^{-k}P(x)$, $q'(x)=x^{-k}q(x)$ are applied.
@@ -223,12 +223,12 @@ def GQSP(qargs, U, p, q=None, k=0):
     -------
     QuantumBool
         Auxiliary variable after applying the GQSP protocol. 
-        Must be measuered in state $\ket{0}$ for the GQSP protocoll to be successful.
+        Must be measuered in state $\ket{0}$ for the GQSP protocol to be successful.
         
     Examples
     --------
 
-    **Example 1: Applying a trasnformation in Fourier basis**
+    **Example 1: Applying a transformation in Fourier basis**
 
     We apply the operator
 
@@ -238,7 +238,7 @@ def GQSP(qargs, U, p, q=None, k=0):
 
     for some :ref:`Hermitian operator <operators>` $H$ to the input state $\ket{\psi}=\ket{0}$.
 
-    First, we define an operator $H$ and the unitaries performing the Hamiltonian evolution $e^{iH}$.
+    First, we define an operator $H$ and the unitary performing the Hamiltonian evolution $e^{iH}$.
     (In this case, Trotterization will perform Hamiltonian evolution exactly since the individual terms commute.)
 
     ::
@@ -254,7 +254,7 @@ def GQSP(qargs, U, p, q=None, k=0):
             H.trotterization(forward_evolution=False)(operand)
 
 
-    Next, we define the ``operand_prep`` function taht prepares a QuantumVariable is state $\ket{\psi}=\ket{0}$.
+    Next, we define the ``operand_prep`` function that prepares a QuantumVariable is state $\ket{\psi}=\ket{0}$.
 
     ::
 
@@ -262,9 +262,9 @@ def GQSP(qargs, U, p, q=None, k=0):
             operand = QuantumVariable(2)
             return operand
 
-    The transformation $\cos(H)$ is achieved by appliying the $p'(x)=0.5x^{-1} + 0.5x^1$ to the unitary $e^{iH}$.
+    The transformation $\cos(H)$ is achieved by applying $p'(x)=0.5x^{-1} + 0.5x^1$ to the unitary $e^{iH}$.
     This corresponds to the polynomial $p(x)=0.5+0.5x^2$ (i.e., ``p=[0.5,0,0.5]``) and ``k=1``. 
-    A suitable second polynomoal is $q(x)=-0.5+0.5x^2$ (i.e., ``q=[-0.5,0,0.5]``) which corresponds to $q'(x)=-0.5x^{-1}+0.5x$.
+    A suitable second polynomial is $q(x)=-0.5+0.5x^2$ (i.e., ``q=[-0.5,0,0.5]``) which corresponds to $q'(x)=-0.5x^{-1}+0.5x$.
 
     Finally, we apply QSP within a :ref:`RUS` protocol.
 
@@ -368,13 +368,13 @@ def polynomial_to_chebyshev(coeffs):
     Parameters
     ----------
     coeffs : ndarray
-        A polynomial $p\in\mathbb C[x]$ represended as a vector of its coeffcients, 
+        A polynomial $p\in\mathbb C[x]$ represented as a vector of its coefficients, 
         i.e., $p=(p_0,p_1,\dotsc,p_d)$ corresponds to $p_0+p_1x+\dotsb+p_dx^d$.
 
     Returns
     -------
     ndarray
-        A polynomial $p\in\mathbb C[x]$ represended as a vector of its coeffcients in Chebyshev basis, 
+        A polynomial $p\in\mathbb C[x]$ represented as a vector of its coefficients in Chebyshev basis, 
         i.e., $(t_0,t_1,\dotsc,t_d)$ corresponds to $t_0T_0(x)+t_1T_1(x)+\dotsb+t_dT_d(x)$
         where $T_n(x)$ is the $n$-th Chebyshev polynomial of first kind.
 
