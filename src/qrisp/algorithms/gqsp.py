@@ -56,18 +56,25 @@ def compute_gqsp_polynomial(p):
             The polynomial $q\in\mathbb C[x]$.
     """
 
+    d = len(p) - 1 # degree of p
+    
     # For |z|=1, |q(z)|^2 + |p(z)|^2 = 1 is equivalent to |q(z)|^2 = 1 - |p(z)|^2 = 1 - p(z)p'(1/z) = h(z), where p' is obtained from p by conjugating all coefficients
     # For d = deg(p), h(z) = z^{-d} r(z), where r(z) = z^d h(z) 
     # As shown in https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368, the polynomial q(z) can be constructed from the roots of r(z)
 
     # Compute the polynomal r(z) = z^d(1 - p(z)p'(1/z)) = z^d - p(z)p_rev'(z) 
     # where p_rev' is obtained from p' by reversing the coefficients, i.e., p_rev'=[p'_d,...,p'_0]
+
     # polyadd, polymul follow the convention that p=[p0,...,p_d] corresponds to p_d+p_{d-1}+...+p_0x^d (reversed endianness)
-    d = len(p) - 1 # degree of p
-    zd = jnp.zeros(d+1)
-    zd = zd.at[0].set(1)
+    #zd = jnp.zeros(d+1)
+    #zd = zd.at[0].set(1)
     # z^d - p(z)p_rev'(z)
-    r = jnp.polyadd(zd, -jnp.polymul(p[::-1], jnp.conj(p)))
+    #r = jnp.polyadd(zd, -jnp.polymul(p[::-1], jnp.conj(p)))
+
+    delta = jnp.zeros(2*d + 1)
+    delta = delta.at[d].set(1)
+    r = delta - jnp.convolve(p, jnp.conjugate(p[::-1]), mode='full')
+
     roots = jnp.roots(r, strip_zeros=False)
 
     # 1. Separate roots inside and outside the unit disk
