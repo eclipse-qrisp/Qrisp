@@ -34,7 +34,84 @@ import jax.numpy as jnp
 import optax
 
 
-def compute_gqsp_polynomial(p, num_iterations=10000, learning_rate=0.01):
+@jax.jit
+def compute_gqsp_polynomial(p):
+    r"""
+    Find the second GQSP polynomial $q$.
+
+    For a polynomial $p\in\mathbb C[x]$ satisfying $|p(e^{ix})|^2\leq 1$ for all $x\in\mathbb R$, this method calculates a polynomial $q\in\mathbb C[x]$ such that
+    $|p(e^{ix})|^2+|q(e^{ix})|^2=1$ for all $x\in\mathbb R$.
+
+    This function is JAX-traceable.
+
+    Parameters
+    ----------
+    p : ndarray
+        A polynomial $p\in\mathbb C[x]$ represended as a vector of its coefficients, 
+        i.e., $p=(p_0,p_1,\dotsc,p_d)$ corresponds to $p_0+p_1x+\dotsb+p_dx^d$.
+
+    Returns
+    -------
+        ndarray
+            The polynomial $q\in\mathbb C[x]$.
+    """
+
+    # For |z|=1, |q(z)|^2 + |p(z)|^2 = 1 is equivalent to |q(z)|^2 = 1 - |p(z)|^2 = 1 - p(z)p'(1/z) = h(z), where p' is obtained from p by conjugating all coefficients
+    # For d = deg(p), h(z) = z^{-d} r(z), where r(z) = z^d h(z) 
+    # As shown in https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368, the polynomial q(z) can be constructed from the roots of r(z)
+
+    # Compute the polynomal r(z) = z^d(1 - p(z)p'(1/z)) = z^d - p(z)p_rev'(z) 
+    # where p_rev' is obtained from p' by reversing the coefficients, i.e., p_rev'=[p'_d,...,p'_0]
+    # polyadd, polymul follow the convention that p=[p0,...,p_d] corresponds to p_d+p_{d-1}+...+p_0x^d (reversed endianness)
+    d = len(p) - 1 # degree of p
+    zd = jnp.zeros(d+1)
+    zd = zd.at[0].set(1)
+    # z^d - p(z)p_rev'(z)
+    r = jnp.polyadd(zd, -jnp.polymul(p[::-1], jnp.conj(p)))
+    roots = jnp.roots(r, strip_zeros=False)
+
+    # 1. Separate roots inside and outside the unit disk
+    abs_roots = jnp.abs(roots)
+    mask_in = abs_roots <= 1.0
+    mask_out = abs_roots > 1.0
+    roots_in_initial = jnp.where(mask_in, roots, 0)
+    roots_out = jnp.where(mask_out, roots, 0) 
+    prod_out = jnp.prod(jnp.where(mask_out, roots, 1))
+
+    # 2d roots; k outside; 2d - k inside the unit disk
+    k = jnp.count_nonzero(roots_out)
+
+    # 2. Find the threshold magnitude from the 'in' roots 
+    # Roots with absolute value within the threshold correspond to pairs (w, 1/w*)
+    # Roots above the threshold are considered to lie on the unit circle
+    abs_roots_in = jnp.abs(roots_in_initial)
+    thres = jnp.sort(abs_roots_in)[2*k]
+
+    # 3. Select roots based on the threshold to obtain g(z)
+    selected_roots = jnp.where(abs_roots_in <= thres, roots_in_initial, 0)
+
+    # Select roots greater than the threshold to obatain r_hat(z) = g_hat^2(z)
+    # Sort complex roots; apply mask that selects every second root to obtain g_hat(z)
+    root_circle = jnp.where(abs_roots_in > thres, roots_in_initial, 0)
+    mask = jnp.ones(2*d).at[1::2].set(0) 
+    roots_circle_masked = jnp.sort_complex(root_circle) * mask
+
+    # 4. Combine and select the final d nonzero roots to obtain g(z)g_hat(z)
+    combined_roots = jnp.concatenate([selected_roots, roots_circle_masked])
+
+    mask_nonzero = combined_roots != 0
+    combined_roots_masked = jnp.where(mask_nonzero, combined_roots, -2)
+    # Sort by complex value and take the last d elements
+    new_roots = jnp.sort_complex(combined_roots_masked)[-d:]
+
+    # Compute polynomial q from roots
+    factor = jnp.sqrt(jnp.abs(r[-1] * prod_out))
+    q = factor * jnp.poly(new_roots)[::-1]
+
+    return q
+
+
+def _compute_gqsp_polynomial(p, num_iterations=10000, learning_rate=0.01):
     r"""
     Find the second GQSP polynomial $q$.
 
@@ -328,7 +405,7 @@ def GQSP(qargs, U, p, q=None, k=0):
     d = len(p) - 1
 
     if q == None:
-        q = compute_gqsp_polynomial(p, num_iterations=10000)
+        q = compute_gqsp_polynomial(p)
 
     theta, phi, lambda_ = compute_gqsp_angles(p, q)
 
