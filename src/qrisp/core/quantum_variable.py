@@ -21,6 +21,7 @@ import copy
 import matplotlib.pyplot as plt
 import numpy as np
 from jax import tree_util
+import warnings
 
 from qrisp.core.compilation import qompiler
 
@@ -717,7 +718,7 @@ class QuantumVariable:
 
         int_encoder(self, self.encoder(value))
 
-    def init_state_qswitch(self, state_array):
+    def init_state_qswitch(self, state_array, method="auto"):
         """
         TODO: Add description
         """
@@ -735,7 +736,17 @@ class QuantumVariable:
                 f"Length of statevector must be {expected_length} for {self.size} qubits, got {len(state_array)}."
             )
 
-        state_preparation(self, state_array)
+        norm = np.linalg.norm(state_array)
+        if norm == 0:
+            raise ValueError("amps vector has zero norm.")
+        if not np.isclose(norm, 1.0):
+            warnings.warn(
+                "The provided state vector is not normalized. It will be normalized automatically.",
+                UserWarning,
+            )
+            state_array = state_array / norm
+
+        state_preparation(self, state_array, method)
 
     def init_state(self, state_dic):
         r"""

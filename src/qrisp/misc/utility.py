@@ -1240,29 +1240,6 @@ def custom_qv(labels, decoder=None, qs=None, name=None):
     return CustomQuantumVariable(qs=qs, name=name)
 
 
-# def rotation_from_state(vec):
-#     """Return U3 parameters mapping $|0\rangle$ to the given single-qubit state vector.
-
-#     The state vector should be normalized with the first component real and positive.
-
-#     Parameters
-#     ----------
-#     vec : array-like
-#         A normalized single-qubit state vector with the first component real and positive.
-
-#     Returns
-#     -------
-#     tuple[float, float, float]
-#         The (theta, phi, lambda) parameters for the U3 gate.
-
-#     """
-#     a, b = vec
-#     theta = 2 * np.arccos(np.real(a))
-#     phi = 0.0 if np.abs(b) < 1e-12 else np.angle(b)
-#     lam = 0.0
-#     return theta, phi, lam
-
-
 def rotation_from_state(vec):
     """Map |0> → a|0> + b|1>, with a real ≥ 0; return (theta, phi, lam)."""
     a, b = vec
@@ -1278,6 +1255,7 @@ def rotation_from_state(vec):
     return float(theta), float(phi), float(lam)
 
 
+# TODO: remove this function (it has been replaced by qrisp.qswitch.qswitch)
 def qswitch_sequential(operand, case, case_function, control_qbl, ctrl=None):
     r"""
     Executes a switch - case statement distinguishing between a list of
@@ -1320,7 +1298,9 @@ def qswitch_sequential(operand, case, case_function, control_qbl, ctrl=None):
                         case_function(i, operand)
 
 
-def state_preparation(qv, target_array: np.ndarray):
+# TODO: This algorithm assumes that the first qubit of a QuantumVariable is the MSB.
+# This is not the case and should be changed as it most likely affects performance.
+def state_preparation(qv, target_array, method="auto"):
     """
     Prepare an arbitrary n-qubit state |psi> = sum_i target_array[i] |i>
     with qubit order |q0 q1 ... q_{n-1}>, where q0 is MSB and q_{n-1} is LSB.
@@ -1334,7 +1314,7 @@ def state_preparation(qv, target_array: np.ndarray):
     """
 
     # This imports must be here to avoid circular imports
-    from qrisp import ry, u3, gphase, QuantumBool
+    from qrisp import ry, u3, gphase, qswitch
 
     target_array = np.array(target_array, dtype=np.complex128)
 
@@ -1382,8 +1362,6 @@ def state_preparation(qv, target_array: np.ndarray):
 
     preprocess(target_array, level=0, prefix_idx=0, acc_phase=0.0)
 
-    control_qbl = QuantumBool()
-
     ry(thetas[0][0], qv[0])
 
     for l in range(1, n - 1):
@@ -1396,11 +1374,11 @@ def state_preparation(qv, target_array: np.ndarray):
 
             return case_fn
 
-        qswitch_sequential(
+        qswitch(
             operand=qv[l],
             case=case_qubits,
             case_function=make_case_fn(thetas_l),
-            control_qbl=control_qbl,
+            method=method,
         )
 
     if n == 1:
@@ -1415,12 +1393,14 @@ def state_preparation(qv, target_array: np.ndarray):
             u3(theta_i, phi_i, lam_i, qb)
             gphase(float(leaf_phase[i]), qb)
 
-        qswitch_sequential(
+        print("calling final qswitch")
+        qswitch(
             operand=qv[n - 1],
             case=case_qubits,
             case_function=final_case_fn,
-            control_qbl=control_qbl,
+            method=method,
         )
+        print("finished final qswitch")
 
 
 def init_state(qv, target_array):
