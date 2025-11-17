@@ -1255,7 +1255,7 @@ def rotation_from_state(vec):
     return float(theta), float(phi), float(lam)
 
 
-# TODO: remove this function (it has been replaced by qrisp.qswitch.qswitch)
+# TODO: remove this function once it is clear how to compute the statevector
 def qswitch_sequential(operand, case, case_function, control_qbl, ctrl=None):
     r"""
     Executes a switch - case statement distinguishing between a list of
@@ -1275,6 +1275,8 @@ def qswitch_sequential(operand, case, case_function, control_qbl, ctrl=None):
         The index specifying which case should be executed.
     case_function : callable
         A function ``case_function(i, operand)`` performing some in-place operation on ``operand`` depending on a nonnegative integer index ``i`` specifying the case.
+    control_qbl : Qubit
+        The control qubits for the entire qswitch operation.
 
     """
 
@@ -1282,11 +1284,7 @@ def qswitch_sequential(operand, case, case_function, control_qbl, ctrl=None):
     from qrisp import conjugate, control, mcx
 
     case_amount = 2 ** len(case)
-
-    if check_for_tracing_mode():
-        xrange = jrange
-    else:
-        xrange = range
+    xrange = jrange if check_for_tracing_mode() else range
 
     for i in xrange(case_amount):
         with conjugate(mcx)(case, control_qbl, ctrl_state=i):
@@ -1393,14 +1391,12 @@ def state_preparation(qv, target_array, method="auto"):
             u3(theta_i, phi_i, lam_i, qb)
             gphase(float(leaf_phase[i]), qb)
 
-        print("calling final qswitch")
         qswitch(
             operand=qv[n - 1],
             case=case_qubits,
             case_function=final_case_fn,
             method=method,
         )
-        print("finished final qswitch")
 
 
 def init_state(qv, target_array):
