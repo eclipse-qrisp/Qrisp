@@ -16,20 +16,22 @@
 ********************************************************************************
 """
 
-from qrisp.core import QuantumArray, QuantumVariable, x, cx, mcx
-from qrisp.qtypes import QuantumBool
+import warnings
+
+import jax.numpy as jnp
+import numpy as np
+
+from qrisp.alg_primitives import demux
+from qrisp.core import QuantumArray, QuantumVariable, cx, mcx, x
 from qrisp.environments import (
     conjugate,
     control,
+    custom_control,
     custom_inversion,
     invert,
-    custom_control,
 )
-from qrisp.alg_primitives import demux
-from qrisp.core.gate_application_functions import mcx
-from qrisp.jasp import check_for_tracing_mode, jrange, q_fori_loop, q_cond
-import numpy as np
-import jax.numpy as jnp
+from qrisp.jasp import check_for_tracing_mode, jrange, q_cond, q_fori_loop
+from qrisp.qtypes import QuantumBool
 
 
 def _invert_inpl_function(func):
@@ -129,16 +131,11 @@ def qswitch(
 
     """
 
-    if callable(case_function):
+    if is_function_mode := callable(case_function):
         if case_amount is None:
             case_size = case.size if isinstance(case, QuantumVariable) else len(case)
             case_amount = 2**case_size
-
         xrange = jrange if check_for_tracing_mode() else range
-
-        if method == "auto":
-            method = "tree"
-
         if inv:
             case_function = _invert_inpl_function(case_function)
 
@@ -149,16 +146,15 @@ def qswitch(
             raise TypeError(
                 "Argument 'case_amount' must be None when using the 'sequential' method and a list as a 'case_function'"
             )
-
         if inv:
             case_function = [_invert_inpl_function(func) for func in case_function]
 
         xrange = range
-        if method == "auto":
-            method = "tree"
 
     else:
         raise TypeError("Argument 'case_function' must be a list or a callable(i, x)")
+
+    method = "tree" if method == "auto" else method
 
     if method == "sequential":
 
@@ -168,12 +164,12 @@ def qswitch(
             with conjugate(mcx)(case, control_qbl, ctrl_state=i):
                 with control(control_qbl):
                     if ctrl is None:
-                        if callable(case_function):
+                        if is_function_mode:
                             case_function(i, operand)
                         else:
                             case_function[i](operand)
                     else:
-                        if callable(case_function):
+                        if is_function_mode:
                             with control(ctrl):
                                 case_function(i, operand)
                         else:
@@ -185,7 +181,7 @@ def qswitch(
     elif method == "parallel":
 
         if check_for_tracing_mode():
-            raise Exception(
+            raise NotImplementedError(
                 f"Compile method {method} for switch-case structure not available in tracing mode."
             )
 
@@ -195,7 +191,6 @@ def qswitch(
         # This QuantumArray acts as an addressable QRAM via the demux function
 
         if case_amount != 2**case.size:
-            import warnings
 
             warnings.warn(
                 "Warning: Additional qubit overhead because case amount is smaller than case QuantumVariable!"
@@ -211,12 +206,12 @@ def qswitch(
                 for i in range(case_amount):
                     with control(enable[i]):
                         if ctrl is None:
-                            if callable(case_function):
+                            if is_function_mode:
                                 case_function(i, qa[i])
                             else:
                                 case_function[i](qa[i])
                         else:
-                            if callable(case_function):
+                            if is_function_mode:
                                 with control(ctrl):
                                     case_function(i, qa[i])
                             else:
@@ -253,8 +248,7 @@ def qswitch(
             def x_cond(pred, true_fun, false_fun, *operands):
                 if pred:
                     return true_fun(*operands)
-                else:
-                    return false_fun(*operands)
+                return false_fun(*operands)
 
             def bitwise_count_diff(a, b):
                 return np.int32(np.bitwise_count(np.bitwise_xor(a, b)))
@@ -342,7 +336,7 @@ def qswitch(
                 )
 
         # Function mode
-        if callable(case_function):
+        if is_function_mode:
 
             def leaf(d: int, anc, ca, oper, i):
                 with control(anc[d]):
