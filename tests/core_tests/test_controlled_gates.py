@@ -16,6 +16,8 @@
 ********************************************************************************
 """
 
+import numpy as np
+
 # Created by ann81984 at 04.05.2022
 import pytest
 import time

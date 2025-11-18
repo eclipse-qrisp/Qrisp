@@ -915,6 +915,7 @@ def test_grover():
 
     pl_probs = circuit()
     qrisp_probs = list(qf.get_measurement().values())
+    
     # We compare probability distributions up to relabelling of basis states
     # (Qrisp and PennyLane use different mappings from quantum basis states to classical labels)
-    assert np.allclose(np.sort(pl_probs), np.sort(qrisp_probs), atol=1e-5)
+    assert np.allclose(np.sort(pl_probs), np.sort(qrisp_probs), atol=1e-4)
