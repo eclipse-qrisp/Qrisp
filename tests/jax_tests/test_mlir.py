@@ -17,6 +17,7 @@
 """
 
 from qrisp import *
+from qrisp.operators import a, c
 
 def test_mlir_generation():
     
@@ -68,4 +69,22 @@ def test_mlir_generation():
     assert "stablehlo.case" not in mlir_str
     assert "stablehlo.while" not in mlir_str
     assert "stablehlo.return" not in mlir_str
+    
+    # Test https://github.com/eclipse-qrisp/Qrisp/pull/296#issuecomment-3468979932
+    
+    H = a(0)
+    orbital_amount = H.find_minimal_qubit_amount()
+    U = qache(H.trotterization(forward_evolution=False))
+
+    # Finding the gound state energy of the Water molecule with QPE
+    def main():
+        qv = QuantumFloat(orbital_amount)
+        [x(qv[i]) for i in range(1)] # Prepare Hartree-Fock state, H2O molecule has 10 electrons
+
+        qpe_res = QPE(qv,U,precision=1,kwargs={"steps":1})
+        phi = measure(qpe_res)
+        return phi
+
+    jaspr = make_jaspr(main)()
+    mlir = jaspr.to_mlir()
     
