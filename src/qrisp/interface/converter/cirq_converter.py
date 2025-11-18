@@ -4,13 +4,10 @@ from qrisp.circuit import ControlledOperation, ClControlledOperation
 from cirq import CNOT, H, X, Y, Z, CZ, S, T, R, SWAP, rx, ry, rz, inverse, I, M, R, CZ, CCNOT, ZPowGate, XPowGate, GlobalPhaseGate, ControlledGate
 
 qrisp_cirq_ops_dict = {
-    # all multi-qubit gates
     'cx': CNOT,
     'cz': CZ,
     'swap': SWAP,
-    # toffoli gate
     '2cx': CCNOT,
-    # all single qubit gates
     'h': H,
     'x': X,
     'y': Y,
@@ -30,6 +27,8 @@ qrisp_cirq_ops_dict = {
     'sx_dg': XPowGate,
     'gphase': GlobalPhaseGate,
     'xxyy': None,
+    'rxx': None,
+    'rzz': None,
 }
 
 
@@ -66,8 +65,6 @@ def convert_to_cirq(qrisp_circuit):
 
         cirq_gate = qrisp_cirq_ops_dict[op_i]
         
-        # map a controlled op from Qrisp to Cirq 
-        # if isinstance(instr.op, ControlledOperation):
             
         cirq_gate = qrisp_cirq_ops_dict[op_i]
 
@@ -81,6 +78,19 @@ def convert_to_cirq(qrisp_circuit):
                 # phase exponent. The default is to assume global_shift = 0 in cirq
                 exp_param = params[0]
                 cirq_circuit.append(ZPowGate(exponent=exp_param)(*cirq_op_qubits))
+
+            elif op_i == 'rxx':
+                phi = params[0]
+                cirq_circuit.append(GlobalPhaseGate(-phi / 2).on())
+                cirq_circuit.append(H(cirq_op_qubits[0]))
+                cirq_circuit.append(H(cirq_op_qubits[1]))
+                cirq_circuit.append(CNOT(cirq_op_qubits[0], cirq_op_qubits[1]))
+                cirq_circuit.append(P(phi).on(cirq_op_qubits[1]))
+                cirq_circuit.append(CNOT(cirq_op_qubits[0], cirq_op_qubits[1]))
+                cirq_circuit.append(H(cirq_op_qubits[0]))
+                cirq_circuit.append(H(cirq_op_qubits[1]))
+
+                
             elif op_i =='xxyy':
                 phi = params[0]
                 beta = params[1]
