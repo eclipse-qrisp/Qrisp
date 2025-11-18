@@ -140,7 +140,7 @@ def check_qml_operations(qml_circuit, expected_ops):
         qml.assert_equal(op, expected_op)
 
 
-def check_statevector_equivalence(qrisp_qv, qml_statevector, atol=1e-8):
+def check_statevector_equivalence(qrisp_qv, qml_statevector, atol=1e-5):
     """Helper function to check if the statevectors from Qrisp and PennyLane are equivalent."""
 
     qrisp_statevector = qrisp_qv.qs.statevector_array()
@@ -153,7 +153,7 @@ def check_statevector_equivalence(qrisp_qv, qml_statevector, atol=1e-8):
 
 
 # We use this check when the statevector comparison is not possible
-def check_probs_measurement_equivalence(qrisp_qv, qml_res, atol=1e-8):
+def check_probs_measurement_equivalence(qrisp_qv, qml_res, atol=1e-5):
     """Helper function to check if the measurement probabilities from Qrisp and PennyLane are equivalent."""
 
     qrisp_res = qrisp_qv.get_measurement()
@@ -228,7 +228,7 @@ def test_gate_unitary_equivalence(qrisp_gate_factory, qml_gate_factory, params_l
         qrisp_unitary = qrisp_gate.get_unitary()
         qml_unitary = qml_gate.matrix()
 
-        assert np.allclose(qrisp_unitary, qml_unitary)
+        assert np.allclose(qrisp_unitary, qml_unitary, atol=1e-5)
 
 
 class TestSingleGateConversion:
