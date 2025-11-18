@@ -68,6 +68,12 @@ extensions = [
               #"nb2plots",
               ]
 
+# Configure sphinx-copybutton to only copy input lines (with >>> prompts) and strip the prompts
+copybutton_prompt_text = r">>> |\.\.\. "
+copybutton_prompt_is_regexp = True
+# Only copy lines that have prompts (input lines), automatically excluding output
+copybutton_only_copy_prompt_lines = True
+
 # Use Python for default highlighting:
 highlight_language = "python"
 
@@ -187,3 +193,5 @@ source_suffix = ['.rst', '.md']
 #     "gitlab_repo": "Qrisp Compiler", # Repo name
 #     "conf_py_path": "/source/", # Path in the checkout to the docs root
 # }
+
+html_extra_path = ['_extra']  # copies contents of docs/_extra/ to _build/html/
