@@ -100,7 +100,10 @@ def q_while_loop(cond_fun, body_fun, init_val):
     """
 
     if not check_for_tracing_mode():
-        return while_loop(cond_fun, body_fun, init_val)
+        val = init_val
+        while cond_fun(val):
+            val = body_fun(val)
+        return val
 
     def new_cond_fun(val):
         temp_qc = qs.abs_qc
@@ -297,6 +300,12 @@ def q_cond(pred, true_fun, false_fun, *operands):
 
     """
 
+    if not check_for_tracing_mode():
+        if pred:
+            return true_fun(*operands)
+        else:
+            return false_fun(*operands)
+
     def new_true_fun(*operands):
         qs.start_tracing(operands[1])
         for qv in recursive_qv_search(operands[0]):
@@ -341,6 +350,12 @@ def q_cond(pred, true_fun, false_fun, *operands):
 
     from qrisp.jasp import Jaspr
 
+    if (not isinstance(false_jaxpr.jaxpr.outvars[-1].aval, AbstractQuantumCircuit)) and (not isinstance(true_jaxpr.jaxpr.outvars[-1].aval, AbstractQuantumCircuit)):
+        eqn.invars.pop(-1)
+        false_jaxpr.jaxpr.invars.pop(-1)
+        true_jaxpr.jaxpr.invars.pop(-1)
+        return cond_res[0]
+    
     eqn.params["branches"] = (
             Jaspr.from_cache(false_jaxpr),
             Jaspr.from_cache(true_jaxpr)

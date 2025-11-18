@@ -334,7 +334,7 @@ Key Features
             <div class="key-features-text">
     
         **Compatibility** |br|
-        Compilation results are circuit objects, implying they can be run on a variety of hardware providers such as IBM Quantum, Quantinuum, Rigetti etc. Further circuit processing is possible using circuit optimizers like PyZX. 
+        Compilation results are circuit objects, implying they can be run on a variety of hardware providers such as IQM, IBM Quantum, Quantinuum, Rigetti etc. Further circuit processing is possible using circuit optimizers like PyZX. 
         
         .. raw:: html
         

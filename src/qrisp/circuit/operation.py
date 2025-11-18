@@ -703,12 +703,12 @@ class PTControlledOperation(Operation):
                 temp_gate = PGate(base_operation.params[0])
 
             if self.ctrl_state[0] == "0":
-                definition_circ.x(-2)
+                definition_circ.x(definition_circ.qubits[-2])
 
             definition_circ.append(temp_gate, definition_circ.qubits[:num_ctrl_qubits])
 
             if self.ctrl_state[0] == "0":
-                definition_circ.x(-2)
+                definition_circ.x(definition_circ.qubits[-2])
 
         elif self.base_operation.name == "gray_phase_gate":
             raise

@@ -26,8 +26,24 @@ from qrisp.jasp import check_for_tracing_mode, DynamicQubitArray, jlen
 def append_operation(operation, qubits=[], clbits=[], param_tracers=[]):
     from qrisp import find_qs
 
-    qs = find_qs(qubits)
-    qs.append(operation, qubits, clbits, param_tracers=param_tracers)
+    try:
+        qs = find_qs(qubits)
+        qs.append(operation, qubits, clbits, param_tracers=param_tracers)
+    except Exception as e:
+        
+        # Handle the case that the user specified an empty qubit list, i.e.
+        # cx([], [])
+        if "Couldn't find QuantumSession" in str(e):
+            if len(qubits) == 0:
+                return
+            for q in qubits:
+                if not (isinstance(q, list) and len(q) == 0):
+                    break
+            else:
+                return
+            
+        raise e
+                    
 
 
 def cx(control, target):
@@ -1222,6 +1238,15 @@ def measure(qubits):
             raise Exception(f"Tried to measure type {type(qubits)}")
 
         return res
+
+def measure_to_big_integer(qv, size):
+    from qrisp import BigInteger, q_fori_loop
+    import jax.numpy as jnp
+    def body_fun(i, val):
+        return val.at[i].set(measure(qv[32*i:32*(i+1)]))
+    digits = q_fori_loop(0, (qv.size-1)//32, body_fun, jnp.zeros(size, jnp.uint32))
+    digits = digits.at[(qv.size-1)//32].set(measure(qv[32*((qv.size - 1)//32):]))
+    return BigInteger(digits)
 
 
 def reset(qubits):

@@ -21,11 +21,14 @@ from jax import jit
 
 from qrisp.jasp import jrange, qache
 from qrisp.core import x, cx, QuantumVariable, mcx
+from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
 from qrisp.environments import control, custom_control
 
 
 @jit
 def extract_boolean_digit(integer, digit):
+    if isinstance(integer, BigInteger):
+        return jnp.bool(integer.get_bit(digit))
     return jnp.bool((integer >> digit & 1))
 
 
