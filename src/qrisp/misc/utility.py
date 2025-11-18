@@ -1256,6 +1256,7 @@ def rotation_from_state(vec):
 
 
 # TODO: remove this function once it is clear how to compute the statevector
+# (right now, this function is not used)
 def qswitch_sequential(operand, case, case_function, control_qbl, ctrl=None):
     r"""
     Executes a switch - case statement distinguishing between a list of
@@ -1299,17 +1300,6 @@ def qswitch_sequential(operand, case, case_function, control_qbl, ctrl=None):
 # TODO: This algorithm assumes that the first qubit of a QuantumVariable is the MSB.
 # This is not the case and should be changed as it most likely affects performance.
 def state_preparation(qv, target_array, method="auto"):
-    """
-    Prepare an arbitrary n-qubit state |psi> = sum_i target_array[i] |i>
-    with qubit order |q0 q1 ... q_{n-1}>, where q0 is MSB and q_{n-1} is LSB.
-
-    This builds an n-layer tree of multiplexers:
-      - layer 0: R_y on q0
-      - layer 1..n-2: R_y on q_l multiplexed by (q0..q_{l-1})
-      - layer n-1: U3 + accumulated phases on q_{n-1} multiplexed by (q0..q_{n-2})
-
-    The function allocates QuantumFloat(n), compiles the circuit, and returns the QuantumSession.
-    """
 
     # This imports must be here to avoid circular imports
     from qrisp import ry, u3, gphase, qswitch
@@ -1326,13 +1316,7 @@ def state_preparation(qv, target_array, method="auto"):
     leaf_phase = np.zeros(1 << (n - 1), dtype=float)
 
     def preprocess(subvec, level, prefix_idx, acc_phase):
-        """
-        subvec: length 2**(n - level)
-        level: 0..n-1, current target qubit is q_level (except leaves)
-        prefix_idx: integer (0..2**level-1) encoding (q0..q_{level-1}) with q_{level-1} as LSB in idx
-        acc_phase: float, accumulated phase to re-apply at the leaf
-        Fills: thetas[level], leaf_U, leaf_phase
-        """
+
         L = subvec.size
         if L == 2:
             a0_phase = float(np.angle(subvec[0])) if abs(subvec[0]) > 1e-12 else 0.0
