@@ -2067,6 +2067,14 @@ class QubitOperator(Hamiltonian):
                 ev_M = M.expectation_value(psi, precision_expectation_value)
                 M_values.append(float(ev_M(t)))
 
+            plt.scatter(T_values, M_values, color='#6929C4', marker="o", linestyle="solid", s=20, label=r"Ising chain")
+            plt.xlabel(r"Evolution time $T$", fontsize=15, color="#444444")
+            plt.ylabel(r"Magnetization $\langle M \rangle$", fontsize=15, color="#444444")
+            plt.legend(fontsize=15, labelcolor="#444444")
+            plt.tick_params(axis='both', labelsize=12)
+            plt.grid()
+            plt.show()
+
         .. image:: /_static/qdrift.png
             :alt: QDRIFT Ising magnetization simulation
             :align: center
