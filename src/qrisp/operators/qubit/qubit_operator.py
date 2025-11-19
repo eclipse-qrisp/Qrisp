@@ -1935,6 +1935,113 @@ class QubitOperator(Hamiltonian):
         return U
 
     #
+    # Qdrift
+    #
+
+    def qdrift(self, qv, time_simulation, N, use_arctan= False ):
+
+        r"""
+        This algorithm simulates the time evolution of a quantum state under a Hamiltonian using the **QDRIFT** (Quantum Stochastic Drift Protocol) algorithm.
+
+        QDRIFT approximates the exact time-evolution operator
+
+        .. math::
+            U(t) = e^{-i H t}, \qquad 
+            H = \sum_j h_j P_j,
+
+        by replacing it with a stochastic product of simpler exponentials
+
+        .. math::
+            \tilde{U}(t) = \prod_{k=1}^N e^{-i \, \tau \, \mathrm{sgn}(h_{j_k}) P_{j_k}},
+
+        where each term :math:`P_j` is sampled independently with probability
+
+        .. math::
+            p_j = \frac{|h_j|}{\lambda}, \qquad 
+            \lambda = \sum_j |h_j|.
+
+        The number of samples :math:`N` controls the overall simulation accuracy. The expected diamond-norm error of the QDRIFT channel satisfies : 
+
+        .. math::
+            \epsilon \le \frac{2 \lambda^2 t^2}{N},
+
+        so that achieving a target precision :math:`\epsilon` requires
+
+        .. math::
+            N = \mathcal{O}\!\left( \frac{\lambda^2 t^2}{\epsilon} \right).
+
+        Each sampled exponential uses a fixed time-step parameter
+
+        .. math::
+            \tau = \frac{\lambda t}{N},
+
+        or, if :code:`use_arctan=True`, a numerically stable variant
+
+        .. math::
+            \tau = \arctan\!\left( \frac{\lambda t}{N} \right).
+
+        QDRIFT is particularly suited for large quantum systems whose Hamiltonians can be decomposed into a sum of local Pauli terms. 
+
+        Parameters
+        ----------
+        H : :class:`QubitOperator`
+            Hamiltonian to simulate, written as 
+            :math:`H = \sum_j h_j P_j`, where each :math:`P_j`
+            is a tensor product of Pauli operators.
+        qv : :class:`QuantumVariable`
+            Quantum state to which the simulated evolution is applied.
+        time_simulation : float
+            Total simulation time :math:`t`.
+        N : int
+            Number of random samples (the number of exponentials in the product).
+            Larger values yield higher accuracy at the cost of more gates.
+        use_arctan : bool, optional
+            If ``True``, uses :math:`\tau = \arctan(\lambda t / N)`
+            instead of linear scaling. This can improve numerical stability
+            for large :math:`\lambda t`. Default is ``False``.
+
+        Returns
+        -------
+        qv : :class:`QuantumVariable`
+            The evolved quantum state after applying the QDRIFT approximation.
+        """
+        
+        coeffs = []
+        terms = []
+        # signs = []
+
+        coeffs = []
+        terms = []
+        for term, coeff in  self.terms_dict.items():
+            terms.append(term)
+            coeffs.append(coeff)
+
+        # Step 1
+        normalisation_factor = sum(abs(c) for c in coeffs)
+        if normalisation_factor == 0 or time_simulation == 0:
+            return []  
+
+        # Step 3
+        tau = normalisation_factor * time_simulation / N
+        angle = np.arctan(tau) if use_arctan else tau
+
+        # Step 4
+        probs = [abs(c) / normalisation_factor for c in coeffs]
+
+        # Step 5
+        i = 0
+        def sample(probs):
+            return np.random.choice(range(len(probs)), p=probs)
+
+        while i < N:
+            i += 1  # Step 5a
+            j = sample(probs)  # Step 5b
+            terms[j].simulate(angle, qv)  # Step 5c
+            
+        #Step 6
+        return qv
+
+    #
     # LCU
     #
 
