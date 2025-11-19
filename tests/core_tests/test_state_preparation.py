@@ -21,7 +21,6 @@ import pytest
 
 from qrisp import QuantumFloat, QuantumVariable, x
 
-
 #######################################
 ### Test state preparation with qswitch
 #######################################

@@ -16,12 +16,12 @@
 ********************************************************************************
 """
 
+import functools
 import traceback
 
 import numpy as np
 import sympy
-from jax.lax import fori_loop, cond
-import functools
+from jax.lax import cond, fori_loop
 
 
 def bin_rep(n, bits):
@@ -40,8 +40,8 @@ def bin_rep(n, bits):
 
 def int_encoder(qv, encoding_number):
 
-    from qrisp import x, control
-    from qrisp.jasp import TracingQuantumSession, jrange, check_for_tracing_mode
+    from qrisp import control, x
+    from qrisp.jasp import TracingQuantumSession, check_for_tracing_mode, jrange
 
     if not check_for_tracing_mode():
         if encoding_number > 2 ** len(qv) - 1:
@@ -434,10 +434,10 @@ def gate_wrap_inner(
             return qached_function(*args, **kwargs)
 
         wrapped_function.__name__ = function.__name__
+        from qrisp import QuantumArray, QuantumVariable, merge
         from qrisp.circuit import Qubit
         from qrisp.core import recursive_qs_search, recursive_qv_search
         from qrisp.environments import GateWrapEnvironment
-        from qrisp import merge, QuantumVariable, QuantumArray
 
         try:
             qs = find_qs(args)
@@ -685,7 +685,7 @@ def find_qs(args):
     if hasattr(args, "qs"):
         return args.qs()
 
-    from qrisp import QuantumVariable, QuantumArray, Qubit
+    from qrisp import QuantumArray, QuantumVariable, Qubit
 
     for arg in args:
         if isinstance(arg, (QuantumVariable, QuantumArray)):
@@ -780,8 +780,8 @@ def multi_measurement(qv_list, shots=None, backend=None):
     from qrisp import (
         QuantumArray,
         QuantumVariable,
-        recursive_qv_search,
         recursive_qa_search,
+        recursive_qv_search,
     )
     from qrisp.core.compilation import qompiler
 
@@ -1277,7 +1277,7 @@ def state_preparation(qv, target_array, method: str = "auto") -> None:
     """Prepares the quantum state specified by ``target_array`` on the qubits of ``qv``."""
 
     # This imports must be here to avoid circular imports
-    from qrisp import ry, u3, gphase, qswitch
+    from qrisp import gphase, qswitch, ry, u3
 
     target_array = np.array(target_array, dtype=np.complex128)
 
@@ -1516,7 +1516,7 @@ def find_calling_line(level=0):
 
 
 def retarget_instructions(data, source_qubits, target_qubits):
-    from qrisp import QuantumEnvironment, recursive_qs_search, multi_session_merge
+    from qrisp import QuantumEnvironment, multi_session_merge, recursive_qs_search
 
     for i in range(len(data)):
         instr = data[i]
@@ -1607,14 +1607,15 @@ def redirect_qfunction(function_to_redirect):
 
 
     """
-    from qrisp import QuantumEnvironment, QuantumVariable, merge, QuantumArray
     import weakref
+
+    from qrisp import QuantumArray, QuantumEnvironment, QuantumVariable, merge
     from qrisp.jasp import (
-        check_for_tracing_mode,
-        make_jaspr,
-        injection_transform,
         TracingQuantumSession,
+        check_for_tracing_mode,
         eval_jaxpr,
+        injection_transform,
+        make_jaspr,
     )
 
     def redirected_qfunction(*args, target=None, **kwargs):
@@ -2223,7 +2224,7 @@ def inpl_adder_test(inpl_adder):
         print("The qcla_2_0 adder passed the tests without errors.")
 
     """
-    from qrisp import QuantumFloat, multi_measurement, h, control, QuantumBool
+    from qrisp import QuantumBool, QuantumFloat, control, h, multi_measurement
 
     for i in range(1, 7):
 

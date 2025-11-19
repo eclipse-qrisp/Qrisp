@@ -17,11 +17,11 @@
 """
 
 import copy
+import warnings
 
 import matplotlib.pyplot as plt
 import numpy as np
 from jax import tree_util
-import warnings
 
 from qrisp.core.compilation import qompiler
 
@@ -234,7 +234,7 @@ class QuantumVariable:
 
         # Store quantum session
         from qrisp.core import QuantumSession
-        from qrisp.jasp import check_for_tracing_mode, TracingQuantumSession
+        from qrisp.jasp import TracingQuantumSession, check_for_tracing_mode
 
         if check_for_tracing_mode():
             self.qs = TracingQuantumSession.get_instance()
@@ -343,7 +343,7 @@ class QuantumVariable:
         self.traced_attributes = []
 
     def __or__(self, other):
-        from qrisp import mcx, x, cx
+        from qrisp import cx, mcx, x
 
         if len(self) > len(other):
             or_res = self.duplicate()
@@ -526,7 +526,7 @@ class QuantumVariable:
         """
 
         from qrisp.core import QuantumSession
-        from qrisp.jasp import check_for_tracing_mode, TracingQuantumSession
+        from qrisp.jasp import TracingQuantumSession, check_for_tracing_mode
 
         if check_for_tracing_mode():
             new_qs = TracingQuantumSession.get_instance()
@@ -706,8 +706,8 @@ class QuantumVariable:
 
         """
 
-        from qrisp.misc import check_if_fresh, int_encoder
         from qrisp.jasp import TracingQuantumSession
+        from qrisp.misc import check_if_fresh, int_encoder
 
         if not isinstance(self.qs, TracingQuantumSession):
             if not permit_dirtyness:
@@ -724,8 +724,8 @@ class QuantumVariable:
         """
 
         # These imports are here to avoid circular dependencies
-        from qrisp.misc import check_if_fresh
         from qrisp import state_preparation
+        from qrisp.misc import check_if_fresh
 
         if not check_if_fresh(self.reg, self.qs):
             raise ValueError("Tried to initialize qubits which are not fresh anymore.")
