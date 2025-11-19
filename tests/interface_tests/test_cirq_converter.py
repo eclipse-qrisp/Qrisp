@@ -46,31 +46,21 @@ expected_cirq_qc_single_qubit_gates_ops = [
 # 4 qubit circuit containing all two qubit gates
 
 # 4 qubit circuit containing all multi-controlled gates
+# there is only 1 multicontrolled gate mcx
+qc_mcx = QuantumCircuit(10)
+qc_mcx.mcx([0, 1, 2, 4, 5, 7], [3, 8])
+
+expected_mcx_circ = [
+    X(LineQubit(3)).controlled_by(LineQubit(0), LineQubit(1), LineQubit(2), LineQubit(4), LineQubit(5), LineQubit(7)),
+    X(LineQubit(8)).controlled_by(LineQubit(0), LineQubit(1), LineQubit(2), LineQubit(4), LineQubit(5), LineQubit(7))]
 
 @pytest.mark.parametrize("input_circuit, expected_res", [
-    (qc_single_qubit_gates, expected_cirq_qc_single_qubit_gates_ops)])
+    (qc_single_qubit_gates, expected_cirq_qc_single_qubit_gates_ops),
+    (qc_mcx, expected_mcx_circ)])
 def test_cirq_converter(input_circuit, expected_res):
     """Check the Qrisp to Cirq converter works for different circuits."""
     converted_circ = convert_to_cirq(input_circuit)
     assert expected_res == list(converted_circ.all_operations())
-
-
-    
-
-def test_two_qubit_circuit():
-    """Check a Qrisp circuit containing all two qubit gates is properly converted to a Cirq circuit."""
-
-
-def test_mc_qubit_circuit():
-    """Check a Qrisp circuit containing all multi-controlled gates is properly converted to a Cirq circuit."""
-
-
-def test_labeled_qubits():
-    """Verify converter works for named qubits in the Qrisp circuit."""
-
-
-def test_symbolic_parametrized_gates():
-    """Verify error is raised when a symbolic parameter is provided to certain parametrized gates."""
 
 
 @pytest.mark.parametrize("op, expected_msg", [
@@ -88,3 +78,23 @@ def test_unsupported_gate(op, expected_msg):
     qc.data = [MagicMock(op=op, qubits=[MagicMock()])]
     with pytest.raises(ValueError, match=expected_msg):
         convert_to_cirq(qc)
+    
+
+@pytest.mark.parametrize("gate, qubits", [
+    ("rxx", [1, 3]),
+    ("rzz", [2, 0]),
+    ("gphase", [0]),
+])
+def test_gphase_error(capsys, gate, qubits):
+    """Verify a message is printed when the Qrisp circuit contains a global phase gate."""
+    qc = QuantumCircuit(4)
+    if gate == "rxx":
+        qc.rxx(0.3, *qubits)
+    elif gate == "rzz":
+        qc.rzz(0.3, *qubits)
+    elif gate == "gphase":
+        qc.gphase(0.3, *qubits)
+
+    convert_to_cirq(qc)
+    captured = capsys.readouterr()
+    assert "Qrisp circuit contains a global phase gate which will be skipped in the Qrisp to Cirq conversion." in captured.out

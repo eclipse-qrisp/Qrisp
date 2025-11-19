@@ -135,7 +135,7 @@ def convert_to_cirq(qrisp_circuit):
                 # cirq_circuit.append(GlobalPhaseGate(*params).on())
                 # print(circuit)
                 
-            else:
+            elif cirq_gate:
                 gate_instance = cirq_gate(*params)
                 cirq_circuit.append(gate_instance(*cirq_op_qubits))
         
