@@ -193,7 +193,7 @@ def make_profiling_eqn_evaluator(profiling_dic, meas_behavior):
             # Reinterpreted body and cond function
             def body_fun(val):
                 
-                constants = val[:eqn.params["body_nconsts"]]
+                constants = val[eqn.params["cond_nconsts"]:overall_constant_amount]
                 carries = val[overall_constant_amount:]
                 
                 body_res = eval_jaxpr(
