@@ -728,7 +728,7 @@ class QuantumVariable:
         from qrisp import state_preparation
 
         if not check_if_fresh(self.reg, self.qs):
-            raise Exception("Tried to initialize qubits which are not fresh anymore.")
+            raise ValueError("Tried to initialize qubits which are not fresh anymore.")
 
         expected_length = 2**self.size
         if len(state_array) != expected_length:
@@ -738,7 +738,7 @@ class QuantumVariable:
 
         norm = np.linalg.norm(state_array)
         if norm == 0:
-            raise ValueError("amps vector has zero norm.")
+            raise ValueError("The provided state vector has zero norm.")
         if not np.isclose(norm, 1.0):
             warnings.warn(
                 "The provided state vector is not normalized. It will be normalized automatically.",

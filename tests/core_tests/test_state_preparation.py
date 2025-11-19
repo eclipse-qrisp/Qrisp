@@ -19,37 +19,131 @@
 import numpy as np
 import pytest
 
-from qrisp import QuantumFloat, QuantumVariable
+from qrisp import QuantumFloat, QuantumVariable, x
 
 
-@pytest.mark.parametrize("n_qubits", [1, 2, 3, 4])
-def test_qswitch_state_preparation(n_qubits):
-    """Test qswitch state preparation for various qubit counts."""
+#######################################
+### Test state preparation with qswitch
+#######################################
 
-    def normalize(vec):
-        """Utility to normalize any vector."""
-        vec = np.asarray(vec, dtype=complex)
-        return vec / np.linalg.norm(vec)
 
-    # Generate two random test vectors
-    test_vectors = [
-        np.random.rand(2**n_qubits) + 1j * np.random.rand(2**n_qubits),
-        np.random.rand(2**n_qubits) + 1j * np.random.rand(2**n_qubits),
-    ]
+def _compute_statevector_logical_qubits(qv: QuantumVariable) -> np.ndarray:
+    """Compute the statevector amplitudes corresponding to the logical qubits"""
 
-    for sv in test_vectors:
-        sv = normalize(sv)
+    qs_compiled = qv.qs.compile()
+    sv = qs_compiled.statevector_array()
+    qubits = qs_compiled.qubits
 
-        qv = QuantumVariable(n_qubits)
-        prepared = qv.init_state_qswitch(sv)
+    logical_positions = [qubits.index(qv[i]) for i in range(qv.size)]
 
-        assert np.allclose(prepared, sv, atol=1e-6), (
-            f"State preparation failed for {n_qubits} qubits.\n"
-            f"Expected: {sv}\nGot: {prepared}"
-        )
+    logical_amplitudes = []
+    for index in range(2**qv.size):
+        bits = format(index, f"0{qv.size}b")
+        full_bits = ["0"] * len(qubits)
+        for pos, bit in zip(logical_positions, bits):
+            full_bits[pos] = bit
+
+        index = int("".join(full_bits), 2)
+        logical_amplitudes.append(sv[index])
+
+    return np.array(logical_amplitudes, dtype=complex)
+
+
+def _gen_real_vector(n):
+    """Returns a full real normalized vector."""
+    v = np.random.rand(2**n)
+    return v / np.linalg.norm(v)
+
+
+def _gen_sparse_vector(n):
+    """Returns a vector with n-1 zeros and one non-zero real entry."""
+    v = np.zeros(2**n, dtype=complex)
+    v[0] = 1.0
+    return v
+
+
+def _gen_complex_vector(n):
+    """Returns a full complex normalized vector."""
+    v = np.random.rand(2**n) + 1j * np.random.rand(2**n)
+    return v / np.linalg.norm(v)
+
+
+class TestStatePreparationQSwitch:
+    """Test state preparation using the qswitch method."""
+
+    def test_warning_non_normalized(self):
+        """Test that a warning is raised when a non-normalized vector is provided."""
+
+        qv = QuantumVariable(3)
+
+        array = np.array([1, 1j, 0, 0, 0, 0, 0, 0], dtype=complex)
+
+        with pytest.warns(
+            UserWarning, match="The provided state vector is not normalized"
+        ):
+            qv.init_state_qswitch(array)
+
+    def test_error_mismatched_size(self):
+        """Test that an error is raised when a vector of mismatched size is provided."""
+
+        qv = QuantumVariable(3)
+
+        array = np.array([1j, 0, 0, 0], dtype=complex)
+
+        with pytest.raises(
+            ValueError,
+            match="Length of statevector must be 8 for 3 qubits, got 4",
+        ):
+            qv.init_state_qswitch(array)
+
+    def test_error_fresh_qubits(self):
+        """Test that an error is raised when qubits are not in the |0> state."""
+
+        qv = QuantumVariable(2)
+        x(qv[0])
+
+        array = np.array([1j, 0, 0, 0], dtype=complex)
+
+        with pytest.raises(
+            ValueError,
+            match="Tried to initialize qubits which are not fresh anymore",
+        ):
+            qv.init_state_qswitch(array)
+
+    def test_error_zero_vector(self):
+        """Test that an error is raised when a zero vector is provided."""
+
+        qv = QuantumVariable(2)
+
+        array = np.array([0, 0, 0, 0], dtype=complex)
+
+        with pytest.raises(
+            ValueError,
+            match="The provided state vector has zero norm",
+        ):
+            qv.init_state_qswitch(array)
+
+    @pytest.mark.parametrize("n", [1, 2, 3, 4, 5])
+    @pytest.mark.parametrize(
+        "statevector_fn",
+        [_gen_real_vector, _gen_sparse_vector, _gen_complex_vector],
+    )
+    def test_state_prep_parametric(self, n, statevector_fn):
+        """Test state preparation with qswitch for different statevectors and sizes."""
+
+        qv = QuantumVariable(n)
+
+        array = statevector_fn(n)
+        qv.init_state_qswitch(array)
+
+        logical_sv = _compute_statevector_logical_qubits(qv)
+
+        assert np.allclose(logical_sv, array, atol=1e-5)
 
 
 def test_state_preparation():
+    """Test state preparation for QuantumFloat with a dictionary."""
+
     qf = QuantumFloat(4, -2, signed=True)
 
     state_dic = {

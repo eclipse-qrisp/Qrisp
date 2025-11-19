@@ -1240,66 +1240,41 @@ def custom_qv(labels, decoder=None, qs=None, name=None):
     return CustomQuantumVariable(qs=qs, name=name)
 
 
-def rotation_from_state(vec):
-    """Map |0> → a|0> + b|1>, with a real ≥ 0; return (theta, phi, lam)."""
+def rotation_from_state(vec: np.ndarray) -> tuple:
+    """
+    Map |0> → a|0> + b|1>, with a real ≥ 0.
+
+    Parameters
+    ----------
+    vec : array_like
+        A 2-dimensional complex vector representing a qubit state.
+
+    Returns
+    -------
+    theta : float
+        The rotation angle theta.
+    phi : float
+        The rotation angle phi.
+    lam : float
+        The rotation angle lambda.
+    """
+
     a, b = vec
-    # numerical guard
-    a_real = float(np.real_if_close(a))
+    a_real = np.real_if_close(a)
     if a_real < 0:
         # flip a global π phase to make 'a' non-negative real
         a_real = -a_real
         b = -b
     theta = 2.0 * np.arccos(a_real)
-    phi = float(np.angle(b)) if abs(b) > 1e-12 else 0.0
+    phi = np.angle(b) if abs(b) > 1e-12 else 0.0
     lam = 0.0
-    return float(theta), float(phi), float(lam)
-
-
-# TODO: remove this function once it is clear how to compute the statevector
-# (right now, this function is not used)
-def qswitch_sequential(operand, case, case_function, control_qbl, ctrl=None):
-    r"""
-    Executes a switch - case statement distinguishing between a list of
-    given in-place functions.
-
-    More precisely, the qswitch applies the unitary $U_i$ to the operand in state $\ket{\psi}$ given that the case variable is in state $\ket{i}$, i.e.,
-
-    .. math::
-
-        \text{qswitch}\ket{i}_{\text{case}}\ket{\psi}_{\text{operand}} = \ket{i}_{\text{case}}U_i\ket{\psi}_{\text{operand}}
-
-    Parameters
-    ----------
-    operand : Qubit
-        The argument on which the case function operates.
-    case : list[Qubit]
-        The index specifying which case should be executed.
-    case_function : callable
-        A function ``case_function(i, operand)`` performing some in-place operation on ``operand`` depending on a nonnegative integer index ``i`` specifying the case.
-    control_qbl : Qubit
-        The control qubits for the entire qswitch operation.
-
-    """
-
-    from qrisp.jasp import check_for_tracing_mode, jrange
-    from qrisp import conjugate, control, mcx
-
-    case_amount = 2 ** len(case)
-    xrange = jrange if check_for_tracing_mode() else range
-
-    for i in xrange(case_amount):
-        with conjugate(mcx)(case, control_qbl, ctrl_state=i):
-            with control(control_qbl):
-                if ctrl is None:
-                    case_function(i, operand)
-                else:
-                    with control(ctrl):
-                        case_function(i, operand)
+    return theta, phi, lam
 
 
 # TODO: This algorithm assumes that the first qubit of a QuantumVariable is the MSB.
-# This is not the case and should be changed as it most likely affects performance.
-def state_preparation(qv, target_array, method="auto"):
+# This is not the case and should be changed.
+def state_preparation(qv, target_array, method: str = "auto") -> None:
+    """Prepares the quantum state specified by ``target_array`` on the qubits of ``qv``."""
 
     # This imports must be here to avoid circular imports
     from qrisp import ry, u3, gphase, qswitch
@@ -1308,34 +1283,31 @@ def state_preparation(qv, target_array, method="auto"):
 
     n = int(np.log2(target_array.size))
 
-    thetas = [None] * max(1, n - 1)
-    for l in range(n - 1):
-        thetas[l] = np.zeros(1 << l, dtype=float)
-
-    leaf_U = np.zeros((1 << (n - 1), 3), dtype=float)
+    thetas = [np.zeros(1 << l, dtype=float) for l in range(max(0, n - 1))]
+    leaf_u = np.zeros((1 << (n - 1), 3), dtype=float)
     leaf_phase = np.zeros(1 << (n - 1), dtype=float)
 
     def preprocess(subvec, level, prefix_idx, acc_phase):
+        """Preprocess the target state vector to extract rotation angles and phases."""
 
-        L = subvec.size
-        if L == 2:
-            a0_phase = float(np.angle(subvec[0])) if abs(subvec[0]) > 1e-12 else 0.0
+        l = subvec.size
+        if l == 2:
+            a0_phase = np.angle(subvec[0]) if abs(subvec[0]) > 1e-12 else 0.0
             vec_n = subvec * np.exp(-1j * a0_phase)
             theta, phi, lam = rotation_from_state(vec_n)
-            leaf_U[prefix_idx, :] = (theta, phi, lam)
+            leaf_u[prefix_idx, :] = (theta, phi, lam)
             leaf_phase[prefix_idx] = acc_phase + a0_phase
             return
 
-        half = L // 2
+        half = l // 2
         v0, v1 = subvec[:half], subvec[half:]
         n0, n1 = np.linalg.norm(v0), np.linalg.norm(v1)
 
-        theta_l = 2.0 * float(np.arccos(n0 if n0 <= 1.0 else 1.0))
+        theta_l = 2.0 * np.arccos(min(1.0, n0))
         thetas[level][prefix_idx] = theta_l
 
-        alpha0 = float(np.angle(v0[0])) if n0 > 1e-12 else 0.0
-        alpha1 = float(np.angle(v1[0])) if n1 > 1e-12 else 0.0
-
+        alpha0 = np.angle(v0[0]) if n0 > 1e-12 else 0.0
+        alpha1 = np.angle(v1[0]) if n1 > 1e-12 else 0.0
         v0n = v0 / (n0 * np.exp(1j * alpha0)) if n0 > 1e-12 else v0
         v1n = v1 / (n1 * np.exp(1j * alpha1)) if n1 > 1e-12 else v1
 
@@ -1344,43 +1316,44 @@ def state_preparation(qv, target_array, method="auto"):
 
     preprocess(target_array, level=0, prefix_idx=0, acc_phase=0.0)
 
+    if n == 1:
+        theta, phi, lam = leaf_u[0]
+        u3(theta, phi, lam, qv[0])
+        gphase(leaf_phase[0], qv[0])
+        return
+
     ry(thetas[0][0], qv[0])
 
     for l in range(1, n - 1):
-        case_qubits = [qv[k] for k in range(l - 1, -1, -1)]
-        thetas_l = thetas[l]
+        control_qubits = [qv[k] for k in range(l - 1, -1, -1)]
+        layer_thetas = thetas[l]
 
         def make_case_fn(thetas_arr):
             def case_fn(i, qb):
-                ry(float(thetas_arr[i]), qb)
+                ry(thetas_arr[i], qb)
 
             return case_fn
 
         qswitch(
             operand=qv[l],
-            case=case_qubits,
-            case_function=make_case_fn(thetas_l),
+            case=control_qubits,
+            case_function=make_case_fn(layer_thetas),
             method=method,
         )
 
-    if n == 1:
-        theta, phi, lam = leaf_U[0]
-        u3(theta, phi, lam, qv[0])
-        gphase(leaf_phase[0], qv[0])
-    else:
-        case_qubits = [qv[k] for k in range(n - 2, -1, -1)]
+    control_qubits = [qv[k] for k in range(n - 2, -1, -1)]
 
-        def final_case_fn(i, qb):
-            theta_i, phi_i, lam_i = map(float, leaf_U[i])
-            u3(theta_i, phi_i, lam_i, qb)
-            gphase(float(leaf_phase[i]), qb)
+    def final_case_fn(i, qb):
+        theta_i, phi_i, lam_i = map(float, leaf_u[i])
+        u3(theta_i, phi_i, lam_i, qb)
+        gphase(float(leaf_phase[i]), qb)
 
-        qswitch(
-            operand=qv[n - 1],
-            case=case_qubits,
-            case_function=final_case_fn,
-            method=method,
-        )
+    qswitch(
+        operand=qv[n - 1],
+        case=control_qubits,
+        case_function=final_case_fn,
+        method=method,
+    )
 
 
 def init_state(qv, target_array):
