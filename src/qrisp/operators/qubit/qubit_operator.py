@@ -2067,10 +2067,10 @@ class QubitOperator(Hamiltonian):
                 ev_M = M.expectation_value(psi, precision_expectation_value)
                 M_values.append(float(ev_M(t)))
 
-        .. image:: qdrift.png
-        :alt: QDRIFT Ising magnetization simulation
-        :align: center
-        :width: 600px
+        .. image:: /_static/qdrift.png
+            :alt: QDRIFT Ising magnetization simulation
+            :align: center
+            :width: 600px
 
         For the sake of demonstration, this example uses the **theoretical bound**
 
