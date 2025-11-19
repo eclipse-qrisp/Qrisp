@@ -1,3 +1,4 @@
+import itertools
 from cirq import Circuit, LineQubit
 from qrisp.circuit import ControlledOperation, ClControlledOperation
 
@@ -37,12 +38,18 @@ qrisp_cirq_ops_dict = {
 }
 
 
+
 def convert_to_cirq(qrisp_circuit):
     """Function to convert a Qrisp circuit to a Cirq circuit."""
     # get data from Qrisp circuit
     qrisp_circ_num_qubits = qrisp_circuit.num_qubits()
     qrisp_circ_ops_data = qrisp_circuit.data
     circ_ops_list = []
+
+    # create generic 'ncx' keys in qrisp_cirq_ops_dict for the possibility of multicontrolled cx gates
+    for n in range(3, qrisp_circ_num_qubits+1):
+        # start at 3 because 2cx is a Toffoli gate which already exists in Cirq
+        qrisp_cirq_ops_dict[f'{n}cx'] = None
     
     # create an empty Cirq circuit
     cirq_circuit = Circuit()
@@ -145,12 +152,18 @@ def convert_to_cirq(qrisp_circuit):
             assert cirq_op_qubits == cirq_ctrl_qubits + cirq_target_qubits
             assert op_qubits_i == control_qubits + target_qubits
 
-            # if the controlled operation is also parametrized
-            if instr.op.params:
-                gate_instance = cirq_gate(*params)
-                cirq_circuit.append(gate_instance(*cirq_ctrl_qubits, *cirq_target_qubits))
+            # for 2-qubit controlled operations
+            if len(cirq_op_qubits) <= 3:
+                # if the controlled operation is also parametrized
+                if instr.op.params:
+                    gate_instance = cirq_gate(*params)
+                    cirq_circuit.append(gate_instance(*cirq_ctrl_qubits, *cirq_target_qubits))
+                else:
+                    cirq_circuit.append(cirq_gate(*cirq_ctrl_qubits, *cirq_target_qubits))
+            # for multi-qubit controlled operations mcx
             else:
-                cirq_circuit.append(cirq_gate(*cirq_ctrl_qubits, *cirq_target_qubits))
+                cirq_circuit.append(X(*cirq_target_qubits).controlled_by(*cirq_ctrl_qubits))
+                
         
         else:
             # for simple single qubit gates
