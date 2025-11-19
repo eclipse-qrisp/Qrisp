@@ -8,6 +8,7 @@ from qrisp.circuit import QuantumCircuit, ControlledOperation, ClControlledOpera
 
 from qrisp.interface.converter.cirq_converter import convert_to_cirq
 from qrisp import QuantumVariable, mcx, cx, QuantumBool
+from qrisp import QuantumVariable, QuantumArray, h, x, cx, reflection
 from qrisp import QuantumCircuit
 
 # define circuits to be used by the unit tests
@@ -103,9 +104,41 @@ def test_gphase_error(capsys, gate, qubits):
 
 def test_converter_compiled_qs():
     """Verify the converter works as expected on a simple compiled QuantumSession circuit."""
+
+    # multi controlled x in a QuantumSession
     ctrl = QuantumVariable(4)
     target = QuantumBool()
     mcx(ctrl, target)
     compiled_qc = ctrl.qs.compile()
     cirq_qc = convert_to_cirq(compiled_qc)
     assert [X(LineQubit(4)).controlled_by(LineQubit(0), LineQubit(1), LineQubit(2), LineQubit(3))] == list(cirq_qc.all_operations())
+
+    # reflection around GHZ state
+    # Prepare |1> state
+    qv = QuantumVariable(5)
+    x(qv)
+
+    def ghz(qv):
+        h(qv[0])
+
+    for i in range(1, qv.size):
+        cx(qv[0], qv[i])
+    reflection(qv, ghz)
+
+    reflection_compiled_qc = qv.qs.compile()
+    reflection_cirq_qc = convert_to_cirq(reflection_compiled_qc)
+    assert list(reflection_cirq_qc.all_operations()) == [
+        X(LineQubit(1)),
+        X(LineQubit(2)),
+        X(LineQubit(3)),
+        X(LineQubit(0)),
+        CNOT(LineQubit(0), LineQubit(4)),
+        H(LineQubit(4)),
+        CNOT(LineQubit(0), LineQubit(1)),
+        CNOT(LineQubit(0), LineQubit(2)),
+        CNOT(LineQubit(0), LineQubit(3)),
+        H(LineQubit(0)),
+        X(LineQubit(4)).controlled_by(LineQubit(0), LineQubit(1), LineQubit(2), LineQubit(3)),
+        H(LineQubit(4)),
+        H(LineQubit(0)),
+        X(LineQubit(4))]
