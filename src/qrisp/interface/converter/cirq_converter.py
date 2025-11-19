@@ -1,7 +1,7 @@
 from cirq import Circuit, LineQubit
 from qrisp.circuit import ControlledOperation, ClControlledOperation
 
-from cirq import CNOT, H, X, Y, Z, CZ, S, T, R, SWAP, rx, ry, rz, inverse, I, M, R, CZ, CCNOT, ZPowGate, XPowGate, GlobalPhaseGate, ControlledGate
+from cirq import CNOT, H, X, Y, Z, CZ, S, T, R, SWAP, rx, ry, rz, inverse, I, M, R, CZ, CCNOT, ZPowGate, XPowGate, ControlledGate
 
 qrisp_cirq_ops_dict = {
     'cx': CNOT,
@@ -25,7 +25,12 @@ qrisp_cirq_ops_dict = {
     'p': ZPowGate,
     'sx': XPowGate,
     'sx_dg': XPowGate,
-    'gphase': GlobalPhaseGate,
+    # the converter skips adding the global phase gate
+    # because the corresponding Cirq gate raises an error
+    # for anything besides 1 and 1j as the coefficient
+    # The qrisp global phase function does not accept
+    # a complex value as input.
+    'gphase': None,
     'xxyy': None,
     'rxx': None,
     'rzz': None,
@@ -60,6 +65,9 @@ def convert_to_cirq(qrisp_circuit):
         
         if op_i not in qrisp_cirq_ops_dict:
             raise ValueError(f"{op_i} gate is not supported by the Qrisp to Cirq converter.")
+
+        if op_i in [ 'gphase', 'rzz', 'rxx']:
+            print("Qrisp circuit contains a global phase gate which will be skipped in the Qrisp to Cirq conversion.")
         
         cirq_op_qubits = [qubit_map[q] for q in op_qubits_i]
 
@@ -81,14 +89,20 @@ def convert_to_cirq(qrisp_circuit):
 
             elif op_i == 'rxx':
                 phi = params[0]
-                cirq_circuit.append(GlobalPhaseGate(-phi / 2).on())
+                # cirq_circuit.append(GlobalPhaseGate(-phi / 2).on())
                 cirq_circuit.append(H(cirq_op_qubits[0]))
                 cirq_circuit.append(H(cirq_op_qubits[1]))
                 cirq_circuit.append(CNOT(cirq_op_qubits[0], cirq_op_qubits[1]))
-                cirq_circuit.append(P(phi).on(cirq_op_qubits[1]))
+                cirq_circuit.append(ZPowGate(exponent=phi)(cirq_op_qubits[1]))
                 cirq_circuit.append(CNOT(cirq_op_qubits[0], cirq_op_qubits[1]))
                 cirq_circuit.append(H(cirq_op_qubits[0]))
                 cirq_circuit.append(H(cirq_op_qubits[1]))
+
+            elif op_i == 'rzz':
+                phi = params[0]
+                cirq_circuit.append(CNOT(cirq_op_qubits[0], cirq_op_qubits[1]))
+                cirq_circuit.append(ZPowGate(exponent=phi)(cirq_op_qubits[1]))
+                cirq_circuit.append(CNOT(cirq_op_qubits[0], cirq_op_qubits[1]))
 
                 
             elif op_i =='xxyy':
@@ -109,8 +123,9 @@ def convert_to_cirq(qrisp_circuit):
                 cirq_circuit.append(rz(np.pi/2).on(cirq_op_qubits[1]))
                 cirq_circuit.append(rz(-beta).on(cirq_op_qubits[0]))
 
-            elif op_i == 'gphase':
-                cirq_circuit.append(GlobalPhaseGate(*params).on())
+            # elif op_i == 'gphase':
+                # global phase gate in Cirq cannot be applied to specific qubits
+                # cirq_circuit.append(GlobalPhaseGate(*params).on())
                 # print(circuit)
                 
             else:
