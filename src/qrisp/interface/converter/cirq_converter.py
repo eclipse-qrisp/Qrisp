@@ -1,8 +1,9 @@
-import itertools
-from cirq import Circuit, LineQubit
-from qrisp.circuit import ControlledOperation, ClControlledOperation
+import numpy as np
 
-from cirq import CNOT, H, X, Y, Z, CZ, S, T, R, SWAP, rx, ry, rz, inverse, I, M, R, CZ, CCNOT, ZPowGate, XPowGate, ControlledGate
+from cirq import Circuit, LineQubit
+from qrisp.circuit import ControlledOperation
+
+from cirq import CNOT, H, X, Y, Z, S, T, SWAP, rx, ry, rz, inverse, I, M, R, CZ, CCNOT, ZPowGate, XPowGate
 
 qrisp_cirq_ops_dict = {
     'cx': CNOT,
@@ -45,10 +46,7 @@ def convert_to_cirq(qrisp_circuit):
     """Function to convert a Qrisp circuit to a Cirq circuit."""
     # get data from Qrisp circuit
     qrisp_circ_num_qubits = qrisp_circuit.num_qubits()
-    # print(qrisp_circ_num_qubits)
     qrisp_circ_ops_data = qrisp_circuit.data
-    # print(qrisp_circ_ops_data)
-    circ_ops_list = []
 
     # create generic 'ncx' keys in qrisp_cirq_ops_dict for the possibility of multicontrolled cx gates
     for n in range(3, qrisp_circ_num_qubits+1):
@@ -58,7 +56,6 @@ def convert_to_cirq(qrisp_circuit):
     # create an empty Cirq circuit
     cirq_circuit = Circuit()
     cirq_qubits = [LineQubit(i) for i in range(qrisp_circ_num_qubits)]
-    # print(cirq_qubits)
 
     # create a mapping of Qrisp qubits to Cirq qubits
     qubit_map = {}
@@ -70,9 +67,7 @@ def convert_to_cirq(qrisp_circuit):
         # get the gate name, qubits it is acting on 
         # and parameters if there are any
         op_i = instr.op.name
-        # print(op_i)
         op_qubits_i = instr.qubits
-        # print(op_qubits_i)
         
         if hasattr(instr.op, 'params'):
             params = instr.op.params
@@ -84,10 +79,8 @@ def convert_to_cirq(qrisp_circuit):
             print("Qrisp circuit contains a global phase gate which will be skipped in the Qrisp to Cirq conversion.")
         
         cirq_op_qubits = [qubit_map[q] for q in op_qubits_i]
-        # print(cirq_op_qubits)
 
         cirq_gate = qrisp_cirq_ops_dict[op_i]
-        # print(cirq_gate)
         
 
         # for single qubit parametrized gates
@@ -140,7 +133,6 @@ def convert_to_cirq(qrisp_circuit):
             # elif op_i == 'gphase':
                 # global phase gate in Cirq cannot be applied to specific qubits
                 # cirq_circuit.append(GlobalPhaseGate(*params).on())
-                # print(circuit)
                 
             elif cirq_gate:
                     gate_instance = cirq_gate(*params)

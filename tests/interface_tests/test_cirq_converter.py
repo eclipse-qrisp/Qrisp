@@ -1,15 +1,14 @@
 import pytest
 
-from cirq import Circuit, LineQubit
+from cirq import LineQubit
 
-from cirq import CNOT, H, X, Y, Z, CZ, S, T, R, SWAP, rx, ry, rz, M, R
-from unittest.mock import MagicMock, create_autospec
-from qrisp.circuit import QuantumCircuit, ControlledOperation, ClControlledOperation
+from cirq import CNOT, H, X, Y, Z, S, T, rx, ry, rz, M, R
+from unittest.mock import MagicMock
+from qrisp.circuit import QuantumCircuit, ClControlledOperation
 
 from qrisp.interface.converter.cirq_converter import convert_to_cirq
 from qrisp import QuantumVariable, mcx, cx, QuantumBool
-from qrisp import QuantumVariable, QuantumArray, h, x, cx, reflection
-from qrisp import QuantumCircuit
+from qrisp import h, x, reflection
 
 # define circuits to be used by the unit tests
 
