@@ -2005,8 +2005,9 @@ class QubitOperator(Hamiltonian):
         qv : :class:`QuantumVariable`
             The evolved quantum state after applying the QDRIFT approximation.
         
-        Example
-        -------
+            
+        Examples
+        --------
             
         Example usage of the qdrift function to simulate a quantum system governed by an Ising Hamiltonian on a chain graph.
 
@@ -2071,8 +2072,6 @@ class QubitOperator(Hamiltonian):
         :align: center
         :width: 600px
 
-        Discussion
-        ----------
         For the sake of demonstration, this example uses the **theoretical bound**
 
         .. math::
