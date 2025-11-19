@@ -2066,7 +2066,7 @@ class QubitOperator(Hamiltonian):
                 ev_M = M.expectation_value(psi, precision_expectation_value)
                 M_values.append(float(ev_M(t)))
 
-        .. image:: imNth.png
+        .. image:: qdrift.png
         :alt: QDRIFT Ising magnetization simulation
         :align: center
         :width: 600px
