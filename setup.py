@@ -26,7 +26,7 @@ REQUIREMENTS = [
                 "scipy>=1.10.0",
                 "numba",
                 "networkx",
-                "tdqm",
+                "tqdm",
                 "dill",
                 "flask",
                 "waitress",
