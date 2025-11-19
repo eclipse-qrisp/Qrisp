@@ -1938,7 +1938,7 @@ class QubitOperator(Hamiltonian):
     # Qdrift
     #
 
-    def qdrift(self, qv, time_simulation, N, use_arctan= False ):
+    def qdrift(self, qv, t, N, use_arctan= False ):
 
         r"""
         This algorithm simulates the time evolution of a quantum state under a Hamiltonian using the **QDRIFT** (Quantum Stochastic Drift Protocol) algorithm.
@@ -1990,7 +1990,7 @@ class QubitOperator(Hamiltonian):
             is a tensor product of Pauli operators.
         qv : :class:`QuantumVariable`
             Quantum state to which the simulated evolution is applied.
-        time_simulation : float
+        t : float
             Total simulation time :math:`t`.
         N : int
             Number of random samples (the number of exponentials in the product).
@@ -2110,11 +2110,11 @@ class QubitOperator(Hamiltonian):
 
         # Step 1
         normalisation_factor = sum(abs(c) for c in coeffs)
-        if normalisation_factor == 0 or time_simulation == 0:
+        if normalisation_factor == 0 or t == 0:
             return []  
 
         # Step 3
-        tau = normalisation_factor * time_simulation / N
+        tau = normalisation_factor * t / N
         angle = np.arctan(tau) if use_arctan else tau
 
         # Step 4
