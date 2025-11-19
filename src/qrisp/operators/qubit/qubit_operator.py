@@ -2021,52 +2021,50 @@ class QubitOperator(Hamiltonian):
 
         .. code-block:: python
 
-        import numpy as np
-        import matplotlib.pyplot as plt
-        import networkx as nx
-        from qrisp import QuantumVariable
-        from qrisp.operators import X, Z, QubitOperator
+            import numpy as np
+            import matplotlib.pyplot as plt
+            import networkx as nx
+            from qrisp import QuantumVariable
+            from qrisp.operators import X, Z, QubitOperator
 
-        # Helper functions
-        def generate_chain_graph(N):
-            G = nx.Graph()
-            G.add_edges_from((k, k+1) for k in range(N-1))
-            return G
+            # Helper functions
+            def generate_chain_graph(N):
+                G = nx.Graph()
+                G.add_edges_from((k, k+1) for k in range(N-1))
+                return G
 
-        def create_ising_hamiltonian(G, J, B):
-            # H = -J ∑ Z_i Z_{i+1} - B ∑ X_i
-            H = sum(-J * Z(i)*Z(j) for (i,j) in G.edges()) + sum(B * X(i) for i in G.nodes())
-            return H
+            def create_ising_hamiltonian(G, J, B):
+                # H = -J ∑ Z_i Z_{i+1} - B ∑ X_i
+                H = sum(-J * Z(i)*Z(j) for (i,j) in G.edges()) + sum(B * X(i) for i in G.nodes())
+                return H
 
-        def create_magnetization(G):
-            return (1.0 / G.number_of_nodes()) * sum(Z(i) for i in G.nodes())
+            def create_magnetization(G):
+                return (1.0 / G.number_of_nodes()) * sum(Z(i) for i in G.nodes())
 
-        # Simulation setup
-        G = generate_chain_graph(6)
-        H = create_ising_hamiltonian(G, J=1.0, B=1.0)
-        M = create_magnetization(G)
-        T_values = np.arange(0, 2, 0.05)
-        precision_expectation_value = 0.001
+            # Simulation setup
+            G = generate_chain_graph(6)
+            H = create_ising_hamiltonian(G, J=1.0, B=1.0)
+            M = create_magnetization(G)
+            T_values = np.arange(0, 2, 0.05)
+            precision_expectation_value = 0.001
 
-        # Choose N according to the theoretical scaling 
-        # The QDRIFT bound suggests:  N ≈ ceil(2 λ² t² / ε), where λ = ∑|h_j|. Here we use this expression directly, although for many models it leads to very large circuits.
-        #
-        # The user is free to choose any alternative formula for N (e.g. N ∝ (λ t)²), depending on desired accuracy and runtime.
+            # Choose N according to the theoretical scaling 
+            # The QDRIFT bound suggests:  N ≈ ceil(2 λ² t² / ε), where λ = ∑|h_j|. Here we use this expression directly, although for many models it leads to very large circuits.
+            #
+            # The user is free to choose any alternative formula for N (e.g. N ∝ (λ t)²), depending on desired accuracy and runtime.
+            lam = sum(abs(coeff) for coeff in H.terms_dict.values())
+            epsilon = 0.001
+            N = int(np.ceil(2 * lam**2 * (max(T_values)**2) / epsilon))
 
-        lam = sum(abs(coeff) for coeff in H.terms_dict.values())
-        epsilon = 0.001
-        N = int(np.ceil(2 * lam**2 * (max(T_values)**2) / epsilon))
+            def psi(t, use_arctan=True):
+                qv = QuantumVariable(G.number_of_nodes())
+                H.qdrift(qv, time_simulation=t, N=N, use_arctan=use_arctan)
 
-        def psi(t, use_arctan=True):
-            qv = QuantumVariable(G.number_of_nodes())
-            qdrift(H, qv, time_simulation=t, N=N, use_arctan=use_arctan)
-            return qv
-
-        # Compute magnetization expectation 
-        M_values = []
-        for t in T_values:
-            ev_M = M.expectation_value(psi, precision_expectation_value)
-            M_values.append(float(ev_M(t)))
+            # Compute magnetization expectation 
+            M_values = []
+            for t in T_values:
+                ev_M = M.expectation_value(psi, precision_expectation_value)
+                M_values.append(float(ev_M(t)))
 
         .. image:: imNth.png
         :alt: QDRIFT Ising magnetization simulation
@@ -2125,8 +2123,7 @@ class QubitOperator(Hamiltonian):
             j = sample(probs)  # Step 5b
             terms[j].simulate(angle, qv)  # Step 5c
             
-        #Step 6
-        return qv
+
 
     #
     # LCU
