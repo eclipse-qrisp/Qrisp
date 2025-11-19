@@ -81,7 +81,7 @@ def reflection(qargs, state_function, args=(), kwargs={}, phase=np.pi, reflectio
             h(qv[0])
 
             for i in range(1, qv.size):
-            cx(qv[0], qv[i])
+                cx(qv[0], qv[i])
 
 
         # Prepare |1> state
