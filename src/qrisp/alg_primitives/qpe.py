@@ -71,7 +71,8 @@ def QPE(
     We define a function that applies two phase gates onto its input and estimate the
     applied phase. ::
 
-        from qrisp import p, QuantumVariable, QPE, multi_measurement
+        from qrisp import p, QuantumVariable, QPE, multi_measurement, h
+        import numpy as np
 
         def U(qv):
             x = 0.5
@@ -83,6 +84,8 @@ def QPE(
         qv = QuantumVariable(2)
 
         h(qv)
+
+        res = QPE(qv, U, precision = 3)
 
         res = QPE(qv, U, precision = 3)
 
