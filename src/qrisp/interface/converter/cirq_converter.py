@@ -35,6 +35,10 @@ qrisp_cirq_ops_dict = {
     'xxyy': None,
     'rxx': None,
     'rzz': None,
+    # cirq equivalent for qubit allocation and deallocation do not exist
+    # the converter will ignore these
+    'qb_alloc': None,
+    'qb_dealloc': None
 }
 
 

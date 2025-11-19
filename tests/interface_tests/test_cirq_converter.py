@@ -7,6 +7,7 @@ from unittest.mock import MagicMock, create_autospec
 from qrisp.circuit import QuantumCircuit, ControlledOperation, ClControlledOperation
 
 from qrisp.interface.converter.cirq_converter import convert_to_cirq
+from qrisp import QuantumVariable, mcx, cx, QuantumBool
 from qrisp import QuantumCircuit
 
 # define circuits to be used by the unit tests
@@ -98,3 +99,13 @@ def test_gphase_error(capsys, gate, qubits):
     convert_to_cirq(qc)
     captured = capsys.readouterr()
     assert "Qrisp circuit contains a global phase gate which will be skipped in the Qrisp to Cirq conversion." in captured.out
+
+
+def test_converter_compiled_qs():
+    """Verify the converter works as expected on a simple compiled QuantumSession circuit."""
+    ctrl = QuantumVariable(4)
+    target = QuantumBool()
+    mcx(ctrl, target)
+    compiled_qc = ctrl.qs.compile()
+    cirq_qc = convert_to_cirq(compiled_qc)
+    assert [X(LineQubit(4)).controlled_by(LineQubit(0), LineQubit(1), LineQubit(2), LineQubit(3))] == list(cirq_qc.all_operations())
