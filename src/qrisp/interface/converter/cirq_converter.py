@@ -47,11 +47,7 @@ qrisp_cirq_ops_dict = {
     "p": ZPowGate,
     "sx": XPowGate,
     "sx_dg": XPowGate,
-    # the converter skips adding the global phase gate
-    # because the corresponding Cirq gate raises an error
-    # for anything besides 1 and 1j as the coefficient
-    # The qrisp global phase function does not accept
-    # a complex value as input.
+    # the converter skips adding the global phase gate for now
     "gphase": None,
     "xxyy": None,
     "rxx": None,
