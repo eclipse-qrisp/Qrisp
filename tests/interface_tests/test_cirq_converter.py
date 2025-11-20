@@ -13,9 +13,9 @@ from qrisp import h, x, reflection
 
 
 def test_n_qubit_gate_circuit():
-    """Verifies the circuit works as expected for a circuit of all single qubit gates."""
+    """Verifies the circuit works as expected fordifferent circuits."""
 
-    # 4 qubit circuit containing all single qubit gates
+    # 4 qubit circuit containing some single qubit gates
     qc_single_qubit_gates = QuantumCircuit(4)
     qc_single_qubit_gates.h(0)
     qc_single_qubit_gates.x(1)
@@ -51,8 +51,6 @@ def test_n_qubit_gate_circuit():
     assert expected_cirq_qc_single_qubit_gates_ops == list(
         converted_circ.all_operations()
     )
-
-    # 4 qubit circuit containing all two qubit gates
 
     # 4 qubit circuit containing all multi-controlled gates
     # there is only 1 multicontrolled gate mcx

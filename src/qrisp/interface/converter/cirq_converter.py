@@ -1,5 +1,3 @@
-import numpy as np
-
 from cirq import Circuit, LineQubit
 from qrisp.circuit import ControlledOperation
 
@@ -96,10 +94,39 @@ def convert_to_cirq(qrisp_circuit):
             print(
                 "Qrisp circuit contains a global phase gate which will be skipped in the Qrisp to Cirq conversion."
             )
-        if op_i in ['rxx', 'rzz', 'xxyy']:
-            new_circ =  instr.op.definition
+        # the filter is useful for composite gates that do not have a cirq equivalent and have instr.op.definition
+        cirq_gates_filter = [
+            "cx",
+            "cz",
+            "swap",
+            "2cx",
+            "h",
+            "x",
+            "y",
+            "z",
+            "rx",
+            "ry",
+            "rz",
+            "s",
+            "t",
+            "s_dg",
+            "t_dg",
+            "measure",
+            "reset",
+            "id",
+            "p",
+            "sx",
+            "sx_dg",
+        ]
+        # create generic 'ncx' keys in the cirq gates filter for the possibility of multicontrolled cx gates
+        for n in range(3, qrisp_circ_num_qubits + 1):
+            # start at 3 because 2cx is a Toffoli gate which already exists in Cirq
+            cirq_gates_filter.append(f"{n}cx")
+
+        if (op_i not in cirq_gates_filter) and instr.op.definition:
+            new_circ = instr.op.definition
             cirq_circuit.append(convert_to_cirq(new_circ))
-            
+
         cirq_op_qubits = [qubit_map[q] for q in op_qubits_i]
 
         cirq_gate = qrisp_cirq_ops_dict[op_i]
