@@ -92,11 +92,14 @@ def convert_to_cirq(qrisp_circuit):
                 f"{op_i} gate is not supported by the Qrisp to Cirq converter."
             )
 
-        if op_i in ["gphase", "rzz", "rxx"]:
+        if op_i in ["gphase"]:
             print(
                 "Qrisp circuit contains a global phase gate which will be skipped in the Qrisp to Cirq conversion."
             )
-
+        if op_i in ['rxx', 'rzz', 'xxyy']:
+            new_circ =  instr.op.definition
+            cirq_circuit.append(convert_to_cirq(new_circ))
+            
         cirq_op_qubits = [qubit_map[q] for q in op_qubits_i]
 
         cirq_gate = qrisp_cirq_ops_dict[op_i]
