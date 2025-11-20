@@ -52,6 +52,7 @@ qrisp_cirq_ops_dict = {
     "xxyy": None,
     "rxx": None,
     "rzz": None,
+    # skip qubit allocation and deallocation ops in the converter
     "qb_alloc": None,
     "qb_dealloc": None,
 }
@@ -114,41 +115,6 @@ def convert_to_cirq(qrisp_circuit):
                 # phase exponent. The default is to assume global_shift = 0 in cirq
                 exp_param = params[0]
                 cirq_circuit.append(ZPowGate(exponent=exp_param)(*cirq_op_qubits))
-
-            elif op_i == "rxx":
-                phi = params[0]
-                # cirq_circuit.append(GlobalPhaseGate(-phi / 2).on())
-                cirq_circuit.append(H(cirq_op_qubits[0]))
-                cirq_circuit.append(H(cirq_op_qubits[1]))
-                cirq_circuit.append(CNOT(cirq_op_qubits[0], cirq_op_qubits[1]))
-                cirq_circuit.append(ZPowGate(exponent=phi)(cirq_op_qubits[1]))
-                cirq_circuit.append(CNOT(cirq_op_qubits[0], cirq_op_qubits[1]))
-                cirq_circuit.append(H(cirq_op_qubits[0]))
-                cirq_circuit.append(H(cirq_op_qubits[1]))
-
-            elif op_i == "rzz":
-                phi = params[0]
-                cirq_circuit.append(CNOT(cirq_op_qubits[0], cirq_op_qubits[1]))
-                cirq_circuit.append(ZPowGate(exponent=phi)(cirq_op_qubits[1]))
-                cirq_circuit.append(CNOT(cirq_op_qubits[0], cirq_op_qubits[1]))
-
-            elif op_i == "xxyy":
-                phi = params[0]
-                beta = params[1]
-                cirq_circuit.append(rz(beta).on(cirq_op_qubits[0]))
-                cirq_circuit.append(rz(-np.pi / 2).on(cirq_op_qubits[1]))
-                cirq_circuit.append(XPowGate(exponent=0.5)(cirq_op_qubits[1]))
-                cirq_circuit.append(rz(np.pi / 2).on(cirq_op_qubits[1]))
-                cirq_circuit.append(S(cirq_op_qubits[0]))
-                cirq_circuit.append(CNOT(cirq_op_qubits[1], cirq_op_qubits[0]))
-                cirq_circuit.append(ry(-phi / 2).on(cirq_op_qubits[1]))
-                cirq_circuit.append(ry(-phi / 2).on(cirq_op_qubits[0]))
-                cirq_circuit.append(CNOT(cirq_op_qubits[1], cirq_op_qubits[0]))
-                cirq_circuit.append(inverse(S(cirq_op_qubits[0])))
-                cirq_circuit.append(rz(-np.pi / 2).on(cirq_op_qubits[1]))
-                cirq_circuit.append(inverse(XPowGate(exponent=0.5)(cirq_op_qubits[1])))
-                cirq_circuit.append(rz(np.pi / 2).on(cirq_op_qubits[1]))
-                cirq_circuit.append(rz(-beta).on(cirq_op_qubits[0]))
 
             # elif op_i == 'gphase':
             # global phase gate in Cirq cannot be applied to specific qubits
