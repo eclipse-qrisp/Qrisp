@@ -724,8 +724,13 @@ class QuantumVariable:
         """
 
         # These imports are here to avoid circular dependencies
-        from qrisp import state_preparation
+        from qrisp import state_preparation, state_preparation_jasp
+        from qrisp.jasp import check_for_tracing_mode
         from qrisp.misc import check_if_fresh
+
+        if check_for_tracing_mode():
+            state_preparation_jasp(self, state_array, method)
+            return
 
         if not check_if_fresh(self.reg, self.qs):
             raise ValueError("Tried to initialize qubits which are not fresh anymore.")

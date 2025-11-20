@@ -19,6 +19,8 @@
 import functools
 import traceback
 
+import jax
+import jax.numpy as jnp
 import numpy as np
 import sympy
 from jax.lax import cond, fori_loop
@@ -1287,34 +1289,188 @@ def state_preparation(qv, target_array, method: str = "auto") -> None:
     leaf_u = np.zeros((1 << (n - 1), 3), dtype=float)
     leaf_phase = np.zeros(1 << (n - 1), dtype=float)
 
-    def preprocess(subvec, level, prefix_idx, acc_phase):
-        """Preprocess the target state vector to extract rotation angles and phases."""
+    queue = [(target_array, 0, 0, 0.0)]
 
-        l = subvec.size
-        if l == 2:
-            a0_phase = np.angle(subvec[0]) if abs(subvec[0]) > 1e-12 else 0.0
+    while queue:
+
+        subvec, level, prefix_idx, acc_phase = queue.pop(0)
+
+        L = subvec.size
+        if L == 2:
+            a0 = subvec[0]
+            a0_phase = np.angle(a0) if abs(a0) > 1e-12 else 0.0
+
             vec_n = subvec * np.exp(-1j * a0_phase)
             theta, phi, lam = rotation_from_state(vec_n)
-            leaf_u[prefix_idx, :] = (theta, phi, lam)
-            leaf_phase[prefix_idx] = acc_phase + a0_phase
-            return
 
-        half = l // 2
+            leaf_u[prefix_idx] = (theta, phi, lam)
+            leaf_phase[prefix_idx] = acc_phase + a0_phase
+            continue
+
+        half = L // 2
         v0, v1 = subvec[:half], subvec[half:]
-        n0, n1 = np.linalg.norm(v0), np.linalg.norm(v1)
+
+        n0 = np.linalg.norm(v0)
+        n1 = np.linalg.norm(v1)
 
         theta_l = 2.0 * np.arccos(min(1.0, n0))
         thetas[level][prefix_idx] = theta_l
 
         alpha0 = np.angle(v0[0]) if n0 > 1e-12 else 0.0
         alpha1 = np.angle(v1[0]) if n1 > 1e-12 else 0.0
+
         v0n = v0 / (n0 * np.exp(1j * alpha0)) if n0 > 1e-12 else v0
         v1n = v1 / (n1 * np.exp(1j * alpha1)) if n1 > 1e-12 else v1
 
-        preprocess(v0n, level + 1, (prefix_idx << 1) | 0, acc_phase + alpha0)
-        preprocess(v1n, level + 1, (prefix_idx << 1) | 1, acc_phase + alpha1)
+        queue.append((v0n, level + 1, (prefix_idx << 1) | 0, acc_phase + alpha0))
+        queue.append((v1n, level + 1, (prefix_idx << 1) | 1, acc_phase + alpha1))
 
-    preprocess(target_array, level=0, prefix_idx=0, acc_phase=0.0)
+    if n == 1:
+        theta, phi, lam = leaf_u[0]
+        u3(theta, phi, lam, qv[0])
+        gphase(leaf_phase[0], qv[0])
+        return
+
+    ry(thetas[0][0], qv[0])
+
+    for l in range(1, n - 1):
+        control_qubits = [qv[k] for k in range(l - 1, -1, -1)]
+        layer_thetas = thetas[l]
+
+        def make_case_fn(thetas_arr):
+            def case_fn(i, qb):
+                ry(thetas_arr[i], qb)
+
+            return case_fn
+
+        qswitch(
+            operand=qv[l],
+            case=control_qubits,
+            case_function=make_case_fn(layer_thetas),
+            method=method,
+        )
+
+    control_qubits = [qv[k] for k in range(n - 2, -1, -1)]
+
+    def final_case_fn(i, qb):
+        theta_i, phi_i, lam_i = map(float, leaf_u[i])
+        u3(theta_i, phi_i, lam_i, qb)
+        gphase(float(leaf_phase[i]), qb)
+
+    qswitch(
+        operand=qv[n - 1],
+        case=control_qubits,
+        case_function=final_case_fn,
+        method=method,
+    )
+
+
+def rotation_from_state_jasp(vec: jnp.ndarray) -> tuple:
+    a, b = vec
+    theta = 2.0 * jnp.arccos(a)
+    phi = cond(jnp.abs(b) > 1e-12, lambda x: jnp.angle(x), lambda x: 0.0, b)
+    lam = 0.0
+    return theta, phi, lam
+
+
+def normalize(v, n, a):
+    return jnp.where(
+        n > 1e-12,
+        v / (n * jnp.exp(1j * a)),
+        v,
+    )
+
+
+def state_preparation_jasp(qv, target_array, method: str = "auto") -> None:
+
+    # This imports must be here to avoid circular imports
+    from qrisp import gphase, q_cond, qswitch, ry, u3
+
+    target_array = jnp.asarray(target_array, dtype=jnp.complex128)
+
+    # n is static, so we can use normal numpy here
+    length = int(target_array.shape[0])
+    n = int(np.log2(length))
+
+    if n == 1:
+        a0 = target_array[0]
+        mag0 = jnp.abs(a0)
+        a0_phase = jnp.where(mag0 > 1e-12, jnp.angle(a0), 0.0)
+        vec_n = target_array * jnp.exp(-1j * a0_phase)
+
+        theta, phi, lam = rotation_from_state_jasp(vec_n)
+
+        thetas = jnp.zeros((0, 1), dtype=jnp.float64)
+        leaf_u = jnp.stack([theta, phi, lam])[None, :]
+        leaf_phase = (a0_phase)[None]
+        return thetas, leaf_u, leaf_phase
+
+    num_theta_layers = n - 1
+    num_leaves = 1 << (n - 1)
+
+    # We store thetas in a "rectangular" array: (layer, index),
+    # and only use the first 2^l entries at layer l.
+    thetas = jnp.zeros((num_theta_layers, num_leaves), dtype=jnp.float64)
+    leaf_u = jnp.zeros((num_leaves, 3), dtype=jnp.float64)
+    leaf_phase = jnp.zeros((num_leaves,), dtype=jnp.float64)
+
+    level_vecs = target_array[jnp.newaxis, :]
+    acc_phases = jnp.zeros((1,), dtype=jnp.float64)
+
+    for l in range(n):
+        num_nodes = 1 << l
+        sub_len = 1 << (n - l)
+        half = sub_len // 2
+
+        level_vecs_l = level_vecs[:, :sub_len]
+
+        if sub_len == 2:
+
+            def leaf_op(subvec, acc):
+                a0 = subvec[0]
+                mag0 = jnp.abs(a0)
+                a0_phase = jnp.where(mag0 > 1e-12, jnp.angle(a0), 0.0)
+                vec_n = subvec * jnp.exp(-1j * a0_phase)
+
+                theta, phi, lam = rotation_from_state_jasp(vec_n)
+                total_phase = acc + a0_phase
+                return jnp.array([theta, phi, lam]), total_phase
+
+            leaf_u_all, leaf_phase_all = jax.vmap(leaf_op)(level_vecs_l, acc_phases)
+
+            leaf_u = leaf_u.at[:num_nodes, :].set(leaf_u_all)
+            leaf_phase = leaf_phase.at[:num_nodes].set(leaf_phase_all)
+            break
+
+        def internal_op(subvec, acc):
+            v0 = subvec[:half]
+            v1 = subvec[half:]
+
+            n0 = jnp.linalg.norm(v0)
+            n1 = jnp.linalg.norm(v1)
+
+            theta_l = 2.0 * jnp.arccos(jnp.minimum(1.0, n0))
+
+            alpha0 = jnp.where(n0 > 1e-12, jnp.angle(v0[0]), 0.0)
+            alpha1 = jnp.where(n1 > 1e-12, jnp.angle(v1[0]), 0.0)
+
+            v0n = normalize(v0, n0, alpha0)
+            v1n = normalize(v1, n1, alpha1)
+
+            acc0 = acc + alpha0
+            acc1 = acc + alpha1
+
+            children = jnp.stack([v0n, v1n], axis=0)
+            child_accs = jnp.stack([acc0, acc1], axis=0)
+            return theta_l, children, child_accs
+
+        theta_vec, children_all, child_accs_all = jax.vmap(internal_op)(
+            level_vecs_l, acc_phases
+        )
+
+        thetas = thetas.at[l, :num_nodes].set(theta_vec)
+        level_vecs = children_all.reshape((2 * num_nodes, half))
+        acc_phases = child_accs_all.reshape((2 * num_nodes,))
 
     if n == 1:
         theta, phi, lam = leaf_u[0]
