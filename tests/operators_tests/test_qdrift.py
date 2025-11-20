@@ -51,14 +51,7 @@ def psi(t, use_arctan=True):
 # Compute magnetization expectation values over time
 M_values = []
 for t in T_values:
-    ev_M = M.expectation_value(psi, precision_expectation_value)
+    ev_M = M.expectation_value(psi, precision=0.05)
     M_values.append(float(ev_M(t)))
 
-
-plt.scatter(T_values, M_values, color='#6929C4', marker="o", linestyle="solid", s=20, label=r"Ising chain")
-plt.xlabel(r"Evolution time $T$", fontsize=15, color="#444444")
-plt.ylabel(r"Magnetization $\langle M \rangle$", fontsize=15, color="#444444")
-plt.legend(fontsize=15, labelcolor="#444444")
-plt.tick_params(axis='both', labelsize=12)
-plt.grid()
-plt.show()
+assert M_values[0]-M_values[-1]>0.6
