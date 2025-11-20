@@ -16,42 +16,43 @@
 ********************************************************************************
 """
 import numpy as np
-import matplotlib.pyplot as plt
 import networkx as nx
 from qrisp import QuantumVariable
-from qrisp.operators import X, Z, QubitOperator
+from qrisp.operators import X, Z
 
-# Helper functions
-def generate_chain_graph(N):
-    G = nx.Graph()
-    G.add_edges_from((k, k+1) for k in range(N-1))
-    return G
+def test_qdrift_ising_chain():
 
-def create_ising_hamiltonian(G, J, B):
-    # H = -J ∑ Z_i Z_{i+1} - B ∑ X_i
-    H = sum(-J * Z(i)*Z(j) for (i,j) in G.edges()) + sum(B * X(i) for i in G.nodes())
-    return H
+    # Helper functions
+    def generate_chain_graph(N):
+        G = nx.Graph()
+        G.add_edges_from((k, k+1) for k in range(N-1))
+        return G
 
-def create_magnetization(G):
-    return (1.0 / G.number_of_nodes()) * sum(Z(i) for i in G.nodes())
+    def create_ising_hamiltonian(G, J, B):
+        # H = -J ∑ Z_i Z_{i+1} - B ∑ X_i
+        H = sum(-J * Z(i)*Z(j) for (i,j) in G.edges()) + sum(B * X(i) for i in G.nodes())
+        return H
 
-# Simulation setup
-N=1000
-G = generate_chain_graph(6)
-H = create_ising_hamiltonian(G, J=1.0, B=1.0)
-M = create_magnetization(G)
-T_values = np.arange(0, 2, 0.05)
+    def create_magnetization(G):
+        return (1.0 / G.number_of_nodes()) * sum(Z(i) for i in G.nodes())
 
-# Define the state evolution function using QDRIFT
-def psi(t, use_arctan=True):
-    qv = QuantumVariable(G.number_of_nodes())
-    H.qdrift(qv, t, N=N, use_arctan=use_arctan)
-    return qv
+    # Simulation setup
+    N=1000
+    G = generate_chain_graph(6)
+    H = create_ising_hamiltonian(G, J=1.0, B=1.0)
+    M = create_magnetization(G)
+    T_values = np.arange(0, 2, 0.05)
 
-# Compute magnetization expectation values over time
-M_values = []
-for t in T_values:
-    ev_M = M.expectation_value(psi, precision=0.05)
-    M_values.append(float(ev_M(t)))
+    # Define the state evolution function using QDRIFT
+    def psi(t, use_arctan=True):
+        qv = QuantumVariable(G.number_of_nodes())
+        H.qdrift(qv, t, N=N, use_arctan=use_arctan)
+        return qv
 
-assert M_values[0]-M_values[-1]>0.6
+    # Compute magnetization expectation values over time
+    M_values = []
+    for t in T_values:
+        ev_M = M.expectation_value(psi, precision=0.05)
+        M_values.append(float(ev_M(t)))
+
+    assert M_values[0]-M_values[-1]>0.6
