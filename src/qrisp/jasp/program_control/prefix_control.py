@@ -140,7 +140,7 @@ def q_while_loop(cond_fun, body_fun, init_val):
     # to make the loop purely classical.
     for i in range(eqn.params["body_nconsts"]):
         if isinstance(body_jaxpr.jaxpr.invars[i].aval, AbstractQuantumCircuit):
-            eqn.invars.pop(i)
+            eqn.invars.pop(i + eqn.params["cond_nconsts"])
             body_jaxpr.jaxpr.invars.pop(i)
             eqn.params["body_nconsts"] -= 1
             return while_res[0]

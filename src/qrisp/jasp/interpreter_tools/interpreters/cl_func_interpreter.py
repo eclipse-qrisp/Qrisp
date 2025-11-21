@@ -289,7 +289,7 @@ def process_while(eqn, context_dic):
 
     body_jaxpr = eqn.params["body_jaxpr"]
     cond_jaxpr = eqn.params["cond_jaxpr"]
-    overall_constant_amount= max(eqn.params["body_nconsts"], eqn.params["cond_nconsts"])
+    overall_constant_amount= eqn.params["body_nconsts"] + eqn.params["cond_nconsts"]
 
     invalues = extract_invalues(eqn, context_dic)
 
@@ -304,7 +304,7 @@ def process_while(eqn, context_dic):
 
     def body_fun(args):
         
-        constants = args[:eqn.params["body_nconsts"]]
+        constants = args[eqn.params["cond_nconsts"]:overall_constant_amount]
         carries = args[overall_constant_amount:]
         
         flattened_invalues = flatten_signature(constants + carries, body_jaxpr.jaxpr.invars)
