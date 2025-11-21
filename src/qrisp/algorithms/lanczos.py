@@ -26,7 +26,7 @@ from qrisp.jasp import jrange, q_cond, check_for_tracing_mode, expectation_value
 import scipy
 
 
-def inner_lanczos(H, k, init_state):
+def inner_lanczos(H, k, operand_prep):
     r"""
     Perform the quantum subroutine of the exact and efficient Lanczos method to estimate expectation values of Chebyshev polynomials of a Hamiltonian.
 
@@ -45,9 +45,9 @@ def inner_lanczos(H, k, init_state):
         Hamiltonian for which to estimate the ground-state energy.
     D : int
         Krylov space dimension. Determines maximum Chebyshev order $(2D-1)$.
-    init_state : callable 
+    operand_prep : callable 
         Function returning the (operand) QuantumVariable in the initial system state $\ket{\psi_0}$, i.e.,
-        ``operand=init_state()``.
+        ``operand=operand_prep()``.
 
     Returns
     -------
@@ -64,7 +64,7 @@ def inner_lanczos(H, k, init_state):
         reflection(case_indicator, state_function=state_prep) # reflection operator R about $\ket{G}$.
 
     case_indicator = QuantumFloat(n)
-    operand = init_state()
+    operand = operand_prep()
 
     def even(case_indicator, operand, k):
         # EVEN k: Figure 1 top
@@ -131,7 +131,7 @@ def compute_expectation(meas_res):
     return expval
 
 
-def lanczos_expvals(H, D, init_state, mes_kwargs={}):
+def lanczos_expvals(H, D, operand_prep, mes_kwargs={}):
     r"""
     Perform the quantum subroutine of the exact and efficient Lanczos method to estimate expectation values of Chebyshev polynomials of a Hamiltonian.
 
@@ -150,9 +150,9 @@ def lanczos_expvals(H, D, init_state, mes_kwargs={}):
         Hamiltonian for which to estimate the ground-state energy.
     D : int
         Krylov space dimension. Determines maximum Chebyshev order $(2D-1)$.
-    init_state : callable 
+    operand_prep : callable 
         Function returning the (operand) QuantumVariable in the initial system state $\ket{\psi_0}$, i.e.,
-        ``operand=init_state()``.
+        ``operand=operand_prep()``.
     mes_kwargs : dict, optional
         The keyword arguments for the measurement function.
         By default, 100_000 ``shots`` are executed for measuring each expectation value.
@@ -181,13 +181,13 @@ def lanczos_expvals(H, D, init_state, mes_kwargs={}):
         expvals = jnp.zeros(2*D)
 
         for k in range(0, 2*D):
-            expval = ev_function(H, k, init_state)
+            expval = ev_function(H, k, operand_prep)
             expvals = expvals.at[k].set(expval)
 
     else:
         expvals = np.zeros(2*D)
         for k in range(0, 2*D):
-            qarg = inner_lanczos(H, k, init_state)
+            qarg = inner_lanczos(H, k, operand_prep)
             meas = qarg.get_measurement(**mes_kwargs)
             expvals[k] = compute_expectation(meas)
     
@@ -328,7 +328,7 @@ def regularize_S_H_jax(S, H_mat, max_D_out, cutoff=1e-3):
     return S_reg, H_reg
 
 
-def lanczos_alg(H, D, init_state, mes_kwargs={}, cutoff=1e-2, show_info=False):
+def lanczos_alg(H, D, operand_prep, mes_kwargs={}, cutoff=1e-2, show_info=False):
     r"""
     Exact and efficient Lanczos method on a quantum computer for ground state energy estimation.
 
@@ -358,9 +358,9 @@ def lanczos_alg(H, D, init_state, mes_kwargs={}, cutoff=1e-2, show_info=False):
             Hamiltonian for which to estimate the ground-state energy.
         D : int
             Krylov space dimension.
-        init_state : callable 
+        operand_prep : callable 
             Function returning the (operand) QuantumVariable in the initial system state $\ket{\psi_0}$, i.e.,
-            ``operand=init_state()``.
+            ``operand=operand_prep()``.
         mes_kwargs : dict
             The keyword arguments for the measurement function. 
             By default, 100_000 ``shots`` are executed for measuring each expectation value.
@@ -412,13 +412,13 @@ def lanczos_alg(H, D, init_state, mes_kwargs={}, cutoff=1e-2, show_info=False):
         M = nx.maximal_matching(G)
         U_singlet = create_heisenberg_init_function(M)
 
-        def init_state():
+        def operand_prep():
             qv = QuantumVariable(H.find_minimal_qubit_amount())
             U_singlet(qv)
             return qv
 
         D = 6  # Krylov dimension
-        energy, info = lanczos_alg(H, D, init_state, show_info=True)
+        energy, info = lanczos_alg(H, D, operand_prep, show_info=True)
 
         print(f"Ground state energy estimate: {energy}")
 
@@ -431,7 +431,7 @@ def lanczos_alg(H, D, init_state, mes_kwargs={}, cutoff=1e-2, show_info=False):
     unitaries, coeffs = H.unitaries()
     
     # Step 1: Quantum Lanczos: Get expectation values of Chebyshev polynomials
-    Tk_expvals = lanczos_expvals(H, D, init_state, mes_kwargs)
+    Tk_expvals = lanczos_expvals(H, D, operand_prep, mes_kwargs)
 
     """
     if check_for_tracing_mode():
