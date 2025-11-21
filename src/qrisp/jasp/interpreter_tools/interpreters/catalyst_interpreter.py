@@ -21,13 +21,11 @@ from functools import lru_cache
 from sympy import lambdify, symbols
 
 from jax import make_jaxpr, jit
-from jax.extend.core import ClosedJaxpr
-from jax.lax import fori_loop, cond, while_loop, switch
+from jax.lax import fori_loop, cond, while_loop
 from jax._src.linear_util import wrap_init
 import jax.numpy as jnp
 
 from catalyst.jax_primitives import (
-    AbstractQreg,
     qinst_p,
     measure_p,
     qextract_p,
@@ -41,18 +39,16 @@ from catalyst.jax_primitives import (
 
 from qrisp.jasp import (
     QuantumPrimitive,
-    OperationPrimitive,
     AbstractQuantumCircuit,
     AbstractQubitArray,
     AbstractQubit,
     eval_jaxpr,
-    Jaspr,
     extract_invalues,
     insert_outvalues,
+    quantum_gate_p,
     Measurement_p,
     get_qubit_p,
     get_size_p,
-    delete_qubits_p,
     Jlist,
 )
 
@@ -118,8 +114,8 @@ def catalyst_eqn_evaluator(eqn, context_dic):
         invars = eqn.invars
         outvars = eqn.outvars
 
-        if isinstance(eqn.primitive, OperationPrimitive):
-            process_op(eqn.primitive, invars, outvars, context_dic)
+        if eqn.primitive.name == "jasp.quantum_gate":
+            process_op(eqn.params["gate"], invars, outvars, context_dic)
         elif eqn.primitive.name == "jasp.create_qubits":
             process_create_qubits(invars, outvars, context_dic)
         elif eqn.primitive.name == "jasp.get_qubit":
@@ -266,7 +262,7 @@ def process_get_size(invars, outvars, context_dic):
     context_dic[outvars[0]] = context_dic[invars[0]].counter
 
 
-def process_op(op_prim, invars, outvars, context_dic):
+def process_op(op, invars, outvars, context_dic):
 
     # Alias the AbstractQreg
     catalyst_register_tracer = context_dic[invars[-1]][0]
@@ -275,7 +271,6 @@ def process_op(op_prim, invars, outvars, context_dic):
     # that are required for the Operation
     qb_vars = []
 
-    op = op_prim.op
     # For that we find all the integers (ie. positions) of the participating
     # qubits in the AbstractQreg
     qb_pos = []
@@ -582,7 +577,7 @@ def reset_qubit_array(qb_array, abs_qc):
 
         def true_fun(arg_tuple):
             qb, abs_qc = arg_tuple
-            abs_qc = OperationPrimitive(XGate()).bind(qb, abs_qc)
+            abs_qc = quantum_gate_p.bind(qb, abs_qc, gate = XGate())
             return (qb, abs_qc)
 
         def false_fun(arg_tuple):

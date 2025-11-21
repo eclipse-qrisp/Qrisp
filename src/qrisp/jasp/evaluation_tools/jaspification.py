@@ -24,7 +24,6 @@ from jax.tree_util import tree_flatten, tree_unflatten
 from qrisp.jasp.interpreter_tools import extract_invalues, insert_outvalues, eval_jaxpr
 from qrisp.jasp.evaluation_tools.buffered_quantum_state import BufferedQuantumState
 from qrisp.jasp.primitives import (
-    OperationPrimitive,
     AbstractQuantumCircuit,
     AbstractQubitArray,
     AbstractQubit,
