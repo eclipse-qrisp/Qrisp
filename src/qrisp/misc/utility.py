@@ -16,12 +16,14 @@
 ********************************************************************************
 """
 
+import functools
 import traceback
 
+import jax
+import jax.numpy as jnp
 import numpy as np
 import sympy
-from jax.lax import fori_loop, cond
-import functools
+from jax.lax import cond, fori_loop
 
 
 def bin_rep(n, bits):
@@ -40,8 +42,8 @@ def bin_rep(n, bits):
 
 def int_encoder(qv, encoding_number):
 
-    from qrisp import x, control
-    from qrisp.jasp import TracingQuantumSession, jrange, check_for_tracing_mode
+    from qrisp import control, x
+    from qrisp.jasp import TracingQuantumSession, check_for_tracing_mode, jrange
 
     if not check_for_tracing_mode():
         if encoding_number > 2 ** len(qv) - 1:
@@ -56,9 +58,9 @@ def int_encoder(qv, encoding_number):
     else:
 
         from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
-                BigInteger
-            )
-        
+            BigInteger,
+        )
+
         if isinstance(encoding_number, BigInteger):
             for i in jrange(qv.size):
                 with control(encoding_number.get_bit(i)):
@@ -404,8 +406,9 @@ def gate_wrap(*args, permeability=None, is_qfree=None, name=None, verify=False):
                 permeability=permeability,
                 is_qfree=is_qfree,
                 name=name,
-                verify=verify
+                verify=verify,
             )(*fargs, **fkwargs)
+
         return wrapper
 
     # If the decorator is called directly with a function (e.g. @gate_wrap)
@@ -415,6 +418,7 @@ def gate_wrap(*args, permeability=None, is_qfree=None, name=None, verify=False):
     else:
         # Otherwise, return the decorator that can be applied to a function later
         return gate_wrap_helper
+
 
 def gate_wrap_inner(
     function, permeability=None, is_qfree=None, name=None, verify=False
@@ -432,10 +436,10 @@ def gate_wrap_inner(
             return qached_function(*args, **kwargs)
 
         wrapped_function.__name__ = function.__name__
+        from qrisp import QuantumArray, QuantumVariable, merge
         from qrisp.circuit import Qubit
         from qrisp.core import recursive_qs_search, recursive_qv_search
         from qrisp.environments import GateWrapEnvironment
-        from qrisp import merge, QuantumVariable, QuantumArray
 
         try:
             qs = find_qs(args)
@@ -683,7 +687,7 @@ def find_qs(args):
     if hasattr(args, "qs"):
         return args.qs()
 
-    from qrisp import QuantumVariable, QuantumArray, Qubit
+    from qrisp import QuantumArray, QuantumVariable, Qubit
 
     for arg in args:
         if isinstance(arg, (QuantumVariable, QuantumArray)):
@@ -751,10 +755,13 @@ def multi_measurement(qv_list, shots=None, backend=None):
     {(3, 2, 5): 0.5, (3, 3, 6): 0.5}
 
     """
-    
+
     from qrisp.jasp import check_for_tracing_mode
+
     if check_for_tracing_mode():
-        raise Exception("Tried to call multi_measurement in Jasp mode. Please use terminal_sampling instead")
+        raise Exception(
+            "Tried to call multi_measurement in Jasp mode. Please use terminal_sampling instead"
+        )
 
     if backend is None:
         if qv_list[0].qs.backend is None:
@@ -775,8 +782,8 @@ def multi_measurement(qv_list, shots=None, backend=None):
     from qrisp import (
         QuantumArray,
         QuantumVariable,
-        recursive_qv_search,
         recursive_qa_search,
+        recursive_qv_search,
     )
     from qrisp.core.compilation import qompiler
 
@@ -1235,6 +1242,292 @@ def custom_qv(labels, decoder=None, qs=None, name=None):
     return CustomQuantumVariable(qs=qs, name=name)
 
 
+def rotation_from_state(vec: np.ndarray) -> tuple:
+    """
+    Map |0> → a|0> + b|1>, with a real ≥ 0.
+
+    Parameters
+    ----------
+    vec : array_like
+        A 2-dimensional complex vector representing a qubit state.
+
+    Returns
+    -------
+    theta : float
+        The rotation angle theta.
+    phi : float
+        The rotation angle phi.
+    lam : float
+        The rotation angle lambda.
+    """
+    a, b = vec
+    a_real = np.real_if_close(a)
+    if a_real < 0:
+        # flip a global π phase to make 'a' non-negative real
+        a_real = -a_real
+        b = -b
+    theta = 2.0 * np.arccos(a_real)
+    phi = np.angle(b) if abs(b) > 1e-12 else 0.0
+    lam = 0.0
+    return theta, phi, lam
+
+
+def _preprocess(target_array):
+
+    n = int(np.log2(target_array.size))
+
+    thetas = [np.zeros(1 << l, dtype=float) for l in range(max(0, n - 1))]
+    leaf_u = np.zeros((1 << (n - 1), 3), dtype=float)
+    leaf_phase = np.zeros(1 << (n - 1), dtype=float)
+
+    queue = [(target_array, 0, 0, 0.0)]
+
+    while queue:
+
+        subvec, level, prefix_idx, acc_phase = queue.pop(0)
+
+        L = subvec.size
+        if L == 2:
+            a0 = subvec[0]
+            a0_phase = np.angle(a0) if abs(a0) > 1e-12 else 0.0
+
+            vec_n = subvec * np.exp(-1j * a0_phase)
+            theta, phi, lam = rotation_from_state(vec_n)
+
+            leaf_u[prefix_idx] = (theta, phi, lam)
+            leaf_phase[prefix_idx] = acc_phase + a0_phase
+            continue
+
+        half = L // 2
+        v0, v1 = subvec[:half], subvec[half:]
+
+        n0 = np.linalg.norm(v0)
+        n1 = np.linalg.norm(v1)
+
+        theta_l = 2.0 * np.arccos(min(1.0, n0))
+        thetas[level][prefix_idx] = theta_l
+
+        alpha0 = np.angle(v0[0]) if n0 > 1e-12 else 0.0
+        alpha1 = np.angle(v1[0]) if n1 > 1e-12 else 0.0
+
+        v0n = v0 / (n0 * np.exp(1j * alpha0)) if n0 > 1e-12 else v0
+        v1n = v1 / (n1 * np.exp(1j * alpha1)) if n1 > 1e-12 else v1
+
+        queue.append((v0n, level + 1, (prefix_idx << 1) | 0, acc_phase + alpha0))
+        queue.append((v1n, level + 1, (prefix_idx << 1) | 1, acc_phase + alpha1))
+
+    return thetas, leaf_u, leaf_phase
+
+
+# def state_preparation_dep(qv, target_array, method: str = "auto") -> None:
+#     """Prepares the quantum state specified by ``target_array`` on the qubits of ``qv``."""
+
+#     # This imports must be here to avoid circular imports
+#     from qrisp import gphase, qswitch, ry, u3
+
+#     target_array = np.array(target_array, dtype=np.complex128)
+#     n = int(np.log2(target_array.size))
+
+#     thetas, leaf_u, leaf_phase = _preprocess(target_array)
+
+#     if n == 1:
+#         theta, phi, lam = leaf_u[0]
+#         u3(theta, phi, lam, qv[0])
+#         gphase(leaf_phase[0], qv[0])
+#         return
+
+#     ry(thetas[0][0], qv[0])
+
+#     for l in range(1, n - 1):
+
+#         control_qubits = qv[l - 1 :: -1]
+#         layer_thetas = thetas[l]
+
+#         def make_case_fn(thetas_arr):
+#             def case_fn(i, qb):
+#                 ry(thetas_arr[i], qb)
+
+#             return case_fn
+
+#         qswitch(
+#             operand=qv[l],
+#             case=control_qubits,
+#             case_function=make_case_fn(layer_thetas),
+#             method=method,
+#         )
+
+#     control_qubits = qv[n - 2 :: -1]
+
+#     def final_case_fn(i, qb):
+#         theta_i, phi_i, lam_i = leaf_u[i]
+#         u3(theta_i, phi_i, lam_i, qb)
+#         gphase(leaf_phase[i], qb)
+
+#     qswitch(
+#         operand=qv[n - 1],
+#         case=control_qubits,
+#         case_function=final_case_fn,
+#         method=method,
+#     )
+
+
+def rotation_from_state_jasp(vec: jnp.ndarray) -> tuple:
+    a, b = vec
+    theta = 2.0 * jnp.arccos(a)
+    phi = jnp.where(jnp.abs(b) > 1e-12, jnp.angle(b), 0.0)
+    lam = 0.0
+    return theta, phi, lam
+
+
+def _normalize(v, n, a):
+    return jnp.where(
+        n > 1e-12,
+        v / (n * jnp.exp(1j * a)),
+        v,
+    )
+
+
+def _preprocess_jasp(target_array):
+
+    n = int(np.log2(target_array.shape[0]))
+
+    if n == 1:
+        a0 = target_array[0]
+        mag0 = jnp.abs(a0)
+        a0_phase = jnp.where(mag0 > 1e-12, jnp.angle(a0), 0.0)
+        vec_n = target_array * jnp.exp(-1j * a0_phase)
+
+        theta, phi, lam = rotation_from_state_jasp(vec_n)
+
+        thetas = jnp.zeros((0, 1), dtype=jnp.float64)
+        leaf_u = jnp.stack([theta, phi, lam])[None, :]
+        leaf_phase = (a0_phase)[None]
+        return thetas, leaf_u, leaf_phase
+
+    num_theta_layers = n - 1
+    num_leaves = 1 << (n - 1)
+
+    # We store thetas in a "rectangular" array: (layer, index),
+    # and only use the first 2^l entries at layer l.
+    thetas = jnp.zeros((num_theta_layers, num_leaves), dtype=jnp.float64)
+    leaf_u = jnp.zeros((num_leaves, 3), dtype=jnp.float64)
+    leaf_phase = jnp.zeros((num_leaves,), dtype=jnp.float64)
+
+    level_vecs = target_array[jnp.newaxis, :]
+    acc_phases = jnp.zeros((1,), dtype=jnp.float64)
+
+    for l in range(n):
+        num_nodes = 1 << l
+        sub_len = 1 << (n - l)
+        half = sub_len // 2
+
+        level_vecs_l = level_vecs[:, :sub_len]
+
+        if sub_len == 2:
+
+            def leaf_op(subvec, acc):
+                a0 = subvec[0]
+                mag0 = jnp.abs(a0)
+                a0_phase = jnp.where(mag0 > 1e-12, jnp.angle(a0), 0.0)
+                vec_n = subvec * jnp.exp(-1j * a0_phase)
+
+                theta, phi, lam = rotation_from_state_jasp(vec_n)
+                total_phase = acc + a0_phase
+                return jnp.array([theta, phi, lam]), total_phase
+
+            leaf_u_all, leaf_phase_all = jax.vmap(leaf_op)(level_vecs_l, acc_phases)
+
+            leaf_u = leaf_u.at[:num_nodes, :].set(leaf_u_all)
+            leaf_phase = leaf_phase.at[:num_nodes].set(leaf_phase_all)
+            break
+
+        def internal_op(subvec, acc):
+            v0 = subvec[:half]
+            v1 = subvec[half:]
+
+            n0 = jnp.linalg.norm(v0)
+            n1 = jnp.linalg.norm(v1)
+
+            theta_l = 2.0 * jnp.arccos(jnp.minimum(1.0, n0))
+
+            alpha0 = jnp.where(n0 > 1e-12, jnp.angle(v0[0]), 0.0)
+            alpha1 = jnp.where(n1 > 1e-12, jnp.angle(v1[0]), 0.0)
+
+            v0n = _normalize(v0, n0, alpha0)
+            v1n = _normalize(v1, n1, alpha1)
+
+            acc0 = acc + alpha0
+            acc1 = acc + alpha1
+
+            children = jnp.stack([v0n, v1n], axis=0)
+            child_accs = jnp.stack([acc0, acc1], axis=0)
+            return theta_l, children, child_accs
+
+        theta_vec, children_all, child_accs_all = jax.vmap(internal_op)(
+            level_vecs_l, acc_phases
+        )
+
+        thetas = thetas.at[l, :num_nodes].set(theta_vec)
+        level_vecs = children_all.reshape((2 * num_nodes, half))
+        acc_phases = child_accs_all.reshape((2 * num_nodes,))
+
+    return thetas, leaf_u, leaf_phase
+
+
+def state_preparation(qv, target_array, method: str = "auto") -> None:
+
+    # This imports must be here to avoid circular imports
+    from qrisp import check_for_tracing_mode, gphase, qswitch, ry, u3
+
+    target_array = jnp.asarray(target_array, dtype=jnp.complex128)
+
+    # n is static, so we can use normal numpy here
+    n = int(np.log2(target_array.shape[0]))
+
+    preprocess_fn = _preprocess_jasp if check_for_tracing_mode() else _preprocess
+    thetas, leaf_u, leaf_phase = preprocess_fn(target_array)
+
+    if n == 1:
+        theta, phi, lam = leaf_u[0]
+        u3(theta, phi, lam, qv[0])
+        gphase(leaf_phase[0], qv[0])
+        return
+
+    ry(thetas[0][0], qv[0])
+
+    for l in range(1, n - 1):
+
+        control_qubits = qv[l - 1 :: -1]
+        layer_thetas = thetas[l]
+
+        def make_case_fn(thetas_arr):
+            def case_fn(i, qb):
+                ry(thetas_arr[i], qb)
+
+            return case_fn
+
+        qswitch(
+            operand=qv[l],
+            case=control_qubits,
+            case_function=make_case_fn(layer_thetas),
+            method=method,
+        )
+
+    control_qubits = qv[n - 2 :: -1]
+
+    def final_case_fn(i, qb):
+        theta_i, phi_i, lam_i = leaf_u[i]
+        u3(theta_i, phi_i, lam_i, qb)
+        gphase(leaf_phase[i], qb)
+
+    qswitch(
+        operand=qv[n - 1],
+        case=control_qubits,
+        case_function=final_case_fn,
+        method=method,
+    )
+
+
 def init_state(qv, target_array):
     from qiskit.circuit.library.data_preparation.state_preparation import (
         StatePreparation,
@@ -1395,7 +1688,7 @@ def find_calling_line(level=0):
 
 
 def retarget_instructions(data, source_qubits, target_qubits):
-    from qrisp import QuantumEnvironment, recursive_qs_search, multi_session_merge
+    from qrisp import QuantumEnvironment, multi_session_merge, recursive_qs_search
 
     for i in range(len(data)):
         instr = data[i]
@@ -1486,14 +1779,15 @@ def redirect_qfunction(function_to_redirect):
 
 
     """
-    from qrisp import QuantumEnvironment, QuantumVariable, merge, QuantumArray
     import weakref
+
+    from qrisp import QuantumArray, QuantumEnvironment, QuantumVariable, merge
     from qrisp.jasp import (
-        check_for_tracing_mode,
-        make_jaspr,
-        injection_transform,
         TracingQuantumSession,
+        check_for_tracing_mode,
         eval_jaxpr,
+        injection_transform,
+        make_jaspr,
     )
 
     def redirected_qfunction(*args, target=None, **kwargs):
@@ -2102,7 +2396,7 @@ def inpl_adder_test(inpl_adder):
         print("The qcla_2_0 adder passed the tests without errors.")
 
     """
-    from qrisp import QuantumFloat, multi_measurement, h, control, QuantumBool
+    from qrisp import QuantumBool, QuantumFloat, control, h, multi_measurement
 
     for i in range(1, 7):
 
@@ -2251,10 +2545,10 @@ def batched_measurement(variables, backend, shots=None):
     variables : list[:ref:`QuantumVariable`]
         A list of QuantumVariables.
     backend : :ref:`BatchedBackend`
-        The backend to evaluate the compiled QuantumCircuits on. 
+        The backend to evaluate the compiled QuantumCircuits on.
     shots : int, optional
         The amount of shots to perform. The default is given by the backend used.
-        
+
     Returns
     -------
     results : list[dict]
@@ -2307,18 +2601,25 @@ def batched_measurement(variables, backend, shots=None):
 
         batched_measurement([c,f], backend=bb)
         # Yields: [{3: 1.0}, {5: 1.0}]
-    
+
     """
 
     import threading
 
-    results = [0]*len(variables)
+    results = [0] * len(variables)
+
     def eval_measurement(qv, i):
-        results[i] = qv.get_measurement(backend = backend, shots = shots)
+        results[i] = qv.get_measurement(backend=backend, shots=shots)
 
     threads = []
     for i, var in enumerate(variables):
-        thread = threading.Thread(target = eval_measurement, args = (var, i, ))
+        thread = threading.Thread(
+            target=eval_measurement,
+            args=(
+                var,
+                i,
+            ),
+        )
         threads.append(thread)
 
     # Start the threads
@@ -2326,9 +2627,9 @@ def batched_measurement(variables, backend, shots=None):
         thread.start()
 
     # Call the dispatch routine
-    # The min_calls keyword will make it wait 
+    # The min_calls keyword will make it wait
     # until the batch has a size of number of variables
-    backend.dispatch(min_calls = len(variables))
+    backend.dispatch(min_calls=len(variables))
 
     # Wait for the threads to join
     for thread in threads:

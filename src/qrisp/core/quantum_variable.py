@@ -17,13 +17,13 @@
 """
 
 import copy
+import warnings
 
 import matplotlib.pyplot as plt
 import numpy as np
 from jax import tree_util
 
 from qrisp.core.compilation import qompiler
-
 
 
 class QuantumVariable:
@@ -234,7 +234,7 @@ class QuantumVariable:
 
         # Store quantum session
         from qrisp.core import QuantumSession
-        from qrisp.jasp import check_for_tracing_mode, TracingQuantumSession
+        from qrisp.jasp import TracingQuantumSession, check_for_tracing_mode
 
         if check_for_tracing_mode():
             self.qs = TracingQuantumSession.get_instance()
@@ -343,7 +343,7 @@ class QuantumVariable:
         self.traced_attributes = []
 
     def __or__(self, other):
-        from qrisp import mcx, x, cx
+        from qrisp import cx, mcx, x
 
         if len(self) > len(other):
             or_res = self.duplicate()
@@ -526,7 +526,7 @@ class QuantumVariable:
         """
 
         from qrisp.core import QuantumSession
-        from qrisp.jasp import check_for_tracing_mode, TracingQuantumSession
+        from qrisp.jasp import TracingQuantumSession, check_for_tracing_mode
 
         if check_for_tracing_mode():
             new_qs = TracingQuantumSession.get_instance()
@@ -706,8 +706,8 @@ class QuantumVariable:
 
         """
 
-        from qrisp.misc import check_if_fresh, int_encoder
         from qrisp.jasp import TracingQuantumSession
+        from qrisp.misc import check_if_fresh, int_encoder
 
         if not isinstance(self.qs, TracingQuantumSession):
             if not permit_dirtyness:
@@ -717,6 +717,41 @@ class QuantumVariable:
                     )
 
         int_encoder(self, self.encoder(value))
+
+    def init_state_qswitch(self, state_array, method="auto"):
+        """
+        TODO: Add description
+        """
+
+        # These imports are here to avoid circular dependencies
+        from qrisp import state_preparation
+        from qrisp.jasp import check_for_tracing_mode
+        from qrisp.misc import check_if_fresh
+
+        if check_for_tracing_mode():
+            state_preparation(self, state_array, method)
+            return
+
+        if not check_if_fresh(self.reg, self.qs):
+            raise ValueError("Tried to initialize qubits which are not fresh anymore.")
+
+        expected_length = 2**self.size
+        if len(state_array) != expected_length:
+            raise ValueError(
+                f"Length of statevector must be {expected_length} for {self.size} qubits, got {len(state_array)}."
+            )
+
+        norm = np.linalg.norm(state_array)
+        if norm == 0:
+            raise ValueError("The provided state vector has zero norm.")
+        if not np.isclose(norm, 1.0):
+            warnings.warn(
+                "The provided state vector is not normalized. It will be normalized automatically.",
+                UserWarning,
+            )
+            state_array = state_array / norm
+
+        state_preparation(self, state_array, method)
 
     def init_state(self, state_dic):
         r"""
@@ -834,7 +869,7 @@ class QuantumVariable:
         from qrisp.jasp import check_for_tracing_mode
 
         if check_for_tracing_mode():
-            
+
             if isinstance(position, int) and position in [0, -1]:
                 if position == -1:
                     self.reg = self.reg + insertion_qubits
@@ -843,10 +878,10 @@ class QuantumVariable:
             else:
                 self.reg = self.reg[:position] + insertion_qubits + self.reg[position:]
         else:
-            
+
             if position == -1:
                 position = self.size
-            
+
             for i in range(amount):
                 insertion_qubits[i].identifier = (
                     self.name
