@@ -133,7 +133,7 @@ def qswitch(
 
     if is_function_mode := callable(case_function):
         if case_amount is None:
-            case_size = case.size if isinstance(case, QuantumVariable) else len(case)
+            case_size = len(case) if isinstance(case, list) else case.size
             case_amount = 2**case_size
         xrange = jrange if check_for_tracing_mode() else range
         if inv:
@@ -253,7 +253,7 @@ def qswitch(
             def bitwise_count_diff(a, b):
                 return np.int32(np.bitwise_count(np.bitwise_xor(a, b)))
 
-        n = case.size if isinstance(case, QuantumVariable) else len(case)
+        n = len(case) if isinstance(case, list) else case.size
 
         def nor_x(t):
             x(t)

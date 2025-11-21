@@ -1273,15 +1273,7 @@ def rotation_from_state(vec: np.ndarray) -> tuple:
     return theta, phi, lam
 
 
-# TODO: This algorithm assumes that the first qubit of a QuantumVariable is the MSB.
-# This is not the case and should be changed.
-def state_preparation(qv, target_array, method: str = "auto") -> None:
-    """Prepares the quantum state specified by ``target_array`` on the qubits of ``qv``."""
-
-    # This imports must be here to avoid circular imports
-    from qrisp import gphase, qswitch, ry, u3
-
-    target_array = np.array(target_array, dtype=np.complex128)
+def _preprocess(target_array):
 
     n = int(np.log2(target_array.size))
 
@@ -1325,6 +1317,22 @@ def state_preparation(qv, target_array, method: str = "auto") -> None:
         queue.append((v0n, level + 1, (prefix_idx << 1) | 0, acc_phase + alpha0))
         queue.append((v1n, level + 1, (prefix_idx << 1) | 1, acc_phase + alpha1))
 
+    return thetas, leaf_u, leaf_phase
+
+
+# TODO: This algorithm assumes that the first qubit of a QuantumVariable is the MSB.
+# This is not the case and should be changed.
+def state_preparation(qv, target_array, method: str = "auto") -> None:
+    """Prepares the quantum state specified by ``target_array`` on the qubits of ``qv``."""
+
+    # This imports must be here to avoid circular imports
+    from qrisp import gphase, qswitch, ry, u3
+
+    target_array = np.array(target_array, dtype=np.complex128)
+    n = int(np.log2(target_array.size))
+
+    thetas, leaf_u, leaf_phase = _preprocess(target_array)
+
     if n == 1:
         theta, phi, lam = leaf_u[0]
         u3(theta, phi, lam, qv[0])
@@ -1334,7 +1342,7 @@ def state_preparation(qv, target_array, method: str = "auto") -> None:
     ry(thetas[0][0], qv[0])
 
     for l in range(1, n - 1):
-        control_qubits = [qv[k] for k in range(l - 1, -1, -1)]
+        control_qubits = qv[l - 1 :: -1]
         layer_thetas = thetas[l]
 
         def make_case_fn(thetas_arr):
@@ -1350,7 +1358,7 @@ def state_preparation(qv, target_array, method: str = "auto") -> None:
             method=method,
         )
 
-    control_qubits = [qv[k] for k in range(n - 2, -1, -1)]
+    control_qubits = qv[n - 2 :: -1]
 
     def final_case_fn(i, qb):
         theta_i, phi_i, lam_i = map(float, leaf_u[i])
@@ -1373,7 +1381,7 @@ def rotation_from_state_jasp(vec: jnp.ndarray) -> tuple:
     return theta, phi, lam
 
 
-def normalize(v, n, a):
+def _normalize(v, n, a):
     return jnp.where(
         n > 1e-12,
         v / (n * jnp.exp(1j * a)),
@@ -1381,16 +1389,9 @@ def normalize(v, n, a):
     )
 
 
-def state_preparation_jasp(qv, target_array, method: str = "auto") -> None:
+def _preprocess_jasp(target_array):
 
-    # This imports must be here to avoid circular imports
-    from qrisp import gphase, q_cond, qswitch, ry, u3
-
-    target_array = jnp.asarray(target_array, dtype=jnp.complex128)
-
-    # n is static, so we can use normal numpy here
-    length = int(target_array.shape[0])
-    n = int(np.log2(length))
+    n = int(np.log2(target_array.shape[0]))
 
     if n == 1:
         a0 = target_array[0]
@@ -1454,8 +1455,8 @@ def state_preparation_jasp(qv, target_array, method: str = "auto") -> None:
             alpha0 = jnp.where(n0 > 1e-12, jnp.angle(v0[0]), 0.0)
             alpha1 = jnp.where(n1 > 1e-12, jnp.angle(v1[0]), 0.0)
 
-            v0n = normalize(v0, n0, alpha0)
-            v1n = normalize(v1, n1, alpha1)
+            v0n = _normalize(v0, n0, alpha0)
+            v1n = _normalize(v1, n1, alpha1)
 
             acc0 = acc + alpha0
             acc1 = acc + alpha1
@@ -1472,6 +1473,21 @@ def state_preparation_jasp(qv, target_array, method: str = "auto") -> None:
         level_vecs = children_all.reshape((2 * num_nodes, half))
         acc_phases = child_accs_all.reshape((2 * num_nodes,))
 
+    return thetas, leaf_u, leaf_phase
+
+
+def state_preparation_jasp(qv, target_array, method: str = "auto") -> None:
+
+    # This imports must be here to avoid circular imports
+    from qrisp import gphase, qswitch, ry, u3
+
+    target_array = jnp.asarray(target_array, dtype=jnp.complex128)
+
+    # n is static, so we can use normal numpy here
+    n = int(np.log2(target_array.shape[0]))
+
+    thetas, leaf_u, leaf_phase = _preprocess_jasp(target_array)
+
     if n == 1:
         theta, phi, lam = leaf_u[0]
         u3(theta, phi, lam, qv[0])
@@ -1481,7 +1497,8 @@ def state_preparation_jasp(qv, target_array, method: str = "auto") -> None:
     ry(thetas[0][0], qv[0])
 
     for l in range(1, n - 1):
-        control_qubits = [qv[k] for k in range(l - 1, -1, -1)]
+
+        control_qubits = qv[l - 1 :: -1]
         layer_thetas = thetas[l]
 
         def make_case_fn(thetas_arr):
@@ -1497,12 +1514,12 @@ def state_preparation_jasp(qv, target_array, method: str = "auto") -> None:
             method=method,
         )
 
-    control_qubits = [qv[k] for k in range(n - 2, -1, -1)]
+    control_qubits = qv[n - 2 :: -1]
 
     def final_case_fn(i, qb):
-        theta_i, phi_i, lam_i = map(float, leaf_u[i])
+        theta_i, phi_i, lam_i = leaf_u[i]
         u3(theta_i, phi_i, lam_i, qb)
-        gphase(float(leaf_phase[i]), qb)
+        gphase(leaf_phase[i], qb)
 
     qswitch(
         operand=qv[n - 1],

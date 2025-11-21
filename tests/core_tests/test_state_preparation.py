@@ -20,6 +20,7 @@ import numpy as np
 import pytest
 
 from qrisp import QuantumFloat, QuantumVariable, x
+from qrisp.misc.utility import _preprocess, _preprocess_jasp
 
 #######################################
 ### Test state preparation with qswitch
@@ -138,6 +139,28 @@ class TestStatePreparationQSwitch:
         logical_sv = _compute_statevector_logical_qubits(qv)
 
         assert np.allclose(logical_sv, array, atol=1e-5)
+
+
+class TestStatePreparationQswitchJasp:
+
+    @pytest.mark.parametrize("n", [1, 2, 3, 4, 5])
+    @pytest.mark.parametrize(
+        "statevector_fn",
+        [_gen_real_vector, _gen_sparse_vector, _gen_complex_vector],
+    )
+    def test_preprocess(self, n, statevector_fn):
+        """Test that the preprocessing of state preparation matches between Qrisp and Jasp."""
+
+        statevector = statevector_fn(n)
+        thetas, leaf_u, leaf_phase = _preprocess(statevector)
+        thetas_jasp, leaf_u_jasp, leaf_phase_jasp = _preprocess_jasp(statevector)
+
+        for l, arr in enumerate(thetas):
+            k = len(arr)
+            assert np.allclose(arr, thetas_jasp[l, :k])
+
+        assert np.allclose(leaf_u, leaf_u_jasp)
+        assert np.allclose(leaf_phase, leaf_phase_jasp)
 
 
 def test_state_preparation():
