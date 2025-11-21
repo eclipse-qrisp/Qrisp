@@ -138,6 +138,7 @@ If you are interested in how the QIR representation looks like, try calling
    Expectation Value
    Resource Estimation
    Simulation Tools/index
+   MLIR Interface
    Optimization Tools/Optimization Tools
    Scalable Integer Type
    Ported Features
