@@ -84,17 +84,8 @@ def inner_lanczos(H, k, operand_prep):
             U(case_indicator, operand) # control-U on the case_indicator QuantumFloat
         h(qv) # Hadamard test for <U>
         return qv
-    
-    if check_for_tracing_mode():
-        x_cond = q_cond
-    else:
-        def x_cond(pred, true_fun, false_fun, *operands):
-            if pred:
-                return true_fun(*operands)
-            else:
-                return false_fun(*operands)
             
-    return x_cond(k%2==0, even, odd, case_indicator, operand, k)
+    return q_cond(k%2==0, even, odd, case_indicator, operand, k)
 
 
 def compute_expectation(meas_res):
