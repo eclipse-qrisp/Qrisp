@@ -1260,7 +1260,6 @@ def rotation_from_state(vec: np.ndarray) -> tuple:
     lam : float
         The rotation angle lambda.
     """
-
     a, b = vec
     a_real = np.real_if_close(a)
     if a_real < 0:
@@ -1320,63 +1319,62 @@ def _preprocess(target_array):
     return thetas, leaf_u, leaf_phase
 
 
-# TODO: This algorithm assumes that the first qubit of a QuantumVariable is the MSB.
-# This is not the case and should be changed.
-def state_preparation(qv, target_array, method: str = "auto") -> None:
-    """Prepares the quantum state specified by ``target_array`` on the qubits of ``qv``."""
+# def state_preparation_dep(qv, target_array, method: str = "auto") -> None:
+#     """Prepares the quantum state specified by ``target_array`` on the qubits of ``qv``."""
 
-    # This imports must be here to avoid circular imports
-    from qrisp import gphase, qswitch, ry, u3
+#     # This imports must be here to avoid circular imports
+#     from qrisp import gphase, qswitch, ry, u3
 
-    target_array = np.array(target_array, dtype=np.complex128)
-    n = int(np.log2(target_array.size))
+#     target_array = np.array(target_array, dtype=np.complex128)
+#     n = int(np.log2(target_array.size))
 
-    thetas, leaf_u, leaf_phase = _preprocess(target_array)
+#     thetas, leaf_u, leaf_phase = _preprocess(target_array)
 
-    if n == 1:
-        theta, phi, lam = leaf_u[0]
-        u3(theta, phi, lam, qv[0])
-        gphase(leaf_phase[0], qv[0])
-        return
+#     if n == 1:
+#         theta, phi, lam = leaf_u[0]
+#         u3(theta, phi, lam, qv[0])
+#         gphase(leaf_phase[0], qv[0])
+#         return
 
-    ry(thetas[0][0], qv[0])
+#     ry(thetas[0][0], qv[0])
 
-    for l in range(1, n - 1):
-        control_qubits = qv[l - 1 :: -1]
-        layer_thetas = thetas[l]
+#     for l in range(1, n - 1):
 
-        def make_case_fn(thetas_arr):
-            def case_fn(i, qb):
-                ry(thetas_arr[i], qb)
+#         control_qubits = qv[l - 1 :: -1]
+#         layer_thetas = thetas[l]
 
-            return case_fn
+#         def make_case_fn(thetas_arr):
+#             def case_fn(i, qb):
+#                 ry(thetas_arr[i], qb)
 
-        qswitch(
-            operand=qv[l],
-            case=control_qubits,
-            case_function=make_case_fn(layer_thetas),
-            method=method,
-        )
+#             return case_fn
 
-    control_qubits = qv[n - 2 :: -1]
+#         qswitch(
+#             operand=qv[l],
+#             case=control_qubits,
+#             case_function=make_case_fn(layer_thetas),
+#             method=method,
+#         )
 
-    def final_case_fn(i, qb):
-        theta_i, phi_i, lam_i = map(float, leaf_u[i])
-        u3(theta_i, phi_i, lam_i, qb)
-        gphase(float(leaf_phase[i]), qb)
+#     control_qubits = qv[n - 2 :: -1]
 
-    qswitch(
-        operand=qv[n - 1],
-        case=control_qubits,
-        case_function=final_case_fn,
-        method=method,
-    )
+#     def final_case_fn(i, qb):
+#         theta_i, phi_i, lam_i = leaf_u[i]
+#         u3(theta_i, phi_i, lam_i, qb)
+#         gphase(leaf_phase[i], qb)
+
+#     qswitch(
+#         operand=qv[n - 1],
+#         case=control_qubits,
+#         case_function=final_case_fn,
+#         method=method,
+#     )
 
 
 def rotation_from_state_jasp(vec: jnp.ndarray) -> tuple:
     a, b = vec
     theta = 2.0 * jnp.arccos(a)
-    phi = cond(jnp.abs(b) > 1e-12, lambda x: jnp.angle(x), lambda x: 0.0, b)
+    phi = jnp.where(jnp.abs(b) > 1e-12, jnp.angle(b), 0.0)
     lam = 0.0
     return theta, phi, lam
 
@@ -1476,17 +1474,18 @@ def _preprocess_jasp(target_array):
     return thetas, leaf_u, leaf_phase
 
 
-def state_preparation_jasp(qv, target_array, method: str = "auto") -> None:
+def state_preparation(qv, target_array, method: str = "auto") -> None:
 
     # This imports must be here to avoid circular imports
-    from qrisp import gphase, qswitch, ry, u3
+    from qrisp import check_for_tracing_mode, gphase, qswitch, ry, u3
 
     target_array = jnp.asarray(target_array, dtype=jnp.complex128)
 
     # n is static, so we can use normal numpy here
     n = int(np.log2(target_array.shape[0]))
 
-    thetas, leaf_u, leaf_phase = _preprocess_jasp(target_array)
+    preprocess_fn = _preprocess_jasp if check_for_tracing_mode() else _preprocess
+    thetas, leaf_u, leaf_phase = preprocess_fn(target_array)
 
     if n == 1:
         theta, phi, lam = leaf_u[0]

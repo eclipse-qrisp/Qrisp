@@ -185,6 +185,11 @@ def qswitch(
                 f"Compile method {method} for switch-case structure not available in tracing mode."
             )
 
+        if isinstance(case, list):
+            raise NotImplementedError(
+                "Compile method 'parallel' for switch-case structure not available when 'case' is a list of qubits."
+            )
+
         # Idea: Use demux function to move operand and enabling bool into QuantumArray
         # to execute cases in parallel.
 

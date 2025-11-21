@@ -140,6 +140,20 @@ class TestStatePreparationQSwitch:
 
         assert np.allclose(logical_sv, array, atol=1e-5)
 
+    @pytest.mark.parametrize("method", ["auto", "tree", "sequential"])
+    def test_state_prep_methods(self, method):
+        """Test state preparation with different methods."""
+
+        n = 3
+        qv = QuantumVariable(n)
+
+        array = _gen_complex_vector(n)
+        qv.init_state_qswitch(array, method=method)
+
+        logical_sv = _compute_statevector_logical_qubits(qv)
+
+        assert np.allclose(logical_sv, array, atol=1e-5)
+
 
 class TestStatePreparationQswitchJasp:
 
