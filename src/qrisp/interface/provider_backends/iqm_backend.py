@@ -24,9 +24,7 @@ def IQMBackend(api_token,
                compilation_options = None, 
                transpiler = None):
     """
-    This function instantiates an IQMBackend based on :ref:`VirtualBackend`
-    using Qiskit and Qiskit-on-IQM.
-
+    This function creates a :ref:`BatchedBackend` for executing circuits on IQM hardware.
 
     Parameters
     ----------
@@ -39,8 +37,12 @@ def IQMBackend(api_token,
     server_url : str, optional
         The server URL of the IQM backend. If not provided, it defaults to IQM resonance
         using the device_instance. If a server URL is provided, a device instance should not be provided.
-    compilation_options: `CircuitCompilationOptions <https://docs.meetiqm.com/iqm-client/api/iqm.iqm_client.models.CircuitCompilationOptions.html>`_.
-        An object to specify several options regarding pulse-level compilation.
+    compilation_options: CircuitCompilationOptions
+        An object to specify several options regarding `pulse-level compilation <https://docs.meetiqm.com/iqm-client/api/iqm.iqm_client.models.CircuitCompilationOptions.html>`_.
+    transpiler : callable, optional
+        A function receiving and returning a QuantumCircuit, mapping the given
+        circuit to a hardware friendly circuit. By default the `transpile_to_iqm <https://iqm-finland.github.io/qiskit-on-iqm/api/iqm.qiskit_iqm.iqm_naive_move_pass.transpile_to_IQM.html>`_
+        function will be used.
 
     Examples
     --------
@@ -70,6 +72,38 @@ def IQMBackend(api_token,
      13: 0.018,
      11: 0.014,
      3: 0.012}
+    
+    **Manual qubit selection and routing**
+    
+    In the next example we showcase how to prevent automatic selection of qubits.
+    For this we overide the transpilation procedure. The default transpilation
+    calls the ``transpile_to_IQM`` function, which performs routing,
+    automatic selection of suitable qubits, basis-gate transformation and other
+    optimizations.
+    
+    For our example we will just transform to the required basis gates and ensure
+    manually that our circuit has the correct connectivity.
+    
+    ::
+        
+        from qrisp import QuantumCircuit
+        
+        # The custom transpiler should receive and return a QuantumCircuit
+        def custom_transpiler(qc: QuantumCircuit) -> QuantumCircuit:
+            return qc.transpile(basis_gates = ["cz", "r", "measure", "reset"])
+
+        custom_transpiled_garnet = IQMBackend("YOUR_IQM_RESONANCE_TOKEN", 
+                                   device_instance = "garnet",
+                                   transpiler = custom_transpiler)
+        
+        # Create a bell state
+        qc = QuantumCircuit(2)
+        qc.h(0)
+        qc.cx(0, 1)
+        qc.measure(0)
+
+        # execute
+        meas_res = qc.run(shots = 10000, backend = custom_transpiled_garnet)
 
     """
     if not isinstance(api_token, str):
@@ -119,16 +153,19 @@ def IQMBackend(api_token,
         compilation_options = CircuitCompilationOptions()
         
     if transpiler is None:
-        transpiler = lambda qiskit_qc : transpile_to_IQM(qiskit_qc, backend)
+        def transpiler(qc):
+            from qrisp import QuantumCircuit
+            qiskit_qc = qc.to_qiskit()
+            transpiled_qiskit_qc = transpile_to_IQM(qiskit_qc, backend)
+            return QuantumCircuit.from_qiskit(transpiled_qiskit_qc)
 
     def run_batch_iqm(batch):
         
         circuit_batch = []
         shot_batch = []
         for qc, shots in batch:
-            qiskit_qc = qc.to_qiskit()
-            qiskit_qc = transpiler(qiskit_qc)
-            
+            transpiled_qc = transpiler(qc)
+            qiskit_qc = transpiled_qc.to_qiskit()
             circuit_batch.append(backend.serialize_circuit(qiskit_qc))
             if shots is None:
                 shots = 1000
