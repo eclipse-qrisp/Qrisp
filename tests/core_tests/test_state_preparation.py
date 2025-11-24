@@ -16,11 +16,13 @@
 ********************************************************************************
 """
 
+import jax.numpy as jnp
 import numpy as np
 import pytest
 
 from qrisp import QuantumFloat, QuantumVariable, x
-from qrisp.misc.utility import _preprocess, _preprocess_jasp
+from qrisp.jasp import terminal_sampling
+from qrisp.misc.utility import _preprocess, _preprocess_jasp, jasp_bit_reverse
 
 #######################################
 ### Test state preparation with qswitch
@@ -175,6 +177,23 @@ class TestStatePreparationQswitchJasp:
 
         assert np.allclose(leaf_u, leaf_u_jasp)
         assert np.allclose(leaf_phase, leaf_phase_jasp)
+
+    @pytest.mark.parametrize("n", [2, 3])
+    def test_state_prep_jasp(self, n):
+        """Test state preparation with qswitch using Jasp backend."""
+
+        @terminal_sampling(shots=1)
+        def main(idx):
+            qv = QuantumFloat(n)
+            state_vector = jnp.zeros(2**n, dtype=complex)
+            state_vector = state_vector.at[idx].set(1.0)
+            qv.init_state_qswitch(state_vector)
+            return qv
+
+        for idx in range(2**n):
+            dict_res = main(idx)
+            key = jasp_bit_reverse(idx, n)
+            assert dict_res[float(key)] == 1
 
 
 def test_state_preparation():

@@ -18,12 +18,12 @@
 
 import functools
 import traceback
+from typing import Callable
 
 import jax
 import jax.numpy as jnp
 import numpy as np
 import sympy
-from jax.lax import cond, fori_loop
 
 
 def bin_rep(n, bits):
@@ -1272,7 +1272,7 @@ def rotation_from_state(vec: np.ndarray) -> tuple:
     return theta, phi, lam
 
 
-def _preprocess(target_array):
+def _preprocess(target_array) -> tuple:
 
     n = int(np.log2(target_array.size))
 
@@ -1319,59 +1319,24 @@ def _preprocess(target_array):
     return thetas, leaf_u, leaf_phase
 
 
-# def state_preparation_dep(qv, target_array, method: str = "auto") -> None:
-#     """Prepares the quantum state specified by ``target_array`` on the qubits of ``qv``."""
-
-#     # This imports must be here to avoid circular imports
-#     from qrisp import gphase, qswitch, ry, u3
-
-#     target_array = np.array(target_array, dtype=np.complex128)
-#     n = int(np.log2(target_array.size))
-
-#     thetas, leaf_u, leaf_phase = _preprocess(target_array)
-
-#     if n == 1:
-#         theta, phi, lam = leaf_u[0]
-#         u3(theta, phi, lam, qv[0])
-#         gphase(leaf_phase[0], qv[0])
-#         return
-
-#     ry(thetas[0][0], qv[0])
-
-#     for l in range(1, n - 1):
-
-#         control_qubits = qv[l - 1 :: -1]
-#         layer_thetas = thetas[l]
-
-#         def make_case_fn(thetas_arr):
-#             def case_fn(i, qb):
-#                 ry(thetas_arr[i], qb)
-
-#             return case_fn
-
-#         qswitch(
-#             operand=qv[l],
-#             case=control_qubits,
-#             case_function=make_case_fn(layer_thetas),
-#             method=method,
-#         )
-
-#     control_qubits = qv[n - 2 :: -1]
-
-#     def final_case_fn(i, qb):
-#         theta_i, phi_i, lam_i = leaf_u[i]
-#         u3(theta_i, phi_i, lam_i, qb)
-#         gphase(leaf_phase[i], qb)
-
-#     qswitch(
-#         operand=qv[n - 1],
-#         case=control_qubits,
-#         case_function=final_case_fn,
-#         method=method,
-#     )
-
-
 def rotation_from_state_jasp(vec: jnp.ndarray) -> tuple:
+    """
+    Map |0> → a|0> + b|1>, with a real ≥ 0.
+
+    Parameters
+    ----------
+    vec : jnp.ndarray
+        A 2-dimensional complex vector representing a qubit state.
+
+    Returns
+    -------
+    theta : float
+        The rotation angle theta.
+    phi : float
+        The rotation angle phi.
+    lam : float
+        The rotation angle lambda.
+    """
     a, b = vec
     theta = 2.0 * jnp.arccos(a)
     phi = jnp.where(jnp.abs(b) > 1e-12, jnp.angle(b), 0.0)
@@ -1379,7 +1344,7 @@ def rotation_from_state_jasp(vec: jnp.ndarray) -> tuple:
     return theta, phi, lam
 
 
-def _normalize(v, n, a):
+def _normalize(v: jnp.ndarray, n: jnp.ndarray, a: jnp.ndarray) -> jnp.ndarray:
     return jnp.where(
         n > 1e-12,
         v / (n * jnp.exp(1j * a)),
@@ -1387,7 +1352,7 @@ def _normalize(v, n, a):
     )
 
 
-def _preprocess_jasp(target_array):
+def _preprocess_jasp(target_array) -> tuple:
 
     n = int(np.log2(target_array.shape[0]))
 
@@ -1474,18 +1439,78 @@ def _preprocess_jasp(target_array):
     return thetas, leaf_u, leaf_phase
 
 
+# This is required in the qswitch-based state preparation,
+# because DynamicQubitArray does not support reverse iteration.
+def jasp_bit_reverse(i: int | jax.core.Tracer, width: int) -> jnp.ndarray:
+    """
+    Jasp-compatible bit-reversal function.
+
+    Interprets ``i`` as a ``width``-bit binary integer
+    and returns the decimal integer corresponding to the bit-reversal of ``i``.
+
+    Parameters
+    ----------
+    i : int or jax.core.Tracer
+        Index to be bit-reversed.
+    width : int
+        Bit-width for the reversal.
+
+    Returns
+    -------
+    jnp.ndarray
+        Bit-reversed index.
+
+
+    Examples
+    --------
+
+    For ``i=5`` and ``width=3``, the binary representation
+    of ``5`` is ``101``, and its bit-reversal is (again) ``101``, which is ``5`` in decimal.
+
+    >>> import jax.numpy as jnp
+    >>> jasp_bit_reverse(5, 3)
+    5
+
+    For ``i=3`` and ``width=4``, the binary representation
+    of ``3`` is ``0011``, and its bit-reversal is ``1100``, which is ``12`` in decimal.
+
+    >>> jasp_bit_reverse(3, 4)
+    12
+
+    """
+    shifts = jnp.arange(width)
+    bits = (i >> shifts) & 1
+    return jnp.dot(bits[::-1], 1 << shifts)
+
+
 def state_preparation(qv, target_array, method: str = "auto") -> None:
+    """
+    TODO: add docstring
+    """
 
     # This imports must be here to avoid circular imports
     from qrisp import check_for_tracing_mode, gphase, qswitch, ry, u3
 
     target_array = jnp.asarray(target_array, dtype=jnp.complex128)
-
     # n is static, so we can use normal numpy here
     n = int(np.log2(target_array.shape[0]))
 
     preprocess_fn = _preprocess_jasp if check_for_tracing_mode() else _preprocess
     thetas, leaf_u, leaf_phase = preprocess_fn(target_array)
+
+    def make_case_fn(layer_size: int, is_final: bool = False) -> Callable:
+        """Create a case function for qswitch at a given layer."""
+
+        def _case_fn(i, qb):
+            rev_idx = jasp_bit_reverse(i, layer_size)
+            if is_final:
+                theta_i, phi_i, lam_i = leaf_u[rev_idx]
+                u3(theta_i, phi_i, lam_i, qb)
+                gphase(leaf_phase[rev_idx], qb)
+            else:
+                ry(thetas[layer_size][rev_idx], qb)
+
+        return _case_fn
 
     if n == 1:
         theta, phi, lam = leaf_u[0]
@@ -1495,35 +1520,19 @@ def state_preparation(qv, target_array, method: str = "auto") -> None:
 
     ry(thetas[0][0], qv[0])
 
-    for l in range(1, n - 1):
-
-        control_qubits = qv[l - 1 :: -1]
-        layer_thetas = thetas[l]
-
-        def make_case_fn(thetas_arr):
-            def case_fn(i, qb):
-                ry(thetas_arr[i], qb)
-
-            return case_fn
+    for layer_size in range(1, n - 1):
 
         qswitch(
-            operand=qv[l],
-            case=control_qubits,
-            case_function=make_case_fn(layer_thetas),
+            operand=qv[layer_size],
+            case=qv[:layer_size],
+            case_function=make_case_fn(layer_size),
             method=method,
         )
 
-    control_qubits = qv[n - 2 :: -1]
-
-    def final_case_fn(i, qb):
-        theta_i, phi_i, lam_i = leaf_u[i]
-        u3(theta_i, phi_i, lam_i, qb)
-        gphase(leaf_phase[i], qb)
-
     qswitch(
         operand=qv[n - 1],
-        case=control_qubits,
-        case_function=final_case_fn,
+        case=qv[: n - 1],
+        case_function=make_case_fn(n - 1, is_final=True),
         method=method,
     )
 
