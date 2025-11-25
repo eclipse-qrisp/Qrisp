@@ -724,7 +724,7 @@ class QuantumVariable:
         """
 
         # These imports are here to avoid circular dependencies
-        from qrisp import state_preparation
+        from qrisp.alg_primitives.state_preparation import state_preparation
         from qrisp.jasp import check_for_tracing_mode
         from qrisp.misc import check_if_fresh
 
