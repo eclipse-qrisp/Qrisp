@@ -21,7 +21,7 @@ from scipy.optimize import minimize
 import sympy as sp
 from qrisp.algorithms.cold.crab import CRABObjective
 from qrisp import h
-from qrisp.algorithms.cold.AGP_param_opt import solve_params_at_lambda, build_Hg
+
 
 class DCQOProblem:
     """
@@ -56,7 +56,7 @@ class DCQOProblem:
         self, 
         sympy_lambda, 
         sympy_g,
-        alpha,
+        agp_coeffs,
         H_init,
         H_prob,
         A_lam,
@@ -68,7 +68,7 @@ class DCQOProblem:
         
         self.sympy_lambda = sympy_lambda
         self.sympy_g = sympy_g
-        self.alpha = alpha
+        self.agp_coeffs = agp_coeffs
         self.H_init = H_init
         self.H_prob = H_prob
         self.A_lam = A_lam
@@ -167,13 +167,13 @@ class DCQOProblem:
         for s in range(N_steps):
 
             # Get alpha for the timestep
-            alph = self.alpha(self.lam[s])
+            coeffs = self.agp_coeffs(self.lam[s])
 
             # H_0 contribution scaled by dt
             H_step = (1-self.lam[s]) * self.H_init + self.lam[s] * self.H_prob
 
             # AGP contribution scaled by dt* lambda_dot(t)
-            H_step += self.lamdot[s] * self.A_lam(alph)
+            H_step += self.lamdot[s] * self.A_lam(*coeffs)
 
             # Get unitary from trotterization and apply to qarg
             U = H_step.trotterization()
@@ -249,13 +249,12 @@ class DCQOProblem:
             # Get alpha, f and f_deriv for the timestep
             f = sin_matrix[s, :] @ beta
             f_deriv = cos_matrix[s, :] @ beta
-            alph = self.alpha(self.lam[s], f, f_deriv)
-
+            alpha = self.agp_coeffs(self.lam[s], f, f_deriv)
             # H_0 contribution scaled by dt
             H_step = (1-self.lam[s]) * self.H_init + self.lam[s] * self.H_prob
 
             # AGP contribution scaled by dt* lambda_dot(t)
-            H_step += self.lamdot[s] * self.A_lam(alph)
+            H_step += self.lamdot[s] * self.A_lam(alpha)
 
             # Control pulse contribution 
             if CRAB:
@@ -368,7 +367,8 @@ class DCQOProblem:
         self, 
         qarg, 
         N_steps, 
-        T, 
+        T,
+        method,
         N_opt=None, 
         CRAB=False, 
         optimizer="Powell",
@@ -411,7 +411,7 @@ class DCQOProblem:
             self.qarg_prep = qarg_prep
 
         # Run COLD routine if H_control is given
-        if self.H_control is not None:
+        if method == 'COLD':
             qarg1, qarg2 = qarg.duplicate(), qarg.duplicate()
 
             # Compile COLD routine into a circuit
@@ -425,8 +425,11 @@ class DCQOProblem:
             self.apply_cold_hamiltonian(qarg, N_steps, T, opt_params, CRAB=False)
 
         # Otherwise run LCD routine
-        else:
+        elif method == 'LCD':
             self.apply_lcd_hamiltonian(qarg, N_steps, T)
+
+        else:
+            raise ValueError(f'"{method}" is not an option for method. Choose "LCD" or "COLD".')
 
         # Measure qarg
         res_dict = qarg.get_measurement()

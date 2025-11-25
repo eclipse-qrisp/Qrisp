@@ -25,6 +25,12 @@ def create_COLDCRAB_instance(Q):
         t, T = sp.symbols("t T", real=True)
         lam_expr = sp.sin(sp.pi/2 * sp.sin(sp.pi*t/(2*T))**2)**2
         return lam_expr
+    
+    def g():
+        # Inverse of lam(t) giving t(lam)
+        lam = sp.Symbol("lam")
+        g_expr = 2/sp.pi * sp.asin(sp.sqrt(2/sp.pi * sp.asin(sp.sqrt(lam))))
+        return g_expr
 
     def alpha(lam, f, f_deriv):
         A = lam * h + f
@@ -50,11 +56,11 @@ def create_COLDCRAB_instance(Q):
     # Control Hamiltonian
     H_control = sum([Z(i) for i in range(N)])
 
-    return lam, alpha, H_init, H_prob, A_lam, H_control
+    return lam, g, alpha, H_init, H_prob, A_lam, H_control
 
 # Create DCQO instance
-lam, alpha, H_init, H_prob, A_lam, H_control = create_COLDCRAB_instance(Q)
-COLDCRAB_prob = DCQOProblem(lam, alpha, H_init, H_prob, A_lam, H_control)
+lam, g, alpha, H_init, H_prob, A_lam, H_control = create_COLDCRAB_instance(Q)
+COLDCRAB_prob = DCQOProblem(lam, g, alpha, H_init, H_prob, A_lam, H_control)
 
 # Run COLD-CRAB problem
 qarg = QuantumVariable(size=Q.shape[0])
