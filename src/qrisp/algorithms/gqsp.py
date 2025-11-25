@@ -35,6 +35,45 @@ import optax
 
 
 @jax.jit
+def _compute_maximum(p):
+    r"""
+    Finds the maximum absolute value $M$ that the polynomial $p(z)\in\mathbb C[z]$ assumes on the unit circle $|z|=1$.
+
+    Parameters
+    ----------
+    p : ndarray
+
+    Returns
+    -------
+    float
+        The maximum $M$ such that $|p(z)|\leq M$ for all $|z|=1$.
+
+    """
+
+    d = len(p) - 1 # degree of p
+
+    # p = [p0, p1, ..., p_d] 
+    # For |z|=1: |p(z)|^2 = p(z)p'(1/z) = h(z) where p' is obtained from p by conjugating all coefficients
+    # Using z=e^{it}, 1/z = e^{-it}, this corresponds to a trigonometric polynomial h(t)
+    # The maximum of h(t) is achieved for t such that d/dt h(t) = 0
+
+    # The coefficients of h(t) are given by convolve(p, p_rev')
+    # where p_rev' is obtained from p' by reversing the coefficients, i.e., p_rev'=[p'_d,...,p'_0]
+    # Taking the time derivative corresponds to elemment-wise multiplication with [-d,...,0,...,d]
+    # The zeros of d/dt h(t) are given by the zeros with |z|=1 of the polynomial r(z) corresponding to the resulting coefficient vector r
+    r = jnp.convolve(p, jnp.conjugate(p[::-1]), mode="full") * jnp.arange(-d,d+1)
+    roots = jnp.roots(r, strip_zeros=False)
+
+    # Evaluate |p(z)| at the roots 
+    p_values = jnp.abs(jnp.polyval(p[::-1], roots))
+
+    # Find the maximum |p(z)| considering only roots with |z|=1
+    M = jnp.max(jnp.where(jnp.abs(jnp.abs(roots)-1) < 1e-9, p_values, 0))
+
+    return M
+
+
+@jax.jit
 def compute_gqsp_polynomial(p):
     r"""
     Find the second GQSP polynomial $q$.
