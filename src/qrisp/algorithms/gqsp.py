@@ -31,7 +31,6 @@ from qrisp import (
 from qrisp.jasp import qache, jrange
 import jax
 import jax.numpy as jnp
-import optax
 
 
 @jax.jit
@@ -189,6 +188,7 @@ def _compute_gqsp_polynomial(p, num_iterations=10000, learning_rate=0.01):
         ndarray
             The optimized vector $q$.
     """
+    import optax
 
     d = len(p)
     delta = jnp.zeros(2*d-1)
@@ -337,9 +337,9 @@ def GQSP(qargs, U, p, q=None, k=0):
         i.e., $p=(p_0,p_1,\dotsc,p_d)$ corresponds to $p_0+p_1x+\dotsb+p_dx^d$.
     q : ndarray, optional
         A polynomial $q\in\mathbb C[x]$ represented as a vector of its coefficients. 
-        If not specified, the polynomial is computed numerically from $p$.
+        If not specified, the polynomial is computed numerically from $p$, and $p$ is rescaled to ensure $|p(e^{ix})|\leq 1$ for all $x\in\mathbb R$.
     k : int, optional
-        If specified, the Laurent polynomials $p'(x)=x^{-k}P(x)$, $q'(x)=x^{-k}q(x)$ are applied.
+        If specified, the Laurent polynomials $\tilde p(x)=x^{-k}p(x)$, $\tilde q(x)=x^{-k}q(x)$ are applied.
         The default is 0.
 
     Returns
@@ -385,9 +385,9 @@ def GQSP(qargs, U, p, q=None, k=0):
             operand = QuantumVariable(2)
             return operand
 
-    The transformation $\cos(H)$ is achieved by applying $p'(x)=0.5x^{-1} + 0.5x^1$ to the unitary $e^{iH}$.
+    The transformation $\cos(H)$ is achieved by applying $\tilde p(x)=0.5x^{-1} + 0.5x^1$ to the unitary $e^{iH}$.
     This corresponds to the polynomial $p(x)=0.5+0.5x^2$ (i.e., ``p=[0.5,0,0.5]``) and ``k=1``. 
-    A suitable second polynomial is $q(x)=-0.5+0.5x^2$ (i.e., ``q=[-0.5,0,0.5]``) which corresponds to $q'(x)=-0.5x^{-1}+0.5x$.
+    A suitable second polynomial is $q(x)=-0.5+0.5x^2$ (i.e., ``q=[-0.5,0,0.5]``) which corresponds to $\tilde q(x)=-0.5x^{-1}+0.5x$.
 
     Finally, we apply QSP within a :ref:`RUS` protocol.
 
@@ -451,6 +451,7 @@ def GQSP(qargs, U, p, q=None, k=0):
     d = len(p) - 1
 
     if q == None:
+        p = p / _compute_maximum(p)
         q = compute_gqsp_polynomial(p)
 
     theta, phi, lambda_ = compute_gqsp_angles(p, q)
