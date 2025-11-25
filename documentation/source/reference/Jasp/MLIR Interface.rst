@@ -212,7 +212,7 @@ Quantum Operations
        
        **Results:** ``tensor<i1>`` or ``tensor<i64>`` (measurement result), ``QuantumState`` (output state)
    * - ``reset``
-     - Resets qubits to the |0⟩ state. Performs a reset operation on a single qubit or qubit array, returning them to the ground state.
+     - Resets qubits to the :math:`\ket{0}` state. Performs a reset operation on a single qubit or qubit array, returning them to the ground state.
        
        **Arguments:** ``Qubit`` or ``QubitArray`` (qubits to reset), ``QuantumState`` (input state)
        
