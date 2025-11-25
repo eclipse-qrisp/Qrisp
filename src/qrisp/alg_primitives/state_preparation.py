@@ -22,8 +22,8 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
-from qrisp import gphase, qswitch, ry, u3
-from qrisp.misc.utility import jasp_bit_reverse
+
+EPSILON = 1e-12
 
 
 def _rot_params_from_state(vec: jnp.ndarray) -> tuple:
@@ -52,18 +52,55 @@ def _rot_params_from_state(vec: jnp.ndarray) -> tuple:
     """
     a, b = vec
     theta = 2.0 * jnp.arccos(a)
-    phi = jnp.where(jnp.abs(b) > 1e-12, jnp.angle(b), 0.0)
+    phi = jnp.where(jnp.abs(b) > EPSILON, jnp.angle(b), 0.0)
     lam = 0.0
     return theta, phi, lam
 
 
-def _internal_op(
+def _normalize_child_vector(
+    v: jnp.ndarray, acc: jnp.ndarray
+) -> tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
+    """
+    Normalizes a child vector with phase adjustment.
+
+    The phase of the first element of the vector is removed and added to the accumulated phase.
+    The vector is normalized to have a unit norm and the first element is ensured to be real and non-negative.
+
+    Parameters
+    ----------
+    v : jnp.ndarray
+        The child vector to normalize.
+    acc : jnp.ndarray
+        The accumulated phase from previous operations.
+
+    Returns
+    -------
+    norm : jnp.ndarray
+        The norm of the input vector.
+    v_normalized : jnp.ndarray
+        The normalized vector with adjusted phase.
+    updated_acc : jnp.ndarray
+        The updated accumulated phase.
+    """
+
+    norm = jnp.linalg.norm(v)
+    alpha = jnp.where(norm > EPSILON, jnp.angle(v[0]), 0.0)
+    v_normalized = jnp.where(
+        norm > EPSILON,
+        v / (norm * jnp.exp(1j * alpha)),
+        v,
+    )
+    updated_acc = acc + alpha
+    return norm, v_normalized, updated_acc
+
+
+def _compute_thetas(
     subvec: jnp.ndarray, acc: jnp.ndarray
 ) -> tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
     """
-    For a given input vector `subvec`, this function splits it into two halves,
-    computes the rotation angle based on the norms of these halves, normalizes each half
-    with a phase adjustment, and updates the accumulated phase `acc` for each child.
+    For a given input vector ``subvec``, this function computes the rotation angles
+    needed to prepare the corresponding two-qubit state, normalizes its child vectors,
+    and updates the accumulated phases for each child vector.
 
     Parameters
     ----------
@@ -90,29 +127,10 @@ def _internal_op(
     v0 = subvec[:half]
     v1 = subvec[half:]
 
-    n0 = jnp.linalg.norm(v0)
-    n1 = jnp.linalg.norm(v1)
+    n0, v0n, acc0 = _normalize_child_vector(v0, acc)
+    _, v1n, acc1 = _normalize_child_vector(v1, acc)
 
     theta_l = 2.0 * jnp.arccos(jnp.minimum(1.0, n0))
-
-    alpha0 = jnp.where(n0 > 1e-12, jnp.angle(v0[0]), 0.0)
-    alpha1 = jnp.where(n1 > 1e-12, jnp.angle(v1[0]), 0.0)
-
-    # v0n and v1n are normalized with a phase such that
-    # the first element is real and non-negative
-    v0n = jnp.where(
-        n0 > 1e-12,
-        v0 / (n0 * jnp.exp(1j * alpha0)),
-        v0,
-    )
-    v1n = jnp.where(
-        n1 > 1e-12,
-        v1 / (n1 * jnp.exp(1j * alpha1)),
-        v1,
-    )
-
-    acc0 = acc + alpha0
-    acc1 = acc + alpha1
 
     children = jnp.stack([v0n, v1n], axis=0)  # shape (2, half)
     child_phases = jnp.stack([acc0, acc1], axis=0)  # shape (2,)
@@ -120,11 +138,11 @@ def _internal_op(
     return theta_l, children, child_phases
 
 
-def _leaf_op(
+def _compute_u3_params(
     qubit_vec: jnp.ndarray, acc: jnp.ndarray
 ) -> tuple[jnp.ndarray, jnp.ndarray]:
     """
-    For a given input vector `qubit_vec`, this function normalizes it with a phase adjustment,
+    For a given input vector ``qubit_vec``, this function normalizes it with a phase adjustment,
     computes the rotation angles to prepare the corresponding single qubit state,
     and updates the accumulated phase `acc`, which is a scalar in this case.
 
@@ -145,14 +163,8 @@ def _leaf_op(
 
     """
 
-    a0 = qubit_vec[0]
-    mag0 = jnp.abs(a0)
-    a0_phase = jnp.where(mag0 > 1e-12, jnp.angle(a0), 0.0)
-
-    vec_n = qubit_vec * jnp.exp(-1j * a0_phase)
+    _, vec_n, total_phase = _normalize_child_vector(qubit_vec, acc)
     theta, phi, lam = _rot_params_from_state(vec_n)
-
-    total_phase = acc + a0_phase
     return jnp.array([theta, phi, lam]), total_phase
 
 
@@ -166,16 +178,16 @@ def _leaf_op(
 #                   ...
 #                   [theta_{n-2}_0, theta_{n-2}_1, ..., theta_{n-2}_{2^(n-2)-1}, 0]]  # layer n-2
 #
-# - `leaf_u` has shape (2^(n-1), 3), and contains the U3 parameters for each leaf node.
+# - `u_params` has shape (2^(n-1), 3), and contains the U3 parameters for each leaf node.
 #
-#    leaf_u = Array[[theta_leaf0, phi_leaf0, lam_leaf0],                                   # leaf 0
+#    u_params = Array[[theta_leaf0, phi_leaf0, lam_leaf0],                                 # leaf 0
 #                   [theta_leaf1, phi_leaf1, lam_leaf1],                                   # leaf 1
 #                   ...,
 #                   [theta_leaf_{2^(n-1)-1}, phi_leaf_{2^(n-1)-1}, lam_leaf_{2^(n-1)-1}]]  # leaf 2^(n-1)-1
 #
-# - `leaf_phase` has shape (2^(n-1),), and contains the global phase for each leaf node.
+# - `glob_phases` has shape (2^(n-1),), and contains the global phase for each leaf node.
 #
-#    leaf_phase = Array[phase_leaf0, phase_leaf1, ..., phase_leaf_{2^(n-1)-1}]
+#    glob_phases = Array[phase_leaf0, phase_leaf1, ..., phase_leaf_{2^(n-1)-1}]
 #
 def _preprocess(
     target_array: jnp.ndarray,
@@ -192,9 +204,9 @@ def _preprocess(
     -------
     thetas : jnp.ndarray
         A 2D array containing the ry rotation angles for each layer.
-    leaf_u : jnp.ndarray
+    u_params : jnp.ndarray
         A 2D array containing the U3 parameters for each leaf node.
-    leaf_phase : jnp.ndarray
+    glob_phases : jnp.ndarray
         A 1D array containing the global phase for each leaf node.
 
     """
@@ -202,26 +214,20 @@ def _preprocess(
     n = int(np.log2(target_array.shape[0]))
 
     if n == 1:
-        a0 = target_array[0]
-        mag0 = jnp.abs(a0)
-        a0_phase = jnp.where(mag0 > 1e-12, jnp.angle(a0), 0.0)
-        vec_n = target_array * jnp.exp(-1j * a0_phase)
-
+        _, vec_n, a0_phase = _normalize_child_vector(target_array, 0.0)
         theta, phi, lam = _rot_params_from_state(vec_n)
 
         thetas = jnp.zeros((0, 1))
-        leaf_u = jnp.stack([theta, phi, lam])[None, :]
-        leaf_phase = (a0_phase)[None]
-        return thetas, leaf_u, leaf_phase
+        u_params = jnp.stack([theta, phi, lam])[None, :]
+        glob_phases = (a0_phase)[None]
+        return thetas, u_params, glob_phases
 
     num_theta_layers = n - 1
     num_leaves = 1 << (n - 1)
 
-    # We store thetas in a "rectangular" array: (layer, index),
-    # and only use the first 2^l entries at layer l.
     thetas = jnp.zeros((num_theta_layers, num_leaves))
-    leaf_u = jnp.zeros((num_leaves, 3))
-    leaf_phase = jnp.zeros((num_leaves,))
+    u_params = jnp.zeros((num_leaves, 3))
+    glob_phases = jnp.zeros((num_leaves,))
 
     level_vecs = target_array[jnp.newaxis, :]
     acc_phases = jnp.zeros((1,))
@@ -234,12 +240,14 @@ def _preprocess(
         level_vecs_l = level_vecs[:, :sub_len]
 
         if sub_len == 2:
-            leaf_u_all, leaf_phase_all = jax.vmap(_leaf_op)(level_vecs_l, acc_phases)
-            leaf_u = leaf_u.at[:num_nodes, :].set(leaf_u_all)
-            leaf_phase = leaf_phase.at[:num_nodes].set(leaf_phase_all)
+            u_params_all, glob_phases_all = jax.vmap(_compute_u3_params)(
+                level_vecs_l, acc_phases
+            )
+            u_params = u_params.at[:num_nodes, :].set(u_params_all)
+            glob_phases = glob_phases.at[:num_nodes].set(glob_phases_all)
             break
 
-        theta_vec, children_all, child_accs_all = jax.vmap(_internal_op)(
+        theta_vec, children_all, child_accs_all = jax.vmap(_compute_thetas)(
             level_vecs_l, acc_phases
         )
 
@@ -247,7 +255,7 @@ def _preprocess(
         level_vecs = children_all.reshape((2 * num_nodes, sub_len // 2))
         acc_phases = child_accs_all.reshape((2 * num_nodes,))
 
-    return thetas, leaf_u, leaf_phase
+    return thetas, u_params, glob_phases
 
 
 def state_preparation(qv, target_array, method: str = "auto") -> None:
@@ -255,30 +263,34 @@ def state_preparation(qv, target_array, method: str = "auto") -> None:
     TODO: add docstring
     """
 
+    # These imports are here to avoid circular dependencies
+    from qrisp import gphase, qswitch, ry, u3
+    from qrisp.misc.utility import jasp_bit_reverse
+
     target_array = jnp.asarray(target_array, dtype=jnp.complex128)
     # n is static, so we can use normal numpy here
     n = int(np.log2(target_array.shape[0]))
 
-    thetas, leaf_u, leaf_phase = _preprocess(target_array)
+    thetas, u_params, glob_phases = _preprocess(target_array)
 
     def make_case_fn(layer_size: int, is_final: bool = False) -> Callable:
         """Create a case function for qswitch at a given layer."""
 
-        def _case_fn(i, qb):
+        def case_fn(i, qb):
             rev_idx = jasp_bit_reverse(i, layer_size)
             if is_final:
-                theta_i, phi_i, lam_i = leaf_u[rev_idx]
+                theta_i, phi_i, lam_i = u_params[rev_idx]
                 u3(theta_i, phi_i, lam_i, qb)
-                gphase(leaf_phase[rev_idx], qb)
+                gphase(glob_phases[rev_idx], qb)
             else:
                 ry(thetas[layer_size][rev_idx], qb)
 
-        return _case_fn
+        return case_fn
 
     if n == 1:
-        theta, phi, lam = leaf_u[0]
+        theta, phi, lam = u_params[0]
         u3(theta, phi, lam, qv[0])
-        gphase(leaf_phase[0], qv[0])
+        gphase(glob_phases[0], qv[0])
         return
 
     ry(thetas[0][0], qv[0])
