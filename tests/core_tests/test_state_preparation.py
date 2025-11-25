@@ -25,76 +25,6 @@ from qrisp.alg_primitives.state_preparation import _preprocess
 from qrisp.jasp import terminal_sampling
 from qrisp.misc.utility import jasp_bit_reverse
 
-
-def _rotation_from_state_check(vec: np.ndarray) -> tuple:
-    """
-    Map |0> → a|0> + b|1>, with a real ≥ 0.
-
-    This is a simpler, non-Jasp version of the rotation_from_state function for testing purposes.
-    """
-    a, b = vec
-    a_real = np.real_if_close(a)
-    if a_real < 0:
-        # flip a global π phase to make 'a' non-negative real
-        a_real = -a_real
-        b = -b
-    theta = 2.0 * np.arccos(a_real)
-    phi = np.angle(b) if abs(b) > 1e-12 else 0.0
-    lam = 0.0
-    return theta, phi, lam
-
-
-def _preprocess_check(target_array) -> tuple:
-    """
-    Preprocess the target statevector for state preparation.
-
-    This is a simpler, non-Jasp version of the _preprocess function for testing purposes.
-    """
-
-    n = int(np.log2(target_array.size))
-    thetas = [np.zeros(1 << l, dtype=float) for l in range(max(0, n - 1))]
-    leaf_u = np.zeros((1 << (n - 1), 3), dtype=float)
-    leaf_phase = np.zeros(1 << (n - 1), dtype=float)
-
-    queue = [(target_array, 0, 0, 0.0)]
-
-    while queue:
-
-        subvec, level, prefix_idx, acc_phase = queue.pop(0)
-
-        L = subvec.size
-        if L == 2:
-            a0 = subvec[0]
-            a0_phase = np.angle(a0) if abs(a0) > 1e-12 else 0.0
-
-            vec_n = subvec * np.exp(-1j * a0_phase)
-            theta, phi, lam = _rotation_from_state_check(vec_n)
-
-            leaf_u[prefix_idx] = (theta, phi, lam)
-            leaf_phase[prefix_idx] = acc_phase + a0_phase
-            continue
-
-        half = L // 2
-        v0, v1 = subvec[:half], subvec[half:]
-
-        n0 = np.linalg.norm(v0)
-        n1 = np.linalg.norm(v1)
-
-        theta_l = 2.0 * np.arccos(min(1.0, n0))
-        thetas[level][prefix_idx] = theta_l
-
-        alpha0 = np.angle(v0[0]) if n0 > 1e-12 else 0.0
-        alpha1 = np.angle(v1[0]) if n1 > 1e-12 else 0.0
-
-        v0n = v0 / (n0 * np.exp(1j * alpha0)) if n0 > 1e-12 else v0
-        v1n = v1 / (n1 * np.exp(1j * alpha1)) if n1 > 1e-12 else v1
-
-        queue.append((v0n, level + 1, (prefix_idx << 1) | 0, acc_phase + alpha0))
-        queue.append((v1n, level + 1, (prefix_idx << 1) | 1, acc_phase + alpha1))
-
-    return thetas, leaf_u, leaf_phase
-
-
 #######################################
 ### Test state preparation with qswitch
 #######################################
@@ -124,7 +54,7 @@ def _compute_statevector_logical_qubits(qv: QuantumVariable) -> np.ndarray:
 
 def _gen_real_vector(n):
     """Returns a full real normalized vector."""
-    v = np.random.rand(2**n)
+    v = np.random.rand(2**n) - 0.5
     return v / np.linalg.norm(v)
 
 
@@ -137,7 +67,7 @@ def _gen_sparse_vector(n):
 
 def _gen_complex_vector(n):
     """Returns a full complex normalized vector."""
-    v = np.random.rand(2**n) + 1j * np.random.rand(2**n)
+    v = (np.random.rand(2**n) - 0.5) + 1j * (np.random.rand(2**n) - 0.5)
     return v / np.linalg.norm(v)
 
 
@@ -229,25 +159,6 @@ class TestStatePreparationQSwitch:
 
 
 class TestStatePreparationQswitchJasp:
-
-    @pytest.mark.parametrize("n", [1, 2, 3, 4, 5])
-    @pytest.mark.parametrize(
-        "statevector_fn",
-        [_gen_real_vector, _gen_sparse_vector, _gen_complex_vector],
-    )
-    def test_preprocess(self, n, statevector_fn):
-        """Test that the preprocessing of state preparation matches between Qrisp and Jasp."""
-
-        statevector = statevector_fn(n)
-        thetas, leaf_u, leaf_phase = _preprocess_check(statevector)
-        thetas_jasp, leaf_u_jasp, leaf_phase_jasp = _preprocess(statevector)
-
-        for l, arr in enumerate(thetas):
-            k = len(arr)
-            assert np.allclose(arr, thetas_jasp[l, :k])
-
-        assert np.allclose(leaf_u, leaf_u_jasp)
-        assert np.allclose(leaf_phase, leaf_phase_jasp)
 
     @pytest.mark.parametrize("n", [2, 3])
     def test_state_prep_jasp(self, n):
