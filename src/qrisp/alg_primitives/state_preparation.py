@@ -57,11 +57,11 @@ def _rot_params_from_state(vec: jnp.ndarray) -> tuple:
     return theta, phi, lam
 
 
-def _normalize_child_vector(
+def _normalize_with_phase(
     v: jnp.ndarray, acc: jnp.ndarray
 ) -> tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
     """
-    Normalizes a child vector with phase adjustment.
+    Normalizes a given vector and adjusts its phase.
 
     The phase of the first element of the vector is removed and added to the accumulated phase.
     The vector is normalized to have a unit norm and the first element is ensured to be real and non-negative.
@@ -95,17 +95,17 @@ def _normalize_child_vector(
 
 
 def _compute_thetas(
-    subvec: jnp.ndarray, acc: jnp.ndarray
+    vec: jnp.ndarray, acc: jnp.ndarray
 ) -> tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
     """
-    For a given input vector ``subvec``, this function computes the rotation angles
+    For a given input vector, this function computes the rotation angles
     needed to prepare the corresponding two-qubit state, normalizes its child vectors,
     and updates the accumulated phases for each child vector.
 
     Parameters
     ----------
-    subvec : jnp.ndarray
-        A complex vector representing the current subvector to process.
+    vec : jnp.ndarray
+        A complex vector representing the current vector to process.
     acc : jnp.ndarray
         The accumulated phase from previous operations.
 
@@ -114,38 +114,36 @@ def _compute_thetas(
     -------
     theta_l : jnp.ndarray
         The rotation angles for the current layer l.
-    children : jnp.ndarray
+    subvecs : jnp.ndarray
         A 2D array where each row corresponds to a normalized child vector.
-    child_phases : jnp.ndarray
+    acc_phases : jnp.ndarray
         An array of accumulated phases for each child vector.
 
     """
 
-    sub_len = subvec.shape[0]
-    half = sub_len // 2
+    len = vec.shape[0]
+    half = len // 2
 
-    v0 = subvec[:half]
-    v1 = subvec[half:]
+    v0 = vec[:half]
+    v1 = vec[half:]
 
-    n0, v0n, acc0 = _normalize_child_vector(v0, acc)
-    _, v1n, acc1 = _normalize_child_vector(v1, acc)
+    n0, v0n, acc0 = _normalize_with_phase(v0, acc)
+    _, v1n, acc1 = _normalize_with_phase(v1, acc)
 
     theta_l = 2.0 * jnp.arccos(jnp.minimum(1.0, n0))
 
-    children = jnp.stack([v0n, v1n], axis=0)  # shape (2, half)
-    child_phases = jnp.stack([acc0, acc1], axis=0)  # shape (2,)
+    subvecs = jnp.stack([v0n, v1n], axis=0)  # shape (2, half)
+    acc_phases = jnp.stack([acc0, acc1], axis=0)  # shape (2,)
 
-    return theta_l, children, child_phases
+    return theta_l, subvecs, acc_phases
 
 
 def _compute_u3_params(
     qubit_vec: jnp.ndarray, acc: jnp.ndarray
 ) -> tuple[jnp.ndarray, jnp.ndarray]:
     """
-    For a given input vector ``qubit_vec``, this function normalizes it with a phase adjustment,
-    computes the rotation angles to prepare the corresponding single qubit state,
-    and updates the accumulated phase `acc`, which is a scalar in this case.
-
+    For a given one-qubit vector, this function computes the U3 gate parameters needed
+    to prepare the corresponding state, normalizes the vector, and updates the accumulated phase.
 
     Parameters
     ----------
@@ -163,7 +161,7 @@ def _compute_u3_params(
 
     """
 
-    _, vec_n, total_phase = _normalize_child_vector(qubit_vec, acc)
+    _, vec_n, total_phase = _normalize_with_phase(qubit_vec, acc)
     theta, phi, lam = _rot_params_from_state(vec_n)
     return jnp.array([theta, phi, lam]), total_phase
 
@@ -214,7 +212,7 @@ def _preprocess(
     n = int(np.log2(target_array.shape[0]))
 
     if n == 1:
-        _, vec_n, a0_phase = _normalize_child_vector(target_array, 0.0)
+        _, vec_n, a0_phase = _normalize_with_phase(target_array, 0.0)
         theta, phi, lam = _rot_params_from_state(vec_n)
 
         thetas = jnp.zeros((0, 1))
@@ -237,23 +235,21 @@ def _preprocess(
         num_nodes = 1 << l
         sub_len = 1 << (n - l)
 
-        level_vecs_l = level_vecs[:, :sub_len]
+        vec = level_vecs[:, :sub_len]
 
         if sub_len == 2:
             u_params_all, glob_phases_all = jax.vmap(_compute_u3_params)(
-                level_vecs_l, acc_phases
+                vec, acc_phases
             )
             u_params = u_params.at[:num_nodes, :].set(u_params_all)
             glob_phases = glob_phases.at[:num_nodes].set(glob_phases_all)
             break
 
-        theta_vec, children_all, child_accs_all = jax.vmap(_compute_thetas)(
-            level_vecs_l, acc_phases
-        )
+        theta_vec, subvecs, acc_phases_all = jax.vmap(_compute_thetas)(vec, acc_phases)
 
         thetas = thetas.at[l, :num_nodes].set(theta_vec)
-        level_vecs = children_all.reshape((2 * num_nodes, sub_len // 2))
-        acc_phases = child_accs_all.reshape((2 * num_nodes,))
+        level_vecs = subvecs.reshape((2 * num_nodes, sub_len // 2))
+        acc_phases = acc_phases_all.reshape((2 * num_nodes,))
 
     return thetas, u_params, glob_phases
 
