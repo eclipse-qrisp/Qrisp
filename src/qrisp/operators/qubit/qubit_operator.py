@@ -31,7 +31,7 @@ from qrisp.operators.qubit.jasp_measurement import get_jasp_measurement
 from qrisp.operators.qubit.commutativity_tools import construct_change_of_basis
 from qrisp import cx, cz, h, s, sx_dg, IterationEnvironment, conjugate, merge, invert
 
-from qrisp.jasp import check_for_tracing_mode, jrange
+from qrisp.jasp import check_for_tracing_mode, jrange, qache
 
 
 threshold = 1e-9
@@ -2054,6 +2054,7 @@ class QubitOperator(Hamiltonian):
 
         return unitaries, np.array(coefficients, dtype=float)
 
+    @qache
     def pauli_block_encoding(self):
         r"""
         Returns a block encoding of the operator.
@@ -2193,7 +2194,6 @@ class QubitOperator(Hamiltonian):
             (7.0, 6.0): 0.08333333084980639}
 
         """
-        from qrisp.jasp import qache
         from qrisp.alg_primitives import prepare, qswitch
     
         unitaries, coeffs = self.unitaries()
