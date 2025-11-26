@@ -112,12 +112,12 @@ def _compute_thetas(
 
     Returns
     -------
-    theta_l : jnp.ndarray
-        The rotation angles for the current layer l.
+    theta : jnp.ndarray
+        The angle (scalar array) for the ry rotation gate.
     subvecs : jnp.ndarray
-        A 2D array where each row corresponds to a normalized child vector.
+        A 2D array where each row corresponds to a normalized subvector.
     acc_phases : jnp.ndarray
-        An array of accumulated phases for each child vector.
+        A 1D array containing the updated accumulated phases for each subvector.
 
     """
 
@@ -130,12 +130,11 @@ def _compute_thetas(
     n0, v0n, acc0 = _normalize_with_phase(v0, acc)
     _, v1n, acc1 = _normalize_with_phase(v1, acc)
 
-    theta_l = 2.0 * jnp.arccos(jnp.minimum(1.0, n0))
-
+    theta = 2.0 * jnp.arccos(jnp.minimum(1.0, n0))  # shape ()
     subvecs = jnp.stack([v0n, v1n], axis=0)  # shape (2, half)
     acc_phases = jnp.stack([acc0, acc1], axis=0)  # shape (2,)
 
-    return theta_l, subvecs, acc_phases
+    return theta, subvecs, acc_phases
 
 
 def _compute_u3_params(
@@ -220,14 +219,13 @@ def _preprocess(
         glob_phases = (a0_phase)[None]
         return thetas, u_params, glob_phases
 
-    num_theta_layers = n - 1
-    num_leaves = 1 << (n - 1)
+    # Data structures to return
+    thetas = jnp.zeros((n - 1, 1 << (n - 1)))
+    u_params = jnp.zeros((1 << (n - 1), 3))
+    glob_phases = jnp.zeros((1 << (n - 1),))
 
-    thetas = jnp.zeros((num_theta_layers, num_leaves))
-    u_params = jnp.zeros((num_leaves, 3))
-    glob_phases = jnp.zeros((num_leaves,))
-
-    level_vecs = target_array[jnp.newaxis, :]
+    # Data structures used during the computation (reshaped at each layer)
+    subvecs = target_array[jnp.newaxis, :]
     acc_phases = jnp.zeros((1,))
 
     for l in range(n):
@@ -235,21 +233,20 @@ def _preprocess(
         num_nodes = 1 << l
         sub_len = 1 << (n - l)
 
-        vec = level_vecs[:, :sub_len]
-
         if sub_len == 2:
-            u_params_all, glob_phases_all = jax.vmap(_compute_u3_params)(
-                vec, acc_phases
+            u_params_vec, glob_phases_vec = jax.vmap(_compute_u3_params)(
+                subvecs, acc_phases
             )
-            u_params = u_params.at[:num_nodes, :].set(u_params_all)
-            glob_phases = glob_phases.at[:num_nodes].set(glob_phases_all)
+            u_params = u_params.at[:num_nodes, :].set(u_params_vec)
+            glob_phases = glob_phases.at[:num_nodes].set(glob_phases_vec)
             break
 
-        theta_vec, subvecs, acc_phases_all = jax.vmap(_compute_thetas)(vec, acc_phases)
+        theta_vec, subvecs, acc_phases = jax.vmap(_compute_thetas)(subvecs, acc_phases)
 
         thetas = thetas.at[l, :num_nodes].set(theta_vec)
-        level_vecs = subvecs.reshape((2 * num_nodes, sub_len // 2))
-        acc_phases = acc_phases_all.reshape((2 * num_nodes,))
+
+        subvecs = subvecs.reshape((2 * num_nodes, sub_len // 2))
+        acc_phases = acc_phases.reshape((2 * num_nodes,))
 
     return thetas, u_params, glob_phases
 
