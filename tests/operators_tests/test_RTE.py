@@ -44,7 +44,7 @@ def test_RTE():
 
     def psi(t):
         qv = QuantumVariable(G.number_of_nodes())
-        RTE(H, qv, t, n_max)
+        H.RTE(qv, t, n_max)
         return qv  
 
     def magnetization_at_t(t, repeats=50):
