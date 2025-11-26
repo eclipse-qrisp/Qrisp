@@ -18,24 +18,9 @@
 
 import inspect
 
-from jax.lax import while_loop, cond
-import jax
-import jax.numpy as jnp
-
-from qrisp.circuit import XGate
 from qrisp.jasp import (
     TracingQuantumSession,
-    AbstractQubitArray,
-    DynamicQubitArray,
     qache,
-)
-from qrisp.jasp.primitives import (
-    Measurement_p,
-    OperationPrimitive,
-    get_qubit_p,
-    get_size_p,
-    delete_qubits_p,
-    reset_p,
 )
 
 
