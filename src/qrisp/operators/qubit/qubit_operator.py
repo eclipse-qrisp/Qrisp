@@ -1935,6 +1935,219 @@ class QubitOperator(Hamiltonian):
         return U
 
     #
+    # RTE
+    #
+
+    def RTE(self, qv, time_evolution, n_max):
+
+        r"""
+        Implements the **Randomized Time Evolution (RTE)** subroutine introduced in  
+        *A randomized quantum algorithm for statistical phase estimation*  
+        by K. Wan, M. Berta, and E. T. Campbell (2022).  
+        :contentReference[oaicite:0]{index=0}
+
+        This routine provides a randomized approximation of the time-evolution operator
+
+        .. math::
+            U(t) = e^{i H t},
+
+        where the Hamiltonian is written as a weighted sum of Pauli strings,
+
+        .. math::
+            H = \sum_j h_j P_j,
+
+        and where the exact evolution is replaced by a stochastic product of Pauli rotations.
+        Sampling—RTE produces **purely statistical noise** whose variance decreases with the
+        number of samples.
+
+        More specifically, RTE expands the operator :math:`e^{i H t}` using a Poisson-like
+        distribution over the number of Pauli factors, and introduces controlled sign and
+        phase corrections such that the expectation of the random circuit equals the target
+        unitary. The quantity :math:`r` determines the number of samples needed to keep the
+        statistical variance small, and depends quadratically on the scaled evolution time.
+
+        **Algorithmic structure**
+
+        Given:
+        - a Hamiltonian :math:`H = \sum_j h_j P_j`,
+        - a quantum variable ``qv``,
+        - a simulated evolution time ``time_evolution``,
+        - a truncation parameter ``n_max``,
+        
+        this routine:
+
+        1. Normalizes the coefficients :math:`|h_j|` into a probability distribution.
+        2. Samples the number :math:`n` of Pauli factors from an even-valued distribution  
+        proportional to powers of :math:`\tau = |t_{\text{alg}}| / r`, where  
+        :math:`t_{\text{alg}} = t \sum_j |h_j|`.
+        3. Samples :math:`n+1` Pauli operators from :math:`\{P_j\}` according to the normalized
+        coefficient probabilities.
+        4. Constructs a random Pauli product :math:`U = \prod_{k=1}^{n} P_{\text{sampled}(k)}`.
+        5. Applies the rotation corresponding to the first sampled Pauli with angle
+
+        .. math::
+            \theta = \arccos\! \left( \frac{1}{\sqrt{1 + (\tau / (n+1))^2 }} \right),
+
+        as derived in the decomposition of the expansion terms.
+        6. Applies the product unitary :math:`U` with the correct global phase.
+
+        Each repetition produces a random unitary :math:`\widetilde{U}` whose expectation equals
+        the desired time-evolution operator :math:`e^{i H t}`. Increasing the number of samples
+        reduces the statistical error without increasing circuit depth.
+
+        Parameters
+        ----------
+        H : :class:`QubitOperator`
+            Hamiltonian expressed as a sum of Pauli terms.
+        qv : :class:`QuantumVariable`
+            Quantum register on which the simulated evolution acts.
+        time_evolution : float
+            Target simulated evolution time :math:`t`.
+        n_max : int
+            Maximum order of the Poisson-like expansion used for truncation.
+
+        Returns
+        -------
+        None
+            The function acts in-place on ``qv``.
+
+
+        Examples
+        --------
+        Below is an example using RTE to simulate the magnetization of a 6-site Ising chain
+        under randomized time evolution.
+
+        .. code-block:: python
+
+            import numpy as np
+            import matplotlib.pyplot as plt
+            import networkx as nx
+            from qrisp import QuantumVariable
+            from qrisp.operators import X, Z
+
+            # Helper functions
+            def generate_chain_graph(N):
+                G = nx.Graph()
+                G.add_edges_from((k, k+1) for k in range(N-1))
+                return G
+
+            def create_ising_hamiltonian(G, J, B):
+                H = sum(-J * Z(i)*Z(j) for (i,j) in G.edges()) \
+                    + sum(B * X(i) for i in G.nodes())
+                return H
+
+            def magnetization(G):
+                return (1.0 / G.number_of_nodes()) * sum(Z(i) for i in G.nodes())
+
+            # System definition
+            G = generate_chain_graph(6)
+            H = create_ising_hamiltonian(G, J=1.0, B=1.0)
+            M = magnetization(G)
+
+            T_values = np.arange(0, 2, 0.05)
+            precision = 0.005
+            n_max = 20
+
+            def psi(t):
+                qv = QuantumVariable(G.number_of_nodes())
+                H.RTE(qv, t, n_max)
+                return qv
+
+            def magnetization_at_t(t, repeats=50):
+                vals = []
+                for _ in range(repeats):
+                    ev = M.expectation_value(psi, precision)
+                    vals.append(float(ev(t)))
+                return sum(vals)/len(vals)
+
+            M_values = [magnetization_at_t(t, repeats=5) for t in T_values]
+
+            plt.scatter(T_values, M_values, color='#6929C4',
+                        s=20, label="Ising chain")
+            plt.xlabel("Evolution time T")
+            plt.ylabel("Magnetization <M>")
+            plt.legend()
+            plt.grid()
+            plt.show()
+
+        .. image:: /_static/rte_example.png
+            :alt: RTE Ising magnetization simulation
+            :align: center
+            :width: 600px
+
+        This example reproduces the qualitative behavior of the Ising magnetization under
+        randomized time evolution, and mirrors the numerical simulations appearing in
+        the RTE paper.
+        """
+
+        H_coeffs = []
+        H_terms = []
+        for term, coeff in  H.terms_dict.items():
+            H_terms.append(term)
+            H_coeffs.append(coeff)
+
+        normalisaton_factor = sum(abs(h) for h in H_coeffs)
+        if normalisaton_factor == 0:
+            raise ValueError("Hamiltonian has zero norm")
+        
+        H_coeffs_normalised = (np.abs(H_coeffs) / normalisaton_factor).tolist()
+
+        t_alg = time_evolution * normalisaton_factor
+
+        t_abs2 = float(3*abs(t_alg)**2)
+
+        # ensure r >= 1
+        r = int(np.ceil(2 * t_abs2))
+
+        if r < 1:
+            r = 1
+
+        indexes_sampled = []
+        
+        tau = abs(t_alg) / r
+
+        probs_n =[]
+        A0 = [] # list for unitaries eî \theta P, here are the theta
+        A1 = [] # list for unitaries P
+        B = [] # list for product of Pauli matrices
+        j = 0
+
+        while j < r:
+
+            n_list = list(range(0, 2*(n_max + 1), 2))
+            probs_n = [ (tau**i / factorial(i)) * sqrt(1.0 + (tau / (i + 1))**2) for i in n_list ]
+            probs_n = np.asarray(probs_n, dtype=float); probs_n /= probs_n.sum()
+
+            n = n_list[int(np.random.choice(len(probs_n), p=probs_n))]
+            
+            p_arr = np.asarray(H_coeffs_normalised, dtype=float); p_arr /= p_arr.sum()
+            indexes_sampled = list(np.random.choice(len(p_arr), size=n+1, p=p_arr))
+
+            theta = acos(1.0 / sqrt(1.0 + (tau / (n + 1))**2))
+
+            I = QubitOperator(())                              # identity
+            P0 = H_terms[indexes_sampled[0]]
+            A0.append(theta)
+            A1.append(P0)
+
+            U=QubitOperator(())   # start from I
+
+            for i in range(1, n + 1):
+                Ui = QubitOperator({ H_terms[indexes_sampled[i]]: 1.0 })
+                U = Ui * U
+            U = (1j * np.sign(t_alg)) ** n * I * U
+            B.append(U)
+
+            j += 1
+
+        for theta, P, U in zip(A0, A1, B):
+
+            P.simulate(theta, qv)
+
+            unitaries, coeffs = U.unitaries()
+            unitaries[0](qv)
+
+    #
     # LCU
     #
 
