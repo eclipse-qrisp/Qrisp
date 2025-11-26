@@ -22,7 +22,6 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
-
 EPSILON = 1e-12
 
 
@@ -182,9 +181,9 @@ def _compute_u3_params(
 #                   ...,
 #                   [theta_leaf_{2^(n-1)-1}, phi_leaf_{2^(n-1)-1}, lam_leaf_{2^(n-1)-1}]]  # leaf 2^(n-1)-1
 #
-# - `glob_phases` has shape (2^(n-1),), and contains the global phase for each leaf node.
+# - `phases` has shape (2^(n-1),), and contains the global phase for each leaf node.
 #
-#    glob_phases = Array[phase_leaf0, phase_leaf1, ..., phase_leaf_{2^(n-1)-1}]
+#    phases = Array[phase_leaf0, phase_leaf1, ..., phase_leaf_{2^(n-1)-1}]
 #
 def _preprocess(
     target_array: jnp.ndarray,
@@ -203,7 +202,7 @@ def _preprocess(
         A 2D array containing the ry rotation angles for each layer.
     u_params : jnp.ndarray
         A 2D array containing the U3 parameters for each leaf node.
-    glob_phases : jnp.ndarray
+    phases : jnp.ndarray
         A 1D array containing the global phase for each leaf node.
 
     """
@@ -213,7 +212,7 @@ def _preprocess(
     # Data structures to return
     thetas = jnp.zeros((n - 1, 1 << (n - 1)))
     u_params = jnp.zeros((1 << (n - 1), 3))
-    glob_phases = jnp.zeros((1 << (n - 1),))
+    phases = jnp.zeros((1 << (n - 1),))
 
     # Data structures used during the computation (reshaped at each layer)
     subvecs = target_array[jnp.newaxis, :]
@@ -225,21 +224,18 @@ def _preprocess(
         sub_len = 1 << (n - l)
 
         if sub_len == 2:
-            u_params_vec, glob_phases_vec = jax.vmap(_compute_u3_params)(
-                subvecs, acc_phases
-            )
+            u_params_vec, phases_vec = jax.vmap(_compute_u3_params)(subvecs, acc_phases)
             u_params = u_params.at[:num_nodes, :].set(u_params_vec)
-            glob_phases = glob_phases.at[:num_nodes].set(glob_phases_vec)
+            phases = phases.at[:num_nodes].set(phases_vec)
             break
 
         theta_vec, subvecs, acc_phases = jax.vmap(_compute_thetas)(subvecs, acc_phases)
 
         thetas = thetas.at[l, :num_nodes].set(theta_vec)
-
         subvecs = subvecs.reshape((2 * num_nodes, sub_len // 2))
         acc_phases = acc_phases.reshape((2 * num_nodes,))
 
-    return thetas, u_params, glob_phases
+    return thetas, u_params, phases
 
 
 def state_preparation(qv, target_array, method: str = "auto") -> None:
@@ -255,7 +251,7 @@ def state_preparation(qv, target_array, method: str = "auto") -> None:
     # n is static, so we can use normal numpy here
     n = int(np.log2(target_array.shape[0]))
 
-    thetas, u_params, glob_phases = _preprocess(target_array)
+    thetas, u_params, phases = _preprocess(target_array)
 
     def make_case_fn(layer_size: int, is_final: bool = False) -> Callable:
         """Create a case function for qswitch at a given layer."""
@@ -265,7 +261,7 @@ def state_preparation(qv, target_array, method: str = "auto") -> None:
             if is_final:
                 theta_i, phi_i, lam_i = u_params[rev_idx]
                 u3(theta_i, phi_i, lam_i, qb)
-                gphase(glob_phases[rev_idx], qb)
+                gphase(phases[rev_idx], qb)
             else:
                 ry(thetas[layer_size][rev_idx], qb)
 
@@ -274,7 +270,7 @@ def state_preparation(qv, target_array, method: str = "auto") -> None:
     if n == 1:
         theta, phi, lam = u_params[0]
         u3(theta, phi, lam, qv[0])
-        gphase(glob_phases[0], qv[0])
+        gphase(phases[0], qv[0])
         return
 
     ry(thetas[0][0], qv[0])
