@@ -1952,7 +1952,7 @@ class QubitOperator(Hamiltonian):
         by replacing it with a stochastic product of simpler exponentials
 
         .. math::
-            \tilde{U}(t) = \prod_{k=1}^N e^{-i \, \tau \, \mathrm{sgn}(h_{j_k}) P_{j_k}},
+            \tilde{U}(t) = \prod_{k=1}^N e^{-i \, \tau \, P_{j_k}},
 
         where each term :math:`P_j` is sampled independently with probability
 
