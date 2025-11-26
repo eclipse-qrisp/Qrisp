@@ -164,6 +164,7 @@ class TestStatePreparationQSwitch:
 
 
 class TestStatePreparationQswitchJasp:
+    """Test state preparation using the qswitch method in JASP mode."""
 
     @pytest.mark.parametrize("n", [1, 2, 3])
     def test_basis_states(self, n):
@@ -243,21 +244,21 @@ class TestStatePreparationQswitchJasp:
         """Test state prep for a sparse uniform superposition on several states."""
 
         shots = 30000
-        N = 1 << n
-        K = 3
+        n_qubits = 1 << n
+        k = 3
 
-        p = 1 / K
+        p = 1 / k
         expected = shots * p
         std = np.sqrt(shots * p * (1 - p))
         tolerance = 6 * std
 
-        idxs = np.random.choice(N, size=K, replace=False)
+        idxs = np.random.choice(n_qubits, size=k, replace=False)
 
         @terminal_sampling(shots=shots)
         def main():
             qv = QuantumFloat(n)
-            state_vector = jnp.zeros(N, dtype=complex)
-            amp = 1.0 / jnp.sqrt(K)
+            state_vector = jnp.zeros(n_qubits, dtype=complex)
+            amp = 1.0 / jnp.sqrt(k)
             for i in idxs:
                 state_vector = state_vector.at[i].set(amp)
             qv.init_state_qswitch(state_vector)

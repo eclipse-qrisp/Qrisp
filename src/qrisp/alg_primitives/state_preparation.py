@@ -120,8 +120,8 @@ def _compute_thetas(
 
     """
 
-    len = vec.shape[0]
-    half = len // 2
+    len_vec = vec.shape[0]
+    half = len_vec // 2
 
     v0 = vec[:half]
     v1 = vec[half:]
@@ -230,7 +230,6 @@ def _preprocess(
             break
 
         theta_vec, subvecs, acc_phases = jax.vmap(_compute_thetas)(subvecs, acc_phases)
-
         thetas = thetas.at[l, :num_nodes].set(theta_vec)
         subvecs = subvecs.reshape((2 * num_nodes, sub_len // 2))
         acc_phases = acc_phases.reshape((2 * num_nodes,))
