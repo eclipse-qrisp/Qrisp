@@ -495,4 +495,6 @@ def SQPE(H, ansatz_state,
     print(f"Estimated probability Pr(E ≤ X) = {prob_estimate:.4f}")
     print(f"Decision threshold = {threshold:.4f}")
     print(f"Is estimated energy ≤ X? : {is_below_threshold}")
+
+    return is_below_threshold, prob_estimate
     
