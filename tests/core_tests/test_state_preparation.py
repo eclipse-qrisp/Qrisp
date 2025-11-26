@@ -23,7 +23,7 @@ import pytest
 from qrisp import QuantumFloat, QuantumVariable, x
 from qrisp.alg_primitives.state_preparation import _preprocess
 from qrisp.jasp import terminal_sampling
-from qrisp.misc.utility import jasp_bit_reverse
+from qrisp.misc.utility import bit_reverse
 
 #######################################
 ### Test state preparation with qswitch
@@ -160,9 +160,9 @@ class TestStatePreparationQSwitch:
 
 class TestStatePreparationQswitchJasp:
 
-    @pytest.mark.parametrize("n", [2, 3])
+    @pytest.mark.parametrize("n", [1, 2, 3])
     def test_state_prep_jasp(self, n):
-        """Test state preparation with qswitch using Jasp backend."""
+        """Test state preparation with qswitch in JASP mode for basis states."""
 
         @terminal_sampling(shots=1)
         def main(idx):
@@ -173,8 +173,11 @@ class TestStatePreparationQswitchJasp:
             return qv
 
         for idx in range(2**n):
+
             dict_res = main(idx)
-            key = jasp_bit_reverse(idx, n)
+            key = bit_reverse(idx, n)
+
+            assert len(dict_res) == 1
             assert dict_res[float(key)] == 1
 
 

@@ -1243,7 +1243,7 @@ def custom_qv(labels, decoder=None, qs=None, name=None):
 
 # This is required in the qswitch-based state preparation,
 # because DynamicQubitArray does not support reverse iteration.
-def jasp_bit_reverse(i: int | jax.core.Tracer, width: int) -> jnp.ndarray:
+def bit_reverse(i, width):
     """
     Jasp-compatible bit-reversal function.
 
@@ -1252,10 +1252,10 @@ def jasp_bit_reverse(i: int | jax.core.Tracer, width: int) -> jnp.ndarray:
 
     Parameters
     ----------
-    i : int or jax.core.Tracer
+    i : jnp.ndarray
         Index to be bit-reversed.
-    width : int
-        Bit-width for the reversal.
+    width : jnp.ndarray
+        Bit-width for the reversal (scalar array).
 
     Returns
     -------
@@ -1269,14 +1269,14 @@ def jasp_bit_reverse(i: int | jax.core.Tracer, width: int) -> jnp.ndarray:
     For ``i=5`` and ``width=3``, the binary representation
     of ``5`` is ``101``, and its bit-reversal is (again) ``101``, which is ``5`` in decimal.
 
-    >>> import jax.numpy as jnp
-    >>> jasp_bit_reverse(5, 3)
+    >>> from qrisp.misc.utility import bit_reverse
+    >>> bit_reverse(5, 3)
     5
 
     For ``i=3`` and ``width=4``, the binary representation
     of ``3`` is ``0011``, and its bit-reversal is ``1100``, which is ``12`` in decimal.
 
-    >>> jasp_bit_reverse(3, 4)
+    >>> bit_reverse(3, 4)
     12
 
     """

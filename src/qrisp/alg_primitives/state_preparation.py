@@ -210,15 +210,6 @@ def _preprocess(
 
     n = int(np.log2(target_array.shape[0]))
 
-    if n == 1:
-        _, vec_n, a0_phase = _normalize_with_phase(target_array, 0.0)
-        theta, phi, lam = _rot_params_from_state(vec_n)
-
-        thetas = jnp.zeros((0, 1))
-        u_params = jnp.stack([theta, phi, lam])[None, :]
-        glob_phases = (a0_phase)[None]
-        return thetas, u_params, glob_phases
-
     # Data structures to return
     thetas = jnp.zeros((n - 1, 1 << (n - 1)))
     u_params = jnp.zeros((1 << (n - 1), 3))
@@ -258,7 +249,7 @@ def state_preparation(qv, target_array, method: str = "auto") -> None:
 
     # These imports are here to avoid circular dependencies
     from qrisp import gphase, qswitch, ry, u3
-    from qrisp.misc.utility import jasp_bit_reverse
+    from qrisp.misc.utility import bit_reverse
 
     target_array = jnp.asarray(target_array, dtype=jnp.complex128)
     # n is static, so we can use normal numpy here
@@ -270,7 +261,7 @@ def state_preparation(qv, target_array, method: str = "auto") -> None:
         """Create a case function for qswitch at a given layer."""
 
         def case_fn(i, qb):
-            rev_idx = jasp_bit_reverse(i, layer_size)
+            rev_idx = bit_reverse(i, layer_size)
             if is_final:
                 theta_i, phi_i, lam_i = u_params[rev_idx]
                 u3(theta_i, phi_i, lam_i, qb)
