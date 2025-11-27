@@ -19,6 +19,7 @@
 from typing import Callable
 
 import jax
+from jax import lax
 import jax.numpy as jnp
 import numpy as np
 
@@ -52,6 +53,9 @@ def _rot_params_from_state(vec: jnp.ndarray) -> tuple:
         The rotation angle lambda.
     """
     a, b = vec
+    # We know that a is real (and non-negative).
+    # This step avoids warning about casting complex to real.
+    a = jnp.clip(jnp.real(a), -1.0, 1.0)
     theta = 2.0 * jnp.arccos(a)
     phi = jnp.where(jnp.abs(b) > EPSILON, jnp.angle(b), 0.0)
     lam = 0.0
@@ -85,14 +89,25 @@ def _normalize_with_phase(
     """
 
     norm = jnp.linalg.norm(v)
-    alpha = jnp.where(norm > EPSILON, jnp.angle(v[0]), 0.0)
-    v_normalized = jnp.where(
+
+    def branch_nonzero(_):
+        alpha = jnp.angle(v[0])
+        v_normalized = v / (norm * jnp.exp(1j * alpha))
+        return norm, v_normalized, acc + alpha
+
+    def branch_zero(_):
+        # If the norm is zero, we return a default normalized vector
+        # with the first element set to 1 (real and non-negative).
+        v0 = jnp.where(jnp.real(v[0]) < 0, -v[0], v[0])
+        v_adj = v.at[0].set(v0)
+        return norm, v_adj, acc
+
+    return lax.cond(
         norm > EPSILON,
-        v / (norm * jnp.exp(1j * alpha)),
-        v,
+        lambda _: branch_nonzero(None),
+        lambda _: branch_zero(None),
+        operand=None,
     )
-    updated_acc = acc + alpha
-    return norm, v_normalized, updated_acc
 
 
 def _compute_thetas(
@@ -100,7 +115,7 @@ def _compute_thetas(
 ) -> tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
     """
     For a given input vector, this function computes the rotation angles
-    needed to prepare the corresponding two-qubit state, normalizes its child vectors,
+    needed for the uniformly controlled RY at this tree layer, normalizes its child vectors,
     and updates the accumulated phases for each child vector.
 
     Parameters
@@ -142,7 +157,7 @@ def _compute_u3_params(
     qubit_vec: jnp.ndarray, acc: jnp.ndarray
 ) -> tuple[jnp.ndarray, jnp.ndarray]:
     """
-    For a given one-qubit vector, this function computes the U3 gate parameters needed
+    For a given length-2 vector, this function computes the U3 gate parameters needed
     to prepare the corresponding state, normalizes the vector, and updates the accumulated phase.
 
     Parameters
@@ -212,14 +227,13 @@ def _preprocess(
     n = int(np.log2(target_array.shape[0]))
 
     # Data structures to return
-    thetas = jnp.zeros((n - 1, 1 << (n - 1)))
-    u_params = jnp.zeros((1 << (n - 1), 3))
-    phases = jnp.zeros((1 << (n - 1),))
+    thetas = jnp.zeros((n - 1, 1 << (n - 1)), dtype=jnp.float64)
+    u_params = jnp.zeros((1 << (n - 1), 3), dtype=jnp.float64)
+    phases = jnp.zeros((1 << (n - 1),), dtype=jnp.float64)
 
     # Data structures used during the computation (reshaped at each layer)
     subvecs = target_array[jnp.newaxis, :]
-    acc_phases = jnp.zeros((1,))
-
+    acc_phases = jnp.zeros((1,), dtype=jnp.float64)
     for l in range(n):
 
         num_nodes = 1 << l
@@ -254,6 +268,12 @@ def state_preparation(
     and U3 parameters for the leaf nodes.
     The quantum stage applies them using ``qswitch``, which replaces
     explicit multiplexers and conditionals in both static execution and Jasp mode.
+
+    .. note::
+
+        During the quantum stage, ``qswitch`` enumerates control patterns in
+        little-endian order, so each index is bit-reversed before accessing
+        the parameters computed in the classical preprocessing stage.
 
     Parameters
     ----------

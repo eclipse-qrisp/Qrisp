@@ -21,6 +21,7 @@ import numpy as np
 import pytest
 
 from qrisp import QuantumFloat, QuantumVariable, x
+from qrisp.alg_primitives.state_preparation import EPSILON
 from qrisp.jasp import terminal_sampling
 from qrisp.misc.utility import bit_reverse
 
@@ -154,12 +155,32 @@ class TestStatePreparationQSwitch:
 
         n = 3
         qv = QuantumVariable(n)
-
         array = _gen_complex_vector(n)
         qv.init_state_qswitch(array, method=method)
 
         logical_sv = _compute_statevector_logical_qubits(qv)
+        assert np.allclose(logical_sv, array, atol=1e-5)
 
+    def test_phase_varied_state(self):
+        """Test state preparation of a state with varied phases."""
+
+        qv = QuantumVariable(3)
+        array = jnp.array([1, 1j, -1, -1j, 1, 1j, -1, -1j])
+        array /= jnp.linalg.norm(array)
+        qv.init_state_qswitch(array)
+
+        logical_sv = _compute_statevector_logical_qubits(qv)
+        assert np.allclose(logical_sv, array, atol=1e-5)
+
+    def test_near_zero_amplitudes(self):
+        """Test state preparation of a state with near-zero amplitudes."""
+
+        qv = QuantumVariable(3)
+        array = jnp.array([1.0, EPSILON, 0, 0, 0, EPSILON * 1j, -EPSILON, 0])
+        array /= jnp.linalg.norm(array)
+        qv.init_state_qswitch(array)
+
+        logical_sv = _compute_statevector_logical_qubits(qv)
         assert np.allclose(logical_sv, array, atol=1e-5)
 
 
