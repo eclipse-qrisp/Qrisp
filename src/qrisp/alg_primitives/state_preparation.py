@@ -97,7 +97,7 @@ def _normalize_with_phase(
 
     def branch_zero(_):
         # If the norm is zero, we return a default normalized vector
-        # with the first element set to 1 (real and non-negative).
+        # with the first element real and non-negative.
         v0 = jnp.where(jnp.real(v[0]) < 0, -v[0], v[0])
         v_adj = v.at[0].set(v0)
         return norm, v_adj, acc
