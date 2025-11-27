@@ -720,7 +720,15 @@ class QuantumVariable:
 
     def init_state_qswitch(self, state_array, method="auto"):
         """
-        TODO: Add description
+        The ``init_state_qswitch`` method allows the initialization of arbitrary quantum
+        states using a quantum switch based state preparation algorithm.
+
+        It recieves a statevector as a numpy array of complex numbers and initializes
+        the corresponding state.
+
+        For more information on the quantum switch based state preparation algorithm,
+        please refer to :func:`state_preparation`.
+
         """
 
         # These imports are here to avoid circular dependencies
@@ -742,14 +750,14 @@ class QuantumVariable:
             )
 
         norm = np.linalg.norm(state_array)
-        if norm == 0:
+        if np.isclose(norm, 0.0):
             raise ValueError("The provided state vector has zero norm.")
         if not np.isclose(norm, 1.0):
             warnings.warn(
                 "The provided state vector is not normalized. It will be normalized automatically.",
                 UserWarning,
             )
-            state_array = state_array / norm
+            state_array /= norm
 
         state_preparation(self, state_array, method)
 

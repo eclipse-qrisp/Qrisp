@@ -22,7 +22,9 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
-EPSILON = 1e-12
+from qrisp.core.quantum_variable import QuantumVariable
+
+EPSILON = jnp.sqrt(jnp.finfo(jnp.float64).eps)
 
 
 def _rot_params_from_state(vec: jnp.ndarray) -> tuple:
@@ -237,9 +239,31 @@ def _preprocess(
     return thetas, u_params, phases
 
 
-def state_preparation(qv, target_array, method: str = "auto") -> None:
+def state_preparation(
+    qv: QuantumVariable, target_array: jnp.ndarray, method: str = "auto"
+) -> None:
     """
-    TODO: add docstring
+    Prepare the quantum state encoded in ``qv`` so that it matches the given
+    ``target_array`` by constructing a binary-tree decomposition of the target
+    amplitudes and applying a sequence of uniformly controlled rotations via
+    the ``qswitch`` primitive.
+
+    This routine implements a standard state-preparation algorithm based on
+    recursively splitting the target statevector.
+    The classical preprocessing stage extracts RY angles for internal tree nodes
+    and U3 parameters for the leaf nodes.
+    The quantum stage applies them using ``qswitch``, which replaces
+    explicit multiplexers and conditionals in both static execution and Jasp mode.
+
+    Parameters
+    ----------
+    qv : QuantumVariable
+        The quantum variable representing the qubits to be prepared.
+    target_array : jnp.ndarray
+        A normalized complex vector representing the target state to prepare.
+    method : str, optional
+        The dispatch strategy for ``qswitch``. Default is "auto".
+
     """
 
     # These imports are here to avoid circular dependencies
@@ -247,7 +271,7 @@ def state_preparation(qv, target_array, method: str = "auto") -> None:
     from qrisp.misc.utility import bit_reverse
 
     target_array = jnp.asarray(target_array, dtype=jnp.complex128)
-    # n is static, so we can use normal numpy here
+    # n is static (known at compile time), so we can use normal numpy here
     n = int(np.log2(target_array.shape[0]))
 
     thetas, u_params, phases = _preprocess(target_array)
