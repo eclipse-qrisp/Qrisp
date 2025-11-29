@@ -58,7 +58,7 @@ def collect_environments(closed_jaxpr):
     eqn_var_tracker = VarTracker(eqn_list)
     new_eqn_var_tracker = VarTracker(new_eqn_list)
     
-    from qrisp.jasp import Jaspr
+    from qrisp.jasp import Jaspr, AbstractQuantumCircuit
 
     if isinstance(closed_jaxpr, Jaspr) and closed_jaxpr.envs_flattened:
         return closed_jaxpr
@@ -164,6 +164,14 @@ def collect_environments(closed_jaxpr):
                 remaining_script_var_tracker,
                 [var for var in closed_jaxpr.jaxpr.outvars if not isinstance(var, Literal)],
             )
+            
+            
+            # Filter the AbstractQuantumCircuit (we add it manually to make sure
+            # it is the last argument)
+            for k in range(len(outvars)):
+                if isinstance(outvars[k].aval, AbstractQuantumCircuit):
+                    outvars.pop(k)
+                    break
 
             # Create the Jaxpr
             environment_body_jaspr = Jaspr(
