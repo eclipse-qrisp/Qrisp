@@ -225,11 +225,12 @@ def _preprocess(
     """
 
     n = int(np.log2(target_array.shape[0]))
+    max_nodes = 1 << (n - 1)
 
     # Data structures to return
-    thetas = jnp.zeros((n - 1, 1 << (n - 1)), dtype=jnp.float64)
-    u_params = jnp.zeros((1 << (n - 1), 3), dtype=jnp.float64)
-    phases = jnp.zeros((1 << (n - 1),), dtype=jnp.float64)
+    thetas = jnp.zeros((n - 1, max_nodes), dtype=jnp.float64)
+    u_params = jnp.zeros((max_nodes, 3), dtype=jnp.float64)
+    phases = jnp.zeros(max_nodes, dtype=jnp.float64)
 
     # Data structures used during the computation (reshaped at each layer)
     subvecs = target_array[jnp.newaxis, :]

@@ -743,7 +743,7 @@ class QuantumVariable:
         if not check_if_fresh(self.reg, self.qs):
             raise ValueError("Tried to initialize qubits which are not fresh anymore.")
 
-        expected_length = 2**self.size
+        expected_length = 1 << self.size
         if len(state_array) != expected_length:
             raise ValueError(
                 f"Length of statevector must be {expected_length} for {self.size} qubits, got {len(state_array)}."

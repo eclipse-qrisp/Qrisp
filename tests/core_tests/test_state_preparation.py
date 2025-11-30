@@ -25,9 +25,9 @@ from qrisp.alg_primitives.state_preparation import EPSILON
 from qrisp.jasp import terminal_sampling
 from qrisp.misc.utility import bit_reverse
 
-#######################################
-### Test state preparation with qswitch
-#######################################
+########################################################
+### Test state preparation with array (based on qswitch)
+########################################################
 
 
 def _compute_statevector_logical_qubits(qv: QuantumVariable) -> np.ndarray:
@@ -40,7 +40,7 @@ def _compute_statevector_logical_qubits(qv: QuantumVariable) -> np.ndarray:
     logical_positions = [qubits.index(qv[i]) for i in range(qv.size)]
 
     logical_amplitudes = []
-    for index in range(2**qv.size):
+    for index in range(1 << qv.size):
         bits = format(index, f"0{qv.size}b")
         full_bits = ["0"] * len(qubits)
         for pos, bit in zip(logical_positions, bits):
@@ -54,26 +54,26 @@ def _compute_statevector_logical_qubits(qv: QuantumVariable) -> np.ndarray:
 
 def _gen_real_vector(n):
     """Returns a full real normalized vector."""
-    v = np.random.rand(2**n) - 0.5
+    v = np.random.rand(1 << n) - 0.5
     return v / np.linalg.norm(v)
 
 
 def _gen_sparse_vector(n, idx=0):
     """Returns a vector with n-1 zeros and one non-zero real entry."""
-    v = jnp.zeros(2**n, dtype=complex)
+    v = jnp.zeros(1 << n, dtype=complex)
     v = v.at[idx].set(1.0)
     return v
 
 
 def _gen_complex_vector(n):
     """Returns a full complex normalized vector."""
-    v = (np.random.rand(2**n) - 0.5) + 1j * (np.random.rand(2**n) - 0.5)
+    v = (np.random.rand(1 << n) - 0.5) + 1j * (np.random.rand(1 << n) - 0.5)
     return v / np.linalg.norm(v)
 
 
 def _gen_uniform_vector(n):
     """Returns a uniform superposition vector."""
-    v = np.ones(2**n, dtype=complex)
+    v = np.ones(1 << n, dtype=complex)
     return v / np.linalg.norm(v)
 
 
@@ -198,7 +198,7 @@ class TestStatePreparationQswitchJasp:
             qv.init_state_qswitch(state_vector)
             return qv
 
-        for idx in range(2**n):
+        for idx in range(1 << n):
             dict_res = main(idx)
             key = bit_reverse(idx, n)
             assert len(dict_res) == 1
@@ -223,7 +223,7 @@ class TestStatePreparationQswitchJasp:
             return qv
 
         dict_res = main()
-        expected_shots = n_shots / (2**n)
+        expected_shots = n_shots / (1 << n)
 
         for key in dict_res:
             n_shots = dict_res[key]
@@ -292,6 +292,11 @@ class TestStatePreparationQswitchJasp:
 
         for key in keys:
             assert abs(res[key] - expected) < tolerance
+
+
+############################################################
+### Test state preparation with dictionary (based on qiskit)
+############################################################
 
 
 def test_state_preparation():
