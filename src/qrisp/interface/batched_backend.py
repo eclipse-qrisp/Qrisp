@@ -19,10 +19,8 @@
 import threading
 import time
 
-from qrisp.interface import VirtualBackend
 
-
-class BatchedBackend(VirtualBackend):
+class BatchedBackend:
     """
     This class tackles the problem that many physical backends have a high-overhead
     regarding individual circuit execution. This overhead typically comes

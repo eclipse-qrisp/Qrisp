@@ -892,7 +892,7 @@ class QuantumCircuit:
             «      └─────────┘└────┘└─────────┘
 
         One can also transpile a specific composite gate in a QuantumCircuit, if desired. A Quantum
-        Phase Estimation circuit also contains a `QFT_dg` gate. 
+        Phase Estimation circuit also contains a `QFT_dg` gate.
 
         >>> from qrisp import p, QuantumVariable, QPE, multi_measurement, h
         >>> import numpy as np
@@ -903,11 +903,11 @@ class QuantumCircuit:
         >>>
         >>>     p(x*2*np.pi, qv[0])
         >>>     p(y*2*np.pi, qv[1])
-        >>> 
+        >>>
         >>> qv = QuantumVariable(2)
         >>>
         >>> h(qv)
-        >>> 
+        >>>
         >>> res = QPE(qv, U, precision = 3)
         >>>
         >>> print(qv.qs.compile())
@@ -921,11 +921,11 @@ class QuantumCircuit:
         >>>        return True
         >>>    else:
         >>>        return False
-        >>>    
+        >>>
         >>> transpiled_qc = test_circuit.transpile(transpile_predicate = transpile_predicate)
         >>>
         >>> print(transpiled_qc)
-        
+
 
         """
         from qrisp.circuit import transpile
