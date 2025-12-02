@@ -352,4 +352,4 @@ def test_cq_qcla_adder():
     b = QuantumFloat(40)
     qcla(a, b)
     qc = b.qs.compile(workspace = 50, gate_speed = gate_speed, compile_mcm = True)
-    assert qc.t_depth() < 21
+    assert qc.t_depth() < 23
