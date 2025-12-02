@@ -19,7 +19,6 @@
 import functools
 import traceback
 
-import jax
 import jax.numpy as jnp
 import numpy as np
 import sympy
@@ -1242,13 +1241,18 @@ def custom_qv(labels, decoder=None, qs=None, name=None):
 
 
 # This is required in the qswitch-based state preparation,
-# because DynamicQubitArray does not support reverse iteration.
+# (where is called inside jrange loops), because DynamicQubitArray
+# does not support reverse iteration.
 def bit_reverse(i, width):
     """
     Jasp-compatible bit-reversal function.
 
     Interprets ``i`` as a ``width``-bit binary integer
     and returns the decimal integer corresponding to the bit-reversal of ``i``.
+    The maximum supported width is 64 bits.
+
+    This function can be used in Jasp-mode and within a `jrange` loop.
+    It does not use any Python or Jax control flow, but only Jax array operations.
 
     Parameters
     ----------
@@ -1280,9 +1284,24 @@ def bit_reverse(i, width):
     12
 
     """
-    shifts = jnp.arange(width)
-    bits = (i >> shifts) & 1
-    return jnp.dot(bits[::-1], 1 << shifts)
+    i = jnp.asarray(i, dtype=jnp.uint64)
+    width = jnp.asarray(width, dtype=jnp.uint64)
+
+    m1 = jnp.uint64(0x5555555555555555)
+    m2 = jnp.uint64(0x3333333333333333)
+    m3 = jnp.uint64(0x0F0F0F0F0F0F0F0F)
+    m4 = jnp.uint64(0x00FF00FF00FF00FF)
+    m5 = jnp.uint64(0x0000FFFF0000FFFF)
+    m6 = jnp.uint64(0x00000000FFFFFFFF)
+
+    i = ((i >> 1) & m1) | ((i & m1) << 1)
+    i = ((i >> 2) & m2) | ((i & m2) << 2)
+    i = ((i >> 4) & m3) | ((i & m3) << 4)
+    i = ((i >> 8) & m4) | ((i & m4) << 8)
+    i = ((i >> 16) & m5) | ((i & m5) << 16)
+    i = ((i >> 32) & m6) | ((i & m6) << 32)
+
+    return i >> jnp.asarray(64, jnp.uint64) - width
 
 
 def init_state(qv, target_array):

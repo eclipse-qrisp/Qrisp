@@ -19,11 +19,13 @@
 from typing import Callable
 
 import jax
-from jax import lax
 import jax.numpy as jnp
 import numpy as np
+from jax import lax
 
 from qrisp.core.quantum_variable import QuantumVariable
+from qrisp.jasp.program_control.jrange_iterator import jrange
+from qrisp.jasp.tracing_logic import check_for_tracing_mode
 
 EPSILON = jnp.sqrt(jnp.finfo(jnp.float64).eps)
 
@@ -295,6 +297,9 @@ def state_preparation(
     # n is static (known at compile time), so we can use normal numpy here
     n = int(np.log2(target_array.shape[0]))
 
+    # We could use jrange even in static mode, but this would add overhead.
+    xrange = jrange if check_for_tracing_mode() else range
+
     thetas, u_params, phases = _preprocess(target_array)
 
     def make_case_fn(layer_size: int, is_final: bool = False) -> Callable:
@@ -319,7 +324,7 @@ def state_preparation(
 
     ry(thetas[0][0], qv[0])
 
-    for layer_size in range(1, n - 1):
+    for layer_size in xrange(1, qv.size - 1):
 
         qswitch(
             operand=qv[layer_size],
@@ -329,8 +334,8 @@ def state_preparation(
         )
 
     qswitch(
-        operand=qv[n - 1],
-        case=qv[: n - 1],
-        case_function=make_case_fn(n - 1, is_final=True),
+        operand=qv[qv.size - 1],
+        case=qv[: qv.size - 1],
+        case_function=make_case_fn(qv.size - 1, is_final=True),
         method=method,
     )
