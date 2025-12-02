@@ -19,8 +19,10 @@
 import threading
 import time
 
+from .backend import Backend
 
-class BatchedBackend:
+
+class BatchedBackend(Backend):
     """
     This class tackles the problem that many physical backends have a high-overhead
     regarding individual circuit execution. This overhead typically comes
@@ -141,7 +143,9 @@ class BatchedBackend:
 
     """
 
-    def __init__(self, batch_run_func):
+    def __init__(self, batch_run_func, name=None, description=None, options=None):
+
+        super().__init__(name=name, description=description, options=options)
 
         # The function to call the backend
         self.batch_run_func = batch_run_func
@@ -163,6 +167,14 @@ class BatchedBackend:
         # during the backed evaluation and transmits them to the main thread
         # to be properly raised.
         self.backend_exception = None
+
+    @classmethod
+    def _default_options(cls):
+        return {"shots": 1000}
+
+    @property
+    def max_circuits(self):
+        return None
 
     def run(self, qc, shots):
 
