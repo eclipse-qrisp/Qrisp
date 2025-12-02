@@ -524,3 +524,5 @@ Qrisp is an Eclipse open-source project developed mainly at `Fraunhofer FOKUS <h
    general/papers/index
    general/changelog/index
    general/imprint
+   general/QC_basics/index
+ 
