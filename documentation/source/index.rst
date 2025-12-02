@@ -79,6 +79,12 @@
             max-width: 76%;
         }
     }
+    
+    /* Center logos at the bottom of the page */
+    .sd-row {
+        justify-content: center;
+    }
+    
     </style>
 
     <div id="hero">
@@ -103,37 +109,6 @@
 
 .. grid:: 1 1 2 2
 
-    .. grid-item-card::
-        :shadow: none
-        
-        .. raw:: html
-
-            <a href="./reference/Algorithms/QuantumBacktrackingTree.html">
-            <div class="example-img-plot-overlay">
-            <p class="sd-card-text">Solve backtracking problems by leveraging quantum walks</p>
-            </div>
-            </a>
-
-    
-        .. image:: ./_static/backtracking.svg
-            
-
-
-    .. grid-item-card::
-        :shadow: none
-    
-        .. raw:: html
-
-            <a href="./reference/Algorithms/Shor.html">
-            <div class="example-img-plot-overlay">
-            <p class="sd-card-text">Factor integers using abitrary quantum adders with Shor's algorithm</p>
-            </div>
-            </a>
-
-    
-        .. image:: ./_static/period_finding.svg
-
-.. grid:: 1 1 2 2
 
     .. grid-item-card::
         :shadow: none
@@ -168,17 +143,83 @@
 
     .. grid-item-card::
         :shadow: none
+            
+    
+        .. raw:: html
+            
+            <a href="./general/tutorial/Jasp.html">
+            <div class="example-img-plot-overlay">
+            <p class="sd-card-text">Exert hybrid real-time algorithm control with Catalyst and Jasp</p>
+            </div>
+            </a>
+            
+        .. image:: ./_static/hybrid_realtime.png
+            :width: 180
+            :align: center
+
+
+.. grid:: 1 1 2 2
+
+            
+    .. grid-item-card::
+        :shadow: none
     
         .. raw:: html
 
-            <a href="./general/tutorial/TSP.html">
+            <a href="./general/tutorial/H2.html">
             <div class="example-img-plot-overlay">
-            <p class="sd-card-text">Solve the traveling salesman problem using quantum search</code></p>
+            <p class="sd-card-text">Simulate the quantum dynamics of molecules using chemistry data</code></p>
             </div>
             </a>
 
     
-        .. image:: ./_static/tsp.svg
+        .. image:: ./_static/hydrogen.png
+
+    .. grid-item-card::
+        :shadow: none
+    
+        .. raw:: html
+
+            <a href="./reference/Algorithms/Shor.html">
+            <div class="example-img-plot-overlay">
+            <p class="sd-card-text">Factor integers using abitrary quantum adders with Shor's algorithm</p>
+            </div>
+            </a>
+
+    
+        .. image:: ./_static/period_finding.svg
+
+
+.. grid:: 1 1 2 2
+
+            
+    .. grid-item-card::
+        :shadow: none
+        
+        .. raw:: html
+
+            <a href="./reference/Algorithms/QuantumBacktrackingTree.html">
+            <div class="example-img-plot-overlay">
+            <p class="sd-card-text">Solve backtracking problems by leveraging quantum walks</p>
+            </div>
+            </a>
+
+    
+        .. image:: ./_static/backtracking.svg
+
+    .. grid-item-card::
+        :shadow: none
+    
+        .. raw:: html
+
+            <a href="./reference/Primitives/LCU.html">
+            <div class="example-img-plot-overlay">
+            <p class="sd-card-text">Realize LCU and LCHS using block encodings</p>
+            </div>
+            </a>
+
+    
+        .. image:: ./_static/LCU.png
 
 
 .. raw:: html
@@ -347,27 +388,28 @@ Qrisp code can be significantly shorter and also more readable than the equivale
          :align: center
    * - ::
          
-         from qiskit import (QuantumCircuit, QuantumRegister, 
-         ClassicalRegister, Aer, execute)
-         from qiskit.circuit.library import RGQFTMultiplier
-         n = 6
-         a = QuantumRegister(n)
-         b = QuantumRegister(n)
-         res = QuantumRegister(2*n)
-         cl_res = ClassicalRegister(2*n)
-         qc = QuantumCircuit(a, b, res, cl_res)
-         for i in range(len(a)):
-             if 3 & 1<<i: qc.x(a[i]) 
-         for i in range(len(b)):
-             if 4 & 1<<i: qc.x(b[i]) 
-         qc.append(RGQFTMultiplier(n, 2*n), 
-         list(a) + list(b) + list(res))
-         qc.measure(res, cl_res)
-         backend = Aer.get_backend('qasm_simulator')
-         counts_dic = execute(qc, backend).result().get_counts()
-         print({int(k, 2) : v for k, v in counts_dic.items()})
-         #Yields: {12: 1024}
-         
+		from qiskit import (QuantumCircuit, QuantumRegister,
+		ClassicalRegister, transpile)
+		from qiskit_aer import Aer
+		from qiskit.circuit.library import RGQFTMultiplier
+		n = 6
+		a = QuantumRegister(n)
+		b = QuantumRegister(n)
+		res = QuantumRegister(2*n)
+		cl_res = ClassicalRegister(2*n)
+		qc = QuantumCircuit(a, b, res, cl_res)
+		for i in range(len(a)):
+			if 3 & 1<<i: qc.x(a[i])
+		for i in range(len(b)):
+			if 4 & 1<<i: qc.x(b[i])
+		qc.append(RGQFTMultiplier(n, 2*n),
+		list(a) + list(b) + list(res))
+		qc.measure(res, cl_res)
+		backend = Aer.get_backend('qasm_simulator')
+		qc = transpile(qc, backend)
+		counts_dic = backend.run(qc).result().get_counts()
+		print({int(k, 2) : v for k, v in counts_dic.items()})
+		#Yields: {12: 1024}
          
      - ::
    
@@ -381,7 +423,7 @@ Qrisp code can be significantly shorter and also more readable than the equivale
          print(res)
          #Yields: {12: 1.0}
 
-Apart from simple scripts like the above, our :doc:`tutorial <general/tutorial/TSP>` showcases the utilization of Qrisp in solving the traveling salesman problem. This solution involves over 10 distinct :ref:`QuantumVariables <QuantumVariable>`, with their respective qubits being repeatedly disentangled and repurposed for other variables. The presented approach scales better in the qubit count than the previously known QUBO based solution:  $\mathcal{O}(n \text{log}(n))$ vs. $\mathcal{O}(n^2)$. 
+Apart from simple scripts like the above, our :doc:`tutorial <general/tutorial/Shor>` showcases the utilization of Qrisp implementing Shor's algorithm leveraging `Montgomery reduction <https://en.wikipedia.org/wiki/Montgomery_modular_multiplication>`_, fully agnostic to the particular quantum adder. This solution involves several conceptually distinct :ref:`QuantumVariables <QuantumVariable>`, with their respective qubits being repeatedly disentangled and repurposed for other variables. The presented approach improves the resource requirement of known open source implementations :ref:`significantly <shor_benchmark_plot>`, while retaining an :ref:`accesible form <shor_tutorial>`.
 
 This example illustrates how Qrisp, as a high-level language, permits novel and scalable solutions to intricate problems and furthermore that high-level quantum programming languages will be an integral part of the future of quantum information science.
 
@@ -397,11 +439,12 @@ Who is behind Qrisp
     <div class="code-example-text">
     
 
-Qrisp is an open-source project developed at `Fraunhofer FOKUS <https://www.fokus.fraunhofer.de/en/>`_, an industrial research facility based in Berlin. It is publicly funded by the German ministry of econmic affairs with the aim to enable commercial use of quantum computation. To achieve this, we aim to open this field of research to a broad audience of developers. Furthermore we are proud to announce that Qrisp will become a part of the `Eclipse foundation <https://www.eclipse.org/>`_!
+Qrisp is an Eclipse open-source project developed mainly at `Fraunhofer FOKUS <https://www.fokus.fraunhofer.de/en/>`_, an industrial research facility based in Berlin. It is publicly funded by the `German ministry of economic affairs <https://www.digitale-technologien.de/DT/Navigation/DE/ProgrammeProjekte/AktuelleTechnologieprogramme/Quanten_Computing/Projekte/Qompiler/qompiler.html>`_ and the European Union with the aim to enable commercial use of quantum computation. To achieve this, we aim to open this field of research to a broad audience of developers. Furthermore we are proud to announce that Qrisp will become a part of the `Eclipse foundation <https://www.eclipse.org/>`_!
 
 .. raw:: html
 
     </div>
+
 
 .. grid:: 1 1 5 5
 
@@ -441,6 +484,9 @@ Qrisp is an open-source project developed at `Fraunhofer FOKUS <https://www.foku
             :width: 150
             :class: no-scaled-link
 
+
+.. grid:: 1 1 5 5
+
     .. grid-item-card::
         :class-card: sd-border-0
         :shadow: none
@@ -449,7 +495,25 @@ Qrisp is an open-source project developed at `Fraunhofer FOKUS <https://www.foku
             :align: center
             :width: 150
             :class: no-scaled-link
-            
+
+    .. grid-item-card::
+        :class-card: sd-border-0
+        :shadow: none
+    
+        .. image:: ./_static/iqm_logo.jpg
+            :align: center
+            :width: 150
+            :class: no-scaled-link
+
+    .. grid-item-card::
+        :class-card: sd-border-0
+        :shadow: none
+    
+        .. image:: ./_static/eu.png
+            :align: center
+            :width: 150
+            :class: no-scaled-link
+
 
 .. toctree::
    :hidden:
@@ -457,6 +521,7 @@ Qrisp is an open-source project developed at `Fraunhofer FOKUS <https://www.foku
    general/tutorial/index
    reference/index
    general/setup
+   general/papers/index
    general/changelog/index
    general/imprint
    general/QC_basics/index

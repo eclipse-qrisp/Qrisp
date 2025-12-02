@@ -1,6 +1,6 @@
 """
-\********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+********************************************************************************
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -13,10 +13,11 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 import weakref
+from jaxlib.xla_extension import ArrayImpl
 
 # This module contains the necessary tools to merge QuantumSessions
 
@@ -177,6 +178,9 @@ def merge_sessions_inner(qs_0, qs_1, merge_env_stack_=True):
     qs_0.qubits.extend(qs_1.qubits)
     qs_0.clbits.extend(qs_1.clbits)
 
+    for i in range(len(qs_0.clbits)):
+        qs_0.clbits[i].identifier = f"clbit_{i}"
+
     qs_0.data.extend(qs_1.data)
 
     object.__setattr__(qs_1, "data", qs_0.data)
@@ -192,13 +196,14 @@ def merge_sessions_inner(qs_0, qs_1, merge_env_stack_=True):
     for qv in qs_1.deleted_qv_list:
         # Patch quantum session attribute
         qv.qs = qs_0
-        
+
     qs_0.deleted_qv_list.extend(qs_1.deleted_qv_list)
 
     reorder_quantum_variables(qs_0)
 
-
-    qs_0.will_be_uncomputed = bool(qs_0.will_be_uncomputed) or bool(qs_1.will_be_uncomputed)
+    qs_0.will_be_uncomputed = bool(qs_0.will_be_uncomputed) or bool(
+        qs_1.will_be_uncomputed
+    )
     # Add variables to the uncomputation stack
     qs_0.uncomp_stack.extend(qs_1.uncomp_stack)
 
@@ -351,7 +356,10 @@ def recursive_qs_search(input):
                 result += recursive_qs_search(key)
                 result += recursive_qs_search(input[key])
         else:
+            input = list(input)
             for i in range(len(input)):
+                if isinstance(input[i], ArrayImpl):
+                    continue
                 result += recursive_qs_search(input[i])
     else:
         if isinstance(input, QuantumSession):
@@ -379,6 +387,9 @@ def recursive_qv_search(input):
         return []
     from qrisp.core import QuantumVariable
 
+    if isinstance(input, QuantumVariable):
+        return [input]
+
     if hasattr(input, "__iter__"):
         iterable = True
     elif hasattr(input, "__dict__") and not isinstance(input, QuantumVariable):
@@ -393,12 +404,38 @@ def recursive_qv_search(input):
             for key in input.keys():
                 result += recursive_qv_search(key)
                 result += recursive_qv_search(input[key])
-        else:
+        elif isinstance(input, (tuple, list)):
             for i in range(len(input)):
                 result += recursive_qv_search(input[i])
+
+    return result
+
+
+def recursive_qa_search(input):
+    if isinstance(input, str):
+        return []
+    from qrisp.core import QuantumArray
+
+    if isinstance(input, QuantumArray):
+        return [input]
+
+    if hasattr(input, "__iter__"):
+        iterable = True
+    elif hasattr(input, "__dict__") and not isinstance(input, QuantumArray):
+        iterable = False
+        # input = input.__dict__
     else:
-        if isinstance(input, QuantumVariable):
-            result = [input]
+        iterable = False
+
+    result = []
+    if iterable:
+        if isinstance(input, dict):
+            for key in input.keys():
+                result += recursive_qa_search(key)
+                result += recursive_qa_search(input[key])
+        elif isinstance(input, (tuple, list)):
+            for i in range(len(input)):
+                result += recursive_qa_search(input[i])
 
     return result
 

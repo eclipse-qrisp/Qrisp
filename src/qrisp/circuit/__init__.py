@@ -1,6 +1,6 @@
 """
-\********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+********************************************************************************
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -13,7 +13,7 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 from qrisp.circuit.qubit import *
@@ -25,5 +25,3 @@ from qrisp.circuit.compilation_acceleration import *
 from qrisp.circuit.transpiler import *
 from qrisp.circuit.standard_operations import *
 from qrisp.circuit.controlled_operations import *
-
-

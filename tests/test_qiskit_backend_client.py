@@ -1,6 +1,6 @@
 """
-\********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+********************************************************************************
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -13,23 +13,20 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 # Created by ann81984 at 23.05.2022
 import numpy as np
 
 from qrisp import QuantumCircuit
-from qrisp.interface.backends import VirtualBackend
-from qrisp.interface.backends import VirtualQiskitBackend
-
-
+from qrisp.interface import VirtualBackend, QiskitBackend
 
 def test_qiskit_backend_client():
     
     try:
-        from qiskit import Aer
-        backend = Aer.get_backend("qasm_simulator")
+        from qiskit_aer import AerSimulator
+        backend = AerSimulator()
     except ImportError:
         from qiskit.providers.basic_provider import BasicProvider
         backend = BasicProvider().get_backend('basic_simulator')
@@ -72,7 +69,9 @@ def test_qiskit_backend_client():
     qc.measure(1, 0)
 
 
-    def sample_run_func(qc, shots, token = ""):
+    def sample_run_func(qc, shots = None, token = ""):
+        if shots is None:
+            shots = 10000
         return {"0": shots}
 
     test_virtual_backend = VirtualBackend(sample_run_func)
@@ -83,7 +82,7 @@ def test_qiskit_backend_client():
     ###################
 
     # Create Qiskit Backend
-    test_qiskit_backend = VirtualQiskitBackend()
+    test_qiskit_backend = QiskitBackend()
 
     qc = QuantumCircuit(4, 1)
     qc.x(0)

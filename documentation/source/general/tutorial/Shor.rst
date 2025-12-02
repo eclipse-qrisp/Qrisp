@@ -1,7 +1,7 @@
 .. _shor_tutorial:
 
-Shor's Algorithm
-================
+Factoring integers using Shor's Algorithm
+=========================================
 
 In the realm of quantum computing, where classical limitations are challenged and new horizons are explored, Shor's Algorithm stands as a testament to the transformative potential of quantum mechanics in the field of cryptography. Developed by mathematician Peter Shor in 1994, this groundbreaking algorithm has the power to revolutionize the world of cryptography by efficiently factoring large numbers, once considered an insurmountable task - at least for classical computers.
 
@@ -111,7 +111,7 @@ As you might know by now, the reason why this algorithm can be tricky to impleme
 .. note::
     To make sure you understand everything and get familiar with the concepts, we strongly recommend to execute the code yourself! Either with the Thebe server (might be slow) or on your own device!
 
-The central concept of our implementation is the :ref:`QuantumModulus` class. This :ref:`quantum type<QuantumType>` can be used to represent and process elements of a `Quotient Ring <https://en.wikipedia.org/wiki/Quotient_ring>`_, which is basically just a fancy wording for "numbers that operate under modular arithmetic".
+The central concept of our implementation is the :ref:`QuantumModulus` class. This :ref:`quantum type<QuantumTypes>` can be used to represent and process elements of a `Quotient Ring <https://en.wikipedia.org/wiki/Quotient_ring>`_, which is basically just a fancy wording for "numbers that operate under modular arithmetic".
 
 >>> from qrisp import *
 >>> N = 13

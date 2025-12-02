@@ -9,26 +9,24 @@ This algorithms submodule of Qrisp provides a collection of commonly used quantu
 
    * - ALGORITHM
      - USED FOR
-   * - :ref:`Quantum Fourier Transform <QFT>`
-     - periodicity detection and phase estimation
-   * - :ref:`Quantum Phase Estimation <QPE>`
-     - estimating the eigenvalues of a unitary operator
-   * - :ref:`Quantum Amplitude Amplification <AA>`
-     - enhancing amplitude of a target state
-   * - :ref:`Quantum Amplitude Estimation <QAE>`
-     - estimating the amplitude of a target state
+   * - :ref:`VQE <VQE>`
+     - finding the ground state energy of a Hamiltonian
    * - :ref:`QAOA <QAOA>`
-     - solving combinatorial optimizatin problems
+     - solving combinatorial optimization problems
+   * - :ref:`QIRO <QIRO>`
+     - solving combinatorial optimization problems, with quantum informed update rules
+   * - :ref:`QITE <QITE>`
+     - performing quantum imaginary-time evolution
    * - :ref:`Shor's Algorithm <Shor>`
      - efficiently factoring large numbers
-   * - :ref:`Grover's Algorithm <Grover>`
+   * - :ref:`Grover's Algorithm <grovers_alg>`
      - unstructured search
    * - :ref:`Quantum Backtracking Algorithms <QuantumBacktrackingTree>`
      - solving constraint-satisfaction problems like 3-SAT or the :ref:`Traveling Salesman Problem (TSP) <tsp>`
    * - :ref:`Quantum Counting <QCounting>`
      - estimating the amount of solutions for a given Grover oracle
-   * - Iterable :ref:`Demuxing <ItDemuxing>`, :ref:`Shifting <ItShifting>`, and :ref:`Permutation <ItPermutation>`
-     - low-level manipulations of quantum arguments like :ref:`QuantumVariable <QuantumVariable>` or :ref:`QuantumArray <QuantumArray>`
+   * - :ref:`Quantum Monte Carlo Integration <QMCI>`
+     - numerical integration
 
 
 We encourage you to explore these algorithms, delve into their documentation, and experiment with their implementations.
@@ -39,16 +37,12 @@ We encourage you to explore these algorithms, delve into their documentation, an
    :maxdepth: 2
    :hidden:
    
-   QFT
-   QPE
-   amplitude_amplification
-   QAE
-   QAOA
+   vqe/VQE
+   qaoa/QAOA
+   qiro/QIRO
+   QITE
    Shor
-   grover.grovers_alg  
+   Grover
    QuantumBacktrackingTree
-   quantum_counting
-   demux
-   cyclic_shift
-   iterable_permutation
-   
+   quantum_counting   
+   QMCI

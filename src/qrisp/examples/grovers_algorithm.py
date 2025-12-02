@@ -1,6 +1,6 @@
 """
-\********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+********************************************************************************
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -13,7 +13,7 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 import numpy as np
@@ -21,7 +21,7 @@ import time
 from qrisp import QuantumFloat, auto_uncompute
 from qrisp.grover import grovers_alg, tag_state
 from qrisp.misc import multi_measurement
-from qrisp.interface import VirtualQiskitBackend
+from qrisp.interface import QiskitBackend
 
 
 # Create two quantum variables
@@ -86,7 +86,7 @@ print(qc.num_qubits())
 # %%
 # Perform measurement
 
-qasm_simulator = VirtualQiskitBackend()
+qasm_simulator = QiskitBackend()
 
 start_time = time.time()
 print(multi_measurement(qf_list))

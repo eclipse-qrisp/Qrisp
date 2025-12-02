@@ -1,6 +1,6 @@
 """
-\********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+********************************************************************************
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -13,7 +13,7 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 # Created by ann81984 at 05.05.2022
@@ -131,3 +131,47 @@ def test_diagonal_hamiltonian_application():
         ("c", 3): 0.25,
         ("d", 4): 0.25,
     }
+
+def test_phase_polynomial_application():     
+    import numpy as np
+    import sympy as sp
+    from qrisp import QuantumFloat, h, app_phase_polynomial
+
+    # We apply the phase function specified by the polynomial P(x) = 1 - 0.9x^2 + x^3 on a QuantumFloat (unsigned)
+    x = sp.symbols('x')
+    P = 1-0.9*x**2+x**3
+
+    qf = QuantumFloat(3,-3)
+    h(qf)
+
+    app_phase_polynomial([qf],P)
+
+    sv_function = qf.qs.statevector("function")
+    qf_values = np.array([qf.decoder(i) for i in range(2 ** qf.size)])
+    sv_phase_array = np.angle([sv_function({qf : i}) for i in qf_values])
+
+    P_func = sp.lambdify(x, P, 'numpy')
+
+    # Check if phases agree
+    from numpy.linalg import norm
+    assert norm((sv_phase_array - P_func(qf_values))) < 1e-4
+
+
+    # We apply the phase function specified by the polynomial P(x) = 1 - 0.9x^2 + x^3 on a QuantumFloat (signed)
+    x = sp.symbols('x')
+    P = 1-0.9*x**2+x**3
+
+    qf = QuantumFloat(3,-3,signed=True)
+    h(qf)
+
+    app_phase_polynomial([qf],P)
+
+    sv_function = qf.qs.statevector("function")
+    qf_values = np.array([qf.decoder(i) for i in range(2 ** qf.size)])
+    sv_phase_array = np.angle([sv_function({qf : i}) for i in qf_values])
+
+    P_func = sp.lambdify(x, P, 'numpy')
+
+    # Check if phases agree
+    from numpy.linalg import norm
+    assert norm((sv_phase_array - P_func(qf_values))) < 1e-4

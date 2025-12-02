@@ -8,8 +8,10 @@ Backend Interface
    BackendServer
    BackendClient
    VirtualBackend
-   VirtualQiskitBackend
    DockerSimulators
+   QiskitBackend
+   IQMBackend
+   QiskitRuntimeBackend
    
 The backend interface contains a minimal set of features that apply to every gate-based quantum computer.
 The main motivation in designing the interface, is to provide a convenient setup for both clients and providers of physical quantum
@@ -52,8 +54,8 @@ This class can be used to connect to :ref:`BackendServers <BackendServer>` in or
 In this code snippet, we create connect a BackendClient, to the BackendServer running under the ip ``server_ip`` and ``port``. Subsequently, we run some quantum algorithm returing a :ref:`QuantumVariable` and call the :meth:`qrisp.QuantumVariable.get_measurement` method, to query the remote backend.
 
 
-:ref:`Docker Backend <DockerBackend>`
--------------------------------------
+:ref:`Docker Backend <DockerSimulators>`
+----------------------------------------
 
 This module describes the inbuilt Docker container to enable utilization of alternative simulation frameworks.  
 It supports: Cirq (cirq.Simulator), MQT (ddsim qasm_simulator), Qiskit (Aer Backend), PyTket (AerBackend), Rigetti (numpy wavefunction simulator), Qulacs (sampler).  
@@ -69,16 +71,33 @@ The VirtualBackend class allows to run external circuit dispatching code locally
 having adherence to the Qrisp interface at the same time. Using this class it is possible
 to use the (Python) infrastructure of any backend provider as a Qrisp backend.
 
-:ref:`VirtualQiskitBackend`
+:ref:`QiskitBackend`
 ---------------------------
 
 This class is a wrapper for the VirtualBackend to quickly integrate Qiskit backend instances.
 
 ::
 
-   from qiskit import Aer
-   from qrisp.interface import VirtualQiskitBackend
-   qiskit_backend = Aer.get_backend('qasm_simulator')
-   vrtl_qasm_sim = VirtualQiskitBackend(qiskit_backend)
+   from qiskit_aer import AerSimulator
+   from qrisp.interface import QiskitBackend
+   qiskit_backend = AerSimulator()
+   vrtl_aer_sim = QiskitBackend(qiskit_backend)
 
 Naturally, this also works for non-simulator Qiskit backends.
+
+
+:ref:`IQMBackend`
+---------------------
+
+The IQMBackend class allows to run Qrisp programs on IQM quantum computers available via 
+`IQM Resonance <https://resonance.meetiqm.com/>`_. 
+For an up-to-date list of device instance names check the IQM Resonance Dashboard. 
+Devices available via IQM Resonance currently support up to 20 000 shots. 
+
+.. code-block:: python
+
+   from qrisp.interface import IQMBackend
+   qrisp_garnet = IQMBackend(
+      api_token = "YOUR_IQM_RESONANCE_TOKEN", 
+      device_instance = "garnet" # check the website for an up-to-date list of devices
+   )

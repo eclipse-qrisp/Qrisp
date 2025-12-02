@@ -10,6 +10,7 @@ Core
    QuantumArray
    QuantumDictionary
    Uncomputation
+   Function Injection
    Session Merging
 
 The core module of Qrisp provides fundamental functionality that is essential for building quantum applications. It includes features such as data structures, algorithms, and utility functions that can be used across multiple components of quantum algorithm development. Additionally, the core module includes interfaces for :meth:`input <qrisp.QuantumVariable.encode>` and :meth:`output <qrisp.QuantumVariable.get_measurement>` operations, :meth:`compilation <qrisp.QuantumSession.compile>` to quantum circuits, and uncomputation. This module serves as the foundation for the entire framework and provides developers with the necessary tools to build reliable and scalable applications.

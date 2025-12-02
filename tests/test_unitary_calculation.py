@@ -1,6 +1,6 @@
 """
-\********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+********************************************************************************
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -13,17 +13,17 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 # Created by ann81984 at 07.05.2022
 import time
 
 from qrisp.core import QuantumSession
-from qrisp.arithmetic import QuantumFloat
+from qrisp.alg_primitives.arithmetic import QuantumFloat
 from numpy.linalg import norm
 
-from qrisp.interface import convert_circuit
+from qrisp.interface import convert_to_qiskit
 
 
 def test_unitary_calculation():
@@ -36,9 +36,9 @@ def test_unitary_calculation():
     x = QuantumFloat(n, 0, qs, signed=True)
     y = QuantumFloat(n, 0, qs, signed=False)
 
-    s = x * y
+    s = x + y
     # qs = s.qs
-    qc = qs.compile(1)
+    qc = qs.compile()
 
     start = time.time()
     test_unitary_1 = qc.get_unitary()
@@ -48,7 +48,7 @@ def test_unitary_calculation():
 
     ###################
     qc.qubits = qc.qubits[::-1]
-    qiskit_qc = convert_circuit(qc, target_api="qiskit")
+    qiskit_qc = convert_to_qiskit(qc, transpile = True)
     
 
     start = time.time()

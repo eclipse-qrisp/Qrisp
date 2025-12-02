@@ -1,6 +1,6 @@
 """
-\********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+********************************************************************************
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -13,7 +13,7 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 # -*- coding: utf-8 -*-
@@ -98,7 +98,7 @@ def nx_get_causal_graph(
 
             # Update the dictionary
             current_node_qubits[qb] = new_node
-            
+
         for cb in qc.data[i].clbits:
             # If there is a node which has been connected to this qubit before,
             # append the node to the node set, that the new node will be connected to
@@ -108,7 +108,6 @@ def nx_get_causal_graph(
                 pass
             # Update the dictionary
             current_node_clbits[cb] = new_node
-                        
 
         # Make sure every node is listed only once
         node_set = list(set(node_set))
@@ -226,7 +225,7 @@ def nx_reorder_circuit(qc, preferential_gates=[]):
     # Now we succesively determine the minimal circuit required to execute
     # for each non-unitary operation
     while node_costs:
-        
+
         # This node contains the non-unitary operation
         evaluation_node = node_costs.pop(0)[0]
 
@@ -289,15 +288,13 @@ def nk_reorder_circuit(qc, preferential_gates=[]):
                 node_set.append(current_node_qubits[qb])
 
             current_node_qubits[qb] = new_node
-            
+
         for cb in qc.data[i].clbits:
             if current_node_clbits[cb] != "-":
                 node_set.append(current_node_clbits[cb])
 
             current_node_clbits[qb] = new_node
-            
-            
-            
+
         node_set = list(set(node_set))
 
         for node in node_set:

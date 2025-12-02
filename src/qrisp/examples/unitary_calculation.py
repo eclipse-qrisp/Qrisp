@@ -1,6 +1,6 @@
 """
-\********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+********************************************************************************
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -13,14 +13,14 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 from numpy.linalg import norm
 import time
 from qiskit import Aer, execute
 from qrisp import QuantumFloat, transpile
-from qrisp.interface import convert_circuit
+from qrisp.interface import convert_to_qiskit
 
 n = 2
 
@@ -40,7 +40,7 @@ print("Qrisp calculation time = %s" % (end - start))
 # %%
 qc.qubits = qc.qubits[::-1]
 
-qiskit_qc = convert_circuit(qc, target_api="qiskit")
+qiskit_qc = convert_to_qiskit(qc)
 
 
 backend = Aer.get_backend("unitary_simulator")

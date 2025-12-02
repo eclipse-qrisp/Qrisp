@@ -1,6 +1,6 @@
 """
-\********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+********************************************************************************
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -13,7 +13,7 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 import itertools
@@ -21,7 +21,6 @@ import itertools
 import numpy as np
 
 from qrisp.core import QuantumVariable, recursive_qv_search
-from qrisp.logic_synthesis import TruthTable
 from qrisp.misc import bin_rep, custom_qv, int_as_array
 
 
@@ -196,6 +195,7 @@ class QuantumDictionary(dict):
         {1.0: 0.5, 2.0: 0.5}
 
         """
+        from qrisp.alg_primitives.logic_synthesis import TruthTable
 
         qv_list = recursive_qv_search(key)
         if not len(qv_list):

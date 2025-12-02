@@ -1,6 +1,6 @@
 """
-\********************************************************************************
-* Copyright (c) 2023 the Qrisp authors
+********************************************************************************
+* Copyright (c) 2025 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -13,7 +13,7 @@
 * available at https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************
 """
 
 from qrisp import cyclic_shift, QuantumVariable, QuantumArray, QuantumFloat, OutcomeArray
@@ -50,4 +50,4 @@ def test_cycling_function():
 
     shift_amount[:] = {0: 1, -4 : 1, 1: 1}
     cyclic_shift(qa, shift_amount)
-    assert qa.get_measurement() == {OutcomeArray([7, 0, 1, 2, 3, 4, 5, 6]): 0.33333, OutcomeArray([4, 5, 6, 7, 0, 1, 2, 3]): 0.33333, OutcomeArray([0, 1, 2, 3, 4, 5, 6, 7]): 0.33333}
+    assert qa.get_measurement() == {OutcomeArray([7, 0, 1, 2, 3, 4, 5, 6]): 0.3333333333333333, OutcomeArray([4, 5, 6, 7, 0, 1, 2, 3]): 0.3333333333333333, OutcomeArray([0, 1, 2, 3, 4, 5, 6, 7]): 0.3333333333333333}
