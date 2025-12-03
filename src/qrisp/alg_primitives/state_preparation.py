@@ -23,10 +23,6 @@ import jax.numpy as jnp
 import numpy as np
 from jax import lax
 
-from qrisp.core.quantum_variable import QuantumVariable
-from qrisp.jasp.program_control.jrange_iterator import jrange
-from qrisp.jasp.tracing_logic import check_for_tracing_mode
-
 EPSILON = jnp.sqrt(jnp.finfo(jnp.float64).eps)
 
 
@@ -256,9 +252,7 @@ def _preprocess(
     return thetas, u_params, phases
 
 
-def state_preparation(
-    qv: QuantumVariable, target_array: jnp.ndarray, method: str = "auto"
-) -> None:
+def state_preparation(qv, target_array: jnp.ndarray, method: str = "auto") -> None:
     """
     Prepare the quantum state encoded in ``qv`` so that it matches the given
     ``target_array`` by constructing a binary-tree decomposition of the target
@@ -291,6 +285,8 @@ def state_preparation(
 
     # These imports are here to avoid circular dependencies
     from qrisp import gphase, qswitch, ry, u3
+    from qrisp.jasp.program_control.jrange_iterator import jrange
+    from qrisp.jasp.tracing_logic import check_for_tracing_mode
     from qrisp.misc.utility import bit_reverse
 
     target_array = jnp.asarray(target_array, dtype=jnp.complex128)
