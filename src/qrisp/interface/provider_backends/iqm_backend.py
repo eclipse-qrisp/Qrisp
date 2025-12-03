@@ -164,8 +164,11 @@ def IQMBackend(api_token,
         circuit_batch = []
         shot_batch = []
         for qc, shots in batch:
-            transpiled_qc = transpiler(qc)
-            qiskit_qc = transpiled_qc.to_qiskit()
+            if device_instance == "sirius":
+                qiskit_qc = transpile_to_IQM(qc.to_qiskit(), backend)
+            else:
+                transpiled_qc = transpiler(qc)
+                qiskit_qc = transpiled_qc.to_qiskit()
             circuit_batch.append(backend.serialize_circuit(qiskit_qc))
             if shots is None:
                 shots = 1000
