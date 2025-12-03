@@ -255,10 +255,7 @@ class QiskitBackend(Backend):
 
     @classmethod
     def _default_options(cls):
-        return {
-            "shots": 1000,
-            "optimization_level": None,
-        }
+        return {"shots": 1000}
 
     @property
     def max_circuits(self):
@@ -296,11 +293,7 @@ class QiskitBackend(Backend):
                 [qiskit_qc.clbits.index(cb) for cb in instr.clbits],
             )
 
-        new_qc = transpile(
-            new_qc,
-            backend=self.backend,
-            optimization_level=self._options.get("optimization_level"),
-        )
+        new_qc = transpile(new_qc, backend=self.backend)
 
         job = self.sampler.run([new_qc], shots=shots)
         qiskit_counts = job.result()[0].data.c.get_counts()

@@ -23,6 +23,9 @@ from qiskit_ibm_runtime.fake_provider import FakeWashingtonV2
 from qrisp import QuantumCircuit, QuantumFloat
 from qrisp.interface import QiskitBackend, VirtualBackend
 
+aer_simulator_backend = AerSimulator()
+fake_backend = FakeWashingtonV2()
+
 
 class TestQiskitBackendClient:
     """Test QiskitBackend client functionality."""
@@ -30,31 +33,43 @@ class TestQiskitBackendClient:
     def test_backend_metadata(self):
         """Test that QiskitBackend correctly retrieves metadata from the Qiskit backend."""
 
-        backend = AerSimulator()
-        example_backend = QiskitBackend(backend=backend)
+        backend = QiskitBackend(backend=aer_simulator_backend)
 
-        assert example_backend.options == backend.options
-        assert example_backend.name == backend.name
-        assert example_backend.description == backend.description
+        assert backend.options == aer_simulator_backend.options
+        assert backend.name == aer_simulator_backend.name
+        assert backend.description == aer_simulator_backend.description
+
+    def test_set_options(self):
+        """Test setting options on QiskitBackend."""
+
+        backend = QiskitBackend(backend=aer_simulator_backend)
+        opts = {"shots": 12345}
+        backend.set_options(**opts)
+
+        assert backend.options["shots"] == 12345
+
+        for key in aer_simulator_backend.options:
+            if key != "shots":
+                assert backend.options[key] == aer_simulator_backend.options[key]
 
     def test_qiskit_aer_backend(self):
         """Test QiskitBackend with Qiskit Aer simulator."""
 
-        example_backend = QiskitBackend(backend=AerSimulator())
+        backend = QiskitBackend(backend=aer_simulator_backend)
         qf = QuantumFloat(4)
         qf[:] = 3
         res = qf * qf
-        meas_res = res.get_measurement(backend=example_backend)
+        meas_res = res.get_measurement(backend=backend)
         assert meas_res == {9: 1.0}
 
     def test_qiskit_fake_backend(self):
         """Test QiskitBackend with Qiskit FakeWashingtonV2 backend."""
 
-        example_backend = QiskitBackend(FakeWashingtonV2())
+        backend = QiskitBackend(backend=fake_backend)
         qf = QuantumFloat(2)
         qf[:] = 2
         res = qf * qf
-        meas_res = res.get_measurement(backend=example_backend)
+        meas_res = res.get_measurement(backend=backend)
         assert meas_res[4] > 0.5
 
 
