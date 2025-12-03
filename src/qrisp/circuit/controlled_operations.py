@@ -153,9 +153,9 @@ def multi_controlled_u3_circ(u3_gate, control_amount, ctrl_state, method=None):
     # Treat general U3Gates
     else:
         # Algorithm based on https://arxiv.org/pdf/quant-ph/9503016.pdf
-        alpha = u3_gate.phi
-        theta = -u3_gate.theta
-        beta = u3_gate.lam
+        alpha = u3_gate.lam
+        theta = u3_gate.theta
+        beta = u3_gate.phi
 
         A = QuantumCircuit(1)
 

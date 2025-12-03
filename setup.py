@@ -26,9 +26,9 @@ REQUIREMENTS = [
                 "scipy>=1.10.0",
                 "numba",
                 "networkx",
-                "tdqm",
+                "tqdm",
                 "dill",
-                "flask",
+                "flask<2.3.0",
                 "waitress",
                 "pyyaml",
                 "requests",
@@ -56,7 +56,7 @@ setuptools.setup(
     install_requires = REQUIREMENTS,
     setup_requires = REQUIREMENTS,
     extras_require={
-        'iqm': ['iqm-client[qiskit]']
+        'iqm': ['iqm-client[qiskit]<33.0.0']
     },
     packages=setuptools.find_packages(where="src"),
     python_requires=">=3.10",

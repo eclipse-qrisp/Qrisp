@@ -55,9 +55,18 @@ def int_encoder(qv, encoding_number):
 
     else:
 
-        for i in jrange(qv.size):
-            with control(encoding_number & (1 << i)):
-                x(qv[i])
+        from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
+                BigInteger
+            )
+        
+        if isinstance(encoding_number, BigInteger):
+            for i in jrange(qv.size):
+                with control(encoding_number.get_bit(i)):
+                    x(qv[i])
+        else:
+            for i in jrange(qv.size):
+                with control(encoding_number & (1 << i)):
+                    x(qv[i])
 
         # def true_fun(qc, cond, qb):
         #     tr_qs.abs_qc = qc
@@ -682,20 +691,19 @@ def find_qs(args):
         if isinstance(arg, Qubit):
             return arg.qs()
 
-    else:
-        for arg in args:
-            if isinstance(arg, (list, tuple)):
-                try:
-                    return find_qs(arg)
-                except:
-                    pass
-            if isinstance(arg, dict):
-                try:
-                    return find_qs(arg.items())
-                except:
-                    pass
+    for arg in args:
+        if isinstance(arg, (list, tuple)):
+            try:
+                return find_qs(arg)
+            except:
+                pass
+        if isinstance(arg, dict):
+            try:
+                return find_qs(arg.items())
+            except:
+                pass
 
-    raise Exception("Couldn't find QuantumSession")
+    raise Exception(f"Couldn't find QuantumSession in input {args}")
 
 
 # Function to measure multiple quantum variables at once to assess their entanglement

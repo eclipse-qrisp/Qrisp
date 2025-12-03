@@ -19,7 +19,8 @@
 import numpy as np
 import sympy as sp
 import jax.numpy as jnp
-from jax import jit
+from jax import jit, Array
+from jax.core import Tracer
 
 from qrisp.core import QuantumVariable, cx
 from qrisp.misc import gate_wrap
@@ -318,12 +319,10 @@ class QuantumFloat(QuantumVariable):
 
     # Define outcome_labels
     def decoder(self, i):
-        from jax.numpy import float64
-        from jax.core import Tracer
 
-        res = signed_int_iso_inv_2(i, self.msize, self.signed) * float64(2)**self.exponent
+        res = signed_int_iso_inv_2(i, self.msize, self.signed) * jnp.float64(2)**self.exponent
 
-        if isinstance(i, Tracer):
+        if check_for_tracing_mode():
             return res
         else:
             if self.exponent >= 0:
@@ -335,9 +334,7 @@ class QuantumFloat(QuantumVariable):
         return self.decoder(i)
 
     def encoder(self, i):
-        from jax.numpy import float64
-
-        res = signed_int_iso_2(i / (float64(2) ** self.exponent), self.size)
+        res = signed_int_iso_2(i / (jnp.float64(2) ** self.exponent), self.size)
         # if self.signed:
         #     res = signed_int_iso(i/2**self.exponent, self.size-1)
         # else:
@@ -421,7 +418,7 @@ class QuantumFloat(QuantumVariable):
 
         if isinstance(other, QuantumFloat):
             return q_mult(self, other)
-        elif isinstance(other, int):
+        elif isinstance(other, (int, np.integer)):
             bit_shift = 0
             while not other % 2:
                 other = other >> 1
@@ -578,8 +575,18 @@ class QuantumFloat(QuantumVariable):
 
         if check_for_tracing_mode():
             from qrisp.alg_primitives.arithmetic import gidney_adder
-
-            gidney_adder(other, self)
+            
+            if isinstance(other, QuantumFloat):
+                starting_digit = jnp.maximum(other.exponent, self.exponent)
+                
+                gidney_adder(other[starting_digit-other.exponent:], self[starting_digit-self.exponent:])
+            elif isinstance(other, (int, float)) or (isinstance(other, Tracer) and isinstance(other, Array)):
+                gidney_adder(self.encoder(other), self)
+            else:
+                print(isinstance(other, Tracer))
+                print(type(other.dtype))
+                raise Exception(f"Don't know how to handle quantum addition with type {type(other)}")
+            
             return self
 
         from qrisp.alg_primitives.arithmetic import polynomial_encoder
@@ -619,10 +626,8 @@ class QuantumFloat(QuantumVariable):
         from qrisp.jasp import check_for_tracing_mode
 
         if check_for_tracing_mode():
-            from qrisp.alg_primitives.arithmetic import gidney_adder
-
             with invert():
-                gidney_adder(other, self)
+                self.__iadd__(other)
             return self
 
         if isinstance(other, QuantumFloat):

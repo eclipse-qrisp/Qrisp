@@ -140,3 +140,21 @@ def test_prefix_control():
         return measure(qbl)
 
     assert main()
+    
+    # Test constant handling problems from https://github.com/eclipse-qrisp/Qrisp/issues/308    
+    @jaspify
+    def test0():
+        N_outer = jnp.array([3])
+        bi0 = jnp.array([0])
+        return lax.while_loop(lambda x: jnp.all(x==bi0), lambda x:x + N_outer, bi0)
+    
+    test0()
+    
+    
+    @jaspify
+    def test5():
+        N_outer = jnp.array([3])
+        bi0 = jnp.array([0])
+        return q_while_loop(lambda x: jnp.all(x==bi0), lambda x:x + N_outer, bi0)
+    
+    test5()

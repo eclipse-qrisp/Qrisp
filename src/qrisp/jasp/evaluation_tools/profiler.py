@@ -35,14 +35,10 @@ This file implements the interfaces to evaluating the transformed Jaspr.
 from functools import lru_cache
 import types
 
-import numpy as np
-
 import jax
-import jax.numpy as jnp
 from jax.extend.core import ClosedJaxpr
+from jax.tree_util import tree_flatten
 
-
-from qrisp.jasp.primitives import OperationPrimitive
 from qrisp.jasp.interpreter_tools import make_profiling_eqn_evaluator, eval_jaxpr
 from qrisp.jasp.evaluation_tools.jaspification import simulate_jaspr
 
@@ -255,6 +251,8 @@ def profile_jaspr(jaspr, meas_behavior="0"):
                 jaspr, meas_behavior
             )
             
+            args = tree_flatten(args)[0]
+            
             # Compute the profiling array
             if len(jaspr.outvars) > 1:
                 profiling_array = profiling_array_computer(*args)[-1][0]
@@ -281,23 +279,13 @@ def profile_jaspr(jaspr, meas_behavior="0"):
 @lru_cache(int(1e5))
 def get_profiling_array_computer(jaspr, meas_behavior):
 
-    # This functions determines the set of primitives that appear in a given Jaxpr
-    primitives = get_primitives(jaspr)
-
-    # Filter out the non OperationPrimitives and fill them in a dictionary
-    profiling_dic = {}
-    for i in range(len(primitives)):
-        if isinstance(primitives[i], OperationPrimitive):
-            op = primitives[i].op
-            if op.definition:
-                op_names = list(op.definition.transpile().count_ops().keys())
-            else:
-                op_names = [op.name]
-            for name in op_names:
-                if not name in profiling_dic:
-                    profiling_dic[name] = len(profiling_dic) - 1
-        elif primitives[i].name == "jasp.measure" and not "measure" in profiling_dic:
-            profiling_dic["measure"] = len(profiling_dic) - 1
+    # Find the occuring quantum operations and store their names in a dictionary,
+    # indicating, which tracer counts what operation
+    quantum_operations = get_quantum_operations(jaspr)
+    profiling_dic = {quantum_operations[i] : i for i in range(len(quantum_operations))}
+    
+    if "measure" not in profiling_dic:
+        profiling_dic["measure"] = - 1
 
     profiling_eqn_evaluator = make_profiling_eqn_evaluator(
         profiling_dic, meas_behavior
@@ -336,22 +324,28 @@ def get_profiling_array_computer(jaspr, meas_behavior):
 
 
 # This functions determines the set of primitives that appear in a given Jaxpr
-def get_primitives(jaxpr):
+def get_quantum_operations(jaxpr):
 
-    primitives = set()
+    quantum_operations = set()
 
     for eqn in jaxpr.eqns:
         # Add current primitive
-        primitives.add(eqn.primitive)
+        if eqn.primitive.name == "jasp.quantum_gate":
+            
+            if eqn.params["gate"].definition:
+                for op_name in eqn.params["gate"].definition.transpile().count_ops().keys():
+                    quantum_operations.add(op_name)
+            else:
+                quantum_operations.add(eqn.params["gate"].name)
 
         if eqn.primitive.name == "cond":
-            primitives.update(get_primitives(eqn.params["branches"][0].jaxpr))
-            primitives.update(get_primitives(eqn.params["branches"][1].jaxpr))
+            quantum_operations.update(get_quantum_operations(eqn.params["branches"][0].jaxpr))
+            quantum_operations.update(get_quantum_operations(eqn.params["branches"][1].jaxpr))
             continue
 
         # Handle call primitives (like cond/pjit)
         for param in eqn.params.values():
             if isinstance(param, ClosedJaxpr):
-                primitives.update(get_primitives(param.jaxpr))
+                quantum_operations.update(get_quantum_operations(param.jaxpr))
 
-    return list(primitives)
+    return list(quantum_operations)
