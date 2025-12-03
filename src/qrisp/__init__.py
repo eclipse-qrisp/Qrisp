@@ -34,6 +34,7 @@ from qrisp.qtypes import *
 from qrisp.environments import *
 from qrisp.alg_primitives import *
 from qrisp.algorithms import *
+from qrisp.pqc import *
 
 for i in [
     "shor",
