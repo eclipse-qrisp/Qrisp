@@ -172,11 +172,11 @@ class QuantumArray:
 
     def __init__(self, qtype, shape, qs=None):
 
-        if isinstance(shape, int):
+        if isinstance(shape, (int, np.integer)):
             shape = (shape,)
         size = 1
         for s in shape:
-            if not isinstance(s, int):
+            if not isinstance(s, (int, np.integer)):
                 raise Exception(
                     f"Tried to create QuantumArray with non-integer tuple {shape}"
                 )
