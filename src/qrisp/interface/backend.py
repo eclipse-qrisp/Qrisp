@@ -31,16 +31,10 @@ class Backend(ABC):
     """
 
     def __init__(self, name=None, description=None, options=None):
-        self.name = name or self.__class__.__name__
+
+        self.name = name if name is not None else self.__class__.__name__
         self.description = description
-
-        # options is just a plain dict at the moment
-        self._options = self._default_options()
-
-        if options is not None:
-            if not isinstance(options, dict):
-                raise TypeError("Backend options must be a dict.")
-            self._options.update(options)
+        self._options = options if options is not None else self._default_options()
 
     @property
     def options(self):

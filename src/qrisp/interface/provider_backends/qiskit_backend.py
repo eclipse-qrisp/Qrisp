@@ -164,6 +164,61 @@ from ..backend import Backend
 
 
 class QiskitBackend(Backend):
+    """
+    This class instantiates a :ref:`Backend` using a Qiskit backend.
+
+    This allows easy access to Qiskit backends through the qrisp interface.
+
+    Parameters
+    ----------
+
+    TODO: update at the end
+
+
+
+    Examples
+    --------
+
+    We evaluate a :ref:`QuantumFloat` multiplication on the Aer simulator.
+
+    >>> from qrisp import QuantumFloat
+    >>> from qrisp.interface import QiskitBackend
+    >>> from qiskit_aer import AerSimulator
+    >>> example_backend = QiskitBackend(backend = AerSimulator())
+    >>> qf = QuantumFloat(4)
+    >>> qf[:] = 3
+    >>> res = qf*qf
+    >>> res.get_measurement(backend = example_backend)
+    {9: 1.0}
+
+    We evaluate a :ref:`QuantumFloat` multiplication on the FakeWashingtonV2 backend.
+
+    >>> from qrisp import QuantumFloat
+    >>> from qiskit_ibm_runtime.fake_provider import FakeWashingtonV2
+    >>> from qrisp.interface import QiskitBackend
+    >>> example_backend = QiskitBackend(backend = FakeWashingtonV2())
+    >>> qf = QuantumFloat(2)
+    >>> qf[:] = 2
+    >>> res = qf*qf
+    >>> res.get_measurement(backend = example_backend)
+    {4: 0.6962,
+    12: 0.0967,
+    0: 0.0607,
+    8: 0.0572,
+    6: 0.028,
+    2: 0.0128,
+    14: 0.0126,
+    5: 0.0103,
+    10: 0.0062,
+    3: 0.0057,
+    9: 0.0042,
+    13: 0.0037,
+    1: 0.0029,
+    7: 0.001,
+    15: 0.001,
+    11: 0.0008}
+
+    """
 
     def __init__(self, backend=None, name=None, description=None, options=None):
         if backend is None:
@@ -186,11 +241,15 @@ class QiskitBackend(Backend):
             )
         self.sampler = SamplerV2(backend)
 
+        # If not specified, we use the Qiskit backend metadata
         if name is None:
-            if isinstance(backend.name, str):
-                name = backend.name
-            else:
-                name = backend.name()
+            name = getattr(backend, "name", None)
+
+        if description is None:
+            description = getattr(backend, "description", None)
+
+        if options is None:
+            options = getattr(backend, "options", None)
 
         super().__init__(name=name, description=description, options=options)
 
@@ -229,7 +288,6 @@ class QiskitBackend(Backend):
 
         qiskit_qc = QuantumCircuit.from_qasm_str(qasm_str)
 
-        # flatten registers (same logic as original implementation)
         new_qc = QuantumCircuit(len(qiskit_qc.qubits), len(qiskit_qc.clbits))
         for instr in qiskit_qc:
             new_qc.append(
@@ -253,15 +311,6 @@ class QiskitBackend(Backend):
             result[cleaned] = value
 
         return result
-
-
-def VirtualQiskitBackend(*args, **kwargs):
-    import warnings
-
-    warnings.warn(
-        "VirtualQiskitBackend will be deprecated in a future release of Qrisp. Use QiskitBackend instead."
-    )
-    return QiskitBackend(*args, **kwargs)
 
 
 class QiskitRuntimeBackend(VirtualBackend):
