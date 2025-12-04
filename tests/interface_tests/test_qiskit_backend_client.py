@@ -18,14 +18,13 @@
 
 import numpy as np
 from qiskit_aer import AerSimulator
-
-# from qiskit_ibm_runtime.fake_provider import FakeWashingtonV2
+from qiskit_ibm_runtime.fake_provider import FakeWashingtonV2
 
 from qrisp import QuantumCircuit, QuantumFloat
 from qrisp.interface import QiskitBackend, VirtualBackend
 
 aer_simulator_backend = AerSimulator()
-# fake_backend = FakeWashingtonV2()
+fake_backend = FakeWashingtonV2()
 
 
 class TestQiskitBackendClient:
@@ -63,15 +62,15 @@ class TestQiskitBackendClient:
         meas_res = res.get_measurement(backend=backend)
         assert meas_res == {9: 1.0}
 
-    # def test_qiskit_fake_backend(self):
-    #     """Test QiskitBackend with Qiskit FakeWashingtonV2 backend."""
+    def test_qiskit_fake_backend(self):
+        """Test QiskitBackend with Qiskit FakeWashingtonV2 backend."""
 
-    #     backend = QiskitBackend(backend=fake_backend)
-    #     qf = QuantumFloat(2)
-    #     qf[:] = 2
-    #     res = qf * qf
-    #     meas_res = res.get_measurement(backend=backend)
-    #     assert meas_res[4] > 0.5
+        backend = QiskitBackend(backend=fake_backend)
+        qf = QuantumFloat(2)
+        qf[:] = 2
+        res = qf * qf
+        meas_res = res.get_measurement(backend=backend)
+        assert meas_res[4] > 0.5
 
 
 # We keep this test even though VirtualBackend is deprecated
