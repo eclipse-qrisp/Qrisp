@@ -30,7 +30,7 @@ def append_operation(operation, qubits=[], clbits=[], param_tracers=[]):
         qs = find_qs(qubits)
         qs.append(operation, qubits, clbits, param_tracers=param_tracers)
     except Exception as e:
-        
+
         # Handle the case that the user specified an empty qubit list, i.e.
         # cx([], [])
         if "Couldn't find QuantumSession" in str(e):
@@ -41,9 +41,9 @@ def append_operation(operation, qubits=[], clbits=[], param_tracers=[]):
                     break
             else:
                 return
-            
+
         raise e
-                    
+
 
 
 def cx(control, target):
@@ -1182,6 +1182,41 @@ def u3(theta, phi, lam, qubits):
     return qubits
 
 
+def unitary(unitary_array, qubits):
+    """
+    Instruct a U3-gate from a given U3 matrix.
+
+    Parameters
+    ----------
+    unitary_array : numpy.ndarray
+        The U3 matrix to apply.
+    qubits : Qubit
+        The Qubit to apply the gate on.
+    """
+    import jax.numpy as jnp
+
+    mat = unitary_array
+    coeff = 1 / jnp.sqrt(jnp.linalg.det(mat))
+    gphase_angle = -jnp.angle(coeff) % (2 * jnp.pi)
+    tmp_10 = jnp.abs((coeff * mat[1][0]))
+    tmp_00 = jnp.abs((coeff * mat[0][0]))
+    theta = 2 * jnp.arctan2(tmp_10, tmp_00)
+    phiplambda2 = jnp.angle(coeff * mat[1][1]) % (2 * jnp.pi)
+    phimlambda2 = jnp.angle(coeff * mat[1][0]) % (2 * jnp.pi)
+    phi = phiplambda2 + phimlambda2
+    lam = phiplambda2 - phimlambda2
+
+    arg_max = jnp.argmax(jnp.abs(mat).flatten())
+    from qrisp.simulator.unitary_management import u3matrix
+
+    temp_u3 = u3matrix(theta, phi, lam, 0).flatten()
+
+    gphase_angle = (-jnp.angle(temp_u3[arg_max] / mat.flatten()[arg_max])) % (2 * jnp.pi)
+
+    u3(theta, phi, lam, qubits)
+    gphase(gphase_angle, qubits)
+
+
 def measure(qubits):
     """
     Performs a measurement of the specified Qubit.
@@ -1223,7 +1258,7 @@ def measure(qubits):
             DynamicQubitArray,
         )
         from qrisp import QuantumVariable, QuantumArray
-        
+
         if not qs.abs_qc._trace is jax.core.trace_ctx.trace:
             raise Exception(
                 """Lost track of QuantumCircuit during tracing. This might have been caused by a missing quantum_kernel decorator or not using quantum prefix control (like q_fori_loop, q_cond). Please visit https://www.qrisp.eu/reference/Jasp/Quantum%20Kernel.html for more details"""
