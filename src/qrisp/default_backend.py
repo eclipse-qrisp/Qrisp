@@ -16,14 +16,23 @@
 ********************************************************************************
 """
 
-from qrisp.interface import VirtualBackend, QiskitBackend
-from qrisp.simulator.simulator import run
-from qrisp import QuantumCircuit
+from qrisp.interface.backend import Backend
+from qrisp.simulator.simulator import run as default_run
 
 
-class DefaultBackend:
+class DefaultBackend(Backend):
+    """A default backend that uses the built-in simulator."""
+
     def run(self, qc, shots=None, token=""):
-        return run(qc, shots, token)
+        return default_run(qc, shots, token)
+
+    @classmethod
+    def _default_options(cls):
+        return {}
+
+    @property
+    def max_circuits(self):
+        return None
 
 
 def_backend = DefaultBackend()

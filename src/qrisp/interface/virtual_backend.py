@@ -34,7 +34,7 @@ class VirtualBackend(BackendClient):
     Parameters
     ----------
     run_func : function
-        A function that recieves a QuantumCircuit, an integer specifiying the amount of
+        A function that receives a QuantumCircuit, an integer specifying the amount of
         shots and a token in the form of a string. It returns the counts as a dictionary
         of bitstrings.
     name : str, optional

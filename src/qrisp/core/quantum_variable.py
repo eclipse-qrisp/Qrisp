@@ -25,7 +25,6 @@ from jax import tree_util
 from qrisp.core.compilation import qompiler
 
 
-
 class QuantumVariable:
     """
     The QuantumVariable is the quantum equivalent of a regular variable in classical
@@ -834,7 +833,7 @@ class QuantumVariable:
         from qrisp.jasp import check_for_tracing_mode
 
         if check_for_tracing_mode():
-            
+
             if isinstance(position, int) and position in [0, -1]:
                 if position == -1:
                     self.reg = self.reg + insertion_qubits
@@ -843,10 +842,10 @@ class QuantumVariable:
             else:
                 self.reg = self.reg[:position] + insertion_qubits + self.reg[position:]
         else:
-            
+
             if position == -1:
                 position = self.size
-            
+
             for i in range(amount):
                 insertion_qubits[i].identifier = (
                     self.name
