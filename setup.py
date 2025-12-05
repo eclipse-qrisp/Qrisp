@@ -56,7 +56,7 @@ setuptools.setup(
     install_requires = REQUIREMENTS,
     setup_requires = REQUIREMENTS,
     extras_require={
-        'iqm': ['iqm-client[qiskit]<33.0.0']
+        'iqm': ['iqm-client[qiskit]']
     },
     packages=setuptools.find_packages(where="src"),
     python_requires=">=3.10",
