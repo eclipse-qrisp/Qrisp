@@ -21,7 +21,7 @@ from scipy.optimize import minimize
 import sympy as sp
 from qrisp.algorithms.cold.crab import CRABObjective
 from qrisp import h
-from qrisp.algorithms.cold.AGP_param_opt import solve_params_at_lambda, build_Hg
+# from qrisp.algorithms.cold.AGP_param_opt import solve_params_at_lambda, build_Hg
 
 class DCQOProblem:
     """
