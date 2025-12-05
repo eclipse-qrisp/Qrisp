@@ -144,9 +144,9 @@ def IQMBackend(api_token,
 
     # Construct the server URL based on device_instance if server_url is not provided
     if server_url is None:
-        server_url = "https://cocos.resonance.meetiqm.com/" + device_instance
+        server_url = "https://resonance.meetiqm.com/"
         
-    client = IQMClient(iqm_server_url = server_url, token = api_token)
+    client = IQMClient(iqm_server_url = server_url, token = api_token, quantum_computer = device_instance)
     backend = IQMBackend(client)
     
     if compilation_options is None:
