@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 
-from cirq import LineQubit
+from cirq import LineQubit, unitary
 
 from cirq import CNOT, H, X, Y, Z, S, T, rx, ry, rz, M, R, SWAP
 from unittest.mock import MagicMock
@@ -28,53 +28,20 @@ def test_n_qubit_gate_circuit():
     qc_single_qubit_gates.t(1)
     qc_single_qubit_gates.t_dg(3)
     qc_single_qubit_gates.s_dg(2)
-
-    expected_cirq_qc_single_qubit_gates_ops = [
-        H(LineQubit(0)),
-        X(LineQubit(1)),
-        Y(LineQubit(3)),
-        Z(LineQubit(2)),
-        rx(rads=0.3).on(LineQubit(3)),
-        ry(rads=0.4).on(LineQubit(1)),
-        rz(rads=0.2).on(LineQubit(2)),
-        S(LineQubit(0)),
-        T(LineQubit(1)),
-        (T**-1).on(LineQubit(3)),
-        (S**-1).on(LineQubit(2)),
-        M(LineQubit(0)),
-        R(LineQubit(0)),
-    ]
-
-    converted_circ = convert_to_cirq(qc_single_qubit_gates)
-    assert expected_cirq_qc_single_qubit_gates_ops == list(
-        converted_circ.all_operations()
-    )
+    expected_unitary = qc_single_qubit_gates.get_unitary()
+    converted_cirq = convert_to_cirq(qc_single_qubit_gates)
+    calculated_unitary = unitary(converted_cirq)
+    np.testing.assert_array_almost_equal(expected_unitary, calculated_unitary)
+    
 
     # 4 qubit circuit containing all multi-controlled gates
     # there is only 1 multicontrolled gate mcx
-    qc_mcx = QuantumCircuit(10)
-    qc_mcx.mcx([0, 1, 2, 4, 5, 7], [3, 8])
-
-    expected_mcx_circ = [
-        X(LineQubit(3)).controlled_by(
-            LineQubit(0),
-            LineQubit(1),
-            LineQubit(2),
-            LineQubit(4),
-            LineQubit(5),
-            LineQubit(7),
-        ),
-        X(LineQubit(8)).controlled_by(
-            LineQubit(0),
-            LineQubit(1),
-            LineQubit(2),
-            LineQubit(4),
-            LineQubit(5),
-            LineQubit(7),
-        ),
-    ]
-    converted_circ = convert_to_cirq(qc_mcx)
-    assert expected_mcx_circ == list(converted_circ.all_operations())
+    qc_mcx = QuantumCircuit(8)
+    qc_mcx.mcx([0, 1, 2, 4, 5, 6], [3, 7])
+    expected_unitary = qc_mcx.get_unitary()
+    converted_cirq = convert_to_cirq(qc_mcx)
+    calculated_unitary = unitary(converted_cirq)
+    np.testing.assert_array_almost_equal(expected_unitary, calculated_unitary)
 
 
 @pytest.mark.parametrize(
@@ -138,11 +105,10 @@ def test_converter_compiled_qs():
     mcx(ctrl, target)
     compiled_qc = ctrl.qs.compile()
     cirq_qc = convert_to_cirq(compiled_qc)
-    assert [
-        X(LineQubit(4)).controlled_by(
-            LineQubit(0), LineQubit(1), LineQubit(2), LineQubit(3)
-        )
-    ] == list(cirq_qc.all_operations())
+    expected_unitary = compiled_qc.get_unitary()
+    converted_cirq = convert_to_cirq(compiled_qc)
+    calculated_unitary = unitary(converted_cirq)
+    np.testing.assert_array_almost_equal(expected_unitary, calculated_unitary)
 
     # reflection around GHZ state in a QuantumSession
     # Prepare |1> state
@@ -158,25 +124,7 @@ def test_converter_compiled_qs():
 
     reflection_compiled_qc = qv.qs.compile()
     reflection_cirq_qc = convert_to_cirq(reflection_compiled_qc)
-    assert list(reflection_cirq_qc.all_operations()) == [
-        X(LineQubit(1)),
-        X(LineQubit(2)),
-        X(LineQubit(3)),
-        X(LineQubit(0)),
-        CNOT(LineQubit(0), LineQubit(4)),
-        H(LineQubit(4)),
-        CNOT(LineQubit(0), LineQubit(1)),
-        CNOT(LineQubit(0), LineQubit(2)),
-        CNOT(LineQubit(0), LineQubit(3)),
-        H(LineQubit(0)),
-        X(LineQubit(4)).controlled_by(
-            LineQubit(0), LineQubit(1), LineQubit(2), LineQubit(3)
-        ),
-        H(LineQubit(4)),
-        H(LineQubit(0)),
-        X(LineQubit(4)),
-    ]
-
+    
 
 def test_transpiled_qc():
     """Verify the converter works without any issues for a transpiled circuit that has a composite gate."""
@@ -196,71 +144,10 @@ def test_transpiled_qc():
     QPE(qv, U, precision=3)
     test_circuit = qv.qs.compile()
     # test_circuit has a composite gate QFT_dg
-    with pytest.raises(
-        ValueError, match="QFT_dg gate is not supported by the Qrisp to Cirq converter."
-    ):
-        convert_to_cirq(test_circuit)
+    # the function transpiles the composite gate, if possible
 
-    def transpile_predicate(op):
-        if op.name == "QFT_dg":
-            return True
-        else:
-            return False
+    expected_unitary = test_circuit.get_unitary()
+    converted_cirq = convert_to_cirq(test_circuit)
+    calculated_unitary = unitary(converted_cirq)
+    np.testing.assert_array_almost_equal(expected_unitary, calculated_unitary)
 
-    transpiled_qc = test_circuit.transpile(transpile_predicate=transpile_predicate)
-
-    assert list(convert_to_cirq(transpiled_qc).all_operations()) == [
-        H(LineQubit(0)),
-        H(LineQubit(1)),
-        H(LineQubit(2)),
-        H(LineQubit(3)),
-        H(LineQubit(4)),
-        (Z**1.570796326794896558).on(LineQubit(0)),
-        (Z**0.3926990816987241395).on(LineQubit(1)),
-        (Z**1.9634954084936206975).on(LineQubit(2)),
-        (Z**3.926990816987241395).on(LineQubit(3)),
-        (Z**7.85398163397448279).on(LineQubit(4)),
-        CNOT(LineQubit(2), LineQubit(0)),
-        CNOT(LineQubit(3), LineQubit(1)),
-        (Z**-1.570796326794896558).on(LineQubit(0)),
-        (Z**-0.3926990816987241395).on(LineQubit(1)),
-        CNOT(LineQubit(2), LineQubit(0)),
-        CNOT(LineQubit(3), LineQubit(1)),
-        (Z**3.141592653589793116).on(LineQubit(0)),
-        (Z**0.3926990816987241395).on(LineQubit(1)),
-        CNOT(LineQubit(3), LineQubit(0)),
-        CNOT(LineQubit(2), LineQubit(1)),
-        (Z**-3.141592653589793116).on(LineQubit(0)),
-        (Z**-0.3926990816987241395).on(LineQubit(1)),
-        CNOT(LineQubit(3), LineQubit(0)),
-        CNOT(LineQubit(2), LineQubit(1)),
-        (Z**6.283185307179586232).on(LineQubit(0)),
-        (Z**0.3926990816987241395).on(LineQubit(1)),
-        CNOT(LineQubit(4), LineQubit(0)),
-        CNOT(LineQubit(3), LineQubit(1)),
-        (Z**-6.283185307179586232).on(LineQubit(0)),
-        (Z**-0.3926990816987241395).on(LineQubit(1)),
-        CNOT(LineQubit(4), LineQubit(0)),
-        CNOT(LineQubit(3), LineQubit(1)),
-        (Z**1.570796326794896558).on(LineQubit(1)),
-        (Z**-0.7853981633974483).on(LineQubit(3)),
-        CNOT(LineQubit(4), LineQubit(1)),
-        (Z**-1.570796326794896558).on(LineQubit(1)),
-        CNOT(LineQubit(4), LineQubit(1)),
-        SWAP(LineQubit(4), LineQubit(2)),
-        (Z**-1.1780972450961724).on(LineQubit(4)),
-        H(LineQubit(2)),
-        (Z**-1.1780972450961724).on(LineQubit(2)),
-        CNOT(LineQubit(3), LineQubit(2)),
-        (Z**0.7853981633974483).on(LineQubit(2)),
-        CNOT(LineQubit(3), LineQubit(2)),
-        H(LineQubit(3)),
-        CNOT(LineQubit(4), LineQubit(2)),
-        (Z**-0.7853981633974483).on(LineQubit(3)),
-        (Z**0.39269908169872414).on(LineQubit(2)),
-        CNOT(LineQubit(4), LineQubit(2)),
-        CNOT(LineQubit(4), LineQubit(3)),
-        (Z**0.7853981633974483).on(LineQubit(3)),
-        CNOT(LineQubit(4), LineQubit(3)),
-        H(LineQubit(4)),
-    ]

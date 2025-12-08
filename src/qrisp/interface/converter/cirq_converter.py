@@ -87,9 +87,20 @@ def convert_to_cirq(qrisp_circuit):
             params = instr.op.params
 
         if op_i not in qrisp_cirq_ops_dict:
-            raise ValueError(
-                f"{op_i} gate is not supported by the Qrisp to Cirq converter."
-            )
+            try:
+                def transpile_predicate(op):
+                    if op.name == op_i:
+                        return True
+                    else:
+                        return False
+                
+                transpiled_qc = qrisp_circuit.transpile(transpile_predicate=transpile_predicate)
+                return convert_to_cirq(transpiled_qc)
+            
+            except Exception:
+                raise ValueError(
+                    f"{op_i} gate is not supported by the Qrisp to Cirq converter."
+                )
 
         if op_i in ["gphase"]:
             print(
