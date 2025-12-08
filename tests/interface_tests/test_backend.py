@@ -28,17 +28,63 @@ class DummyBackend(Backend):
     def _default_options(cls):
         return {"shots": 1000, "flag": False}
 
-    @property
-    def max_circuits(self):
-        return 1
-
-    def run(self, run_input, **kwargs):
-        # just return what was sent, to test passthrough
-        return {"input": run_input, "options": {**self._options, **kwargs}}
+    def run(self, *args, **kwargs):
+        return {"inputs": args, "options": {**self._options, **kwargs}}
 
 
-class TestBackend:
-    """Test suite for Backend abstract class and DummyBackend implementation."""
+class BackendNoOptionsNoDefaultsOptions(Backend):
+    """
+    Dummy Backend for testing the following scenario:
+
+    - The backend is instantiated without passing any options.
+
+    - Therefore, it must use the default options provided by Backend._default_options().
+
+    - The update_options method should only allow modifying existing keys.
+    """
+
+    def run(self, *_, **__):
+        pass
+
+
+class BackendWithExplicitOptions(Backend):
+    """
+    Dummy Backend for testing the following scenario:
+
+    - The backend is instantiated with explicit options.
+
+    - Therefore, these options must override the default options provided by
+      Backend._default_options() entirely.
+
+    """
+
+    def __init__(self, options=None):
+        super().__init__(options=options)
+
+    def run(self, *_, **__):
+        pass
+
+
+class BackendWithChildDefaultOptions(Backend):
+    """
+    Dummy Backend for testing the following scenario:
+
+    - The backend is instantiated without passing any options, but the child class
+      defines its own _default_options().
+
+    - Therefore, it must use the child class's default options.
+    """
+
+    @classmethod
+    def _default_options(cls):
+        return {"shots": 1024, "custom_default": 42}
+
+    def run(self, *_, **__):
+        pass
+
+
+class TestDummyBackend:
+    """Test suite for DummyBackend implementation."""
 
     def test_backend_is_abstract(self):
         """Ensure Backend cannot be instantiated directly."""
@@ -51,34 +97,47 @@ class TestBackend:
         assert b.name == "test_backend"
         assert b.options == {"shots": 1000, "flag": False}
 
-    def test_override_default_options_at_init(self):
-        """Ensure constructor options override defaults."""
-        b = DummyBackend(options={"shots": 500, "flag": True})
-        assert b.options["shots"] == 500
-        assert b.options["flag"] is True
 
-    def test_set_options_updates_existing_values(self):
-        """Ensure set_options modifies only allowed keys."""
-        b = DummyBackend()
-        b.set_options(shots=2000, flag=True)
-        assert b.options["shots"] == 2000
-        assert b.options["flag"] is True
+class TestBackendOptions:
+    """Test suite for Backend options handling."""
 
-    def test_set_options_rejects_unknown_keys(self):
-        """Ensure unknown options raise an error."""
-        b = DummyBackend()
+    def test_no_options_no_defaults_options(self):
+        """Test backend instantiated without options uses default options."""
+
+        backend = BackendNoOptionsNoDefaultsOptions()
+        assert backend.options == {"shots": 1024}
+
+        backend.update_options(shots=2048)
+        assert backend.options["shots"] == 2048
+
         with pytest.raises(AttributeError):
-            b.set_options(unknown_option=123)
+            backend.update_options(custom_option="new_value")
 
-    def test_dummy_backend_run_behavior(self):
-        """Ensure run() behaves as expected in subclass."""
-        b = DummyBackend()
-        result = b.run("test_qasm", shots=250)
-        assert result["input"] == "test_qasm"
-        assert result["options"]["shots"] == 250
-        assert result["options"]["flag"] is False
+    def test_backend_with_explicit_options(self):
+        """Test backend instantiated with explicit options."""
 
-    def test_dummy_backend_default_max_circuits(self):
-        """Ensure subclass exposes max_circuits property."""
-        b = DummyBackend()
-        assert b.max_circuits == 1
+        options = {"shots": 1024, "custom_option": "old_value"}
+        backend = BackendWithExplicitOptions(options=options)
+
+        assert backend.options == {"shots": 1024, "custom_option": "old_value"}
+        backend.update_options(custom_option="new_value")
+        assert backend.options["custom_option"] == "new_value"
+
+        options["custom_option"] = "modified_externally"
+        assert backend.options["custom_option"] == "new_value"
+
+        with pytest.raises(AttributeError):
+            backend.update_options(unknown_field=123)
+
+    def test_backend_with_child_default_options(self):
+        """Test backend instantiated without options uses child class default options."""
+
+        backend = BackendWithChildDefaultOptions()
+        assert backend.options == {"shots": 1024, "custom_default": 42}
+
+        backend.update_options(shots=2048, custom_default="updated")
+        assert backend.options["shots"] == 2048
+        assert backend.options["custom_default"] == "updated"
+
+        with pytest.raises(AttributeError):
+            backend.update_options(new_param=999)

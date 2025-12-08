@@ -17,74 +17,158 @@
 """
 
 from abc import ABC, abstractmethod
-
-# TODO: This class is complete state of construction.
-# It should be extended with more functionality as needed.
+from collections.abc import Mapping
+from copy import copy
+from typing import Any, Optional
 
 
 class Backend(ABC):
     """
-    Minimal abstract Backend class for Qrisp.
+    Abstract base class for Qrisp-compatible backends.
 
-    - Uses a simple `dict` for backend options.
-    - Inspired by Qiskit BackendV2 but intentionally simplified.
+    This class provides a minimal and hardware-agnostic interface that all
+    backends (simulators or quantum hardware clients) must follow.
+
+    The only mandatory method for child classes is :meth:`run`, which executes
+    a circuit or operation on the backend.
+
+    **Runtime Options**
+
+    Runtime options describe *how* the backend executes circuits (e.g., the
+    number of shots). These can be provided:
+
+    * by overriding :meth:`_default_options` at class level, or
+    * by passing a custom ``options`` mapping to the constructor.
+
+    The ``options`` argument does not need to be a dict; any object satisfying
+    the :class:`collections.abc.Mapping` interface is accepted. This allows
+    interoperability with external frameworks such as Qiskit, which define
+    their own structured ``Options`` classes.
+
+    Options are updated through :meth:`update_options`, but only keys that were
+    present at initialization may be modified.
+
+    **Hardware Metadata**
+
+    The backend may optionally expose hardware metadata such as:
+
+    * number of qubits,
+    * connectivity graph,
+    * gate set,
+    * error rates, etc.
+
+    These properties default to ``None`` and are intended primarily for hardware
+    backends. Simulators may safely ignore them.
+
+    Parameters
+    ----------
+    name : str or None
+        Optional user-defined name for the backend.
+        Defaults to the class name.
+
+    options : Mapping or None
+        Runtime execution options for the backend.
+        If omitted, :meth:`_default_options` is used.
+
     """
 
-    def __init__(self, name=None, description=None, options=None):
+    def __init__(self, name: Optional[str] = None, options: Optional[Mapping] = None):
+        """
+        Initialize the backend.
 
-        self.name = name if name is not None else self.__class__.__name__
-        self.description = description
-        self._options = options if options is not None else self._default_options()
+        Parameters
+        ----------
+        name : str or None
+            Optional user-defined name for this backend.
+            Defaults to the class name.
+
+        options : Mapping or None
+            Mapping of runtime execution options for the backend.
+            If omitted, the backend uses the class-level default options from
+            :meth:`_default_options`.
+
+        """
+
+        self.name = name or self.__class__.__name__
+
+        if options is None:
+            options = self._default_options()
+
+        if not isinstance(options, Mapping):
+            raise TypeError("options must be a dict-like mapping")
+
+        self._options = copy(options)
+
+    # ----------------------------------------------------------------------
+    # Abstract interface
+    # ----------------------------------------------------------------------
+
+    @abstractmethod
+    def run(self, *args, **kwargs) -> Any:
+        """
+        Execute one or more circuits/operations on the backend.
+
+        Subclasses may override this method with a more specific signature.
+
+        Returns
+        -------
+        Any
+            Backend-specific result of the execution.
+
+        """
+        raise NotImplementedError
+
+    # ----------------------------------------------------------------------
+    # Runtime options
+    # ----------------------------------------------------------------------
+
+    @classmethod
+    def _default_options(cls) -> Mapping:
+        """
+        Default runtime options for the backend.
+
+        Child classes may override this method to provide custom default options,
+        or the defaults may be overridden entirely by passing an ``options``
+        mapping to the constructor.
+        """
+        return {"shots": 1024}
 
     @property
     def options(self):
-        """Return the backend options dictionary."""
+        """Current runtime options."""
         return self._options
 
-    @classmethod
-    @abstractmethod
-    def _default_options(cls) -> dict:
-        """Return a dict of default options."""
-        pass
+    def update_options(self, **kwargs) -> None:
+        """Update existing runtime options, rejecting unknown keys."""
 
-    def set_options(self, **kwargs):
-        """
-        Update the backend options for this instance.
-
-        Example:
-            backend.set_options(shots=5000, seed=42)
-
-        By default, only fields that already exist in _default_options()
-        can be updated. This prevents silent typos.
-
-        Raises:
-            AttributeError: If a field is not part of the allowed options.
-        """
-
-        for key, value in kwargs.items():
+        for key, val in kwargs.items():
             if key not in self._options:
                 raise AttributeError(
-                    f"'{key}' is not a valid backend option. "
-                    f"Valid options are: {list(self._options.keys())}"
+                    f"'{key}' is not a valid backend option for {self.__class__.__name__}. "
+                    f"Valid options: {list(self._options.keys())}"
                 )
-            self._options[key] = value
+            self._options[key] = val
+
+    # ----------------------------------------------------------------------
+    # Optional hardware/backend-specific metadata
+    # ----------------------------------------------------------------------
 
     @property
-    @abstractmethod
-    def max_circuits(self):
-        """Maximum number of circuits supported in a single run."""
-        pass
+    def num_qubits(self):
+        """Number of qubits available on the backend."""
+        return None
 
-    @abstractmethod
-    def run(self, run_input, **kwargs):
-        """
-        Execute a circuit or batch of circuits on the backend.
+    @property
+    def connectivity(self):
+        """Connectivity graph of the backend."""
+        return None
 
-        run_input may be:
-           - a single QuantumCircuit
-           - a list of QuantumCircuit
-           - anything the subclass supports
+    @property
+    def gate_set(self):
+        """Set of gates supported by the backend."""
+        return None
 
-        kwargs override options.
-        """
-        pass
+    @property
+    def error_rates(self):
+        """Error rates of the backend's operations."""
+        return None

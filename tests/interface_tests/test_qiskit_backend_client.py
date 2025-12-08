@@ -35,16 +35,17 @@ class TestQiskitBackendClient:
 
         backend = QiskitBackend(backend=aer_simulator_backend)
 
-        assert backend.options == aer_simulator_backend.options
         assert backend.name == aer_simulator_backend.name
-        assert backend.description == aer_simulator_backend.description
 
-    def test_set_options(self):
-        """Test setting options on QiskitBackend."""
+        for key in aer_simulator_backend.options:
+            assert backend.options[key] == aer_simulator_backend.options[key]
+
+    def test_update_options(self):
+        """Test updating options on QiskitBackend."""
 
         backend = QiskitBackend(backend=aer_simulator_backend)
         opts = {"shots": 12345}
-        backend.set_options(**opts)
+        backend.update_options(**opts)
 
         assert backend.options["shots"] == 12345
 

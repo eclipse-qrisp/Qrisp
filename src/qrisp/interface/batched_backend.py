@@ -143,9 +143,9 @@ class BatchedBackend(Backend):
 
     """
 
-    def __init__(self, batch_run_func, name=None, description=None, options=None):
+    def __init__(self, batch_run_func, name=None, options=None):
 
-        super().__init__(name=name, description=description, options=options)
+        super().__init__(name=name, options=options)
 
         # The function to call the backend
         self.batch_run_func = batch_run_func

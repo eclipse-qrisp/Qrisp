@@ -220,7 +220,7 @@ class QiskitBackend(Backend):
 
     """
 
-    def __init__(self, backend=None, name=None, description=None, options=None):
+    def __init__(self, backend=None, name=None, options=None):
         if backend is None:
             try:
                 from qiskit_aer import AerSimulator
@@ -245,13 +245,10 @@ class QiskitBackend(Backend):
         if name is None:
             name = getattr(backend, "name", None)
 
-        if description is None:
-            description = getattr(backend, "description", None)
-
         if options is None:
             options = getattr(backend, "options", None)
 
-        super().__init__(name=name, description=description, options=options)
+        super().__init__(name=name, options=options)
 
     @classmethod
     def _default_options(cls):
