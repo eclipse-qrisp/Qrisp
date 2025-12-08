@@ -144,8 +144,10 @@ def IQMBackend(
     # Construct the server URL based on device_instance if server_url is not provided
     if server_url is None:
         server_url = "https://resonance.meetiqm.com/"
-        
-    client = IQMClient(iqm_server_url = server_url, token = api_token, quantum_computer = device_instance)
+
+    client = IQMClient(
+        iqm_server_url=server_url, token=api_token, quantum_computer=device_instance
+    )
     backend = IQMBackend(client)
 
     if compilation_options is None:
@@ -175,43 +177,40 @@ def IQMBackend(
                 shots = 1000
 
             shot_batch.append(shots)
-            
-        
 
-        job = client.submit_circuits(circuit_batch, 
-                                      options = compilation_options, 
-                                      shots = max(shot_batch))
-        
-        
+        job = client.submit_circuits(
+            circuit_batch, options=compilation_options, shots=max(shot_batch)
+        )
+
         job.wait_for_completion()
         answer = job.result()
-        
+
         import re
 
         counts_batch = []
         for i in range(len(batch)):
             counts = answer[i]
-        
+
             counts_dic = {}
-            
+
             shots = batch[i][1]
             if shots is None:
                 shots = 1000
-            
+
             for j in range(shots):
-                
+
                 key_str = ""
-                
+
                 for k in counts.keys():
                     key_str += str(counts[k][j][0])
-                
+
                 if key_str in counts_dic:
-                    counts_dic[key_str] +=1
+                    counts_dic[key_str] += 1
                 else:
-                    counts_dic[key_str] =1
-                    
+                    counts_dic[key_str] = 1
+
             counts_batch.append(counts_dic)
-    
+
         return counts_batch
 
     return BatchedBackend(run_batch_iqm)
