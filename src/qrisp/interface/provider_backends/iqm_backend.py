@@ -143,9 +143,9 @@ def IQMBackend(
 
     # Construct the server URL based on device_instance if server_url is not provided
     if server_url is None:
-        server_url = "https://cocos.resonance.meetiqm.com/" + device_instance
-
-    client = IQMClient(url=server_url, token=api_token)
+        server_url = "https://resonance.meetiqm.com/"
+        
+    client = IQMClient(iqm_server_url = server_url, token = api_token, quantum_computer = device_instance)
     backend = IQMBackend(client)
 
     if compilation_options is None:
@@ -165,34 +165,53 @@ def IQMBackend(
         circuit_batch = []
         shot_batch = []
         for qc, shots in batch:
-            transpiled_qc = transpiler(qc)
-            qiskit_qc = transpiled_qc.to_qiskit()
+            if device_instance == "sirius":
+                qiskit_qc = transpile_to_IQM(qc.to_qiskit(), backend)
+            else:
+                transpiled_qc = transpiler(qc)
+                qiskit_qc = transpiled_qc.to_qiskit()
             circuit_batch.append(backend.serialize_circuit(qiskit_qc))
             if shots is None:
                 shots = 1000
 
             shot_batch.append(shots)
+            
+        
 
-        UUID = client.submit_circuits(
-            circuit_batch, options=compilation_options, shots=max(shot_batch)
-        )
-
-        client.wait_for_results(UUID)
-
-        answer = client.get_run_counts(UUID)
+        job = client.submit_circuits(circuit_batch, 
+                                      options = compilation_options, 
+                                      shots = max(shot_batch))
+        
+        
+        job.wait_for_completion()
+        answer = job.result()
+        
         import re
 
         counts_batch = []
         for i in range(len(batch)):
-            counts = answer.counts_batch[i].counts
-
-            new_counts = {}
-            for key in counts.keys():
-                counts_string = re.sub(r"\W", "", key)
-                new_counts[counts_string] = counts[key]
-
-            counts_batch.append(new_counts)
-
+            counts = answer[i]
+        
+            counts_dic = {}
+            
+            shots = batch[i][1]
+            if shots is None:
+                shots = 1000
+            
+            for j in range(shots):
+                
+                key_str = ""
+                
+                for k in counts.keys():
+                    key_str += str(counts[k][j][0])
+                
+                if key_str in counts_dic:
+                    counts_dic[key_str] +=1
+                else:
+                    counts_dic[key_str] =1
+                    
+            counts_batch.append(counts_dic)
+    
         return counts_batch
 
     return BatchedBackend(run_batch_iqm)
