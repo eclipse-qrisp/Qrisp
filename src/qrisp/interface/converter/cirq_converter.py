@@ -19,7 +19,6 @@ from cirq import (
     M,
     R,
     CZ,
-    CCNOT,
     ZPowGate,
     XPowGate,
 )
@@ -89,10 +88,12 @@ def convert_to_cirq(qrisp_circuit):
                         return True
                     else:
                         return False
-                
-                transpiled_qc = qrisp_circuit.transpile(transpile_predicate=transpile_predicate)
+
+                transpiled_qc = qrisp_circuit.transpile(
+                    transpile_predicate=transpile_predicate
+                )
                 return convert_to_cirq(transpiled_qc)
-            
+
             except Exception:
                 raise ValueError(
                     f"{op_i} gate is not supported by the Qrisp to Cirq converter."
@@ -147,7 +148,9 @@ def convert_to_cirq(qrisp_circuit):
                 # the ZPowGate has a global phase in addition to the
                 # phase exponent. The default is to assume global_shift = 0 in cirq
                 exp_param = params[0]
-                cirq_circuit.append(ZPowGate(exponent=exp_param/np.pi)(*cirq_op_qubits))
+                cirq_circuit.append(
+                    ZPowGate(exponent=exp_param / np.pi)(*cirq_op_qubits)
+                )
 
             # elif op_i == 'gphase':
             # global phase gate in Cirq cannot be applied to specific qubits

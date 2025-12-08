@@ -1,9 +1,8 @@
 import pytest
 import numpy as np
 
-from cirq import LineQubit, unitary
+from cirq import unitary
 
-from cirq import CNOT, H, X, Y, Z, S, T, rx, ry, rz, M, R, SWAP
 from unittest.mock import MagicMock
 from qrisp.circuit import QuantumCircuit, ClControlledOperation
 
@@ -32,7 +31,6 @@ def test_n_qubit_gate_circuit():
     converted_cirq = convert_to_cirq(qc_single_qubit_gates)
     calculated_unitary = unitary(converted_cirq)
     np.testing.assert_array_almost_equal(expected_unitary, calculated_unitary)
-    
 
     # 4 qubit circuit containing all multi-controlled gates
     # there is only 1 multicontrolled gate mcx
@@ -104,7 +102,6 @@ def test_converter_compiled_qs():
     target = QuantumBool()
     mcx(ctrl, target)
     compiled_qc = ctrl.qs.compile()
-    cirq_qc = convert_to_cirq(compiled_qc)
     expected_unitary = compiled_qc.get_unitary()
     converted_cirq = convert_to_cirq(compiled_qc)
     calculated_unitary = unitary(converted_cirq)
@@ -126,10 +123,10 @@ def test_converter_compiled_qs():
     reflection_cirq_qc = convert_to_cirq(reflection_compiled_qc)
 
     expected_unitary = reflection_compiled_qc.get_unitary()
-    # multiple by -1 to account for the global phase factor
-    calculated_unitary = -1*unitary(reflection_cirq_qc)
+    # multiple by -1 to account for the global phase gate in the qrisp circuit
+    calculated_unitary = -1 * unitary(reflection_cirq_qc)
     np.testing.assert_array_almost_equal(expected_unitary, calculated_unitary)
-    
+
 
 def test_transpiled_qc():
     """Verify the converter works without any issues for a transpiled circuit that has a composite gate."""
@@ -155,4 +152,3 @@ def test_transpiled_qc():
     converted_cirq = convert_to_cirq(test_circuit)
     calculated_unitary = unitary(converted_cirq)
     np.testing.assert_array_almost_equal(expected_unitary, calculated_unitary)
-
