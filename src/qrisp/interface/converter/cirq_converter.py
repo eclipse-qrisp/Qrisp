@@ -1,5 +1,6 @@
 from cirq import Circuit, LineQubit
 from qrisp.circuit import ControlledOperation
+import numpy as np
 
 from cirq import (
     CNOT,
@@ -144,7 +145,7 @@ def convert_to_cirq(qrisp_circuit):
                 # the ZPowGate has a global phase in addition to the
                 # phase exponent. The default is to assume global_shift = 0 in cirq
                 exp_param = params[0]
-                cirq_circuit.append(ZPowGate(exponent=exp_param)(*cirq_op_qubits))
+                cirq_circuit.append(ZPowGate(exponent=exp_param/np.pi)(*cirq_op_qubits))
 
             # elif op_i == 'gphase':
             # global phase gate in Cirq cannot be applied to specific qubits

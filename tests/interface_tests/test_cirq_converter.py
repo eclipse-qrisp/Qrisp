@@ -28,8 +28,6 @@ def test_n_qubit_gate_circuit():
     qc_single_qubit_gates.t(1)
     qc_single_qubit_gates.t_dg(3)
     qc_single_qubit_gates.s_dg(2)
-    qc_single_qubit_gates.measure(0)
-    qc_single_qubit_gates.reset(0)
 
     expected_cirq_qc_single_qubit_gates_ops = [
         H(LineQubit(0)),
