@@ -28,7 +28,6 @@ qrisp_cirq_ops_dict = {
     "cx": CNOT,
     "cz": CZ,
     "swap": SWAP,
-    "2cx": CCNOT,
     "h": H,
     "x": X,
     "y": Y,
@@ -63,11 +62,6 @@ def convert_to_cirq(qrisp_circuit):
     qrisp_circ_num_qubits = qrisp_circuit.num_qubits()
     qrisp_circ_ops_data = qrisp_circuit.data
 
-    # create generic 'ncx' keys in qrisp_cirq_ops_dict for the possibility of multicontrolled cx gates
-    for n in range(3, qrisp_circ_num_qubits + 1):
-        # start at 3 because 2cx is a Toffoli gate which already exists in Cirq
-        qrisp_cirq_ops_dict[f"{n}cx"] = None
-
     # create an empty Cirq circuit
     cirq_circuit = Circuit()
     cirq_qubits = [LineQubit(i) for i in range(qrisp_circ_num_qubits)]
@@ -88,6 +82,8 @@ def convert_to_cirq(qrisp_circuit):
 
         if op_i not in qrisp_cirq_ops_dict:
             try:
+                # this code block also ends up transpiling a mcx gate
+                # qrisp allows for different types of control state but cirq does not
                 def transpile_predicate(op):
                     if op.name == op_i:
                         return True
@@ -111,7 +107,6 @@ def convert_to_cirq(qrisp_circuit):
             "cx",
             "cz",
             "swap",
-            "2cx",
             "h",
             "x",
             "y",
@@ -130,10 +125,6 @@ def convert_to_cirq(qrisp_circuit):
             "sx",
             "sx_dg",
         ]
-        # create generic 'ncx' keys in the cirq gates filter for the possibility of multicontrolled cx gates
-        for n in range(3, qrisp_circ_num_qubits + 1):
-            # start at 3 because 2cx is a Toffoli gate which already exists in Cirq
-            cirq_gates_filter.append(f"{n}cx")
 
         if (op_i not in cirq_gates_filter) and instr.op.definition:
             new_circ = instr.op.definition
@@ -190,11 +181,6 @@ def convert_to_cirq(qrisp_circuit):
                     cirq_circuit.append(
                         cirq_gate(*cirq_ctrl_qubits, *cirq_target_qubits)
                     )
-            # for multi-qubit controlled operations mcx
-            else:
-                cirq_circuit.append(
-                    X(*cirq_target_qubits).controlled_by(*cirq_ctrl_qubits)
-                )
 
         else:
             # for simple single qubit gates
