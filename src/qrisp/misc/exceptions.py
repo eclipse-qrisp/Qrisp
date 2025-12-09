@@ -16,19 +16,6 @@
 ********************************************************************************
 """
 
-from qrisp.interface.backend import Backend
-from qrisp.simulator.simulator import run as default_run
 
-
-class DefaultBackend(Backend):
-    """A default backend that uses the built-in simulator."""
-
-    def run(self, qc, shots=None, token=""):
-        return default_run(qc, shots, token)
-
-    @classmethod
-    def _default_options(cls):
-        return {}
-
-
-def_backend = DefaultBackend()
+class QrispDeprecationWarning(UserWarning):
+    """Warning for deprecated features in Qrisp."""

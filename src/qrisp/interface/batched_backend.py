@@ -172,10 +172,6 @@ class BatchedBackend(Backend):
     def _default_options(cls):
         return {"shots": 1000}
 
-    @property
-    def max_circuits(self):
-        return None
-
     def run(self, qc, shots):
 
         # Appends the circuit-shot tuple

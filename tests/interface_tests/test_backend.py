@@ -19,6 +19,14 @@
 import pytest
 
 from qrisp.interface.backend import Backend
+from qrisp.interface.qunicorn.backend_client import BackendClient
+from qrisp.interface.qunicorn.backend_server import BackendServer
+from qrisp.interface.virtual_backend import VirtualBackend
+from qrisp.misc.exceptions import QrispDeprecationWarning
+
+###############################################
+### Tests for the new Backend infrastructure
+###############################################
 
 
 class DummyBackend(Backend):
@@ -91,11 +99,25 @@ class TestDummyBackend:
         with pytest.raises(TypeError):
             Backend()
 
-    def test_dummy_backend_instantiation(self):
+    def test_dummy_backend_instantiation_with_name(self):
         """Ensure a subclass can be instantiated."""
         b = DummyBackend(name="test_backend")
         assert b.name == "test_backend"
+
+    def test_dummy_backend_instantiation_without_name(self):
+        """Ensure a subclass can be instantiated without a name."""
+        b = DummyBackend()
+        assert b.name == "DummyBackend"
+
+    def test_dummy_backend_run_method(self):
+        """Test the run method of DummyBackend."""
+        b = DummyBackend()
+        result = b.run(1, 2, param=True)
         assert b.options == {"shots": 1000, "flag": False}
+        assert result["inputs"] == (1, 2)
+        assert result["options"]["shots"] == 1000
+        assert result["options"]["flag"] is False
+        assert result["options"]["param"] is True
 
 
 class TestBackendOptions:
@@ -141,3 +163,35 @@ class TestBackendOptions:
 
         with pytest.raises(AttributeError):
             backend.update_options(new_param=999)
+
+
+###########################################################
+### Deprecation tests for the old Backend infrastructure
+###########################################################
+
+
+def test_backend_client_deprecation_warning():
+    """Test that BackendClient raises a deprecation warning upon instantiation."""
+
+    with pytest.warns(QrispDeprecationWarning):
+        _ = BackendClient(api_endpoint="not_used")
+
+
+def test_backend_server_deprecation_warning():
+    """Test that BackendServer raises a deprecation warning upon instantiation."""
+
+    def dummy_run():
+        pass
+
+    with pytest.warns(QrispDeprecationWarning):
+        _ = BackendServer(run_func=dummy_run)
+
+
+def test_virtual_backend_deprecation_warning():
+    """Test that VirtualBackend raises a deprecation warning upon instantiation."""
+
+    def dummy_run():
+        pass
+
+    with pytest.warns(QrispDeprecationWarning):
+        _ = VirtualBackend(run_func=dummy_run)

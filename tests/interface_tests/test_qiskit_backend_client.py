@@ -16,19 +16,23 @@
 ********************************************************************************
 """
 
+import warnings
+
 import numpy as np
+import pytest
 from qiskit_aer import AerSimulator
 from qiskit_ibm_runtime.fake_provider import FakeWashingtonV2
 
 from qrisp import QuantumCircuit, QuantumFloat
 from qrisp.interface import QiskitBackend, VirtualBackend
+from qrisp.misc.exceptions import QrispDeprecationWarning
 
 aer_simulator_backend = AerSimulator()
 fake_backend = FakeWashingtonV2()
 
 
-class TestQiskitBackendClient:
-    """Test QiskitBackend client functionality."""
+class TestQiskitBackend:
+    """Test QiskitBackend functionality."""
 
     def test_backend_metadata(self):
         """Test that QiskitBackend correctly retrieves metadata from the Qiskit backend."""
@@ -75,7 +79,7 @@ class TestQiskitBackendClient:
 
 
 # We keep this test even though VirtualBackend is deprecated
-def test_qiskit_backend_client():
+def test_qiskit_virtual_backend():
     """Test QiskitBackend client functionality with VirtualBackend."""
 
     qc = QuantumCircuit()
