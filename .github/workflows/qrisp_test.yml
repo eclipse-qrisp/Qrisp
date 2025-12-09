@@ -28,7 +28,7 @@ jobs:
           pip install --upgrade pennylane-catalyst
           pip install qiskit-aer
           pip install qiskit-ibm-runtime
-          pip install "qiskit-iqm<18.0"
+          pip install iqm-client[qiskit]
           pip install pyscf
           pip install stim
           pip install xdsl
