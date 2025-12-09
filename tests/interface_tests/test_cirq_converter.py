@@ -5,10 +5,26 @@ from cirq import unitary
 
 from unittest.mock import MagicMock
 from qrisp.circuit import QuantumCircuit, ClControlledOperation
-
+from qrisp.grover import diffuser
 from qrisp.interface.converter.cirq_converter import convert_to_cirq
-from qrisp import QuantumVariable, mcx, cx, QuantumBool
-from qrisp import h, x, reflection
+from qrisp import (
+    QuantumVariable,
+    mcx,
+    cx,
+    QuantumBool,
+    h,
+    x,
+    reflection,
+    p,
+    QPE,
+    auto_uncompute,
+    z,
+    QuantumFloat,
+)
+from cirq import final_state_vector
+
+
+from math import pi
 
 
 def test_n_qubit_gate_circuit():
@@ -130,7 +146,7 @@ def test_converter_compiled_qs():
 
 def test_transpiled_qc():
     """Verify the converter works without any issues for a transpiled circuit that has a composite gate."""
-    from qrisp import p, QuantumVariable, QPE
+    from qrisp import QuantumVariable
 
     def U(qv):
         x = 0.5
@@ -152,3 +168,39 @@ def test_transpiled_qc():
     converted_cirq = convert_to_cirq(test_circuit)
     calculated_unitary = unitary(converted_cirq)
     np.testing.assert_array_almost_equal(expected_unitary, calculated_unitary)
+
+
+def test_grover_example():
+    """Verify the function works as expected for the Grover example from
+    the 101 tutorial."""
+
+    @auto_uncompute
+    def sqrt_oracle(qf):
+        temp_qbool = qf * qf == 0.25
+        z(temp_qbool)
+
+    qf = QuantumFloat(3, -1, signed=True)
+    sqrt_oracle(qf)
+
+    qf = QuantumFloat(3, -1, signed=True)
+
+    n = qf.size
+    iterations = int(0.25 * pi * (2**n / 2) ** 0.5)
+
+    h(qf)
+
+    for i in range(iterations):
+        sqrt_oracle(qf)
+        diffuser(qf)
+
+    qrisp_circuit = qf.qs.compile()
+    cirq_circuit = convert_to_cirq(qrisp_circuit)
+    qrisp_sv = qrisp_circuit.statevector_array()
+    cirq_sv = final_state_vector(cirq_circuit)
+    zero_array_shape = np.shape(cirq_sv)
+    np.testing.assert_array_almost_equal(
+        np.zeros(
+            zero_array_shape,
+        ),
+        np.round(qrisp_sv - cirq_sv),
+    )
