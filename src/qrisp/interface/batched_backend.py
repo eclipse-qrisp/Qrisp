@@ -19,7 +19,7 @@
 import threading
 import time
 
-from .backend import Backend
+from qrisp.interface.backend import Backend
 
 
 class BatchedBackend(Backend):

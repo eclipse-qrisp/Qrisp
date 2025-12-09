@@ -23,55 +23,57 @@ from qrisp.interface import BatchedBackend, IQMBackend
 
 
 class FakeCircuitCompilationOptions:
-    """A fake CircuitCompilationOptions to mock IQM compilation options."""
-
-    pass
+    """A fake CircuitCompilationOptions to mock IQM behavior."""
 
 
-class FakeBatch:
-    """A fake batch object to mock IQM batch results."""
+class FakeJob:
+    """A fake IQM Job to mock job behavior."""
 
     def __init__(self):
-        """Initialize the fake batch with counts."""
-        self.counts_batch = [type("FakeCountsObj", (), {"counts": {"00": 5, "11": 5}})]
+
+        # We simulate 2 qubits measured 10 times with alternating results
+        self.fake_result = [
+            {
+                0: [[0], [1], [0], [1], [0], [1], [0], [1], [0], [1]],
+                1: [[0], [1], [0], [1], [0], [1], [0], [1], [0], [1]],
+            }
+        ]
+
+    def wait_for_completion(self):
+        """Mock waiting for job completion."""
+        return
+
+    def result(self):
+        """Mock retrieval of job result."""
+        return self.fake_result
 
 
-class FakeIQMClient:
-    """A fake IQMClient to mock IQM API calls."""
-
-    def __init__(self, url, token):
-        """Initialize the fake client with URL and token."""
-        self.url = url
-        self.token = token
-
-    def submit_circuits(self, _, **__):
-        """Simulate submitting circuits to IQM backend."""
-        pass
-
-    def wait_for_results(self, _):
-        """Simulate waiting for results."""
-        pass
-
-    def get_run_counts(self, _):
-        """Simulate getting run counts."""
-        # returns format: counts_batch[i].counts
-        return FakeBatch()
-
-
-class FakeIQMBackend:
-    """A fake IQMBackend to mock backend behavior."""
+class FakeIQMProviderBackend:
+    """A fake IQM Backend to mock IQMProviderBackend behavior."""
 
     def __init__(self, client):
-        """Initialize the fake provider backend with a client."""
         self.client = client
 
     def serialize_circuit(self, _):
-        """Simulate circuit serialization."""
-        pass
+        """Mock serialization of a circuit."""
+        return {"serialized": True}
 
 
-def _fake_transpile_to_iqm(qc, _):
-    """A fake transpile_to_IQM function to mock transpilation behavior."""
+class FakeIQMClient:
+    """A fake IQM Client to mock IQMClient behavior."""
+
+    def __init__(self, iqm_server_url, token, quantum_computer):
+        self.url = iqm_server_url
+        self.token = token
+        self.device = quantum_computer
+
+    def submit_circuits(self, *_, **__):
+        """Mock submission of circuits."""
+        return FakeJob()
+
+
+def fake_transpile_to_IQM(qc, _):
+    """A fake transpiler to mock transpilation to IQM hardware."""
     return qc
 
 
@@ -99,31 +101,24 @@ class TestIQMBackendInitialization:
             IQMBackend("mock_api_token")
 
 
-# TODO
-# After the update to the new iqm.iqm_client version, the following mock-based test should be updated and re-enabled.
+def test_iqm_backend_measurement(monkeypatch):
+    """Test IQMBackend measurement functionality with mocked IQM client and backend."""
 
-# def test_iqm_backend_measurement(monkeypatch):
-#     """
-#     Test Qrisp→IQMBackend integration without calling the real IQM API.
-#     """
+    monkeypatch.setattr("iqm.iqm_client.iqm_client.IQMClient", FakeIQMClient)
+    monkeypatch.setattr(
+        "iqm.qiskit_iqm.iqm_provider.IQMBackend", FakeIQMProviderBackend
+    )
+    monkeypatch.setattr("iqm.qiskit_iqm.transpile_to_IQM", fake_transpile_to_IQM)
+    monkeypatch.setattr(
+        "iqm.iqm_client.CircuitCompilationOptions", FakeCircuitCompilationOptions
+    )
 
-#     monkeypatch.setattr("iqm.iqm_client.iqm_client.IQMClient", FakeIQMClient)
-#     monkeypatch.setattr("iqm.qiskit_iqm.iqm_provider.IQMBackend", FakeIQMBackend)
-#     monkeypatch.setattr("iqm.qiskit_iqm.transpile_to_IQM", _fake_transpile_to_iqm)
-#     monkeypatch.setattr(
-#         "iqm.iqm_client.CircuitCompilationOptions", FakeCircuitCompilationOptions
-#     )
+    backend = IQMBackend(api_token="FAKE", device_instance="garnet")
+    assert isinstance(backend, BatchedBackend)
 
-#     backend = IQMBackend(
-#         api_token="FAKE_TOKEN",
-#         device_instance="garnet",
-#     )
+    a = QuantumFloat(2)
+    a[:] = 2
+    b = a + a
 
-#     assert isinstance(backend, BatchedBackend)
-
-#     a = QuantumFloat(2)
-#     a[:] = 2
-#     b = a + a
-
-#     result = b.get_measurement(backend=backend, shots=10)
-#     assert result == {0: 0.5, 3: 0.5}
+    result = b.get_measurement(backend=backend, shots=10)
+    assert result == {0: 0.5, 3: 0.5}

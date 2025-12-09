@@ -185,8 +185,6 @@ def IQMBackend(
         job.wait_for_completion()
         answer = job.result()
 
-        import re
-
         counts_batch = []
         for i in range(len(batch)):
             counts = answer[i]

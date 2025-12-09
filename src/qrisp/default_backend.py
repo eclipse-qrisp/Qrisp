@@ -28,7 +28,7 @@ class DefaultBackend(Backend):
 
     @classmethod
     def _default_options(cls):
-        return {}
+        return {"shots": None, "token": ""}
 
 
 def_backend = DefaultBackend()
