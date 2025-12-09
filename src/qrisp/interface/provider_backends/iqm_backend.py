@@ -186,26 +186,16 @@ def IQMBackend(
         answer = job.result()
 
         counts_batch = []
-        for i in range(len(batch)):
+        for i, (_, shots) in enumerate(batch):
+
             counts = answer[i]
+            shots = shots or 1000
 
             counts_dic = {}
-
-            shots = batch[i][1]
-            if shots is None:
-                shots = 1000
-
             for j in range(shots):
 
-                key_str = ""
-
-                for k in counts.keys():
-                    key_str += str(counts[k][j][0])
-
-                if key_str in counts_dic:
-                    counts_dic[key_str] += 1
-                else:
-                    counts_dic[key_str] = 1
+                key_str = "".join(str(counts[k][j][0]) for k in counts.keys())
+                counts_dic[key_str] = counts_dic.get(key_str, 0) + 1
 
             counts_batch.append(counts_dic)
 
