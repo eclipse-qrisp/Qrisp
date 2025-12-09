@@ -62,5 +62,5 @@ def create_COLD_instance(Q, uniform_AGP_coeffs):
     # Control Hamiltonian
     H_control = sum([Z(i) for i in range(N)])
 
-    return lam, g, alpha, H_init, H_prob, A_lam, H_control
+    return lam, g, alpha, H_init, H_prob, A_lam, J, h, H_control
 

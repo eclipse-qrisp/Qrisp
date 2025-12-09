@@ -133,14 +133,14 @@ def create_LCD_instance(Q, agp_type, uniform_AGP_coeffs=True):
     # AGP
     A_lam = build_agp(agp_type)
     
-    return lam, coeff_func, H_init, H_prob, A_lam
+    return lam, coeff_func, H_init, H_prob, A_lam, J, h
 
 # Create DCQO instance for different scenarios
 # for agp_type in ["order1", "order2", "nc"]:
 #     for uniform in [True, False]:
 
-#         lam, alpha, H_init, H_prob, A_lam = create_LCD_instance(Q, agp_type, uniform)
-#         LCD_prob = DCQOProblem(lam, None, alpha, H_init, H_prob, A_lam)
+#         lam, alpha, H_init, H_prob, A_lam, J, h = create_LCD_instance(Q, agp_type, uniform)
+#         LCD_prob = DCQOProblem(lam, None, alpha, H_init, H_prob, A_lam, J, h)
 
 #         # Run LCD problem
 #         qarg = QuantumVariable(size=Q.shape[0])
