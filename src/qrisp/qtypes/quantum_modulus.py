@@ -30,13 +30,13 @@ def comparison_wrapper(func):
 
     def res_func(self, other):
 
-        if self.m != 0:
+        if not check_for_tracing_mode() and (self.m != 0):
             raise Exception(
                 "Tried to evaluate QuantumModulus comparison with non-zero Montgomery shift"
             )
 
-        conversion_flag = False
-        if isinstance(other, QuantumModulus):
+        #conversion_flag = False
+        if not check_for_tracing_mode() and isinstance(other, QuantumModulus):
 
             if other.m != 0:
                 raise Exception(
@@ -48,12 +48,14 @@ def comparison_wrapper(func):
                     "Tried to compare QuantumModulus instances of differing modulus"
                 )
 
-            other.__class__ = QuantumFloat
-        self.__class__ = QuantumFloat
+            #other.__class__ = QuantumFloat
+            #conversion_flag = True
+
+        #self.__class__ = QuantumFloat
         res = func(self, other)
-        self.__class__ = QuantumModulus
-        if conversion_flag:
-            other.__class__ = QuantumModulus
+        #self.__class__ = QuantumModulus
+        #if conversion_flag:
+        #    other.__class__ = QuantumModulus
         return res
 
     return res_func
@@ -508,11 +510,11 @@ class QuantumModulus(QuantumFloat):
 
     @comparison_wrapper
     def __eq__(self, other):
-        return QuantumVariable.__eq__(self, other)
+        return QuantumFloat.__eq__(self, other)
 
     @comparison_wrapper
     def __ne__(self, other):
-        return QuantumVariable.__ne__(self, other)
+        return QuantumFloat.__ne__(self, other)
 
     def __hash__(self):
         return QuantumFloat.__hash__(self)
