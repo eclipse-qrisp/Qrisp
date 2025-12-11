@@ -24,6 +24,7 @@ from qrisp.operators.fermionic.fermionic_term import FermionicTerm
 from qrisp.operators.fermionic.trotterization import fermionic_trotterization
 from qrisp.operators.hamiltonian_tools import group_up_iterable
 from qrisp.operators.qubit import QubitOperator
+from qrisp.misc.exceptions import QrispDeprecationWarning
 
 import sympy as sp
 
@@ -734,7 +735,8 @@ class FermionicOperator(Hamiltonian):
         """
 
         warnings.warn(
-            "DeprecationWarning: This method will no longer be supported in a later release of Qrisp. Instead please migrate to .expectation_value."
+            "DeprecationWarning: This method will no longer be supported in a later release of Qrisp. Instead please migrate to .expectation_value.",
+            QrispDeprecationWarning,
         )
 
         qubit_operator = self.to_qubit_operator(mapping_type)
