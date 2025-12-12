@@ -23,6 +23,31 @@ import jax.numpy as jnp
 import numpy as np
 import sympy
 
+# A small epsilon value for numerical stability.
+# Defined here for convenience, so it can be imported elsewhere.
+_EPSILON = jnp.sqrt(jnp.finfo(jnp.float64).eps)
+
+
+def swap_endianness(vec: np.ndarray, n: int) -> np.ndarray:
+    """
+    Convert between big-endian and little-endian qubit ordering.
+
+    This transformation is its own inverse, so it works in both directions.
+
+    Parameters
+    ----------
+    vec : np.ndarray
+        The state vector to convert.
+    n : int
+        The number of qubits.
+
+    Returns
+    -------
+    np.ndarray
+        The state vector with reversed qubit ordering.
+    """
+    return vec.reshape([2] * n).transpose(*reversed(range(n))).flatten()
+
 
 def bin_rep(n, bits):
     if n < 0:
@@ -1241,7 +1266,7 @@ def custom_qv(labels, decoder=None, qs=None, name=None):
 
 
 # This is required in the qswitch-based state preparation,
-# (where is called inside jrange loops), because DynamicQubitArray
+# where it is called inside jrange loops, because DynamicQubitArray
 # does not support reverse iteration.
 def bit_reverse(i, width):
     """
@@ -1302,36 +1327,6 @@ def bit_reverse(i, width):
     i = ((i >> 32) & m6) | ((i & m6) << 32)
 
     return i >> jnp.asarray(64, jnp.uint64) - width
-
-
-def init_state(qv, target_array):
-    from qiskit.circuit.library.data_preparation.state_preparation import (
-        StatePreparation,
-    )
-
-    qiskit_qc = StatePreparation(target_array).definition
-    from qrisp import QuantumCircuit
-
-    init_qc = QuantumCircuit.from_qiskit(qiskit_qc)
-
-    # Find global phase correction
-    from qrisp.simulator import statevector_sim
-
-    init_qc.qubits.reverse()
-    sim_array = statevector_sim(init_qc)
-    init_qc.qubits.reverse()
-
-    arg_max = np.argmax(np.abs(sim_array))
-
-    gphase_dif = (np.angle(target_array[arg_max] / sim_array[arg_max])) % (2 * np.pi)
-
-    init_qc.gphase(gphase_dif, 0)
-
-    init_gate = init_qc.to_gate()
-
-    init_gate.name = "state_init"
-
-    qv.qs.append(init_gate, qv)
 
 
 def get_statevector_function(qs, decimals=None):

@@ -23,7 +23,7 @@ import jax.numpy as jnp
 import numpy as np
 from jax import lax
 
-EPSILON = jnp.sqrt(jnp.finfo(jnp.float64).eps)
+from qrisp.misc.utility import _EPSILON, swap_endianness
 
 
 def _rot_params_from_state(vec: jnp.ndarray) -> tuple:
@@ -55,7 +55,7 @@ def _rot_params_from_state(vec: jnp.ndarray) -> tuple:
     # This step avoids warning about casting complex to real.
     a = jnp.clip(jnp.real(a), -1.0, 1.0)
     theta = 2.0 * jnp.arccos(a)
-    phi = jnp.where(jnp.abs(b) > EPSILON, jnp.angle(b), 0.0)
+    phi = jnp.where(jnp.abs(b) > _EPSILON, jnp.angle(b), 0.0)
     lam = 0.0
     return theta, phi, lam
 
@@ -101,7 +101,7 @@ def _normalize_with_phase(
         return norm, v_adj, acc
 
     return lax.cond(
-        norm > EPSILON,
+        norm > _EPSILON,
         lambda _: branch_nonzero(None),
         lambda _: branch_zero(None),
         operand=None,
@@ -252,7 +252,7 @@ def _preprocess(
     return thetas, u_params, phases
 
 
-def state_preparation(qv, target_array: jnp.ndarray, method: str = "auto") -> None:
+def init_state_qswitch(qv, target_array: jnp.ndarray) -> None:
     """
     Prepare the quantum state encoded in ``qv`` so that it matches the given
     ``target_array`` by constructing a binary-tree decomposition of the target
@@ -278,8 +278,6 @@ def state_preparation(qv, target_array: jnp.ndarray, method: str = "auto") -> No
         The quantum variable representing the qubits to be prepared.
     target_array : jnp.ndarray
         A normalized complex vector representing the target state to prepare.
-    method : str, optional
-        The dispatch strategy for ``qswitch``. Default is "auto".
 
     """
 
@@ -326,12 +324,58 @@ def state_preparation(qv, target_array: jnp.ndarray, method: str = "auto") -> No
             operand=qv[layer_size],
             case=qv[:layer_size],
             case_function=make_case_fn(layer_size),
-            method=method,
         )
 
     qswitch(
         operand=qv[qv.size - 1],
         case=qv[: qv.size - 1],
         case_function=make_case_fn(qv.size - 1, is_final=True),
-        method=method,
     )
+
+
+def init_state_qiskit(qv, target_array, from_dict: bool = False) -> None:
+    """
+    Initialize the quantum state of ``qv`` to match ``target_array`` using Qiskit's
+    StatePreparation circuit.
+
+    ``target_array`` is assumed to be in big-endian order by default, but if ``from_dict`` is ``True``,
+    it is assumed to be in little-endian order.
+
+    Parameters
+    ----------
+    qv : QuantumVariable
+        The quantum variable representing the qubits to be prepared.
+    target_array : array-like
+        A normalized complex vector representing the target state to prepare.
+    from_dict : bool, optional
+        If ``True``, indicates that ``target_array`` is in little-endian order. By default, ``False``.
+
+    """
+    from qiskit.circuit.library.data_preparation import StatePreparation
+
+    from qrisp import QuantumCircuit
+    from qrisp.simulator import statevector_sim
+
+    target_array = np.asarray(target_array, dtype=np.complex128)
+
+    n = qv.size
+
+    target_little_end = target_array if from_dict else swap_endianness(target_array, n)
+
+    qiskit_qc = StatePreparation(target_little_end).definition
+    init_qc = QuantumCircuit.from_qiskit(qiskit_qc)
+
+    init_qc.qubits.reverse()
+    sim_little_end = statevector_sim(init_qc)
+    init_qc.qubits.reverse()
+
+    sim_big_end = sim_little_end if from_dict else swap_endianness(sim_little_end, n)
+
+    # Apply global phase correction
+    arg_max = np.argmax(np.abs(sim_big_end))
+    gphase = (np.angle(target_array[arg_max] / sim_big_end[arg_max])) % (2 * np.pi)
+    init_qc.gphase(gphase, 0)
+
+    init_gate = init_qc.to_gate()
+    init_gate.name = "state_init"
+    qv.qs.append(init_gate, qv)

@@ -17,7 +17,6 @@
 """
 
 import copy
-import warnings
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -718,117 +717,236 @@ class QuantumVariable:
 
         int_encoder(self, self.encoder(value))
 
-    def init_state_qswitch(self, state_array, method="auto"):
-        """
-        The ``init_state_qswitch`` method allows the initialization of arbitrary quantum
-        states using a quantum switch based state preparation algorithm.
+    # def init_state_qswitch(self, state_array):
+    #     """
+    #     The ``init_state_qswitch`` method allows the initialization of arbitrary quantum
+    #     states using a quantum switch based state preparation algorithm.
 
-        It recieves a statevector as a numpy array of complex numbers and initializes
-        the corresponding state.
+    #     It recieves a statevector as a numpy array of complex numbers and initializes
+    #     the corresponding state.
 
-        For more information on the quantum switch based state preparation algorithm,
-        please refer to :func:`state_preparation`.
+    #     For more information on the quantum switch based state preparation algorithm,
+    #     please refer to :func:`state_preparation`.
 
-        """
+    #     """
 
-        # These imports are here to avoid circular dependencies
-        from qrisp.alg_primitives.state_preparation import state_preparation
-        from qrisp.jasp import check_for_tracing_mode
-        from qrisp.misc import check_if_fresh
+    #     # These imports are here to avoid circular dependencies
+    #     from qrisp.alg_primitives.state_preparation import init_state_qswitch
+    #     from qrisp.jasp import check_for_tracing_mode
+    #     from qrisp.misc import check_if_fresh
 
-        if check_for_tracing_mode():
-            state_preparation(self, state_array, method)
-            return
+    #     if check_for_tracing_mode():
+    #         init_state_qswitch(self, state_array)
+    #         return
 
-        if not check_if_fresh(self.reg, self.qs):
-            raise ValueError("Tried to initialize qubits which are not fresh anymore.")
+    #     if not check_if_fresh(self.reg, self.qs):
+    #         raise ValueError("Tried to initialize qubits which are not fresh anymore.")
 
-        expected_length = 1 << self.size
-        if len(state_array) != expected_length:
-            raise ValueError(
-                f"Length of statevector must be {expected_length} for {self.size} qubits, got {len(state_array)}."
-            )
+    #     expected_length = 1 << self.size
+    #     if len(state_array) != expected_length:
+    #         raise ValueError(
+    #             f"Length of statevector must be {expected_length} for {self.size} qubits, got {len(state_array)}."
+    #         )
 
-        norm = np.linalg.norm(state_array)
-        if np.isclose(norm, 0.0):
-            raise ValueError("The provided state vector has zero norm.")
-        if not np.isclose(norm, 1.0):
-            warnings.warn(
-                "The provided state vector is not normalized. It will be normalized automatically.",
-                UserWarning,
-            )
-            state_array /= norm
+    #     norm = np.linalg.norm(state_array)
+    #     if np.isclose(norm, 0.0):
+    #         raise ValueError("The provided state vector has zero norm.")
+    #     if not np.isclose(norm, 1.0):
+    #         warnings.warn(
+    #             "The provided state vector is not normalized. It will be normalized automatically.",
+    #             UserWarning,
+    #         )
+    #         state_array /= norm
 
-        state_preparation(self, state_array, method)
+    #     init_state_qswitch(self, state_array)
 
-    def init_state(self, state_dic):
+    # def init_state(self, state_dic):
+    #     r"""
+    #     The ``init_state`` method allows the initialization of arbitrary quantum states.
+    #     It recieves a dictionary of the type
+
+    #     **{value : complex number}**
+
+    #     and initializes the **normalized** state. Amplitudes not specified are assumed
+    #     to be zero.
+
+    #     Note that the state initialization algorithm requires it's qubits to be in
+    #     state $\ket{0}$.
+
+    #     A shorthand for this method is the ``[:]`` operator, when handed the
+    #     corresponding dictionary
+
+    #     Parameters
+    #     ----------
+    #     state_dic : dict
+    #         Dictionary describing the wave function to be initialized.
+
+    #     Raises
+    #     ------
+    #     Exception
+    #         Tried to initialize qubits which are not fresh anymore.
+
+    #     Examples
+    #     --------
+
+    #     We create a QuantumFloat and encode the state
+
+    #     .. math::
+
+    #         \ket{\psi} = \sqrt{\frac{1}{3}} \ket{0.5} + i\sqrt{\frac{2}{3}} \ket{2}
+
+    #     >>> from qrisp import QuantumFloat
+    #     >>> qf = QuantumFloat(3, -1)
+
+    #     We can now use either
+
+    #     >>> qf.init_state({0.5: (1/3)**0.5, 2.0 : 1j*(2/3)**0.5})
+
+    #     or:
+
+    #     >>> qf[:] = {0.5: (1/3)**0.5, 2.0 : 1j*(2/3)**0.5}
+
+    #     To acquire the expected result
+
+    #     >>> print(qf)
+    #     {2.0: 0.6667, 0.5: 0.3333}
+
+    #     """
+
+    #     from qrisp.misc import check_if_fresh
+
+    #     if not check_if_fresh(self.reg, self.qs):
+    #         raise Exception("Tried to initialize qubits which are not fresh anymore.")
+
+    # from qrisp.alg_primitives.state_preparation import init_state_qiskit
+
+    # target_array = np.zeros(2**self.size, dtype=np.complex128)
+
+    # for key in state_dic.keys():
+    #     target_array[self.encoder(key)] = state_dic[key]
+
+    # target_array = target_array / np.vdot(target_array, target_array) ** 0.5
+
+    # init_state_qiskit(self, target_array)
+
+    def init_state(self, params, method="auto"):
         r"""
-        The ``init_state`` method allows the initialization of arbitrary quantum states.
-        It recieves a dictionary of the type
+        Initialize an arbitrary quantum state on this QuantumVariable.
 
-        **{value : complex number}**
+        This method accepts either:
 
-        and initializes the **normalized** state. Amplitudes not specified are assumed
-        to be zero.
+        - A complex **statevector** (1D array-like of length :math:`2^n`), or
+        - A **dictionary** mapping logical values to complex amplitudes
+        (unspecified amplitudes default to zero).
 
-        Note that the state initialization algorithm requires it's qubits to be in
-        state $\ket{0}$.
-
-        A shorthand for this method is the ``[:]`` operator, when handed the
-        corresponding dictionary
+        The state is automatically normalized if necessary.
 
         Parameters
         ----------
-        state_dic : dict
-            Dictionary describing the wave function to be initialized.
+        params : array-like or dict
+            The target quantum state.
+            - If array-like: interpreted directly as a statevector.
+            - If dict: ``{value: amplitude}`` mapping; the values are passed through
+            this register's encoder to produce the correct basis index.
+
+        method : {"auto", "qiskit", "qswitch"}, optional
+            Which state preparation algorithm to use:
+
+            - ``"auto"``
+            Uses the Qiskit-based state preparation when *not* in tracing mode
+            (``check_for_tracing_mode() == False``), since it produces the most
+            compact circuits.
+            Falls back to the quantum-switch based algorithm when tracing, as the
+            Qiskit-based routine is not compatible with tracing.
+
+            - ``"qiskit"``
+            Always use the Qiskit-based state preparation algorithm.
+
+            - ``"qswitch"``
+            Always use the quantum-switch based state preparation algorithm.
 
         Raises
         ------
-        Exception
-            Tried to initialize qubits which are not fresh anymore.
+        ValueError
+            If the qubits are not in a fresh ``|0...0⟩`` state, or if the input
+            vector has the wrong length or zero norm.
+
+        Notes
+        -----
+        - This operation **requires the register to be fresh** (i.e. all qubits
+        must be in the computational ``|0⟩`` state).
+        - The shorthand assignment ``qf[:] = params`` calls this method.
 
         Examples
         --------
+        Initialize from a dictionary:
 
-        We create a QuantumFloat and encode the state
-
-        .. math::
-
-            \ket{\psi} = \sqrt{\frac{1}{3}} \ket{0.5} + i\sqrt{\frac{2}{3}} \ket{2}
-
-        >>> from qrisp import QuantumFloat
         >>> qf = QuantumFloat(3, -1)
+        >>> qf.init_state({0.5: (1/3)**0.5, 2.0: 1j*(2/3)**0.5})
 
-        We can now use either
+        Initialize from a full statevector:
 
-        >>> qf.init_state({0.5: (1/3)**0.5, 2.0 : 1j*(2/3)**0.5})
-
-        or:
-
-        >>> qf[:] = {0.5: (1/3)**0.5, 2.0 : 1j*(2/3)**0.5}
-
-        To acquire the expected result
-
-        >>> print(qf)
-        {2.0: 0.6667, 0.5: 0.3333}
-
+        >>> import numpy as np
+        >>> psi = np.random.rand(8) + 1j*np.random.rand(8)
+        >>> qf.init_state(psi)
         """
 
+        # Imports here to avoid circular dependencies
+        import jax.numpy as jnp
+
+        from qrisp.alg_primitives.state_preparation import (
+            init_state_qiskit,
+            init_state_qswitch,
+        )
+        from qrisp.jasp import check_for_tracing_mode
         from qrisp.misc import check_if_fresh
 
-        if not check_if_fresh(self.reg, self.qs):
-            raise Exception("Tried to initialize qubits which are not fresh anymore.")
+        tracing = check_for_tracing_mode()
 
-        from qrisp import init_state
+        if isinstance(params, dict):
+            target_array = np.zeros(1 << self.size, dtype=np.complex128)
+            for key, amp in params.items():
+                target_array[self.encoder(key)] = amp
+            from_dict = True
 
-        target_array = np.zeros(2**self.size, dtype=np.complex128)
+        else:
+            # Use JAX array to allow tracing; convert later if needed
+            target_array = jnp.asarray(params, dtype=jnp.complex128)
+            from_dict = False
 
-        for key in state_dic.keys():
-            target_array[self.encoder(key)] = state_dic[key]
+        if not tracing:
+            expected = 1 << self.size
+            if target_array.size != expected:
+                raise ValueError(
+                    f"Statevector length must be {expected} for {self.size} qubits, "
+                    f"got {target_array.size}."
+                )
+            norm = np.linalg.norm(np.asarray(target_array))
+            if np.isclose(norm, 0.0):
+                raise ValueError("The provided statevector has zero norm.")
+            if not check_if_fresh(self.reg, self.qs):
+                raise ValueError(
+                    "Tried to initialize qubits which are not fresh anymore."
+                )
+            target_array = np.asarray(target_array) / norm
 
-        target_array = target_array / np.vdot(target_array, target_array) ** 0.5
+        if method == "auto":
+            use_qiskit = not tracing
+        elif method == "qiskit":
+            if tracing:
+                raise ValueError(
+                    "Qiskit state preparation cannot be used in tracing mode."
+                )
+            use_qiskit = True
+        elif method == "qswitch":
+            use_qiskit = False
+        else:
+            raise ValueError("method must be 'auto', 'qiskit', or 'qswitch'.")
 
-        init_state(self, target_array)
+        if use_qiskit:
+            init_state_qiskit(self, target_array, from_dict=from_dict)
+        else:
+            init_state_qswitch(self, target_array)
 
     def append(self, operation):
         self.qs.append(operation, self)
