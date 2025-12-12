@@ -234,37 +234,6 @@ class TestStatePreparationQswitchJasp:
             n_shots = dict_res[key]
             assert np.abs(n_shots - expected_shots) < tolerance
 
-    # @pytest.mark.parametrize("n", [2, 3, 4, 5])
-    # def test_sparse_two_state_superposition(self, n):
-    #     """Test superposition of two basis states: equal probability for both."""
-
-    #     shots = 20000
-    #     p = 0.5
-    #     expected = shots * p
-    #     std = np.sqrt(shots * p * (1 - p))
-    #     tolerance = 6 * std
-
-    #     idx1, idx2 = 1, (1 << (n - 1))
-
-    #     @terminal_sampling(shots=shots)
-    #     def main():
-    #         qv = QuantumFloat(n)
-    #         state_vector = jnp.zeros(1 << n, dtype=complex)
-    #         state_vector = state_vector.at[idx1].set(1.0)
-    #         state_vector = state_vector.at[idx2].set(1.0)
-    #         state_vector = state_vector / jnp.sqrt(2.0)
-    #         qv.init_state(state_vector)
-    #         return qv
-
-    #     res = main()
-
-    #     key_i = float(bit_reverse(idx1, n))
-    #     key_j = float(bit_reverse(idx2, n))
-
-    #     assert set(res.keys()) == {key_i, key_j}
-    #     assert abs(res[key_i] - expected) < tolerance
-    #     assert abs(res[key_j] - expected) < tolerance
-
     @pytest.mark.parametrize("n", [2, 3, 4, 5])
     def test_sparse_k_state_superposition(self, n):
         """Test state prep for a sparse uniform superposition on several states."""

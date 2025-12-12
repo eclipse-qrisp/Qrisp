@@ -39,8 +39,6 @@ This submodule of Qrisp provides a collection of commonly used buildings blocks 
      - unstructured search
    * - :ref:`phase_polynomials` 
      - provides functions for applying diagonal Hamiltonians given by polynomials
-   * - :ref:`state_preparation <state_preparation>`
-     - Quantum state preparation via different backends
    * - Iterable :ref:`Demuxing <ItDemuxing>`, :ref:`Shifting <ItShifting>`, and :ref:`Permutation <ItPermutation>`
      - low-level manipulations of quantum arguments like :ref:`QuantumVariable <QuantumVariable>` or :ref:`QuantumArray <QuantumArray>`
 
@@ -71,4 +69,3 @@ We encourage you to explore these algorithms, delve into their documentation, an
    demux
    cyclic_shift
    iterable_permutation
-   state_preparation

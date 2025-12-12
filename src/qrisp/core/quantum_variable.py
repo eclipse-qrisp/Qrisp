@@ -821,7 +821,7 @@ class QuantumVariable:
         # Imports here to avoid circular dependencies
         import jax.numpy as jnp
 
-        from qrisp.alg_primitives.state_preparation import (
+        from qrisp.alg_primitives.prepare import (
             init_state_qiskit,
             init_state_qswitch,
         )
