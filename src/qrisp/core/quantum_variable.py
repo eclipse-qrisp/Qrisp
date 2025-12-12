@@ -719,64 +719,103 @@ class QuantumVariable:
 
     def init_state(self, params, method="auto"):
         r"""
-        Initialize an arbitrary quantum state on this QuantumVariable.
+        Initialize an arbitrary quantum state on this quantum variable.
 
-        This method accepts either:
+        This method can be used in two ways:
 
-        - A complex **statevector** (1D array-like of length :math:`2^n`), or
-        - A **dictionary** mapping logical values to complex amplitudes
-        (unspecified amplitudes default to zero).
+        **1. Dictionary input**
 
-        The state is automatically normalized if necessary.
+            A dictionary of the form ``{value: amplitude}`` describing the
+            (possibly non-normalized) wavefunction in the logical basis of the
+            quantum variable. Any value not explicitly provided is assigned
+            amplitude zero.
+
+        **2. Explicit statevector input**
+
+            A flat vector of complex amplitudes of length :math:`2^{n}`, where
+            :math:`n` is the size (in qubits) of the quantum variable.
+            The vector is automatically normalized.
+
+        In both cases, the initialization algorithm requires all underlying
+        qubits to be in the :math:`\ket{0}` state (i.e. *fresh*).
+
+        The parameter ``method`` determines the backend used for state
+        preparation:
+
+        - ``"auto"`` (default): Use the Qiskit-based initializer when not
+          in Jasp mode, and fall back to the internal ``qswitch`` initializer
+          during Jasp mode.
+        - ``"qiskit"``: Force the Qiskit state-preparation circuit. This
+          cannot be used in Jasp mode.
+        - ``"qswitch"``: Use the internal recursive state-preparation
+          implementation.
 
         Parameters
         ----------
-        params : array-like or dict
-            The target quantum state.
-            - If array-like: interpreted directly as a statevector.
-            - If dict: ``{value: amplitude}`` mapping; the values are passed through
-            this register's encoder to produce the correct basis index.
-
+        params : dict or array-like
+            Either a dictionary ``{value: amplitude}`` or a length
+            :math:`2^{n}` complex statevector.
         method : {"auto", "qiskit", "qswitch"}, optional
-            Which state preparation algorithm to use:
-
-            - ``"auto"``
-            Uses the Qiskit-based state preparation when *not* in tracing mode
-            (``check_for_tracing_mode() == False``), since it produces the most
-            compact circuits.
-            Falls back to the quantum-switch based algorithm when tracing, as the
-            Qiskit-based routine is not compatible with tracing.
-
-            - ``"qiskit"``
-            Always use the Qiskit-based state preparation algorithm.
-
-            - ``"qswitch"``
-            Always use the quantum-switch based state preparation algorithm.
+            Choice of state-preparation backend. Defaults to ``"auto"``.
 
         Raises
         ------
         ValueError
-            If the qubits are not in a fresh ``|0...0⟩`` state, or if the input
-            vector has the wrong length or zero norm.
+            If a statevector of incorrect length is provided.
+        ValueError
+            If the supplied statevector has zero norm.
+        ValueError
+            If the qubits are not fresh prior to initialization.
+        ValueError
+            If ``method="qiskit"`` is used in Jasp mode.
 
-        Notes
-        -----
-        - This operation **requires the register to be fresh** (i.e. all qubits
-        must be in the computational ``|0⟩`` state).
-        - The shorthand assignment ``qf[:] = params`` calls this method.
+        .. note::
+
+            When executing in Jasp mode, Python-based shape and normalization
+            checks are disabled to avoid introducing tracing side effects.
+
+        .. note::
+
+            When using an array-like input, the ordering of amplitudes should
+            correspond to the one retrieved with the ``statevector`` method.
 
         Examples
         --------
-        Initialize from a dictionary:
+        **Dictionary input**
 
+        Prepare the state
+
+        .. math::
+
+            \ket{\psi} = \sqrt{\tfrac{1}{3}}\,\ket{0.5}
+                         + i\sqrt{\tfrac{2}{3}}\,\ket{2.0}
+
+        >>> from qrisp import QuantumFloat
         >>> qf = QuantumFloat(3, -1)
         >>> qf.init_state({0.5: (1/3)**0.5, 2.0: 1j*(2/3)**0.5})
 
-        Initialize from a full statevector:
+        or equivalently:
+
+        >>> qf[:] = {0.5: (1/3)**0.5, 2.0: 1j*(2/3)**0.5}
+
+        **Explicit statevector input**
 
         >>> import numpy as np
-        >>> psi = np.random.rand(8) + 1j*np.random.rand(8)
+        >>> psi = np.zeros(2**3, dtype=complex)
+        >>> psi[4] = (1/3)**0.5
+        >>> psi[1] = 1j*(2/3)**0.5
         >>> qf.init_state(psi)
+
+        **Forcing a backend**
+
+        >>> qf.init_state(psi, method="qswitch")   # Always allowed
+        >>> qf.init_state(psi, method="qiskit")    # Only outside Jasp mode
+
+        After initialization, the amplitudes can be inspected via:
+
+        >>> sv_function = qf.qs.statevector("function")
+        >>> sv_function({qf: 2.0})
+        0.8164965809277261j  # i * sqrt(2/3)
         """
 
         # Imports here to avoid circular dependencies

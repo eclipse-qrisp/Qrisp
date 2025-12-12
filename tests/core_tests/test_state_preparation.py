@@ -51,12 +51,6 @@ def _compute_statevector_logical_qubits(qv: QuantumVariable) -> np.ndarray:
     return np.array(logical_amplitudes, dtype=complex)
 
 
-def _compute_statevector_all_qubits(qv: QuantumVariable) -> np.ndarray:
-    """Compute the statevector amplitudes corresponding to all qubits"""
-
-    return qv.qs.statevector_array()
-
-
 def _gen_real_vector(n):
     """Returns a full real normalized vector."""
     v = np.random.rand(1 << n) - 0.5
@@ -125,6 +119,19 @@ class TestStatePreparationQSwitch:
         ):
             qv.init_state(array, method="qswitch")
 
+    def test_error_unrecognized_method(self):
+        """Test that an error is raised when an unrecognized method is provided."""
+
+        qv = QuantumVariable(2)
+
+        array = np.array([1j, 0, 0, 0], dtype=complex)
+
+        with pytest.raises(
+            ValueError,
+            match="method must be 'auto', 'qiskit', or 'qswitch'",
+        ):
+            qv.init_state(array, method="unknown_method")
+
     @pytest.mark.parametrize("n", [1, 2, 3, 4, 5])
     @pytest.mark.parametrize(
         "statevector_fn",
@@ -168,6 +175,22 @@ class TestStatePreparationQSwitch:
 
 class TestStatePreparationQswitchJasp:
     """Test state preparation using the qswitch method in JASP mode."""
+
+    def test_error_if_qiskit_in_jasp(self):
+        """Test that an error is raised when method 'qiskit' is used in JASP mode."""
+
+        @terminal_sampling(shots=10)
+        def main():
+            qv = QuantumFloat(2)
+            state_vector = _gen_real_vector(2)
+            qv.init_state(state_vector, method="qiskit")
+            return qv
+
+        with pytest.raises(
+            ValueError,
+            match="Qiskit state preparation cannot be used in tracing mode",
+        ):
+            main()
 
     @pytest.mark.parametrize("n", [1, 2, 3])
     def test_basis_states(self, n):
