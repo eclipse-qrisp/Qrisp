@@ -3,4 +3,4 @@
 
 .. currentmodule:: qrisp
 
-.. autofunction:: init_state_qswitch
+.. autofunction:: prepare_qswitch

@@ -8,6 +8,5 @@ Quantum State Preparation
 .. autosummary::
    :toctree: generated/
 
-   init_state_qswitch
-   init_state_qiskit
+   prepare_qswitch
    prepare

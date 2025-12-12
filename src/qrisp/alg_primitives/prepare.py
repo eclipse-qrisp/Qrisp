@@ -252,136 +252,6 @@ def _preprocess(
     return thetas, u_params, phases
 
 
-def init_state_qswitch(qv, target_array: jnp.ndarray) -> None:
-    """
-    Prepare the quantum state encoded in ``qv`` so that it matches the given
-    ``target_array`` by constructing a binary-tree decomposition of the target
-    amplitudes and applying a sequence of uniformly controlled rotations via
-    the ``qswitch`` primitive.
-
-    This routine implements a standard state-preparation algorithm based on
-    recursively splitting the target statevector.
-    The classical preprocessing stage extracts RY angles for internal tree nodes
-    and U3 parameters for the leaf nodes.
-    The quantum stage applies them using ``qswitch``, which replaces
-    explicit multiplexers and conditionals in both static execution and Jasp mode.
-
-    .. note::
-
-        During the quantum stage, ``qswitch`` enumerates control patterns in
-        little-endian order, so each index is bit-reversed before accessing
-        the parameters computed in the classical preprocessing stage.
-
-    Parameters
-    ----------
-    qv : QuantumVariable
-        The quantum variable representing the qubits to be prepared.
-    target_array : jnp.ndarray
-        A normalized complex vector representing the target state to prepare.
-
-    """
-
-    # These imports are here to avoid circular dependencies
-    from qrisp import gphase, qswitch, ry, u3
-    from qrisp.jasp.program_control.jrange_iterator import jrange
-    from qrisp.jasp.tracing_logic import check_for_tracing_mode
-    from qrisp.misc.utility import bit_reverse
-
-    target_array = jnp.asarray(target_array, dtype=jnp.complex128)
-    # n is static (known at compile time), so we can use normal numpy here
-    n = int(np.log2(target_array.shape[0]))
-
-    # We could use jrange even in static mode, but this would add overhead.
-    xrange = jrange if check_for_tracing_mode() else range
-
-    thetas, u_params, phases = _preprocess(target_array)
-
-    def make_case_fn(layer_size: int, is_final: bool = False) -> Callable:
-        """Create a case function for qswitch at a given layer."""
-
-        def case_fn(i, qb):
-            rev_idx = bit_reverse(i, layer_size)
-            if is_final:
-                theta_i, phi_i, lam_i = u_params[rev_idx]
-                u3(theta_i, phi_i, lam_i, qb)
-                gphase(phases[rev_idx], qb)
-            else:
-                ry(thetas[layer_size][rev_idx], qb)
-
-        return case_fn
-
-    if n == 1:
-        theta, phi, lam = u_params[0]
-        u3(theta, phi, lam, qv[0])
-        gphase(phases[0], qv[0])
-        return
-
-    ry(thetas[0][0], qv[0])
-
-    for layer_size in xrange(1, qv.size - 1):
-
-        qswitch(
-            operand=qv[layer_size],
-            case=qv[:layer_size],
-            case_function=make_case_fn(layer_size),
-        )
-
-    qswitch(
-        operand=qv[qv.size - 1],
-        case=qv[: qv.size - 1],
-        case_function=make_case_fn(qv.size - 1, is_final=True),
-    )
-
-
-def init_state_qiskit(qv, target_array, from_dict: bool = False) -> None:
-    """
-    Initialize the quantum state of ``qv`` to match ``target_array`` using Qiskit's
-    StatePreparation circuit.
-
-    ``target_array`` is assumed to be in big-endian order by default, but if ``from_dict`` is ``True``,
-    it is assumed to be in little-endian order.
-
-    Parameters
-    ----------
-    qv : QuantumVariable
-        The quantum variable representing the qubits to be prepared.
-    target_array : array-like
-        A normalized complex vector representing the target state to prepare.
-    from_dict : bool, optional
-        If ``True``, indicates that ``target_array`` is in little-endian order. By default, ``False``.
-
-    """
-    from qiskit.circuit.library.data_preparation import StatePreparation
-
-    from qrisp import QuantumCircuit
-    from qrisp.simulator import statevector_sim
-
-    target_array = np.asarray(target_array, dtype=np.complex128)
-
-    n = qv.size
-
-    target_little_end = target_array if from_dict else swap_endianness(target_array, n)
-
-    qiskit_qc = StatePreparation(target_little_end).definition
-    init_qc = QuantumCircuit.from_qiskit(qiskit_qc)
-
-    init_qc.qubits.reverse()
-    sim_little_end = statevector_sim(init_qc)
-    init_qc.qubits.reverse()
-
-    sim_big_end = sim_little_end if from_dict else swap_endianness(sim_little_end, n)
-
-    # Apply global phase correction
-    arg_max = np.argmax(np.abs(sim_big_end))
-    gphase = (np.angle(target_array[arg_max] / sim_big_end[arg_max])) % (2 * np.pi)
-    init_qc.gphase(gphase, 0)
-
-    init_gate = init_qc.to_gate()
-    init_gate.name = "state_init"
-    qv.qs.append(init_gate, qv)
-
-
-# This function should be deprecated in the future.
 def prepare(qv, target_array, reversed=False):
     r"""
     This method performs quantum state preparation. Given a vector $b=(b_0,\dotsc,b_{N-1})$, the function acts as
@@ -463,3 +333,84 @@ def prepare(qv, target_array, reversed=False):
         qv.qs.append(init_gate, [qv[m - 1 - i] for i in range(m)])
     else:
         qv.qs.append(init_gate, [qv[i] for i in range(m)])
+
+
+def prepare_qswitch(qv, target_array: jnp.ndarray) -> None:
+    """
+    Prepare the quantum state encoded in ``qv`` so that it matches the given
+    ``target_array`` by constructing a binary-tree decomposition of the target
+    amplitudes and applying a sequence of uniformly controlled rotations via
+    the ``qswitch`` primitive.
+
+    This routine implements a standard state-preparation algorithm based on
+    recursively splitting the target statevector.
+    The classical preprocessing stage extracts RY angles for internal tree nodes
+    and U3 parameters for the leaf nodes.
+    The quantum stage applies them using ``qswitch``, which replaces
+    explicit multiplexers and conditionals in both static execution and Jasp mode.
+
+    .. note::
+
+        During the quantum stage, ``qswitch`` enumerates control patterns in
+        little-endian order, so each index is bit-reversed before accessing
+        the parameters computed in the classical preprocessing stage.
+
+    Parameters
+    ----------
+    qv : QuantumVariable
+        The quantum variable representing the qubits to be prepared.
+    target_array : jnp.ndarray
+        A normalized complex vector representing the target state to prepare.
+
+    """
+
+    # These imports are here to avoid circular dependencies
+    from qrisp import gphase, qswitch, ry, u3
+    from qrisp.jasp.program_control.jrange_iterator import jrange
+    from qrisp.jasp.tracing_logic import check_for_tracing_mode
+    from qrisp.misc.utility import bit_reverse
+
+    target_array = jnp.asarray(target_array, dtype=jnp.complex128)
+    # n is static (known at compile time), so we can use normal numpy here
+    n = int(np.log2(target_array.shape[0]))
+
+    # We could use jrange even in static mode, but this would add overhead.
+    xrange = jrange if check_for_tracing_mode() else range
+
+    thetas, u_params, phases = _preprocess(target_array)
+
+    def make_case_fn(layer_size: int, is_final: bool = False) -> Callable:
+        """Create a case function for qswitch at a given layer."""
+
+        def case_fn(i, qb):
+            rev_idx = bit_reverse(i, layer_size)
+            if is_final:
+                theta_i, phi_i, lam_i = u_params[rev_idx]
+                u3(theta_i, phi_i, lam_i, qb)
+                gphase(phases[rev_idx], qb)
+            else:
+                ry(thetas[layer_size][rev_idx], qb)
+
+        return case_fn
+
+    if n == 1:
+        theta, phi, lam = u_params[0]
+        u3(theta, phi, lam, qv[0])
+        gphase(phases[0], qv[0])
+        return
+
+    ry(thetas[0][0], qv[0])
+
+    for layer_size in xrange(1, qv.size - 1):
+
+        qswitch(
+            operand=qv[layer_size],
+            case=qv[:layer_size],
+            case_function=make_case_fn(layer_size),
+        )
+
+    qswitch(
+        operand=qv[qv.size - 1],
+        case=qv[: qv.size - 1],
+        case_function=make_case_fn(qv.size - 1, is_final=True),
+    )

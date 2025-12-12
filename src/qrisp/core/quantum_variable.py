@@ -824,8 +824,8 @@ class QuantumVariable:
         import jax.numpy as jnp
 
         from qrisp.alg_primitives.prepare import (
-            init_state_qiskit,
-            init_state_qswitch,
+            prepare,
+            prepare_qswitch,
         )
         from qrisp.jasp import check_for_tracing_mode
         from qrisp.misc import check_if_fresh
@@ -836,12 +836,12 @@ class QuantumVariable:
             target_array = np.zeros(1 << self.size, dtype=np.complex128)
             for key, amp in params.items():
                 target_array[self.encoder(key)] = amp
-            from_dict = True
+            qiskit_reversed = False
 
         else:
             # Use JAX array to allow tracing; convert later if needed
             target_array = jnp.asarray(params, dtype=jnp.complex128)
-            from_dict = False
+            qiskit_reversed = True
 
         if not tracing:
             expected = 1 << self.size
@@ -873,9 +873,9 @@ class QuantumVariable:
             raise ValueError("method must be 'auto', 'qiskit', or 'qswitch'.")
 
         if use_qiskit:
-            init_state_qiskit(self, target_array, from_dict=from_dict)
+            prepare(self, target_array, qiskit_reversed)
         else:
-            init_state_qswitch(self, target_array)
+            prepare_qswitch(self, target_array)
 
     def append(self, operation):
         self.qs.append(operation, self)
