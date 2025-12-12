@@ -20,7 +20,7 @@ from jax.tree_util import tree_flatten, tree_unflatten
 from qrisp.jasp.jasp_expression import make_jaspr
 
 
-def qjit(function):
+def qjit(function=None, device=None):
     """
     Decorator to leverage the jasp + Catalyst infrastructure to compile the given
     function to QIR and run it on the Catalyst QIR runtime.
@@ -67,6 +67,9 @@ def qjit(function):
 
     """
 
+    if function is None:
+        return lambda x: qjit(x, device=device)
+
     def jitted_function(*args):
 
         if not hasattr(function, "jaspr_dict"):
@@ -79,7 +82,7 @@ def qjit(function):
             function.jaspr_dict[signature] = make_jaspr(function)(*args)
 
         return function.jaspr_dict[signature].qjit(
-            *args, function_name=function.__name__
+            *args, function_name=function.__name__, device=device
         )
 
     return jitted_function

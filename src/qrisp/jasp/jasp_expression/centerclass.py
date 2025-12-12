@@ -670,7 +670,7 @@ class Jaspr(ClosedJaxpr):
         qs.abs_qc = new_abs_qc
         return res
 
-    def qjit(self, *args, function_name="jaspr_function"):
+    def qjit(self, *args, function_name="jaspr_function", device=None):
         """
         Leverages the Catalyst pipeline to compile a QIR representation of
         this function and executes that function using the Catalyst QIR runtime.
@@ -691,7 +691,7 @@ class Jaspr(ClosedJaxpr):
             jaspr_to_catalyst_qjit,
         )
 
-        qjit_obj = jaspr_to_catalyst_qjit(flattened_jaspr, function_name=function_name)
+        qjit_obj = jaspr_to_catalyst_qjit(flattened_jaspr, function_name=function_name, device=device)
         res = qjit_obj.compiled_function(*args)
         if not isinstance(res, (tuple, list)):
             return res
