@@ -747,8 +747,8 @@ class QuantumVariable:
           during Jasp mode.
         - ``"qiskit"``: Force the Qiskit state-preparation circuit. This
           cannot be used in Jasp mode.
-        - ``"qswitch"``: Use the internal recursive state-preparation
-          implementation.
+        - ``"qswitch"``: Use the state-preparation implementation based on
+          :ref:`qswitch <qswitch>`, which is compatible with Jasp mode.
 
         Parameters
         ----------
@@ -783,7 +783,7 @@ class QuantumVariable:
         --------
         **Dictionary input**
 
-        Prepare the state
+        We create a ``QuantumFloat`` and encode the state
 
         .. math::
 
@@ -807,6 +807,8 @@ class QuantumVariable:
         >>> qf.init_state(psi)
 
         **Forcing a backend**
+
+        We can also explicitly choose the state-preparation backend:
 
         >>> qf.init_state(psi, method="qswitch")   # Always allowed
         >>> qf.init_state(psi, method="qiskit")    # Only outside Jasp mode
