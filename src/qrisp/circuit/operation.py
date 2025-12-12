@@ -22,7 +22,7 @@ import numpy as np
 from sympy.core.expr import Expr
 from sympy import lambdify
 from jax.core import Tracer
-from jaxlib.xla_extension import ArrayImpl
+from jax._src.array import ArrayImpl
 
 
 def adaptive_substitution(expr, subs_dic, precision=10):

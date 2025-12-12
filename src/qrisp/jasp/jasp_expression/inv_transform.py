@@ -168,7 +168,7 @@ def invert_jaspr(jaspr):
     
     for i in range(len(op_eqs)):
         op_eqs[i].invars[-1] = current_abs_qc
-        current_abs_qc = Var(suffix=str(qc_var_count[0]), aval=AbstractQuantumCircuit())
+        current_abs_qc = Var(aval=AbstractQuantumCircuit())
         qc_var_count[0] += 1
         op_eqs[i].outvars[-1] = current_abs_qc
     

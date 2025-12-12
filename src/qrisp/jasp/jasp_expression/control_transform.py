@@ -252,7 +252,7 @@ def control_jaspr(jaspr):
 
     from qrisp.jasp import Jaspr, AbstractQubit
 
-    ctrl_qubit_var = Var(suffix=str(control_var_count[0]), aval=AbstractQubit())
+    ctrl_qubit_var = Var(aval=AbstractQubit())
     control_var_count[0] += 1
 
     new_eqns = []
@@ -306,7 +306,7 @@ def multi_control_jaspr(jaspr, num_ctrl, ctrl_state):
     from qrisp.jasp import make_jaspr
 
     ctrl_vars = [
-        Var(suffix=str(control_var_count[0] + _), aval=AbstractQubit())
+        Var(aval=AbstractQubit())
         for _ in range(num_ctrl)
     ]
     control_var_count[0] += num_ctrl

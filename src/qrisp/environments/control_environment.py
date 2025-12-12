@@ -17,7 +17,7 @@
 """
 
 from jax.core import ShapedArray
-from jaxlib.xla_extension import ArrayImpl
+from jax._src.array import ArrayImpl
 from jax.extend.core import ClosedJaxpr
 
 from qrisp.circuit import Qubit, QuantumCircuit, XGate

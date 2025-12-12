@@ -17,7 +17,7 @@
 """
 
 import weakref
-from jaxlib.xla_extension import ArrayImpl
+from jax._src.array import ArrayImpl
 
 # This module contains the necessary tools to merge QuantumSessions
 
