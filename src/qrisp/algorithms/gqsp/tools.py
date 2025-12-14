@@ -31,13 +31,14 @@ from qrisp import (
     gphase,
 )
 from qrisp.alg_primitives.reflection import reflection
-from qrisp.algorithms.gqsp.gqsp import GQSP, polynomial_to_chebyshev
+from qrisp.algorithms.gqsp.gqsp import GQSP
+from qrisp.algorithms.gqsp.helper_functions import poly2cheb, cheb2poly
 from qrisp.jasp import qache, jrange
 import jax
 import jax.numpy as jnp
 
 
-def apply(qarg, H, p, basis="polynomial"):
+def apply(qarg, H, p, kind="Polynomial"):
     r"""
     Applies are polynomial transformation of a Hamiltonian to a quantum state.
 
@@ -51,27 +52,120 @@ def apply(qarg, H, p, basis="polynomial"):
         A polynomial $p\in\mathbb C[x]$ represented as a vector of its coefficients, 
         i.e., $p=(p_0,p_1,\dotsc,p_d)$ corresponds to $p_0+p_1x+\dotsb+p_dx^d$.
 
+    kind : str, optinal
+        ``"Polynomial"``or ``"Chebyshev"``.
+        
 
     Returns
     -------
-    QuantumBool
+    qbl : QuantumBool
+        Auxiliary variable after GQSP protocol. Must be measured in state $\ket{0}$.
+    case : QuantumFloat
+        Auxiliary variable after GQSP protocol. Must be measured in state $\ket{0}$.
 
     Examples
     --------
 
+    ::
+
+        from qrisp import *
+        from qrisp.gqsp import *
+        from qrisp.operators import X, Y, Z
+        from qrisp.vqe.problems.heisenberg import create_heisenberg_init_function
+        import numpy as np
+        import networkx as nx
+
+
+        def generate_1D_chain_graph(L):
+            graph = nx.Graph()
+            graph.add_edges_from([(k, (k+1)%L) for k in range(L-1)]) 
+        return graph
+
+
+        # Define Heisenberg Hamiltonian 
+        L = 10
+        G = generate_1D_chain_graph(L)
+        H = sum((X(i)*X(j) + Y(i)*Y(j) + Z(i)*Z(j)) for i,j in G.edges())
+
+        M = nx.maximal_matching(G)
+        U0 = create_heisenberg_init_function(M)
+
+
+        # Define initial state preparation function
+        def psi_prep():
+            operand = QuantumVariable(H.find_minimal_qubit_amount())
+            U0(operand)
+            return operand
+
+
+        # Calculate the energy
+        E = H.expectation_value(psi_prep, precision=0.001)()
+        print(E)
+
+    ::
+
+        poly = np.array([1., 2., 1.])
+
+        @RUS
+        def filtered_psi_prep():
+
+            operand = psi_prep()
+
+            qbl, case = apply(operand, H, poly, kind="Polynomial")
+
+            success_bool = (measure(qbl) == 0) & (measure(case) == 0)
+            return success_bool, operand
+
+    ::
+
+        @jaspify(terminal_sampling=True)
+        def main(): 
+
+            E = H.expectation_value(filtered_psi_prep, precision=0.001)()
+            return E
+
+        print(main())
+        # -16.67236953920006 
+
+    Finally, we compare the quantum simulation to the corresponding numpy calculation:
+
+    ::
+
+        # Calculate energy for |psi_0>
+        H_arr = H.to_array()
+        psi_0 = psi_prep().qs.statevector_array()
+        E_0 = (psi_0.conj() @ H_arr @ psi_0).real
+        print("E_0", E_0)
+
+        # Calculate energy for |psi> = poly(H) |psi0>
+        I = np.eye(H_arr.shape[0])
+        si = (I + H_arr) @ (I + H_arr) @ psi_0
+        psi = psi / np.linalg.norm(psi)
+        E = (psi.conj() @ H_arr @ psi).real
+        print("E", E)
+
     """
 
+    ALLOWED_KINDS = {"Polynomial", "Chebyshev"}
+    if kind not in ALLOWED_KINDS:
+        raise ValueError(
+            f"Invalid kind specified: '{kind}'. "
+            f"Allowed kinds are: {', '.join(ALLOWED_KINDS)}"
+        )
+
     # Rescaling of the polynomial to account for scaling factor alpha of block-encoding
-    #_, coeffs = H.unitaries()
-    #alpha = np.sum(coeffs)
-    #scaling_exponents = np.arange(len(p))
-    #scaling_factors = np.power(alpha, scaling_exponents)
+    _, coeffs = H.unitaries()
+    alpha = np.sum(coeffs)
+    scaling_exponents = np.arange(len(p))
+    scaling_factors = np.power(alpha, scaling_exponents)
 
-    #p = p * scaling_factors
+    # Convert to Polynomial for rescaling
+    if kind=="Chebyshev":
+        p = cheb2poly(p)
 
-    if basis=="polynomial":
-        print("polynomial")
-        p = polynomial_to_chebyshev(p)
+    p = p * scaling_factors
+
+    p = poly2cheb(p)
 
     U, state_prep, n = H.pauli_block_encoding()
 

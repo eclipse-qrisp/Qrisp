@@ -28,6 +28,7 @@ from qrisp import (
     invert,
     gphase,
 )
+from qrisp.algorithms.gqsp.helper_functions import *
 from qrisp.jasp import qache, jrange
 import jax
 import jax.numpy as jnp
@@ -479,47 +480,3 @@ def GQSP(qargs, U, p, q=None, k=0):
         R(theta[d-k+i+1], phi[d-k+i+1], 0, qbl)
 
     return qbl
-
-
-@jax.jit
-def polynomial_to_chebyshev(coeffs):
-    """
-    Converts polynomial coefficients in the power basis to coefficients 
-    in the Chebyshev basis of the first kind $(T_n(x))$.
-
-    This function is JAX-traceable.
-    
-    Parameters
-    ----------
-    coeffs : ndarray
-        A polynomial $p\in\mathbb C[x]$ represented as a vector of its coefficients, 
-        i.e., $p=(p_0,p_1,\dotsc,p_d)$ corresponds to $p_0+p_1x+\dotsb+p_dx^d$.
-
-    Returns
-    -------
-    ndarray
-        A polynomial $p\in\mathbb C[x]$ represented as a vector of its coefficients in Chebyshev basis, 
-        i.e., $(t_0,t_1,\dotsc,t_d)$ corresponds to $t_0T_0(x)+t_1T_1(x)+\dotsb+t_dT_d(x)$
-        where $T_n(x)$ is the $n$-th Chebyshev polynomial of first kind.
-
-    """
-    N = len(coeffs)
-    
-    # Build the transformation matrix C such that P_power = C @ P_cheb
-    # This matrix contains the power-basis coefficients of T_n(x)
-    C = jnp.zeros((N, N), dtype=coeffs.dtype)
-    C = C.at[0, 0].set(1)
-    if N > 1:
-        C = C.at[1, 1].set(1)
-        for n in range(2, N):
-            prev = C[n-1]
-            prev_shifted = jnp.roll(prev, 1) * 2
-            # Handle the roll boundary condition manually to match 2*x*T_{n-1}
-            prev_shifted = prev_shifted.at[0].set(0) 
-            C = C.at[n, :].set(prev_shifted - C[n-2, :])
-            
-    # Solve the linear system for the Chebyshev coefficients
-    # The matrix C is triangular/well-behaved, making the solve stable
-    cheb_coeffs = jnp.linalg.solve(C.T, coeffs)
-    
-    return cheb_coeffs

@@ -11,6 +11,15 @@ Generalized Quantum Signal Processing (GQSP)
 .. autofunction:: GQSP
 
 
+Helper functions
+----------------
+
+.. autosummary:: 
+    :toctree: generated/
+    
+    poly2cheb
+    cheb2poly
+
 Miscellaneous
 -------------
 
@@ -19,4 +28,3 @@ Miscellaneous
     
     compute_gqsp_polynomial
     compute_gqsp_angles
-    polynomial_to_chebyshev
