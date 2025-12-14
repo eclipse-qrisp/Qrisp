@@ -79,7 +79,7 @@ def apply(qarg, H, p, kind="Polynomial"):
         def generate_1D_chain_graph(L):
             graph = nx.Graph()
             graph.add_edges_from([(k, (k+1)%L) for k in range(L-1)]) 
-        return graph
+            return graph
 
 
         # Define Heisenberg Hamiltonian 
@@ -139,7 +139,7 @@ def apply(qarg, H, p, kind="Polynomial"):
 
         # Calculate energy for |psi> = poly(H) |psi0>
         I = np.eye(H_arr.shape[0])
-        si = (I + H_arr) @ (I + H_arr) @ psi_0
+        psi = (I + H_arr) @ (I + H_arr) @ psi_0
         psi = psi / np.linalg.norm(psi)
         E = (psi.conj() @ H_arr @ psi).real
         print("E", E)
@@ -178,5 +178,38 @@ def apply(qarg, H, p, kind="Polynomial"):
 
     with conjugate(state_prep)(case):
         qbl = GQSP([case, qarg], RU, p, k=0)
+
+    return qbl, case
+
+
+def hamiltonian_simulation(qarg, H, t):
+    r"""
+    Performs Hamiltonian simulation.
+
+    .. math ::
+
+        e^{-itz} = J_0(t) + 2\sum{m=0}^{\infty}(-i)^mJ_m(t)T_m(z)
+
+    where $T_m(z)$ are Chebyshev polynomials of the first kind, and $J_m(x)$ are Bessel functions of the first kind.
+
+    """
+
+    # Rescaling of the polynomial to account for scaling factor alpha of block-encoding
+    _, coeffs = H.unitaries()
+    alpha = np.sum(coeffs)
+
+    from scipy.special import jv
+
+    #N = int(2 * np.ceil(alpha))
+    N = 5
+
+    J_values = np.array([jv(m, t) for m in range(N)])
+    factors = np.array([2*(-1.j)**m for m in range(N)])
+    factors[0] = 1
+
+    # Coefficients of Chebyshev series
+    cheb = factors * J_values
+
+    qbl, case = apply(qarg, H, cheb, kind="Chebyshev")
 
     return qbl, case
