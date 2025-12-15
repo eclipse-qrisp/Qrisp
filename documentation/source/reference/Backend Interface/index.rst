@@ -7,6 +7,7 @@ Backend Interface
    :maxdepth: 2
    :hidden:
 
+   Backend
    BackendServer
    BackendClient
    VirtualBackend

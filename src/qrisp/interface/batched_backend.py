@@ -22,6 +22,16 @@ import time
 from qrisp.interface.backend import Backend
 
 
+# Right now, this BatchedBackend inherits from `Backend`, but takes care of:
+
+# - Enqueuing the backend calls from multiple threads
+# - Synchronizing multiple threads
+# - Dispatching the batch to the backend
+
+# Therefore, it acts primarily as a scheduler / execution coordinator, not as a real backend.
+# This should be revisited once the design of the `Backend` class is finalized.
+
+
 class BatchedBackend(Backend):
     """
     This class tackles the problem that many physical backends have a high-overhead
