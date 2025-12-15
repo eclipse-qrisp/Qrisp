@@ -19,7 +19,7 @@
 import setuptools
 
 REQUIREMENTS = [
-                "numpy>=2.0,<2.3",  # to avoid: ImportError: Numba needs NumPy 2.3 or less.
+                "numpy>=2.0",
                 "sympy<=1.13",
                 "qiskit>=0.44.0",
                 "matplotlib>=3.5.1",

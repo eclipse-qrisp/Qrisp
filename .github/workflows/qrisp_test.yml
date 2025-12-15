@@ -3,11 +3,10 @@ name: Qrisp unit tests via Pytest
 on:
   push:
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
     timeout-minutes: 60
     strategy:
@@ -32,6 +31,7 @@ jobs:
           pip install pyscf
           pip install stim
           pip install xdsl
+          pip install numpy<2.3
       - name: Test with pytest
         run: |
           pytest
