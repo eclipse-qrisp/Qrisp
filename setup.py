@@ -19,23 +19,22 @@
 import setuptools
 
 REQUIREMENTS = [
-    "numpy>=2.0,<2.3",  # to avoid: ImportError: Numba needs NumPy 2.3 or less.
-    "sympy<=1.13",
-    "qiskit>=0.44.0",
-    "matplotlib>=3.5.1",
-    "scipy>=1.10.0",
-    "numba",
-    "networkx",
-    "tqdm",
-    "dill",
-    "flask<2.3.0",
-    "waitress",
-    "pyyaml",
-    "requests",
-    "psutil",
-    "jax==0.6.0",
-    "jaxlib==0.6.0",
-]
+                "numpy>=2.0,<2.3",  # to avoid: ImportError: Numba needs NumPy 2.3 or less.
+                "sympy<=1.13",
+                "qiskit>=0.44.0",
+                "matplotlib>=3.5.1",
+                "scipy>=1.10.0",
+                "numba",
+                "networkx",
+                "tqdm",
+                "dill",
+                "flask<2.3.0",
+                "waitress",
+                "pyyaml",
+                "requests",
+                "psutil",
+                "jax==0.6.2",
+                "jaxlib==0.6.2"]
 
 
 with open("README.md", "r", encoding="utf-8") as fh:
