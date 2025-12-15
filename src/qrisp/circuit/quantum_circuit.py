@@ -836,7 +836,7 @@ class QuantumCircuit:
         """
         Transpiles the QuantumCircuit in the sense that there are no longer any
         synthesized gate objects. Furthermore, we can call the `Qiskit transpiler
-        <https://qiskit.org/documentation/stubs/qiskit.compiler.transpile.html>`__
+        <https://qiskit.org/documentation/stubs/qiskit.compiler.transpile.html>`_
         by supplying keyword arguments.
 
         The Qiskit transpiler is not called, if no keyword arguments are given.
@@ -898,11 +898,11 @@ class QuantumCircuit:
         >>> import numpy as np
         >>>
         >>> def U(qv):
-            >>> x = 0.5
-            >>> y = 0.125
-
-            >>> p(x*2*np.pi, qv[0])
-            >>> p(y*2*np.pi, qv[1])
+        >>>     x = 0.5
+        >>>     y = 0.125
+        >>>
+        >>>     p(x*2*np.pi, qv[0])
+        >>>     p(y*2*np.pi, qv[1])
         >>> 
         >>> qv = QuantumVariable(2)
         >>>

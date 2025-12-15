@@ -159,7 +159,7 @@ def custom_control(*func, **cusc_kwargs):
     qache_kwargs = dict(cusc_kwargs)
     qache_kwargs["static_argnames"] = new_static_argnames
     
-    func = qache(func, **qache_kwargs)
+    qashed_func = qache(func, **qache_kwargs)
 
     def adaptive_control_function(*args, **kwargs):
 
@@ -245,7 +245,7 @@ def custom_control(*func, **cusc_kwargs):
                     args[i] = jnp.array(args[i], dtype=jnp.complex64)
 
             # Call the (qached) function
-            res = func(*args, **kwargs)
+            res = qashed_func(*args, **kwargs)
 
             # Retrieve the pjit equation
             jit_eqn = get_last_equation()
@@ -267,9 +267,9 @@ def custom_control(*func, **cusc_kwargs):
                     new_kwargs["ctrl"] = ammended_args[0]
                     args = ammended_args[1:]
                     if custom_inversion:
-                        return func(*args, inv = custom_inv_value, **new_kwargs)
+                        return qashed_func(*args, inv = custom_inv_value, **new_kwargs)
                     else:
-                        return func(*args, **new_kwargs)
+                        return qashed_func(*args, **new_kwargs)
 
                 ctrl_aval = AbstractQubit()
                 ammended_args = [ctrl_aval] + list(args)

@@ -28,7 +28,7 @@ REQUIREMENTS = [
                 "networkx",
                 "tqdm",
                 "dill",
-                "flask",
+                "flask<2.3.0",
                 "waitress",
                 "pyyaml",
                 "requests",

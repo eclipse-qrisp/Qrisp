@@ -257,12 +257,13 @@ def stimulate(func=None):
 
 
 def simulate_jaspr(
-    jaspr, *args, terminal_sampling=False, simulator="qrisp", return_gate_counts=False
+    jaxpr, *args, terminal_sampling=False, simulator="qrisp", return_gate_counts=False
 ):
-
+    
+    from qrisp.jasp import Jaspr
     from qrisp.alg_primitives.mcx_algs.circuit_library import gidney_qc
 
-    if len(jaspr.outvars) == 1:
+    if len(jaxpr.jaxpr.outvars) == 1 and isinstance(jaxpr.jaxpr.outvars[0].aval, AbstractQuantumCircuit):
         return None
 
     if simulator == "stim":
@@ -348,15 +349,18 @@ def simulate_jaspr(
             return True
 
     with fast_append(3):
-        res = eval_jaxpr(jaspr, eqn_evaluator=eqn_evaluator)(*(args))
+        res = eval_jaxpr(jaxpr, eqn_evaluator=eqn_evaluator)(*(args))
 
     if return_gate_counts:
         return res[-1].gate_counts
 
-    if len(jaspr.outvars) == 2:
-        return res[0]
+    if isinstance(jaxpr, Jaspr):
+        if len(jaxpr.jaxpr.outvars) == 2:
+            return res[0]
+        else:
+            return res[:-1]
     else:
-        return res[:-1]
+        return res
 
 
 @lru_cache(maxsize=int(1e5))

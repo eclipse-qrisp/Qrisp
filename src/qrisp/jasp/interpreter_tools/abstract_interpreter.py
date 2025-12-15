@@ -104,7 +104,7 @@ def reinterpret(jaxpr, eqn_evaluator=exec_eqn):
         inter_jaxpr = jaxpr
 
     res = make_jaxpr(eval_jaxpr(inter_jaxpr, eqn_evaluator=eqn_evaluator))(
-        *[var.aval for var in jaxpr.constvars + jaxpr.invars]
+        *[var.aval for var in inter_jaxpr.constvars + inter_jaxpr.invars]
     ).jaxpr
 
     res.constvars.extend(res.invars[: len(inter_jaxpr.constvars)])
