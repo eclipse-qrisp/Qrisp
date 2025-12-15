@@ -184,6 +184,7 @@ def lanczos_expvals(H, D, operand_prep, mes_kwargs={}):
     
     return expvals
 
+# Postprocessing
 
 def build_S_H_from_Tk(Tk_expvals, D):
     r"""
@@ -233,34 +234,7 @@ def build_S_H_from_Tk(Tk_expvals, D):
     return S, H_mat
 
 
-@partial(jax.jit, static_argnums=(1,))
-def build_S_H_from_Tk_jax(Tk_expvals, D):
-
-    def Tk_vec(k):
-        k = jnp.abs(k)
-        return Tk_expvals[k]
-
-    # Create 2D arrays of indices i and j
-    i_indices = jnp.arange(D, dtype=jnp.int32)[:, None] # Column vector (D, 1)
-    j_indices = jnp.arange(D, dtype=jnp.int32)[None, :] # Row vector (1, D)
-    # The combination of these two will broadcast operations across a (D, D) grid
-
-    # Calculate S matrix using vectorized operations
-    # i+j and abs(i-j) are performed element-wise across the (D, D) grid
-    S = 0.5 * (Tk_vec(i_indices + j_indices) + Tk_vec(jnp.abs(i_indices - j_indices)))
-
-    # Calculate H_mat matrix using vectorized operations
-    H_mat = 0.25 * (
-        Tk_vec(i_indices + j_indices + 1)
-        + Tk_vec(jnp.abs(i_indices + j_indices - 1))
-        + Tk_vec(jnp.abs(i_indices - j_indices + 1))
-        + Tk_vec(jnp.abs(i_indices - j_indices - 1))
-    )
-
-    return S, H_mat
-
-
-def regularize_S_H(S, H_mat, cutoff=1e-3):
+def regularize_S_H(S, H_mat, cutoff=1e-2):
     r"""
     Regularize the overlap matrix $\mathbf{S}$ by retaining only eigenvectors with sufficiently large eigenvalues and project the Hamiltonian matrix $\mathbf{H}$ (``H_mat``) accordingly.
 
@@ -295,9 +269,40 @@ def regularize_S_H(S, H_mat, cutoff=1e-3):
     H_reg = U.T @ H_mat @ U
     return S_reg, H_reg
 
+# JAX postprocessing
 
-@partial(jax.jit, static_argnums=(2,)) # max_D_out must be static
-def regularize_S_H_jax(S, H_mat, max_D_out, cutoff=1e-3):
+@partial(jax.jit, static_argnums=(1,))
+def build_S_H_from_Tk_jitted(Tk_expvals, D):
+
+    def Tk_vec(k):
+        k = jnp.abs(k)
+        return Tk_expvals[k]
+
+    # Create 2D arrays of indices i and j
+    i_indices = jnp.arange(D, dtype=jnp.int32)[:, None] # Column vector (D, 1)
+    j_indices = jnp.arange(D, dtype=jnp.int32)[None, :] # Row vector (1, D)
+    # The combination of these two will broadcast operations across a (D, D) grid
+
+    # Calculate S matrix using vectorized operations
+    # i+j and abs(i-j) are performed element-wise across the (D, D) grid
+    S = 0.5 * (Tk_vec(i_indices + j_indices) + Tk_vec(jnp.abs(i_indices - j_indices)))
+
+    # Calculate H_mat matrix using vectorized operations
+    H_mat = 0.25 * (
+        Tk_vec(i_indices + j_indices + 1)
+        + Tk_vec(jnp.abs(i_indices + j_indices - 1))
+        + Tk_vec(jnp.abs(i_indices - j_indices + 1))
+        + Tk_vec(jnp.abs(i_indices - j_indices - 1))
+    )
+
+    return S, H_mat
+
+
+@jax.jit
+def regularize_S_H_jitted(S, H_mat, cutoff=1e-2):
+
+    D = S.shape[0]
+
     eigvals, eigvecs = jnp.linalg.eigh(S)
     
     max_eigval = eigvals.max()
@@ -306,17 +311,56 @@ def regularize_S_H_jax(S, H_mat, max_D_out, cutoff=1e-3):
     mask = eigvals > threshold
     
     # Use nonzero with a fixed size and fill_value to handle static shapes
-    kept_indices = jnp.nonzero(mask, size=max_D_out, fill_value=0)[0]
+    kept_indices = jnp.nonzero(mask, size=D, fill_value=0)[0]
     
     # Use jnp.take to select eigenvectors. The resulting U has a static shape.
     # We might need to ensure the indices array has the correct shape for broadcasting
     U = jnp.take(eigvecs, kept_indices, axis=1)
 
-    S_reg = U.T @ S @ U
-    H_reg = U.T @ H_mat @ U
+    # Replace the vectors for the remaining indices by all zeros vectors
+    new_mask = jnp.sort(mask)[::-1]
+    zeros = jnp.zeros(D)
+    V = jnp.zeros((D, D), dtype=U.dtype)
+    V = V.at[jnp.arange(D), :].set(jnp.where(new_mask, U, zeros))
+
+    S_reg_ext = V.T @ S @ V
+    H_reg_ext = V.T @ H_mat @ V
+
+    I = jnp.eye(D)
+    S_reg_ext = jnp.where(new_mask, S_reg_ext, I)
+    H_reg_ext =jnp.where(new_mask, H_reg_ext, I)
     
-    # Note: S_reg and H_reg will be of shape (max_D_out, max_D_out)
-    return S_reg, H_reg
+    # S_reg and H_reg will be a block matrix of shape (D, D):
+    # upper left: k x k block of regularized matrices S_reg, H_reg, respectively; 
+    # lower right: (D-k) x (D-k) identity; 
+    # upper right and lower left are zeros
+    return S_reg_ext, H_reg_ext
+
+
+@jax.jit
+def generalized_eigh_jitted(A, B):
+    # Solves the generalized eigenvalue problem A*v = lambda*B*v
+    # for symmetric/hermitian matrices A and symmetric positive-definite B.
+    
+    # Compute Cholesky decomposition of B (L*L.T)
+    # The 'lower=True' parameter is typically the default but good to be explicit.
+    L = jax.scipy.linalg.cholesky(B, lower=True)
+    
+    # Compute L_inv * A * L_inv_T. 
+    # Use solve_triangular for efficiency and numerical stability instead of explicit inverse.
+    A_prime = jax.scipy.linalg.solve_triangular(L, A, lower=True)
+    A_prime = jax.scipy.linalg.solve_triangular(L.T, A_prime.T, lower=False).T
+
+    # Solve the standard eigenvalue problem for A'
+    eigenvalues, eigenvectors_prime = jax.scipy.linalg.eigh(A_prime)
+    
+    # Transform eigenvectors back to the original basis (v = L_inv_T * v_prime)
+    eigenvectors = jax.scipy.linalg.solve_triangular(L.T, eigenvectors_prime, lower=False)
+    
+    # Normalize eigenvectors if needed (optional)
+    eigenvectors = eigenvectors / jnp.linalg.norm(eigenvectors, axis=0)
+
+    return eigenvalues, eigenvectors
 
 
 def lanczos_alg(H, D, operand_prep, mes_kwargs={}, cutoff=1e-2, show_info=False):
@@ -415,31 +459,29 @@ def lanczos_alg(H, D, operand_prep, mes_kwargs={}, cutoff=1e-2, show_info=False)
 
 
     """
-
-    if check_for_tracing_mode():
-        raise NotImplementedError("Solving the generalized eigenvalue problem not implemented in JAX 0.6")
     
     unitaries, coeffs = H.unitaries()
     
     # Step 1: Quantum Lanczos: Get expectation values of Chebyshev polynomials
     Tk_expvals = lanczos_expvals(H, D, operand_prep, mes_kwargs)
 
-    """
+    
     if check_for_tracing_mode():
 
         # Step 2: Build matrices S and H
-        S, H_mat = build_S_H_from_Tk_jax(Tk_expvals, D)
+        S, H_mat = build_S_H_from_Tk_jitted(Tk_expvals, D)
 
         # Step 3: Regularize matrices via thresholding
-        S_reg, H_reg = regularize_S_H_jax(S, H_mat, D, cutoff=cutoff)  
+        S_reg, H_reg = regularize_S_H_jitted(S, H_mat, cutoff=cutoff)  
 
         # Step 4: Solve generalized eigenvalue problem $\mathbf{H}\vec{v}=\epsilon\mathbf{S}\vec{v}$
-        evals, evecs = jax.scipy.linalg.eigh(H_reg, S_reg) # Solving the generalized eigenvalue problem not implemented in JAX 0.6
+        #evals, evecs = jax.scipy.linalg.eigh(H_reg, S_reg) # Solving the generalized eigenvalue problem not implemented in JAX 0.6
+        evals, evecs = generalized_eigh_jitted(H_reg, S_reg)
 
         ground_state_energy = jnp.min(evals) * jnp.sum(coeffs)
 
         return ground_state_energy
-    """
+    
 
     # Step 2: Build matrices S and H
     S, H_mat = build_S_H_from_Tk(Tk_expvals, D)
