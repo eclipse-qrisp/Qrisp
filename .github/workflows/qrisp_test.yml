@@ -31,7 +31,7 @@ jobs:
           pip install pyscf
           pip install stim
           pip install xdsl
-          pip install numpy<2.3
+          pip install 'numpy<2.3'
       - name: Test with pytest
         run: |
           pytest
