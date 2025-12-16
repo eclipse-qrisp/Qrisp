@@ -28,5 +28,5 @@ Miscellaneous
     
     compute_gqsp_polynomial
     compute_gqsp_angles
-    apply
+    GQET
     hamiltonian_simulation

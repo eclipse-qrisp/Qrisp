@@ -18,17 +18,8 @@
 
 import numpy as np
 from qrisp import (
-    QuantumArray,
-    QuantumVariable,
-    QuantumBool,
     QuantumFloat,
-    h,
-    u3,
-    z,
     conjugate,
-    control,
-    invert,
-    gphase,
 )
 from qrisp.alg_primitives.reflection import reflection
 from qrisp.algorithms.gqsp.gqsp import GQSP
@@ -38,9 +29,10 @@ import jax
 import jax.numpy as jnp
 
 
-def apply(qarg, H, p, kind="Polynomial"):
+def GQET(qarg, H, p, kind="Polynomial"):
     r"""
-    Applies are polynomial transformation of a Hamiltonian to a quantum state.
+    Performs `Generalized Quantum Eigenvalue Transform <https://arxiv.org/pdf/2312.00723>`_.
+    Applies polynomial transformations on the eigenvalues of a Hermitian operator.
 
     Parameters
     ----------
@@ -111,7 +103,7 @@ def apply(qarg, H, p, kind="Polynomial"):
 
             operand = psi_prep()
 
-            qbl, case = apply(operand, H, poly, kind="Polynomial")
+            qbl, case = GQET(operand, H, poly, kind="Polynomial")
 
             success_bool = (measure(qbl) == 0) & (measure(case) == 0)
             return success_bool, operand
@@ -178,38 +170,5 @@ def apply(qarg, H, p, kind="Polynomial"):
 
     with conjugate(state_prep)(case):
         qbl = GQSP([case, qarg], RU, p, k=0)
-
-    return qbl, case
-
-
-def hamiltonian_simulation(qarg, H, t):
-    r"""
-    Performs Hamiltonian simulation.
-
-    .. math ::
-
-        e^{-itz} = J_0(t) + 2\sum{m=0}^{\infty}(-i)^mJ_m(t)T_m(z)
-
-    where $T_m(z)$ are Chebyshev polynomials of the first kind, and $J_m(x)$ are Bessel functions of the first kind.
-
-    """
-
-    # Rescaling of the polynomial to account for scaling factor alpha of block-encoding
-    _, coeffs = H.unitaries()
-    alpha = np.sum(coeffs)
-
-    from scipy.special import jv
-
-    #N = int(2 * np.ceil(alpha))
-    N = 5
-
-    J_values = np.array([jv(m, t) for m in range(N)])
-    factors = np.array([2*(-1.j)**m for m in range(N)])
-    factors[0] = 1
-
-    # Coefficients of Chebyshev series
-    cheb = factors * J_values
-
-    qbl, case = apply(qarg, H, cheb, kind="Chebyshev")
 
     return qbl, case
