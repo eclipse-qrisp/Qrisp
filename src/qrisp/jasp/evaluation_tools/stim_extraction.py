@@ -33,6 +33,26 @@ def extract_stim(func):
         Stim only supports Clifford operations. Functions containing non-Clifford
         gates (e.g., T, RZ, RX) will raise an error during conversion.
     
+    .. warning::
+        
+        **Measurement post-processing limitation:** Advanced quantum types like 
+        :ref:`QuantumFloat` apply post-processing to raw measurement results during 
+        decoding. For example, a QuantumFloat might convert a raw integer into a fractional 
+        value. This post-processing cannot be performed during the Stim extraction 
+        because it requires transforming a list of classical bits in ways that go 
+        beyond simple index mapping.
+        
+        For this reason, it is **recommended to use** :ref:`QuantumVariable` **instead 
+        of QuantumFloat** (or similar advanced types) when working with ``extract_stim``. 
+        QuantumVariable's decoder returns raw integer values without post-processing, 
+        making it fully compatible with Stim's measurement record. You can then apply 
+        any necessary transformations manually after sampling. Values that have
+        been processed in this way are represented through the ``ProcessedMeasurement``
+        class, which acts as a dummy representative.
+        
+        See the :meth:`Jaspr.to_qc <qrisp.jasp.Jaspr.to_qc>` documentation for more 
+        details on this limitation.
+    
     Parameters
     ----------
     func : callable
@@ -53,7 +73,7 @@ def extract_stim(func):
             
             - **Classical values** (integers, floats, etc.) are returned as-is.
             - **Quantum measurements** (measured QuantumVariables) are returned as 
-              integers or lists of integers indicating which measurement positions 
+              integers or tuples of integers indicating which measurement positions 
               in the Stim circuit correspond to this return value.
           
           * Element n: The `stim.Circuit` object.
@@ -67,15 +87,15 @@ def extract_stim(func):
     
     ::
         
-        from qrisp import QuantumFloat, h, cx, measure
+        from qrisp import QuantumVariable, h, cx, measure
         from qrisp.jasp import extract_stim
         
         @extract_stim
         def bell_state():
-            qf = QuantumFloat(2)
-            h(qf[0])
-            cx(qf[0], qf[1])
-            return measure(qf)
+            qv = QuantumVariable(2)
+            h(qv[0])
+            cx(qv[0], qv[1])
+            return measure(qv)
         
         stim_circuit = bell_state()
         print(stim_circuit)
@@ -220,7 +240,7 @@ def extract_stim(func):
                 # This happens when a QuantumFloat/QuantumVariable is measured and returns
                 # a list of classical bits representing the measurement results.
                 if isinstance(val, list) and len(val) and isinstance(val[0], Clbit):
-                    new_val = [idx_mapping[clbit] for clbit in val]
+                    new_val = tuple(idx_mapping[clbit] for clbit in val)
                 
                 # Case 2: Value is a single Clbit object
                 # Replace it with its Stim measurement index.
