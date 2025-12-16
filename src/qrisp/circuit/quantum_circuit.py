@@ -1890,6 +1890,67 @@ class QuantumCircuit:
         from qrisp.interface import qml_converter
 
         return qml_converter(self)
+    
+    def to_stim(self, return_clbit_map = False):
+        """
+        Method to convert the given QuantumCircuit to a `Stim <https://github.com/quantumlib/Stim/>`_ Circuit.
+
+        .. note::
+            
+            Stim can only process/represent Clifford operations.
+
+        Parameters
+        ----------
+        return_clbit_map : bool, optional
+            If set to True, the function returns the clbit_map, as described below.
+            The default is False.
+
+        Returns
+        -------
+        stim_circuit : stim.Circuit
+            The converted Stim circuit.
+        clbit_map : dict
+            A dictionary mapping Qrisp Clbit objects to Stim measurement record indices. 
+            For example, {clbit_obj_0: 2, clbit_obj_1: 0} means the first Clbit object 
+            corresponds to the 3rd measurement (index 2) in Stim's measurement record.
+
+        Examples
+        --------
+        Basic conversion:
+        
+        >>> from qrisp import QuantumCircuit
+        >>> qc = QuantumCircuit(2, 2)
+        >>> qc.h(0)
+        >>> qc.cx(0, 1)
+        >>> qc.measure([0, 1])
+        >>> stim_circuit, clbit_map = qc.to_stim(True)
+        >>> print(stim_circuit)
+        H 0
+        CX 0 1
+        M 0 1
+        >>> print(clbit_map)  # Maps Clbit objects to measurement indices
+        {Clbit(cb_2): 0, Clbit(cb_3): 1}
+        
+        Handling non-sequential classical bit mapping:
+        
+        >>> qc = QuantumCircuit(3, 3)
+        >>> qc.h(0)
+        >>> qc.x(1)
+        >>> qc.measure(qc.qubits[0], qc.clbits[2])  # qubit 0 -> clbit 2
+        >>> qc.measure(qc.qubits[1], qc.clbits[0])  # qubit 1 -> clbit 0
+        >>> stim_circuit, clbit_map = qc.to_stim(True)
+        >>> # clbit_map maps Clbit objects to Stim measurement record indices
+        >>> sampler = stim_circuit.compile_sampler()
+        >>> samples = sampler.sample(100)
+        >>> # Reorder to match Qrisp's classical bit order:
+        >>> clbit_indices = {clbit: qc.clbits.index(clbit) for clbit in clbit_map}
+        >>> sorted_clbits = sorted(clbit_map.keys(), key=lambda cb: clbit_indices[cb])
+        >>> reordered = samples[:, [clbit_map[cb] for cb in sorted_clbits]]
+        """
+
+        from qrisp.interface import qrisp_to_stim
+
+        return qrisp_to_stim(self, return_clbit_map)
 
     def to_pytket(self):
         """
