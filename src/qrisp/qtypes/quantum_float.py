@@ -864,8 +864,9 @@ class QuantumFloat(QuantumVariable):
         {True: 0.6667, False: 0.3333}
 
         """
-        if not self.signed:
-            raise Exception("Tried to retrieve sign qubit of unsigned QuantumFloat")
+        if not check_for_tracing_mode():
+            if not self.signed:
+                raise Exception("Tried to retrieve sign qubit of unsigned QuantumFloat")
 
         return self[-1]
 

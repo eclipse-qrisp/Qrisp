@@ -127,3 +127,33 @@ def test_error_invalid_slice_step():
         NotImplementedError, match="Slicing with DynamicQubitArray only supports step=1"
     ):
         main()
+
+def test_injection():
+    @jaspify
+    def test():
+        a_array = QuantumArray(QuantumFloat(4), shape=(4,4))
+        x(a_array)
+        b_array = QuantumArray(QuantumFloat(4), shape=(4,4))
+        h(b_array)
+        r_array = QuantumArray(QuantumBool(), shape=(4,4))
+
+        (r_array << (lambda a,b: a==b))(a_array, b_array)
+        return measure(r_array), measure(a_array), measure(b_array)
+
+    r, a, b = test()
+    assert((r[0] == (a == b)).all())
+
+def test_element_wise_addition_injection():
+    @jaspify
+    def test():
+        a_array = QuantumArray(QuantumFloat(4), shape=(4,4))
+        x(a_array)
+        b_array = QuantumArray(QuantumFloat(4), shape=(4,4))
+        h(b_array)
+        r_array = QuantumArray(QuantumFloat(4), shape=(4,4))
+
+        (r_array << (lambda a,b: a+b))(a_array, b_array)
+        return measure(r_array), measure(a_array), measure(b_array)
+
+    r, a, b = test()
+    assert((r == (a+b)%16).all())

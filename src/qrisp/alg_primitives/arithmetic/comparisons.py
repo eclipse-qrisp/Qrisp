@@ -197,21 +197,30 @@ def less_than(a, b):
 
 @lifted
 def equal(qf_0, qf_1):
-    from qrisp import QuantumBool, QuantumFloat, cx, mcx
+    from qrisp import QuantumBool, QuantumFloat, cx, mcx, check_for_tracing_mode, q_cond
     from qrisp.jasp import jrange
     import jax.numpy as jnp
 
     eq_qbl = QuantumBool(qs=qf_0.qs, name="eq_qbl*")
 
     if isinstance(qf_1, QuantumFloat):
-        if qf_1.signed and not qf_0.signed:
-            qf_0, qf_1 = qf_1, qf_0
+        if check_for_tracing_mode():
+            qf_0, qf_1 = q_cond(jnp.logical_and(qf_1.signed, jnp.logical_not(qf_0.signed)), lambda: (qf_1, qf_0), lambda: (qf_0, qf_1))
+        else:
+            if qf_1.signed and not qf_0.signed:
+                qf_0, qf_1 = qf_1, qf_0
 
         mcx_qubits = []
         mcx_qubits += qf_0.reg
 
-        if qf_1.signed and qf_0.signed:
-            cx(qf_1.sign(), qf_0.sign())
+        if check_for_tracing_mode():
+            def apply_cx(): 
+                cx(qf_1.sign(), qf_0.sign())
+                return None
+            q_cond(jnp.logical_and(qf_0.signed, qf_1.signed), apply_cx, lambda: None)
+        else:
+            if qf_1.signed and qf_0.signed:
+                cx(qf_1.sign(), qf_0.sign())
 
         m0 = qf_0.msize
         m1 = qf_1.msize
@@ -233,8 +242,14 @@ def equal(qf_0, qf_1):
         with conjugate(conjugator)(qf_0, qf_1):
             mcx(mcx_qubits, eq_qbl, ctrl_state=0)
 
-        if qf_1.signed and qf_0.signed:
-            cx(qf_1.sign(), qf_0.sign())
+        if check_for_tracing_mode():
+            def apply_cx(): 
+                cx(qf_1.sign(), qf_0.sign())
+                return None
+            q_cond(jnp.logical_and(qf_0.signed, qf_1.signed), apply_cx, lambda: None)
+        else:
+            if qf_1.signed and qf_0.signed:
+                cx(qf_1.sign(), qf_0.sign())
 
         return eq_qbl
     
