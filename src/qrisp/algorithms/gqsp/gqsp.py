@@ -303,7 +303,7 @@ def compute_gqsp_angles(p, q):
 
 
 # https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368
-def GQSP(qargs, U, p, q=None, k=0):
+def GQSP(qargs, U, p=None, q=None, angles=None, k=0):
     r"""
     Performs `Generalized Quantum Signal Processing <https://journals.aps.org/prxquantum/pdf/10.1103/PRXQuantum.5.020368>`_.
 
@@ -333,12 +333,15 @@ def GQSP(qargs, U, p, q=None, k=0):
     U : function
         A function appying a unitary to the variables in ``qargs``.
         Typically, $U=e^{iH}$ for a Hermitian operator $H$ and GQSP applies a function of $H$.
-    p : ndarray
+    p : ndarray, optional
         A polynomial $p\in\mathbb C[x]$ represented as a vector of its coefficients, 
         i.e., $p=(p_0,p_1,\dotsc,p_d)$ corresponds to $p_0+p_1x+\dotsb+p_dx^d$.
+        Either the polynomial ``p`` or ``angles`` must be specified.
     q : ndarray, optional
         A polynomial $q\in\mathbb C[x]$ represented as a vector of its coefficients. 
         If not specified, the polynomial is computed numerically from $p$, and $p$ is rescaled to ensure $|p(e^{ix})|\leq 1$ for all $x\in\mathbb R$.
+    angles : tuple(ndarray, ndarray, float), optional
+        A tuple of angles $(\theta,\phi,\lambda)$ for $\theta,\phi\in\mathbb R^{d+1}$, $\lambda\in\mathbb R$.
     k : int, optional
         If specified, the Laurent polynomials $\tilde p(x)=x^{-k}p(x)$, $\tilde q(x)=x^{-k}q(x)$ are applied.
         The default is 0.
@@ -449,13 +452,17 @@ def GQSP(qargs, U, p, q=None, k=0):
     if isinstance(qargs, (QuantumVariable, QuantumArray)):
         qargs = [qargs]
 
-    d = len(p) - 1
-
-    if q == None:
-        p = p / _compute_maximum(p)
-        q = compute_gqsp_polynomial(p)
-
-    theta, phi, lambda_ = compute_gqsp_angles(p, q)
+    if angles != None:
+        theta, phi, lambda_ = angles
+        d = len(theta) - 1
+    elif p != None:
+        d = len(p) - 1
+        if q == None:
+            p = p / _compute_maximum(p)
+            q = compute_gqsp_polynomial(p)
+        theta, phi, lambda_ = compute_gqsp_angles(p, q)
+    else:
+        raise Exception("Either GQSP polynomial or angles must be provided.")
 
     qbl = QuantumBool()
 
