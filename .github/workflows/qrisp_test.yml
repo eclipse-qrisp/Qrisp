@@ -26,12 +26,12 @@ jobs:
           pip install -e ./
           pip install --upgrade pennylane-catalyst
           pip install qiskit-aer
-          pip install qiskit-ibm-runtime
+          pip install qiskit-ibm-runtime   # To test `QiskitBackend` with `qiskit_ibm_runtime.fake_provider`
           pip install iqm-client[qiskit]
           pip install pyscf
           pip install stim
           pip install xdsl
-          pip install 'numpy<2.3'
+          pip install 'numpy<2.3'          # To solve 'ImportError: Numba needs NumPy 2.3 or less.'
       - name: Test with pytest
         run: |
           pytest

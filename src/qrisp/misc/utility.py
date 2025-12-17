@@ -812,7 +812,7 @@ def multi_measurement(qv_list, shots=None, backend=None):
 
     # counts = execute(qs_temp, backend, basis_gates = basis_gates,
     # noise_model = noise_model, shots = shots).result().get_counts()
-    counts = backend.run(compiled_qc, shots)
+    counts = backend.run(compiled_qc, shots=shots)
     counts = {k: counts[k] for k in sorted(counts)}
     shots = sum(counts.values())
 
