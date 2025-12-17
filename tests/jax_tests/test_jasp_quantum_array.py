@@ -141,7 +141,7 @@ def test_injection():
         return measure(r_array), measure(a_array), measure(b_array)
 
     r, a, b = test()
-    assert((r[0] == (a == b)).all())
+    assert((r == (a == b)).all())
 
 def test_element_wise_addition_injection():
     @jaspify
