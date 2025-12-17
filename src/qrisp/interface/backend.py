@@ -32,6 +32,24 @@ class Backend(ABC):
     The only mandatory method for child classes is :meth:`run`, which executes
     a circuit or operation on the backend.
 
+
+    .. rubric:: Design Contract
+
+    The ``Backend`` class defines the minimal execution interface required by Qrisp.
+    It does not assume universality of the gate set, specific connectivity
+    constraints, or the presence of calibration data. Any such assumptions must be
+    made explicit by concrete backend implementations or higher-level compilation
+    policies.
+
+    This class intentionally avoids prescribing compilation, scheduling, or
+    execution policies, which are delegated to concrete backends or external
+    components.
+
+    Simulators are expected to implement ``run`` but may return ``None``
+    for all hardware metadata properties. For other backends,
+    the type of hardware metadata might be backend-defined.
+
+
     **Runtime Options**
 
     Runtime options describe *how* the backend executes circuits (e.g., the
@@ -76,19 +94,6 @@ class Backend(ABC):
 
     This design keeps the base ``Backend`` interface fully hardware-agnostic while
     allowing vendor backends to expose detailed and typed hardware information.
-
-    **Design Contract**
-
-    The ``Backend`` class defines the minimal execution interface required by Qrisp.
-    It does not assume universality of the gate set, specific connectivity
-    constraints, or the presence of calibration data. Any such assumptions must be
-    made explicit by concrete backend implementations or higher-level compilation
-    policies.
-
-    Simulators are expected to implement ``run`` but may return ``None``
-    for all hardware metadata properties.
-
-    The concrete type of hardware metadata might be backend-defined.
 
 
     Parameters
@@ -151,7 +156,7 @@ class Backend(ABC):
         **kwargs :
             Additional keyword arguments that may modify the execution behavior.
             If a key is also present in the backend's runtime options, the value
-            from ``kwargs`` is expected to take precedence for the execution.
+            from ``kwargs`` is expected to take precedence for that specific execution.
 
         Returns
         -------
@@ -178,11 +183,29 @@ class Backend(ABC):
 
     @property
     def options(self) -> Mapping:
-        """Current runtime options."""
+        """
+        Current runtime options for the backend.
+
+        These options may contain settings that influence execution behavior,
+        such as the number of shots. Therefore, they may affect the :meth:`run` method.
+        """
         return self._options
 
     def update_options(self, **kwargs) -> None:
-        """Update existing runtime options, rejecting unknown keys."""
+        """
+        Update existing runtime options for the backend.
+
+        Parameters
+        ----------
+        **kwargs :
+            Key-value pairs to update in the backend's runtime options.
+
+        Raises
+        ------
+        AttributeError
+            If any key in ``kwargs`` is not a valid option for this backend.
+
+        """
 
         for key, val in kwargs.items():
             if key not in self._options:
@@ -193,7 +216,7 @@ class Backend(ABC):
             self._options[key] = val
 
     # ----------------------------------------------------------------------
-    # Optional hardware/backend-specific status information
+    # Hardware/backend-specific status information
     # ----------------------------------------------------------------------
 
     @property
@@ -201,8 +224,7 @@ class Backend(ABC):
         """
         Current health status or diagnostics of the backend.
 
-        This may include calibration data, uptime statistics, or other
-        backend-specific health indicators.
+        This may include uptime statistics or other backend-specific health indicators.
 
         Returns ``None`` if the backend does not expose health information.
         """
@@ -233,7 +255,7 @@ class Backend(ABC):
         return None
 
     # ----------------------------------------------------------------------
-    # Optional hardware/backend-specific metadata
+    # Hardware/backend-specific metadata
     # ----------------------------------------------------------------------
 
     @property
@@ -252,8 +274,15 @@ class Backend(ABC):
         """
         Connectivity information for the backend.
 
-        This may encode qubit adjacency, coupling constraints, or other topology
-        information in a backend-specific format.
+        This property describes the qubit connectivity exposed by the backend for
+        compilation and execution purposes. If the physical device consists of
+        multiple disconnected components, the backend is expected to expose
+        **a single connected component**. The choice of which component to expose
+        (e.g. largest component, highest-fidelity subset) is left
+        to the concrete backend implementation.
+
+        The returned object may encode qubit adjacency, coupling constraints, or
+        other topology information in a backend-specific format.
 
         Returns ``None`` if the backend does not expose connectivity information.
         Concrete backend implementations may return structured, vendor-defined
