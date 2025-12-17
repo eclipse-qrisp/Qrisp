@@ -940,6 +940,122 @@ class QuantumArray:
         """
         meas_res = self.get_measurement(**meas_kwargs)
         return list(meas_res.keys())[0]
+    
+    # Delegation of element-wise out-of-place functions
+
+    def _element_wise_out_of_place_injection(self, other, fun, out_type):
+        out_type.qs = self.qs #######
+        out = QuantumArray(out_type, self.shape)
+        out_view = out.flatten()
+        self_view = self.flatten()
+        # If other is an array, do element-wise
+        if isinstance(other, QuantumArray):
+            other_view = other.flatten()
+            if check_for_tracing_mode():
+                for i in jrange(self_view.size):
+                    (out_view[i] << fun)(self_view[i], other_view[i])
+            else:
+                for i in range(self_view.size):
+                    (out_view[i] << fun)(self_view[i], other_view[i])
+            return out
+        # If other is not an array, use other for every index
+        else:
+            if check_for_tracing_mode():
+                for i in jrange(self_view.size):
+                    (out_view[i] << fun)(self_view[i], other)
+            else:
+                for i in range(self_view.size):
+                    (out_view[i] << fun)(self_view[i], other)
+            return out
+
+    def __add__(self, other):
+        return self._element_wise_out_of_place_injection(other, lambda a,b: a+b, self.qtype)
+        
+    def __sub__(self, other):
+        return self._element_wise_out_of_place_injection(other, lambda a,b: a-b, self.qtype)
+
+    def __mul__(self, other):
+        return self._element_wise_out_of_place_injection(other, lambda a,b: a*b,self.qtype)
+
+    def __eq__(self, other):
+        from qrisp.qtypes import QuantumBool
+        return self._element_wise_out_of_place_injection(other, lambda a,b: a==b, QuantumBool())
+        
+    def __ne__(self, other):
+        from qrisp.qtypes import QuantumBool
+        return self._element_wise_out_of_place_injection(other, lambda a,b: a==b, QuantumBool())
+
+    def __gt__(self, other):
+        from qrisp.qtypes import QuantumBool
+        return self._element_wise_out_of_place_injection(other, lambda a,b: a>b, QuantumBool())
+
+    def __ge__(self, other):
+        from qrisp.qtypes import QuantumBool
+        return self._element_wise_out_of_place_injection(other, lambda a,b: a>=b, QuantumBool())
+
+    def __lt__(self, other):
+        from qrisp.qtypes import QuantumBool
+        return self._element_wise_out_of_place_injection(other, lambda a,b: a<b, QuantumBool())
+
+    def __le__(self, other):
+        from qrisp.qtypes import QuantumBool
+        self._element_wise_out_of_place_injection(other, lambda a,b: a<=b, QuantumBool())
+
+    # Delegation of element-wise in-place functions
+    
+    def _element_wise_in_place_call(self, other, fun):
+        self_view = self.flatten()
+        if isinstance(other, QuantumArray):
+            other_view = other.flatten()
+            if check_for_tracing_mode():
+                for i in jrange(self_view.size):
+                    fun(self_view[i], other_view[i])
+            else:
+                for i in range(self_view.size):
+                    fun(self_view[i], other_view[i])
+        else:
+            if check_for_tracing_mode():
+                for i in jrange(self_view.size):
+                    fun(self_view[i], other)
+            else:
+                for i in range(self_view.size):
+                    fun(self_view[i], other)
+
+    def __iadd__(self, other):
+        def f(a,b): a+=b
+        self._element_wise_in_place_call(other, f)
+
+    def __isub__(self, other):
+        def f(a,b): a-=b
+        self._element_wise_in_place_call(other, f)
+        
+    def __imul__(self, other):
+        def f(a,b): a*=b
+        self._element_wise_in_place_call(other, f)
+
+    # Element-wise implementation of the injection operator
+
+    def __lshift_o__(self, other):
+        if not callable(other):
+            raise Exception("Tried to inject QuantumVariable into non-callable")
+
+        from qrisp.misc.utility import redirect_qfunction
+
+        def return_function(*args, **kwargs):
+            return redirect_qfunction(other)(*args, target=self, **kwargs)
+
+        return return_function
+    
+    def __lshift__(self, other):
+        if not callable(other):
+            raise Exception("Tried to inject QuantumVariable into non-callable")
+
+        from qrisp.misc.utility import redirect_qfunction
+
+        def return_function(*args, **kwargs):
+            return redirect_qfunction(other)(*args, target=self, **kwargs)
+
+        return return_function
 
 
 class QuantumArrayIterator:

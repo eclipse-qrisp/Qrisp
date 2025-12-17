@@ -1406,7 +1406,7 @@ def retarget_instructions(data, source_qubits, target_qubits):
             continue
 
         for j in range(len(instr.qubits)):
-            if instr.qubits[j] in source_qubits:
+            if any(instr.qubits[j] is q for q in source_qubits):
                 instr.qubits[j] = target_qubits[source_qubits.index(instr.qubits[j])]
 
 
@@ -1503,7 +1503,6 @@ def redirect_qfunction(function_to_redirect):
                 *args, **kwargs
             ).flatten_environments()
 
-            transformed_jaspr = injection_transform(jaspr, jaspr.outvars[0])
 
             qs = TracingQuantumSession.get_instance()
             abs_qc = qs.abs_qc
@@ -1511,11 +1510,16 @@ def redirect_qfunction(function_to_redirect):
 
             flattened_args = []
 
-            flattened_args.append(target.reg.tracer)
+            if isinstance(target, QuantumArray):
+                transformed_jaspr = injection_transform(jaspr, jaspr.outvars[2])
+                flattened_args.append(target.qb_array.reg.tracer)
+            else:
+                transformed_jaspr = injection_transform(jaspr, jaspr.outvars[0])
+                flattened_args.append(target.reg.tracer) #Traced<QubitArray>with<DynamicJaxprTrace>
 
             for arg in args:
                 flattened_args.extend(tree_flatten(arg)[0])
-
+            #[Traced<QubitArray>with<DynamicJaxprTrace>, Traced<ShapedArray(int64[])>with<DynamicJaxprTrace>, Traced<ShapedArray(bool[])>with<DynamicJaxprTrace>]
             flattened_args.append(abs_qc)
 
             res = eval_jaxpr(transformed_jaspr, [])(*flattened_args)
@@ -1540,13 +1544,19 @@ def redirect_qfunction(function_to_redirect):
 
             with env:
                 res = function_to_redirect(*args, **kwargs)
-
-                if not isinstance(res, QuantumVariable):
+                
+                if isinstance(res, QuantumVariable):
+                    res_qubits = list(res)
+                    target_qubits = list(target)
+                elif isinstance(res, QuantumArray):
+                    res_qubits = [a for l in list(res) for a in list(l)]
+                    target_qubits = [a for l in list(target) for a in list(l)]
+                else:
                     raise Exception("Given function did not return a QuantumVariable")
 
-                target = list(target)
+                #target = list(target)
 
-                if len(res) != len(target):
+                if len(res) != len(target) or len(list(res)) != len(list(target)):
                     raise Exception(
                         "Tried to redirect quantum function into QuantumVariable of "
                         "differing size"
@@ -1560,7 +1570,7 @@ def redirect_qfunction(function_to_redirect):
 
                     if isinstance(instr, QuantumEnvironment):
                         pass
-                    elif instr.op.name == "qb_alloc" and instr.qubits[0] in list(res):
+                    elif instr.op.name == "qb_alloc" and instr.qubits[0] in res_qubits:
                         env.env_qs.data.pop(i)
                         res_is_new = True
                         continue
@@ -1570,21 +1580,26 @@ def redirect_qfunction(function_to_redirect):
 
                     i += 1
 
-                retarget_instructions(env.env_qs.data, list(res), target)
+                retarget_instructions(env.env_qs.data, res_qubits, target_qubits)
 
             if res_is_new:
                 # Remove all traces of res
                 res.delete()
 
-                for i in range(res.size):
-                    res.qs.qubits.remove(res[i])
+                for q in res_qubits:
+                    res.qs.qubits.remove(q)
                     res.qs.data.pop(-1)
 
                 for i in range(len(res.qs.deleted_qv_list)):
                     qv = res.qs.deleted_qv_list[i]
-                    if qv.name == res.name:
-                        res.qs.deleted_qv_list.pop(i)
-                        break
+                    if isinstance(res, QuantumVariable):
+                        if qv.name == res.name:
+                            res.qs.deleted_qv_list.pop(i)
+                            break
+                    elif isinstance(res, QuantumArray):
+                        if qv.name in [q.name for q in list(res)]:
+                            res.qs.deleted_qv_list.pop(i)
+                            break
 
             return target
 
