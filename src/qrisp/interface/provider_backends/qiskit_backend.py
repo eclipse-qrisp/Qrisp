@@ -119,18 +119,19 @@ class QiskitBackend(Backend):
 
     @classmethod
     def _default_options(cls):
-        return {"shots": 1000}
+        return {"shots": 1024}
 
-    def run(self, qc, shots=None):
+    def run(self, circuit, **kwargs):
         """
         Execute QASM code on a Qiskit backend using SamplerV2.
 
         Parameters
         ----------
-        qc : QuantumCircuit
+        circuit : QuantumCircuit
             Qiskit QuantumCircuit object
-        shots : int
-            Number of repetitions
+
+        **kwargs :
+            Additional keyword arguments.
 
         Returns
         -------
@@ -138,10 +139,8 @@ class QiskitBackend(Backend):
             Measurement results (bitstring → counts)
         """
 
-        qasm_str = qc.qasm()
-
-        if shots is None:
-            shots = self._options.get("shots", 1000)
+        qasm_str = circuit.qasm()
+        shots = kwargs.get("shots", self._options.get("shots", 1024))
 
         qiskit_qc = QuantumCircuit.from_qasm_str(qasm_str)
 

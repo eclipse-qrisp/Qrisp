@@ -36,8 +36,8 @@ class DummyBackend(Backend):
     def _default_options(cls):
         return {"shots": 1000, "flag": False}
 
-    def run(self, *args, **kwargs):
-        return {"inputs": args, "options": {**self._options, **kwargs}}
+    def run(self, circuit, **kwargs):
+        return {"circuit": circuit, "options": {**self._options, **kwargs}}
 
 
 class BackendNoOptionsNoDefaultsOptions(Backend):
@@ -51,7 +51,7 @@ class BackendNoOptionsNoDefaultsOptions(Backend):
     - The update_options method should only allow modifying existing keys.
     """
 
-    def run(self, *_, **__):
+    def run(self, circuit, **kwargs):
         pass
 
 
@@ -69,7 +69,7 @@ class BackendWithExplicitOptions(Backend):
     def __init__(self, options=None):
         super().__init__(options=options)
 
-    def run(self, *_, **__):
+    def run(self, circuit, **kwargs):
         pass
 
 
@@ -87,7 +87,7 @@ class BackendWithChildDefaultOptions(Backend):
     def _default_options(cls):
         return {"shots": 1024, "custom_default": 42}
 
-    def run(self, *_, **__):
+    def run(self, circuit, **kwargs):
         pass
 
 
@@ -112,9 +112,9 @@ class TestDummyBackend:
     def test_dummy_backend_run_method(self):
         """Test the run method of DummyBackend."""
         b = DummyBackend()
-        result = b.run(1, 2, param=True)
+        result = b.run(circuit=None, param=True)
         assert b.options == {"shots": 1000, "flag": False}
-        assert result["inputs"] == (1, 2)
+        assert result["circuit"] is None
         assert result["options"]["shots"] == 1000
         assert result["options"]["flag"] is False
         assert result["options"]["param"] is True

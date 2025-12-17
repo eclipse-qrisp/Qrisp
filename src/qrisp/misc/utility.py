@@ -1355,7 +1355,7 @@ def get_measurement_from_qc(qc, qubits, backend, shots=None):
         qc.measure(qubits[i], cl[i])
 
     # Execute circuit
-    counts = backend.run(qc, shots)
+    counts = backend.run(qc, shots=shots)
 
     # Remove other measurements outcomes from counts dic
     new_counts_dic = {}

@@ -21,8 +21,6 @@ from collections.abc import Mapping
 from copy import copy
 from typing import Any
 
-from qrisp.circuit.quantum_circuit import QuantumCircuit
-
 
 class Backend(ABC):
     """
@@ -138,20 +136,22 @@ class Backend(ABC):
 
     # TODO: we will handle with batched execution later
     @abstractmethod
-    def run(self, circuit: QuantumCircuit, *args, **kwargs) -> Any:
+    def run(self, circuit, **kwargs) -> Any:
         """
-        Execute a qrisp QuantumCircuit on the backend.
+        Execute a quantum circuit on the backend.
 
         The execution semantics of this method should not depend on the presence of optional hardware metadata.
+        Backends are expected to ignore unknown keyword arguments or raise a backend-specific error.
 
         Parameters
         ----------
-        circuit : QuantumCircuit
-            The quantum circuit to be executed.
-        *args :
-            Additional positional arguments.
+        circuit :
+            The quantum circuit to be executed on the backend. The type is backend-specific.
+
         **kwargs :
-            Additional keyword arguments.
+            Additional keyword arguments that may modify the execution behavior.
+            If a key is also present in the backend's runtime options, the value
+            from ``kwargs`` is expected to take precedence for the execution.
 
         Returns
         -------
@@ -193,7 +193,7 @@ class Backend(ABC):
             self._options[key] = val
 
     # ----------------------------------------------------------------------
-    # Optional hardware/backend-specific metadata
+    # Optional hardware/backend-specific status information
     # ----------------------------------------------------------------------
 
     @property
@@ -209,6 +209,18 @@ class Backend(ABC):
         return None
 
     @property
+    def backend_info(self) -> Any | None:
+        """
+        General information about the backend.
+
+        This may include backend version, provider details, or other
+        backend-specific information.
+
+        Returns ``None`` if the backend does not expose such information.
+        """
+        return None
+
+    @property
     def backend_queue(self) -> Any | None:
         """
         Current queue status or job backlog of the backend.
@@ -219,6 +231,10 @@ class Backend(ABC):
         Returns ``None`` if the backend does not expose queue information.
         """
         return None
+
+    # ----------------------------------------------------------------------
+    # Optional hardware/backend-specific metadata
+    # ----------------------------------------------------------------------
 
     @property
     def num_qubits(self) -> int | None:
@@ -282,5 +298,8 @@ class Backend(ABC):
         Keys and values are backend-defined. This property is intended as an
         extension point for vendor backends to expose additional structured
         information without modifying the base Backend API.
+
+        This may include, for example, calibration schedules, advanced hardware
+        features, quality metrics, or other backend-specific data.
         """
         return {}
