@@ -55,7 +55,7 @@ qrisp_cirq_ops_dict = {
 }
 
 
-def convert_to_cirq(qrisp_circuit):
+def convert_to_cirq(qrisp_circuit, cirq_qubits = None):
     """Function to convert a Qrisp circuit to a Cirq circuit."""
     # get data from Qrisp circuit
     qrisp_circ_num_qubits = qrisp_circuit.num_qubits()
@@ -63,7 +63,9 @@ def convert_to_cirq(qrisp_circuit):
 
     # create an empty Cirq circuit
     cirq_circuit = Circuit()
-    cirq_qubits = [LineQubit(i) for i in range(qrisp_circ_num_qubits)]
+
+    if cirq_qubits is None:
+        cirq_qubits = [LineQubit(i) for i in range(qrisp_circ_num_qubits)]
 
     # create a mapping of Qrisp qubits to Cirq qubits
     qubit_map = {}
@@ -127,11 +129,11 @@ def convert_to_cirq(qrisp_circuit):
             "sx_dg",
         ]
 
+        cirq_op_qubits = [qubit_map[q] for q in op_qubits_i]
+
         if (op_i not in cirq_gates_filter) and instr.op.definition:
             new_circ = instr.op.definition
-            cirq_circuit.append(convert_to_cirq(new_circ))
-
-        cirq_op_qubits = [qubit_map[q] for q in op_qubits_i]
+            cirq_circuit.append(convert_to_cirq(new_circ, cirq_op_qubits))
 
         cirq_gate = qrisp_cirq_ops_dict[op_i]
 

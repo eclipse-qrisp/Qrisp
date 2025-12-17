@@ -21,7 +21,7 @@ from qrisp import (
     z,
     QuantumFloat,
 )
-from cirq import final_state_vector
+from cirq import final_state_vector, num_qubits
 
 
 from math import pi
@@ -204,3 +204,13 @@ def test_grover_example():
         ),
         np.round(qrisp_sv - cirq_sv),
     )
+
+def test_recursive_conversion():
+    """Verify an op that is non-elementary and has the definition attribute can be converted recursively."""
+
+    qc = QuantumCircuit(4)
+    qc.rxx(0.3, 0, 1)
+    qc.rxx(0.3, 2, 3)
+
+    cirq_circuit = qc.to_cirq()
+    assert qc.num_qubits() == num_qubits(cirq_circuit)
