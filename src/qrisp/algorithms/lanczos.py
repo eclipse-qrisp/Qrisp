@@ -380,6 +380,12 @@ def lanczos_alg(H, D, operand_prep, mes_kwargs={}, cutoff=1e-2, show_info=False)
     This algorithm is motivated by the rapid convergence of the Lanczos method for estimating extremal eigenvalues,
     and its quantum version avoids the classical barrier of exponential cost in representing Krylov vectors.
 
+    A critical step in this implementation is solving the generalized eigenvalue problem $\mathbf{H}\vec{v}=\epsilon\mathbf{S}\vec{v}$.
+    In practice, the overlap matrix $S$ can become ill-conditioned due to the linear dependencies in the Krylov basis
+    or sampling noise in the expectation values $T_k(H)$. To prevent numerical instability, the matrices are regularized via threshholding,
+    a process involving discarding small eigenvalues of $S$ below a specified cuttoff. The choice of this cutoff is vital;
+    a value too small may fail to suppress noise, while a value too large may discard physically relevant information.
+    
     Implements the following steps:
       1. Run quantum Lanczos subroutine to obtain Chebyshev expectation values $\langle T_k(H)\rangle$.
       2. Build overlap and Hamiltonian subspace matrices $(\mathbf{S}, \mathbf{H})$.
