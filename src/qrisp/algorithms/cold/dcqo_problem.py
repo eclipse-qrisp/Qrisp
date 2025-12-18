@@ -19,7 +19,6 @@
 import numpy as np
 from scipy.optimize import minimize, Bounds
 import sympy as sp
-from qrisp.algorithms.cold.crab import CRABObjective
 from qrisp import h
 from qrisp.algorithms.cold.AGP_params import solve_alpha_gamma_chi
 
@@ -175,26 +174,20 @@ class DCQOProblem:
             Numpy or sympy (if CRAB) array holding the derivative of the opt pulse for each timestep.
         """
             
-        if CRAB:
-            # Matrices and arrays must be sympy objects
-            sin_matrix = sp.MutableDenseMatrix.zeros(N_steps, N_opt)
-            cos_matrix = sp.MutableDenseMatrix.zeros(N_steps, N_opt)
-            t_list = sp.Array(t_list)
-
-            # Add symbols for random parameters to be called in optimizaton
-            r_params = [sp.Symbol("r_"+str(i)) for i in range(N_opt)]
-            for k in range(N_opt):
-                sin_matrix[:, k] = sp.Matrix(t_list.applyfunc(lambda t: sp.sin(sp.pi * (k+1+r_params[k]) * t / T)))
-                cos_matrix[:, k] = sp.Matrix(t_list.applyfunc(lambda t: (sp.pi/T * (k+1+r_params[k])) * sp.cos(sp.pi * (k+1+r_params[k]) * t / T)))
+        # Precompute f (sine) and f_deriv (cosine) for each timestep as numpy arrays
+        sin_matrix = np.zeros((N_steps, N_opt))
+        cos_matrix = np.zeros((N_steps, N_opt))
         
+        if CRAB:
+            # Random CRAB parameters
+            r_params = np.random.uniform(-0.5, 0.5, N_opt)
         else:
-            # Precompute f (sine) and f_deriv (cosine) for each timestep as numpy arrays
-            sin_matrix = np.zeros((N_steps, N_opt))
-            cos_matrix = np.zeros((N_steps, N_opt))
+            # Otherwise add nothing
+            r_params = np.zeros(N_opt)
 
-            for k in range(N_opt):
-                sin_matrix[:, k] = np.sin(np.pi * (k+1) * t_list/T)
-                cos_matrix[:, k] = (np.pi * (k+1)) * np.cos(np.pi * (k+1) * self.g) * self.g_deriv
+        for k in range(N_opt):
+            sin_matrix[:, k] = np.sin(np.pi * (k+1+r_params[k]) * t_list/T)
+            cos_matrix[:, k] = (np.pi * (k+1+r_params[k])) * np.cos(np.pi * (k+1+r_params[k]) * self.g) * self.g_deriv
 
         return sin_matrix, cos_matrix
 
@@ -266,13 +259,8 @@ class DCQOProblem:
         # Precompute opt pulses
         dt = T/N_steps
         t_list = np.linspace(dt, T, int(N_steps))
-        sin_matrix, cos_matrix = self._precompute_opt_pulses(N_steps, T, t_list, N_opt=len(opt_params))
-
-        # Transform opt_params to sympy to work with symbols for random values
-        if CRAB:
-            beta = sp.Matrix(opt_params)
-        else:
-            beta = opt_params
+        sin_matrix, cos_matrix = self._precompute_opt_pulses(N_steps, T, t_list, N_opt=len(opt_params), CRAB=CRAB)
+        beta = opt_params
 
         # Apply hamiltonian to qarg for each timestep
         for s in range(N_steps):
@@ -287,11 +275,8 @@ class DCQOProblem:
             # AGP contribution scaled by dt* lambda_dot(t)
             H_step += self.lamdot[s] * self.A_lam(alpha)
 
-            # Control pulse contribution 
-            if CRAB:
-                H_step += sum(f[i, 0] for i in range(f.rows)) * self.H_control
-            else:
-                H_step += f * self.H_control
+            # Control pulse contribution
+            H_step += f * self.H_control
 
             # Get unitary from trotterization and apply to qarg
             U = H_step.trotterization()
@@ -368,7 +353,7 @@ class DCQOProblem:
         # Different objective functions: exp_value, agp coeffs magnitude, agp coeffs amplitude
 
         # Expectation value of the QUBO Hamiltonian
-        def objective_exp(params):
+        def objective_exp(params, CRAB):
             # Dict to assign the optimization parameters
             subs_dic = {sp.Symbol("par_"+str(i)): params[i] for i in range(len(params))}
 
@@ -384,10 +369,10 @@ class DCQOProblem:
         
         # Magnitude of the AGP coefficients (coeffs are treated as uniform for simplification)
         # (sum of absolute values for each timestep)
-        def objective_mag(params):
+        def objective_mag(params, CRAB):
             # Precompute opt pulses to be multiplied with opt params
             t_list = np.linspace(T/N_steps, T, int(N_steps))
-            sin_matrix, cos_matrix = self._precompute_opt_pulses(N_steps, T, t_list, N_opt=len(params))
+            sin_matrix, cos_matrix = self._precompute_opt_pulses(N_steps, T, t_list, N_opt=len(params), CRAB=CRAB)
             magnitude = 0
 
             # Iterate through lambda(t)
@@ -396,17 +381,16 @@ class DCQOProblem:
                 f = sin_matrix[s, :] @ params
                 f_deriv = cos_matrix[s, :] @ params
                 alpha, gamma, chi = solve_alpha_gamma_chi(self.h, self.J, self.lam[s], f, f_deriv, uniform=True)
-                magnitude += (np.abs(gamma[0]) + np.abs(chi[0]) +  np.abs(alpha[0]))
+                magnitude += (np.abs(gamma[0]) + np.abs(chi[0]) + np.abs(alpha[0]))
 
             return magnitude
 
-
         # Amplitude of the AGP coefficients (coeffs are treated as uniform for simplification)
         # (maximum absolute coeffs value of all timesteps)
-        def objective_amp(params):
+        def objective_amp(params, CRAB):
             # Precompute opt pulses to be multiplied with opt params
             t_list = np.linspace(T/N_steps, T, int(N_steps))
-            sin_matrix, cos_matrix = self._precompute_opt_pulses(N_steps, T, t_list, N_opt=len(params))
+            sin_matrix, cos_matrix = self._precompute_opt_pulses(N_steps, T, t_list, N_opt=len(params), CRAB=CRAB)
             amplitude = 0
 
             # Iterate through lambda(t)
@@ -423,12 +407,7 @@ class DCQOProblem:
         init_point = np.random.rand(N_opt) * np.pi/2
 
         # Define objective function
-
-        # Create CRAB objective to make sure randomization is applied at each optimization iteration
-        if objective == "exp_value" and CRAB:
-            objective = CRABObjective(self.H_prob, qarg, qc, N_opt) # for now, CRAB only works with the exp_value objective
-
-        elif objective == "exp_value":
+        if objective == "exp_value":
             objective = objective_exp
 
         elif objective == "agp_coeff_magnitude":
@@ -436,13 +415,17 @@ class DCQOProblem:
 
         elif objective == "agp_coeff_amplitude":
             objective = objective_amp
+        
+        else:
+            raise ValueError("{objective} is not a valid option as objective.")
 
         
         res = minimize(objective,
                         init_point,
                         method=optimizer,
                         options=options,
-                        bounds=Bounds(*bounds)
+                        bounds=Bounds(*bounds),
+                        args=(CRAB)
                         )
         
         return res.x
