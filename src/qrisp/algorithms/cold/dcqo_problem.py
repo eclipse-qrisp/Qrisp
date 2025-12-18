@@ -17,11 +17,11 @@
 """
 
 import numpy as np
-from scipy.optimize import minimize
+from scipy.optimize import minimize, Bounds
 import sympy as sp
-from qrisp.algorithms.cold.crab import CRABObjective
 from qrisp import h
-# from qrisp.algorithms.cold.AGP_param_opt import solve_params_at_lambda, build_Hg
+from qrisp.algorithms.cold.AGP_params import solve_alpha_gamma_chi
+
 
 class DCQOProblem:
     """
@@ -56,24 +56,33 @@ class DCQOProblem:
         self, 
         sympy_lambda, 
         sympy_g,
-        alpha,
+        agp_coeffs,
         H_init,
         H_prob,
         A_lam,
+        J,
+        h,
         H_control=None,
         qarg_prep=None, 
         callback=False
 
     ):
         
+        # Scheduling function
         self.sympy_lambda = sympy_lambda
         self.sympy_g = sympy_g
-        self.alpha = alpha
+
+        # Operators
+        self.agp_coeffs = agp_coeffs
         self.H_init = H_init
         self.H_prob = H_prob
         self.A_lam = A_lam
         self.H_control = H_control
         self.qarg_prep = qarg_prep
+
+        # Qubo characteristics
+        self.J = J
+        self.h = h
         
         # Parameters for callback
         self.callback = callback
@@ -88,7 +97,7 @@ class DCQOProblem:
 
         self.callback = True
 
-    def __precompute_timegrid(self, N_steps, T, method):
+    def _precompute_timegrid(self, N_steps, T, method):
         """
         Compute lambda(t, T) and the time-derivative lambdadot(t, T) 
         for each timestep.
@@ -140,6 +149,47 @@ class DCQOProblem:
             self.g = g_func(self.lam, T)
             self.g_deriv = g_deriv
 
+    def _precompute_opt_pulses(self, N_steps, T, t_list, N_opt, CRAB=False):
+        """
+        Precompute optimization pulses for COLD routine that will be scaled by optimized paramters.
+        
+        Parameters
+        ----------
+        N_steps : int
+            Number of timesteps.
+        T : float
+            Evolution time for the simulation.
+        t_list : list
+            Time values for each step.
+        N_opt : int
+            Number of optimization parameters in ``H_control``.
+        CRAB : bool
+            If ``True``, the CRAB optimization method is being used. The default is ``False``.
+
+        Returns
+        -------
+        sin_matrix : 
+            Numpy or sympy (if CRAB) array holding the opt pulse for each timestep.
+        cos_matrix :
+            Numpy or sympy (if CRAB) array holding the derivative of the opt pulse for each timestep.
+        """
+            
+        # Precompute f (sine) and f_deriv (cosine) for each timestep as numpy arrays
+        sin_matrix = np.zeros((N_steps, N_opt))
+        cos_matrix = np.zeros((N_steps, N_opt))
+        
+        if CRAB:
+            # Random CRAB parameters
+            r_params = np.random.uniform(-0.5, 0.5, N_opt)
+        else:
+            # Otherwise add nothing
+            r_params = np.zeros(N_opt)
+
+        for k in range(N_opt):
+            sin_matrix[:, k] = np.sin(np.pi * (k+1+r_params[k]) * t_list/T)
+            cos_matrix[:, k] = (np.pi * (k+1+r_params[k])) * np.cos(np.pi * (k+1+r_params[k]) * self.g) * self.g_deriv
+
+        return sin_matrix, cos_matrix
 
     def apply_lcd_hamiltonian(self, qarg, N_steps, T):
         """
@@ -161,19 +211,19 @@ class DCQOProblem:
         dt = T / N_steps
 
         # Compute time-function lamda(t, T) and the derivative lamdot(t, T)
-        self.__precompute_timegrid(N_steps, T, 'LCD')
+        self._precompute_timegrid(N_steps, T, 'LCD')
         
         # Apply hamiltonian to qarg for each timestep
         for s in range(N_steps):
 
             # Get alpha for the timestep
-            alph = self.alpha(self.lam[s])
+            coeffs = self.agp_coeffs(self.lam[s])
 
             # H_0 contribution scaled by dt
             H_step = (1-self.lam[s]) * self.H_init + self.lam[s] * self.H_prob
 
             # AGP contribution scaled by dt* lambda_dot(t)
-            H_step += self.lamdot[s] * self.A_lam(alph)
+            H_step += self.lamdot[s] * self.A_lam(*coeffs)
 
             # Get unitary from trotterization and apply to qarg
             U = H_step.trotterization()
@@ -200,48 +250,17 @@ class DCQOProblem:
             If ``True``, the CRAB optimization method is being used. The default is ``False``.
         """
         
-        def precompute_opt_pulses(t_list, N_opt):
-            
-            # Precompute f (sine) and f_deriv (cosine) for each timestep
-            if CRAB:
-                # Matrices and arrays must be sympy objects
-                sin_matrix = sp.MutableDenseMatrix.zeros(N_steps, N_opt)
-                cos_matrix = sp.MutableDenseMatrix.zeros(N_steps, N_opt)
-                t_list = sp.Array(t_list)
-
-                # Add symbols for random parameters to be called in optimizaton
-                r_params = [sp.Symbol("r_"+str(i)) for i in range(N_opt)]
-                for k in range(N_opt):
-                    sin_matrix[:, k] = sp.Matrix(t_list.applyfunc(lambda t: sp.sin(sp.pi * (k+1+r_params[k]) * t / T)))
-                    cos_matrix[:, k] = sp.Matrix(t_list.applyfunc(lambda t: (sp.pi/T * (k+1+r_params[k])) * sp.cos(sp.pi * (k+1+r_params[k]) * t / T)))
-
-            # Use numpy if not random params are used
-            else:
-                sin_matrix = np.zeros((N_steps, N_opt))
-                cos_matrix = np.zeros((N_steps, N_opt))
-
-                for k in range(N_opt):
-                    sin_matrix[:, k] = np.sin(np.pi * (k+1) * t_list/T)
-                    cos_matrix[:, k] = (np.pi * (k+1)) * np.cos(np.pi * (k+1) * self.g) * self.g_deriv
-
-            return sin_matrix, cos_matrix
-        
         # Initialize qarg
         self.qarg_prep(qarg)
 
         # Compute time-function lamda(t, T) and the derivative lamdot(t, T)
-        self.__precompute_timegrid(N_steps, T, 'COLD')
+        self._precompute_timegrid(N_steps, T, 'COLD')
 
         # Precompute opt pulses
-        dt = T / N_steps
+        dt = T/N_steps
         t_list = np.linspace(dt, T, int(N_steps))
-        sin_matrix, cos_matrix = precompute_opt_pulses(t_list, N_opt=len(opt_params))
-
-        # Transform opt_params to sympy to work with symbols for random values
-        if CRAB:
-            beta = sp.Matrix(opt_params)
-        else:
-            beta = opt_params
+        sin_matrix, cos_matrix = self._precompute_opt_pulses(N_steps, T, t_list, N_opt=len(opt_params), CRAB=CRAB)
+        beta = opt_params
 
         # Apply hamiltonian to qarg for each timestep
         for s in range(N_steps):
@@ -249,19 +268,15 @@ class DCQOProblem:
             # Get alpha, f and f_deriv for the timestep
             f = sin_matrix[s, :] @ beta
             f_deriv = cos_matrix[s, :] @ beta
-            alph = self.alpha(self.lam[s], f, f_deriv)
-
+            alpha = self.agp_coeffs(self.lam[s], f, f_deriv)
             # H_0 contribution scaled by dt
             H_step = (1-self.lam[s]) * self.H_init + self.lam[s] * self.H_prob
 
             # AGP contribution scaled by dt* lambda_dot(t)
-            H_step += self.lamdot[s] * self.A_lam(alph)
+            H_step += self.lamdot[s] * self.A_lam(alpha)
 
-            # Control pulse contribution 
-            if CRAB:
-                H_step += sum(f[i, 0] for i in range(f.rows)) * self.H_control
-            else:
-                H_step += f * self.H_control
+            # Control pulse contribution
+            H_step += f * self.H_control
 
             # Get unitary from trotterization and apply to qarg
             U = H_step.trotterization()
@@ -303,7 +318,8 @@ class DCQOProblem:
         return compiled_qc
 
 
-    def optimization_routine(self, qarg, N_opt, qc, CRAB, optimizer, options
+    def optimization_routine(self, qarg, N_opt, N_steps, T, qc, CRAB, optimizer, 
+                             options, objective, bounds
                              ): 
         """
         Subroutine for the optimization method used in COLD. 
@@ -323,17 +339,21 @@ class DCQOProblem:
             Specifies the `SciPy optimization routine <https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html>`_.
         options : dict
             A dictionary of solver options.
+        objective : str
+            The objective function to be minimized (``exp_value``, ``agp_coeff_magnitude``, ``agp_coeff_amplitude``). Default is ``exp_value``.
+        bounds : tuple
+            The parameter bounds for the optimizer. Default is (-2, 2).
 
         Returns
         -------
         res.x: array
             The optimized parameters of the problem instance.
         """
+        
+        # Different objective functions: exp_value, agp coeffs magnitude, agp coeffs amplitude
 
-        def objective(params):
-            # Objective function to be minimized: 
-            # Expectation value of the QUBO Hamiltonian
-
+        # Expectation value of the QUBO Hamiltonian
+        def objective_exp(params, CRAB):
             # Dict to assign the optimization parameters
             subs_dic = {sp.Symbol("par_"+str(i)): params[i] for i in range(len(params))}
 
@@ -347,19 +367,65 @@ class DCQOProblem:
             
             return cost
         
+        # Magnitude of the AGP coefficients (coeffs are treated as uniform for simplification)
+        # (sum of absolute values for each timestep)
+        def objective_mag(params, CRAB):
+            # Precompute opt pulses to be multiplied with opt params
+            t_list = np.linspace(T/N_steps, T, int(N_steps))
+            sin_matrix, cos_matrix = self._precompute_opt_pulses(N_steps, T, t_list, N_opt=len(params), CRAB=CRAB)
+            magnitude = 0
+
+            # Iterate through lambda(t)
+            for s in range(N_steps):
+                # Get alpha, f and f_deriv for the timestep
+                f = sin_matrix[s, :] @ params
+                f_deriv = cos_matrix[s, :] @ params
+                alpha, gamma, chi = solve_alpha_gamma_chi(self.h, self.J, self.lam[s], f, f_deriv, uniform=True)
+                magnitude += (np.abs(gamma[0]) + np.abs(chi[0]) + np.abs(alpha[0]))
+
+            return magnitude
+
+        # Amplitude of the AGP coefficients (coeffs are treated as uniform for simplification)
+        # (maximum absolute coeffs value of all timesteps)
+        def objective_amp(params, CRAB):
+            # Precompute opt pulses to be multiplied with opt params
+            t_list = np.linspace(T/N_steps, T, int(N_steps))
+            sin_matrix, cos_matrix = self._precompute_opt_pulses(N_steps, T, t_list, N_opt=len(params), CRAB=CRAB)
+            amplitude = 0
+
+            # Iterate through lambda(t)
+            for s in range(N_steps):
+                # Get alpha, f and f_deriv for the timestep
+                f = sin_matrix[s, :] @ params
+                f_deriv = cos_matrix[s, :] @ params
+                alpha, gamma, chi = solve_alpha_gamma_chi(self.h, self.J, self.lam[s], f, f_deriv, uniform=True)
+                if np.abs(gamma[0]) + np.abs(chi[0] + np.abs(alpha[0])) > amplitude:
+                    amplitude = np.abs(gamma[0]) + np.abs(chi[0])
+
+            return amplitude
+        
         init_point = np.random.rand(N_opt) * np.pi/2
 
-        # Create CRAB objective to make sure randomization is applied at each optimization iteration
-        if CRAB:
-            objective = CRABObjective(self.H_prob, qarg, qc, N_opt)
-        # Otherwise objective from above is used
-        else:
-            objective = objective
+        # Define objective function
+        if objective == "exp_value":
+            objective = objective_exp
 
+        elif objective == "agp_coeff_magnitude":
+            objective = objective_mag
+
+        elif objective == "agp_coeff_amplitude":
+            objective = objective_amp
+        
+        else:
+            raise ValueError("{objective} is not a valid option as objective.")
+
+        
         res = minimize(objective,
                         init_point,
                         method=optimizer,
-                        options=options
+                        options=options,
+                        bounds=Bounds(*bounds),
+                        args=(CRAB)
                         )
         
         return res.x
@@ -368,10 +434,13 @@ class DCQOProblem:
         self, 
         qarg, 
         N_steps, 
-        T, 
+        T,
+        method,
         N_opt=None, 
         CRAB=False, 
         optimizer="Powell",
+        objective="exp_value",
+        bounds=(-2, 2),
         options={}
     ):
         """
@@ -396,6 +465,10 @@ class DCQOProblem:
             We set the default to ``Powell``.
         options : dict
             A dictionary of solver options.
+        objective : str
+            The objective function to be minimized (``exp_value``, ``agp_coeff_magnitude``, ``agp_coeff_amplitude``). Default is ``exp_value``.
+        bounds : tuple
+            The parameter bounds for the optimizer. Default is (-2, 2).
 
         Returns
         -------
@@ -410,23 +483,32 @@ class DCQOProblem:
                 return h(q)
             self.qarg_prep = qarg_prep
 
-        # Run COLD routine if H_control is given
-        if self.H_control is not None:
+        # Run COLD routine
+        if method == 'COLD':
             qarg1, qarg2 = qarg.duplicate(), qarg.duplicate()
 
-            # Compile COLD routine into a circuit
-            U_circuit = self.compile_U_cold(qarg1, N_opt, N_steps, T, CRAB)
+            # If we optimize the Hamiltonian expectation value,
+            # compile COLD routine into a circuit for the optimization
+            if objective == 'exp_value':
+                U_circuit = self.compile_U_cold(qarg1, N_opt, N_steps, T, CRAB)
+            else:
+                self._precompute_timegrid(N_steps, T, 'COLD')
+                U_circuit = None
 
             # Find optimal params for control pulse
-            opt_params = self.optimization_routine(qarg2, N_opt, U_circuit, CRAB, optimizer, options)
+            opt_params = self.optimization_routine(qarg2, N_opt, N_steps, T, U_circuit, CRAB, 
+                                                   optimizer, options, objective=objective, bounds=bounds)
 
             # Apply hamiltonian with optimal parameters
-            # Here we do not want the randomized parameters to be included -> CRAB=False
+            # Here we do not want the randomized parameters to be included -> CRAB=False in any case
             self.apply_cold_hamiltonian(qarg, N_steps, T, opt_params, CRAB=False)
 
-        # Otherwise run LCD routine
-        else:
+        # Run LCD routine
+        elif method == 'LCD':
             self.apply_lcd_hamiltonian(qarg, N_steps, T)
+
+        else:
+            raise ValueError(f'"{method}" is not an option for method. Choose "LCD" or "COLD".')
 
         # Measure qarg
         res_dict = qarg.get_measurement()
