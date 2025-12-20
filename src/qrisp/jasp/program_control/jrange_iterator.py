@@ -17,7 +17,7 @@
 """
 
 import jax.numpy as jnp
-from jaxlib.xla_extension import ArrayImpl
+from jax._src.array import ArrayImpl
 from jax import jit
 
 from qrisp.jasp.tracing_logic import check_for_tracing_mode

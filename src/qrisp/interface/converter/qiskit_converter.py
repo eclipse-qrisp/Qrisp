@@ -307,7 +307,11 @@ def convert_from_qiskit(qiskit_qc):
 
         clbit_name = cl_reg.name
         if cl_reg.size > 1:
-            clbit_name += "." + str(cl_reg._bits.index(qiskit_qc.clbits[i]))
+            # Case distinctionction for Qiskit version compatibility.
+            try:
+                clbit_name += "." + str(cl_reg._bits.index(qiskit_qc.clbits[i]))
+            except AttributeError:
+                clbit_name += "." + str(list(cl_reg).index(qiskit_qc.clbits[i]))
 
         qc.add_clbit(Clbit(clbit_name))
 

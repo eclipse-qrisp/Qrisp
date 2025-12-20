@@ -12,7 +12,7 @@ jobs:
     timeout-minutes: 60
     strategy:
       matrix:
-        python-version: ["3.10.*"]
+        python-version: ["3.11.*"]
 
     steps:
       - uses: actions/checkout@v3
@@ -30,7 +30,7 @@ jobs:
           pip install qiskit-iqm
           pip install pyscf
           pip install stim
-          pip install optax
+          pip install xdsl
       - name: Test with pytest
         run: |
           pytest

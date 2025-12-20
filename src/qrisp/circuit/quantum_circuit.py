@@ -33,6 +33,7 @@ from qrisp.circuit import Clbit, Instruction, Operation, Qubit
 
 TO_GATE_COUNTER = np.zeros(1)
 
+
 class QuantumCircuit:
     """
     This class describes quantum circuits. Many of the attribute and method names are
@@ -208,7 +209,7 @@ class QuantumCircuit:
     clbit_index_counter = np.zeros(1, dtype=int)
     xla_mode = 0
 
-    def __init__(self, num_qubits=0, num_clbits=0, name=None):
+    def __init__(self, num_qubits=0, num_clbits=0):
         object.__setattr__(self, "data", [])
         object.__setattr__(self, "qubits", [])
         object.__setattr__(self, "clbits", [])
@@ -340,7 +341,7 @@ class QuantumCircuit:
         """
 
         if name is None:
-            #name = "circuit" + str(id(self))[:5]
+            # name = "circuit" + str(id(self))[:5]
             name = "circuit" + str(int(TO_GATE_COUNTER[0]))[:7].zfill(7)
 
             TO_GATE_COUNTER[0] += 1
@@ -835,7 +836,7 @@ class QuantumCircuit:
         """
         Transpiles the QuantumCircuit in the sense that there are no longer any
         synthesized gate objects. Furthermore, we can call the `Qiskit transpiler
-        <https://qiskit.org/documentation/stubs/qiskit.compiler.transpile.html>`__
+        <https://qiskit.org/documentation/stubs/qiskit.compiler.transpile.html>`_
         by supplying keyword arguments.
 
         The Qiskit transpiler is not called, if no keyword arguments are given.
@@ -890,6 +891,41 @@ class QuantumCircuit:
             «qb_3: ┤ Rz(π/4) ├┤ √X ├┤ Rz(π/2) ├
             «      └─────────┘└────┘└─────────┘
 
+        One can also transpile a specific composite gate in a QuantumCircuit, if desired. A Quantum
+        Phase Estimation circuit also contains a `QFT_dg` gate. 
+
+        >>> from qrisp import p, QuantumVariable, QPE, multi_measurement, h
+        >>> import numpy as np
+        >>>
+        >>> def U(qv):
+        >>>     x = 0.5
+        >>>     y = 0.125
+        >>>
+        >>>     p(x*2*np.pi, qv[0])
+        >>>     p(y*2*np.pi, qv[1])
+        >>> 
+        >>> qv = QuantumVariable(2)
+        >>>
+        >>> h(qv)
+        >>> 
+        >>> res = QPE(qv, U, precision = 3)
+        >>>
+        >>> print(qv.qs.compile())
+
+        To transpile just `QFT_dg` in the compiled QuantumCircuit,
+
+        >>> test_circuit = qv.qs.compile()
+        >>>
+        >>> def transpile_predicate(op):
+        >>>    if op.name == "QFT_dg":
+        >>>        return True
+        >>>    else:
+        >>>        return False
+        >>>    
+        >>> transpiled_qc = test_circuit.transpile(transpile_predicate = transpile_predicate)
+        >>>
+        >>> print(transpiled_qc)
+        
 
         """
         from qrisp.circuit import transpile
@@ -1004,13 +1040,6 @@ class QuantumCircuit:
 
         subs_circ = self.clearcopy()
 
-        missing_parameters = self.abstract_params - set(subs_dic.keys())
-        if missing_parameters:
-            raise Exception(
-                "Need parameter specification for abstract parameters "
-                + str(missing_parameters)
-            )
-
         for ins in self.data:
             if len(ins.op.abstract_params):
                 op = ins.op.bind_parameters(subs_dic)
@@ -1073,13 +1102,13 @@ class QuantumCircuit:
         try:
             return qiskit_qc.qasm(formatted, filename, encoding)
         except:
-            from qiskit.qasm2 import dumps, QASM2ExportError
+            from qiskit.qasm2 import QASM2ExportError, dumps
 
             try:
                 return dumps(qiskit_qc)
             except (QASM2ExportError, TypeError):
-                from qiskit.qasm3 import dumps
                 from qiskit import transpile
+                from qiskit.qasm3 import dumps
 
                 transpiled_qiskit_qc = transpile(
                     qiskit_qc,
@@ -2328,7 +2357,7 @@ class QuantumCircuit:
 
         """
         self.append(ops.u3Gate(theta, phi, lam), [qubits])
-        
+
     def r(self, phi, theta, qubits):
         self.append(ops.RGate(phi, theta), [qubits])
 

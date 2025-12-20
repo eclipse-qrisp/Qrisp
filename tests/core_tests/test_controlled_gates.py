@@ -16,6 +16,8 @@
 ********************************************************************************
 """
 
+import numpy as np
+
 # Created by ann81984 at 04.05.2022
 import pytest
 import time
@@ -29,6 +31,7 @@ from qrisp.circuit import (
     HGate,
     XGate,
     PGate,
+    U3Gate
 )
 from qrisp import QuantumSession, QuantumVariable, QuantumCircuit, transpile, x
 from qiskit.circuit.library import HGate
@@ -131,3 +134,7 @@ def test_controlled_gates():
     )
 
     assert qv_1.get_measurement() == {"1": 1.0}
+    
+    u3 = U3Gate(1.7465, -0.58331, 0)
+    cu3 = u3.control(1)
+    assert np.allclose(cu3.get_unitary(), cu3.definition.get_unitary(), atol = 1E-5)

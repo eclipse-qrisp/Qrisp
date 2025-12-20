@@ -18,12 +18,9 @@
 
 from functools import lru_cache
 
-from jax import make_jaxpr
-from jax.extend.core import JaxprEqn, ClosedJaxpr
-from jax.lax import add_p, sub_p, while_loop
+from jax.extend.core import JaxprEqn
 
-from qrisp.jasp.primitives import AbstractQuantumCircuit, OperationPrimitive
-from qrisp.jasp.jasp_expression.centerclass import Jaspr
+from qrisp.jasp.primitives import AbstractQuantumCircuit
 
 
 def copy_jaxpr_eqn(eqn):
